@@ -37,6 +37,32 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CBioseqContext;
+class CStartSectionItem;
+class CHtmlAnchorItem;
+class CLocusItem;
+class CDeflineItem;
+class CAccessionItem;
+class CVersionItem;
+class CGenomeProjectItem;
+class CDBSourceItem;
+class CKeywordsItem;
+class CSegmentItem;
+class CSourceItem;
+class CReferenceItem;
+class CCommentItem;
+class CPrimaryItem;
+class CFeatHeaderItem;
+class CSourceFeatureItem;
+class CFeatureItem;
+class CGapItem;
+class CBaseCountItem;
+class COriginItem;
+class CSequenceItem;
+class CContigItem;
+class CWGSItem;
+class CTSAItem;
+class CEndSectionItem;
 
 // --- Flat File configuration class
 
@@ -141,6 +167,10 @@ public:
         // or, specify individual sections to print.
         // or, specify individual sections to skip
         // (via (fGenbankBlocks_All & ~fGenbankBlocks_Locus), for example)
+        // Note that these flags do NOT have a one-to-one relationship
+        // with the notify() functions in CGenbankBlockCallback.
+        // For example, fGenbankBlocks_FeatAndGap is used to turn
+        // on both the CFeatureItem and CGapItem notify functions.
         fGenbankBlocks_Head       = (1u <<  0),
         fGenbankBlocks_Locus      = (1u <<  1),
         fGenbankBlocks_Defline    = (1u <<  2),
@@ -156,13 +186,13 @@ public:
         fGenbankBlocks_Primary    = (1u << 12), 
         fGenbankBlocks_Featheader = (1u << 13),
         fGenbankBlocks_Sourcefeat = (1u << 14),
-        fGenbankBlocks_Feature    = (1u << 15),
+        fGenbankBlocks_FeatAndGap = (1u << 15),
         fGenbankBlocks_Basecount  = (1u << 16),
         fGenbankBlocks_Origin     = (1u << 17),
         fGenbankBlocks_Sequence   = (1u << 18),
         fGenbankBlocks_Contig     = (1u << 19),
         fGenbankBlocks_Wgs        = (1u << 20),
-        fGenbankBlocks_Genome     = (1u << 21),
+        fGenbankBlocks_Tsa        = (1u << 21),
         fGenbankBlocks_Slash      = (1u << 22)
     };
 
@@ -174,6 +204,97 @@ public:
     typedef EView           TView;
     typedef unsigned int    TGffOptions;
     typedef unsigned int    TGenbankBlocks;
+    
+    class CGenbankBlockCallback : public CObject {
+    public:
+        enum EAction {
+            // the normal case; just keep going as normal
+            eAction_Default,
+            // if for some reason you don't want the rest of the flatfile generated, 
+            // this will trigger a CFlatException of type eHaltRequested
+            eAction_HaltFlatfileGeneration
+        };
+
+        virtual ~CGenbankBlockCallback(void) { }
+
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CStartSectionItem & head_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CHtmlAnchorItem & anchor_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text, 
+                                const CBioseqContext& ctx,
+                                const CLocusItem &locus_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CDeflineItem & defline_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CAccessionItem & accession_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CVersionItem & version_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CGenomeProjectItem & project_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CDBSourceItem & dbsource_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CKeywordsItem & keywords_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CSegmentItem & segment_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CSourceItem & source_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CReferenceItem & ref_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CCommentItem & comment_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CPrimaryItem & primary_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CFeatHeaderItem & featheader_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CSourceFeatureItem & sourcefeat_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CFeatureItem & feature_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CGapItem & feature_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CBaseCountItem & basecount_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const COriginItem & origin_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CSequenceItem & sequence_chunk_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CContigItem & contig_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CWGSItem & wgs_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CTSAItem & tsa_item ) { return eAction_Default; }
+        virtual EAction notify( const string & block_text,
+                                const CBioseqContext& ctx,
+                                const CEndSectionItem & slash_item ) { return eAction_Default; }
+
+        // add more overridable functions if more blocks are invented
+    };
 
     // constructors
     CFlatFileConfig(TFormat format = eFormat_GenBank,
@@ -182,7 +303,8 @@ public:
                     TFlags  flags = 0,
                     TView   view = fViewNucleotides,
                     TGffOptions gff_options = fGffGTFCompat,
-                    TGenbankBlocks genbank_blocks = fGenbankBlocks_All );
+                    TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
+                    CGenbankBlockCallback* pGenbankBlockCallback = NULL );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -427,6 +549,9 @@ public:
     // "head, "locus", etc.  Guaranteed to be sorted.
     static const vector<string> & GetAllGenbankStrings(void);
 
+    // return non-const callback even if the CFlatFileConfig is const
+    CRef<CGenbankBlockCallback> GetGenbankBlockCallback(void) const { return m_GenbankBlockCallback; }
+
 public:
     static const size_t SMARTFEATLIMIT = 1000000;
 
@@ -443,7 +568,7 @@ private:
     bool        m_RefSeqConventions;
     TGffOptions m_GffOptions;
     TGenbankBlocks m_fGenbankBlocks;
-
+    CRef<CGenbankBlockCallback> m_GenbankBlockCallback;
 };
 
 

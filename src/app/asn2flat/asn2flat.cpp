@@ -86,6 +86,7 @@ private:
     typedef CFlatFileConfig::TView          TView;
     typedef CFlatFileConfig::TGffOptions    TGffOptions;
     typedef CFlatFileConfig::TGenbankBlocks TGenbankBlocks;
+    typedef CFlatFileConfig::CGenbankBlockCallback TGenbankBlockCallback;
 
     CObjectIStream* x_OpenIStream(const CArgs& args);
 
@@ -96,6 +97,7 @@ private:
     TFlags          x_GetFlags(const CArgs& args);
     TView           x_GetView(const CArgs& args);
     TGenbankBlocks  x_GetGenbankBlocks(const CArgs& args);
+    TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args);
     TSeqPos x_GetFrom(const CArgs& args);
     TSeqPos x_GetTo  (const CArgs& args);
     void x_GetLocation(const CSeq_entry_Handle& entry,
@@ -234,6 +236,12 @@ void CAsn2FlatApp::Init(void)
              CArgDescriptions::eString );
          // don't allow both because it's not really clear what the user intended.
          arg_desc->SetDependency("showblocks", CArgDescriptions::eExcludes, "skipblocks");
+
+         arg_desc->AddFlag("demo-genbank-callback",
+             "When set (and genbank mode is used), this program will demonstrate the use of "
+             "genbank callbacks via a very simple callback that just prints its output to stderr, then "
+             "prints some statistics.  To demonstrate halting of flatfile generation, the genbank callback "
+             "will halt flatfile generation if it encounters an item with the words 'HALT TEST'.");
 
          arg_desc->AddFlag("no-external",
                            "Disable all external annotation sources");
@@ -627,8 +635,9 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     TView          view           = x_GetView(args);
     TGffOptions    gff_options    = CFlatFileConfig::fGffGTFCompat;
     TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
+    CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
-    CFlatFileConfig cfg(format, mode, style, flags, view, gff_options, genbank_blocks);
+    CFlatFileConfig cfg(format, mode, style, flags, view, gff_options, genbank_blocks, genbank_callback.GetPointerOrNull() );
     return new CFlatFileGenerator(cfg);
 }
 
@@ -828,6 +837,107 @@ CAsn2FlatApp::TGenbankBlocks CAsn2FlatApp::x_GetGenbankBlocks(const CArgs& args)
     }
 
     return ( bInvertFlags ? ~fBlocksGiven : fBlocksGiven );
+}
+
+CAsn2FlatApp::TGenbankBlockCallback* 
+CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
+{
+    class CSimpleCallback : public TGenbankBlockCallback {
+    public:
+        CSimpleCallback(void) { }
+        virtual ~CSimpleCallback(void) 
+            { 
+                cerr << endl;
+                cerr << "GENBANK CALLBACK DEMO STATISTICS" << endl;
+                cerr << endl;
+                cerr << "Appearances of each type: " << endl;
+                cerr << endl;
+                x_DumpTypeToCountMap(m_TypeAppearancesMap);
+                cerr << endl;
+                cerr << "Total characters output for each type: " << endl;
+                cerr << endl;
+                x_DumpTypeToCountMap(m_TypeCharsMap);
+                cerr << endl;
+                cerr << "Average characters output for each type: " << endl;
+                cerr << endl;
+                x_PrintAverageStats();
+            }
+
+        // this macro is the lesser evil compared to the messiness that
+        // you would see here otherwise. (plus it's less error-prone)
+#define SIMPLE_CALLBACK_NOTIFY(TItemClass) \
+        virtual EAction notify( const string & block_text, \
+                                const CBioseqContext& ctx, \
+                                const TItemClass & item ) { \
+        cerr << #TItemClass << " {" << block_text << '}' << endl; \
+        ++m_TypeAppearancesMap[#TItemClass]; \
+        ++m_TypeAppearancesMap["TOTAL"]; \
+        m_TypeCharsMap[#TItemClass] += block_text.length(); \
+        m_TypeCharsMap["TOTAL"] += block_text.length(); \
+        return ( block_text.find("HALT TEST") == string::npos ? \
+            eAction_Default : \
+            eAction_HaltFlatfileGeneration); }
+
+        SIMPLE_CALLBACK_NOTIFY(CStartSectionItem);
+        SIMPLE_CALLBACK_NOTIFY(CHtmlAnchorItem);
+        SIMPLE_CALLBACK_NOTIFY(CLocusItem);
+        SIMPLE_CALLBACK_NOTIFY(CDeflineItem);
+        SIMPLE_CALLBACK_NOTIFY(CAccessionItem);
+        SIMPLE_CALLBACK_NOTIFY(CVersionItem);
+        SIMPLE_CALLBACK_NOTIFY(CGenomeProjectItem);
+        SIMPLE_CALLBACK_NOTIFY(CDBSourceItem);
+        SIMPLE_CALLBACK_NOTIFY(CKeywordsItem);
+        SIMPLE_CALLBACK_NOTIFY(CSegmentItem);
+        SIMPLE_CALLBACK_NOTIFY(CSourceItem);
+        SIMPLE_CALLBACK_NOTIFY(CReferenceItem);
+        SIMPLE_CALLBACK_NOTIFY(CCommentItem);
+        SIMPLE_CALLBACK_NOTIFY(CPrimaryItem);
+        SIMPLE_CALLBACK_NOTIFY(CFeatHeaderItem);
+        SIMPLE_CALLBACK_NOTIFY(CSourceFeatureItem);
+        SIMPLE_CALLBACK_NOTIFY(CFeatureItem);
+        SIMPLE_CALLBACK_NOTIFY(CGapItem);
+        SIMPLE_CALLBACK_NOTIFY(CBaseCountItem);
+        SIMPLE_CALLBACK_NOTIFY(COriginItem);
+        SIMPLE_CALLBACK_NOTIFY(CSequenceItem);
+        SIMPLE_CALLBACK_NOTIFY(CContigItem);
+        SIMPLE_CALLBACK_NOTIFY(CWGSItem);
+        SIMPLE_CALLBACK_NOTIFY(CTSAItem);
+        SIMPLE_CALLBACK_NOTIFY(CEndSectionItem);
+#undef SIMPLE_CALLBACK_NOTIFY
+
+    private:
+        typedef map<string, int> TTypeToCountMap;
+        // for each type, how many instances of that type did we see?
+        // We use the special string "TOTAL" for a total count.
+        TTypeToCountMap m_TypeAppearancesMap;
+        // Like m_TypeAppearancesMap but counts total number of *characters*
+        // instead of number of items.  Again, there is
+        // the special value "TOTAL"
+        TTypeToCountMap m_TypeCharsMap;
+
+        void x_DumpTypeToCountMap(const TTypeToCountMap & the_map ) {
+            ITERATE( TTypeToCountMap, map_iter, the_map ) {
+                cerr << setw(25) << left << (map_iter->first + ':')
+                     << " " << map_iter->second << endl;
+            }
+        }
+
+        void x_PrintAverageStats(void) {
+            ITERATE( TTypeToCountMap, map_iter, m_TypeAppearancesMap ) {
+                const string sType = map_iter->first;
+                const int iAppearances = map_iter->second;
+                const int iTotalCharacters = m_TypeCharsMap[sType];
+                cerr << setw(25) << left << (sType + ':')
+                     << " " << (iTotalCharacters / iAppearances) << endl;
+            }
+        }
+    };
+
+    if( args["demo-genbank-callback"] ) {
+        return new CSimpleCallback;
+    } else {
+        return NULL;
+    }
 }
 
 TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args)

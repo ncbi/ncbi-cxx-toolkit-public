@@ -31,6 +31,7 @@
 *
 */
 #include <ncbi_pch.hpp>
+#include <sstream>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -41,7 +42,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/format/text_ostream.hpp>
+#include <objtools/format/flat_expt.hpp>
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/items/locus_item.hpp>
 #include <objtools/format/items/defline_item.hpp>
@@ -67,6 +68,7 @@
 #include <objtools/format/items/genome_project_item.hpp>
 #include <objtools/format/items/html_anchor_item.hpp>
 #include <objtools/format/context.hpp>
+#include <objtools/format/ostream_text_ostream.hpp>
 #include "utils.hpp"
 
 #include <algorithm>
@@ -89,6 +91,87 @@ CGenbankFormatter::CGenbankFormatter(void) :
 ///////////////////////////////////////////////////////////////////////////
 //
 // END SECTION
+
+namespace {
+
+    // forwards AddParagraph, etc. to the underlying IFlatTextOStream but also
+    // keeps a copy for itself to give to the blockcallback when the dtor is called.
+    template<class TFlatItemClass>
+    class CWrapperForFlatTextOStream : public IFlatTextOStream {
+    public:
+        CWrapperForFlatTextOStream(
+            CRef<CFlatFileConfig::CGenbankBlockCallback> block_callback,
+            IFlatTextOStream& orig_text_os,
+            CRef<CBioseqContext> ctx,
+            const TFlatItemClass& item ) : 
+        m_block_callback(block_callback),
+            m_orig_text_os(orig_text_os),
+            m_ctx(ctx),
+            m_item(item) 
+        { 
+            m_storing_text_os.Reset( 
+                new COStreamTextOStream(m_block_text_storage) );
+        }
+
+        ~CWrapperForFlatTextOStream(void)
+        {
+            CFlatFileConfig::CGenbankBlockCallback::EAction eAction =
+                m_block_callback->notify(m_block_text_storage.str(), *m_ctx, m_item);
+            switch(eAction) {
+            case CFlatFileConfig::CGenbankBlockCallback::eAction_HaltFlatfileGeneration:
+                NCBI_THROW(CFlatException, eHaltRequested, 
+                    "A CGenbankBlockCallback has requested that flatfile generation halt");
+                break;
+            default:
+                // do nothing
+                break;
+            }
+        }
+
+        virtual void AddParagraph(const list< string > &text, const CSerialObject *obj)
+        {
+            m_storing_text_os->AddParagraph(text, obj);
+            m_orig_text_os.AddParagraph(text, obj);
+        }
+
+        virtual void AddLine( const CTempString &line, const CSerialObject *obj,
+            EAddNewline add_newline )
+        {
+            m_storing_text_os->AddLine(line, obj, add_newline);
+            m_orig_text_os.AddLine(line, obj, add_newline);
+        }
+
+    private:
+
+        CRef<CFlatFileConfig::CGenbankBlockCallback> m_block_callback;
+        IFlatTextOStream& m_orig_text_os;
+        CRef<CBioseqContext> m_ctx;
+        const TFlatItemClass& m_item;
+
+        stringstream           m_block_text_storage;
+        // writes to m_block_text_storage
+        CRef<IFlatTextOStream> m_storing_text_os;
+    };
+
+    template<class TFlatItemClass>
+    IFlatTextOStream &s_WrapOstreamIfCallbackExists(
+        CRef<IFlatTextOStream> & p_text_os, // note: reference to CRef
+        const TFlatItemClass& item, 
+        IFlatTextOStream& orig_text_os)
+    {
+        // check if there's a callback, because we need to wrap if so
+        CRef<CFlatFileConfig::CGenbankBlockCallback> block_callback =
+            item.GetContext()->Config().GetGenbankBlockCallback();
+        if( block_callback ) {
+            CRef<CBioseqContext> ctx( item.GetContext() );
+            p_text_os.Reset( new CWrapperForFlatTextOStream<TFlatItemClass>(
+                block_callback, orig_text_os, ctx, item) );
+            return *p_text_os;
+        } else {
+            return orig_text_os;
+        }
+    }
+}
 
 static
 void s_PrintLocAsJavascriptArray( 
@@ -146,8 +229,6 @@ void s_PrintLocAsJavascriptArray(
         is_first = false;
     }
     result << "]";
-    //text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
-        // IFlatTextOStream::eAddNewline_No );
     text_os << (string)CNcbiOstrstreamToString(result);
 }
 
@@ -166,8 +247,11 @@ string s_GetAccessionWithoutPeriod(
 
 void CGenbankFormatter::EndSection
 (const CEndSectionItem& end_item,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, end_item, orig_text_os);
+
     // print the double-slashes
     const CFlatFileConfig& cfg = GetContext().GetConfig();
     const bool bHtml = cfg.DoHTML();
@@ -224,9 +308,12 @@ void CGenbankFormatter::EndSection
 
 void CGenbankFormatter::FormatLocus
 (const CLocusItem& locus, 
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
     static const string strands[]  = { "   ", "ss-", "ds-", "ms-" };
+
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, locus, orig_text_os);
 
     CBioseqContext& ctx = *locus.GetContext();
 
@@ -294,8 +381,11 @@ void CGenbankFormatter::FormatLocus
 
 void CGenbankFormatter::FormatDefline
 (const CDeflineItem& defline,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, defline, orig_text_os);
+
     list<string> l;
     string defline_text = defline.GetDefline();
     if( GetContext().GetConfig().DoHTML() ) {
@@ -313,8 +403,11 @@ void CGenbankFormatter::FormatDefline
 
 void CGenbankFormatter::FormatAccession
 (const CAccessionItem& acc, 
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, acc, orig_text_os);
+
     string acc_line = x_FormatAccession(acc, ' ');
     if( acc.GetContext()->Config().DoHTML() && ! acc.GetContext()->GetLocation().IsWhole() ) {
         acc_line = "<a href=\"" + strLinkBaseEntrezViewer + acc_line + "\">" + acc_line + "</a>";
@@ -342,8 +435,11 @@ void CGenbankFormatter::FormatAccession
 
 void CGenbankFormatter::FormatVersion
 (const CVersionItem& version,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, version, orig_text_os);
+
     list<string> l;
     CNcbiOstrstream version_line;
 
@@ -371,8 +467,11 @@ void CGenbankFormatter::FormatVersion
 
 void CGenbankFormatter::FormatGenomeProject(
     const CGenomeProjectItem& gp,
-    IFlatTextOStream& text_os) 
+    IFlatTextOStream& orig_text_os) 
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, gp, orig_text_os);
+
     list<string> l;
     const char *prefix = "DBLINK";
 
@@ -424,8 +523,12 @@ void CGenbankFormatter::FormatGenomeProject(
 // HTML Anchor
 
 void CGenbankFormatter::FormatHtmlAnchor(
-    const CHtmlAnchorItem& html_anchor, IFlatTextOStream& text_os)
+    const CHtmlAnchorItem& html_anchor, 
+    IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, html_anchor, orig_text_os);
+
     CNcbiOstrstream result;
 
     result << "<a name=\"" << html_anchor.GetLabelCore() << "_"
@@ -441,8 +544,11 @@ void CGenbankFormatter::FormatHtmlAnchor(
 
 void CGenbankFormatter::FormatKeywords
 (const CKeywordsItem& keys,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, keys, orig_text_os);
+
     list<string> l;
     x_GetKeywords(keys, "KEYWORDS", l);
     if( keys.GetContext()->Config().DoHTML() ) {
@@ -458,8 +564,11 @@ void CGenbankFormatter::FormatKeywords
 
 void CGenbankFormatter::FormatSegment
 (const CSegmentItem& seg,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, seg, orig_text_os);
+
     list<string> l;
     CNcbiOstrstream segment_line;
 
@@ -478,8 +587,11 @@ void CGenbankFormatter::FormatSegment
 
 void CGenbankFormatter::FormatSource
 (const CSourceItem& source,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, source, orig_text_os);
+
     list<string> l;
     x_FormatSourceLine(l, source);
     x_FormatOrganismLine(l, source);
@@ -610,8 +722,11 @@ string s_GetLinkFeature(
 
 void CGenbankFormatter::FormatReference
 (const CReferenceItem& ref,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, ref, orig_text_os);
+
     CBioseqContext& ctx = *ref.GetContext();
 
     list<string> l;
@@ -1120,8 +1235,11 @@ s_FixListIfBadWrap( list<string> &l, list<string>::iterator l_old_last,
 
 void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, comment, orig_text_os);
+
     list<string> strComment( comment.GetCommentList() );
     const int internalIndent = comment.GetCommentInternalIndent();
 
@@ -1174,8 +1292,11 @@ void CGenbankFormatter::FormatComment
 
 void CGenbankFormatter::FormatFeatHeader
 (const CFeatHeaderItem& fh,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, fh, orig_text_os);
+
     list<string> l;
 
     Wrap(l, "FEATURES", "Location/Qualifiers", eFeatHead);
@@ -1288,9 +1409,28 @@ string s_GetLinkFeatureKey(
 //  ============================================================================
 void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 //  ============================================================================
 { 
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream *ostrm = NULL;
+    {
+        // this works differently from the others because we have to check
+        // the underlying type
+        const CSourceFeatureItem *p_source_feature_item = 
+            dynamic_cast<const CSourceFeatureItem *>(&f);
+        if( ostrm == NULL && p_source_feature_item ) {
+            ostrm = &s_WrapOstreamIfCallbackExists(p_text_os, *p_source_feature_item, orig_text_os);
+        }
+        const CFeatureItem *p_feature_item =
+            dynamic_cast<const CFeatureItem *>(&f);
+        if( ostrm == NULL && p_feature_item ) {
+            ostrm = &s_WrapOstreamIfCallbackExists(p_text_os, *p_feature_item, orig_text_os);
+        }
+        _ASSERT( ostrm != NULL );
+    }
+    IFlatTextOStream & text_os = *ostrm;
+    
     bool bHtml = f.GetContext()->Config().DoHTML();
 
     CConstRef<CFlatFeature> feat = f.Format();
@@ -1394,8 +1534,11 @@ void CGenbankFormatter::FormatFeature
 
 void CGenbankFormatter::FormatBasecount
 (const CBaseCountItem& bc,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, bc, orig_text_os);
+
     list<string> l;
 
     CNcbiOstrstream bc_line;
@@ -1619,8 +1762,11 @@ s_FormatRegularSequencePiece
 
 void CGenbankFormatter::FormatSequence
 (const CSequenceItem& seq,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, seq, orig_text_os);
+
     const bool bGapsHiddenUntilClicked = ( 
         GetContext().GetConfig().DoHTML() && 
         GetContext().GetConfig().IsModeEntrez() );
@@ -1698,8 +1844,11 @@ void CGenbankFormatter::FormatSequence
 
 void CGenbankFormatter::FormatDBSource
 (const CDBSourceItem& dbs,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, dbs, orig_text_os);
+
     list<string> l;
 
     const bool bHtml = dbs.GetContext()->Config().DoHTML();
@@ -1730,8 +1879,11 @@ void CGenbankFormatter::FormatDBSource
 
 void CGenbankFormatter::FormatWGS
 (const CWGSItem& wgs,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, wgs, orig_text_os);
+
     string tag;
 
     switch ( wgs.GetType() ) {
@@ -1805,8 +1957,11 @@ void CGenbankFormatter::FormatWGS
 
 void CGenbankFormatter::FormatTSA
 (const CTSAItem& tsa,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, tsa, orig_text_os);
+
     string tag;
 
     switch ( tsa.GetType() ) {
@@ -1861,8 +2016,11 @@ void CGenbankFormatter::FormatTSA
 
 void CGenbankFormatter::FormatPrimary
 (const CPrimaryItem& primary,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, primary, orig_text_os);
+
     list<string> l;
 
     string primary_str = primary.GetString();
@@ -1881,7 +2039,7 @@ void CGenbankFormatter::FormatPrimary
 
 void CGenbankFormatter::FormatGenome
 (const CGenomeItem& genome,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
     // !!!
 }
@@ -1893,8 +2051,11 @@ void CGenbankFormatter::FormatGenome
 
 void CGenbankFormatter::FormatContig
 (const CContigItem& contig,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, contig, orig_text_os);
+
     list<string> l;
     string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
         CFlatSeqLoc::eType_assembly).GetString();
@@ -1919,8 +2080,11 @@ void CGenbankFormatter::FormatContig
 
 void CGenbankFormatter::FormatOrigin
 (const COriginItem& origin,
- IFlatTextOStream& text_os)
+ IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, origin, orig_text_os);
+
     bool bHtml = this->GetContext().GetConfig().DoHTML();
 
     list<string> l;
@@ -1948,8 +2112,11 @@ void CGenbankFormatter::FormatOrigin
 //
 // GAP
 
-void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
+void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& orig_text_os)
 {
+    CRef<IFlatTextOStream> p_text_os;
+    IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, gap, orig_text_os);
+
     // const bool bHtml = gap.GetContext()->Config().DoHTML();
 
     list<string> l;

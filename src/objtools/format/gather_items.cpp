@@ -833,6 +833,11 @@ void CFlatGatherer::x_FlushComments(void) const
     if (m_Comments.back()->NeedPeriod()) {
         m_Comments.back()->AddPeriod();
     }
+
+    // Remove periods after URLs
+    NON_CONST_ITERATE (TCommentVec, it, m_Comments) {
+        (*it)->RemovePeriodAfterURL();
+    }
     
     // add a period to a GSDB comment (if exist and not last)
     TCommentVec::iterator last = m_Comments.end();
@@ -2644,6 +2649,11 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]; flatfile may be truncated");
                 return;
+            }
+
+            // for cases where a halt is requested, just rethrow the exception
+            if( e.GetErrCodeString() == string("eHaltRequested") ) {
+                throw e;
             }
 
             // post to log, go on to next feature

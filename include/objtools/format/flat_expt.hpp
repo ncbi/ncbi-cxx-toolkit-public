@@ -48,6 +48,7 @@ public:
         eNotSupported,
         eInternal,
         eInvalidParam,
+        eHaltRequested,
         eUnknown
     };
 
@@ -56,11 +57,12 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eNotSupported:     return "eNotSupported";
-        case eInternal:         return "eInternal";
-        case eInvalidParam:     return "eInvalidParam";
-        case eUnknown:          return "eUnknown";
-        default:                return CException::GetErrCodeString();
+        case eNotSupported:  return "eNotSupported";
+        case eInternal:      return "eInternal";
+        case eInvalidParam:  return "eInvalidParam";
+        case eUnknown:       return "eUnknown";
+        case eHaltRequested: return "eHaltRequested";
+        default:             return CException::GetErrCodeString();
         }
     }
 

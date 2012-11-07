@@ -47,10 +47,12 @@ CFlatFileConfig::CFlatFileConfig(
     TFlags flags,
     TView view,
     TGffOptions gff_options,
-    TGenbankBlocks genbank_blocks ) :
+    TGenbankBlocks genbank_blocks,
+    CGenbankBlockCallback* pGenbankBlockCallback ) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
     m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options),
-    m_fGenbankBlocks(genbank_blocks)
+    m_fGenbankBlocks(genbank_blocks),
+    m_GenbankBlockCallback(pGenbankBlockCallback)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
@@ -167,9 +169,8 @@ static const TBlockElem sc_block_map[] = {
     { "contig",     CFlatFileConfig::fGenbankBlocks_Contig },
     { "dbsource",   CFlatFileConfig::fGenbankBlocks_Dbsource },
     { "defline",    CFlatFileConfig::fGenbankBlocks_Defline },
+    { "featandgap", CFlatFileConfig::fGenbankBlocks_FeatAndGap },
     { "featheader", CFlatFileConfig::fGenbankBlocks_Featheader },
-    { "feature",    CFlatFileConfig::fGenbankBlocks_Feature },
-    { "genome",     CFlatFileConfig::fGenbankBlocks_Genome },
     { "head",       CFlatFileConfig::fGenbankBlocks_Head },
     { "keywords",   CFlatFileConfig::fGenbankBlocks_Keywords },
     { "locus",      CFlatFileConfig::fGenbankBlocks_Locus },
@@ -182,6 +183,7 @@ static const TBlockElem sc_block_map[] = {
     { "slash",      CFlatFileConfig::fGenbankBlocks_Slash },
     { "source",     CFlatFileConfig::fGenbankBlocks_Source },
     { "sourcefeat", CFlatFileConfig::fGenbankBlocks_Sourcefeat },
+    { "tsa",        CFlatFileConfig::fGenbankBlocks_Tsa },
     { "version",    CFlatFileConfig::fGenbankBlocks_Version },
     { "wgs",        CFlatFileConfig::fGenbankBlocks_Wgs }
 };

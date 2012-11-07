@@ -77,35 +77,6 @@ public:
         _TROUBLE;
     }
 
-    // TODO: for SC-9, remove this function
-    /**
-     * This function is deprecated because I wanted to remove it. but could
-     * not since some other code still depends on it.
-     *
-     * This adds its argument "line" without any changes whatsoever,
-     * except for adding a newline after the "line".
-     */
-    NCBI_DEPRECATED
-    virtual void AddCLine( const char *line,
-                           const CSerialObject* obj = 0) 
-    {
-        AddLine(line, obj, eAddNewline_Yes);
-    }
-
-    // TODO: for SC-9, remove this function
-    /**
-     * This function is deprecated because I wanted to remove it. but could
-     * not since some other code still depends on it.
-     *
-     * This adds its argument "line" without any changes whatsoever.
-     */
-    NCBI_DEPRECATED
-    virtual void AddRawText( const char *line,
-                             const CSerialObject* obj = 0) 
-    { 
-        AddLine(line, obj, eAddNewline_No);
-    }
-
     virtual ~IFlatTextOStream(void) {}
 };
 

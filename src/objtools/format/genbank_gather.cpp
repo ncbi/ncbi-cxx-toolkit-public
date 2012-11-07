@@ -146,15 +146,15 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
                ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
     {
         // Yes, the TSA info is considered a kind of PRIMARY block
-        GATHER_VIA_FUNC(Primary, x_GatherTSA);
+        GATHER_VIA_FUNC(Tsa, x_GatherTSA);
     } else if ( ctx.DoContigStyle() ) {
         if ( cfg.ShowContigFeatures() ) {
-            GATHER_VIA_FUNC(Feature, x_GatherFeatures);
+            GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
         }
         else if ( cfg.IsModeEntrez() ) {
             size_t size = sequence::GetLength( m_Current->GetLocation(), &m_Current->GetScope() );
             if ( size <= cfg.SMARTFEATLIMIT ) {
-                GATHER_VIA_FUNC(Feature, x_GatherFeatures);
+                GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
             }
         }
         GATHER_ANCHOR(Contig, "contig");
@@ -167,7 +167,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
             GATHER_VIA_FUNC(Sequence, x_GatherSequence);
         }
     } else {
-        GATHER_VIA_FUNC(Feature, x_GatherFeatures);
+        GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
         if ( cfg.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
             GATHER_ANCHOR(Contig, "contig");
             GATHER_BLOCK(Contig, CContigItem);
