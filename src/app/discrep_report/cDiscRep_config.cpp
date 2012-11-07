@@ -136,6 +136,7 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_CONTAINED_CDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_PSEUDO_MISMATCH));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_EC_NUMBER_NOTE));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_NON_GENE_LOCUS_TAG));

@@ -731,6 +731,7 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
     protected:
+       bool StrandOk(ENa_strand strand1, ENa_strand strand2);
        bool IsUnknown(const string& known_items, const unsigned idx);
        bool IsPseudoSeqFeatOrXrefGene(const CSeq_feat* seq_feat);
        string GetRNAProductString(const CSeq_feat& seq_feat);
@@ -827,6 +828,17 @@ namespace DiscRepNmSpc {
   };
 //
 
+  class CBioseq_CONTAINED_CDS : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_CONTAINED_CDS () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("CONTAINED_CDS"); }
+  };
+
+
   class CBioseq_PSEUDO_MISMATCH : public CBioseqTestAndRepData
   {
     public:
@@ -835,6 +847,9 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("PSEUDO_MISMATCH"); }
+
+    protected:
+      void FindPseudoDiscrepancies(const CSeq_feat& seq_feat);
   };
 
 
@@ -1142,7 +1157,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("DISC_BAD_GENE_STRAND");}
 
     protected:
-      bool StrandOk(ENa_strand strand1, ENa_strand strand2);
       bool AreIntervalStrandsOk(const CSeq_loc& g_loc, const CSeq_loc& f_loc);
   };
 

@@ -160,22 +160,119 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
+{
+   set <string> contained_this_strand, last_this_strand;
+   set <string> contained_other_strand, last_other_strand;
+   ENa_strand str1, str2;
+   unsigned i=0, j=0;
+   string desc1, desc2;
+   for (i=0; i< cd_feat.size()-1; i++) {
+     const CSeq_loc& loc1 = cd_feat[i]->GetLocation();
+     str1 = loc1.GetStrand();
+     for (j=i+1; j< cd_feat.size(); j++) {
+        const CSeq_loc& loc2 = cd_feat[j]->GetLocation();
+        str2 = loc2.GetStrand();
+        sequence:ECompare loc_cmp = Compare(loc1, loc2, thisInfo.scope);
+        if (loc_cmp == eSame || loc_cmp == eContained || loc_cmp == eContains) {
+          desc1 = GetDiscItemText(*cd_feat[i]);
+          desc2 = GetDiscItemText(*cd_feat[j]);
+          if (StrandOk(str1, str2)) {
+             if (contained_this_strand.find(desc1) == contained_this_strand.end()) {
+                thisInfo.test_item_list[GetName()].push_back("same$" + desc1);
+                last_this_strand.insert(desc1); 
+                if (contained_this_strand.empty()) 
+                       contained_this_strand = last_this_strand;
+             }
+             if (contained_this_strand.find(desc2) == contained_this_strand.end()) {
+                thisInfo.test_item_list[GetName()].push_back("same$" + desc2);
+                last_this_strand.insert(desc2);
+                if (contained_this_strand.empty()) 
+                     contained_this_strand = last_this_strand;
+             }
+          } 
+          else {
+             if (contained_other_strand.find(desc1) == contained_other_strand.end()) {
+                 thisInfo.test_item_list[GetName()].push_back("opposite$" + desc1);
+                 last_other_strand.insert(desc1);
+                 if (contained_other_strand.empty())
+                      contained_other_strand = last_other_strand;
+             }
+             if (contained_other_strand.find(desc2) == contained_other_strand.end()) {
+                thisInfo.test_item_list[GetName()].push_back("opposite$" + desc2);
+                last_other_strand.insert(desc2);
+                if (contained_other_strand.empty())
+                     contained_other_strand = last_other_strand;
+             }
+          }
+        }
+     }
+   }
+   contained_this_strand.clear();
+   contained_other_strand.clear();
+   last_this_strand.clear();
+   last_other_strand.clear();
+};
+
+
+void CBioseq_CONTAINED_CDS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs list_tp2items;
+   GetTestItemList(c_item->item_list, list_tp2items);
+   c_item->item_list.clear();
+   if (list_tp2items.size() == 1) {
+      c_item->item_list = list_tp2items.begin()->second;
+      c_item->description 
+          = GetIsComment(c_item->item_list.size(), "coding region")
+                + ", completely contained in another coding region on the " 
+                + list_tp2items.begin()->first + " strand.";
+   }
+   else {
+      ITERATE (Str2Strs, it, list_tp2items) {
+        AddSubcategories(c_item, GetName(), it->second, "coding region", 
+  "completely contained in another coding region on the " + it->first + " strand.");
+           
+      }
+      c_item->description = GetIsComment(c_item->item_list.size(), "coding region") 
+                              + "completely contained in another coding region.";
+   }
+};
+
+
+void CBioseq_PSEUDO_MISMATCH :: FindPseudoDiscrepancies(const CSeq_feat& seq_feat)
+{
+    CGene_ref& xref_gene = const_cast <CSeq_feat&> (seq_feat).SetGeneXref();
+    if ( !(const_cast <const CGene_ref&> (xref_gene).IsSuppressed()) ) return;//not empty
+    else {
+      CConstRef <CSeq_feat> gene_olp= GetBestOverlappingFeat(seq_feat.GetLocation(),
+                                                             CSeqFeatData::e_Gene,
+                                                             eOverlap_Contained,
+                                                             *thisInfo.scope);
+      if (gene_olp.Empty()) return;
+      if (seq_feat.CanGetPseudo() && seq_feat.GetPseudo() 
+                      && !(gene_olp->CanGetPseudo() && gene_olp->GetPseudo())) {
+         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(seq_feat));
+         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(*gene_olp));
+      }
+    }
+};
+
+
+
 void CBioseq_PSEUDO_MISMATCH :: TestOnObj(const CBioseq& bioseq)
 {
-  ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
-/*
-    CConstRef <CGene_ref> xref_gene (GetGeneXref(**it));
-    if (xref_gene.NotEmpty()) continue;
-*/
-  }
+  ITERATE (vector <const CSeq_feat*>, it, cd_feat)
+    FindPseudoDiscrepancies(**it);
 
-  ITERATE (vector <const CSeq_feat*>, it, rna_feat) {
-  }
+  ITERATE (vector <const CSeq_feat*>, it, rna_feat) 
+    FindPseudoDiscrepancies(**it);
 };
 
 
 void CBioseq_PSEUDO_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->description = NStr::UIntToString((unsigned)c_item->item_list.size()) 
+                             + " CDSs, RNAs, and genes have mismatching pseudos.";
 };
 
 
@@ -1595,7 +1692,7 @@ void CBioseq_DISC_SHORT_RRNA :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-bool CBioseq_DISC_BAD_GENE_STRAND :: StrandOk(ENa_strand strand1, ENa_strand strand2)
+bool CBioseqTestAndRepData :: StrandOk(ENa_strand strand1, ENa_strand strand2)
 {
   if (strand1 == eNa_strand_minus && strand2 != eNa_strand_minus) return false;
   else if (strand1 != eNa_strand_minus && strand2 == eNa_strand_minus) return false;
