@@ -1,5 +1,6 @@
 # $Id$
 # Pregenerated summary of library relations, for use by project_tree_builder.
+BoostTestXML needs gpipe_alloc
 BoostTestXML needs xncbi
 BoostTestXML needs xser
 BoostTestXML needs xutil
@@ -27,6 +28,7 @@ EntrezCache_g needs general
 EntrezCache_g needs generic_db_asn
 EntrezCache_g needs generic_db_utils
 EntrezCache_g needs genome_collection
+EntrezCache_g needs gpipe_alloc
 EntrezCache_g needs linkout
 EntrezCache_g needs medline
 EntrezCache_g needs mux
@@ -52,6 +54,7 @@ GMA needs connext
 GMA needs ct_ftds64
 GMA needs dbapi_driver
 GMA needs dbconnect
+GMA needs gpipe_alloc
 GMA needs ncbi_xdbapi_ftds
 GMA needs tds_ftds64
 GMA needs xncbi
@@ -68,6 +71,7 @@ GMC needs dbconnect
 GMC needs general
 GMC needs geoauth
 GMC needs geomyncbi
+GMC needs gpipe_alloc
 GMC needs medline
 GMC needs ncbi_xdbapi_ftds
 GMC needs pub
@@ -96,15 +100,18 @@ GMU needs ct_ftds64
 GMU needs dbapi_driver
 GMU needs dbconnect
 GMU needs geoauth
+GMU needs gpipe_alloc
 GMU needs ncbi_xdbapi_ftds
 GMU needs tds_ftds64
 GMU needs xcompress
 GMU needs xconnect
 GMU needs xncbi
 GMU needs xutil
+access needs gpipe_alloc
 access needs xncbi
 access needs xser
 access needs xutil
+affy needs gpipe_alloc
 align-access needs judy
 align-access needs kfg
 align-access needs kfs
@@ -153,6 +160,7 @@ align_format needs dbapi_driver
 align_format needs gene_info
 align_format needs general
 align_format needs genome_collection
+align_format needs gpipe_alloc
 align_format needs id1
 align_format needs id2
 align_format needs medline
@@ -195,6 +203,7 @@ aligndb_reader needs dbapi
 aligndb_reader needs dbapi_driver
 aligndb_reader needs general
 aligndb_reader needs genome_collection
+aligndb_reader needs gpipe_alloc
 aligndb_reader needs medline
 aligndb_reader needs ncbi_xdbapi_ftds
 aligndb_reader needs pub
@@ -215,6 +224,7 @@ aligndb_reader needs xutil
 alndb_asnclient needs alndb_query
 alndb_asnclient needs biblio
 alndb_asnclient needs general
+alndb_asnclient needs gpipe_alloc
 alndb_asnclient needs medline
 alndb_asnclient needs pub
 alndb_asnclient needs seq
@@ -225,6 +235,7 @@ alndb_asnclient needs xser
 alndb_asnclient needs xutil
 alndb_query needs biblio
 alndb_query needs general
+alndb_query needs gpipe_alloc
 alndb_query needs medline
 alndb_query needs pub
 alndb_query needs seq
@@ -249,6 +260,7 @@ alndbaccess needs general
 alndbaccess needs generic_db_asn
 alndbaccess needs generic_db_core
 alndbaccess needs generic_db_utils
+alndbaccess needs gpipe_alloc
 alndbaccess needs medline
 alndbaccess needs mux
 alndbaccess needs ncbi_xdbapi_ftds
@@ -267,6 +279,7 @@ alndbaccess needs xser
 alndbaccess needs xutil
 asn2bcp needs biblio
 asn2bcp needs general
+asn2bcp needs gpipe_alloc
 asn2bcp needs medline
 asn2bcp needs pub
 asn2bcp needs seq
@@ -280,6 +293,7 @@ asn_cache needs bdb
 asn_cache needs biblio
 asn_cache needs cache_blob
 asn_cache needs general
+asn_cache needs gpipe_alloc
 asn_cache needs medline
 asn_cache needs pub
 asn_cache needs seq
@@ -290,9 +304,11 @@ asn_cache needs xcompress
 asn_cache needs xncbi
 asn_cache needs xser
 asn_cache needs xutil
+asn_sample_lib needs gpipe_alloc
 asn_sample_lib needs xncbi
 asn_sample_lib needs xser
 asn_sample_lib needs xutil
+asngendefs needs gpipe_alloc
 asngendefs needs xncbi
 asngendefs needs xser
 asngendefs needs xutil
@@ -301,6 +317,7 @@ asnmuxdblb needs connect
 asnmuxdblb needs dbloadb_asn
 asnmuxdblb needs generic_db_asn
 asnmuxdblb needs generic_db_utils
+asnmuxdblb needs gpipe_alloc
 asnmuxdblb needs mux
 asnmuxdblb needs tables
 asnmuxdblb needs xcgi
@@ -317,6 +334,7 @@ auxcomm_g needs dbldasn_g
 auxcomm_g needs gendefasn_g
 auxcomm_g needs general
 auxcomm_g needs generic_db_utils
+auxcomm_g needs gpipe_alloc
 auxcomm_g needs medline
 auxcomm_g needs mux
 auxcomm_g needs muxex-C_g
@@ -349,6 +367,7 @@ auxcommcpp_g needs general
 auxcommcpp_g needs generic_db_asn
 auxcommcpp_g needs generic_db_utils
 auxcommcpp_g needs gensvc_g
+auxcommcpp_g needs gpipe_alloc
 auxcommcpp_g needs medline
 auxcommcpp_g needs mux
 auxcommcpp_g needs muxex_g
@@ -370,6 +389,7 @@ auxcommcpp_g needs xser
 auxcommcpp_g needs xutil
 auxnet_g needs connect
 auxnet_g needs generic_db_utils
+auxnet_g needs gpipe_alloc
 auxnet_g needs tables
 auxnet_g needs xcompress
 auxnet_g needs xconnect
@@ -394,6 +414,7 @@ backendcommon needs connext
 backendcommon needs ct_ftds64
 backendcommon needs dbapi
 backendcommon needs dbapi_driver
+backendcommon needs gpipe_alloc
 backendcommon needs ncbi_xdbapi_ftds
 backendcommon needs sdbapi
 backendcommon needs tds_ftds64
@@ -406,6 +427,7 @@ backendcommon needs xutil
 bamread needs align-access
 bamread needs biblio
 bamread needs general
+bamread needs gpipe_alloc
 bamread needs judy
 bamread needs kdb
 bamread needs kfg
@@ -428,28 +450,35 @@ bamread needs vfs
 bamread needs xncbi
 bamread needs xser
 bamread needs xutil
+basic_sample_lib needs gpipe_alloc
 basic_sample_lib needs xncbi
+bdb needs gpipe_alloc
 bdb needs xncbi
 bdb needs xutil
+bdb2ez needs gpipe_alloc
 bdb2ez needs xncbi
 bdb2ez needs xser
 bdb2ez needs xutil
 bdbasncli needs bdb2ez
 bdbasncli needs connect
+bdbasncli needs gpipe_alloc
 bdbasncli needs xconnect
 bdbasncli needs xncbi
 bdbasncli needs xser
 bdbasncli needs xutil
 biblio needs general
+biblio needs gpipe_alloc
 biblio needs xncbi
 biblio needs xser
 biblio needs xutil
+biotree needs gpipe_alloc
 biotree needs xncbi
 biotree needs xser
 biotree needs xutil
 bl2seqasn_g needs asngendefs
 bl2seqasn_g needs biblio
 bl2seqasn_g needs general
+bl2seqasn_g needs gpipe_alloc
 bl2seqasn_g needs medline
 bl2seqasn_g needs pub
 bl2seqasn_g needs scoremat
@@ -481,6 +510,7 @@ blast_app_util needs dbapi_driver
 blast_app_util needs gene_info
 blast_app_util needs general
 blast_app_util needs genome_collection
+blast_app_util needs gpipe_alloc
 blast_app_util needs id1
 blast_app_util needs id2
 blast_app_util needs medline
@@ -527,6 +557,7 @@ blast_app_util needs xutil
 blast_services needs biblio
 blast_services needs connect
 blast_services needs general
+blast_services needs gpipe_alloc
 blast_services needs medline
 blast_services needs pub
 blast_services needs scoremat
@@ -549,6 +580,7 @@ blast_sra needs connect
 blast_sra needs creaders
 blast_sra needs general
 blast_sra needs genome_collection
+blast_sra needs gpipe_alloc
 blast_sra needs judy
 blast_sra needs kdb
 blast_sra needs kfg
@@ -596,6 +628,7 @@ blast_sra needs xser
 blast_sra needs xutil
 blastdb needs biblio
 blastdb needs general
+blastdb needs gpipe_alloc
 blastdb needs medline
 blastdb needs pub
 blastdb needs seq
@@ -608,6 +641,7 @@ blastdb_format needs biblio
 blastdb_format needs blastdb
 blastdb_format needs general
 blastdb_format needs genome_collection
+blastdb_format needs gpipe_alloc
 blastdb_format needs medline
 blastdb_format needs pub
 blastdb_format needs seq
@@ -646,6 +680,7 @@ blastdbinfo needs generic_db_core
 blastdbinfo needs generic_db_utils
 blastdbinfo needs genome_collection
 blastdbinfo needs gensvc_g
+blastdbinfo needs gpipe_alloc
 blastdbinfo needs medline
 blastdbinfo needs mux
 blastdbinfo needs muxex-C_g
@@ -688,6 +723,7 @@ blastinput needs dbapi_driver
 blastinput needs gene_info
 blastinput needs general
 blastinput needs genome_collection
+blastinput needs gpipe_alloc
 blastinput needs id1
 blastinput needs id2
 blastinput needs medline
@@ -733,6 +769,7 @@ blaststoreasncpp_g needs asngendefs
 blaststoreasncpp_g needs biblio
 blaststoreasncpp_g needs bl2seqasn_g
 blaststoreasncpp_g needs general
+blaststoreasncpp_g needs gpipe_alloc
 blaststoreasncpp_g needs medline
 blaststoreasncpp_g needs pub
 blaststoreasncpp_g needs scoremat
@@ -745,20 +782,24 @@ blaststoreasncpp_g needs xncbi
 blaststoreasncpp_g needs xnetblast
 blaststoreasncpp_g needs xser
 blaststoreasncpp_g needs xutil
+blastxml needs gpipe_alloc
 blastxml needs xncbi
 blastxml needs xser
 blastxml needs xutil
 bob_g needs connect
 bob_g needs creaders
 bob_g needs gendefasn_g
+bob_g needs gpipe_alloc
 bob_g needs splitdbasn_g
 bob_g needs tables
+cache_blob needs gpipe_alloc
 cache_blob needs xcompress
 cache_blob needs xncbi
 cache_blob needs xser
 cache_blob needs xutil
 cache_g needs connect
 cache_g needs generic_db_utils
+cache_g needs gpipe_alloc
 cache_g needs tables
 cache_g needs xcompress
 cache_g needs xconnect
@@ -768,6 +809,7 @@ cache_g needs xutil
 cdd needs biblio
 cdd needs cn3d
 cdd needs general
+cdd needs gpipe_alloc
 cdd needs medline
 cdd needs mmdb
 cdd needs pub
@@ -781,6 +823,7 @@ cdd needs xser
 cdd needs xutil
 cn3d needs biblio
 cn3d needs general
+cn3d needs gpipe_alloc
 cn3d needs medline
 cn3d needs mmdb
 cn3d needs pub
@@ -801,6 +844,7 @@ cobalt needs creaders
 cobalt needs fastme
 cobalt needs general
 cobalt needs genome_collection
+cobalt needs gpipe_alloc
 cobalt needs medline
 cobalt needs pub
 cobalt needs scoremat
@@ -832,6 +876,7 @@ cobalt needs xutil
 cobaltasn_g needs biblio
 cobaltasn_g needs biotree
 cobaltasn_g needs general
+cobaltasn_g needs gpipe_alloc
 cobaltasn_g needs medline
 cobaltasn_g needs pub
 cobaltasn_g needs seq
@@ -844,18 +889,23 @@ connext needs connect
 connssl needs connect
 ct_ftds64 needs tds_ftds64
 dbapi needs dbapi_driver
+dbapi needs gpipe_alloc
 dbapi needs xncbi
+dbapi_driver needs gpipe_alloc
 dbapi_driver needs xncbi
 dbapi_driver_wrap_s needs dbapi_driver
+dbapi_driver_wrap_s needs gpipe_alloc
 dbapi_driver_wrap_s needs xncbi
 dbapi_sample_base needs connect
 dbapi_sample_base needs connext
 dbapi_sample_base needs dbapi_driver
+dbapi_sample_base needs gpipe_alloc
 dbapi_sample_base needs xconnect
 dbapi_sample_base needs xconnext
 dbapi_sample_base needs xncbi
 dbapi_sample_base needs xutil
 dbapi_util_blobstore needs dbapi_driver
+dbapi_util_blobstore needs gpipe_alloc
 dbapi_util_blobstore needs xcompress
 dbapi_util_blobstore needs xncbi
 dbapi_util_blobstore needs xutil
@@ -869,6 +919,7 @@ dbassist needs dbloadb
 dbassist needs dbloadb_asn
 dbassist needs generic_db_asn
 dbassist needs generic_db_utils
+dbassist needs gpipe_alloc
 dbassist needs mux
 dbassist needs ncbi_xdbapi_ftds
 dbassist needs tables
@@ -882,9 +933,11 @@ dbassist needs xser
 dbassist needs xutil
 dbconnect needs ct_ftds64
 dbconnect needs dbapi_driver
+dbconnect needs gpipe_alloc
 dbconnect needs ncbi_xdbapi_ftds
 dbconnect needs tds_ftds64
 dbconnect needs xncbi
+dbinfoasncpp_g needs gpipe_alloc
 dbinfoasncpp_g needs xncbi
 dbinfoasncpp_g needs xser
 dbinfoasncpp_g needs xutil
@@ -899,6 +952,7 @@ dbloadb needs connect
 dbloadb needs dbloadb_asn
 dbloadb needs generic_db_asn
 dbloadb needs generic_db_utils
+dbloadb needs gpipe_alloc
 dbloadb needs mux
 dbloadb needs tables
 dbloadb needs tea_crypt
@@ -909,16 +963,20 @@ dbloadb needs xncbi
 dbloadb needs xser
 dbloadb needs xutil
 dbloadb_asn needs asngendefs
+dbloadb_asn needs gpipe_alloc
 dbloadb_asn needs xncbi
 dbloadb_asn needs xser
 dbloadb_asn needs xutil
+docsum needs gpipe_alloc
 docsum needs xncbi
 docsum needs xser
 docsum needs xutil
+dtd_sample_lib needs gpipe_alloc
 dtd_sample_lib needs xncbi
 dtd_sample_lib needs xser
 dtd_sample_lib needs xutil
 edirect needs connect
+edirect needs gpipe_alloc
 edirect needs ncqhst
 edirect needs txserv
 edirect needs txservbase
@@ -936,6 +994,7 @@ egenedb needs dbapi_driver
 egenedb needs dbapi_driver_wrap_s
 egenedb needs entrezgene
 egenedb needs general
+egenedb needs gpipe_alloc
 egenedb needs medline
 egenedb needs pub
 egenedb needs seq
@@ -952,6 +1011,7 @@ egenedomains needs dbapi_driver
 egenedomains needs entrezgene
 egenedomains needs general
 egenedomains needs genome_collection
+egenedomains needs gpipe_alloc
 egenedomains needs id1
 egenedomains needs id2
 egenedomains needs medline
@@ -975,29 +1035,36 @@ egenedomains needs xncbi
 egenedomains needs xobjmgr
 egenedomains needs xser
 egenedomains needs xutil
+egquery needs gpipe_alloc
 egquery needs xncbi
 egquery needs xser
 egquery needs xutil
+ehistory needs gpipe_alloc
 ehistory needs xncbi
 ehistory needs xser
 ehistory needs xutil
+einfo needs gpipe_alloc
 einfo needs xncbi
 einfo needs xser
 einfo needs xutil
+elink needs gpipe_alloc
 elink needs xncbi
 elink needs xser
 elink needs xutil
+entrez2 needs gpipe_alloc
 entrez2 needs xncbi
 entrez2 needs xser
 entrez2 needs xutil
 entrez2cli needs connect
 entrez2cli needs entrez2
+entrez2cli needs gpipe_alloc
 entrez2cli needs xconnect
 entrez2cli needs xncbi
 entrez2cli needs xser
 entrez2cli needs xutil
 entrezgene needs biblio
 entrezgene needs general
+entrezgene needs gpipe_alloc
 entrezgene needs medline
 entrezgene needs pub
 entrezgene needs seq
@@ -1006,18 +1073,23 @@ entrezgene needs sequtil
 entrezgene needs xncbi
 entrezgene needs xser
 entrezgene needs xutil
+epost needs gpipe_alloc
 epost needs xncbi
 epost needs xser
 epost needs xutil
+esearch needs gpipe_alloc
 esearch needs xncbi
 esearch needs xser
 esearch needs xutil
+espell needs gpipe_alloc
 espell needs xncbi
 espell needs xser
 espell needs xutil
+esummary needs gpipe_alloc
 esummary needs xncbi
 esummary needs xser
 esummary needs xutil
+eudocsum needs gpipe_alloc
 eudocsum needs xncbi
 eudocsum needs xser
 eudocsum needs xutil
@@ -1030,6 +1102,7 @@ eutils needs epost
 eutils needs esearch
 eutils needs espell
 eutils needs esummary
+eutils needs gpipe_alloc
 eutils needs uilist
 eutils needs xconnect
 eutils needs xncbi
@@ -1037,6 +1110,7 @@ eutils needs xser
 eutils needs xutil
 event_g needs connect
 event_g needs generic_db_utils
+event_g needs gpipe_alloc
 event_g needs tables
 event_g needs xcompress
 event_g needs xconnect
@@ -1058,9 +1132,12 @@ fastqloader needs load
 fastqloader needs srapath
 fastqloader needs vfs
 fastqloader needs wkdb
+featdef needs gpipe_alloc
 featdef needs xncbi
 featdef needs xser
 featdef needs xutil
+fgi needs gpipe_alloc
+gbseq needs gpipe_alloc
 gbseq needs xncbi
 gbseq needs xser
 gbseq needs xutil
@@ -1084,6 +1161,7 @@ gc_load_utils needs dbapi_driver
 gc_load_utils needs gc_utils
 gc_load_utils needs general
 gc_load_utils needs genome_collection
+gc_load_utils needs gpipe_alloc
 gc_load_utils needs gpipe_attr
 gc_load_utils needs gpipe_common
 gc_load_utils needs gpipe_objutil
@@ -1184,6 +1262,7 @@ gc_utils needs dbapi
 gc_utils needs dbapi_driver
 gc_utils needs general
 gc_utils needs genome_collection
+gc_utils needs gpipe_alloc
 gc_utils needs gpipe_attr
 gc_utils needs gpipe_common
 gc_utils needs gpipe_objutil
@@ -1284,6 +1363,7 @@ gcaccess_utils needs dbapi
 gcaccess_utils needs dbapi_driver
 gcaccess_utils needs general
 gcaccess_utils needs genome_collection
+gcaccess_utils needs gpipe_alloc
 gcaccess_utils needs gpipe_common
 gcaccess_utils needs gpipe_objutil
 gcaccess_utils needs id1
@@ -1367,6 +1447,7 @@ gcaccess_utils needs xutil
 gencoll needs biblio
 gencoll needs general
 gencoll needs genome_collection
+gencoll needs gpipe_alloc
 gencoll needs medline
 gencoll needs pub
 gencoll needs seq
@@ -1379,6 +1460,7 @@ gencoll_client needs biblio
 gencoll_client needs connect
 gencoll_client needs general
 gencoll_client needs genome_collection
+gencoll_client needs gpipe_alloc
 gencoll_client needs medline
 gencoll_client needs pub
 gencoll_client needs seq
@@ -1388,12 +1470,14 @@ gencoll_client needs xconnect
 gencoll_client needs xncbi
 gencoll_client needs xser
 gencoll_client needs xutil
+gencoll_load needs gpipe_alloc
 gencoll_load needs xncbi
 gencoll_load needs xser
 gencoll_load needs xutil
 gencoll_stats needs biblio
 gencoll_stats needs general
 gencoll_stats needs genome_collection
+gencoll_stats needs gpipe_alloc
 gencoll_stats needs medline
 gencoll_stats needs pub
 gencoll_stats needs seq
@@ -1404,12 +1488,14 @@ gencoll_stats needs xser
 gencoll_stats needs xutil
 gendefasn_g needs connect
 gendefasn_g needs tables
+gene_info needs gpipe_alloc
 gene_info needs xncbi
 gene_info_writer needs biblio
 gene_info_writer needs blastdb
 gene_info_writer needs gene_info
 gene_info_writer needs general
 gene_info_writer needs genome_collection
+gene_info_writer needs gpipe_alloc
 gene_info_writer needs medline
 gene_info_writer needs pub
 gene_info_writer needs seq
@@ -1422,9 +1508,11 @@ gene_info_writer needs xncbi
 gene_info_writer needs xobjmgr
 gene_info_writer needs xser
 gene_info_writer needs xutil
+general needs gpipe_alloc
 general needs xncbi
 general needs xser
 general needs xutil
+generic_db_asn needs gpipe_alloc
 generic_db_asn needs xncbi
 generic_db_asn needs xser
 generic_db_asn needs xutil
@@ -1440,6 +1528,7 @@ generic_db_core needs dbloadb
 generic_db_core needs dbloadb_asn
 generic_db_core needs generic_db_asn
 generic_db_core needs generic_db_utils
+generic_db_core needs gpipe_alloc
 generic_db_core needs mux
 generic_db_core needs ncbi_xdbapi_ftds
 generic_db_core needs tables
@@ -1453,6 +1542,7 @@ generic_db_core needs xser
 generic_db_core needs xutil
 generic_db_tmpl_utils needs connect
 generic_db_tmpl_utils needs generic_db_utils
+generic_db_tmpl_utils needs gpipe_alloc
 generic_db_tmpl_utils needs tables
 generic_db_tmpl_utils needs xcompress
 generic_db_tmpl_utils needs xconnect
@@ -1460,6 +1550,7 @@ generic_db_tmpl_utils needs xncbi
 generic_db_tmpl_utils needs xser
 generic_db_tmpl_utils needs xutil
 generic_db_utils needs connect
+generic_db_utils needs gpipe_alloc
 generic_db_utils needs tables
 generic_db_utils needs xcompress
 generic_db_utils needs xconnect
@@ -1468,6 +1559,7 @@ generic_db_utils needs xser
 generic_db_utils needs xutil
 genome_collection needs biblio
 genome_collection needs general
+genome_collection needs gpipe_alloc
 genome_collection needs medline
 genome_collection needs pub
 genome_collection needs seq
@@ -1476,6 +1568,7 @@ genome_collection needs sequtil
 genome_collection needs xncbi
 genome_collection needs xser
 genome_collection needs xutil
+gensvc_g needs gpipe_alloc
 gensvc_g needs xncbi
 gensvc_g needs xser
 gensvc_g needs xutil
@@ -1485,15 +1578,18 @@ geoauth needs connext
 geoauth needs ct_ftds64
 geoauth needs dbapi_driver
 geoauth needs dbconnect
+geoauth needs gpipe_alloc
 geoauth needs ncbi_xdbapi_ftds
 geoauth needs tds_ftds64
 geoauth needs xncbi
 geoauth needs xutil
 geodataset needs biblio
 geodataset needs general
+geodataset needs gpipe_alloc
 geodataset needs xncbi
 geodataset needs xser
 geodataset needs xutil
+geoindex needs gpipe_alloc
 geoindex needs xmlwrapp
 geoindex needs xncbi
 geometa needs GMA
@@ -1502,6 +1598,7 @@ geometa needs connext
 geometa needs ct_ftds64
 geometa needs dbapi_driver
 geometa needs dbconnect
+geometa needs gpipe_alloc
 geometa needs ncbi_xdbapi_ftds
 geometa needs tds_ftds64
 geometa needs xmlwrapp
@@ -1516,17 +1613,20 @@ geomyncbi needs connssl
 geomyncbi needs ct_ftds64
 geomyncbi needs dbapi_driver
 geomyncbi needs dbconnect
+geomyncbi needs gpipe_alloc
 geomyncbi needs ncbi_xdbapi_ftds
 geomyncbi needs tds_ftds64
 geomyncbi needs xconnect
 geomyncbi needs xmlwrapp
 geomyncbi needs xncbi
 geomyncbi needs xutil
+geostat needs gpipe_alloc
 geostat needs xncbi
 globalizer needs biblio
 globalizer needs creaders
 globalizer needs general
 globalizer needs genome_collection
+globalizer needs gpipe_alloc
 globalizer needs medline
 globalizer needs pub
 globalizer needs seq
@@ -1565,6 +1665,7 @@ gpinit needs gc_utils
 gpinit needs general
 gpinit needs genome_collection
 gpinit needs gpinit_utils
+gpinit needs gpipe_alloc
 gpinit needs gpipe_attr
 gpinit needs gpipe_common
 gpinit needs gpipe_objutil
@@ -1651,6 +1752,7 @@ gpinit_access needs connext
 gpinit_access needs ct_ftds64
 gpinit_access needs dbapi
 gpinit_access needs dbapi_driver
+gpinit_access needs gpipe_alloc
 gpinit_access needs ncbi_xdbapi_ftds
 gpinit_access needs sdbapi
 gpinit_access needs tds_ftds64
@@ -1678,6 +1780,7 @@ gpinit_admin needs gc_utils
 gpinit_admin needs general
 gpinit_admin needs genome_collection
 gpinit_admin needs gpinit_access
+gpinit_admin needs gpipe_alloc
 gpinit_admin needs gpipe_attr
 gpinit_admin needs gpipe_common
 gpinit_admin needs gpipe_objutil
@@ -1782,6 +1885,7 @@ gpinit_buildinfo needs general
 gpinit_buildinfo needs genome_collection
 gpinit_buildinfo needs gpinit
 gpinit_buildinfo needs gpinit_utils
+gpinit_buildinfo needs gpipe_alloc
 gpinit_buildinfo needs gpipe_attr
 gpinit_buildinfo needs gpipe_common
 gpinit_buildinfo needs gpipe_objutil
@@ -1868,6 +1972,7 @@ gpinit_utils needs connext
 gpinit_utils needs ct_ftds64
 gpinit_utils needs dbapi
 gpinit_utils needs dbapi_driver
+gpinit_utils needs gpipe_alloc
 gpinit_utils needs gpipe_attr
 gpinit_utils needs gpipe_common
 gpinit_utils needs gpipe_property
@@ -1899,6 +2004,7 @@ gpipe_alnutil needs dbapi
 gpipe_alnutil needs dbapi_driver
 gpipe_alnutil needs general
 gpipe_alnutil needs genome_collection
+gpipe_alnutil needs gpipe_alloc
 gpipe_alnutil needs gpipe_common
 gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs id1
@@ -1986,6 +2092,7 @@ gpipe_attr needs connext
 gpipe_attr needs ct_ftds64
 gpipe_attr needs dbapi
 gpipe_attr needs dbapi_driver
+gpipe_attr needs gpipe_alloc
 gpipe_attr needs gpipe_common
 gpipe_attr needs gpipe_property
 gpipe_attr needs ncbi_xdbapi_ftds
@@ -2003,6 +2110,7 @@ gpipe_common needs connext
 gpipe_common needs ct_ftds64
 gpipe_common needs dbapi
 gpipe_common needs dbapi_driver
+gpipe_common needs gpipe_alloc
 gpipe_common needs ncbi_xdbapi_ftds
 gpipe_common needs sdbapi
 gpipe_common needs tds_ftds64
@@ -2012,6 +2120,7 @@ gpipe_common needs xconnext
 gpipe_common needs xmlwrapp
 gpipe_common needs xncbi
 gpipe_common needs xutil
+gpipe_kpi needs gpipe_alloc
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
 gpipe_objutil needs align-reader
@@ -2032,6 +2141,7 @@ gpipe_objutil needs dbapi
 gpipe_objutil needs dbapi_driver
 gpipe_objutil needs general
 gpipe_objutil needs genome_collection
+gpipe_objutil needs gpipe_alloc
 gpipe_objutil needs gpipe_common
 gpipe_objutil needs id1
 gpipe_objutil needs id2
@@ -2115,6 +2225,7 @@ gpipe_property needs connext
 gpipe_property needs ct_ftds64
 gpipe_property needs dbapi
 gpipe_property needs dbapi_driver
+gpipe_property needs gpipe_alloc
 gpipe_property needs gpipe_common
 gpipe_property needs ncbi_xdbapi_ftds
 gpipe_property needs sdbapi
@@ -2126,9 +2237,16 @@ gpipe_property needs xmlwrapp
 gpipe_property needs xncbi
 gpipe_property needs xregexp
 gpipe_property needs xutil
+gpipe_resource_req needs gpipe_alloc
 gpipe_resource_req needs xncbi
+gpipe_xml needs dbapi
+gpipe_xml needs dbapi_driver
+gpipe_xml needs gpipe_alloc
+gpipe_xml needs xmlwrapp
+gpipe_xml needs xncbi
 gpxapi needs connect
 gpxapi needs general
+gpxapi needs gpipe_alloc
 gpxapi needs xconnect
 gpxapi needs xncbi
 gpxapi needs xser
@@ -2139,6 +2257,7 @@ gpxlib needs ct_ftds64
 gpxlib needs dbapi
 gpxlib needs dbapi_driver
 gpxlib needs general
+gpxlib needs gpipe_alloc
 gpxlib needs gpipe_common
 gpxlib needs gpxapi
 gpxlib needs ncbi_xdbapi_ftds
@@ -2153,6 +2272,7 @@ gpxlib needs xmlwrapp
 gpxlib needs xncbi
 gpxlib needs xser
 gpxlib needs xutil
+grid_wrapper needs gpipe_alloc
 grid_wrapper needs gpipe_resource_req
 grid_wrapper needs xncbi
 gui_config needs biblio
@@ -2177,6 +2297,7 @@ gui_config needs esummary
 gui_config needs eutils
 gui_config needs general
 gui_config needs genome_collection
+gui_config needs gpipe_alloc
 gui_config needs gui_objutils
 gui_config needs gui_utils
 gui_config needs linkout
@@ -2240,6 +2361,7 @@ gui_core needs gbseq
 gui_core needs gencoll_client
 gui_core needs general
 gui_core needs genome_collection
+gui_core needs gpipe_alloc
 gui_core needs gui_objects
 gui_core needs gui_objutils
 gui_core needs gui_opengl
@@ -2320,6 +2442,7 @@ gui_framework needs gbseq
 gui_framework needs gencoll_client
 gui_framework needs general
 gui_framework needs genome_collection
+gui_framework needs gpipe_alloc
 gui_framework needs gui_objects
 gui_framework needs gui_objutils
 gui_framework needs gui_opengl
@@ -2376,12 +2499,14 @@ gui_framework needs xqueryparse
 gui_framework needs xregexp
 gui_framework needs xser
 gui_framework needs xutil
+gui_glmesa needs gpipe_alloc
 gui_glmesa needs xcgi
 gui_glmesa needs xhtml
 gui_glmesa needs ximage
 gui_glmesa needs xncbi
 gui_glmesa needs xutil
 gui_graph needs connect
+gui_graph needs gpipe_alloc
 gui_graph needs gui_opengl
 gui_graph needs gui_print
 gui_graph needs gui_utils
@@ -2413,6 +2538,7 @@ gui_objects needs esummary
 gui_objects needs eutils
 gui_objects needs general
 gui_objects needs genome_collection
+gui_objects needs gpipe_alloc
 gui_objects needs gui_objutils
 gui_objects needs gui_utils
 gui_objects needs linkout
@@ -2475,6 +2601,7 @@ gui_objutils needs esummary
 gui_objutils needs eutils
 gui_objutils needs general
 gui_objutils needs genome_collection
+gui_objutils needs gpipe_alloc
 gui_objutils needs gui_utils
 gui_objutils needs linkout
 gui_objutils needs medline
@@ -2514,6 +2641,7 @@ gui_objutils needs xregexp
 gui_objutils needs xser
 gui_objutils needs xutil
 gui_opengl needs connect
+gui_opengl needs gpipe_alloc
 gui_opengl needs gui_print
 gui_opengl needs gui_utils
 gui_opengl needs tables
@@ -2523,6 +2651,7 @@ gui_opengl needs ximage
 gui_opengl needs xncbi
 gui_opengl needs xutil
 gui_print needs connect
+gui_print needs gpipe_alloc
 gui_print needs gui_utils
 gui_print needs tables
 gui_print needs xcompress
@@ -2530,6 +2659,7 @@ gui_print needs xconnect
 gui_print needs xncbi
 gui_print needs xutil
 gui_utils needs connect
+gui_utils needs gpipe_alloc
 gui_utils needs tables
 gui_utils needs xconnect
 gui_utils needs xncbi
@@ -2557,6 +2687,7 @@ guide_tree needs eutils
 guide_tree needs fastme
 guide_tree needs general
 guide_tree needs genome_collection
+guide_tree needs gpipe_alloc
 guide_tree needs gui_glmesa
 guide_tree needs gui_graph
 guide_tree needs gui_objutils
@@ -2611,6 +2742,7 @@ guide_tree needs xregexp
 guide_tree needs xser
 guide_tree needs xthrserv
 guide_tree needs xutil
+gumbelparams needs gpipe_alloc
 gumbelparams needs tables
 gumbelparams needs xncbi
 gumbelparams needs xutil
@@ -2620,6 +2752,7 @@ hgvs needs entrez2
 hgvs needs entrez2cli
 hgvs needs general
 hgvs needs genome_collection
+hgvs needs gpipe_alloc
 hgvs needs medline
 hgvs needs pub
 hgvs needs seq
@@ -2659,6 +2792,7 @@ hgvs_name needs esummary
 hgvs_name needs eutils
 hgvs_name needs general
 hgvs_name needs genome_collection
+hgvs_name needs gpipe_alloc
 hgvs_name needs gui_objutils
 hgvs_name needs gui_utils
 hgvs_name needs id1
@@ -2714,6 +2848,7 @@ hit_analyzer needs biblio
 hit_analyzer needs creaders
 hit_analyzer needs general
 hit_analyzer needs genome_collection
+hit_analyzer needs gpipe_alloc
 hit_analyzer needs medline
 hit_analyzer needs pub
 hit_analyzer needs seq
@@ -2732,6 +2867,7 @@ hit_analyzer needs xser
 hit_analyzer needs xutil
 homologene needs biblio
 homologene needs general
+homologene needs gpipe_alloc
 homologene needs medline
 homologene needs pub
 homologene needs seq
@@ -2740,6 +2876,7 @@ homologene needs sequtil
 homologene needs xncbi
 homologene needs xser
 homologene needs xutil
+htbbase needs gpipe_alloc
 htbbase needs txxmldoc
 htbbase needs xcompress
 htbbase needs xncbi
@@ -2747,6 +2884,7 @@ htbbase needs xutil
 htbcli includes htbbase
 htbcli includes htbcon
 htbcli needs connect
+htbcli needs gpipe_alloc
 htbcli needs txserv
 htbcli needs txservbase
 htbcli needs txxmldoc
@@ -2755,6 +2893,7 @@ htbcli needs xconnect
 htbcli needs xncbi
 htbcli needs xutil
 htbcon needs connect
+htbcon needs gpipe_alloc
 htbcon needs htbbase
 htbcon needs txserv
 htbcon needs txservbase
@@ -2765,6 +2904,7 @@ htbcon needs xncbi
 htbcon needs xutil
 id1 needs biblio
 id1 needs general
+id1 needs gpipe_alloc
 id1 needs medline
 id1 needs pub
 id1 needs seq
@@ -2777,6 +2917,7 @@ id1 needs xutil
 id1cli needs biblio
 id1cli needs connect
 id1cli needs general
+id1cli needs gpipe_alloc
 id1cli needs id1
 id1cli needs medline
 id1cli needs pub
@@ -2790,6 +2931,7 @@ id1cli needs xser
 id1cli needs xutil
 id2 needs biblio
 id2 needs general
+id2 needs gpipe_alloc
 id2 needs medline
 id2 needs pub
 id2 needs seq
@@ -2803,6 +2945,7 @@ id2 needs xutil
 id2_split needs biblio
 id2_split needs general
 id2_split needs genome_collection
+id2_split needs gpipe_alloc
 id2_split needs medline
 id2_split needs pub
 id2_split needs seq
@@ -2819,6 +2962,7 @@ id2_split needs xutil
 id2cli needs biblio
 id2cli needs connect
 id2cli needs general
+id2cli needs gpipe_alloc
 id2cli needs id2
 id2cli needs medline
 id2cli needs pub
@@ -2835,6 +2979,7 @@ id_dump needs bdb
 id_dump needs biblio
 id_dump needs cache_blob
 id_dump needs general
+id_dump needs gpipe_alloc
 id_dump needs medline
 id_dump needs pub
 id_dump needs seq
@@ -2848,6 +2993,7 @@ id_dump needs xutil
 ideo needs biblio
 ideo needs connect
 ideo needs general
+ideo needs gpipe_alloc
 ideo needs gui_utils
 ideo needs mapdata
 ideo needs mapview
@@ -2872,6 +3018,7 @@ ideo needs xutil
 ideocli needs biblio
 ideocli needs connect
 ideocli needs general
+ideocli needs gpipe_alloc
 ideocli needs gui_utils
 ideocli needs ideo
 ideocli needs mapdata
@@ -2901,6 +3048,7 @@ ideocoord needs ct_ftds64
 ideocoord needs dbapi
 ideocoord needs dbapi_driver
 ideocoord needs general
+ideocoord needs gpipe_alloc
 ideocoord needs gui_utils
 ideocoord needs ideo
 ideocoord needs ideocli
@@ -2939,6 +3087,7 @@ idgen needs dbloadb
 idgen needs dbloadb_asn
 idgen needs generic_db_asn
 idgen needs generic_db_utils
+idgen needs gpipe_alloc
 idgen needs mux
 idgen needs ncbi_xdbapi_ftds
 idgen needs tables
@@ -2953,6 +3102,7 @@ idgen needs xutil
 idx needs connect
 idx needs connext
 idx needs dbapi_driver
+idx needs gpipe_alloc
 idx needs spellsrvbase
 idx needs txservbase
 idx needs xconnect
@@ -2964,6 +3114,7 @@ idxgenome2 needs connext
 idxgenome2 needs connssl
 idxgenome2 needs dbapi_driver
 idxgenome2 needs general
+idxgenome2 needs gpipe_alloc
 idxgenome2 needs idx
 idxgenome2 needs idxnucleotide2
 idxgenome2 needs idxseq2base
@@ -2984,6 +3135,7 @@ idxgenome2 needs xutil
 idxgenomeprj needs connect
 idxgenomeprj needs connext
 idxgenomeprj needs dbapi_driver
+idxgenomeprj needs gpipe_alloc
 idxgenomeprj needs idx
 idxgenomeprj needs ilink
 idxgenomeprj needs spellsrvbase
@@ -2994,6 +3146,7 @@ idxgenomeprj needs xutil
 idxjournals needs connect
 idxjournals needs connext
 idxjournals needs dbapi_driver
+idxjournals needs gpipe_alloc
 idxjournals needs idx
 idxjournals needs ilink
 idxjournals needs spellsrvbase
@@ -3004,6 +3157,7 @@ idxjournals needs xutil
 idxlinkout needs connect
 idxlinkout needs connext
 idxlinkout needs dbapi_driver
+idxlinkout needs gpipe_alloc
 idxlinkout needs idx
 idxlinkout needs ilink
 idxlinkout needs spellsrvbase
@@ -3014,6 +3168,7 @@ idxlinkout needs xutil
 idxlinkout2 needs connect
 idxlinkout2 needs connext
 idxlinkout2 needs dbapi_driver
+idxlinkout2 needs gpipe_alloc
 idxlinkout2 needs idx
 idxlinkout2 needs ilink
 idxlinkout2 needs spellsrvbase
@@ -3029,6 +3184,7 @@ idxnuccore needs connext
 idxnuccore needs connssl
 idxnuccore needs dbapi_driver
 idxnuccore needs general
+idxnuccore needs gpipe_alloc
 idxnuccore needs idx
 idxnuccore needs idxnucleotide2
 idxnuccore needs idxseq2base
@@ -3052,6 +3208,7 @@ idxnucest needs connext
 idxnucest needs connssl
 idxnucest needs dbapi_driver
 idxnucest needs general
+idxnucest needs gpipe_alloc
 idxnucest needs idx
 idxnucest needs idxnucleotide2
 idxnucest needs idxseq2base
@@ -3075,6 +3232,7 @@ idxnucgss needs connext
 idxnucgss needs connssl
 idxnucgss needs dbapi_driver
 idxnucgss needs general
+idxnucgss needs gpipe_alloc
 idxnucgss needs idx
 idxnucgss needs idxnucleotide2
 idxnucgss needs idxseq2base
@@ -3098,6 +3256,7 @@ idxnucleotide2 needs connext
 idxnucleotide2 needs connssl
 idxnucleotide2 needs dbapi_driver
 idxnucleotide2 needs general
+idxnucleotide2 needs gpipe_alloc
 idxnucleotide2 needs idx
 idxnucleotide2 needs idxseq2base
 idxnucleotide2 needs ilink
@@ -3117,6 +3276,7 @@ idxnucleotide2 needs xutil
 idxomim needs connect
 idxomim needs connext
 idxomim needs dbapi_driver
+idxomim needs gpipe_alloc
 idxomim needs idx
 idxomim needs ilink
 idxomim needs spellsrvbase
@@ -3130,6 +3290,7 @@ idxpopset2 needs connext
 idxpopset2 needs connssl
 idxpopset2 needs dbapi_driver
 idxpopset2 needs general
+idxpopset2 needs gpipe_alloc
 idxpopset2 needs idx
 idxpopset2 needs idxseq2base
 idxpopset2 needs ilink
@@ -3152,6 +3313,7 @@ idxprotein2 needs connext
 idxprotein2 needs connssl
 idxprotein2 needs dbapi_driver
 idxprotein2 needs general
+idxprotein2 needs gpipe_alloc
 idxprotein2 needs idx
 idxprotein2 needs idxseq2base
 idxprotein2 needs ilink
@@ -3174,6 +3336,7 @@ idxseq2base needs connext
 idxseq2base needs connssl
 idxseq2base needs dbapi_driver
 idxseq2base needs general
+idxseq2base needs gpipe_alloc
 idxseq2base needs idx
 idxseq2base needs ilink
 idxseq2base needs medline
@@ -3192,6 +3355,7 @@ idxseq2base needs xutil
 idxtestdb needs connect
 idxtestdb needs connext
 idxtestdb needs dbapi_driver
+idxtestdb needs gpipe_alloc
 idxtestdb needs idx
 idxtestdb needs ilink
 idxtestdb needs spellsrvbase
@@ -3205,6 +3369,7 @@ idxumbrella needs connext
 idxumbrella needs connssl
 idxumbrella needs dbapi_driver
 idxumbrella needs general
+idxumbrella needs gpipe_alloc
 idxumbrella needs idx
 idxumbrella needs idxnucleotide2
 idxumbrella needs idxseq2base
@@ -3231,6 +3396,7 @@ igblast needs connect
 igblast needs creaders
 igblast needs general
 igblast needs genome_collection
+igblast needs gpipe_alloc
 igblast needs medline
 igblast needs pub
 igblast needs scoremat
@@ -3260,20 +3426,24 @@ igblast needs xutil
 ilink needs connect
 ilink needs connext
 ilink needs dbapi_driver
+ilink needs gpipe_alloc
 ilink needs spellsrvbase
 ilink needs txservbase
 ilink needs xconnect
 ilink needs xncbi
 ilink needs xutil
+insdseq needs gpipe_alloc
 insdseq needs xncbi
 insdseq needs xser
 insdseq needs xutil
 jiracli needs connect
+jiracli needs gpipe_alloc
 jiracli needs jirasvc
 jiracli needs xconnect
 jiracli needs xncbi
 jiracli needs xser
 jiracli needs xutil
+jirasvc needs gpipe_alloc
 jirasvc needs xncbi
 jirasvc needs xser
 jirasvc needs xutil
@@ -3297,6 +3467,7 @@ kdb needs ksproc
 kdb needs kurl
 kdb needs srapath
 kdb needs vfs
+kdf5 needs gpipe_alloc
 kdf5 needs judy
 kdf5 needs kfs
 kdf5 needs klib
@@ -3332,6 +3503,7 @@ ksproc needs judy
 ksproc needs klib
 ksrch needs judy
 ksrch needs klib
+ktst needs gpipe_alloc
 ktst needs judy
 ktst needs klib
 kurl needs judy
@@ -3357,6 +3529,7 @@ lds needs biblio
 lds needs creaders
 lds needs general
 lds needs genome_collection
+lds needs gpipe_alloc
 lds needs medline
 lds needs pub
 lds needs seq
@@ -3374,6 +3547,7 @@ lds needs xutil
 lds2 needs biblio
 lds2 needs creaders
 lds2 needs general
+lds2 needs gpipe_alloc
 lds2 needs medline
 lds2 needs pub
 lds2 needs seq
@@ -3394,6 +3568,7 @@ linkos_utils needs connext
 linkos_utils needs connssl
 linkos_utils needs dbapi_driver
 linkos_utils needs general
+linkos_utils needs gpipe_alloc
 linkos_utils needs medline
 linkos_utils needs pub
 linkos_utils needs seq
@@ -3405,6 +3580,7 @@ linkos_utils needs xid_utils
 linkos_utils needs xncbi
 linkos_utils needs xser
 linkos_utils needs xutil
+linkout needs gpipe_alloc
 linkout needs xncbi
 linkout needs xser
 linkout needs xutil
@@ -3412,6 +3588,7 @@ linkoutdb needs biblio
 linkoutdb needs blastdb
 linkoutdb needs general
 linkoutdb needs genome_collection
+linkoutdb needs gpipe_alloc
 linkoutdb needs medline
 linkoutdb needs pub
 linkoutdb needs seq
@@ -3446,6 +3623,7 @@ ls_cli needs dbloadb
 ls_cli needs dbloadb_asn
 ls_cli needs generic_db_asn
 ls_cli needs generic_db_utils
+ls_cli needs gpipe_alloc
 ls_cli needs mux
 ls_cli needs ncbils2_asn
 ls_cli needs ncbils2_cli
@@ -3459,12 +3637,14 @@ ls_cli needs xconnect
 ls_cli needs xncbi
 ls_cli needs xser
 ls_cli needs xutil
+macro needs gpipe_alloc
 macro needs xncbi
 macro needs xser
 macro needs xutil
 mapdata needs biblio
 mapdata needs connect
 mapdata needs general
+mapdata needs gpipe_alloc
 mapdata needs gui_utils
 mapdata needs medline
 mapdata needs mv_align
@@ -3483,6 +3663,7 @@ mapdata needs xutil
 mapview needs biblio
 mapview needs connect
 mapview needs general
+mapview needs gpipe_alloc
 mapview needs gui_utils
 mapview needs mapdata
 mapview needs medline
@@ -3505,6 +3686,7 @@ mapview needs xutil
 mapviewcli needs biblio
 mapviewcli needs connect
 mapviewcli needs general
+mapviewcli needs gpipe_alloc
 mapviewcli needs gui_utils
 mapviewcli needs mapdata
 mapviewcli needs mapview
@@ -3527,20 +3709,24 @@ mapviewcli needs xser
 mapviewcli needs xutil
 medlars needs biblio
 medlars needs general
+medlars needs gpipe_alloc
 medlars needs xncbi
 medlars needs xser
 medlars needs xutil
 medline needs biblio
 medline needs general
+medline needs gpipe_alloc
 medline needs xncbi
 medline needs xser
 medline needs xutil
 mghbn needs connect
+mim needs gpipe_alloc
 mim needs xncbi
 mim needs xser
 mim needs xutil
 mla needs biblio
 mla needs general
+mla needs gpipe_alloc
 mla needs medlars
 mla needs medline
 mla needs pub
@@ -3551,6 +3737,7 @@ mla needs xutil
 mlacli needs biblio
 mlacli needs connect
 mlacli needs general
+mlacli needs gpipe_alloc
 mlacli needs medlars
 mlacli needs medline
 mlacli needs mla
@@ -3565,6 +3752,7 @@ mmapi needs objmmail
 mmapi needs tables
 mmdb needs biblio
 mmdb needs general
+mmdb needs gpipe_alloc
 mmdb needs medline
 mmdb needs pub
 mmdb needs seq
@@ -3573,8 +3761,10 @@ mmdb needs sequtil
 mmdb needs xncbi
 mmdb needs xser
 mmdb needs xutil
+muparser needs gpipe_alloc
 muscleasn_g needs biblio
 muscleasn_g needs general
+muscleasn_g needs gpipe_alloc
 muscleasn_g needs medline
 muscleasn_g needs pub
 muscleasn_g needs seq
@@ -3585,6 +3775,7 @@ muscleasn_g needs xser
 muscleasn_g needs xutil
 mux needs connect
 mux needs generic_db_utils
+mux needs gpipe_alloc
 mux needs tables
 mux needs xcgi
 mux needs xcompress
@@ -3597,6 +3788,7 @@ muxex-C_g needs creaders
 muxex-C_g needs dbldasn_g
 muxex-C_g needs gendefasn_g
 muxex-C_g needs generic_db_utils
+muxex-C_g needs gpipe_alloc
 muxex-C_g needs mux
 muxex-C_g needs splitdbasn_g
 muxex-C_g needs tables
@@ -3618,6 +3810,7 @@ muxex_g needs general
 muxex_g needs generic_db_asn
 muxex_g needs generic_db_utils
 muxex_g needs gensvc_g
+muxex_g needs gpipe_alloc
 muxex_g needs medline
 muxex_g needs mux
 muxex_g needs pub
@@ -3639,6 +3832,7 @@ muxex_g needs xutil
 mv_admin needs biblio
 mv_admin needs connect
 mv_admin needs general
+mv_admin needs gpipe_alloc
 mv_admin needs gui_utils
 mv_admin needs medline
 mv_admin needs mv_types
@@ -3652,6 +3846,7 @@ mv_admin needs xncbi
 mv_admin needs xser
 mv_admin needs xutil
 mv_admincli needs connect
+mv_admincli needs gpipe_alloc
 mv_admincli needs xconnect
 mv_admincli needs xncbi
 mv_admincli needs xser
@@ -3659,6 +3854,7 @@ mv_admincli needs xutil
 mv_align needs biblio
 mv_align needs connect
 mv_align needs general
+mv_align needs gpipe_alloc
 mv_align needs gui_utils
 mv_align needs medline
 mv_align needs mv_types
@@ -3674,6 +3870,7 @@ mv_align needs xutil
 mv_cgi needs biblio
 mv_cgi needs connect
 mv_cgi needs general
+mv_cgi needs gpipe_alloc
 mv_cgi needs gui_utils
 mv_cgi needs medline
 mv_cgi needs mv_types
@@ -3689,6 +3886,7 @@ mv_cgi needs xutil
 mv_entrez needs biblio
 mv_entrez needs connect
 mv_entrez needs general
+mv_entrez needs gpipe_alloc
 mv_entrez needs gui_utils
 mv_entrez needs medline
 mv_entrez needs mv_types
@@ -3704,6 +3902,7 @@ mv_entrez needs xutil
 mv_entrezcli needs biblio
 mv_entrezcli needs connect
 mv_entrezcli needs general
+mv_entrezcli needs gpipe_alloc
 mv_entrezcli needs gui_utils
 mv_entrezcli needs medline
 mv_entrezcli needs mv_entrez
@@ -3717,12 +3916,14 @@ mv_entrezcli needs xconnect
 mv_entrezcli needs xncbi
 mv_entrezcli needs xser
 mv_entrezcli needs xutil
+mv_markup needs gpipe_alloc
 mv_markup needs xncbi
 mv_markup needs xser
 mv_markup needs xutil
 mv_meta needs biblio
 mv_meta needs connect
 mv_meta needs general
+mv_meta needs gpipe_alloc
 mv_meta needs gui_utils
 mv_meta needs medline
 mv_meta needs mv_types
@@ -3738,6 +3939,7 @@ mv_meta needs xutil
 mv_metacli needs biblio
 mv_metacli needs connect
 mv_metacli needs general
+mv_metacli needs gpipe_alloc
 mv_metacli needs gui_utils
 mv_metacli needs medline
 mv_metacli needs mv_meta
@@ -3754,6 +3956,7 @@ mv_metacli needs xutil
 mv_types needs biblio
 mv_types needs connect
 mv_types needs general
+mv_types needs gpipe_alloc
 mv_types needs gui_utils
 mv_types needs medline
 mv_types needs pub
@@ -3768,6 +3971,7 @@ mv_types needs xutil
 mv_webdata needs biblio
 mv_webdata needs connect
 mv_webdata needs general
+mv_webdata needs gpipe_alloc
 mv_webdata needs gui_utils
 mv_webdata needs mapdata
 mv_webdata needs mapview
@@ -3791,6 +3995,7 @@ mv_webdata needs xutil
 mvobjutil needs biblio
 mvobjutil needs connect
 mvobjutil needs general
+mvobjutil needs gpipe_alloc
 mvobjutil needs gui_utils
 mvobjutil needs medline
 mvobjutil needs mv_align
@@ -3817,34 +4022,43 @@ ncbi-bam needs kurl
 ncbi-bam needs srapath
 ncbi-bam needs vfs
 ncbi_xblobstorage_netcache needs connect
+ncbi_xblobstorage_netcache needs gpipe_alloc
 ncbi_xblobstorage_netcache needs xconnect
 ncbi_xblobstorage_netcache needs xconnserv
 ncbi_xblobstorage_netcache needs xncbi
 ncbi_xblobstorage_netcache needs xthrserv
 ncbi_xblobstorage_netcache needs xutil
 ncbi_xcache_bdb needs bdb
+ncbi_xcache_bdb needs gpipe_alloc
 ncbi_xcache_bdb needs xncbi
 ncbi_xcache_bdb needs xutil
 ncbi_xcache_dbapi needs dbapi
 ncbi_xcache_dbapi needs dbapi_driver
+ncbi_xcache_dbapi needs gpipe_alloc
 ncbi_xcache_dbapi needs xncbi
 ncbi_xcache_netcache needs connect
+ncbi_xcache_netcache needs gpipe_alloc
 ncbi_xcache_netcache needs xconnect
 ncbi_xcache_netcache needs xconnserv
 ncbi_xcache_netcache needs xncbi
 ncbi_xcache_netcache needs xthrserv
 ncbi_xcache_netcache needs xutil
+ncbi_xcache_sqlite3 needs gpipe_alloc
 ncbi_xcache_sqlite3 needs xncbi
 ncbi_xcache_sqlite3 needs xutil
 ncbi_xdbapi_ctlib needs dbapi_driver
+ncbi_xdbapi_ctlib needs gpipe_alloc
 ncbi_xdbapi_ctlib needs xncbi
 ncbi_xdbapi_dblib needs dbapi_driver
+ncbi_xdbapi_dblib needs gpipe_alloc
 ncbi_xdbapi_dblib needs xncbi
 ncbi_xdbapi_ftds needs ct_ftds64
 ncbi_xdbapi_ftds needs dbapi_driver
+ncbi_xdbapi_ftds needs gpipe_alloc
 ncbi_xdbapi_ftds needs tds_ftds64
 ncbi_xdbapi_ftds needs xncbi
 ncbi_xdbapi_mysql needs dbapi_driver
+ncbi_xdbapi_mysql needs gpipe_alloc
 ncbi_xdbapi_mysql needs xncbi
 ncbi_xloader_asn_cache needs asn_cache
 ncbi_xloader_asn_cache needs bdb
@@ -3852,6 +4066,7 @@ ncbi_xloader_asn_cache needs biblio
 ncbi_xloader_asn_cache needs cache_blob
 ncbi_xloader_asn_cache needs general
 ncbi_xloader_asn_cache needs genome_collection
+ncbi_xloader_asn_cache needs gpipe_alloc
 ncbi_xloader_asn_cache needs id_dump
 ncbi_xloader_asn_cache needs medline
 ncbi_xloader_asn_cache needs pub
@@ -3871,6 +4086,7 @@ ncbi_xloader_bam needs biblio
 ncbi_xloader_bam needs creaders
 ncbi_xloader_bam needs general
 ncbi_xloader_bam needs genome_collection
+ncbi_xloader_bam needs gpipe_alloc
 ncbi_xloader_bam needs judy
 ncbi_xloader_bam needs kdb
 ncbi_xloader_bam needs kfg
@@ -3903,6 +4119,7 @@ ncbi_xloader_blastdb needs biblio
 ncbi_xloader_blastdb needs blastdb
 ncbi_xloader_blastdb needs general
 ncbi_xloader_blastdb needs genome_collection
+ncbi_xloader_blastdb needs gpipe_alloc
 ncbi_xloader_blastdb needs medline
 ncbi_xloader_blastdb needs pub
 ncbi_xloader_blastdb needs seq
@@ -3921,6 +4138,7 @@ ncbi_xloader_blastdb_rmt needs blastdb
 ncbi_xloader_blastdb_rmt needs connect
 ncbi_xloader_blastdb_rmt needs general
 ncbi_xloader_blastdb_rmt needs genome_collection
+ncbi_xloader_blastdb_rmt needs gpipe_alloc
 ncbi_xloader_blastdb_rmt needs medline
 ncbi_xloader_blastdb_rmt needs ncbi_xloader_blastdb
 ncbi_xloader_blastdb_rmt needs pub
@@ -3942,6 +4160,7 @@ ncbi_xloader_cdd needs biblio
 ncbi_xloader_cdd needs connect
 ncbi_xloader_cdd needs general
 ncbi_xloader_cdd needs genome_collection
+ncbi_xloader_cdd needs gpipe_alloc
 ncbi_xloader_cdd needs medline
 ncbi_xloader_cdd needs pub
 ncbi_xloader_cdd needs seq
@@ -3959,6 +4178,7 @@ ncbi_xloader_csra needs axf
 ncbi_xloader_csra needs biblio
 ncbi_xloader_csra needs general
 ncbi_xloader_csra needs genome_collection
+ncbi_xloader_csra needs gpipe_alloc
 ncbi_xloader_csra needs judy
 ncbi_xloader_csra needs kdb
 ncbi_xloader_csra needs kfg
@@ -3995,6 +4215,7 @@ ncbi_xloader_genbank needs biblio
 ncbi_xloader_genbank needs connect
 ncbi_xloader_genbank needs general
 ncbi_xloader_genbank needs genome_collection
+ncbi_xloader_genbank needs gpipe_alloc
 ncbi_xloader_genbank needs id1
 ncbi_xloader_genbank needs id2
 ncbi_xloader_genbank needs medline
@@ -4020,6 +4241,7 @@ ncbi_xloader_lds needs biblio
 ncbi_xloader_lds needs creaders
 ncbi_xloader_lds needs general
 ncbi_xloader_lds needs genome_collection
+ncbi_xloader_lds needs gpipe_alloc
 ncbi_xloader_lds needs lds
 ncbi_xloader_lds needs medline
 ncbi_xloader_lds needs pub
@@ -4039,6 +4261,7 @@ ncbi_xloader_lds2 needs biblio
 ncbi_xloader_lds2 needs creaders
 ncbi_xloader_lds2 needs general
 ncbi_xloader_lds2 needs genome_collection
+ncbi_xloader_lds2 needs gpipe_alloc
 ncbi_xloader_lds2 needs lds2
 ncbi_xloader_lds2 needs medline
 ncbi_xloader_lds2 needs pub
@@ -4059,6 +4282,7 @@ ncbi_xloader_lds2 needs xutil
 ncbi_xloader_patcher needs biblio
 ncbi_xloader_patcher needs general
 ncbi_xloader_patcher needs genome_collection
+ncbi_xloader_patcher needs gpipe_alloc
 ncbi_xloader_patcher needs medline
 ncbi_xloader_patcher needs pub
 ncbi_xloader_patcher needs seq
@@ -4075,6 +4299,7 @@ ncbi_xloader_sra needs axf
 ncbi_xloader_sra needs biblio
 ncbi_xloader_sra needs general
 ncbi_xloader_sra needs genome_collection
+ncbi_xloader_sra needs gpipe_alloc
 ncbi_xloader_sra needs judy
 ncbi_xloader_sra needs kdb
 ncbi_xloader_sra needs kfg
@@ -4111,6 +4336,7 @@ ncbi_xloader_trace needs biblio
 ncbi_xloader_trace needs connect
 ncbi_xloader_trace needs general
 ncbi_xloader_trace needs genome_collection
+ncbi_xloader_trace needs gpipe_alloc
 ncbi_xloader_trace needs id1
 ncbi_xloader_trace needs id1cli
 ncbi_xloader_trace needs medline
@@ -4130,6 +4356,7 @@ ncbi_xloader_wgs needs axf
 ncbi_xloader_wgs needs biblio
 ncbi_xloader_wgs needs general
 ncbi_xloader_wgs needs genome_collection
+ncbi_xloader_wgs needs gpipe_alloc
 ncbi_xloader_wgs needs judy
 ncbi_xloader_wgs needs kdb
 ncbi_xloader_wgs needs kfg
@@ -4166,6 +4393,7 @@ ncbi_xreader needs biblio
 ncbi_xreader needs connect
 ncbi_xreader needs general
 ncbi_xreader needs genome_collection
+ncbi_xreader needs gpipe_alloc
 ncbi_xreader needs id1
 ncbi_xreader needs id2
 ncbi_xreader needs medline
@@ -4186,6 +4414,7 @@ ncbi_xreader_cache needs biblio
 ncbi_xreader_cache needs connect
 ncbi_xreader_cache needs general
 ncbi_xreader_cache needs genome_collection
+ncbi_xreader_cache needs gpipe_alloc
 ncbi_xreader_cache needs id1
 ncbi_xreader_cache needs id2
 ncbi_xreader_cache needs medline
@@ -4207,6 +4436,7 @@ ncbi_xreader_gicache needs biblio
 ncbi_xreader_gicache needs connect
 ncbi_xreader_gicache needs general
 ncbi_xreader_gicache needs genome_collection
+ncbi_xreader_gicache needs gpipe_alloc
 ncbi_xreader_gicache needs id1
 ncbi_xreader_gicache needs id2
 ncbi_xreader_gicache needs medline
@@ -4228,6 +4458,7 @@ ncbi_xreader_id1 needs biblio
 ncbi_xreader_id1 needs connect
 ncbi_xreader_id1 needs general
 ncbi_xreader_id1 needs genome_collection
+ncbi_xreader_id1 needs gpipe_alloc
 ncbi_xreader_id1 needs id1
 ncbi_xreader_id1 needs id2
 ncbi_xreader_id1 needs medline
@@ -4249,6 +4480,7 @@ ncbi_xreader_id2 needs biblio
 ncbi_xreader_id2 needs connect
 ncbi_xreader_id2 needs general
 ncbi_xreader_id2 needs genome_collection
+ncbi_xreader_id2 needs gpipe_alloc
 ncbi_xreader_id2 needs id1
 ncbi_xreader_id2 needs id2
 ncbi_xreader_id2 needs medline
@@ -4272,6 +4504,7 @@ ncbi_xreader_pubseqos needs connext
 ncbi_xreader_pubseqos needs dbapi_driver
 ncbi_xreader_pubseqos needs general
 ncbi_xreader_pubseqos needs genome_collection
+ncbi_xreader_pubseqos needs gpipe_alloc
 ncbi_xreader_pubseqos needs id1
 ncbi_xreader_pubseqos needs id2
 ncbi_xreader_pubseqos needs medline
@@ -4296,6 +4529,7 @@ ncbi_xreader_pubseqos2 needs connext
 ncbi_xreader_pubseqos2 needs dbapi_driver
 ncbi_xreader_pubseqos2 needs general
 ncbi_xreader_pubseqos2 needs genome_collection
+ncbi_xreader_pubseqos2 needs gpipe_alloc
 ncbi_xreader_pubseqos2 needs id1
 ncbi_xreader_pubseqos2 needs id2
 ncbi_xreader_pubseqos2 needs medline
@@ -4315,6 +4549,7 @@ ncbi_xreader_pubseqos2 needs xobjmgr
 ncbi_xreader_pubseqos2 needs xser
 ncbi_xreader_pubseqos2 needs xutil
 ncbils2_admin needs connect
+ncbils2_admin needs gpipe_alloc
 ncbils2_admin needs ncbils2_asn
 ncbils2_admin needs ncbils2_cli
 ncbils2_admin needs ncbils2_cmn
@@ -4323,15 +4558,18 @@ ncbils2_admin needs xconnect
 ncbils2_admin needs xncbi
 ncbils2_admin needs xser
 ncbils2_admin needs xutil
+ncbils2_asn needs gpipe_alloc
 ncbils2_asn needs ncbils2_cmn
 ncbils2_asn needs sssutils
 ncbils2_asn needs xncbi
 ncbils2_asn needs xser
 ncbils2_asn needs xutil
+ncbils2_authxml needs gpipe_alloc
 ncbils2_authxml needs xncbi
 ncbils2_authxml needs xser
 ncbils2_authxml needs xutil
 ncbils2_cli needs connect
+ncbils2_cli needs gpipe_alloc
 ncbils2_cli needs ncbils2_asn
 ncbils2_cli needs ncbils2_cmn
 ncbils2_cli needs sssutils
@@ -4339,7 +4577,9 @@ ncbils2_cli needs xconnect
 ncbils2_cli needs xncbi
 ncbils2_cli needs xser
 ncbils2_cli needs xutil
+ncbils2_cmn needs gpipe_alloc
 ncbils2_cmn needs sssutils
+ncbils2_dispxml needs gpipe_alloc
 ncbils2_dispxml needs xncbi
 ncbils2_dispxml needs xser
 ncbils2_dispxml needs xutil
@@ -4347,6 +4587,7 @@ ncbimime needs biblio
 ncbimime needs cdd
 ncbimime needs cn3d
 ncbimime needs general
+ncbimime needs gpipe_alloc
 ncbimime needs medline
 ncbimime needs mmdb
 ncbimime needs pub
@@ -4359,6 +4600,7 @@ ncbimime needs xncbi
 ncbimime needs xser
 ncbimime needs xutil
 ncqhst needs connect
+ncqhst needs gpipe_alloc
 ncqhst needs xconnect
 ncqhst needs xconnserv
 ncqhst needs xncbi
@@ -4366,12 +4608,14 @@ ncqhst needs xthrserv
 ncqhst needs xutil
 objmmail needs connect
 objmmail needs tables
+objprt needs gpipe_alloc
 objprt needs xncbi
 objprt needs xser
 objprt needs xutil
 odbc_ftds64 needs tds_ftds64
 omssa needs biblio
 omssa needs general
+omssa needs gpipe_alloc
 omssa needs medline
 omssa needs pub
 omssa needs seq
@@ -4382,6 +4626,7 @@ omssa needs xser
 omssa needs xutil
 pcassay needs biblio
 pcassay needs general
+pcassay needs gpipe_alloc
 pcassay needs medline
 pcassay needs pcsubstance
 pcassay needs pub
@@ -4393,11 +4638,13 @@ pcassay needs xser
 pcassay needs xutil
 pcsubstance needs biblio
 pcsubstance needs general
+pcsubstance needs gpipe_alloc
 pcsubstance needs medline
 pcsubstance needs pub
 pcsubstance needs xncbi
 pcsubstance needs xser
 pcsubstance needs xutil
+pepXML needs gpipe_alloc
 pepXML needs xncbi
 pepXML needs xser
 pepXML needs xutil
@@ -4407,6 +4654,7 @@ phytree_format needs connect
 phytree_format needs fastme
 phytree_format needs general
 phytree_format needs genome_collection
+phytree_format needs gpipe_alloc
 phytree_format needs medline
 phytree_format needs pub
 phytree_format needs seq
@@ -4425,8 +4673,11 @@ phytree_format needs xobjutil
 phytree_format needs xser
 phytree_format needs xutil
 pmcli needs connect
+pmcli needs gpipe_alloc
+primer3 needs gpipe_alloc
 proj needs biblio
 proj needs general
+proj needs gpipe_alloc
 proj needs medline
 proj needs pub
 proj needs pubmed
@@ -4446,6 +4697,7 @@ prosplign needs connect
 prosplign needs creaders
 prosplign needs general
 prosplign needs genome_collection
+prosplign needs gpipe_alloc
 prosplign needs medline
 prosplign needs pub
 prosplign needs scoremat
@@ -4478,6 +4730,7 @@ prosplign needs xregexp
 prosplign needs xser
 prosplign needs xutil
 proxsort needs connect
+proxsort needs gpipe_alloc
 proxsort needs ssrvcmn
 proxsort needs ssscli
 proxsort needs ssssys
@@ -4488,12 +4741,14 @@ proxsort needs xconnect
 proxsort needs xncbi
 pub needs biblio
 pub needs general
+pub needs gpipe_alloc
 pub needs medline
 pub needs xncbi
 pub needs xser
 pub needs xutil
 pubmed needs biblio
 pubmed needs general
+pubmed needs gpipe_alloc
 pubmed needs medline
 pubmed needs xncbi
 pubmed needs xser
@@ -4502,6 +4757,8 @@ python_ncbi_dbapi includes connect
 python_ncbi_dbapi includes dbapi
 python_ncbi_dbapi includes xncbi
 python_ncbi_dbapi needs dbapi_driver
+python_ncbi_dbapi needs gpipe_alloc
+rcobaltasn_g needs gpipe_alloc
 rcobaltasn_g needs xncbi
 rcobaltasn_g needs xser
 rcobaltasn_g needs xutil
@@ -4521,6 +4778,7 @@ refseq_aln_source needs dbapi
 refseq_aln_source needs dbapi_driver
 refseq_aln_source needs general
 refseq_aln_source needs genome_collection
+refseq_aln_source needs gpipe_alloc
 refseq_aln_source needs medline
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs pub
@@ -4559,6 +4817,7 @@ refseq_aln_source needs xser
 refseq_aln_source needs xutil
 remap needs biblio
 remap needs general
+remap needs gpipe_alloc
 remap needs medline
 remap needs pub
 remap needs seq
@@ -4570,6 +4829,7 @@ remap needs xutil
 remapcli needs biblio
 remapcli needs connect
 remapcli needs general
+remapcli needs gpipe_alloc
 remapcli needs medline
 remapcli needs pub
 remapcli needs remap
@@ -4580,15 +4840,18 @@ remapcli needs xconnect
 remapcli needs xncbi
 remapcli needs xser
 remapcli needs xutil
+sage_mappings needs gpipe_alloc
 sage_mappings needs xncbi
 sage_mappings needs xser
 sage_mappings needs xutil
 sample_asn needs general
+sample_asn needs gpipe_alloc
 sample_asn needs xncbi
 sample_asn needs xser
 sample_asn needs xutil
 scoremat needs biblio
 scoremat needs general
+scoremat needs gpipe_alloc
 scoremat needs medline
 scoremat needs pub
 scoremat needs seq
@@ -4603,6 +4866,7 @@ sdbapi needs connext
 sdbapi needs ct_ftds64
 sdbapi needs dbapi
 sdbapi needs dbapi_driver
+sdbapi needs gpipe_alloc
 sdbapi needs ncbi_xdbapi_ftds
 sdbapi needs tds_ftds64
 sdbapi needs xconnect
@@ -4632,6 +4896,7 @@ sdncbiauth needs generic_db_asn
 sdncbiauth needs generic_db_core
 sdncbiauth needs generic_db_utils
 sdncbiauth needs gensvc_g
+sdncbiauth needs gpipe_alloc
 sdncbiauth needs medline
 sdncbiauth needs mux
 sdncbiauth needs muxex-C_g
@@ -4661,6 +4926,7 @@ sdncbiauth needs xser
 sdncbiauth needs xutil
 seq needs biblio
 seq needs general
+seq needs gpipe_alloc
 seq needs medline
 seq needs pub
 seq needs seqcode
@@ -4668,6 +4934,7 @@ seq needs sequtil
 seq needs xncbi
 seq needs xser
 seq needs xutil
+seqcode needs gpipe_alloc
 seqcode needs xncbi
 seqcode needs xser
 seqcode needs xutil
@@ -4675,6 +4942,7 @@ seqdb needs biblio
 seqdb needs blastdb
 seqdb needs general
 seqdb needs genome_collection
+seqdb needs gpipe_alloc
 seqdb needs medline
 seqdb needs pub
 seqdb needs seq
@@ -4688,6 +4956,7 @@ seqdb needs xser
 seqdb needs xutil
 seqedit needs biblio
 seqedit needs general
+seqedit needs gpipe_alloc
 seqedit needs medline
 seqedit needs pub
 seqedit needs seq
@@ -4702,6 +4971,7 @@ seqmasks_io needs blastdb
 seqmasks_io needs creaders
 seqmasks_io needs general
 seqmasks_io needs genome_collection
+seqmasks_io needs gpipe_alloc
 seqmasks_io needs medline
 seqmasks_io needs pub
 seqmasks_io needs seq
@@ -4717,11 +4987,13 @@ seqmasks_io needs xobjread
 seqmasks_io needs xobjutil
 seqmasks_io needs xser
 seqmasks_io needs xutil
+seqmeta needs gpipe_alloc
 seqmeta needs xncbi
 seqmeta needs xser
 seqmeta needs xutil
 seqset needs biblio
 seqset needs general
+seqset needs gpipe_alloc
 seqset needs medline
 seqset needs pub
 seqset needs seq
@@ -4732,6 +5004,7 @@ seqset needs xser
 seqset needs xutil
 seqsplit needs biblio
 seqsplit needs general
+seqsplit needs gpipe_alloc
 seqsplit needs medline
 seqsplit needs pub
 seqsplit needs seq
@@ -4743,6 +5016,7 @@ seqsplit needs xser
 seqsplit needs xutil
 seqtest needs biblio
 seqtest needs general
+seqtest needs gpipe_alloc
 seqtest needs medline
 seqtest needs pub
 seqtest needs seq
@@ -4751,10 +5025,12 @@ seqtest needs sequtil
 seqtest needs xncbi
 seqtest needs xser
 seqtest needs xutil
+sequtil needs gpipe_alloc
 sequtil needs xncbi
 snputil needs biblio
 snputil needs general
 snputil needs genome_collection
+snputil needs gpipe_alloc
 snputil needs medline
 snputil needs pub
 snputil needs seq
@@ -4766,6 +5042,7 @@ snputil needs xncbi
 snputil needs xobjmgr
 snputil needs xser
 snputil needs xutil
+soap_dataobj needs gpipe_alloc
 soap_dataobj needs xncbi
 soap_dataobj needs xser
 soap_dataobj needs xutil
@@ -4781,6 +5058,7 @@ softparse needs dbconnect
 softparse needs general
 softparse needs geoauth
 softparse needs geomyncbi
+softparse needs gpipe_alloc
 softparse needs medline
 softparse needs ncbi_xdbapi_ftds
 softparse needs pub
@@ -4808,6 +5086,7 @@ spcgi needs dbconnect
 spcgi needs general
 spcgi needs geoauth
 spcgi needs geomyncbi
+spcgi needs gpipe_alloc
 spcgi needs medline
 spcgi needs ncbi_xdbapi_ftds
 spcgi needs pub
@@ -4830,6 +5109,7 @@ spcgi needs xser
 spcgi needs xthrserv
 spcgi needs xutil
 spellsrvbase needs connect
+spellsrvbase needs gpipe_alloc
 spellsrvbase needs txservbase
 spellsrvbase needs xconnect
 spellsrvbase needs xncbi
@@ -4840,6 +5120,7 @@ splitdbasn_g needs tables
 splitdbasncpp_g needs asngendefs
 splitdbasncpp_g needs biblio
 splitdbasncpp_g needs general
+splitdbasncpp_g needs gpipe_alloc
 splitdbasncpp_g needs medline
 splitdbasncpp_g needs pub
 splitdbasncpp_g needs scoremat
@@ -4851,6 +5132,7 @@ splitdbasncpp_g needs xncbi
 splitdbasncpp_g needs xnetblast
 splitdbasncpp_g needs xser
 splitdbasncpp_g needs xutil
+sqlitewrapp needs gpipe_alloc
 sqlitewrapp needs xncbi
 sra-path needs judy
 sra-path needs kfg
@@ -4888,6 +5170,7 @@ sraread needs align-reader
 sraread needs axf
 sraread needs biblio
 sraread needs general
+sraread needs gpipe_alloc
 sraread needs judy
 sraread needs kdb
 sraread needs kfg
@@ -4950,31 +5233,39 @@ sraxf needs srapath
 sraxf needs vdb
 sraxf needs vfs
 ssrvcmn needs connect
+ssrvcmn needs gpipe_alloc
 ssrvcmn needs sssutils
 ssrvcmn needs xconnect
 ssrvcmn needs xncbi
 ssscli needs connect
+ssscli needs gpipe_alloc
 ssscli needs ssrvcmn
 ssscli needs ssssys
 ssscli needs sssutils
 ssscli needs xconnect
 ssscli needs xncbi
 sssdb needs connect
+sssdb needs gpipe_alloc
 sssdb needs ssssys
 sssdb needs sssutils
 sssdb needs xconnect
 sssdb needs xncbi
 ssssys needs connect
+ssssys needs gpipe_alloc
 ssssys needs sssutils
 ssssys needs xconnect
 ssssys needs xncbi
+sssutils needs gpipe_alloc
+ssswww needs gpipe_alloc
 staxupdcmn needs connect
+staxupdcmn needs gpipe_alloc
 staxupdcmn needs ssssys
 staxupdcmn needs sssutils
 staxupdcmn needs xconnect
 staxupdcmn needs xncbi
 submit needs biblio
 submit needs general
+submit needs gpipe_alloc
 submit needs medline
 submit needs pub
 submit needs seq
@@ -4985,6 +5276,7 @@ submit needs xncbi
 submit needs xser
 submit needs xutil
 sv_objects needs general
+sv_objects needs gpipe_alloc
 sv_objects needs xncbi
 sv_objects needs xser
 sv_objects needs xutil
@@ -4993,6 +5285,7 @@ sybdb_ftds64 needs tds_ftds64
 taxon1 needs biblio
 taxon1 needs connect
 taxon1 needs general
+taxon1 needs gpipe_alloc
 taxon1 needs medline
 taxon1 needs pub
 taxon1 needs seq
@@ -5005,6 +5298,7 @@ taxon1 needs xutil
 taxon3 needs biblio
 taxon3 needs connect
 taxon3 needs general
+taxon3 needs gpipe_alloc
 taxon3 needs medline
 taxon3 needs pub
 taxon3 needs seq
@@ -5015,6 +5309,7 @@ taxon3 needs xncbi
 taxon3 needs xser
 taxon3 needs xutil
 taxoscli needs connect
+taxoscli needs gpipe_alloc
 taxoscli needs ssrvcmn
 taxoscli needs ssscli
 taxoscli needs ssssys
@@ -5027,6 +5322,7 @@ taxutl needs blastdb
 taxutl needs connect
 taxutl needs general
 taxutl needs genome_collection
+taxutl needs gpipe_alloc
 taxutl needs medline
 taxutl needs pub
 taxutl needs seq
@@ -5043,19 +5339,24 @@ taxutl needs xser
 taxutl needs xutil
 tea_crypt needs connect
 tea_crypt needs generic_db_utils
+tea_crypt needs gpipe_alloc
 tea_crypt needs tables
 tea_crypt needs xcompress
 tea_crypt needs xconnect
 tea_crypt needs xncbi
 tea_crypt needs xser
 tea_crypt needs xutil
+test_boost needs gpipe_alloc
 test_boost needs xncbi
+test_dll needs gpipe_alloc
+test_mt needs gpipe_alloc
 test_mt needs xncbi
 test_stat_ext needs connect
 test_stat_ext needs connext
 test_stat_ext needs ct_ftds64
 test_stat_ext needs dbapi
 test_stat_ext needs dbapi_driver
+test_stat_ext needs gpipe_alloc
 test_stat_ext needs ncbi_xdbapi_ftds
 test_stat_ext needs tds_ftds64
 test_stat_ext needs xcompress
@@ -5063,40 +5364,52 @@ test_stat_ext needs xconnect
 test_stat_ext needs xconnext
 test_stat_ext needs xncbi
 test_stat_ext needs xutil
+tinyseq needs gpipe_alloc
 tinyseq needs xncbi
 tinyseq needs xser
 tinyseq needs xutil
+tiol needs gpipe_alloc
+trackmgr needs gpipe_alloc
 trackmgr needs xncbi
 trackmgr needs xser
 trackmgr needs xutil
 trackmgrcli needs connect
+trackmgrcli needs gpipe_alloc
 trackmgrcli needs trackmgr
 trackmgrcli needs xconnect
 trackmgrcli needs xncbi
 trackmgrcli needs xser
 trackmgrcli needs xutil
 txclient needs connect
+txclient needs gpipe_alloc
 txclient needs xconnect
 txclient needs xncbi
 txserv includes txservbase
 txserv needs connect
+txserv needs gpipe_alloc
 txserv needs txxmldoc
 txserv needs xcompress
 txserv needs xconnect
 txserv needs xncbi
 txserv needs xutil
 txservbase needs connect
+txservbase needs gpipe_alloc
 txservbase needs xconnect
 txservbase needs xncbi
+txxmldoc needs gpipe_alloc
 txxmldoc needs xcompress
 txxmldoc needs xncbi
 txxmldoc needs xutil
+u2tl needs gpipe_alloc
+uilist needs gpipe_alloc
 uilist needs xncbi
 uilist needs xser
 uilist needs xutil
+valerr needs gpipe_alloc
 valerr needs xncbi
 valerr needs xser
 valerr needs xutil
+valid needs gpipe_alloc
 valid needs xncbi
 valid needs xregexp
 valid needs xser
@@ -5120,6 +5433,7 @@ validate_regions needs dbapi
 validate_regions needs dbapi_driver
 validate_regions needs general
 validate_regions needs genome_collection
+validate_regions needs gpipe_alloc
 validate_regions needs gpipe_common
 validate_regions needs gpipe_objutil
 validate_regions needs id1
@@ -5203,6 +5517,7 @@ validate_regions needs xser
 validate_regions needs xutil
 variation needs biblio
 variation needs general
+variation needs gpipe_alloc
 variation needs medline
 variation needs pub
 variation needs seq
@@ -5282,6 +5597,7 @@ w_aln_crossaln needs esummary
 w_aln_crossaln needs eutils
 w_aln_crossaln needs general
 w_aln_crossaln needs genome_collection
+w_aln_crossaln needs gpipe_alloc
 w_aln_crossaln needs gui_graph
 w_aln_crossaln needs gui_objutils
 w_aln_crossaln needs gui_opengl
@@ -5352,6 +5668,7 @@ w_aln_multi needs esummary
 w_aln_multi needs eutils
 w_aln_multi needs general
 w_aln_multi needs genome_collection
+w_aln_multi needs gpipe_alloc
 w_aln_multi needs gui_objutils
 w_aln_multi needs gui_opengl
 w_aln_multi needs gui_print
@@ -5420,6 +5737,7 @@ w_aln_table needs esummary
 w_aln_table needs eutils
 w_aln_table needs general
 w_aln_table needs genome_collection
+w_aln_table needs gpipe_alloc
 w_aln_table needs gui_objutils
 w_aln_table needs gui_opengl
 w_aln_table needs gui_print
@@ -5486,6 +5804,7 @@ w_data needs esummary
 w_data needs eutils
 w_data needs general
 w_data needs genome_collection
+w_data needs gpipe_alloc
 w_data needs gui_objutils
 w_data needs gui_opengl
 w_data needs gui_print
@@ -5552,6 +5871,7 @@ w_edit needs esummary
 w_edit needs eutils
 w_edit needs general
 w_edit needs genome_collection
+w_edit needs gpipe_alloc
 w_edit needs gui_objutils
 w_edit needs gui_opengl
 w_edit needs gui_print
@@ -5619,6 +5939,7 @@ w_feat_table needs esummary
 w_feat_table needs eutils
 w_feat_table needs general
 w_feat_table needs genome_collection
+w_feat_table needs gpipe_alloc
 w_feat_table needs gui_objutils
 w_feat_table needs gui_opengl
 w_feat_table needs gui_print
@@ -5686,6 +6007,7 @@ w_gap needs eutils
 w_gap needs gbseq
 w_gap needs general
 w_gap needs genome_collection
+w_gap needs gpipe_alloc
 w_gap needs gui_config
 w_gap needs gui_graph
 w_gap needs gui_objects
@@ -5766,6 +6088,7 @@ w_gl needs esummary
 w_gl needs eutils
 w_gl needs general
 w_gl needs genome_collection
+w_gl needs gpipe_alloc
 w_gl needs gui_objutils
 w_gl needs gui_opengl
 w_gl needs gui_print
@@ -5832,6 +6155,7 @@ w_grid_widget needs esummary
 w_grid_widget needs eutils
 w_grid_widget needs general
 w_grid_widget needs genome_collection
+w_grid_widget needs gpipe_alloc
 w_grid_widget needs gui_objutils
 w_grid_widget needs gui_opengl
 w_grid_widget needs gui_print
@@ -5900,6 +6224,7 @@ w_hapmap needs eutils
 w_hapmap needs gbseq
 w_hapmap needs general
 w_hapmap needs genome_collection
+w_hapmap needs gpipe_alloc
 w_hapmap needs gui_config
 w_hapmap needs gui_graph
 w_hapmap needs gui_objects
@@ -5979,6 +6304,7 @@ w_hit_matrix needs esummary
 w_hit_matrix needs eutils
 w_hit_matrix needs general
 w_hit_matrix needs genome_collection
+w_hit_matrix needs gpipe_alloc
 w_hit_matrix needs gui_graph
 w_hit_matrix needs gui_objutils
 w_hit_matrix needs gui_opengl
@@ -6048,6 +6374,7 @@ w_macro_edit needs esummary
 w_macro_edit needs eutils
 w_macro_edit needs general
 w_macro_edit needs genome_collection
+w_macro_edit needs gpipe_alloc
 w_macro_edit needs gui_objutils
 w_macro_edit needs gui_opengl
 w_macro_edit needs gui_print
@@ -6115,6 +6442,7 @@ w_object_list needs eutils
 w_object_list needs gbseq
 w_object_list needs general
 w_object_list needs genome_collection
+w_object_list needs gpipe_alloc
 w_object_list needs gui_objutils
 w_object_list needs gui_opengl
 w_object_list needs gui_print
@@ -6189,6 +6517,7 @@ w_phylo_tree needs eutils
 w_phylo_tree needs fastme
 w_phylo_tree needs general
 w_phylo_tree needs genome_collection
+w_phylo_tree needs gpipe_alloc
 w_phylo_tree needs gui_graph
 w_phylo_tree needs gui_objutils
 w_phylo_tree needs gui_opengl
@@ -6260,6 +6589,7 @@ w_seq needs eutils
 w_seq needs gbseq
 w_seq needs general
 w_seq needs genome_collection
+w_seq needs gpipe_alloc
 w_seq needs gui_objutils
 w_seq needs gui_opengl
 w_seq needs gui_print
@@ -6333,6 +6663,7 @@ w_seq_graphic needs eutils
 w_seq_graphic needs gbseq
 w_seq_graphic needs general
 w_seq_graphic needs genome_collection
+w_seq_graphic needs gpipe_alloc
 w_seq_graphic needs gui_config
 w_seq_graphic needs gui_graph
 w_seq_graphic needs gui_objects
@@ -6411,6 +6742,7 @@ w_seq_text needs esummary
 w_seq_text needs eutils
 w_seq_text needs general
 w_seq_text needs genome_collection
+w_seq_text needs gpipe_alloc
 w_seq_text needs gui_config
 w_seq_text needs gui_objutils
 w_seq_text needs gui_opengl
@@ -6480,6 +6812,7 @@ w_snp_bins needs eutils
 w_snp_bins needs gbseq
 w_snp_bins needs general
 w_snp_bins needs genome_collection
+w_snp_bins needs gpipe_alloc
 w_snp_bins needs gui_config
 w_snp_bins needs gui_graph
 w_snp_bins needs gui_objects
@@ -6560,6 +6893,7 @@ w_snp_filter needs esummary
 w_snp_filter needs eutils
 w_snp_filter needs general
 w_snp_filter needs genome_collection
+w_snp_filter needs gpipe_alloc
 w_snp_filter needs gui_objutils
 w_snp_filter needs gui_opengl
 w_snp_filter needs gui_print
@@ -6627,6 +6961,7 @@ w_snp_ld needs eutils
 w_snp_ld needs gbseq
 w_snp_ld needs general
 w_snp_ld needs genome_collection
+w_snp_ld needs gpipe_alloc
 w_snp_ld needs gui_config
 w_snp_ld needs gui_graph
 w_snp_ld needs gui_objects
@@ -6708,6 +7043,7 @@ w_snp_table needs gbseq
 w_snp_table needs gencoll_client
 w_snp_table needs general
 w_snp_table needs genome_collection
+w_snp_table needs gpipe_alloc
 w_snp_table needs gui_core
 w_snp_table needs gui_framework
 w_snp_table needs gui_objects
@@ -6790,6 +7126,7 @@ w_snp_track needs eutils
 w_snp_track needs gbseq
 w_snp_track needs general
 w_snp_track needs genome_collection
+w_snp_track needs gpipe_alloc
 w_snp_track needs gui_config
 w_snp_track needs gui_graph
 w_snp_track needs gui_objects
@@ -6851,6 +7188,7 @@ w_snp_track needs xutil
 w_snp_utils needs biblio
 w_snp_utils needs general
 w_snp_utils needs genome_collection
+w_snp_utils needs gpipe_alloc
 w_snp_utils needs medline
 w_snp_utils needs pub
 w_snp_utils needs seq
@@ -6884,6 +7222,7 @@ w_taxtree needs esummary
 w_taxtree needs eutils
 w_taxtree needs general
 w_taxtree needs genome_collection
+w_taxtree needs gpipe_alloc
 w_taxtree needs gui_objutils
 w_taxtree needs gui_utils
 w_taxtree needs linkout
@@ -6945,6 +7284,7 @@ w_text_widget needs esummary
 w_text_widget needs eutils
 w_text_widget needs general
 w_text_widget needs genome_collection
+w_text_widget needs gpipe_alloc
 w_text_widget needs gui_objutils
 w_text_widget needs gui_opengl
 w_text_widget needs gui_print
@@ -7011,6 +7351,7 @@ w_wx needs esummary
 w_wx needs eutils
 w_wx needs general
 w_wx needs genome_collection
+w_wx needs gpipe_alloc
 w_wx needs gui_objutils
 w_wx needs gui_opengl
 w_wx needs gui_print
@@ -7070,6 +7411,7 @@ waxf needs vdb
 waxf needs vfs
 waxf needs wkdb
 waxf needs wvdb
+we_cpp needs gpipe_alloc
 we_cpp needs xncbi
 we_cpp needs xser
 we_cpp needs xutil
@@ -7101,6 +7443,7 @@ writedb needs blastdb
 writedb needs creaders
 writedb needs general
 writedb needs genome_collection
+writedb needs gpipe_alloc
 writedb needs medline
 writedb needs pub
 writedb needs seq
@@ -7208,9 +7551,11 @@ wwgsxf needs kurl
 wwgsxf needs srapath
 wwgsxf needs vdb
 wwgsxf needs vfs
+wx_tools needs gpipe_alloc
 wx_tools needs xncbi
 xalgoalignnw needs biblio
 xalgoalignnw needs general
+xalgoalignnw needs gpipe_alloc
 xalgoalignnw needs medline
 xalgoalignnw needs pub
 xalgoalignnw needs seq
@@ -7229,6 +7574,7 @@ xalgoalignsplign needs connect
 xalgoalignsplign needs creaders
 xalgoalignsplign needs general
 xalgoalignsplign needs genome_collection
+xalgoalignsplign needs gpipe_alloc
 xalgoalignsplign needs medline
 xalgoalignsplign needs pub
 xalgoalignsplign needs scoremat
@@ -7270,6 +7616,7 @@ xalgoalignutil needs connect
 xalgoalignutil needs creaders
 xalgoalignutil needs general
 xalgoalignutil needs genome_collection
+xalgoalignutil needs gpipe_alloc
 xalgoalignutil needs medline
 xalgoalignutil needs pub
 xalgoalignutil needs scoremat
@@ -7308,6 +7655,7 @@ xalgoblastdbindex needs connect
 xalgoblastdbindex needs creaders
 xalgoblastdbindex needs general
 xalgoblastdbindex needs genome_collection
+xalgoblastdbindex needs gpipe_alloc
 xalgoblastdbindex needs medline
 xalgoblastdbindex needs pub
 xalgoblastdbindex needs seq
@@ -7327,6 +7675,7 @@ xalgoblastdbindex needs xutil
 xalgoblastdbindex_search needs biblio
 xalgoblastdbindex_search needs general
 xalgoblastdbindex_search needs genome_collection
+xalgoblastdbindex_search needs gpipe_alloc
 xalgoblastdbindex_search needs medline
 xalgoblastdbindex_search needs pub
 xalgoblastdbindex_search needs seq
@@ -7347,6 +7696,7 @@ xalgocontig_assembly needs connect
 xalgocontig_assembly needs creaders
 xalgocontig_assembly needs general
 xalgocontig_assembly needs genome_collection
+xalgocontig_assembly needs gpipe_alloc
 xalgocontig_assembly needs medline
 xalgocontig_assembly needs pub
 xalgocontig_assembly needs scoremat
@@ -7377,6 +7727,7 @@ xalgocontig_assembly needs xutil
 xalgodustmask needs biblio
 xalgodustmask needs general
 xalgodustmask needs genome_collection
+xalgodustmask needs gpipe_alloc
 xalgodustmask needs medline
 xalgodustmask needs pub
 xalgodustmask needs seq
@@ -7392,6 +7743,7 @@ xalgognomon needs biblio
 xalgognomon needs connect
 xalgognomon needs general
 xalgognomon needs genome_collection
+xalgognomon needs gpipe_alloc
 xalgognomon needs medline
 xalgognomon needs pub
 xalgognomon needs seq
@@ -7415,6 +7767,7 @@ xalgophytree needs biotree
 xalgophytree needs fastme
 xalgophytree needs general
 xalgophytree needs genome_collection
+xalgophytree needs gpipe_alloc
 xalgophytree needs medline
 xalgophytree needs pub
 xalgophytree needs seq
@@ -7435,6 +7788,7 @@ xalgosegmask needs composition_adjustment
 xalgosegmask needs connect
 xalgosegmask needs general
 xalgosegmask needs genome_collection
+xalgosegmask needs gpipe_alloc
 xalgosegmask needs medline
 xalgosegmask needs pub
 xalgosegmask needs seq
@@ -7451,6 +7805,7 @@ xalgoseq needs biblio
 xalgoseq needs connect
 xalgoseq needs general
 xalgoseq needs genome_collection
+xalgoseq needs gpipe_alloc
 xalgoseq needs medline
 xalgoseq needs pub
 xalgoseq needs seq
@@ -7474,6 +7829,7 @@ xalgoseqqa needs entrez2
 xalgoseqqa needs entrez2cli
 xalgoseqqa needs general
 xalgoseqqa needs genome_collection
+xalgoseqqa needs gpipe_alloc
 xalgoseqqa needs medline
 xalgoseqqa needs pub
 xalgoseqqa needs seq
@@ -7494,15 +7850,18 @@ xalgoseqqa needs xobjutil
 xalgoseqqa needs xregexp
 xalgoseqqa needs xser
 xalgoseqqa needs xutil
+xalgotext needs gpipe_alloc
 xalgotext needs xcompress
 xalgotext needs xncbi
 xalgotext needs xutil
+xalgovmerge needs gpipe_alloc
 xalgovmerge needs xncbi
 xalgowinmask needs biblio
 xalgowinmask needs blastdb
 xalgowinmask needs creaders
 xalgowinmask needs general
 xalgowinmask needs genome_collection
+xalgowinmask needs gpipe_alloc
 xalgowinmask needs medline
 xalgowinmask needs pub
 xalgowinmask needs seq
@@ -7530,6 +7889,7 @@ xaligndb needs dbapi
 xaligndb needs dbapi_driver
 xaligndb needs general
 xaligndb needs genome_collection
+xaligndb needs gpipe_alloc
 xaligndb needs medline
 xaligndb needs pub
 xaligndb needs scoremat
@@ -7566,6 +7926,7 @@ xaligndb needs xutil
 xalnmgr needs biblio
 xalnmgr needs general
 xalnmgr needs genome_collection
+xalnmgr needs gpipe_alloc
 xalnmgr needs medline
 xalnmgr needs pub
 xalnmgr needs seq
@@ -7582,6 +7943,7 @@ xalnmgr needs xutil
 xalntool needs biblio
 xalntool needs general
 xalntool needs genome_collection
+xalntool needs gpipe_alloc
 xalntool needs medline
 xalntool needs pub
 xalntool needs seq
@@ -7596,6 +7958,7 @@ xalntool needs xobjutil
 xalntool needs xser
 xalntool needs xutil
 xasn needs connect
+xasn needs gpipe_alloc
 xasn needs tables
 xasn needs xhtml
 xasn needs xncbi
@@ -7607,6 +7970,7 @@ xblast needs connect
 xblast needs creaders
 xblast needs general
 xblast needs genome_collection
+xblast needs gpipe_alloc
 xblast needs medline
 xblast needs pub
 xblast needs scoremat
@@ -7645,6 +8009,7 @@ xblastformat needs dbapi_driver
 xblastformat needs gene_info
 xblastformat needs general
 xblastformat needs genome_collection
+xblastformat needs gpipe_alloc
 xblastformat needs id1
 xblastformat needs id2
 xblastformat needs medline
@@ -7697,6 +8062,7 @@ xbma_refiner needs entrez2
 xbma_refiner needs entrez2cli
 xbma_refiner needs general
 xbma_refiner needs genome_collection
+xbma_refiner needs gpipe_alloc
 xbma_refiner needs id1
 xbma_refiner needs id1cli
 xbma_refiner needs medline
@@ -7732,6 +8098,7 @@ xbma_refiner needs xser
 xbma_refiner needs xstruct_dp
 xbma_refiner needs xstruct_util
 xbma_refiner needs xutil
+xbma_refiner_gui needs gpipe_alloc
 xbma_refiner_gui needs wx_tools
 xbma_refiner_gui needs xncbi
 xcd_utils needs biblio
@@ -7747,6 +8114,7 @@ xcd_utils needs entrez2
 xcd_utils needs entrez2cli
 xcd_utils needs general
 xcd_utils needs genome_collection
+xcd_utils needs gpipe_alloc
 xcd_utils needs id1
 xcd_utils needs id1cli
 xcd_utils needs medline
@@ -7783,6 +8151,7 @@ xcddalignview needs biblio
 xcddalignview needs cdd
 xcddalignview needs cn3d
 xcddalignview needs general
+xcddalignview needs gpipe_alloc
 xcddalignview needs medline
 xcddalignview needs mmdb
 xcddalignview needs ncbimime
@@ -7795,8 +8164,10 @@ xcddalignview needs sequtil
 xcddalignview needs xncbi
 xcddalignview needs xser
 xcddalignview needs xutil
+xcgi needs gpipe_alloc
 xcgi needs xncbi
 xcgi needs xutil
+xcgi_redirect needs gpipe_alloc
 xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
 xcgi_redirect needs xncbi
@@ -7804,6 +8175,7 @@ xcgi_redirect needs xutil
 xcleanup needs biblio
 xcleanup needs general
 xcleanup needs genome_collection
+xcleanup needs gpipe_alloc
 xcleanup needs medline
 xcleanup needs pub
 xcleanup needs seq
@@ -7818,16 +8190,21 @@ xcleanup needs xobjutil
 xcleanup needs xregexp
 xcleanup needs xser
 xcleanup needs xutil
+xcommcs needs gpipe_alloc
 xcommcs needs xncbi
+xcompress needs gpipe_alloc
 xcompress needs xncbi
 xcompress needs xutil
 xconnect includes connect
+xconnect needs gpipe_alloc
 xconnect needs xncbi
 xconnext includes connext
 xconnext needs connect
+xconnext needs gpipe_alloc
 xconnext needs xconnect
 xconnext needs xncbi
 xconnserv needs connect
+xconnserv needs gpipe_alloc
 xconnserv needs xconnect
 xconnserv needs xncbi
 xconnserv needs xthrserv
@@ -7838,6 +8215,7 @@ xcontigdb needs dbapi
 xcontigdb needs dbapi_driver
 xcontigdb needs general
 xcontigdb needs genome_collection
+xcontigdb needs gpipe_alloc
 xcontigdb needs medline
 xcontigdb needs ncbi_xdbapi_ftds
 xcontigdb needs pub
@@ -7855,15 +8233,19 @@ xcontigdb needs xobjutil
 xcontigdb needs xser
 xcontigdb needs xutil
 xcser needs connect
+xcser needs gpipe_alloc
 xcser needs tables
 xcser needs xncbi
 xcser needs xser
 xcser needs xutil
 xctools needs connect
+xctools needs gpipe_alloc
 xctools needs tables
 xctools needs xncbi
+xdb needs gpipe_alloc
 xdb needs xncbi
 xfcgi includes xcgi
+xfcgi needs gpipe_alloc
 xfcgi needs xncbi
 xfcgi needs xutil
 xformat needs biblio
@@ -7871,6 +8253,7 @@ xformat needs connect
 xformat needs gbseq
 xformat needs general
 xformat needs genome_collection
+xformat needs gpipe_alloc
 xformat needs medlars
 xformat needs medline
 xformat needs mla
@@ -7896,6 +8279,7 @@ xgdsapi needs connext
 xgdsapi needs ct_ftds64
 xgdsapi needs dbapi
 xgdsapi needs dbapi_driver
+xgdsapi needs gpipe_alloc
 xgdsapi needs ncbi_xdbapi_ftds
 xgdsapi needs tds_ftds64
 xgdsapi needs xncbi
@@ -7906,9 +8290,11 @@ xgdsdata needs dbapi
 xgdsdata needs dbapi_driver
 xgdsdata needs general
 xgdsdata needs geodataset
+xgdsdata needs gpipe_alloc
 xgdsdata needs xncbi
 xgdsdata needs xser
 xgdsdata needs xutil
+xgdsdata_misc needs gpipe_alloc
 xgdsdata_misc needs xncbi
 xgencoll needs align-reader
 xgencoll needs aligndb_reader
@@ -7929,6 +8315,7 @@ xgencoll needs dbapi
 xgencoll needs dbapi_driver
 xgencoll needs general
 xgencoll needs genome_collection
+xgencoll needs gpipe_alloc
 xgencoll needs gpipe_common
 xgencoll needs gpipe_objutil
 xgencoll needs id1
@@ -8029,6 +8416,7 @@ xgencollstats needs gcaccess_utils
 xgencollstats needs gencoll_stats
 xgencollstats needs general
 xgencollstats needs genome_collection
+xgencollstats needs gpipe_alloc
 xgencollstats needs gpipe_common
 xgencollstats needs gpipe_objutil
 xgencollstats needs id1
@@ -8109,6 +8497,7 @@ xgencollstats needs xobjutil
 xgencollstats needs xregexp
 xgencollstats needs xser
 xgencollstats needs xutil
+xgp_manifest needs gpipe_alloc
 xgp_manifest needs xncbi
 xgp_manifest needs xser
 xgp_manifest needs xutil
@@ -8136,6 +8525,7 @@ xgraphiccgi needs esummary
 xgraphiccgi needs eutils
 xgraphiccgi needs general
 xgraphiccgi needs genome_collection
+xgraphiccgi needs gpipe_alloc
 xgraphiccgi needs gui_glmesa
 xgraphiccgi needs gui_objects
 xgraphiccgi needs gui_objutils
@@ -8199,6 +8589,7 @@ xgraphiccgi needs xsvnc
 xgraphiccgi needs xthrserv
 xgraphiccgi needs xutil
 xgridcgi needs connect
+xgridcgi needs gpipe_alloc
 xgridcgi needs xcgi
 xgridcgi needs xconnect
 xgridcgi needs xconnserv
@@ -8213,6 +8604,7 @@ xhgenefetch needs dbapi
 xhgenefetch needs dbapi_driver
 xhgenefetch needs general
 xhgenefetch needs genome_collection
+xhgenefetch needs gpipe_alloc
 xhgenefetch needs homologene
 xhgenefetch needs medline
 xhgenefetch needs pub
@@ -8230,7 +8622,9 @@ xhgenefetch needs xobjmgr
 xhgenefetch needs xobjutil
 xhgenefetch needs xser
 xhgenefetch needs xutil
+xhist needs gpipe_alloc
 xhist needs xncbi
+xhtml needs gpipe_alloc
 xhtml needs xncbi
 xid_estsub needs biblio
 xid_estsub needs connect
@@ -8238,6 +8632,7 @@ xid_estsub needs connext
 xid_estsub needs connssl
 xid_estsub needs dbapi_driver
 xid_estsub needs general
+xid_estsub needs gpipe_alloc
 xid_estsub needs medline
 xid_estsub needs pub
 xid_estsub needs seq
@@ -8254,6 +8649,7 @@ xid_estsub needs xutil
 xid_mapper needs biblio
 xid_mapper needs general
 xid_mapper needs genome_collection
+xid_mapper needs gpipe_alloc
 xid_mapper needs medline
 xid_mapper needs pub
 xid_mapper needs seq
@@ -8271,6 +8667,7 @@ xid_utils needs connext
 xid_utils needs connssl
 xid_utils needs dbapi_driver
 xid_utils needs general
+xid_utils needs gpipe_alloc
 xid_utils needs medline
 xid_utils needs pub
 xid_utils needs seq
@@ -8287,6 +8684,7 @@ xid_utils_noncorelib needs connext
 xid_utils_noncorelib needs connssl
 xid_utils_noncorelib needs dbapi_driver
 xid_utils_noncorelib needs general
+xid_utils_noncorelib needs gpipe_alloc
 xid_utils_noncorelib needs medline
 xid_utils_noncorelib needs pub
 xid_utils_noncorelib needs seq
@@ -8302,10 +8700,13 @@ xid_utils_noncorelib needs xid_utils
 xid_utils_noncorelib needs xncbi
 xid_utils_noncorelib needs xser
 xid_utils_noncorelib needs xutil
+ximage needs gpipe_alloc
 ximage needs xncbi
+xmlwrapp needs gpipe_alloc
 xmvdatacache needs biblio
 xmvdatacache needs connect
 xmvdatacache needs general
+xmvdatacache needs gpipe_alloc
 xmvdatacache needs gui_utils
 xmvdatacache needs mapdata
 xmvdatacache needs mapview
@@ -8327,6 +8728,7 @@ xmvdatacache needs xncbi
 xmvdatacache needs xser
 xmvdatacache needs xutil
 xmyncbi needs connect
+xmyncbi needs gpipe_alloc
 xmyncbi needs txclient
 xmyncbi needs txxmldoc
 xmyncbi needs xcompress
@@ -8335,9 +8737,12 @@ xmyncbi needs xncbi
 xmyncbi needs xutil
 xmyncbi_captcha needs connect
 xmyncbi_captcha needs connext
+xmyncbi_captcha needs gpipe_alloc
 xmyncbi_captcha needs xncbi
+xncbi needs gpipe_alloc
 xnetblast needs biblio
 xnetblast needs general
+xnetblast needs gpipe_alloc
 xnetblast needs medline
 xnetblast needs pub
 xnetblast needs scoremat
@@ -8351,6 +8756,7 @@ xnetblast needs xutil
 xnetblastcli needs biblio
 xnetblastcli needs connect
 xnetblastcli needs general
+xnetblastcli needs gpipe_alloc
 xnetblastcli needs medline
 xnetblastcli needs pub
 xnetblastcli needs scoremat
@@ -8379,6 +8785,7 @@ xngalign needs dbapi_driver
 xngalign needs gene_info
 xngalign needs general
 xngalign needs genome_collection
+xngalign needs gpipe_alloc
 xngalign needs id1
 xngalign needs id2
 xngalign needs medline
@@ -8430,6 +8837,7 @@ xngalign needs xutil
 xobjedit needs biblio
 xobjedit needs general
 xobjedit needs genome_collection
+xobjedit needs gpipe_alloc
 xobjedit needs medline
 xobjedit needs pub
 xobjedit needs seq
@@ -8443,12 +8851,14 @@ xobjedit needs xobjutil
 xobjedit needs xser
 xobjedit needs xutil
 xobjmanip needs general
+xobjmanip needs gpipe_alloc
 xobjmanip needs xncbi
 xobjmanip needs xser
 xobjmanip needs xutil
 xobjmgr needs biblio
 xobjmgr needs general
 xobjmgr needs genome_collection
+xobjmgr needs gpipe_alloc
 xobjmgr needs medline
 xobjmgr needs pub
 xobjmgr needs seq
@@ -8462,6 +8872,7 @@ xobjmgr needs xutil
 xobjread needs biblio
 xobjread needs creaders
 xobjread needs general
+xobjread needs gpipe_alloc
 xobjread needs medline
 xobjread needs pub
 xobjread needs seq
@@ -8475,6 +8886,7 @@ xobjreadex needs biblio
 xobjreadex needs creaders
 xobjreadex needs general
 xobjreadex needs genome_collection
+xobjreadex needs gpipe_alloc
 xobjreadex needs medline
 xobjreadex needs pub
 xobjreadex needs seq
@@ -8495,6 +8907,7 @@ xobjsimple needs connext
 xobjsimple needs dbapi_driver
 xobjsimple needs general
 xobjsimple needs genome_collection
+xobjsimple needs gpipe_alloc
 xobjsimple needs id1
 xobjsimple needs id2
 xobjsimple needs medline
@@ -8521,6 +8934,7 @@ xobjsimple needs xutil
 xobjutil needs biblio
 xobjutil needs general
 xobjutil needs genome_collection
+xobjutil needs gpipe_alloc
 xobjutil needs medline
 xobjutil needs pub
 xobjutil needs seq
@@ -8535,6 +8949,7 @@ xobjutil needs xutil
 xobjwrite needs biblio
 xobjwrite needs general
 xobjwrite needs genome_collection
+xobjwrite needs gpipe_alloc
 xobjwrite needs medline
 xobjwrite needs pub
 xobjwrite needs seq
@@ -8556,6 +8971,7 @@ xomssa needs composition_adjustment
 xomssa needs connect
 xomssa needs general
 xomssa needs genome_collection
+xomssa needs gpipe_alloc
 xomssa needs medline
 xomssa needs omssa
 xomssa needs pepXML
@@ -8574,9 +8990,11 @@ xomssa needs xobjmgr
 xomssa needs xregexp
 xomssa needs xser
 xomssa needs xutil
+xpbacktest needs gpipe_alloc
 xpbacktest needs xncbi
 xportal_auth needs connect
 xportal_auth needs connext
+xportal_auth needs gpipe_alloc
 xportal_auth needs txserv
 xportal_auth needs txservbase
 xportal_auth needs txxmldoc
@@ -8592,6 +9010,7 @@ xprimer needs dbapi_driver
 xprimer needs gene_info
 xprimer needs general
 xprimer needs genome_collection
+xprimer needs gpipe_alloc
 xprimer needs id1
 xprimer needs id2
 xprimer needs medline
@@ -8619,11 +9038,15 @@ xprimer needs xobjmgr
 xprimer needs xobjutil
 xprimer needs xser
 xprimer needs xutil
+xqueryparse needs gpipe_alloc
 xqueryparse needs xncbi
+xregexp needs gpipe_alloc
 xregexp needs xncbi
+xsd_sample_lib needs gpipe_alloc
 xsd_sample_lib needs xncbi
 xsd_sample_lib needs xser
 xsd_sample_lib needs xutil
+xser needs gpipe_alloc
 xser needs xncbi
 xser needs xutil
 xslt_libxml needs biblio
@@ -8632,6 +9055,7 @@ xslt_libxml needs connext
 xslt_libxml needs connssl
 xslt_libxml needs dbapi_driver
 xslt_libxml needs general
+xslt_libxml needs gpipe_alloc
 xslt_libxml needs medline
 xslt_libxml needs pub
 xslt_libxml needs seq
@@ -8649,6 +9073,7 @@ xslt_sablotron needs connext
 xslt_sablotron needs connssl
 xslt_sablotron needs dbapi_driver
 xslt_sablotron needs general
+xslt_sablotron needs gpipe_alloc
 xslt_sablotron needs medline
 xslt_sablotron needs pub
 xslt_sablotron needs seq
@@ -8666,6 +9091,7 @@ xslt_xalan needs connext
 xslt_xalan needs connssl
 xslt_xalan needs dbapi_driver
 xslt_xalan needs general
+xslt_xalan needs gpipe_alloc
 xslt_xalan needs medline
 xslt_xalan needs pub
 xslt_xalan needs seq
@@ -8698,6 +9124,7 @@ xsmall_assembly needs gcaccess_utils
 xsmall_assembly needs gencoll_stats
 xsmall_assembly needs general
 xsmall_assembly needs genome_collection
+xsmall_assembly needs gpipe_alloc
 xsmall_assembly needs gpipe_common
 xsmall_assembly needs gpipe_objutil
 xsmall_assembly needs id1
@@ -8780,18 +9207,22 @@ xsmall_assembly needs xregexp
 xsmall_assembly needs xser
 xsmall_assembly needs xutil
 xsoap needs connect
+xsoap needs gpipe_alloc
 xsoap needs xconnect
 xsoap needs xncbi
 xsoap needs xser
 xsoap needs xutil
 xsoap_server needs connect
+xsoap_server needs gpipe_alloc
 xsoap_server needs xcgi
 xsoap_server needs xconnect
 xsoap_server needs xncbi
 xsoap_server needs xser
 xsoap_server needs xsoap
 xsoap_server needs xutil
+xstruct_dp needs gpipe_alloc
 xstruct_dp needs xncbi
+xstruct_thread needs gpipe_alloc
 xstruct_thread needs xncbi
 xstruct_thread needs xutil
 xstruct_util needs biblio
@@ -8803,6 +9234,7 @@ xstruct_util needs connect
 xstruct_util needs creaders
 xstruct_util needs general
 xstruct_util needs genome_collection
+xstruct_util needs gpipe_alloc
 xstruct_util needs medline
 xstruct_util needs pub
 xstruct_util needs scoremat
@@ -8854,6 +9286,7 @@ xsvcgi needs esummary
 xsvcgi needs eutils
 xsvcgi needs general
 xsvcgi needs genome_collection
+xsvcgi needs gpipe_alloc
 xsvcgi needs gui_objects
 xsvcgi needs gui_objutils
 xsvcgi needs gui_utils
@@ -8942,6 +9375,7 @@ xsvdata needs gencoll_client
 xsvdata needs gene_info
 xsvdata needs general
 xsvdata needs genome_collection
+xsvdata needs gpipe_alloc
 xsvdata needs gui_objects
 xsvdata needs gui_objutils
 xsvdata needs gui_utils
@@ -9028,6 +9462,7 @@ xsvlink needs esummary
 xsvlink needs eutils
 xsvlink needs general
 xsvlink needs genome_collection
+xsvlink needs gpipe_alloc
 xsvlink needs gui_objutils
 xsvlink needs gui_utils
 xsvlink needs linkout
@@ -9090,6 +9525,7 @@ xsvnaa needs esummary
 xsvnaa needs eutils
 xsvnaa needs general
 xsvnaa needs genome_collection
+xsvnaa needs gpipe_alloc
 xsvnaa needs gui_objutils
 xsvnaa needs gui_utils
 xsvnaa needs linkout
@@ -9151,6 +9587,7 @@ xsvnc needs esummary
 xsvnc needs eutils
 xsvnc needs general
 xsvnc needs genome_collection
+xsvnc needs gpipe_alloc
 xsvnc needs gui_objects
 xsvnc needs gui_objutils
 xsvnc needs gui_utils
@@ -9218,6 +9655,7 @@ xsvsearchcgi needs esummary
 xsvsearchcgi needs eutils
 xsvsearchcgi needs general
 xsvsearchcgi needs genome_collection
+xsvsearchcgi needs gpipe_alloc
 xsvsearchcgi needs gui_objects
 xsvsearchcgi needs gui_objutils
 xsvsearchcgi needs gui_utils
@@ -9300,6 +9738,7 @@ xsvsnp needs esummary
 xsvsnp needs eutils
 xsvsnp needs general
 xsvsnp needs genome_collection
+xsvsnp needs gpipe_alloc
 xsvsnp needs gui_objutils
 xsvsnp needs gui_utils
 xsvsnp needs linkout
@@ -9341,15 +9780,18 @@ xsvsnp needs xser
 xsvsnp needs xsvnaa
 xsvsnp needs xutil
 xthrserv needs connect
+xthrserv needs gpipe_alloc
 xthrserv needs xconnect
 xthrserv needs xncbi
 xthrserv needs xutil
+xutil needs gpipe_alloc
 xutil needs xncbi
 xvalidate needs biblio
 xvalidate needs connect
 xvalidate needs gbseq
 xvalidate needs general
 xvalidate needs genome_collection
+xvalidate needs gpipe_alloc
 xvalidate needs medlars
 xvalidate needs medline
 xvalidate needs mla
@@ -9376,4 +9818,5 @@ xvalidate needs xregexp
 xvalidate needs xser
 xvalidate needs xutil
 xxconnect needs connect
+xxconnect needs gpipe_alloc
 xxconnect needs xncbi
