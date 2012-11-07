@@ -78,6 +78,7 @@ public:
     void FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains);
     void CombineCompatibleChains(list<CChain>& chains);
     void CombineChainsForPartialProteins(list<CChain>& chains, const vector<SChainMember*>& pointers);
+    void CreateChainsForPartialProteins(list<CChain>& chains, vector<SChainMember*>& pointers);
 
 private:
     void CutParts(TGeneModelList& clust);
@@ -190,6 +191,8 @@ struct SChainMember
     bool m_postponed;
     bool m_marked_for_deletion;
     bool m_marked_for_retention;
+    bool m_gapped_connection;          // used for gapped proteins
+    int m_fully_connected_to_part;     // used for gapped proteins
 #ifdef _DEBUG
     int m_mem_id;
 #endif
@@ -265,31 +268,22 @@ void SChainMember::MarkExtraCopiesForDeletion(const TSignedSeqRange& cds)
 {
     NON_CONST_ITERATE (TContained, i, m_contained) {
         SChainMember* mi = *i;
-        CGeneModel& algn = *mi->m_align;
-
-        TSignedSeqRange overlap = cds&algn.Limits();
-
-        /*
-        CAlignMap& amap = *mi->m_align_map;
-        bool retain = false;
-        if(overlap == algn.Limits())   // all alignment in cds
-            retain = true;
-        else if(algn.Exons().size() > 1 && Include(overlap, TSignedSeqRange(algn.Exons().front().GetTo(),algn.Exons().back().GetFrom())))   // all introns in cds
-            retain = true;
-        else if(amap.FShiftedLen(overlap, false) > 0.5*amap.FShiftedLen(algn.Limits(), false))  // most of the alignment in cds
-            retain = true;
-        */
-
-        bool retain = Include(cds, algn.ReadingFrame());
-
-        if(retain) {
+        CGeneModel& algni = *mi->m_align;
+        if(Include(cds, algni.ReadingFrame())) {
             mi->m_marked_for_retention = true;
             mi->m_marked_for_deletion = false;
             if (mi->m_copy != 0) {
                 ITERATE(TContained, j, *mi->m_copy) {
                     SChainMember* mj = *j;
-                    if(!mj->m_marked_for_retention)
-                        mj->m_marked_for_deletion = true;
+                    if(mj->m_marked_for_retention)      // already included in cds
+                        continue;
+                    else if(algni.HasStart()) {         // don't delete copy which overrides the start
+                        CGeneModel& algnj = *mj->m_align;
+                        if((algni.Strand() == ePlus && algni.ReadingFrame().GetTo() == algnj.ReadingFrame().GetTo()) ||
+                           (algni.Strand() == eMinus && algni.ReadingFrame().GetFrom() == algnj.ReadingFrame().GetFrom()))
+                            continue;
+                    }
+                    mj->m_marked_for_deletion = true;
                 }
             }
         }
@@ -846,6 +840,115 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 
 #define START_BONUS 600
 
+bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, int oep) {
+
+    const CGeneModel& ai = *mi.m_align;
+    const CGeneModel& aj = *mj.m_align;
+
+
+    if(aj.Strand() != ai.Strand())
+        return false;
+
+    const CCDSInfo& ai_cds_info = ai.GetCdsInfo();
+    TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
+
+    const CCDSInfo& aj_cds_info = aj.GetCdsInfo();
+    TSignedSeqRange aj_rf = aj_cds_info.Start()+aj_cds_info.ReadingFrame()+aj_cds_info.Stop();
+ 
+    switch(mi.m_type) {
+    case eCDS: 
+        if(mj.m_type == eRightUTR) 
+            return false;
+        else if(mj.m_type == eLeftUTR && (!ai.LeftComplete() || (aj.Limits()&ai_rf).GetLength() > 5))
+            return false;
+        else 
+            break;
+    case eLeftUTR: 
+        if(mj.m_type != eLeftUTR) 
+            return false;
+        else 
+            break;
+    case eRightUTR:
+        if(mj.m_type == eLeftUTR) 
+            return false;
+        else if(mj.m_type == eCDS && (!aj.RightComplete() || (ai.Limits()&aj_rf).GetLength() > 5))
+            return false;
+        else 
+            break;
+    default:
+        return false;    
+    }
+
+    switch(ai.MutualExtension(aj)) {
+    case 0:              // not compatible 
+        return false;
+    case 1:              // no introns in intersection
+        if(mi.m_type == eCDS && mj.m_type == eCDS)  // no intersecting limit for coding 
+            break;
+        if ((ai.Limits() & aj.Limits()).GetLength() < oep) 
+            return false;
+        break;
+    default:             // one or more introns in intersection 
+        break;
+    }
+            
+    int cds_overlap = 0;
+
+    if(mi.m_type == eCDS && mj.m_type == eCDS) {
+        int genome_overlap =  ai_rf.GetLength()+aj_rf.GetLength()-(ai_rf+aj_rf).GetLength();
+        if(genome_overlap < 0)
+            return false;
+
+        TSignedSeqRange max_cds_limits = ai_cds_info.MaxCdsLimits() & aj_cds_info.MaxCdsLimits();
+
+        if (!Include(max_cds_limits, ExtendedMaxCdsLimits(ai) + ExtendedMaxCdsLimits(aj)))
+            return false;
+
+        if((Include(ai_rf,aj_rf) || Include(aj_rf,ai_rf)) && ai_rf.GetFrom() != aj_rf.GetFrom() && ai_rf.GetTo() != aj_rf.GetTo())
+            return false;
+        
+        cds_overlap = mi.m_align_map->FShiftedLen(ai_rf&aj_rf,false);
+        if(cds_overlap%3 != 0)
+            return false;
+
+        if(ai.HasStart() && aj.HasStart())
+            cds_overlap += START_BONUS; 
+    }
+
+    delta_cds = mi.m_cds-cds_overlap;
+
+    TContained::const_iterator endsp = upper_bound(mi.m_contained.begin(),mi.m_contained.end(),&mj,LeftOrder()); // first alignmnet contained in ai and outside aj
+    delta_num = 0;
+    for(TContained::const_iterator ic = endsp; ic != mi.m_contained.end(); ++ic) 
+        delta_num += (*ic)->m_align->Weight();
+
+    return true;
+}
+
+void LRIinit(SChainMember& mi) {
+    CGeneModel& ai = *mi.m_align;
+    const CCDSInfo& ai_cds_info = ai.GetCdsInfo();
+    TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
+
+    mi.m_num = 0;
+    ITERATE(TContained, ic, mi.m_contained)
+        mi.m_num += (*ic)->m_align->Weight();
+    mi.m_cds = mi.m_align_map->FShiftedLen(ai_rf,false);
+    if(ai.HasStart()) {
+        mi.m_cds += START_BONUS;
+        _ASSERT((ai.Strand() == ePlus && ai_cds_info.Start().GetFrom() == ai_cds_info.MaxCdsLimits().GetFrom()) || 
+                (ai.Strand() == eMinus && ai_cds_info.Start().GetTo() == ai_cds_info.MaxCdsLimits().GetTo()));
+    }
+
+    mi.m_left_member = 0;
+    mi.m_left_num = mi.m_num;
+    mi.m_left_cds =  mi.m_cds;
+    sort(mi.m_contained.begin(),mi.m_contained.end(),LeftOrderD());
+
+    mi.m_gapped_connection = false;
+    mi.m_fully_connected_to_part = -1;
+}
+
 void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
 {
     sort(pointers.begin(),pointers.end(),LeftOrderD());
@@ -855,25 +958,8 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
     NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
-        const CCDSInfo& ai_cds_info = ai.GetCdsInfo();
-        TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
-        TSignedSeqRange ai_limits = ai.Limits();
-
-        mi.m_num = 0;
-        ITERATE(TContained, ic, mi.m_contained)
-            mi.m_num += (*ic)->m_align->Weight();
-        mi.m_cds = mi.m_align_map->FShiftedLen(ai_rf,false);
-        if(ai.HasStart()) {
-            mi.m_cds += START_BONUS;
-            _ASSERT((ai.Strand() == ePlus && ai_cds_info.Start().GetFrom() == ai_cds_info.MaxCdsLimits().GetFrom()) || 
-            (ai.Strand() == eMinus && ai_cds_info.Start().GetTo() == ai_cds_info.MaxCdsLimits().GetTo()));
-        }
-
-        mi.m_left_member = 0;
-        mi.m_left_num = mi.m_num;
-        mi.m_left_cds =  mi.m_cds;
-        sort(mi.m_contained.begin(),mi.m_contained.end(),LeftOrderD());
-       
+        LRIinit(mi);
+        
         TIVec::iterator lb = lower_bound(right_ends.begin(),right_ends.end(),ai.Limits().GetFrom());
         vector<SChainMember*>::iterator jfirst = pointers.begin();
         if(lb != right_ends.end())
@@ -882,91 +968,17 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
             SChainMember& mj = **j;
             CGeneModel& aj = *mj.m_align;
 
-            if(aj.Strand() != ai.Strand())
-                continue;
-
-            const CCDSInfo& aj_cds_info = aj.GetCdsInfo();
-            TSignedSeqRange aj_rf = aj_cds_info.Start()+aj_cds_info.ReadingFrame()+aj_cds_info.Stop();
- 
-            switch(mi.m_type)
-            {
-                case eCDS: 
-                    if(mj.m_type == eRightUTR) 
-                        continue;
-                    else if(mj.m_type == eLeftUTR && (!ai.LeftComplete() || (aj.Limits()&ai_rf).GetLength() > 5))
-                        continue;
-                    else 
-                        break;
-                case eLeftUTR: 
-                    if(mj.m_type != eLeftUTR) 
-                        continue;
-                    else 
-                        break;
-                case eRightUTR:
-                    if(mj.m_type == eLeftUTR) 
-                        continue;
-                    else if(mj.m_type == eCDS && (!aj.RightComplete() || (ai.Limits()&aj_rf).GetLength() > 5))
-                        continue;
-                    else 
-                        break;
-                default:
-                    continue;    
-            }
-
-            switch(ai.MutualExtension(aj))
-            {
-                case 0:              // not compatible 
-                    continue;
-                case 1:              // no introns in intersection
-                {
-                    if(mi.m_type == eCDS && mj.m_type == eCDS)  // no intersecting limit for coding
-                        break;
-
-                    int intersection_len = (ai_limits & aj.Limits()).GetLength(); 
-                    if (intersection_len < intersect_limit) continue;
-                    break;
+            int delta_cds;
+            double delta_num;
+            if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, intersect_limit)) {
+                int newcds = mj.m_left_cds+delta_cds;
+                double newnum = mj.m_left_num+delta_num;
+                if (newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
+                    mi.m_left_cds = newcds;
+                    mi.m_left_num = newnum;
+                    mi.m_left_member = &mj;
+                    _ASSERT(aj.Limits().GetFrom() < ai.Limits().GetFrom() && aj.Limits().GetTo() < ai.Limits().GetTo());
                 }
-                default:             // one or more introns in intersection
-                    break;
-            }
-            
-            int cds_overlap = 0;
-
-            if(mi.m_type == eCDS && mj.m_type == eCDS) {
-                int genome_overlap =  ai_rf.GetLength()+aj_rf.GetLength()-(ai_rf+aj_rf).GetLength();
-                if(genome_overlap < 0)
-                    continue;
-
-                TSignedSeqRange max_cds_limits = ai_cds_info.MaxCdsLimits() & aj_cds_info.MaxCdsLimits();
-
-                if (!Include(max_cds_limits, ExtendedMaxCdsLimits(ai) + ExtendedMaxCdsLimits(aj)))
-                    continue;
-
-                if((Include(ai_rf,aj_rf) || Include(aj_rf,ai_rf)) && ai_rf.GetFrom() != aj_rf.GetFrom() && ai_rf.GetTo() != aj_rf.GetTo())
-                    continue;
-
-                cds_overlap = mi.m_align_map->FShiftedLen(ai_rf&aj_rf,false);
-                if(cds_overlap%3 != 0)
-                    continue;
-
-                if(ai.HasStart() && aj.HasStart())
-                    cds_overlap += START_BONUS; 
-            }
-
-            int delta_cds = mi.m_cds-cds_overlap;
-            int newcds = mj.m_left_cds+delta_cds;
-
-            TContained::iterator endsp = upper_bound(mi.m_contained.begin(),mi.m_contained.end(),&mj,LeftOrder()); // first alignmnet contained in ai and outside aj
-            double delta = 0;
-            for(TContained::iterator ic = endsp; ic != mi.m_contained.end(); ++ic) 
-                delta += (*ic)->m_align->Weight();
-            double newnum = mj.m_left_num+delta;
-
-            if(newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
-                mi.m_left_cds = newcds;
-                mi.m_left_num = newnum;
-                mi.m_left_member = &mj;
-                _ASSERT(aj.Limits().GetFrom() < ai.Limits().GetFrom() && aj.Limits().GetTo() < ai.Limits().GetTo());
             }    
         }
     }
@@ -1226,6 +1238,8 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         }
     }
 
+    CreateChainsForPartialProteins(chains, pointers);
+
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
 
     LeftRight(pointers);
@@ -1262,7 +1276,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         //        mi.MarkIncludedAllContainedAlignments(chain.Limits());
     }
 
-    CombineChainsForPartialProteins(chains, coding_pointers);
+    //    CombineChainsForPartialProteins(chains, coding_pointers);
     CombineCompatibleChains(chains);
 
     NON_CONST_ITERATE(list<CChain>, i, chains) {
@@ -1277,6 +1291,16 @@ struct AlignSeqOrder
     bool operator()(const CGeneModel* ap, const CGeneModel* bp)
     {
         if (ap->Limits().GetFrom() != bp->Limits().GetFrom()) return ap->Limits().GetFrom() < bp->Limits().GetFrom();
+        if (ap->Limits().GetTo() != bp->Limits().GetTo()) return ap->Limits().GetTo() > bp->Limits().GetTo();
+        return ap->ID() < bp->ID(); // to make sort deterministic
+    }
+};
+
+struct AntiAlignSeqOrder
+{
+    bool operator()(const CGeneModel* ap, const CGeneModel* bp)
+    {
+        if (ap->Limits().GetFrom() != bp->Limits().GetFrom()) return ap->Limits().GetFrom() > bp->Limits().GetFrom();
         if (ap->Limits().GetTo() != bp->Limits().GetTo()) return ap->Limits().GetTo() > bp->Limits().GetTo();
         return ap->ID() < bp->ID(); // to make sort deterministic
     }
@@ -1300,6 +1324,238 @@ struct RightEndOrder
         return ap->ID() < bp->ID(); // to make sort deterministic
     }
 };
+
+void CChainer::CChainerImpl::CreateChainsForPartialProteins(list<CChain>& chains, vector<SChainMember*>& pointers) {
+
+    sort(pointers.begin(),pointers.end(),LeftOrderD());
+
+    typedef map<Int8, vector<CGeneModel*> > TIdChainMembermap;
+    TIdChainMembermap protein_parts;
+    TIVec right_ends(pointers.size());
+    vector<SChainMember> no_gap_members(pointers.size());   // helper chain members; will be used for gap filling optimisation
+    for(int k = 0; k < (int)pointers.size(); ++k) {
+        SChainMember& mi = *pointers[k];
+        right_ends[k] = mi.m_align->Limits().GetTo();
+        no_gap_members[k] = mi;
+        if((mi.m_align->Type() & CGeneModel::eProt) && (mi.m_copy == 0 || mi.m_align->HasStart()))  // only prots with start can have copies
+            protein_parts[mi.m_align->ID()].push_back(mi.m_align);
+    }
+
+    typedef multimap< int,vector<CGeneModel*>*,greater<int> > TLenChainMemberPmap;
+    TLenChainMemberPmap gapped_sorted_protein_parts;
+    NON_CONST_ITERATE(TIdChainMembermap, ip, protein_parts) {
+        vector<CGeneModel*>& parts = ip->second;
+        if(parts.size() > 1) {
+            sort(parts.begin(),parts.end(),AlignSeqOrder());
+            int align_len = 0;
+            ITERATE(vector<CGeneModel*>, k, parts)
+                align_len += (*k)->AlignLen();
+            gapped_sorted_protein_parts.insert(make_pair(align_len,&parts));
+        }
+    }
+
+    NON_CONST_ITERATE(TLenChainMemberPmap, ip, gapped_sorted_protein_parts) {  // make chains starting from long proteins
+        vector<CGeneModel*>& parts = *ip->second;
+        Int8 id = parts.front()->ID();
+
+        CGeneModel palign(parts.front()->Strand(), id, CGeneModel::eProt);
+        ITERATE(vector<CGeneModel*>, k, parts)
+            palign.Extend(**k);
+        m_gnomon->GetScore(palign);
+
+        bool connected = false;
+        ITERATE(list<CChain>, k, chains) {
+            if(palign.Strand() == k->Strand() && palign.IsSubAlignOf(*k)) {
+                connected = true;
+                break;
+            }
+        }
+        if(connected)
+            continue;
+
+
+        SChainMember* best_right = 0;
+
+        int first_member = pointers.size()-1;
+        int leftpos = palign.Limits().GetFrom();
+        for(int i = pointers.size()-1; i >= 0; --i) {
+            TSignedSeqRange limi = pointers[i]->m_align->Limits();
+            if(limi.GetTo() >= leftpos) {
+                first_member = i;
+                leftpos = min(leftpos,limi.GetFrom());
+            } else {
+                break;
+            }
+        }
+
+        int last_member = 0;
+        int rightpos = palign.Limits().GetTo();
+        for(int i = 0; i < (int)pointers.size(); ++i) {
+            TSignedSeqRange limi = pointers[i]->m_align->Limits();
+            if(Include(limi,rightpos)) {
+                last_member = i;
+                rightpos = max(rightpos,limi.GetTo());
+            }
+        }
+
+        for(int i = first_member; i <= last_member; ++i) {
+            SChainMember& mi = *pointers[i];                   // best connection maybe gapped
+            SChainMember& mi_no_gap = no_gap_members[i];       // best not gapped connection (if any)
+            CGeneModel& ai = *mi.m_align;
+            LRIinit(mi);
+            LRIinit(mi_no_gap);
+
+            if(ai.Strand() != palign.Strand())
+                continue;
+
+            int part_to_connect =  parts.size()-1;
+            while(part_to_connect >= 0 && ai.Limits().GetFrom() <= parts[part_to_connect]->Limits().GetFrom())
+                --part_to_connect;
+
+            if(part_to_connect >=0 && ai.Limits().GetFrom() < parts[part_to_connect]->Limits().GetTo() && !parts[part_to_connect]->isCompatible(ai))  // overlaps with part but not compatible
+                continue;
+
+            bool compatible_with_included_parts = true;
+            int last_included_part = -1;
+            bool includes_first_part = false;
+            for(int p = part_to_connect+1; p < (int)parts.size(); ++p) {
+                if(Include(ai.Limits(),parts[p]->Limits())) {
+                    bool found = false;
+                    ITERATE(TContained, ic, mi.m_contained) {
+                        if((*ic)->m_align->ID() == id && (*ic)->m_align->Limits() == parts[p]->Limits()) {
+                            found = true;
+                            last_included_part = p;
+                            if(p == 0)
+                                includes_first_part = true;
+                            break;
+                        }
+                    }
+                    if(!found) {
+                        compatible_with_included_parts = false;
+                        break;
+                    }
+                } else if(ai.Limits().IntersectingWith(parts[p]->Limits())) {
+                    if(!parts[p]->isCompatible(ai)) {
+                        compatible_with_included_parts = false;
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            if(!compatible_with_included_parts)
+                continue;
+
+            if(includes_first_part) {
+                mi.m_fully_connected_to_part = last_included_part;
+                mi_no_gap.m_fully_connected_to_part = last_included_part;
+            }
+
+            TIVec::iterator lb = lower_bound(right_ends.begin(),right_ends.end(),(part_to_connect >= 0 ? parts[part_to_connect]->Limits().GetTo() : ai.Limits().GetFrom()));
+            int jfirst = 0;
+            if(lb != right_ends.end())
+                jfirst = lb-right_ends.begin(); // skip all on the left side
+
+            for(int j = jfirst; j < i; ++j) {
+                SChainMember& mj = *pointers[j];                   // best connection maybe gapped
+                SChainMember& mj_no_gap = no_gap_members[j];       // best not gapped connection (if any)
+                CGeneModel& aj = *mj.m_align;
+
+                if( ai.Strand() != aj.Strand())
+                    continue;
+
+                if(part_to_connect >= 0 && mj.m_fully_connected_to_part != part_to_connect)   // alignmnet is not connected to all previous parts
+                    continue;
+
+                if(ai.Limits().GetFrom() > aj.Limits().GetTo() && part_to_connect >= 0 && part_to_connect < (int)parts.size()-1 &&       // gap is not closed
+                   mj_no_gap.m_fully_connected_to_part == part_to_connect &&                                                             // no additional gap
+                   mi.m_type == eCDS && mj.m_type == eCDS &&
+                   aj.GetCdsInfo().MaxCdsLimits().GetTo() == TSignedSeqRange::GetWholeTo() && 
+                   ai.GetCdsInfo().MaxCdsLimits().GetFrom() == TSignedSeqRange::GetWholeFrom()) {                                        // reading frame not interrupted 
+                    
+#define PGAP_PENALTY 120
+
+                    int newcds = mj_no_gap.m_left_cds+mi.m_cds - PGAP_PENALTY;
+                    double newnum = mj_no_gap.m_left_num+mi.m_num; 
+
+                    if(mi.m_left_member == 0 || newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
+                        mi.m_left_cds = newcds;
+                        mi.m_left_num = newnum;
+                        mi.m_left_member = &mj_no_gap;
+                        mi.m_gapped_connection = true;
+                        mi.m_fully_connected_to_part = part_to_connect;
+                    }
+                } else {
+                    int delta_cds;
+                    double delta_num;
+                    if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, intersect_limit)) {      // i and j connected continuosly
+                        int newcds = mj.m_left_cds+delta_cds;
+                        double newnum = mj.m_left_num+delta_num;
+                        if (mi.m_left_member == 0 || newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
+                            mi.m_left_cds = newcds;
+                            mi.m_left_num = newnum;
+                            mi.m_gapped_connection = mj.m_gapped_connection;
+                            mi.m_left_member = &mj;
+                            mi.m_fully_connected_to_part = part_to_connect;
+                            if(!mi.m_gapped_connection)
+                                mi_no_gap = mi; 
+                        } else if(mj_no_gap.m_fully_connected_to_part == part_to_connect) {
+                            newcds = mj_no_gap.m_left_cds+delta_cds;
+                            newnum = mj_no_gap.m_left_num+delta_num;
+                            if (mi_no_gap.m_left_member == 0 || newcds > mi_no_gap.m_left_cds || (newcds == mi_no_gap.m_left_cds && newnum > mi_no_gap.m_left_num)) {
+                                mi_no_gap.m_left_cds = newcds;
+                                mi_no_gap.m_left_num = newnum;
+                                mi_no_gap.m_left_member = &mj_no_gap;
+                                mi_no_gap.m_fully_connected_to_part = part_to_connect;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(mi.m_left_member != 0 && last_included_part >= 0) {
+                mi.m_fully_connected_to_part = last_included_part;
+                mi.m_gapped_connection = false;
+                mi_no_gap = mi;
+            }
+
+            if(mi.m_fully_connected_to_part == (int)parts.size()-1) {   // includes all parts
+                if(best_right == 0 || (mi.m_left_cds >  best_right->m_left_cds || (mi.m_left_cds ==  best_right->m_left_cds && mi.m_left_num >  best_right->m_left_num)) ) 
+                    best_right = &mi;
+            }
+        }
+
+        _ASSERT(best_right != 0);
+
+        TGeneModelSet chain_alignments;
+        best_right->CollectAllContainedAlignments(chain_alignments);
+        chain_alignments.insert(&palign);
+        CChain chain(chain_alignments);
+        remove(chain.m_members.begin(),chain.m_members.end(),&palign);
+        chain.CalculatedSupportAndWeightFromMembers();
+        m_gnomon->GetScore(chain);
+        chain.ClipToCompleteAlignment(CGeneModel::eCap);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
+        string connected_proteins = orig_aligns[palign.ID()]->TargetAccession();
+
+        /*
+        map< Int8,set<TSignedSeqRange> > included_parts;
+        ITERATE(vector<CGeneModel*>, im, chain.m_members)
+            included_parts[(*im)->ID()].insert((*im)->Limits());
+        ITERATE(TLenChainMemberPmap, ipp, gapped_sorted_protein_parts) {
+            Int8 idd = ipp->second->front()->ID();
+            if(idd != palign.ID() && ipp->second->size() == included_parts[idd].size()) {
+                connected_proteins += ","+orig_aligns[idd]->TargetAccession();
+            }
+        }
+        chain.AddComment("Connected protein(s) "+connected_proteins);
+        */
+
+        chains.push_back(chain);
+    }
+}
 
 void CChainer::CChainerImpl::CombineChainsForPartialProteins(list<CChain>& chains, const vector<SChainMember*>& apointers) {
 
@@ -1449,6 +1705,7 @@ void CChainer::CChainerImpl::CombineChainsForPartialProteins(list<CChain>& chain
         combined_chain.m_members = members;
         combined_chain.CalculatedSupportAndWeightFromMembers();
         m_gnomon->GetScore(combined_chain);
+        combined_chain.AddComment("Connected protein "+orig_aligns[align.ID()]->TargetAccession());
         chains.push_front(combined_chain);
     }
 }
@@ -1526,7 +1783,26 @@ CChain::CChain(const TGeneModelSet& chain_alignments)
     EStrand strand = m_members.front()->Strand();
     SetStrand(strand);
 
+    vector<CGeneModel*> not_placed;
     ITERATE (vector<CGeneModel*>, it, m_members) {
+        const CGeneModel& align = **it;
+        if(Exons().empty() || this->isCompatible(align))
+            Extend(align, false);
+        else
+            not_placed.push_back(*it);
+    }
+
+    vector<CGeneModel*> not_placed_again;
+    sort(not_placed.begin(),not_placed.end(),AntiAlignSeqOrder());
+    ITERATE (vector<CGeneModel*>, it, not_placed) {
+        const CGeneModel& align = **it;
+        if(this->isCompatible(align))
+            Extend(align, false);
+        else
+            not_placed_again.push_back(*it);
+    }
+
+    ITERATE (vector<CGeneModel*>, it, not_placed_again) {
         const CGeneModel& align = **it;
         Extend(align, false);
     }
