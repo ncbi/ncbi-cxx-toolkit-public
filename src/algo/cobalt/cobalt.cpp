@@ -733,10 +733,6 @@ CMultiAligner::TStatus CMultiAligner::Run()
         status = eInternalError;
     }
 
-    if (status == eSuccess && IsMessage()) {
-        status = eWarnings;
-    }
-
     return (TStatus)status;
 }
 

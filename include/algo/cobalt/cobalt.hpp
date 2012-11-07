@@ -76,7 +76,6 @@ public:
     /// Return status
     enum EStatus {
         eSuccess = 0,   ///< Alignment successfully completed
-        eWarnings = 1,  ///< Alignment completed with warnings
         eOptionsError,  ///< Error related to options occured
         eQueriesError,  ///< Error related to query sequences occured
         eDatabaseError, ///< Error related to RPS database occured

@@ -916,7 +916,7 @@ BOOST_AUTO_TEST_CASE(TestResultsForMaxClusterDiam)
 
     //Bad input file - there are two exactly same sequences
 
-    BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eWarnings);
+    BOOST_REQUIRE_EQUAL(status, (CMultiAligner::TStatus)CMultiAligner::eSuccess);
     BOOST_CHECK((int)m_Aligner->GetMessages().size() > 0);
 
     s_TestResults(*m_Aligner);
@@ -993,8 +993,7 @@ BOOST_AUTO_TEST_CASE(TestTwoSequences)
     m_Aligner->SetQueries(queries, m_Scope);
     
     CMultiAligner::TStatus status = m_Aligner->Run();
-    BOOST_CHECK(status == CMultiAligner::eSuccess
-                || status == CMultiAligner::eWarnings);
+    BOOST_CHECK(status == CMultiAligner::eSuccess);
     s_TestResults(*m_Aligner);
 
     // case with two clusters
@@ -1002,8 +1001,7 @@ BOOST_AUTO_TEST_CASE(TestTwoSequences)
     m_Aligner.Reset(new CMultiAligner(m_Options));
     m_Aligner->SetQueries(queries, m_Scope);
     status = m_Aligner->Run();
-    BOOST_CHECK(status == CMultiAligner::eSuccess
-                || status == CMultiAligner::eWarnings);
+    BOOST_CHECK(status == CMultiAligner::eSuccess);
     s_TestResults(*m_Aligner);
 }
 

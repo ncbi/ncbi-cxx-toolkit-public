@@ -568,22 +568,16 @@ int CMultiApplication::Run(void)
         aligner.SetInputMSAs(*msa1, *msa2, repr1, repr2, scope);
     }
 
+    // write error and/or warning messages
     CMultiAligner::TStatus status = aligner.Run();
-
-    // If aligner returns with error status then write messages and exit
-    if (status > CMultiAligner::eWarnings) {
-        ITERATE(vector<string>, it, aligner.GetMessages()) {
-            NcbiCerr << "Error: " << *it << NcbiEndl;
-        }
-
-        return 1;
+    string msg = status != CMultiAligner::eSuccess ? "Error: " : "Warning: ";
+    ITERATE(vector<string>, it, aligner.GetMessages()) {
+        NcbiCerr << msg << *it << NcbiEndl;
     }
 
-    // If aligner returns with warning status then write messeges and proceed
-    if (status == CMultiAligner::eWarnings) {
-        ITERATE(vector<string>, it, aligner.GetMessages()) {
-            NcbiCerr << "Warning: " << *it << NcbiEndl;
-        }
+    // If aligner returns with error status then exit
+    if (status != CMultiAligner::eSuccess) {
+        return status;
     }
 
     sequence::CDeflineGenerator defline_gen;
