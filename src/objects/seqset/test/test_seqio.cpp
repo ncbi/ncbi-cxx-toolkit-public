@@ -85,9 +85,11 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
             string ref_name = dir+name+ext[out_i];
             string out_name = ref_name+".out";
-            auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
-                                                              fmt[out_i]));
-            *out << *obj;
+            {
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
+                                                                  fmt[out_i]));
+                *out << *obj;
+            }
             if ( fmt[out_i] == eSerial_AsnBinary ) {
                 BOOST_REQUIRE(CFile(out_name).Compare(ref_name));
             }
@@ -160,9 +162,11 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
             string ref_name = dir+name+ext[out_i];
             string out_name = ref_name+".out";
-            auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
-                                                              fmt[out_i]));
-            *out << *obj;
+            {
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
+                                                                  fmt[out_i]));
+                *out << *obj;
+            }
             if ( fmt[out_i] == eSerial_AsnBinary ) {
                 BOOST_REQUIRE(CFile(out_name).Compare(ref_name));
             }
