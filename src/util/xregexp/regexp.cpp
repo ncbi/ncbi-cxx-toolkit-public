@@ -100,7 +100,7 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
 }
 
 
-CRegexp::CRegexp(const string& pattern, TCompile flags)
+CRegexp::CRegexp(CTempStringEx pattern, TCompile flags)
     : m_PReg(NULL), m_Extra(NULL), m_NumFound(0)
 {
     Set(pattern, flags);
@@ -114,7 +114,7 @@ CRegexp::~CRegexp()
 }
 
 
-void CRegexp::Set(const string& pattern, TCompile flags)
+void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 {
     if (m_PReg != NULL) {
         (*pcre_free)(m_PReg);
@@ -123,10 +123,14 @@ void CRegexp::Set(const string& pattern, TCompile flags)
     int err_offset;
     int x_flags = s_GetRealCompileFlags(flags);
 
-    m_PReg = pcre_compile(pattern.c_str(), x_flags, &err, &err_offset, NULL);
+    if ( pattern.HasZeroAtEnd() ) {
+        m_PReg = pcre_compile(pattern.data(), x_flags, &err, &err_offset, NULL);
+    } else {
+        m_PReg = pcre_compile(string(pattern).c_str(), x_flags, &err, &err_offset, NULL);
+    }
     if (m_PReg == NULL) {
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
-                   pattern + "' failed: " + err);
+                   string(pattern) + "' failed: " + err);
     }
     m_Extra = pcre_study((pcre*)m_PReg, 0, &err);
 }
@@ -140,7 +144,7 @@ void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
     if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
         dst.erase();
     } else {
-        dst.assign(str.data()+start, end - start);
+        dst.assign(str.data() + start, end - start);
     }
 }
 
@@ -153,12 +157,8 @@ string CRegexp::GetSub(CTempString str, size_t idx) const
 }
 
 
-string CRegexp::GetMatch(
-    CTempString   str,
-    size_t        offset,
-    size_t        idx,
-    TMatch        flags,
-    bool          noreturn)
+string CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
+                         TMatch flags, bool noreturn)
 {
     int x_flags = s_GetRealMatchFlags(flags);
     m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
@@ -183,7 +183,7 @@ bool CRegexp::IsMatch(CTempString str, TMatch flags)
 }
 
 
-string CRegexp::Escape(const string& str)
+string CRegexp::Escape(CTempString str)
 {
     // Find first special character
     SIZE_TYPE prev = 0;
@@ -211,7 +211,7 @@ string CRegexp::Escape(const string& str)
 }
 
 
-string CRegexp::WildcardToRegexp(const string& mask)
+string CRegexp::WildcardToRegexp(CTempString mask)
 {
     // Find first special character
     SIZE_TYPE prev = 0;
@@ -252,28 +252,29 @@ string CRegexp::WildcardToRegexp(const string& mask)
 //  CRegexpUtil
 //
 
-CRegexpUtil::CRegexpUtil(const string& str) 
-    : m_Content(str), m_IsDivided(false),
-      m_RangeStart(kEmptyStr), m_RangeEnd(kEmptyStr), m_Delimiter("\n")
+CRegexpUtil::CRegexpUtil(CTempString str) 
+    : m_Delimiter("\n")
 {
+    Reset(str);
     return;
 }
 
 
 void CRegexpUtil::SetRange(
-        const string& addr_start,
-        const string& addr_end,
-        const string& delimiter)
+    CTempStringEx addr_start,
+    CTempStringEx addr_end,
+    CTempString   delimiter)
 {
     m_RangeStart = addr_start;
     m_RangeEnd   = addr_end;
+    m_Delimiter  = delimiter;
     x_Divide(delimiter);
 }
 
 
 size_t CRegexpUtil::Replace(
-    const string&     search,
-    const string&     replace,
+    CTempStringEx     search,
+    CTempString       replace,
     CRegexp::TCompile compile_flags,
     CRegexp::TMatch   match_flags,
     size_t            max_replace)
@@ -283,7 +284,7 @@ size_t CRegexpUtil::Replace(
     }
     size_t n_replace = 0;
 
-    // Fill shure that string is not divided.
+    // Join string to parts with delimiter
     x_Join();
 
     // Compile regular expression.
@@ -293,16 +294,15 @@ size_t CRegexpUtil::Replace(
     for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
 
         // Match pattern.
-        re.GetMatch(m_Content.c_str(), (int)start_pos, 0, match_flags, true);
+        re.GetMatch(m_Content, (int)start_pos, 0, match_flags, true);
         int num_found = re.NumFound();
         if (num_found <= 0) {
             break;
         }
 
-        // Substitute all subpatterns "$<digit>" to values in the "replace"
-        // string.
+        // Substitute all subpatterns "$<digit>" to values in the "replace" string
         const int* result;
-        string     x_replace = replace;
+        string     x_replace(replace.data(), replace.length());
         size_t     pos = 0;
 
         for (;;) {
@@ -327,12 +327,11 @@ size_t CRegexpUtil::Replace(
             int n = (int)value;
 
             // Get subpattern value
-            string subpattern;
+            CTempString subpattern;
             if ( n > 0  &&  n < num_found ) {
                 result = re.GetResults(n);
                 if (result[0] >= 0  &&  result[1] >= 0) {
-                    subpattern = m_Content.substr(result[0],
-                                                  result[1] - result[0]);
+                    subpattern.assign(m_Content.data() + result[0], result[1] - result[0]);
                 }
             }
 
@@ -350,8 +349,7 @@ size_t CRegexpUtil::Replace(
                 }
             }
             // Replace $n with subpattern value.
-            x_replace.replace(sp_start, sp_end - sp_start, subpattern);
-
+            x_replace.replace(sp_start, sp_end - sp_start, subpattern.data(), subpattern.length());
             pos += subpattern.length();
         }
 
@@ -370,8 +368,8 @@ size_t CRegexpUtil::Replace(
 
 
 size_t CRegexpUtil::ReplaceRange(
-    const string&       search,
-    const string&       replace,
+    CTempStringEx       search,
+    CTempString         replace,
     CRegexp::TCompile   compile_flags,
     CRegexp::TMatch     match_flags,
     CRegexpUtil::ERange process_inside,
@@ -381,6 +379,8 @@ size_t CRegexpUtil::ReplaceRange(
     if ( search.empty() ) {
         return 0;
     }
+
+    // Number of replaced strings
     size_t n_replace = 0;
 
     // Split source string to parts by delimiter
@@ -391,19 +391,19 @@ size_t CRegexpUtil::ReplaceRange(
 
     NON_CONST_ITERATE (list<string>, i, m_ContentList) {
         // Get new line
-        string line = *i;
+        CTempString line(*i);
 
         // Check beginning of block [addr_re_start:addr_re_end]
         if ( !inside  &&  !m_RangeStart.empty() ) {
-            CRegexp re(m_RangeStart.c_str());
-            re.GetMatch(line.c_str(), 0, 0, CRegexp::fMatch_default, true);
+            CRegexp re(m_RangeStart);
+            re.GetMatch(line, 0, 0, CRegexp::fMatch_default, true);
             inside = (re.NumFound() > 0);
         } else {
             inside = true;
         }
 
         // Process current line
-        if ( (inside  &&  process_inside == eInside)  ||
+        if ( (inside   &&  process_inside == eInside)  ||
              (!inside  &&  process_inside == eOutside) ) {
             CRegexpUtil re(line);
             n_replace += re.Replace(search, replace,
@@ -411,11 +411,11 @@ size_t CRegexpUtil::ReplaceRange(
             *i = re;
         }
 
+        // Two addresses were specified?
         // Check ending of block [addr_re_start:addr_re_end]
         if ( inside  &&  !m_RangeEnd.empty() ) {
-            // Two addresses
-            CRegexp re(m_RangeEnd.c_str());
-            re.GetMatch(line.c_str(), 0, 0, CRegexp::fMatch_default, true);
+            CRegexp re(m_RangeEnd);
+            re.GetMatch(line, 0, 0, CRegexp::fMatch_default, true);
             inside = (re.NumFound() <= 0);
         } else {
             // One address -- process one current string only
@@ -426,35 +426,33 @@ size_t CRegexpUtil::ReplaceRange(
     return n_replace;
 }
 
-
-void CRegexpUtil::x_Divide(const string& delimiter)
+void CRegexpUtil::x_Divide(CTempString delimiter)
 {
-    string x_delimiter = delimiter.empty() ? m_Delimiter : delimiter;
+    /// Join substrings back to entire string if divided
     if ( m_IsDivided  ) {
-        if ( x_delimiter == m_Delimiter ) {
+        if ( delimiter == m_Delimiter ) {
             return;
         }
         x_Join();
     }
     m_ContentList.clear();
 
-    // Split source string to parts by delimiter
+    // Split source string to parts by new delimiter
     size_t pos;
     size_t start_pos = 0;
     for (;;) {
-        pos = m_Content.find(x_delimiter, start_pos);
+        pos = m_Content.find(delimiter.data(), start_pos, delimiter.length());
         if (pos == NPOS) {
             m_ContentList.push_back(m_Content.substr(start_pos));
             break;
         } else {
-            m_ContentList.push_back(m_Content.substr(start_pos,
-                                                     pos - start_pos));
-            start_pos = pos + x_delimiter.length();
+            m_ContentList.push_back(m_Content.substr(start_pos, pos - start_pos));
+            start_pos = pos + delimiter.length();
         }
     }
     m_IsDivided = true;
     // Save delimiter for consecutive joining
-    m_Delimiter = x_delimiter;
+    m_Delimiter = delimiter;
 }
 
 

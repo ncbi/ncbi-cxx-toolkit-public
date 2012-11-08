@@ -77,7 +77,7 @@ public:
     ///
     /// PCRE compiler flags used in the constructor and in Set().
     /// If fCompile_ignore_case is set, matches are case insensitive.
-    /// If fCompile_dotall is set, a dot metacharater in the pattern matches
+    /// If fCompile_dotall is set, a dot meta-character in the pattern matches
     /// all characters, including newlines. Without it, newlines are excluded.
     /// If fCompile_newline is set then ^ matches the start of a line and
     /// $ matches the end of a line. If not set, ^ matches only the start
@@ -112,7 +112,7 @@ public:
         eCompile_ungreedy    = fCompile_ungreedy
     };
 
-    /// Flags for match string against a pre-compiled pattern.
+    /// Flags for match string against a precompiled pattern.
     ///
     /// Setting fMatch_not_begin causes ^ not to match before the
     /// first character of a line. Without setting fCompile_newline,
@@ -144,7 +144,7 @@ public:
     ///   Regular expression compilation flags.
     /// @sa
     ///   ECompile
-    CRegexp(const string& pattern, TCompile flags = fCompile_default);
+    CRegexp(CTempStringEx pattern, TCompile flags = fCompile_default);
 
     /// Destructor.
     ///
@@ -161,7 +161,7 @@ public:
     ///   Regular expression compilation flags.
     /// @sa
     ///   ECompile
-    void Set(const string& pattern, TCompile flags = fCompile_default);
+    void Set(CTempStringEx pattern, TCompile flags = fCompile_default);
 
     /// Get matching pattern and subpatterns.
     ///
@@ -237,12 +237,12 @@ public:
     ///
     /// @return
     ///   Return the number of patterns + subpatterns found as a result
-    ///   of the most recent GetMatch() call.
+    ///   of the most recent GetMatch() call (check on >= 0).
     /// @sa
     ///   GetMatch, IsMatch
     int NumFound() const;
 
-    /// Get location of pattern/subpattern.
+    /// Get location of pattern/subpattern for the last GetMatch().
     ///
     /// @param idx
     ///   Index of pattern/subpattern to obtaining.
@@ -257,9 +257,9 @@ public:
     const int* GetResults(size_t idx) const;
 
     /// Escape all regular expression meta characters in the string.
-    static string Escape(const string& str);
+    static string Escape(CTempString str);
 
-    /// Convert wildcard mask to reqular expression.
+    /// Convert wildcard mask to regular expression.
     ///
     /// Escapes all regular expression meta characters in the string,
     /// except '*' and '?'. They will be replaced with '.*' and '.'
@@ -270,7 +270,7 @@ public:
     ///   Regular expression.
     /// @sa
     ///   Escape, NStr::MatchesMask
-    static string WildcardToRegexp(const string& mask);
+    static string WildcardToRegexp(CTempString mask);
 
 private:
     // Disable copy constructor and assignment operator.
@@ -309,7 +309,7 @@ public:
     ///   String to process.
     /// @sa
     ///   Exists(), Extract(), Replace(), ReplaceRange()
-    CRegexpUtil(const string& str = kEmptyStr);
+    CRegexpUtil(CTempString str = kEmptyStr);
 
     /// Reset the content of the string to process.
     ///
@@ -317,7 +317,7 @@ public:
     ///   String to process.
     /// @sa
     ///   operator =
-    void Reset(const string& str);
+    void Reset(CTempString str);
 
     /// Reset the content of the string to process.
     ///
@@ -326,7 +326,7 @@ public:
     ///   String to process.
     /// @sa
     ///   Reset()
-    void operator= (const string& str);
+    void operator= (CTempString str);
 
     /// Get result string.
     ///
@@ -341,7 +341,7 @@ public:
     ///   GetResult()
     operator string(void);
  
-    /// Check existence substring which match a specified pattern.
+    /// Check existence of substring which match a specified pattern.
     ///
     /// @param pattern
     ///   Perl regular expression to search.
@@ -350,14 +350,14 @@ public:
     /// @param match_flags
     ///   Flags to match.
     /// @return
-    ///   Return TRUE if  a string corresponding to the match to pattern or
+    ///   Return TRUE if a string corresponding to the match to pattern or
     ///   subpattern.
     /// @sa
     ///   CRegexp, CRegexp::GetMatch()
     bool Exists(
-        const string&      pattern,
-        CRegexp::TCompile  compile_flags = CRegexp::fCompile_default,
-        CRegexp::TMatch    match_flags   = CRegexp::fMatch_default
+        CTempStringEx     pattern,
+        CRegexp::TCompile compile_flags = CRegexp::fCompile_default,
+        CRegexp::TMatch   match_flags   = CRegexp::fMatch_default
     );
 
     /// Get matching pattern/subpattern from string.
@@ -372,12 +372,12 @@ public:
     ///   Index of pattern/subpattern to extract.
     ///   Use pattern_idx = 0 for pattern, pattern_idx > 0 for sub patterns.
     /// @return
-    ///   Return the substring at location of pattern/subpatter match with
+    ///   Return the substring at location of pattern/subpattern match with
     ///   index pattern_idx. Return empty string when no match.
     /// @sa
     ///   CRegexp, CRegexp::GetMatch()
     string Extract(
-        const string&      pattern,
+        CTempStringEx      pattern,
         CRegexp::TCompile  compile_flags = CRegexp::fCompile_default,
         CRegexp::TMatch    match_flags   = CRegexp::fMatch_default,
         size_t             pattern_idx   = 0
@@ -386,7 +386,7 @@ public:
     /// Replace occurrences of a substring within a string by pattern.
     ///
     /// @param search
-    ///   Reqular expression to match a substring value that is replaced.
+    ///   Regular expression to match a substring value that is replaced.
     /// @param replace
     ///   Replace "search" substring with this value. The matched subpatterns
     ///   (if any) can be found and inserted into replace string using
@@ -405,11 +405,11 @@ public:
     /// @sa
     ///   CRegexp, ReplaceRange()
     size_t Replace(
-        const string&      search,
-        const string&      replace,
-        CRegexp::TCompile  compile_flags = CRegexp::fCompile_default,
-        CRegexp::TMatch    match_flags   = CRegexp::fMatch_default,
-        size_t             max_replace   = 0
+        CTempStringEx     search,
+        CTempString       replace,
+        CRegexp::TCompile compile_flags = CRegexp::fCompile_default,
+        CRegexp::TMatch   match_flags   = CRegexp::fMatch_default,
+        size_t            max_replace   = 0
     );
 
 
@@ -427,21 +427,22 @@ public:
 
     /// Set new range for range-dependent functions.
     ///
-    /// The mached string will be splitted up by "delimeter".
+    /// The matched string will be split up by "delimiter".
     /// And then in range-dependent functions every part (substring) is checked
-    /// to fall into the range, specified by start and end adresses.
+    /// to fall into the range, specified by start and end addresses.
     ///
-    /// The addresses works similare the Unix utility SED, except that regular
+    /// The addresses works similar to the Unix utility SED, except that regular
     /// expressions is Perl-compatible:
     ///    - empty address in the range correspond to any substring.
     ///    - command with one address correspond to any substring that matches
     ///      the address.
     ///    - command with two addresses correspond to inclusive range from the
-    ///      start address to through the next pattern space that maches the
+    ///      start address to through the next pattern space that matches the
     ///      end address.
     ///
     /// Specified range have effect only for range-dependent functions.
     /// Otherwise range is ignored.
+    ///
     /// @param addr_start
     ///   Regular expression which assign a starting address of range.
     /// @param addr_end
@@ -452,9 +453,9 @@ public:
      /// @sa
     ///   ClearRange, ReplaceRange()
     void SetRange(
-        const string&  addr_start = kEmptyStr,
-        const string&  addr_end   = kEmptyStr,
-        const string&  delimiter  = "\n"
+        CTempStringEx addr_start = kEmptyStr,
+        CTempStringEx addr_end   = kEmptyStr,
+        CTempString   delimiter  = "\n"
     );
 
     /// Clear range for range-dependent functions.
@@ -468,7 +469,7 @@ public:
     ///
     /// Use range specified by SetRange() method. Work like SED command s/.
     /// @param search
-    ///   Reqular expression to match a substring value that is replaced.
+    ///   Regular expression to match a substring value that is replaced.
     /// @param replace
     ///   Replace "search" substring with this value. The matched subpatterns
     ///   (if any) can be found and inserted into replace string using
@@ -489,8 +490,8 @@ public:
     /// @sa
     ///   ERange, SetRange(), ClearRange()
     size_t ReplaceRange(
-        const string&       search,
-        const string&       replace,
+        CTempStringEx       search,
+        CTempString         replace,
         CRegexp::TCompile   compile_flags  = CRegexp::fCompile_default,
         CRegexp::TMatch     match_flags    = CRegexp::fMatch_default,
         CRegexpUtil::ERange process_within = eInside,
@@ -498,21 +499,23 @@ public:
     );
 
 private:
-    /// Divide source string to substrings by delimiter.
-    /// If delimiter is empty string that use early defined delimiter.
-    void x_Divide(const string& delimiter = kEmptyStr);
+    /// Divide source string to substrings by delimiter for separate processing.
+    void x_Divide(CTempString delimiter);
+    void x_Divide(void) { x_Divide(m_Delimiter); };
 
     /// Join substrings back to entire string.
     void x_Join(void);
 
 private:
-    string       m_Content;       ///< Content string.
-    list<string> m_ContentList;   ///< Content list.
-    bool         m_IsDivided;     ///< TRUE if m_ContentList is newer than
-                                  ///< m_Content, and FALSE otherwise.
-    string       m_RangeStart;    ///< Regexp to determine start of range.
-    string       m_RangeEnd;      ///< Regexp to determine end of range.
-    string       m_Delimiter;     ///< Delimiter used to split string.
+    string         m_Content;       ///< Content string.
+
+    // Range processing members
+    list<string>   m_ContentList;   ///< Content list.
+    bool           m_IsDivided;     ///< TRUE if m_ContentList is newer than
+                                    ///< m_Content, and FALSE otherwise.
+    CTempStringEx  m_RangeStart;    ///< Regexp to determine start of range.
+    CTempStringEx  m_RangeEnd;      ///< Regexp to determine end of range.
+    CTempString    m_Delimiter;     ///< Delimiter used to split m_Content.
 };
 
 
@@ -576,9 +579,9 @@ string CRegexpUtil::GetResult(void)
 }
 
 inline
-void CRegexpUtil::Reset(const string& str)
+void CRegexpUtil::Reset(CTempString str)
 {
-    m_Content   = str;
+    m_Content.assign(str.data(), str.length());
     m_IsDivided = false;
     m_ContentList.clear();
 }
@@ -590,7 +593,7 @@ CRegexpUtil::operator string(void)
 }
 
 inline
-void CRegexpUtil::operator= (const string& str)
+void CRegexpUtil::operator= (CTempString str)
 {
     Reset(str);
 }
@@ -603,30 +606,30 @@ void CRegexpUtil::ClearRange(void)
 
 inline
 bool CRegexpUtil::Exists(
-    const string&     pattern,
+    CTempStringEx     pattern,
     CRegexp::TCompile compile_flags,
     CRegexp::TMatch   match_flags)
 {
-    // Fill shure that string is not divided
+    // Join string to parts with delimiter
     x_Join();
     // Check the pattern existence
     CRegexp re(pattern, compile_flags);
-    re.GetMatch(m_Content.c_str(), 0, 0, match_flags, true);
+    re.GetMatch(m_Content, 0, 0, match_flags, true);
     return re.NumFound() > 0;
 }
 
 inline
 string CRegexpUtil::Extract(
-    const string&     pattern,
+    CTempStringEx     pattern,
     CRegexp::TCompile compile_flags,
     CRegexp::TMatch   match_flags,
     size_t            pattern_idx)
 {
-    // Fill shure that string is not divided
+    // Join string to parts with delimiter
     x_Join();
     // Get the pattern/subpattern
     CRegexp re(pattern, compile_flags);
-    return re.GetMatch(m_Content.c_str(), 0, pattern_idx, match_flags);
+    return re.GetMatch(m_Content, 0, pattern_idx, match_flags);
 }
 
 

@@ -77,17 +77,21 @@ void CRegexApplication::Init(void)
 
 int CRegexApplication::Run(void)
 {
+    // ---------------------------------------------------------------
     // Simple way to use regular expressions
+
     CRegexp pattern("D\\w*g");
     assert(pattern.GetMatch("The Dodgers play baseball.") == "Dodg");
     
+    // ---------------------------------------------------------------
     // Perl compatible regular expression pattern to match
+
     string pat("(q.*k).*f?x");
     pattern.Set(pat);
     
     // String to find matching pattern in
     const string text
-    ("The quick brown fox jumped over the lazy dogs.\n"             \
+       ("The quick brown fox jumped over the lazy dogs.\n"             \
         "Now is the time for all good men to come to the aid of "      \
         "their country.\nTwas the night before Christmas and all "     \
         "through the house, not a\n creature was stirring, not "       \
@@ -105,6 +109,8 @@ int CRegexApplication::Run(void)
 
     LOG_POST(string(33, '-'));
 
+
+    // ---------------------------------------------------------------
     // Set new pattern and ignore case
 
     pattern.Set("t\\w*e", CRegexp::fCompile_ignore_case);
@@ -121,13 +127,9 @@ int CRegexApplication::Run(void)
     }
     LOG_POST(string(33, '-'));
 
-    // Note: This loop works only with this regular expression
-    // and test string. The text.find() can give incorrect results for
-    // other input data and regular expression. Usually, it is better
-    // to use GetResults() method, if you need to get offset of the found
-    // string, as shown below.
-
-    // Same as above but using GetResults() instead of return string
+    // ---------------------------------------------------------------
+    // Same as above but using GetResults() instead of return string.
+    // Use this method if you need to get an offset of the found string.
 
     start = 0;
     for (;;) {
@@ -142,6 +144,7 @@ int CRegexApplication::Run(void)
     }
     LOG_POST(string(33, '-'));
 
+    // ---------------------------------------------------------------
     // Match() test
     {{
         pattern.Set("d?g");
@@ -156,6 +159,7 @@ int CRegexApplication::Run(void)
         assert( pattern.NumFound() <= 0);
     }}
 
+    // ---------------------------------------------------------------
     // Escape special metacharacters test
     {{
         assert(CRegexp::Escape("a+b") == "a\\+b");
@@ -184,6 +188,7 @@ int CRegexApplication::Run(void)
         assert(!pattern.IsMatch("...cat ct..."));
     }}
 
+    // ---------------------------------------------------------------
     // CMaskRegexp
     {{
         CMaskRegexp mask;
@@ -206,6 +211,35 @@ int CRegexApplication::Run(void)
 
         mask.Remove("[0-9][0-9]*");
         assert(!mask.Match("123"));
+    }}
+
+    // ---------------------------------------------------------------
+    // CRegexpUtil
+
+    {{
+        CRegexpUtil re(text);
+        assert(re.Exists(pat));
+        // Replace by pattern
+        re.Replace(pat, "slow green turtle");
+        string str = re.GetResult();
+        assert(str != text);
+        // Extract a part of string
+        str = re.Extract("\\s+all (\\w+) ", 
+                         CRegexp::fCompile_default,
+                         CRegexp::fMatch_default, 
+                         1);
+        assert(str == "good");
+    }}
+    {{
+        // Replace by pattern in some range
+        CRegexpUtil re("cats: dog_1, dog#2; dogs: dog_3, dog_4");
+        re.SetRange("^cats:", "^dogs:", " ");
+        re.ReplaceRange("d[a-z]g(_|#)", "cat{$1}", 
+                        CRegexp::fCompile_default, 
+                        CRegexp::fMatch_default, 
+                        CRegexpUtil::eInside);
+        string str = re.GetResult();
+        assert(str == "cats: cat_1, cat#2; dogs: dog_3, dog_4");
     }}
 
     return 0;
