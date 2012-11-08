@@ -2520,7 +2520,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ILCA	s	International Livestock Research Institute",
 "ILF	s	Iflracombe Museum",
 "ILH	s	Iowa Lakeside Laboratory",
-"ILL	s	University of Illinois, Plant Biology Department",
+"ILL	sc	University of Illinois, Plant Biology Department",
 "ILLS	s	Illinois Natural History Survey",
 "ILMA	s	Istituto Leonardo Murialdo",
 "ILPLA	s	Museo de La Plata, Instituto de Limnologia",
