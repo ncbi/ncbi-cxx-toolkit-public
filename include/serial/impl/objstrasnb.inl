@@ -32,6 +32,9 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
+#define ASN_BINARY_MAKE_TAG_BYTE(tag_class, tag_constructed, tag_value) \
+    TByte(TByte(tag_class) | TByte(tag_value) | TByte(tag_constructed))
+
 inline
 CAsnBinaryDefs::TByte
 CAsnBinaryDefs::MakeTagByte(ETagClass tag_class,

@@ -184,7 +184,10 @@ protected:
 
     virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
                             TObjectPtr choicePtr);
+    virtual void ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
+                                  TObjectPtr choicePtr);
     virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
+    virtual void SkipChoiceSimple(const CChoiceTypeInfo* choiceType);
 
 #endif
 
@@ -222,6 +225,8 @@ private:
     virtual TObjectIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
     virtual void ReadOtherPointerEnd(void);
+    virtual pair<TObjectPtr, TTypeInfo> ReadPointer(TTypeInfo declaredType);
+    virtual void SkipPointer(TTypeInfo declaredType);
 
     bool SkipRealValue(void);
 
@@ -265,10 +270,16 @@ private:
     TByte PeekTagByte(size_t index = 0);
     TByte StartTag(TByte first_tag_byte);
     TLongTag PeekTag(TByte first_tag_byte);
+    TLongTag PeekLongTag(void);
     void ExpectTagClassByte(TByte first_tag_byte,
                             TByte expected_class_byte);
     void UnexpectedTagClassByte(TByte first_tag_byte,
                                 TByte expected_class_byte);
+    void UnexpectedShortLength(size_t got_length,
+                               size_t expected_length);
+    void UnexpectedFixedLength(void);
+    void UnexpectedContinuation(void);
+    void UnexpectedLongLength(void);
     TLongTag PeekTag(TByte first_tag_byte,
                      ETagClass tag_class,
                      ETagConstructed tag_constructed);

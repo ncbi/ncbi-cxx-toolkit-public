@@ -85,11 +85,6 @@ CMemberId::~CMemberId(void)
 {
 }
 
-bool CMemberId::HaveParentTag(void) const
-{
-    return GetTag() == eParentTag && !HaveExplicitTag();
-}
-
 void CMemberId::SetParentTag(void)
 {
     SetTag(eParentTag, false);
@@ -108,45 +103,24 @@ void CMemberId::SetNoPrefix(void)
     m_NoPrefix = true;
 }
 
-bool CMemberId::HaveNoPrefix(void) const
-{
-    return m_NoPrefix;
-}
-
 void CMemberId::SetAttlist(void)
 {
     m_Attlist = true;
-}
-bool CMemberId::IsAttlist(void) const
-{
-    return m_Attlist;
 }
 
 void CMemberId::SetNotag(void)
 {
     m_Notag = true;
 }
-bool CMemberId::HasNotag(void) const
-{
-    return m_Notag;
-}
 
 void CMemberId::SetAnyContent(void)
 {
     m_AnyContent = true;
 }
-bool CMemberId::HasAnyContent(void) const
-{
-    return m_AnyContent;
-}
 
 void CMemberId::SetCompressed(void)
 {
     m_Compressed = true;
-}
-bool CMemberId::IsCompressed(void) const
-{
-    return m_Compressed;
 }
 
 void CMemberId::SetNsQualified(bool qualified)
@@ -154,9 +128,5 @@ void CMemberId::SetNsQualified(bool qualified)
     m_NsqMode = qualified ? eNSQualified : eNSUnqualified;
 }
 
-ENsQualifiedMode CMemberId::IsNsQualified(void) const
-{
-    return m_NsqMode;
-}
 
 END_NCBI_SCOPE

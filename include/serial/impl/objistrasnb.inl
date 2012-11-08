@@ -49,9 +49,11 @@ inline
 CObjectIStreamAsnBinary::TByte
 CObjectIStreamAsnBinary::StartTag(TByte first_tag_byte)
 {
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagLength != 0 )
         ThrowError(fIllegalCall,
             "illegal StartTag call: current tag length != 0");
+#endif
     _ASSERT(PeekTagByte() == first_tag_byte);
     return first_tag_byte;
 }
@@ -67,10 +69,12 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 #if CHECK_INSTREAM_LIMITS
     // check for all bytes read
     if ( m_CurrentTagLimit != 0 ) {
+#if CHECK_INSTREAM_STATE
         if ( m_Input.GetStreamPosAsInt8() != m_CurrentTagLimit ) {
             ThrowError(fIllegalCall,
                        "illegal EndOfTag call: not all data bytes read");
         }
+#endif
         // restore tag limit from stack
         if ( m_Limits.empty() ) {
             m_CurrentTagLimit = 0;
@@ -128,19 +132,28 @@ void CObjectIStreamAsnBinary::ExpectSysTag(ETagValue tag_value)
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectContainer(bool random)
-{
-    ExpectSysTagByte(MakeContainerTagByte(random));
-    ExpectIndefiniteLength();
-}
-
-inline
 void CObjectIStreamAsnBinary::ExpectTagClassByte(TByte first_tag_byte,
                                                  TByte expected_class_byte)
 {
     if ( GetTagClassAndConstructed(first_tag_byte) != expected_class_byte ) {
         UnexpectedTagClassByte(first_tag_byte, expected_class_byte);
     }
+}
+
+inline
+CObjectIStreamAsnBinary::TLongTag
+CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
+{
+    TByte byte = StartTag(first_tag_byte);
+    ETagValue sysTag = GetTagValue(byte);
+    if ( sysTag == eLongTag ) {
+        return PeekLongTag();
+    }
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eTagParsed;
+#endif
+    m_CurrentTagLength = 1;
+    return sysTag;
 }
 
 inline
@@ -171,6 +184,142 @@ inline
 bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 {
     return PeekTagByte() != eEndOfContentsByte;
+}
+
+inline
+CObjectIStreamAsnBinary::TByte
+CObjectIStreamAsnBinary::FlushTag(void)
+{
+#if CHECK_INSTREAM_STATE
+    if ( m_CurrentTagState != eTagParsed || m_CurrentTagLength == 0 )
+        ThrowError(fIllegalCall, "illegal FlushTag call");
+    m_CurrentTagState = eLengthValue;
+#endif
+    m_Input.SkipChars(m_CurrentTagLength);
+    return TByte(m_Input.GetChar());
+}
+
+inline
+bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
+{
+#if CHECK_INSTREAM_STATE
+    if ( m_CurrentTagState != eTagParsed )
+        ThrowError(fIllegalCall, "illegal PeekIndefiniteLength call");
+#endif
+    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == eIndefiniteLengthByte;
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
+{
+    // indefinite length allowed only for constructed tags
+#if CHECK_INSTREAM_LIMITS
+    if ( !GetTagConstructed(m_Input.PeekChar()) )
+        ThrowError(fIllegalCall, "illegal ExpectIndefiniteLength call");
+    _ASSERT(m_CurrentTagLimit == 0);
+    // save tag limit
+    // tag limit is not changed
+    if ( m_CurrentTagLimit != 0 ) {
+        m_Limits.push(m_CurrentTagLimit);
+    }
+#endif
+    if ( FlushTag() != eIndefiniteLengthByte ) {
+        UnexpectedFixedLength();
+    }
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eTagStart;
+#endif
+    m_CurrentTagLength = 0;
+}
+
+inline
+size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
+{
+#if CHECK_INSTREAM_LIMITS
+    Int8 cur_pos = m_Input.GetStreamPosAsInt8();
+    Int8 newLimit = cur_pos + length;
+    _ASSERT(newLimit >= cur_pos);
+    _ASSERT(newLimit != 0);
+    Int8 currentLimit = m_CurrentTagLimit;
+    if ( currentLimit != 0 ) {
+        if ( newLimit > currentLimit ) {
+            ThrowError(fOverflow, "nested data length overflow");
+        }
+        m_Limits.push(currentLimit);
+    }
+    m_CurrentTagLimit = newLimit;
+#endif
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eData;
+#endif
+    return length;
+}
+
+inline
+size_t CObjectIStreamAsnBinary::ReadShortLength(void)
+{
+    TByte byte = FlushTag();
+    if ( byte >= 0x80 ) {
+        UnexpectedLongLength();
+    }
+    return StartTagData(byte);
+}
+
+inline
+size_t CObjectIStreamAsnBinary::ReadLengthInlined(void)
+{
+    TByte byte = FlushTag();
+    if ( byte >= 0x80 ) {
+        return ReadLengthLong(byte);
+    }
+    return StartTagData(byte);
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectContainer(bool random)
+{
+    ExpectSysTagByte(MakeContainerTagByte(random));
+    ExpectIndefiniteLength();
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
+{
+    size_t got = ReadShortLength();
+    if ( got != length ) {
+        UnexpectedShortLength(got, length);
+    }
+}
+
+inline
+void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
+{
+#if CHECK_INSTREAM_STATE
+    if ( m_CurrentTagState != eTagStart || m_CurrentTagLength != 0 )
+        ThrowError(fIllegalCall, "illegal ExpectEndOfContent call");
+#endif
+    if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
+                                    char(eZeroLengthByte)) ) {
+        UnexpectedContinuation();
+    }
+#if CHECK_INSTREAM_LIMITS
+    // restore tag limit from stack
+    _ASSERT(m_CurrentTagLimit == 0);
+    if ( m_CurrentTagLimit != 0 ) {
+        if ( m_Limits.empty() ) {
+            m_CurrentTagLimit = 0;
+        }
+        else {
+            m_CurrentTagLimit = m_Limits.top();
+            m_Limits.pop();
+        }
+        _ASSERT(m_CurrentTagLimit == 0);
+    }
+#endif
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eTagStart;
+#endif
+    m_CurrentTagLength = 0;
 }
 
 #endif /* def OBJISTRASNB__HPP  &&  ndef OBJISTRASNB__INL */

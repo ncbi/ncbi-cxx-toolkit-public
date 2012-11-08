@@ -117,6 +117,8 @@ public:
 
     /// set value of 'setFlag'
     void UpdateSetFlag(TObjectPtr object, ESetFlag value) const;
+    /// set value of 'setFlag' from object of the same type (if necessary)
+    void UpdateSetFlag(TObjectPtr object, TConstObjectPtr src) const;
     /// set 'setFlag' to eSetYes
     void UpdateSetFlagYes(TObjectPtr object) const;
     /// set 'setFlag' to eSetMaybe
@@ -200,7 +202,7 @@ private:
     TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object
     TPointerOffsetType m_SetFlagOffset;
-    bool m_BitSetFlag;
+    Uint4 m_BitSetMask;
     // offset of delay buffer inside object
     TPointerOffsetType m_DelayOffset;
 

@@ -160,7 +160,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CTypeRef& type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_SetFlagOffset(eNoOffset), m_BitSetMask(0),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
@@ -185,7 +185,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          TTypeInfo type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_SetFlagOffset(eNoOffset), m_BitSetMask(0),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
@@ -210,7 +210,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CTypeRef& type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_SetFlagOffset(eNoOffset), m_BitSetMask(0),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
@@ -235,7 +235,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          TTypeInfo type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_SetFlagOffset(eNoOffset), m_BitSetMask(0),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
@@ -371,15 +371,16 @@ CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 {
     _ASSERT(Optional());
     m_SetFlagOffset = TPointerOffsetType(setFlag);
-    m_BitSetFlag = false;
+    m_BitSetMask = 0;
     UpdateFunctions();
     return this;
 }
 
 CMemberInfo* CMemberInfo::SetSetFlag(const Uint4* setFlag)
 {
-    m_SetFlagOffset = TPointerOffsetType(setFlag);
-    m_BitSetFlag = true;
+    unsigned offset = GetIndex()-1;
+    m_SetFlagOffset = TPointerOffsetType(setFlag) + (offset/16)*4;
+    m_BitSetMask = 3<<(offset%16*2);
     UpdateFunctions();
     return this;
 }

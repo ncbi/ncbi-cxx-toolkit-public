@@ -43,16 +43,27 @@ BEGIN_NCBI_SCOPE
 class CChoiceTypeInfoFunctions
 {
 public:
+    static void ReadChoiceSimple(CObjectIStream& in,
+                                 TTypeInfo objectType,
+                                 TObjectPtr objectPtr);
     static void ReadChoiceDefault(CObjectIStream& in,
                                   TTypeInfo objectType,
                                   TObjectPtr objectPtr);
     static void WriteChoiceDefault(CObjectOStream& out,
                                    TTypeInfo objectType,
                                    TConstObjectPtr objectPtr);
+    static void SkipChoiceSimple(CObjectIStream& in,
+                                 TTypeInfo objectType);
     static void SkipChoiceDefault(CObjectIStream& in,
                                   TTypeInfo objectType);
     static void CopyChoiceDefault(CObjectStreamCopier& copier,
                                   TTypeInfo objectType);
+    static void AssignDefault(TTypeInfo typeInfo,
+                              TObjectPtr dst, TConstObjectPtr src,
+                              ESerialRecursionMode how);
+    static void AssignSimple(TTypeInfo typeInfo,
+                             TObjectPtr dst, TConstObjectPtr src,
+                             ESerialRecursionMode how);
 };
 
 typedef CChoiceTypeInfoFunctions TFunc;
@@ -126,6 +137,12 @@ CVariantInfo* CChoiceTypeInfo::AddVariant(const char* memberId,
                                           const void* memberPtr,
                                           const CTypeRef& memberType)
 {
+    if ( GetVariants().Size() == 1 &&
+         !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
+        // simple
+        SetReadFunction(&TFunc::ReadChoiceSimple);
+        SetSkipFunction(&TFunc::SkipChoiceSimple);
+    }
     CVariantInfo* variantInfo = new CVariantInfo(this, memberId,
                                                  TPointerOffsetType(memberPtr),
                                                  memberType);
@@ -137,6 +154,12 @@ CVariantInfo* CChoiceTypeInfo::AddVariant(const CMemberId& memberId,
                                           const void* memberPtr,
                                           const CTypeRef& memberType)
 {
+    if ( GetVariants().Size() == 1 &&
+         !GetVariantInfo(kFirstMemberIndex)->GetId().IsAttlist() ) {
+        // simple
+        SetReadFunction(&TFunc::ReadChoiceSimple);
+        SetSkipFunction(&TFunc::SkipChoiceSimple);
+    }
     CVariantInfo* variantInfo = new CVariantInfo(this, memberId,
                                                  TPointerOffsetType(memberPtr),
                                                  memberType);
@@ -172,15 +195,15 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
 {
     // User defined comparison
     if ( IsCObject() ) {
-        const CSerialUserOp* op1 =
-            dynamic_cast<const CSerialUserOp*>
-            (static_cast<const CObject*>(object1));
-        const CSerialUserOp* op2 =
-            dynamic_cast<const CSerialUserOp*>
-            (static_cast<const CObject*>(object2));
-        if ( op1  &&  op2 ) {
-            if ( !op1->UserOp_Equals(*op2) )
-                return false;
+        if ( const CSerialUserOp* op1 =
+             dynamic_cast<const CSerialUserOp*>
+             (static_cast<const CObject*>(object1)) ) {
+            if ( const CSerialUserOp* op2 =
+                 dynamic_cast<const CSerialUserOp*>
+                 (static_cast<const CObject*>(object2)) ) {
+                if ( !op1->UserOp_Equals(*op2) )
+                    return false;
+            }
         }
     }
 
@@ -213,6 +236,24 @@ void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
     ResetIndex(dst);
 }
 
+inline
+void CChoiceTypeInfo::CallUserOp_Assign(TObjectPtr dst,
+                                        TConstObjectPtr src) const
+{
+    // User defined assignment
+    if ( IsCObject() ) {
+        if ( const CSerialUserOp* opsrc =
+             dynamic_cast<const CSerialUserOp*>
+             (static_cast<const CObject*>(src)) ) {
+            if ( CSerialUserOp* opdst =
+                 dynamic_cast<CSerialUserOp*>
+                 (static_cast<CObject*>(dst)) ) {
+                opdst->UserOp_Assign(*opsrc);
+            }
+        }
+    }
+}
+
 void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
                              ESerialRecursionMode how) const
 {
@@ -239,18 +280,61 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
     }
 
     // User defined assignment
-    if ( IsCObject() ) {
-        const CSerialUserOp* opsrc =
-            dynamic_cast<const CSerialUserOp*>
-            (static_cast<const CObject*>(src));
-        CSerialUserOp* opdst =
-            dynamic_cast<CSerialUserOp*>
-            (static_cast<CObject*>(dst));
-        if ( opdst  &&  opsrc ) {
-            opdst->UserOp_Assign(*opsrc);
-        }
-    }
+    CallUserOp_Assign(dst, src);
 }
+
+void CChoiceTypeInfoFunctions::AssignDefault(TTypeInfo typeInfo,
+                                             TObjectPtr dst,
+                                             TConstObjectPtr src,
+                                             ESerialRecursionMode how)
+{
+    const CChoiceTypeInfo* choiceType =
+        static_cast<const CChoiceTypeInfo*>(typeInfo);
+    TMemberIndex index;
+
+    index = choiceType->GetVariants().FirstIndex();
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* info =
+            static_cast<const CMemberInfo*>(choiceType->GetVariants().GetItemInfo(index));
+        info->GetTypeInfo()->Assign(GetMember(info, dst),
+                                    GetMember(info, src),how);
+    }
+
+    index = choiceType->GetIndex(src);
+    if ( index == kEmptyChoice )
+        choiceType->ResetIndex(dst);
+    else {
+        _ASSERT(index >= choiceType->GetVariants().FirstIndex() && 
+                index <= choiceType->GetVariants().LastIndex());
+        choiceType->SetIndex(dst, index);
+        choiceType->GetVariantInfo(index)->GetTypeInfo()->Assign(choiceType->GetData(dst, index),
+                                                                 choiceType->GetData(src, index), how);
+    }
+
+    choiceType->CallUserOp_Assign(dst, src);
+}
+
+
+void CChoiceTypeInfoFunctions::AssignSimple(TTypeInfo typeInfo,
+                                            TObjectPtr dst,
+                                            TConstObjectPtr src,
+                                            ESerialRecursionMode how)
+{
+    const CChoiceTypeInfo* choiceType =
+        static_cast<const CChoiceTypeInfo*>(typeInfo);
+    TMemberIndex index = choiceType->GetIndex(src);
+    if ( index == kEmptyChoice ) {
+        choiceType->ResetIndex(dst);
+        return;
+    }
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    choiceType->SetIndex(dst, index);
+    variantInfo->GetTypeInfo()->Assign(variantInfo->GetVariantPtr(dst),
+                                       variantInfo->GetVariantPtr(src),
+                                       how);
+}
+
 
 void CChoiceTypeInfo::SetSelectDelayFunction(TSelectDelayFunction func)
 {
@@ -271,7 +355,6 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
 {
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
-
     BEGIN_OBJECT_FRAME_OF3(in, eFrameChoice, choiceType, objectPtr);
     in.BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
@@ -286,7 +369,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
         const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
         if (variantInfo->GetId().IsAttlist()) {
             const CMemberInfo* memberInfo =
-                dynamic_cast<const CMemberInfo*>(
+                static_cast<const CMemberInfo*>(
                     choiceType->GetVariants().GetItemInfo(index));
             memberInfo->ReadMember(in,objectPtr);
             in.EndChoiceVariant();
@@ -303,6 +386,15 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     END_OBJECT_FRAME_OF(in);
     in.EndChoice();
     END_OBJECT_FRAME_OF(in);
+}
+
+void CChoiceTypeInfoFunctions::ReadChoiceSimple(CObjectIStream& in,
+                                                TTypeInfo objectType,
+                                                TObjectPtr objectPtr)
+{
+    const CChoiceTypeInfo* choiceType =
+        CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
+    in.ReadChoiceSimple(choiceType, objectPtr);
 }
 
 void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
@@ -350,7 +442,6 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
 {
     const CChoiceTypeInfo* choiceType =
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
-
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     in.BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
@@ -378,6 +469,15 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     END_OBJECT_FRAME_OF(in);
     in.EndChoice();
     END_OBJECT_FRAME_OF(in);
+}
+
+
+void CChoiceTypeInfoFunctions::SkipChoiceSimple(CObjectIStream& in,
+                                                 TTypeInfo objectType)
+{
+    const CChoiceTypeInfo* choiceType =
+        CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
+    in.SkipChoiceSimple(choiceType);
 }
 
 

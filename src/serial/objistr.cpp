@@ -1449,6 +1449,12 @@ void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
     END_OBJECT_FRAME();
 }
 
+void CObjectIStream::ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
+                                      TObjectPtr choicePtr)
+{
+    ReadChoice(choiceType, choicePtr);
+}
+
 void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
@@ -1467,6 +1473,11 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
     END_OBJECT_FRAME();
     EndChoice();
     END_OBJECT_FRAME();
+}
+
+void CObjectIStream::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)
+{
+    SkipChoice(choiceType);
 }
 
 void CObjectIStream::ReadAlias(const CAliasTypeInfo* aliasType,

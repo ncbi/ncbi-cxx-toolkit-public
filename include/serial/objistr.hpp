@@ -928,7 +928,10 @@ public:
     // choice
     MLIOVIR void ReadChoice(const CChoiceTypeInfo* choiceType,
                             TObjectPtr choicePtr);
+    MLIOVIR void ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
+                                  TObjectPtr choicePtr);
     MLIOVIR void SkipChoice(const CChoiceTypeInfo* choiceType);
+    MLIOVIR void SkipChoiceSimple(const CChoiceTypeInfo* choiceType);
 
     // alias
     MLIOVIR void ReadAlias(const CAliasTypeInfo* aliasType,

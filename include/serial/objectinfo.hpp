@@ -41,7 +41,6 @@
 #include <serial/impl/classinfo.hpp>
 #include <serial/impl/choice.hpp>
 #include <serial/impl/enumerated.hpp>
-#include <serial/impl/objstrasnb.hpp>
 #include <vector>
 #include <memory>
 
@@ -389,7 +388,8 @@ public:
     CMemberIterator GetMemberIterator(TMemberIndex index) const;
     CVariantIterator GetVariantIterator(TMemberIndex index) const;
 
-    CAsnBinaryDefs::ETagValue GetASNTag() const;
+    typedef int TASNTag;
+    TASNTag GetASNTag() const;
 
 protected:
     void ResetTypeInfo(void);

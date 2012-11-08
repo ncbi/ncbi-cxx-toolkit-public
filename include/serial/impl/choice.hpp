@@ -127,6 +127,7 @@ public:
 
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);
+    void CallUserOp_Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     friend class CChoiceTypeInfoFunctions;
 

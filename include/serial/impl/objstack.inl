@@ -185,7 +185,7 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
             type == TFrame::eFrameChoiceVariant);
     TFrame& frame = PushFrame(type);
     frame.m_MemberId = &memberId;
-    x_PushStackPath();
+    if ( m_WatchPathHooks ) x_PushStackPath();
     return frame;
 }
 
@@ -196,7 +196,7 @@ void CObjectStack::PopFrame(void)
 #if defined(NCBI_SERIAL_IO_TRACE)
     TracePushFrame(false);
 #endif
-    x_PopStackPath();
+    if ( m_WatchPathHooks ) x_PopStackPath();
     m_StackPtr->Reset();
     --m_StackPtr;
 }
@@ -234,9 +234,14 @@ CObjectStack::TFrame& CObjectStack::TopFrame(void)
 inline
 void CObjectStack::SetTopMemberId(const CMemberId& memberid)
 {
-    x_PopStackPath();
-    TopFrame().SetMemberId(memberid);
-    x_PushStackPath();
+    if ( m_WatchPathHooks ) {
+        x_PopStackPath();
+        TopFrame().SetMemberId(memberid);
+        x_PushStackPath();
+    }
+    else {
+        TopFrame().SetMemberId(memberid);
+    }
 }
 
 inline

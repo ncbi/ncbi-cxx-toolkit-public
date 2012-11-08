@@ -51,6 +51,12 @@ bool CMemberId::HaveExplicitTag(void) const
 }
 
 inline
+bool CMemberId::HaveParentTag(void) const
+{
+    return GetTag() == eParentTag && !HaveExplicitTag();
+}
+
+inline
 void CMemberId::SetName(const string& name)
 {
     m_Name = name;
@@ -61,6 +67,42 @@ void CMemberId::SetTag(TTag tag, bool explicitTag)
 {
     m_Tag = tag;
     m_ExplicitTag = explicitTag;
+}
+
+inline
+bool CMemberId::HaveNoPrefix(void) const
+{
+    return m_NoPrefix;
+}
+
+inline
+bool CMemberId::IsAttlist(void) const
+{
+    return m_Attlist;
+}
+
+inline
+bool CMemberId::HasNotag(void) const
+{
+    return m_Notag;
+}
+
+inline
+bool CMemberId::HasAnyContent(void) const
+{
+    return m_AnyContent;
+}
+
+inline
+bool CMemberId::IsCompressed(void) const
+{
+    return m_Compressed;
+}
+
+inline
+ENsQualifiedMode CMemberId::IsNsQualified(void) const
+{
+    return m_NsqMode;
 }
 
 #endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */

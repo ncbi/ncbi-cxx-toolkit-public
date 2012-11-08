@@ -432,14 +432,14 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2,
 
     // User defined comparison
     if ( IsCObject() ) {
-        const CSerialUserOp* op1 =
-            dynamic_cast<const CSerialUserOp*>
-            (static_cast<const CObject*>(object1));
-        const CSerialUserOp* op2 =
-            dynamic_cast<const CSerialUserOp*>
-            (static_cast<const CObject*>(object2));
-        if ( op1  &&  op2 ) {
-            return op1->UserOp_Equals(*op2);
+        if ( const CSerialUserOp* op1 =
+             dynamic_cast<const CSerialUserOp*>
+             (static_cast<const CObject*>(object1)) ) {
+            if ( const CSerialUserOp* op2 =
+                 dynamic_cast<const CSerialUserOp*>
+                 (static_cast<const CObject*>(object2)) ) {
+                return op1->UserOp_Equals(*op2);
+            }
         }
     }
     return true;
@@ -454,21 +454,19 @@ void CClassTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
         const CMemberInfo* info = GetMemberInfo(i);
         info->GetTypeInfo()->Assign(GetMember(info, dst),
                                     GetMember(info, src), how);
-        if ( info->HaveSetFlag() ) {
-            info->UpdateSetFlag(dst,info->GetSetFlag(src));
-        }
+        info->UpdateSetFlag(dst, src);
     }
 
     // User defined assignment
     if ( IsCObject() ) {
-        const CSerialUserOp* opsrc =
-            dynamic_cast<const CSerialUserOp*>
-            (static_cast<const CObject*>(src));
-        CSerialUserOp* opdst =
-            dynamic_cast<CSerialUserOp*>
-            (static_cast<CObject*>(dst));
-        if ( opdst  &&  opsrc ) {
-            opdst->UserOp_Assign(*opsrc);
+        if ( const CSerialUserOp* opsrc =
+             dynamic_cast<const CSerialUserOp*>
+             (static_cast<const CObject*>(src)) ) {
+            if ( CSerialUserOp* opdst =
+                 dynamic_cast<CSerialUserOp*>
+                 (static_cast<CObject*>(dst)) ) {
+                opdst->UserOp_Assign(*opsrc);
+            }
         }
     }
 }

@@ -34,6 +34,7 @@
 #include <serial/exception.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/impl/stdtypesimpl.hpp>
+#include <serial/impl/objstrasnb.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -459,7 +460,7 @@ void CObjectTypeInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string&
     GetNCTypeInfo()->SetPathCopyHook(stream,path,hook);
 }
 
-CAsnBinaryDefs::ETagValue CObjectTypeInfo::GetASNTag() const
+CObjectTypeInfo::TASNTag CObjectTypeInfo::GetASNTag() const
 {
     switch (GetTypeFamily()) {
     default:
@@ -524,7 +525,7 @@ bool CObjectTypeInfo::MatchPattern(
     const CItemInfo* item) const
 {
     bool good = false;
-    CAsnBinaryDefs::ETagValue tag = GetASNTag();
+    TASNTag tag = GetASNTag();
     if (tag != CAsnBinaryDefs::eNone) {
         good = pattern[pos] == depth && pattern[pos+2] == (int)tag;
         if (!good) {

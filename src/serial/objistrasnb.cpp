@@ -144,21 +144,13 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(const char* buffer,
 }
 
 CObjectIStreamAsnBinary::TLongTag
-CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
+CObjectIStreamAsnBinary::PeekLongTag(void)
 {
-    TByte byte = StartTag(first_tag_byte);
-    ETagValue sysTag = GetTagValue(byte);
-    if ( sysTag != eLongTag ) {
-#if CHECK_INSTREAM_STATE
-        m_CurrentTagState = eTagParsed;
-#endif
-        m_CurrentTagLength = 1;
-        return sysTag;
-    }
     TLongTag tag = 0;
     size_t i = 1;
     const size_t KBitsInByte = 8; // ?
     const size_t KTagBits = sizeof(tag) * KBitsInByte - 1;
+    TByte byte;
     do {
         if ( tag >= (1 << (KTagBits - 7)) ) {
             ThrowError(fOverflow,
@@ -180,6 +172,29 @@ void CObjectIStreamAsnBinary::UnexpectedTagClassByte(TByte first_tag_byte,
     ThrowError(fFormatError, "unexpected tag class/constructed: " +
                              TagToString(first_tag_byte) + ", should be " +
                              TagToString(expected_class_byte));
+}
+
+void CObjectIStreamAsnBinary::UnexpectedShortLength(size_t got_length,
+                                                    size_t expected_length)
+{
+    ThrowError(fFormatError,
+               "unexpected length: " + NStr::SizetToString(got_length) +
+               ", should be: "       + NStr::SizetToString(expected_length));
+}
+
+void CObjectIStreamAsnBinary::UnexpectedFixedLength(void)
+{
+    ThrowError(fFormatError, "IndefiniteLengthByte is expected");
+}
+
+void CObjectIStreamAsnBinary::UnexpectedContinuation(void)
+{
+    ThrowError(eFormatError, "EndOfContentsByte expected");
+}
+
+void CObjectIStreamAsnBinary::UnexpectedLongLength(void)
+{
+    ThrowError(fFormatError, "ShortLength expected");
 }
 
 string CObjectIStreamAsnBinary::PeekClassTag(void)
@@ -340,95 +355,6 @@ void CObjectIStreamAsnBinary::UnexpectedByte(TByte byte)
                "byte " + NStr::IntToString(byte) + " expected");
 }
 
-inline
-CObjectIStreamAsnBinary::TByte
-CObjectIStreamAsnBinary::FlushTag(void)
-{
-#if CHECK_INSTREAM_STATE
-    if ( m_CurrentTagState != eTagParsed || m_CurrentTagLength == 0 )
-        ThrowError(fIllegalCall, "illegal FlushTag call");
-    m_CurrentTagState = eLengthValue;
-#endif
-    m_Input.SkipChars(m_CurrentTagLength);
-    return TByte(m_Input.GetChar());
-}
-
-inline
-bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
-{
-#if CHECK_INSTREAM_STATE
-    if ( m_CurrentTagState != eTagParsed )
-        ThrowError(fIllegalCall, "illegal PeekIndefiniteLength call");
-#endif
-    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == eIndefiniteLengthByte;
-}
-
-inline
-void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
-{
-    // indefinite length allowed only for constructed tags
-    if ( !GetTagConstructed(m_Input.PeekChar()) )
-        ThrowError(fIllegalCall, "illegal ExpectIndefiniteLength call");
-#if CHECK_INSTREAM_LIMITS
-    _ASSERT(m_CurrentTagLimit == 0);
-    // save tag limit
-    // tag limit is not changed
-    if ( m_CurrentTagLimit != 0 ) {
-        m_Limits.push(m_CurrentTagLimit);
-    }
-#endif
-    if ( FlushTag() != eIndefiniteLengthByte ) {
-        ThrowError(fFormatError, "IndefiniteLengthByte is expected");
-    }
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-    m_CurrentTagLength = 0;
-}
-
-inline
-size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
-{
-#if CHECK_INSTREAM_LIMITS
-    Int8 cur_pos = m_Input.GetStreamPosAsInt8();
-    Int8 newLimit = cur_pos + length;
-    _ASSERT(newLimit >= cur_pos);
-    _ASSERT(newLimit != 0);
-    Int8 currentLimit = m_CurrentTagLimit;
-    if ( currentLimit != 0 ) {
-        if ( newLimit > currentLimit ) {
-            ThrowError(fOverflow, "nested data length overflow");
-        }
-        m_Limits.push(currentLimit);
-    }
-    m_CurrentTagLimit = newLimit;
-#endif
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eData;
-#endif
-    return length;
-}
-
-inline
-size_t CObjectIStreamAsnBinary::ReadShortLength(void)
-{
-    TByte byte = FlushTag();
-    if ( byte >= 0x80 ) {
-        ThrowError(fFormatError, "ShortLength expected");
-    }
-    return StartTagData(byte);
-}
-
-inline
-size_t CObjectIStreamAsnBinary::ReadLengthInlined(void)
-{
-    TByte byte = FlushTag();
-    if ( byte >= 0x80 ) {
-        return ReadLengthLong(byte);
-    }
-    return StartTagData(byte);
-}
-
 size_t CObjectIStreamAsnBinary::ReadLength(void)
 {
     return ReadLengthInlined();
@@ -453,48 +379,6 @@ size_t CObjectIStreamAsnBinary::ReadLengthLong(TByte byte)
         length = (length << 8) | (m_Input.GetChar() & 0xff);
     }
     return StartTagData(length);
-}
-
-inline
-void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
-{
-    size_t got = ReadShortLength();
-    if ( got != length ) {
-        ThrowError(fFormatError,
-            "unexpected length: " + NStr::SizetToString(got) +
-            ", should be: "       + NStr::SizetToString(length));
-    }
-}
-
-inline
-void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
-{
-#if CHECK_INSTREAM_STATE
-    if ( m_CurrentTagState != eTagStart || m_CurrentTagLength != 0 )
-        ThrowError(fIllegalCall, "illegal ExpectEndOfContent call");
-#endif
-    if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
-                                    char(eZeroLengthByte)) ) {
-        ThrowError(eFormatError, "EndOfContentsByte expected");
-    }
-#if CHECK_INSTREAM_LIMITS
-    // restore tag limit from stack
-    _ASSERT(m_CurrentTagLimit == 0);
-    if ( m_CurrentTagLimit != 0 ) {
-        if ( m_Limits.empty() ) {
-            m_CurrentTagLimit = 0;
-        }
-        else {
-            m_CurrentTagLimit = m_Limits.top();
-            m_Limits.pop();
-        }
-        _ASSERT(m_CurrentTagLimit == 0);
-    }
-#endif
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-    m_CurrentTagLength = 0;
 }
 
 void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
@@ -1041,18 +925,18 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
 {
     BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
     ExpectContainer(classType->RandomOrder());
-
     ReadClassRandomContentsBegin(classType);
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+    while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType)) != kInvalidMember ) {
         ReadClassRandomContentsMember(classPtr);
-        EndClassMember();
+        ExpectEndOfContent();
+        //CObjectIStreamAsnBinary::EndClassMember();
     }
 
     ReadClassRandomContentsEnd();
-
-    EndClass();
+    ExpectEndOfContent();
+    //CObjectIStreamAsnBinary::EndClass();
     END_OBJECT_FRAME();
 }
 
@@ -1065,13 +949,15 @@ CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
     ReadClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType,*pos)) != kInvalidMember ) {
+    while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType,*pos)) != kInvalidMember ) {
         ReadClassSequentialContentsMember(classPtr);
-        EndClassMember();
+        ExpectEndOfContent();
+        //CObjectIStreamAsnBinary::EndClassMember();
     }
 
     ReadClassSequentialContentsEnd(classPtr);
-    EndClass();
+    ExpectEndOfContent();
+    //CObjectIStreamAsnBinary::EndClass();
     END_OBJECT_FRAME();
 }
 
@@ -1082,13 +968,15 @@ void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
     SkipClassRandomContentsBegin(classType);
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+    while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType)) != kInvalidMember ) {
         SkipClassRandomContentsMember();
-        EndClassMember();
+        ExpectEndOfContent();
+        //CObjectIStreamAsnBinary::EndClassMember();
     }
 
     SkipClassRandomContentsEnd();
-    EndClass();
+    ExpectEndOfContent();
+    //CObjectIStreamAsnBinary::EndClass();
     END_OBJECT_FRAME();
 }
 
@@ -1100,13 +988,15 @@ CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classType)
     SkipClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
-    while ( (index = BeginClassMember(classType,*pos)) != kInvalidMember ) {
+    while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType,*pos)) != kInvalidMember ) {
         SkipClassSequentialContentsMember();
-        EndClassMember();
+        ExpectEndOfContent();
+        //CObjectIStreamAsnBinary::EndClassMember();
     }
 
     SkipClassSequentialContentsEnd();
-    EndClass();
+    ExpectEndOfContent();
+    //CObjectIStreamAsnBinary::EndClass();
     END_OBJECT_FRAME();
 }
 #endif
@@ -1170,7 +1060,33 @@ void CObjectIStreamAsnBinary::ReadChoice(const CChoiceTypeInfo* choiceType,
 
     END_OBJECT_FRAME();
 
-    EndChoiceVariant();
+    ExpectEndOfContent();
+    //EndChoiceVariant();
+}
+
+void CObjectIStreamAsnBinary::ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
+                                               TObjectPtr choicePtr)
+{
+    BEGIN_OBJECT_FRAME3(eFrameChoice, choiceType, choicePtr);
+    TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
+    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
+    ExpectIndefiniteLength();
+    TMemberIndex index = choiceType->GetVariants().Find(tag);
+    if ( index == kInvalidMember ) {
+        if (!CanSkipUnknownVariants()) {
+            UnexpectedMember(tag, choiceType->GetItems());
+        }
+        SetFailFlags(fUnknownValue);
+        SkipAnyContent();
+    }
+    else {
+        const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+        SetTopMemberId(variantInfo->GetId());
+        variantInfo->ReadVariant(*this, choicePtr);
+    }
+    END_OBJECT_FRAME();
+    ExpectEndOfContent();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
@@ -1184,7 +1100,32 @@ void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
 
     END_OBJECT_FRAME();
 
-    EndChoiceVariant();
+    ExpectEndOfContent();
+    //EndChoiceVariant();
+}
+
+void CObjectIStreamAsnBinary::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)
+{
+    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
+    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
+    ExpectIndefiniteLength();
+    TMemberIndex index = choiceType->GetVariants().Find(tag);
+    if ( index == kInvalidMember ) {
+        if (!CanSkipUnknownVariants()) {
+            UnexpectedMember(tag, choiceType->GetItems());
+        }
+        SetFailFlags(fUnknownValue);
+        SkipAnyContent();
+    }
+    else {
+        const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+        SetTopMemberId(variantInfo->GetId());
+        variantInfo->SkipVariant(*this);
+    }
+    END_OBJECT_FRAME();
+    ExpectEndOfContent();
+    END_OBJECT_FRAME();
 }
 #endif
 
@@ -1525,22 +1466,10 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     return eThisPointer;
 }
 
-TEnumValueType
-CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
+static inline
+TTypeInfo MapType(const string& name)
 {
-    TEnumValueType value;
-    if ( values.IsInteger() ) {
-        // allow any integer
-        ExpectSysTag(eInteger);
-        ReadStdSigned(*this, value);
-    }
-    else {
-        // enum element by value
-        ExpectSysTag(eEnumerated);
-        ReadStdSigned(*this, value);
-        values.FindName(value, false); // check value
-    }
-    return value;
+    return CClassTypeInfoBase::GetClassInfoByName(name);
 }
 
 CObjectIStream::TObjectIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
@@ -1560,6 +1489,197 @@ string CObjectIStreamAsnBinary::ReadOtherPointer(void)
 void CObjectIStreamAsnBinary::ReadOtherPointerEnd(void)
 {
     ExpectEndOfContent();
+}
+
+static unsigned cnt[256];
+struct SPrint {
+    ~SPrint() {
+        for ( int i = 0; i < 256; ++i ) {
+            if ( cnt[i] ) {
+                cout << i << ": " << cnt[i] << endl;
+            }
+        }
+    }
+} s_print;
+
+pair<TObjectPtr, TTypeInfo>
+CObjectIStreamAsnBinary::ReadPointer(TTypeInfo declaredType)
+{
+    _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
+    TObjectPtr objectPtr = 0;
+    TTypeInfo objectType = 0;
+    TByte byte = PeekTagByte();
+    //cnt[byte] += 1;
+    // variants:
+    //    eUniversal,   !constructed, eNull             -> NULL
+    //    eApplication,  constructed, eMemberReference  -> member reference
+    //    eApplication,  constructed, eLongTag          -> other class
+    //    eApplication, !constructed, eObjectReference  -> object reference
+    // any other -> this class
+    switch ( byte ) {
+    case ASN_BINARY_MAKE_TAG_BYTE(eUniversal, ePrimitive, eNull):
+        {
+            _TRACE("CObjectIStream::ReadPointer: null");
+#if CHECK_INSTREAM_STATE
+            m_CurrentTagState = eTagParsed;
+#endif
+            m_CurrentTagLength = 1;
+            ExpectShortLength(0);
+            EndOfTag();
+            return pair<TObjectPtr, TTypeInfo>((TObjectPtr)0, declaredType);
+        }
+    case ASN_BINARY_MAKE_TAG_BYTE(eApplication, ePrimitive, eObjectReference):
+        {
+            _TRACE("CObjectIStream::ReadPointer: @...");
+            TObjectIndex index = ReadObjectPointer();
+            _TRACE("CObjectIStream::ReadPointer: @" << index);
+            const CReadObjectInfo& info = GetRegisteredObject(index);
+            objectType = info.GetTypeInfo();
+            objectPtr = info.GetObjectPtr();
+            if ( !objectPtr ) {
+                ThrowError(fFormatError,
+                    "invalid reference to skipped object: object ptr is NULL");
+            }
+            break;
+        }
+    case ASN_BINARY_MAKE_TAG_BYTE(eApplication, eConstructed, eLongTag):
+        {
+            _TRACE("CObjectIStream::ReadPointer: new...");
+            string className = ReadOtherPointer();
+            _TRACE("CObjectIStream::ReadPointer: new " << className);
+            objectType = MapType(className);
+
+            BEGIN_OBJECT_FRAME2(eFrameNamed, objectType);
+                
+            CRef<CObject> ref;
+            if ( objectType->IsCObject() ) {
+                objectPtr = objectType->Create(GetMemoryPool());
+                ref.Reset(static_cast<CObject*>(objectPtr));
+            }
+            else {
+                objectPtr = objectType->Create();
+            }
+            RegisterObject(objectPtr, objectType);
+            ReadObject(objectPtr, objectType);
+            if ( objectType->IsCObject() )
+                ref.Release();
+                
+            END_OBJECT_FRAME();
+
+            ReadOtherPointerEnd();
+            break;
+        }
+    case eContainterTagByte:
+    case eContainterTagByte+1:
+    default:
+        {
+            _TRACE("CObjectIStream::ReadPointer: new");
+            CRef<CObject> ref;
+            if ( declaredType->IsCObject() ) {
+                objectPtr = declaredType->Create(GetMemoryPool());
+                ref.Reset(static_cast<CObject*>(objectPtr));
+            }
+            else {
+                objectPtr = declaredType->Create();
+            }
+            RegisterObject(objectPtr, declaredType);
+            ReadObject(objectPtr, declaredType);
+            if ( declaredType->IsCObject() )
+                ref.Release();
+            return make_pair(objectPtr, declaredType);
+        }
+    }
+    while ( objectType != declaredType ) {
+        // try to check parent class pointer
+        if ( objectType->GetTypeFamily() != eTypeFamilyClass ) {
+            ThrowError(fFormatError,"incompatible member type");
+        }
+        const CClassTypeInfo* parentClass =
+            CTypeConverter<CClassTypeInfo>::SafeCast(objectType)->GetParentClassInfo();
+        if ( parentClass ) {
+            objectType = parentClass;
+        }
+        else {
+            ThrowError(fFormatError,"incompatible member type");
+        }
+    }
+    return make_pair(objectPtr, objectType);
+}
+
+void CObjectIStreamAsnBinary::SkipPointer(TTypeInfo declaredType)
+{
+    _TRACE("CObjectIStream::SkipPointer("<<declaredType->GetName()<<")");
+    TByte byte = PeekTagByte();
+    // variants:
+    //    eUniversal,   !constructed, eNull             -> NULL
+    //    eApplication,  constructed, eMemberReference  -> member reference
+    //    eApplication,  constructed, eLongTag          -> other class
+    //    eApplication, !constructed, eObjectReference  -> object reference
+    // any other -> this class
+    switch ( byte ) {
+    case ASN_BINARY_MAKE_TAG_BYTE(eUniversal, ePrimitive, eNull):
+        {
+            _TRACE("CObjectIStream::SkipPointer: null");
+#if CHECK_INSTREAM_STATE
+            m_CurrentTagState = eTagParsed;
+#endif
+            m_CurrentTagLength = 1;
+            ExpectShortLength(0);
+            EndOfTag();
+            return;
+        }
+        return;
+    case ASN_BINARY_MAKE_TAG_BYTE(eApplication, ePrimitive, eObjectReference):
+        {
+            _TRACE("CObjectIStream::SkipPointer: @...");
+            TObjectIndex index = ReadObjectPointer();
+            _TRACE("CObjectIStream::SkipPointer: @" << index);
+            GetRegisteredObject(index);
+            break;
+        }
+    case ASN_BINARY_MAKE_TAG_BYTE(eApplication, eConstructed, eLongTag):
+        {
+            _TRACE("CObjectIStream::ReadPointer: new...");
+            string className = ReadOtherPointer();
+            _TRACE("CObjectIStream::ReadPointer: new " << className);
+            TTypeInfo typeInfo = MapType(className);
+            BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
+                
+            RegisterObject(typeInfo);
+            SkipObject(typeInfo);
+
+            END_OBJECT_FRAME();
+            ReadOtherPointerEnd();
+            break;
+        }
+    case eContainterTagByte:
+    case eContainterTagByte+1:
+    default:
+        {
+            _TRACE("CObjectIStream::ReadPointer: new");
+            RegisterObject(declaredType);
+            SkipObject(declaredType);
+            break;
+        }
+    }
+}
+
+TEnumValueType
+CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
+{
+    TEnumValueType value;
+    if ( values.IsInteger() ) {
+        // allow any integer
+        ExpectSysTag(eInteger);
+        ReadStdSigned(*this, value);
+    }
+    else {
+        // enum element by value
+        ExpectSysTag(eEnumerated);
+        ReadStdSigned(*this, value);
+        values.FindName(value, false); // check value
+    }
+    return value;
 }
 
 bool CObjectIStreamAsnBinary::SkipRealValue(void)
