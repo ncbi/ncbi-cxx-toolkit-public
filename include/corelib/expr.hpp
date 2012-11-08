@@ -358,7 +358,7 @@ private:
         return m_ParserFlags & fDenyAutoVar;
     }
 
-    bool NoDivision(void) const { return m_ParserFlags&fNoDivision;}
+    bool NoDivision(void) const { return (m_ParserFlags & fNoDivision) != 0;}
 
 private:
     enum {hash_table_size = 1013};
