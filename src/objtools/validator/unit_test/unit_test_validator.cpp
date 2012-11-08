@@ -15224,6 +15224,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivBioSources)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+    src1->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("Viruses");
+    src2->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("Viruses");
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
 }
 
 

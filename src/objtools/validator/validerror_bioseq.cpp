@@ -1203,6 +1203,10 @@ static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
     if (NStr::EqualNocase(src.GetOrg().GetTaxname(), "unidentified phage")) {
         return true;
     }
+    if (src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetLineage()
+        && NStr::StartsWith(src.GetOrg().GetOrgname().GetLineage(), "Viruses", NStr::eNocase)) {
+        return true;
+    }
     return false;
 }
 
