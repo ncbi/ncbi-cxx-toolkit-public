@@ -1350,7 +1350,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(list<CChain>& chains
             int align_len = 0;
             ITERATE(vector<CGeneModel*>, k, parts)
                 align_len += (*k)->AlignLen();
-            gapped_sorted_protein_parts.insert(make_pair(align_len,&parts));
+            gapped_sorted_protein_parts.insert(TLenChainMemberPmap::value_type(align_len,&parts));
         }
     }
 
