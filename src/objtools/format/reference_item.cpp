@@ -81,11 +81,15 @@ USING_SCOPE(sequence);
 class LessThan
 {
 public:
-    LessThan(bool serial_first, bool is_refseq);
+    enum ESerialFirst {
+        eSerialFirst_No = 0,
+        eSerialFirst_Yes
+    };
+    LessThan(ESerialFirst serial_first, bool is_refseq);
     bool operator()(const CRef<CReferenceItem>& ref1, const CRef<CReferenceItem>& ref2);
 private:
-    bool m_SerialFirst;
-    bool m_IsRefSeq;
+    ESerialFirst m_SerialFirst;
+    bool         m_IsRefSeq;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -466,7 +470,8 @@ static void s_MergeDuplicates
 void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 {
     {{
-        stable_sort(refs.begin(), refs.end(), LessThan(false, ctx.IsRefSeq()));
+        stable_sort(refs.begin(), refs.end(), 
+            LessThan(LessThan::eSerialFirst_No, ctx.IsRefSeq()));
     }}
 
     {{
@@ -482,7 +487,8 @@ void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 
     {{
         // re-sort, take serial number into consideration.
-        stable_sort(refs.begin(), refs.end(), LessThan(true, ctx.IsRefSeq()));
+        stable_sort(refs.begin(), refs.end(), 
+            LessThan(LessThan::eSerialFirst_Yes, ctx.IsRefSeq()));
     }}
     
     // assign final serial numbers
@@ -687,8 +693,20 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
 
-        ITERATE( vector< CRef<CPub> >, new_pub_iter, new_pubs ) {
-            x_Init( **new_pub_iter, ctx );
+        if( ! new_pubs.empty() ) {
+            ITERATE( vector< CRef<CPub> >, new_pub_iter, new_pubs ) {
+                x_Init( **new_pub_iter, ctx );
+            }
+
+            // we have to add the new_pubs to m_Pubdesc->GetPub() but m_Pubdesc
+            // is const.  The solution is to copy it, modify the copy, and 
+            // set the copy to have CConstRef
+            CRef<CPubdesc> new_pubdesc( new CPubdesc );
+            new_pubdesc->Assign(*m_Pubdesc);
+            CPub_equiv::Tdata & new_pub_list = new_pubdesc->SetPub().Set();
+            copy( new_pubs.begin(), new_pubs.end(),
+                back_inserter(new_pub_list) );
+            m_Pubdesc = new_pubdesc;
         }
     }
 
@@ -1638,7 +1656,7 @@ static CDate::ECompare s_CompareDates(const CDate& d1, const CDate& d2)
     return CDate::eCompare_same;
 }
 
-LessThan::LessThan(bool serial_first, bool is_refseq) :
+LessThan::LessThan(ESerialFirst serial_first, bool is_refseq) :
     m_SerialFirst(serial_first), m_IsRefSeq(is_refseq)
 {}
 
@@ -1647,7 +1665,7 @@ bool LessThan::operator()
 (const CRef<CReferenceItem>& ref1,
  const CRef<CReferenceItem>& ref2)
 {
-    if ( m_SerialFirst  &&  ref1->GetSerial() != ref2->GetSerial() ) {
+    if ( m_SerialFirst == eSerialFirst_Yes &&  ref1->GetSerial() != ref2->GetSerial() ) {
         return ref1->GetSerial() < ref2->GetSerial();
     }
 
