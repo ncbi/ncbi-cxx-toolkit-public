@@ -1012,8 +1012,8 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
 bool CObjectIStreamXml::SkipAnyContent(void)
 {
     if (ThisTagIsSelfClosed()) {
-        EndSelfClosedTag();
-        return false;
+        //EndSelfClosedTag();
+        return true;
     }
     while (!NextTagIsClosing()) {
         while (NextIsTag()) {
