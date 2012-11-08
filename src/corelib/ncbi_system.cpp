@@ -567,7 +567,9 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
                      TLimitsPrintParameter parameter,
                      size_t                terminate_delay_time)
 {
-    return SetCpuTimeLimit(max_cpu_time, terminate_delay_time, handler, parameter);
+    return SetCpuTimeLimit((unsigned int)max_cpu_time,
+                           (unsigned int)terminate_delay_time,
+                           handler, parameter);
 }
 
 
