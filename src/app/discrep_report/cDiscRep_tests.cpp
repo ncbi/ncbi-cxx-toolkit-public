@@ -115,6 +115,8 @@ static CDiscTestInfo thisTest;
 bool CDiscTestInfo :: is_AllAnnot_run = false;
 bool CDiscTestInfo :: is_BASES_N_run = false;
 bool CDiscTestInfo :: is_BIOSRC_run = false;
+bool CDiscTestInfo :: is_BIOSRC1_run = false;
+bool CDiscTestInfo :: is_Biosrc_Orgmod_run = false;
 bool CDiscTestInfo :: is_DESC_user_run = false;
 bool CDiscTestInfo :: is_FEAT_DESC_biosrc_run = false;
 bool CDiscTestInfo :: is_MOLINFO_run = false;
@@ -167,7 +169,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    ENa_strand str1, str2;
    unsigned i=0, j=0;
    string desc1, desc2;
-   for (i=0; i< cd_feat.size()-1; i++) {
+   for (i=0; (int)i< (int)(cd_feat.size()-1); i++) {
      const CSeq_loc& loc1 = cd_feat[i]->GetLocation();
      str1 = loc1.GetStrand();
      for (j=i+1; j< cd_feat.size(); j++) {
@@ -241,8 +243,8 @@ void CBioseq_CONTAINED_CDS :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_PSEUDO_MISMATCH :: FindPseudoDiscrepancies(const CSeq_feat& seq_feat)
 {
-    CGene_ref& xref_gene = const_cast <CSeq_feat&> (seq_feat).SetGeneXref();
-    if ( !(const_cast <const CGene_ref&> (xref_gene).IsSuppressed()) ) return;//not empty
+    const CGene_ref* xref_gene = seq_feat.GetGeneXref();
+    if ( xref_gene ) return;//not empty
     else {
       CConstRef <CSeq_feat> gene_olp= GetBestOverlappingFeat(seq_feat.GetLocation(),
                                                              CSeqFeatData::e_Gene,
@@ -2770,9 +2772,7 @@ void CSeqEntryTestAndRepData :: TestOnBiosrc(const CSeq_entry& seq_entry)
    ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
      const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
      desc = GetDiscItemText(**it);
-     if (CSeqEntry_ONCALLER_MULTISRC :: HasMulSrc( biosrc ))
-        thisInfo.test_item_list[GetName_multi()].push_back(desc);
-     else if (IsBacterialIsolate(biosrc))
+     if (IsBacterialIsolate(biosrc))
                thisInfo.test_item_list[GetName_iso()].push_back(desc); 
    };
 
@@ -2780,10 +2780,7 @@ void CSeqEntryTestAndRepData :: TestOnBiosrc(const CSeq_entry& seq_entry)
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
      const CBioSource& biosrc = (*it)->GetSource();
      desc = GetDiscItemText( **it, *(biosrc_seqdesc_seqentry[i]));
-     if (CSeqEntry_ONCALLER_MULTISRC :: HasMulSrc( biosrc ))
-        thisInfo.test_item_list[GetName_multi()].push_back(desc);
-     else 
-       if (IsBacterialIsolate(biosrc)) 
+     if (IsBacterialIsolate(biosrc)) 
                  thisInfo.test_item_list[GetName_iso()].push_back(desc);
      i++;
    };
@@ -2842,35 +2839,6 @@ void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: GetReport(CRef <CClickab
                            + "isolate.";
 };
 
-
-
-bool CSeqEntry_ONCALLER_MULTISRC :: HasMulSrc(const CBioSource& biosrc)
-{
-  if (biosrc.IsSetOrgMod()) {
-    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
-      const int subtype = (*it)->GetSubtype();
-      const string& subname = (*it)->GetSubname();
-      if ( (subtype == COrgMod :: eSubtype_strain || subtype == COrgMod :: eSubtype_isolate)
-                     && ( subname.find(",") != string::npos || subname.find(";") != string::npos) )
-         return true;
-    }
-    return false;
-  }
-  else return false;
-};
-
-
-void CSeqEntry_ONCALLER_MULTISRC :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   if (!thisTest.is_BIOSRC_run) TestOnBiosrc(seq_entry);
-};
-
-
-void CSeqEntry_ONCALLER_MULTISRC :: GetReport(CRef <CClickableItem>& c_item) 
-{
-   c_item->description = GetHasComment(c_item->item_list.size(), "organism") 
-                                      + "commma or semicolon in strain or isolate.";
-};
 
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SynonymsMatch(const COrg_ref& org1, const COrg_ref& org2)
@@ -4579,6 +4547,281 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c
 
 
 // new method
+bool CSeqEntry_test_on_biosrc_orgmod :: HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, const COrgMod::ESubtype& check_type, const string& check_head)
+{
+  size_t pos;
+  unsigned h_size = check_head.size();
+  ITERATE (list <CRef <COrgMod> >, it, mods) {
+     strtmp = (*it)->GetSubname();
+     if ( (*it)->GetSubtype() == check_type && strtmp.substr(0, h_size) == check_head ) {
+        if ( (pos = strtmp.find(';')) != string::npos) {
+           if ( strtmp.substr(h_size, pos-h_size) == subname_rest ) return false;  // need to test
+        }
+        else if (strtmp.substr(h_size) == subname_rest) return false;
+     }
+  }
+  return true;
+};
+
+
+bool CSeqEntry_test_on_biosrc_orgmod :: IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, const string& strain_head, const string& culture_head)
+{
+  COrgMod::ESubtype check_type;
+  string check_head(kEmptyStr), subname_rest(kEmptyStr);
+  const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
+  ITERATE (list <CRef <COrgMod> >, it, mods) {
+    if ( (*it)->GetSubtype() == COrgMod::eSubtype_strain
+                  && (*it)->GetSubname().substr(0, strain_head.size()) == strain_head) {
+       check_type = COrgMod::eSubtype_culture_collection;
+       check_head = culture_head;
+       subname_rest = (*it)->GetSubname().substr(strain_head.size());
+    }
+    else if ( (*it)->GetSubtype() == COrgMod::eSubtype_culture_collection
+                && (*it)->GetSubname().substr(0, culture_head.size()) == culture_head) {
+       check_type = COrgMod::eSubtype_strain;
+       check_head = strain_head;
+       subname_rest = (*it)->GetSubname().substr(culture_head.size());
+    }
+
+    if (!check_head.empty()&& !subname_rest.empty() 
+                          && HasConflict(mods, subname_rest, check_type, check_head) )
+         return true;
+  }
+
+  return false;
+};
+
+
+void CSeqEntry_test_on_biosrc_orgmod :: BacterialTaxShouldEndWithStrain(const CBioSource& biosrc, const string& desc)
+{
+    if ( HasLineage(biosrc, "Bacteria") && biosrc.GetOrg().CanGetTaxname()) {
+      string taxname = biosrc.GetOrg().GetTaxname();
+      if (taxname.empty()) return;
+      string subname;
+      ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
+        if ( (*it)->GetSubtype() == COrgMod::eSubtype_strain) {
+           subname = (*it)->GetSubname();
+           size_t pos = taxname.find(subname);
+           if (pos == string::npos || subname.size() != (taxname.size() - pos + 1))
+                 thisInfo.test_item_list[GetName_mism()].push_back(desc);
+        }
+      }
+    }
+};
+
+
+void CSeqEntry_test_on_biosrc_orgmod :: BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, const string& desc)
+{
+   bool has_match = false, has_conflict = false;
+   string extra_str(kEmptyStr), subnm1, subnm2;
+
+   const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
+   ITERATE (list < CRef < COrgMod > >, it, mods) {
+     if ((*it)->GetSubtype() == COrgMod :: eSubtype_strain) {
+       ITERATE (list < CRef < COrgMod > >, jt, mods) {
+         if ( (*jt)->GetSubtype() == COrgMod :: eSubtype_culture_collection) {
+            subnm1 = (*it)->GetSubname();
+            subnm2 = (*jt)->GetSubname();
+            RmvChar(subnm1, ": ");
+            RmvChar(subnm2, ": ");
+            if (subnm1 == subnm2) {
+                   has_match = true;
+                   break;
+            }
+            else {
+               extra_str = "        " + (*it)->GetSubtypeName( (*it)->GetSubtype(),
+                                                     COrgMod::eVocabulary_insdc ) + ": "
+                                + (*it)->GetSubname() + "\n        "
+                                + (*jt)->GetSubtypeName( (*jt)->GetSubtype(),
+                                                     COrgMod::eVocabulary_insdc ) + ": "
+                                + (*jt)->GetSubname();
+               has_conflict = true;
+            }
+         }
+       };
+       if (has_match) break;
+     }
+   }
+   if (has_conflict && !has_match)
+       thisInfo.test_item_list[GetName_cul()].push_back(desc + "\n" + extra_str); 
+};
+
+
+void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const string& desc)
+{
+  // DUP_DISC_ATCC_CULTURE_CONFLICT
+  if (IsStrainInCultureCollectionForBioSource(biosrc, "ATCC ", "ATCC:"))
+        thisInfo.test_item_list[GetName_atcc()].push_back(desc);
+         
+  // DUP_DISC_CBS_CULTURE_CONFLICT
+  if (IsStrainInCultureCollectionForBioSource(biosrc, "CBS ", "CBS:"))
+          thisInfo.test_item_list[GetName_cbs()].push_back(desc);
+
+  // DISC_BACTERIAL_TAX_STRAIN_MISMATCH
+  BacterialTaxShouldEndWithStrain(biosrc, desc);
+
+  // ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH
+  BiosrcHasConflictingStrainAndCultureCollectionValues(biosrc, desc);
+};
+
+
+void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (thisTest.is_Biosrc_Orgmod_run) return;
+
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
+     desc = GetDiscItemText(**it);
+     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
+     RunTests(biosrc, desc);
+   }
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
+      desc = GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i]));
+      const CBioSource& biosrc = (*it)->GetSource();
+      RunTests(biosrc, desc);
+      i++;
+   }
+
+   thisTest.is_Biosrc_Orgmod_run = true;
+};
+
+
+void CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list); 
+  c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
+                          + "conflicting ATCC strain and culture collection values.";
+};
+
+
+void CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   RmvRedundancy(c_item->item_list); 
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
+                          + "conflicting CBS strain and culture collection values.";
+};
+
+
+void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
+{
+   RmvRedundancy(c_item->item_list); 
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+                           + "tax name/strain mismatch.";
+};
+
+
+void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: GetReport(CRef <CClickableItem>& c_item) 
+{
+   RmvRedundancy(c_item->item_list); 
+   c_item->description = GetHasComment(c_item->item_list.size(), "organism")
+                          + "conflicting strain and culture-collection values";
+};
+
+
+
+bool CSeqEntry_test_on_biosrc :: HasMulSrc(const CBioSource& biosrc)
+{
+  if (biosrc.IsSetOrgMod()) {
+    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
+      const int subtype = (*it)->GetSubtype();
+      const string& subname = (*it)->GetSubname();
+      if ( (subtype == COrgMod::eSubtype_strain || subtype == COrgMod::eSubtype_isolate)
+             && ( subname.find(",") !=string::npos || subname.find(";") !=string::npos) )
+         return true;
+    }
+    return false;
+  }
+  else return false;
+};
+
+
+bool CSeqEntry_test_on_biosrc :: HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc)
+{
+  if (biosrc.CanGetSubtype()) {
+    ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
+      if ( (*it)->GetSubtype() == CSubSource::eSubtype_other
+            && (*it)->GetName() == "amplified with species-specific primers")
+        return true;
+    }
+  }
+
+  ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+     if ( (*it)->GetSubtype() == COrgMod::eSubtype_other
+                  && (*it)->GetSubname() == "amplified with species-specific primers")
+        return true;
+  }
+  return false;
+};
+
+
+bool CSeqEntry_test_on_biosrc :: IsBacterialIsolate(const CBioSource& biosrc)
+{
+   if (!HasLineage(biosrc, "Bacteria")
+         || !biosrc.IsSetOrgMod()
+         || HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) return false;
+
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+     strtmp = (*it)->GetSubname();
+     if ( (*it)->GetSubtype() == COrgMod::eSubtype_isolate
+             && !NStr::EqualNocase(strtmp, 0, 13, "DGGE gel band")
+             && !NStr::EqualNocase(strtmp, 0, 13, "TGGE gel band")
+             && !NStr::EqualNocase(strtmp, 0, 13, "SSCP gel band"))
+        return true;
+   }
+   return false;
+};
+
+
+void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string& desc)
+{
+  if (HasMulSrc( biosrc ))   // ONCALLER_MULTISRC
+          thisInfo.test_item_list[GetName_mult()].push_back(desc);
+  else if (IsBacterialIsolate(biosrc))   // DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE
+               thisInfo.test_item_list[GetName_iso()].push_back(desc);
+};
+
+
+void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (thisTest.is_BIOSRC1_run) return;
+
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
+     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
+     desc = GetDiscItemText(**it);
+     RunTests(biosrc, desc);
+   };
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
+     const CBioSource& biosrc = (*it)->GetSource();
+     desc = GetDiscItemText( **it, *(biosrc_seqdesc_seqentry[i]));
+     RunTests(biosrc, desc);
+     i++;
+   };
+
+  thisTest.is_BIOSRC1_run = true;
+};
+
+
+void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1 :: GetReport(CRef <CClickableItem>& c_item)
+{
+   RmvRedundancy(c_item->item_list); 
+   c_item->description = GetHasComment(c_item->item_list.size(), "bacterial biosrouce")
+                           + "isolate.";
+};
+
+
+void CSeqEntry_ONCALLER_MULTISRC :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list); 
+  c_item->description = GetHasComment(c_item->item_list.size(), "organism")
+                                      + "commma or semicolon in strain or isolate.";
+};
+
+
 void CSeqEntry_test_on_user :: GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id)
 {
   string desc;
@@ -4609,7 +4852,8 @@ void CSeqEntry_test_on_user :: CheckCommentCountForSet(const CBioseq_set& set, c
           if (!bioseq.IsAa()) {
               desc =  GetDiscItemText( (*it)->GetSeq());
               if (bioseq2cnt.find(desc) != bioseq2cnt.end()) {
-                   if (cnt) bioseq2cnt[desc] =bioseq2cnt[desc] ? bioseq2cnt[desc]++ : cnt;
+                   if (cnt) 
+                       bioseq2cnt[desc] = bioseq2cnt[desc] ? bioseq2cnt[desc]++ : cnt;
               }
               else bioseq2cnt[desc] = cnt;
           }
@@ -4642,11 +4886,12 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
          && user_obj.HasField("StructuredCommentPrefix")
          && user_obj.GetField("StructuredCommentPrefix").GetData().IsStr()) {
       if (user_obj.GetField("StructuredCommentPrefix").GetData().GetStr()
-                                                        != "##Genome-Assembly-Data-START##") {
-           if (user_seqdesc_seqentry[i]->IsSeq() && user_seqdesc_seqentry[i]->GetSeq().IsNa())
+                                                 != "##Genome-Assembly-Data-START##") {
+         if (user_seqdesc_seqentry[i]->IsSeq() 
+                                          && user_seqdesc_seqentry[i]->GetSeq().IsNa())
               thisInfo.test_item_list[GetName_comm()].push_back(desc);
-           else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_comm(),
-                                                                              true, false);
+         else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_comm(),
+                                                                           true, false);
       }
     }
 
@@ -4690,12 +4935,13 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     // ONCALLER_BIOPROJECT_ID
     if (type_str == "DBLink" && user_obj.HasField("BioProject")
          && user_obj.GetField("BioProject").GetData().IsStrs()) {
-         const vector <string>& ids = user_obj.GetField("BioProject").GetData().GetStrs();
-         if (!ids.empty() && !ids[0].empty()) {
-           if (user_seqdesc_seqentry[i]->IsSeq())
+       const vector <string>& ids =user_obj.GetField("BioProject").GetData().GetStrs();
+       if (!ids.empty() && !ids[0].empty()) {
+         if (user_seqdesc_seqentry[i]->IsSeq())
               thisInfo.test_item_list[GetName_bproj()].push_back(desc);
-           else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_bproj());
-         }
+         else 
+            AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_bproj());
+       }
     }
 
     i++;
@@ -4704,7 +4950,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 // ONCALLER_MISSING_STRUCTURED_COMMENTS
   ITERATE (Str2Int, it, bioseq2cnt) {
     thisInfo.test_item_list[GetName_scomm()].push_back(
-                        NStr::IntToString( (it->second > 0)? it->second:0) + "$" + it->first);
+                   NStr::IntToString( (it->second > 0)? it->second:0) + "$" + it->first);
   }
 
   thisTest.is_DESC_user_run = true;
@@ -4818,6 +5064,14 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 // new method
 
+
+void CSeqEntry_INCONSISTENT_SOURCE_DEFLINE :: TestOnObj(const CSeq_entry& seq_entry)
+{
+};
+
+void CSeqEntry_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
+{
+};
 
 
 
@@ -5991,48 +6245,6 @@ void CSeqEntry_DISC_SOURCE_QUALS :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
-
-
-
-void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: BacterialTaxShouldEndWithStrain(const CBioSource& biosrc, const CSeq_feat* seq_feat, const CSeqdesc* seqdesc, const CSeq_entry* seq_entry)
-{
-    if ( HasLineage(biosrc, "Bacteria") && biosrc.GetOrg().CanGetTaxname()) {
-      string taxname = biosrc.GetOrg().GetTaxname();
-      if (taxname.empty()) return;
-      string subname;
-      ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
-        if ( (*it)->GetSubtype() == COrgMod::eSubtype_strain) {
-           subname = (*it)->GetSubname();
-           size_t pos = taxname.find(subname);
-           if (pos == string::npos || subname.size() != (taxname.size() - pos + 1)) {
-             thisInfo.test_item_list[GetName()].push_back(
-                (seq_feat? GetDiscItemText(*seq_feat) : GetDiscItemText(*seqdesc,*seq_entry)));
-           }
-        }
-      }
-    }
-};
-
-
-void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat)
-     BacterialTaxShouldEndWithStrain((*it)->GetData().GetBiosrc(), *it);
-
-   unsigned i=0;
-   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc)
-     BacterialTaxShouldEndWithStrain((*it)->GetSource(), 0, *it, biosrc_orgmod_seqdesc_seqentry[i++]);
-};
-
-
-
-void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") + "tax name/strain mismatch.";
-};
-
-
-
 void  CSeqEntry_ONCALLER_DEFLINE_ON_SET :: TestOnObj(const CSeq_entry& seq_entry)
 {
     unsigned i=0; 
@@ -6059,160 +6271,6 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
    if (thisInfo.expand_defline_on_set == "true" || thisInfo.expand_defline_on_set == "TRUE")
      c_item->expanded = true;
 };
-
-
-
-void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, const CSeq_feat* seq_feat, const CSeqdesc* seqdesc, const CSeq_entry* seq_entry)
-{
-   bool has_match = false, has_conflict = false;
-   string extra_str(kEmptyStr), subnm1, subnm2;
-
-   const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
-   ITERATE (list < CRef < COrgMod > >, it, mods) {
-     if ((*it)->GetSubtype() == COrgMod :: eSubtype_strain) {
-       ITERATE (list < CRef < COrgMod > >, jt, mods) {
-         if ( (*jt)->GetSubtype() == COrgMod :: eSubtype_culture_collection) {
-            subnm1 = (*it)->GetSubname();
-            subnm2 = (*jt)->GetSubname();
-            RmvChar(subnm1, ": ");
-            RmvChar(subnm2, ": ");
-            if (subnm1 == subnm2) {
-                   has_match = true;
-                   break;
-            }
-            else {
-               extra_str = "        " + (*it)->GetSubtypeName( (*it)->GetSubtype(), 
-                                                     COrgMod::eVocabulary_insdc ) + ": "
-                                + (*it)->GetSubname() + "\n        " 
-                                + (*jt)->GetSubtypeName( (*jt)->GetSubtype(),
-                                                     COrgMod::eVocabulary_insdc ) + ": "
-                                + (*jt)->GetSubname();
-               has_conflict = true;
-            }
-         } 
-       };
-       if (has_match) break; 
-     } 
-   }
-   if (has_conflict && !has_match)
-       thisInfo.test_item_list[GetName()].push_back(
-                (seq_feat? GetDiscItemText(*seq_feat):GetDiscItemText(*seqdesc,*seq_entry)) 
-                 + "\n" + extra_str);
-};
-
-
-
-void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) 
-     BiosrcHasConflictingStrainAndCultureCollectionValues((*it)->GetData().GetBiosrc(), *it);
-
-   unsigned i=0;
-   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc)
-     BiosrcHasConflictingStrainAndCultureCollectionValues((*it)->GetSource(), 0, *it, 
-                                                        biosrc_orgmod_seqdesc_seqentry[i++]);
-};
-
-
-
-void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->description = GetHasComment(c_item->item_list.size(), "organism") 
-                          + "conflicting strain and culture-collection values";
-};
-
-
-
-bool CSeqEntryTestAndRepData :: HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, const COrgMod::ESubtype& check_type, const string& check_head)
-{
-  size_t pos;
-  unsigned h_size = check_head.size();
-  ITERATE (list <CRef <COrgMod> >, it, mods) {
-     strtmp = (*it)->GetSubname();
-     if ( (*it)->GetSubtype() == check_type && strtmp.substr(0, h_size) == check_head ) {
-        if ( (pos = strtmp.find(';')) != string::npos) {
-           if ( strtmp.substr(h_size, pos-h_size) == subname_rest ) return false;  // have to test
-        }
-        else if (strtmp.substr(h_size) == subname_rest) return false;
-     }
-  }
-  return true;
-}
-
-
-
-bool CSeqEntryTestAndRepData :: IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, const string& strain_head, const string& culture_head) 
-{
-  COrgMod::ESubtype check_type;
-  string check_head(kEmptyStr), subname_rest(kEmptyStr);
-  const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
-  ITERATE (list <CRef <COrgMod> >, it, mods) {
-    if ( (*it)->GetSubtype() == COrgMod::eSubtype_strain 
-                            && (*it)->GetSubname().substr(0, strain_head.size()) == strain_head) {
-       check_type = COrgMod::eSubtype_culture_collection;
-       check_head = culture_head;
-       subname_rest = (*it)->GetSubname().substr(strain_head.size());
-    }
-    else if ( (*it)->GetSubtype() == COrgMod::eSubtype_culture_collection
-                                   && (*it)->GetSubname().substr(0, culture_head.size()) == culture_head) {
-       check_type = COrgMod::eSubtype_strain;
-       check_head = strain_head;
-       subname_rest = (*it)->GetSubname().substr(culture_head.size());
-    }
-
-    if (!check_head.empty()&& !subname_rest.empty() && HasConflict(mods, subname_rest, check_type, check_head) ) 
-         return true;
-  }
-
-  return false; 
-};
-
-
-void CSeqEntryTestAndRepData :: CheckBioSourceWithStrainCulture(const string& strain_head, const string& culture_head,
-const string& test_setting_name)
-{
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
-     if (IsStrainInCultureCollectionForBioSource((*it)->GetData().GetBiosrc(), strain_head, culture_head))
-        thisInfo.test_item_list[test_setting_name].push_back( GetDiscItemText(**it) );
-   }
-
-   unsigned i=0;
-   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
-      if (IsStrainInCultureCollectionForBioSource((*it)->GetSource(), strain_head, culture_head))
-        thisInfo.test_item_list[test_setting_name].push_back(
-                               GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i])));
-      i++;
-   }
-};
-
-
-void CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   CheckBioSourceWithStrainCulture("CBS ", "CBS:", GetName());
-};
-
-
-
-void CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
-                          + "conflicting CBS strain and culture collection values.";
-};
-
-
-void CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   CheckBioSourceWithStrainCulture("ATCC ", "ATCC:", GetName());
-};
-
-
-
-void CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
-                          + "conflicting ATCC strain and culture collection values.";
-};
-
 
 
 void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)

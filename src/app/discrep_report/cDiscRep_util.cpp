@@ -276,10 +276,13 @@ bool CTestAndRepData :: IsWholeWord(const string& str, const string& phrase)
 string CTestAndRepData :: GetProdNmForCD(const CSeq_feat& cd_feat)
 {
      // should be the longest CProt_ref on the bioseq pointed by the cds.GetProduct()
-     CConstRef <CSeq_feat> prot_seq_feat =
+     CConstRef <CSeq_feat> prot_seq_feat;
+     if (cd_feat.CanGetProduct()) {
+       prot_seq_feat = CConstRef <CSeq_feat> (
                                   GetBestOverlappingFeat(cd_feat.GetProduct(),
                                       CSeqFeatData::e_Prot, eOverlap_Contains,
-                                      *thisInfo.scope);
+                                      *thisInfo.scope));
+     }
      if (prot_seq_feat.NotEmpty() && prot_seq_feat->GetData().IsProt()) {
          const CProt_ref& prot = prot_seq_feat->GetData().GetProt();
          if (prot.CanGetName()) return( *(prot.GetName().begin()) );
@@ -730,7 +733,8 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       if (label.empty()) label = "Unknown label";
       string locus_tag = GetLocusTagForFeature (*seq_feat_p);
       string context_label(kEmptyStr);
-      if (seq_feat_p->GetData().IsCdregion()) context_label = GetProdNmForCD(*seq_feat_p);
+      if (seq_feat_p->GetData().IsCdregion()) 
+              context_label = GetProdNmForCD(*seq_feat_p);
       else {
           if (seq_feat_p->GetData().IsPub()) {
                  if ( seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label));

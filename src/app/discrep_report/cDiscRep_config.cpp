@@ -215,12 +215,14 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
    tests_on_SeqEntry_feat_desc.push_back( 
-                   CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
+                     CRef <CTestAndRepData>(new CSeqEntry_INCONSISTENT_SOURCE_DEFLINE));
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT));
    tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTISRC));
-   // asndisc vertion
+   // asndisc version
    tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
    tests_on_SeqEntry_feat_desc.push_back(
@@ -257,6 +259,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                        CRef <CTestAndRepData>(new CSeqEntry_MISSING_PROJECT));
    tests_on_SeqEntry_feat_desc.push_back( 
           CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE));
+   tests_on_SeqEntry_feat_desc.push_back( 
+          CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1));
 
 // tests_on_BioseqSet
    tests_on_BioseqSet.push_back(

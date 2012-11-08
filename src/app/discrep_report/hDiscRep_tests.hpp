@@ -71,6 +71,8 @@ namespace DiscRepNmSpc {
       static bool   is_AllAnnot_run;  // checked
       static bool   is_BASES_N_run;
       static bool   is_BIOSRC_run;
+      static bool   is_Biosrc_Orgmod_run;
+      static bool   is_BIOSRC1_run;
       static bool   is_DESC_user_run; // checked
       static bool   is_FEAT_DESC_biosrc_run;
       static bool   is_MOLINFO_run;
@@ -277,12 +279,6 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
      protected:
-       void CheckBioSourceWithStrainCulture(const string& strain_head, 
-                 const string& culture_head, const string& test_setting_name);
-       bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, 
-                  const string& strain_head, const string& culture_head);
-       bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
-                                const COrgMod::ESubtype& check_type, const string& check_head);
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
        void TestOnFeatDesc_Biosrc();
@@ -325,6 +321,71 @@ namespace DiscRepNmSpc {
 
 
 //  revolution!!
+  class CSeqEntry_test_on_biosrc_orgmod : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_biosrc_orgmod () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+ 
+    protected:
+      string GetName_mism() const {return string("DISC_BACTERIAL_TAX_STRAIN_MISMATCH");}
+      string GetName_cul() const {return string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
+      string GetName_cbs() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
+      string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
+      bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, const string& strain_head, 
+                                                          const string& culture_head);
+      void RunTests(const CBioSource& biosrc, const string& desc);
+      void BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, const string& desc);
+      void BacterialTaxShouldEndWithStrain(const CBioSource& biosrc, const string& desc);
+      bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
+                               const COrgMod::ESubtype& check_type, const string& check_head);
+  };
+
+
+  class CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_atcc();}
+  };
+
+ 
+  class CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_cbs();}
+  };
+
+  
+  class CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_mism();}
+  }; 
+
+ 
+  class CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_cul();}
+  };
+
+
+
   class CSeqEntry_test_on_user : public CSeqEntryTestAndRepData
   {
     public:
@@ -394,8 +455,58 @@ namespace DiscRepNmSpc {
   };
 
 
+
+  class CSeqEntry_test_on_biosrc : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_biosrc () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+    protected:
+      string GetName_iso() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
+      string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
+      bool HasMulSrc(const CBioSource& biosrc);
+      bool IsBacterialIsolate(const CBioSource& biosrc);
+      bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc);
+      void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+
+  class CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1 : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1 () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_iso();}
+  };
+
+
+  class CSeqEntry_ONCALLER_MULTISRC : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_MULTISRC () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_mult();}
+  };
+
   
 //
+
+
+  class CSeqEntry_INCONSISTENT_SOURCE_DEFLINE : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_INCONSISTENT_SOURCE_DEFLINE () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("INCONSISTENT_SOURCE_DEFLINE");}
+  };
 
 
   class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntryTestAndRepData
@@ -426,19 +537,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {
                                return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE");}
       virtual void Check(const string& desc) {cerr << "check1 " << desc << endl;}
-  };
-
-
-  class CSeqEntry_ONCALLER_MULTISRC : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_ONCALLER_MULTISRC () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("ONCALLER_MULTISRC");}
- 
-      static bool HasMulSrc(const CBioSource& biosrc);
   };
 
 
@@ -595,24 +693,6 @@ namespace DiscRepNmSpc {
   };
 
 
-
-
-  class CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_BACTERIAL_TAX_STRAIN_MISMATCH");}
-   
-    protected:
-      void BacterialTaxShouldEndWithStrain(const CBioSource& biosrc, const CSeq_feat* seq_feat, 
-                                       const CSeqdesc* seqdesc=0, const CSeq_entry* seq_entry=0);
-  };
-
-
-
   class CSeqEntry_ONCALLER_DEFLINE_ON_SET : public CSeqEntryTestAndRepData
   {
     public:
@@ -623,49 +703,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("ONCALLER_DEFLINE_ON_SET");}
   };
    
-
-
-  class CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
-
-    protected:
-      void BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, 
-         const CSeq_feat* seq_feat, const CSeqdesc* seqdesc = 0, const CSeq_entry* seq_entry = 0);
-
-  };
-
-
-
-  class CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
-  };
-
-
-
-  class CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
-  };
-
-
-
 
   class CSeqEntry_DISC_FEATURE_COUNT : public CSeqEntryTestAndRepData
   {
