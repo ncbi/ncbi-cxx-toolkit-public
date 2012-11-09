@@ -75,7 +75,7 @@ namespace DiscRepNmSpc {
       static bool   is_BIOSRC1_run;
       static bool   is_DESC_user_run; // checked
       static bool   is_FEAT_DESC_biosrc_run;
-      static bool   is_MOLINFO_run;
+      static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
       static bool   is_SHORT_run;
   };
@@ -506,6 +506,10 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("INCONSISTENT_SOURCE_DEFLINE");}
+
+    protected:
+      Str2Strs m_bioseq2taxnm_title;
+      void AddDtToAllBioseqsofSet(const string& txt, const CBioseq_set& bioseq_set);
   };
 
 
@@ -793,10 +797,6 @@ namespace DiscRepNmSpc {
        string GetName_10perc() const {return string("DISC_10_PERCENTN"); }
        string GetName_non_nt() const {return string("TEST_UNUSUAL_NT"); }
 
-       void TestOnMolinfo(const CBioseq& bioseq);
-       string GetName_mrna() const {return string("MOLTYPE_NOT_MRNA");}
-       string GetName_tsa() const {return string("TECHNIQUE_NOT_TSA");}
-
        void TestOnShortContigSequence(const CBioseq& bioseq);
        string GetName_contig() const {return string("SHORT_CONTIG"); }
        string GetName_200seq() const {return string("SHORT_SEQUENCES_200"); }
@@ -820,7 +820,53 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
-   class CBioseq_test_on_all_annot : public CBioseqTestAndRepData
+  
+  class CBioseq_test_on_molinfo : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_molinfo () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_mrna() const {return string("MOLTYPE_NOT_MRNA"); }
+      string GetName_tsa() const {return string("TECHNIQUE_NOT_TSA"); }
+      string GetName_part() const { return string("PARTIAL_CDS_COMPLETE_SEQUENCE"); }
+  };
+
+  class CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE : public CBioseq_test_on_molinfo
+  {
+    public:
+      virtual ~CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_part();}
+  };
+
+
+  class CBioseq_MOLTYPE_NOT_MRNA : public CBioseq_test_on_molinfo
+  {
+    public:
+      virtual ~CBioseq_MOLTYPE_NOT_MRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_mrna();}
+  };
+
+
+  class CBioseq_TECHNIQUE_NOT_TSA : public CBioseq_test_on_molinfo
+  {
+    public:
+      virtual ~CBioseq_TECHNIQUE_NOT_TSA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_tsa();}
+  };
+
+
+  class CBioseq_test_on_all_annot : public CBioseqTestAndRepData
   {
     public:
       virtual ~CBioseq_test_on_all_annot () {};
@@ -863,7 +909,9 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_long_no();}
   };
-//
+
+// new comb
+
 
   class CBioseq_CONTAINED_CDS : public CBioseqTestAndRepData
   {
@@ -1043,30 +1091,6 @@ namespace DiscRepNmSpc {
       bool CouldExtendLeft(const CBioseq& bioseq, const unsigned& pos);
       int DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq);
       bool CouldExtendRight(const CBioseq& bioseq, const int& pos);
-  };
-
-
-
-  class CBioseq_TECHNIQUE_NOT_TSA : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_TECHNIQUE_NOT_TSA () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("TECHNIQUE_NOT_TSA");}
-  };
-
-
-
-  class CBioseq_MOLTYPE_NOT_MRNA : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_MOLTYPE_NOT_MRNA () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MOLTYPE_NOT_MRNA");}
   };
 
 

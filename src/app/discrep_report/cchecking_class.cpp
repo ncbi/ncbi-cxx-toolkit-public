@@ -206,7 +206,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 // ini.
    thisTest.is_AllAnnot_run = false;
    thisTest.is_BASES_N_run = false;
-   thisTest.is_MOLINFO_run = false;
+   thisTest.is_MolInfo_run = false;
    thisTest.is_MRNA_run = false;
    thisTest.is_SHORT_run = false;
 
@@ -333,15 +333,15 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      if (!CRepConfig::tests_on_Bioseq_CFeat.empty()) 
               GoTests(CRepConfig::tests_on_Bioseq_CFeat, bioseq);
      if (!CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
-                                           && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
+                               && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
                GoTests(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq); 
 
      if (!CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
         for (CSeqdesc_CI it(bioseq_hl, sel_seqdesc_4_bioseq); it; ++it) {
           switch (it->Which()) {
-            case CSeqdesc :: e_Source: CTestAndRepData::bioseq_biosrc.push_back(&(*it));
+            case CSeqdesc ::e_Source: CTestAndRepData::bioseq_biosrc.push_back(&(*it));
                    break;
-            case CSeqdesc :: e_Molinfo: CTestAndRepData::bioseq_molinfo.push_back(&(*it));
+            case CSeqdesc ::e_Molinfo: CTestAndRepData::bioseq_molinfo.push_back(&(*it));
                    break;        
             default: break;
           }
