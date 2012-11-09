@@ -418,6 +418,16 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
         p.SetExceptions().push_back(exception);
     }
 
+    if(p.GetLoc().GetId()) {
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(*p.GetLoc().GetId());
+        if(bsh && bsh.GetState() != 0 && bsh.GetState() != CBioseq_Handle::fState_dead) { //dead is OK, beacuse supporting old versions
+            CRef<CVariationException> exception(new CVariationException);
+            exception->SetMessage("Bioseq is suppressed or withdrawn");
+            exception->SetCode(CVariationException::eCode_bioseq_state);
+            p.SetExceptions().push_back(exception);
+        }
+    }
+
     return invalid_location;
 }
 
