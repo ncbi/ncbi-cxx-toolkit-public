@@ -1452,7 +1452,21 @@ void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
 void CObjectIStream::ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
                                       TObjectPtr choicePtr)
 {
-    ReadChoice(choiceType, choicePtr);
+    BEGIN_OBJECT_FRAME3(eFrameChoice, choiceType, choicePtr);
+    BeginChoice(choiceType);
+    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
+    TMemberIndex index = BeginChoiceVariant(choiceType);
+    _ASSERT(index != kInvalidMember);
+
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    SetTopMemberId(variantInfo->GetId());
+
+    variantInfo->ReadVariant(*this, choicePtr);
+
+    EndChoiceVariant();
+    END_OBJECT_FRAME();
+    EndChoice();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
@@ -1477,7 +1491,22 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 
 void CObjectIStream::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)
 {
-    SkipChoice(choiceType);
+    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    BeginChoice(choiceType);
+    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
+    TMemberIndex index = BeginChoiceVariant(choiceType);
+    if ( index == kInvalidMember )
+        ThrowError(fFormatError,"choice variant id expected");
+
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    SetTopMemberId(variantInfo->GetId());
+
+    variantInfo->SkipVariant(*this);
+
+    EndChoiceVariant();
+    END_OBJECT_FRAME();
+    EndChoice();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::ReadAlias(const CAliasTypeInfo* aliasType,
