@@ -815,6 +815,7 @@ GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
 {
     if (!data_index) {
         data_index = (SGiDataIndex*) malloc(sizeof(SGiDataIndex));
+        memset( data_index, 0, sizeof(SGiDataIndex));
         data_index->m_FreeOnDrop = 1;
     } else {
         data_index->m_FreeOnDrop = 0;
