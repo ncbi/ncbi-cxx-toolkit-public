@@ -159,8 +159,9 @@ struct SNumericLimits : public std::numeric_limits<T>
 {
     static T min(void)
     {
-        return std::numeric_limits<T>::min() > 0
-            ? T(-std::numeric_limits<T>::max()) : std::numeric_limits<T>::min();
+        typedef std::numeric_limits<T> TBase;
+        return (( !TBase::is_integer  ||  TBase::min() > 0)
+                ? T(-TBase::max()) : TBase::min());
     }
 }; 
 
