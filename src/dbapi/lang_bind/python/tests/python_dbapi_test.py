@@ -33,6 +33,7 @@ from __future__ import with_statement
 from python_ncbi_dbapi import *
 import datetime
 
+release_global_lock(True)
 
 def check(cond, msg):
     if not cond:

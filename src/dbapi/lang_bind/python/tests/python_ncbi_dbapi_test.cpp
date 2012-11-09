@@ -203,6 +203,7 @@ NCBITEST_AUTO_INIT()
 
     ExecuteStr("import python_ncbi_dbapi as dbapi\n");
     ExecuteStr("import datetime\n");
+    ExecuteStr("dbapi.release_global_lock(True)");
     ExecuteStr( connection_str.c_str() );
     ExecuteStr( conn_simple_str.c_str() );
 

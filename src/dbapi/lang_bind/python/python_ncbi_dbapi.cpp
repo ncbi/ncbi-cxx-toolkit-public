@@ -39,6 +39,7 @@
 #include <dbapi/error_codes.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 
+#define PYTHONPP_DEFINE_GLOBALS 1
 #include "python_ncbi_dbapi.hpp"
 #include "pythonpp/pythonpp_pdt.hpp"
 #if PY_VERSION_HEX >= 0x02040000
@@ -317,6 +318,8 @@ bool CRealSetProxy::MoveToNextRS(void)
 {
     m_HasRS = false;
 
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
     while (m_Stmt->HasMoreResults()) {
         if ( m_Stmt->HasRows() ) {
             m_VariantSet.reset(new CRealResultSet(m_Stmt->GetResultSet()));
@@ -353,6 +356,7 @@ bool CRealSetProxy::HasRS(void) const
 void
 CRealSetProxy::DumpResult(void)
 {
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
     while ( m_Stmt->HasMoreResults() ) {
         if ( m_Stmt->HasRows() ) {
             // Keep very last ResultSet in case somebody calls GetRS().
@@ -1118,6 +1122,7 @@ CConnection::CConnection(
             }
         }
 
+        pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
         // Make a datasource ...
         m_DS = m_DM.MakeDs(m_Params);
 
@@ -1181,6 +1186,8 @@ CConnection::~CConnection(void)
 IConnection*
 CConnection::MakeDBConnection(void) const
 {
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
     _ASSERT(m_DS);
     // !!! eTakeOwnership !!!
     IConnection* connection = m_DS->CreateConnection( eTakeOwnership );
@@ -1193,7 +1200,10 @@ CConnection::CreateTransaction(void)
 {
     CTransaction* trans = NULL;
 
-    trans = new CTransaction(this, pythonpp::eOwned, m_ConnectionMode);
+    {{
+        pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+        trans = new CTransaction(this, pythonpp::eOwned, m_ConnectionMode);
+    }}
 
     m_TransList.insert(trans);
     return trans;
@@ -1331,6 +1341,7 @@ CDMLConnPool::Create(void)
         _ASSERT( m_LocalStmt.get() == NULL );
 
         if ( m_TransType == eImplicitTrans ) {
+            pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
             m_LocalStmt.reset( m_DMLConnection->GetStatement() );
             // Begin transaction ...
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
@@ -1356,6 +1367,7 @@ CDMLConnPool::Clear(void)
     }
 
     // Close the DML connection ...
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
     m_LocalStmt.reset();
     m_DMLConnection.reset();
     m_Started = false;
@@ -1371,6 +1383,8 @@ CDMLConnPool::GetLocalStmt(void) const
 void
 CDMLConnPool::commit(void) const
 {
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
     if (
         m_TransType == eImplicitTrans &&
         m_Started &&
@@ -1393,6 +1407,8 @@ CDMLConnPool::commit(void) const
 void
 CDMLConnPool::rollback(void) const
 {
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
     if (
         m_TransType == eImplicitTrans &&
         m_Started &&
@@ -1694,6 +1710,8 @@ CStmtHelper::Close(void)
 void
 CStmtHelper::DumpResult(void)
 {
+    pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
     if ( m_Stmt.get() && m_Executed ) {
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
@@ -1708,6 +1726,8 @@ void
 CStmtHelper::ReleaseStmt(void)
 {
     if ( m_Stmt.get() ) {
+        pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
         IConnection* conn = m_Stmt->GetParentConn();
 
         // Release the statement before a connection release because it is a child object for a connection.
@@ -1832,6 +1852,8 @@ CStmtHelper::Execute(void)
     _ASSERT( m_Stmt.get() );
 
     try {
+        pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
         m_RS.reset();
         switch ( m_StmtStr.GetType() ) {
         case estSelect :
@@ -1906,6 +1928,7 @@ CStmtHelper::MoveToNextRS(void)
     _ASSERT( m_Stmt.get() );
 
     try {
+        pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
                 m_RS.reset(m_Stmt->GetResultSet());
@@ -2048,6 +2071,8 @@ void
 CCallableStmtHelper::ReleaseStmt(void)
 {
     if ( m_Stmt.get() ) {
+        pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+
         IConnection* conn = m_Stmt->GetParentConn();
 
         // Release the statement before a connection release because it is a child object for a connection.
@@ -2171,7 +2196,10 @@ CCallableStmtHelper::Execute(bool cache_results)
         m_ResultStatus = 0;
         m_ResultStatusAvailable = false;
 
-        m_Stmt->Execute();
+        {{
+            pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
+            m_Stmt->Execute();
+        }}
 
         // Retrieve a resut if there is any ...
         if (cache_results) {
@@ -3699,6 +3727,27 @@ ReturnStrsAsUnicode(PyObject *self, PyObject *args)
     return pythonpp::CNone().Get();
 }
 
+static
+PyObject*
+ReleaseGlobalLock(PyObject *self, PyObject *args)
+{
+    try{
+        const pythonpp::CTuple func_args(args);
+        pythonpp::CThreadingGuard::SetMayRelease
+            (pythonpp::CBool(func_args[0]));
+    }
+    catch (const pythonpp::CError&) {
+        // An error message is already set by an exception ...
+        return NULL;
+    }
+    catch (...) {
+        pythonpp::CError::SetString
+            ("Unknown error in python_ncbi_dbapi::ReleaseGlobalLock");
+    }
+
+    return pythonpp::CNone().Get();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // connect(driver_name, db_type, db_name, user_name, user_pswd)
 static
@@ -4053,6 +4102,14 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
         "should be presented to Python as unicode strings (if value is True) or "
         " as regular strings in UTF-8 encoding (if value is False - the default one). "
         "NOTE:  This is not a part of the Python Database API Specification v2.0."
+    },
+    {(char*)"release_global_lock", (PyCFunction) python::ReleaseGlobalLock, METH_VARARGS, (char*)
+        "release_global_lock(bool_flag_value) "
+        "-- set global flag indicating that blocking database operations "
+        "should run with Python's global interpreter lock released (if value "
+        "is True) or with it held (if value is False, the default for now)."
+        "NOTE:  This is not a part of the Python Database API Specification "
+        "v2.0."
     },
     {(char*)"connect", (PyCFunction) python::Connect, METH_VARARGS, (char*)
         "connect(driver_name, db_type, server_name, database_name, userid, password) "

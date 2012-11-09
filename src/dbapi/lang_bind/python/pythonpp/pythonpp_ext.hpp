@@ -916,6 +916,28 @@ private:
 template <class T, class B> PyObject* CUserError<T, B>::m_Exception(NULL);
 
 
+/// CThreadingGuard -- "Anti-guard" for Python's global interpreter
+/// lock, which it temporarily releases to allow other threads to
+/// proceed in parallel with blocking operations that don't involve
+/// Python-specific state.
+/// @note Does NOT support recursive usage at present.
+class CThreadingGuard {
+public:
+    CThreadingGuard() : m_State(sm_MayRelease ? PyEval_SaveThread() : NULL) { }
+    ~CThreadingGuard() { if (m_State != NULL) PyEval_RestoreThread(m_State); }
+
+    static void SetMayRelease(bool may_release)
+        { sm_MayRelease = may_release; }
+
+private:
+    static bool    sm_MayRelease;
+    PyThreadState* m_State;
+};
+
+#ifdef PYTHONPP_DEFINE_GLOBALS
+bool CThreadingGuard::sm_MayRelease = false;
+#endif
+
 }                                       // namespace pythonpp
 
 END_NCBI_SCOPE
