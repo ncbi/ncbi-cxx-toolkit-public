@@ -377,15 +377,14 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
     else if (a.Support().empty() && !b.Support().empty())
         return false;
 
-    if(!a.TrustedmRNA().empty() && b.TrustedmRNA().empty())       // trusted gene is always better, mRNA is better than protein, both are better than one   
+
+    bool atrusted = !a.TrustedmRNA().empty() || !a.TrustedProt().empty();
+    bool btrusted = !b.TrustedmRNA().empty() || !b.TrustedProt().empty();
+    if(atrusted && !btrusted) {                                     // trusted gene is always better
         return true;
-    else if(!b.TrustedmRNA().empty() && a.TrustedmRNA().empty()) 
+    } else if(btrusted && !atrusted) {
         return false;
-    else if(!a.TrustedProt().empty() && b.TrustedProt().empty())    
-        return true;
-    else if(!b.TrustedProt().empty() && a.TrustedProt().empty()) 
-        return false;
-    else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is always better
+    } else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is always better
         return true;
     } else if(b.ReadingFrame().NotEmpty() && a.ReadingFrame().Empty()) {
         return false;

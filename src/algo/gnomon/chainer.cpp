@@ -1337,8 +1337,9 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(list<CChain>& chains
         SChainMember& mi = *pointers[k];
         right_ends[k] = mi.m_align->Limits().GetTo();
         no_gap_members[k] = mi;
-        if((mi.m_align->Type() & CGeneModel::eProt) && (mi.m_copy == 0 || mi.m_align->HasStart()))  // only prots with start can have copies
+        if((mi.m_align->Type() & CGeneModel::eProt) && (mi.m_copy == 0 || mi.m_align->HasStart())) {  // only prots with start can have copies
             protein_parts[mi.m_align->ID()].push_back(mi.m_align);
+        }
     }
 
     typedef multimap< int,vector<CGeneModel*>*,greater<int> > TLenChainMemberPmap;
@@ -2351,17 +2352,22 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
 {
     ClearTrustedmRNA();
     ClearTrustedProt();
-    if(Continuous() && ConfirmedStart() && ConfirmedStop()) {
+
+    if(ConfirmedStart() && ConfirmedStop()) {
+        typedef map<Int8, int> Tint8int;
+        Tint8int palignedlen;
         ITERATE(vector<CGeneModel*>, i, m_members) {
-            if(IntersectingWith(**i)) {                  // just in case we clipped this alignment
-                CAlignModel* orig_align = orig_aligns[(*i)->ID()];
-                if(orig_align->Continuous() && (((*i)->ConfirmedStart() && (*i)->ConfirmedStop()) || (orig_align->AlignLen() > minscor.m_minprotfrac*orig_align->TargetLen()))) {
-                    if(!(*i)->TrustedmRNA().empty())
-                        InsertTrustedmRNA(*(*i)->TrustedmRNA().begin());
-                    else if(!(*i)->TrustedProt().empty())
-                        InsertTrustedProt(*(*i)->TrustedProt().begin());
-                }
+            if(IntersectingWith(**i)) {                                                                   // just in case we clipped this alignment
+                if(!(*i)->TrustedProt().empty())
+                    palignedlen[(*i)->ID()] += (*i)->AlignLen();
+                else if(!(*i)->TrustedmRNA().empty() && (*i)->ConfirmedStart() && (*i)->ConfirmedStop())  // trusted mRNA with aligned CDS
+                    InsertTrustedmRNA(*(*i)->TrustedmRNA().begin());                                      // could be only one 'part'
             }
+        }
+        ITERATE(Tint8int, i, palignedlen) {
+            CAlignModel* orig_align = orig_aligns[i->first];
+            if(i->second > minscor.m_minprotfrac*orig_align->TargetLen())                                 // well aligned trusted protein
+                InsertTrustedProt(*orig_align->TrustedProt().begin());
         }
     }
 }

@@ -501,7 +501,15 @@ void AddSupport(const TGeneModelList& align_list, TSignedSeqRange inside_range, 
             supporting_align = &algn;
 
             if((algn.Status()&CGeneModel::ePolyA) != 0)
-                gene.Status() |= CGeneModel::ePolyA; 
+                gene.Status() |= CGeneModel::ePolyA;
+
+            ITERATE(list< CRef<CSeq_id> >, i, algn.TrustedmRNA()) {
+                gene.InsertTrustedmRNA(*i);
+            }
+            ITERATE(list< CRef<CSeq_id> >, i, algn.TrustedProt()) {
+                gene.InsertTrustedProt(*i);
+            }
+            
         }
     }
 
