@@ -700,8 +700,8 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gdb_xref);
     ADD_QUAL(gene);
@@ -811,8 +811,8 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
-    ADD_QUAL(derived_from);
     ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
@@ -837,8 +837,8 @@ START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(calculated_mol_wt);
     ADD_QUAL(citation);
-    ADD_QUAL(derived_from);
     ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -862,8 +862,8 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -888,8 +888,8 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -914,8 +914,8 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(anticodon);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -939,8 +939,8 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -963,8 +963,8 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -986,8 +986,8 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1009,8 +1009,8 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1032,8 +1032,8 @@ START_SUBTYPE(ncRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1041,8 +1041,8 @@ START_SUBTYPE(ncRNA)
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
-    ADD_QUAL(note);
     ADD_QUAL(ncRNA_class);
+    ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
@@ -1058,8 +1058,8 @@ START_SUBTYPE(tmRNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1183,8 +1183,8 @@ START_SUBTYPE(Imp_CDS)
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1352,6 +1352,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(cons_splice);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
+    ADD_QUAL(exception);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1522,8 +1523,8 @@ START_SUBTYPE(misc_RNA)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1680,8 +1681,8 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(db_xref);
     ADD_QUAL(derived_from);
     ADD_QUAL(evidence);
-    ADD_QUAL(experiment);
     ADD_QUAL(exception);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
@@ -1937,6 +1938,7 @@ START_SUBTYPE(sig_peptide)
 END_SUBTYPE
 
 START_SUBTYPE(source)
+    ADD_QUAL(PCR_primers);
     ADD_QUAL(bio_material);
     ADD_QUAL(cell_line);
     ADD_QUAL(cell_type);
@@ -1979,7 +1981,6 @@ START_SUBTYPE(source)
     ADD_QUAL(note);
     ADD_QUAL(organelle);
     ADD_QUAL(organism);
-    ADD_QUAL(PCR_primers);
     ADD_QUAL(plasmid);
     ADD_QUAL(pop_variant);
     ADD_QUAL(proviral);
@@ -2068,8 +2069,8 @@ START_SUBTYPE(terminator)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
-    ADD_QUAL(operon);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(operon);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
