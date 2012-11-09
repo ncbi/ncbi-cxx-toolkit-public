@@ -1359,8 +1359,13 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(list<CChain>& chains
         Int8 id = parts.front()->ID();
 
         CGeneModel palign(parts.front()->Strand(), id, CGeneModel::eProt);
-        ITERATE(vector<CGeneModel*>, k, parts)
-            palign.Extend(**k);
+        ITERATE(vector<CGeneModel*>, k, parts) {
+            CGeneModel part = **k;
+            CCDSInfo cds = part.GetCdsInfo();
+            cds.Clear5PrimeCdsLimit();
+            part.SetCdsInfo(cds);
+            palign.Extend(part);
+        }
         m_gnomon->GetScore(palign);
 
         bool connected = false;
