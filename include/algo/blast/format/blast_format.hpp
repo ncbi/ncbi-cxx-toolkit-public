@@ -320,7 +320,8 @@ private:
                            unsigned int itr_num,
                            blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
                            int additional = 0,
-                           int index = -1);
+                           int index = -1,
+                           int defline_length = -1);
 
     /// Split the full alignment into two sets of alignments: one for those
     /// seen in the previous iteration and used to build the PSSM and the other

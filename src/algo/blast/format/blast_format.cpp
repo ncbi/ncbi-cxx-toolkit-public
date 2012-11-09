@@ -412,7 +412,8 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
                                 unsigned int itr_num,
                                 blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
                                 int additional,
-                                int index)
+                                int index,
+                                int defline_length )
 {
 
     if (itr_num != numeric_limits<unsigned int>::max() && 
@@ -442,8 +443,9 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         }}
 
     } else {
+        
         CShowBlastDefline showdef(*aln_set, *m_Scope, 
-                                  kFormatLineLength,
+                                  defline_length == -1 ? kFormatLineLength:defline_length,
                                   m_NumSummary + additional);
         x_ConfigCShowBlastDefline(showdef, -1, -1, index);
         showdef.DisplayBlastDefline(m_Outfile);
@@ -983,7 +985,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     if ( !m_IsBl2Seq ) {
         CPsiBlastIterationState::TSeqIds prev_ids = CPsiBlastIterationState::TSeqIds();
         int additional =  results.m_NumActualV +results.m_NumActualD + results.m_NumActualJ;
-        x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, additional, index);
+        x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, additional, index, 100);
     }
 
     //-------------------------------------------------
