@@ -32,6 +32,7 @@
  *    Configuration class for flat-file generator
  */
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 
 BEGIN_NCBI_SCOPE

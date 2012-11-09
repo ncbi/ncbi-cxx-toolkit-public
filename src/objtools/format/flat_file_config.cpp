@@ -30,9 +30,9 @@
 *   
 */
 #include <ncbi_pch.hpp>
+#include <objtools/format/flat_file_config.hpp>
 #include <util/static_map.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objtools/format/flat_file_config.hpp>
 
 
 BEGIN_NCBI_SCOPE
