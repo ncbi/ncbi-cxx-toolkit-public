@@ -6099,6 +6099,7 @@ UNC-B	s	University of Northern Colorado
 UNCB	s	Universidad Nacional de Colombia, Insituto de Ciencias Naturales de la Universidad Nacional
 UNCC<COL>	s	Universidad Nacional de Caldas, Museo de Historia Natural
 UNCC<USA-NC>	s	University of North Carolina, Biology Department
+UNCG	c	University of North  Carolina at Greensboro
 UNCM	s	Museo de Entomologia "Francisco Luis Gallego"
 UNCP	s	Universidad Nacional de Colombia
 UNCW	s	University of North Carolina at Wilmington
