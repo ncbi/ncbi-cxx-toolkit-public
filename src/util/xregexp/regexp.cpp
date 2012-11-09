@@ -388,12 +388,13 @@ size_t CRegexpUtil::ReplaceRange(
 
     // Flag which denote that current line is inside "range"
     bool inside = m_RangeStart.empty();
+    bool close_inside = false;
 
     NON_CONST_ITERATE (list<string>, i, m_ContentList) {
         // Get new line
         CTempString line(*i);
 
-        // Check beginning of block [addr_re_start:addr_re_end]
+        // Check for beginning of block [addr_re_start:addr_re_end]
         if ( !inside  &&  !m_RangeStart.empty() ) {
             CRegexp re(m_RangeStart);
             re.GetMatch(line, 0, 0, CRegexp::fMatch_default, true);
@@ -402,23 +403,29 @@ size_t CRegexpUtil::ReplaceRange(
             inside = true;
         }
 
+        // Two addresses were specified?
+        // Check for ending of block [addr_re_start:addr_re_end]
+        // before doing any replacements in the string
+        if ( inside  &&  !m_RangeEnd.empty() ) {
+            CRegexp re(m_RangeEnd);
+            re.GetMatch(line, 0, 0, CRegexp::fMatch_default, true);
+            close_inside = (re.NumFound() > 0);
+        } else {
+            // One address -- process one current string only
+            close_inside = true;
+        }
+
         // Process current line
         if ( (inside   &&  process_inside == eInside)  ||
              (!inside  &&  process_inside == eOutside) ) {
             CRegexpUtil re(line);
             n_replace += re.Replace(search, replace,
                                     compile_flags, match_flags, max_replace);
-            *i = re;
+            *i = re; // invalidates CTempString line
         }
 
-        // Two addresses were specified?
-        // Check ending of block [addr_re_start:addr_re_end]
-        if ( inside  &&  !m_RangeEnd.empty() ) {
-            CRegexp re(m_RangeEnd);
-            re.GetMatch(line, 0, 0, CRegexp::fMatch_default, true);
-            inside = (re.NumFound() <= 0);
-        } else {
-            // One address -- process one current string only
+        // Finish processing block?
+        if ( close_inside ) {
             inside = false;
         }
     }
