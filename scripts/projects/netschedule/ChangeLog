@@ -1,3 +1,16 @@
+Release 4.15.0 based on SC-10 (2012-11-13)
+
+Improvements
+
+    * NetSchedule: VERSION command output to include PID (JIRA: CXX-3506)
+    * NetSchedule: STAT QUEUES and QINF2 commands (JIRA: CXX-3509)
+    * NetSchedule: incorrect counters for timeouted jobs (JIRA: CXX-3515)
+    * NetSchedule RECO: comma omitted in logging parameter changes
+      (JIRA: CXX-3566)
+    * CServer: destroy queues if all threads have finished successfully.
+    * NetSchedule: bug fix in the logging parameters initialization
+
+
 Release 4.14.0 based on SC-10 (2012-08-29)
 
 Improvements
