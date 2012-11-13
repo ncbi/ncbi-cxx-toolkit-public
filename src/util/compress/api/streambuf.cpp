@@ -74,12 +74,11 @@ CCompressionStreambuf::CCompressionStreambuf(
     }
 
     // Allocate memory for all buffers at one time
-    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[size_t(read_bufsize + write_bufsize)]);
+    AutoArray<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[size_t(read_bufsize + write_bufsize)]);
     m_Buf = bp.get();
     if ( !m_Buf ) {
         return;
     }
-
     // Init processors and set the buffer pointers
     if ( m_Reader ) {
         m_Reader->Init();
