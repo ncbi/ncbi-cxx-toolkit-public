@@ -246,7 +246,12 @@ CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads,
     m_PutQueueNum.Set(0);
     m_GetQueueNum.Set(0);
 
-    m_Queues = (TQueue**)malloc(m_MaxThreads * sizeof(m_Queues[0]));
+    // The original developer used malloc(...) here to allocate the required
+    // number of bytes for an array. It is unknown why that decision was made.
+    // Later on it was decided to replace malloc(...) with new to have a pure
+    // C++ style in the code.
+    m_Queues = (TQueue**) new char[m_MaxThreads * sizeof(m_Queues[0])];
+
     for (TACValue i = 0; i < m_MaxThreads; ++i) {
         m_Queues[i] = new TQueue();
     }
@@ -262,8 +267,14 @@ CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer(void)
     if (n) {
         ERR_POST_X(10, Warning << "CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer: "
                                << n << " thread(s) still active");
+    } else {
+        // It seems to be safe to destroy the allocated array if all the
+        // threads were stopped.
+        for (TACValue i = 0; i < m_MaxThreads; ++i) {
+            delete m_Queues[i];
+        }
+        delete [] (char *)(m_Queues);
     }
-
     // Just in case let's deliberately not destroy all queues.
 }
 
