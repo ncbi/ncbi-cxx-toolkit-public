@@ -1061,6 +1061,7 @@ void HEAP_Options(ESwitch fast, ESwitch ignored)
     switch (fast) {
     case eOff:
         s_HEAP_fast = 0/*false*/;
+        break;
     case eOn:
         s_HEAP_fast = 1/*true*/;
         break;
