@@ -258,7 +258,7 @@ alp_data::alp_data(//constructor
 
                 alp_data::assert_mem(d_is);
 
-                d_memory_size_in_MB+=sizeof(d_is)/mb_bytes;
+                d_memory_size_in_MB+=sizeof(*d_is)/mb_bytes;
 
                 d_r_i_dot=new double[d_number_of_AA];
                 alp_data::assert_mem(d_r_i_dot);
@@ -557,7 +557,7 @@ string out_file_name_)//output file name
 
                 alp_data::assert_mem(d_is);
 
-                d_memory_size_in_MB+=sizeof(d_is)/mb_bytes;
+                d_memory_size_in_MB+=sizeof(*d_is)/mb_bytes;
 
                 d_r_i_dot=new double[d_number_of_AA];
                 alp_data::assert_mem(d_r_i_dot);
@@ -678,7 +678,7 @@ alp_data::~alp_data()//destructor
 
         delete d_is;d_is=NULL;
 
-        d_memory_size_in_MB-=sizeof(d_is)/mb_bytes;
+        d_memory_size_in_MB-=sizeof(*d_is)/mb_bytes;
 
         delete[]d_r_i_dot;d_r_i_dot=NULL;
         delete[]d_r_dot_j;d_r_dot_j=NULL;
