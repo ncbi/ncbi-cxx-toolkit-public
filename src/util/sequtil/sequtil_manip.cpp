@@ -669,7 +669,7 @@ static SIZE_TYPE s_Ncbi2naRevCmp
  TSeqPos pos,
  TSeqPos length)
 {
-    char* buf = new char(length);
+    char* buf = new char[length];
     CSeqConvert::Convert(src, CSeqUtil::e_Ncbi2na, pos, length, 
         buf, CSeqUtil::e_Ncbi2na_expand);
     s_Ncbi2naExpandRevCmp(buf, 0, length);
@@ -686,7 +686,7 @@ static SIZE_TYPE s_Ncbi4naRevCmp
  TSeqPos pos,
  TSeqPos length)
 {
-    char* buf = new char(length);
+    char* buf = new char[length];
     CSeqConvert::Convert(src, CSeqUtil::e_Ncbi4na, pos, length, 
         buf, CSeqUtil::e_Ncbi8na);
     revcmp(buf, pos, length, C8naCmp::GetTable());
