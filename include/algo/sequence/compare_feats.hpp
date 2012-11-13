@@ -205,7 +205,7 @@ private:
         string ToString();
         
         bool IsValid() {
-            return !(m_first.m_exon_ordinal1 == 0 && m_first.m_exon_ordinal2 == 0 && m_first.m_exon_ordinal1 == 0 && m_last.m_exon_ordinal2 == 0);
+            return !(m_first.m_exon_ordinal1 == 0 && m_first.m_exon_ordinal2 == 0 && m_last.m_exon_ordinal1 == 0 && m_last.m_exon_ordinal2 == 0);
         }
         
         void Reset(const SIntervalComparisonResult& r)
