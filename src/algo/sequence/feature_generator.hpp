@@ -224,7 +224,9 @@ private:
     // merge into single interval or, if cross the origin, into two intervals abutting at the origin
     CRef<CSeq_loc> MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2 = NULL);
 
-    CRef<CSeq_loc> FixOrderOfCrossTheOriginSeqloc(const CSeq_loc& loc, CSeq_loc::TOpFlags flags = CSeq_loc::fSort);
+    CRef<CSeq_loc> FixOrderOfCrossTheOriginSeqloc(const CSeq_loc& loc,
+                                                  TSeqPos outside_point,
+                                                  CSeq_loc::TOpFlags flags = CSeq_loc::fSort);
 };
 
 END_NCBI_SCOPE

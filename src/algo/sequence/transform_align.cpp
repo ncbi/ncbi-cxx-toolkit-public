@@ -568,28 +568,6 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
 
     CSpliced_seg& spliced_seg = align->SetSegs().SetSpliced();
 
-    bool cross_the_origin = range.GetFrom() > range.GetTo();
-    TSeqPos genomic_size = 0;
-    if (cross_the_origin) {
-        genomic_size = m_scope->GetSequenceLength(spliced_seg.GetGenomic_id());
-
-        range.SetTo(range.GetTo() + genomic_size);
-
-        NON_CONST_ITERATE(CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
-            CSpliced_exon& exon = **exon_it;
-            if (exon.GetGenomic_start() < genomic_size/2) // assume align does not cross the middle of chromosome
-                exon.SetGenomic_start() += genomic_size;
-            if (exon.GetGenomic_end() < genomic_size/2)
-                exon.SetGenomic_end() += genomic_size;
-        }
-    }
-
-    vector<SExon> exons;
-    GetExonStructure(spliced_seg, exons, *m_scope);
-
-    bool is_protein_align =
-        spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
-
     pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
     ENa_strand product_strand = strands.first;
     ENa_strand genomic_strand = strands.second;
@@ -602,6 +580,45 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     }
 
     bool plus_strand = !(genomic_strand == eNa_strand_minus);
+
+    bool cross_the_origin = range.GetFrom() > range.GetTo();
+    TSeqPos genomic_size = 0;
+    if (cross_the_origin) {
+        genomic_size = m_scope->GetSequenceLength(spliced_seg.GetGenomic_id());
+
+        range.SetTo(range.GetTo() + genomic_size);
+
+        TSeqRange align_range;
+        if (plus_strand) {
+            align_range = TSeqRange(spliced_seg.GetExons().front()->GetGenomic_start(),
+                                    spliced_seg.GetExons().back()->GetGenomic_end());
+        } else {
+            align_range = TSeqRange(spliced_seg.GetExons().back()->GetGenomic_start(),
+                                    spliced_seg.GetExons().front()->GetGenomic_end());
+        }
+        if (align_range.GetFrom() > align_range.GetTo()) {
+            align_range.SetTo(align_range.GetTo() + genomic_size);
+        }
+        if (align_range.GetTo() < range.GetFrom()) {
+            align_range.SetFrom(align_range.GetFrom() + genomic_size);
+            align_range.SetTo(align_range.GetTo() + genomic_size);
+        }
+
+        TSeqPos outside_point = (min(range.GetFrom(), align_range.GetFrom())+max(range.GetTo(), align_range.GetTo())-genomic_size)/2;
+        NON_CONST_ITERATE(CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
+            CSpliced_exon& exon = **exon_it;
+            if (exon.GetGenomic_start() < outside_point)
+                exon.SetGenomic_start() += genomic_size;
+            if (exon.GetGenomic_end() < outside_point)
+                exon.SetGenomic_end() += genomic_size;
+        }
+    }
+
+    vector<SExon> exons;
+    GetExonStructure(spliced_seg, exons, *m_scope);
+
+    bool is_protein_align =
+        spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
 
     vector<SExon>::iterator right_exon_it = exons.begin();
     CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();

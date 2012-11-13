@@ -2055,7 +2055,8 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
     }
 
     if (loc->GetStart(eExtreme_Positional) > loc->GetStop(eExtreme_Positional)) {
-        mapped_loc = FixOrderOfCrossTheOriginSeqloc(*mapped_loc);
+        mapped_loc = FixOrderOfCrossTheOriginSeqloc(*mapped_loc,
+                                                    (loc->GetStart(eExtreme_Positional) + loc->GetStop(eExtreme_Positional))/2);
     }
     return mapped_loc;
 }
@@ -3231,12 +3232,42 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc*
         if (loc2 != NULL)
         merged_loc->Add(*loc2);
 
-        merged_loc = FixOrderOfCrossTheOriginSeqloc(*merged_loc, CSeq_loc::fMerge_SingleRange);
+        TSeqPos x[] = {
+            loc1->GetStart(eExtreme_Positional),
+            loc1->GetStop(eExtreme_Positional),
+            (loc2 ? loc2->GetStart(eExtreme_Positional) : 0),
+            (loc2 ? loc2->GetStop(eExtreme_Positional) : 0)
+        };
+
+        if (x[0] > x[1])
+            x[1] += genomic_size;
+        if (x[2] > x[3])
+            x[3] += genomic_size;
+
+        if (x[1] < x[2]) {
+            x[0] += genomic_size;
+            x[1] += genomic_size;
+        } else if (x[3] < x[0]) {
+            x[2] += genomic_size;
+            x[3] += genomic_size;
+        }
+
+
+        x[0] = min(x[0], x[2]);
+        x[1] = max(x[1], x[3]) - genomic_size;
+        _ASSERT( x[0] > x[1] +1 );
+
+        merged_loc = FixOrderOfCrossTheOriginSeqloc(*merged_loc,
+                                                    (x[0]+x[1])/2,
+                                                    CSeq_loc::fMerge_SingleRange);
     }
     return merged_loc;
 }
 
-CRef<CSeq_loc> CFeatureGenerator::SImplementation::FixOrderOfCrossTheOriginSeqloc(const CSeq_loc& loc, CSeq_loc::TOpFlags flags)
+CRef<CSeq_loc> CFeatureGenerator::SImplementation::FixOrderOfCrossTheOriginSeqloc
+(const CSeq_loc& loc,
+ TSeqPos outside_point,
+ CSeq_loc::TOpFlags flags)
 {
     CRef<CSeq_id> id(new CSeq_id);
     id->Assign(*loc.GetId());
@@ -3246,7 +3277,7 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::FixOrderOfCrossTheOriginSeqlo
     CRef<CSeq_loc> right_loc(new CSeq_loc);
                                                      
     ITERATE(CSeq_loc, it, loc) {
-        if (it.GetRangeAsSeq_loc()->GetStart(eExtreme_Biological) > genomic_size/2) // assumes loc doesn't cross the middle
+        if (it.GetRangeAsSeq_loc()->GetStart(eExtreme_Biological) > outside_point)
             left_loc->Add(*it.GetRangeAsSeq_loc());
         else
             right_loc->Add(*it.GetRangeAsSeq_loc());
