@@ -527,20 +527,10 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
     m_Impl->m_API->GetServer(job.job_id).ExecWithRetry(cmd);
 }
 
-CNetScheduleAPI::EJobStatus
-    CNetScheduleExecutor::GetJobStatus(const string& job_key)
+CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
+        const string& job_key, time_t* job_exptime)
 {
-    static const char* const s_WST2Attr[] = {"job_status"};
-
-#define NUMBER_OF_WST2_ATTRS (sizeof(s_WST2Attr) / sizeof(*s_WST2Attr))
-
-    string attr_values[NUMBER_OF_WST2_ATTRS];
-
-    CNetScheduleNotificationHandler::ParseNSOutput(m_Impl->m_API->
-            x_SendJobCmdWaitResponse("WST2", job_key),
-            s_WST2Attr, attr_values, NUMBER_OF_WST2_ATTRS);
-
-    return CNetScheduleAPI::StringToStatus(attr_values[0]);
+    return m_Impl->m_API->GetJobStatus("WST2", job_key, job_exptime);
 }
 
 void CNetScheduleExecutor::ReturnJob(const string& job_key,

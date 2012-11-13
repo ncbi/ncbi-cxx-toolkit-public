@@ -538,6 +538,43 @@ CNetScheduleAPI::EJobStatus
     }
 }
 
+CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
+        const string& job_key, time_t* job_exptime)
+{
+    string response;
+
+    try {
+        response = x_SendJobCmdWaitResponse(cmd, job_key);
+    }
+    catch (CNetScheduleException& e) {
+        if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
+            throw;
+
+        if (job_exptime != NULL)
+            *job_exptime = 0;
+
+        return CNetScheduleAPI::eJobNotFound;
+    }
+
+    static const char* const s_AttrNames[] = {
+        "job_status",       // 0
+        "job_exptime"       // 1
+    };
+
+#define NUMBER_OF_ATTRS (sizeof(s_AttrNames) / sizeof(*s_AttrNames))
+
+    string attr_values[NUMBER_OF_ATTRS];
+
+    CNetScheduleNotificationHandler::ParseNSOutput(response,
+            s_AttrNames, attr_values, NUMBER_OF_ATTRS);
+
+    if (job_exptime != NULL)
+        *job_exptime = (time_t) NStr::StringToUInt8(attr_values[1],
+                NStr::fConvErr_NoThrow);
+
+    return CNetScheduleAPI::StringToStatus(attr_values[0]);
+}
+
 const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 {
     CFastMutexGuard g(m_FastMutex);

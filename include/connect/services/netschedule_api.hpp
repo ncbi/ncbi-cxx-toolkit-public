@@ -462,20 +462,42 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// Get progress message
     ///
     /// @param job
-    ///    NetSchedule job description structure. The message is taken from
-    ///    progress_msg filed
+    ///    NetSchedule job description structure. The message is taken
+    ///    from the progress_msg field.
     ///
     /// @sa PutProgressMsg
     ///
     void GetProgressMsg(CNetScheduleJob& job);
 
-    /// Request of current job status
-    /// eJobNotFound is returned if job status cannot be found
-    /// (job record timed out)
+    /// Get the current status of the specified job. Unlike the similar
+    /// method from CNetScheduleExecutor, this method prolongs the lifetime
+    /// of the job on the server.
+    ///
+    /// @param job_key
+    ///    NetSchedule job key.
+    /// @param job_exptime
+    ///    Number of seconds since EPOCH when the job will expire
+    ///    on the server.
+    ///
+    /// @return The current job status. eJobNotFound is returned if the job
+    ///         cannot be found (job record has expired).
     ///
     CNetScheduleAPI::EJobStatus GetJobStatus(
             const string& job_key, time_t* job_exptime = NULL);
 
+    /// Get full information about the specified job.
+    ///
+    /// @param job
+    ///    A reference to the job description structure. The job key
+    ///    is taken from the job_key field. Upon return, the structure
+    ///    will be filled with the current information about the job,
+    ///    including its input and output.
+    /// @param job_exptime
+    ///    Number of seconds since EPOCH when the job will expire
+    ///    on the server.
+    ///
+    /// @return The current job status.
+    ///
     CNetScheduleAPI::EJobStatus GetJobDetails(
             CNetScheduleJob& job, time_t* job_exptime = NULL);
 };
@@ -612,11 +634,21 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///
     void PutFailure(const CNetScheduleJob& job);
 
-    /// Request of current job status
-    /// eJobNotFound is returned if job status cannot be found
-    /// (job record timed out)
+    /// Get the current status of the specified job. Unlike the similar
+    /// method from CNetScheduleSubmitter, this method does not prolong
+    /// the lifetime of the job on the server.
     ///
-    CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key);
+    /// @param job_key
+    ///    NetSchedule job key.
+    /// @param job_exptime
+    ///    Number of seconds since EPOCH when the job will expire
+    ///    on the server.
+    ///
+    /// @return The current job status. eJobNotFound is returned if the job
+    ///         cannot be found (job record has expired).
+    ///
+    CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key,
+            time_t* job_exptime = NULL);
 
     /// Switch the job back to the "Pending" status. It will be
     /// run again on a different worker node.

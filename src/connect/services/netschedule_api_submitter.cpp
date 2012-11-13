@@ -533,9 +533,7 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
 CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobStatus(
         const string& job_key, time_t* job_exptime)
 {
-    CNetScheduleJob job;
-    job.job_id = job_key;
-    return m_Impl->m_API.GetJobDetails(job, job_exptime);
+    return m_Impl->m_API->GetJobStatus("SST2", job_key, job_exptime);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobDetails(

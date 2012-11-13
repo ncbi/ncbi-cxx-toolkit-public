@@ -142,6 +142,9 @@ struct SNetScheduleAPIImpl : public CObject
         return GetServer(job_key).ExecWithRetry(tmp).response;
     }
 
+    CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,
+            const string& job_key, time_t* job_exptime);
+
     const CNetScheduleAPI::SServerParams& GetServerParams();
 
     CNetServer GetServer(const string& job_key)
