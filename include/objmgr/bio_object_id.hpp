@@ -53,7 +53,7 @@ public:
     CBioObjectId(EType type, int id) 
         : m_Id(type, CSeq_id_Handle::GetGiHandle(id)) 
     {
-        _ASSERT(type == eSetId || type == eSetId || type == eUniqNumber);
+        _ASSERT(type == eSeqId || type == eSetId || type == eUniqNumber);
     }
 
     const CSeq_id_Handle& GetSeqId() const { 
