@@ -1014,9 +1014,9 @@ static void s_DestroyContext(void)
  */
 static const char* s_GetToolkitRCLogLocation()
 {
-    static const char* log_path     = NULL;
-    static const char* kToolkitRc   = "/etc/toolkitrc";
-    static const char* kSectionName = "[Web_dir_to_port]";
+    static const char* log_path       = NULL;
+    static const char  kToolkitRc[]   = "/etc/toolkitrc";
+    static const char  kSectionName[] = "[Web_dir_to_port]";
 
     FILE*  fp;
     char   buf[256];
