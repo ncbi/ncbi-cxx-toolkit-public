@@ -172,7 +172,6 @@ protected:
 
     void x_GatherInfoWithParent(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
 
-    bool x_ExceptionIsLegalForFeature() const;
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem ) const;
     CSeq_feat_Handle x_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ctx ) const;

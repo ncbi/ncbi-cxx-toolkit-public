@@ -1041,39 +1041,6 @@ void CFeatureItem::x_GatherInfoWithParent(CBioseqContext& ctx, CConstRef<CFeatur
     x_AddQuals(ctx, parentFeatureItem );
 }
 
-
-//  ----------------------------------------------------------------------------
-bool CFeatureItem::x_ExceptionIsLegalForFeature() const
-//  ----------------------------------------------------------------------------
-{
-    CSeqFeatData::ESubtype subtype = m_Feat.GetData().GetSubtype();
-
-    switch (subtype) {
-    case CSeqFeatData::eSubtype_3UTR:
-    case CSeqFeatData::eSubtype_3clip:
-    case CSeqFeatData::eSubtype_5UTR:
-    case CSeqFeatData::eSubtype_5clip:
-    case CSeqFeatData::eSubtype_C_region:
-    case CSeqFeatData::eSubtype_V_segment:
-    case CSeqFeatData::eSubtype_cdregion:
-    case CSeqFeatData::eSubtype_exon:
-    case CSeqFeatData::eSubtype_gene:
-    case CSeqFeatData::eSubtype_mRNA:
-    case CSeqFeatData::eSubtype_mat_peptide_aa:
-    case CSeqFeatData::eSubtype_misc_feature:
-    case CSeqFeatData::eSubtype_ncRNA:
-    case CSeqFeatData::eSubtype_otherRNA:
-    case CSeqFeatData::eSubtype_preRNA:
-    case CSeqFeatData::eSubtype_rRNA:
-    case CSeqFeatData::eSubtype_sig_peptide_aa:
-    case CSeqFeatData::eSubtype_tRNA:
-        return true;
-
-    default:
-        return false;
-    }
-}
-
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualPartial(
     CBioseqContext& ctx )
@@ -1318,11 +1285,14 @@ void CFeatureItem::x_AddQualExceptions(
 
     if ( ( m_Feat.IsSetExcept() && m_Feat.GetExcept() ) && 
         (m_Feat.IsSetExcept_text()  &&  !m_Feat.GetExcept_text().empty()) ) {
-        raw_exception = m_Feat.GetExcept_text();
+            raw_exception = m_Feat.GetExcept_text();
     }
     if ( raw_exception == "" ) {
         return;
     }
+
+    const bool bIsRefseq = ctx.IsRefSeq();
+    const bool bIsRelaxed = ( ! cfg.DropIllegalQuals() );
 
     list<string> exceptions;
     NStr::Split( raw_exception, ",", exceptions );
@@ -1331,18 +1301,8 @@ void CFeatureItem::x_AddQualExceptions(
     list<string> output_notes;
     ITERATE( list<string>, it, exceptions ) {
         string cur = NStr::TruncateSpaces( *it );
-
-        //
-        //  If exceptions aren't legal for the feature, then turn them into
-        //  notes for strict modes, and let them stand in relaxed modes:
-        //
-        if ( ! x_ExceptionIsLegalForFeature() ) {
-            if ( cfg.DropIllegalQuals() ) {
-                output_notes.push_back( cur );
-            }
-            else {
-                output_exceptions.push_back( cur );
-            }
+        if( cur.empty() ) {
+            continue;
         }
 
         //
@@ -1350,75 +1310,64 @@ void CFeatureItem::x_AddQualExceptions(
         //  turned into their own custom qualifiers. Others are allowed to stand
         //  as exceptions, while others are turned into notes.
         //
+        if ( s_IsValidExceptionText( cur ) ) {
+            if( bIsRefseq || bIsRelaxed || data.IsCdregion() ) {
+                output_exceptions.push_back( cur );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
+        if ( s_IsValidRefSeqExceptionText( cur ) ) {
+            if( bIsRefseq || bIsRelaxed ) {
+                output_exceptions.push_back( cur );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
+        if ( NStr::EqualNocase(cur, "ribosomal slippage") ) {
+            if( data.IsCdregion() ) {
+                x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
+        if ( NStr::EqualNocase(cur, "trans-splicing") ) {
+            if( s_TransSplicingFeatureAllowed( data ) ) {
+                x_AddQual( eFQ_trans_splicing, new CFlatBoolQVal( true ) );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
+        const bool is_cds_or_mrna = ( data.IsCdregion() || 
+            data.GetSubtype() == CSeqFeatData::eSubtype_mRNA );
+        if( NStr::EqualNocase(cur, "artificial location") ) {
+            if( is_cds_or_mrna ) {
+                x_AddQual( eFQ_artificial_location, new CFlatBoolQVal( true ) );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
+        if( NStr::EqualNocase(cur, "heterogeneous population sequenced") || 
+            NStr::EqualNocase(cur, "low-quality sequence region") ) 
+        {
+            if( is_cds_or_mrna ) {
+                x_AddQual( eFQ_artificial_location, new CFlatStringQVal( cur ) );
+            } else {
+                output_notes.push_back( cur );
+            }
+            continue;
+        }
         else {
-            if ( s_IsValidExceptionText( cur ) ) {
-                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() || data.IsCdregion() ) {
-                    output_exceptions.push_back( cur );
-                } else {
-                    output_notes.push_back( cur );
-                }
-                continue;
-            }
-            if ( ctx.IsRefSeq() && s_IsValidRefSeqExceptionText( cur ) ) {
-                if( ctx.IsRefSeq() || ! cfg.DropIllegalQuals() ) {
-                    output_exceptions.push_back( cur );
-                } else {
-                    output_notes.push_back( cur );
-                }
-                continue;
-            }
-            if ( NStr::EqualNocase(cur, "ribosomal slippage") ) {
-                if( data.IsCdregion() ) {
-                    x_AddQual( eFQ_ribosomal_slippage, new CFlatBoolQVal( true ) );
-                } else {
-                    output_notes.push_back( cur );
-                }
-                continue;
-            }
-            if ( NStr::EqualNocase(cur, "trans-splicing") ) {
-                if( s_TransSplicingFeatureAllowed( data ) ) {
-                    x_AddQual( eFQ_trans_splicing, new CFlatBoolQVal( true ) );
-                } else {
-                    output_notes.push_back( cur );
-                }
-                continue;
-            }
-            if ( NStr::EqualNocase(cur, "reasons given in citation") ) {
-                if ( data.IsCdregion() || data.IsGene() ) {
-                    output_exceptions.push_back( cur );
-                }
-                else { 
-                    output_notes.push_back( cur );
-                }
-                continue;
-            }
-            const bool is_cds_or_mrna = ( data.IsCdregion() || 
-                data.GetSubtype() == CSeqFeatData::eSubtype_mRNA );
-            if( NStr::EqualNocase(cur, "artificial location") ) {
-                if( is_cds_or_mrna ) {
-                    x_AddQual( eFQ_artificial_location, new CFlatBoolQVal( true ) );
-                } else {
-                    output_notes.push_back( cur );
-                }
-                continue;
-            }
-            if( NStr::EqualNocase(cur, "heterogeneous population sequenced") || 
-                NStr::EqualNocase(cur, "low-quality sequence region") ) 
-            {
-                if( is_cds_or_mrna ) {
-                    x_AddQual( eFQ_artificial_location, new CFlatStringQVal( cur ) );
-                } else {
-                    output_notes.push_back( cur );
-                }
-                continue;
+            if ( bIsRelaxed ) {
+                output_exceptions.push_back( cur );
             }
             else {
-                if ( cfg.DropIllegalQuals() ) {
-                    output_notes.push_back( cur );
-                }
-                else {
-                    output_exceptions.push_back( cur );
-                }
+                output_notes.push_back( cur );
             }
         }
     }

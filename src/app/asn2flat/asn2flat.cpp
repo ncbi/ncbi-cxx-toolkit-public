@@ -241,7 +241,7 @@ void CAsn2FlatApp::Init(void)
              "When set (and genbank mode is used), this program will demonstrate the use of "
              "genbank callbacks via a very simple callback that just prints its output to stderr, then "
              "prints some statistics.  To demonstrate halting of flatfile generation, the genbank callback "
-             "will halt flatfile generation if it encounters an item with the words 'HALT TEST'.");
+             "will halt flatfile generation if it encounters an item with the words 'HALT TEST'.  To demonstrate skipping a block, it will skip blocks with the words 'SKIP TEST' in them.  Also, blocks with the words 'MODIFY TEST' in them will have the text 'MODIFY TEST' turned into 'WAS MODIFIED TEST'.");
 
          arg_desc->AddFlag("no-external",
                            "Disable all external annotation sources");
@@ -866,17 +866,23 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
         // this macro is the lesser evil compared to the messiness that
         // you would see here otherwise. (plus it's less error-prone)
 #define SIMPLE_CALLBACK_NOTIFY(TItemClass) \
-        virtual EAction notify( const string & block_text, \
+        virtual EAction notify( string & block_text, \
                                 const CBioseqContext& ctx, \
                                 const TItemClass & item ) { \
+        NStr::ReplaceInPlace(block_text, "MODIFY TEST", "WAS MODIFIED TEST" ); \
         cerr << #TItemClass << " {" << block_text << '}' << endl; \
         ++m_TypeAppearancesMap[#TItemClass]; \
         ++m_TypeAppearancesMap["TOTAL"]; \
         m_TypeCharsMap[#TItemClass] += block_text.length(); \
         m_TypeCharsMap["TOTAL"] += block_text.length(); \
-        return ( block_text.find("HALT TEST") == string::npos ? \
-            eAction_Default : \
-            eAction_HaltFlatfileGeneration); }
+        EAction eAction = eAction_Default; \
+        if( block_text.find("SKIP TEST")  != string::npos ) { \
+            eAction = eAction_Skip; \
+        } \
+        if ( block_text.find("HALT TEST") != string::npos ) { \
+            eAction = eAction_HaltFlatfileGeneration;         \
+        } \
+        return eAction; }
 
         SIMPLE_CALLBACK_NOTIFY(CStartSectionItem);
         SIMPLE_CALLBACK_NOTIFY(CHtmlAnchorItem);

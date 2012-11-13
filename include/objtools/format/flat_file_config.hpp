@@ -209,8 +209,10 @@ public:
     class CGenbankBlockCallback : public CObject {
     public:
         enum EAction {
-            // the normal case; just keep going as normal
+            // the normal case
             eAction_Default,
+            // skip this block (i.e. don't print it)
+            eAction_Skip,
             // if for some reason you don't want the rest of the flatfile generated, 
             // this will trigger a CFlatException of type eHaltRequested
             eAction_HaltFlatfileGeneration
@@ -218,79 +220,80 @@ public:
 
         virtual ~CGenbankBlockCallback(void) { }
 
-        virtual EAction notify( const string & block_text,
+        // note that these notify functions let you change the block_text
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CStartSectionItem & head_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CHtmlAnchorItem & anchor_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text, 
+        virtual EAction notify( string & block_text, 
                                 const CBioseqContext& ctx,
                                 const CLocusItem &locus_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CDeflineItem & defline_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CAccessionItem & accession_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CVersionItem & version_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CGenomeProjectItem & project_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CDBSourceItem & dbsource_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CKeywordsItem & keywords_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CSegmentItem & segment_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CSourceItem & source_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CReferenceItem & ref_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CCommentItem & comment_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CPrimaryItem & primary_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CFeatHeaderItem & featheader_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CSourceFeatureItem & sourcefeat_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CFeatureItem & feature_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CGapItem & feature_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CBaseCountItem & basecount_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const COriginItem & origin_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CSequenceItem & sequence_chunk_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CContigItem & contig_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CWGSItem & wgs_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CTSAItem & tsa_item ) { return eAction_Default; }
-        virtual EAction notify( const string & block_text,
+        virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
                                 const CEndSectionItem & slash_item ) { return eAction_Default; }
 

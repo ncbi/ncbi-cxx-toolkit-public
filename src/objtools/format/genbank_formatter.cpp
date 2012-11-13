@@ -109,36 +109,42 @@ namespace {
             m_ctx(ctx),
             m_item(item) 
         { 
-            m_storing_text_os.Reset( 
-                new COStreamTextOStream(m_block_text_storage) );
         }
 
         ~CWrapperForFlatTextOStream(void)
         {
             CFlatFileConfig::CGenbankBlockCallback::EAction eAction =
-                m_block_callback->notify(m_block_text_storage.str(), *m_ctx, m_item);
+                m_block_callback->notify(m_block_text_str, *m_ctx, m_item);
             switch(eAction) {
             case CFlatFileConfig::CGenbankBlockCallback::eAction_HaltFlatfileGeneration:
                 NCBI_THROW(CFlatException, eHaltRequested, 
                     "A CGenbankBlockCallback has requested that flatfile generation halt");
                 break;
+            case CFlatFileConfig::CGenbankBlockCallback::eAction_Skip:
+                // don't show this block
+                break;
             default:
-                // do nothing
+                // normal case: just print the string we got back
+                m_orig_text_os.AddLine(m_block_text_str, NULL, eAddNewline_No);
                 break;
             }
         }
 
         virtual void AddParagraph(const list< string > &text, const CSerialObject *obj)
         {
-            m_storing_text_os->AddParagraph(text, obj);
-            m_orig_text_os.AddParagraph(text, obj);
+            ITERATE(list<string>, line, text) {
+                m_block_text_str += *line;
+                m_block_text_str += '\n';
+            }
         }
 
         virtual void AddLine( const CTempString &line, const CSerialObject *obj,
             EAddNewline add_newline )
         {
-            m_storing_text_os->AddLine(line, obj, add_newline);
-            m_orig_text_os.AddLine(line, obj, add_newline);
+            m_block_text_str += line;
+            if( add_newline == eAddNewline_Yes ) {
+                m_block_text_str += '\n';
+            }
         }
 
     private:
@@ -148,9 +154,8 @@ namespace {
         CRef<CBioseqContext> m_ctx;
         const TFlatItemClass& m_item;
 
-        stringstream           m_block_text_storage;
-        // writes to m_block_text_storage
-        CRef<IFlatTextOStream> m_storing_text_os;
+        // build the block text here
+        string m_block_text_str;
     };
 
     template<class TFlatItemClass>
