@@ -779,6 +779,9 @@ void CAgpFastaComparator::x_ProcessObjects(
                         CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
                         CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
                         x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped, NULL );
+                        if( temp_dir ) {
+                            temp_dir->WriteData( CTmpSeqVecStorage::eType_Obj, seh );
+                        }
                     }
                 } 
                 else
@@ -792,6 +795,9 @@ void CAgpFastaComparator::x_ProcessObjects(
                     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
                     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
                     x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped, NULL );
+                    if( temp_dir ) {
+                        temp_dir->WriteData( CTmpSeqVecStorage::eType_Obj, seh );
+                    }
                 }
             } else {
                 LOG_POST(Error << "Could not determine format of " << filename 
