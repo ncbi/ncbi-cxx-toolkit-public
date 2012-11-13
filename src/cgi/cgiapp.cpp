@@ -354,7 +354,7 @@ int CCgiApplication::Run(void)
         // Exception reporting. Use different severity for broken connection.
         ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
         CNcbiOstream* os = m_Context.get() ? m_Context->GetResponse().GetOutput() : NULL;
-        if (fex  &&  os  &&  !os->good()) {
+        if (fex  &&  os  &&  (!os->good()  ||  m_OutputBroken)) {
             if ( !TClientConnIntOk::GetDefault() ) {
                 ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
                     "Connection interrupted");
@@ -546,6 +546,8 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
  int               ofd,
  int               flags)
 {
+    m_OutputBroken = false; // reset failure flag
+
     int errbuf_size =
         GetConfig().GetInt("CGI", "RequestErrBufSize", 256, 0,
                            CNcbiRegistry::eReturn);
@@ -625,6 +627,7 @@ CCgiApplication::CCgiApplication(void)
    m_HostIP(0), 
    m_Iteration(0),
    m_ArgContextSync(false),
+   m_OutputBroken(false),
    m_IsResultReady(true),
    m_ShouldExit(false),
    m_RequestStartPrinted(false),
@@ -694,7 +697,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     }
 
     // Don't try to write to a broken output
-    if ( !os.good() ) {
+    if (!os.good()  ||  m_OutputBroken) {
         return -1;
     }
 
@@ -810,6 +813,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             try {
                 if ( m_OutputStream.get() ) {
                     if ( !m_OutputStream->good() ) {
+                        m_OutputBroken = true; // set flag to indicate broken output
                         m_OutputStream->clear();
                     }
                     rctx.SetBytesWr(NcbiStreamposToInt8(m_OutputStream->tellp()));
@@ -829,7 +833,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 // Log broken connection as 299/499 status
                 CNcbiOstream* os = m_Context.get() ?
                     m_Context->GetResponse().GetOutput() : NULL;
-                if (os  &&  !os->good()) {
+                if (os  &&  (!os->good()  ||  m_OutputBroken)) {
                     if (TClientConnIntOk::GetDefault()  ||
                         m_Context->GetResponse().AcceptRangesBytes()) {
                         rctx.SetRequestStatus(

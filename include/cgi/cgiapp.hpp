@@ -327,6 +327,7 @@ private:
     /// Wrappers for cin and cout
     auto_ptr<CNcbiIstream>    m_InputStream;
     auto_ptr<CNcbiOstream>    m_OutputStream;
+    bool                      m_OutputBroken;
 
     string m_RID;
     bool m_IsResultReady;
@@ -396,20 +397,22 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 //  Tracking Environment
 
-NCBI_PARAM_DECL(bool, CGI, DisableTrackingCookie); 
+NCBI_PARAM_DECL_EXPORT(NCBI_XCGI_EXPORT, bool, CGI, DisableTrackingCookie);
 typedef NCBI_PARAM_TYPE(CGI, DisableTrackingCookie) TCGI_DisableTrackingCookie;
-NCBI_PARAM_DECL(string, CGI, TrackingCookieName); 
+NCBI_PARAM_DECL_EXPORT(NCBI_XCGI_EXPORT, string, CGI, TrackingCookieName);
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookieName) TCGI_TrackingCookieName;
-NCBI_PARAM_DECL(string, CGI, TrackingTagName);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCGI_EXPORT, string, CGI, TrackingTagName);
 typedef NCBI_PARAM_TYPE(CGI, TrackingTagName) TCGI_TrackingTagName;
-NCBI_PARAM_DECL(string, CGI, TrackingCookieDomain); 
+NCBI_PARAM_DECL_EXPORT(NCBI_XCGI_EXPORT, string, CGI, TrackingCookieDomain);
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookieDomain) TCGI_TrackingCookieDomain;
-NCBI_PARAM_DECL(string, CGI, TrackingCookiePath); 
+NCBI_PARAM_DECL_EXPORT(NCBI_XCGI_EXPORT, string, CGI, TrackingCookiePath);
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookiePath) TCGI_TrackingCookiePath;
-NCBI_PARAM_DECL(bool, CGI, Client_Connection_Interruption_Okay);
+NCBI_PARAM_DECL_EXPORT(NCBI_XCGI_EXPORT, bool, CGI,
+    Client_Connection_Interruption_Okay);
 typedef NCBI_PARAM_TYPE(CGI, Client_Connection_Interruption_Okay)
     TClientConnIntOk;
-NCBI_PARAM_ENUM_DECL(EDiagSev, CGI, Client_Connection_Interruption_Severity);
+NCBI_PARAM_ENUM_DECL_EXPORT(NCBI_XCGI_EXPORT, EDiagSev, CGI,
+    Client_Connection_Interruption_Severity);
 typedef NCBI_PARAM_TYPE(CGI, Client_Connection_Interruption_Severity)
     TClientConnIntSeverity;
 
