@@ -231,8 +231,40 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
     }
 }
 
-string CNetServerConnection::Exec(const string& cmd)
+namespace {
+    class CTimeoutKeeper
+    {
+    public:
+        CTimeoutKeeper(CSocket* sock, STimeout* timeout)
+        {
+            if (timeout == NULL)
+                m_Socket = NULL;
+            else {
+                m_Socket = sock;
+                m_ReadTimeout = sock->GetTimeout(eIO_Read);
+                m_WriteTimeout = sock->GetTimeout(eIO_Write);
+                sock->SetTimeout(eIO_ReadWrite, timeout);
+            }
+        }
+
+        ~CTimeoutKeeper()
+        {
+            if (m_Socket != NULL) {
+                m_Socket->SetTimeout(eIO_Read, m_ReadTimeout);
+                m_Socket->SetTimeout(eIO_Write, m_WriteTimeout);
+            }
+        }
+
+        CSocket* m_Socket;
+        const STimeout* m_ReadTimeout;
+        const STimeout* m_WriteTimeout;
+    };
+}
+
+string CNetServerConnection::Exec(const string& cmd, STimeout* timeout)
 {
+    CTimeoutKeeper timeout_keeper(&m_Impl->m_Socket, timeout);
+
     m_Impl->WriteLine(cmd);
 
     m_Impl->m_Socket.SetCork(false);
@@ -428,13 +460,14 @@ CNetServerConnection SNetServerImpl::GetConnectionFromPool()
 const char SNetServerImpl::kXSiteFwd[] = "XSITEFWD";
 #endif
 
-CNetServerConnection SNetServerImpl::Connect()
+CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
     EIO_Status io_st;
     STimeout internal_timeout = s_InternalConnectTimeout;
-    const STimeout& conn_timeout = m_ServerInPool->m_ServerPool->m_ConnTimeout;
+    const STimeout& conn_timeout = timeout != NULL ? *timeout :
+            m_ServerInPool->m_ServerPool->m_ConnTimeout;
     CAbsTimeout abs_timeout(conn_timeout.sec, conn_timeout.usec * 1000);
     STimeout remaining_timeout;
 
@@ -552,18 +585,22 @@ CNetServerConnection SNetServerImpl::Connect()
     m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
 
     conn->m_Socket.SetDataLogging(eOff);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite,
+    conn->m_Socket.SetTimeout(eIO_ReadWrite, timeout != NULL ? timeout :
                               &m_ServerInPool->m_ServerPool->m_CommTimeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
     m_Service->m_Listener->OnConnected(conn);
 
+    if (timeout != NULL)
+        conn->m_Socket.SetTimeout(eIO_ReadWrite,
+                &m_ServerInPool->m_ServerPool->m_CommTimeout);
+
     return conn;
 }
 
 void SNetServerImpl::ConnectAndExec(const string& cmd,
-    CNetServer::SExecResult& exec_result)
+        CNetServer::SExecResult& exec_result, STimeout* timeout)
 {
     m_ServerInPool->CheckIfThrottled();
 
@@ -572,7 +609,7 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     // due to inactivity.
     while ((exec_result.conn = GetConnectionFromPool()) != NULL) {
         try {
-            exec_result.response = exec_result.conn.Exec(cmd);
+            exec_result.response = exec_result.conn.Exec(cmd, timeout);
             return;
         }
         catch (CNetSrvConnException& e) {
@@ -588,8 +625,8 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     }
 
     try {
-        exec_result.conn = Connect();
-        exec_result.response = exec_result.conn.Exec(cmd);
+        exec_result.conn = Connect(timeout);
+        exec_result.response = exec_result.conn.Exec(cmd, timeout);
     }
     catch (CNetSrvConnException&) {
         m_ServerInPool->AdjustThrottlingParameters(

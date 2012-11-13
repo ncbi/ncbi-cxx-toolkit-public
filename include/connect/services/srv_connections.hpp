@@ -81,7 +81,7 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     /// Execute remote command 'cmd', wait for the reply,
     /// check that it starts with 'OK:', and return the
     /// remaining characters of the reply as a string.
-    string Exec(const string& cmd);
+    string Exec(const string& cmd, STimeout* timeout = NULL);
 };
 
 

@@ -417,6 +417,12 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section)
         else
             m_CommTimeout = s_GetDefaultCommTimeout();
 
+        NcbiMsToTimeout(&m_FirstServerTimeout,
+                s_SecondsToMilliseconds(config->GetString(section,
+                "first_server_timeout", CConfig::eErr_NoThrow,
+                NCBI_AS_STRING(FIRST_SERVER_TIMEOUT_DEFAULT)),
+                SECONDS_DOUBLE_TO_MS_UL(FIRST_SERVER_TIMEOUT_DEFAULT)));
+
         m_ServerThrottlePeriod = config->GetInt(section,
             "throttle_relaxation_period", CConfig::eErr_NoThrow,
                 THROTTLE_RELAXATION_PERIOD_DEFAULT);
@@ -477,6 +483,9 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section)
         NcbiMsToTimeout(&m_ConnTimeout,
             SECONDS_DOUBLE_TO_MS_UL(CONNECTION_TIMEOUT_DEFAULT));
         m_CommTimeout = s_GetDefaultCommTimeout();
+
+        NcbiMsToTimeout(&m_FirstServerTimeout,
+            SECONDS_DOUBLE_TO_MS_UL(FIRST_SERVER_TIMEOUT_DEFAULT));
 
         // Throttling parameters.
         m_ServerThrottlePeriod = THROTTLE_RELAXATION_PERIOD_DEFAULT;
@@ -540,14 +549,14 @@ string SNetServiceImpl::MakeAuthString()
     if (!m_ServerPool->m_UseOldStyleAuth) {
         if (m_ServiceType == eLoadBalancedService) {
             auth += " svc=\"";
-            auth += m_ServiceName;
+            auth += NStr::PrintableString(m_ServiceName);
             auth += '\"';
         }
 
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app != NULL) {
             auth += " client_path=\"";
-            auth += app->GetProgramExecutablePath();
+            auth += NStr::PrintableString(app->GetProgramExecutablePath());
             auth += '\"';
         }
     }
@@ -850,9 +859,12 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     unsigned ns_with_submits_disabled = 0;
     unsigned servers_throttled = 0;
 
+    STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
+            NULL : &m_ServerPool->m_FirstServerTimeout;
+
     for (;;) {
         try {
-            (*it)->ConnectAndExec(cmd, exec_result);
+            (*it)->ConnectAndExec(cmd, exec_result, timeout);
             return;
         }
         catch (CNetCacheException& ex) {
@@ -932,6 +944,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         }
 
         --retry_count;
+
+        timeout = NULL;
     }
 }
 

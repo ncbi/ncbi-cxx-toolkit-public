@@ -170,12 +170,13 @@ struct SNetServerImpl : public CObject
     {
     }
 
-    CNetServerConnection Connect();
+    CNetServerConnection Connect(STimeout* timeout);
 
     CNetServerConnection GetConnectionFromPool();
 
     void ConnectAndExec(const string& cmd,
-            CNetServer::SExecResult& exec_result);
+            CNetServer::SExecResult& exec_result,
+            STimeout* timeout = NULL);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static const char kXSiteFwd[];

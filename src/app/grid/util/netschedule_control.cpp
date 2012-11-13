@@ -224,9 +224,7 @@ int CNetScheduleControl::Run(void)
         os << "Server parameters for the queue \"" << ctl.GetQueueName()
            << "\":" << endl
            << "max_input_size = " << params.max_input_size << endl
-           << "max_output_size = " << params.max_output_size << endl
-           << "fast status is "
-           << (params.fast_status? "supported" : "not supported") << endl;
+           << "max_output_size = " << params.max_output_size << endl;
     }
 
     else if (args["dump"]) {

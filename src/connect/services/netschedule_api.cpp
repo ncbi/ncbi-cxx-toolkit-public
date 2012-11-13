@@ -550,53 +550,23 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
     m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
 
-    m_ServerParams->max_input_size = kMax_UInt;
-    m_ServerParams->max_output_size = kMax_UInt;
-    m_ServerParams->fast_status = true;
+    m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
+    m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
 
-    bool was_called = false;
+    string cmd("GETP");
+    g_AppendClientIPAndSessionID(cmd);
 
-    for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
-        was_called = true;
+    list<CTempString> lst;
+    NStr::Split(m_Service.FindServerAndExec(cmd).response, ";", lst);
 
-        string resp;
-        try {
-            string cmd("GETP");
-            g_AppendClientIPAndSessionID(cmd);
-            resp = (*it).ExecWithRetry(cmd).response;
-        } catch (CNetScheduleException& ex) {
-            if (ex.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
-                throw;
-        } catch (...) {
-        }
-        list<string> spars;
-        NStr::Split(resp, ";", spars);
-        bool fast_status = false;
-        ITERATE(list<string>, param, spars) {
-            string n,v;
-            NStr::SplitInTwo(*param,"=",n,v);
-            if (n == "max_input_size") {
-                size_t val = NStr::StringToInt(v) / 4;
-                if (m_ServerParams->max_input_size > val)
-                    m_ServerParams->max_input_size = val ;
-            } else if (n == "max_output_size") {
-                size_t val = NStr::StringToInt(v) / 4;
-                if (m_ServerParams->max_output_size > val)
-                    m_ServerParams->max_output_size = val;
-            } else if (n == "fast_status" && v == "1") {
-                fast_status = true;
-            }
-        }
-        if (m_ServerParams->fast_status)
-            m_ServerParams->fast_status = fast_status;
+    ITERATE(list<CTempString>, it, lst) {
+        CTempString n, v;
+        NStr::SplitInTwo(*it, "=", n, v);
+        if (n == "max_input_size")
+            m_ServerParams->max_input_size = NStr::StringToInt(v) / 4;
+        else if (n == "max_output_size")
+            m_ServerParams->max_output_size = NStr::StringToInt(v) / 4;
     }
-
-    if (m_ServerParams->max_input_size == kMax_UInt)
-        m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
-    if (m_ServerParams->max_output_size == kMax_UInt)
-        m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
-    if (!was_called)
-        m_ServerParams->fast_status = false;
 
     return *m_ServerParams;
 }

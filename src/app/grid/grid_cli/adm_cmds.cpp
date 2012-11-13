@@ -121,11 +121,9 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
         CNetScheduleAPI::SServerParams params =
             m_NetScheduleAPI.GetServerParams();
         printf("max_input_size: %lu\n"
-            "max_output_size: %lu\n"
-            "fast_status_support: %s\n",
+            "max_output_size: %lu\n",
             (unsigned long) params.max_input_size,
-            (unsigned long) params.max_output_size,
-            params.fast_status ? "yes" : "no");
+            (unsigned long) params.max_output_size);
     } else {
         bool print_server_address = service.IsLoadBalanced();
 

@@ -225,7 +225,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     struct SServerParams {
         size_t max_input_size;
         size_t max_output_size;
-        bool   fast_status;
     };
 
     const SServerParams& GetServerParams();
