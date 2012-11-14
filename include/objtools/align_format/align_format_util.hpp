@@ -160,8 +160,11 @@ static const char kDownloadLink[] = "<a href=\"<@download_url@>&segs=<@segs@>\">
 //substitues <@lnk_displ@>
 static const char kDownloadImg[] = "<img border=0 height=16 width=16 src=\"images/D.gif\" alt=\"Download subject sequence <@label@> spanning the HSP\">";
 
-static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&<@seqViewerParams@>&v=<@from@>:<@to@>";
+static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&<@seqViewerParams@>&v=<@from@>:<@to@>&appname=ncbiblast&link_loc=<@link_loc@>";
 static const string kSeqViewerParams = "tracks=[key:gene_model_track,CDSProductFeats:false][key:alignment_track,name:other alignments,annots:NG Alignments|Refseq Alignments|Gnomon Alignments|Unnamed,shown:false]";
+
+static const char kSeqViewerUrlNonGi[] = "http://www.ncbi.nlm.nih.gov/projects/sviewer/?RID=<@rid@>&id=<@firstSeqID@>&<@seqViewerParams@>&v=<@from@>:<@to@>&appname=ncbiblast&link_loc=<@link_loc@>";
+
 //to test ranges use:
 //static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&tracks=[key:gene_model_track],[key:alignment_track]&v=<@from@>:<@to@>,<@fromTest@>:<@toTest@>&flip=<@flip@>";
 
@@ -1101,6 +1104,11 @@ public:
                                    int customLinkTypes = eLinkTypeDefault);
 
     static list<string>  GetGiLinksList(SSeqURLInfo *seqUrlInfo,bool hspRange = false);
+    static string  GetGraphiscLink(SSeqURLInfo *seqUrlInfo,bool hspRange = false);
+    static list<string>  GetSeqLinksList(SSeqURLInfo *seqUrlInfo,bool hspRange = false);
+    
+    
+
 
     ///Create URL showing aligned regions info
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
