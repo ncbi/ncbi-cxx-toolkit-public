@@ -1786,29 +1786,26 @@ CChain::CChain(const TGeneModelSet& chain_alignments)
     }
     sort(m_members.begin(),m_members.end(),AlignSeqOrder());
 
-    EStrand strand = m_members.front()->Strand();
-    SetStrand(strand);
-
-    vector<CGeneModel*> not_placed;
+    list<CGeneModel> extened_parts;
+    vector<CGeneModel*> extened_parts_and_gapped;
     ITERATE (vector<CGeneModel*>, it, m_members) {
         const CGeneModel& align = **it;
-        if(Exons().empty() || this->isCompatible(align))
-            Extend(align, false);
-        else
-            not_placed.push_back(*it);
+        
+        if(!align.Continuous()) {
+            extened_parts_and_gapped.push_back(*it);
+        } else if(extened_parts.empty() || !align.Limits().IntersectingWith(extened_parts.back().Limits())) {
+            extened_parts.push_back(align);
+            extened_parts_and_gapped.push_back(&extened_parts.back());
+        } else {
+            extened_parts.back().Extend(align, false);
+        }
     }
+    sort(extened_parts_and_gapped.begin(),extened_parts_and_gapped.end(),AlignSeqOrder());
 
-    vector<CGeneModel*> not_placed_again;
-    sort(not_placed.begin(),not_placed.end(),AntiAlignSeqOrder());
-    ITERATE (vector<CGeneModel*>, it, not_placed) {
-        const CGeneModel& align = **it;
-        if(this->isCompatible(align))
-            Extend(align, false);
-        else
-            not_placed_again.push_back(*it);
-    }
+    EStrand strand = extened_parts_and_gapped.front()->Strand();
+    SetStrand(strand);
 
-    ITERATE (vector<CGeneModel*>, it, not_placed_again) {
+    ITERATE (vector<CGeneModel*>, it, extened_parts_and_gapped) {
         const CGeneModel& align = **it;
         Extend(align, false);
     }
