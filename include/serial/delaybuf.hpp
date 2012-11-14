@@ -104,16 +104,20 @@ public:
     /// Get member index
     TMemberIndex GetIndex(void) const;
 
+    typedef int TFormatFlags;
+    
     /// Reset the buffer with a new data
     void SetData(const CItemInfo* itemInfo, TObjectPtr object,
-                 ESerialDataFormat dataFormat, CByteSource& data);
+                 ESerialDataFormat dataFormat, TFormatFlags flags,
+                 CByteSource& data);
 
 private:
     struct SInfo
     {
     public:
         SInfo(const CItemInfo* itemInfo, TObjectPtr object,
-              ESerialDataFormat dataFormat, CByteSource& source);
+              ESerialDataFormat dataFormat, TFormatFlags flags,
+              CByteSource& source);
         ~SInfo(void);
 
         // member info
@@ -122,6 +126,8 @@ private:
         TObjectPtr m_Object;
         // data format
         ESerialDataFormat m_DataFormat;
+        // data format flags
+        TFormatFlags m_Flags;
         // data source
         mutable CRef<CByteSource> m_Source;
     };

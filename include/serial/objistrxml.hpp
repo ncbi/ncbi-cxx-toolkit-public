@@ -105,7 +105,10 @@ public:
     ///
     /// @return
     ///   TRUE (omit scope prefixes) or FALSE
-    bool GetEnforcedStdXml(void)     {return m_StdXml ? false : m_EnforcedStdXml;}
+    bool GetEnforcedStdXml(void) {
+        return m_StdXml ? false :
+            (GetFlags()&fFlagEnforcedStdXml) != 0;
+    }
 
     virtual string ReadFileHeader(void);
     virtual string PeekNextTypeName(void);
@@ -273,7 +276,7 @@ private:
     char SkipWSAndComments(void);
 
     void UnexpectedMember(const CTempString& id, const CItemsInfo& items);
-    bool x_IsStdXml(void) {return m_StdXml || m_EnforcedStdXml;}
+    bool x_IsStdXml(void) {return m_StdXml || (GetFlags()&fFlagEnforcedStdXml);}
     void x_EndTypeNamespace(void);
 
     enum ETagState {
@@ -287,7 +290,6 @@ private:
     string m_RejectedTag;
     bool m_Attlist;
     bool m_StdXml;
-    bool m_EnforcedStdXml;
     bool m_Doctype_found;
     string m_LastPrimitive;
     EEncoding m_Encoding;

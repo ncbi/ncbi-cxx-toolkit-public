@@ -45,12 +45,12 @@ CDelayBuffer::~CDelayBuffer(void)
 }
 
 void CDelayBuffer::SetData(const CItemInfo* itemInfo, TObjectPtr object,
-                           ESerialDataFormat dataFormat,
+                           ESerialDataFormat dataFormat, TFormatFlags flags,
                            CByteSource& data)
 {
     _ASSERT(!Delayed());
 
-    m_Info.reset(new SInfo(itemInfo, object, dataFormat, data));
+    m_Info.reset(new SInfo(itemInfo, object, dataFormat, flags, data));
 }
 
 void CDelayBuffer::Forget(void)
@@ -66,6 +66,7 @@ void CDelayBuffer::DoUpdate(void)
     {
         auto_ptr<CObjectIStream> in(CObjectIStream::Create(info.m_DataFormat,
                                                            *info.m_Source));
+        in->SetFlags(info.m_Flags);
         info.m_ItemInfo->UpdateDelayedBuffer(*in, info.m_Object);
         _VERIFY(in->EndOfData());
     }
@@ -83,10 +84,11 @@ TMemberIndex CDelayBuffer::GetIndex(void) const
 }
 
 CDelayBuffer::SInfo::SInfo(const CItemInfo* itemInfo, TObjectPtr object,
-                           ESerialDataFormat format,
+                           ESerialDataFormat format, TFormatFlags flags,
                            CByteSource& source)
     : m_ItemInfo(itemInfo), m_Object(object),
-      m_DataFormat(format), m_Source(&source)
+      m_DataFormat(format), m_Flags(flags),
+      m_Source(&source)
 {
 }
 

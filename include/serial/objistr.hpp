@@ -812,7 +812,9 @@ public:
         fFlagNone                = 0,
         eFlagNone                = fFlagNone,
         fFlagAllowNonAsciiChars  = 1 << 0,
-        eFlagAllowNonAsciiChars  = fFlagAllowNonAsciiChars
+        eFlagAllowNonAsciiChars  = fFlagAllowNonAsciiChars,
+        fFlagEnforcedStdXml      = 1 << 1,
+        eFlagEnforcedStdXml      = fFlagEnforcedStdXml
     };
     typedef int TFlags;
     TFlags GetFlags(void) const;

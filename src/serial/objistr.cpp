@@ -975,7 +975,7 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
                                     TObjectPtr objectPtr)
 {
     CRef<CByteSource> src = EndDelayBuffer();
-    buffer.SetData(itemInfo, objectPtr, GetDataFormat(), *src);
+    buffer.SetData(itemInfo, objectPtr, GetDataFormat(), GetFlags(), *src);
 }
 
 bool CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)

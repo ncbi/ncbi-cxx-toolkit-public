@@ -54,7 +54,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 CObjectIStreamXml::CObjectIStreamXml(void)
     : CObjectIStream(eSerial_Xml),
       m_TagState(eTagOutside), m_Attlist(false),
-      m_StdXml(false), m_EnforcedStdXml(false), m_Doctype_found(false),
+      m_StdXml(false), m_Doctype_found(false),
       m_Encoding( eEncoding_Unknown ),
       m_StringEncoding( eEncoding_Unknown ),
       m_SkipNextTag(false)
@@ -101,8 +101,13 @@ string CObjectIStreamXml::GetPosition(void) const
 
 void CObjectIStreamXml::SetEnforcedStdXml(bool set)
 {
-    m_EnforcedStdXml = set;
-    if (m_EnforcedStdXml) {
+    if ( set ) {
+        SetFlags(fFlagEnforcedStdXml);
+    }
+    else {
+        ClearFlags(fFlagEnforcedStdXml);
+    }
+    if (set) {
         m_StdXml = false;
     }
 }
