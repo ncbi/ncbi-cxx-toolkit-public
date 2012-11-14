@@ -134,6 +134,10 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("single", "Use single id queries (non-bulk)");
+    args.AddDefaultKey
+        ("count", "Count",
+         "Number of iterations to run (default: 1)",
+         CArgDescriptions::eInteger, "1");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "test_bulkinfo", false);
@@ -245,150 +249,153 @@ CRef<CScope> s_MakeScope(void)
 
 int CTestApplication::Run(void)
 {
-    size_t count = m_Ids.size();
+    int run_count = GetArgs()["count"].AsInteger();
+    for ( int run_i = 0; run_i < run_count; ++run_i ) {
+        size_t count = m_Ids.size();
 
-    TGis gis, gis2;
-    TAccs accs, accs2;
-    TLabels labels, labels2;
-    TTaxIds taxids, taxids2;
-    TLengths lengths, lengths2;
-    TTypes types, types2;
+        TGis gis, gis2;
+        TAccs accs, accs2;
+        TLabels labels, labels2;
+        TTaxIds taxids, taxids2;
+        TLengths lengths, lengths2;
+        TTypes types, types2;
 
-    if ( !m_Single ) {
-        CRef<CScope> scope = s_MakeScope();
-        switch ( m_Type ) {
-        case eBulk_gi:
-            gis = scope->GetGis(m_Ids, m_ForceLoad);
-            break;
-        case eBulk_acc:
-            accs = scope->GetAccVers(m_Ids, m_ForceLoad);
-            break;
-        case eBulk_label:
-            labels = scope->GetLabels(m_Ids, m_ForceLoad);
-            break;
-        case eBulk_taxid:
-            taxids = scope->GetTaxIds(m_Ids, m_ForceLoad);
-            break;
-        case eBulk_length:
-            lengths = scope->GetSequenceLengths(m_Ids, m_ForceLoad);
-            break;
-        case eBulk_type:
-            types = scope->GetSequenceTypes(m_Ids, m_ForceLoad);
-            break;
-        }
-        for ( size_t i = 0; i < count; ++i ) {
-            _ASSERT(!scope->GetBioseqHandle(m_Ids[i], CScope::eGetBioseq_Loaded));
-        }
-    }
-
-    {
-        CRef<CScope> scope = s_MakeScope();
-
-        switch ( m_Type ) {
-        case eBulk_gi:    gis2.resize(count); break;
-        case eBulk_acc:   accs2.resize(count); break;
-        case eBulk_label: labels2.resize(count); break;
-        case eBulk_taxid: taxids2.resize(count); break;
-        case eBulk_length: lengths2.resize(count); break;
-        case eBulk_type: types2.resize(count); break;
-        }
-        for ( size_t i = 0; i < count; ++i ) {
+        if ( !m_Single ) {
+            CRef<CScope> scope = s_MakeScope();
             switch ( m_Type ) {
             case eBulk_gi:
-                gis2[i] = scope->GetGi(m_Ids[i]);
+                gis = scope->GetGis(m_Ids, m_ForceLoad);
                 break;
             case eBulk_acc:
-                accs2[i] = scope->GetAccVer(m_Ids[i]);
+                accs = scope->GetAccVers(m_Ids, m_ForceLoad);
                 break;
             case eBulk_label:
-                labels2[i] = scope->GetLabel(m_Ids[i], m_ForceLabelLoad);
+                labels = scope->GetLabels(m_Ids, m_ForceLoad);
                 break;
             case eBulk_taxid:
-                taxids2[i] = scope->GetTaxId(m_Ids[i], m_ForceLoad);
+                taxids = scope->GetTaxIds(m_Ids, m_ForceLoad);
                 break;
             case eBulk_length:
-                lengths2[i] = scope->GetSequenceLength(m_Ids[i], m_ForceLoad);
+                lengths = scope->GetSequenceLengths(m_Ids, m_ForceLoad);
                 break;
             case eBulk_type:
-                types2[i] = scope->GetSequenceType(m_Ids[i], m_ForceLoad);
+                types = scope->GetSequenceTypes(m_Ids, m_ForceLoad);
                 break;
             }
+            for ( size_t i = 0; i < count; ++i ) {
+                _ASSERT(!scope->GetBioseqHandle(m_Ids[i], CScope::eGetBioseq_Loaded));
+            }
         }
-        for ( size_t i = 0; i < count; ++i ) {
-            _ASSERT(!scope->GetBioseqHandle(m_Ids[i], CScope::eGetBioseq_Loaded));
-        }
-    }
 
-    if ( m_Single ) {
+        {
+            CRef<CScope> scope = s_MakeScope();
+
+            switch ( m_Type ) {
+            case eBulk_gi:    gis2.resize(count); break;
+            case eBulk_acc:   accs2.resize(count); break;
+            case eBulk_label: labels2.resize(count); break;
+            case eBulk_taxid: taxids2.resize(count); break;
+            case eBulk_length: lengths2.resize(count); break;
+            case eBulk_type: types2.resize(count); break;
+            }
+            for ( size_t i = 0; i < count; ++i ) {
+                switch ( m_Type ) {
+                case eBulk_gi:
+                    gis2[i] = scope->GetGi(m_Ids[i]);
+                    break;
+                case eBulk_acc:
+                    accs2[i] = scope->GetAccVer(m_Ids[i]);
+                    break;
+                case eBulk_label:
+                    labels2[i] = scope->GetLabel(m_Ids[i], m_ForceLabelLoad);
+                    break;
+                case eBulk_taxid:
+                    taxids2[i] = scope->GetTaxId(m_Ids[i], m_ForceLoad);
+                    break;
+                case eBulk_length:
+                    lengths2[i] = scope->GetSequenceLength(m_Ids[i], m_ForceLoad);
+                    break;
+                case eBulk_type:
+                    types2[i] = scope->GetSequenceType(m_Ids[i], m_ForceLoad);
+                    break;
+                }
+            }
+            for ( size_t i = 0; i < count; ++i ) {
+                _ASSERT(!scope->GetBioseqHandle(m_Ids[i], CScope::eGetBioseq_Loaded));
+            }
+        }
+
+        if ( m_Single ) {
+            switch ( m_Type ) {
+            case eBulk_gi:    gis = gis2; break;
+            case eBulk_acc:   accs = accs2; break;
+            case eBulk_label: labels = labels2; break;
+            case eBulk_taxid: taxids = taxids2; break;
+            case eBulk_length: lengths = lengths2; break;
+            case eBulk_type: types = types2; break;
+            }
+        }
+
+        if ( m_Verbose ) {
+            for ( size_t i = 0; i < count; ++i ) {
+                if ( !gis.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<gis[i]);
+                }
+                if ( !accs.empty() ) {
+                    if ( accs[i] ) {
+                        LOG_POST(m_Ids[i]<<" -> "<<accs[i]);
+                    }
+                    else {
+                        LOG_POST(m_Ids[i]<<" -> null");
+                    }
+                }
+                if ( !labels.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> \""<<labels[i]<<"\"");
+                }
+                if ( !taxids.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<taxids[i]);
+                }
+                if ( !lengths.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<lengths[i]);
+                }
+                if ( !types.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<types[i]);
+                }
+
+                // single queries
+                if ( !m_Single && !gis.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<gis2[i]);
+                }
+                if ( !m_Single && !accs.empty() ) {
+                    if ( accs2[i] ) {
+                        LOG_POST(m_Ids[i]<<" -> "<<accs2[i]);
+                    }
+                    else {
+                        LOG_POST(m_Ids[i]<<" -> null");
+                    }
+                }
+                if ( !m_Single && !labels.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> \""<<labels2[i]<<"\"");
+                }
+                if ( !m_Single && !taxids.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<taxids2[i]);
+                }
+                if ( !m_Single && !lengths.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<lengths2[i]);
+                }
+                if ( !m_Single && !types.empty() ) {
+                    LOG_POST(m_Ids[i]<<" -> "<<types2[i]);
+                }
+            }
+        }
         switch ( m_Type ) {
-        case eBulk_gi:    gis = gis2; break;
-        case eBulk_acc:   accs = accs2; break;
-        case eBulk_label: labels = labels2; break;
-        case eBulk_taxid: taxids = taxids2; break;
-        case eBulk_length: lengths = lengths2; break;
-        case eBulk_type: types = types2; break;
+        case eBulk_gi:    _ASSERT(gis == gis2); break;
+        case eBulk_acc:   _ASSERT(accs == accs2); break;
+        case eBulk_label: _ASSERT(labels == labels2); break;
+        case eBulk_taxid: _ASSERT(taxids == taxids2); break;
+        case eBulk_length: _ASSERT(lengths == lengths2); break;
+        case eBulk_type: _ASSERT(types == types2); break;
         }
-    }
-
-    if ( m_Verbose ) {
-        for ( size_t i = 0; i < count; ++i ) {
-            if ( !gis.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<gis[i]);
-            }
-            if ( !accs.empty() ) {
-                if ( accs[i] ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<accs[i]);
-                }
-                else {
-                    LOG_POST(m_Ids[i]<<" -> null");
-                }
-            }
-            if ( !labels.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> \""<<labels[i]<<"\"");
-            }
-            if ( !taxids.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<taxids[i]);
-            }
-            if ( !lengths.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<lengths[i]);
-            }
-            if ( !types.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<types[i]);
-            }
-
-            // single queries
-            if ( !m_Single && !gis.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<gis2[i]);
-            }
-            if ( !m_Single && !accs.empty() ) {
-                if ( accs2[i] ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<accs2[i]);
-                }
-                else {
-                    LOG_POST(m_Ids[i]<<" -> null");
-                }
-            }
-            if ( !m_Single && !labels.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> \""<<labels2[i]<<"\"");
-            }
-            if ( !m_Single && !taxids.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<taxids2[i]);
-            }
-            if ( !m_Single && !lengths.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<lengths2[i]);
-            }
-            if ( !m_Single && !types.empty() ) {
-                LOG_POST(m_Ids[i]<<" -> "<<types2[i]);
-            }
-        }
-    }
-    switch ( m_Type ) {
-    case eBulk_gi:    _ASSERT(gis == gis2); break;
-    case eBulk_acc:   _ASSERT(accs == accs2); break;
-    case eBulk_label: _ASSERT(labels == labels2); break;
-    case eBulk_taxid: _ASSERT(taxids == taxids2); break;
-    case eBulk_length: _ASSERT(lengths == lengths2); break;
-    case eBulk_type: _ASSERT(types == types2); break;
     }
     LOG_POST("Passed");
     return 0;
