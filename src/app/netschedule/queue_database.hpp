@@ -208,6 +208,7 @@ private:
     unsigned x_PurgeUnconditional(void);
     void     x_OptimizeStatusMatrix(time_t  current_time);
     bool     x_CheckStopPurge(void);
+    SQueueParameters x_SingleQueueInfo(TQueueInfo::const_iterator  found) const;
 
     CBackgroundHost &    m_Host;
     CRequestExecutor &   m_Executor;

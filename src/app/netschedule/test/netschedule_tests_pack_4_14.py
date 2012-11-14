@@ -386,8 +386,8 @@ class Scenario505( TestBase ):
             if reply[ 0 ] != True:
                 raise Exception( 'RECO failed: ' + reply[ 1 ] )
             if reply[ 1 ] != '"server_changes" ' \
-                '{"log_notification_thread" [false true], ' \
-                '"log_statistics_thread" [true false]}, ' \
+                '{"log_notification_thread" [false, true], ' \
+                '"log_statistics_thread" [true, false]}, ' \
                 '"added_queue_classes" ["class1", "class2"], ' \
                 '"added_queues" {"q1" "", "q2" "class2"}':
                 raise Exception( 'Unexpected output for RECO (step 4): ' + reply[ 1 ] )

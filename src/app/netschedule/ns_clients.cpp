@@ -506,65 +506,65 @@ string CNSClient::Print(const string &               node_name,
     buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
               NStr::SizetToString(m_NumberOfSubmitted) + "\n";
 
-    if (m_BlacklistedJobs.any()) {
-        if (verbose) {
-            buffer += "OK:  BLACKLISTED JOBS:\n";
+    if (verbose && m_BlacklistedJobs.any()) {
+        buffer += "OK:  BLACKLISTED JOBS:\n";
 
-            TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
-            for ( ; en.valid(); ++en)
-                buffer += "OK:    " + queue->MakeKey(*en) + "\n";
-        } else {
-            buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
-                      NStr::UIntToString(m_BlacklistedJobs.count()) + "\n";
-        }
+        TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
+        for ( ; en.valid(); ++en)
+            buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+    } else {
+        buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
+                  NStr::UIntToString(m_BlacklistedJobs.count()) + "\n";
     }
 
-    if (m_RunningJobs.any()) {
+    if (verbose && m_RunningJobs.any()) {
         buffer += "OK:  RUNNING JOBS:\n";
 
         TNSBitVector::enumerator    en(m_RunningJobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+    } else {
+        buffer += "OK:  NUMBER OF RUNNING JOBS: " +
+                  NStr::UIntToString(m_RunningJobs.count()) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
               NStr::SizetToString(m_NumberOfRun) + "\n";
 
-    if (m_ReadingJobs.any()) {
+    if (verbose && m_ReadingJobs.any()) {
         buffer += "OK:  READING JOBS:\n";
 
         TNSBitVector::enumerator    en(m_ReadingJobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+    } else {
+        buffer += "OK:  NUMBER OF READING JOBS: " +
+                  NStr::UIntToString(m_ReadingJobs.count()) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +
               NStr::SizetToString(m_NumberOfRead) + "\n";
 
-    if (m_Affinities.any()) {
-        if (verbose) {
-            buffer += "OK:  PREFERRED AFFINITIES:\n";
+    if (verbose && m_Affinities.any()) {
+        buffer += "OK:  PREFERRED AFFINITIES:\n";
 
-            TNSBitVector::enumerator    en(m_Affinities.first());
-            for ( ; en.valid(); ++en)
-                buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
-        } else {
-            buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
-                      NStr::UIntToString(m_Affinities.count()) + "\n";
-        }
+        TNSBitVector::enumerator    en(m_Affinities.first());
+        for ( ; en.valid(); ++en)
+            buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+    } else {
+        buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
+                  NStr::UIntToString(m_Affinities.count()) + "\n";
     }
 
-    if (m_WaitAffinities.any()) {
-        if (verbose) {
-            buffer += "OK:  REQUESTED AFFINITIES:\n";
+    if (verbose && m_WaitAffinities.any()) {
+        buffer += "OK:  REQUESTED AFFINITIES:\n";
 
-            TNSBitVector::enumerator    en(m_WaitAffinities.first());
-            for ( ; en.valid(); ++en)
-                buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
-        } else {
-            buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
-                      NStr::UIntToString(m_WaitAffinities.count()) + "\n";
-        }
+        TNSBitVector::enumerator    en(m_WaitAffinities.first());
+        for ( ; en.valid(); ++en)
+            buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+    } else {
+        buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
+                  NStr::UIntToString(m_WaitAffinities.count()) + "\n";
     }
 
     return buffer;

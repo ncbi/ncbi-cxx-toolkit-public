@@ -463,16 +463,15 @@ class NetSchedule:
     @staticmethod
     def __appendNodeSession( cmd, node, session ):
         " Appends node and session if needed "
-        if node is None or node != '' or session is None or session != '':
-            cmd.append( "--extended-cli" )
-            if node is None:
-                cmd.append( "--client-node=default" )
-            elif node:
-                cmd.append( "--client-node=" + node )
-            if session is None:
-                cmd.append( "--client-session=default" )
-            elif session:
-                cmd.append( "--client-session=" + session )
+        cmd.append( "--extended-cli" )
+        if node is None:
+            cmd.append( "--client-node=default" )
+        else:
+            cmd.append( "--client-node=" + node )
+        if session is None:
+            cmd.append( "--client-session=default" )
+        else:
+            cmd.append( "--client-session=" + session )
         return cmd
 
     def getVersion( self, queue = '', node = None, session = None ):

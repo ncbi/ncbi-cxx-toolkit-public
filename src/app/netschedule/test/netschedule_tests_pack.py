@@ -20,7 +20,7 @@ class TestBase:
         return grid.NetScheduleService( self.ns.getHost() + ":" + \
                                         str( self.ns.getPort() ),
                                         queueName, clientName,
-                                        grid.ipc.AutomationServer( \
+                                        grid.ipc.RPCServer( \
                                             self.ns.getGridCLIPath() ) )
 
     def __init__( self, netschedule ):
@@ -342,6 +342,8 @@ class Scenario09( TestBase ):
             return qinfo[ "queue_type" ] == "static"
         if qinfo.has_key( "queue type" ):
             return qinfo[ "queue type" ] == "static"
+        if qinfo.has_key( "kind" ):
+            return qinfo[ "kind" ] == "static"
         raise Exception( "No queue type found" )
 
 
@@ -572,12 +574,22 @@ class Scenario18( TestBase ):
             return False
 
         info = self.ns.getJobInfo( 'TEST', jobID )
+
+        # Check input
+        if info.has_key( 'input_data' ):
+            if info[ 'input_data' ] != "'D test input'":
+                raise Exception( "Unexpected input (old format)" )
+        elif info.has_key( 'embedded_input_data' ):
+            if info[ 'embedded_input_data' ] != '"test input"':
+                raise Exception( "Unexpected input (new format)" )
+        else:
+            raise Exception( "Not found output field" )
+
         if info[ 'status' ] != 'Pending' or \
            info[ 'progress_msg' ] != "''" or \
            info[ 'mask' ] != "0" or \
            info[ 'run_counter' ] != "0" or \
-           info[ 'input_storage' ] != "embedded, size=10" or \
-           info[ 'input_data' ] != "'D test input'":
+           info[ 'input_storage' ] != "embedded, size=10":
             return False
 
         if info.has_key( 'aff_id' ):
@@ -705,8 +717,15 @@ class Scenario23( TestBase ):
             return False
 
         status = self.ns.getJobBriefStatus( 'TEST', jobID )
-        if status[ "Status" ] != "Running":
-            return False
+
+        if status.has_key( "Status" ):
+            if status[ "Status" ] != "Running":
+                return False
+        elif status.has_key( "status" ):
+            if status[ "status" ] != "Running":
+                return False
+        else:
+            raise Exception( "status field is not found" )
 
         if self.ns.getFastJobStatus( 'TEST', jobID ) != "Running":
             return False

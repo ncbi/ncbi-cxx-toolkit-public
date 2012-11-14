@@ -132,6 +132,15 @@ public:
 
     bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)  { m_RefuseSubmits = val;  }
+    size_t GetAffSlotsUsed(void) const { return m_AffinityRegistry.size(); }
+    size_t GetClientsCount(void) const { return m_ClientsRegistry.size(); }
+    size_t GetGroupsCount(void) const { return m_GroupRegistry.size(); }
+    size_t GetNotifCount(void) const { return m_NotificationsList.size(); }
+    size_t GetGCBacklogCount(void) const
+    {
+        CFastMutexGuard     guard(m_JobsToDeleteLock);
+        return m_JobsToDelete.count();
+    }
 
     ////
     // Status matrix related
@@ -312,13 +321,10 @@ public:
 
     CBDB_FileCursor& GetEventsCursor();
 
-    void PrintSubmHosts(CNetScheduleHandler &  handler) const;
-    void PrintWNodeHosts(CNetScheduleHandler &  handler) const;
-
-    /// Dump a single job
+    // Dump a single job
     size_t PrintJobDbStat(CNetScheduleHandler &   handler,
                           unsigned                job_id);
-    /// Dump all job records
+    // Dump all job records
     void PrintAllJobDbStat(CNetScheduleHandler &   handler,
                            const string &          group,
                            TJobStatus              job_status,
@@ -480,7 +486,7 @@ private:
     CFastMutex                  m_LastIdLock;
 
     // Lock for deleted jobs vectors
-    CFastMutex                   m_JobsToDeleteLock;
+    mutable CFastMutex           m_JobsToDeleteLock;
     // Vector of jobs to be deleted from db unconditionally
     // keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;

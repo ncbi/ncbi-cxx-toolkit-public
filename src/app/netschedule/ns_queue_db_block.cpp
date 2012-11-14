@@ -155,7 +155,9 @@ CQueueDbBlockArray::CQueueDbBlockArray()
 
 
 CQueueDbBlockArray::~CQueueDbBlockArray()
-{}
+{
+    Close();
+}
 
 
 void CQueueDbBlockArray::Init(CBDB_Env& env, const string& path,
@@ -177,7 +179,7 @@ void CQueueDbBlockArray::Close()
     }
 
     delete [] m_Array;
-    m_Array = 0;
+    m_Array = NULL;
     m_Count = 0;
 }
 

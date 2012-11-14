@@ -1321,11 +1321,25 @@ SQueueParameters CQueueDataBase::QueueInfo(const string &  qname) const
         NCBI_THROW(CNetScheduleException, eUnknownQueue,
                    "Queue '" + qname + "' is not found." );
 
-    SQueueParameters    params = found_queue->second.first;
+    return x_SingleQueueInfo(found_queue);
+}
 
-    // refuse_submits field is used as a transport.
-    // Usually used by QINF2
-    params.refuse_submits = found_queue->second.second->GetRefuseSubmits();
+
+/* Note: this member must be called under a lock, it's not thread safe */
+SQueueParameters
+CQueueDataBase::x_SingleQueueInfo(TQueueInfo::const_iterator  found) const
+{
+    SQueueParameters    params = found->second.first;
+
+    // The fields below are used as a transport.
+    // Usually used by QINF2 and STAT QUEUES
+    params.refuse_submits = found->second.second->GetRefuseSubmits();
+    params.max_aff_slots = m_Server->GetMaxAffinities();
+    params.aff_slots_used = found->second.second->GetAffSlotsUsed();
+    params.clients = found->second.second->GetClientsCount();
+    params.groups = found->second.second->GetGroupsCount();
+    params.gc_backlog = found->second.second->GetGCBacklogCount();
+    params.notif_count = found->second.second->GetNotifCount();
     return params;
 }
 
@@ -1434,7 +1448,8 @@ string CQueueDataBase::GetQueueClassesInfo(void)
             output += "\n";
         output += "OK:[qclass " + k->first + "]\n";
         // false - not to include qclass
-        output += k->second.GetPrintableParameters(false);
+        // false - not URL encoded format
+        output += k->second.GetPrintableParameters(false, false);
     }
     return output;
 }
@@ -1450,7 +1465,8 @@ string CQueueDataBase::GetQueueInfo(void)
             output += "\n";
         output += "OK:[queue " + k->first + "]\n";
         // true - include qclass
-        output += k->second.first.GetPrintableParameters(true);
+        // false - not URL encoded format
+        output += x_SingleQueueInfo(k).GetPrintableParameters(true, false);
     }
     return output;
 }

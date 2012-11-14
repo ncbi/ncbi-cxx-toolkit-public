@@ -1662,7 +1662,7 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         // Update the memory cache
         m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eReading);
         m_StatisticsCounters.CountTransition(old_status,
-                                              CNetScheduleAPI::eReading);
+                                             CNetScheduleAPI::eReading);
         m_ClientsRegistry.AddToReading(client, job_id);
 
         m_GCRegistry.UpdateLifetime(job_id, job->GetExpirationTime(m_Timeout,
@@ -2751,36 +2751,6 @@ CBDB_FileCursor& CQueue::GetEventsCursor()
     }
     cur->ReOpen(trans);
     return *cur;
-}
-
-
-void CQueue::PrintSubmHosts(CNetScheduleHandler &  handler) const
-{
-    string      hosts;
-
-    {{
-        CQueueParamAccessor     qp(*this);
-        hosts = qp.GetSubmHosts().Print("OK:", "\n");
-    }}
-
-    if (!hosts.empty())
-        hosts += "\n";
-    handler.WriteMessage(hosts);
-}
-
-
-void CQueue::PrintWNodeHosts(CNetScheduleHandler &  handler) const
-{
-    string      hosts;
-
-    {{
-         CQueueParamAccessor     qp(*this);
-         hosts = qp.GetWnodeHosts().Print("OK:", "\n");
-    }}
-
-    if (!hosts.empty())
-        hosts += "\n";
-    handler.WriteMessage(hosts);
 }
 
 

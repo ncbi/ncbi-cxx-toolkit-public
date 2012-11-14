@@ -135,6 +135,11 @@ class CNSNotificationList
                    const CNSClientsRegistry &   clients_registry,
                    const CNSAffinityRegistry &  aff_registry,
                    bool                         verbose) const;
+        size_t size(void) const
+        {
+            CMutexGuard guard(m_ListenersLock);
+            return m_PassiveListeners.size() + m_ActiveListeners.size();
+        }
 
     private:
         void x_SendNotificationPacket(unsigned int    address,

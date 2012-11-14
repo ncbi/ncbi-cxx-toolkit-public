@@ -55,11 +55,13 @@ void CJobGCRegistry::RegisterJob(unsigned int            job_id,
                                  unsigned int            group_id,
                                  time_t                  life_time)
 {
-    CFastMutexGuard     guard(m_Lock);
-    SJobGCInfo          job_attr(aff_id, group_id, life_time);
+    SJobGCInfo                      job_attr(aff_id, group_id, life_time);
     job_attr.m_SubmitTime = submit_time;
 
-    m_JobsAttrs[job_id] = job_attr;
+    pair<unsigned int, SJobGCInfo>  item(job_id, job_attr);
+
+    CFastMutexGuard                 guard(m_Lock);
+    m_JobsAttrs.insert(item);
 }
 
 

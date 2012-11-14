@@ -76,18 +76,24 @@ struct SQueueParameters
     // This parameter is not reconfigurable
     unsigned int    run_timeout_precision;
 
-    // This field is not for reading/writing/printing
+    // These fields are not for reading/writing/printing
     // It is used for QINF2 command which should print this status
     // together with the queue parameters. So it is handy to have it here and
     // set when parameters are retrieved.
     bool            refuse_submits;
-
+    size_t          max_aff_slots;
+    size_t          aff_slots_used;
+    size_t          clients;
+    size_t          groups;
+    size_t          gc_backlog;
+    size_t          notif_count;
 
   public:
     string Diff(const SQueueParameters &  other,
                 bool                      include_class_cmp,
                 bool                      include_description) const;
-    string GetPrintableParameters(bool  include_class) const;
+    string GetPrintableParameters(bool  include_class,
+                                  bool  url_encoded) const;
 
     // Parameters are always: registry and section name
     unsigned int  ReadTimeout(const IRegistry &, const string &);

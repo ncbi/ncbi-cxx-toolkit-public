@@ -56,6 +56,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_LogBatchEachJobFlag(false),
       m_LogNotificationThreadFlag(false),
       m_LogCleaningThreadFlag(false),
+      m_LogExecutionWatcherThreadFlag(false),
       m_LogStatisticsThreadFlag(false),
       m_RefuseSubmits(false),
       m_DeleteBatchSize(100),

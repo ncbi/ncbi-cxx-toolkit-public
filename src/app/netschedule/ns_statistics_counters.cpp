@@ -404,6 +404,7 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
                 default:
                     break;
             }
+            return;
         }
 
         // Here: this is a transition from the Reading state

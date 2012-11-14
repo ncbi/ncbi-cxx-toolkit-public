@@ -469,8 +469,7 @@ class Scenario110( TestBase ):
            client[ 'number_of_jobs_given_for_execution' ] == 1 and \
            client[ 'number_of_jobs_given_for_reading' ] == 1 and \
            client[ 'type' ] == 'submitter | worker node | reader' and \
-           len( client[ 'reading_jobs' ] ) == 1 and \
-           client[ 'reading_jobs' ][ 0 ] == jobID:
+           client[ 'number_of_reading_jobs' ] == 1:
             return True
 
         raise Exception( "Unexpected client info: " + str( client ) )
@@ -946,7 +945,8 @@ class Scenario123( TestBase ):
         execAny( ns_client, 'CLRN' )
         client = getClientInfo( ns_client, 'node' )
         if client.has_key( 'number_of_preferred_affinities' ):
-            raise Exception( "Expected no preferred affinities, got some." )
+            if client[ 'number_of_preferred_affinities' ] != 0:
+                raise Exception( "Expected no preferred affinities, got some." )
         return True
 
 class Scenario124( TestBase ):
@@ -974,7 +974,8 @@ class Scenario124( TestBase ):
 
         client = getClientInfo( ns_client, 'node' )
         if client.has_key( 'number_of_preferred_affinities' ):
-            raise Exception( "Expected no preferred affinities, got some." )
+            if client[ 'number_of_preferred_affinities' ] != 0:
+                raise Exception( "Expected no preferred affinities, got some." )
         return True
 
 class Scenario125( TestBase ):
@@ -3719,11 +3720,19 @@ class Scenario198( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario198' )
 
-        self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB )
+        try:
+            # This generates an exception for non existing job
+            self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB )
+        except:
+            pass
         getClientInfo( ns_client, None, 0, 0 )
 
-        self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB,
-                                   'mynode', 'mysession' )
+        try:
+            # This generates an exception for non existing job
+            self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB,
+                                    'mynode', 'mysession' )
+        except:
+            pass
         getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
@@ -5427,7 +5436,7 @@ class Scenario262( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario262' )
 
-        info = ns_client.get_number_of_jobs_by_status( None, "111" )
+        info = ns_client.get_job_counters( None, "111" )
         if info[ 'Confirmed' ] != 0:
             raise Exception( "Unexpected number of confirmed jobs" )
         if info[ 'Total' ] != 3:
@@ -5469,7 +5478,7 @@ class Scenario263( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario263' )
 
-        info = ns_client.get_number_of_jobs_by_status( None, "222" )
+        info = ns_client.get_job_counters( None, "222" )
         if info[ 'Confirmed' ] != 0:
             raise Exception( "Unexpected number of confirmed jobs" )
         if info[ 'Total' ] != 1:
@@ -5563,9 +5572,9 @@ class Scenario266( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario266' )
-        output = execAny( ns_client, 'DUMP group=777' )
-        if output != "":
-            raise Exception( "Expected error, got nothing: " + output )
+        output = execAny( ns_client, 'DUMP group=777', 0, True )
+        if output:
+            raise Exception( "Expected no output, received: " + str( output ) )
         return True
 
 class Scenario267( TestBase ):
@@ -5592,7 +5601,7 @@ class Scenario267( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario267' )
 
-        info = ns_client.get_number_of_jobs_by_status( 'a2', None )
+        info = ns_client.get_job_counters( 'a2', None )
         if info[ 'Confirmed' ] != 0:
             raise Exception( "Unexpected number of confirmed jobs" )
         if info[ 'Total' ] != 2:
@@ -5612,7 +5621,7 @@ class Scenario267( TestBase ):
         if info[ 'Pending' ] != 2:
             raise Exception( "Unexpected number of pending jobs" )
 
-        info = ns_client.get_number_of_jobs_by_status( 'a2', 'g2' )
+        info = ns_client.get_job_counters( 'a2', 'g2' )
         if info[ 'Confirmed' ] != 0:
             raise Exception( "Unexpected number of confirmed jobs" )
         if info[ 'Total' ] != 1:

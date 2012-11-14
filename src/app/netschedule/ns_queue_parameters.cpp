@@ -222,43 +222,73 @@ SQueueParameters::Diff(const SQueueParameters &  other,
 
 // Classes are included for queues only (not for queue classes)
 string
-SQueueParameters::GetPrintableParameters(bool  include_class) const
+SQueueParameters::GetPrintableParameters(bool  include_class,
+                                         bool  url_encoded) const
 {
     string      result;
 
+    /* Initialized for multi-line output */
+    string      prefix("OK:");
+    string      suffix(": ");
+    string      separator("\n");
+
+    if (url_encoded) {
+        prefix    = "";
+        suffix    = "=";
+        separator = "&";
+    }
+
     if (include_class) {
         // These parameters make sense for queues only
-        result = "OK:kind: ";
+        result = prefix + "kind" + suffix;
         if (kind == CQueue::eKindStatic)
-            result += "static\n";
+            result += "static" + separator;
         else
-            result += "dynamic\n";
+            result += "dynamic" + separator;
 
         result +=
-        "OK:position: " + NStr::NumericToString(position) + "\n"
-        "OK:qclass: " + qclass + "\n";
+        prefix + "position" + suffix + NStr::NumericToString(position) + separator +
+        prefix + "qclass" + suffix + qclass + separator +
+        prefix + "refuse_submits" + suffix + NStr::BoolToString(refuse_submits) + separator +
+        prefix + "max_aff_slots" + suffix + NStr::NumericToString(max_aff_slots) + separator +
+        prefix + "aff_slots_used" + suffix + NStr::NumericToString(aff_slots_used) + separator +
+        prefix + "clients" + suffix + NStr::NumericToString(clients) + separator +
+        prefix + "groups" + suffix + NStr::NumericToString(groups) + separator +
+        prefix + "gc_backlog" + suffix + NStr::NumericToString(gc_backlog) + separator +
+        prefix + "notif_count" + suffix + NStr::NumericToString(notif_count) + separator;
     }
 
     result +=
-    "OK:delete_request: " + NStr::BoolToString(delete_request) + "\n"
-    "OK:timeout: " + NStr::NumericToString(timeout) + "\n"
-    "OK:notif_hifreq_interval: " + NStr::NumericToString(notif_hifreq_interval) + "\n"
-    "OK:notif_hifreq_period: " + NStr::NumericToString(notif_hifreq_period) + "\n"
-    "OK:notif_lofreq_mult: " + NStr::NumericToString(notif_lofreq_mult) + "\n"
-    "OK:dump_buffer_size: " + NStr::NumericToString(dump_buffer_size) + "\n"
-    "OK:run_timeout: " + NStr::NumericToString(run_timeout) + "\n"
-    "OK:program_name: " + NStr::PrintableString(program_name) + "\n"
-    "OK:failed_retries: " + NStr::NumericToString(failed_retries) + "\n"
-    "OK:blacklist_time: " + NStr::NumericToString(blacklist_time) + "\n"
-    "OK:max_input_size: " + NStr::NumericToString(max_input_size) + "\n"
-    "OK:max_output_size: " + NStr::NumericToString(max_output_size) + "\n"
-    "OK:subm_hosts: " + NStr::PrintableString(subm_hosts) + "\n"
-    "OK:wnode_hosts: " + NStr::PrintableString(wnode_hosts) + "\n"
-    "OK:wnode_timeout: " + NStr::NumericToString(wnode_timeout) + "\n"
-    "OK:pending_timeout: " + NStr::NumericToString(pending_timeout) + "\n"
-    "OK:max_pending_wait_timeout: " + NStr::NumericToString(max_pending_wait_timeout) + "\n"
-    "OK:description: " + NStr::PrintableString(description) + "\n"
-    "OK:run_timeout_precision: " + NStr::NumericToString(run_timeout_precision);
+    prefix + "delete_request" + suffix + NStr::BoolToString(delete_request) + separator +
+    prefix + "timeout" + suffix + NStr::NumericToString(timeout) + separator +
+    prefix + "notif_hifreq_interval" + suffix + NStr::NumericToString(notif_hifreq_interval) + separator +
+    prefix + "notif_hifreq_period" + suffix + NStr::NumericToString(notif_hifreq_period) + separator +
+    prefix + "notif_lofreq_mult" + suffix + NStr::NumericToString(notif_lofreq_mult) + separator +
+    prefix + "dump_buffer_size" + suffix + NStr::NumericToString(dump_buffer_size) + separator +
+    prefix + "run_timeout" + suffix + NStr::NumericToString(run_timeout) + separator +
+    prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
+    prefix + "blacklist_time" + suffix + NStr::NumericToString(blacklist_time) + separator +
+    prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
+    prefix + "max_output_size" + suffix + NStr::NumericToString(max_output_size) + separator +
+    prefix + "wnode_timeout" + suffix + NStr::NumericToString(wnode_timeout) + separator +
+    prefix + "pending_timeout" + suffix + NStr::NumericToString(pending_timeout) + separator +
+    prefix + "max_pending_wait_timeout" + suffix + NStr::NumericToString(max_pending_wait_timeout) + separator +
+    prefix + "run_timeout_precision" + suffix + NStr::NumericToString(run_timeout_precision) + separator;
+
+    if (url_encoded) {
+        result +=
+        prefix + "program_name" + suffix + NStr::URLEncode(program_name) + separator +
+        prefix + "subm_hosts" + suffix + NStr::URLEncode(subm_hosts) + separator +
+        prefix + "wnode_hosts" + suffix + NStr::URLEncode(wnode_hosts) + separator +
+        prefix + "description" + suffix + NStr::URLEncode(description);
+    } else {
+        result +=
+        prefix + "program_name" + suffix + NStr::PrintableString(program_name) + separator +
+        prefix + "subm_hosts" + suffix + NStr::PrintableString(subm_hosts) + separator +
+        prefix + "wnode_hosts" + suffix + NStr::PrintableString(wnode_hosts) + separator +
+        prefix + "description" + suffix + NStr::PrintableString(description);
+    }
+
     return result;
 }
 
