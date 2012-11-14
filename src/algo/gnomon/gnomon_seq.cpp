@@ -188,6 +188,17 @@ bool UpstreamStartOrSplice(const CEResidueVec& seq_strand, int start, int frame)
 
 }
 
+bool Partial5pCodonIsStop(const CEResidueVec& seq_strand, int start, int frame) {
+    if(frame == 0)      // no partial codon
+        return false;
+
+    int codon_start = start+frame-3;
+    if(codon_start >= 0 && IsStopCodon(&seq_strand[codon_start]))
+        return true;
+
+    return false;
+}
+
 void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& frame)
 {
     int left_cds_limit = -1;
@@ -252,7 +263,11 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
             for (int i = 0; i<3; ++i) {
                 if (frame == -1 || frame == i) {
 
-                    starts[i].push_back(i-3);
+                    if(Partial5pCodonIsStop(contig_seq,model_start,i))
+                        stops[i].push_back(i-3); // stop to limit MaxCds
+                    else 
+                        starts[i].push_back(i-3);
+
 
                     /*
                     if (UpstreamStartOrSplice(contig_seq,model_start,i))

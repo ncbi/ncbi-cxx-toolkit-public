@@ -1397,8 +1397,8 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
         for(int fr = 0; fr < 3; ++fr) {
 
             int first_stop = stops[fr][0];
-            if(first_stop < 0)  // bogus stop for maxcds
-                first_stop = stops[fr][1];
+            //            if(first_stop < 0)  // bogus stop for maxcds
+            //                first_stop = stops[fr][1];
 
             if(first_stop >= 3) {   // we have 5' reading frame
                 TSignedSeqRange rframe, stt, stp;                
