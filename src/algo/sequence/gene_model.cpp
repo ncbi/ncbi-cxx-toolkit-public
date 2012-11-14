@@ -2374,7 +2374,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     bool has_length_mismatch = false;
     bool has_polya_tail = false;
     bool has_incomplete_polya_tail = false;
-    bool partial_unaligned_edge = false;
+    bool partial_unaligned_section = false;
     CRangeCollection<TSeqPos> mismatch_locs;
     CRangeCollection<TSeqPos> insert_locs;
     CRangeCollection<TSeqPos> delete_locs;
@@ -2407,7 +2407,11 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
             if (exon_it != al->GetSegs().GetSpliced().GetExons().begin()) {
                 TSeqRange gap(prev_to+1, pos-1);
                 if (gap.NotEmpty()) {
-                    insert_locs += gap;
+                    if (feat.IsSetPartial()) {
+                        partial_unaligned_section = true;
+                    } else {
+                        insert_locs += gap;
+                    }
                 }
             }
             prev_to = exon.GetProduct_end().GetNucpos();
@@ -2446,7 +2450,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         TSeqRange r = al->GetSeqRange(0);
         if (r.GetFrom() != 0) {
             if (feat.IsSetPartial()) {
-                partial_unaligned_edge = true;
+                partial_unaligned_section = true;
             } else {
                 insert_locs += TSeqRange(0, r.GetFrom()-1);
             }
@@ -2464,7 +2468,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
 
         if (r.GetTo() + 1 < max_align_len) {
             if (feat.IsSetPartial()) {
-                partial_unaligned_edge = true;
+                partial_unaligned_section = true;
             } else {
                 insert_locs += TSeqRange(r.GetTo()+1, max_align_len-1);
             }
@@ -2476,7 +2480,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         }
     }
 
-    if ( insert_locs.empty() && delete_locs.empty() && !partial_unaligned_edge)
+    if ( insert_locs.empty() && delete_locs.empty() && !partial_unaligned_section)
     {
         /// only compare for mismatches and 3' unaligned
         /// we assume that the feature is otherwise aligned
@@ -2517,7 +2521,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         }
         else if (tail_len) {
             if (feat.IsSetPartial()) {
-                partial_unaligned_edge = true;
+                partial_unaligned_section = true;
             } else {
                 TSeqPos end_pos = feat.GetLocation().GetTotalRange().GetTo();
                 insert_locs += TSeqRange(end_pos-tail_len+1, end_pos);
@@ -2530,7 +2534,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         !delete_locs.empty() ||
         has_length_mismatch  ||
         has_incomplete_polya_tail ||
-        partial_unaligned_edge) {
+        partial_unaligned_section) {
         except_text = "unclassified transcription discrepancy";
     }
     else if (!mismatch_locs.empty()) {
@@ -2540,7 +2544,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     x_SetExceptText(feat, except_text);
     x_SetComment(feat, cds_feat, cds_feat_on_mrna, align, mismatch_locs,
                  insert_locs, delete_locs, delete_sizes,
-                 partial_unaligned_edge);
+                 partial_unaligned_section);
 }
 
 
@@ -2995,10 +2999,10 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                       const CRangeCollection<TSeqPos> &insert_locs,
                       const CRangeCollection<TSeqPos> &delete_locs,
                       const map<TSeqPos,TSeqPos> &delete_sizes,
-                      bool partial_unaligned_edge)
+                      bool partial_unaligned_section)
 {
     if (mismatch_locs.empty() && insert_locs.empty() && delete_locs.empty() &&
-        !partial_unaligned_edge &&
+        !partial_unaligned_section &&
         !(m_is_gnomon && cds_feat &&
           cds_feat->GetData().GetCdregion().IsSetCode_break()))
     {
@@ -3037,7 +3041,7 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
             rna_comment += (mismatch_locs.empty() ? " has " : " and ") +
                            s_Count(indel_count, "indel");
         }
-        if (partial_unaligned_edge) {
+        if (partial_unaligned_section) {
             pct_coverage =
                 CScoreBuilderBase().GetPercentCoverage(*m_scope, *align);
             cds_pct_coverage =
