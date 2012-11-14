@@ -211,13 +211,14 @@ CValueConvert<SRunTimeCP, CDB_Result>::operator string(void) const
 
             const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
             if (db_obj.IsNULL()) {
-                throw CInvalidConversionException();
+                NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL long binary");
             }
 
             return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
         }
     default:
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONVERSION_ERROR("CDB_Object of unsupported type "
+                                     << db_type);
     }
 
     return TO();
@@ -272,13 +273,14 @@ CValueConvert<SRunTimeCP, CDB_Result>::operator CTime(void) const
 
             const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
             if (db_obj.IsNULL()) {
-                throw CInvalidConversionException();
+                NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL long binary");
             }
 
             return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
         }
     default:
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONVERSION_ERROR("CDB_Object of unsupported type "
+                                     << db_type);
     }
 
     return TO();
@@ -476,7 +478,8 @@ CValueConvert<SRunTimeSqlCP, CDB_Result>::operator string(void) const
             return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
         }
     default:
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONVERSION_ERROR("CDB_Object of unsupported type "
+                                     << db_type);
     }
 
     return TO();
@@ -537,7 +540,8 @@ CValueConvert<SRunTimeSqlCP, CDB_Result>::operator CTime(void) const
             return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
         }
     default:
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONVERSION_ERROR("CDB_Object of unsupported type "
+                                     << db_type);
     }
 
     return TO();

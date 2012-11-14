@@ -65,7 +65,7 @@ public:
         CDB_Bit db_obj;
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL to bool");
         }
         return db_obj.Value() != 0;
     }
@@ -98,7 +98,7 @@ public:
         CDB_VarChar db_obj;
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL to string");
         }
         return string(db_obj.Value(), db_obj.Size());
     }
@@ -114,7 +114,7 @@ private:
         FROM db_obj;
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL");
         }
         return MakeCP<CP>(db_obj.Value());
     }
@@ -157,7 +157,9 @@ public:
                 return bool();
             }
 
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONVERSION_ERROR("non-NULL CDB_Int ("
+                                         << db_obj_int.Value()
+                                         << ") to bool");
         }
 
         CDB_Bit db_obj;
@@ -217,7 +219,9 @@ public:
                 return string();
             }
 
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONVERSION_ERROR("non-NULL CDB_Int("
+                                         << db_obj_int.Value()
+                                         << ") to string");
         }
 
         CDB_VarChar db_obj;
@@ -250,7 +254,9 @@ private:
                 return TO();
             }
 
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONVERSION_ERROR("non-NULL CDB_Int("
+                                         << db_obj_int.Value()
+                                         << ')');
         }
 
         FROM db_obj;
@@ -302,7 +308,7 @@ private:
 
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (obj_wrapper.is_null()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL");
         }
 
         // return MakeCP<SRunTimeCP>(obj_wrapper.get_value());
@@ -317,7 +323,7 @@ private:
 
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL");
         }
 
         return NCBI_CONVERT_TO(Convert(db_obj.Value()), TO);
@@ -330,7 +336,7 @@ private:
 
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL string");
         }
 
         return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
@@ -343,7 +349,7 @@ private:
 
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL fixed-length string");
         }
 
         return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
@@ -357,7 +363,7 @@ private:
 
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL BLOB");
         }
 
         result.resize(db_obj.Size());
@@ -375,7 +381,7 @@ private:
 
         const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
         if (db_obj.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL to time");
         }
 
         return CTime(time_t(Convert(db_obj.Value())));
@@ -443,14 +449,16 @@ private:
 
                     const_cast<CDB_Result*>(m_Value)->GetItem(&db_obj);
                     if (db_obj.IsNULL()) {
-                        throw CInvalidConversionException();
+                        NCBI_REPORT_CONSTANT_CONVERSION_ERROR
+                            ("NULL long binary");
                     }
 
                     value = Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.DataSize()));
                 }
                 break;
             default:
-                throw CInvalidConversionException();
+                NCBI_REPORT_CONVERSION_ERROR("CDB_Object of unsupported type "
+                                             << db_type);
         }
     }
 
@@ -623,7 +631,8 @@ private:
                 }
                 break;
             default:
-                throw CInvalidConversionException();
+                NCBI_REPORT_CONVERSION_ERROR("CDB_Object of unsupported type "
+                                             << db_type);
         }
     }
 
@@ -955,7 +964,7 @@ public:
     : m_Stmt(&value)
     {
         if (!m_Stmt->Send()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("unsendable CDB_LangCmd");
         }
     }
     ~CValueConvert(void)
@@ -989,7 +998,7 @@ public:
         }
 
         // return TO();
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONSTANT_CONVERSION_ERROR("failed CDB_LangCmd");
     }
 
 private:
@@ -1010,7 +1019,7 @@ public:
     : m_Stmt(value)
     {
         if (!m_Stmt->Send()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("unsendable CDB_LangCmd");
         }
     }
     ~CValueConvert(void)
@@ -1044,7 +1053,7 @@ public:
         }
 
         // return TO();
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONSTANT_CONVERSION_ERROR("failed CDB_LangCmd");
     }
 
 private:
@@ -1066,7 +1075,7 @@ public:
     : m_Stmt(&value)
     {
         if (!m_Stmt->Send()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("unsendable CDB_RPCCmd");
         }
     }
     ~CValueConvert(void)
@@ -1100,7 +1109,7 @@ public:
         }
 
         // return TO();
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONSTANT_CONVERSION_ERROR("failed CDB_RPCCmd");
     }
 
 private:
@@ -1121,7 +1130,7 @@ public:
     : m_Stmt(value)
     {
         if (!m_Stmt->Send()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("unsendable CDB_RPCCmd");
         }
     }
     ~CValueConvert(void)
@@ -1155,7 +1164,7 @@ public:
         }
 
         // return TO();
-        throw CInvalidConversionException();
+        NCBI_REPORT_CONSTANT_CONVERSION_ERROR("failed CDB_RPCCmd");
     }
 
 private:
@@ -1179,7 +1188,7 @@ public:
     , m_RS(value.Open())
     {
         if (!m_RS.get()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("failed CDB_CursorCmd");
         }
     }
     ~CValueConvert(void)
@@ -1218,7 +1227,7 @@ public:
     , m_RS(value->Open())
     {
         if (!m_RS.get()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("failed CDB_CursorCmd");
         }
     }
     ~CValueConvert(void)

@@ -44,16 +44,25 @@ BEGIN_NCBI_SCOPE
 class CInvalidConversionException : public CException
 {
 public:
-    CInvalidConversionException()
-    {
-    }
-
+    enum EErrCode {
+        eInvalidConversion
+    };
     virtual const char* GetErrCodeString(void) const
     {
         return "Invalid run-time type conversion."; 
     }
+
+    NCBI_EXCEPTION_DEFAULT(CInvalidConversionException, CException);
 }; 
 
+#define NCBI_REPORT_CONVERSION_ERROR(x) \
+    NCBI_THROW(CInvalidConversionException, eInvalidConversion, \
+               FORMAT("Invalid run-time type conversion (unable to convert " \
+               << x << ")."))
+
+#define NCBI_REPORT_CONSTANT_CONVERSION_ERROR(x) \
+    NCBI_THROW(CInvalidConversionException, eInvalidConversion, \
+               "Invalid run-time type conversion (unable to convert " x ").")
 
 namespace value_slice
 {
@@ -147,13 +156,6 @@ struct SGreaterThanTypeMax<false, false>
 template <typename CP, typename FROM> class CConvPolicy;
 
 ////////////////////////////////////////////////////////////////////////////////
-inline
-void ReportConversionError(void)
-{
-    throw CInvalidConversionException();
-}
-
-////////////////////////////////////////////////////////////////////////////////
 template <class T, bool is_signed = std::numeric_limits<T>::is_signed>
 struct SNumericLimits : public std::numeric_limits<T>
 {
@@ -194,7 +196,7 @@ struct SConvertUsingRunTimeCP
     {
         if (value < SNumericLimits<TO>::min() || value > SNumericLimits<TO>::max()) 
         {
-            ReportConversionError();
+            NCBI_REPORT_CONVERSION_ERROR(value);
         }
 
         return static_cast<TO>(value);
@@ -217,7 +219,7 @@ struct SConvertUsingRunTimeCP<true, true>
             || SGreaterThanTypeMax<same_sign, from_is_signed>::Check(value, SNumericLimits<TO>::max())
            ) 
         {
-            ReportConversionError();
+            NCBI_REPORT_CONVERSION_ERROR(value);
         }
 
         return static_cast<TO>(value);

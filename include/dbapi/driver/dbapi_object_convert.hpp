@@ -188,7 +188,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL integer");
         }
     }
 
@@ -214,7 +214,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL small integer");
         }
     }
 
@@ -240,7 +240,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL tiny integer");
         }
     }
 
@@ -266,7 +266,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL big integer");
         }
     }
 
@@ -292,7 +292,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL string");
         }
     }
 
@@ -318,7 +318,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL fixed-length string");
         }
     }
 
@@ -344,7 +344,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL long string");
         }
     }
 
@@ -370,7 +370,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL floating-point value");
         }
     }
 
@@ -396,7 +396,8 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR
+                ("NULL double-precision value");
         }
     }
 
@@ -422,7 +423,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL small timestamp");
         }
     }
 
@@ -448,7 +449,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL timestamp");
         }
     }
 
@@ -474,7 +475,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL bit");
         }
     }
 
@@ -500,7 +501,7 @@ public:
     : m_Value(value)
     {
         if (value.IsNULL()) {
-            throw CInvalidConversionException();
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL numeric");
         }
     }
 
