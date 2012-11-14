@@ -140,7 +140,11 @@ public:
     unsigned int GetPsiNumOfIterations();
 
     /// Return the BlastOptions builder used in this class
-    CBlastOptionsBuilder& GetOptionsBuilder() const {
+    CBlastOptionsBuilder& GetOptionsBuilder() {
+        if (m_OptionsBuilder.get() == NULL) {
+            FetchData();
+        }
+        _ASSERT(m_OptionsBuilder.get() != NULL);
         return *m_OptionsBuilder.get();
     }
 
