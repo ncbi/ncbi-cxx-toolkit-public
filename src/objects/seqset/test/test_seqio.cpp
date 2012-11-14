@@ -34,6 +34,8 @@
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objistrxml.hpp>
+#include <serial/objostrxml.hpp>
 #include <serial/objhook.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -54,17 +56,26 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
     typedef CSeq_entry TObject;
     string name = "seq_entry1";
 
-    const int kFmtCount = 4;
+    const int kFmtCount = 5;
     const ESerialDataFormat fmt[kFmtCount] = {
         eSerial_AsnText,
         eSerial_AsnBinary,
         eSerial_Xml,
+        eSerial_Xml,
         eSerial_Json
+    };
+    const bool std_xml[kFmtCount] = {
+        false,
+        false,
+        false,
+        true,
+        false
     };
     const string ext[kFmtCount] = {
         ".asn",
         ".asb",
         ".xml",
+        ".sxml",
         ".json"
     };
     for ( int in_i = 0; in_i < kFmtCount; ++in_i ) {
@@ -73,13 +84,22 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         
         CRef<TObject> obj(new TObject);
         if ( fmt[in_i] != eSerial_Json ) {
+            // skipping in JSON is not implemented 
             auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
                                                              fmt[in_i]));
+            if ( std_xml[in_i] ) {
+                dynamic_cast<CObjectIStreamXml*>(in.get())
+                    ->SetEnforcedStdXml(true);
+            }
             in->Skip(obj->GetThisTypeInfo());
         }
         {
             auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
                                                              fmt[in_i]));
+            if ( std_xml[in_i] ) {
+                dynamic_cast<CObjectIStreamXml*>(in.get())
+                    ->SetEnforcedStdXml(true);
+            }
             *in >> *obj;
         }
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
@@ -88,6 +108,10 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
+                if ( std_xml[out_i] ) {
+                    dynamic_cast<CObjectOStreamXml*>(out.get())
+                        ->SetEnforcedStdXml(true);
+                }
                 *out << *obj;
             }
             if ( fmt[out_i] == eSerial_AsnBinary ) {
@@ -129,17 +153,26 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
     typedef CSeq_entry TObject;
     string name = "seq_entry1";
 
-    const int kFmtCount = 4;
+    const int kFmtCount = 5;
     const ESerialDataFormat fmt[kFmtCount] = {
         eSerial_AsnText,
         eSerial_AsnBinary,
         eSerial_Xml,
+        eSerial_Xml,
         eSerial_Json
+    };
+    const bool std_xml[kFmtCount] = {
+        false,
+        false,
+        false,
+        true,
+        false
     };
     const string ext[kFmtCount] = {
         ".asn",
         ".asb",
         ".xml",
+        ".sxml",
         ".json"
     };
     for ( int in_i = 0; in_i < kFmtCount; ++in_i ) {
@@ -148,14 +181,23 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
         
         CRef<TObject> obj(new TObject);
         if ( fmt[in_i] != eSerial_Json ) {
+            // skipping in JSON is not implemented 
             auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
                                                              fmt[in_i]));
+            if ( std_xml[in_i] ) {
+                dynamic_cast<CObjectIStreamXml*>(in.get())
+                    ->SetEnforcedStdXml(true);
+            }
             CObjectHookGuard<CObject_id> g1("str", *new CSkipVariantHook, in.get());
             in->Skip(obj->GetThisTypeInfo());
         }
         {
             auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
                                                              fmt[in_i]));
+            if ( std_xml[in_i] ) {
+                dynamic_cast<CObjectIStreamXml*>(in.get())
+                    ->SetEnforcedStdXml(true);
+            }
             CObjectHookGuard<CObject_id> g1("str", *new CReadVariantHook, in.get());
             *in >> *obj;
         }
@@ -165,6 +207,10 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
+                if ( std_xml[out_i] ) {
+                    dynamic_cast<CObjectOStreamXml*>(out.get())
+                        ->SetEnforcedStdXml(true);
+                }
                 *out << *obj;
             }
             if ( fmt[out_i] == eSerial_AsnBinary ) {
