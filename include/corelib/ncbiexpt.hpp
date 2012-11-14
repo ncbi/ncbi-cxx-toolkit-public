@@ -678,25 +678,6 @@ public:
 };
 
 
-template<class TErrCode>
-CExceptionArgs<TErrCode> operator|(TErrCode            err_code,
-                                   FExceptionArgsManip manip)
-{
-    CExceptionArgs<TErrCode> args(err_code);
-    manip(args);
-    return args;
-}
-
-template<class TErrCode>
-CExceptionArgs<TErrCode> operator|(TErrCode                   err_code,
-                                   const CExceptionArgsManip& manip)
-{
-    CExceptionArgs<TErrCode> args(err_code);
-    manip(args);
-    return args;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CException --
@@ -956,6 +937,25 @@ private:
 /// Exception manipulators. Can be combined with error code using operator|().
 
 BEGIN_SCOPE(ncbi_ex_manip)
+
+template<class TErrCode>
+CExceptionArgs<TErrCode> operator|(TErrCode            err_code,
+                                   FExceptionArgsManip manip)
+{
+    CExceptionArgs<TErrCode> args(err_code);
+    manip(args);
+    return args;
+}
+
+template<class TErrCode>
+CExceptionArgs<TErrCode> operator|(TErrCode                   err_code,
+                                   const CExceptionArgsManip& manip)
+{
+    CExceptionArgs<TErrCode> args(err_code);
+    manip(args);
+    return args;
+}
+
 
 inline
 void Console(CExceptionArgs_Base& args)
