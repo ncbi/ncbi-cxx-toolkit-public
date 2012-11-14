@@ -261,10 +261,6 @@ Seq-annot ::= {
           tag id 2195
         },
         {
-          db "HPRD",
-          tag str "00382"
-        },
-        {
           db "MIM",
           tag id 120328
         }
@@ -1751,7 +1747,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 15 substitutions and 5 indels and
+      comment "The RefSeq transcript has 15 substitutions and 4 indels and
  aligns at 11% coverage compared to this genomic sequence",
       product whole gi 47086060,
       location packed-int {
@@ -2980,8 +2976,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 8 substitutions and 2 indels compared
- to this genomic sequence",
+      comment "The RefSeq transcript has 8 substitutions and aligns at 97%
+ coverage compared to this genomic sequence",
       product whole other {
         accession "NM_003715",
         version 2
@@ -3223,6 +3219,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein aligns at 95% coverage compared to this
+ genomic sequence",
       product whole gi 4505541,
       location packed-int {
         {
@@ -3469,8 +3467,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 8 substitutions and 2 indels compared
- to this genomic sequence",
+      comment "The RefSeq transcript has 8 substitutions and aligns at 97%
+ coverage compared to this genomic sequence",
       product whole other {
         accession "NM_003715",
         version 2
@@ -3712,6 +3710,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein aligns at 95% coverage compared to this
+ genomic sequence",
       product whole gi 4505541,
       location packed-int {
         {
@@ -3958,8 +3958,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 3 substitutions and 1 indel compared
- to this genomic sequence",
+      comment "The RefSeq transcript has 3 substitutions and aligns at 97%
+ coverage compared to this genomic sequence",
       product whole other {
         accession "NM_003715",
         version 2
@@ -4181,6 +4181,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein aligns at 94% coverage compared to this
+ genomic sequence",
       product whole gi 4505541,
       location packed-int {
         {
@@ -4943,8 +4945,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions and 11 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 17 substitutions and 5 indels and
+ aligns at 59% coverage compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -5158,8 +5160,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 4 indels compared to this genomic
- sequence",
+      comment "The RefSeq protein has 4 indels and aligns at 50% coverage
+ compared to this genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -5378,8 +5380,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions and 11 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 17 substitutions and 5 indels and
+ aligns at 59% coverage compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -5593,8 +5595,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 4 indels compared to this genomic
- sequence",
+      comment "The RefSeq protein has 4 indels and aligns at 50% coverage
+ compared to this genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -5813,8 +5815,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 3 indels compared to this genomic
- sequence",
+      comment "The RefSeq transcript has 1 indel and aligns at 59% coverage
+ compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -5958,6 +5960,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein aligns at 45% coverage compared to this
+ genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -6210,8 +6214,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 225 substitutions and 2 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 225 substitutions and 1 indel and
+ aligns at 96% coverage compared to this genomic sequence",
       product whole gi 55742775,
       location packed-int {
         {
@@ -6541,8 +6545,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 15 substitutions compared to this
- genomic sequence",
+      comment "The RefSeq protein has 15 substitutions and aligns at 96%
+ coverage compared to this genomic sequence",
       product whole gi 55742776,
       location packed-int {
         {
