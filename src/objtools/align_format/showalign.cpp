@@ -1120,8 +1120,8 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
                                m_Scope,                                             
                                customLinkTypes);                               
 
-        m_HSPLinksList = CAlignFormatUtil::GetGiLinksList(seqUrlInfo,true);                                                                      
-
+        m_HSPLinksList = CAlignFormatUtil::GetSeqLinksList(seqUrlInfo,true);                                                                      
+        
         //URL tp FASTA representation, includes genbank, trace and SNP
         m_FASTAlinkUrl = CAlignFormatUtil::GetFASTALinkURL(seqUrlInfo,*seqID, m_Scope);
 
@@ -3644,7 +3644,8 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	}
     string hspNum,isFirstDflAttr;
     if(isFirst) {
-        hspNum = NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber);
+        string totalHsps = m_Ctx->GetRequestValue("TOTAL_HSPS").GetValue(); //Future use
+		hspNum = totalHsps.empty() ? NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber): totalHsps;
         hspNum = (hspNum == "0") ? "" : hspNum;        
     }
     else {
@@ -3689,8 +3690,8 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             //there is no blast defline in such case.
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
-		    m_CurrAlnID_Lbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
-			m_CurrAlnAccession = alnDispParams->label;
+		    m_CurrAlnID_Lbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;			
+            m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
 			delete alnDispParams;
 			firstDefline = alnDefLine;
             m_NumBlastDefLines++;
@@ -3786,8 +3787,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqTitlesNum", NStr::IntToString(alnSeqTitlesNum));
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqTitlesShow",alnSeqTitlesShow);				
 
-	//fill id info	
-	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"firstSeqID",m_CurrAlnAccession);	
+	
    
 	//fill sequence checkbox
 	string seqRetrieval = ((m_AlignOption&eSequenceRetrieval) && m_CanRetrieveSeq) ? "" : "hidden";
@@ -3798,6 +3798,8 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnLinkOutLinks",linkOutStr);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnCustomLinks",customLinkStr);
+    //fill id info	
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"firstSeqID",m_CurrAlnAccession);	
 
     string isGenbankAttr = (NStr::Find(customLinkStr,"GenBank") == NPOS && NStr::Find(customLinkStr,"GenPept") == NPOS)? "hidden" : "";    
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"dwGnbn",isGenbankAttr);
@@ -3851,7 +3853,8 @@ void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out,
 
         }
 		//start counting hsp
-		m_currAlignHsp = 0;        
+		string currHsp = m_Ctx->GetRequestValue("HSP_START").GetValue();
+		m_currAlignHsp = currHsp.empty() ? 0: NStr::StringToInt(currHsp);        
     }    
     if (m_AlignOption&eShowBlastInfo) {
         //4. add id anchor for mapviewer link
@@ -3942,8 +3945,8 @@ string CDisplaySeqalign:: x_FormatAlnHSPLinks(string &alignInfo)
         TSeqPos from = (range.GetFrom()> range.GetTo()) ? range.GetTo() : range.GetFrom() + 1;
         TSeqPos to =   (range.GetFrom()> range.GetTo()) ? range.GetFrom() : range.GetTo() + 1;
 
-        int addToRange = (int)((to - from) * 0.05);//add 5% to each side
-	    int fromAdjust = from - addToRange; 
+        int addToRange = (int)((to - from) * 0.05);//add 5% to each side         
+	    int fromAdjust = max(0,(int)from - addToRange); 
 	    int toAdjust = to  + addToRange; 			 
         string customLinkStr;
         ITERATE(list<string>, iter_custList, m_HSPLinksList){
@@ -3961,6 +3964,7 @@ string CDisplaySeqalign:: x_FormatAlnHSPLinks(string &alignInfo)
     
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnHSPLinks",hspLinks);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"multiHSP",multiHSP);
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"firstSeqID",m_CurrAlnAccession);
 
     return alignInfo;    
 }

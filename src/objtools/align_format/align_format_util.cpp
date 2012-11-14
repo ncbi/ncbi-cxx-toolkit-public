@@ -3038,34 +3038,57 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         }
 	    link = s_MapCustomLink(linkUrl,"genbank",seqUrlInfo->accession,linkText,"lnk" + seqUrlInfo->rid,linkTiltle);
         customLinksList.push_back(link);
-        
-        //seqviewer
-        string dbtype = (seqUrlInfo->isDbNa) ? "nuccore" : "protein";
-	    linkUrl = CAlignFormatUtil::MapTemplate(kSeqViewerUrl,"rid",seqUrlInfo->rid);
+    }
+    return customLinksList;
+}
 
-        string seqViewerParams;
-        if(m_Reg && !seqUrlInfo->blastType.empty() && seqUrlInfo->blastType != "newblast") {
-            seqViewerParams = m_Reg->Get(seqUrlInfo->blastType, "SEQVIEW_PARAMS");            
-        }
-        seqViewerParams = seqViewerParams.empty() ? kSeqViewerParams : seqViewerParams;
-        linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
+string  CAlignFormatUtil::GetGraphiscLink(SSeqURLInfo *seqUrlInfo,
+                                               bool hspRange)
+{
+    //seqviewer
+    string dbtype = (seqUrlInfo->isDbNa) ? "nuccore" : "protein";
+    string seqViewUrl = (seqUrlInfo->gi > 0)?kSeqViewerUrl:kSeqViewerUrlNonGi;    
+
+	string linkUrl = CAlignFormatUtil::MapTemplate(seqViewUrl,"rid",seqUrlInfo->rid);
+
+    string seqViewerParams;
+    if(m_Reg && !seqUrlInfo->blastType.empty() && seqUrlInfo->blastType != "newblast") {
+        seqViewerParams = m_Reg->Get(seqUrlInfo->blastType, "SEQVIEW_PARAMS");            
+    }
+    seqViewerParams = seqViewerParams.empty() ? kSeqViewerParams : seqViewerParams;
+    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
          
-	    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);			
-	    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",seqUrlInfo->gi);
-        string linkTitle = "Show alignment to <@seqid@> in <@custom_report_type@>";	
-        if(!hspRange) {
-            int addToRange = (int) ((seqUrlInfo->seqRange.GetTo() - seqUrlInfo->seqRange.GetFrom()) * 0.05);//add 5% to each side
-		    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"from",max(0,(int)seqUrlInfo->seqRange.GetFrom() - addToRange)); 
-		    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"to",seqUrlInfo->seqRange.GetTo() + addToRange); 					    
-		    //linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"flip",NStr::BoolToString(seqUrlInfo->flip));            
-        }
-        else {
-            linkTitle += " for <@fromHSP@> to <@toHSP@> range";
-        }        
-        string title = (seqUrlInfo->isDbNa) ? "Nucleotide Graphics" : "Protein Graphics";
+	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);			
+	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",seqUrlInfo->gi);    
+    string linkTitle = "Show alignment to <@seqid@> in <@custom_report_type@>";	
+    string link_loc;
+    if(!hspRange) {
+        int addToRange = (int) ((seqUrlInfo->seqRange.GetTo() - seqUrlInfo->seqRange.GetFrom()) * 0.05);//add 5% to each side
+		linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"from",max(0,(int)seqUrlInfo->seqRange.GetFrom() - addToRange)); 
+		linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"to",seqUrlInfo->seqRange.GetTo() + addToRange); 					    
+        link_loc = "fromSubj";
+		//linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"flip",NStr::BoolToString(seqUrlInfo->flip));            
+    }
+    else {
+        link_loc = "fromHSP";
+        linkTitle += " for <@fromHSP@> to <@toHSP@> range";
+    }           
+    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"link_loc",link_loc);
+
+    string title = (seqUrlInfo->isDbNa) ? "Nucleotide Graphics" : "Protein Graphics";
     
-        link = s_MapCustomLink(linkUrl,title,seqUrlInfo->accession, "Graphics","lnk" + seqUrlInfo->rid,linkTitle,"spr");
-        customLinksList.push_back(link);
+    string link = s_MapCustomLink(linkUrl,title,seqUrlInfo->accession, "Graphics","lnk" + seqUrlInfo->rid,linkTitle,"spr");    
+    
+    return link;
+}
+
+list<string>  CAlignFormatUtil::GetSeqLinksList(SSeqURLInfo *seqUrlInfo,                                 
+                                                bool hspRange)
+{
+    list<string> customLinksList = GetGiLinksList(seqUrlInfo,hspRange);  //ONLY FOR genBank seqUrlInfo->seqUrl has "report=genbank"             
+    string graphicLink = GetGraphiscLink(seqUrlInfo,hspRange);
+    if(!graphicLink.empty()) {
+        customLinksList.push_back(graphicLink);
     }
     return customLinksList;
 }
@@ -3104,11 +3127,9 @@ list<string>  CAlignFormatUtil::GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
     string linkUrl,link;
 
     customLinkTypes = SetCustomLinksTypes(seqUrlInfo, customLinkTypes);
-    //First show links to GenBank and FASTA
-    if(customLinkTypes & eLinkTypeGenLinks) {
-        customLinksList = GetGiLinksList(seqUrlInfo);  //seqUrlInfo->seqUrl has "report=genbank"     
-    }         
-    else if(customLinkTypes & eLinkTypeTraceLinks) {    
+    //First show links to GenBank and FASTA, then to Graphics    
+    customLinksList = GetSeqLinksList(seqUrlInfo);
+    if(customLinkTypes & eLinkTypeTraceLinks) {    
         linkUrl = seqUrlInfo->seqUrl;
 	    link = s_MapCustomLink(linkUrl,"Trace Archive FASTA",seqUrlInfo->accession, "FASTA","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
