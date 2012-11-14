@@ -6089,6 +6089,10 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
             pex->GetClass().c_str(),
             pex->GetFunction().c_str());
 
+        if ( pex->IsSetFlag(CException::fConsole) ) {
+            diagmsg.m_Flags |= eDPF_IsConsole;
+        }
+
         m_Buffer.PrintMessage(diagmsg, *this);
     }
     

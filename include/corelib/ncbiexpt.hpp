@@ -540,8 +540,15 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 /// Generic macro to throw an exception, given the exception class,
 /// error code and message string.
-#define NCBI_THROW(exception_class, err_code, message) \
-    NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code, message))
+/// The err_code argument may include manipulators to set additional
+/// options, e.g. eMyErrCode | Console | Severity(eDiag_Info). In any
+/// case the error code value must be the first in the combination.
+#define NCBI_THROW(exception_class, err_code, message)                  \
+    do {                                                                \
+        USING_SCOPE(ncbi_ex_manip);                                     \
+        NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code,  \
+            message));                                                  \
+    } while (0)
 
 /// Throw a quick-and-dirty runtime exception of type 'CException' with
 /// the given error message and error code 'eUnknown'.
@@ -566,8 +573,15 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
                           exception_class, err_code, message)
 
 /// Generic macro to re-throw an exception.
-#define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
-    throw NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)
+/// The err_code argument may include manipulators to set additional
+/// options, e.g. eMyErrCode | Console | Severity(eDiag_Info). In any
+/// case the error code value must be the first in the combination.
+#define NCBI_RETHROW(prev_exception, exception_class, err_code, message)    \
+    do {                                                                    \
+        USING_SCOPE(ncbi_ex_manip);                                         \
+        throw NCBI_EXCEPTION_EX(prev_exception, exception_class,            \
+            err_code, message);                                             \
+    } while (0)
 
 /// The same as NCBI_RETHROW but with message processed as output to ostream.
 #define NCBI_RETHROW_FMT(prev_exception, exception_class, err_code, message) \
@@ -605,6 +619,84 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 class CExceptionReporter;
 
 
+// Base helper class for passing options to exceptions.
+class CExceptionArgs_Base
+{
+public:
+    typedef int      TErrCodeVal;
+    typedef int      TFlags;
+    typedef EDiagSev TSeverity;
+
+    CExceptionArgs_Base(void) : m_ErrCode(0), m_Flags(0), m_Severity(eDiag_Error) {}
+
+    void SetErrCodeVal(TErrCodeVal err_code) { m_ErrCode = err_code; }
+    TErrCodeVal GetErrCodeVal(void) const { return m_ErrCode; }
+
+    void SetFlags(TFlags flags) { m_Flags = flags; }
+    TFlags GetFlags(void) const { return m_Flags; }
+
+    void SetSeverity(TSeverity severity) { m_Severity = severity; }
+    TSeverity GetSeverity(void) const { return m_Severity; }
+
+private:
+    TErrCodeVal m_ErrCode;
+    TFlags      m_Flags;
+    TSeverity   m_Severity;
+};
+
+
+class CExceptionArgsManip
+{
+public:
+    virtual ~CExceptionArgsManip(void) {}
+
+    virtual void operator()(CExceptionArgs_Base& args) const = 0;
+};
+
+typedef void (*FExceptionArgsManip)(CExceptionArgs_Base&);
+
+
+template<class TErrCode>
+class CExceptionArgs : public CExceptionArgs_Base
+{
+public:
+    CExceptionArgs(TErrCode err_code) { SetErrCodeVal(err_code); }
+
+    TErrCode GetErrCode(void) const { return TErrCode(GetErrCodeVal()); }
+
+    CExceptionArgs<TErrCode>& operator|(FExceptionArgsManip manip)
+    {
+        manip(*this);
+        return *this;
+    }
+
+    CExceptionArgs<TErrCode>& operator|(const CExceptionArgsManip& manip)
+    {
+        manip(*this);
+        return *this;
+    }
+};
+
+
+template<class TErrCode>
+CExceptionArgs<TErrCode> operator|(TErrCode            err_code,
+                                   FExceptionArgsManip manip)
+{
+    CExceptionArgs<TErrCode> args(err_code);
+    manip(args);
+    return args;
+}
+
+template<class TErrCode>
+CExceptionArgs<TErrCode> operator|(TErrCode                   err_code,
+                                   const CExceptionArgsManip& manip)
+{
+    CExceptionArgs<TErrCode> args(err_code);
+    manip(args);
+    return args;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CException --
@@ -630,6 +722,19 @@ public:
     };
     typedef int TErrCode;
 
+    /// Miscellaneous generic hints, flags and attributes
+    enum EFlags {
+        /// Mark the exception with this flag if the exception is supposed
+        /// to be extra-visible, such as to go to a console or a dialog
+        /// that's looked at by the end user. Naturally, the message should be
+        /// clear and informative enough to be actually helpful for the user.
+        /// If such "console" exception is passed to the diagnostic (e.g.
+        /// "ERR_POST(ex);", then the posting will be automatically marked as
+        /// "console" too (so it'll work as "ERR_POST(Console << ex);").
+        fConsole = (1 << 0)
+    };
+    typedef int TFlags;  //< Bit-wise OR of "EFlags"
+
     /// Constructor.
     ///
     /// When throwing an exception initially, "prev_exception" must be 0.
@@ -637,7 +742,13 @@ public:
                const CException* prev_exception,
                EErrCode err_code,
                const string& message,
-               EDiagSev severity = eDiag_Error );
+               EDiagSev severity = eDiag_Error,
+               TFlags flags = 0);
+
+    CException(const CDiagCompileInfo& info,
+               const CException* prev_exception,
+               const CExceptionArgs<EErrCode>& args,
+               const string& message);
 
     /// Copy constructor.
     CException(const CException& other);
@@ -722,7 +833,7 @@ public:
     EDiagSev GetSeverity(void) const { return m_Severity; }
 
     /// Set exception severity.
-    void SetSeverity(EDiagSev severity);
+    CException& SetSeverity(EDiagSev severity);
 
     /// Get class name as a string.
     virtual const char* GetType(void) const;
@@ -768,6 +879,15 @@ public:
 
     /// Destructor.
     virtual ~CException(void) throw();
+
+    /// Check if the flag is set
+    bool IsSetFlag(EFlags flag) const { return (m_Flags & flag) != 0; }
+
+    /// Set flag (add to other flags)
+    CException& SetFlag(EFlags flag) { m_Flags |= flag; return *this; }
+
+    /// Unset flag (other flags are left as is)
+    CException& UnsetFlag(EFlags flag) { m_Flags &= ~flag; return *this; }
 
 protected:
     /// Constructor with no arguments.
@@ -826,9 +946,60 @@ private:
 
     auto_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace
 
+    TFlags       m_Flags;            ///< Flags, hints, attributes
+
     /// Private assignment operator to prohibit assignment.
     CException& operator= (const CException&);
 };
+
+
+/// Exception manipulators. Can be combined with error code using operator|().
+
+BEGIN_SCOPE(ncbi_ex_manip)
+
+inline
+void Console(CExceptionArgs_Base& args)
+{
+    args.SetFlags(args.GetFlags() | CException::fConsole);
+}
+
+inline
+void Trace(CExceptionArgs_Base& args)
+{
+    args.SetSeverity(eDiag_Trace);
+}
+
+inline
+void Info(CExceptionArgs_Base& args)
+{
+    args.SetSeverity(eDiag_Info);
+}
+
+inline
+void Warning(CExceptionArgs_Base& args)
+{
+    args.SetSeverity(eDiag_Warning);
+}
+
+inline
+void Error(CExceptionArgs_Base& args)
+{
+    args.SetSeverity(eDiag_Error);
+}
+
+inline
+void Critical(CExceptionArgs_Base& args)
+{
+    args.SetSeverity(eDiag_Critical);
+}
+
+inline
+void Fatal(CExceptionArgs_Base& args)
+{
+    args.SetSeverity(eDiag_Fatal);
+}
+
+END_SCOPE(ncbi_ex_manip)
 
 
 /// Return valid pointer to uppermost derived class only if "from" is _really_
@@ -891,15 +1062,32 @@ private: \
 ///
 /// This can be used ONLY if the derived class does not have any additional
 /// (non-standard) data members.
-#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class)         \
-public:                                                             \
-    exception_class(const CDiagCompileInfo& info,                   \
-        const CException* prev_exception,                           \
-                    EErrCode err_code,const string& message,        \
-                    EDiagSev severity = eDiag_Error)                \
-        : base_class(info, prev_exception,                          \
-            (base_class::EErrCode) CException::eInvalid, (message)) \
-    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
+#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class)             \
+public:                                                                 \
+    exception_class(const CDiagCompileInfo& info,                       \
+        const CException* prev_exception, EErrCode err_code,            \
+        const string& message, EDiagSev severity = eDiag_Error)         \
+        : base_class(info, prev_exception,                              \
+            (base_class::EErrCode) CException::eInvalid, (message))     \
+    {                                                                   \
+        x_Init(info, message, prev_exception, severity);                \
+        x_InitErrCode((CException::EErrCode) err_code);                 \
+    }                                                                   \
+    exception_class(const CDiagCompileInfo& info,                       \
+        const CException* prev_exception,                               \
+        const CExceptionArgs<EErrCode>& args,                           \
+        const string& message)                                          \
+        : base_class(info, prev_exception,                              \
+            (base_class::EErrCode) CException::eInvalid, (message))     \
+    {                                                                   \
+        x_Init(info, message, prev_exception, args.GetSeverity());      \
+        x_InitErrCode((CException::EErrCode) args.GetErrCode());        \
+    }                                                                   \
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class,       \
+        base_class)                                                     \
+private:                                                                \
+    /* for the sake of semicolon at the end of macro...*/               \
+    static void xx_unused_##exception_class(void)
 
 
 /// Helper macro added to support templatized exceptions.

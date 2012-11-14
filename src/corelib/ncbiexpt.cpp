@@ -159,18 +159,41 @@ CException::CException(const CDiagCompileInfo& info,
                        const CException* prev_exception,
                        EErrCode err_code,
                        const string& message,
-                       EDiagSev severity)
+                       EDiagSev severity,
+                       TFlags flags)
 : m_Severity(severity),
   m_ErrCode(err_code),
   m_Predecessor(0),
   m_InReporter(false),
-  m_MainText(true)
+  m_MainText(true),
+  m_Flags(0)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical.Get()) {
         abort();
     }
     x_Init(info, message, prev_exception, severity);
+    if (prev_exception)
+        prev_exception->m_MainText = false;
+}
+
+
+CException::CException(const CDiagCompileInfo& info,
+                       const CException* prev_exception,
+                       const CExceptionArgs<EErrCode>& args,
+                       const string& message)
+: m_Severity(args.GetSeverity()),
+  m_ErrCode(args.GetErrCode()),
+  m_Predecessor(0),
+  m_InReporter(false),
+  m_MainText(true),
+  m_Flags(args.GetFlags())
+{
+    if (CompareDiagPostLevel(m_Severity, eDiag_Critical) >= 0  &&
+        s_AbortIfCritical.Get()) {
+        abort();
+    }
+    x_Init(info, message, prev_exception, m_Severity);
     if (prev_exception)
         prev_exception->m_MainText = false;
 }
@@ -188,7 +211,8 @@ CException::CException(void)
   m_ErrCode(CException::eInvalid),
   m_Predecessor(0),
   m_InReporter(false),
-  m_MainText(true)
+  m_MainText(true),
+  m_Flags(0)
 {
 // this only is called in case of multiple inheritance
 }
@@ -249,7 +273,7 @@ void CException::AddPrevious(const CException* prev_exception)
 }
 
 
-void CException::SetSeverity(EDiagSev severity)
+CException& CException::SetSeverity(EDiagSev severity)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
         s_AbortIfCritical.Get()) {
@@ -257,6 +281,7 @@ void CException::SetSeverity(EDiagSev severity)
     }
     m_Severity = severity;
     x_GetStackTrace(); // May need stack trace with the new severity
+    return *this;
 }
 
 
@@ -446,6 +471,7 @@ void CException::x_Assign(const CException& src)
     if ( src.m_StackTrace.get() ) {
         m_StackTrace.reset(new CStackTrace(*src.m_StackTrace));
     }
+    m_Flags = src.m_Flags;
 }
 
 
