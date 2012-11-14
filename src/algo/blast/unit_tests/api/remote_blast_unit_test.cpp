@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("2MSX0X8M01N" );
+    const string rid("A7CZ5K5N016");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
     
@@ -583,6 +583,7 @@ BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetWarnings());
     
     const string error("CPU usage limit was exceeded");
+    BOOST_REQUIRE(rmt_blaster.GetErrors().empty() == false);
     BOOST_REQUIRE(NStr::FindNoCase(rmt_blaster.GetErrors(), error) != NPOS);
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, 
                         rmt_blaster.CheckStatus());
