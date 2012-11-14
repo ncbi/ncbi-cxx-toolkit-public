@@ -41,6 +41,39 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
+struct SFixedStepInfo {
+//  ============================================================================
+    string mChrom;
+    TSeqPos mStart;
+    TSeqPos mStep;
+    TSeqPos mSpan;
+
+    void Reset() {
+        mChrom.clear();
+        mStart = mStep = 0;
+        mSpan = 1;
+    }
+    SFixedStepInfo() {
+        Reset();
+    }
+};
+
+//  ============================================================================
+struct SVarStepInfo {
+//  ============================================================================
+    string mChrom;
+    TSeqPos mSpan;
+
+    void Reset() {
+        mChrom.clear();
+        mSpan =1;
+    }
+    SVarStepInfo() {
+        Reset();
+    }
+};
+
+//  ============================================================================
 struct SValueInfo {
 //  ============================================================================
     TSeqPos m_Pos;
@@ -175,13 +208,25 @@ protected:
     xReadTrack(
         IErrorContainer*);
 
+    void
+    xGetFixedStepInfo(
+        SFixedStepInfo&,
+        IErrorContainer*);
+
     void 
-    xReadFixedStep(
+    xReadFixedStepData(
+        const SFixedStepInfo&,
         ILineReader&,
         IErrorContainer*);
     
+    void
+    xGetVarStepInfo(
+        SVarStepInfo&,
+        IErrorContainer*);
+
     void 
-    xReadVariableStep(
+    xReadVariableStepData(
+        const SVarStepInfo&,
         ILineReader&,
         IErrorContainer*);
 

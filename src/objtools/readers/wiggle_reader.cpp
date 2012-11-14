@@ -114,18 +114,23 @@ CWiggleReader::ReadSeqAnnot(
             xReadTrack(pErrorContainer);
         }
         else if ( s == "fixedStep" ) {
-            if (!m_ChromId.empty()) {
+            SFixedStepInfo fixedStepInfo;
+            xGetFixedStepInfo(fixedStepInfo, pErrorContainer);
+            if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
+                cerr << fixedStepInfo.mChrom << endl;
                 lr.UngetLine();
                 return xGetAnnot();
             }
-            xReadFixedStep(lr, pErrorContainer);
+            xReadFixedStepData(fixedStepInfo, lr, pErrorContainer);
         }
         else if ( s == "variableStep" ) {
-            if (!m_ChromId.empty()) {
+            SVarStepInfo varStepInfo;
+            xGetVarStepInfo(varStepInfo, pErrorContainer);
+            if (!m_ChromId.empty() && varStepInfo.mChrom != m_ChromId) {
                 lr.UngetLine();
                 return xGetAnnot();
             }
-            xReadVariableStep(lr, pErrorContainer);
+            xReadVariableStepData(varStepInfo, lr, pErrorContainer);
         }
         else {
             xReadBedLine(s, pErrorContainer);
@@ -881,11 +886,11 @@ void CWiggleReader::xReadTrack(
     }
 }
 
-//  =========================================================================
-void CWiggleReader::xReadFixedStep(
-    ILineReader& lr,
+//  ----------------------------------------------------------------------------
+void CWiggleReader::xGetFixedStepInfo(
+    SFixedStepInfo& fixedStepInfo,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
         if ( m_TrackType != eTrackType_invalid ) {
@@ -900,23 +905,21 @@ void CWiggleReader::xReadFixedStep(
         }
     }
 
-    size_t start = 0;
-    size_t step = 0;
-    size_t span = 1;
+    fixedStepInfo.Reset();
     while ( xSkipWS() ) {
         CTempString name = xGetParamName(pErrorContainer);
         CTempString value = xGetParamValue(pErrorContainer);
         if ( name == "chrom" ) {
-            xSetChrom(value);
+            fixedStepInfo.mChrom = value;
         }
         else if ( name == "start" ) {
-            start = NStr::StringToUInt(value);
+            fixedStepInfo.mStart = NStr::StringToUInt(value);
         }
         else if ( name == "step" ) {
-            step = NStr::StringToUInt(value);
+            fixedStepInfo.mStep = NStr::StringToUInt(value);
         }
         else if ( name == "span" ) {
-            span = NStr::StringToUInt(value);
+            fixedStepInfo.mSpan = NStr::StringToUInt(value);
         }
         else {
             CObjReaderLineException err(
@@ -926,46 +929,55 @@ void CWiggleReader::xReadFixedStep(
             xProcessError(err, pErrorContainer);
         }
     }
-    if ( m_ChromId.empty() ) {
+    if ( fixedStepInfo.mChrom.empty() ) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Missing chrom parameter");
         xProcessError(err, pErrorContainer);
     }
-    if ( start == 0 ) {
+    if ( fixedStepInfo.mStart == 0 ) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Missing start value");
         xProcessError(err, pErrorContainer);
     }
-    if ( step == 0 ) {
+    if ( fixedStepInfo.mStep == 0 ) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Missing step value");
         xProcessError(err, pErrorContainer);
     }
+}
 
+//  =========================================================================
+void CWiggleReader::xReadFixedStepData(
+    const SFixedStepInfo& fixedStepInfo,
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer)
+//  =========================================================================
+{
+    xSetChrom(fixedStepInfo.mChrom);
     SValueInfo value;
-    value.m_Pos = start-1;
-    value.m_Span = span;
+    value.m_Pos = fixedStepInfo.mStart-1;
+    value.m_Span = fixedStepInfo.mSpan;
     while ( xGetLine(lr) ) {
         if ( !xTryGetDouble(value.m_Value, pErrorContainer) ) {
             lr.UngetLine();
             break;
         }
         xAddValue(value);
-        value.m_Pos += step;
+        value.m_Pos += fixedStepInfo.mStep;
     }
 }
 
-//  =========================================================================
-void CWiggleReader::xReadVariableStep(
-    ILineReader& lr,
+//  ----------------------------------------------------------------------------
+void CWiggleReader::xGetVarStepInfo(
+    SVarStepInfo& varStepInfo,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
         if ( m_TrackType != eTrackType_invalid ) {
@@ -980,15 +992,15 @@ void CWiggleReader::xReadVariableStep(
         }
     }
 
-    size_t span = 1;
+    varStepInfo.Reset();
     while ( xSkipWS() ) {
         CTempString name = xGetParamName(pErrorContainer);
         CTempString value = xGetParamValue(pErrorContainer);
         if ( name == "chrom" ) {
-            xSetChrom(value);
+            varStepInfo.mChrom = value;
         }
         else if ( name == "span" ) {
-            span = NStr::StringToUInt(value);
+            varStepInfo.mSpan = NStr::StringToUInt(value);
         }
         else {
             CObjReaderLineException err(
@@ -998,15 +1010,25 @@ void CWiggleReader::xReadVariableStep(
             xProcessError(err, pErrorContainer);
         }
     }
-    if ( m_ChromId.empty() ) {
+    if ( varStepInfo.mChrom.empty() ) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Missing chrom parameter");
         xProcessError(err, pErrorContainer);
     }
+}
+
+//  =========================================================================
+void CWiggleReader::xReadVariableStepData(
+    const SVarStepInfo& varStepInfo,
+    ILineReader& lr,
+    IErrorContainer* pErrorContainer)
+//  =========================================================================
+{
+    xSetChrom(varStepInfo.mChrom);
     SValueInfo value;
-    value.m_Span = span;
+    value.m_Span = varStepInfo.mSpan;
     while ( xGetLine(lr) ) {
         if ( !xTryGetPos(value.m_Pos, pErrorContainer) ) {
             lr.UngetLine();
