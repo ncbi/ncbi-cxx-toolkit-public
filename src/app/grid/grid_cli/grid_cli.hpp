@@ -124,6 +124,7 @@ enum EOption {
     eOutputFormat,
     eNetCache,
     eCache,
+    eCacheArg,
     ePassword,
     eOffset,
     eSize,
@@ -377,7 +378,7 @@ public:
     int Cmd_PutBlob();
     int Cmd_BlobInfo();
     int Cmd_RemoveBlob();
-    int Cmd_ReinitNetCache();
+    int Cmd_Purge();
 
 // NetSchedule commands.
 public:

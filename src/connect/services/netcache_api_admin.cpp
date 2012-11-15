@@ -50,11 +50,11 @@ void CNetCacheAdmin::ReloadServerConfig()
     m_Impl->m_API->m_Service.ExecOnAllServers(m_Impl->m_API->MakeCmd("RECONF"));
 }
 
-void CNetCacheAdmin::Reinitialize(const string& cache_name)
+void CNetCacheAdmin::Purge(const string& cache_name)
 {
-    m_Impl->m_API->m_Service.ExecOnAllServers(
-            m_Impl->m_API->MakeCmd(cache_name.empty() ? "REINIT" :
-                    string("IC(" + cache_name + ") REINIT").c_str()));
+    string cmd("PURGE " + NStr::PrintableString(cache_name));
+    cmd += '"';
+    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream)

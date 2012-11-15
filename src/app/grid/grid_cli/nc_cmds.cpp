@@ -425,16 +425,11 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_ReinitNetCache()
+int CGridCommandLineInterfaceApp::Cmd_Purge()
 {
-    bool icache_mode = IsOptionSet(eCache);
-
     SetUp_NetCacheCmd(eNetCacheAdmin, eSevereAdminCmd);
 
-    if (icache_mode)
-        m_NetCacheAdmin.Reinitialize(m_Opts.cache_name);
-    else
-        m_NetCacheAdmin.Reinitialize();
+    m_NetCacheAdmin.Purge(m_Opts.cache_name);
 
     return 0;
 }

@@ -111,6 +111,8 @@ struct SOptionDefinition {
     {OPT_DEF(eOptionWithParameter, eCache),
         "cache", "Enable ICache mode and specify cache name to use.", {-1}},
 
+    {OPT_DEF(ePositionalArgument, eCacheArg), "CACHE", NULL, {-1}},
+
     {OPT_DEF(eOptionWithParameter, ePassword),
         "password", "Enable NetCache password protection.", {-1}},
 
@@ -476,12 +478,11 @@ struct SCommandDefinition {
         {eID, eNetCache, eCache, ePassword, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
-    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_ReinitNetCache,
-        "reinitnc", "Delete all blobs and reset NetCache database.",
-        "This command purges and resets the specified NetCache "
-        "(or ICache) database. Administrative privileges are "
-        "required.",
-        {eNetCache, eCache, eLoginToken, eAuth,
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Purge,
+        "purge", "Delete all blobs from an ICache database.",
+        "This command purges the specified ICache database. "
+        "Administrative privileges are required.",
+        {eCacheArg, eNetCache, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1054,6 +1055,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.nc_service = opt_value;
                 break;
             case eCache:
+            case eCacheArg:
                 m_Opts.cache_name = opt_value;
                 break;
             case ePassword:

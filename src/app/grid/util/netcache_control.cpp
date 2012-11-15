@@ -101,7 +101,6 @@ void CNetCacheControl::Init()
         "Connect to an ICache database", CArgDescriptions::eString);
 
     arg_desc->AddFlag("reconf",        "Reload server configuration");
-    arg_desc->AddFlag("reinit",        "Delete all blobs and reset DB");
     arg_desc->AddFlag("shutdown",      "Shutdown server");
     arg_desc->AddFlag("ver",           "Server version");
     arg_desc->AddFlag("getconf",       "Server config");
@@ -157,8 +156,7 @@ enum {
     eCmdStat = 0x08 | REQUIRES_ADMIN,
     eCmdVer = 0x09 | REQUIRES_ADMIN,
     eCmdShutdown = 0x0A | REQUIRES_ADMIN,
-    eCmdReconf = 0x0B | REQUIRES_ADMIN,
-    eCmdReinit = 0x0C | REQUIRES_ADMIN
+    eCmdReconf = 0x0B | REQUIRES_ADMIN
 };
 
 int CNetCacheControl::Run()
@@ -205,8 +203,7 @@ int CNetCacheControl::Run()
             args["stat"] ? eCmdStat :
             args["ver"] ? eCmdVer :
             args["shutdown"] ? eCmdShutdown :
-            args["reconf"] ? eCmdReconf :
-            args["reinit"] ? eCmdReinit : 0;
+            args["reconf"] ? eCmdReconf : 0;
     }
 
     SICacheBlobAddress blob_address;
@@ -465,14 +462,6 @@ int CNetCacheControl::Run()
     case eCmdReconf:
         admin.ReloadServerConfig();
         NcbiCout << "Reconfigured." << NcbiEndl;
-        break;
-
-    case eCmdReinit:
-        if (icache_mode)
-            admin.Reinitialize(args["icache"].AsString());
-        else
-            admin.Reinitialize();
-        NcbiCout << "Reinitialized." << NcbiEndl;
     }
 
     return 0;
