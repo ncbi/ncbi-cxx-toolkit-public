@@ -24,7 +24,6 @@
  * ===========================================================================
  *
  * File Description:
- *   Sample library
  *
  */
 
@@ -471,12 +470,15 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
 
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
 
-    if((p2->IsSetStart_offset() || p2->IsSetStop_offset()) && p.GetLoc().IsInt() && mapped_loc->IsPnt()) {
-        //If we have offsets, then the distinction betwen point and one-point interval is important, e.g.
+    bool equal_offsets = (!p2->IsSetStart_offset() && !p2->IsSetStop_offset())
+                      || ( p2->IsSetStart_offset() &&  p2->IsSetStop_offset() && p2->GetStart_offset() == p2->GetStop_offset());
+    if(p.GetLoc().IsInt() && mapped_loc->IsPnt() && !equal_offsets) {
+        //If we have offsets, then the distinction between point and one-point interval is important, e.g.
         //NM_000155.3:c.-116-3_-116 - the location is an interval, but the anchor point is the same; we need to 
         //keep it as interval, as if we represent it as a point, then the corresponding HGVS is also a point: NM_000155.3:c.-116-3
         mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fMerge_SingleRange, NULL);
     }
+
 
 #if 0
     if(mapped_loc->IsNull() && p.GetLoc().GetId() && !p.GetLoc().IsEmpty()) {
@@ -1761,6 +1763,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
 void CVariationUtil::AsSOTerms(const CVariantProperties& p, TSOTerms& terms)
 {
+    if(p.GetGene_location() & CVariantProperties::eGene_location_intergenic) {
+        terms.push_back(eSO_intergenic_variant);
+    }
     if(p.GetGene_location() & CVariantProperties::eGene_location_near_gene_5) {
         terms.push_back(eSO_2KB_upstream_variant);
     }
@@ -1785,6 +1790,12 @@ void CVariationUtil::AsSOTerms(const CVariantProperties& p, TSOTerms& terms)
     if(p.GetGene_location() & CVariantProperties::eGene_location_conserved_noncoding) {
         terms.push_back(eSO_nc_transcript_variant);
     }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_in_start_codon) {
+        terms.push_back(eSO_start_codon);
+    }
+    if(p.GetGene_location() & CVariantProperties::eGene_location_in_stop_codon) {
+        terms.push_back(eSO_stop_codon);
+    }
 
     if(p.GetEffect() & CVariantProperties::eEffect_frameshift) {
         terms.push_back(eSO_frameshift_variant);
@@ -1805,37 +1816,24 @@ void CVariationUtil::AsSOTerms(const CVariantProperties& p, TSOTerms& terms)
 
 string CVariationUtil::AsString(ESOTerm term)
 {
-    if(term == eSO_2KB_upstream_variant) {
-        return "2KB_upstream_variant";
-    } else if(term == eSO_500B_downstream_variant) {
-        return "500B_downstream_variant";
-    } else if(term == eSO_splice_donor_variant) {
-        return "splice_donor_variant";
-    } else if(term == eSO_splice_acceptor_variant) {
-        return "splice_acceptor_varian";
-    } else if(term == eSO_intron_variant) {
-        return "intron_variant";
-    } else if(term == eSO_5_prime_UTR_variant) {
-        return "5_prime_UTR_variant";
-    } else if(term == eSO_3_prime_UTR_variant) {
-        return "3_prime_UTR_variant";
-    } else if(term == eSO_coding_sequence_variant) {
-        return "coding_sequence_variant";
-    } else if(term == eSO_nc_transcript_variant) {
-        return "nc_transcript_variant";
-    } else if(term == eSO_synonymous_codon) {
-        return "synonymous_codon";
-    } else if(term == eSO_non_synonymous_codon) {
-        return "non_synonymous_codon";
-    } else if(term == eSO_stop_gained) {
-        return "stop_gained";
-    } else if(term == eSO_stop_lost) {
-        return "stop_lost";
-    } else if(term == eSO_frameshift_variant) {
-        return "frameshift_variant";
-    } else {
-        return "other_variant";
-    }
+    if     (term == eSO_intergenic_variant)      { return "intergenic_variant";      }
+    else if(term == eSO_2KB_upstream_variant)    { return "2KB_upstream_variant";    }
+    else if(term == eSO_500B_downstream_variant) { return "500B_downstream_variant"; }
+    else if(term == eSO_splice_donor_variant)    { return "splice_donor_variant";    }
+    else if(term == eSO_splice_acceptor_variant) { return "splice_acceptor_varian";  }
+    else if(term == eSO_intron_variant)          { return "intron_variant";          }
+    else if(term == eSO_5_prime_UTR_variant)     { return "5_prime_UTR_variant";     }
+    else if(term == eSO_3_prime_UTR_variant)     { return "3_prime_UTR_variant";     }
+    else if(term == eSO_coding_sequence_variant) { return "coding_sequence_variant"; }
+    else if(term == eSO_nc_transcript_variant)   { return "nc_transcript_variant";   }
+    else if(term == eSO_synonymous_codon)        { return "synonymous_codon";        }
+    else if(term == eSO_non_synonymous_codon)    { return "non_synonymous_codon";    }
+    else if(term == eSO_stop_gained)             { return "stop_gained";             }
+    else if(term == eSO_stop_lost)               { return "stop_lost";               }
+    else if(term == eSO_frameshift_variant)      { return "frameshift_variant";      }
+    else if(term == eSO_start_codon)             { return "start_codon";             }
+    else if(term == eSO_stop_codon)              { return "stop_codon";              }
+    else                                         { return "other_variant";           }
 };
 
 
@@ -2055,6 +2053,116 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
         }
     }
 }
+
+
+void CVariationUtil::FindLocationProperties(const CSeq_align& transcript_aln,
+                                            const CSeq_loc& query_loc,
+                                            TSOTerms& terms)
+{
+    //note: initializing mapper with scope because the annotation from scope is gi-based,
+    //while the parameters are normaly accver-based
+    CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(transcript_aln, 1, m_scope));
+
+    CConstRef<CSeq_loc> genomic_query_loc;
+    if(query_loc.GetId() && query_loc.GetId()->Equals(transcript_aln.GetSeq_id(0))) {
+        genomic_query_loc = mapper->Map(query_loc);
+    } else {
+        genomic_query_loc.Reset(&query_loc);
+    }
+
+    CRef<CSeq_loc> rna_loc = transcript_aln.CreateRowSeq_loc(1);
+
+    CRef<CSeq_loc> cds_loc;
+    {{
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(transcript_aln.GetSeq_id(0));
+        for(CFeat_CI ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion)); ci; ++ci) {
+            const CMappedFeat& mf = *ci;
+            cds_loc = mapper->Map(mf.GetLocation());
+
+            //remove indels from the mapped cds loc
+            cds_loc = sequence::Seq_loc_Merge(*cds_loc, CSeq_loc::fMerge_SingleRange, NULL);
+            cds_loc = rna_loc->Intersect(*cds_loc, NULL, NULL);
+            break;
+        }
+    }}        
+ 
+    s_FindLocationProperties(rna_loc, cds_loc, *genomic_query_loc, terms);
+}
+        
+
+void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
+                                              CConstRef<CSeq_loc> cds_loc,
+                                              const CSeq_loc& query_loc,
+                                              CVariationUtil::TSOTerms& terms)
+{
+    struct SPropsMap 
+    {
+        typedef CRangeMap<CVariationUtil::ESOTerm, TSeqPos> TRangeMap;
+        typedef map<CSeq_id_Handle, TRangeMap> TIdRangeMap;
+        TIdRangeMap loc_map;
+        void Add(CVariationUtil::ESOTerm term, const CSeq_loc& loc)
+        {
+            for(CSeq_loc_CI ci(loc); ci; ++ci) {
+                loc_map[ci.GetSeq_id_Handle()][ci.GetRange()] = term;
+            }
+        }
+    } props_map;
+
+    typedef pair<CRef<CSeq_loc>, CRef<CSeq_loc> > TLocsPair;
+
+    if(!rna_loc && !cds_loc) {
+        return;
+    }
+
+    const CSeq_loc& main_loc = rna_loc ? *rna_loc : *cds_loc;  
+
+    {{
+        TLocsPair p = CVariantPropertiesIndex::s_GetNeighborhoodLocs(main_loc, main_loc.GetStop(eExtreme_Positional) + 100000);
+        props_map.Add(eSO_2KB_upstream_variant, *p.first);    
+        props_map.Add(eSO_500B_downstream_variant, *p.second);    
+    }}
+
+    {{
+        TLocsPair p = CVariantPropertiesIndex::s_GetIntronsAndSpliceSiteLocs(main_loc);
+        props_map.Add(eSO_intron_variant, *p.first);
+        size_t i(0);
+        for(CSeq_loc_CI ci(*p.second, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
+            props_map.Add((i%2 ? eSO_splice_acceptor_variant : eSO_splice_donor_variant), *ci.GetRangeAsSeq_loc());
+            i++;
+        }
+    }}
+
+    if(!cds_loc) {
+        props_map.Add(eSO_nc_transcript_variant, *rna_loc);
+    } else {
+        props_map.Add(eSO_coding_sequence_variant, *cds_loc);
+
+        {{
+            TLocsPair p = CVariantPropertiesIndex::s_GetStartAndStopCodonsLocs(*cds_loc);
+            props_map.Add(eSO_start_codon, *p.first);
+            props_map.Add(eSO_stop_codon, *p.second);
+        }}
+
+        if(rna_loc) {
+            TLocsPair p = CVariantPropertiesIndex::s_GetUTRLocs(*cds_loc, *rna_loc);
+            props_map.Add(eSO_5_prime_UTR_variant, *p.first);
+            props_map.Add(eSO_3_prime_UTR_variant, *p.second);
+        }
+    }    
+
+    set<CVariationUtil::ESOTerm> terms_set;
+    for(CSeq_loc_CI ci(query_loc, CSeq_loc_CI::eEmpty_Skip); ci; ++ci) {
+        const SPropsMap::TRangeMap& rm = props_map.loc_map[ci.GetSeq_id_Handle()];
+        for(SPropsMap::TRangeMap::const_iterator it2 = rm.begin(ci.GetRange()); it2.Valid(); ++it2) {
+            terms_set.insert(it2->second);
+        }
+    }
+    terms.insert(terms.end(), terms_set.begin(), terms_set.end());
+}
+
+
+
+
 
 //transcript length less polyA
 TSeqPos GetEffectiveTranscriptLength(const CBioseq_Handle& bsh)

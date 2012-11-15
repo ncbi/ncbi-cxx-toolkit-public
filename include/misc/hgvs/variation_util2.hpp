@@ -213,12 +213,11 @@ public:
     void SetVariantProperties(CVariation& v);
 
 
-
-
     /// Supported SO-terms
     enum ESOTerm
     {
         //location-specific terms
+        eSO_intergenic_variant      =1628,
         eSO_2KB_upstream_variant    =1636,
         eSO_500B_downstream_variant =1634,
         eSO_splice_donor_variant    =1575,
@@ -228,6 +227,11 @@ public:
         eSO_3_prime_UTR_variant     =1624,
         eSO_coding_sequence_variant =1580,
         eSO_nc_transcript_variant   =1619,
+
+        //note: there are not eSO_(start|stop)_codon_variant terms, so
+        //the location-specific rather than variant-specific terms are used instead:
+        eSO_start_codon             =318,
+        eSO_stop_codon              =319,
 
         //variant-specific terms
         eSO_synonymous_codon        =1588,
@@ -239,6 +243,19 @@ public:
     typedef vector<ESOTerm> TSOTerms;
     void AsSOTerms(const CVariantProperties& p, TSOTerms& terms);
     static string AsString(ESOTerm term);
+
+
+    /// Find location properties based on alignment.
+    void FindLocationProperties(const CSeq_align& transcript_aln,
+                                const CSeq_loc& query_loc,
+                                TSOTerms& terms);
+
+
+    static void s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
+                                         CConstRef<CSeq_loc> cds_loc,
+                                         const CSeq_loc& query_loc,
+                                         TSOTerms& terms);
+                                    
 
     static TSeqPos s_GetLength(const CVariantPlacement& p, CScope* scope);
 
@@ -432,9 +449,6 @@ private:
         {
             m_loc2prop.clear();
         }
-    private:
-        void x_Index(const CSeq_id_Handle& idh);
-        void x_Add(const CSeq_loc& loc, int gene_id, CVariantProperties::TGene_location prop);
 
         typedef pair<CRef<CSeq_loc>, CRef<CSeq_loc> > TLocsPair; //5' and 3' respectively
         static TLocsPair s_GetStartAndStopCodonsLocs(const CSeq_loc& cds_loc);
@@ -444,6 +458,9 @@ private:
         static int s_GetGeneID(const CMappedFeat& mf, feature::CFeatTree& ft);
 
     private:
+        void x_Index(const CSeq_id_Handle& idh);
+        void x_Add(const CSeq_loc& loc, int gene_id, CVariantProperties::TGene_location prop);
+
         typedef CRangeMap<TGeneIDAndPropVector, TSeqPos> TRangeMap;
         typedef map<CSeq_id_Handle, TRangeMap> TIdRangeMap;
 
