@@ -291,9 +291,9 @@ BOOST_AUTO_TEST_CASE(CheckBlastpMasks) {
     const string rid("1143488953-21461-10186755953.BLASTQ1");
     CRemoteBlast rmt_blaster(rid);
 
-    BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
-    BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
+    BOOST_REQUIRE_MESSAGE(rid == rmt_blaster.GetRID(), "RID=" << rid);
+    BOOST_REQUIRE_MESSAGE(rmt_blaster.CheckDone(), "RID=" << rid);
+    BOOST_REQUIRE_MESSAGE(kEmptyStr == rmt_blaster.GetErrors(), "RID=" << rid);
 
     const EBlastProgramType prog = 
         NetworkProgram2BlastProgramType(rmt_blaster.GetProgram(),
@@ -609,28 +609,31 @@ BOOST_AUTO_TEST_CASE(RetrieveInvalidRID) {
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("2RCK3CZR01N");
+    const string rid("A844TTAM014");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), "CPU usage limit was exceeded, resulting in SIGXCPU") != NPOS);
+    BOOST_REQUIRE_MESSAGE(NStr::Find(rmt_blaster.GetErrors(), 
+                                     "CPU usage limit was exceeded, resulting in SIGXCPU") != NPOS,
+                          "RID=" << rid);
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, rmt_blaster.CheckStatus());
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithSIGXCPU) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("2RCWHBTS01N");
+    const string rid("A84J535H016");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
     //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
-    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), 
-                             "Error: CPU usage limit was exceeded") != NPOS);
+    BOOST_REQUIRE_MESSAGE(NStr::Find(rmt_blaster.GetErrors(), 
+                             "Error: CPU usage limit was exceeded") != NPOS,
+                          "RID=" << rid);
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed,
                         rmt_blaster.CheckStatus());
 }
