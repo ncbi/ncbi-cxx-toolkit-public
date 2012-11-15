@@ -577,7 +577,7 @@ CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_SkipUnknownMembers& ob
 ///     cin >> MSerial_Format(eSerial_Xml)
 ///         >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes) >> obj;
 ///   @sa ESerialSkipUnknown
-class NCBI_XSERIAL_EXPORT MSerial_SkipUnknownVariants : public MSerial_Flags
+class NCBI_XSERIAL_EXPORT MSerial_SkipUnknownVariants : protected MSerial_Flags
 {
 public:
     explicit MSerial_SkipUnknownVariants(ESerialSkipUnknown fmt);
