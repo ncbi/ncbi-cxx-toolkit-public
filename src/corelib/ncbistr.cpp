@@ -367,8 +367,10 @@ public:
         }
     }
     void Set(int errcode)    { m_Errno = errcode; }
-    bool ToThrow(void) const { return !m_NoThrow; }
     int  Errno(void) const   { return m_Errno;}
+    // Says that we want to throw an exception, do not set errno in this case
+    void Throw(void)         { m_SkipIfZero = true; m_Errno = 0; }
+    bool ToThrow(void) const { return !m_NoThrow; }
     // Auxiliary function to create a message about conversion error 
     // to specified type. It doesn't have any relation to the guard itself,
     // but can help to save on the amount of code in calling macro.
@@ -408,6 +410,7 @@ string CS2N_Guard::Message(const CTempString& str, const char* to_type, const CT
     do {                                                              \
         err_guard.Set(errcode);                                       \
         if ( err_guard.ToThrow() ) {                                  \
+            err_guard.Throw();                                        \
             NCBI_THROW2(CStringException, eConvert,                   \
                         err_guard.Message(str, #to_type, msg), pos);  \
         } else {                                                      \
@@ -1320,7 +1323,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
     Uint8 n = StringToUInt8(CTempString(str.data()+numpos, pos-numpos),
                             flags, base);
     if ( !n && errno ) {
-        // If exceptions enabled that it has been already thrown.
+        // If exceptions are enabled that it has been already thrown.
         // The errno is also set, so just return a zero.
         return 0;
     }
