@@ -135,6 +135,9 @@ void CNetScheduleDApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "netscheduled");
 
+    arg_desc->AddDefaultKey("pidfile", "File_Name",
+                            "File to save NetSchedule process PID",
+                            CArgDescriptions::eOutputFile, "");
     arg_desc->AddFlag("reinit",       "Recreate the storage directory.");
     arg_desc->AddFlag("nodaemon",     "Turn off daemonization of NetSchedule at the start.");
 
@@ -155,6 +158,20 @@ int CNetScheduleDApp::Run(void)
         // attempt to get server gracefully shutdown on signal
         signal(SIGINT, Threaded_Server_SignalHandler);
         signal(SIGTERM, Threaded_Server_SignalHandler);
+
+        // Deal with a pid file; it is the simplest and the fastest part
+        string pid_file = args["pidfile"].AsString();
+        if (!pid_file.empty()) {
+            FILE*  pid_f = NULL;
+            pid_f = fopen(pid_file.c_str(), "w");
+            if (pid_f == NULL) {
+                NcbiCerr << "Cannot open pid file " << pid_file
+                         << ". Abort." << NcbiEndl;
+                ERR_POST("Cannot open pid file " << pid_file << ". Abort.");
+                return 2;
+            }
+            fclose(pid_f);
+        }
 
         // [bdb] section
         SNSDBEnvironmentParams bdb_params;
@@ -250,6 +267,15 @@ int CNetScheduleDApp::Run(void)
                          << "Checking running jobs expiration: every "
                          << min_run_timeout << " seconds");
 
+        // Save the process PID if PID is given
+        if (!pid_file.empty()) {
+            // It was checked earlier that there are permissions to do this
+            FILE* f = fopen(pid_file.c_str(), "w");
+            if (f != NULL) {
+                fprintf(f, "%ld", CDiagContext::GetPID());
+                fclose(f);
+            }
+        }
 
         qdb->RunExecutionWatcherThread(min_run_timeout);
         qdb->RunPurgeThread();
@@ -263,6 +289,7 @@ int CNetScheduleDApp::Run(void)
 
         CAsyncDiagHandler diag_handler;
         diag_handler.SetCustomThreadSuffix("_l");
+
         try {
             diag_handler.InstallToDiag();
             server->Run();
