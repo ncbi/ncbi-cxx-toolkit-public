@@ -341,46 +341,34 @@ bool CNetScheduleServer::IsAdminClientName(const string &  name) const
 // This guarantees that the directory is there.
 // The file with an identifier could be read or created safely.
 // Returns: true if everything is fine.
-bool CNetScheduleServer::InitNodeID(const string &  db_path)
+void CNetScheduleServer::InitNodeID(const string &  db_path)
 {
-    try {
-        CFile   node_id_file(CFile::MakePath(
-                                CDirEntry::AddTrailingPathSeparator(db_path),
-                                "NODE_ID"));
+    CFile   node_id_file(CFile::MakePath(
+                            CDirEntry::AddTrailingPathSeparator(db_path),
+                            "NODE_ID"));
 
-        if (node_id_file.Exists()) {
-            // File exists, read the ID from it
-            CFileIO     f;
-            char        buffer[64];
+    if (node_id_file.Exists()) {
+        // File exists, read the ID from it
+        CFileIO     f;
+        char        buffer[64];
 
-            f.Open(node_id_file.GetPath(), CFileIO_Base::eOpen,
-                                           CFileIO_Base::eRead);
-            size_t      n = f.Read(buffer, sizeof(buffer));
+        f.Open(node_id_file.GetPath(), CFileIO_Base::eOpen,
+                                       CFileIO_Base::eRead);
+        size_t      n = f.Read(buffer, sizeof(buffer));
 
-            m_NodeID = string(buffer, n);
-            NStr::TruncateSpacesInPlace(m_NodeID, NStr::eTrunc_End);
-            f.Close();
-        } else {
-            // No file, need to be created
-            m_NodeID = "n" + x_GenerateGUID();
+        m_NodeID = string(buffer, n);
+        NStr::TruncateSpacesInPlace(m_NodeID, NStr::eTrunc_End);
+        f.Close();
+    } else {
+        // No file, need to be created
+        m_NodeID = "n" + x_GenerateGUID();
 
-            CFileIO     f;
-            f.Open(node_id_file.GetPath(), CFileIO_Base::eCreate,
-                                           CFileIO_Base::eReadWrite);
-            f.Write(m_NodeID.data(), m_NodeID.size());
-            f.Close();
-        }
+        CFileIO     f;
+        f.Open(node_id_file.GetPath(), CFileIO_Base::eCreate,
+                                       CFileIO_Base::eReadWrite);
+        f.Write(m_NodeID.data(), m_NodeID.size());
+        f.Close();
     }
-    catch (const exception &  ex) {
-        ERR_POST("Cannot create or read node ID. " << ex.what());
-        return false;
-    }
-    catch (...) {
-        ERR_POST("Unknown error creating or reading node ID");
-        return false;
-    }
-
-    return true;
 }
 
 

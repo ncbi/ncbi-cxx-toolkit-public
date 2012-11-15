@@ -160,175 +160,142 @@ int CNetScheduleDApp::Run(void)
 {
     LOG_POST(Message << Warning << NETSCHEDULED_FULL_VERSION);
 
-    const CArgs &           args = GetArgs();
-    const CNcbiRegistry &   reg = GetConfig();
+    const CArgs&         args = GetArgs();
+    const CNcbiRegistry& reg  = GetConfig();
+
+    // attempt to get server gracefully shutdown on signal
+    signal(SIGINT,  Threaded_Server_SignalHandler);
+    signal(SIGTERM, Threaded_Server_SignalHandler);
+
+    // Check that the pidfile argument is really a file
+    if (args[kPidFileArgName]) {
+        if (args[kPidFileArgName].AsString() == "-")
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "PID file cannot be standard output and only "
+                       "file name is accepted.");
+    }
+
+    // [bdb] section
+    SNSDBEnvironmentParams bdb_params;
+
+    if (!bdb_params.Read(reg, "bdb"))
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Failed to read BDB initialization section.");
+
+    {{
+        string str_params;
+        unsigned nParams = bdb_params.GetNumParams();
+        for (unsigned n = 0; n < nParams; ++n) {
+            if (n > 0) str_params += ';';
+            str_params += bdb_params.GetParamName(n) + '=' +
+                          bdb_params.GetParamValue(n);
+        }
+        LOG_POST(Message << Warning
+                         <<"Effective [bdb] parameters: " << str_params);
+    }}
+
+    // [server] section
+    SNS_Parameters      params;
+    params.Read(reg, "server");
+
+
+    {{
+        string      str_params;
+        unsigned    nParams = params.GetNumParams();
+        for (unsigned n = 0; n < nParams; ++n) {
+            if (n > 0) str_params += ';';
+            str_params += params.GetParamName(n) + '=' +
+                          params.GetParamValue(n);
+        }
+        LOG_POST(Message << Warning
+                         <<"Effective [server] parameters: " << str_params);
+    }}
+
+    bool reinit = params.reinit || args[kReinitArgName];
+
+    m_ServerAcceptTimeout.sec  = 1;
+    m_ServerAcceptTimeout.usec = 0;
+    params.accept_timeout      = &m_ServerAcceptTimeout;
+
+    SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
+    auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer());
+    server->SetCustomThreadSuffix("_h");
+    server->SetNSParameters(params, false);
+
+    // Use port passed through parameters
+    server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));
+    server->StartListening();
+    LOG_POST(Message << Warning
+                     <<"Server listening on port " << params.port);
+
+    // two transactions per thread should be enough
+    bdb_params.max_trans = params.max_threads * 2;
+
+    LOG_POST(Message << Warning
+                     << "Mounting database at " << bdb_params.db_path);
+    auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
+                                                       bdb_params, reinit));
+
+    server->InitNodeID(bdb_params.db_path);
+
+    if (!args[kNodaemonArgName]) {
+        LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
+        // Here's workaround for SQLite3 bug: if stdin is closed in forked
+        // process then 0 file descriptor is returned to SQLite after open().
+        // But there's assert there which prevents fd to be equal to 0. So
+        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
+        // just in case somebody will try to write to them.
+        bool    is_good = CProcess::Daemonize(kEmptyCStr,
+                                              CProcess::fDontChroot |
+                                              CProcess::fKeepStdin  |
+                                              CProcess::fKeepStdout);
+        if (!is_good)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error during daemonization.");
+    }
+    else
+        LOG_POST(Message << Warning << "Operating in non-daemon mode...");
+
+    // [queue_*], [qclass_*] and [queues] sections
+    // Scan and mount queues
+    string        diff;
+    unsigned int  min_run_timeout = qdb->Configure(reg, diff);
+
+    min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
+    LOG_POST(Message << Warning
+                     << "Checking running jobs expiration: every "
+                     << min_run_timeout << " seconds");
+
+    // Save the process PID if PID is given
+    if (args[kPidFileArgName]) {
+        args[kPidFileArgName].AsOutputFile() << CDiagContext::GetPID();
+        args[kPidFileArgName].CloseFile();
+    }
+
+    qdb->RunExecutionWatcherThread(min_run_timeout);
+    qdb->RunPurgeThread();
+    qdb->RunNotifThread();
+    qdb->RunServiceThread();
+
+    server->SetQueueDB(qdb.release());
+
+    if (args[kNodaemonArgName])
+        NcbiCout << "Server started" << NcbiEndl;
+
+    CAsyncDiagHandler diag_handler;
+    diag_handler.SetCustomThreadSuffix("_l");
 
     try {
-        // attempt to get server gracefully shutdown on signal
-        signal(SIGINT, Threaded_Server_SignalHandler);
-        signal(SIGTERM, Threaded_Server_SignalHandler);
-
-        // Check that the pidfile argument is really a file
-        if (args[kPidFileArgName]) {
-            if (args[kPidFileArgName].AsString() == "-") {
-                string msg = "PID file cannot be standard output and only "
-                             "file name is accepted. Exiting.";
-                ERR_POST(msg);
-                NcbiCerr << msg << NcbiEndl;
-                return 1;
-            }
-        }
-
-        // [bdb] section
-        SNSDBEnvironmentParams bdb_params;
-
-        if (!bdb_params.Read(reg, "bdb")) {
-            ERR_POST("Failed to read BDB initialization section. Exiting.");
-            return 1;
-        }
-
-        {{
-            string str_params;
-            unsigned nParams = bdb_params.GetNumParams();
-            for (unsigned n = 0; n < nParams; ++n) {
-                if (n > 0) str_params += ';';
-                str_params += bdb_params.GetParamName(n) + '=' +
-                              bdb_params.GetParamValue(n);
-            }
-            LOG_POST(Message << Warning
-                             <<"Effective [bdb] parameters: " << str_params);
-        }}
-
-        // [server] section
-        SNS_Parameters      params;
-        params.Read(reg, "server");
-
-
-        {{
-            string      str_params;
-            unsigned    nParams = params.GetNumParams();
-            for (unsigned n = 0; n < nParams; ++n) {
-                if (n > 0) str_params += ';';
-                str_params += params.GetParamName(n) + '=' +
-                              params.GetParamValue(n);
-            }
-            LOG_POST(Message << Warning
-                             <<"Effective [server] parameters: " << str_params);
-        }}
-
-        bool reinit = params.reinit || args[kReinitArgName];
-
-        m_ServerAcceptTimeout.sec  = 1;
-        m_ServerAcceptTimeout.usec = 0;
-        params.accept_timeout      = &m_ServerAcceptTimeout;
-
-        SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
-        auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer());
-        server->SetCustomThreadSuffix("_h");
-        server->SetNSParameters(params, false);
-
-        // Use port passed through parameters
-        server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));
-        server->StartListening();
-        LOG_POST(Message << Warning
-                         <<"Server listening on port " << params.port);
-
-        // two transactions per thread should be enough
-        bdb_params.max_trans = params.max_threads * 2;
-
-        LOG_POST(Message << Warning
-                         << "Mounting database at " << bdb_params.db_path);
-        auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
-                                                           bdb_params, reinit));
-
-        if (server->InitNodeID(bdb_params.db_path) == false)
-            return 1;
-
-        if (!args[kNodaemonArgName]) {
-            LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
-            // Here's workaround for SQLite3 bug: if stdin is closed in forked
-            // process then 0 file descriptor is returned to SQLite after open().
-            // But there's assert there which prevents fd to be equal to 0. So
-            // we keep descriptors 0, 1 and 2 in child process open. Latter two -
-            // just in case somebody will try to write to them.
-            bool    is_good = CProcess::Daemonize(kEmptyCStr,
-                                                  CProcess::fDontChroot |
-                                                  CProcess::fKeepStdin  |
-                                                  CProcess::fKeepStdout);
-            if (!is_good) {
-                ERR_POST(Critical << "Error during daemonization. Exiting.");
-                return 0;
-            }
-        }
-        else
-            LOG_POST(Message << Warning << "Operating in non-daemon mode...");
-
-        // [queue_*], [qclass_*] and [queues] sections
-        // Scan and mount queues
-        string        diff;
-        unsigned int  min_run_timeout = qdb->Configure(reg, diff);
-
-        min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
-        LOG_POST(Message << Warning
-                         << "Checking running jobs expiration: every "
-                         << min_run_timeout << " seconds");
-
-        // Save the process PID if PID is given
-        if (args[kPidFileArgName]) {
-            args[kPidFileArgName].AsOutputFile() << CDiagContext::GetPID();
-            args[kPidFileArgName].CloseFile();
-        }
-
-        qdb->RunExecutionWatcherThread(min_run_timeout);
-        qdb->RunPurgeThread();
-        qdb->RunNotifThread();
-        qdb->RunServiceThread();
-
-        server->SetQueueDB(qdb.release());
-
-        if (args[kNodaemonArgName])
-            NcbiCout << "Server started" << NcbiEndl;
-
-        CAsyncDiagHandler diag_handler;
-        diag_handler.SetCustomThreadSuffix("_l");
-
-        try {
-            diag_handler.InstallToDiag();
-            server->Run();
-            diag_handler.RemoveFromDiag();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-        }
-
-        if (args[kNodaemonArgName])
-            NcbiCout << "Server stopped" << NcbiEndl;
-
+        diag_handler.InstallToDiag();
+        server->Run();
+        diag_handler.RemoveFromDiag();
     }
-    catch (const CNetScheduleException &  ex) {
-        ERR_POST("NetSchedule exception: " << ex);
-        return 1;
+    catch (CThreadException& ex) {
+        ERR_POST(Critical << ex);
     }
-    catch (const CBDB_ErrnoException &  ex)
-    {
-        ERR_POST("Error: BDB errno exception:" << ex.what());
-        return ex.BDB_GetErrno();
-    }
-    catch (const CBDB_LibException &  ex)
-    {
-        ERR_POST("Error: BDB library exception:" << ex.what());
-        return 1;
-    }
-    catch (const exception &  ex)
-    {
-        ERR_POST("Error: STD exception:" << ex.what());
-        return 1;
-    }
-    catch (...)
-    {
-        ERR_POST("Unknown exception");
-        return 1;
-    }
+
+    if (args[kNodaemonArgName])
+        NcbiCout << "Server stopped" << NcbiEndl;
 
     return 0;
 }
