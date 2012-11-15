@@ -69,6 +69,11 @@
 USING_NCBI_SCOPE;
 
 
+static const string kPidFileArgName = "pidfile";
+static const string kReinitArgName = "reinit";
+static const string kNodaemonArgName = "nodaemon";
+
+
 /// @internal
 extern "C" void Threaded_Server_SignalHandler(int signum)
 {
@@ -133,13 +138,17 @@ void CNetScheduleDApp::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "netscheduled");
+                              "Network job queue server");
+    arg_desc->SetMiscFlags(CArgDescriptions::fNoUsage |
+                           CArgDescriptions::fDupErrToCerr);
 
-    arg_desc->AddDefaultKey("pidfile", "File_Name",
-                            "File to save NetSchedule process PID",
-                            CArgDescriptions::eOutputFile, "");
-    arg_desc->AddFlag("reinit",       "Recreate the storage directory.");
-    arg_desc->AddFlag("nodaemon",     "Turn off daemonization of NetSchedule at the start.");
+    arg_desc->AddOptionalKey(kPidFileArgName, "File_Name",
+                             "File to save NetSchedule process PID",
+                             CArgDescriptions::eOutputFile,
+                             CArgDescriptions::fPreOpen);
+    arg_desc->AddFlag(kReinitArgName, "Recreate the storage directory.");
+    arg_desc->AddFlag(kNodaemonArgName,
+                      "Turn off daemonization of NetSchedule at the start.");
 
     SetupArgDescriptions(arg_desc.release());
 
@@ -159,18 +168,15 @@ int CNetScheduleDApp::Run(void)
         signal(SIGINT, Threaded_Server_SignalHandler);
         signal(SIGTERM, Threaded_Server_SignalHandler);
 
-        // Deal with a pid file; it is the simplest and the fastest part
-        string pid_file = args["pidfile"].AsString();
-        if (!pid_file.empty()) {
-            FILE*  pid_f = NULL;
-            pid_f = fopen(pid_file.c_str(), "w");
-            if (pid_f == NULL) {
-                NcbiCerr << "Cannot open pid file " << pid_file
-                         << ". Abort." << NcbiEndl;
-                ERR_POST("Cannot open pid file " << pid_file << ". Abort.");
-                return 2;
+        // Check that the pidfile argument is really a file
+        if (args[kPidFileArgName]) {
+            if (args[kPidFileArgName].AsString() == "-") {
+                string msg = "PID file cannot be standard output and only "
+                             "file name is accepted. Exiting.";
+                ERR_POST(msg);
+                NcbiCerr << msg << NcbiEndl;
+                return 1;
             }
-            fclose(pid_f);
         }
 
         // [bdb] section
@@ -210,7 +216,7 @@ int CNetScheduleDApp::Run(void)
                              <<"Effective [server] parameters: " << str_params);
         }}
 
-        bool reinit = params.reinit || args["reinit"];
+        bool reinit = params.reinit || args[kReinitArgName];
 
         m_ServerAcceptTimeout.sec  = 1;
         m_ServerAcceptTimeout.usec = 0;
@@ -238,7 +244,7 @@ int CNetScheduleDApp::Run(void)
         if (server->InitNodeID(bdb_params.db_path) == false)
             return 1;
 
-        if (!args["nodaemon"]) {
+        if (!args[kNodaemonArgName]) {
             LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
             // Here's workaround for SQLite3 bug: if stdin is closed in forked
             // process then 0 file descriptor is returned to SQLite after open().
@@ -268,13 +274,9 @@ int CNetScheduleDApp::Run(void)
                          << min_run_timeout << " seconds");
 
         // Save the process PID if PID is given
-        if (!pid_file.empty()) {
-            // It was checked earlier that there are permissions to do this
-            FILE* f = fopen(pid_file.c_str(), "w");
-            if (f != NULL) {
-                fprintf(f, "%ld", CDiagContext::GetPID());
-                fclose(f);
-            }
+        if (args[kPidFileArgName]) {
+            args[kPidFileArgName].AsOutputFile() << CDiagContext::GetPID();
+            args[kPidFileArgName].CloseFile();
         }
 
         qdb->RunExecutionWatcherThread(min_run_timeout);
@@ -284,7 +286,7 @@ int CNetScheduleDApp::Run(void)
 
         server->SetQueueDB(qdb.release());
 
-        if (args["nodaemon"])
+        if (args[kNodaemonArgName])
             NcbiCout << "Server started" << NcbiEndl;
 
         CAsyncDiagHandler diag_handler;
@@ -299,7 +301,7 @@ int CNetScheduleDApp::Run(void)
             ERR_POST(Critical << ex);
         }
 
-        if (args["nodaemon"])
+        if (args[kNodaemonArgName])
             NcbiCout << "Server stopped" << NcbiEndl;
 
     }
@@ -309,12 +311,12 @@ int CNetScheduleDApp::Run(void)
     }
     catch (const CBDB_ErrnoException &  ex)
     {
-        ERR_POST("Error: DBD errno exception:" << ex.what());
+        ERR_POST("Error: BDB errno exception:" << ex.what());
         return ex.BDB_GetErrno();
     }
     catch (const CBDB_LibException &  ex)
     {
-        ERR_POST("Error: DBD library exception:" << ex.what());
+        ERR_POST("Error: BDB library exception:" << ex.what());
         return 1;
     }
     catch (const exception &  ex)
