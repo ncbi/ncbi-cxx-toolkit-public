@@ -30,10 +30,10 @@
  * Note:
  *  1) Utility returns tokens for 'start_app' and 'start_request' commands.
  *     That should be used as parameter for any subsequent calls.
- *  2) This utility tries to log locally (to /log). If it can't do that
- *     then it try to call a CGI that does the logging (on other machine).
- *     CGI can be specified in the .ini file. If not specified, use 
- *     default at
+ *  2) This utility tries to log locally (to /log) by default. If it can't
+ *     do that then it try to call a CGI that does the logging
+ *     (on other machine). CGI can be specified in the .ini file.
+ *     If not specified, use  default at
  *     http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
  *  3) Utility does not implement any checks for correct commands order,
  *     because it unable save context between calls. Please control this
@@ -41,7 +41,7 @@
  *     API, in this case ncbi_applog terminates with non-zero error code
  *     and error message printed to stdout.
  *  4) No MT support. This utility assume that it can be called from 
- *     single-thread scripts or application only.
+ *     single-thread scripts or application only. Please add MT-guards yourself.
  */
 
  /*
@@ -53,6 +53,21 @@
     ncbi_applog post          <token> [-severity SEV] -message MSG
     ncbi_applog extra         <token> [-param PAIRS]
     ncbi_applog perf          <token> [-status STATUS] -time TIMESPAN [-param PAIRS]
+
+ Environment/registry settings:
+     1) Logging CGI (used if /log is not accessible on current machine)
+            Registry file:
+                [NCBI]
+                NcbiApplogCGI = http://...
+            Environment variable:
+                NCBI_CONFIG__NCBI__NcbiApplogCGI
+     2) Output destination ("default" if not specified) (see C Logging API for details)
+        If this parameter is used and not "default", CGI redirecting will be disabled.
+            Registry file:
+                [NCBI]
+                NcbiApplogDestination = default|cwd|stdlog|stdout|stderr
+            Environment variable:
+                NCBI_CONFIG__NCBI__NcbiApplogDestination
  */
 
 
@@ -71,13 +86,12 @@ USING_NCBI_SCOPE;
 const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
 /// Declare the parameter for logging CGI
-/// Registry file:
-///     [NCBI]
-///     NcbiApplogCGI = ...
-/// Environment variable:
-///     NCBI_CONFIG__NCBI__NcbiApplogCGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
 NCBI_PARAM_DEF (string, NCBI, NcbiApplogCGI, kDefaultCGI);
+
+/// Declare the parameter for logging output destination
+NCBI_PARAM_DECL(string, NCBI, NcbiApplogDestination); 
+NCBI_PARAM_DEF (string, NCBI, NcbiApplogDestination, kEmptyStr /*default*/);
 
 
 /// Structure to store logging information
@@ -395,7 +409,7 @@ int CNcbiApplogApp::Redirect() const
     CConn_HttpStream cgi(url);
     cgi << s_args << endl;
     if (!cgi.good()) {
-        throw "Fails to redirect request to CGI";
+        throw "Failed to redirect request to CGI";
     }
     // Read response from CGI (until EOF)
     string output;
@@ -632,28 +646,47 @@ int CNcbiApplogApp::Run(void)
     NcbiLog_InitST(m_Info.appname.c_str());
     NcbiLogP_DisableChecks(1);
     is_api_init = true;
-    // Try to set output to /log (forced)
-#if 1
-    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
-    if (dst != eNcbiLog_Default) {
-#else
-    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Cwd, 0);
-    if (dst != eNcbiLog_Cwd) {
-//    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Stdout, 0);
-//    if (dst != eNcbiLog_Stdout) {
-#endif
-        // The /log is not writable, use external CGI for logging
-        redirect = true;
-        is_api_init = false;
-        NcbiLog_Destroy();
-    }
-    if ( redirect ) {
-        // Recursive redirection is not allowed
-        if (mode == "cgi") {
-            throw "/log is not writable for CGI logger";
+
+    // Get an output destination (from registry file, env.variable or default value)
+    string dst_str = NCBI_PARAM_TYPE(NCBI, NcbiApplogDestination)::GetDefault();
+    if (dst_str.empty()  ||  dst_str == "default") {
+        // Try to set default output destination
+        ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
+        if (cur_dst != eNcbiLog_Default) {
+            // The /log is not writable, use external CGI for logging
+            redirect = true;
+            is_api_init = false;
+            NcbiLog_Destroy();
+            // Recursive redirection is not allowed
+            if (mode == "cgi") {
+                throw "/log is not writable for CGI logger";
+            }
+            return Redirect();
         }
-        return Redirect();
+    } else {
+        ENcbiLog_Destination dst;
+        NStr::ToLower(dst_str);
+        if (dst_str == "stdlog") {
+            dst = eNcbiLog_Stdlog;
+        } else 
+        if (dst_str == "cwd") {
+            dst = eNcbiLog_Cwd;
+        } else 
+        if (dst_str == "stdout") {
+            dst = eNcbiLog_Stdout;
+        } else 
+        if (dst_str == "stderr") {
+            dst = eNcbiLog_Stderr;
+        } else {
+            throw "Syntax error: NcbiApplogDestination parameter have incorrect value " + dst_str;
+        }
+        // Try to set output destination
+        ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(dst, m_Info.server_port);
+        if (cur_dst != dst) {
+            throw "Failed to set output destination to " + dst_str;
+        }
     }
+
     // Get posting time on original host (if specified; redirect mode only)
     string post_time = args["htime"].AsString();
     if ( !post_time.empty() ) {
