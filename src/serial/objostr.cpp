@@ -176,78 +176,89 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 /////////////////////////////////////////////////////////////////////////////
 // data verification setup
 
-ESerialVerifyData CObjectOStream::ms_VerifyDataDefault = eSerialVerifyData_Default;
-static CStaticTls<int> s_VerifyTLS;
+
+NCBI_PARAM_ENUM_ARRAY(ESerialVerifyData, SERIAL, VERIFY_DATA_WRITE)
+{
+    {"NO",              eSerialVerifyData_No},
+    {"NEVER",           eSerialVerifyData_Never},
+    {"YES",             eSerialVerifyData_Yes},
+    {"ALWAYS",          eSerialVerifyData_Always},
+    {"DEFVALUE",        eSerialVerifyData_DefValue},
+    {"DEFVALUE_ALWAYS", eSerialVerifyData_DefValueAlways}
+};
+NCBI_PARAM_ENUM_DECL(ESerialVerifyData, SERIAL, VERIFY_DATA_WRITE);
+NCBI_PARAM_ENUM_DEF(ESerialVerifyData, SERIAL, VERIFY_DATA_WRITE, eSerialVerifyData_Default);
+typedef NCBI_PARAM_TYPE(SERIAL, VERIFY_DATA_WRITE) TSerialVerifyData;
 
 
 void CObjectOStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
-    x_GetVerifyDataDefault();
-    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
-    if (tls_verify != eSerialVerifyData_Never &&
-        tls_verify != eSerialVerifyData_Always &&
-        tls_verify != eSerialVerifyData_DefValueAlways) {
-        if (tls_verify != verify &&
-            (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
-            ERR_POST_X_ONCE(2, Warning <<
-                "CObjectOStream::SetVerifyDataThread: data verification disabled");
+    ESerialVerifyData now = TSerialVerifyData::GetThreadDefault();
+    if (now != eSerialVerifyData_Never &&
+        now != eSerialVerifyData_Always &&
+        now != eSerialVerifyData_DefValueAlways) {
+        if (verify == eSerialVerifyData_Default) {
+            TSerialVerifyData::ResetThreadDefault();
+        } else {
+            if (verify != now && 
+                (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
+                ERR_POST_X_ONCE(2, Warning <<
+                    "CObjectOStream::SetVerifyDataThread: data verification disabled");
+            }
+            TSerialVerifyData::SetThreadDefault(verify);
         }
-        s_VerifyTLS.SetValue(reinterpret_cast<int*>(verify));
     }
 }
 
 void CObjectOStream::SetVerifyDataGlobal(ESerialVerifyData verify)
 {
-    x_GetVerifyDataDefault();
-    if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
-        ms_VerifyDataDefault != eSerialVerifyData_Always &&
-        ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
-        if (ms_VerifyDataDefault != verify &&
-            (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
-            ERR_POST_X_ONCE(3, Warning <<
-                "CObjectOStream::SetVerifyDataGlobal: data verification disabled");
+    ESerialVerifyData now = TSerialVerifyData::GetDefault();
+    if (now != eSerialVerifyData_Never &&
+        now != eSerialVerifyData_Always &&
+        now != eSerialVerifyData_DefValueAlways) {
+        if (verify == eSerialVerifyData_Default) {
+            TSerialVerifyData::ResetDefault();
+        } else {
+            if (verify != now && 
+                (verify == eSerialVerifyData_No || verify == eSerialVerifyData_Never)) {
+                ERR_POST_X_ONCE(3, Warning <<
+                    "CObjectOStream::SetVerifyDataGlobal: data verification disabled");
+            }
+            TSerialVerifyData::SetDefault(verify);
         }
-        ms_VerifyDataDefault = verify;
     }
 }
 
 ESerialVerifyData CObjectOStream::x_GetVerifyDataDefault(void)
 {
-    ESerialVerifyData verify;
-    if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
-        ms_VerifyDataDefault == eSerialVerifyData_Always ||
-        ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
-        verify = ms_VerifyDataDefault;
-    } else {
-        verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
-        if (verify == eSerialVerifyData_Default) {
-            if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
-
-                // change the default here, if you wish
-                ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                //ms_VerifyDataDefault = eSerialVerifyData_No;
-
-                const char* str = getenv(SERIAL_VERIFY_DATA_WRITE);
-                if (str) {
-                    if (NStr::CompareNocase(str,"YES") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                    } else if (NStr::CompareNocase(str,"NO") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_No;
-                    } else if (NStr::CompareNocase(str,"NEVER") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_Never;
-                    } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_Always;
-                    } else  if (NStr::CompareNocase(str,"DEFVALUE") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_DefValue;
-                    } else  if (NStr::CompareNocase(str,"DEFVALUE_ALWAYS") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_DefValueAlways;
-                    }
+    ESerialVerifyData now = TSerialVerifyData::GetThreadDefault();
+    if (now == eSerialVerifyData_Default) {
+        now = TSerialVerifyData::GetDefault();
+        if (now == eSerialVerifyData_Default) {
+// this is to provide compatibility with old implementation
+            const char* str = getenv(SERIAL_VERIFY_DATA_WRITE);
+            if (str) {
+                if (NStr::CompareNocase(str,"YES") == 0) {
+                    now = eSerialVerifyData_Yes;
+                } else if (NStr::CompareNocase(str,"NO") == 0) {
+                    now = eSerialVerifyData_No;
+                } else if (NStr::CompareNocase(str,"NEVER") == 0) {
+                    now = eSerialVerifyData_Never;
+                } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
+                    now = eSerialVerifyData_Always;
+                } else  if (NStr::CompareNocase(str,"DEFVALUE") == 0) {
+                    now = eSerialVerifyData_DefValue;
+                } else  if (NStr::CompareNocase(str,"DEFVALUE_ALWAYS") == 0) {
+                    now = eSerialVerifyData_DefValueAlways;
                 }
             }
-            verify = ms_VerifyDataDefault;
         }
     }
-    return verify;
+    if (now != eSerialVerifyData_Default) {
+        return now;
+    }
+    // change the default here, if you like
+    return eSerialVerifyData_Yes;
 }
 
 

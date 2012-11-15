@@ -423,7 +423,7 @@ CTempString CObjectIStreamXml::ReadName(char c)
         if (m_Attlist && m_LastTag == "xmlns") {
             string value;
             ReadAttributeValue(value, true);
-            if (FetchFrameFromTop(1).HasTypeInfo()) {
+            if (GetStackDepth() > 1 && FetchFrameFromTop(1).HasTypeInfo()) {
                 TTypeInfo type = FetchFrameFromTop(1).GetTypeInfo();
                 type->SetNamespacePrefix(m_CurrNsPrefix);
                 type->SetNamespaceName(value);

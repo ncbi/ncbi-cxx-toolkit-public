@@ -319,6 +319,8 @@ public:
     ///
     /// @param skip
     ///   Skip unknown choice variants parameter
+    /// @note
+    ///   Skipping unknown variants can result in invalid object - with unset choice
     void SetSkipUnknownVariants(ESerialSkipUnknown skip);
 
     /// Get skip unknown choice variants parameter
@@ -1031,12 +1033,8 @@ private:
     static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
                                        bool deleteInStream = false);
 
-    static ESerialVerifyData ms_VerifyDataDefault;
-    static ESerialVerifyData x_GetVerifyDataDefault(void);
-
-    static ESerialSkipUnknown ms_SkipUnknownDefault;
+    static ESerialVerifyData  x_GetVerifyDataDefault(void);
     static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
-
     static ESerialSkipUnknown x_GetSkipUnknownVariantsDefault(void);
 
 

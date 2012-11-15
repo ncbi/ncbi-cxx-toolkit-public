@@ -34,6 +34,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
 
@@ -131,71 +132,77 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 const char* CSerialObject::ms_UnassignedStr = "<*unassigned*>";
 const char  CSerialObject::ms_UnassignedByte = char(0xcd);
 
-ESerialVerifyData CSerialObject::ms_VerifyDataDefault = eSerialVerifyData_Default;
-static CStaticTls<int> s_VerifyTLS;
+NCBI_PARAM_ENUM_ARRAY(ESerialVerifyData, SERIAL, VERIFY_DATA_GET)
+{
+    {"NO",              eSerialVerifyData_No},
+    {"NEVER",           eSerialVerifyData_Never},
+    {"YES",             eSerialVerifyData_Yes},
+    {"ALWAYS",          eSerialVerifyData_Always},
+    {"DEFVALUE",        eSerialVerifyData_DefValue},
+    {"DEFVALUE_ALWAYS", eSerialVerifyData_DefValueAlways}
+};
+NCBI_PARAM_ENUM_DECL(ESerialVerifyData, SERIAL, VERIFY_DATA_GET);
+NCBI_PARAM_ENUM_DEF(ESerialVerifyData, SERIAL, VERIFY_DATA_GET, eSerialVerifyData_Default);
+typedef NCBI_PARAM_TYPE(SERIAL, VERIFY_DATA_GET) TSerialVerifyData;
 
 
 void CSerialObject::SetVerifyDataThread(ESerialVerifyData verify)
 {
-    x_GetVerifyData();
-    ESerialVerifyData tls_verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
-    if (tls_verify != eSerialVerifyData_Never &&
-        tls_verify != eSerialVerifyData_Always &&
-        tls_verify != eSerialVerifyData_DefValueAlways) {
-        s_VerifyTLS.SetValue(reinterpret_cast<int*>(verify));
+    ESerialVerifyData now = TSerialVerifyData::GetThreadDefault();
+    if (now != eSerialVerifyData_Never &&
+        now != eSerialVerifyData_Always &&
+        now != eSerialVerifyData_DefValueAlways) {
+        if (verify == eSerialVerifyData_Default) {
+            TSerialVerifyData::ResetThreadDefault();
+        } else {
+            TSerialVerifyData::SetThreadDefault(verify);
+        }
     }
 }
 
 void CSerialObject::SetVerifyDataGlobal(ESerialVerifyData verify)
 {
-    x_GetVerifyData();
-    if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
-        ms_VerifyDataDefault != eSerialVerifyData_Always &&
-        ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
-        ms_VerifyDataDefault = verify;
+    ESerialVerifyData now = TSerialVerifyData::GetDefault();
+    if (now != eSerialVerifyData_Never &&
+        now != eSerialVerifyData_Always &&
+        now != eSerialVerifyData_DefValueAlways) {
+        if (verify == eSerialVerifyData_Default) {
+            TSerialVerifyData::ResetDefault();
+        } else {
+            TSerialVerifyData::SetDefault(verify);
+        }
     }
 }
 
 ESerialVerifyData CSerialObject::x_GetVerifyData(void)
 {
-    ESerialVerifyData verify;
-    if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
-        ms_VerifyDataDefault == eSerialVerifyData_Always ||
-        ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
-        verify = ms_VerifyDataDefault;
-    } else {
-        verify = ESerialVerifyData(intptr_t(s_VerifyTLS.GetValue()));
-        if (verify == eSerialVerifyData_Default) {
-            if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
-
-                // change the default here, if you wish
-                ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                //ms_VerifyDataDefault = eSerialVerifyData_No;
-
-                const char* str = getenv(SERIAL_VERIFY_DATA_GET);
-                if (str) {
-                    if (NStr::CompareNocase(str,"YES") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                    } else if (NStr::CompareNocase(str,"NO") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_No;
-                    } else if (NStr::CompareNocase(str,"NEVER") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_Never;
-                    } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_Always;
-                    } else  if (NStr::CompareNocase(str,"DEFVALUE") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_DefValue;
-                    } else  if (NStr::CompareNocase(str,"DEFVALUE_ALWAYS") == 0) {
-                        ms_VerifyDataDefault = eSerialVerifyData_DefValueAlways;
-                    }
+    ESerialVerifyData now = TSerialVerifyData::GetThreadDefault();
+    if (now == eSerialVerifyData_Default) {
+        now = TSerialVerifyData::GetDefault();
+        if (now == eSerialVerifyData_Default) {
+// this is to provide compatibility with old implementation
+            const char* str = getenv(SERIAL_VERIFY_DATA_GET);
+            if (str) {
+                if (NStr::CompareNocase(str,"YES") == 0) {
+                    now = eSerialVerifyData_Yes;
+                } else if (NStr::CompareNocase(str,"NO") == 0) {
+                    now = eSerialVerifyData_No;
+                } else if (NStr::CompareNocase(str,"NEVER") == 0) {
+                    now = eSerialVerifyData_Never;
+                } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
+                    now = eSerialVerifyData_Always;
+                } else  if (NStr::CompareNocase(str,"DEFVALUE") == 0) {
+                    now = eSerialVerifyData_DefValue;
+                } else  if (NStr::CompareNocase(str,"DEFVALUE_ALWAYS") == 0) {
+                    now = eSerialVerifyData_DefValueAlways;
                 }
             }
-            verify = ms_VerifyDataDefault;
         }
     }
-    switch (verify) {
+    switch (now) {
     default:
     case eSerialVerifyData_Default:
-        return ms_VerifyDataDefault;
+        break;
     case eSerialVerifyData_No:
     case eSerialVerifyData_Never:
         return eSerialVerifyData_No;
@@ -206,6 +213,8 @@ ESerialVerifyData CSerialObject::x_GetVerifyData(void)
     case eSerialVerifyData_DefValueAlways:
         return eSerialVerifyData_No;
     }
+    // change the default here, if you like
+    return eSerialVerifyData_Yes;
 }
 
 BEGIN_LOCAL_NAMESPACE;
@@ -464,10 +473,20 @@ CAnyContentObject::GetAttributes(void) const
 #define  eFmt_Xml         (1l <<  2)
 #define  eFmt_Json        (1l <<  3)
 #define  eFmt_All         (eFmt_AsnText | eFmt_AsnBinary | eFmt_Xml | eFmt_Json)
+
 #define  eVerify_No       (1l <<  8)
 #define  eVerify_Yes      (1l <<  9)
 #define  eVerify_DefValue (1l << 10)
 #define  eVerify_All      (eVerify_No | eVerify_Yes | eVerify_DefValue)
+
+#define  eSkipUnkMembers_No    (1l <<  11)
+#define  eSkipUnkMembers_Yes   (1l <<  12)
+#define  eSkipUnkMembers_All   (eSkipUnkMembers_No  | eSkipUnkMembers_Yes)
+
+#define  eSkipUnkVariants_No   (1l <<  13)
+#define  eSkipUnkVariants_Yes  (1l <<  14)
+#define  eSkipUnkVariants_All  (eSkipUnkVariants_No | eSkipUnkVariants_Yes)
+
 #define  eEncoding_All    (255l << 16)
 #define  eFmtFlags_All    (255l << 24)
 
@@ -533,6 +552,49 @@ long s_VerifyToFlags(ESerialVerifyData fmt)
     case eSerialVerifyData_Yes:      return eVerify_Yes;
     case eSerialVerifyData_DefValueAlways:
     case eSerialVerifyData_DefValue: return eVerify_DefValue;
+    default:                         return 0;
+    }
+}
+
+static
+ESerialSkipUnknown s_FlagsToSkipUnkMembers(CNcbiIos& io)
+{
+    switch (s_SerFlags(io) & eSkipUnkMembers_All) {
+    case eSkipUnkMembers_No:   return eSerialSkipUnknown_No;
+    case eSkipUnkMembers_Yes:  return eSerialSkipUnknown_Yes;
+    default:                   return eSerialSkipUnknown_Default;
+    }
+}
+
+static
+long s_SkipUnkMembersToFlags(ESerialSkipUnknown fmt)
+{
+    switch (fmt) {
+    case eSerialSkipUnknown_Never:
+    case eSerialSkipUnknown_No:      return eSkipUnkMembers_No;
+    case eSerialSkipUnknown_Always:
+    case eSerialSkipUnknown_Yes:     return eSkipUnkMembers_Yes;
+    default:                         return 0;
+    }
+}
+static
+ESerialSkipUnknown s_FlagsToSkipUnkVariants(CNcbiIos& io)
+{
+    switch (s_SerFlags(io) & eSkipUnkVariants_All) {
+    case eSkipUnkVariants_No:  return eSerialSkipUnknown_No;
+    case eSkipUnkVariants_Yes: return eSerialSkipUnknown_Yes;
+    default:                   return eSerialSkipUnknown_Default;
+    }
+}
+
+static
+long s_SkipUnkVariantsToFlags(ESerialSkipUnknown fmt)
+{
+    switch (fmt) {
+    case eSerialSkipUnknown_Never:
+    case eSerialSkipUnknown_No:      return eSkipUnkVariants_No;
+    case eSerialSkipUnknown_Always:
+    case eSerialSkipUnknown_Yes:     return eSkipUnkVariants_Yes;
     default:                         return 0;
     }
 }
@@ -623,6 +685,16 @@ MSerial_VerifyData::MSerial_VerifyData(ESerialVerifyData fmt)
 {
 }
 
+MSerial_SkipUnknownMembers::MSerial_SkipUnknownMembers(ESerialSkipUnknown fmt)
+    : MSerial_Flags(eSkipUnkMembers_All, s_SkipUnkMembersToFlags(fmt))
+{
+}
+
+MSerial_SkipUnknownVariants::MSerial_SkipUnknownVariants(ESerialSkipUnknown fmt)
+    : MSerial_Flags(eSkipUnkVariants_All, s_SkipUnkVariantsToFlags(fmt))
+{
+}
+
 MSerialXml_DefaultStringEncoding::MSerialXml_DefaultStringEncoding(EEncoding fmt)
     : MSerial_Flags(eEncoding_All, s_EncodingToFlags(fmt))
 {
@@ -696,6 +768,8 @@ CNcbiIstream& ReadObject(CNcbiIstream& is, TObjectPtr ptr, TTypeInfo info)
 {
     auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
     istr->SetVerifyData(s_FlagsToVerify(is));
+    istr->SetSkipUnknownMembers( s_FlagsToSkipUnkMembers(is));
+    istr->SetSkipUnknownVariants( s_FlagsToSkipUnkVariants(is));
     TSerial_Format_Flags f = s_FlagsToFormatFlags(is);
     if (f != 0) {
         ERR_POST_XX_ONCE(Serial_IStream, 9, Warning <<

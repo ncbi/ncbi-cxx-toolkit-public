@@ -183,7 +183,6 @@ public:
 
 private:
     static ESerialVerifyData x_GetVerifyData(void);
-    static ESerialVerifyData ms_VerifyDataDefault;
 };
 
 /// XML attribute information item
@@ -464,19 +463,21 @@ class NCBI_XSERIAL_EXPORT MSerial_Flags
 {
 public:
     static bool HasSerialFormatting(CNcbiIos& io);
+
 protected:
     MSerial_Flags(unsigned long all, unsigned long flags);
     MSerial_Flags(const MSerial_Flags& o) {m_All=o.m_All; m_Flags=o.m_Flags;}
-private:
-    MSerial_Flags(void) {}
-    MSerial_Flags& operator= (const MSerial_Flags&) {return *this;}
 
     void SetFlags(CNcbiIos& io) const;
+    void SetFormatFlags(unsigned long flags);
+
     friend CNcbiOstream& operator<< (CNcbiOstream& io, const MSerial_Flags& obj);
     friend CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_Flags& obj);
-protected:
-    void SetFormatFlags(unsigned long flags);
+
 private:
+    MSerial_Flags(void);
+    MSerial_Flags& operator= (const MSerial_Flags&);
+
     unsigned long m_All;
     unsigned long m_Flags;
 };
@@ -548,6 +549,46 @@ class NCBI_XSERIAL_EXPORT MSerial_VerifyData : public MSerial_Flags
 public:
     explicit MSerial_VerifyData(ESerialVerifyData fmt);
 };
+
+/// MSerial_SkipUnknownMembers --
+///
+///   I/O stream manipulator. Set up skipping unknown members policy.
+///   For example:
+///     cin >> MSerial_Format(eSerial_Xml)
+///         >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes) >> obj;
+///   @sa ESerialSkipUnknown
+class NCBI_XSERIAL_EXPORT MSerial_SkipUnknownMembers : protected MSerial_Flags
+{
+public:
+    explicit MSerial_SkipUnknownMembers(ESerialSkipUnknown fmt);
+    friend CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_SkipUnknownMembers& obj);
+};
+inline
+CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_SkipUnknownMembers& obj)
+{
+    obj.SetFlags(io);
+    return io;
+}
+
+/// MSerial_SkipUnknownVariants --
+///
+///   I/O stream manipulator. Set up skipping unknown choice variants policy.
+///   For example:
+///     cin >> MSerial_Format(eSerial_Xml)
+///         >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes) >> obj;
+///   @sa ESerialSkipUnknown
+class NCBI_XSERIAL_EXPORT MSerial_SkipUnknownVariants : public MSerial_Flags
+{
+public:
+    explicit MSerial_SkipUnknownVariants(ESerialSkipUnknown fmt);
+    friend CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_SkipUnknownVariants& obj);
+};
+inline
+CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_SkipUnknownVariants& obj)
+{
+    obj.SetFlags(io);
+    return io;
+}
 
 /// MSerialXml_DefaultStringEncoding --
 ///

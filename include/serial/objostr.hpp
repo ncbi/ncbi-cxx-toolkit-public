@@ -777,7 +777,6 @@ private:
     static ESerialVerifyData x_GetVerifyDataDefault(void);
 
     ESerialVerifyData   m_VerifyData;
-    static ESerialVerifyData ms_VerifyDataDefault;
     CStreamObjectPathHook<CWriteObjectHook*>                m_PathWriteObjectHooks;
     CStreamPathHook<CMemberInfo*, CWriteClassMemberHook*>   m_PathWriteMemberHooks;
     CStreamPathHook<CVariantInfo*,CWriteChoiceVariantHook*> m_PathWriteVariantHooks;

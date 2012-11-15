@@ -404,7 +404,7 @@ ESerialVerifyData CObjectOStream::GetVerifyData(void) const
     case eSerialVerifyData_DefValueAlways:
         return eSerialVerifyData_DefValue;
     }
-    return ms_VerifyDataDefault;
+    return eSerialVerifyData_Yes;
 }
 
 inline

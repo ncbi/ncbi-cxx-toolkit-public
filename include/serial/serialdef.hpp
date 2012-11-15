@@ -114,7 +114,6 @@ enum ESerialVerifyData {
     eSerialVerifyData_DefValueAlways ///< initialize field with default
 };
 
-#define SERIAL_SKIP_UNKNOWN_MEMBERS    "SERIAL_SKIP_UNKNOWN_MEMBERS"
 /// Skip unknown members parameters
 enum ESerialSkipUnknown {
     eSerialSkipUnknown_Default = 0, ///< use current default
