@@ -99,7 +99,9 @@ VariantPlacement ::= SEQUENCE
     gene-location INTEGER OPTIONAL, --Same semantics as VariantProperties.gene-location, except placement-specific
 
     id Object-id OPTIONAL,
-    parent-id Object-id OPTIONAL --id of the placement from which this one was derived
+    parent-id Object-id OPTIONAL, --id of the placement from which this one was derived
+
+    so-terms SEQUENCE OF INTEGER OPTIONAL --Sequence Ontology terms for this placement
 }
 
 VariationMethod ::= SEQUENCE
@@ -279,7 +281,9 @@ Variation ::= SEQUENCE
         } OPTIONAL
     } OPTIONAL,
 
-    exceptions SET OF VariationException OPTIONAL
+    exceptions SET OF VariationException OPTIONAL,
+
+    so-terms SET OF INTEGER OPTIONAL
 }
 
 
