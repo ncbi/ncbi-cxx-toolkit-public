@@ -865,7 +865,38 @@ public:
     ///
     /// Force to print USAGE unconditionally (and then exit) if no
     /// command-line args are present.
-    void PrintUsageIfNoArgs(bool do_print = true);
+    /// @deprecated
+    NCBI_DEPRECATED void PrintUsageIfNoArgs(bool do_print = true);
+
+    /// Miscellaneous flags.
+    enum EMiscFlags {
+        fNoUsage        = 1 << 0,  ///< Do not print USAGE on argument error.
+        fUsageIfNoArgs  = 1 << 1,  ///< Force printing USAGE (and then exit)
+                                   ///< if no command line args are present.
+        fUsageSortArgs  = 1 << 2,  ///< Sort args when printing USAGE.
+        fDupErrToCerr   = 1 << 3,  ///< Print arg error to both log and cerr.
+
+        fMisc_Default   = 0
+    };
+    typedef int TMiscFlags;  ///< Bitwise OR of "EMiscFlags"
+
+    /// Set the selected flags.
+    void SetMiscFlags(TMiscFlags flags)
+    {
+        m_MiscFlags |= flags;
+    }
+    
+    /// Clear the selected usage flags.
+    void ResetMiscFlags(TMiscFlags flags)
+    {
+        m_MiscFlags &= ~flags;
+    }
+
+    /// Check if the flag is set.
+    bool IsSetMiscFlag(EMiscFlags flag) const
+    {
+        return (m_MiscFlags & flag) != 0;
+    }
 
     /// Print usage message to end of specified string.
     ///
@@ -927,15 +958,15 @@ private:
     size_t       m_CurrentGroup; ///< Currently selected group (0 = no group)
     EArgPositionalMode m_PositionalMode; ///< Processing of positional args
     TDependencies      m_Dependencies;   ///< Arguments' dependencies
+    TMiscFlags   m_MiscFlags;    ///< Flags for USAGE, error handling etc.
 
     // Extra USAGE info
 protected:
     string    m_UsageName;         ///< Program name
     string    m_UsageDescription;  ///< Program description
-    bool      m_UsageSortArgs;     ///< Sort alphabetically on usage printout
     SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
     bool      m_AutoHelp;          ///< Special flag "-h" activated
-    bool      m_UsageIfNoArgs;     ///< Print usage and exit if no args passed
+
 private:
 
     CRef<CArgErrorHandler> m_ErrorHandler; ///< Global error handler or NULL

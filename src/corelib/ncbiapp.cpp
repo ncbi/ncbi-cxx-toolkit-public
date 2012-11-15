@@ -671,13 +671,21 @@ int CNcbiApplication::AppMain
         if ( e.GetErrCode() != CArgException::eNoValue &&  m_ArgDesc.get() ) {
             x_AddDefaultArgs();
             string str;
-            m_ArgDesc->PrintUsage(str);
-            cerr << str;
-            CStreamDiagHandler* errh =
-                dynamic_cast<CStreamDiagHandler*>(GetDiagHandler());
-            if (!errh  ||  errh->GetStream() != &cerr) {
-                cerr << "Error in command-line arguments. "
-                    "See error logs for more details." << endl;
+            if ( !m_ArgDesc->IsSetMiscFlag(CArgDescriptions::fNoUsage) ) {
+                m_ArgDesc->PrintUsage(str);
+                cerr << str;
+            }
+            if ( !m_ArgDesc->IsSetMiscFlag(CArgDescriptions::fDupErrToCerr) ) {
+                CStreamDiagHandler* errh =
+                    dynamic_cast<CStreamDiagHandler*>(GetDiagHandler());
+                if (!errh  ||  errh->GetStream() != &cerr) {
+                    cerr << "Error in command-line arguments. "
+                        "See error logs for more details." << endl;
+                }
+            }
+            else {
+                cerr << "Error in command-line arguments." << endl;
+                cerr << e.what() << endl;
             }
             cerr << string(72, '=') << endl << endl;
         }

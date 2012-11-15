@@ -1767,8 +1767,8 @@ CArgDescriptions::CArgDescriptions(bool              auto_help,
       m_nExtraOpt(0),
       m_CurrentGroup(0),
       m_PositionalMode(ePositionalMode_Strict),
+      m_MiscFlags(fMisc_Default),
       m_AutoHelp(auto_help),
-      m_UsageIfNoArgs(false),
       m_ErrorHandler(err_handler)
 {
     if ( !m_ErrorHandler ) {
@@ -2535,7 +2535,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
 {
     // If explicitly specified, printout usage and exit in case there
     // was no args passed to the application
-    if (m_UsageIfNoArgs  &&  args.IsEmpty()) {
+    if (IsSetMiscFlag(fUsageIfNoArgs)  &&  args.IsEmpty()) {
         NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
     }
 
@@ -2640,7 +2640,7 @@ void CArgDescriptions::SetUsageContext
 {
     m_UsageName        = usage_name;
     m_UsageDescription = usage_description;
-    m_UsageSortArgs    = usage_sort_args;
+    usage_sort_args ? SetMiscFlags(fUsageSortArgs) : ResetMiscFlags(fUsageSortArgs);
 
     const SIZE_TYPE kMinUsageWidth = 30;
     if (usage_width < kMinUsageWidth) {
@@ -2727,7 +2727,7 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
 
 void CArgDescriptions::PrintUsageIfNoArgs(bool do_print)
 {
-    m_UsageIfNoArgs = do_print;
+    do_print ? SetMiscFlags(fUsageIfNoArgs) : ResetMiscFlags(fUsageIfNoArgs);
 }
 
 
@@ -2883,7 +2883,7 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
     }
 
     // Keys and Flags
-    if ( desc.m_UsageSortArgs ) {
+    if ( desc.IsSetMiscFlag(fUsageSortArgs) ) {
         // Alphabetically ordered,
         // mandatory keys to go first, then flags, then optional keys
         TListI& it_opt_keys = it_pos;
