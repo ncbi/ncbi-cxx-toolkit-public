@@ -201,8 +201,9 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 
 // Common part of the param description structure. 'desctype' can be
 // SParamDescription or SParamEnumDescription.
-#define X_NCBI_PARAM_DESC_DECL(type, desctype)                              \
+#define X_NCBI_PARAM_DESC_DECL(type, desctype, tagtype)                     \
     {                                                                       \
+        typedef tagtype TTagType;                                           \
         typedef type TValueType;                                            \
         typedef desctype<TValueType> TDescription;                          \
         typedef CStaticTls< type > TTls;                                    \
@@ -214,18 +215,20 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     }
 
 // Common definitions related to enum parser.
-#define X_NCBI_PARAM_ENUM_PARSER_DECL(type)                                 \
+// 'ptype' is the final parameter type used to make the parser unique even
+// if the same enum is used by another parameter.
+#define X_NCBI_PARAM_ENUM_PARSER_DECL(type, ptype)                          \
     EMPTY_TEMPLATE inline                                                   \
-    CParamParser< SParamEnumDescription< type > >::TValueType               \
-    CParamParser< SParamEnumDescription< type > >::                         \
+    CParamParser< SParamEnumDescription< type >, ptype >::TValueType        \
+    CParamParser< SParamEnumDescription< type >, ptype >::                  \
     StringToValue(const string&     str,                                    \
                   const TParamDesc& descr)                                  \
-    { return CEnumParser< type >::StringToEnum(str, descr); }               \
+    { return CEnumParser< type, ptype >::StringToEnum(str, descr); }        \
     EMPTY_TEMPLATE inline string                                            \
-    CParamParser< SParamEnumDescription< type > >::                         \
+    CParamParser< SParamEnumDescription< type >, ptype >::                  \
     ValueToString(const TValueType& val,                                    \
                   const TParamDesc& descr)                                  \
-    { return CEnumParser< type >::EnumToString(val, descr); }
+    { return CEnumParser< type, ptype >::EnumToString(val, descr); }
 
 // Defenition of SNcbiParamDesc_XXXX static members common for normal
 // and enum parameters.
@@ -247,33 +250,37 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 /// @sa NCBI_PARAM_DEF
 #define NCBI_PARAM_DECL(type, section, name)                                \
     struct X_NCBI_PARAM_DECLNAME(section, name)                             \
-    X_NCBI_PARAM_DESC_DECL(type, SParamDescription)
+    X_NCBI_PARAM_DESC_DECL(type, SParamDescription, type)
 
 
 /// Same as NCBI_PARAM_DECL but with export specifier (e.g. NCBI_XNCBI_EXPORT)
 /// @sa NCBI_PARAM_DECL
 #define NCBI_PARAM_DECL_EXPORT(expname, type, section, name)                \
     struct expname X_NCBI_PARAM_DECLNAME(section, name)                     \
-    X_NCBI_PARAM_DESC_DECL(type, SParamDescription)
+    X_NCBI_PARAM_DESC_DECL(type, SParamDescription, type)
 
 
 /// Enum parameter declaration. In addition to NCBI_PARAM_DECL also
-/// specializes CParamParser<type> to convert between strings and
+/// specializes CParamParser<type, ptype> to convert between strings and
 /// enum values.
 /// @sa NCBI_PARAM_ENUM_ARRAY
 /// @sa NCBI_PARAM_ENUM_DEF
-#define NCBI_PARAM_ENUM_DECL(type, section, name)                           \
-    X_NCBI_PARAM_ENUM_PARSER_DECL(type)                                     \
-    struct X_NCBI_PARAM_DECLNAME(section, name)                             \
-    X_NCBI_PARAM_DESC_DECL(type, SParamEnumDescription)
+#define NCBI_PARAM_ENUM_DECL(type, section, name)                             \
+    struct X_NCBI_PARAM_DECLNAME(section, name);                              \
+    X_NCBI_PARAM_ENUM_PARSER_DECL(type, X_NCBI_PARAM_DECLNAME(section, name)) \
+    struct X_NCBI_PARAM_DECLNAME(section, name)                               \
+    X_NCBI_PARAM_DESC_DECL(type, SParamEnumDescription,                       \
+        X_NCBI_PARAM_DECLNAME(section, name))
 
 
 /// Same as NCBI_PARAM_ENUM_DECL but with export specifier (e.g. NCBI_XNCBI_EXPORT)
 /// @sa NCBI_PARAM_ENUM_DECL
-#define NCBI_PARAM_ENUM_DECL_EXPORT(expname, type, section, name)           \
-    X_NCBI_PARAM_ENUM_PARSER_DECL(type)                                     \
-    struct expname X_NCBI_PARAM_DECLNAME(section, name)                     \
-    X_NCBI_PARAM_DESC_DECL(type, SParamEnumDescription)
+#define NCBI_PARAM_ENUM_DECL_EXPORT(expname, type, section, name)             \
+    struct expname X_NCBI_PARAM_DECLNAME(section, name);                      \
+    X_NCBI_PARAM_ENUM_PARSER_DECL(type, X_NCBI_PARAM_DECLNAME(section, name)) \
+    struct expname X_NCBI_PARAM_DECLNAME(section, name)                       \
+    X_NCBI_PARAM_DESC_DECL(type, SParamEnumDescription,                       \
+        X_NCBI_PARAM_DECLNAME(section, name))
 
 
 /// Parameter definition. "value" is used to set the initial parameter
@@ -408,7 +415,7 @@ public:
 ///
 
 
-template<class TDescription>
+template<class TDescription, class TParam>
 class CParamParser
 {
 public:
@@ -490,11 +497,12 @@ template<class TDescription>
 class CParam : public CParamBase
 {
 public:
-    typedef CParam<TDescription>                   TParam;
-    typedef typename TDescription::TDescription    TParamDescription;
-    typedef typename TParamDescription::TValueType TValueType;
-    typedef CParamParser<TParamDescription>        TParamParser;
-    typedef typename TDescription::TTls            TTls;
+    typedef CParam<TDescription>                        TParam;
+    typedef typename TDescription::TTagType             TTagType;
+    typedef typename TDescription::TDescription         TParamDescription;
+    typedef typename TParamDescription::TValueType      TValueType;
+    typedef CParamParser<TParamDescription, TTagType>   TParamParser;
+    typedef typename TDescription::TTls                 TTls;
 
     /// Create parameter with the thread default or global default value.
     /// Changing defaults does not affect the existing parameter objects.

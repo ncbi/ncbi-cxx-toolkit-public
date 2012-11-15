@@ -181,7 +181,7 @@ struct SParamEnumDescription
 //
 
 
-template<class TEnum>
+template<class TEnum, class TParam>
 class CEnumParser
 {
 public:
@@ -207,11 +207,11 @@ void g_ParamTlsValueCleanup(TValue* value, void*)
 
 // Generic CParamParser
 
-template<class TDescription>
+template<class TDescription, class TParam>
 inline
-typename CParamParser<TDescription>::TValueType
-CParamParser<TDescription>::StringToValue(const string& str,
-                                          const TParamDesc&)
+typename CParamParser<TDescription, TParam>::TValueType
+CParamParser<TDescription, TParam>::StringToValue(const string& str,
+                                                  const TParamDesc&)
 {
     CNcbiIstrstream in(str.c_str());
     TValueType val;
@@ -227,10 +227,10 @@ CParamParser<TDescription>::StringToValue(const string& str,
 }
 
 
-template<class TDescription>
+template<class TDescription, class TParam>
 inline
-string CParamParser<TDescription>::ValueToString(const TValueType& val,
-                                                 const TParamDesc&)
+string CParamParser<TDescription, TParam>::ValueToString(const TValueType& val,
+                                                         const TParamDesc&)
 {
     CNcbiOstrstream buffer;
     buffer << val;
@@ -242,9 +242,9 @@ string CParamParser<TDescription>::ValueToString(const TValueType& val,
 
 EMPTY_TEMPLATE
 inline
-CParamParser< SParamDescription<string> >::TValueType
-CParamParser< SParamDescription<string> >::StringToValue(const string& str,
-                                                         const TParamDesc&)
+CParamParser< SParamDescription<string>, string>::TValueType
+CParamParser< SParamDescription<string>, string>::StringToValue(const string& str,
+                                                                const TParamDesc&)
 {
     return str;
 }
@@ -253,8 +253,8 @@ CParamParser< SParamDescription<string> >::StringToValue(const string& str,
 EMPTY_TEMPLATE
 inline
 string
-CParamParser< SParamDescription<string> >::ValueToString(const string& val,
-                                                         const TParamDesc&)
+CParamParser< SParamDescription<string>, string>::ValueToString(const string& val,
+                                                                const TParamDesc&)
 {
     return val;
 }
@@ -264,9 +264,9 @@ CParamParser< SParamDescription<string> >::ValueToString(const string& val,
 
 EMPTY_TEMPLATE
 inline
-CParamParser< SParamDescription<bool> >::TValueType
-CParamParser< SParamDescription<bool> >::StringToValue(const string& str,
-                                                       const TParamDesc&)
+CParamParser< SParamDescription<bool>, bool>::TValueType
+CParamParser< SParamDescription<bool>, bool>::StringToValue(const string& str,
+                                                            const TParamDesc&)
 {
     try {
         return NStr::StringToBool(str);
@@ -280,8 +280,8 @@ CParamParser< SParamDescription<bool> >::StringToValue(const string& str,
 EMPTY_TEMPLATE
 inline
 string
-CParamParser< SParamDescription<bool> >::ValueToString(const bool& val,
-                                                       const TParamDesc&)
+CParamParser< SParamDescription<bool>, bool>::ValueToString(const bool& val,
+                                                            const TParamDesc&)
 {
     return NStr::BoolToString(val);
 }
@@ -290,9 +290,9 @@ CParamParser< SParamDescription<bool> >::ValueToString(const bool& val,
 
 EMPTY_TEMPLATE
 inline
-CParamParser< SParamDescription<double> >::TValueType
-CParamParser< SParamDescription<double> >::StringToValue(const string& str,
-                                                         const TParamDesc&)
+CParamParser< SParamDescription<double>, double>::TValueType
+CParamParser< SParamDescription<double>, double>::StringToValue(const string& str,
+                                                                const TParamDesc&)
 {
     return NStr::StringToDouble(str,
         NStr::fDecimalPosixOrLocal |
@@ -303,8 +303,8 @@ CParamParser< SParamDescription<double> >::StringToValue(const string& str,
 EMPTY_TEMPLATE
 inline
 string
-CParamParser< SParamDescription<double> >::ValueToString(const double& val,
-                                                         const TParamDesc&)
+CParamParser< SParamDescription<double>, double>::ValueToString(const double& val,
+                                                                const TParamDesc&)
 {
     return NStr::DoubleToString(val, DBL_DIG,
         NStr::fDoubleGeneral | NStr::fDoublePosix);
@@ -313,11 +313,11 @@ CParamParser< SParamDescription<double> >::ValueToString(const double& val,
 
 // CParamParser for enums
 
-template<class TEnum>
+template<class TEnum, class TParam>
 inline
-typename CEnumParser<TEnum>::TEnumType
-CEnumParser<TEnum>::StringToEnum(const string& str,
-                                 const TParamDesc& descr)
+typename CEnumParser<TEnum, TParam>::TEnumType
+CEnumParser<TEnum, TParam>::StringToEnum(const string& str,
+                                         const TParamDesc& descr)
 {
     for (size_t i = 0;  i < descr.enums_size;  ++i) {
         if ( NStr::EqualNocase(str, descr.enums[i].alias) ) {
@@ -333,10 +333,10 @@ CEnumParser<TEnum>::StringToEnum(const string& str,
 }
 
 
-template<class TEnum>
+template<class TEnum, class TParam>
 inline string
-CEnumParser<TEnum>::EnumToString(const TEnumType& val,
-                                 const TParamDesc& descr)
+CEnumParser<TEnum, TParam>::EnumToString(const TEnumType& val,
+                                         const TParamDesc& descr)
 {
     for (size_t i = 0;  i < descr.enums_size;  ++i) {
         if (descr.enums[i].value == val) {
