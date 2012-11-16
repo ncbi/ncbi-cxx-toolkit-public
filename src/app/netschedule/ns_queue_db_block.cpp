@@ -155,9 +155,7 @@ CQueueDbBlockArray::CQueueDbBlockArray()
 
 
 CQueueDbBlockArray::~CQueueDbBlockArray()
-{
-    Close();
-}
+{}
 
 
 void CQueueDbBlockArray::Init(CBDB_Env& env, const string& path,
