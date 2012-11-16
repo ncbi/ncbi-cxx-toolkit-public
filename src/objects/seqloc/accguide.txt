@@ -106,6 +106,10 @@ version  1 # of file format
 3+8  ??_      refseq_unreserved
 3+9  ??_      refseq_unreserved
 
+# Unusually structured GenBank accessions
+4+6  MAP_  gb_other_nuc # Fallback to placate older clients
+4+6  MAP_  gb_optical_map
+
 # 6-character accessions (mixed, but generally nucleotide)
 1+5  A  embl_patent
 1+5  B  gb_gss

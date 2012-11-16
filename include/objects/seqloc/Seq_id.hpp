@@ -220,6 +220,7 @@ public:
         eAcc_wgs_intermed  = 135 << 8, // WGS intermediate assembly
         eAcc_sts           = 136 << 8, // sequence tagged site
         eAcc_mga           = 137 << 8, // Mass sequence for Genome Annotation
+        eAcc_optical_map   = 138 << 8, // optical map
         eAcc_division_mask = 0xff00,
 
         // Internal values combinining a division and a flag for convenience.
@@ -276,6 +277,7 @@ public:
         eAcc_gb_wgsm_prot   = e_Genbank | eAcc_wgs_master | fAcc_prot,
         eAcc_gb_sts         = e_Genbank | eAcc_sts        | fAcc_nuc,  // G
         eAcc_gb_mga         = e_Genbank | eAcc_mga        | fAcc_nuc,  // unused
+        eAcc_gb_optical_map = e_Genbank | eAcc_optical_map| fAcc_nuc,  // MAP_
 
         eAcc_embl_prot      = e_Embl | eAcc_other | fAcc_prot,      // CAA
         eAcc_embl_other_nuc = e_Embl | eAcc_other | fAcc_nuc,       // AL

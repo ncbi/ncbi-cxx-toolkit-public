@@ -610,6 +610,7 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     { "gb_gss",                  CSeq_id::eAcc_gb_gss },
     { "gb_htgs",                 CSeq_id::eAcc_gb_htgs },
     { "gb_mga",                  CSeq_id::eAcc_gb_mga },
+    { "gb_optical_map",          CSeq_id::eAcc_gb_optical_map },
     { "gb_other_nuc",            CSeq_id::eAcc_gb_other_nuc },
     { "gb_patent",               CSeq_id::eAcc_gb_patent },
     { "gb_patent_prot",          CSeq_id::eAcc_gb_patent_prot },

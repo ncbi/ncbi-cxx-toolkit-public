@@ -173,6 +173,11 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("BABA01S00009300"),
                       CSeq_id::eAcc_ddbj_wgs_nuc);
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA01S000093000")));
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("MAP_12345")));
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("MAP_123456"),
+                      CSeq_id::eAcc_gb_optical_map);
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("MAP_1234567")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)
