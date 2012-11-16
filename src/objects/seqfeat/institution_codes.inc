@@ -1801,7 +1801,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FPM	s	Fukui Prefectural Museum",
 "FPRL	s	Building Research Establishment",
 "FQH	s	Fort Qu'Appelle Herbarium",
-"FR	s	Forschungsinstitut Senckenberg",
+"FR	sb	Forschungsinstitut Senckenberg",
 "FRC	s	Institute of Forest Genetics and Tree Breeding",
 "FRCL	s	Fisheries Research Centre",
 "FRCS	s	Forest Research Centre",
