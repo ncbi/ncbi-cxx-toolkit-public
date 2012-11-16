@@ -341,24 +341,17 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     if (config != NULL) {
         if (m_ServiceName.empty()) {
-            try {
-                m_ServiceName = config->GetString(section,
-                    "service", CConfig::eErr_Throw, kEmptyStr);
-            }
-            catch (exception&) {
-                m_ServiceName = config->GetString(section,
-                    "service_name", CConfig::eErr_NoThrow, kEmptyStr);
-            }
+            m_ServiceName = config->GetString(section, "service",
+                    CConfig::eErr_NoThrow, kEmptyStr);
+            if (m_ServiceName.empty())
+                m_ServiceName = config->GetString(section, "service_name",
+                        CConfig::eErr_NoThrow, kEmptyStr);
             if (m_ServiceName.empty()) {
-                string host;
-                try {
-                    host = config->GetString(section,
-                        "server", CConfig::eErr_Throw, kEmptyStr);
-                }
-                catch (exception&) {
-                    m_ServiceName = config->GetString(section,
-                        "host", CConfig::eErr_NoThrow, kEmptyStr);
-                }
+                string host(config->GetString(section, "server",
+                        CConfig::eErr_NoThrow, kEmptyStr));
+                if (host.empty())
+                    host = config->GetString(section, "host",
+                            CConfig::eErr_NoThrow, kEmptyStr);
                 string port = config->GetString(section,
                     "port", CConfig::eErr_NoThrow, kEmptyStr);
                 if (!host.empty() && !port.empty()) {
@@ -389,14 +382,11 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section)
 {
     if (config != NULL) {
         if (m_ClientName.empty()) {
-            try {
-                m_ClientName = config->GetString(section,
-                    "client_name", CConfig::eErr_Throw, kEmptyStr);
-            }
-            catch (exception&) {
-                m_ClientName = config->GetString(section,
-                    "client", CConfig::eErr_NoThrow, kEmptyStr);
-            }
+            m_ClientName = config->GetString(section, "client_name",
+                    CConfig::eErr_NoThrow, kEmptyStr);
+            if (m_ClientName.empty())
+                m_ClientName = config->GetString(section, "client",
+                        CConfig::eErr_NoThrow, kEmptyStr);
         }
 
         if (m_LBSMAffinityName.empty())
