@@ -878,6 +878,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
             switch (ex.GetErrCode()) {
+            case CNetSrvConnException::eReadTimeout:
             case CNetSrvConnException::eConnectionFailure:
                 LOG_POST(Warning << ex);
                 break;
