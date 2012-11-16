@@ -2157,7 +2157,7 @@ void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
             terms_set.insert(it2->second);
         }
     }
-    terms.insert(terms.end(), terms_set.begin(), terms_set.end());
+    copy(terms_set.begin(), terms_set.end(), back_inserter(terms));
 }
 
 
