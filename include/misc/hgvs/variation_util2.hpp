@@ -188,6 +188,10 @@ public:
     /// otherwise return false;
     bool CheckPlacement(CVariantPlacement& p);
 
+    /// if variation.data contains a seq-literal with non-ACGT residues, attach VariationException to the first placement
+    /// (if exists) and return true. otherwise return false;
+    bool CheckAmbiguitiesInLiterals(CVariation& v);
+    
     /// Calculate upstream (first) and downstream(second) flanks for loc
     struct SFlankLocs
     {

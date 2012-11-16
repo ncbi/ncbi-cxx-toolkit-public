@@ -1841,6 +1841,9 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
         vr = x_root(info.trees.begin(), context);
         vr->SetName(hgvs2);
         sx_AppendMoltypeExceptions(*vr, context.GetScope());
+
+        CVariationUtil util(context.GetScope());
+        util.CheckAmbiguitiesInLiterals(*vr);
     }
 
     return vr;

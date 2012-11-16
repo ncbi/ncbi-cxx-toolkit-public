@@ -92,6 +92,18 @@ BEGIN_NCBI_SCOPE
 
 namespace variation {
 
+CRef<CVariationException> CreateException(const string& message, 
+                                          CVariationException::ECode code = static_cast<CVariationException::ECode>(0))
+{
+    CRef<CVariationException> e(new CVariationException);
+    e->SetMessage(message);
+    if(code) {
+        e->SetCode(code);
+    }
+    return e;
+}
+
+
 template<typename T>
 void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
 {
@@ -384,6 +396,44 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
 }
 
 
+template<typename T>
+bool ContainsIupacNaAmbiguities(const T& obj)
+{
+    for(CTypeConstIterator<CSeq_data> it(Begin(obj)); it; ++it) {
+        const CSeq_data& sd = *it;
+        if(!sd.IsIupacna()) {
+            continue;
+        }
+        ITERATE(string, it2, sd.GetIupacna().Get()) {
+            char c = *it2;
+            if(c != 'A' &&  c != 'C' && c != 'G' && c != 'T') {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CVariationUtil::CheckAmbiguitiesInLiterals(CVariation& v)
+{
+    bool had_ambiguities = false;
+ 
+    if(v.IsSetPlacements() && v.GetPlacements().size() > 0) {
+        if(ContainsIupacNaAmbiguities(v.GetData())) {
+            had_ambiguities = true;
+            v.SetPlacements().front()->SetExceptions().push_back(CreateException("Ambiguous residues in variation", CVariationException::eCode_ambiguous_sequence));
+        }        
+    }
+
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            CVariation& v2 = **it;
+            had_ambiguities = had_ambiguities || CheckAmbiguitiesInLiterals(v2);
+        }
+    }
+    return had_ambiguities;
+}
+
 bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
 {
     bool invalid_location = false;
@@ -411,19 +461,16 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
     }
 
     if(invalid_location) {
-        CRef<CVariationException> exception(new CVariationException);
-        exception->SetCode(CVariationException::eCode_hgvs_parsing);
-        exception->SetMessage(out_of_order ? "Invalid location - start and stop are out of order" : "Invalid location");
-        p.SetExceptions().push_back(exception);
+        p.SetExceptions().push_back(CreateException(
+            out_of_order ? "Invalid location - start and stop are out of order" 
+                         : "Invalid location", 
+            CVariationException::eCode_hgvs_parsing));
     }
 
     if(p.GetLoc().GetId()) {
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(*p.GetLoc().GetId());
         if(bsh && bsh.GetState() != 0 && bsh.GetState() != CBioseq_Handle::fState_dead) { //dead is OK, beacuse supporting old versions
-            CRef<CVariationException> exception(new CVariationException);
-            exception->SetMessage("Bioseq is suppressed or withdrawn");
-            exception->SetCode(CVariationException::eCode_bioseq_state);
-            p.SetExceptions().push_back(exception);
+            p.SetExceptions().push_back(CreateException("Bioseq is suppressed or withdrawn", CVariationException::eCode_bioseq_state));
         }
     }
 
@@ -548,6 +595,10 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
     {
         CRef<CSeq_literal> literal = x_GetLiteralAtLoc(p.GetLoc());
         p.SetSeq(*literal);
+
+        if(ContainsIupacNaAmbiguities(*literal)) {
+            p.SetExceptions().push_back(CreateException("Ambiguous residues in reference", CVariationException::eCode_ambiguous_sequence));
+        }
         ret = true;
     }
     return ret;
@@ -1021,6 +1072,8 @@ CRef<CVariation> CVariationUtil::InferNAfromAA(const CVariation& v, TAA2NAFlags 
     x_InferNAfromAA(*v2, flags);
     s_FactorOutPlacements(*v2);
     v2->Index();
+
+    CheckAmbiguitiesInLiterals(*v2);
 
     //Note: The result describes whole codons, even for point mutations, i.e. common suffx/prefix are not truncated.
     return v2;
