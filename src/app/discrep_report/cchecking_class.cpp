@@ -208,6 +208,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_BASES_N_run = false;
    thisTest.is_MolInfo_run = false;
    thisTest.is_MRNA_run = false;
+   thisTest.is_Rna_run = false;
    thisTest.is_SHORT_run = false;
 
    GoTests(CRepConfig::tests_on_Bioseq, bioseq);
@@ -250,6 +251,8 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                           CTestAndRepData::rrna_feat.push_back(&seq_feat); break;
                      case CSeqFeatData::eSubtype_otherRNA:
                           CTestAndRepData::otherRna_feat.push_back(&seq_feat); break;
+                     case  CSeqFeatData::eSubtype_tRNA:
+                          CTestAndRepData::trna_feat.push_back(&seq_feat); break;
                      default: break;
                    }
                 }
@@ -330,12 +333,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 // CFeat_CI is sorted:
 //    sort(CTestAndRepData::gene_feat.begin(), CTestAndRepData::gene_feat.end(), CCheckingClass :: SortByFrom);
      
-     if (!CRepConfig::tests_on_Bioseq_CFeat.empty()) 
-              GoTests(CRepConfig::tests_on_Bioseq_CFeat, bioseq);
-     if (!CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
-                               && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
-               GoTests(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq); 
-
      if (!CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
         for (CSeqdesc_CI it(bioseq_hl, sel_seqdesc_4_bioseq); it; ++it) {
           switch (it->Which()) {
@@ -343,6 +340,8 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                    break;
             case CSeqdesc ::e_Molinfo: CTestAndRepData::bioseq_molinfo.push_back(&(*it));
                    break;        
+            case CSeqdesc ::e_Title: CTestAndRepData::bioseq_title.push_back(&(*it));
+                   break;
             default: break;
           }
         }
@@ -351,7 +350,14 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 
         CTestAndRepData::bioseq_biosrc.clear();
         CTestAndRepData::bioseq_molinfo.clear();
+        CTestAndRepData::bioseq_title.clear();
      }
+
+     if (!CRepConfig::tests_on_Bioseq_CFeat.empty())
+              GoTests(CRepConfig::tests_on_Bioseq_CFeat, bioseq);
+     if (!CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
+                               && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
+               GoTests(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
 
      CTestAndRepData::gene_feat.clear();
      CTestAndRepData::mix_feat.clear();

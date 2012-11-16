@@ -112,6 +112,7 @@ vector <const CSeq_feat*> CTestAndRepData :: utr5_feat;
 vector <const CSeq_feat*> CTestAndRepData :: utr3_feat;
 vector <const CSeq_feat*> CTestAndRepData :: promoter_feat;
 vector <const CSeq_feat*> CTestAndRepData :: mrna_feat;
+vector <const CSeq_feat*> CTestAndRepData :: trna_feat;
 
 vector <const CSeqdesc*>  CTestAndRepData :: pub_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;
@@ -121,6 +122,7 @@ vector <const CSeqdesc*>  CTestAndRepData :: title_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: user_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_molinfo;
+vector <const CSeqdesc*>  CTestAndRepData :: bioseq_title;
 
 vector <const CSeq_entry*>  CTestAndRepData :: pub_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: comm_seqdesc_seqentry;
@@ -404,8 +406,7 @@ string CTestAndRepData :: GetDiscItemTextForBioseqSet(const CBioseq_set& bioseq_
                BioseqToBestSeqIdString( (*(seq_entrys.begin()))->GetSeq(), CSeq_id::e_Genbank);
     }
     else if ( (*(seq_entrys.begin()))->IsSet()) {
-       row_text = "Set containing " 
-             + GetDiscItemTextForBioseqSet( (*(seq_entrys.begin()))->GetSet());
+       row_text = GetDiscItemTextForBioseqSet( (*(seq_entrys.begin()))->GetSet());
     } 
     else row_text =  "BioseqSet";
   }

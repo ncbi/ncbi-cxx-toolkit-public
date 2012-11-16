@@ -157,6 +157,7 @@ namespace DiscRepNmSpc{
            static vector <string>                    spec_words_biosrc; 
            static vector <string>                    suspicious_notes;
            static vector <string>                    trna_list; 
+           static Str2UInt                           desired_aaList;
      };
 
 /*

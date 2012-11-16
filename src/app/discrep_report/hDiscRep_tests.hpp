@@ -77,6 +77,7 @@ namespace DiscRepNmSpc {
       static bool   is_FEAT_DESC_biosrc_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
+      static bool   is_Rna_run;
       static bool   is_SHORT_run;
   };
 
@@ -206,11 +207,11 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
       static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
-      static vector <const CSeq_feat*> mrna_feat;
+      static vector <const CSeq_feat*> mrna_feat, trna_feat;
 
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
-      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, bioseq_biosrc, bioseq_molinfo;
-      static vector <const CSeqdesc*>  user_seqdesc;
+      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc;
+      static vector <const CSeqdesc*>  bioseq_biosrc, bioseq_molinfo, bioseq_title;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
@@ -320,7 +321,7 @@ namespace DiscRepNmSpc {
 */
 
 
-//  revolution!!
+//  new comb!!
   class CSeqEntry_test_on_biosrc_orgmod : public CSeqEntryTestAndRepData
   {
     public:
@@ -404,6 +405,10 @@ namespace DiscRepNmSpc {
       void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
       void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 
                                                                         Str2Int& bioseq2cnt);
+      Str2Int m_bioseq2geno_comm;
+      const CBioseq& Get1stBioseqOfSet(const CBioseq_set& bioseq_set);
+      void AddBioseqsOfSet2Map(const CBioseq_set& bioseq_set);
+      void RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_set);
   };
 
   class CSeqEntry_ONCALLER_BIOPROJECT_ID : public CSeqEntry_test_on_user
@@ -468,6 +473,7 @@ namespace DiscRepNmSpc {
     protected:
       string GetName_iso() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
+
       bool HasMulSrc(const CBioSource& biosrc);
       bool IsBacterialIsolate(const CBioSource& biosrc);
       bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc);
@@ -495,22 +501,7 @@ namespace DiscRepNmSpc {
   };
 
   
-//
-
-
-  class CSeqEntry_INCONSISTENT_SOURCE_DEFLINE : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_INCONSISTENT_SOURCE_DEFLINE () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("INCONSISTENT_SOURCE_DEFLINE");}
-
-    protected:
-      Str2Strs m_bioseq2taxnm_title;
-      void AddDtToAllBioseqsofSet(const string& txt, const CBioseq_set& bioseq_set);
-  };
+// new comb
 
 
   class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntryTestAndRepData
@@ -820,6 +811,37 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
+
+  class CBioseq_test_on_rna : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_rna() {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_tcnt() const {return string("COUNT_TRNAS"); }
+      string GetName_rcnt() const {return string("COUNT_RRNAS"); }
+      string GetName_rdup() const {return string("FIND_DUP_RRNAS"); }
+      void FindMissingRNAsInList();
+      bool RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
+      void FindDupRNAsInList();
+
+      string m_bioseq_desc, m_best_id_str;
+  };
+
+
+  class CBioseq_COUNT_TRNAS : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_COUNT_TRNAS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_tcnt();}
+  };
+
   
   class CBioseq_test_on_molinfo : public CBioseqTestAndRepData
   {
@@ -835,6 +857,7 @@ namespace DiscRepNmSpc {
       string GetName_tsa() const {return string("TECHNIQUE_NOT_TSA"); }
       string GetName_part() const { return string("PARTIAL_CDS_COMPLETE_SEQUENCE"); }
   };
+
 
   class CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE : public CBioseq_test_on_molinfo
   {
@@ -910,7 +933,18 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_long_no();}
   };
 
-// new comb
+// new comb: CBioseq_
+
+
+  class CBioseq_INCONSISTENT_SOURCE_DEFLINE : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_INCONSISTENT_SOURCE_DEFLINE () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("INCONSISTENT_SOURCE_DEFLINE"); }
+  };
 
 
   class CBioseq_CONTAINED_CDS : public CBioseqTestAndRepData

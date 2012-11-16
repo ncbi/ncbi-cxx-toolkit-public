@@ -97,6 +97,7 @@ vector <string>                         CDiscRepInfo :: spec_words_biosrc;
 vector <string>                         CDiscRepInfo :: suspicious_notes;
 vector <string>                         CDiscRepInfo :: trna_list;
 vector <string>                         CDiscRepInfo :: rrna_standard_name;
+Str2UInt                                CDiscRepInfo :: desired_aaList;
 
 void CDiscRepApp::Init(void)
 {
@@ -292,6 +293,35 @@ cerr << "222can get\n";
     thisInfo.short_auth_nms.push_back("der");
     thisInfo.short_auth_nms.push_back("den");
     thisInfo.short_auth_nms.push_back("di");
+
+    // ini. of descred_aaList
+    thisInfo.desired_aaList["Ala"] = 1;
+    thisInfo.desired_aaList["Asx"] = 0;
+    thisInfo.desired_aaList["Cys"] = 1;
+    thisInfo.desired_aaList["Asp"] = 1;
+    thisInfo.desired_aaList["Glu"] = 1;
+    thisInfo.desired_aaList["Phe"] = 1;
+    thisInfo.desired_aaList["Gly"] = 1;
+    thisInfo.desired_aaList["His"] = 1;
+    thisInfo.desired_aaList["Ile"] = 1;
+    thisInfo.desired_aaList["Xle"] = 0;
+    thisInfo.desired_aaList["Lys"] = 1;
+    thisInfo.desired_aaList["Leu"] = 2;
+    thisInfo.desired_aaList["Met"] = 1;
+    thisInfo.desired_aaList["Asn"] = 1;
+    thisInfo.desired_aaList["Pro"] = 1;
+    thisInfo.desired_aaList["Gln"] = 1;
+    thisInfo.desired_aaList["Arg"] = 1;
+    thisInfo.desired_aaList["Ser"] = 2;
+    thisInfo.desired_aaList["Thr"] = 1;
+    thisInfo.desired_aaList["Val"] = 1;
+    thisInfo.desired_aaList["Trp"] = 1;
+    thisInfo.desired_aaList["Xxx"] = 0;
+    thisInfo.desired_aaList["Tyr"] = 1;
+    thisInfo.desired_aaList["Glx"] = 0;
+    thisInfo.desired_aaList["Sec"] = 0;
+    thisInfo.desired_aaList["Pyl"] = 0;
+    thisInfo.desired_aaList["Ter"] = 0;
 }
 
 

@@ -87,6 +87,7 @@ namespace DiscRepNmSpc{
                 sel_seqdesc_4_bioseq.reserve(10);
                 sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Source);
                 sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Molinfo);
+                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Title);
              }; 
 
          void CheckBioseq( CBioseq& bioseq );
@@ -113,7 +114,7 @@ namespace DiscRepNmSpc{
 {
 //cerr << "GetNAme " << (*it)->GetName() << endl;
                   (*it)->TestOnObj(obj);
- //cerr << "done\n";
+//cerr << "done\n";
 }
          };
 

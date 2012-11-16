@@ -192,7 +192,9 @@ void CRepConfDiscrepancy :: ConfigRep()
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
 
 // tests_on_Bioseq_CFeat_CSeqdesc
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                           new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                                  CRef <CTestAndRepData> (new CBioseq_TEST_BAD_GENE_NAME));
@@ -216,8 +218,6 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
-   tests_on_SeqEntry_feat_desc.push_back( 
-                     CRef <CTestAndRepData>(new CSeqEntry_INCONSISTENT_SOURCE_DEFLINE));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back( 
