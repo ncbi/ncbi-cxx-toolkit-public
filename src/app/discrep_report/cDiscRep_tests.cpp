@@ -27,6 +27,8 @@
  *
  * File Description:
  *   Tests and report data collection for Cpp Discrepany Report
+ *
+ * $Log$ 
  */
 
 #include <ncbi_pch.hpp>
@@ -595,7 +597,7 @@ void CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA :: GetReport(CRef <CClickableIte
 
 void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: TestOnObj(const CBioseq& bioseq)
 {
-   if (bioseq.IsNa()) return;
+   if (bioseq.IsAa()) return;
    // ReportPartialConflictsForFeatureType (bsp, 0, FEATDEF_intron, "intron")
    ReportPartialConflictsForFeatureType (intron_feat, (string)"intron");
    ReportPartialConflictsForFeatureType (exon_feat, (string)"exon");
@@ -624,7 +626,7 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
     
     GetTestItemList(it->second, sublabel2items, "#");
     cnt = c_item->subcategories.size();  
-     c_item->subcategories[cnt-1]->item_list.clear();
+    c_item->subcategories[cnt-1]->item_list.clear();
     ITERATE (Str2Strs, jt, sublabel2items) {
       CRef <CClickableItem> c_sub2 (new CClickableItem);
       c_sub2->setting_name = GetName();
@@ -637,7 +639,7 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
     sublabel2items.clear();
   }
 
-  cnt = c_item->item_list.size();
+  cnt = c_item->item_list.size()/2;
   c_item->description 
        = GetOtherComment(cnt, "feature that is", "features that are") 
            + " not coding regions or misc_features " 
@@ -5166,6 +5168,20 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     type_str = user_obj.GetType().GetStr();
 
     // MISSING_GENOMEASSEMBLY_COMMENTS
+    if (type_str == "StructuredComment"
+          && user_obj.HasField("StructuredCommentPrefix")
+          && user_obj.GetField("ProjectID").GetData().IsStr()
+          && user_obj.GetField("StructuredCommentPrefix").GetData().GetStr()
+                      == "##Genome-Assembly-Data-START##") {
+            // has comment, rm bioseqs from map
+            if (user_seqdesc_seqentry[i]->IsSeq()) {
+                if (user_seqdesc_seqentry[i]->GetSeq().IsNa()
+                      && m_bioseq2geno_comm.find(desc) == m_bioseq2geno_comm.end())
+                m_bioseq2geno_comm[desc] = 0;
+            }
+            else RmvBioseqsOfSetOutMap(user_seqdesc_seqentry[i]->GetSet());
+    }
+/*
     if ( NStr::EqualNocase(type_str, "StructuredComment")) {
          ITERATE (vector <CRef< CUser_field > >, jt, user_obj.GetData()) {
             if ( (*jt)->GetLabel().IsStr()
@@ -5182,14 +5198,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
                }
             }
          };
-    }
-/*
-    if (!found_geno_comm) {
-         if (user_seqdesc_seqentry[i]->IsSeq() 
-                                          && user_seqdesc_seqentry[i]->GetSeq().IsNa())
-              thisInfo.test_item_list[GetName_comm()].push_back(desc);
-         else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_comm(),
-                                                                           true, false);
     }
 */
 
@@ -5212,7 +5220,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     }
 
     // ONCALLER_MISSING_STRUCTURED_COMMENTS
-    if (NStr::EqualNocase(type_str, "StructuredComment"))  cnt = 1;
+    if (type_str == "StructuredComment") cnt = 1;
     else cnt = 0;
     if (user_seqdesc_seqentry[i]->IsSeq()) {
       const CBioseq& bioseq = user_seqdesc_seqentry[i]->GetSeq();
@@ -5226,12 +5234,12 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     else CheckCommentCountForSet(user_seqdesc_seqentry[i]->GetSet(), cnt, bioseq2cnt);
 
     // MISSING_PROJECT
-    if (!NStr::EqualNocase(type_str, "GenomeProjectsDB")
-            && (!NStr::EqualNocase(type_str, "DBLink") || !user_obj.HasField("BioProject"))) 
+    if (type_str != "GenomeProjectsDB"
+            && (type_str != "DBLink" || !user_obj.HasField("BioProject")) ) 
        AddBioseqsInSeqentryToReport(user_seqdesc_seqentry[i], GetName_mproj());
 
     // ONCALLER_BIOPROJECT_ID
-    if (NStr::EqualNocase(type_str, "DBLink") && user_obj.HasField("BioProject")
+    if (type_str == "DBLink" && user_obj.HasField("BioProject")
          && user_obj.GetField("BioProject").GetData().IsStrs()) {
        const vector <string>& ids =user_obj.GetField("BioProject").GetData().GetStrs();
        if (!ids.empty() && !ids[0].empty()) {
