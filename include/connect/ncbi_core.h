@@ -51,7 +51,7 @@
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    callbacks:  (*FLOG_Handler)(),  (*FLOG_Cleanup)()
  *    methods:    LOG_Create(),  LOG_Reset(),  LOG_AddRef(),  LOG_Delete(),
- *                LOG_WriteInternal()
+ *                LOG_Write(), LOG_WriteInternal()
  *
  * Registry:
  *    handle:     REG
@@ -434,24 +434,8 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_AddRef(LOG lg);
 extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
 
 
-/** Write message (perhaps with raw data attached) to the log by calling
- * "lg->handler(lg->user_data, call_data)".
- * @par <b>NOTE:</b>
- *  Do not call this function directly, if possible.
- *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
- * @param lg
- *  A log handle previously obtained from LOG_Create
- * @sa
- *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WRITE, LOG_DATA
- */
-extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
-(LOG           lg,
- SLOG_Handler* call_data
- );
-
-
-/** Write message (perhaps with raw data attached) to the log by calling
- * LOG_WriteInternal() upon filling up SLOG_Handler data from parameters.
+/** Upon having filled SLOG_Handler data from parameters, write a message
+ * (perhaps with raw data attached) to the log by calling LOG_WriteInternal().
  * @par <b>NOTE:</b>
  *  Do not call this function directly, if possible.
  *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
@@ -488,6 +472,22 @@ extern NCBI_XCONNECT_EXPORT void LOG_Write
  const void* raw_data,
  size_t      raw_size
 );
+
+
+/** Write message (perhaps with raw data attached) to the log by calling
+ * "lg->handler(lg->user_data, call_data)".
+ * @par <b>NOTE:</b>
+ *  Do not call this function directly, if possible.
+ *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
+ * @param lg
+ *  A log handle previously obtained from LOG_Create
+ * @sa
+ *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_Write
+ */
+extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
+(LOG           lg,
+ SLOG_Handler* call_data
+ );
 
 
 /******************************************************************************
