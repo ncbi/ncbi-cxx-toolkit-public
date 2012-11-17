@@ -1158,12 +1158,6 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     size_t len;
     char*  s;
 
-    if (!lg) {
-        if (sev == eLOG_Fatal)
-            abort();
-        return;
-    }
-
     if (!info) {
         LOG_Write(lg, NCBI_C_ERRCODE_X, 10, sev, 0, 0, 0,
                   "ConnNetInfo_Log: NULL info", 0, 0);
