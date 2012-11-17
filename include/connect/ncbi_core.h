@@ -438,7 +438,7 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  * (perhaps with raw data attached) to the log by calling LOG_WriteInternal().
  * @par <b>NOTE:</b>
  *  Do not call this function directly, if possible.
- *  Instead, use LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
+ *  Instead, use LOG_WRITE() and LOG_DATA() macros from <connect/ncbi_util.h>!
  * @param code
  *  Error code of the message
  * @param subcode
