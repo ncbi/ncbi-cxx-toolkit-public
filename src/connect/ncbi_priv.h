@@ -80,11 +80,11 @@ extern "C" {
  * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
 NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  36);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     302,  22);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     302,  25);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  12);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  33);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  34);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  20);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,    308,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail, 309,  31);
