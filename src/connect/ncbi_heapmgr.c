@@ -303,12 +303,13 @@ HEAP HEAP_Attach(const void* base, int serial)
  */
 static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size* prev)
 {
+    const SHEAP_HeapBlock* e = heap->base + heap->size;
     SHEAP_HeapBlock* b = heap->base;
     SHEAP_HeapBlock* f = 0;
     TNCBI_Size free = 0;
 
     *prev = 0;
-    while (b < heap->base + heap->size) {
+    while (b < e) {
         SHEAP_HeapBlock* n = HEAP_NEXT(b);
         assert(HEAP_ALIGN(b->head.size) == b->head.size);
         if (HEAP_ISFREE(b)) {
@@ -349,7 +350,7 @@ static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size* prev)
 static SHEAP_Block* s_HEAP_Book(HEAP heap, SHEAP_HeapBlock* b,
                                 TNCBI_Size size, int/*bool*/ fast)
 {
-    unsigned int last = b->head.flag & HEAP_LAST;
+    unsigned int last = HEAP_ISLAST(b);
 
     assert(HEAP_ALIGN(size) == size);
     assert(HEAP_ISFREE(b)  &&  b->head.size >= size);
@@ -466,14 +467,13 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
 
     free = 0;
     if (heap->free < heap->size) {
+        const SHEAP_HeapBlock* e = heap->base + heap->size;
         f = heap->base + heap->free;
         b = f;
         do {
-            if (!HEAP_ISFREE(b)
-                ||  (!fast  &&
-                     ((char*) b + b->head.size >
-                      (char*)(heap->base + heap->size)  ||
-                      heap->base + b->nextfree > heap->base + heap->size))) {
+            if (!HEAP_ISFREE(b)  ||  (!fast
+                                      &&  (e < heap->base + b->nextfree
+                                           ||  e < HEAP_NEXT(b)))) {
                 CORE_LOGF_X(8, eLOG_Error,
                             ("Heap Alloc%s: Heap%s corrupt "
                              "@%u/%u (0x%08X, %u)",
@@ -564,11 +564,26 @@ SHEAP_Block* HEAP_AllocFast(HEAP heap, TNCBI_Size size)
 }
 
 
-static void s_HEAP_Free(HEAP heap, SHEAP_HeapBlock* p, SHEAP_HeapBlock* b)
+static void s_HEAP_Free(HEAP heap,
+                        SHEAP_HeapBlock* p,
+                        SHEAP_HeapBlock* b,
+                        SHEAP_HeapBlock* n)
 {
-    unsigned int last = b->head.flag & HEAP_LAST;
-    SHEAP_HeapBlock* n = HEAP_NEXT(b);
+    const SHEAP_HeapBlock* e = heap->base + heap->size;
+    unsigned int last = HEAP_ISLAST(b);
     TNCBI_Size free;
+    char _id[32];
+
+    assert(p < b  && (!p  ||  (heap->base <= p  &&  HEAP_NEXT(p) == b)));
+    assert(heap->base <= b  &&  HEAP_ISUSED(b));
+    assert(n <= e);
+
+    if (!last != !(n == e)) {
+        CORE_LOGF_X(34, eLOG_Error,
+                    ("Heap Free%s: Last block%s", s_HEAP_Id(_id, heap),
+                     n == e ? " lost" : ""));
+        last = n == e ? HEAP_LAST : 0;
+    }
 
     if (p  &&  HEAP_ISFREE(p)) {
         free = HEAP_INDEX(p, heap->base);
@@ -581,9 +596,9 @@ static void s_HEAP_Free(HEAP heap, SHEAP_HeapBlock* p, SHEAP_HeapBlock* b)
             heap->base[n->nextfree].prevfree = n->prevfree;
             heap->base[n->prevfree].nextfree = n->nextfree;
             /* Merge */
+            last = HEAP_ISLAST(n);
             b->head.flag  = n->head.flag;
             b->head.size += n->head.size;
-            last = b->head.flag & HEAP_LAST;
         }
         /* Merge all together */
         if (last) {
@@ -635,6 +650,7 @@ static void s_HEAP_Free(HEAP heap, SHEAP_HeapBlock* p, SHEAP_HeapBlock* b)
 
 void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 {
+    const SHEAP_HeapBlock* e;
     SHEAP_HeapBlock* b, *p;
     char _id[32];
 
@@ -654,24 +670,33 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 
     p = 0;
     b = heap->base;
-    while (b < heap->base + heap->size) {
-        if (&b->head == ptr) {
-            if (HEAP_ISUSED(b)) {
-                s_HEAP_Free(heap, p, b);
-            } else if (HEAP_ISFREE(b)) {
-                CORE_LOGF_X(12, eLOG_Warning,
-                            ("Heap Free%s: Freeing free block @%u",
-                             s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
+    e = b + heap->size;
+    while (b < e) {
+        SHEAP_HeapBlock* n = HEAP_NEXT(b);
+        if (n <= e) {
+            if (&b->head == ptr) {
+                if (HEAP_ISUSED(b)) {
+                    s_HEAP_Free(heap, p, b, n);
+                    return;
+                }
+                if (HEAP_ISFREE(b)) {
+                    CORE_LOGF_X(12, eLOG_Warning,
+                                ("Heap Free%s: Freeing free block @%u",
+                                 s_HEAP_Id(_id, heap),
+                                 HEAP_INDEX(b, heap->base)));
+                    return;
+                }
             } else {
-                CORE_LOGF_X(13, eLOG_Error,
-                            ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
-                             s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
-                             heap->size, b->head.flag, b->head.size));
+                p = b;
+                b = n;
+                continue;
             }
-            return;
         }
-        p = b;
-        b = HEAP_NEXT(b);
+        CORE_LOGF_X(13, eLOG_Error,
+                    ("Heap Free%s: Heap corrupt @%u/%u (0x%08X, %u)",
+                     s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
+                     heap->size, b->head.flag, b->head.size));
+        return;
     }
 
     CORE_LOGF_X(14, eLOG_Error,
@@ -681,7 +706,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 
 void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 {
-    SHEAP_HeapBlock* b, *p;
+    SHEAP_HeapBlock* b, *p, *n;
     char _id[32];
 
     if (!heap) {
@@ -700,18 +725,29 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 
     p = (SHEAP_HeapBlock*) prev;
     b = (SHEAP_HeapBlock*) ptr;
+    n = HEAP_NEXT(b);
+
     if (!s_HEAP_fast) {
-        if (b < heap->base  ||  b >= heap->base + heap->size) {
+        const SHEAP_HeapBlock* e = heap->base + heap->size;
+        if (b < heap->base  ||  e < n) {
             CORE_LOGF_X(17, eLOG_Error,
                         ("Heap Free%s: Alien block", s_HEAP_Id(_id, heap)));
             return;
-        } else if ((!p  &&  b != heap->base)  ||
-                   ( p  &&  (p < heap->base  ||  HEAP_NEXT(p) != b))) {
+        }
+        if ((!p  &&  b != heap->base)  ||
+            ( p  &&  (p < heap->base  ||  b != HEAP_NEXT(p)))) {
+            char h[40];
+            if (!p  ||  p < heap->base  ||  e <= p)
+                *h = '\0';
+            else
+                sprintf(h, "(%u)", HEAP_INDEX(p, heap->base));
             CORE_LOGF_X(18, eLOG_Warning,
-                        ("Heap Free%s: Invalid hint", s_HEAP_Id(_id, heap)));
+                        ("Heap Free%s: Lame hint%s for block @%u",
+                         s_HEAP_Id(_id, heap), h, HEAP_INDEX(b, heap->base)));
             HEAP_Free(heap, ptr);
             return;
-        } else if (HEAP_ISFREE(b)) {
+        }
+        if (HEAP_ISFREE(b)) {
             CORE_LOGF_X(19, eLOG_Warning,
                         ("Heap Free%s: Freeing free block @%u",
                          s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base)));
@@ -719,100 +755,150 @@ void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
         }
     }
 
-    s_HEAP_Free(heap, p, b);
+    s_HEAP_Free(heap, p, b, n);
 }
 
 
 static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
 {
+    const SHEAP_HeapBlock* e = heap->base + heap->size;
     SHEAP_HeapBlock* p = (SHEAP_HeapBlock*) ptr;
-    SHEAP_HeapBlock* b;
+    SHEAP_HeapBlock* b, *n;
+    char msg[80];
     char _id[32];
+    size_t i;
 
-    if (p  &&  (p < heap->base  ||  p >= heap->base + heap->size
+    if (p  &&  (p < heap->base  ||  e <= p
                 ||  p->head.size <= sizeof(SHEAP_Block)
                 ||  HEAP_ALIGN(p->head.size) != p->head.size
                 ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p)))) {
         CORE_LOGF_X(28, eLOG_Error,
-                    ("Heap Walk%s: Alien pointer",
-                     s_HEAP_Id(_id, heap)));
+                    ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
         return 0;
     }
     b = p ? HEAP_NEXT(p) : heap->base;
 
-    if (b >= heap->base + heap->size
+    if (e <= b
         ||  b->head.size <= sizeof(SHEAP_Block)
         ||  HEAP_ALIGN(b->head.size) != b->head.size
         ||  (!HEAP_ISFREE(b)  &&  !HEAP_ISUSED(b))
-        ||  HEAP_NEXT(b) > heap->base + heap->size) {
-        if (b != heap->base + heap->size  ||  (b  &&  !p)) {
+        ||  e < (n = HEAP_NEXT(b))) {
+        if (b != e  ||  (b  &&  !p)) {
             CORE_LOGF_X(26, eLOG_Error,
-                        ("Heap Walk%s: Heap corrupt",
-                         s_HEAP_Id(_id, heap)));
+                        ("Heap Walk%s: Heap corrupt", s_HEAP_Id(_id, heap)));
         } else if (b  &&  !HEAP_ISLAST(p)) {
             CORE_LOGF_X(27, eLOG_Error,
-                        ("Heap Walk%s: Last block lost",
-                         s_HEAP_Id(_id, heap)));
+                        ("Heap Walk%s: Last block lost",s_HEAP_Id(_id, heap)));
         }
         return 0;
     }
 
+    if (HEAP_ISLAST(b)  &&
+        (n < e  ||  (heap->chunk/*RW heap*/ &&  b < heap->base + heap->last))){
+        if (heap->chunk/*RW heap*/)
+            sprintf(msg, " expected @%u", heap->last);
+        else
+            *msg = '\0';
+        CORE_LOGF_X(23, eLOG_Error,
+                    ("Heap Walk%s: Last block @%u%s", s_HEAP_Id(_id, heap),
+                     HEAP_INDEX(b, heap->base), msg));
+    }
+
     if (HEAP_ISFREE(b)) {
-        const SHEAP_HeapBlock* c = b;
-        if (c->prevfree >= heap->size  ||
-            c->nextfree >= heap->size  ||
-            !HEAP_ISFREE(heap->base + c->prevfree)  ||
-            !HEAP_ISFREE(heap->base + c->nextfree)) {
-            c = 0;
-        } else if (c->prevfree == c->nextfree  &&
-                   heap->base  +  c->nextfree == c) {
-            if (heap->chunk/*RW heap*/  &&  heap->base + heap->free != c)
-                c = 0;
-        } else {
-            int/*bool*/ origin = !heap->chunk/*RW: false, RO: true*/;
-            size_t n;
-            for (n = 0;  n < heap->size;  n++) {
-                const SHEAP_HeapBlock* s = c;
-                c = heap->base + c->nextfree;
-                if (!HEAP_ISFREE(c)  ||  c == s
+        const SHEAP_HeapBlock* c;
+        if (heap->chunk/*RW heap*/) {
+            /* Free blocks are tricky!  They can be left-overs from
+               merging of freed blocks while walking.  Careful here! */
+            int/*bool*/ ok = 0/*false*/;
+            c = heap->base + heap->free;
+            for (i = 0;  i < heap->size;  ++i) {
+                const SHEAP_HeapBlock* s;
+                int/*bool*/ self;
+                if (e <= c
+                    ||  c->prevfree >= heap->size
                     ||  c->nextfree >= heap->size
-                    ||  c->prevfree != s->nextfree) {
+                    ||  !HEAP_ISFREE(heap->base + c->prevfree)
+                    ||  !HEAP_ISFREE(heap->base + c->nextfree)
+                    ||  e < (s = HEAP_NEXT(c))) {
                     c = 0;
                     break;
                 }
-                if (c == heap->base + heap->free)
-                    origin = 1/*true*/;
-                if (c == b) {
-                    if (!origin)
-                        c = s/*NB: != c => != b*/;
+                self = (c->prevfree == c->nextfree
+                        &&  c == heap->base + c->nextfree);
+                if (self  ||  (c <= b  &&  b <= s)){
+                    if (ok  ||  s < n) {
+                        c = 0;
+                        break;
+                    }
+                    if (self/*the only single free block in heap*/) {
+                        ok = c <= b  &&  c == heap->base + heap->free;
+                        break;
+                    }
+                    ok = 1/*true*/;
+                }
+                s = heap->base + c->nextfree;
+                if (s == c  ||  c != heap->base + s->prevfree) {
+                    b = 0;
                     break;
                 }
+                if (s == heap->base + heap->free)
+                    break;
+                c = s;
             }
+            if (!ok)
+                b = 0;
+            else if (c)
+                c = b;
+        } else {
+            /* RO heap does not have any free block peculiarities */
+            c = b;
+            if (b->prevfree >= heap->size  ||
+                b->nextfree >= heap->size
+                ||  !HEAP_ISFREE(heap->base + b->prevfree)
+                ||  !HEAP_ISFREE(heap->base + b->nextfree)) {
+                b = 0;
+            } else if (b->prevfree != b->nextfree  ||
+                       b != heap->base + b->nextfree) {
+                for (i = 0;  i < heap->size;  ++i) {
+                    const SHEAP_HeapBlock* s = b;
+                    b = heap->base + b->nextfree;
+                    if (!HEAP_ISFREE(b)  ||  b == s
+                        ||  b->nextfree >= heap->size
+                        ||  s != heap->base + b->prevfree) {
+                        b = 0;
+                        break;
+                    }
+                    if (b == c)
+                        break;
+                }
+            } else
+                b = heap->base + b->nextfree;  /* NB: must not move */
         }
-        if (!c  ||  c != b) {
+        if (!c  ||  !b  ||  b != c) {
+            if (c) {
+                sprintf(msg, " @%u/%u (%u, <-%u, %u->)",
+                         HEAP_INDEX(c, heap->base), heap->size,
+                         c->head.size, c->prevfree, c->nextfree);
+            } else
+                *msg = '\0';
             CORE_LOGF_X(21, eLOG_Error,
-                        ("Heap Walk%s: Free list %s @%u/%u"
-                         " (%u, <-%u, %u->)",
-                         s_HEAP_Id(_id, heap),
-                         c ? "broken" : "corrupt",
-                         HEAP_INDEX(b, heap->base), heap->size,
-                         b->head.size, b->prevfree, b->nextfree));
+                        ("Heap Walk%s: Free list %s%s", s_HEAP_Id(_id, heap),
+                         b  &&  c ? "broken" : "corrupt", msg));
             return 0;
         }
     }
+
     if (HEAP_ISUSED(b)  &&  heap->chunk/*RW heap*/) {
-        size_t n;
-        /* check that a used block is not within the free chain but
-           ignoring any inconsistencies in the free chain here */
         const SHEAP_HeapBlock* c = heap->base + heap->free;
-        for (n = 0;  c < heap->base + heap->size  &&  n < heap->size;  ++n) {
-            if (!HEAP_ISFREE(c))
+        /* check that a used block is not within the chain of free
+           blocks but ignore any inconsistencies in the chain */
+        for (i = 0;  c < e  &&  i < heap->size;  ++i) {
+            if (e <= c  ||  !HEAP_ISFREE(c))
                 break;
             if (c <= b  &&  b < HEAP_NEXT(c)) {
                 CORE_LOGF_X(20, eLOG_Error,
                             ("Heap Walk%s: Used block @%u within"
-                             " the free one @%u",
-                             s_HEAP_Id(_id, heap),
+                             " a free one @%u", s_HEAP_Id(_id, heap),
                              HEAP_INDEX(b, heap->base),
                              HEAP_INDEX(c, heap->base)));
                 return 0;
@@ -829,33 +915,25 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     if (p) {
         if (HEAP_ISLAST(p)) {
             CORE_LOGF_X(22, eLOG_Error,
-                        ("Heap Walk%s: Misplaced last block @%u",
-                         s_HEAP_Id(_id,heap),
+                        ("Heap Walk%s: Last block @%u", s_HEAP_Id(_id,heap),
                          HEAP_INDEX(p, heap->base)));
-        } else if (heap->chunk/*RW heap*/
-                   &&  HEAP_ISLAST(b)  &&  heap->base + heap->last != b) {
-            CORE_LOGF_X(23, eLOG_Error,
-                        ("Heap Walk%s: Last block @%u "
-                         "not @ last ptr %u",
-                         s_HEAP_Id(_id, heap),
-                         HEAP_INDEX(b, heap->base), heap->last));
         } else if (HEAP_ISFREE(p)  &&  HEAP_ISFREE(b)) {
             const SHEAP_HeapBlock* c = heap->base;
             while (c < p) {
-                if (HEAP_ISFREE(c)  &&  HEAP_NEXT(c) >= HEAP_NEXT(b))
+                if (HEAP_ISFREE(c)  &&  n <= HEAP_NEXT(c))
                     break;
                 c = HEAP_NEXT(c);
             }
-            if (c >= p) {
+            if (p <= c) {
                 CORE_LOGF_X(24, eLOG_Error,
-                            ("Heap Walk%s: Adjacent free blocks "
-                             "@%u and @%u",
-                             s_HEAP_Id(_id, heap),
+                            ("Heap Walk%s: Adjacent free blocks"
+                             " @%u and @%u", s_HEAP_Id(_id, heap),
                              HEAP_INDEX(p, heap->base),
                              HEAP_INDEX(b, heap->base)));
             }
         }
     }
+
     return &b->head;
 }
 
@@ -873,7 +951,7 @@ SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
         if (!ptr)
             return &heap->base->head;
         b = HEAP_NEXT((SHEAP_HeapBlock*) ptr);
-        return b < heap->base + heap->size ? &b->head : 0;
+        return &b->head != ptr  &&  b < heap->base + heap->size ? &b->head : 0;
     }
     return s_HEAP_Walk(heap, ptr);
 }

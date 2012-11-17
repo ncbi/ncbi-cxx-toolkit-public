@@ -7,4 +7,6 @@ LIB = connect
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 # LINK = purify g++
 
+CHECK_CMD =
+
 WATCHERS = lar
