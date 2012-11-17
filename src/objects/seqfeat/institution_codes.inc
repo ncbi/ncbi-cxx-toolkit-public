@@ -2724,6 +2724,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IUQ	s	Laboratorio de Ictiologia",
 "IVAU	s	Instituut Voor Aardwetenschappen",
 "IVF	s	Chinese Academy of Agricultural Sciences",
+"IVIC	s	Instituto Venezolano de Investigaciones Cientificas",
 "IVPP	s	Institute of Vertebrate Paleontology and Paleoanthropology",
 "IZ<BRA>	c	Departamento de Tecnologia Rural",
 "IZ<CUB>	s	Instituto de Zoologia",
