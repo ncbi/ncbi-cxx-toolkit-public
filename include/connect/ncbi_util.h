@@ -35,8 +35,7 @@
  *  ncbi_core.h
  *
  * 1. CORE support:
- *    macros:     LOG_Write(), LOG_Data(),
- *                LOG_WRITE(), LOG_DATA(),
+ *    macros:     LOG_WRITE(), LOG_DATA(),
  *                THIS_FILE, THIS_MODULE,
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), NcbiMessagePlusError(),
@@ -164,6 +163,8 @@ extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
  *  The file stream to log to
  * @param cut_off
  *  Do not post messages with severity levels lower than specified
+ * @param fatal_err
+ *  Severity greater or equal to "fatal_err" always logs and aborts the program
  * @param auto_close
  *  Do "fclose(fp)" when the LOG is reset/destroyed
  * @sa
@@ -172,12 +173,12 @@ extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
 extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE_Ex
 (FILE*       fp,
  ELOG_Level  cut_off,
+ ELOG_Level  fatal_err,
  int/*bool*/ auto_close
  );
 
 
-/** Same as CORE_SetLOGFILE_Ex() with last parameter passed as 0
- * (all messages get posted).
+/** Same as CORE_SetLOGFILE_Ex(fp, eLOG_Trace, eLOG_Fatal, auto_close).
  * @sa
  *  CORE_SetLOGFILE_Ex, CORE_SetLOG
  */
@@ -187,29 +188,31 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetLOGFILE
  );
 
 
-/** Same as CORE_SetLOGFILE_Ex(fopen(filename, "a"), cut_off, TRUE).
- * @param filename
+/** Same as CORE_SetLOGFILE_Ex(fopen(logfile, "a"), cut_off, fatal_err, TRUE).
+ * @param logile
  *  Filename to write the log into
  * @param cut_off
  *  Do not post messages with severity levels lower than specified
+ * @param fatal_err
+ *  Severity greater or equal to "fatal_err" always logs and aborts the program
  * @return
  *  Return zero on error, non-zero on success
  * @sa
  *  CORE_SetLOGFILE_Ex, CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME_Ex
-(const char* filename,
- ELOG_Level  cut_off
+(const char* logfile,
+ ELOG_Level  cut_off,
+ ELOG_Level  fatal_err
  );
 
 
-/** Same as CORE_SetLOGFILE_NAME_Ex with last parameter passed as 0
- * (all messages pass).
+/** Same as CORE_SetLOGFILE_NAME_Ex(logfile, eLOG_Trace, eLOG_Fatal).
  * @sa
  *  CORE_SetLOGFILE_NAME_Ex, CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ CORE_SetLOGFILE_NAME
-(const char* filename
+(const char* logfile
 );
 
 
@@ -264,6 +267,8 @@ extern NCBI_XCONNECT_EXPORT char* LOG_ComposeMessage
  *  The file stream to log to
  * @param cut_off
  *  Do not post messages with severity levels lower than specified
+ * @param fatal_err
+ *  Severity greater or equal to "fatal_err" always logs and aborts the program
  * @param auto_close
  *  Whether to do "fclose(fp)" when the LOG is reset/destroyed
  * @sa
@@ -273,12 +278,12 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE_Ex
 (LOG         lg,
  FILE*       fp,
  ELOG_Level  cut_off,
+ ELOG_Level  fatal_err,
  int/*bool*/ auto_close
  );
 
 
-/** Same as LOG_ToFILEx with "cut_off" parameter passed as 0
- * (all messages pass).
+/** Same as LOG_ToFILEx(lg, fp, eLOG_Trace, eLOG_Fatal, auto_close).
  * @sa
  *  LOG_ToFILE_Ex
  */

@@ -112,11 +112,12 @@ extern LOG CORE_GetLOG(void)
 extern void CORE_SetLOGFILE_Ex
 (FILE*       fp,
  ELOG_Level  cut_off,
+ ELOG_Level  fatal_err,
  int/*bool*/ auto_close
  )
 {
     LOG lg = LOG_Create(0, 0, 0, 0);
-    LOG_ToFILE_Ex(lg, fp, cut_off, auto_close);
+    LOG_ToFILE_Ex(lg, fp, cut_off, fatal_err, auto_close);
     CORE_SetLOG(lg);
 }
 
@@ -125,31 +126,32 @@ extern void CORE_SetLOGFILE
 (FILE*       fp,
  int/*bool*/ auto_close)
 {
-    CORE_SetLOGFILE_Ex(fp, eLOG_Trace, auto_close);
+    CORE_SetLOGFILE_Ex(fp, eLOG_Trace, eLOG_Fatal, auto_close);
 }
 
 
 extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
-(const char* filename,
- ELOG_Level  cut_off)
+(const char* logfile,
+ ELOG_Level  cut_off,
+ ELOG_Level  fatal_err)
 {
-    FILE* fp = fopen(filename, "a");
+    FILE* fp = fopen(logfile, "a");
     if (!fp) {
         CORE_LOGF_ERRNO_X(1, eLOG_Error, errno,
-                          ("Cannot open \"%s\"", filename));
+                          ("Cannot open \"%s\"", logfile));
         return 0/*false*/;
     }
 
-    CORE_SetLOGFILE_Ex(fp, cut_off, 1/*true*/);
+    CORE_SetLOGFILE_Ex(fp, cut_off, fatal_err, 1/*autoclose*/);
     return 1/*true*/;
 }
 
 
 extern int/*bool*/ CORE_SetLOGFILE_NAME
-(const char* filename
+(const char* logfile
  )
 {
-    return CORE_SetLOGFILE_NAME_Ex(filename, eLOG_Trace);
+    return CORE_SetLOGFILE_NAME_Ex(logfile, eLOG_Trace, eLOG_Fatal);
 }
 
 
@@ -479,7 +481,8 @@ extern char* LOG_ComposeMessage
 
 typedef struct {
     FILE*       fp;
-    int/*bool*/ cut_off;
+    ELOG_Level  cut_off;
+    ELOG_Level  fatal_err;
     int/*bool*/ auto_close;
 } SLogData;
 
@@ -494,12 +497,20 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
     assert(data  &&  data->fp);
     assert(call_data);
 
-    if (call_data->level >= data->cut_off  ||  call_data->level == eLOG_Fatal){
+    if (call_data->level >= data->cut_off  ||
+        call_data->level >= data->fatal_err) {
         char* str = LOG_ComposeMessage(call_data, s_LogFormatFlags);
         if (str) {
             fprintf(data->fp, "%s\n", str);
             fflush(data->fp);
             free(str);
+        }
+        if (call_data->level >= data->fatal_err) {
+#ifdef NDEBUG
+            exit(1);
+#else
+            abort();
+#endif /*NDEBUG*/
         }
     }
 }
@@ -532,6 +543,7 @@ extern void LOG_ToFILE_Ex
 (LOG         lg,
  FILE*       fp,
  ELOG_Level  cut_off,
+ ELOG_Level  fatal_err,
  int/*bool*/ auto_close
  )
 {
@@ -539,6 +551,7 @@ extern void LOG_ToFILE_Ex
     if (data) {
         data->fp         = fp;
         data->cut_off    = cut_off;
+        data->fatal_err  = fatal_err;
         data->auto_close = auto_close;
         LOG_Reset(lg, data, s_LOG_FileHandler, s_LOG_FileCleanup);
     } else {
@@ -553,7 +566,7 @@ extern void LOG_ToFILE
  int/*bool*/ auto_close
  )
 {
-    LOG_ToFILE_Ex(lg, fp, eLOG_Trace, auto_close);
+    LOG_ToFILE_Ex(lg, fp, eLOG_Trace, eLOG_Fatal, auto_close);
 }
 
 
