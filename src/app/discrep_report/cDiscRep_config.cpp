@@ -136,6 +136,10 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_COUNT_TRNAS));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_FIND_DUP_TRNAS));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_COUNT_RRNAS));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_FIND_DUP_RRNAS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (
                                             new CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_CONTAINED_CDS));

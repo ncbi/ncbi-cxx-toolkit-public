@@ -375,6 +375,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      CTestAndRepData::utr5_feat.clear();
      CTestAndRepData::promoter_feat.clear();
      CTestAndRepData::mrna_feat.clear();
+     CTestAndRepData::trna_feat.clear();
    }
 
    if (!CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))

@@ -825,13 +825,23 @@ namespace DiscRepNmSpc {
       string GetName_tcnt() const {return string("COUNT_TRNAS"); }
       string GetName_rcnt() const {return string("COUNT_RRNAS"); }
       string GetName_rdup() const {return string("FIND_DUP_RRNAS"); }
+      string GetName_tdup() const {return string("FIND_DUP_TRNAS"); }
       void FindMissingRNAsInList();
       bool RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
       void FindDupRNAsInList();
+      void GetReport_trna(CRef <CClickableItem>& c_item);
 
       string m_bioseq_desc, m_best_id_str;
   };
 
+  class CBioseq_FIND_DUP_TRNAS : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_FIND_DUP_TRNAS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_tdup();}
+  };
 
   class CBioseq_COUNT_TRNAS : public CBioseq_test_on_rna
   {
@@ -841,6 +851,27 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_tcnt();}
   };
+
+
+  class CBioseq_COUNT_RRNAS : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_COUNT_RRNAS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_rcnt();}
+  };
+
+
+  class CBioseq_FIND_DUP_RRNAS : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_FIND_DUP_RRNAS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_rdup();}
+  };
+
 
   
   class CBioseq_test_on_molinfo : public CBioseqTestAndRepData

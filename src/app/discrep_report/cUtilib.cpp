@@ -286,7 +286,9 @@ bool isInt(const string& str)
 {
      if (str.empty() || str.size() > 10) return false;
  
-     for (unsigned i=0; i< str.size(); i++) 
+     unsigned i=0;
+     if (str[0] == '+' || str[0] == '-') i=1;
+     for (i; i< str.size(); i++) 
 	 if (!isdigit(str[i])) return false;
 
      return true;
@@ -298,7 +300,9 @@ int isInt(char *str)
 {
    if (!strlen(str) || strlen(str) > 10) return 0;
   
-   for (unsigned i=0; i< strlen(str); i++) if (!isdigit(str[i])) return 0;	
+   unsigned i=0;
+   if (str[0] == '+' || str[0] == '-') i=1;
+   for (i; i< strlen(str); i++) if (!isdigit(str[i])) return 0;	
 
    return 1;
 }

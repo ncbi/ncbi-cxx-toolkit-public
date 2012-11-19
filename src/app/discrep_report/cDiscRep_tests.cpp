@@ -505,14 +505,16 @@ bool CBioseq_DISC_GENE_PARTIAL_CONFLICT :: Is3EndInUTRList(const unsigned& stop)
 };
 
 
+
 void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: ReportPartialConflictsForFeatureType(vector <const CSeq_feat*>& seq_feats, string label, bool check_for_utrs)
 {
   CRef <CSeq_loc> gene_loc, feat_loc;
   ENa_strand feat_strand, gene_strand;
   unsigned feat_start, feat_stop, gene_start, gene_stop;
   bool conflict5, conflict3, feat_partial5, feat_partial3, gene_partial5, gene_partial3;
+  CConstRef <CSeq_feat> gene_feat_4_feat;
   ITERATE (vector <const CSeq_feat*>, it, seq_feats) {
-    CConstRef <CSeq_feat> gene_feat_4_feat (GetGeneForFeature(**it));
+    gene_feat_4_feat = CConstRef <CSeq_feat> (GetGeneForFeature(**it));
     if (gene_feat_4_feat.NotEmpty()) {
       feat_loc = Seq_loc_Merge((*it)->GetLocation(), 
                      CSeq_loc::fMerge_Overlapping | CSeq_loc::fSort, thisInfo.scope);
@@ -562,15 +564,16 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: ReportPartialConflictsForFeatureType(
               strtmp += " feature partialness conflicts with gene on 5' end.";
         else strtmp += " feature partialness conflicts with gene on 3' end.";
 
-        label += "$" + strtmp;
-        thisInfo.test_item_list[GetName()].push_back(label + "#" + GetDiscItemText(**it));
         thisInfo.test_item_list[GetName()].push_back(
-                                       label + "#" +GetDiscItemText(*gene_feat_4_feat));
+                               strtmp + "$" + GetDiscItemText(**it));
+        thisInfo.test_item_list[GetName()].push_back(
+                               strtmp + "$" +GetDiscItemText(*gene_feat_4_feat));
       }
     }
   }
 };
 
+/*
 
 bool CBioseqTestAndRepData :: IsMrnaSequence()
 {
@@ -594,6 +597,7 @@ void CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA :: GetReport(CRef <CClickableIte
      = GetHasComment(c_item->item_list.size(), "bacterial sequence") + "mRNA features.";
 };
 
+*/
 
 void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: TestOnObj(const CBioseq& bioseq)
 {
@@ -605,7 +609,6 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: TestOnObj(const CBioseq& bioseq)
    ReportPartialConflictsForFeatureType (rna_feat, (string)"RNA");
    ReportPartialConflictsForFeatureType (utr3_feat, (string)"3' URT");
    ReportPartialConflictsForFeatureType (utr5_feat, (string)"5' URT");
-   ReportPartialConflictsForFeatureType (utr5_feat, (string)"5' URT");
    if (!IsBioseqHasLineage(bioseq, "Eukaryota") || IsMrnaSequence ()) 
        ReportPartialConflictsForFeatureType (cd_feat, (string)"coding region");
    ReportPartialConflictsForFeatureType (miscfeat_feat, (string)"misc_feature");
@@ -615,37 +618,64 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
-  Str2Strs label2lists, sublabel2items;
+  Str2Strs label2lists;
   GetTestItemList(c_item->item_list, label2lists);
   c_item->item_list.clear();
-  unsigned cnt;
+  bool has_other = false;
   ITERATE (Str2Strs, it, label2lists) {
-    AddSubcategories(c_item, GetName(), it->second, it->first + " location conflicts ", 
-                                    it->first + " locations conflict ", false, e_OtherComment,
+    strtmp = kEmptyStr;
+    if (it->first.find("coding region") != string::npos) strtmp = "coding region";
+    else if (it->first.find("misc_feature") != string::npos) strtmp = "misc_feature";
+    if (!strtmp.empty()) {
+        AddSubcategories(c_item, GetName(), it->second, strtmp + " location conflicts ", 
+                   strtmp + " locations conflict ", true, e_OtherComment,
                                       "with partialness of overlapping gene.", true);
-    
-    GetTestItemList(it->second, sublabel2items, "#");
-    cnt = c_item->subcategories.size();  
-    c_item->subcategories[cnt-1]->item_list.clear();
-    ITERATE (Str2Strs, jt, sublabel2items) {
-      CRef <CClickableItem> c_sub2 (new CClickableItem);
-      c_sub2->setting_name = GetName();
-      c_sub2->item_list.insert(c_sub2->item_list.end(), jt->second.begin(), jt->second.end());
-      c_sub2->description = jt->first;
-      c_item->subcategories[cnt-1]->item_list.insert(
-          c_item->subcategories[cnt-1]->item_list.end(), jt->second.begin(), jt->second.end());
-      c_item->item_list.insert(c_item->item_list.end(), jt->second.begin(), jt->second.end());
     }
-    sublabel2items.clear();
+    else {
+      if (!has_other) {
+        CRef <CClickableItem> citem_other (new CClickableItem);
+        ITERATE (Str2Strs, jt, label2lists) {
+           if (jt->first.find("coding region") == string::npos
+                && jt->first.find("misc_feature") == string::npos) 
+              AddSubcategories(citem_other, GetName(), jt->second, jt->first, jt->first, true,
+                       e_OtherComment, "", true);
+        }
+        AddSubcategories(c_item, GetName(), citem_other->item_list, 
+              "feature that is not coding regions or misc_feature conflicts",
+              "features that are not coding regions or misc_features conflict", true, e_OtherComment,
+              " with partialness of overlapping gene.", true);
+        has_other = true; 
+      }
+    } 
   }
-
-  cnt = c_item->item_list.size()/2;
-  c_item->description 
-       = GetOtherComment(cnt, "feature that is", "features that are") 
-           + " not coding regions or misc_features " 
-           + (cnt == 1? "conflicts" : "conflict") + " with partialness of overlapping gene.";
+  c_item->description
+       = GetOtherComment(c_item->item_list.size()/2, 
+                        "feature location conflicts", "feature locations conflict")
+          + " with partialness of overlapping gene.";
 };
 
+
+bool CBioseqTestAndRepData :: IsMrnaSequence()
+{
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
+     if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo :: eBiomol_mRNA) return true;
+  }
+  return false;
+};
+
+
+void CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA :: TestOnObj(const CBioseq& bioseq)
+{
+   if (IsBioseqHasLineage(bioseq, "Bacteria") && !mrna_feat.empty())
+       thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
+};
+
+
+void CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetHasComment(c_item->item_list.size(), "bacterial sequence") + "mRNA features.";
+};
 
 void CBioseq_SHORT_PROT_SEQUENCES :: TestOnObj(const CBioseq& bioseq)
 {
@@ -3180,8 +3210,8 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 {
   vector <unsigned>  num_present;
   Str2Strs aa_seqfeat;
-  num_present.reserve(27);
-  NON_CONST_ITERATE (vector <unsigned>, it, num_present) (*it) = 0;
+  num_present.reserve(thisInfo.desired_aaList.size());
+  for (unsigned i=0; i< thisInfo.desired_aaList.size(); i++) num_present.push_back(0);
 
   string context_label;
   unsigned i; 
@@ -3202,9 +3232,11 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
   ITERATE (Str2UInt, it, thisInfo.desired_aaList) {
     if (num_present[i] < it->second) 
        thisInfo.test_item_list[GetName_tcnt()].push_back(
-                               it->first + "_missing$" + m_bioseq_desc);
+           "Sequence " + m_best_id_str + " is missing trna-" + it->first + "$" + m_bioseq_desc);
+                            //   it->first + "_missing$" + m_bioseq_desc);
     else if (num_present[i] > it->second) {
-       strtmp = it->first + "_having$";
+       strtmp = "Sequence " + m_best_id_str + " has " + NStr::UIntToString(num_present[i]) 
+                     + " trna-" + it->first + (num_present[i]==1 ? " feature." : " features.") + "$";
        thisInfo.test_item_list[GetName_tcnt()].push_back(
                                                strtmp + m_bioseq_desc);
        ITERATE (vector <string>, jt, aa_seqfeat[it->first])
@@ -3275,7 +3307,7 @@ bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2
         if (has_quals1 != has_quals2) return false;
         else if (has_quals1) { 
           if (gen1.GetQuals().Get().size() != gen2.GetQuals().Get().size()) return false;
-          else return true; // not always right
+          else return true; // may not always right
         }
         else return true;
       }
@@ -3290,27 +3322,35 @@ void CBioseq_test_on_rna :: FindDupRNAsInList()
 {
   unsigned i, j;
   vector <unsigned> is_dup;
-  NON_CONST_ITERATE (vector <unsigned>, it, is_dup) (*it) = 0;
-  Str2Strs dup_rrna;
+  is_dup.reserve(rrna_feat.size());
+  for (i=0; i< rrna_feat.size(); i++) is_dup.push_back(0);
+  Str2Strs label2dup_rrna;
   string label;
 
   for (i=0; (int) i < (int)rrna_feat.size() -1; i++) {
     if (is_dup[i]) continue;
-    GetSeqFeatLabel(*rrna_feat[i], &label);
-    dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[i]));
+    GetSeqFeatLabel(*rrna_feat[i], &label);  // context_label in C
+    label2dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[i]));
     is_dup[i] = 1;
     for (j=i+1; j< rrna_feat.size(); j++) {
       if (!is_dup[j] 
            && RRnaMatch(rrna_feat[i]->GetData().GetRna(), rrna_feat[j]->GetData().GetRna())) {
-         dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[j]));
+         label2dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[j]));
          is_dup[j] = 1;
       }      
     }
   }
 
-  ITERATE (Str2Strs, it, dup_rrna) 
-    ITERATE (vector <string>, jt, it->second) 
-      thisInfo.test_item_list[GetName_rdup()].push_back(it->first + "$" + *jt);
+  unsigned cnt;
+  ITERATE (Str2Strs, it, label2dup_rrna) 
+    ITERATE (vector <string>, jt, it->second) {
+      cnt = it->second.size();
+      if (cnt > 1) {
+         strtmp = NStr::UIntToString(cnt) + " rRNA features on " + m_best_id_str 
+                    + " have the same name (" + it->first + ").";
+         thisInfo.test_item_list[GetName_rdup()].push_back(strtmp + "$" + *jt);
+      }
+    }
 };
 
 
@@ -3335,22 +3375,96 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   }
 
   string label;
+  unsigned cnt;
   if (run_test) {
-    ITERATE (vector <const CSeq_feat*>, it, trna_feat) 
-       thisInfo.test_item_list[GetName_tcnt()].push_back("tcnt_" + m_best_id_str + "_" + m_bioseq_desc + "$" + GetDiscItemText(**it));
-    ITERATE (vector <const CSeq_feat*>, it, rrna_feat) 
-       thisInfo.test_item_list[GetName_rcnt()].push_back("rcnt$" + GetDiscItemText(**it));
-    FindMissingRNAsInList();
-    FindDupRNAsInList();
+    cnt = trna_feat.size();
+    if (cnt) 
+       thisInfo.test_item_list[GetName_tcnt()].push_back(
+                                NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
+    if (cnt) FindMissingRNAsInList();
+    cnt = rrna_feat.size();
+    if (cnt)
+       thisInfo.test_item_list[GetName_rcnt()].push_back(
+                                NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
+    if (cnt) FindDupRNAsInList();
   }
 
   thisTest.is_Rna_run = true;
 };
 
 
+void CBioseq_FIND_DUP_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+  Str2Strs label2rrna;
+  GetTestItemList(c_item->item_list, label2rrna);
+  c_item->item_list.clear();
+  unsigned i=1;
+  ITERATE (Str2Strs, it, label2rrna) {
+    c_item->item_list = it->second;
+    c_item->description = it->first;
+    if (i > 1) thisInfo.disc_report_data.push_back(c_item);
+    if (i != label2rrna.size()) {
+         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item->setting_name = GetName();
+    }
+    i++;
+  }
+};
+
+
+// void CBioseq_COUNT_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem>& c_item)
+{
+   Str2Strs cnt2bioseq;
+   GetTestItemList(c_item->item_list, cnt2bioseq);
+   c_item->item_list.size();
+   unsigned i=1;
+   ITERATE (Str2Strs, it, cnt2bioseq) {
+     c_item->item_list = it->second;
+     if (isInt(it->first)) {
+         c_item->description = GetHasComment(c_item->item_list.size(), "sequence") + it->first 
+                               + " tRNA " + ((it->first== "1")? "feature." : "features.");
+     }
+     else c_item->description = it->first;
+     if (i > 1) thisInfo.disc_report_data.push_back(c_item);
+     if (i != cnt2bioseq.size()) {
+         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item->setting_name = GetName_tcnt(); 
+     }
+     i++;
+   } 
+};
 void CBioseq_COUNT_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
 {
-   
+    GetReport_trna(c_item);
+};
+void CBioseq_FIND_DUP_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+    GetReport_trna(c_item);
+};
+
+
+
+void CBioseq_COUNT_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs cnt2bioseq;
+   GetTestItemList(c_item->item_list, cnt2bioseq);
+   c_item->item_list.size();
+   unsigned i=1;
+   ITERATE (Str2Strs, it, cnt2bioseq) {
+     c_item->item_list = it->second;
+     if (isInt(it->first)) {
+         c_item->description = GetHasComment(c_item->item_list.size(), "sequence") + it->first
+                               + " rRNA " + ((it->first== "1")? "feature." : "features.");
+     }
+     else c_item->description = it->first;
+     if (i > 1) thisInfo.disc_report_data.push_back(c_item);
+     if (i != cnt2bioseq.size()) {
+         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item->setting_name = GetName();
+     }
+     i++;
+   }
 };
 
 
@@ -5181,25 +5295,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
             }
             else RmvBioseqsOfSetOutMap(user_seqdesc_seqentry[i]->GetSet());
     }
-/*
-    if ( NStr::EqualNocase(type_str, "StructuredComment")) {
-         ITERATE (vector <CRef< CUser_field > >, jt, user_obj.GetData()) {
-            if ( (*jt)->GetLabel().IsStr()
-                  && NStr::EqualNocase((*jt)->GetLabel().GetStr(), "StructuredCommentPrefix")) {
-               if ((*jt)->GetData().IsStr() && NStr::EqualNocase((*jt)->GetData().GetStr(),
-                                                           "##Genome-Assembly-Data-START##")) {
-                  // has comment, rm bioseqs from map
-                  if (user_seqdesc_seqentry[i]->IsSeq()) {
-                    if (user_seqdesc_seqentry[i]->GetSeq().IsNa()
-                               && m_bioseq2geno_comm.find(desc) == m_bioseq2geno_comm.end())
-                       m_bioseq2geno_comm[desc] = 0;
-                  }
-                  else RmvBioseqsOfSetOutMap(user_seqdesc_seqentry[i]->GetSet());
-               }
-            }
-         };
-    }
-*/
 
     // TEST_HAS_PROJECT_ID
     if (type_str == "GenomeProjectsDB" && user_obj.HasField("ProjectID")
