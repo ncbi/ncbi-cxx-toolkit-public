@@ -120,7 +120,7 @@ public:
     // id indexing
     void x_UpdateCore(void);
     void x_SetBioseqChunkId(TChunkId chunk_id);
-    void x_SetContainedId(const TBioseqId& id, TChunkId chunk_id);
+    void x_SetContainedId(const TBioseqId& id, TChunkId chunk_id, bool bioseq);
 
     bool x_CanAddBioseq(const TBioseqId& id) const;
 
@@ -170,6 +170,7 @@ private:
     CInitMutexPool         m_MutexPool;
     mutable CMutex         m_SeqIdToChunksMutex;
     mutable bool           m_SeqIdToChunksSorted;
+    bool                   m_ContainsBioseqs;
     mutable TSeqIdToChunks m_SeqIdToChunks;
 
 private:
