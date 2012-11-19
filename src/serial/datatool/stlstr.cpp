@@ -44,8 +44,9 @@ CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
                                              const string& namespaceName,
                                              const CDataType* dataType)
     : CParent(namespaceName, dataType),
-      m_TemplateName(templateName), m_Arg1Type(arg1Type)
+      m_Arg1Type(arg1Type)
 {
+    x_ParseTemplateName(templateName);
 }
 
 CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
@@ -55,6 +56,18 @@ CTemplate1TypeStrings::CTemplate1TypeStrings(const string& templateName,
     : CParent(namespaceName, dataType),
       m_TemplateName(templateName), m_Arg1Type(arg1Type)
 {
+    x_ParseTemplateName(templateName);
+}
+
+void CTemplate1TypeStrings::x_ParseTemplateName(const string& templateName)
+{
+    string s1, s2;
+    NStr::SplitInTwo(templateName," ",s1,s2);
+    m_TemplateName = s1;
+    if (!s2.empty()) {
+        m_ExtraParam = ", ";
+        m_ExtraParam += s2;
+    }
 }
 
 CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
@@ -68,24 +81,44 @@ CTypeStrings::EKind CTemplate1TypeStrings::GetKind(void) const
 
 string CTemplate1TypeStrings::GetCType(const CNamespace& ns) const
 {
-    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+" >";
+    string result(ns.GetNamespaceRef(GetTemplateNamespace()));
+    result += GetTemplateName()+"< "+GetArg1Type()->GetCType(ns);
+    result += GetTemplateExtraParam() + " >";
+    return result;
 }
 
 string CTemplate1TypeStrings::GetPrefixedCType(const CNamespace& ns,
                                                const string& methodPrefix) const
 {
-    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "
-        + GetArg1Type()->GetPrefixedCType(ns,methodPrefix)+" >";
+    string result(ns.GetNamespaceRef(GetTemplateNamespace()));
+    result += GetTemplateName()+"< "+GetArg1Type()->GetPrefixedCType(ns,methodPrefix);
+    result += GetTemplateExtraParam() + " >";
+    return result;
 }
 
 string CTemplate1TypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef(ns)+')';
+    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef(ns)+
+        GetTemplateExtraParam()+')';
 }
 
 string CTemplate1TypeStrings::GetRefTemplate(void) const
 {
-    return GetTemplateName();
+    // count extra params
+    string extracount;
+    const string& extra(GetTemplateExtraParam());
+    if (!extra.empty()) {
+        const CTemplate2TypeStrings* t2 =
+            dynamic_cast<const CTemplate2TypeStrings*>(this);
+        int c= t2 ? 2 : 1;
+        string::size_type comma = extra.find(',');
+        for (; comma != string::npos;) {
+            ++c;
+            comma = extra.find(',', ++comma);
+        }
+        extracount = NStr::NumericToString(c);
+    }
+    return GetTemplateName()+extracount;
 }
 
 string CTemplate1TypeStrings::GetIsSetCode(const string& var) const
@@ -135,20 +168,29 @@ CTemplate2TypeStrings::~CTemplate2TypeStrings(void)
 
 string CTemplate2TypeStrings::GetCType(const CNamespace& ns) const
 {
-    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+", "+GetArg2Type()->GetCType(ns)+" >";
+    string result(ns.GetNamespaceRef(GetTemplateNamespace()));
+    result += GetTemplateName()+"< ";
+    result += GetArg1Type()->GetCType(ns)+", "+GetArg2Type()->GetCType(ns);
+    result += GetTemplateExtraParam() + " >";
+    return result;
 }
 
 string CTemplate2TypeStrings::GetPrefixedCType(const CNamespace& ns,
                                                const string& methodPrefix) const
 {
-    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "
-        + GetArg1Type()->GetPrefixedCType(ns,methodPrefix)+", "
-        + GetArg2Type()->GetPrefixedCType(ns,methodPrefix)+" >";
+    string result(ns.GetNamespaceRef(GetTemplateNamespace()));
+    result += GetTemplateName()+"< ";
+    result += GetArg1Type()->GetPrefixedCType(ns,methodPrefix)+", "
+            + GetArg2Type()->GetPrefixedCType(ns,methodPrefix);
+    result += GetTemplateExtraParam() + " >";
+    return result;
 }
 
 string CTemplate2TypeStrings::GetRef(const CNamespace& ns) const
 {
-    return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef(ns)+", "+GetArg2Type()->GetRef(ns)+')';
+    return "STL_"+GetRefTemplate()+
+        ", ("+GetArg1Type()->GetRef(ns)+", "+GetArg2Type()->GetRef(ns)+
+        GetTemplateExtraParam()+')';
 }
 
 void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -218,7 +260,7 @@ CListTypeStrings::~CListTypeStrings(void)
 
 string CListTypeStrings::GetRefTemplate(void) const
 {
-    string templ = GetTemplateName();
+    string templ = CParent::GetRefTemplate();
     if ( m_ExternalSet )
         templ += "_set";
     return templ;

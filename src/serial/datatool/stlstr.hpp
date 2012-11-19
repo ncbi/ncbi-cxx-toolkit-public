@@ -61,6 +61,11 @@ public:
         {
             return m_TemplateName;
         }
+    const string& GetTemplateExtraParam(void) const
+        {
+            return m_ExtraParam;
+        }
+
     const CTypeStrings* GetArg1Type(void) const
         {
             return m_Arg1Type.get();
@@ -82,7 +87,10 @@ protected:
     virtual const CNamespace& GetTemplateNamespace(void) const;
 
 private:
+    void x_ParseTemplateName(const string& templateName);
+    
     string m_TemplateName;
+    string m_ExtraParam;
     AutoPtr<CTypeStrings> m_Arg1Type;
 };
 
