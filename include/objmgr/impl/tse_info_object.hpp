@@ -148,6 +148,8 @@ public:
     void x_LoadChunk(TChunkId chunk_id) const;
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
+    virtual string GetDescription(void) const;
+
 protected:
     void x_BaseParentAttach(CTSE_Info_Object& parent);
     void x_BaseParentDetach(CTSE_Info_Object& parent);

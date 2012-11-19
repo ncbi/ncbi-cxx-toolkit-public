@@ -434,6 +434,8 @@ public:
                                   TSeqPos loc_pos,
                                   const CSeq_feat& feat) const;
 
+    virtual string GetDescription(void) const;
+
 private:
     friend class CTSE_Guard;
     friend class CDataSource;

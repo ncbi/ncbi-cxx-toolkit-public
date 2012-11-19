@@ -1887,6 +1887,18 @@ void CTSE_Info::SetBioseqUpdater(CRef<CBioseqUpdater> updater)
 }
 
 
+string CTSE_Info::GetDescription(void) const
+{
+    string ret;
+    ret = GetBlobId().ToString();
+    if ( GetName().IsNamed() ) {
+        ret += '/';
+        ret += GetName().GetName();
+    }
+    return ret;
+}
+
+
 CTSE_SetObjectInfo::CTSE_SetObjectInfo(void)
 {
 }

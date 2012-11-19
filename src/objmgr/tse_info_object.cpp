@@ -346,5 +346,15 @@ void CTSE_Info_Object::SetBioObjectId(const CBioObjectId& id)
     m_UniqueId = id;
 }
 
+
+string CTSE_Info_Object::GetDescription(void) const
+{
+    if ( HasParent_Info() ) {
+        return GetBaseParent_Info().GetDescription();
+    }
+    return string();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
