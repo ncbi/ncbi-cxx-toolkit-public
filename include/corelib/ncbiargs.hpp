@@ -865,7 +865,7 @@ public:
     ///
     /// Force to print USAGE unconditionally (and then exit) if no
     /// command-line args are present.
-    /// @deprecated
+    /// @deprecated Use SetMiscFlags(fUsageIfNoArgs) instead.
     NCBI_DEPRECATED void PrintUsageIfNoArgs(bool do_print = true);
 
     /// Miscellaneous flags.
