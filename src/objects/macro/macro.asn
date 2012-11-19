@@ -1368,6 +1368,12 @@ Remove-sequences-action ::= SEQUENCE {
   constraint Constraint-choice-set
 }
 
+Update-replaced-ec-numbers-action ::= SEQUENCE {
+  delete-improper-format BOOLEAN ,
+  delete-unrecognized BOOLEAN ,
+  delete-multiple-replacement BOOLEAN
+}
+  
 
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
@@ -1413,7 +1419,9 @@ Macro-action-choice ::= CHOICE {
   remove-duplicate-structured-comments NULL ,
   lookup-taxonomy NULL ,
   lookup-pubs NULL ,
-  trim-terminal-ns NULL }
+  trim-terminal-ns NULL ,
+  update-replaced-ecnumbers Update-replaced-ec-numbers-action ,
+  instantiate-protein-titles NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
