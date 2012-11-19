@@ -110,13 +110,38 @@ def main():
     # Check the class usage in general
     retCode += validateClasses( localConfig, lClasses, lQueues )
 
+# It was decided that it is not necessary to check what is in queue classes
+#    for qclass in lClasses:
+#        retCode += compareQueueClass( localConfig, qclass, allowedClassValues )
 
-
-    for qclass in lClasses:
-        retCode += compareQueueClass( localConfig, qclass, allowedClassValues )
+# This is a plain dumb parameters check. It is necessary to make it more
+# intelligent, considering what is defined in a queue class
+#    for queue in lQueues:
+#        retCode += compareQueue( localConfig, queue, allowedQueueValues )
 
     for queue in lQueues:
-        retCode += compareQueue( localConfig, queue, allowedQueueValues )
+        # There are 3 case:
+        # - queue without a class
+        # - queue refers to non-existing classs
+        # - queue refers to an existing class
+        if not localConfig.has_option( queue, "class" ):
+            retCode += compareQueue( localConfig, queue, allowedQueueValues )
+            continue
+
+        # Here: the queue refers to the class
+        qclassSection = "qclass_" + localConfig.get( queue, "class" )
+        if not qclassSection in lClasses:
+            # Skip it, the queue refers to an undefined class so there was
+            # an error message earlier
+            continue
+
+        # Here: the queue refers to an existing class.
+        # Merge the class parameters with what is defined in the queue
+        combined = Set( tuplesToValues( localConfig.items( qclassSection ) ) ) \
+            | Set( tuplesToValues( localConfig.items( queue ) ) )
+
+        retCode += validateQueueWithClass( queue, combined, allowedQueueValues )
+
 
     return retCode
 
@@ -154,6 +179,27 @@ def validateClasses( localConfig, localClasses, localQueues ):
 
     return retCode
 
+def validateQueueWithClass( queue, combined, allowedQueueValues ):
+    " Checks a queue with a class "
+    retCode = 0
+
+    missed = allowedQueueValues - combined
+    extra = combined - allowedQueueValues
+
+    if len( missed ) >= 1:
+        print >> sys.stderr, "Local config file misses the following values " \
+                             "in the queue [" + queue + "] description:"
+        print >> sys.stderr, "\n".join( missed )
+        retCode += 1
+
+    if len( extra ) >= 1:
+        print >> sys.stderr, "Local config file has the following extra " \
+                             "values in the queue [" + queue + \
+                             "] description:"
+        print >> sys.stderr, "\n".join( extra )
+        retCode += 1
+
+    return retCode
 
 def compareQueue( localConfig, queue, allowedQueueValues ):
     " Compares a single queue "
