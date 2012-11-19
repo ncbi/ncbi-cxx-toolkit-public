@@ -179,7 +179,7 @@ void CTarTest::Init(void)
 #endif // TEST_CONN_TAR
 
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
-    args->PrintUsageIfNoArgs();
+    args->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
     if (args->Exist ("h")) {
         args->Delete("h");
     }

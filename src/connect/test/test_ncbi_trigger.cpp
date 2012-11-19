@@ -97,7 +97,7 @@ void CTest::Init(void)
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    arg_desc->PrintUsageIfNoArgs();
+    arg_desc->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
     if (arg_desc->Exist("h")) {
         arg_desc->Delete("h");
     }
