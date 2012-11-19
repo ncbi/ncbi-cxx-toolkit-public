@@ -3306,8 +3306,21 @@ bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2
         bool has_quals2 = gen2.CanGetQuals();
         if (has_quals1 != has_quals2) return false;
         else if (has_quals1) { 
-          if (gen1.GetQuals().Get().size() != gen2.GetQuals().Get().size()) return false;
-          else return true; // may not always right
+          unsigned sz1 = gen1.GetQuals().Get().size();
+          unsigned sz2 = gen2.GetQuals().Get().size(); 
+          if (sz1 != sz2) return false;
+          else if (!sz1) return true;
+          else {
+             Str2Str qual1_vlu;
+             ITERATE (list <CRef <CRNA_qual> >, it, gen1.GetQuals().Get()) {
+                qual1_vlu[(*it)->GetQual()] = (*it)->GetVal();
+             }
+             ITERATE (list <CRef <CRNA_qual> >, it, gen2.GetQuals().Get()) {
+                if (qual1_vlu.find((*it)->GetQual()) == qual1_vlu.end()) return false;
+                else if (qual1_vlu[(*it)->GetQual()] != (*it)->GetVal()) return false;
+             }
+             return true;
+          } 
         }
         else return true;
       }
