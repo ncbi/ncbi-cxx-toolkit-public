@@ -1572,7 +1572,6 @@ class CGeneSearchPlugin : public sequence::CGetOverlappingFeaturesPlugin {
 public:	
     CGeneSearchPlugin( 
         const CSeq_loc &location, 
-        CBioseqContext &ctx,
         CScope & scope,
         const CGene_ref* filtering_gene_xref ) 
         : m_Loc_original_strand(eNa_strand_other),
@@ -1797,7 +1796,7 @@ private:
 
 // static
 CConstRef<CSeq_feat> 
-CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible( 
+CFeatureItem::s_GetFeatViaSubsetThenExtremesIfPossible( 
     CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
     CSeqFeatData::ESubtype feat_subtype,
     const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
@@ -1822,7 +1821,7 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
         // try one strand first
         cleaned_location->SetStrand( first_strand_to_try );
         CConstRef<CSeq_feat> feat;
-        CGeneSearchPlugin plugin( *cleaned_location, ctx, *scope, filtering_gene_xref );
+        CGeneSearchPlugin plugin( *cleaned_location, *scope, filtering_gene_xref );
         feat = sequence::GetBestOverlappingFeat
             ( *cleaned_location,
             sought_type,
@@ -1840,7 +1839,7 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
         } else {
             cleaned_location->SetStrand( eNa_strand_plus );
         }
-        CGeneSearchPlugin plugin2( *cleaned_location, ctx, *scope, filtering_gene_xref );
+        CGeneSearchPlugin plugin2( *cleaned_location, *scope, filtering_gene_xref );
         return sequence::GetBestOverlappingFeat
             ( *cleaned_location,
             sought_type,
@@ -1851,12 +1850,12 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
     }
 
     // normal case
-    return x_GetFeatViaSubsetThenExtremesIfPossible_Helper( ctx, scope, *cleaned_location, sought_type, filtering_gene_xref );
+    return s_GetFeatViaSubsetThenExtremesIfPossible_Helper( ctx, scope, *cleaned_location, sought_type, filtering_gene_xref );
 }
 
 // static
 CConstRef<CSeq_feat> 
-CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
+CFeatureItem::s_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref)
 {
@@ -1885,11 +1884,11 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     }
 
     CConstRef<CSeq_feat> feat;
-    feat = x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
+    feat = s_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
         ctx, scope, location, sought_type,
         filtering_gene_xref );
-    if( ! feat && x_CanUseExtremesToFindGene(ctx, location) ) {
-        feat = x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
+    if( ! feat && s_CanUseExtremesToFindGene(ctx, location) ) {
+        feat = s_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
             ctx, scope, location, sought_type,
             filtering_gene_xref );
     }
@@ -1903,11 +1902,11 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
 
 // static
 CConstRef<CSeq_feat> 
-CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
+CFeatureItem::s_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref )
 {
-    CGeneSearchPlugin plugin( location, ctx, *scope, filtering_gene_xref );
+    CGeneSearchPlugin plugin( location, *scope, filtering_gene_xref );
     return sequence::GetBestOverlappingFeat
                     ( location,
                      sought_type,
@@ -1919,11 +1918,11 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
 
 // static
 CConstRef<CSeq_feat> 
-CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
+CFeatureItem::s_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref )
 {
-    CGeneSearchPlugin plugin( location, ctx, *scope, filtering_gene_xref );
+    CGeneSearchPlugin plugin( location, *scope, filtering_gene_xref );
     return sequence::GetBestOverlappingFeat
         ( location,
         sought_type,
@@ -1933,13 +1932,37 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
         &plugin );
 }
 
+// static
+CConstRef<CGene_ref> 
+CFeatureItem::s_GetSuppressionCheckGeneRef(const CSeq_feat_Handle & feat)
+{
+    CConstRef<CGene_ref> answer;
+    if( ! feat ) {
+        return answer;
+    }
+
+    if (feat.IsSetXref()) {
+        ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+            const CSeqFeatXref& xref = **it;
+            if (xref.IsSetData() && xref.GetData().IsGene() ) {
+                answer.Reset( &xref.GetData().GetGene() ) ;
+                if( xref.GetData().GetGene().IsSuppressed()) {
+                    return answer;
+                }
+            }
+        }
+    }
+    
+    return answer;
+}
+
 static
 CConstRef<CSeq_feat> 
 s_ResolveGeneObjectId( CBioseqContext& ctx, 
-                       const CMappedFeat &feat,
+                       const CSeq_feat_Handle &feat,
                        int recursion_depth = 0 )
 {
-    const CConstRef<CSeq_feat> kNullRef;
+    const static CConstRef<CSeq_feat> kNullRef;
 
     // prevent infinite loop due to circular references
     if( recursion_depth > 10 ) {
@@ -1979,11 +2002,16 @@ s_ResolveGeneObjectId( CBioseqContext& ctx,
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatureItem::x_GetAssociatedGeneInfo(
+// static
+void CFeatureItem::s_GetAssociatedGeneInfo(
     CBioseqContext& ctx,
-    const CGene_ref*& g_ref,      //  out: gene ref
-    CConstRef<CSeq_feat>& s_feat, //  out: gene seq feat
-    CConstRef<CFeatureItem> parentFeatureItem ) const
+    const CSeq_feat_Handle & in_feat,
+    const CConstRef<CSeq_loc> & feat_loc,
+    CConstRef<CGene_ref> & out_suppression_check_gene_ref,
+    const CGene_ref*& out_g_ref,      //  out: gene ref
+    CConstRef<CSeq_feat>& out_s_feat, //  out: gene seq feat
+    const CSeq_feat_Handle & in_parent_feat )
+    // CConstRef<CFeatureItem> parentFeatureItem )
 //
 //  Find the feature's related gene information. The association is established
 //  through dbxref if it exists and through best overlap otherwise.
@@ -1992,33 +2020,28 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 //  could not be found.
 //  ----------------------------------------------------------------------------
 {
-    s_feat.Reset();
-    g_ref = NULL;
+    out_s_feat.Reset();
+    out_g_ref = NULL;
 
     // guard against suppressed gene xrefs
-    if (m_Feat.IsSetXref()) {
-        ITERATE (CSeq_feat::TXref, it, m_Feat.GetXref()) {
-            const CSeqFeatXref& xref = **it;
-            if (xref.IsSetData() && xref.GetData().IsGene() ) {
-                m_GeneRef.Reset( &xref.GetData().GetGene() ) ;
-                if( xref.GetData().GetGene().IsSuppressed()) {
-                    return;
-                }
-            }
-        }
+    out_suppression_check_gene_ref = s_GetSuppressionCheckGeneRef(in_feat);
+    if( out_suppression_check_gene_ref && 
+        out_suppression_check_gene_ref->IsSuppressed() ) 
+    {
+        return;
     }
 
     // Try to resolve the gene directly
     CConstRef<CSeq_feat> resolved_feat = 
-        s_ResolveGeneObjectId( ctx, m_Feat );
+        s_ResolveGeneObjectId( ctx, in_feat );
     if( resolved_feat ) {
-        s_feat = resolved_feat;
-        g_ref = &s_feat->GetData().GetGene();
+        out_s_feat = resolved_feat;
+        out_g_ref = &out_s_feat->GetData().GetGene();
         return;
     }
 
     // this will point to the gene xref inside the feature, if any
-    const CGene_ref *xref_g_ref = m_Feat.GetGeneXref();
+    const CGene_ref *xref_g_ref = in_feat.GetGeneXref();
     string xref_label;
     if( xref_g_ref ) {
         xref_g_ref->GetLabel(&xref_label);
@@ -2031,7 +2054,7 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
     bool also_look_at_parent_CDS = false;
 
     // special cases for some subtypes
-    switch( m_Feat.GetFeatSubtype() ) {
+    switch( in_feat.GetFeatSubtype() ) {
         case CSeqFeatData::eSubtype_region:
         case CSeqFeatData::eSubtype_site:
         case CSeqFeatData::eSubtype_bond:
@@ -2045,46 +2068,47 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             break;
     }
 
+    CConstRef<CGene_ref> pParentDecidingGeneRef = s_GetSuppressionCheckGeneRef(in_parent_feat);
+
     // always use CDS's ref if xref_g_ref directly if it's set (e.g. AB280922)
     if( also_look_at_parent_CDS &&
-        parentFeatureItem &&
-        (NULL != parentFeatureItem->m_GeneRef) &&
-        (! parentFeatureItem->m_GeneRef->IsSuppressed()) )
+        pParentDecidingGeneRef &&
+        (! pParentDecidingGeneRef->IsSuppressed()) )
     {
-        g_ref = parentFeatureItem->m_GeneRef;
-        s_feat.ReleaseOrNull();
+        out_g_ref = pParentDecidingGeneRef;
+        out_s_feat.ReleaseOrNull();
         return;
     }
 
     // always use xref_g_ref directly if it's set, but CDS's xref isn't (e.g. NP_041400)
     if( also_look_at_parent_CDS && NULL != xref_g_ref ) {
-        g_ref = xref_g_ref;
-        s_feat.ReleaseOrNull();
+        out_g_ref = xref_g_ref;
+        out_s_feat.ReleaseOrNull();
         return;
     }
 
     // For primer_bind, we get genes only by xref, not by overlap
-    if( m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_primer_bind ) {
+    if( in_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_primer_bind ) {
         CSeq_id_Handle id1 = sequence::GetId(ctx.GetHandle(),
             sequence::eGetId_Canonical);
-        CSeq_id_Handle id2 = sequence::GetIdHandle(m_Feat.GetLocation(),
+        CSeq_id_Handle id2 = sequence::GetIdHandle(in_feat.GetLocation(),
             &ctx.GetScope());
 
         if (sequence::IsSameBioseq(id1, id2, &ctx.GetScope())) {
-            s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
-                ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), m_Feat.GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
+            out_s_feat = s_GetFeatViaSubsetThenExtremesIfPossible( 
+                ctx, in_feat.GetFeatType(), in_feat.GetFeatSubtype(), in_feat.GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
         }
-        else if (ctx.IsProt()  &&  m_Feat.GetData().IsCdregion()) {
+        else if (ctx.IsProt()  &&  in_feat.GetData().IsCdregion()) {
             /// genpept report; we need to do something different
             CMappedFeat cds = GetMappedCDSForProduct(ctx.GetHandle());
             if (cds) {
-                s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                out_s_feat = s_GetFeatViaSubsetThenExtremesIfPossible( 
                     ctx, cds.GetFeatType(), cds.GetFeatSubtype(), cds.GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
             }
         }
         else {
-            s_feat = x_GetFeatViaSubsetThenExtremesIfPossible(
-                ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Gene, xref_g_ref );
+            out_s_feat = s_GetFeatViaSubsetThenExtremesIfPossible(
+                ctx, in_feat.GetFeatType(), in_feat.GetFeatSubtype(), *feat_loc, CSeqFeatData::e_Gene, xref_g_ref );
         }
 
         // special cases for some subtypes
@@ -2092,9 +2116,9 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
 
             // remove gene if bad match
             bool ownGeneIsOkay = false;
-            if( s_feat ) {
-                const CSeq_loc &gene_loc = s_feat->GetLocation();
-                if( sequence::Compare(gene_loc, *m_Loc, &ctx.GetScope()) == sequence::eSame ) {
+            if( out_s_feat ) {
+                const CSeq_loc &gene_loc = out_s_feat->GetLocation();
+                if( sequence::Compare(gene_loc, *feat_loc, &ctx.GetScope()) == sequence::eSame ) {
                     ownGeneIsOkay = true;
                 }
             }
@@ -2104,25 +2128,26 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
             // 2. Use the feature's own gene but only 
             //    if it *exactly* overlaps it.
             // 3. Use the parent CDS's gene (found via overlap)
-            if( parentFeatureItem && parentFeatureItem->m_GeneRef ) {
+            if( pParentDecidingGeneRef ) {
                 // get the parent CDS's gene
-                s_feat.Reset();
-                if( ! parentFeatureItem->m_GeneRef->IsSuppressed() ) {
-                    g_ref = parentFeatureItem->m_GeneRef;
+                out_s_feat.Reset();
+                if( ! pParentDecidingGeneRef->IsSuppressed() ) {
+                    out_g_ref = pParentDecidingGeneRef;
                     xref_g_ref = NULL; // TODO: is it right to ignore mat_peptide gene xrefs?
                 }
             } else if( ownGeneIsOkay ) {
                 // do nothing; it's already set
             } else {
-                if( parentFeatureItem ) {
-                    s_feat = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                if( in_parent_feat ) {
+                    CConstRef<CSeq_loc> pParentLocation( &in_parent_feat.GetLocation() );
+                    out_s_feat = s_GetFeatViaSubsetThenExtremesIfPossible( 
                         ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion, 
-                        parentFeatureItem->GetFeat().GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
+                        *pParentLocation, CSeqFeatData::e_Gene, xref_g_ref );
                 } else {
-                    CConstRef<CSeq_feat> cds_feat = x_GetFeatViaSubsetThenExtremesIfPossible(
-                        ctx, m_Feat.GetFeatType(), m_Feat.GetFeatSubtype(), *m_Loc, CSeqFeatData::e_Cdregion, xref_g_ref );
+                    CConstRef<CSeq_feat> cds_feat = s_GetFeatViaSubsetThenExtremesIfPossible(
+                        ctx, in_feat.GetFeatType(), in_feat.GetFeatSubtype(), *feat_loc, CSeqFeatData::e_Cdregion, xref_g_ref );
                     if( cds_feat ) {
-                        s_feat  = x_GetFeatViaSubsetThenExtremesIfPossible( 
+                        out_s_feat  = s_GetFeatViaSubsetThenExtremesIfPossible( 
                             ctx, CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion, 
                             cds_feat->GetLocation(), CSeqFeatData::e_Gene, xref_g_ref );
                     } 
@@ -2131,9 +2156,9 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         } // end: if( also_look_at_parent_CDS )
     }
 
-    if ( m_Feat && NULL == xref_g_ref ) {
-        if (s_feat) {
-            g_ref = &( s_feat->GetData().GetGene() );
+    if ( in_feat && NULL == xref_g_ref ) {
+        if (out_s_feat) {
+            out_g_ref = &( out_s_feat->GetData().GetGene() );
         }
     }
     else {
@@ -2142,35 +2167,36 @@ void CFeatureItem::x_GetAssociatedGeneInfo(
         // then override it (example accession where this issue crops up:
         // AF231993.1 )
 
-        if (s_feat) {
-            g_ref = &s_feat->GetData().GetGene();
+        if (out_s_feat) {
+            out_g_ref = &out_s_feat->GetData().GetGene();
         }
 
         // find a gene match using the xref (e.g. match by locus or whatever)
-        if( NULL != xref_g_ref && ! s_GeneMatchesXref( g_ref, xref_g_ref ) )
+        if( NULL != xref_g_ref && ! s_GeneMatchesXref( out_g_ref, xref_g_ref ) )
         {
-            g_ref = NULL;
-            s_feat.Reset();
+            out_g_ref = NULL;
+            out_s_feat.Reset();
 
-            CSeq_feat_Handle feat = x_ResolveGeneXref( xref_g_ref, ctx );
+            CSeq_feat_Handle feat = s_ResolveGeneXref( xref_g_ref, ctx );
             if( feat ) {
                 const CGene_ref& other_ref = feat.GetData().GetGene();
 
-                s_feat.Reset( &*feat.GetSeq_feat() );
-                g_ref = &other_ref;
+                out_s_feat.Reset( &*feat.GetSeq_feat() );
+                out_g_ref = &other_ref;
             }
         }
 
         // we found no match for the gene, but we can fall back on the xref
         // itself (e.g. K03223.1)
-        if( NULL == g_ref ) {
-            g_ref = xref_g_ref;
+        if( NULL == out_g_ref ) {
+            out_g_ref = xref_g_ref;
         }
     }
 }
 
+// static
 CSeq_feat_Handle 
-CFeatureItem::x_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ctx ) const
+CFeatureItem::s_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ctx )
 {
     CSeq_feat_Handle feat;
 
@@ -2206,7 +2232,7 @@ CFeatureItem::x_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ct
 }
 
 // static
-bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location )
+bool CFeatureItem::s_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location )
 {
     // disallowed if mixed strand
     if( s_IsMixedStrand( CBioseq_Handle(), location) ) {
@@ -2417,13 +2443,18 @@ void CFeatureItem::x_AddQuals(
          subtype != CSeqFeatData::eSubtype_gap && 
          (  ! gene_forbidden_if_genbank || is_not_genbank ) )
     {
-      x_GetAssociatedGeneInfo( ctx, gene_ref, gene_feat, parentFeatureItem );
+        CSeq_feat_Handle parent_feat_handle;
+        if( parentFeatureItem ) {
+            parent_feat_handle = parentFeatureItem->GetFeat();
+        }
+        s_GetAssociatedGeneInfo( ctx, m_Feat, m_Loc, m_GeneRef, gene_ref, 
+            gene_feat, parent_feat_handle );
     } else if( ! is_not_genbank && gene_forbidden_if_genbank ) {
         // We include a gene_ref on the genbank-forbidden features if there's
         // an explicit xref and the referenced gene does not exist
         // e.g. NC_014095.1
         const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
-        if( feat_gene_xref && ! x_ResolveGeneXref(feat_gene_xref, ctx) ) {
+        if( feat_gene_xref && ! s_ResolveGeneXref(feat_gene_xref, ctx) ) {
             gene_ref = feat_gene_xref;
         }
     }
