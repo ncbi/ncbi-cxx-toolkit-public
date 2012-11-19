@@ -213,10 +213,9 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo.NotEmpty());
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
 
-    const string nt_title =
-        "All GenBank+EMBL+DDBJ+PDB sequences (but no EST, STS, "
-        "GSS,environmental samples or phase 0, 1 or 2 HTGS sequences)";
-    BOOST_REQUIRE_EQUAL(nt_title, dbinfo->GetDescription());
+    const string nt_title = "Nucleotide collection (nt)";
+    BOOST_REQUIRE_MESSAGE(nt_title == dbinfo->GetDescription(),
+                          "Actual title is '" << dbinfo->GetDescription() << "'");
 
     BOOST_REQUIRE(dbinfo->GetTotal_length() > (Int8)15e+9);
     BOOST_REQUIRE(dbinfo->GetNum_sequences() > (Int8)35e+5);
@@ -261,9 +260,7 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo.NotEmpty());
 
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
-    //BOOST_REQUIRE(dbinfo->GetDescription().empty());
-    //BOOST_REQUIRE_EQUAL(string("12/12/2002 14:17:00"),
-    //                     dbinfo->GetLast_updated());
+    BOOST_REQUIRE_EQUAL("ecoli", dbinfo->GetDescription());
     BOOST_REQUIRE_EQUAL((Int8)400, dbinfo->GetNum_sequences());
     BOOST_REQUIRE_EQUAL((Int8)4662239, dbinfo->GetTotal_length());
 
