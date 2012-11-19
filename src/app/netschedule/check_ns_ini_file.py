@@ -39,10 +39,14 @@ def main():
     parser.add_option( "-v", "--verbose",
                        action="store_true", dest="verbose", default=False,
                        help="be verbose (default: False)" )
+    parser.add_option( "-s", "--no-sed",
+                       action="store_true", dest="nosed", default=False,
+                       help="avoid sed preprocessing (default: False)" )
 
     # parse the command line options
     options, args = parser.parse_args()
     verbose = options.verbose
+    nosed = options.nosed
 
     # Check the number of arguments
     if len( args ) != 2:
@@ -80,7 +84,16 @@ def main():
 
     # Compose parsed configs
     localConfig = ConfigParser()
-    localConfig.readfp( open( localIniFile ) )
+    if not nosed:
+        # The first sed prevent having 'class =' uncommented
+        # The second sed uncomments the commented values
+        cmd = "cat " + localIniFile + \
+              " | sed 's%^[ ]*;[ ]*\\(class[ ]*=\\)%;;;\\1%'" \
+              " | sed 's%^[ ]*;[ ]*\\([a-zA-Z_][a-zA-Z_]*[ ]*=\\)%\\1%'"
+        afterSed = check_output( cmd, shell = True )
+        localConfig.readfp( StringIO( afterSed ) )
+    else:
+        localConfig.readfp( open( localIniFile ) )
 
     patternConfig = ConfigParser()
     patternConfig.readfp( StringIO( content ) )
@@ -158,6 +171,10 @@ def validateClasses( localConfig, localClasses, localQueues ):
             sectionName = "qclass_" + qclass
             if sectionName in localClasses:
                 usedClasses.append( sectionName )
+                if localConfig.has_option( sectionName, "class" ):
+                    print >> sys.stderr, "The queue class [" + sectionName + \
+                                         "] must not have the following value:"
+                    print >> sys.stderr, "class"
             else:
                 if qclass not in undefinedClasses:
                     undefinedClasses.append( qclass )
@@ -208,6 +225,9 @@ def compareQueue( localConfig, queue, allowedQueueValues ):
 
     missed = allowedQueueValues - localValues
     extra = localValues - allowedQueueValues
+
+    # The 'class' parameter is not mandatory
+    missed = missed - Set( [ 'class' ] )
 
     if len( missed ) >= 1:
         print >> sys.stderr, "Local config file misses the following values " \
@@ -382,6 +402,22 @@ def tuplesToValues( src ):
     for item in src:
         res.append( item[ 0 ] )
     return res
+
+
+def check_output(*popenargs, **kwargs):
+    " Copied from Python 2.7 distribution and slightly modified "
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = Popen(stdout=PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        raise Exception( "Command '" + cmd + "' returned non-zero status " + \
+                         str( retcode ) )
+    return output
 
 
 # The script execution entry point
