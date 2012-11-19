@@ -48,11 +48,6 @@ BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(INTDIR)
 BERKELEYDB_SRC = $(BERKELEYDB_BINPATH)\$(ALTDIR)
 !ENDIF
 
-FLTK_SRC = $(FLTK_BINPATH)\$(INTDIR)
-!IF !EXIST($(FLTK_SRC))
-FLTK_SRC = $(FLTK_BINPATH)\$(ALTDIR)
-!ENDIF
-
 GNUTLS_SRC = $(GNUTLS_BINPATH)\$(INTDIR)
 !IF !EXIST($(GNUTLS_SRC))
 GNUTLS_SRC = $(GNUTLS_BINPATH)\$(ALTDIR)
@@ -160,15 +155,6 @@ $(BERKELEYDB_SRC).berkeleydb_clean :
 	@echo ---- & echo Deleting BerkeleyDB DLLs & $(CLEAN_CMD)
 install_berkeleydb : $(BERKELEYDB_SRC).berkeleydb_install
 clean_berkeleydb : $(BERKELEYDB_SRC).berkeleydb_clean
-
-
-
-$(FLTK_SRC).fltk_install :
-	@echo ---- & echo Copying FLTK DLLs & $(INSTALL_CMD)
-$(FLTK_SRC).fltk_clean :
-	@echo ---- & echo Deleting FLTK DLLs & $(CLEAN_CMD)
-install_fltk : $(FLTK_SRC).fltk_install
-clean_fltk : $(FLTK_SRC).fltk_clean
 
 
 

@@ -16,7 +16,6 @@ META_MAKE = $(THIRDPARTY_MAKEFILES_DIR)\..\third_party_install.meta.mk
 
 THIRD_PARTY_LIBS = \
 	install_berkeleydb \
-	install_fltk       \
 	install_gnutls     \
 	install_glew       \
 	install_lzo        \
@@ -35,7 +34,6 @@ THIRD_PARTY_LIBS = \
 
 CLEAN_THIRD_PARTY_LIBS = \
 	clean_berkeleydb \
-	clean_fltk       \
 	clean_gnutls     \
 	clean_glew       \
 	clean_lzo        \
