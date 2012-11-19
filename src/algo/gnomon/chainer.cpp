@@ -1471,7 +1471,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(list<CChain>& chains
                 if( ai.Strand() != aj.Strand())
                     continue;
 
-                if(part_to_connect >= 0 && mj.m_fully_connected_to_part != part_to_connect)   // alignmnet is not connected to all previous parts
+                if(part_to_connect >= 0 && mj.m_fully_connected_to_part < part_to_connect)   // alignmnet is not connected to all previous parts
                     continue;
 
                 if(ai.Limits().GetFrom() > aj.Limits().GetTo() && part_to_connect >= 0 && part_to_connect < (int)parts.size()-1 &&       // gap is not closed
