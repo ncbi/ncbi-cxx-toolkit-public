@@ -85,7 +85,6 @@ def main():
     patternConfig = ConfigParser()
     patternConfig.readfp( StringIO( content ) )
 
-
     localSections = localConfig.sections()
     patternSections = patternConfig.sections()
 
@@ -108,11 +107,50 @@ def main():
         allowedClassValues.remove( "class" )
     allowedClassValues = Set( allowedClassValues )
 
+    # Check the class usage in general
+    retCode += validateClasses( localConfig, lClasses, lQueues )
+
+
+
     for qclass in lClasses:
         retCode += compareQueueClass( localConfig, qclass, allowedClassValues )
 
     for queue in lQueues:
         retCode += compareQueue( localConfig, queue, allowedQueueValues )
+
+    return retCode
+
+
+def validateClasses( localConfig, localClasses, localQueues ):
+    " Checks if some classes are not used "
+    retCode = 0
+
+    usedClasses = []
+    undefinedClasses = []
+    for queue in localQueues:
+        try:
+            qclass = localConfig.get( queue, "class" )
+            sectionName = "qclass_" + qclass
+            if sectionName in localClasses:
+                usedClasses.append( sectionName )
+            else:
+                if qclass not in undefinedClasses:
+                    undefinedClasses.append( qclass )
+        except:
+            pass    # No class used
+
+    if len( undefinedClasses ) >= 1:
+        retCode += 1
+        print >> sys.stderr, "The following queue class sections are undefined:"
+        print >> sys.stderr, "\n".join( undefinedClasses )
+
+
+    # Detect unused classes
+    unusedClasses = Set( localClasses ) - Set( usedClasses )
+    if len( unusedClasses ) >= 1:
+        retCode += 1
+        print >> sys.stderr, "The following queue class sections are not used:"
+        print >> sys.stderr, "\n".join( unusedClasses )
 
     return retCode
 
