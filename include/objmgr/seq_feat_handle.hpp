@@ -641,6 +641,31 @@ public:
     void AddDbxref(const string& db_name, const string& db_key);
     void AddDbxref(const string& db_name, int db_key);
 
+    /// Add feature id
+    void AddFeatId(int id);
+    void AddFeatId(const string& id);
+    void AddFeatId(const CObject_id& id);
+    void AddFeatXref(int id);
+    void AddFeatXref(const string& id);
+    void AddFeatXref(const CObject_id& id);
+    
+    /// Remove feature id
+    void RemoveFeatId(int id);
+    void RemoveFeatId(const string& id);
+    void RemoveFeatId(const CObject_id& id);
+    void RemoveFeatXref(int id);
+    void RemoveFeatXref(const string& id);
+    void RemoveFeatXref(const CObject_id& id);
+    
+    /// Clear feature ids
+    void ClearFeatIds(void);
+    void ClearFeatXrefs(void);
+    
+    /// Set single feature id
+    void SetFeatId(int id);
+    void SetFeatId(const string& id);
+    void SetFeatId(const CObject_id& id);
+
 protected:
     friend class CSeq_annot_EditHandle;
 

@@ -42,6 +42,7 @@
 #include <objmgr/impl/seq_annot_edit_commands.hpp>
 
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -511,6 +512,153 @@ void CSeq_feat_EditHandle::AddDbxref(const string& db_name, int db_key)
 {
     const_cast<CSeq_feat&>(*GetSeq_feat()).AddDbxref(db_name, db_key);
     //Update(); no index information is changed by dbxref
+}
+
+
+void CSeq_feat_EditHandle::AddFeatId(const CObject_id& id)
+{
+    if ( !IsPlainFeat() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_EditHandle::AddFeatId: not plain Seq-feat");
+    }
+    GetAnnot().x_GetInfo().AddFeatId(x_GetFeatIndex(), id, false);
+}
+
+
+void CSeq_feat_EditHandle::AddFeatId(int id)
+{
+    CObject_id obj_id;
+    obj_id.SetId(id);
+    AddFeatId(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::AddFeatId(const string& id)
+{
+    CObject_id obj_id;
+    obj_id.SetStr(id);
+    AddFeatId(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::AddFeatXref(const CObject_id& id)
+{
+    if ( !IsPlainFeat() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_EditHandle::AddFeatXref: not plain Seq-feat");
+    }
+    GetAnnot().x_GetInfo().AddFeatId(x_GetFeatIndex(), id, true);
+}
+
+
+void CSeq_feat_EditHandle::AddFeatXref(int id)
+{
+    CObject_id obj_id;
+    obj_id.SetId(id);
+    AddFeatXref(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::AddFeatXref(const string& id)
+{
+    CObject_id obj_id;
+    obj_id.SetStr(id);
+    AddFeatXref(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::RemoveFeatId(const CObject_id& id)
+{
+    if ( !IsPlainFeat() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_EditHandle::RemoveFeatId: not plain Seq-feat");
+    }
+    GetAnnot().x_GetInfo().RemoveFeatId(x_GetFeatIndex(), id, false);
+}
+
+
+void CSeq_feat_EditHandle::RemoveFeatId(int id)
+{
+    CObject_id obj_id;
+    obj_id.SetId(id);
+    RemoveFeatId(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::RemoveFeatId(const string& id)
+{
+    CObject_id obj_id;
+    obj_id.SetStr(id);
+    RemoveFeatId(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::RemoveFeatXref(const CObject_id& id)
+{
+    if ( !IsPlainFeat() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_EditHandle::RemoveFeatXref: not plain Seq-feat");
+    }
+    GetAnnot().x_GetInfo().RemoveFeatId(x_GetFeatIndex(), id, true);
+}
+
+
+void CSeq_feat_EditHandle::RemoveFeatXref(int id)
+{
+    CObject_id obj_id;
+    obj_id.SetId(id);
+    RemoveFeatXref(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::RemoveFeatXref(const string& id)
+{
+    CObject_id obj_id;
+    obj_id.SetStr(id);
+    RemoveFeatXref(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::ClearFeatIds(void)
+{
+    if ( !IsPlainFeat() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_EditHandle::ClearFeatIds: not plain Seq-feat");
+    }
+    GetAnnot().x_GetInfo().ClearFeatIds(x_GetFeatIndex(), false);
+}
+
+
+void CSeq_feat_EditHandle::ClearFeatXrefs(void)
+{
+    if ( !IsPlainFeat() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_EditHandle::ClearFeatXrefs: not plain Seq-feat");
+    }
+    GetAnnot().x_GetInfo().ClearFeatIds(x_GetFeatIndex(), true);
+}
+
+
+void CSeq_feat_EditHandle::SetFeatId(const CObject_id& id)
+{
+    ClearFeatIds();
+    AddFeatId(id);
+}
+
+
+void CSeq_feat_EditHandle::SetFeatId(int id)
+{
+    CObject_id obj_id;
+    obj_id.SetId(id);
+    SetFeatId(obj_id);
+}
+
+
+void CSeq_feat_EditHandle::SetFeatId(const string& id)
+{
+    CObject_id obj_id;
+    obj_id.SetStr(id);
+    SetFeatId(obj_id);
 }
 
 

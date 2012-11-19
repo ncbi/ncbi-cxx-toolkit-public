@@ -143,6 +143,10 @@ public:
 
     void Update(TAnnotIndex index);
 
+    void AddFeatId(TAnnotIndex index, const CObject_id& id, bool xref);
+    void RemoveFeatId(TAnnotIndex index, const CObject_id& id, bool xref);
+    void ClearFeatIds(TAnnotIndex index, bool xref);
+
     const CAnnotObject_Info& GetInfo(TAnnotIndex index) const;
 
     const CSeqTableInfo& GetTableInfo(void) const;
