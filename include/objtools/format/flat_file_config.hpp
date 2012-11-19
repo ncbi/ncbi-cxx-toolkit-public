@@ -208,7 +208,7 @@ public:
     typedef unsigned int    TGffOptions;
     typedef unsigned int    TGenbankBlocks;
     
-    class CGenbankBlockCallback : public CObject {
+    class NCBI_FORMAT_EXPORT CGenbankBlockCallback : public CObject {
     public:
         enum EAction {
             // the normal case
