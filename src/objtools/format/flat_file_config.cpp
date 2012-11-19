@@ -34,10 +34,256 @@
 #include <util/static_map.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <objtools/format/items/accession_item.hpp>
+#include <objtools/format/items/basecount_item.hpp>
+#include <objtools/format/items/comment_item.hpp>
+#include <objtools/format/items/contig_item.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
+#include <objtools/format/items/dbsource_item.hpp>
+#include <objtools/format/items/defline_item.hpp>
+#include <objtools/format/items/feature_item.hpp>
+#include <objtools/format/items/gap_item.hpp>
+#include <objtools/format/items/genome_project_item.hpp>
+#include <objtools/format/items/html_anchor_item.hpp>
+#include <objtools/format/items/keywords_item.hpp>
+#include <objtools/format/items/locus_item.hpp>
+#include <objtools/format/items/origin_item.hpp>
+#include <objtools/format/items/primary_item.hpp>
+#include <objtools/format/items/reference_item.hpp>
+#include <objtools/format/items/segment_item.hpp>
+#include <objtools/format/items/sequence_item.hpp>
+#include <objtools/format/items/source_item.hpp>
+#include <objtools/format/items/tsa_item.hpp>
+#include <objtools/format/items/version_item.hpp>
+#include <objtools/format/items/wgs_item.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+CFlatFileConfig::CGenbankBlockCallback::EAction 
+CFlatFileConfig::CGenbankBlockCallback::notify( 
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CStartSectionItem & head_item ) 
+{ 
+    return unified_notify(block_text, ctx, head_item, fGenbankBlocks_Head); 
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CHtmlAnchorItem & anchor_item )
+{
+    return unified_notify(block_text, ctx, anchor_item, fGenbankBlocks_None); 
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text, 
+    const CBioseqContext& ctx,
+    const CLocusItem &locus_item ) 
+{
+    return unified_notify(block_text, ctx, locus_item, fGenbankBlocks_Locus);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CDeflineItem & defline_item ) 
+{
+    return unified_notify(block_text, ctx,  defline_item, fGenbankBlocks_Defline);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CAccessionItem & accession_item ) 
+{
+    return unified_notify(block_text, ctx,  accession_item, fGenbankBlocks_Accession);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CVersionItem & version_item ) 
+{
+    return unified_notify(block_text, ctx,  version_item, fGenbankBlocks_Version);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CGenomeProjectItem & project_item ) 
+{
+    return unified_notify(block_text, ctx,  project_item, fGenbankBlocks_Project);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CDBSourceItem & dbsource_item ) 
+{
+    return unified_notify(block_text, ctx,  dbsource_item, fGenbankBlocks_Dbsource);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CKeywordsItem & keywords_item ) 
+{
+    return unified_notify(block_text, ctx,  keywords_item, fGenbankBlocks_Keywords);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CSegmentItem & segment_item ) 
+{
+    return unified_notify(block_text, ctx,  segment_item, fGenbankBlocks_Segment);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CSourceItem & source_item ) 
+{
+    return unified_notify(block_text, ctx,  source_item, fGenbankBlocks_Source);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CReferenceItem & ref_item ) 
+{
+    return unified_notify(block_text, ctx,  ref_item, fGenbankBlocks_Reference);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CCommentItem & comment_item ) 
+{
+    return unified_notify(block_text, ctx,  comment_item, fGenbankBlocks_Comment);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CPrimaryItem & primary_item ) 
+{
+    return unified_notify(block_text, ctx,  primary_item, fGenbankBlocks_Primary);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CFeatHeaderItem & featheader_item ) 
+{
+    return unified_notify(block_text, ctx,  featheader_item, fGenbankBlocks_Featheader);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CSourceFeatureItem & sourcefeat_item ) 
+{
+    return unified_notify(block_text, ctx,  sourcefeat_item, fGenbankBlocks_Sourcefeat);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CFeatureItem & feature_item ) 
+{
+    return unified_notify(block_text, ctx,  feature_item, fGenbankBlocks_FeatAndGap);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CGapItem & feature_item ) 
+{
+    return unified_notify(block_text, ctx,  feature_item, fGenbankBlocks_FeatAndGap);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CBaseCountItem & basecount_item ) 
+{
+    return unified_notify(block_text, ctx,  basecount_item, fGenbankBlocks_Basecount);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const COriginItem & origin_item ) 
+{
+    return unified_notify(block_text, ctx,  origin_item, fGenbankBlocks_Origin);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CSequenceItem & sequence_chunk_item ) 
+{
+    return unified_notify(block_text, ctx,  sequence_chunk_item, fGenbankBlocks_Sequence);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CContigItem & contig_item ) 
+{
+    return unified_notify(block_text, ctx,  contig_item, fGenbankBlocks_Contig);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CWGSItem & wgs_item ) 
+{
+    return unified_notify(block_text, ctx,  wgs_item, fGenbankBlocks_Wgs);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CTSAItem & tsa_item ) 
+{
+    return unified_notify(block_text, ctx,  tsa_item, fGenbankBlocks_Tsa);
+}
+
+CFlatFileConfig::CGenbankBlockCallback::EAction
+CFlatFileConfig::CGenbankBlockCallback::notify(
+    string & block_text,
+    const CBioseqContext& ctx,
+    const CEndSectionItem & slash_item ) 
+{
+    return unified_notify(block_text, ctx,  slash_item, fGenbankBlocks_Slash);
+}
 
 // -- constructor
 CFlatFileConfig::CFlatFileConfig(

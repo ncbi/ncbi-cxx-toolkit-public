@@ -167,53 +167,10 @@ public:
     bool IsMappedFromCDNA   (void) const { return m_Mapped == eMapped_from_cdna;    }
     bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
-    // outside programs should use this to find the gene on a given feature
-    static void s_GetAssociatedGeneInfo(
-        CBioseqContext& ctx,
-        const CSeq_feat_Handle & in_feat,
-        const CConstRef<CSeq_loc> & feat_loc,
-        CConstRef<CGene_ref> & out_suppression_check_gene_ref,
-        const CGene_ref*& out_g_ref,      //  out: gene ref
-        CConstRef<CSeq_feat>& out_s_feat, //  out: gene seq feat
-        const CSeq_feat_Handle & in_parent_feat );
-
 protected:
     typedef CGene_ref::TSyn TGeneSyn;
 
     void x_GatherInfoWithParent(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
-
-    static CSeq_feat_Handle s_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ctx );
-    static bool s_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location );
-    static
-    CConstRef<CSeq_feat> 
-        s_GetFeatViaSubsetThenExtremesIfPossible( 
-            CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
-            CSeqFeatData::ESubtype feat_subtype,
-            const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref ) ;
-
-    static
-    CConstRef<CSeq_feat> 
-        s_GetFeatViaSubsetThenExtremesIfPossible_Helper(
-            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref );
-    // These 2 functions could just be folded into x_GetFeatViaSubsetThenExtremesIfPossible_Helper,
-    // but they're separate to make it easier to profile the different paths.
-    static
-    CConstRef<CSeq_feat> 
-        s_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
-            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref );
-    static
-    CConstRef<CSeq_feat> 
-        s_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
-            CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref );
-
-    // If any gene-ref is suppressed, it returns that one.
-    // Otherwise, it returns the last generef
-    static
-    CConstRef<CGene_ref> s_GetSuppressionCheckGeneRef(const CSeq_feat_Handle & feat);
 
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );

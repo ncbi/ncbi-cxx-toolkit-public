@@ -64,6 +64,7 @@ class CContigItem;
 class CWGSItem;
 class CTSAItem;
 class CEndSectionItem;
+class IFlatItem;
 
 // --- Flat File configuration class
 
@@ -164,6 +165,7 @@ public:
     enum FGenbankBlocks {
         // default is all sections
         fGenbankBlocks_All        = (~0u),
+        fGenbankBlocks_None       = 0,
 
         // or, specify individual sections to print.
         // or, specify individual sections to skip
@@ -220,84 +222,94 @@ public:
 
         virtual ~CGenbankBlockCallback(void) { }
 
-        // note that these notify functions let you change the block_text
+        // please note that these notify functions let you change the block_text
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CStartSectionItem & head_item ) { return eAction_Default; }
+                                const CStartSectionItem & head_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CHtmlAnchorItem & anchor_item ) { return eAction_Default; }
+                                const CHtmlAnchorItem & anchor_item );
         virtual EAction notify( string & block_text, 
                                 const CBioseqContext& ctx,
-                                const CLocusItem &locus_item ) { return eAction_Default; }
+                                const CLocusItem &locus_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CDeflineItem & defline_item ) { return eAction_Default; }
+                                const CDeflineItem & defline_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CAccessionItem & accession_item ) { return eAction_Default; }
+                                const CAccessionItem & accession_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CVersionItem & version_item ) { return eAction_Default; }
+                                const CVersionItem & version_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CGenomeProjectItem & project_item ) { return eAction_Default; }
+                                const CGenomeProjectItem & project_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CDBSourceItem & dbsource_item ) { return eAction_Default; }
+                                const CDBSourceItem & dbsource_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CKeywordsItem & keywords_item ) { return eAction_Default; }
+                                const CKeywordsItem & keywords_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CSegmentItem & segment_item ) { return eAction_Default; }
+                                const CSegmentItem & segment_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CSourceItem & source_item ) { return eAction_Default; }
+                                const CSourceItem & source_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CReferenceItem & ref_item ) { return eAction_Default; }
+                                const CReferenceItem & ref_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CCommentItem & comment_item ) { return eAction_Default; }
+                                const CCommentItem & comment_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CPrimaryItem & primary_item ) { return eAction_Default; }
+                                const CPrimaryItem & primary_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CFeatHeaderItem & featheader_item ) { return eAction_Default; }
+                                const CFeatHeaderItem & featheader_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CSourceFeatureItem & sourcefeat_item ) { return eAction_Default; }
+                                const CSourceFeatureItem & sourcefeat_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CFeatureItem & feature_item ) { return eAction_Default; }
+                                const CFeatureItem & feature_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CGapItem & feature_item ) { return eAction_Default; }
+                                const CGapItem & feature_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CBaseCountItem & basecount_item ) { return eAction_Default; }
+                                const CBaseCountItem & basecount_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const COriginItem & origin_item ) { return eAction_Default; }
+                                const COriginItem & origin_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CSequenceItem & sequence_chunk_item ) { return eAction_Default; }
+                                const CSequenceItem & sequence_chunk_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CContigItem & contig_item ) { return eAction_Default; }
+                                const CContigItem & contig_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CWGSItem & wgs_item ) { return eAction_Default; }
+                                const CWGSItem & wgs_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CTSAItem & tsa_item ) { return eAction_Default; }
+                                const CTSAItem & tsa_item );
         virtual EAction notify( string & block_text,
                                 const CBioseqContext& ctx,
-                                const CEndSectionItem & slash_item ) { return eAction_Default; }
+                                const CEndSectionItem & slash_item );
 
         // add more overridable functions if more blocks are invented
+
+
+        // ...or override
+        // this if you want only a single entry-point for
+        // notifications.
+        virtual EAction unified_notify( 
+            string & block_text,
+            const CBioseqContext& ctx, 
+            const IFlatItem & flat_item, 
+            FGenbankBlocks which_block ) { return eAction_Default; }
     };
 
     // constructors
