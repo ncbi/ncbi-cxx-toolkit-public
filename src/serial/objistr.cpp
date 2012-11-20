@@ -595,11 +595,7 @@ void CObjectIStream::x_SetPathHooks(bool set)
         if (hook) {
             CTypeInfo* item = m_PathReadObjectHooks.FindType(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalReadHook(*this, hook);
-                } else {
-                    item->ResetLocalReadHook(*this);
-                }
+                item->SetPathReadHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -608,11 +604,7 @@ void CObjectIStream::x_SetPathHooks(bool set)
         if (hook) {
             CTypeInfo* item = m_PathSkipObjectHooks.FindType(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalSkipHook(*this, hook);
-                } else {
-                    item->ResetLocalSkipHook(*this);
-                }
+                item->SetPathSkipHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -621,11 +613,7 @@ void CObjectIStream::x_SetPathHooks(bool set)
         if (hook) {
             CMemberInfo* item = m_PathReadMemberHooks.FindItem(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalReadHook(*this, hook);
-                } else {
-                    item->ResetLocalReadHook(*this);
-                }
+                item->SetPathReadHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -634,11 +622,7 @@ void CObjectIStream::x_SetPathHooks(bool set)
         if (hook) {
             CMemberInfo* item = m_PathSkipMemberHooks.FindItem(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalSkipHook(*this, hook);
-                } else {
-                    item->ResetLocalSkipHook(*this);
-                }
+                item->SetPathSkipHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -647,11 +631,7 @@ void CObjectIStream::x_SetPathHooks(bool set)
         if (hook) {
             CVariantInfo* item = m_PathReadVariantHooks.FindItem(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalReadHook(*this, hook);
-                } else {
-                    item->ResetLocalReadHook(*this);
-                }
+                item->SetPathReadHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -660,11 +640,7 @@ void CObjectIStream::x_SetPathHooks(bool set)
         if (hook) {
             CVariantInfo* item = m_PathSkipVariantHooks.FindItem(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalSkipHook(*this, hook);
-                } else {
-                    item->ResetLocalSkipHook(*this);
-                }
+                item->SetPathSkipHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }

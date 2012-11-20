@@ -253,11 +253,7 @@ void CObjectStreamCopier::SetPathHooks(CObjectStack& stk, bool set)
         if (hook) {
             CTypeInfo* item = m_PathCopyObjectHooks.FindType(stk);
             if (item) {
-                if (set) {
-                    item->SetLocalCopyHook(*this, hook);
-                } else {
-                    item->ResetLocalCopyHook(*this);
-                }
+                item->SetPathCopyHook(this,stk.GetStackPath(),set ? hook : NULL);
             }
         }
     }
@@ -266,11 +262,7 @@ void CObjectStreamCopier::SetPathHooks(CObjectStack& stk, bool set)
         if (hook) {
             CMemberInfo* item = m_PathCopyMemberHooks.FindItem(stk);
             if (item) {
-                if (set) {
-                    item->SetLocalCopyHook(*this, hook);
-                } else {
-                    item->ResetLocalCopyHook(*this);
-                }
+                item->SetPathCopyHook(this,stk.GetStackPath(),set ? hook : NULL);
             }
         }
     }
@@ -279,11 +271,7 @@ void CObjectStreamCopier::SetPathHooks(CObjectStack& stk, bool set)
         if (hook) {
             CVariantInfo* item = m_PathCopyVariantHooks.FindItem(stk);
             if (item) {
-                if (set) {
-                    item->SetLocalCopyHook(*this, hook);
-                } else {
-                    item->ResetLocalCopyHook(*this);
-                }
+                item->SetPathCopyHook(this,stk.GetStackPath(),set ? hook : NULL);
             }
         }
     }

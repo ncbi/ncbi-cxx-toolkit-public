@@ -384,11 +384,7 @@ void CObjectOStream::x_SetPathHooks(bool set)
         if (hook) {
             CTypeInfo* item = m_PathWriteObjectHooks.FindType(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalWriteHook(*this, hook);
-                } else {
-                    item->ResetLocalWriteHook(*this);
-                }
+                item->SetPathWriteHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -397,11 +393,7 @@ void CObjectOStream::x_SetPathHooks(bool set)
         if (hook) {
             CMemberInfo* item = m_PathWriteMemberHooks.FindItem(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalWriteHook(*this, hook);
-                } else {
-                    item->ResetLocalWriteHook(*this);
-                }
+                item->SetPathWriteHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
@@ -410,11 +402,7 @@ void CObjectOStream::x_SetPathHooks(bool set)
         if (hook) {
             CVariantInfo* item = m_PathWriteVariantHooks.FindItem(*this);
             if (item) {
-                if (set) {
-                    item->SetLocalWriteHook(*this, hook);
-                } else {
-                    item->ResetLocalWriteHook(*this);
-                }
+                item->SetPathWriteHook(this, GetStackPath(), set ? hook : NULL);
             }
         }
     }
