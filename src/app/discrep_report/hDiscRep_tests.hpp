@@ -168,6 +168,7 @@ namespace DiscRepNmSpc {
 
       string GetIsComment(unsigned cnt, const string& str);
       string GetHasComment(unsigned cnt, const string& str);
+      string GetDoesComment(unsigned cnt, const string& str);
       string GetOtherComment(unsigned cnt, const string& single_str, const string& plural_str);
 
  //  GetDiscrepancyItemTextEx() 
@@ -473,11 +474,34 @@ namespace DiscRepNmSpc {
     protected:
       string GetName_iso() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
+      string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
+      string GetName_tbad () const {return string("TAX_LOOKUP_MISMATCH"); }
 
       bool HasMulSrc(const CBioSource& biosrc);
       bool IsBacterialIsolate(const CBioSource& biosrc);
       bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc);
+      bool DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2);
       void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+
+  class CSeqEntry_TAX_LOOKUP_MISSING : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_TAX_LOOKUP_MISSING () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_tmiss();}
+  };
+
+
+  class CSeqEntry_TAX_LOOKUP_MISMATCH : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_TAX_LOOKUP_MISMATCH () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_tbad();}
   };
 
 

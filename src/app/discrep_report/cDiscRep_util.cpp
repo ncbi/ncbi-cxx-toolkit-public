@@ -761,6 +761,12 @@ string CTestAndRepData :: GetHasComment(unsigned cnt, const string& str)
 }
 
 
+string CTestAndRepData :: GetDoesComment(unsigned cnt, const string& str)
+{
+   return(NStr::UIntToString(cnt) + " " + str + ( (1==cnt) ? " does " : "s do "));
+}
+
+
 string CTestAndRepData :: GetOtherComment(unsigned cnt, const string& single_str, const string& plural_str)
 {
    return(NStr::UIntToString(cnt) + " " + ( (1==cnt) ? single_str : plural_str));

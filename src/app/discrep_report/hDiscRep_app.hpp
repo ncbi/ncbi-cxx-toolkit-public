@@ -50,6 +50,7 @@
 #include <objects/macro/Suspect_rule.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/submit/Submit_block.hpp>
+#include <objects/taxon1/taxon1.hpp>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
@@ -81,6 +82,7 @@ namespace DiscRepNmSpc{
        public:
          virtual void Init(void);
          virtual int  Run (void);
+         virtual void Exit(void);
          
          void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
      };
@@ -158,6 +160,7 @@ namespace DiscRepNmSpc{
            static vector <string>                    suspicious_notes;
            static vector <string>                    trna_list; 
            static Str2UInt                           desired_aaList;
+           static CTaxon1                           tax_db_conn;
      };
 
 /*

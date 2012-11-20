@@ -98,6 +98,7 @@ vector <string>                         CDiscRepInfo :: suspicious_notes;
 vector <string>                         CDiscRepInfo :: trna_list;
 vector <string>                         CDiscRepInfo :: rrna_standard_name;
 Str2UInt                                CDiscRepInfo :: desired_aaList;
+CTaxon1                                 CDiscRepInfo :: tax_db_conn;
 
 void CDiscRepApp::Init(void)
 {
@@ -322,6 +323,9 @@ cerr << "222can get\n";
     thisInfo.desired_aaList["Sec"] = 0;
     thisInfo.desired_aaList["Pyl"] = 0;
     thisInfo.desired_aaList["Ter"] = 0;
+
+    // ini. of tax_db_conn: taxonomy db connection
+    thisInfo.tax_db_conn.Init();
 }
 
 
@@ -443,6 +447,11 @@ cerr << "CFeat_CI.size()   " << i << endl;
     return 0;
 }
 
+
+void CDiscRepApp::Exit(void)
+{
+   thisInfo.tax_db_conn.Fini();
+};
 
 
 /////////////////////////////////////////////////////////////////////////////

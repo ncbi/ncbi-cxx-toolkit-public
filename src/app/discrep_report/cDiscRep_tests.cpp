@@ -206,8 +206,7 @@ void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem>& c_i
               false, e_OtherComment);
       }
       c_item->description
-        = GetOtherComment(tax2list.size(), "source does not", "source do not")
-            + " match definition lines.";
+        = GetDoesComment(tax2list.size(), "source") + + "not match definition lines.";
    }
 };
 
@@ -1004,8 +1003,7 @@ void CBioseq_DISC_CDS_WITHOUT_MRNA :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_DISC_CDS_WITHOUT_MRNA :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description 
-     = GetOtherComment(c_item->item_list.size(), "coding region does", "coding regions do")
-        + " not have an mRNA.";
+     = GetDoesComment(c_item->item_list.size(), "coding region") + "not have an mRNA.";
 };
 
 
@@ -5135,6 +5133,26 @@ bool CSeqEntry_test_on_biosrc :: IsBacterialIsolate(const CBioSource& biosrc)
    return false;
 };
 
+bool CSeqEntry_test_on_biosrc :: DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2)
+{
+   if (!org1.CanGetDb() || org1.GetDb().empty()
+             || !org2.CanGetDb() || org2.GetDb().empty())
+      return false;
+
+   ITERATE (vector <CRef <CDbtag> >, it, org1.GetDb()) {
+       if ((*it)->GetType() == CDbtag::eDbtagType_taxon) {
+          ITERATE (vector <CRef <CDbtag> >, jt, org2.GetDb()) {
+             if ((*jt)->GetType() == CDbtag::eDbtagType_taxon) {
+                if ((*it)->Match(**jt)) return true;
+                else return false;
+             }
+          }
+          return false;
+       }
+   }
+   return false;
+};
+
 
 void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string& desc)
 {
@@ -5144,6 +5162,21 @@ void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string
   // DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE
   if (IsBacterialIsolate(biosrc))   
                thisInfo.test_item_list[GetName_iso()].push_back(desc);
+
+  // TAX_LOOKUP_MISSING
+  CRef <CTaxon2_data> lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());
+  if (lookup_tax.Empty() || !(lookup_tax->CanGetOrg()))
+      thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
+  else {
+    string org_tax = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
+    string db_tax =lookup_tax->GetOrg().CanGetTaxname() ?lookup_tax->GetOrg().GetTaxname():kEmptyStr;
+    if (org_tax != db_tax)
+      thisInfo.test_item_list[GetName_tbad()].push_back(desc);
+    else {
+      if (!DoTaxonIdsMatch(biosrc.GetOrg(), lookup_tax->GetOrg()))
+          thisInfo.test_item_list[GetName_tbad()].push_back(desc);
+    }
+  }
 };
 
 
@@ -5167,6 +5200,19 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    };
 
   thisTest.is_BIOSRC1_run = true;
+};
+
+void CSeqEntry_TAX_LOOKUP_MISSING :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetIsComment(c_item->item_list.size(), "organism") + "not found in taxonomy lookup.";
+};
+
+
+void CSeqEntry_TAX_LOOKUP_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetDoesComment(c_item->item_list.size(), "tax name") + "not match taxonomy lookup.";
 };
 
 
@@ -5392,8 +5438,7 @@ void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
   RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
 
   c_item->description
-    = GetOtherComment(c_item->item_list.size(), "sequence does", "sequences do")
-       + " not include project.";
+    = GetDoesComment(c_item->item_list.size(), "sequence") + " not include project.";
 };
 
 
