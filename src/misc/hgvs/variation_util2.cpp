@@ -2282,6 +2282,8 @@ void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int
 
 void CVariationUtil::SetVariantProperties(CVariation& v)
 {
+    v.Index();
+
     for(CTypeIterator<CVariation> it(Begin(v)); it; ++it) {
         CVariation& v2 = *it;
         if(!v2.IsSetPlacements()) {
@@ -2296,6 +2298,14 @@ void CVariationUtil::SetVariantProperties(CVariation& v)
         NON_CONST_ITERATE(CVariation::TPlacements, it2, v2.SetPlacements()) {
             CVariantPlacement& p = **it2;
             SetPlacementProperties(p);
+            
+            if(v2.GetConsequenceParent()) {
+                //If this variation is a consequence of a parent variation, we are only interested 
+                //in the product-specific properties (as the consequence variation will have nucleotide-level placement
+                //but we're not interested in recomputing multiple-genes-specific properties here.
+                break;
+            }
+            
             v2.SetVariant_prop().SetGene_location() |= p.GetGene_location();
         }
     }
