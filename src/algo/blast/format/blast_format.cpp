@@ -559,6 +559,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
         const CBlastTabularInfo::EFieldDelimiter kDelim =
             (m_FormatType == CFormattingArgs::eCommaSeparatedValues
              ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
+
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
         tabinfo.SetParseLocalIds(m_BelieveQuery);
         if (ncbi::NStr::ToLower(m_Program) == string("blastn"))
@@ -573,10 +574,13 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
                                 subject_bioseq);
         }
 
-
         if (results.HasAlignments()) {
     	    CSeq_align_set copy_aln_set;
             CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_HitlistSize);
+
+            if(string::npos != m_CustomOutputFormatSpec.find("qcovs"))
+            		CBlastFormatUtil::InsertSubjectScores (copy_aln_set, bhandle);
+
             ITERATE(CSeq_align_set::Tdata, itr, copy_aln_set.Get()) {
                     const CSeq_align& s = **itr;
                     tabinfo.SetFields(s, *m_Scope, &m_ScoringMatrix);

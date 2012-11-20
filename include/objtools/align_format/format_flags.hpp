@@ -112,6 +112,16 @@ enum ETabularField {
     eQueryFrame,           ///< Query frame
     eSubjFrame,            ///< Subject frame
     eBTOP,                 ///< BLAST traceback operations.
+    eSubjectTaxIds,		   ///< Subject Tax ID
+    eSubjectSciNames,	   ///< Subject Scientific Name
+    eSubjectCommonNames,   ///< Subject Common Name
+    eSubjectBlastNames,	   ///< Subject Blast Name
+    eSubjectSuperKingdoms, ///< Subject Super Kingdom
+    eSubjectTitle,		   ///< Only the first subject defline
+    eSubjectAllTitles,	   ///< All subject deflines
+    eSubjectStrand,        ///< Subject Strand
+    eQueryCovSubject,      ///< Query Coverage per Subject
+    eQueryCovSeqalign,     ///< Query Coverage per Seqalign
     eMaxTabularField       ///< Sentinel value
 };
 

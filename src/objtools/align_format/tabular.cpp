@@ -49,13 +49,17 @@ static char const rcsid[] = "$Id$";
 #include <objmgr/util/sequence.hpp>
 
 #include <objects/blastdb/Blast_def_line.hpp>
-#include <objects/blastdb/Blast_def_line_set.hpp>
+
+#include <objmgr/seqdesc_ci.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 #include <map>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
+
+static const string NA = "N/A";
 
 void 
 CBlastTabularInfo::x_AddDefaultFieldsToShow()
@@ -103,13 +107,15 @@ void CBlastTabularInfo::x_ResetFields()
 {
     m_QueryLength = m_SubjectLength = 0U;
     m_Score = m_AlignLength = m_NumGaps = m_NumGapOpens = m_NumIdent =
-        m_NumPositives = m_QueryStart = m_QueryEnd = m_SubjectStart = 
-        m_SubjectEnd = 0; 
+    m_NumPositives = m_QueryStart = m_QueryEnd = m_SubjectStart =
+    m_SubjectEnd = 0;
     m_BitScore = NcbiEmptyString;
     m_Evalue = NcbiEmptyString;
     m_QuerySeq = NcbiEmptyString;
     m_SubjectSeq = NcbiEmptyString;
     m_BTOP = NcbiEmptyString;
+    m_SubjectStrand = NcbiEmptyString;
+    m_QueryCovSeqalign = -1;
 }
 
 void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
@@ -124,13 +130,15 @@ void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
 CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
                                      EFieldDelimiter delim, 
                                      bool parse_local_ids)
-    : m_Ostream(ostr) 
+    : m_Ostream(ostr)
 {
     x_SetFieldsToShow(format);
     x_ResetFields();
     x_SetFieldDelimiter(delim);
     SetParseLocalIds(parse_local_ids);
     SetNoFetch(false);
+    m_QueryCovSubject.first = NA;
+    m_QueryCovSubject.second = -1;
 }
 
 CBlastTabularInfo::~CBlastTabularInfo()
@@ -239,6 +247,145 @@ void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
     }
 }
 
+void CBlastTabularInfo::x_PrintSubjectTaxIds()
+{
+	if(m_SubjectTaxIds.empty()) {
+		m_Ostream << NA;
+		return;
+	}
+
+    ITERATE(set<int>, iter, m_SubjectTaxIds) {
+        if (iter != m_SubjectTaxIds.begin())
+            m_Ostream << ";";
+       m_Ostream << *iter;
+    }
+}
+
+void CBlastTabularInfo::x_PrintSubjectBlastNames()
+{
+	if(m_SubjectBlastNames.empty()) {
+		m_Ostream << NA;
+		return;
+	}
+
+	ITERATE(set<string>, iter, m_SubjectBlastNames) {
+        if (iter != m_SubjectBlastNames.begin())
+            m_Ostream << ";";
+        m_Ostream << *iter;
+	}
+}
+
+void CBlastTabularInfo::x_PrintSubjectSuperKingdoms()
+{
+	if(m_SubjectSuperKingdoms.empty()) {
+		m_Ostream << NA;
+		return;
+	}
+
+	 ITERATE(set<string>, iter, m_SubjectSuperKingdoms) {
+		 if (iter != m_SubjectSuperKingdoms.begin())
+			 m_Ostream << ";";
+		 m_Ostream << *iter;
+	}
+}
+
+void CBlastTabularInfo::x_PrintSubjectSciNames()
+{
+	if(m_SubjectSciNames.empty()) {
+		m_Ostream << NA;
+		return;
+	}
+
+	ITERATE(vector<string>, iter, m_SubjectSciNames) {
+		 if (iter != m_SubjectSciNames.begin())
+			 m_Ostream << ";";
+		 m_Ostream << *iter;
+	}
+}
+
+void CBlastTabularInfo::x_PrintSubjectCommonNames()
+{
+	if(m_SubjectCommonNames.empty()) {
+		m_Ostream << NA;
+		return;
+	}
+
+	 ITERATE(vector<string>, iter, m_SubjectCommonNames) {
+		 if (iter != m_SubjectCommonNames.begin())
+			 m_Ostream << ";";
+		 m_Ostream << *iter;
+	}
+}
+
+void CBlastTabularInfo::x_PrintSubjectAllTitles ()
+{
+	if(m_SubjectDefline.NotEmpty() && m_SubjectDefline->CanGet() &&
+	   m_SubjectDefline->IsSet() && !m_SubjectDefline->Get().empty())
+	{
+		const list<CRef<CBlast_def_line> > & defline = m_SubjectDefline->Get();
+		list<CRef<CBlast_def_line> >::const_iterator iter = defline.begin();
+		for(; iter != defline.end(); ++iter)
+		{
+			if (iter != defline.begin())
+						 m_Ostream << "<>";
+
+			if((*iter)->IsSetTitle())
+				m_Ostream << (*iter)->GetTitle();
+			else
+				m_Ostream << NA;
+		}
+	}
+	else
+		m_Ostream << NA;
+
+}
+
+void CBlastTabularInfo::x_PrintSubjectTitle()
+{
+	if(m_SubjectDefline.NotEmpty() && m_SubjectDefline->CanGet() &&
+	   m_SubjectDefline->IsSet() && !m_SubjectDefline->Get().empty())
+	{
+		const list<CRef<CBlast_def_line> > & defline = m_SubjectDefline->Get();
+
+		if(defline.empty())
+			m_Ostream << NA;
+		else
+		{
+			if(defline.front()->IsSetTitle())
+				m_Ostream << defline.front()->GetTitle();
+			else
+				m_Ostream << NA;
+		}
+	}
+	else
+		m_Ostream << NA;
+
+}
+
+void CBlastTabularInfo::x_PrintSubjectStrand()
+{
+	if(m_SubjectStrand != NcbiEmptyString)
+		m_Ostream << m_SubjectStrand;
+	else
+		m_Ostream << NA;
+}
+
+void CBlastTabularInfo::x_PrintSubjectCoverage(void)
+{
+	if(m_QueryCovSubject.second < 0)
+		m_Ostream << NA;
+	else
+		m_Ostream << NStr::IntToString(m_QueryCovSubject.second);
+}
+
+void CBlastTabularInfo::x_PrintSeqalignCoverage(void)
+{
+	if(m_QueryCovSeqalign < 0)
+		m_Ostream << NA;
+	else
+		m_Ostream << NStr::IntToString(m_QueryCovSeqalign);
+}
+
 CRef<CSeq_id> s_ReplaceLocalId(const CBioseq_Handle& bh, CConstRef<CSeq_id> sid_in, bool parse_local)
 {
 
@@ -289,19 +436,27 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
         
 void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 {
-    m_SubjectIds.clear();
 
-    // Check if this Bioseq handle contains a Blast-def-line-set object.
-    // If it does, retrieve Seq-ids from all redundant sequences, and 
-    // print them separated by commas.
-    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
-    // its destruction; then extract the list of CBlast_def_line objects.
     const CRef<CBlast_def_line_set> bdlRef = 
         CSeqDB::ExtractBlastDefline(bh);
 
-    if (bdlRef && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
+    x_SetSubjectId(bh, bdlRef);
+    
+}
+
+void CBlastTabularInfo::x_SetSubjectId(const CBioseq_Handle& bh, const CRef<CBlast_def_line_set> & bdlRef)
+{
+    m_SubjectIds.clear();
+
+    // Check if this Bioseq handle contains a Blast-def-line-set object.
+    // If it does, retrieve Seq-ids from all redundant sequences, and
+    // print them separated by commas.
+    // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
+    // its destruction; then extract the list of CBlast_def_line objects.
+
+    if (bdlRef.NotEmpty() && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
         vector< CConstRef<CSeq_id> > original_seqids;
-        
+
         ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
             original_seqids.clear();
             ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
@@ -313,7 +468,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
             m_SubjectIds.push_back(next_seqid_list);
         }
     } else {
-        // Blast-def-line is not filled, hence retrieve all Seq-ids directly 
+        // Blast-def-line is not filled, hence retrieve all Seq-ids directly
         // from the Bioseq handle's Seq-id.
         list<CRef<objects::CSeq_id> > subject_id_list;
         ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
@@ -322,9 +477,124 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
         }
         m_SubjectIds.push_back(subject_id_list);
     }
-    
+
+
 }
 
+bool s_IsValidName(const string & name)
+{
+	if(name == "-")
+		return false;
+
+	if(name == "unclassified")
+		return false;
+
+	return true;
+}
+
+void CBlastTabularInfo::x_SetTaxInfo(const CBioseq_Handle & handle, const CRef<CBlast_def_line_set> & bdlRef)
+{
+	m_SubjectTaxIds.clear();
+	m_SubjectSciNames.clear();
+	m_SubjectCommonNames.clear();
+	m_SubjectBlastNames.clear();
+	m_SubjectSuperKingdoms.clear();
+
+    if (bdlRef.NotEmpty() && bdlRef->CanGet() && bdlRef->IsSet() && !bdlRef->Get().empty()){
+
+        ITERATE(CBlast_def_line_set::Tdata, itr, bdlRef->Get()) {
+        	if((*itr)->IsSetTaxid())
+        	{
+        		if((*itr)->GetTaxid())
+        			m_SubjectTaxIds.insert((*itr)->GetTaxid());
+        	}
+        }
+    }
+
+	if(m_SubjectTaxIds.empty())
+	{
+		CSeqdesc_CI desc_s(handle, CSeqdesc::e_Source);
+		for (;desc_s; ++desc_s)
+		{
+			 int t = desc_s->GetSource().GetOrg().GetTaxId();
+			 if(t)
+				  m_SubjectTaxIds.insert(t);
+		}
+
+		CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
+		for (; desc; ++desc)
+		{
+			int t= desc->GetOrg().GetTaxId();
+			if(t)
+				m_SubjectTaxIds.insert(t);
+		}
+	}
+
+	if(m_SubjectTaxIds.empty())
+		return;
+
+   	if( x_IsFieldRequested(eSubjectSciNames) ||
+    	x_IsFieldRequested(eSubjectCommonNames) ||
+    	x_IsFieldRequested(eSubjectBlastNames) ||
+    	x_IsFieldRequested(eSubjectSuperKingdoms))
+   	{
+   		set<int>::iterator itr = m_SubjectTaxIds.begin();
+
+   		for(; itr !=  m_SubjectTaxIds.end(); ++itr)
+   		{
+    		try
+    		{
+    			SSeqDBTaxInfo taxinfo;
+    			CSeqDB::GetTaxInfo(*itr, taxinfo);
+    			m_SubjectSciNames.push_back(taxinfo.scientific_name);
+    			m_SubjectCommonNames.push_back(taxinfo.common_name);
+    			if(s_IsValidName(taxinfo.blast_name))
+    				m_SubjectBlastNames.insert(taxinfo.blast_name);
+
+    			if(s_IsValidName(taxinfo.s_kingdom))
+    				m_SubjectSuperKingdoms.insert(taxinfo.s_kingdom);
+
+    		} catch (const CException&) {
+    			//only put fillers in if we are going to show tax id
+    			// the fillers are put in so that the name list would
+    			// match the taxid list
+    			if(x_IsFieldRequested(eSubjectTaxIds) )
+    			{
+    				m_SubjectSciNames.push_back(NA);
+    				m_SubjectCommonNames.push_back(NA);
+    			}
+    		}
+    	}
+    }
+
+	return;
+
+}
+void CBlastTabularInfo::x_SetQueryCovSubject(const CSeq_align & align)
+{
+	int pct = -1;
+	if(align.GetNamedScore("seq_percent_coverage", pct))
+	{
+		m_QueryCovSubject.first = align.GetSeq_id(1).AsFastaString();
+		m_QueryCovSubject.second = pct;
+	}
+	else if(align.GetSeq_id(1).AsFastaString() != m_QueryCovSubject.first)
+	{
+		m_QueryCovSubject.first = NA;
+		m_QueryCovSubject.second = pct;
+	}
+
+}
+
+void CBlastTabularInfo::x_SetQueryCovSeqalign(const CSeq_align & align, int query_len)
+{
+	int len = abs((int) (align.GetSeqStop(0) - align.GetSeqStart(0))) + 1;
+	double tmp = 100.0 * len/(double) query_len;
+	if(tmp  < 99)
+		tmp +=0.5;
+
+	m_QueryCovSeqalign = (int)tmp;
+}
 
 int CBlastTabularInfo::SetFields(const CSeq_align& align, 
                                  CScope& scope, 
@@ -358,7 +628,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // Extract the full query id from the correspondintg Bioseq handle.
     if (x_IsFieldRequested(eQuerySeqId) || x_IsFieldRequested(eQueryGi) ||
         x_IsFieldRequested(eQueryAccession) ||
-        x_IsFieldRequested(eQueryAccessionVersion)) {
+        x_IsFieldRequested(eQueryAccessionVersion) ||
+        x_IsFieldRequested(eQueryCovSeqalign)) {
         try {
             // FIXME: do this only if the query has changed
             const CBioseq_Handle& query_bh = 
@@ -366,6 +637,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
             SetQueryId(query_bh);
             query_is_na = query_bh.IsNa();
             m_QueryLength = query_bh.GetBioseqLength();
+            x_SetQueryCovSeqalign(align, m_QueryLength);
         } catch (const CException&) {
             list<CRef<CSeq_id> > query_ids;
             CRef<CSeq_id> id(new CSeq_id());
@@ -376,20 +648,47 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         }
     }
 
+    if (x_IsFieldRequested(eQueryCovSubject))
+    	x_SetQueryCovSubject(align);
+
     // Extract the full list of subject ids
-    if (x_IsFieldRequested(eSubjectSeqId) || 
+    bool setSubjectIds =  (x_IsFieldRequested(eSubjectSeqId) ||
         x_IsFieldRequested(eSubjectAllSeqIds) ||
         x_IsFieldRequested(eSubjectGi) ||
         x_IsFieldRequested(eSubjectAllGis) ||
         x_IsFieldRequested(eSubjectAccession) ||
         x_IsFieldRequested(eSubjectAllAccessions) ||
-        x_IsFieldRequested(eSubjAccessionVersion)) {
+        x_IsFieldRequested(eSubjAccessionVersion));
+
+    bool setSubjectTaxInfo = (x_IsFieldRequested(eSubjectTaxIds) ||
+    						  x_IsFieldRequested(eSubjectSciNames) ||
+    						  x_IsFieldRequested(eSubjectCommonNames) ||
+    						  x_IsFieldRequested(eSubjectBlastNames) ||
+    						  x_IsFieldRequested(eSubjectSuperKingdoms));
+
+    bool setSubjectTitle = (x_IsFieldRequested(eSubjectTitle) ||
+			  	  	  	  	x_IsFieldRequested(eSubjectAllTitles));
+
+    if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle ||
+       x_IsFieldRequested(eSubjectStrand))
+    {
         try {
             const CBioseq_Handle& subject_bh = 
                 scope.GetBioseqHandle(align.GetSeq_id(1));
-            SetSubjectId(subject_bh);
+            CRef<CBlast_def_line_set> bdlRef =
+                CSeqDB::ExtractBlastDefline(subject_bh);
+            x_SetSubjectId(subject_bh, bdlRef);
             subject_is_na = subject_bh.IsNa();
             m_SubjectLength = subject_bh.GetBioseqLength();
+            if(setSubjectTaxInfo)
+            	x_SetTaxInfo(subject_bh, bdlRef);
+            if(setSubjectTitle)
+            {
+            	m_SubjectDefline.Reset();
+            	if(bdlRef.NotEmpty())
+            		m_SubjectDefline = bdlRef;
+            }
+
         } catch (const CException&) {
             list<CRef<CSeq_id> > subject_ids;
             CRef<CSeq_id> id(new CSeq_id());
@@ -398,6 +697,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
             SetSubjectId(subject_ids);
             bioseqs_found = false;
         }
+
     }
 
     // If Bioseq has not been found for one or both of the sequences, all
@@ -411,7 +711,9 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         //_ASSERT(m_QueryId.front().NotEmpty());
         //m_QueryLength = sequence::GetLength(*m_QueryId.front(), &scope);
         m_QueryLength = sequence::GetLength(align.GetSeq_id(0), &scope);
+
     }
+
     if (x_IsFieldRequested(eSubjectLength) && m_SubjectLength == 0) {
         //_ASSERT(!m_SubjectIds.empty());
         //_ASSERT(!m_SubjectIds.front().empty());
@@ -428,7 +730,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(eSubjectSeq) || (x_IsFieldRequested(eNumIdentical) && num_ident > 0 ) ||
         x_IsFieldRequested(ePositives) || x_IsFieldRequested(eMismatches) || 
         x_IsFieldRequested(ePercentPositives) || x_IsFieldRequested(ePercentIdentical) ||
-        x_IsFieldRequested(eQueryFrame) || x_IsFieldRequested(eBTOP)) {
+        x_IsFieldRequested(eQueryFrame) || x_IsFieldRequested(eBTOP) ||
+        x_IsFieldRequested(eSubjectStrand)) {
 
     CRef<CSeq_align> finalAln(0);
    
@@ -561,7 +864,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     }
 
     if (x_IsFieldRequested(eSubjectStart) || x_IsFieldRequested(eSubjectEnd) ||
-        x_IsFieldRequested(eSubjFrame) || x_IsFieldRequested(eFrames)) {
+        x_IsFieldRequested(eSubjFrame) || x_IsFieldRequested(eFrames) ||
+        x_IsFieldRequested(eSubjectStrand)) {
         // If subject is on a reverse strand, reverse its start and end
         // offsets. Also do that for a nucleotide-nucleotide search, if query
         // is on the reverse strand, because BLAST output always reverses
@@ -573,6 +877,14 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         } else {
             s_start = alnVec->GetSeqStart(kSubjectRow) + 1;
             s_end = alnVec->GetSeqStop(kSubjectRow) + 1;
+        }
+
+        if(x_IsFieldRequested(eSubjectStrand))
+        {
+        	if((kTranslated) || (!subject_is_na))
+        		m_SubjectStrand = NA;
+        	else
+        		m_SubjectStrand = ((s_start - s_end) > 0 )? "minus":"plus";
         }
     }
     SetEndpoints(q_start, q_end, s_start, s_end);
@@ -687,6 +999,26 @@ void CBlastTabularInfo::x_PrintFieldNames()
             m_Ostream << "sbjct frame"; break; 
         case eBTOP:
             m_Ostream << "BTOP"; break;        
+        case eSubjectTaxIds:
+            m_Ostream << "subject tax ids"; break;
+        case eSubjectSciNames:
+        	m_Ostream << "subject sci names"; break;
+        case eSubjectCommonNames:
+        	m_Ostream << "subject com names"; break;
+        case eSubjectBlastNames:
+        	m_Ostream << "subject blast names"; break;
+        case eSubjectSuperKingdoms:
+        	m_Ostream << "subject super kingdoms"; break;
+        case eSubjectTitle:
+        	m_Ostream << "subject title"; break;
+        case eSubjectAllTitles:
+        	m_Ostream << "subject titles"; break;
+        case eSubjectStrand:
+        	m_Ostream << "subject strand"; break;
+        case eQueryCovSubject:
+        	m_Ostream << "% subject coverage"; break;
+        case eQueryCovSeqalign:
+        	m_Ostream << "% hsp coverage"; break;
         default:
             _ASSERT(false);
             break;
@@ -909,6 +1241,26 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
         x_PrintSubjectFrame(); break;        
     case eBTOP:
         x_PrintBTOP(); break;        
+    case eSubjectTaxIds:
+    	x_PrintSubjectTaxIds(); break;
+    case eSubjectSciNames:
+    	x_PrintSubjectSciNames(); break;
+    case eSubjectCommonNames:
+    	x_PrintSubjectCommonNames(); break;
+    case eSubjectBlastNames:
+    	x_PrintSubjectBlastNames(); break;
+    case eSubjectSuperKingdoms:
+    	x_PrintSubjectSuperKingdoms(); break;
+    case eSubjectTitle:
+    	x_PrintSubjectTitle(); break;
+    case eSubjectAllTitles:
+    	x_PrintSubjectAllTitles(); break;
+    case eSubjectStrand:
+    	x_PrintSubjectStrand(); break;
+    case eQueryCovSubject:
+    	x_PrintSubjectCoverage(); break;
+    case eQueryCovSeqalign:
+    	x_PrintSeqalignCoverage(); break;
     default:
         _ASSERT(false);
         break;

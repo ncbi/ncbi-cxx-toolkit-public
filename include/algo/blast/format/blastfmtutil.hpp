@@ -162,6 +162,20 @@ public:
     								  align_format::CDisplaySeqalign::SeqLocCharOption mask_char,
     								  int query_frame);
 
+    /*
+     *  @brief Get aggregrated score for each subject
+     *  @input param: alignSet -- seq aligns for 1 query
+     *  @ouput param: alignSet -- insert % query coverage per subject
+     *  @note: this function will return if the first seqalign in the
+     *         set contains score for query coverage %
+     *         (i.e. seqalign set from getreq contains query coverage %
+     *          already, we only need to do the calcaultion if the format r
+     *          request is from SB)
+     *
+     */
+
+    static void InsertSubjectScores (objects::CSeq_align_set & org_align_set,
+    					      const objects::CBioseq_Handle & query_handle);
 };
 
 
@@ -177,7 +191,6 @@ public:
     /// 2-dimensional integer array.
     CBlastFormattingMatrix(int** data, unsigned int nrows, unsigned int ncols); 
 };
-
 
 END_NCBI_SCOPE
 

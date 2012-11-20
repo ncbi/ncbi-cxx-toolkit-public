@@ -40,7 +40,7 @@ const string kDfltArgTabularOutputFmt =
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 
-const size_t kNumTabularOutputFormatSpecifiers = 34;
+const size_t kNumTabularOutputFormatSpecifiers = 44;
 const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("qseqid",   
                 "Query Seq-id",
@@ -143,7 +143,37 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
                 eSubjFrame),
     SFormatSpec("btop",   
                 "Blast traceback operations (BTOP)", 
-                eBTOP)
+                eBTOP),
+    SFormatSpec("staxids",
+                "Subject Taxonomy ID(s), separated by a ';'",
+                eSubjectTaxIds),
+    SFormatSpec("sscinames",
+                "Subject Scientific Name(s), separated by a ';'",
+                eSubjectSciNames),
+    SFormatSpec("scomnames",
+                "Subject Common Name(s), separated by a ';'",
+                eSubjectCommonNames),
+    SFormatSpec("sblastnames",
+                "Subject Blast Name(s), separated by a ';'\n\t\t\t (in alphabetical order)",
+                eSubjectBlastNames),
+    SFormatSpec("sskingdoms",
+                "Subject Super Kingdom(s), separated by a ';'\n\t\t\t (in alphabetical order) ",
+                eSubjectSuperKingdoms),
+    SFormatSpec("stitle",
+                "Subject Title",
+                eSubjectTitle),
+    SFormatSpec("salltitles",
+                "All Subject Title(s), separated by a '<>'",
+                eSubjectAllTitles),
+    SFormatSpec("sstrand",
+                "Subject Strand",
+                eSubjectStrand),
+    SFormatSpec("qcovs",
+                "Query Coverage Per Subject",
+                eQueryCovSubject),
+    SFormatSpec("qcovhsp",
+                "Query Coverage Per HSP",
+                eQueryCovSeqalign)
 };
 
 string DescribeTabularOutputFormatSpecifiers()

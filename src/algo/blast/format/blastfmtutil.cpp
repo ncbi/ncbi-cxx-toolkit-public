@@ -527,4 +527,65 @@ CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
 	s_MaskQuerySeq(aln_vec, masked_query, mask_info, mask_char, query_frame);
 }
 
+void CBlastFormatUtil::InsertSubjectScores (CSeq_align_set & org_align_set,
+										    const CBioseq_Handle & query_handle)
+{
+	if(!org_align_set.IsSet() || org_align_set.Get().empty())
+	{
+		_TRACE("Empty seq_align_set");
+		return;
+	}
+
+	// Seq align set from
+	int dont_care = 0;
+	if(org_align_set.Get().front()->GetNamedScore("seq_percent_coverage", dont_care))
+		return;
+
+    CConstRef<CBioseq> query_bioseq = query_handle.GetCompleteBioseq();
+    int query_len = 0;
+    if (!query_bioseq.Empty() && query_bioseq->IsSetLength())
+    {
+    	query_len = query_bioseq->GetLength();
+    }
+
+    if(query_len <= 0)
+    {
+    	_TRACE("Invalid Query Length");
+    	return;
+    }
+
+    CSeq_align_set tmp_align_set;
+    list<CRef<CSeq_align> > & tmp_align_list = tmp_align_set.Set();
+    list<CRef<CSeq_align> > &  org_align_list = org_align_set.Set();
+
+    list<CRef<CSeq_align> >::iterator left_it = org_align_list.begin();
+    list<CRef<CSeq_align> >::iterator right_it = org_align_list.begin();
+
+    while(left_it != org_align_list.end())
+    {
+    	const CSeq_id & cur_id = (*left_it)->GetSeq_id(1);
+    	++ right_it;
+
+    	for (; right_it != org_align_list.end(); ++right_it)
+    	{
+          	const CSeq_id  & id = (*right_it)->GetSeq_id(1);
+          	if (!id.Match(cur_id))
+          		break;
+        }
+
+       	tmp_align_list.assign(left_it, right_it);
+       	int master_coverage = align_format::CAlignFormatUtil::GetMasterCoverage(tmp_align_set);
+
+        if (master_coverage)
+        {
+           	double subj_coverage = 100.0 * (double) master_coverage/ (double) query_len;
+           	if(subj_coverage < 99)
+           		subj_coverage +=0.5;
+
+           	(*left_it)->SetNamedScore ("seq_percent_coverage", (int) subj_coverage);
+        }
+        left_it = right_it;
+    }
+}
+
 END_NCBI_SCOPE

@@ -194,6 +194,103 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentBTOPOutput) {
     BOOST_REQUIRE(output.find("AE000111	AE000183	36	82.02	14G-TATGAG2-A3-G4-C1A-4-AGA3C-6CATATC7C-1-C28") != NPOS);
 }
 
+BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
+
+    const string seqAlignFileName_in = "data/tabular_seqalignset_2.asn";
+    CRef<CSeq_align_set> sa(new CSeq_align_set);
+
+    ifstream in(seqAlignFileName_in.c_str());
+    in >> MSerial_AsnText >> *sa;
+    in.close();
+
+    const list<CRef<CSeq_align> > & seqalign_list = sa->Get();
+
+    const string kDbName("nr");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
+    CRef<CScope> scope = tmp_data_loader.NewScope();
+
+    ostrstream output_stream;
+    CBlastTabularInfo ctab(output_stream, "qacc sacc staxids sscinames scomnames sblastnames sskingdoms");
+
+    ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
+    {
+       ctab.SetFields(**iter, *scope);
+       ctab.Print();
+    }
+
+    string output = CNcbiOstrstreamToString(output_stream);
+
+    BOOST_REQUIRE(output.find("M10360	XP_003609077	3880	Medicago truncatula	barrel medic	eudicots	Eukaryota") != NPOS);
+    BOOST_REQUIRE(output.find("M10360	ZP_05395304	536227	Clostridium carboxidivorans P7	Clostridium carboxidivorans P7	firmicutes	Bacteria") != NPOS);
+    BOOST_REQUIRE(output.find("M10360	YP_001109553	3694	Populus trichocarpa	black cottonwood	eudicots	Eukaryota") != NPOS);
+    BOOST_REQUIRE(output.find("M10360	ABZ09338	455551	uncultured marine microorganism HF4000_APKG7H23	uncultured marine microorganism HF4000_APKG7H23	N/A	N/A") != NPOS);
+}
+
+BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
+
+    const string seqAlignFileName_in = "data/tabular_seqalignset_2.asn";
+    CRef<CSeq_align_set> sa(new CSeq_align_set);
+
+    ifstream in(seqAlignFileName_in.c_str());
+    in >> MSerial_AsnText >> *sa;
+    in.close();
+
+    const list<CRef<CSeq_align> > & seqalign_list = sa->Get();
+
+    const string kDbName("nr");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
+    CRef<CScope> scope = tmp_data_loader.NewScope();
+
+    {
+    	ostrstream output_stream;
+    	CBlastTabularInfo ctab(output_stream, "qacc sacc stitle");
+
+    	ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
+    	{
+    		ctab.SetFields(**iter, *scope);
+    		ctab.Print();
+    	}
+
+    	string output = CNcbiOstrstreamToString(output_stream);
+
+    	vector<string> results;
+    	NStr::Tokenize(output, "\n", results);
+    	BOOST_REQUIRE(results[0].find("hypothetical protein MTR_4g111700 [Medicago truncatula]") != NPOS);
+    	BOOST_REQUIRE(results[3].find("Glycerophosphodiesterase-like protein [Medicago truncatula]") != NPOS);
+    	BOOST_REQUIRE(results[4].find("Cell wall-associated hydrolase [Medicago truncatula]") != NPOS);
+    	BOOST_REQUIRE(results[6].find("hypothetical protein ALOHA_HF4000APKG7H23ctg3g3 [uncultured marine microorganism HF4000_APKG7H23]") != NPOS);
+    }
+
+    {
+    	ostrstream output_stream;
+    	CBlastTabularInfo ctab(output_stream, "qacc sacc salltitles");
+
+    	ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
+    	{
+    		ctab.SetFields(**iter, *scope);
+    		ctab.Print();
+    	}
+
+    	string output = CNcbiOstrstreamToString(output_stream);
+    	vector<string> results;
+    	NStr::Tokenize(output, "\n", results);
+    	string ref_0 = "hypothetical protein MTR_4g111700 [Medicago truncatula]<>hypothetical protein " \
+    				   "MTR_4g112050 [Medicago truncatula]<>hypothetical protein MTR_4g111700 [Medicago " \
+    				   "truncatula]<>hypothetical protein MTR_4g112050 [Medicago truncatula]";
+    	string ref_2 = "hypothetical protein Poptr_cp075 [Populus trichocarpa]<>hypothetical protein " \
+    			       "Poptr_cp088 [Populus trichocarpa]<>hypothetical protein Poptr_cp075 [Populus " \
+    			       "trichocarpa]<>hypothetical protein Poptr_cp088 [Populus trichocarpa]";
+    	string ref_6 = "hypothetical protein ALOHA_HF4000APKG7H23ctg3g3 [uncultured marine " \
+    			       "microorganism HF4000_APKG7H23]";
+
+    	BOOST_REQUIRE(results[0].find(ref_0) != NPOS);
+    	BOOST_REQUIRE(results[2].find(ref_2) != NPOS);
+    	BOOST_REQUIRE(results[6].find(ref_6) != NPOS);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 /*

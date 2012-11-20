@@ -187,5 +187,48 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
     BOOST_REQUIRE(evalue_str == string("2e-141"));
     BOOST_REQUIRE(bit_score_str == string("  503"));
 }
+
+BOOST_AUTO_TEST_CASE(GetSubjectQueryCoverageScore)
+{
+
+    CNcbiIfstream is("data/blastfmtutil-querycoverage.aln");
+    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
+    CSeq_align_set align_set;
+    *in>> align_set;
+    const list<CRef<CSeq_align> > & align = align_set.Get();
+
+    CRef<CObjectManager> obj = CObjectManager::GetInstance();
+    CRef<CScope> scope;
+    const string kDbName("nr");
+    const CBlastDbDataLoader::EDbType
+        kDbType(CBlastDbDataLoader::eNucleotide);
+    CBlastDbDataLoader::RegisterInObjectManager(*obj,
+                                                kDbName,
+                                                kDbType, true,
+                                                CObjectManager::eNonDefault);
+    scope = new CScope(*obj);
+    string name =
+            CBlastDbDataLoader::GetLoaderNameFromArgs(kDbName, kDbType);
+    DataLoaderRevoker revoker(obj, name);
+    scope->AddDataLoader(name);
+
+    const CBioseq_Handle& query_handle = scope->GetBioseqHandle(align.front()->GetSeq_id(0));
+    CBlastFormatUtil::InsertSubjectScores (align_set, query_handle);
+    const unsigned int list_size = 31;
+    int ref_score[list_size]={100, 47, -1, -1, -1, -1, -1, -1, -1, -1,
+    		      	  	       -1, -1, -1, -1, -1, -1, 45, -1, -1, -1,
+    		      	  	       -1, -1, -1, -1, -1, -1, -1, -1, -1,  40, 40 };
+
+    int i=0;
+   	BOOST_REQUIRE(align.size() == list_size);
+    ITERATE(list< CRef< CSeq_align > >, iter, align)
+    {
+    	int score = -1;
+    	(*iter)->GetNamedScore("seq_percent_coverage", score);
+    	BOOST_REQUIRE(score == ref_score[i]);
+    	i++;
+    }
+}
+
     
 BOOST_AUTO_TEST_SUITE_END()

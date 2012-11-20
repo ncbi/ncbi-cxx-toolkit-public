@@ -39,12 +39,15 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/align_format/align_format_util.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/blast/igblast/igblast.hpp>
+#include <objects/blastdb/Blast_def_line_set.hpp>
 
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(align_format)
+
 
 /// Class containing information needed for tabular formatting of BLAST 
 /// results.
@@ -262,6 +265,21 @@ protected:
     void x_PrintQueryLength();
     /// Print the subject sequence length
     void x_PrintSubjectLength();
+    /// Print subject tax info
+    void x_PrintSubjectTaxIds();
+    void x_PrintSubjectSciNames();
+    void x_PrintSubjectCommonNames();
+    void x_PrintSubjectBlastNames();
+    void x_PrintSubjectSuperKingdoms();
+    void x_PrintSubjectTitle();
+    void x_PrintSubjectAllTitles();
+    void x_PrintSubjectStrand();
+    void x_PrintSeqalignCoverage();
+    void x_PrintSubjectCoverage();
+    void x_SetTaxInfo(const objects::CBioseq_Handle & handle, const CRef<objects::CBlast_def_line_set> & bdlRef);
+    void x_SetSubjectId(const objects::CBioseq_Handle& bh, const CRef<objects::CBlast_def_line_set> & bdlRef);
+    void x_SetQueryCovSubject(const objects::CSeq_align & align);
+    void x_SetQueryCovSeqalign(const CSeq_align & align, int query_len);
 
     CNcbiOstream& m_Ostream; ///< Stream to write output to
     char m_FieldDelimiter;   ///< Delimiter character for fields to print.
@@ -296,7 +314,20 @@ private:
     /// Should the query deflines be parsed for local IDs?
     bool m_ParseLocalIds;
     string m_BTOP;            /// Blast-traceback-operations.
+
+    //TaxInfo
+    set<int>			m_SubjectTaxIds;
+    vector<string>		m_SubjectSciNames;
+    vector<string>		m_SubjectCommonNames;
+    set<string>		m_SubjectBlastNames;
+    set<string>		m_SubjectSuperKingdoms;
+    CRef<CBlast_def_line_set> m_SubjectDefline;
+
+    string m_SubjectStrand;
+    pair<string, int>  m_QueryCovSubject;
+    int m_QueryCovSeqalign;
 };
+
 
 inline void CBlastTabularInfo::x_PrintQuerySeq(void)
 {

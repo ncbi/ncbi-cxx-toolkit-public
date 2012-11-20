@@ -1,0 +1,373 @@
+Seq-align-set ::= {
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 130
+      },
+      {
+        id str "e_value",
+        value real { 127374482117249, 10, -22 }
+      },
+      {
+        id str "bit_score",
+        value real { 546841771492999, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 23
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 28
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 357477583
+        },
+        loc {
+          int {
+            from 3,
+            to 92,
+            strand plus,
+            id gi 176224
+          },
+          int {
+            from 37,
+            to 66,
+            strand unknown,
+            id gi 357477583
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 80
+      },
+      {
+        id str "e_value",
+        value real { 806046844642502, 10, -16 }
+      },
+      {
+        id str "bit_score",
+        value real { 354241983534323, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 16
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 22
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 255528521
+        },
+        loc {
+          int {
+            from 39,
+            to 119,
+            strand plus,
+            id gi 176224
+          },
+          int {
+            from 15,
+            to 41,
+            strand unknown,
+            id gi 255528521
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 72
+      },
+      {
+        id str "e_value",
+        value real { 112243344912913, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 323426017460934, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 13
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 13
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 134093252
+        },
+        loc {
+          int {
+            from 2,
+            to 40,
+            strand minus,
+            id gi 176224
+          },
+          int {
+            from 0,
+            to 12,
+            strand unknown,
+            id gi 134093252
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 77
+      },
+      {
+        id str "e_value",
+        value real { 122816470766249, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 342685996256802, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 12
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 1
+      },
+      {
+        id str "num_positives",
+        value int 12
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 357459873
+        },
+        loc {
+          int {
+            from 2,
+            to 40,
+            strand minus,
+            id gi 176224
+          },
+          int {
+            from 0,
+            to 12,
+            strand unknown,
+            id gi 357459873
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 72
+      },
+      {
+        id str "e_value",
+        value real { 549758256062729, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 323426017460934, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 13
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 13
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 358349383
+        },
+        loc {
+          int {
+            from 2,
+            to 40,
+            strand minus,
+            id gi 176224
+          },
+          int {
+            from 0,
+            to 12,
+            strand unknown,
+            id gi 358349383
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 72
+      },
+      {
+        id str "e_value",
+        value real { 564998523124157, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 323426017460934, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 13
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 13
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 357467743
+        },
+        loc {
+          int {
+            from 2,
+            to 40,
+            strand minus,
+            id gi 176224
+          },
+          int {
+            from 0,
+            to 12,
+            strand unknown,
+            id gi 357467743
+          }
+        }
+      }
+    }
+  },
+  {
+    type partial,
+    dim 2,
+    score {
+      {
+        id str "score",
+        value int 69
+      },
+      {
+        id str "e_value",
+        value real { 880944988228886, 10, -14 }
+      },
+      {
+        id str "bit_score",
+        value real { 311870030183414, 10, -13 }
+      },
+      {
+        id str "num_ident",
+        value int 17
+      },
+      {
+        id str "comp_adjustment_method",
+        value int 2
+      },
+      {
+        id str "num_positives",
+        value int 22
+      }
+    },
+    segs std {
+      {
+        dim 2,
+        ids {
+          gi 176224,
+          gi 167044667
+        },
+        loc {
+          int {
+            from 3,
+            to 116,
+            strand minus,
+            id gi 176224
+          },
+          int {
+            from 28,
+            to 65,
+            strand unknown,
+            id gi 167044667
+          }
+        }
+      }
+    }
+  }
+}
