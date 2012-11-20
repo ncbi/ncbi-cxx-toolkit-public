@@ -241,8 +241,8 @@ namespace {
                 m_Socket = NULL;
             else {
                 m_Socket = sock;
-                m_ReadTimeout = sock->GetTimeout(eIO_Read);
-                m_WriteTimeout = sock->GetTimeout(eIO_Write);
+                m_ReadTimeout = *sock->GetTimeout(eIO_Read);
+                m_WriteTimeout = *sock->GetTimeout(eIO_Write);
                 sock->SetTimeout(eIO_ReadWrite, timeout);
             }
         }
@@ -250,14 +250,14 @@ namespace {
         ~CTimeoutKeeper()
         {
             if (m_Socket != NULL) {
-                m_Socket->SetTimeout(eIO_Read, m_ReadTimeout);
-                m_Socket->SetTimeout(eIO_Write, m_WriteTimeout);
+                m_Socket->SetTimeout(eIO_Read, &m_ReadTimeout);
+                m_Socket->SetTimeout(eIO_Write, &m_WriteTimeout);
             }
         }
 
         CSocket* m_Socket;
-        const STimeout* m_ReadTimeout;
-        const STimeout* m_WriteTimeout;
+        STimeout m_ReadTimeout;
+        STimeout m_WriteTimeout;
     };
 }
 
