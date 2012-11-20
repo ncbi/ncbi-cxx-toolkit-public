@@ -26,16 +26,25 @@
  *
  * ===========================================================================
  *
- * Author:
+ * Authors: Andrei Gourianov, Denis Vakatov
  *
  * File Description:
  *   Defines location of test data folder at NCBI
  *
  */
 
+/// @file test_data_path.h
+/// Defines location of test data folder at NCBI.
+
 #include <stdlib.h>
 #include <string.h>
 
+/// Get the directory where test data is stored at NCBI.
+/// The location is hard coded, but can be changed using
+/// environment variable NCBI_TEST_DATA_PATH.
+///
+/// @return
+///   Pointer to internal zero-terminated string buffer.
 static const char* NCBI_GetTestDataPath(void)
 {
     static char* s_NcbiTestDataPath = NULL;
