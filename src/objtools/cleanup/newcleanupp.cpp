@@ -3648,6 +3648,9 @@ CNewCleanup_imp::x_GeneGBQualBC( CGene_ref& gene, const CGb_qual& gb_qual )
             change_made = true;
             gene.SetLocus_tag(val);
         }
+    } else if (NStr::EqualNocase(qual, "gene_synonym")) {
+        change_made = true;
+        gene.SetSyn().push_back(val);
     } else if (NStr::EqualNocase(qual, "gene") ) {
         change_made = true;
         if ( ! gene.IsSetLocus() ) {
