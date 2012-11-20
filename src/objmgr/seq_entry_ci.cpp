@@ -160,7 +160,11 @@ void CSeq_entry_CI::x_Next(void)
         else if ( m_Current.IsSet() ) {
             // Current entry is a seq-set, iterate sub-entries.
             m_SubIt.reset(new CSeq_entry_CI(m_Current, m_Recursive, m_Filter));
-            return;
+            if ( *m_SubIt ) {
+                return;
+            }
+            // Empty sub-entry, continue to the next entry.
+            m_SubIt.reset();
         }
     }
 
