@@ -257,25 +257,35 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 const string& acc = tsid->GetAccession();
                 unsigned int num_digits = 0;
                 unsigned int num_letters = 0;
+                size_t num_underscores = 0;
                 bool letter_after_digit = false;
-                bool bad_id_chars = false;       
+                bool bad_id_chars = false;
+                size_t i = 0;
                     
-                ITERATE(string, s, acc) {
-                    if (isupper((unsigned char)(*s))) {
+                for ( ; i < acc.length(); ++i ) {
+                    if ( isupper((unsigned char) acc[i]) ) {
                         num_letters++;
-                        if (num_digits > 0) {
+                    } else if ( isdigit((unsigned char) acc[i]) ) {
+                        num_digits++;
+                    } else if ( acc[i] == '_' ) {
+                        num_underscores++;
+                        if ( num_digits > 0  ||  num_underscores > 1 ) {
                             letter_after_digit = true;
                         }
-                    } else if (isdigit((unsigned char)(*s))) {
-                        num_digits++;
                     } else {
                         bad_id_chars = true;
                     }
                 }
 
+
                 if ( letter_after_digit || bad_id_chars ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, ctx);
+                } else if (num_underscores == 1) {
+                    if (NStr::CompareNocase(acc, 0, 4, "MAP_") != 0 || num_digits != 6) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                            "Bad accession " + acc, ctx);
+                    }
                 } else if (num_letters == 1 && num_digits == 5 && ctx.IsNa()) {
                 } else if (num_letters == 2 && num_digits == 6 && ctx.IsNa()) {
                 } else if (num_letters == 3 && num_digits == 5 && ctx.IsAa()) {
