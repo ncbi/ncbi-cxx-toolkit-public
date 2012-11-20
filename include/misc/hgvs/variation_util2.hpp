@@ -460,6 +460,7 @@ private:
         static TLocsPair s_GetNeighborhoodLocs(const CSeq_loc& gene_loc, TSeqPos max_pos);
         static TLocsPair s_GetIntronsAndSpliceSiteLocs(const CSeq_loc& rna_loc);
         static int s_GetGeneID(const CMappedFeat& mf, feature::CFeatTree& ft);
+        static int s_GetGeneIdForProduct(CBioseq_Handle bsh);
 
     private:
         void x_Index(const CSeq_id_Handle& idh);

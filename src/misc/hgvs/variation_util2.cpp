@@ -2460,6 +2460,35 @@ set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
 }
 
 
+// There's no GeneID on a protein bioseq. 
+// Instead, need to find the corresponding cdregion (which may or may not have GeneID dbxref), and get GeneID based on parent gene feature.
+int CVariationUtil::CVariantPropertiesIndex::s_GetGeneIdForProduct(CBioseq_Handle orig_bsh)
+{
+    CBioseq_Handle bsh = orig_bsh.GetInst_Mol() == CSeq_inst::eMol_aa ?
+            sequence::GetNucleotideParent(orig_bsh) : orig_bsh;
+
+    SAnnotSelector sel;
+    sel.SetResolveTSE();
+    sel.SetAdaptiveDepth();
+    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    CFeat_CI ci(bsh, sel);
+    feature::CFeatTree ft(ci);
+ 
+    for(ci.Rewind(); ci; ++ci) {
+        const CMappedFeat& mf = *ci;
+        if(   mf.IsSetProduct() 
+           && mf.GetProduct().GetId()
+           && sequence::IsSameBioseq(*orig_bsh.GetSeqId(), *mf.GetProduct().GetId(), &orig_bsh.GetScope()))
+        {
+            return s_GetGeneID(mf, ft);
+        }
+    }
+    return 0;
+}
+
+
 void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 {
     SAnnotSelector sel;
@@ -2468,6 +2497,7 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
     sel.IncludeFeatType(CSeqFeatData::e_Gene);
     sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+
     CBioseq_Handle bsh = m_scope->GetBioseqHandle(idh);
     CFeat_CI ci(bsh, sel);
     feature::CFeatTree ft(ci);
@@ -2504,9 +2534,12 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 
     CRef<CSeq_loc> all_gene_neighborhoods(new CSeq_loc(CSeq_loc::e_Mix));
 
+    bool found_some_gene_ids = false;
+
     for(ci.Rewind(); ci; ++ci) {
         const CMappedFeat& mf = *ci;
         CMappedFeat parent_mf = ft.GetParent(mf);
+
         if(!mf.GetLocation().GetId()) {
             continue;
         }
@@ -2522,6 +2555,7 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             //we can simply use the value 0 for that.
             //Only need to do that for parent locs.
             x_Add(mf.GetLocation(), gene_id, 0);
+            found_some_gene_ids = true;
         }
 
         //compute neighbborhood locations.
@@ -2582,7 +2616,6 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             p = s_GetUTRLocs(mf.GetLocation(), *rna_loc);
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_utr_5);
             x_Add(*p.second, gene_id, CVariantProperties::eGene_location_utr_3);
-
         } else if(mf.GetData().IsRna()) {
             if(mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
                 x_Add(mf.GetLocation(), gene_id, CVariantProperties::eGene_location_conserved_noncoding);
@@ -2620,6 +2653,18 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
                 CSeq_loc::fSortAndMerge_All,
                 NULL);
         x_Add(*intergenic_loc, 0, CVariantProperties::eGene_location_intergenic);
+    }
+
+    if(bsh.GetBioseqMolType() == CSeq_inst::eMol_aa && !found_some_gene_ids) {
+        //JIRA:SNP-5390
+        //in it's normal configuration the iterator won't find a feature with GeneID on a protein, and so
+        //it would not be reported in the protein placement. If a CDS is annotated directly on a DNA molecule,
+        //there would be no product-specific GeneID at all (
+        CRef<CSeq_loc> whole_range_loc = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
+        int gene_id = s_GetGeneIdForProduct(bsh);
+        if(gene_id) {
+            x_Add(*whole_range_loc, gene_id, 0);
+        }
     }
 }
 
