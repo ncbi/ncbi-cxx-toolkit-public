@@ -399,31 +399,79 @@ static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms)
     return false;
 };
 
-void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
-                            CRef<CSearchResultSet>        &results_J,
-                            vector<CRef <CIgAnnotation> > &annots)
-{
-    int iq = 0;
-    NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
-
-        string q_ct = (*annot)->m_ChainType[0];
-        bool q_ms = (*annot)->m_MinusStrand;
-        ENa_strand q_st = (q_ms) ? eNa_strand_minus : eNa_strand_plus;
-        int q_ve = (q_ms) ? (*annot)->m_GeneInfo[0] : (*annot)->m_GeneInfo[1] - 1;
-
-        CRef<CSeq_align_set> align_D, align_J;
-
+/*
+static bool s_IsTopMatchJD(CSearchResults& res_J, CIgAnnotationInfo& annotation_info){
+    bool result = true; //default
+    CRef<CSeq_align_set> align_J;
+    if (res_J.HasAlignments()) {
+        align_J.Reset(const_cast<CSeq_align_set *>
+                      (&*(res_J.GetSeqAlign())));
+        CSeq_align_set::Tdata & align_list = align_J->Set();
+        CSeq_align_set::Tdata::iterator it = align_list.begin();
+        int prev_score = 0;
+        result = false;
+        while (it != align_list.end()) {
+            int current_score;
+            (*it)->GetNamedScore(CSeq_align::eScore_Score, current_score);
+            if(current_score >= prev_score){
+                string j_id;
+                (*it)->GetSeq_id(1).GetLabel(&j_id, CSeq_id::eContent);
+                string j_chain_type = annotation_info.GetDJChainType(j_id);
+                if (j_chain_type == "N/A"){
+                    //assume J gene id style 
+                    
+                    string sid = NStr::ToUpper(j_id);
+                    if (sid.substr(0, 2) == "TR" && sid[3] == 'J') {
+                        j_chain_type = "J" + sid.substr(2,1);
+                    } else if (sid[0] == 'J') {
+                        j_chain_type = sid.substr(0,2);
+                    }
+                }
+                if (j_chain_type == "JD"){
+                    result = true;
+                    break;
+                }
+                
+            } else {
+                break;
+            } 
+            prev_score = current_score;
+            ++it;
+        }
+           
+    }
+    return result;
+};
+*/
+void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
+                           CRef<CSeq_align_set>& align_J,
+                           string q_ct,
+                           bool q_ms,
+                           ENa_strand q_st,
+                           int q_ve,
+                           int iq,
+                           bool va_or_vd_as_heavy_chain) {
+    
+ 
         /* preprocess D */
-        CSearchResults& res_D = (*results_D)[iq];
-        if (res_D.HasAlignments()) {
-            align_D.Reset(const_cast<CSeq_align_set *>
-                                           (&*(res_D.GetSeqAlign())));
+        if (align_D && !align_D->Get().empty()) {
             CSeq_align_set::Tdata & align_list = align_D->Set();
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             /* chain type test */
-            if (q_ct!="VH" && q_ct!="VD" && q_ct!="VB" && q_ct!="N/A") {
+            if (q_ct!="VH" && q_ct!="VD" && q_ct!="VA" && q_ct!="VB" && q_ct!="N/A") {
                 while (it != align_list.end()) {
                     it = align_list.erase(it);
+                }
+            } else if (q_ct =="VA" || q_ct =="VD") {
+                if (va_or_vd_as_heavy_chain) {
+                    //VA could behave like VD and is allowed to rearrange to JA or DD/JD
+                    q_ct = "VD";
+                    //annot->m_ChainType[0] = "VD";
+                } else {
+                    q_ct = "VA";
+                    while (it != align_list.end()) {
+                        it = align_list.erase(it);
+                    } 
                 }
             }
             //test compatability between V and D
@@ -489,10 +537,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
         }
 
         /* preprocess J */
-        CSearchResults& res_J = (*results_J)[iq];
-        if (res_J.HasAlignments()) {
-            align_J.Reset(const_cast<CSeq_align_set *>
-                                           (&*(res_J.GetSeqAlign())));
+        if (align_J && !align_J->Get().empty()) {
             CSeq_align_set::Tdata & align_list = align_J->Set();
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             while (it != align_list.end()) {
@@ -563,7 +608,94 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                 }
             }
         }
+                   
+
+}
+
+
+void CIgBlast::x_FindDJ(CRef<CSearchResultSet>& results_D,
+                        CRef<CSearchResultSet>& results_J,
+                        CRef <CIgAnnotation>& annot,
+                        CRef<CSeq_align_set>& align_D,
+                        CRef<CSeq_align_set>& align_J,
+                        string q_ct,
+                        bool q_ms,
+                        ENa_strand q_st,
+                        int q_ve,
+                        int iq) {
+    
+    CRef<CSeq_align_set> original_align_D(new CSeq_align_set);
+    CRef<CSeq_align_set> original_align_J(new CSeq_align_set);
+    
+        /* preprocess D */
+        CSearchResults& res_D = (*results_D)[iq];
+        if (res_D.HasAlignments()) {
+
+            align_D.Reset(const_cast<CSeq_align_set *>
+                                           (&*(res_D.GetSeqAlign())));
+            original_align_D->Assign(*align_D);
+;
+        }
+
+        /* preprocess J */
+        CSearchResults& res_J = (*results_J)[iq];
+        if (res_J.HasAlignments()) {
+            align_J.Reset(const_cast<CSeq_align_set *>
+                                           (&*(res_J.GetSeqAlign())));
+            original_align_J->Assign(*align_J);
+           
+        } 
+        //try as VA
+        x_FindDJAln(align_D, align_J, q_ct, q_ms, q_st, q_ve, iq, false);
+        if (q_ct =="VA" || q_ct =="VD") {
+            annot->m_ChainType[0] = "VA";
+            //try as VD
+            x_FindDJAln(original_align_D, original_align_J, q_ct, q_ms, q_st, q_ve, iq, true);
+            int as_heavy_chain_score = 0;
+            int as_light_chain_score = 0;
+            int d_score = 0;
+            if(original_align_J.NotEmpty() && !original_align_J->Get().empty()){
+                original_align_J->Get().front()->GetNamedScore(CSeq_align::eScore_Score, as_heavy_chain_score);
+            }
+           
+            if(original_align_D.NotEmpty() && !original_align_D->Get().empty()){
+                original_align_D->Get().front()->GetNamedScore(CSeq_align::eScore_Score, d_score);
+            }
+            if (align_J.NotEmpty() && !align_J->Get().empty()){
+                align_J->Get().front()->GetNamedScore(CSeq_align::eScore_Score, as_light_chain_score);
+            }
+            if (as_heavy_chain_score + d_score> as_light_chain_score){
+                if (align_D.NotEmpty() && original_align_D.NotEmpty()){
+                    align_D->Assign(*original_align_D);
+                }
+                if (align_J.NotEmpty() && original_align_J.NotEmpty()){
+                    align_J->Assign(*original_align_J);
+                }
                 
+                annot->m_ChainType[0] = "VD";
+            }
+            
+        }
+        
+}
+
+void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
+                            CRef<CSearchResultSet>        &results_J,
+                            vector<CRef <CIgAnnotation> > &annots)
+{
+    int iq = 0;
+    NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
+
+        string q_ct = (*annot)->m_ChainType[0];
+        bool q_ms = (*annot)->m_MinusStrand;
+        ENa_strand q_st = (q_ms) ? eNa_strand_minus : eNa_strand_plus;
+        int q_ve = (q_ms) ? (*annot)->m_GeneInfo[0] : (*annot)->m_GeneInfo[1] - 1;
+
+        CRef<CSeq_align_set> align_D, align_J;
+
+        x_FindDJ( results_D, results_J, *annot, align_D, align_J, q_ct, q_ms, q_st, q_ve, iq); 
+
+       
         /* annotate D */    
         if (align_D.NotEmpty() && !align_D->IsEmpty()) {
             const CSeq_align & it = **(align_D->Get().begin());
@@ -622,7 +754,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
 
         CIgAnnotation *annot = &*(annots[iq]);
         annot->m_ChainType.push_back("NON");  // Assuming non-ig sequence first
-
+        annot->m_ChainTypeToShow = "NON";
         if ((*result)->HasAlignments() && (*gl_results)[iq].HasAlignments()) {
 
 
@@ -654,7 +786,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                 string sid = (*it)->GetSeq_id(1).AsFastaString();
                 if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
                 annot->m_ChainType[0] = m_AnnotationInfo.GetDomainChainType(sid);
-
+                annot->m_ChainTypeToShow = annot->m_ChainType[0];
                 int domain_info[10];
 
                 if (m_AnnotationInfo.GetDomainInfo(sid, domain_info)) {

@@ -1297,6 +1297,7 @@ CIgBlastTabularInfo::PrintHeader(const string& program_version,
 int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align, 
                                  CScope& scope, 
                                  const string& chain_type,
+                                 const string& master_chain_type_to_show,
                                  CNcbiMatrix<int>* matrix)
 {
     int retval = 0;
@@ -1314,7 +1315,7 @@ int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align,
     if (!hasSeq) x_AddFieldToShow(eQuerySeq);
     if (!hasQuerySeqId) x_AddFieldToShow(eQuerySeqId);
     if (!hasQueryStart) x_AddFieldToShow(eQueryStart);
-    retval = SetFields(align, scope, chain_type, matrix);
+    retval = SetFields(align, scope, chain_type, master_chain_type_to_show, matrix);
     if (!hasSeq) x_DeleteFieldToShow(eQuerySeq);
     if (!hasQuerySeqId) x_DeleteFieldToShow(eQuerySeqId);
     if (!hasQueryStart) x_DeleteFieldToShow(eQueryStart);
@@ -1322,11 +1323,13 @@ int CIgBlastTabularInfo::SetMasterFields(const CSeq_align& align,
 };            
 
 int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
-                                 CScope& scope, 
-                                 const string& chain_type,
-                                 CNcbiMatrix<int>* matrix)
+                                   CScope& scope, 
+                                   const string& chain_type,
+                                   const string& master_chain_type_to_show,
+                                   CNcbiMatrix<int>* matrix)
 {
     m_ChainType = chain_type;
+    m_MasterChainTypeToShow = master_chain_type_to_show;
     if (m_ChainType == "NA") m_ChainType = "N/A";
     return CBlastTabularInfo::SetFields(align, scope, matrix);
 };
@@ -1400,7 +1403,7 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
         m_Ostream << m_JGene.sid << m_FieldDelimiter;
-        m_Ostream << m_ChainType << m_FieldDelimiter;
+        m_Ostream << m_MasterChainTypeToShow << m_FieldDelimiter;
         if (m_FrameInfo == "IF") m_Ostream << "In-frame";
         else if (m_FrameInfo == "OF") m_Ostream << "Out-of-frame";
         else if (m_FrameInfo == "IP") m_Ostream << "In-frame with stop codon";
@@ -1469,7 +1472,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
             m_Ostream << "</td><td>" << m_DGene.sid;
         }
         m_Ostream << "</td><td>" << m_JGene.sid
-                  << "</td><td>" << m_ChainType
+                  << "</td><td>" << m_MasterChainTypeToShow 
                   << "</td><td>";
         if (m_FrameInfo == "IF") {
             m_Ostream << "In-frame";

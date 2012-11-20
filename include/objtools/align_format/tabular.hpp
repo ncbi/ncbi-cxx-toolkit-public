@@ -539,12 +539,14 @@ public:
     int SetMasterFields(const objects::CSeq_align& align, 
                         objects::CScope&           scope, 
                         const string&              chain_type,
+                        const string& master_chain_type_to_show,
                         CNcbiMatrix<int>*          matrix=0);
 
     /// Set fields for all other alignments
     int SetFields(const objects::CSeq_align& align,
                   objects::CScope&           scope,
                   const string&              chain_type,
+                  const string& master_chain_type_to_show,
                   CNcbiMatrix<int>*          matrix=0);
 
     /// Override the print method
@@ -613,6 +615,7 @@ private:
     bool m_IsMinusStrand;
     string m_FrameInfo;                                                           
     string m_ChainType;
+    string m_MasterChainTypeToShow;
     SIgGene m_VGene;
     SIgGene m_DGene;
     SIgGene m_JGene;

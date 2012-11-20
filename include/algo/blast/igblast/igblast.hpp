@@ -83,6 +83,9 @@ public:
     bool m_MinusStrand;              // hit is on minus strand of the query
     vector<string> m_TopGeneIds;     // Top match germline gene ID
     vector<string> m_ChainType;      // chain types of the query ([0]) and subjects ([1:])
+    string m_ChainTypeToShow;        // chain type to show to user.  Normally this is 
+                                     //the same as m_ChainType[0] but could be different
+                                     // in case o TCRA/D chains which can use both JA and JD
     int m_GeneInfo[6];               // The (start) and (end offset + 1) for VDJ
     int m_FrameInfo[3];              // Coding frame start offset for V start, V end,
                                      // and V start.
@@ -306,6 +309,26 @@ private:
     static void s_SetAnnotation(vector<CRef <CIgAnnotation> > &annot,
                                 CRef<CSearchResultSet> &final_results);
 
+    void x_FindDJ(CRef<CSearchResultSet>& results_D,
+                  CRef<CSearchResultSet>& results_J,
+                  CRef <CIgAnnotation> & annot,
+                  CRef<CSeq_align_set>& align_D,
+                  CRef<CSeq_align_set>& align_J,
+                  string q_ct,
+                  bool q_ms,
+                  ENa_strand q_st,
+                  int q_ve,
+                  int iq);
+
+    void x_FindDJAln(CRef<CSeq_align_set>& align_D,
+                     CRef<CSeq_align_set>& align_J,
+                     string q_ct,
+                     bool q_ms,
+                     ENa_strand q_st,
+                     int q_ve,
+                     int iq,
+                     bool va_or_vd_as_heavy_chain);
+    
 };
 
 END_SCOPE(blast)

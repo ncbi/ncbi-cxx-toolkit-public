@@ -628,6 +628,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
         tabinfo.SetMasterFields(**itr, *m_Scope, 
                                 annots->m_ChainType[0], 
+                                annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
 
@@ -642,6 +643,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         for (; itr != aln_set->Get().end(); ++itr) {
             tabinfo.SetFields(**itr, *m_Scope, 
                               annots->m_ChainType[j++], 
+                              annots->m_ChainTypeToShow,
                               &m_ScoringMatrix);
             tabinfo.Print();
         }
@@ -1009,6 +1011,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         CSeq_align_set::Tdata::const_iterator itr = aln_set->Get().begin();
         tabinfo.SetMasterFields(**itr, *m_Scope, 
                                 annots->m_ChainType[0], 
+                                annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
         m_Outfile << "Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
