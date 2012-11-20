@@ -1,4 +1,5 @@
 #CXXFLAGS = $(ORIG_CXXFLAGS) -DUSE_TEXT_ASN
+ASN_PROJ = taxon1
 LIB = taxon1
 SRC = taxon1__ taxon1___ taxon1 cache utils ctreecont
 
