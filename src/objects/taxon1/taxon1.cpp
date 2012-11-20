@@ -520,6 +520,11 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
     } else {
         on.ResetDiv();
     }
+    if( db_orgRef.GetOrgname().IsSetPgcode() ) {
+        on.SetPgcode( db_orgRef.GetOrgname().GetPgcode() );
+    } else {
+        on.ResetPgcode();
+    }
 }
 
 bool
@@ -1359,9 +1364,10 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
             return true;
         }
         } catch( CEofException& /*eoe*/ ) {
-        bNeedReconnect = true;
+	    bNeedReconnect = true;
         } catch( exception& e ) {
-        SetLastError( e.what() );
+	    SetLastError( e.what() );
+	    bNeedReconnect = true;
         }
         fail_flags = m_pIn->GetFailFlags();
         bNeedReconnect |= (fail_flags & ( CObjectIStream::eEOF
