@@ -15,7 +15,6 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
-        test -x "$d/bin/fltk-config"       &&  : ${FLTK_PATH=$d}
         test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
@@ -68,13 +67,6 @@ case "$ncbi_platform" in
     Linux*     ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
     SunOSx86   ) : ${FASTCGI_PATH=$NCBI/fcgi-2.1}         ;;
     SunOSSparc ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0-ncbi1} ;;
-esac
-
-case "$ncbi_platform" in
-    FreeBSD32  ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8-OBSOLETE} ;;
-    Linux32    ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi8-OBSOLETE} ;;
-    SunOSx86   ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi6-OBSOLETE} ;;
-    *          ) : ${FLTK_PATH=$NCBI/fltk-1.1.6-ncbi9-OBSOLETE} ;;
 esac
 
 case "$ncbi_platform" in

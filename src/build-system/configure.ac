@@ -66,7 +66,7 @@ case "$with_3psw" in
       fi
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre,
                      gcrypt, gnutls, openssl, krb5,
-                     sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
+                     sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
                      python, jni, boost, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
@@ -279,10 +279,6 @@ AC_ARG_WITH(mysql,
    [ --without-mysql         do not use MySQL])
 AC_ARG_WITH(mysql2,
    [ --with-mysql=DIR        use MySQL installation in DIR])
-AC_ARG_WITH(fltk,
-   [ --without-fltk          do not use FLTK])
-AC_ARG_WITH(fltk2,
-   [ --with-fltk=DIR         use FLTK installation in DIR])
 AC_ARG_WITH(opengl,
    [ --without-opengl        do not use OpenGL])
 AC_ARG_WITH(opengl2,
@@ -488,7 +484,7 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
-ftds mysql orbacus freetype ftgl fltk opengl mesa glut glew glew-mx \
+ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
@@ -536,7 +532,7 @@ for x_arg in "$@" ; do
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
       | --with-krb5=* | --with-curl=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
-      | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
+      | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
@@ -5061,83 +5057,6 @@ fi
 LDFLAGS=$orig_LDFLAGS
 
 
-## FLTK
-if test "$with_fltk" != "no"; then
-   case "$with_fltk" in
-      yes | "" ) : ${FLTK_PATH=$NCBI/fltk} ;;
-      *        ) FLTK_PATH=$with_fltk ;;
-   esac
-   if test -d "$FLTK_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
-        -a -z "$FLTK_ARCH_PATH"; then
-      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
-   elif test -d "$FLTK_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
-        -a -z "$FLTK_ARCH_PATH"; then
-      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
-   else
-      FLTK_ARCH_PATH="$FLTK_PATH"
-   fi
-   FLTK_BINPATH=${FLTK_BINPATH:="$FLTK_ARCH_PATH/bin"}
-   FLTK_LIBPATH=${FLTK_LIBPATH:="$FLTK_ARCH_PATH/lib"}
-   FLTK_INCLUDE=
-   case "$host_os:$compiler" in
-      solaris2.10:GCC ) extrased='s/-lpthread//g; ' ;;
-      *               ) extrased= ;;
-   esac
-   AC_CACHE_CHECK([for FLTK in $FLTK_ARCH_PATH], ncbi_cv_lib_fltk,
-      [if test -x "$FLTK_BINPATH/fltk-config" ; then
-          FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
-          NCBI_RPATHIFY_OUTPUT(FLTK_LIBS, $FLTK_BINPATH/fltk-config --ldflags,
-             $extrased)
-
-          CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
-          LIBS="$FLTK_LIBS $orig_LIBS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <FL/Fl.H>]],
-             [[ Fl::run(); ]])],
-             [ncbi_cv_lib_fltk=yes], [ncbi_cv_lib_fltk=no])
-       else
-          ncbi_cv_lib_fltk=no
-       fi])
-   if test "$ncbi_cv_lib_fltk" = "no"; then
-      NCBI_MISSING_PACKAGE(fltk)
-   fi
-fi
-
-if test "$with_fltk" = "no" ; then
-   FLTK_LIBPATH="No_FLTK"
-   FLTK_INCLUDE=
-   FLTK_LIBS=
-   FLTK_LIBS_GL=
-else
-   NCBI_PACKAGE(FLTK)
-   FLTK_CONFIG="$FLTK_BINPATH/fltk-config"
-   # The "yes" may have been cached; get the actual settings again if needed
-   if test -z "$FLTK_INCLUDE"; then
-      FLTK_INCLUDE=`$FLTK_CONFIG --cxxflags --use-gl`
-      NCBI_RPATHIFY_OUTPUT(FLTK_LIBS, $FLTK_BINPATH/fltk-config --ldflags,
-         $extrased)
-   fi
-   NCBI_RPATHIFY_OUTPUT(FLTK_LIBS_GL,
-      $FLTK_BINPATH/fltk-config --ldflags --use-gl, $extrased)
-   NCBI_RPATHIFY_OUTPUT(FLTK_LIBS_IMAGES,
-      $FLTK_BINPATH/fltk-config --ldflags --use-images, $extrased)
-   NCBI_RPATHIFY_OUTPUT(FLTK_LIBS_ALL,
-      $FLTK_BINPATH/fltk-config --ldflags --use-gl --use-images, $extrased)
-   # Also supply static versions for use in CGIs to be deployed to servers
-   # without access to the shared libraries.
-   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS,
-      $FLTK_BINPATH/fltk-config --ldstaticflags, $extrased)
-   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS_GL,
-      $FLTK_BINPATH/fltk-config --ldstaticflags --use-gl, $extrased)
-   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS_IMAGES,
-      $FLTK_BINPATH/fltk-config --ldstaticflags --use-images, $extrased)
-   NCBI_RPATHIFY_OUTPUT(FLTK_STATIC_LIBS_ALL,
-      $FLTK_BINPATH/fltk-config --ldstaticflags --use-gl --use-images,
-      $extrased)
-   AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
-fi
-
-
 ## wxWidgets
 # Insist on single-byte builds by default, per various projects' expectations.
 : ${with_wxwidgets_ucs=no}
@@ -6839,16 +6758,6 @@ AC_SUBST(GLUT_LIBS)
 AC_SUBST(GLEW_INCLUDE)
 AC_SUBST(GLEW_LIBS)
 AC_SUBST(GLEW_STATIC_LIBS)
-AC_SUBST(FLTK_INCLUDE)
-AC_SUBST(FLTK_LIBS)
-AC_SUBST(FLTK_LIBS_GL)
-AC_SUBST(FLTK_LIBS_IMAGES)
-AC_SUBST(FLTK_LIBS_ALL)
-AC_SUBST(FLTK_STATIC_LIBS)
-AC_SUBST(FLTK_STATIC_LIBS_GL)
-AC_SUBST(FLTK_STATIC_LIBS_IMAGES)
-AC_SUBST(FLTK_STATIC_LIBS_ALL)
-AC_SUBST(FLTK_CONFIG)
 AC_SUBST(WXWIDGETS_INCLUDE)
 AC_SUBST(WXWIDGETS_LIBS)
 AC_SUBST(WXWIDGETS_STATIC_LIBS)

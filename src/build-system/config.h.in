@@ -74,9 +74,6 @@
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 #undef HAVE_FCGX_ACCEPT_R
 
-/* Define to 1 if FLTK is available. */
-#undef HAVE_FLTK
-
 /* Define to 1 if you have the `freehostent' function. */
 #undef HAVE_FREEHOSTENT
 

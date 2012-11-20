@@ -53,9 +53,6 @@
 /* Define to 1 if you have the `FCGX_Accept_r' function. */
 /* #undef HAVE_FCGX_ACCEPT_R */
 
-/* Define to 1 if FLTK is available. */
-#define HAVE_FLTK 1
-
 /* Define to 1 if ICU libraries are available. */
 /* #undef HAVE_ICU */
 

@@ -90,8 +90,6 @@ noops="\
  --without-ftds-renamed \
  --without-mysql \
  --with-mysql \
- --without-fltk \
- --with-fltk \
  --without-opengl \
  --with-opengl \
  --without-mesa \
@@ -100,8 +98,6 @@ noops="\
  --with-glew \
  --without-glut \
  --with-glut \
- --without-wxwin \
- --with-wxwin \
  --without-wxwidgets \
  --with-wxwidgets \
  --with-wxwidgets-ucs \
