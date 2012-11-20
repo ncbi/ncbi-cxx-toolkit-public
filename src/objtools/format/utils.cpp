@@ -731,6 +731,12 @@ static bool s_IsValidAccession(const string& acc)
 
     case 1:
         {{
+            if( num_alpha == 3 && num_digits == 6 && 
+                NStr::StartsWith(acc, "MAP_") ) 
+            {
+                return true;
+            }
+
             // RefSeq accession
             if ( (num_alpha != 2)  ||
                  (num_digits != 6  &&  num_digits != 8  &&  num_digits != 9) ) {
