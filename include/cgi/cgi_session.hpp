@@ -258,12 +258,12 @@ public:
     /// Modify session id. 
     /// Change Id of the current session.
     /// The implementations must handle binary data correctly (e.g.
-    /// NULL charachters in the string).
+    /// NULL characters in the string).
     virtual void ModifySessionId(const string& new_id) = 0;
 
     /// Load the session
     /// The implementations must handle binary data correctly (e.g.
-    /// NULL charachters in the string).
+    /// NULL characters in the string).
     /// @param[in]
     ///  ID of the session
     /// @return true if the session was loaded, false otherwise
