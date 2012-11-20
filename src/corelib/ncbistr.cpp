@@ -2642,7 +2642,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
 #elif defined(HAVE_VSNPRINTF)
     // deal with implementation quirks
     SIZE_TYPE size = 1024;
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
+    AutoArray<char> buf(size);
     buf.get()[size-1] = buf.get()[size-2] = 0;
     SIZE_TYPE n = vsnprintf(buf.get(), size, format, args);
     while (n >= size  ||  buf.get()[size-2]) {
@@ -5581,7 +5581,7 @@ void CTempStringList::Join(CTempStringEx* s) const
         *s = m_FirstNode.str;
     } else {
         SIZE_TYPE n = GetSize();
-        AutoPtr<char, ArrayDeleter<char> > buf(new char[n + 1]);
+        AutoArray<char> buf(n + 1);
         char* p = buf.get();
         for (const SNode* node = &m_FirstNode;  node != NULL;
              node = node->next.get()) {
@@ -5720,7 +5720,7 @@ void CStrTokenizeBase::SkipDelims(void)
 void CStrTokenizeBase::x_ExtendInternalDelim(void)
 {
     SIZE_TYPE n = m_InternalDelim.size();
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[n + 3]);
+    AutoArray<char> buf(n + 3);
     char *s = buf.get();
     memcpy(s, m_InternalDelim.data(), n);
     if ((m_Flags & NStr::fSplit_CanEscape) != 0) {
