@@ -33,6 +33,17 @@
 ################################################################################
 
 {
+   Known LIBC bug (https://bugs.kde.org/show_bug.cgi?id=167483)
+   Memcheck:Free
+   fun:free
+   fun:free_mem
+   fun:__libc_freeres
+   fun:_vgnU_freeres
+   fun:exit
+   fun:(below main)
+}
+
+{
    MemCpy to itself in swap() in CObject  (ICC 10.1)
    Memcheck:Overlap
    fun:memcpy
