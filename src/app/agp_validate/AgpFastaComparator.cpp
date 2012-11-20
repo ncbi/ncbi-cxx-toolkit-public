@@ -454,8 +454,7 @@ void CAgpFastaComparator::CTmpSeqVecStorage::WriteData( EType type, CSeq_entry_H
             }
             output_stream << *iter;
         }
-        copy( vec.begin(), vec.end(),
-              ostream_iterator<CSeqVector::TResidue>(output_stream) );
+        output_stream << endl;
     }
 }
 
@@ -947,9 +946,9 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         return;
     }
 
-    const static string kHead = "/usr/bin/head";
-    if( ! CExec::IsExecutable(kHead) ) {
-        cerr << "No differences shown because cannot run " << kHead << endl;
+    const static string kAwk = "/usr/bin/awk";
+    if( ! CExec::IsExecutable(kAwk) ) {
+        cerr << "No differences shown because cannot run " << kAwk << endl;
         return;
     }
 
@@ -973,7 +972,11 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         // solution is possible.  In particular, I would like the NCBI
         // C++ toolkit to have a diff library.
         std::stringstream cmd_strm;
-        cmd_strm << kDiff << " '" << agp_file << "' '" << obj_file << "' 2> /dev/null | " << kHead << " -n " << diffs_to_find;
+        cmd_strm << kDiff << " '" << agp_file << "' '" << obj_file << "' 2> /dev/null | " << kAwk << " 'BEGIN { max_lines = " << diffs_to_find << "; left_seen = 0; right_seen = 0; } "
+                 << "/^</ { left_seen += 1; if( left_seen <= max_lines ) { print } } "
+                 << "/^>/ { right_seen += 1; if( right_seen <= max_lines ) { print } } "
+                 << "/^[0-9]/ {  if( left_seen > right_seen ) { right_seen = left_seen } else { left_seen = right_seen }  if( left_seen >= max_lines && right_seen >= max_lines) { exit } ; print } "
+                 << "/^-/ { print }'";
         CExec::System( cmd_strm.str().c_str() );
     }
 }
