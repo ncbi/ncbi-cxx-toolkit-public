@@ -56,7 +56,7 @@ endif
 define make_one_leaf_proj
 $(if $(8),NCBI_BUT_EXPENDABLE=$(but_exp);,) \
 if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
-    if $(3) -q $(4); then \
+    if $(3) -q $(4) >/dev/null 2>&1; then \
 	echo "$(make_tag) (Makefile.$(1)$(5)): Nothing to be done for \`$(4)'."; \
     elif echo $(3) $(4) && \
       $(RWL) -base "make_$(1)" -log "make_$(1).log" $(2) ! $(3) $(4) ; then \
