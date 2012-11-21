@@ -490,13 +490,12 @@ s_DupSequencesTest(const TIdList & ids,
     BOOST_REQUIRE_CUTPOINT(1);
 
     // Ensure no strange files are left after text execution
-    CFileDeleteList delete_list;
     string basename = dst_name;
     basename += (is_protein ? ".p" : ".n");
     const char* ext[] = { "si", "sd", "og", "ni", "nd" };
     for (size_t i = 0; i < (sizeof(ext)/sizeof(*ext)); i++) {
         string fname(basename+string(ext[i]));
-        delete_list.Add(fname);
+        CFileDeleteAtExit::Add(fname);
     }
     
     CSeqDBExpert src(src_name, (is_protein
@@ -2451,6 +2450,42 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathUnix)
     CFile f1(kOutput + ".pal"), f2(kOutput + ".pin");
     BOOST_REQUIRE(f1.Exists() == false);
     BOOST_REQUIRE(f2.Exists() == false);
+}
+
+BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
+{
+    const int kTaxId(9986);
+    CTaxIdSet tis(kTaxId);
+    const string kDbName("foo");
+    CWriteDB blastdb(kDbName, CWriteDB::eNucleotide, kDbName);
+    const CFastaReader::TFlags flags = 
+        CFastaReader::fAssumeNuc | CFastaReader::fAllSeqIds;
+    CFastaReader reader("data/rabbit_mrna.fsa", flags);
+    set<int> gis;
+    while (!reader.AtEOF()) {
+        CRef<CSeq_entry> se = reader.ReadOneSeq();
+        BOOST_REQUIRE(se.NotEmpty());
+        BOOST_REQUIRE(se->IsSeq());
+        CRef<CBioseq> bs(&se->SetSeq());
+        CRef<CBlast_def_line_set> bds(CWriteDB::ExtractBioseqDeflines(*bs));
+        tis.FixTaxId(bds);
+        blastdb.AddSequence(*bs);
+        blastdb.SetDeflines(*bds);
+        gis.insert(FindGi(bs->GetId()));
+    }
+    blastdb.Close();
+
+    CSeqDB db(kDbName, CSeqDB::eNucleotide);
+    ITERATE(set<int>, gi, gis) {
+        int oid = -1;
+        if (db.GiToOid(*gi, oid)) {
+            vector<int> taxids;
+            db.GetTaxIDs(oid, taxids);
+            BOOST_REQUIRE(taxids.size() == 1);
+            BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
+        }
+    }
+    DeleteBlastDb(kDbName, CSeqDB::eNucleotide);
 }
 
 BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
