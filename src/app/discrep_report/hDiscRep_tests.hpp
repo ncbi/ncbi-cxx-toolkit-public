@@ -73,6 +73,7 @@ namespace DiscRepNmSpc {
       static bool   is_BIOSRC_run;
       static bool   is_Biosrc_Orgmod_run;
       static bool   is_BIOSRC1_run;
+      static bool   is_CdTransl_run;
       static bool   is_DESC_user_run; // checked
       static bool   is_FEAT_DESC_biosrc_run;
       static bool   is_MolInfo_run;
@@ -835,6 +836,51 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
+  class CBioseq_test_on_cd_4_transl: public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_cd_4_transl() {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+    
+    protected:
+      string GetName_note() const {return string("TRANSL_NO_NOTE"); }
+      string GetName_transl() const {return string("NOTE_NO_TRANSL"); }
+      string GetName_long() const {return string("TRANSL_TOO_LONG"); }
+      void  TranslExceptOfCDs (const CSeq_feat& cd, bool& has_transl, bool& too_long);
+  };
+
+  class CBioseq_TRANSL_NO_NOTE : public CBioseq_test_on_cd_4_transl
+  {
+    public:
+      virtual ~CBioseq_TRANSL_NO_NOTE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_cd_4_transl::GetName_note(); }
+  };
+
+
+  class CBioseq_NOTE_NO_TRANSL : public CBioseq_test_on_cd_4_transl
+  {
+    public:
+      virtual ~CBioseq_NOTE_NO_TRANSL () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_cd_4_transl::GetName_transl(); }
+  };
+
+ 
+  class CBioseq_TRANSL_TOO_LONG : public CBioseq_test_on_cd_4_transl
+  {
+    public:
+      virtual ~CBioseq_TRANSL_TOO_LONG () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_cd_4_transl::GetName_long(); }
+  };
+
 
   class CBioseq_test_on_rna : public CBioseqTestAndRepData
   {
@@ -850,13 +896,38 @@ namespace DiscRepNmSpc {
       string GetName_rcnt() const {return string("COUNT_RRNAS"); }
       string GetName_rdup() const {return string("FIND_DUP_RRNAS"); }
       string GetName_tdup() const {return string("FIND_DUP_TRNAS"); }
+      string GetName_len() const {return string("FIND_BADLEN_TRNAS"); }
+      string GetName_strand() const {return string("FIND_STRAND_TRNAS"); }
+
       void FindMissingRNAsInList();
       bool RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
       void FindDupRNAsInList();
       void GetReport_trna(CRef <CClickableItem>& c_item);
+      void FindtRNAsOnSameStrand();
 
       string m_bioseq_desc, m_best_id_str;
   };
+
+
+  class CBioseq_FIND_STRAND_TRNAS : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_FIND_STRAND_TRNAS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_strand(); }
+  };
+
+
+  class CBioseq_FIND_BADLEN_TRNAS : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_FIND_BADLEN_TRNAS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_len(); }
+  };
+
 
   class CBioseq_FIND_DUP_TRNAS : public CBioseq_test_on_rna
   {

@@ -121,6 +121,7 @@ bool CDiscTestInfo :: is_BASES_N_run;
 bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC1_run;
 bool CDiscTestInfo :: is_Biosrc_Orgmod_run;
+bool CDiscTestInfo :: is_CdTransl_run;
 bool CDiscTestInfo :: is_DESC_user_run;
 bool CDiscTestInfo :: is_FEAT_DESC_biosrc_run;
 bool CDiscTestInfo :: is_MolInfo_run;
@@ -1187,7 +1188,7 @@ int CBioseq_DISC_PARTIAL_PROBLEMS :: DistanceToUpstreamGap(const unsigned& pos, 
 {
    int offset = 0, last_gap = -1;
    ITERATE (list <CRef <CDelta_seq> >, it, bioseq.GetInst().GetExt().GetDelta().Get()) {
-     if ( (*it)->IsLoc()) offset += (*it)->GetLoc().GetTotalRange().GetLength(); 
+     if ( (*it)->IsLoc()) offset += sequence::GetCoverage((*it)->GetLoc(), thisInfo.scope);
      else if ((*it)->IsLiteral()) {
             const CSeq_literal& seq_lit = (*it)->GetLiteral();
             offset += seq_lit.GetLength();
@@ -1225,7 +1226,7 @@ int CBioseq_DISC_PARTIAL_PROBLEMS :: DistanceToDownstreamGap (const int& pos, co
   if (pos < 0) return -1;
 
   ITERATE (list <CRef <CDelta_seq> >, it, bioseq.GetInst().GetExt().GetDelta().Get()) {
-     if ( (*it)->IsLoc()) offset += (*it)->GetLoc().GetTotalRange().GetLength();
+     if ( (*it)->IsLoc()) offset += sequence::GetCoverage((*it)->GetLoc(), thisInfo.scope);
      else if ((*it)->IsLiteral()) {
             const CSeq_literal& seq_lit = (*it)->GetLiteral();
             if ( (!seq_lit.CanGetSeq_data() || seq_lit.GetSeq_data().IsGap()) //IsDeltaSeqGap()
@@ -1703,7 +1704,7 @@ void CBioseq_DISC_SHORT_RRNA :: TestOnObj(const CBioseq& bioseq)
   unsigned len;
   ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
     if ((*it)->CanGetPartial() && (*it)->GetPartial()) continue; 
-    len = (*it)->GetLocation().GetTotalRange().GetLength();
+    len = sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope);
     rrna_name = GetRNAProductString(**it);
     ITERATE (Str2UInt, jt, thisInfo.rRNATerms) {
       if (NStr::FindNoCase(rrna_name, jt->first) != string::npos && len < jt->second) {
@@ -1835,7 +1836,7 @@ bool CBioseq_DISC_SHORT_INTRON :: PosIsAt5End(unsigned pos, CConstRef <CBioseq>&
          if (seq_ext.Which() != CSeq_ext :: e_Seg) return false;
          else {
            ITERATE (list <CRef <CSeq_loc> >, it, seq_ext.GetSeg().Get()) {
-             seq_end += (*it)->GetTotalRange().GetLength();
+             seq_end += sequence::GetCoverage(**it, thisInfo.scope);
              if (pos == seq_end) return true;
            }
         }
@@ -1861,7 +1862,7 @@ bool CBioseq_DISC_SHORT_INTRON :: PosIsAt3End(const unsigned pos, CConstRef <CBi
         if (seq_ext.Which() != CSeq_ext :: e_Seg) return false;
         else {
           ITERATE (list <CRef <CSeq_loc> >, it, seq_ext.GetSeg().Get()) {
-            seq_end += (*it)->GetTotalRange().GetLength();
+            seq_end += sequence::GetCoverage(**it, thisInfo.scope);
             if (pos == seq_end -1) return true;
           }
         }
@@ -1882,7 +1883,7 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
   ITERATE (vector <const CSeq_feat*>, it, intron_feat) {
     if (IsPseudoSeqFeatOrXrefGene(*it)) continue;
     const CSeq_loc& seq_loc = (*it)->GetLocation();
-    if (seq_loc.GetTotalRange().GetLength() >= 11) continue;
+    if (sequence::GetCoverage(seq_loc, thisInfo.scope) >= 11) continue;
     strand = seq_loc.GetStrand();
     partial5 = partial3 = false;
     start = seq_loc.GetTotalRange().GetFrom();
@@ -3204,6 +3205,90 @@ void CBioseqTestAndRepData :: TestProteinID(const CBioseq& bioseq)
 
 
 // new comb.
+void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool& has_transl, bool& too_long)
+{
+  has_transl = too_long = false;
+  unsigned len, tmp_len;
+  tmp_len = len = sequence::GetCoverage(cd.GetLocation(), thisInfo.scope);
+  switch ( cd.GetData().GetCdregion().GetFrame() ) {
+     case CCdregion::eFrame_two: tmp_len -=1; break;
+     case CCdregion::eFrame_three: tmp_len -= 2; break;
+     default: break;
+  }
+
+  unsigned codon_start, codon_stop, pos, i, codon_len, end_dist;
+  ITERATE (list <CRef <CCode_break> >, it, cd.GetData().GetCdregion().GetCode_break()) {
+    if ( !((*it)->GetAa().IsNcbieaa()) || (*it)->GetAa().GetNcbieaa() != 42) continue;
+    if (!too_long && sequence::GetCoverage((*it)->GetLoc(), thisInfo.scope) > 3) 
+         too_long = true;
+      
+    if (!has_transl && (tmp_len % 3)) {
+       i=0;
+       for (CSeq_loc_CI loc_ci( (*it)->GetLoc() ); loc_ci && !has_transl; ++loc_ci, i++) {
+          pos = sequence::LocationOffset(cd.GetLocation(), loc_ci.GetEmbeddingSeq_loc(),
+                                eOffset_FromLeft, thisInfo.scope);
+          
+          if ( (int)pos > -1 &&  (!i || pos <= codon_start)) {
+            codon_start = pos;
+            codon_len = loc_ci.GetRange().GetLength() - 1;// codon_len=codon_stop - codon_start
+            codon_stop = codon_len + codon_start;
+            if (codon_len >= 0 && codon_len <= 1 && codon_stop == len - 1) 
+               has_transl = true;
+          } 
+       }
+    }
+    
+    if (too_long && has_transl) return;
+  }
+};
+
+
+void CBioseq_test_on_cd_4_transl :: TestOnObj(const CBioseq& bioseq)
+{ 
+   if (thisTest.is_CdTransl_run) return;
+  
+   string desc, comment;
+   string note_txt("TAA stop codon is completed by the addition of 3' A residues to the mRNA");
+   bool has_transl, too_long;
+   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+     desc = GetDiscItemText(**it); 
+     comment = (*it)->CanGetComment()? (*it)->GetComment() : kEmptyStr;
+     if ( (*it)->GetData().GetCdregion().CanGetCode_break() ) {
+        TranslExceptOfCDs(**it, has_transl, too_long); 
+        if (has_transl) {
+            if (comment.find(note_txt.substr(0, 3)) == string::npos) 
+                 thisInfo.test_item_list[GetName_note()].push_back(desc);
+        }
+        else if (comment.find(note_txt) != string::npos)
+                    thisInfo.test_item_list[GetName_transl()].push_back(desc);
+        if (too_long) thisInfo.test_item_list[GetName_long()].push_back(desc);
+     }
+     else if (comment.find(note_txt) != string::npos)
+                    thisInfo.test_item_list[GetName_transl()].push_back(desc);
+   }  
+
+   thisTest.is_CdTransl_run = true;
+};
+
+void CBioseq_TRANSL_NO_NOTE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "feature") 
+                             + "a translation exception but no note";
+};
+
+void CBioseq_NOTE_NO_TRANSL :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "feature")
+                            + "a note but not translation exception";
+};
+
+void CBioseq_TRANSL_TOO_LONG :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "feature")
+                             + "translation exceptions longer than 3 bp";
+};
+
+
 void CBioseq_test_on_rna :: FindMissingRNAsInList()
 {
   vector <unsigned>  num_present;
@@ -3365,11 +3450,54 @@ void CBioseq_test_on_rna :: FindDupRNAsInList()
 };
 
 
+void CBioseq_test_on_rna :: FindtRNAsOnSameStrand()
+{
+   ENa_strand str0 = trna_feat[0]->GetLocation().GetStrand();
+   ENa_strand this_str; 
+   vector <string> trnas_same_str;
+   bool mixed_strand = false;
+
+   for (unsigned i=1; !mixed_strand && i< trna_feat.size(); i++) {
+      this_str = trna_feat[i]->GetLocation().GetStrand();
+      if ((str0 == eNa_strand_minus && this_str != eNa_strand_minus)
+          || (str0 != eNa_strand_minus && this_str == eNa_strand_minus)) {
+          mixed_strand = true;
+      }
+      else trnas_same_str.push_back(GetDiscItemText(*trna_feat[i]));
+   }
+  
+   string setting_name = GetName_strand();
+   if (!mixed_strand) {
+     string str_tp = (str0 == eNa_strand_minus) ? "minus" : "plus";
+     thisInfo.test_item_list[setting_name].push_back(
+                            str_tp + "$" +GetDiscItemText( *trna_feat[0]));
+     thisInfo.test_item_list[setting_name].insert(
+            thisInfo.test_item_list[setting_name].end(),
+                                trnas_same_str.begin(), trnas_same_str.end()); 
+   }
+};
+
+
 void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
 {
-  if (bioseq.IsAa()) return;
   if (thisTest.is_Rna_run) return;
+ 
+  // FIND_BADLEN_TRNAS
+  unsigned len;
+  string trna_desc;
+  ITERATE (vector <const CSeq_feat*>, it, trna_feat) {
+     len = sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope);
+     trna_desc = GetDiscItemText(**it); 
+     if ( len > 90) 
+        thisInfo.test_item_list[GetName_len()].push_back("long$" + trna_desc);
+     else if (len < 50) {
+       if ( (*it)->CanGetPartial() && !(*it)->GetPartial())
+          thisInfo.test_item_list[GetName_len()].push_back("short$" + trna_desc);
+     }
+  }
 
+  // below covers COUNT_TRNAS, COUNT_RRNAS, FIND_DUP_RRNAS, FUND_DUP_TRNAS
+  if (bioseq.IsAa()) return;
   m_best_id_str = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
   m_bioseq_desc = GetDiscItemText(bioseq);
 
@@ -3389,18 +3517,48 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   unsigned cnt;
   if (run_test) {
     cnt = trna_feat.size();
-    if (cnt) 
+    if (cnt) {
        thisInfo.test_item_list[GetName_tcnt()].push_back(
                                 NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
-    if (cnt) FindMissingRNAsInList();
+       FindMissingRNAsInList();
+       FindtRNAsOnSameStrand();
+    }
+
     cnt = rrna_feat.size();
-    if (cnt)
+    if (cnt) {
        thisInfo.test_item_list[GetName_rcnt()].push_back(
                                 NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
-    if (cnt) FindDupRNAsInList();
+       FindDupRNAsInList();
+    }
   }
 
   thisTest.is_Rna_run = true;
+};
+
+
+void CBioseq_FIND_STRAND_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+  size_t pos = c_item->item_list[0].find("$");
+  strtmp = c_item->item_list[0].substr(0, pos);
+  c_item->item_list[0] = c_item->item_list[0].substr(pos+1);
+  c_item->description 
+      = NStr::UIntToString((unsigned)c_item->item_list.size()) + " tRNAs on " + strtmp + " strand.";
+};
+
+
+void CBioseq_FIND_BADLEN_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs len2trnas;
+   GetTestItemList(c_item->item_list, len2trnas);
+   c_item->item_list.clear();
+   unsigned i=0;
+   ITERATE (Str2Strs, it, len2trnas) {
+     c_item->item_list = it->second;
+     c_item->description =GetIsComment(c_item->item_list.size(), "tRNAs") + "too " + it->first;
+     if (i) thisInfo.disc_report_data.push_back(c_item);
+     else c_item = CRef <CClickableItem> (new CClickableItem);
+     i++;
+   }
 };
 
 
