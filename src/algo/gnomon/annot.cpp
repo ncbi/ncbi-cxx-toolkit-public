@@ -416,9 +416,12 @@ void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand
             wall_model.reset( new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eWall+CGeneModel::eGnomon));
             wall_model->SetGeneID(ir->GeneID());
             wall_model->AddExon(limits);
-        } else { // same cluster
+        }
+        /* doesn't work for genes which onclude coding and non coding together
+        else { // same cluster
             _ASSERT( wall_model.get() != 0 && wall_model->GeneID()==ir->GeneID() );
         }
+        */
         
         right = max(right, limits.GetTo());
         if (ir->RankInGene() == 1 && !ir->GoodEnoughToBeAnnotation()) {
@@ -483,9 +486,12 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
 
     NON_CONST_ITERATE(TGeneModelList, it, models) {
         TInDels fs;
+        TSignedSeqRange fullcds = it->GetCdsInfo().Start()+it->GetCdsInfo().ReadingFrame()+it->GetCdsInfo().Stop();
         ITERATE(TInDels, i, it->FrameShifts()) {   // removing fshifts in UTRs
-            if (i->IntersectingWith(it->ReadingFrame().GetFrom(), it->ReadingFrame().GetTo()))
+            if((i->IsInsertion() && Include(fullcds,i->Loc())) ||
+               (i->IsDeletion() && i->Loc() > fullcds.GetFrom() && i->Loc() <= fullcds.GetTo())) {
                 fs.push_back(*i);
+            }
         }
         it->FrameShifts() = fs;
 
