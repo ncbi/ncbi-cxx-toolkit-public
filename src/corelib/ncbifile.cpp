@@ -1958,6 +1958,21 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
 
 #if defined(NCBI_OS_MSWIN)
     errcode = NcbiSys_stat(_T_XCSTRING(GetPath()), &st);
+    if (errcode != 0) {
+        // Make additional checks for UNC paths, because 
+        // stat() cannot handle path that looks as \\Server\Share.
+        if (GetPath()[0] == '\\'  &&  GetPath()[1] == '\\') {
+            DWORD attr = GetFileAttributes(_T_XCSTRING(GetPath()));
+            if (attr == INVALID_FILE_ATTRIBUTES) {
+                CNcbiError::SetFromWindowsError(GetPath());
+                return eUnknown;
+            }
+            if ( F_ISSET(attr, FILE_ATTRIBUTE_DIRECTORY) ) {
+                return eDir;
+            }
+            return eFile;
+        }
+    }
 #else // NCBI_OS_UNIX
     if (follow == eFollowLinks) {
         errcode = stat(GetPath().c_str(), &st);
