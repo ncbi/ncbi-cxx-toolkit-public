@@ -694,7 +694,9 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
         }
     }}
     if (want_reverse) {
-        return GetLength(outer, scope) - rl.m_Ranges.back()->GetTo();
+        // Subtract 1 to compensate comparing 0-based coordinates to a
+        // 1-based length.
+        return GetLength(outer, scope) - rl.m_Ranges.back()->GetTo() - 1;
     } else {
         return rl.m_Ranges.front()->GetFrom();
     }
