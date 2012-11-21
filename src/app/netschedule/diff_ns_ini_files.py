@@ -14,6 +14,8 @@ import os
 from sets import Set
 from optparse import OptionParser
 from ConfigParser import ConfigParser
+from subprocess import Popen, PIPE
+from StringIO import StringIO
 
 
 def main():
@@ -30,10 +32,18 @@ def main():
     parser.add_option( "-v", "--verbose",
                        action="store_true", dest="verbose", default=False,
                        help="be verbose (default: False)" )
+    parser.add_option( "-s", "--no-sed",
+                       action="store_true", dest="nosed", default=False,
+                       help="avoid sed preprocessing (default: False)" )
+    parser.add_option( "-e", "--no-extra",
+                       action="store_true", dest="noextra", default=False,
+                       help="don't complain about extra values for queues (default: False)" )
 
     # parse the command line options
     options, args = parser.parse_args()
     verbose = options.verbose
+    nosed = options.nosed
+    noextra = options.noextra
 
     # Check the number of arguments
     if len( args ) != 2:
@@ -61,13 +71,32 @@ def main():
     if verbose:
         print "First config file: " + lhsIniFile
         print "Second config file: " + rhsIniFile
+        sys.stdout.flush()
 
     # Compose parsed configs
     lhsConfig = ConfigParser()
-    lhsConfig.readfp( open( lhsIniFile ) )
+    if not nosed:
+        # The first sed prevent having 'class =' uncommented
+        # The second sed uncomments the commented values
+        cmd = "cat " + lhsIniFile + \
+              " | sed 's%^[ ]*;[ ]*\\(class[ ]*=\\)%;;;\\1%'" \
+              " | sed 's%^[ ]*;[ ]*\\([a-zA-Z_][a-zA-Z_]*[ ]*=\\)%\\1%'"
+        afterSed = check_output( cmd, shell = True )
+        lhsConfig.readfp( StringIO( afterSed ) )
+    else:
+        lhsConfig.readfp( open( lhsIniFile ) )
 
     rhsConfig = ConfigParser()
-    rhsConfig.readfp( open( rhsIniFile ) )
+    if not nosed:
+        # The first sed prevent having 'class =' uncommented
+        # The second sed uncomments the commented values
+        cmd = "cat " + rhsIniFile + \
+              " | sed 's%^[ ]*;[ ]*\\(class[ ]*=\\)%;;;\\1%'" \
+              " | sed 's%^[ ]*;[ ]*\\([a-zA-Z_][a-zA-Z_]*[ ]*=\\)%\\1%'"
+        afterSed = check_output( cmd, shell = True )
+        rhsConfig.readfp( StringIO( afterSed ) )
+    else:
+        rhsConfig.readfp( open( rhsIniFile ) )
 
     lhsSections = lhsConfig.sections()
     rhsSections = rhsConfig.sections()
@@ -102,12 +131,12 @@ def main():
 
     for qname in commonQueues:
         retCode += compareQueueValues( lhsConfig, rhsConfig, lClasses, rClasses,
-                                       qname )
+                                       qname, noextra )
 
     return retCode
 
 
-def compareQueueValues( lConfig, rConfig, lClasses, rClasses, qname ):
+def compareQueueValues( lConfig, rConfig, lClasses, rClasses, qname, noextra ):
     " Compares values in the queues respecting classes "
     retCode = 0
     try:
@@ -124,23 +153,23 @@ def compareQueueValues( lConfig, rConfig, lClasses, rClasses, qname ):
 
     # Here we have two lists of tuples. Common part is not interesting
     lSet = Set( lValues )
-    rSet = set( rValues )
+    rSet = Set( rValues )
     common = lSet & rSet
 
     # Compare the rest - could be different values or different variables
     lRestValues = tuplesToValues( lSet - common )
     rRestValues = tuplesToValues( rSet - common )
 
-    missedValues = lRestValues - rRestValues
-    extraValues = rRestValues - lRestValues
-    commonValues = lRestValues & rRestValues
+    missedValues = Set( lRestValues ) - Set( rRestValues ) - Set( [ 'class' ] )
+    extraValues = Set( rRestValues ) - Set( lRestValues ) - Set( [ 'class' ] )
+    commonValues = Set( lRestValues ) & Set( rRestValues )
 
     if len( missedValues ) >= 1:
         print >> sys.stderr, "The second config file queue " + qname + \
                              " misses the following options:"
         print >> sys.stderr, "\n".join( missedValues )
         retCode += 1
-    if len( extraValues ) >= 1:
+    if len( extraValues ) >= 1 and noextra == False:
         print >> sys.stderr, "The second config file queue " + qname + \
                              " has the following extra options:"
         print >> sys.stderr, "\n".join( extraValues )
@@ -191,7 +220,8 @@ def mergeValue( values, another ):
         # Replace it
         for item in values:
             if item[ 0 ] == another[ 0 ]:
-                item[ 1 ] = another[ 1 ]
+                values.remove( item )
+                values.append( another )
                 break
     else:
         values.append( another )
@@ -294,6 +324,21 @@ def tuplesToValues( src ):
         res.append( item[ 0 ] )
     return res
 
+
+def check_output(*popenargs, **kwargs):
+    " Copied from Python 2.7 distribution and slightly modified "
+    if 'stdout' in kwargs:
+        raise ValueError('stdout argument not allowed, it will be overridden.')
+    process = Popen(stdout=PIPE, *popenargs, **kwargs)
+    output, unused_err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        cmd = kwargs.get("args")
+        if cmd is None:
+            cmd = popenargs[0]
+        raise Exception( "Command '" + cmd + "' returned non-zero status " + \
+                         str( retcode ) )
+    return output
 
 
 # The script execution entry point
