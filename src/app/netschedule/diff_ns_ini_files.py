@@ -27,7 +27,7 @@ def main():
 
     e.g. %prog  netscheduled.ini.old  netscheduled.ini
     NetSchedule configuration files comparing utility.
-    It compares the given ini files and prints the diffwrence
+    It compares the given ini files and prints the difference
     """ )
     parser.add_option( "-v", "--verbose",
                        action="store_true", dest="verbose", default=False,
