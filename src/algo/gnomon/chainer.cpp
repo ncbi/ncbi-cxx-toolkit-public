@@ -201,9 +201,8 @@ struct SChainMember
     bool m_not_for_chaining;           // included in other alignmnet(s) and can't trigger a different chain
     int m_rlimb;                       // leftmost compatible rexon
     int m_llimb;                       // leftmost not compatible lexon
-#ifdef _DEBUG
+
     int m_mem_id;
-#endif
 };
 
 class CChain : public CGeneModel
@@ -383,7 +382,7 @@ struct GenomeOrderD
         const TSignedSeqRange& alimits = ap->m_align->Limits();
         const TSignedSeqRange& blimits = bp->m_align->Limits();
         if(ap->m_align->Limits() == bp->m_align->Limits()) 
-            return ap->m_align->ID() < bp->m_align->ID(); // to make sort deterministic
+            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
         else if(alimits.GetFrom() == blimits.GetFrom()) 
             return (alimits.GetTo() > blimits.GetTo());
         else 
@@ -409,7 +408,7 @@ struct LeftOrderD                                                      // use fo
     bool operator()(const SChainMember* ap, const SChainMember* bp)    // right end increasing, short first if right end equal
     {
         if(ap->m_align->Limits() == bp->m_align->Limits()) 
-            return ap->m_align->ID() < bp->m_align->ID(); // to make sort deterministic
+            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
         else 
             return LeftOrder()(ap,bp);
     }
@@ -434,7 +433,7 @@ struct RightOrderD
     bool operator()(const SChainMember* ap, const SChainMember* bp)   // left end decreasing, short first if left end equal
     {
         if(ap->m_align->Limits() == bp->m_align->Limits()) 
-            return ap->m_align->ID() < bp->m_align->ID(); // to make sort deterministic
+            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
         else 
             return RightOrder()(ap,bp);
     }
@@ -448,7 +447,7 @@ struct CdsNumOrder
         if(max(ap->m_cds,bp->m_cds) >= 300 && ap->m_cds != bp->m_cds) // only long cdses count
             return (ap->m_cds > bp->m_cds);
         else if(ap->m_num == bp->m_num)
-            return ap->m_align->ID() < bp->m_align->ID(); // to make sort deterministic
+            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
         else
             return (ap->m_num > bp->m_num);
     }
@@ -467,7 +466,7 @@ struct ScoreOrder
     bool operator()(const SChainMember* ap, const SChainMember* bp)
     {
         if (ap->m_align->Score() == bp->m_align->Score())
-            return ap->m_align->ID() < bp->m_align->ID(); // to make sort deterministic
+            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
         else
             return (ap->m_align->Score() > bp->m_align->Score());
     }
@@ -532,10 +531,7 @@ void CChainMembers::InsertMember(CGeneModel& algn, SChainMember* copy_ofp)
 
 void CChainMembers::InsertMember(SChainMember& m, SChainMember* copy_ofp)
 {
-#ifdef _DEBUG
     m.m_mem_id = size();
-#endif
-
     m_members.push_back(m);
     push_back(&m_members.back());
 
@@ -3356,7 +3352,7 @@ void CChainer::CChainerImpl::CollapsSimilarESTandSR(TGeneModelList& clust)
         }
     }
 
-#define MAX_ETEND 200   // useful for separating overlapping genes
+#define MAX_ETEND 20   // useful for separating overlapping genes
     clust.sort(LeftAndLongFirst); // left to right, if equal longer first
 
     NON_CONST_ITERATE(TGeneModelList, i, clust) {
