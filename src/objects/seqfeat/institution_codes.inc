@@ -3949,7 +3949,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MVZ:Mamm	s	Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection",
 "MVZ:Page	b	Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection",
 "MW<NLD>	s	Museum Wasmann",
-"MW<RUS>	s	Moscow State University Herbarium",
+"MW<RUS>	sb	Moscow State University Herbarium",
 "MWC	s	Museum of Western Colorado",
 "MWCF	s	Mary Washington College, Department of Biology",
 "MWFB	s	University of California, Davis, Museum of Wildlife and Fisheries Biology",
