@@ -73,6 +73,7 @@
 
 #endif /*NCBI_PACKAGE*/
 
+#ifndef RC_INVOKED
 
 #define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned short)            \
                                             ((((ma) & 0xF) << 8) |      \
@@ -88,7 +89,7 @@
                                            (NETDAEMONS_MAJOR,           \
                                             NETDAEMONS_MINOR,           \
                                             NETDAEMONS_PATCH))
-
+#endif /*RC_INVOKED*/
 
 #ifdef NCBI_CXX_TOOLKIT
 
@@ -113,6 +114,8 @@
 #endif /*NCBI_CXX_TOOLKIT*/
 
 
+#ifndef RC_INVOKED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -125,5 +128,7 @@ const char* g_VersionStr(const char* revision);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+#endif /*RC_INVOKED*/
 
 #endif /*CONNECT___NCBI_VERSION__H*/
