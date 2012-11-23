@@ -127,6 +127,27 @@ inline unsigned char s_ASCII_ToUpper(unsigned char c)
     return s_ASCII_IsLower(c) ? c + 'A' - 'a' : c;
 }
 
+inline bool s_ASCII_IsAmbigNuc(unsigned char c)
+{
+    switch( s_ASCII_ToUpper(c) ) {
+    case 'U':
+    case 'R':
+    case 'Y':
+    case 'S':
+    case 'W':
+    case 'K':
+    case 'M':
+    case 'B':
+    case 'D':
+    case 'H':
+    case 'V':
+    case 'N':
+        return true;
+    default:
+        return false;
+    }
+}
+
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
     : m_LineReader(&reader), m_MaskVec(0), m_IDGenerator(new CSeqIdGenerator)
 {
@@ -565,6 +586,26 @@ size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
 
 void CFastaReader::ParseTitle(const TStr& s)
 {
+    const static size_t kWarnTitleLength = 1000;
+    if( s.length() > kWarnTitleLength ) {
+        ERR_POST_X(1, Warning
+            << "CFastaReader: Title is very long: " << s.length() 
+            << " characters (max is " << kWarnTitleLength << "),"
+            << " at line " << LineNumber());
+    }
+
+    const static size_t kWarnNumSeqCharsAtEnd = 20;
+    if( s.length() > kWarnNumSeqCharsAtEnd ) {
+        const string sEndOfTitle = 
+            s.substr(s.length() - kWarnNumSeqCharsAtEnd, kWarnNumSeqCharsAtEnd);
+        if( sEndOfTitle.find_first_not_of("ACGTacgt") == string::npos ) {
+            ERR_POST_X(1, Warning
+                << "CFastaReader: Title ends with at least " << kWarnNumSeqCharsAtEnd 
+                << " valid nucleotide characters.  Was the sequence accidentally put in the title line?"
+                << " at line " << LineNumber());
+        }
+    }
+
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetTitle().assign(s.data(), s.length());
     m_CurrentSeq->SetDescr().Set().push_back(desc);
@@ -601,10 +642,16 @@ void CFastaReader::CheckDataLine(const TStr& s)
         return;
     }
     size_t good = 0, bad = 0, len = s.length();
+    const bool bIsNuc = ( m_CurrentSeq && m_CurrentSeq->IsSetInst() &&
+        m_CurrentSeq->GetInst().IsSetMol() &&  m_CurrentSeq->IsNa() );
+    size_t ambig_nuc = 0;
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
         if (s_ASCII_IsAlpha(c)  ||  c == '-'  ||  c == '*') {
             ++good;
+            if( bIsNuc && s_ASCII_IsAmbigNuc(c) ) {
+                ++ambig_nuc;
+            }
         } else if (isspace(c)  ||  (c >= '0' && c <= '9')) {
             // treat whitespace and digits as neutral
         } else if (c == ';') {
@@ -618,6 +665,16 @@ void CFastaReader::CheckDataLine(const TStr& s)
             "CFastaReader: Near line " + NStr::NumericToString(LineNumber()) +
             ", there's a line that doesn't look like plausible data, but it's not marked as defline or comment.",
             LineNumber());
+    }
+    // warn if more than a certain percentage is ambiguous nucleotides
+    const static size_t kWarnPercentAmbiguous = 40; // e.g. "40" means "40%"
+    const size_t percent_ambig = (ambig_nuc * 100) / good;
+    if( len > 3 && percent_ambig > kWarnPercentAmbiguous ) {
+        ERR_POST_X(1, Warning
+            << "CFastaReader: First data line in seq is about "
+            << percent_ambig << "% ambiguous nucleotides (shouldn't be over "
+            << kWarnPercentAmbiguous << "%)"
+            << " at line " << LineNumber() );
     }
 }
 
