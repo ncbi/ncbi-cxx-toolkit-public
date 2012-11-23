@@ -42,7 +42,7 @@ BEGIN_objects_SCOPE
 
 
 COrgRefCache::COrgRefCache( CTaxon1& host )
-    : m_host( host ), m_nCacheCapacity( 10 ), m_ppEntries( 0 )
+    : m_host( host ), m_ppEntries( 0 ), m_nCacheCapacity( 10 )
 {
     return;
 }
@@ -770,29 +770,17 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
     req.SetGetorgprop( *pProp );
     try {
 	if( m_host.SendRequest( req, resp ) ) {
-	    if( !resp.IsGetorgprop() ) { // error
-	        m_host.SetLastError( "Unable to get pgcode: Response type is not Getorgprop" );
-	    } else {
+	    if( resp.IsGetorgprop() ) { 
 		if( resp.GetGetorgprop().size() > 0 ) {
 		    CRef<CTaxon1_info> pInfo
 			= resp.GetGetorgprop().front();
 		    org.SetOrgname().SetPgcode( pInfo->GetIval2() );
-		    return true;
 		}
 	    }
-	} else if( resp.IsError()
-		   && resp.GetError().GetLevel()
-		   != CTaxon1_error::eLevel_none ) {
-	    string sErr;
-	    resp.GetError().GetErrorText( sErr );
-	    m_host.SetLastError( sErr.c_str() );
 	}
     } catch( exception& e ) {
-	if( e.what() ) {
-	    m_host.SetLastError( e.what() );
-	}
     }
-    return false;
+    return true;
 }
 
 bool
