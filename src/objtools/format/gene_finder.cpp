@@ -922,3 +922,4 @@ bool CGeneFinder::IsMixedStrand(
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

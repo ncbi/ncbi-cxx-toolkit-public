@@ -5868,3 +5868,4 @@ bool CFeatureItem::x_HasMethodtRNAscanSE(void) const
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
