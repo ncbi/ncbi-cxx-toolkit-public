@@ -98,6 +98,9 @@ struct tree_impl;
  * a tree like structure of xml::node objects. After constructing a
  * tree_parser, with either a file to parse or some in memory data to parse,
  * you can walk the tree using the xml::node interface.
+ *
+ * @note: The class is deprecated and the xml::document class with appropriate
+ *        constructors should be used instead.
 **/
 NCBI_DEPRECATED_CLASS tree_parser {
 public:
