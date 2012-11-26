@@ -118,6 +118,7 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
         auto_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText,
                                                           ostr));
         oos->SetAutoSeparator(false);
+        oos->SetVerifyData(eSerialVerifyData_No);
         oos->Write(this, GetThisTypeInfo());
     }}
     ostr << "\n****** end   ASN dump ******\n" << '\0';
