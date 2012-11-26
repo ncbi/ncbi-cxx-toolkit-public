@@ -6358,11 +6358,14 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
     string transl_prot = "";
     try {
         CSeqTranslator::Translate(*tmp_cds, *m_Scope, transl_prot,
-                                  true,   // include stop codons
+                                  false,   // include stop codons
                                   false,  // do not remove trailing X/B/Z
                                   &alt_start);
     } catch (CException&) {
     }
+
+    // now, will use tmp_cds to translate individual code breaks;
+    tmp_cds->SetData().SetCdregion().ResetFrame();
 
     FOR_EACH_CODEBREAK_ON_CDREGION (cbr, cdregion) {
         if (!(*cbr)->IsSetLoc()) {
@@ -6401,66 +6404,80 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                         "transl_except qual out of frame.", feat);
                 }
                 has_errors = true;
-            } else if ((*cbr)->IsSetAa()) {
-                size_t prot_pos = from / 3;
-                unsigned char ex = 0;
-                vector<char> seqData;
-                string str = "";
-                bool not_set = false;
-    
-                switch ((*cbr)->GetAa().Which()) {
-                    case CCode_break::C_Aa::e_Ncbi8aa:
-                        str = (*cbr)->GetAa().GetNcbi8aa();
-                        CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
-                        ex = seqData[0];
-                        break;
-                    case CCode_break::C_Aa::e_Ncbistdaa:
-                        str = (*cbr)->GetAa().GetNcbi8aa();
-                        CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
-                        ex = seqData[0];
-                        break;
-                    case CCode_break::C_Aa::e_Ncbieaa:
-                        seqData.push_back((*cbr)->GetAa().GetNcbieaa());
-                        ex = seqData[0];
-                        break;
-                    default:
-                        // do nothing, code break wasn't actually set
-                        not_set = true;
-                        break;
-                }
+            }
+        }
+        if ((*cbr)->IsSetAa() && (*cbr)->IsSetLoc()) {
+            tmp_cds->SetLocation().Assign((*cbr)->GetLoc());
+            tmp_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+            tmp_cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+            string cb_trans = "";
+            try {
+                CSeqTranslator::Translate(*tmp_cds, *m_Scope, cb_trans,
+                                          true,   // include stop codons
+                                          false,  // do not remove trailing X/B/Z
+                                          &alt_start);
+            } catch (CException&) {
+            }
+            size_t prot_pos = from / 3;
 
-                if (!not_set) {
-                    string except_char = "";
-                    except_char += ex;
-                    if (prot_pos == 0 && ex != 'M') {
-                        if ((! feat.IsSetPartial()) || (! feat.GetPartial())) {
-                            string msg = "Suspicious transl_except ";
-                            msg += ex;
-                            msg += " at first codon of complete CDS";
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                     msg,
-                                     feat);
-                        }
+            unsigned char ex = 0;
+            vector<char> seqData;
+            string str = "";
+            bool not_set = false;
+
+            switch ((*cbr)->GetAa().Which()) {
+                case CCode_break::C_Aa::e_Ncbi8aa:
+                    str = (*cbr)->GetAa().GetNcbi8aa();
+                    CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+                    ex = seqData[0];
+                    break;
+                case CCode_break::C_Aa::e_Ncbistdaa:
+                    str = (*cbr)->GetAa().GetNcbi8aa();
+                    CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+                    ex = seqData[0];
+                    break;
+                case CCode_break::C_Aa::e_Ncbieaa:
+                    seqData.push_back((*cbr)->GetAa().GetNcbieaa());
+                    ex = seqData[0];
+                    break;
+                default:
+                    // do nothing, code break wasn't actually set
+                    not_set = true;
+                    break;
+            }
+
+            if (!not_set) {
+                string except_char = "";
+                except_char += ex;
+                if (prot_pos == 0 && ex != 'M') {
+                    if ((! feat.IsSetPartial()) || (! feat.GetPartial())) {
+                        string msg = "Suspicious transl_except ";
+                        msg += ex;
+                        msg += " at first codon of complete CDS";
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                 msg,
+                                 feat);
                     }
-                    if (prot_pos < transl_prot.length()) {
-                        if (len - from < 2 && NStr::Equal (except_char, "*")) {
-                            // this is a necessary terminal transl_except
-                        } else if (NStr::EqualNocase (transl_prot, prot_pos, 1, except_char)) {
-                            string msg = "Unnecessary transl_except ";
-                            msg += ex;
-                            msg += " at position ";
-                            msg += NStr::SizetToString (prot_pos + 1);
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                     msg,
-                                     feat);
-                        }
-                    } else if (prot_pos == transl_prot.length()) {
-                        if (!NStr::Equal (except_char, "*")) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
-                                     "Unexpected transl_except " + except_char
-                                     + " at position " + NStr::SizetToString (prot_pos + 1),
-                                     feat);
-                        }
+                }
+                if (prot_pos < transl_prot.length()) {
+                    if (len - from < 2 && NStr::Equal (except_char, "*")) {
+                        // this is a necessary terminal transl_except
+                    } else if (NStr::EqualNocase (cb_trans, except_char)) {
+                        string msg = "Unnecessary transl_except ";
+                        msg += ex;
+                        msg += " at position ";
+                        msg += NStr::SizetToString (prot_pos + 1);
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                 msg,
+                                 feat);
+                    }
+                } else if (prot_pos == transl_prot.length()) {
+                    if (!NStr::Equal (except_char, "*")) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                 "Unexpected transl_except " + except_char
+                                 + " at position " + NStr::SizetToString (prot_pos + 1)
+                                 + " just past end of protein",
+                                 feat);
                     }
                 }
             }

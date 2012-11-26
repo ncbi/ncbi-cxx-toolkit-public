@@ -16497,6 +16497,27 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryTranslExcept)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+    codebreak->SetLoc().SetInt().SetFrom(0);
+    codebreak->SetLoc().SetInt().SetTo(2);
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
+                               "Suspicious transl_except P at first codon of complete CDS"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "MisMatchAA",
+                               "Residue 1 in protein [M] != translation [P] at lcl|nuc:1-3"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    codebreak->SetLoc().SetInt().SetFrom(cds->GetLocation().GetStop(eExtreme_Biological) - 2);
+    codebreak->SetLoc().SetInt().SetTo(cds->GetLocation().GetStop(eExtreme_Biological));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "UnnecessaryTranslExcept",
+                               "Unexpected transl_except P at position 9 just past end of protein"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "TransLen",
+                               "Given protein length [8] does not match translation length [9]"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NoStop", "Missing stop codon"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
     CLEAR_ERRORS    
 }
 
