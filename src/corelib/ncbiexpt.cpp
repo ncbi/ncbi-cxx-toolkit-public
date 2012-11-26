@@ -194,6 +194,8 @@ CException::CException(const CDiagCompileInfo& info,
         abort();
     }
     x_Init(info, message, prev_exception, m_Severity);
+    x_InitArgs(args);
+
     if (prev_exception)
         prev_exception->m_MainText = false;
 }
@@ -450,6 +452,14 @@ void CException::x_Init(const CDiagCompileInfo& info,const string& message,
         m_Predecessor = prev_exception->x_Clone();
     }
     x_GetStackTrace();
+}
+
+
+void CException::x_InitArgs(const CExceptionArgs_Base& args)
+{
+    if ( args.IsSetModule() ) {
+        m_Module = args.GetModule();
+    }
 }
 
 

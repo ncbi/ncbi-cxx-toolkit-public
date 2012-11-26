@@ -638,10 +638,15 @@ public:
     void SetSeverity(TSeverity severity) { m_Severity = severity; }
     TSeverity GetSeverity(void) const { return m_Severity; }
 
+    void SetModule(const string& module) { m_Module = module; }
+    const string& GetModule(void) const { return m_Module; }
+    bool IsSetModule(void) const { return !m_Module.empty(); }
+
 private:
     TErrCodeVal m_ErrCode;
     TFlags      m_Flags;
     TSeverity   m_Severity;
+    string      m_Module;
 };
 
 
@@ -655,6 +660,18 @@ public:
 
 typedef void (*FExceptionArgsManip)(CExceptionArgs_Base&);
 
+/// Manipulator function wrapper.
+class CExceptionArgsManip_Wrapper : public CExceptionArgsManip
+{
+public:
+    CExceptionArgsManip_Wrapper(FExceptionArgsManip f) : m_Func(f) { }
+
+    void operator()(CExceptionArgs_Base& args) const { (*m_Func)(args); }
+
+private:
+    FExceptionArgsManip m_Func;
+};
+
 
 template<class TErrCode>
 class CExceptionArgs : public CExceptionArgs_Base
@@ -664,13 +681,13 @@ public:
 
     TErrCode GetErrCode(void) const { return TErrCode(GetErrCodeVal()); }
 
-    CExceptionArgs<TErrCode>& operator|(FExceptionArgsManip manip)
+    CExceptionArgs<TErrCode>& operator|(const CExceptionArgsManip& manip)
     {
         manip(*this);
         return *this;
     }
 
-    CExceptionArgs<TErrCode>& operator|(const CExceptionArgsManip& manip)
+    CExceptionArgs<TErrCode>& operator|(const CExceptionArgsManip_Wrapper& manip)
     {
         manip(*this);
         return *this;
@@ -888,6 +905,10 @@ protected:
                         const CException*       prev_exception,
                         EDiagSev                severity);
 
+    /// Process additional arguments. Derived classes may need
+    /// to cast args to CExceptionArgs<CDerivedException::EErrCode>.
+    virtual void x_InitArgs(const CExceptionArgs_Base& args);
+
     /// Helper method for copying exception data.
     virtual void x_Assign(const CException& src);
 
@@ -939,17 +960,18 @@ private:
 BEGIN_SCOPE(ncbi_ex_manip)
 
 template<class TErrCode>
-CExceptionArgs<TErrCode> operator|(TErrCode            err_code,
-                                   FExceptionArgsManip manip)
+CExceptionArgs<TErrCode> operator|(TErrCode                   err_code,
+                                   const CExceptionArgsManip& manip)
 {
     CExceptionArgs<TErrCode> args(err_code);
     manip(args);
     return args;
 }
 
+
 template<class TErrCode>
-CExceptionArgs<TErrCode> operator|(TErrCode                   err_code,
-                                   const CExceptionArgsManip& manip)
+CExceptionArgs<TErrCode> operator|(TErrCode                           err_code,
+                                   const CExceptionArgsManip_Wrapper& manip)
 {
     CExceptionArgs<TErrCode> args(err_code);
     manip(args);
@@ -998,6 +1020,26 @@ void Fatal(CExceptionArgs_Base& args)
 {
     args.SetSeverity(eDiag_Fatal);
 }
+
+
+/// Module manipulator
+
+class Module : public CExceptionArgsManip
+{
+public:
+    Module(const string& module) : m_Module(module) {}
+    Module(const char* module) : m_Module(module) {}
+    virtual ~Module(void) {}
+
+    virtual void operator()(CExceptionArgs_Base& args) const
+    {
+        args.SetModule(m_Module);
+    }
+
+private:
+    string m_Module;
+};
+
 
 END_SCOPE(ncbi_ex_manip)
 
@@ -1081,6 +1123,7 @@ public:                                                                 \
             (base_class::EErrCode) CException::eInvalid, (message))     \
     {                                                                   \
         x_Init(info, message, prev_exception, args.GetSeverity());      \
+        x_InitArgs(args);                                               \
         x_InitErrCode((CException::EErrCode) args.GetErrCode());        \
     }                                                                   \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class,       \
