@@ -809,11 +809,11 @@ void CChainer::CChainerImpl::Duplicate5pendsAndShortCDSes(CChainMembers& pointer
 
                 CGeneModel algn_with_longcds = algn;
                 if(algn.Strand() == ePlus) {
-                    int full_rf_left = algn.Limits().GetFrom()+(algn.FShiftedLen(algn.Limits().GetFrom(), cdsinfo.Start().GetFrom(), false)-1)%3;
+                    int full_rf_left = algn.FShiftedMove(algn.Limits().GetFrom(),(algn.FShiftedLen(algn.Limits().GetFrom(), cdsinfo.Start().GetFrom(), false)-1)%3);
                     cdsinfo.SetStart(TSignedSeqRange::GetEmpty());
                     cdsinfo.SetReadingFrame(TSignedSeqRange(full_rf_left,cdsinfo.ReadingFrame().GetTo()));
                 } else {
-                    int full_rf_right = algn.Limits().GetTo()-(algn.FShiftedLen(cdsinfo.Start().GetTo(),algn.Limits().GetTo(),false)-1)%3;
+                    int full_rf_right = algn.FShiftedMove(algn.Limits().GetTo(),-(algn.FShiftedLen(cdsinfo.Start().GetTo(),algn.Limits().GetTo(),false)-1)%3);
                     cdsinfo.SetStart(TSignedSeqRange::GetEmpty());
                     cdsinfo.SetReadingFrame(TSignedSeqRange(cdsinfo.ReadingFrame().GetFrom(),full_rf_right));
                 }
