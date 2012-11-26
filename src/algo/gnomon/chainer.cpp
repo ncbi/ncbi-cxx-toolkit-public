@@ -1345,50 +1345,77 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         double ms = GoodCDNAScore(chain);
         if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
             RemovePoorCds(chain,ms);
-        mi.MarkIncludedAllContainedAlignments(chain.Limits());   // alignments clipped below mighy not be in any chain
-        chain.ClipToCompleteAlignment(CGeneModel::eCap);
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
-        NON_CONST_ITERATE(vector<SChainMember*>, j, pointers) {
-            SChainMember& mj = **j;
-            const CGeneModel& align = *mj.m_align;
+        if(chain.Score() != BadScore()) {
+            mi.MarkIncludedAllContainedAlignments(chain.Limits());   // alignments clipped below mighy not be in any chain
+            chain.ClipToCompleteAlignment(CGeneModel::eCap);
+            chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+            chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
+            NON_CONST_ITERATE(vector<SChainMember*>, j, pointers) {
+                SChainMember& mj = **j;
+                const CGeneModel& align = *mj.m_align;
             
-            if(mj.m_included || mj.m_type == eCDS || align.Strand() != chain.Strand()) continue;
+                if(mj.m_included || mj.m_type == eCDS || align.Strand() != chain.Strand()) continue;
 
-            if(align.IsSubAlignOf(chain)) {
-                chain.AddSupport(CSupportInfo(align.ID()));
-                chain.SetWeight(chain.Weight()+align.Weight());
-                if (mj.m_copy != 0) {
-                    ITERATE(TContained, k, *mj.m_copy) {
-                        (*k)->m_included = true;
-                    }
-                }                
-            }
-        }  
-
-
-        /*
-        vector<SChainMember*> mal;
-        mal.push_back(&mi);
-        for (SChainMember* left = mi.m_left_member; left != 0; left = left->m_left_member) {
-            mal.push_back(left);
-        }
-        for (SChainMember* right = mi.m_right_member; right != 0; right = right->m_right_member) {
-            mal.push_back(right);
-        }
-        sort(mal.begin(),mal.end(),GenomeOrderD());
-        ITERATE(vector<SChainMember*>, imal, mal) {
-            cout << mi.m_mem_id << '\t' << (*imal)->m_mem_id << '\t' << (*imal)->m_align->ID() << '\t' << (*imal)->m_align->Limits() << endl;
-        }
-        */
-
+                if(align.IsSubAlignOf(chain)) {
+                    chain.AddSupport(CSupportInfo(align.ID()));
+                    chain.SetWeight(chain.Weight()+align.Weight());
+                    if (mj.m_copy != 0) {
+                        ITERATE(TContained, k, *mj.m_copy) {
+                            (*k)->m_included = true;
+                        }
+                    }                
+                }
+            }  
 #ifdef _DEBUG
             chain.AddComment("Member "+NStr::IntToString(mi.m_mem_id));
 #endif
             chains.push_back(chain);
+        } else {
+            mi.MarkPostponedAllContainedAlignments();
+        }
     }
 
     CreateChainsForPartialProteins(chains, pointers);
+
+    pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
+
+    LeftRight(pointers);
+    RightLeft(pointers);
+
+    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+        SChainMember& mi = **i;
+        mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
+        _ASSERT(mi.m_cds == 0);
+    }
+
+    sort(pointers.begin(),pointers.end(),CdsNumOrder());
+
+    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+        SChainMember& mi = **i;
+        if(mi.m_included) continue;
+
+        TGeneModelSet chain_alignments;
+        mi.CollectAllContainedAlignments(chain_alignments);
+        CChain chain(chain_alignments);
+
+        m_gnomon->GetScore(chain);
+        if ((chain.Type() & CGeneModel::eProt)==0) {
+            double ms = GoodCDNAScore(chain);
+            RemovePoorCds(chain,ms);
+        }
+
+        mi.MarkIncludedAllContainedAlignments(chain.Limits());
+        chain.ClipToCompleteAlignment(CGeneModel::eCap);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
+
+#ifdef _DEBUG
+            chain.AddComment("Member "+NStr::IntToString(mi.m_mem_id));
+#endif
+        chains.push_back(chain);
+    }
+
+    CombineCompatibleChains(chains);
 }
 
 struct AlignSeqOrder
