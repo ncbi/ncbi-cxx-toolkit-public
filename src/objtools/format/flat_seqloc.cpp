@@ -411,9 +411,6 @@ bool CFlatSeqLoc::x_Add
 
     // get the fuzz we need, but certain kinds of fuzz do not belong in an interval
     const CSeq_interval::TFuzz_from *from_fuzz = (si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0);
-    if( from_fuzz && from_fuzz->IsLim() && from_fuzz->GetLim() == CInt_fuzz::eLim_tr ) {
-        from_fuzz = NULL;
-    }
 
     x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
     if ( (type == eType_assembly) || 
@@ -423,9 +420,6 @@ bool CFlatSeqLoc::x_Add
         oss << "..";
 
         const CSeq_interval::TFuzz_from *to_fuzz = (si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0);
-        if( from_fuzz && from_fuzz->IsLim() && from_fuzz->GetLim() == CInt_fuzz::eLim_tr ) {
-            from_fuzz = NULL;
-        }
 
         x_Add(to, to_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
     }
@@ -493,26 +487,21 @@ bool CFlatSeqLoc::x_Add
             }
         case CInt_fuzz::e_Pct: // actually per thousand...
             {
-                // calculate in floating point to avoid overflow
-                TSeqPos delta = 
-                    static_cast<TSeqPos>(0.001 * pnt * fuzz->GetPct());
-                oss << '(' << pnt - delta << '.' << pnt + delta << ')';
+                // calculate in floating point to avoid overflow (or underflow)
+                double delta = 0.001 * pnt * fuzz->GetPct();
+                oss << '(' << static_cast<long>(pnt - delta) << '.' << static_cast<long>(pnt + delta) << ')';
                 break;
             }
         case CInt_fuzz::e_Lim:
             {
                 switch ( fuzz->GetLim() ) {
                 case CInt_fuzz::eLim_gt:
+                case CInt_fuzz::eLim_tr:
                     oss << (html == eHTML_Yes ? "&gt;" : ">") << pnt;
                     break;
                 case CInt_fuzz::eLim_lt:
-                    oss << (html == eHTML_Yes ? "&lt;" : "<") << pnt;
-                    break;
-                case CInt_fuzz::eLim_tr:
-                    oss << pnt << '^' << pnt + 1;
-                    break;
                 case CInt_fuzz::eLim_tl:
-                    oss << pnt - 1 << '^' << pnt;
+                    oss << (html == eHTML_Yes ? "&lt;" : "<") << pnt;
                     break;
                 default:
                     oss << pnt;
