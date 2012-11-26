@@ -104,7 +104,7 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
         }
     }
 
-    return ENUM_METHOD_NAME(ESubtype)()->FindValue(str);
+    return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
 }
 
 
