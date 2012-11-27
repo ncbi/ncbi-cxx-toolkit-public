@@ -376,6 +376,7 @@ void CValidError_bioseqset::ValidateNucProtSet
 
     bool has_source = false;
     bool has_title = false;
+    bool has_refgenetracking = false;
     FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
         if ((*it)->IsSource()
             && (*it)->GetSource().IsSetOrg()
@@ -384,10 +385,15 @@ void CValidError_bioseqset::ValidateNucProtSet
             has_source = true;
         } else if ((*it)->IsTitle()) {
             has_title = true;
+        } else if ((*it)->IsUser()
+            && IsRefGeneTrackingObject((*it)->GetUser())) {
+            has_refgenetracking = true;
         }
+        /*
         if (has_title && has_source) {
             break;
         }
+        */
     }
 
     if (!has_source) {
@@ -402,6 +408,11 @@ void CValidError_bioseqset::ValidateNucProtSet
     if (has_title) {
         PostErr (eDiag_Warning, eErr_SEQ_PKG_NucProtSetHasTitle,
                  "Nuc-prot set should not have title descriptor", seqset);
+    }
+
+    if (has_refgenetracking) {
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
+                 "Nuc-prot set should not have RefGeneTracking user object", seqset);
     }
 }
 

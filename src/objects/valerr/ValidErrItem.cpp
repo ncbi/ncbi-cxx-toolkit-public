@@ -624,6 +624,12 @@ require a taxonomy consult." } },
    { "AmbiguousSpecificHost",
 "A BioSource descriptor or feature has an ambiguous specific host value that may \
 require a taxonomy consult." } },
+   { eErr_SEQ_DESCR_BadAltitude,
+   { "BadAltitude",
+"The altitude must be reported as a number followed by m (for meters) and a period." } },
+   { eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
+   { "RefGeneTrackingOnNucProtSet",
+"The RefGeneTracking user object should not be on a nuc-prot set." } },
 
 /* SEQ_GENERIC */
 

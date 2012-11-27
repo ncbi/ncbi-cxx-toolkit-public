@@ -236,6 +236,8 @@ enum EErrType {
     eErr_SEQ_DESCR_InconsistentMolTypeBiomol,
     eErr_SEQ_DESCR_BadInstitutionCountry,
     eErr_SEQ_DESCR_AmbiguousSpecificHost,
+    eErr_SEQ_DESCR_BadAltitude,
+    eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
     ERR_CODE_END(SEQ_DESCR),
 
 
