@@ -289,6 +289,7 @@ void CValidError_bioseqset::ValidateNucProtSet
     }
 
     int prot_biosource = 0;
+    bool is_nm = false;
 
     sequence::CDeflineGenerator defline_generator;
 
@@ -304,7 +305,15 @@ void CValidError_bioseqset::ValidateNucProtSet
                         "Nucleotide bioseq should be product of mRNA "
                         "feature on contig, but is not",
                         seq);
+				}
+				FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+				    if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
+				        const string& acc = (*id_it)->GetOther().GetAccession();
+				        if (NStr::StartsWith(acc, "NM_")) {
+				            is_nm = true;
 				        }
+				    }
+				}
             } else if ( seq.IsAa() ) {
                 if (gps && !IsCDSProductInGPS(seq, *(gps.GetCompleteBioseq_set())) ) {
                     PostErr(eDiag_Warning,
@@ -410,7 +419,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                  "Nuc-prot set should not have title descriptor", seqset);
     }
 
-    if (has_refgenetracking) {
+    if (has_refgenetracking && (! is_nm)) {
         PostErr (eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
                  "Nuc-prot set should not have RefGeneTracking user object", seqset);
     }
