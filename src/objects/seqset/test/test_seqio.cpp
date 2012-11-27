@@ -38,6 +38,7 @@
 #include <serial/objostrxml.hpp>
 #include <serial/objhook.hpp>
 #include <corelib/ncbifile.hpp>
+#include <common/test_data_path.h>
 #include <objects/seqset/Seq_entry.hpp>
 #include <corelib/test_boost.hpp>
 #include <objects/general/Object_id.hpp>
@@ -48,8 +49,6 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
-const char* const dir = "test_data/";
 
 BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
 {
@@ -78,8 +77,12 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         ".sxml",
         ".json"
     };
+
+    string src_dir = CDirEntry::MakePath(NCBI_GetTestDataPath(),
+                                         "objects/seqset/test");
+    string dst_dir = ".";
     for ( int in_i = 0; in_i < kFmtCount; ++in_i ) {
-        string in_name = dir+name+ext[in_i];
+        string in_name = CDirEntry::MakePath(src_dir, name, ext[in_i]);
         LOG_POST("Reading from "<<in_name);
         
         CRef<TObject> obj(new TObject);
@@ -103,8 +106,8 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             *in >> *obj;
         }
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
-            string ref_name = dir+name+ext[out_i];
-            string out_name = ref_name+".out";
+            string ref_name = CDirEntry::MakePath(src_dir, name, ext[out_i]);
+            string out_name = CDirEntry::MakePath(dst_dir, name, ext[out_i]);
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
@@ -175,8 +178,11 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
         ".sxml",
         ".json"
     };
+    string src_dir = CDirEntry::MakePath(NCBI_GetTestDataPath(),
+                                         "objects/seqset/test");
+    string dst_dir = ".";
     for ( int in_i = 0; in_i < kFmtCount; ++in_i ) {
-        string in_name = dir+name+ext[in_i];
+        string in_name = CDirEntry::MakePath(src_dir, name, ext[in_i]);
         LOG_POST("Reading from "<<in_name);
         
         CRef<TObject> obj(new TObject);
@@ -202,8 +208,8 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             *in >> *obj;
         }
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
-            string ref_name = dir+name+ext[out_i];
-            string out_name = ref_name+".out";
+            string ref_name = CDirEntry::MakePath(src_dir, name, ext[out_i]);
+            string out_name = CDirEntry::MakePath(dst_dir, name, ext[out_i]);
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
