@@ -450,4 +450,12 @@ CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges,
     }
 }
 
+void CBlastDBExtractor::SetConfig(TSeqRange range, objects::ENa_strand strand,
+							      int filt_algo_id)
+{
+	m_OrigSeqRange = range;
+	m_Strand = strand;
+	m_FiltAlgoId = filt_algo_id;
+}
+
 END_NCBI_SCOPE

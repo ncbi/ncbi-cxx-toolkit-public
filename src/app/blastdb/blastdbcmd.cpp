@@ -120,6 +120,12 @@ private:
     /// @param retval the return value where the queries will be added [in|out]
     /// @param entry the user's query [in]
     void x_AddOid(CBlastDBCmdApp::TQueries& retval, const int oid, bool check=false) const;
+
+    /// Process batch entry with range, strand and filter id
+    /// @param args program input args
+    /// @param seq_fmt sequence formatter object
+    /// @return 0 on sucess; 1 if some queries were not processed
+    int x_ProcessBatchEntry(const CArgs& args, CSeqFormatter & seq_fmt);
 };
 
 int
@@ -224,18 +230,6 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
             }
         } else {
             err_found += x_AddSeqId(retval, entry);
-        }
-
-    } else if (args["entry_batch"].HasValue()) {
-
-        CNcbiIstream& input = args["entry_batch"].AsInputFile();
-        retval.reserve(256); // arbitrary value
-        while (input) {
-            string line;
-            NcbiGetlineEOL(input, line);
-            if ( !line.empty() ) {
-                err_found += x_AddSeqId(retval, line);
-            }
         }
 
     } else {
@@ -394,6 +388,10 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
         return errors_found ? 1 : 0;
     }
 
+    if (args["entry_batch"].HasValue()) {
+       	return x_ProcessBatchEntry(args, seq_fmt);
+    }
+
     TQueries queries;
 	errors_found = (x_GetQueries(queries) > 0 ? true : false);
     _ASSERT( !queries.empty() );
@@ -410,6 +408,65 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
         }
     }
     return errors_found ? 1 : 0;
+}
+
+int CBlastDBCmdApp::x_ProcessBatchEntry(const CArgs& args, CSeqFormatter & seq_fmt)
+{
+    CNcbiIstream& input = args["entry_batch"].AsInputFile();
+    bool err_found = false;
+    while (input) {
+        string line;
+        NcbiGetlineEOL(input, line);
+        if ( !line.empty() ) {
+        	vector<string> tmp;
+        	NStr::Tokenize(line, " \t", tmp, NStr::fSplit_MergeDelims);
+        	if(tmp.empty())
+        		continue;
+
+        	TQueries queries;
+        	if(x_AddSeqId(queries, tmp[0]) > 0 )
+        			err_found = true;
+
+            if(queries.empty())
+            	continue;
+
+           	TSeqRange seq_range(TSeqRange::GetEmpty());
+            ENa_strand seq_strand = eNa_strand_plus;
+           	int seq_algo_id = -1;
+
+           	for(unsigned int i=1; i < tmp.size(); i++) {
+
+           		if(tmp[i].find('-')!= string::npos)
+            	{
+            		try {
+            			seq_range = ParseSequenceRangeOpenEnd(tmp[i]);
+            		} catch (...) {
+            			seq_range = TSeqRange::GetEmpty();
+            		}
+            	}
+            	else if (!m_DbIsProtein && NStr::EqualNocase(tmp[i].c_str(), "minus")) {
+            		seq_strand = eNa_strand_minus;
+            	}
+            	else {
+            		seq_algo_id = NStr::StringToNonNegativeInt(tmp[i]);
+            	}
+            }
+
+           	seq_fmt.SetConfig(seq_range, seq_strand, seq_algo_id);
+            NON_CONST_ITERATE(TQueries, itr, queries) {
+            	try {
+            		seq_fmt.Write(**itr);
+            	} catch (const CException& e) {
+                     ERR_POST(Error << e.GetMsg());
+                     err_found = true;
+            	} catch (...) {
+                  	ERR_POST(Error << "Failed to retrieve requested item");
+                   	err_found = true;
+            	}
+            }
+        }
+    }
+    return err_found ? 1:0;
 }
 
 void CBlastDBCmdApp::Init()
@@ -444,6 +501,8 @@ void CBlastDBCmdApp::Init()
                  CArgDescriptions::eInputFile);
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "entry");
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "range");
+    arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "strand");
+    arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "mask_sequence_with");
 
     arg_desc->AddOptionalKey("pig", "PIG", "PIG to retrieve", 
                              CArgDescriptions::eInteger);

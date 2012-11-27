@@ -95,6 +95,8 @@ public:
     /// @throws CExcpetion derived classes on error
     void DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config = CSeqFormatterConfig());
 
+    /// Set range, strand and filter algo for each seq id
+    void SetConfig(TSeqRange range, objects::ENa_strand strand, int filt_algo_id);
 private:
     /// Stream to write output
     CNcbiOstream& m_Out;

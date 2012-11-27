@@ -94,6 +94,9 @@ public:
     string ExtractAsn1Defline();
     string ExtractFasta(const CBlastDBSeqId &seq_id);
 
+    // Call before ExtractFasta or SetSeqId
+    void SetConfig(TSeqRange range, objects::ENa_strand strand, int filt_algo_id);
+
 protected:
     /// underlying Blast database
     CSeqDB& m_BlastDb;

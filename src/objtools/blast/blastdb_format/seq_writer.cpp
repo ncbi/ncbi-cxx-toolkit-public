@@ -267,4 +267,11 @@ CSeqFormatter::x_Replacer(const vector<string>& data2write) const
     return retval;
 }
 
+void CSeqFormatter::SetConfig(TSeqRange range, objects::ENa_strand strand,
+							  int filt_algo_id)
+{
+	m_DataExtractor.SetConfig(range, strand, filt_algo_id);
+}
+
+
 END_NCBI_SCOPE
