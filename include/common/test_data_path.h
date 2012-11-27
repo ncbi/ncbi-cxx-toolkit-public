@@ -47,7 +47,7 @@
 ///   Pointer to internal zero-terminated string buffer.
 static const char* NCBI_GetTestDataPath(void)
 {
-    static char* s_NcbiTestDataPath = NULL;
+    static const char* s_NcbiTestDataPath = NULL;
 
     if ( s_NcbiTestDataPath )
         return s_NcbiTestDataPath;
