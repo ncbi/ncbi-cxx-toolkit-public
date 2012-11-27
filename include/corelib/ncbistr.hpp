@@ -3278,6 +3278,8 @@ public:
     ///
     /// @param chU
     ///   Unicode character
+    /// @sa
+    ///   TruncateSpacesInPlace, TruncateSpaces_Unsafe, TruncateSpaces
     static bool IsWhiteSpace(TUnicodeSymbol chU);
     
     /// Truncate spaces in the string (in-place)
@@ -3288,9 +3290,24 @@ public:
     /// @return
     ///   Reference to itself
     /// @sa
-    ///   IsWhiteSpace
+    ///   IsWhiteSpace, TruncateSpaces_Unsafe, TruncateSpaces
     CStringUTF8& TruncateSpacesInPlace(NStr::ETrunc side = NStr::eTrunc_Both);
 
+    /// Truncate spaces in the string
+    ///
+    /// @param str
+    ///   source string, in UTF8 format
+    /// @param side                                                        svn st inc   
+    ///   Which end of the string to truncate spaces from. Default is to
+    ///   truncate spaces from both ends (eTrunc_Both).
+    /// @attention
+    ///   The lifespan of the result string is the same as one of the source.
+    ///   So, for example, if the source is temporary string, the result
+    ///   will be invalid right away (will point to already released memory).
+    /// @sa
+    ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces, CTempString
+    static CTempString TruncateSpaces_Unsafe(const CTempString& str,
+                                             NStr::ETrunc side = NStr::eTrunc_Both);
     /// Truncate spaces in the string
     ///
     /// @param str
@@ -3299,8 +3316,12 @@ public:
     ///   Which end of the string to truncate spaces from. Default is to
     ///   truncate spaces from both ends (eTrunc_Both).
     /// @sa
-    ///   IsWhiteSpace
-    static CTempString TruncateSpaces(const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
+    ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe, CTempString
+    static CStringUTF8 TruncateSpaces(const CTempString& str,
+                                      NStr::ETrunc side = NStr::eTrunc_Both)
+    {
+        return CStringUTF8(TruncateSpaces_Unsafe( str,side), eEncoding_UTF8);
+    }
 
 private:
     /// Function AsAscii is deprecated - use AsLatin1() instead
@@ -3364,7 +3385,7 @@ public:
     static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
     static bool IsWhiteSpace(TUnicodeSymbol chU);
     static CStringUTF8& TruncateSpacesInPlace(CStringUTF8& self, NStr::ETrunc side);
-    static CTempString  TruncateSpaces(const CTempString& str, NStr::ETrunc side);
+    static CTempString  TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side);
 
 private:
     static void   x_Validate(const CStringUTF8& self);
@@ -3458,9 +3479,9 @@ CStringUTF8& CStringUTF8::TruncateSpacesInPlace(NStr::ETrunc side)
     return CStringUTF8_Helper::TruncateSpacesInPlace(*this,side);
 }
 inline
-CTempString CStringUTF8::TruncateSpaces(const CTempString& str, NStr::ETrunc side)
+CTempString CStringUTF8::TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side)
 {
-    return CStringUTF8_Helper::TruncateSpaces(str,side);
+    return CStringUTF8_Helper::TruncateSpaces_Unsafe(str,side);
 }
 inline
 void   CStringUTF8::x_Validate(void) const

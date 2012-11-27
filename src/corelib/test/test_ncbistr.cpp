@@ -3009,6 +3009,7 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
 
     wss.append(1, 0x2028).append(1, 0x205F).append(1,0x0D);
     BOOST_CHECK_EQUAL( CStringUTF8(wss).TruncateSpacesInPlace(), "ab" );
+    BOOST_CHECK_EQUAL( CStringUTF8::TruncateSpaces(CStringUTF8(wss)), "ab" );
 }
 
 

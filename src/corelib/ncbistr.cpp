@@ -5504,7 +5504,7 @@ CStringUTF8& CStringUTF8_Helper::TruncateSpacesInPlace(
     CStringUTF8& self(*this);
 #endif
     if (!self.empty()) {
-        CTempString t( TruncateSpaces( self,side));
+        CTempString t( TruncateSpaces_Unsafe( self,side));
         if (t.empty()) {
             self.erase();
         } else {
@@ -5514,7 +5514,7 @@ CStringUTF8& CStringUTF8_Helper::TruncateSpacesInPlace(
     return self;
 }
 
-CTempString CStringUTF8_Helper::TruncateSpaces(
+CTempString CStringUTF8_Helper::TruncateSpaces_Unsafe(
     const CTempString& str, NStr::ETrunc side)
 {
     if (str.empty()) {
