@@ -26,7 +26,7 @@
  * Authors:  Denis Vakatov, Vladimir Ivanov
  *
  * File Description:
- *   Sample for the command-line arguments' processing ("ncbiargs.[ch]pp"):
+ *   Minimalistic application, with command-line arguments' processing
  *
  */
 
@@ -231,7 +231,7 @@ int CSampleBasicApplication::Run(void)
 
 void CSampleBasicApplication::Exit(void)
 {
-    SetDiagStream(0);
+    // Do your after-Run() cleanup here
 }
 
 
