@@ -2164,7 +2164,7 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
     CTmpFile tmpfile;
     const string kTitle("My alias file");
     // nr should have at least two volumes
-    const unsigned int kNumVols(2);
+    const unsigned int kNumVols(9);
     const string kMyAliasDb("nr");
     const string kAliasFileName(kMyAliasDb + ".pal");
     CFileDeleteAtExit::Add(kAliasFileName);
