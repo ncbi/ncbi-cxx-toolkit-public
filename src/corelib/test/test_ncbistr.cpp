@@ -2967,6 +2967,48 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Begin), sEndSpace  );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_End  ), sBegSpace  );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Both ), sTrunc     );
+
+// http://unicode.org/charts/uca/chart_Whitespace.html
+// http://en.wikipedia.org/wiki/Whitespace_character
+    wchar_t ws[] = {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x85, 0xA0, 0x1680, 0x180E,
+    0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A,
+    0x2028, 0x2029, 0x202F, 0x205F, 0x3000, 0 };
+    int i;
+    cout << "Testing iswspace" << endl;
+    for (i=0; ws[i]; ++i) {
+        if (iswspace(ws[i]) == 0) {
+            cout << "WARNING: wide char " << hex << ws[i] << " is not whitespace" << endl;
+        }
+    }
+    cout << "Testing CStringUTF8::IsWhiteSpace" << endl;
+    for (i=0; ws[i]; ++i) {
+        BOOST_CHECK( CStringUTF8::IsWhiteSpace(ws[i]) );
+    }
+    for (wchar_t t=1; t<=0x3000; ++t) {
+        if (CStringUTF8::IsWhiteSpace(t)) {
+            bool found=false;
+            for (i=0; !found && ws[i]; ++i) {
+                found = ws[i] == t;
+            }
+            BOOST_CHECK(found);
+        }
+    }
+
+#if !defined(HAVE_WSTRING)
+    wstring wss;
+#else
+    TStringUCS2 wss;
+#endif
+    wss.erase().append(1, 0x2003).append(1, 0x2004).append(1, 0x2028).append(1, 0x205F);
+    BOOST_CHECK( CStringUTF8(wss).TruncateSpacesInPlace(NStr::eTrunc_Begin).empty() );
+    BOOST_CHECK( CStringUTF8(wss).TruncateSpacesInPlace(NStr::eTrunc_End).empty() );
+    BOOST_CHECK( CStringUTF8(wss).TruncateSpacesInPlace().empty() );
+
+    wss.append(1,L'a').append(1,L'b');
+    BOOST_CHECK_EQUAL( CStringUTF8(wss).TruncateSpacesInPlace(), "ab" );
+
+    wss.append(1, 0x2028).append(1, 0x205F).append(1,0x0D);
+    BOOST_CHECK_EQUAL( CStringUTF8(wss).TruncateSpacesInPlace(), "ab" );
 }
 
 

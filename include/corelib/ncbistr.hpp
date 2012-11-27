@@ -3272,6 +3272,35 @@ public:
     /// @return
     ///   non-zero, if the character is valid
     static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
+    
+    /// Determines if a symbol is whitespace
+    /// per  http://unicode.org/charts/uca/chart_Whitespace.html
+    ///
+    /// @param chU
+    ///   Unicode character
+    static bool IsWhiteSpace(TUnicodeSymbol chU);
+    
+    /// Truncate spaces in the string (in-place)
+    ///
+    /// @param side
+    ///   Which end of the string to truncate spaces from. Default is to
+    ///   truncate spaces from both ends (eTrunc_Both).
+    /// @return
+    ///   Reference to itself
+    /// @sa
+    ///   IsWhiteSpace
+    CStringUTF8& TruncateSpacesInPlace(NStr::ETrunc side = NStr::eTrunc_Both);
+
+    /// Truncate spaces in the string
+    ///
+    /// @param str
+    ///   source string, in UTF8 format
+    /// @param side
+    ///   Which end of the string to truncate spaces from. Default is to
+    ///   truncate spaces from both ends (eTrunc_Both).
+    /// @sa
+    ///   IsWhiteSpace
+    static CTempString TruncateSpaces(const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
 
 private:
     /// Function AsAscii is deprecated - use AsLatin1() instead
@@ -3333,6 +3362,10 @@ public:
     static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
     static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
     static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
+    static bool IsWhiteSpace(TUnicodeSymbol chU);
+    static CStringUTF8& TruncateSpacesInPlace(CStringUTF8& self, NStr::ETrunc side);
+    static CTempString  TruncateSpaces(const CTempString& str, NStr::ETrunc side);
+
 private:
     static void   x_Validate(const CStringUTF8& self);
     static void   x_AppendChar(CStringUTF8& self, TUnicodeSymbol ch);
@@ -3413,6 +3446,21 @@ inline
 TUnicodeSymbol  CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
 {
     return CStringUTF8_Helper::DecodeNext(chU,ch);
+}
+inline
+bool  CStringUTF8::IsWhiteSpace(TUnicodeSymbol chU)
+{
+    return CStringUTF8_Helper::IsWhiteSpace(chU);
+}
+inline
+CStringUTF8& CStringUTF8::TruncateSpacesInPlace(NStr::ETrunc side)
+{
+    return CStringUTF8_Helper::TruncateSpacesInPlace(*this,side);
+}
+inline
+CTempString CStringUTF8::TruncateSpaces(const CTempString& str, NStr::ETrunc side)
+{
+    return CStringUTF8_Helper::TruncateSpaces(str,side);
 }
 inline
 void   CStringUTF8::x_Validate(void) const

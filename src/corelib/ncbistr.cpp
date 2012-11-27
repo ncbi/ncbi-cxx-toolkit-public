@@ -5474,6 +5474,82 @@ TUnicodeSymbol CStringUTF8_Helper::DecodeNext(TUnicodeSymbol chU, char ch)
     return 0;
 }
 
+bool CStringUTF8_Helper::IsWhiteSpace(TUnicodeSymbol chU)
+{
+/*
+    {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x85, 0xA0, 0x1680, 0x180E,
+    0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A,
+    0x2028, 0x2029, 0x202F, 0x205F, 0x3000 };
+*/
+    if (chU >= 0x85) {
+        if (chU < 0x2000) {
+            return chU == 0x85 || chU == 0xA0 || chU == 0x1680 || chU == 0x180E;
+        } else if (chU >= 0x3000) {
+            return chU == 0x3000;
+        }
+        return chU <=0x200A || chU == 0x2028 || chU == 0x2029 || chU == 0x202F || chU ==  0x205F;
+    }
+    return iswspace(chU)!=0;
+}
+
+#if defined(__NO_EXPORT_STRINGUTF8__)
+CStringUTF8& CStringUTF8_Helper::TruncateSpacesInPlace(
+    CStringUTF8& self, NStr::ETrunc side)
+#else
+CStringUTF8& CStringUTF8_Helper::TruncateSpacesInPlace(
+    NStr::ETrunc side)
+#endif
+{
+#if !defined(__NO_EXPORT_STRINGUTF8__)
+    CStringUTF8& self(*this);
+#endif
+    if (!self.empty()) {
+        CTempString t( TruncateSpaces( self,side));
+        if (t.empty()) {
+            self.erase();
+        } else {
+            self.replace(0,self.length(),t.data(),t.length());
+        }
+    }
+    return self;
+}
+
+CTempString CStringUTF8_Helper::TruncateSpaces(
+    const CTempString& str, NStr::ETrunc side)
+{
+    if (str.empty()) {
+        return str;
+    }
+    CTempString::const_iterator beg = str.begin();
+    CTempString::const_iterator end = str.end();
+    if (side == NStr::eTrunc_Begin  ||  side == NStr::eTrunc_Both) {
+        for (CTempString::const_iterator next = beg; beg != end; beg = ++next) {
+            if (!IsWhiteSpace( CStringUTF8::Decode( next ) )) {
+                break;
+            }
+        }
+    }
+    if (side == NStr::eTrunc_End  ||  side == NStr::eTrunc_Both) {
+        while (end != beg) {
+            while (end != beg) {
+                char ch = *(--end);
+                if ((ch & 0x80) == 0 || (ch & 0xC0) == 0xC0) {
+                    break;
+                }
+            }
+            CTempString::const_iterator next = end;
+            if (!IsWhiteSpace( CStringUTF8::Decode( next ) )) {
+                end = ++next;
+                break;
+            }
+        }
+    }
+    CTempString res;
+    if (beg != end) {
+        res.assign(beg,end-beg);
+    }
+    return res;
+}
 
 const char* CStringException::GetErrCodeString(void) const
 {
