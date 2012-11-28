@@ -168,8 +168,7 @@ bool CSnpBitfield2::IsTrue(CSnpBitfield::EProperty prop) const
 
     // Return false if property queried is
     // newer than last property implemented at version 2 release
-    // last property implemented was 'eHasShortReadArchive'
-    if(prop > CSnpBitfield::eHasShortReadArchive) 
+    if(prop > CSnpBitfield::ePropertyV2Last) 
         return false;
 
     // perform table lookup to find byteoffset, and bitoffset
@@ -233,6 +232,15 @@ bool CSnpBitfield2::IsTrue( CSnpBitfield::EFunctionClass prop ) const
 const char * CSnpBitfield2::GetString() const
 {
     return m_strBits.c_str();
+}
+
+void CSnpBitfield2::GetBytes(vector<char>& bytes) const
+{
+    bytes.clear();
+    bytes.reserve(sizeof(m_listBytes));
+    for(size_t i=0; i<sizeof(m_listBytes); ++i) {
+        bytes.push_back(m_listBytes[i]);
+    }
 }
 
 void CSnpBitfield2::x_CreateString()

@@ -61,8 +61,7 @@ bool CSnpBitfield3::IsTrue(CSnpBitfield::EProperty prop) const
 
     // Return false if property queried is
     // newer than last property implemented at version 3 release
-    // last property implemented was 'eIsContigAlleleAbsent'
-    if(prop > CSnpBitfield::eIsContigAlleleAbsent)
+    if(prop > CSnpBitfield::ePropertyV3Last)
         return false;
 
     if (prop == CSnpBitfield::eIsContigAlleleAbsent)

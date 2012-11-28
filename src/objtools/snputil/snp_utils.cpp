@@ -43,6 +43,10 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/variation/Variation.hpp>
+#include <objects/variation/VariantPlacement.hpp>
+#include <objects/seqfeat/Variation_inst.hpp>
+#include <objects/seqfeat/VariantProperties.hpp>
 
 #include <objmgr/annot_selector.hpp>
 
@@ -54,15 +58,19 @@ USING_SCOPE(objects);
 ///////////////////////////////////////////////////////////////////////////////
 bool  NSnp::IsSnp(const CMappedFeat &mapped_feat)
 {
-    bool isSnp = false;
-    const CSeq_feat &feat = mapped_feat.GetOriginalFeature();
+    return IsSnp(mapped_feat.GetOriginalFeature());
+}
 
+bool  NSnp::IsSnp(const CSeq_feat &feat)
+{
+    bool isSnp = false;
     if (feat.IsSetData()) {
         isSnp = (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_variation);
     }
-
     return isSnp;
 }
+
+
 
 CTime NSnp::GetCreateTime(const CMappedFeat &feat)
 {
@@ -205,5 +213,326 @@ bool NSnp::IsSnpKnown( CScope& scope, const CSeq_loc& loc, const string & allele
 
     return isKnown;
 }
+
+
+bool NSNPVariationHelper::ConvertFeat(CVariation& Variation, const CSeq_feat& SrcFeat)
+{
+    if(!x_CommonConvertFeat(&Variation, SrcFeat))
+        return false;
+	CRef<CVariantPlacement> pPlacement(new CVariantPlacement);
+    pPlacement->SetLoc().Assign(SrcFeat.GetLocation());
+    Variation.SetPlacements().push_back(pPlacement);
+
+    // save a copy of the bitfield since not every bit 
+    // currently is adequately represented in Variation
+    CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
+    if(bf.GetVersion() > 0) {
+        CRef<CUser_object> pExt(new CUser_object());
+        CUser_field::C_Data::TOs Os;
+        bf.GetBytes(Os);
+        pExt->SetField(SNP_VAR_EXT_BITFIELD).SetData().SetOs() = Os;
+        pExt->SetClass(SNP_VAR_EXT_CLASS);
+        Variation.SetExt().push_back(pExt);
+    }
+    return true;
+}
+
+bool NSNPVariationHelper::ConvertFeat(CVariation_ref& Variation, const CSeq_feat& SrcFeat)
+{
+    if(!x_CommonConvertFeat(&Variation, SrcFeat))
+        return false;
+
+    // save a copy of the bitfield since not every bit 
+    // currently is adequately represented in Variation
+    CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
+    if(bf.GetVersion() > 0) {
+        CUser_field::C_Data::TOs Os;
+        bf.GetBytes(Os);
+        Variation.SetExt().SetField(SNP_VAR_EXT_BITFIELD).SetData().SetOs() = Os;
+        Variation.SetExt().SetClass(SNP_VAR_EXT_CLASS);
+    }
+    return true;
+}
+
+
+
+
+void NSNPVariationHelper::DecodeBitfield(CVariantProperties& prop, const CSnpBitfield& bf)
+{
+    prop.SetVersion(bf.GetVersion());
+
+    /// resource link
+    int res_link = 0;
+    if (bf.IsTrue(CSnpBitfield::eIsPrecious)) {
+        res_link |= CVariantProperties::eResource_link_preserved;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasProvisionalTPA)) {
+        res_link |= CVariantProperties::eResource_link_provisional;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasSnp3D)) {
+        res_link |= CVariantProperties::eResource_link_has3D;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasLinkOut)) {
+        res_link |= CVariantProperties::eResource_link_submitterLinkout;
+    }
+    if (bf.IsTrue(CSnpBitfield::eIsClinical)) {
+        res_link |= CVariantProperties::eResource_link_clinical;
+    }
+    if (bf.IsTrue(CSnpBitfield::eInGenotypeKit)) {
+        res_link |= CVariantProperties::eResource_link_genotypeKit;
+    }
+    if (res_link) {
+        prop.SetResource_link(res_link);
+    }
+
+    /// gene function
+    int gene_location = 0;
+    if (bf.IsTrue(CSnpBitfield::eInGene)) {
+        gene_location |= CVariantProperties::eGene_location_in_gene;
+    }
+    if (bf.IsTrue(CSnpBitfield::eInGene5)) {
+        gene_location |= CVariantProperties::eGene_location_near_gene_5;
+    }
+    if (bf.IsTrue(CSnpBitfield::eInGene3)) {
+        gene_location |= CVariantProperties::eGene_location_near_gene_3;
+    }
+    if (bf.IsTrue(CSnpBitfield::eIntron)) {
+        gene_location |= CVariantProperties::eGene_location_intron;
+    }
+    if (bf.IsTrue(CSnpBitfield::eDonor)) {
+        gene_location |= CVariantProperties::eGene_location_donor;
+    }
+    if (bf.IsTrue(CSnpBitfield::eAcceptor)) {
+        gene_location |= CVariantProperties::eGene_location_acceptor;
+    }
+    if (bf.IsTrue(CSnpBitfield::eInUTR5)) {
+        gene_location |= CVariantProperties::eGene_location_utr_5;
+    }
+    if (bf.IsTrue(CSnpBitfield::eInUTR3)) {
+        gene_location |= CVariantProperties::eGene_location_utr_3;
+    }
+    if (gene_location) {
+        prop.SetGene_location(gene_location);
+    }
+
+    // effect
+    int effect(0);
+    if (bf.IsTrue(CSnpBitfield::eSynonymous)) {
+        effect |= CVariantProperties::eEffect_synonymous;
+    }
+    if (bf.IsTrue(CSnpBitfield::eStopGain)) {
+        effect |= CVariantProperties::eEffect_stop_gain;
+    }
+    if (bf.IsTrue(CSnpBitfield::eStopLoss)) {
+        effect |= CVariantProperties::eEffect_stop_loss;
+    }
+    if (bf.IsTrue(CSnpBitfield::eMissense)) {
+        effect |= CVariantProperties::eEffect_missense;
+    }
+    if (bf.IsTrue(CSnpBitfield::eFrameshift)) {
+        effect |= CVariantProperties::eEffect_frameshift;
+    }
+    if (effect) {
+        prop.SetEffect(effect);
+    }
+
+    /// mapping
+    int mapping = 0;
+    if (bf.IsTrue(CSnpBitfield::eHasOtherSameSNP)) {
+        mapping |= CVariantProperties::eMapping_has_other_snp;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasAssemblyConflict)) {
+        mapping |= CVariantProperties::eMapping_has_assembly_conflict;
+    }
+    if (bf.IsTrue(CSnpBitfield::eIsAssemblySpecific)) {
+        mapping |= CVariantProperties::eMapping_is_assembly_specific;
+    }
+    if (mapping) {
+        prop.SetMapping(mapping);
+    }
+
+    /// weight
+    int weight = bf.GetWeight();
+    if (weight) {
+        prop.SetMap_weight(weight);
+    }
+
+    /// allele frequency
+    int allele_freq = 0;
+    if (bf.IsTrue(CSnpBitfield::eIsMutation)) {
+        allele_freq |= CVariantProperties::eFrequency_based_validation_is_mutation;
+    }
+    if (bf.IsTrue(CSnpBitfield::e5PctMinorAlleleAll)) {
+        allele_freq |= CVariantProperties::eFrequency_based_validation_above_5pct_all;
+    }
+    if (bf.IsTrue(CSnpBitfield::e5PctMinorAllele1Plus)) {
+        allele_freq |= CVariantProperties::eFrequency_based_validation_above_5pct_1plus;
+    }
+    if (bf.IsTrue(CSnpBitfield::eIsValidated)) {
+        allele_freq |= CVariantProperties::eFrequency_based_validation_validated;
+    }
+    if (allele_freq) {
+        prop.SetFrequency_based_validation(allele_freq);
+    }
+
+    /// genotype
+    int genotype = 0;
+    if (bf.IsTrue(CSnpBitfield::eInHaplotypeSet)) {
+        genotype |= CVariantProperties::eGenotype_in_haplotype_set;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasGenotype)) {
+        genotype |= CVariantProperties::eGenotype_has_genotypes;
+    }
+    if (genotype) {
+        prop.SetGenotype(genotype);
+    }
+
+    /// quality checking
+    int qual_check = 0;
+    if (bf.IsTrue(CSnpBitfield::eIsContigAlleleAbsent)) {
+        qual_check |= CVariantProperties::eQuality_check_contig_allele_missing;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasMemberSsConflict)) {
+        qual_check |= CVariantProperties::eQuality_check_non_overlapping_alleles;
+    }
+    if (bf.IsTrue(CSnpBitfield::eIsWithdrawn)) {
+        qual_check |= CVariantProperties::eQuality_check_withdrawn_by_submitter;
+    }
+    if (bf.IsTrue(CSnpBitfield::eIsStrainSpecific)) {
+        qual_check |= CVariantProperties::eQuality_check_strain_specific;
+    }
+    if (bf.IsTrue(CSnpBitfield::eHasGenotypeConflict)) {
+        qual_check |= CVariantProperties::eQuality_check_genotype_conflict;
+    }
+    if (qual_check) {
+        prop.SetQuality_check(qual_check);
+    }
+}
+
+string NSNPVariationHelper::VariantPropAsString(const CVariantProperties& prop, ESNPPropTypes ePropType)
+{
+    list<string> ResList;
+    switch(ePropType) {
+    case eSNPPropName_FxnClass:
+        if(prop.CanGetGene_location()) {
+            CVariantProperties::TGene_location gene_loc(prop.GetGene_location());
+            if(gene_loc & CVariantProperties::eGene_location_in_gene)
+                ResList.push_back("In Gene");
+            if(gene_loc & CVariantProperties::eGene_location_near_gene_5)
+                ResList.push_back("In 5\' Gene");
+            if(gene_loc & CVariantProperties::eGene_location_near_gene_3)
+                ResList.push_back("In 3\' Gene");
+            if(gene_loc & CVariantProperties::eGene_location_intron)
+                ResList.push_back("Intron");
+            if(gene_loc & CVariantProperties::eGene_location_donor)
+                ResList.push_back("Donor");
+            if(gene_loc & CVariantProperties::eGene_location_acceptor)
+                ResList.push_back("Acceptor");
+            if(gene_loc & CVariantProperties::eGene_location_utr_5)
+                ResList.push_back("In 5\' UTR");
+            if(gene_loc & CVariantProperties::eGene_location_utr_3)
+                ResList.push_back("In 3\' UTR");
+            if(gene_loc & CVariantProperties::eGene_location_in_start_codon)
+                ResList.push_back("In Start Codon");
+            if(gene_loc & CVariantProperties::eGene_location_in_stop_codon)
+                ResList.push_back("In Stop Codon");
+            if(gene_loc & CVariantProperties::eGene_location_intergenic)
+                ResList.push_back("Intergenic");
+            if(gene_loc & CVariantProperties::eGene_location_conserved_noncoding)
+                ResList.push_back("In Conserved Non-coding region");
+        }
+        if(prop.CanGetEffect()) {
+            CVariantProperties::TEffect effect(prop.GetEffect());
+            if(effect == CVariantProperties::eEffect_no_change)
+                ResList.push_back("No change");
+            else {
+                if(effect & CVariantProperties::eEffect_synonymous)
+                    ResList.push_back("Synonymous");
+                if(effect & CVariantProperties::eEffect_nonsense)
+                    ResList.push_back("Nonsense");
+                if(effect & CVariantProperties::eEffect_missense)
+                    ResList.push_back("Missense");
+                if(effect & CVariantProperties::eEffect_frameshift)
+                    ResList.push_back("Frameshift");
+                if(effect & CVariantProperties::eEffect_up_regulator)
+                    ResList.push_back("Up-regulator");
+                if(effect & CVariantProperties::eEffect_down_regulator)
+                    ResList.push_back("Down-regulator");
+                if(effect & CVariantProperties::eEffect_methylation)
+                    ResList.push_back("Methylation");
+                if(effect & CVariantProperties::eEffect_stop_gain)
+                    ResList.push_back("Stop-gain");
+                if(effect & CVariantProperties::eEffect_stop_loss)
+                    ResList.push_back("Stop-loss");
+            }
+        }
+        break;
+    case eSNPPropName_Mapping:
+        if(prop.CanGetMapping()) {
+            CVariantProperties::TMapping mapping(prop.GetMapping());
+            if(mapping & CVariantProperties::eMapping_has_other_snp)
+                ResList.push_back("Has other SNP");
+            if(mapping & CVariantProperties::eMapping_has_assembly_conflict)
+                ResList.push_back("Has Assembly conflict");
+            if(mapping & CVariantProperties::eMapping_is_assembly_specific)
+                ResList.push_back("Is assembly specific");
+        }
+        break;
+    case eSNPPropName_FreqValidation:
+        if(prop.CanGetFrequency_based_validation()) {
+            CVariantProperties::TFrequency_based_validation freq_validation(prop.GetFrequency_based_validation());
+            if(freq_validation & CVariantProperties::eFrequency_based_validation_above_1pct_1plus)
+                ResList.push_back(">1% minor allele freq in 1+ populations");
+            if(freq_validation & CVariantProperties::eFrequency_based_validation_above_1pct_all)
+                ResList.push_back(">1% minor allele freq in each and all populations");
+            if(freq_validation & CVariantProperties::eFrequency_based_validation_above_5pct_1plus)
+                ResList.push_back(">5% minor allele freq in 1+ populations");
+            if(freq_validation & CVariantProperties::eFrequency_based_validation_above_5pct_all)
+                ResList.push_back(">5% minor allele freq in each and all populations");
+            if(freq_validation & CVariantProperties::eFrequency_based_validation_is_mutation)
+                ResList.push_back("Is mutation");
+            if(freq_validation & CVariantProperties::eFrequency_based_validation_validated)
+                ResList.push_back("Validated (has a minor allele in two or more separate chromosomes)");
+        }
+        break;
+    case eSNPPropName_QualityCheck:
+        if(prop.CanGetQuality_check()) {
+            CVariantProperties::TQuality_check quality_check(prop.GetQuality_check());
+            if(quality_check & CVariantProperties::eQuality_check_contig_allele_missing)
+                ResList.push_back("Reference allele missing from SNP alleles");
+            if(quality_check & CVariantProperties::eQuality_check_genotype_conflict)
+                ResList.push_back("Genotype conflict");
+            if(quality_check & CVariantProperties::eQuality_check_non_overlapping_alleles)
+                ResList.push_back("Non-overlapping allele sets");
+            if(quality_check & CVariantProperties::eQuality_check_strain_specific)
+                ResList.push_back("Strain specific fixed difference");
+            if(quality_check & CVariantProperties::eQuality_check_withdrawn_by_submitter)
+                ResList.push_back("Member SS withdrawn by submitter");
+        }
+        break;
+    case eSNPPropName_ResourceLink:
+        if(prop.CanGetResource_link()) {
+            CVariantProperties::TResource_link resource_link(prop.GetResource_link());
+            if(resource_link & CVariantProperties::eResource_link_clinical)
+                ResList.push_back("Clinical");
+            if(resource_link & CVariantProperties::eResource_link_provisional)
+                ResList.push_back("Provisional");
+            if(resource_link & CVariantProperties::eResource_link_preserved)
+                ResList.push_back("Preserved");
+            if(resource_link & CVariantProperties::eResource_link_genotypeKit)
+                ResList.push_back("On high density genotyping kit");
+            if(resource_link & CVariantProperties::eResource_link_has3D)
+                ResList.push_back("SNP3D");
+            if(resource_link & CVariantProperties::eResource_link_submitterLinkout)
+                ResList.push_back("SubmitterLinkOut");
+        }
+        break;
+    default:
+        break;
+    }
+    return NStr::Join(ResList, ", ");
+}
+
+
 
 END_NCBI_SCOPE

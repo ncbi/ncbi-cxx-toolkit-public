@@ -60,6 +60,7 @@ class CSnpBitfieldNull : public CSnpBitfield::IEncoding
     virtual CSnpBitfield::EFunctionClass    GetFunctionClass() const;
     virtual CSnpBitfield::EVariationClass   GetVariationClass() const;
     virtual const char *                    GetString() const;
+    virtual void                            GetBytes(vector<char>& bytes) const;
     virtual CSnpBitfield::IEncoding *       Clone();
 };
 

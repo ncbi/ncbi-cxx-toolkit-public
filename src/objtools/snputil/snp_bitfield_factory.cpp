@@ -130,4 +130,9 @@ const char * CSnpBitfieldNull::GetString() const
     return "";
 }
 
+void CSnpBitfieldNull::GetBytes(vector<char>&) const
+{
+}
+
+
 END_NCBI_SCOPE

@@ -57,10 +57,10 @@ bool CSnpBitfield4::IsTrue(CSnpBitfield::EProperty prop) const
     // Return false if property queried is
     // newer than last property implemented at version 4 release
     // last property implemented was 'eIsValidated'
-    if(prop > CSnpBitfield::eIsValidated)
+    if(prop > CSnpBitfield::ePropertyV4Last)
         return false;
 
-    if (prop == CSnpBitfield::eIsDoubleHit)  // eIsDoubleHit was removed
+    if (prop == CSnpBitfield::eIsDoubleHit_depr)  // eIsDoubleHit was removed
         ret = false;
     else if (prop == CSnpBitfield::eIsValidated)
         ret = (m_listBytes[6] & 0x04) != 0;  // on byte 6, bit 3

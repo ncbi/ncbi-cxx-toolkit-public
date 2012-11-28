@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 // table lookup for the 40 property fields and their byte offset
 static const int g_byteOffset[] = {
     0,0,0,0,0,0,0,0,    // F1 Link (first 8 properties)     on byte 0
-    1,1,                // F1 Link (8th and 9th properties) on byte 1
+    1,1,                // F1 Link (9th and 10th properties) on byte 1
     3,3,3,              // F3 Map (next 3 properties)       on byte 3
     4,4,4,4,            // F4 Freq (next 4 properties)      on byte 4
     5,5,5,              // F5 GTY  (next 3 properties)      on byte 5
@@ -59,7 +59,7 @@ static const int g_byteOffset[] = {
     9,9,9,9,9,9         // F9 Quality (next 6 properties)   on byte 9
 };
 
-// table lookup for the 40 property fieldss and their bit offset in the byte
+// table lookup for the 40 property fields and their bit offset in the byte
 static const int g_bitOffset[] = {
     CSnpBitfield::IEncoding::fBit0, CSnpBitfield::IEncoding::fBit1, CSnpBitfield::IEncoding::fBit2, CSnpBitfield::IEncoding::fBit3, CSnpBitfield::IEncoding::fBit4, CSnpBitfield::IEncoding::fBit5, CSnpBitfield::IEncoding::fBit6, CSnpBitfield::IEncoding::fBit7,
     CSnpBitfield::IEncoding::fBit0, CSnpBitfield::IEncoding::fBit1,
@@ -135,7 +135,7 @@ bool CSnpBitfield1_2::IsTrue(CSnpBitfield::EProperty prop) const
 
     // Return false if property queried is
     // newer than last property implemented at 1.2 release
-    if(prop > CSnpBitfield::eIsWithdrawn) // last property implemented for v1.2 was 'eIsWithdrawn'
+    if(prop > CSnpBitfield::ePropertyV1Last)
         return false;
 
     int byteOffset  = g_byteOffset[prop];
@@ -154,6 +154,15 @@ bool CSnpBitfield1_2::IsTrue( CSnpBitfield::EFunctionClass prop ) const
 const char * CSnpBitfield1_2::GetString() const
 {
     return m_strBits.c_str();
+}
+
+void CSnpBitfield1_2::GetBytes(vector<char>& bytes) const
+{
+    bytes.clear();
+    bytes.reserve(sizeof(m_listBytes));
+    for(size_t i=0; i<sizeof(m_listBytes); ++i) {
+        bytes.push_back(m_listBytes[i]);
+    }
 }
 
 void CSnpBitfield1_2::x_CreateString()

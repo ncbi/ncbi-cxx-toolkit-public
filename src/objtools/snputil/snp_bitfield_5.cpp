@@ -52,15 +52,23 @@ int CSnpBitfield5::GetVersion() const
 
 bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
 {
-    int ret = 0;
+    int ret(0);
 
     // Return false if property queried is
     // newer than last property implemented at version 5 release
-    // last property implemented was 'eTGP2010Production'
-    if(prop >= CSnpBitfield::ePropertyLast)
+    if(prop > CSnpBitfield::ePropertyV5Last)
         return false;
 
     switch (prop) {
+        // return false for all fields deprecated in V5
+        case CSnpBitfield::eTGP2009Pilot_depr:
+        case CSnpBitfield::eTGP2010Pilot_depr:
+        case CSnpBitfield::eTGP2010Production_depr:
+        case CSnpBitfield::ePhase1Genotyped_depr:
+        case CSnpBitfield::ePhase2Genotyped_depr:
+            ret = false;
+            break;
+        // proper values for all fields introduced in V5
         case CSnpBitfield::eHasPubmedArticle:
             ret = (m_listBytes[2] & BIT_4); // on byte 2, bit 4
             break;
@@ -78,15 +86,6 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
             break;
         case CSnpBitfield::eIsSuspect:
             ret = (m_listBytes[11] & BIT_7); // on byte 11 (F9), bit 7
-            break;
-        case CSnpBitfield::eTGP2009Pilot:
-            ret = 0; // obsolete
-            break;
-        case CSnpBitfield::eTGP2010Pilot:
-            ret = 0; // obsolete
-            break;
-        case CSnpBitfield::eTGP2010Production:
-            ret = 0; // obsolete
             break;
         case CSnpBitfield::eTGPValidated:
             ret = (m_listBytes[8] & BIT_6); // on byte 8 (F6), bit 6
@@ -115,6 +114,7 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
         case CSnpBitfield::eGMAF0dot01:
             ret = (m_listBytes[6] & BIT_5); // on byte 6 (F4), bit 5
             break;
+        // all other values inherited from V4
         default:
             ret = CSnpBitfield4::IsTrue(prop);
             break;
