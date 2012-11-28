@@ -713,7 +713,6 @@ void CChainer::CChainerImpl::DuplicateNotOriented(CChainMembers& pointers, TGene
         SChainMember& mbr = *pointers[i];
         CGeneModel& algn = *mbr.m_align;
         if((algn.Status()&CGeneModel::eUnknownOrientation) != 0) {
-            //            algn.Status() &= (~CGeneModel::eUnknownOrientation);
             CGeneModel new_algn = algn;
             new_algn.SetStrand(algn.Strand() == ePlus ? eMinus : ePlus);
             clust.push_back(new_algn);
@@ -870,6 +869,10 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
         const CCDSInfo& ai_cds_info = ai.GetCdsInfo();
         TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
 
+        // knockdown spliced notconsensus UTRs in reads
+        if(mi.m_type != eCDS && (ai.Status()&CGeneModel::eUnknownOrientation) && ai.Exons().size() > 1)
+            mi.m_not_for_chaining = true; 
+
         int jfirst = i;
         while(jfirst > 0 && pointers[jfirst-1]->m_align->Limits() == ai.Limits())
             --jfirst;
@@ -948,7 +951,10 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 
             IncludeInContained(mi, mj);
 
-            if(mj.m_type  != mi.m_type)
+            if(mi.m_not_for_chaining)
+                continue;
+
+            if(mj.m_type != mi.m_type)
                 continue;
             if((aj.Status()&CGeneModel::ePolyA) != 0 || (aj.Status()&CGeneModel::eCap) != 0)
                 continue;
