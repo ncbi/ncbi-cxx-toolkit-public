@@ -84,6 +84,8 @@ public:
         // DO NOT MODIFY EXISTING ASSIGNED VALUES.
         // ADD NEW PROPERTIES TO END OF ENUMERATION
         // THIS IS A LIST OF PROPERTIES THAT MAY BE FOUND ON ANY VERSION OF THE SNP BITFIELD FORMAT
+        // When deprecating a bit, take care to edit out their entries in g_byteOffset and g_bitOffset
+        // if the version is not changed
 
         // F1 Link
         eHasLinkOut         = 0,  ///< Has SubmitterLinkOut From SNP->SubSNP->Batch.link_out
@@ -107,7 +109,7 @@ public:
         // F4 Freq
         e5PctMinorAllele1Plus   = 13, // >5% minor allele frequency in 1+ populations
         e5PctMinorAlleleAll     = 14, // >5% minor allele frequency in each and all populations.
-        eIsDoubleHit            = 15, // Deprecated in v4+.  This bit is set if the rs# is in Jim Mullikin's double hit submission which has been only on human snp.
+        eIsDoubleHit_depr       = 15, // Deprecated in v4+.  This bit is set if the rs# is in Jim Mullikin's double hit submission which has been only on human snp.
         eIsMutation             = 16, // Is mutation (journal citation, explicit fact) low frequency variation that is cited in journal and other reputable sources.
 
         // F5 GTY
@@ -116,18 +118,18 @@ public:
         eInGenotypeKit          = 19, // Marker is on high density genotyping kit (50K density or greater). The snp may have phenotype associations present in dbGaP
 
         // F6 Hapmap
-        ePhase1Attempted        = 20, // Phase 1 attempted all snp in HapMap unfiltered-redundant set
-        ePhase1Genotyped        = 21, // Phase 1 genotyped a subset of above: filtered, non-redundant
-        ePhase2Attempted        = 22, // Phase 2 attempted
-        ePhase2Genotyped        = 23, // Phase 2 genotyped  filtered, non-redundant
-        ePhase3Attempted        = 24, // Phase 3 attempted
+        ePhase1Attempted_depr   = 20, // deprecated in V2 -- Phase 1 attempted all snp in HapMap unfiltered-redundant set
+        ePhase1Genotyped_depr   = 21, // deprecated in V5 -- Phase 1 genotyped a subset of above: filtered, non-redundant
+        ePhase2Attempted_depr   = 22, // deprecated in V2 -- Phase 2 attempted
+        ePhase2Genotyped_depr   = 23, // deprecated in V5 -- Phase 2 genotyped  filtered, non-redundant
+        ePhase3Attempted_depr   = 24, // deprecated in V2 -- Phase 3 attempted
         ePhase3Genotyped        = 25, // Phase 3 genotyped  filtered, non-redundant
 
         // F7 Phenotype
         eHasOMIM_OMIA           = 26, // Has OMIM/OMIA
         eHasMicroattribution    = 27, // Microattribution/third-party annotaton (TPA:GWAS,PAGE)
         eHasLodScore            = 28, // Has LOD score >= 2.0 in a dbGaP study genome scan
-        eHasPhenoDB             = 29, // Has p-value <= 1x10-3 in a dbGaP study association test
+        eHasLowdbGaPPValue      = 29, // Has p-value <= 1x10-3 in a dbGaP study association test
         eHasDiseaseInfo         = 30, // Submitted as a disease-related mutation and/or present in a locus-specific database
         eHasTranscriptionFactor = 31, // Has transcription factor
         eHasClinicalAssay       = 32, // Variation is interrogated in a clinical diagnostic assay Note: Used to be eHasMPO(Mammalian Pheonotype Ontology), but never used
@@ -138,24 +140,27 @@ public:
         // F9 Quality Check
         eHasGenotypeConflict            = 34, // Has Genotype Conflict Same (rs, ind), different genotype. N/N is not included
         eIsStrainSpecific               = 35, // Is Strain Specific
-        eHasMendelError                 = 36, // Has Mendelian Error
-        eHasHardyWeinbergDeviation      = 37, // Has Hardy Weinberg deviation
+        eHasMendelError_depr            = 36, // Has Mendelian Error -- deprecated
+        eHasHardyWeinbergDeviation_depr = 37, // Has Hardy Weinberg deviation -- deprecated
         eHasMemberSsConflict            = 38, // Has member ss with conflict alleles
         eIsWithdrawn                    = 39, // Is Withdrawn by submitter If one member ss is withdrawn by submitter, then this bit is set. If all member ss' are withdrawn, then the rs is deleted to SNPHistory
+        ePropertyV1Last                 = eIsWithdrawn,
 
         // Version 2 additions
         // F1 Link
         eHasShortReadArchive            = 40,  // Has Short Read Archive link
-
+        ePropertyV2Last                 = eHasShortReadArchive,
         // Version 3 additions
         // F9 Quality
         eIsContigAlleleAbsent           = 41,   // Contig allele not present in SNP allele list. The reference sequence allele at the mapped position is not present in the SNP allele list, adjusted for orientation
 
         // Version 2 & 3 (hidden in F2, gene function properties.  will be moved out of F2 in later bitfield versions)
         eHasReference                   = 42,   // A coding region variation where one allele in the set is identical to the reference sequence. FxnCode = 8
+        ePropertyV3Last                 = eHasReference,
 
         // Version 4 Additions
         eIsValidated                    = 43,   // This bit is set if the snp has 2+ minor allele count based on frequency of genotype data
+        ePropertyV4Last                 = eIsValidated,
 
         // Version 5 Additions
         // F1 Link
@@ -168,10 +173,10 @@ public:
         eIsSomatic                      = 48,   // SNP is somatic, not germline.  Variation was detected in a Somatic tissue (e.g. cancer tumor).  The variation is not known to exist in heritable DNA
 
         // F6 Validation by HapMap/TGP properties
-        eTGP2009Pilot                   = 49,   // TGP 2009 pilot phase 1 -- obsolete
-        eTGP2010Pilot                   = 50,   // TGP 2010 pilot (phases 1, 2, 3) -- obsolete
+        eTGP2009Pilot_depr              = 49,   // deprecated in V5 -- TGP 2009 pilot phase 1 -- obsolete
+        eTGP2010Pilot_depr              = 50,   // deprecated in V5 -- TGP 2010 pilot (phases 1, 2, 3) -- obsolete
         eTGPValidated                   = 51,   // TGP_validated (for subset that passed positive second platform validation)
-        eTGP2010Production              = 52,   // TGP 2010 production (for data created and released prior to ASHG) -- obsolete
+        eTGP2010Production_depr              = 52,   // deprecated in V5 -- TGP 2010 production (for data created and released prior to ASHG) -- obsolete
 		eTGPPhase1						= 53,	// TGP Phase 1 (include June interim phase 1)
 		eTGPPilot						= 54,	// TGP Pilot (1,2,3)
 		// the following two settings are exclusive (must be one and not the other)
@@ -190,7 +195,7 @@ public:
 		eGMAF0dot01                     = 61,   // GMAF>=0.01(Global population Minor Allele Frequency. Population includes all samples in TGP(1000Genome project).
 
 		/// Add additional properties here.
-		ePropertyLast
+		ePropertyV5Last                 = eGMAF0dot01
     };
 
     // A SNP can only be one class of variation
@@ -248,6 +253,7 @@ public:
         virtual CSnpBitfield::EFunctionClass    GetFunctionClass()       const = 0;
         virtual CSnpBitfield::EVariationClass   GetVariationClass()      const = 0;
         virtual const char *                    GetString()              const = 0;
+        virtual void                            GetBytes(vector<char>& bytes) const = 0;
         virtual IEncoding *                     Clone()                        = 0;
         virtual                                 ~IEncoding(){};
     };
@@ -278,6 +284,7 @@ public:
     const char *            GetGenePropertyString()     const;
     const char *            GetVariationClassString()   const;
     const char *            GetString()                 const;
+    void                    GetBytes(vector<char>& bytes) const;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private Methods
@@ -325,6 +332,12 @@ inline CSnpBitfield::EVariationClass   CSnpBitfield::GetVariationClass() const {
 inline const char * CSnpBitfield::GetString() const {
     return m_bitfield->GetString();
 }
+
+inline void CSnpBitfield::GetBytes(vector<char>& bytes) const
+{
+    m_bitfield->GetBytes(bytes);
+}
+
 
 inline int  CSnpBitfield::GetVersion() const {
     return m_bitfield->GetVersion();
