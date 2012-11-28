@@ -530,6 +530,16 @@ CNCServer::ReadCurState(SNCStateStat& state)
     CWriteBackControl::ReadState(state);
 }
 
+bool s_ReportPid(const string& pid_file)
+{
+    CNcbiOfstream ofs(pid_file.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+    if (!ofs.is_open()) {
+        return false;
+    }
+    ofs << CProcess::GetCurrentPid() << endl;
+    return true;
+}
+
 
 END_NCBI_SCOPE
 
@@ -557,14 +567,31 @@ int main(int argc, const char* argv[])
 
     bool is_daemon = true;
     bool is_reinit = false;
+    string pid_file;
 
     for (int i = 1; i < argc; ++i) {
         string param(argv[i]);
-        if (param == "-nodaemon")
+        if (param == "-nodaemon") {
             is_daemon = false;
-        else if (param == "-reinit")
+        } else if (param == "-reinit") {
             is_reinit = true;
-        else {
+        } else if (param == "-pidfile") {
+            bool ok=false;
+            if (i + 1 < argc) {
+                pid_file = argv[++i];
+                ok = !pid_file.empty() && pid_file[0] != '-' && s_ReportPid(pid_file);
+                if (!ok) {
+                    ERR_POST(Critical << "Cannot write into pidfile: " << pid_file);
+                }
+            }
+            else {
+                ERR_POST(Critical << "Parameter -pidfile misses file name");
+            }
+            if (!ok) {
+                CTaskServer::Finalize();
+                return 122;
+            }
+        } else {
             ERR_POST(Critical << "Unknown parameter: " << param);
             CTaskServer::Finalize();
             return 150;
@@ -589,6 +616,9 @@ int main(int argc, const char* argv[])
     }
 #endif
 
+    if (!pid_file.empty()) {
+        s_ReportPid(pid_file);
+    }
     if (s_Initialize(is_reinit))
         CTaskServer::Run();
     s_Finalize();
