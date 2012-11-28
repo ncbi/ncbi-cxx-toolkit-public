@@ -650,14 +650,14 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
                                                 subject_gapped_start,
                                                 score);
 
-    const int query_offset_final[k_num_hsps_end] = { 4, 3, 3, 0, 1};
-    const int query_end_final[k_num_hsps_end] = { 236, 235, 220, 226, 218};
-    const int subject_offset_final[k_num_hsps_end] = { 6, 6, 1, 12, 1};
-    const int subject_end_final[k_num_hsps_end] = { 238, 238, 218, 238, 218};
+    const int query_offset_final[k_num_hsps_end] = { 4, 3, 3, 0, 0};
+    const int query_end_final[k_num_hsps_end] = { 236, 235, 220, 226, 232};
+    const int subject_offset_final[k_num_hsps_end] = { 6, 6, 1, 12, 6};
+    const int subject_end_final[k_num_hsps_end] = { 238, 238, 218, 238, 238};
     const int score_final[k_num_hsps_end] = { 73, 72, 69, 68, 66};
     const double evalue_final[k_num_hsps_end] = 
-    { 1.26e-05 , 1.7e-5 , 4.0e-5, 5.1e-5, 0.000088};
-    const int num_idents_final[k_num_hsps_end] = { 87, 85, 81, 84, 81 };
+    { 1.26e-05 , 1.7e-5 , 4.0e-5, 5.1e-5, 0.0000775};
+    const int num_idents_final[k_num_hsps_end] = { 87, 85, 81, 84, 85 };
             
 
     BlastHSPList* ending_hsp_list = 
