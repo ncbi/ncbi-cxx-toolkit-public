@@ -867,6 +867,13 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             .SetFeatSubtype(feat_subtype)
             .SetOverlapType(annot_overlap_type)
             .SetResolveTSE();
+        if( opts & fBestFeat_IgnoreStrand ) {
+            sel.SetIgnoreStrand();
+            if( ! circular_id  &&  range.GetFrom() > range.GetTo() ) {
+                // switch from and to
+                range = CRange<TSeqPos>( range.GetTo(), range.GetFrom() );
+            }
+        }
         if( plugin ) {
             plugin->processSAnnotSelector( sel );
         }
@@ -891,6 +898,9 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
 
         CRef<CSeq_loc> cleaned_loc( new CSeq_loc );
         cleaned_loc->Assign( loc );
+        if( opts & fBestFeat_IgnoreStrand ) {
+            cleaned_loc->SetStrand(eNa_strand_plus);
+        }
         if( plugin ) {
             plugin->processLoc( bioseq_handle, cleaned_loc, circular_length );
         }
@@ -899,6 +909,9 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
             CRef<CSeq_loc> cleaned_loc_this_iteration = cleaned_loc;
             CRef<CSeq_loc> candidate_feat_loc( new CSeq_loc ); 
             candidate_feat_loc->Assign( feat_it->GetOriginalFeature().GetLocation() );
+            if( opts & fBestFeat_IgnoreStrand ) {
+                candidate_feat_loc->SetStrand(eNa_strand_plus);
+            }
             EOverlapType overlap_type_this_iteration = overlap_type;
             bool revert_locations_this_iteration = revert_locations;
 
@@ -1061,10 +1074,14 @@ CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
 }
 
 
-CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope)
+CConstRef<CSeq_feat> GetOverlappingGene(
+    const CSeq_loc& loc, CScope& scope,
+    ETransSplicing eTransSplicing )
 {
-    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene,
-                                  eOverlap_Contained, scope);
+    return GetBestOverlappingFeat(
+        loc, CSeqFeatData::eSubtype_gene,
+        eOverlap_Contained, scope,
+        ( eTransSplicing == eTransSplicing_Yes ? fBestFeat_IgnoreStrand : 0 ) );
 }
 
 

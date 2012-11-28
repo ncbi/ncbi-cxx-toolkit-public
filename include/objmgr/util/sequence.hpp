@@ -319,6 +319,10 @@ enum EBestFeatOpts {
     /// favor longer features over shorter features
     fBestFeat_FavorLonger = 0x04,
 
+    /// Pay no attention to strands when finding the best feat.  This may be
+    /// useful for, e.g., trans-spliced genes.
+    fBestFeat_IgnoreStrand = 0x08,
+
     /// default options: do everything
     fBestFeat_Defaults = 0
 };
@@ -547,8 +551,14 @@ CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
 
 
 /// Convenience functions for popular overlapping types
+enum ETransSplicing {
+    eTransSplicing_No = 0,
+    eTransSplicing_Yes
+};
 NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope);
+CConstRef<CSeq_feat> GetOverlappingGene(
+    const CSeq_loc& loc, CScope& scope, 
+    ETransSplicing eTransSplicing = eTransSplicing_No);
 
 
 NCBI_XOBJUTIL_EXPORT
