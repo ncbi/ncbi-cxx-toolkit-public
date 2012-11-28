@@ -289,12 +289,18 @@ bool CBedReader::xParseFeature(
 
     //  parse
     NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
+    if (fields.size() < 3) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Insuffixient column count." );
+        throw( err );
+    }
+
     // better 'chr 8' fixup
-    if( fields.size() >= 2 ) {
-        if( NStr::EqualNocase(fields[0], "chr") ) {
-            fields[1] = fields[0] + fields[1];
-            fields.erase( fields.begin() );
-        }
+    if( NStr::EqualNocase(fields[0], "chr") ) {
+        fields[1] = fields[0] + fields[1];
+        fields.erase( fields.begin() );
     }
     if (fields.size() != m_columncount) {
         if ( 0 == m_columncount ) {
@@ -420,6 +426,8 @@ void CBedReader::x_SetFeatureLocation(
 {
     CRef<CSeq_loc> location(new CSeq_loc);
     int from, to;
+
+    //already established: We got at least three columns
     try {
 		string cleaned_from;
 		NStr::Replace(fields[1], ",", "", cleaned_from);
