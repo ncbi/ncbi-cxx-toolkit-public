@@ -174,6 +174,11 @@ public:
     CProSplignOutputOptions& SetCutFlankPartialCodons(bool);
     bool GetCutFlankPartialCodons() const;
 
+    /// fill back holes between good pieces. Flank regions remain unaligned 
+    /// called at the end of post processing
+    CProSplignOutputOptions& SetFillHoles(bool);
+    bool GetFillHoles() const;
+
     /// any length flank of a good piece should not be worse than this percentage threshold
     CProSplignOutputOptions& SetFlankPositives(int);
     int GetFlankPositives() const;
@@ -212,6 +217,7 @@ public:
 
 public:
     static const bool default_cut_flank_partial_codons = true;
+    static const bool default_fill_holes = false;
 
     static const int default_flank_positives = 55;
     static const int default_total_positives = 70;
@@ -230,6 +236,7 @@ public:
 
 private:
     bool cut_flank_partial_codons;
+    bool fill_holes;
     int flank_positives;
     int total_positives;
     int max_bad_len;
