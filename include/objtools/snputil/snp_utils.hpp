@@ -40,6 +40,11 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objects/variation/Variation.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seqfeat/Delta_item.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 
@@ -169,7 +174,7 @@ private:
 class NCBI_SNPUTIL_EXPORT NSNPVariationHelper
 {
 public:
-    // reads a feature that supposedly contains a SNP record (old, up-to-2012, style, 
+    // reads a feature that supposedly contains a SNP record (old, up-to-2012, style,
     // with SNP data encoded as "qual" (alleles) and "ext.data" (bitfield))
     // and resets pVariation to content
     // found in the feature
@@ -204,20 +209,21 @@ template <class TVariation> inline void NSNPVariationHelper::GetDeltas(list<stri
 {
     if(!pVariation || !pVariation->CanGetData())
         return;
-    const TVariation::TData& Data(pVariation->GetData());
+    const typename TVariation::TData& Data(pVariation->GetData());
     // if the data is a set, the deltas are located in the components
     if(Data.IsSet()) {
-        const TVariation::TData::TSet& Set(Data.GetSet());
+        const typename TVariation::TData::TSet& Set(Data.GetSet());
         if(Set.CanGetVariations()) {
-            ITERATE(TVariation::TData::TSet::TVariations, iVariations, Set.GetVariations()) {
+            ITERATE(typename TVariation::TData::TSet::TVariations, iVariations, Set.GetVariations()) {
                 GetDeltas(Alleles, iVariations->GetPointer());
             }
         }
     }
     if(Data.IsInstance()) {
-        const TVariation::TData::TInstance& VarInst(Data.GetInstance());
+        const typename TVariation::TData::TInstance&
+            VarInst(Data.GetInstance());
         if(VarInst.CanGetDelta()) {
-            ITERATE(TVariation::TData::TInstance::TDelta, iDelta, VarInst.GetDelta()) {
+            ITERATE(typename TVariation::TData::TInstance::TDelta, iDelta, VarInst.GetDelta()) {
                 if((*iDelta)->CanGetSeq()) {
                     const CDelta_item::C_Seq& DeltaSeq((*iDelta)->GetSeq());
                     switch(DeltaSeq.Which()) {
@@ -277,7 +283,7 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
     // store the alleles depending on the SNP type sourced from the bitfield
     // have to create a temp CVariation_ref for this, since CVariation lacks useful
     // helper methods like SetSNV(), SetMNP(), etc.
-    //!! need to remind Mike to implement those or suggest 
+    //!! need to remind Mike to implement those or suggest
     //!! a helper for CVariation_inst (since this is really the data structure those helpers
     //!! work with)
     //!! see email exchange with Mike from 07/15/2011
