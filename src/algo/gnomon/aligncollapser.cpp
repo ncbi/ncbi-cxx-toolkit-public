@@ -236,16 +236,16 @@ void CAlignCollapser::CollapsIdentical() {
             //remove identicals
             sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder);
             deque<SAlignIndividual>::iterator ali = alideque.begin();
-            for(deque<SAlignIndividual>::iterator far = ali+1; far != alideque.end(); ++far) {
-                _ASSERT(far > ali);
-                if(far->m_range == ali->m_range) {
-                    ali->m_weight += far->m_weight;
-                    for(deque<char>::iterator p = id_pool.begin()+far->m_target_id; *p != 0; ++p) {
+            for(deque<SAlignIndividual>::iterator farp = ali+1; farp != alideque.end(); ++farp) {
+                _ASSERT(farp > ali);
+                if(farp->m_range == ali->m_range) {
+                    ali->m_weight += farp->m_weight;
+                    for(deque<char>::iterator p = id_pool.begin()+farp->m_target_id; *p != 0; ++p) {
                         _ASSERT(p < id_pool.end());
                         *p = 0;
                     }
                 } else {
-                    *(++ali) = *far;
+                    *(++ali) = *farp;
                 }
             }
             _ASSERT(ali-alideque.begin()+1 <= (int)alideque.size());
@@ -258,25 +258,25 @@ void CAlignCollapser::CollapsIdentical() {
             deque<char>::iterator id = id_pool.begin();
             int shift = 0;
             ali = alideque.begin();
-            for(deque<char>::iterator far = id; far != id_pool.end(); ) {
-                while(far != id_pool.end() && *far == 0) {
-                    ++far;
+            for(deque<char>::iterator farp = id; farp != id_pool.end(); ) {
+                while(farp != id_pool.end() && *farp == 0) {
+                    ++farp;
                     ++shift;
                 }
-                if(far != id_pool.end()) {
+                if(farp != id_pool.end()) {
                                                             
-                    if(far-id_pool.begin() == ali->m_target_id) {
+                    if(farp-id_pool.begin() == ali->m_target_id) {
                         ali->m_target_id -= shift;
                         _ASSERT(ali->m_target_id >= 0);
                         ++ali;
                     }
                     
 
-                    _ASSERT(far >= id);
-                    while(*far != 0) {
-                        *id++ = *far++;
+                    _ASSERT(farp >= id);
+                    while(*farp != 0) {
+                        *id++ = *farp++;
                     }
-                    *id++ = *far++;
+                    *id++ = *farp++;
                 }
             }
             id_pool.resize(id-id_pool.begin());  // id - next after last retained element
