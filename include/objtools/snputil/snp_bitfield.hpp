@@ -110,6 +110,7 @@ public:
         e5PctMinorAllele1Plus   = 13, // >5% minor allele frequency in 1+ populations
         e5PctMinorAlleleAll     = 14, // >5% minor allele frequency in each and all populations.
         eIsDoubleHit_depr       = 15, // Deprecated in v4+.  This bit is set if the rs# is in Jim Mullikin's double hit submission which has been only on human snp.
+        eIsDoubleHit            = eIsDoubleHit_depr,    //!! temp here for backward compatibility; remove once a jump to SC11 is done
         eIsMutation             = 16, // Is mutation (journal citation, explicit fact) low frequency variation that is cited in journal and other reputable sources.
 
         // F5 GTY
@@ -119,10 +120,15 @@ public:
 
         // F6 Hapmap
         ePhase1Attempted_depr   = 20, // deprecated in V2 -- Phase 1 attempted all snp in HapMap unfiltered-redundant set
+        ePhase1Attempted        = ePhase1Attempted_depr,
         ePhase1Genotyped_depr   = 21, // deprecated in V5 -- Phase 1 genotyped a subset of above: filtered, non-redundant
+        ePhase1Genotyped        = ePhase1Genotyped_depr,
         ePhase2Attempted_depr   = 22, // deprecated in V2 -- Phase 2 attempted
+        ePhase2Attempted        = ePhase2Attempted_depr,
         ePhase2Genotyped_depr   = 23, // deprecated in V5 -- Phase 2 genotyped  filtered, non-redundant
+        ePhase2Genotyped        = ePhase2Genotyped_depr,
         ePhase3Attempted_depr   = 24, // deprecated in V2 -- Phase 3 attempted
+        ePhase3Attempted        = ePhase3Attempted_depr,
         ePhase3Genotyped        = 25, // Phase 3 genotyped  filtered, non-redundant
 
         // F7 Phenotype
@@ -130,6 +136,7 @@ public:
         eHasMicroattribution    = 27, // Microattribution/third-party annotaton (TPA:GWAS,PAGE)
         eHasLodScore            = 28, // Has LOD score >= 2.0 in a dbGaP study genome scan
         eHasLowdbGaPPValue      = 29, // Has p-value <= 1x10-3 in a dbGaP study association test
+        eHasPhenoDB             = eHasLowdbGaPPValue,   //!! temp here for backward compatibility; remove once a jump to SC11 is done
         eHasDiseaseInfo         = 30, // Submitted as a disease-related mutation and/or present in a locus-specific database
         eHasTranscriptionFactor = 31, // Has transcription factor
         eHasClinicalAssay       = 32, // Variation is interrogated in a clinical diagnostic assay Note: Used to be eHasMPO(Mammalian Pheonotype Ontology), but never used
@@ -141,7 +148,9 @@ public:
         eHasGenotypeConflict            = 34, // Has Genotype Conflict Same (rs, ind), different genotype. N/N is not included
         eIsStrainSpecific               = 35, // Is Strain Specific
         eHasMendelError_depr            = 36, // Has Mendelian Error -- deprecated
+        eHasMendelError                 = eHasMendelError_depr,
         eHasHardyWeinbergDeviation_depr = 37, // Has Hardy Weinberg deviation -- deprecated
+        eHasHardyWeinbergDeviation      = eHasHardyWeinbergDeviation_depr,
         eHasMemberSsConflict            = 38, // Has member ss with conflict alleles
         eIsWithdrawn                    = 39, // Is Withdrawn by submitter If one member ss is withdrawn by submitter, then this bit is set. If all member ss' are withdrawn, then the rs is deleted to SNPHistory
         ePropertyV1Last                 = eIsWithdrawn,
@@ -174,9 +183,12 @@ public:
 
         // F6 Validation by HapMap/TGP properties
         eTGP2009Pilot_depr              = 49,   // deprecated in V5 -- TGP 2009 pilot phase 1 -- obsolete
+        eTGP2009Pilot                   = eTGP2009Pilot_depr,
         eTGP2010Pilot_depr              = 50,   // deprecated in V5 -- TGP 2010 pilot (phases 1, 2, 3) -- obsolete
+        eTGP2010Pilot                   = eTGP2010Pilot_depr,
         eTGPValidated                   = 51,   // TGP_validated (for subset that passed positive second platform validation)
-        eTGP2010Production_depr              = 52,   // deprecated in V5 -- TGP 2010 production (for data created and released prior to ASHG) -- obsolete
+        eTGP2010Production_depr         = 52,   // deprecated in V5 -- TGP 2010 production (for data created and released prior to ASHG) -- obsolete
+        eTGP2010Production              = eTGP2010Production_depr,
 		eTGPPhase1						= 53,	// TGP Phase 1 (include June interim phase 1)
 		eTGPPilot						= 54,	// TGP Pilot (1,2,3)
 		// the following two settings are exclusive (must be one and not the other)
