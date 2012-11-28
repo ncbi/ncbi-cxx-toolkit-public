@@ -65,7 +65,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DEFINE_ERR_SUBCODE_X(7);
+NCBI_DEFINE_ERR_SUBCODE_X(9);
 
 BEGIN_SCOPE(objects)
 
@@ -263,6 +263,22 @@ void CSeq_annot_Info::x_UpdateName(void)
                         NCBI_ANNOT_TRACK_ZOOM_LEVEL_SUFFIX+
                         NStr::IntToString(zoom_level));
     }
+}
+
+
+string CSeq_annot_Info::GetDescription(void) const
+{
+    string ret;
+    if ( GetName().IsNamed() ) {
+        ret = GetName().GetName();
+    }
+    if ( HasTSE_Info() ) {
+        if ( !ret.empty() ) {
+            ret += '|';
+        }
+        ret += GetTSE_Info().GetDescription();
+    }
+    return ret;
 }
 
 
@@ -653,7 +669,7 @@ void CSeq_annot_Info::x_Map(const CTSEAnnotObjectMapper& mapper,
         else {
             s << "unknown object";
         }
-        ERR_POST_X(6, "Failed to parse location of "<<s.rdbuf());
+        ERR_POST_X(6, "Failed to parse location of "<<s.rdbuf()<<" in "<<GetDescription());
         return;
     }
     mapper.Map(key, index);
@@ -719,9 +735,8 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
                 if ( key.m_Range.Empty() ) {
-                    CNcbiOstrstream s;
-                    s << MSerial_AsnText << *info.GetFeatFast();
-                    ERR_POST_X(1, "Empty region in "<<s.rdbuf());
+                    ERR_POST_X(1, "Empty region in "<<GetDescription()<<" "<<
+                               MSerial_AsnText<<*info.GetFeatFast());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -784,9 +799,8 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
                 if ( key.m_Range.Empty() ) {
-                    CNcbiOstrstream s;
-                    s << MSerial_AsnText << *info.GetGraphFast();
-                    ERR_POST_X(2, "Empty region in "<<s.rdbuf());
+                    ERR_POST_X(2, "Empty region in "<<GetDescription()<<" "<<
+                               MSerial_AsnText<<*info.GetGraphFast());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -837,9 +851,8 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
                 if ( key.m_Range.Empty() ) {
-                    CNcbiOstrstream s;
-                    s << MSerial_AsnText << info.GetAlign();
-                    ERR_POST_X(3, "Empty region in "<<s.rdbuf());
+                    ERR_POST_X(3, "Empty region in "<<GetDescription()<<" "<<
+                               MSerial_AsnText<<info.GetAlign());
                     continue;
                 }
                 key.m_Handle = hrit->first;
@@ -891,9 +904,8 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
             const CHandleRange& hr = hrit->second;
             key.m_Range = hr.GetOverlappingRange();
             if ( key.m_Range.Empty() ) {
-                CNcbiOstrstream s;
-                s << MSerial_AsnText << info.GetLocs();
-                ERR_POST_X(4, "Empty region in "<<s.rdbuf());
+                ERR_POST_X(4, "Empty region in "<<GetDescription()<<" "<<
+                           MSerial_AsnText<<info.GetLocs());
                 continue;
             }
             key.m_Handle = hrit->first;
@@ -986,9 +998,8 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
             const CHandleRange& hr = hrit->second;
             key.m_Range = hr.GetOverlappingRange();
             if ( key.m_Range.Empty() ) {
-                CNcbiOstrstream s;
-                s << MSerial_AsnText << *info.GetFeatFast();
-                ERR_POST_X(7, "Empty region in "<<s.rdbuf());
+                ERR_POST_X(7, "Empty region in "<<GetDescription()<<" "<<
+                           MSerial_AsnText<<*info.GetFeatFast());
                 continue;
             }
             key.m_Handle = hrit->first;
@@ -1054,9 +1065,8 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
                         const CHandleRange& hr = hrit->second;
                         key.m_Range = hr.GetOverlappingRange();
                         if ( key.m_Range.Empty() ) {
-                            CNcbiOstrstream s;
-                            s << MSerial_AsnText << *info.GetFeatFast();
-                            ERR_POST_X(7, "Empty region in "<<s.rdbuf());
+                            ERR_POST_X(8, "Empty region in "<<GetDescription()<<" "<<
+                                       MSerial_AsnText<<*info.GetFeatFast());
                             continue;
                         }
                         key.m_Handle = hrit->first;
@@ -1233,7 +1243,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
                 else {
                     s << "unknown annotation";
                 }
-                ERR_POST_X(5, "Empty region in "<<s.rdbuf());
+                ERR_POST_X(5, "Empty region in "<<GetDescription()<<" "<<s.rdbuf());
                 continue;
             }
             key.m_Handle = hrit->first;
@@ -1305,7 +1315,7 @@ void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
                 else {
                     s << "unknown annotation";
                 }
-                ERR_POST_X(6, "Empty region in "<<s.rdbuf());
+                ERR_POST_X(9, "Empty region in "<<GetDescription()<<" "<<s.rdbuf());
                 continue;
             }
             key.m_Handle = hrit->first;

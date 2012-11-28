@@ -165,6 +165,8 @@ public:
                                 const CAnnotObject_Info& feat_info) const;
     bool IsTableFeatPartial(const CAnnotObject_Info& feat_info) const;
 
+    virtual string GetDescription(void) const;
+
 protected:
     friend class CDataSource;
     friend class CTSE_Info;
