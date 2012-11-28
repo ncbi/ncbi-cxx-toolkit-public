@@ -119,23 +119,6 @@ Blast_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
  */
 #define HSP_MAX_WINDOW 11
 
-/** Function to check that the highest scoring region in an HSP still gives a 
- * positive score. This value was originally calcualted by 
- * BlastGetStartForGappedAlignment but it may have changed due to the 
- * introduction of ambiguity characters. Such a change can lead to 'strange' 
- * results from ALIGN. 
- * @param hsp An HSP structure [in]
- * @param query Query sequence buffer [in]
- * @param subject Subject sequence buffer [in]
- * @param sbp Scoring block containing matrix [in]
- * @return TRUE if region aroung starting offsets gives a positive score
-*/
-Boolean
-BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, 
-                                   const Uint1* query, 
-                                   const Uint1* subject, 
-                                   const BlastScoreBlk* sbp);
-
 /** Are the two HSPs within a given number of diagonals from each other? */
 #define MB_HSP_CLOSE(q1, s1, q2, s2, c) \
 (ABS(((q1)-(s1)) - ((q2)-(s2))) < c)

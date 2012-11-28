@@ -72,87 +72,6 @@ static char const rcsid[] =
  */
 #define HSP_MAX_WINDOW 11
 
-/**
- * Check whether the starting point for gapped alignment lies in
- * region that has positive score.  This routine is called after a
- * preliminary gapped alignment has been computed, but before the
- * traceback is computed.  The score of the region containing the
- * starting point may have changed due to the introduction of
- * ambiguity characters, further filtering of the sequences or the
- * application of composition based statistics.
- *
- * Usually, we check an ungapped alignment of length 11 about the
- * starting point: 5 characters to the left and 5 to the right.
- * However, the actual region checked is occassionally shorter because
- * we don't check characters before the start, or after the end, of
- * the preliminarily aligned regions in the query or subject.
- *
- * @param hsp An HSP structure [in]
- * @param query Query sequence buffer [in]
- * @param subject Subject sequence buffer [in]
- * @param sbp Scoring block containing matrix [in]
- * @return TRUE if region around starting offsets gives a positive score
-*/
-Boolean
-BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, const Uint1* query,
-                                   const Uint1* subject,
-                                   const BlastScoreBlk* sbp)
-{
-    Int4 left, right;       /* Number of aligned characters to the
-                               left and right of the starting point */
-    Int4 score;             /* Score of the word alignment */
-    const Uint1*   subject_var;   /* Current character in the subject sequence */
-    const Uint1*   subject_right; /* Last character to be considered in the subject
-                               sequence */
-    Boolean positionBased = (sbp->psi_matrix != NULL);
-
-    /* Compute the number of characters to the left of the start
-       to include in the word */
-    left = -HSP_MAX_WINDOW/2;
-    if (left < hsp->query.offset - hsp->query.gapped_start) {
-        left = hsp->query.offset - hsp->query.gapped_start;
-    }
-    if (left < hsp->subject.offset - hsp->subject.gapped_start) {
-        left = hsp->subject.offset - hsp->subject.gapped_start;
-    }
-
-    /* Compute the number of characters to right to include in the word,
-       including the starting point itself. */
-    right = HSP_MAX_WINDOW/2 + 1;
-    if (right > hsp->query.end - hsp->query.gapped_start) {
-        right = hsp->query.end - hsp->query.gapped_start;
-    }
-    if (right > hsp->subject.end - hsp->subject.gapped_start) {
-        right = hsp->subject.end - hsp->subject.gapped_start;
-    }
-
-    /* Calculate the score of the word */
-    score = 0;
-    subject_var   = subject + hsp->subject.gapped_start + left;
-    subject_right = subject + hsp->subject.gapped_start + right;
-    if ( !positionBased ) {
-        const Uint1*   query_var;     /* Current character in the query */
-        query_var = query + hsp->query.gapped_start + left;
-        for ( ; subject_var < subject_right; subject_var++, query_var++) {
-            ASSERT(*query_var < sbp->matrix->ncols);
-            ASSERT(*subject_var < sbp->matrix->nrows);
-           score += sbp->matrix->data[*query_var][*subject_var];
-        }
-    } else {
-        Int4 query_index;       /* Current position in the query */
-        query_index = hsp->query.gapped_start + left;
-        for ( ;  subject_var < subject_right;  subject_var++, query_index++) {
-            score += sbp->psi_matrix->pssm->data[query_index][*subject_var];
-        }
-    }
-    if (score <= 0) {
-        return FALSE;
-    } else {
-        return TRUE;
-    }
-}
-
-
 Int2
 Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp)
 {
@@ -504,10 +423,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
             if (subject_length > 0) stat_length = subject_length;
          }
 
-         if (!kIsOutOfFrame && (((hsp->query.gapped_start == 0 && 
-                                  hsp->subject.gapped_start == 0) ||
-                 !BLAST_CheckStartForGappedAlignment(hsp, query, 
-                                                     subject, sbp)))) {
+         if (!kIsOutOfFrame && hsp->query.gapped_start == 0 && 
+                               hsp->subject.gapped_start == 0) {
             Boolean retval = 
                BlastGetOffsetsForGappedAlignment(query, subject, sbp,
                    hsp, &q_start, &s_start);

@@ -1482,41 +1482,9 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     (void) ccat_query_length;
     (void) full_subject_length;
 
-    /* Shift the subject offset and gapped start to be offsets
-       into the translated subject_range; shifting in this manner
-       is necessary for BLAST_CheckStartForGappedAlignment */
-    hsp->subject.offset       -= subject_range->begin;
-    hsp->subject.end          -= subject_range->begin;
-    hsp->subject.gapped_start -= subject_range->begin;
-    hsp->query.offset         -= query_range->begin;
-    hsp->query.end            -= query_range->begin;
-    hsp->query.gapped_start   -= query_range->begin;
-    if(BLAST_CheckStartForGappedAlignment(hsp, query_data->data,
-                                          subject_data->data, sbp)) {
-        /* We may use the starting point supplied by the HSP. */
-        q_start = hsp->query.gapped_start;
-        s_start = hsp->subject.gapped_start;
-    } else {
-        /* We must recompute the start for the gapped alignment, as the
-           one in the HSP was unacceptable.*/
-        Boolean retval =
-            BlastGetOffsetsForGappedAlignment(query_data->data,
-                                            subject_data->data, sbp,
-                                            hsp,
-                                            &q_start, 
-                                            &s_start);
-        /* ASSERT(retval == TRUE); */
-        if (retval == FALSE)
-           return NULL;
-    }
-    /* Undo the shift so there is no side effect on the incoming HSP
-       list. */
-    hsp->subject.offset       += subject_range->begin;
-    hsp->subject.end          += subject_range->begin;
-    hsp->subject.gapped_start += subject_range->begin;
-    hsp->query.offset         += query_range->begin;
-    hsp->query.end            += query_range->begin;
-    hsp->query.gapped_start   += query_range->begin;
+    /* Use the starting point supplied by the HSP. */
+    q_start = hsp->query.gapped_start - query_range->begin;
+    s_start = hsp->subject.gapped_start - subject_range->begin;
 
     gapAlign->gap_x_dropoff = gapping_params->x_dropoff;
 
