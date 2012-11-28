@@ -255,9 +255,17 @@ list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSp
         it =  m_AliPiece.erase(it);
     }
 
-return  m_AliPiece;
+    if( !m_AliPiece.empty() && m_options.GetFillHoles() ) {
+        list<CNPiece> filled;
+        string::size_type beg = m_AliPiece.front().beg;
+        string::size_type end = m_AliPiece.back().end;
+        filled.push_back(CNPiece(beg, end, 0, 0));
+        return filled;
+    }
 
+    return  m_AliPiece;
 }
+
 list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options)
 {
     list<CNPiece> m_AliPiece;

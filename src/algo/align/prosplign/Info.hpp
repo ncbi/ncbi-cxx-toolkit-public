@@ -82,7 +82,6 @@ list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const
 //not implemented yet
 list<CNPiece> CutFlankPartialCodons(const list<CNPiece>& pc, const string& match_all_pos, const string& protein);
 
-//void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts, bool cut_flank_partial_codons);
 void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
 void SetScores(objects::CSeq_align& seq_align, objects::CScope& scope, const string& matrix_name = "BLOSUM62");
 
