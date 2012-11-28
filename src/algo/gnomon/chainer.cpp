@@ -3844,6 +3844,21 @@ bool HasShortIntron::model_predicate(CGeneModel& m)
     return false;
 }
 
+HasLongIntron::HasLongIntron(CGnomonEngine& _gnomon)
+    :gnomon(_gnomon) {}
+
+bool HasLongIntron::model_predicate(CGeneModel& m)
+{
+    for(unsigned int i = 1; i < m.Exons().size(); ++i) {
+        bool hole = !m.Exons()[i-1].m_ssplice || !m.Exons()[i].m_fsplice;
+        int intron = m.Exons()[i].GetFrom()-m.Exons()[i-1].GetTo()-1;
+        if (!hole && intron > gnomon.GetMaxIntronLen()) {
+            return true;
+        } 
+    }
+    return false;
+}
+
 CutShortPartialExons::CutShortPartialExons(int _minex)
     : minex(_minex) {}
 

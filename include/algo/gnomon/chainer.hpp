@@ -196,6 +196,12 @@ struct HasShortIntron : public Predicate {
     virtual bool model_predicate(CGeneModel& align);
 };
 
+struct HasLongIntron : public Predicate {
+    HasLongIntron(CGnomonEngine& gnomon);
+    CGnomonEngine& gnomon;
+    virtual bool model_predicate(CGeneModel& align);
+};
+
 struct CutShortPartialExons : public TransformFunction {
     CutShortPartialExons(int minex);
     int minex;
