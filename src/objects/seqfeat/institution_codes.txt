@@ -1017,6 +1017,7 @@ CMGP	s	Central Museum of Geological Prospecting
 CMIZASDPRK	s	Custody Museum
 CMKKU	c	Clinical Diagnostic Microbiology Srinagarind Hospital, Faculty of Medicine
 CML	s	Universidad Nacional de Tucuman, Coleccion de Mamiferos Lillo (Argentina)
+CML<BRA>	c	Colecao Micologica de Lavras
 CMM	s	Bradford Art Galleries and Museums, Natural Sciences Department
 CMMC	c	China Marine Microbe Collection
 CMMED<USA-HI>	c	Center for Marine Microbial Ecology & Diversity Collection
@@ -2545,6 +2546,7 @@ INH	s	Institut National d'Horticulture, Departement de Sciences Biologiques
 INHM	s	Iraq Natural History Museum
 INHS	s	Illinois Natural History Survey
 INIA	s	Instituto Nacional de Investigaciones Forestales y Agropecurias
+INIA<CHL>	b	El Instituto de Investigaciones Agropecuarias
 INIA<ESP>	b	Instituto Nacional de Investigacion y Tecnologia Agraria y Alimentaria
 INIBP	s	Instituto Nacional de Investigaciones Biologico Pesqueras
 INIDA	s	Instituto Nacional de Investigacao e Desenvolvimento Agrario - Cape Verde
@@ -2737,6 +2739,7 @@ JBAG	s	Jardin Botanico Atlantico, Ayuntamiento de Gijon
 JBC<MEX>	b	Francisco Javier Clavijero Botanic Garden
 JBG	s	Johannesburg Botanic Garden
 JBGP	s	Jardin Botanico Guillermo Pineres
+JBN	s	Jardin Botanico Nacional
 JBSD	s	Jardin Botanico Nacional Dr. Rafael M. Moscoso
 JBVN	s	Jardin Botanique de la Ville de Nice, Service des Espaces Verts
 JBWM	s	J.B. Wallis Museum of Entomology
