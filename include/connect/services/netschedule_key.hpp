@@ -63,6 +63,8 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 {
     explicit CNetScheduleKey(const string& str_key);
 
+    bool ParseJobKey(const string& key_str);
+
     unsigned version; ///< Key version
     string host; ///< Server name
     unsigned short port; ///< TCP/IP port number

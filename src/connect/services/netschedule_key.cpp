@@ -48,7 +48,15 @@ BEGIN_NCBI_SCOPE
 
 CNetScheduleKey::CNetScheduleKey(const string& key_str)
 {
+    if (!ParseJobKey(key_str)) {
+        NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
+                "Invalid job key format: '" <<
+                        NStr::PrintableString(key_str) << '\'');
+    }
+}
 
+bool CNetScheduleKey::ParseJobKey(const string& key_str)
+{
     // Parses several notations for job id:
     // version 1:
     //   JSID_01_1_MYHOST_9000
@@ -71,25 +79,21 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
         while (*ch && *ch != '_') {
             ++ch;
         }
-        if (*ch == 0 || id == 0) {
-            NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
-                    key_str << ": key syntax error.");
-        }
+        if (*ch == 0 || id == 0)
+            return false;
         ++ch;
 
         // hostname
         for (;*ch && *ch != '_'; ++ch) {
             host += *ch;
         }
-        if (*ch == 0) {
-            NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
-                    key_str << ": key syntax error.");
-        }
+        if (*ch == 0)
+            return false;
         ++ch;
 
         // port
         port = (unsigned short) atoi(ch);
-        return;
+        return true;
     } else if (key_str.compare(0, 5, NS_KEY_V2_PREFIX) == 0) {
         version = 2;
         ch += 5;
@@ -118,7 +122,7 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
             } else {
                 run = -1;
             }
-            return;
+            return true;
         } while (0);
     } else if (isdigit(*ch)) {
         version = 0;
@@ -127,18 +131,16 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
         if (*ch) {
             ch += 1;
             if (!isdigit(*ch))
-                NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
-                        key_str << ": key syntax error.");
+                return false;
             // run
             run = atoi(ch);
         } else {
             run = -1;
         }
-        return;
+        return true;
     }
 
-    NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
-            key_str << ": key syntax error.");
+    return false;
 }
 
 #define MAX_INT_TO_STR_LEN(type) (sizeof(type) * 3 / 2)
