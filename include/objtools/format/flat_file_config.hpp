@@ -211,12 +211,12 @@ public:
     class NCBI_FORMAT_EXPORT CGenbankBlockCallback : public CObject {
     public:
         enum EAction {
-            // the normal case
+            /// the normal case
             eAction_Default,
-            // skip this block (i.e. don't print it)
+            /// skip this block (i.e. don't print it)
             eAction_Skip,
-            // if for some reason you don't want the rest of the flatfile generated, 
-            // this will trigger a CFlatException of type eHaltRequested
+            /// If for some reason you don't want the rest of the flatfile generated, 
+            /// this will trigger a CFlatException of type eHaltRequested
             eAction_HaltFlatfileGeneration
         };
 
