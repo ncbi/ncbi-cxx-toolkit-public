@@ -121,7 +121,11 @@ void CRepConfDiscrepancy :: ConfigRep()
    thisInfo.test_item_list["DISC_QUALITY_SCORES"].clear();
    
 // tests_on_Bioseq_aa
+   tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_COUNT_PROTEINS));
+   tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID1));
    tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID));
+   tests_on_Bioseq_aa.push_back(
+                       CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
    tests_on_Bioseq_aa.push_back(
                        CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX));
 
@@ -136,6 +140,19 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData> (new CBioseq_ADJACENT_PSEUDOGENES));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_PROTEIN));
+   tests_on_Bioseq_CFeat.push_back(
+                      CRef <CTestAndRepData> (new CBioseq_DUP_GENPRODSET_PROTEIN));
+   tests_on_Bioseq_CFeat.push_back(
+                      CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID));
+   tests_on_Bioseq_CFeat.push_back(
+                      CRef <CTestAndRepData> (new CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID));
+   tests_on_Bioseq_CFeat.push_back(
+                           CRef <CTestAndRepData> (new CBioseq_DISC_FEAT_OVERLAP_SRCFEAT));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_CDS_TRNA_OVERLAP));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_TRANSL_NO_NOTE));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_NOTE_NO_TRANSL));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_TRANSL_TOO_LONG));
@@ -227,6 +244,10 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_VIRAL_QUALS));
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISSING));
    tests_on_SeqEntry_feat_desc.push_back( 

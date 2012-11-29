@@ -113,6 +113,7 @@ vector <const CSeq_feat*> CTestAndRepData :: utr3_feat;
 vector <const CSeq_feat*> CTestAndRepData :: promoter_feat;
 vector <const CSeq_feat*> CTestAndRepData :: mrna_feat;
 vector <const CSeq_feat*> CTestAndRepData :: trna_feat;
+vector <const CSeq_feat*> CTestAndRepData :: bioseq_biosrc_feat;
 
 vector <const CSeqdesc*>  CTestAndRepData :: pub_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;
@@ -120,7 +121,7 @@ vector <const CSeqdesc*>  CTestAndRepData :: biosrc_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: biosrc_orgmod_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: title_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: user_seqdesc;
-vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc;
+vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_molinfo;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_title;
 
@@ -815,7 +816,7 @@ void CTestAndRepData :: AddSubcategories(CRef <CClickableItem>& c_item, const st
      }  
                                        
      if (copy2parent)
-        c_item->item_list.insert(c_item->item_list.begin(),
+        c_item->item_list.insert(c_item->item_list.end(),
                                        c_sub->item_list.begin(), c_sub->item_list.end());
      c_item->subcategories.push_back(c_sub);
 };

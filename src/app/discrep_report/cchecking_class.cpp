@@ -207,8 +207,10 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_AllAnnot_run = false;
    thisTest.is_BASES_N_run = false;
    thisTest.is_CdTransl_run = false;
+   thisTest.is_GP_Set_run = false;
    thisTest.is_MolInfo_run = false;
    thisTest.is_MRNA_run = false;
+   thisTest.is_Prot_run = false;
    thisTest.is_Rna_run = false;
    thisTest.is_SHORT_run = false;
 
@@ -232,6 +234,8 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 
         switch (seq_feat_dt.Which()) {
 
+          case CSeqFeatData::e_Biosrc:
+               CTestAndRepData::bioseq_biosrc_feat.push_back(&seq_feat); break;
           case CSeqFeatData::e_Gene:
                 CTestAndRepData::gene_feat.push_back(&seq_feat); break;
           case CSeqFeatData::e_Prot:
@@ -337,7 +341,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      if (!CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
         for (CSeqdesc_CI it(bioseq_hl, sel_seqdesc_4_bioseq); it; ++it) {
           switch (it->Which()) {
-            case CSeqdesc ::e_Source: CTestAndRepData::bioseq_biosrc.push_back(&(*it));
+            case CSeqdesc ::e_Source: CTestAndRepData::bioseq_biosrc_seqdesc.push_back(&(*it));
                    break;
             case CSeqdesc ::e_Molinfo: CTestAndRepData::bioseq_molinfo.push_back(&(*it));
                    break;        
@@ -349,7 +353,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 
         GoTests(CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc, bioseq);
 
-        CTestAndRepData::bioseq_biosrc.clear();
+        CTestAndRepData::bioseq_biosrc_seqdesc.clear();
         CTestAndRepData::bioseq_molinfo.clear();
         CTestAndRepData::bioseq_title.clear();
      }
@@ -361,6 +365,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                GoTests(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
 
      CTestAndRepData::gene_feat.clear();
+     CTestAndRepData::bioseq_biosrc_feat.clear();
      CTestAndRepData::mix_feat.clear();
      CTestAndRepData::cd_feat.clear();
      CTestAndRepData::rna_feat.clear();

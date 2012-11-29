@@ -76,8 +76,10 @@ namespace DiscRepNmSpc {
       static bool   is_CdTransl_run;
       static bool   is_DESC_user_run; // checked
       static bool   is_FEAT_DESC_biosrc_run;
+      static bool   is_GP_Set_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
+      static bool   is_Prot_run;
       static bool   is_Rna_run;
       static bool   is_SHORT_run;
   };
@@ -209,11 +211,11 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
       static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
-      static vector <const CSeq_feat*> mrna_feat, trna_feat;
+      static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
       static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc;
-      static vector <const CSeqdesc*>  bioseq_biosrc, bioseq_molinfo, bioseq_title;
+      static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo, bioseq_title;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
@@ -324,6 +326,23 @@ namespace DiscRepNmSpc {
 
 
 //  new comb!!
+/*
+  class CSeqEntry_test_on_quals : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_quals () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+    protected:
+      string GetName_asn1() const {return string("DISC_SOURCE_QUALS_ASNDISC"); }
+      string GetName_asn1_oncall() const {return string("DISC_SOURCE_QUALS_ASNDISC"); }
+  };
+*/
+
+
   class CSeqEntry_test_on_biosrc_orgmod : public CSeqEntryTestAndRepData
   {
     public:
@@ -335,14 +354,18 @@ namespace DiscRepNmSpc {
  
     protected:
       string GetName_mism() const {return string("DISC_BACTERIAL_TAX_STRAIN_MISMATCH");}
-      string GetName_cul() const {return string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
+      string GetName_cul() const {return 
+                                    string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
       string GetName_cbs() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
       string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
-      bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, const string& strain_head, 
-                                                          const string& culture_head);
+
+      bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, 
+                        const string& strain_head, const string& culture_head);
       void RunTests(const CBioSource& biosrc, const string& desc);
-      void BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, const string& desc);
+      void BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, 
+                                                                         const string& desc);
       void BacterialTaxShouldEndWithStrain(const CBioSource& biosrc, const string& desc);
+
       bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
                                const COrgMod::ESubtype& check_type, const string& check_head);
   };
@@ -477,12 +500,37 @@ namespace DiscRepNmSpc {
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
       string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
       string GetName_tbad () const {return string("TAX_LOOKUP_MISMATCH"); }
+      string GetName_flu() const {return string("DISC_INFLUENZA_DATE_MISMATCH"); }
+      string GetName_quals() const {return string("DISC_MISSING_VIRAL_QUALS"); }
 
       bool HasMulSrc(const CBioSource& biosrc);
       bool IsBacterialIsolate(const CBioSource& biosrc);
       bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc);
       bool DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2);
+      bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& biosrc);
+      void AddMissingViralQualsDiscrepancies(const CBioSource& biosrc, const string& desc);
+
       void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+
+  class CSeqEntry_DISC_MISSING_VIRAL_QUALS : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_MISSING_VIRAL_QUALS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_quals();}
+  };
+
+
+  class CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_flu();}
   };
 
 
@@ -836,7 +884,116 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
-  class CBioseq_test_on_cd_4_transl: public CBioseqTestAndRepData
+  class CBioseq_test_on_genprod_set : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_genprod_set() {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_mprot() const {return string("MISSING_GENPRODSET_PROTEIN");}
+      string GetName_dprot() const {return string("DUP_GENPRODSET_PROTEIN");}
+      string GetName_mtid() const {return string("MISSING_GENPRODSET_TRANSCRIPT_ID");}
+      string GetName_dtid() const {return string("DUP_GENPRODSET_TRANSCRIPT_ID");}
+
+      void GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name, 
+                              const string& desc1, const string& desc2, const string& desc3);
+  };
+
+
+  class CBioseq_MISSING_GENPRODSET_PROTEIN : public CBioseq_test_on_genprod_set
+  {
+    public:
+      virtual ~CBioseq_MISSING_GENPRODSET_PROTEIN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_mprot(); }
+  };
+
+
+  class CBioseq_DUP_GENPRODSET_PROTEIN : public CBioseq_test_on_genprod_set
+  {
+    public:
+      virtual ~CBioseq_DUP_GENPRODSET_PROTEIN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_dprot(); }
+  };
+
+
+  class CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID : public CBioseq_test_on_genprod_set
+  {
+    public:
+      virtual ~CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_mtid(); }
+  };
+
+
+  class CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID : public CBioseq_test_on_genprod_set
+  {
+    public:
+      virtual ~CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_dtid(); }
+  };
+
+
+  class CBioseq_test_on_prot : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_prot() {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_cnt () const {return string("COUNT_PROTEINS"); }
+      string GetName_id() const {return string("MISSING_PROTEIN_ID1"); }
+      string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX1"); }
+  };
+
+
+  class CBioseq_COUNT_PROTEINS : public CBioseq_test_on_prot
+  {
+    public:
+      virtual ~CBioseq_COUNT_PROTEINS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_prot::GetName_cnt(); }
+  };
+
+ 
+  class CBioseq_MISSING_PROTEIN_ID1 : public CBioseq_test_on_prot
+  {
+    public:
+      virtual ~CBioseq_MISSING_PROTEIN_ID1 () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_prot::GetName_id(); }
+  };
+
+
+  class CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1 : public CBioseq_test_on_prot
+  {
+    public:
+      virtual ~CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1 () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_prot::GetName_prefix(); }
+
+    protected:
+      void MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2);
+  };
+
+
+  class CBioseq_test_on_cd_4_transl : public CBioseqTestAndRepData
   {
     public:
       virtual ~CBioseq_test_on_cd_4_transl() {};
@@ -1060,6 +1217,42 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+ 
+  class CBioseq_ADJACENT_PSEUDOGENES : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_ADJACENT_PSEUDOGENES () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("ADJACENT_PSEUDOGENES"); }
+
+    protected:
+      string GetGeneStringMatch (const string& str1, const string& str2);
+  };
+
+
+  class CBioseq_DISC_FEAT_OVERLAP_SRCFEAT : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_FEAT_OVERLAP_SRCFEAT () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_FEAT_OVERLAP_SRCFEAT"); }
+  };
+
+
+  class CBioseq_CDS_TRNA_OVERLAP : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_CDS_TRNA_OVERLAP () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("CDS_TRNA_OVERLAP"); }
+  };
 
 
   class CBioseq_INCONSISTENT_SOURCE_DEFLINE : public CBioseqTestAndRepData
