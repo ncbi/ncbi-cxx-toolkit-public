@@ -38,6 +38,8 @@
 #include <ncbi_pch.hpp>
 
 // generated includes
+#include <objects/general/User_field.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/genomecoll/GC_Replicon.hpp>
 #include <objects/genomecoll/GC_AssemblyUnit.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
@@ -74,6 +76,49 @@ CConstRef<CGC_Assembly> CGC_Replicon::GetFullAssembly() const
     return CConstRef<CGC_Assembly>(m_Assembly);
 }
 
+static 
+CConstRef<CUser_object> x_GetMolLocTypeUserObj(const CGC_Replicon& rep)
+{
+    const CGC_Sequence& seq = rep.GetSequence().GetSingle();
+    if (seq.IsSetDescr()) {
+        ITERATE(CSeq_descr::Tdata, dit, seq.GetDescr().Get()) {
+            if ((*dit)->IsUser()) {
+                const CUser_object& uo = (*dit)->GetUser();
+                if ( uo.GetType().IsStr() && uo.GetType().GetStr() == "molecule-location-type") {
+                    return CConstRef<CUser_object>(&uo);
+                }
+            }
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+
+string CGC_Replicon::GetMoleculeLocation() const
+{
+    CConstRef<CUser_object> uo = x_GetMolLocTypeUserObj(*this);
+    if (uo) {
+        return uo->GetField("location").GetData().GetStr();
+    }
+    return kEmptyStr;
+}
+
+string CGC_Replicon::GetMoleculeType() const
+{
+    CConstRef<CUser_object> uo = x_GetMolLocTypeUserObj(*this);
+    if (uo) {
+        return uo->GetField("type").GetData().GetStr();
+    }
+    return kEmptyStr;
+}
+
+string CGC_Replicon::GetMoleculeLabel() const
+{
+    CConstRef<CUser_object> uo = x_GetMolLocTypeUserObj(*this);
+    if (uo) {
+        return uo->GetField("label").GetData().GetStr();
+    }
+    return kEmptyStr;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

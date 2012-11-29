@@ -69,6 +69,10 @@ public:
     /// knowing the unit is not always enough
     CConstRef<CGC_Assembly>     GetFullAssembly() const;
 
+    string GetMoleculeLocation() const;
+    string GetMoleculeType() const;
+    string GetMoleculeLabel() const;
+
 protected:
     CGC_Assembly*     m_Assembly;
     CGC_AssemblyUnit* m_AssemblyUnit;
