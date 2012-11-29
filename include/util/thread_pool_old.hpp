@@ -322,12 +322,11 @@ public:
     ///   A pool where this thead is placed
     /// @param mode
     ///   A running mode of this thread
-    CThreadInPool(TPool* pool, ERunMode mode = eNormal) 
-        : m_Pool(pool), m_RunMode(mode) {}
+    CThreadInPool(TPool* pool, ERunMode mode = eNormal);
 
 protected:
     /// Destructor
-    virtual ~CThreadInPool(void) {}
+    virtual ~CThreadInPool(void);
 
     /// Intit this thread. It is called at beginning of Main()
     virtual void Init(void) {}
@@ -903,6 +902,27 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
 //
 
 template <typename TRequest>
+CThreadInPool<TRequest>::CThreadInPool(TPool* pool, ERunMode mode)
+    : m_Pool(pool), m_RunMode(mode)
+{
+    if (mode == eRunOnce) {
+        pool->m_UrgentThreadCount.Add(1);
+    } else {
+        pool->m_ThreadCount.Add(1);
+    }
+}
+
+template <typename TRequest>
+CThreadInPool<TRequest>::~CThreadInPool()
+{
+    if (m_RunMode == eRunOnce) {
+        m_Pool->m_UrgentThreadCount.Add(-1);
+    } else {
+        m_Pool->m_ThreadCount.Add(-1);
+    }
+}
+
+template <typename TRequest>
 CThreadInPool<TRequest>::CAutoUnregGuard::CAutoUnregGuard(TThread* thr)
     : m_Thread(thr)
 {}
@@ -980,10 +1000,6 @@ void CThreadInPool<TRequest>::OnExit(void)
     try {
         x_OnExit();
     } STD_CATCH_ALL_XX(Util_Thread, 6, "x_OnExit")
-    if (m_RunMode != eRunOnce)
-        m_Pool->m_ThreadCount.Add(-1);
-    else 
-        m_Pool->m_UrgentThreadCount.Add(-1);
 }
 
 template <typename TRequest>
@@ -1031,7 +1047,6 @@ void CPoolOfThreads<TRequest>::Spawn(unsigned int num_threads)
 {
     for (unsigned int i = 0; i < num_threads; i++)
     {
-        m_ThreadCount.Add(1);
         NewThread(TThread::eNormal)->Run();
     }
 }
@@ -1125,13 +1140,12 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
         if (m_Delta.Add(1) >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads) {
             // Add another thread to the pool because they're all busy.
-            m_ThreadCount.Add(1);
             new_thread = true;
-        } else if (urgent && m_UrgentThreadCount.Get() < m_MaxUrgentThreads) {
-            m_UrgentThreadCount.Add(1);
-        } else  // Prevent from running a new urgent thread if we have reached
-                // the maximum number of urgent threads
+        } else if (urgent && m_UrgentThreadCount.Get() >= m_MaxUrgentThreads) {
+            // Prevent from running a new urgent thread if we have reached
+            // the maximum number of urgent threads
             urgent = false;
+        }
     }}
 
     if (urgent || new_thread) {
