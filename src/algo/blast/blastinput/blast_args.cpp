@@ -1372,7 +1372,11 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (sentry.registry) {
        paths[2] = CDirEntry::NormalizePath(sentry.registry->Get("BLAST","IGDATA"), eFollowLinks);
     } else {
+#if defined(NCBI_OS_DARWIN)
+       paths[2] = "/usr/local/ncbi/igblast/data";
+#else        
        paths[2] = paths[0];
+#endif        
     }
 
     m_IgOptions.Reset(new CIgBlastOptions());
