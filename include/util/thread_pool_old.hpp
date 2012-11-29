@@ -322,7 +322,8 @@ public:
     ///   A pool where this thead is placed
     /// @param mode
     ///   A running mode of this thread
-    CThreadInPool(TPool* pool, ERunMode mode = eNormal);
+    CThreadInPool(TPool* pool, ERunMode mode = eNormal) 
+        : m_Pool(pool), m_RunMode(mode) {}
 
 protected:
     /// Destructor
@@ -902,17 +903,6 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
 //
 
 template <typename TRequest>
-CThreadInPool<TRequest>::CThreadInPool(TPool* pool, ERunMode mode)
-    : m_Pool(pool), m_RunMode(mode)
-{
-    if (mode == eRunOnce) {
-        pool->m_UrgentThreadCount.Add(1);
-    } else {
-        pool->m_ThreadCount.Add(1);
-    }
-}
-
-template <typename TRequest>
 CThreadInPool<TRequest>::~CThreadInPool()
 {
     if (m_RunMode == eRunOnce) {
@@ -979,6 +969,11 @@ template <typename TRequest>
 void* CThreadInPool<TRequest>::Main(void)
 {
     m_Pool->Register(*this);
+    if (m_RunMode == eRunOnce) {
+        m_Pool->m_UrgentThreadCount.Add(1);
+    } else {
+        m_Pool->m_ThreadCount.Add(1);
+    }
     CAutoUnregGuard guard(this);
 
     Init();
