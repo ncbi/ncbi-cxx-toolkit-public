@@ -175,8 +175,7 @@ public:
 
 protected:
     /// Destructor
-    virtual ~CThreadInPool_ForServer(void)
-    {}
+    virtual ~CThreadInPool_ForServer(void);
 
     /// Process a request.
     /// It is called from Main() for each request this thread handles
@@ -192,7 +191,6 @@ protected:
 private:
     // to prevent overriding; inherited from CThread
     virtual void* Main(void);
-    virtual void OnExit(void);
 
     void x_HandleOneRequest(bool catch_all);
     void x_UnregisterThread(void);

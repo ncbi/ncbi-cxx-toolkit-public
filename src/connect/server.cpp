@@ -171,6 +171,11 @@ CThreadInPool_ForServer::CAutoUnregGuard::~CAutoUnregGuard(void)
     m_Thread->x_UnregisterThread();
 }
 
+CThreadInPool_ForServer::~CThreadInPool_ForServer(void)
+{
+    m_Pool->m_ThreadCount.Add(-1);
+}
+
 void
 CThreadInPool_ForServer::x_UnregisterThread(void)
 {
@@ -212,6 +217,7 @@ CThreadInPool_ForServer::Main(void)
     }
 
     m_Pool->Register(*this);
+    m_Pool->m_ThreadCount.Add(1);
     CAutoUnregGuard guard(this);
 
     bool catch_all = TParamThreadPoolCatchExceptions::GetDefault();
@@ -220,12 +226,6 @@ CThreadInPool_ForServer::Main(void)
     }
 
     return NULL;
-}
-
-void
-CThreadInPool_ForServer::OnExit(void)
-{
-    m_Pool->m_ThreadCount.Add(-1);
 }
 
 void
@@ -283,7 +283,6 @@ CPoolOfThreads_ForServer::Spawn(unsigned int num_threads)
 {
     for (unsigned int i = 0; i < num_threads; i++)
     {
-        m_ThreadCount.Add(1);
         NewThread()->Run();
     }
 }
