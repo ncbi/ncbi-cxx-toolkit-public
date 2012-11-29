@@ -218,3 +218,4 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // ! __gene_finder_hpp__
+
