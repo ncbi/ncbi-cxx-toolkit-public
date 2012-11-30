@@ -301,9 +301,11 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
         bs->GetInst().GetExt().IsDelta() &&
         bs->GetInst().CanGetMol() &&
         !CSeq_inst::IsNa(bs->GetInst().GetMol())) {
-        
-        NCBI_THROW(CMultisourceException, eArg,
-                   "Protein delta sequences are not supported.");
+        CConstRef<CSeq_id> id = FindBestChoice(bs->GetId(), CSeq_id::BestRank);
+        CNcbiOstrstream oss;
+        oss << id->AsFastaString() << ": Protein delta sequences are not supported.";
+        string msg = CNcbiOstrstreamToString(oss);
+        NCBI_THROW(CMultisourceException, eArg, msg);
     }
     
     try {
