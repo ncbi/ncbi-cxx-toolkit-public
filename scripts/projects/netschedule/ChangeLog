@@ -1,3 +1,15 @@
+Release 4.16.1 based on SC-11 (2012-11-30)
+
+Improvements and bug fixes
+    * NetSchedule: close connection explicitly if writing to socket failed
+      (JIRA: CXX-3624)
+    * NetSchedule: accept job result in FAILED state (JIRA: CXX-3632)
+    * Improved logging
+    * Bug fix: sending a message to a client could read out of a buffer in
+      case of an empty message.
+    * Bug fix: Failed to Failed total transition counter did not work properly.
+
+
 Release 4.16.0 based on SC-11 (2012-11-14)
 
 Improvements
