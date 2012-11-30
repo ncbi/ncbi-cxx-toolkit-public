@@ -117,14 +117,16 @@ CAlignCommon::CAlignCommon(const CGeneModel& align) {
 struct SAlignExtended {
     SAlignExtended(SAlignIndividual& ali, const set<int>& left_exon_ends, const set<int>& right_exon_ends) : m_ali(&ali), m_initial_right_end(ali.m_range.GetTo()) {
 
-        set<int>::iterator ri = right_exon_ends.lower_bound(m_ali->m_range.GetTo()); // leftmost compatible rexon
+        set<int>::const_iterator ri =
+            right_exon_ends.lower_bound(m_ali->m_range.GetTo()); // leftmost compatible rexon
         m_rlimb =  numeric_limits<int>::max();
         if(ri != right_exon_ends.end())
             m_rlimb = *ri;
         m_rlima = -1;
         if(ri != right_exon_ends.begin())
             m_rlima = *(--ri);
-        set<int>::iterator li = left_exon_ends.upper_bound(m_ali->m_range.GetFrom()); // leftmost not compatible lexon
+        set<int>::const_iterator li =
+            left_exon_ends.upper_bound(m_ali->m_range.GetFrom()); // leftmost not compatible lexon
         m_llimb = numeric_limits<int>::max() ;
         if(li != left_exon_ends.end())
             m_llimb = *li;
