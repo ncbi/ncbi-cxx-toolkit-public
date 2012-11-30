@@ -590,7 +590,8 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
             }
 
             if (old_status != CNetScheduleAPI::ePending &&
-                old_status != CNetScheduleAPI::eRunning)
+                old_status != CNetScheduleAPI::eRunning &&
+                old_status != CNetScheduleAPI::eFailed)
                 return old_status;
 
             {{

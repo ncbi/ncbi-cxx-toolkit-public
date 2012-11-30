@@ -1549,6 +1549,13 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         x_PrintCmdRequestStop();
         return;
     }
+    if (old_status == CNetScheduleAPI::eFailed) {
+        // Still accept the job results, but print a warning: CXX-3632
+        ERR_POST(Warning << "Accepting results for a job in the FAILED state.");
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
+        return;
+    }
     if (old_status == CNetScheduleAPI::eDone) {
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
@@ -1605,6 +1612,9 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
+    } else if (old_status == CNetScheduleAPI::eFailed) {
+        // Still accept the job results, but print a warning: CXX-3632
+        ERR_POST(Warning << "Accepting results for a job in the FAILED state.");
     } else if (old_status != CNetScheduleAPI::ePending &&
                old_status != CNetScheduleAPI::eRunning) {
         ERR_POST(Warning << "Cannot accept job "

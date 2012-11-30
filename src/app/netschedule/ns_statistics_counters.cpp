@@ -136,6 +136,8 @@ CStatisticsCounters::CStatisticsCounters()
                           [s_StatusToIndex[CNetScheduleAPI::eFailed]].Set(0);
         s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eFailed]]
                           [s_StatusToIndex[CNetScheduleAPI::eReading]].Set(0);
+        s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eFailed]]
+                          [s_StatusToIndex[CNetScheduleAPI::eDone]].Set(0);
 
         s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::ePending]]
                           [s_StatusToIndex[CNetScheduleAPI::eCanceled]].Set(0);
@@ -202,6 +204,10 @@ CStatisticsCounters::CStatisticsCounters()
 
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::eFailed]]
                  [s_StatusToIndex[CNetScheduleAPI::eFailed]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eFailed]]
+                 [s_StatusToIndex[CNetScheduleAPI::eReading]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eFailed]]
+                 [s_StatusToIndex[CNetScheduleAPI::eDone]].Set(0);
 
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::ePending]]
                  [s_StatusToIndex[CNetScheduleAPI::eCanceled]].Set(0);
