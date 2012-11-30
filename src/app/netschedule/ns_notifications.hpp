@@ -48,7 +48,6 @@ BEGIN_NCBI_SCOPE
 class CNSClientId;
 class CNSClientsRegistry;
 class CNSAffinityRegistry;
-class CNetScheduleHandler;
 
 
 struct SNSNotificationAttributes
@@ -131,10 +130,9 @@ class CNSNotificationList
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
                     unsigned int           notif_highfreq_period);
-        void Print(CNetScheduleHandler &        handler,
-                   const CNSClientsRegistry &   clients_registry,
-                   const CNSAffinityRegistry &  aff_registry,
-                   bool                         verbose) const;
+        string Print(const CNSClientsRegistry &   clients_registry,
+                     const CNSAffinityRegistry &  aff_registry,
+                     bool                         verbose) const;
         size_t size(void) const
         {
             CMutexGuard guard(m_ListenersLock);

@@ -30,7 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/request_ctx.hpp>
 
 #include "ns_handler.hpp"
 #include "ns_server.hpp"
@@ -457,18 +456,19 @@ void CNetScheduleHandler::OnOpen(void)
 
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgAuth;
 
-    // Log the fact of opened connection
-    m_ConnContext.Reset(new CRequestContext());
-    m_ConnContext->SetRequestID();
-    m_ConnContext->SetClientIP(socket.GetPeerAddress(eSAF_IP));
-
-    CDiagnosticsGuard   guard(this);
+    // Log the fact of opened connection if needed
     if (m_Server->IsLog()) {
+        m_ConnContext.Reset(new CRequestContext());
+        m_ConnContext->SetRequestID();
+        m_ConnContext->SetClientIP(socket.GetPeerAddress(eSAF_IP));
+
+        // Set the connection request as the current one and print request
+        // start
+        CDiagContext::SetRequestContext(m_ConnContext);
         GetDiagContext().PrintRequestStart()
-                        .Print("_type", "conn")
-                        .Flush();
+                        .Print("_type", "conn");
+        m_ConnContext->SetRequestStatus(eStatus_OK);
     }
-    m_ConnContext->SetRequestStatus(eStatus_OK);
 }
 
 
@@ -486,49 +486,55 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     // It's possible that this method will be called before OnOpen - when
     // connection is just created and server is shutting down. In this case
     // OnOpen will never be called.
+    //
+    // m_ConnContext != NULL also tells that the logging is required
     if (m_ConnContext.IsNull())
         return;
-
-
-    CDiagnosticsGuard   guard(this);
 
     switch (peer)
     {
     case IServer_ConnectionHandler::eOurClose:
-        if (m_DiagContext.NotNull()) {
-            m_ConnContext->SetRequestStatus(m_DiagContext->GetRequestStatus());
+        if (m_CmdContext.NotNull()) {
+            m_ConnContext->SetRequestStatus(m_CmdContext->GetRequestStatus());
         } else {
-            if (m_ConnContext->GetRequestStatus() != eStatus_HTTPProbe &&
-                m_ConnContext->GetRequestStatus() != eStatus_BadRequest)
+            int status = m_ConnContext->GetRequestStatus();
+            if (status != eStatus_HTTPProbe &&
+                status != eStatus_BadRequest &&
+                status != eStatus_SocketIOError)
                 m_ConnContext->SetRequestStatus(eStatus_Inactive);
         }
         break;
     case IServer_ConnectionHandler::eClientClose:
-        if (m_DiagContext.NotNull()) {
-            m_DiagContext->SetRequestStatus(eStatus_SocketIOError);
+        if (m_CmdContext.NotNull()) {
+            m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
             m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
         }
         break;
     }
 
 
-    if (m_Server->IsLog()) {
-        CSocket&        socket = GetSocket();
-        CDiagContext::SetRequestContext(m_ConnContext);
-        m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
-        m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
+    // If a command has not finished its logging by some reasons - do it
+    // here as the last chance.
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStop();
+        m_CmdContext.Reset();
     }
 
+    CSocket&        socket = GetSocket();
+    CDiagContext::SetRequestContext(m_ConnContext);
+    m_ConnContext->SetBytesRd(socket.GetCount(eIO_Read));
+    m_ConnContext->SetBytesWr(socket.GetCount(eIO_Write));
+    GetDiagContext().PrintRequestStop();
+
     m_ConnContext.Reset();
+    CDiagContext::SetRequestContext(NULL);
 }
 
 
 void CNetScheduleHandler::OnTimeout()
 {
-    CDiagnosticsGuard       guard(this);
-
-    if (m_Server->IsLog())
+    if (m_ConnContext.NotNull())
         m_ConnContext->SetRequestStatus(eStatus_Inactive);
 }
 
@@ -554,76 +560,103 @@ void CNetScheduleHandler::OnOverflow(EOverflowReason reason)
 
 void CNetScheduleHandler::OnMessage(BUF buffer)
 {
-    CDiagnosticsGuard   guard(this);
+    // Initialize the proper diagnostics context
+    if (m_CmdContext.NotNull())
+        CDiagContext::SetRequestContext(m_CmdContext);
+    else if (m_ConnContext.NotNull())
+        CDiagContext::SetRequestContext(m_ConnContext);
 
     if (m_Server->ShutdownRequested()) {
-        x_WriteMessageNoThrow("ERR:eShuttingDown:NetSchedule server is shutting down. "
-                              "Session aborted.");
+        ERR_POST("NetSchedule is shutting down. Client input rejected.");
+        x_SetCmdRequestStatus(eStatus_ShuttingDown);
+        if (x_WriteMessage("ERR:eShuttingDown:NetSchedule server "
+                           "is shutting down. Session aborted.") == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
         return;
     }
+
+    bool          error = true;
+    string        error_client_message;
+    unsigned int  error_code;
 
     try {
         // Single line user input processor
         (this->*m_ProcessMessage)(buffer);
+        error = false;
     }
     catch (const CNetScheduleException &  ex) {
-        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                      ":" + ex.GetMsg());
-        ERR_POST("NetSchedule exception: " << ex);
-        x_PrintRequestStop(ex.ErrCodeToHTTPStatusCode());
+        if (ex.GetErrCode() == CNetScheduleException::eAuthenticationError) {
+            ERR_POST(ex);
+            if (m_CmdContext.NotNull())
+                m_CmdContext->SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
+            else if (m_ConnContext.NotNull())
+                m_ConnContext->SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
+
+            if (x_WriteMessage("ERR:" + string(ex.GetErrCodeString()) +
+                               ":" + ex.GetMsg()) == eIO_Success)
+                m_Server->CloseConnection(&GetSocket());
+            return;
+        }
+        ERR_POST(ex);
+        error_client_message = "ERR:" + string(ex.GetErrCodeString()) +
+                               ":" + ex.GetMsg();
+        error_code = ex.ErrCodeToHTTPStatusCode();
     }
     catch (const CNSProtoParserException &  ex) {
-        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                      ":" + ex.GetMsg());
-        ERR_POST("Command parser error: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
+        ERR_POST(ex);
+        error_client_message = "ERR:" + string(ex.GetErrCodeString()) +
+                               ":" + ex.GetMsg();
+        error_code = eStatus_BadRequest;
     }
     catch (const CNetServiceException &  ex) {
-        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                      ":" + ex.GetMsg());
-        ERR_POST("NetService exception: " << ex);
+        ERR_POST(ex);
+        error_client_message = "ERR:" + string(ex.GetErrCodeString()) +
+                               ":" + ex.GetMsg();
         if (ex.GetErrCode() == CNetServiceException::eCommunicationError)
-            x_PrintRequestStop(eStatus_SocketIOError);
+            error_code = eStatus_SocketIOError;
         else
-            x_PrintRequestStop(eStatus_ServerError);
+            error_code = eStatus_ServerError;
     }
     catch (const CBDB_ErrnoException &  ex) {
-        string  error;
-        if (ex.IsRecovery())
-            error = NStr::PrintableString("Fatal Berkeley DB error "
+        ERR_POST(ex);
+        if (ex.IsRecovery()) {
+            error_client_message = "ERR:eInternalError:" +
+                    NStr::PrintableString("Fatal Berkeley DB error "
                                           "(DB_RUNRECOVERY). Emergency "
                                           "shutdown initiated. " +
                                           string(ex.what()));
-        else
-            error = NStr::PrintableString("Internal database error - " +
-                                          string(ex.what()));
-
-        x_WriteMessageNoThrow("ERR:", "eInternalError:" + error);
-        ERR_POST("BDB error: " << ex);
-        x_PrintRequestStop(eStatus_ServerError);
-
-        if (ex.IsRecovery())
             m_Server->SetShutdownFlag();
+        }
+        else
+            error_client_message = "ERR:eInternalError:" +
+                    NStr::PrintableString("Internal database error - " +
+                                          string(ex.what()));
+        error_code = eStatus_ServerError;
     }
     catch (const CBDB_Exception &  ex) {
-        string  error = NStr::PrintableString("eInternalError:Internal "
-                                              "database (BDB) error - " +
-                                              string(ex.what()));
-        x_WriteMessageNoThrow("ERR:", error);
-        ERR_POST("BDB error: " << ex);
-        x_PrintRequestStop(eStatus_ServerError);
+        ERR_POST(ex);
+        error_client_message = "ERR:" +
+                               NStr::PrintableString("eInternalError:Internal "
+                               "database (BDB) error - " + string(ex.what()));
+        error_code = eStatus_ServerError;
     }
     catch (const exception &  ex) {
-        string  error = NStr::PrintableString("eInternalError:Internal "
-                                              "error - " + string(ex.what()));
-        x_WriteMessageNoThrow("ERR:", error);
         ERR_POST("STL exception: " << ex.what());
-        x_PrintRequestStop(eStatus_ServerError);
+        error_client_message = "ERR:" +
+                               NStr::PrintableString("eInternalError:Internal "
+                               "error - " + string(ex.what()));
+        error_code = eStatus_ServerError;
     }
     catch (...) {
-        x_WriteMessageNoThrow("ERR:eInternalError:Unknown server exception.");
         ERR_POST("ERR:Unknown server exception.");
-        x_PrintRequestStop(eStatus_ServerError);
+        error_client_message = "ERR:eInternalError:Unknown server exception.";
+        error_code = eStatus_ServerError;
+    }
+
+    if (error) {
+        x_SetCmdRequestStatus(error_code);
+        x_WriteMessage(error_client_message);
+        x_PrintCmdRequestStop();
     }
 }
 
@@ -638,41 +671,10 @@ void CNetScheduleHandler::x_SetQuickAcknowledge(void)
 }
 
 
-void CNetScheduleHandler::WriteMessage(CTempString  prefix,
-                                       CTempString  msg)
-{
-    size_t  prefix_size = prefix.size();
-    size_t  msg_size = msg.size();
-    if (msg[msg_size-1] == '\n')
-        --msg_size;
-    size_t  required_size = prefix_size + msg_size + 1;
-
-    if (required_size > m_MsgBufferSize) {
-        delete [] m_MsgBuffer;
-        while (required_size > m_MsgBufferSize)
-            m_MsgBufferSize += kMessageBufferIncrement;
-        m_MsgBuffer = new char[m_MsgBufferSize];
-    }
-
-    memcpy(m_MsgBuffer, prefix.data(), prefix_size);
-    memcpy(m_MsgBuffer + prefix_size, msg.data(), msg_size);
-    m_MsgBuffer[required_size-1] = '\n';
-
-    // Write to the socket as a single transaction
-    size_t      n_written;
-    if (GetSocket().Write(m_MsgBuffer, required_size,
-                          &n_written) != eIO_Success) {
-        NCBI_THROW(CNetServiceException,
-                   eCommunicationError, "Socket write error; peer: " +
-                                        GetSocket().GetPeerAddress());
-    }
-}
-
-
-void CNetScheduleHandler::WriteMessage(CTempString msg)
+EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
 {
     size_t  msg_size = msg.size();
-    if (msg[msg_size-1] == '\n')
+    while (msg_size >= 1 && msg[msg_size-1] == '\n')
         --msg_size;
     size_t  required_size = msg_size + 1;
 
@@ -687,64 +689,31 @@ void CNetScheduleHandler::WriteMessage(CTempString msg)
     m_MsgBuffer[required_size-1] = '\n';
 
     // Write to the socket as a single transaction
-    size_t      n_written;
-    if (GetSocket().Write(m_MsgBuffer, required_size,
-                          &n_written) != eIO_Success) {
-        NCBI_THROW(CNetServiceException,
-                   eCommunicationError, "Socket write error; peer: " +
-                                         GetSocket().GetPeerAddress());
-    }
-}
+    size_t     written;
+    EIO_Status result = GetSocket().Write(m_MsgBuffer, required_size, &written);
+    if (result != eIO_Success) {
+        string msg = "Error writing message to the client. "
+                     "Peer: " +  GetSocket().GetPeerAddress() + ". "
+                     "Socket write return code: " + NStr::NumericToString((int)result) + ". "
+                     "Written bytes: " + NStr::NumericToString(written) + ". "
+                     "Message begins with: ";
+        if (msg_size > 32)
+            msg += string(m_MsgBuffer, 32) + " (TRUNCATED)";
+        else
+            msg += m_MsgBuffer;
+        ERR_POST(msg);
 
-
-unsigned int  CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  prefix,
-                                                         CTempString  msg)
-{
-    try {
-        WriteMessage(prefix, msg);
+        if (m_ConnContext.NotNull()) {
+            if (m_ConnContext->GetRequestStatus() == eStatus_OK)
+                m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+            if (m_CmdContext.NotNull()) {
+                if (m_CmdContext->GetRequestStatus() == eStatus_OK)
+                    m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+            }
+        }
+        m_Server->CloseConnection(&GetSocket());
     }
-    catch (CNetServiceException&  ex) {
-        ERR_POST(ex);
-        return eStatus_SocketIOError;
-    }
-    catch (...) {
-        ERR_POST("Unknown exception while writing into a socket.");
-        return eStatus_ServerError;
-    }
-    return eStatus_OK;
-}
-
-unsigned int  CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  msg)
-{
-    try {
-        WriteMessage(msg);
-    }
-    catch (CNetServiceException&  ex) {
-        ERR_POST(ex);
-        return eStatus_SocketIOError;
-    }
-    catch (...) {
-        ERR_POST("Unknown exception while writing into a socket.");
-        return eStatus_ServerError;
-    }
-    return eStatus_OK;
-}
-
-
-void CNetScheduleHandler::InitDiagnostics(void)
-{
-    if (m_DiagContext.NotNull()) {
-        CDiagContext::SetRequestContext(m_DiagContext);
-    }
-    else if (m_ConnContext.NotNull()) {
-        CDiagContext::SetRequestContext(m_ConnContext);
-    }
-}
-
-
-void CNetScheduleHandler::ResetDiagnostics(void)
-{
-    CDiagContext::SetRequestContext(NULL);
+    return result;
 }
 
 
@@ -774,9 +743,7 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
     if (strncmp(m_RawAuthString.c_str(), "GET / HTTP/1.", 13) == 0) {
         // That was systems probing ports
 
-        if (m_ConnContext.NotNull())
-            m_ConnContext->SetRequestStatus(eStatus_HTTPProbe);
-
+        x_SetConnRequestStatus(eStatus_HTTPProbe);
         m_Server->CloseConnection(&GetSocket());
         return;
     }
@@ -792,39 +759,28 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 
     // Parse saved raw authorization string and produce log output
     TNSProtoParams      params;
-    bool                parse_failed = false;
 
     try {
         m_SingleCmdParser.ParseArguments(m_RawAuthString, s_AuthArgs, &params);
     }
     catch (CNSProtoParserException &  ex) {
-        ERR_POST("Error authenticating client: '" <<
-                 m_RawAuthString << "': " << ex);
-        parse_failed = true;
+        string msg = "Error authenticating client: '";
+        if (m_RawAuthString.size() > 128)
+            msg += string(m_RawAuthString.c_str(), 128) + " (TRUNCATED)";
+        else
+            msg += m_RawAuthString;
+        msg += "': ";
+        // ex.what() is here to avoid unnecessery records in the log
+        // if it is simple 'ex' -> 2 records are produced
+        ERR_POST(msg << ex.what());
+
+        x_SetConnRequestStatus(eStatus_BadRequest);
+        m_Server->CloseConnection(&GetSocket());
+        return;
     }
 
     // Memorize what we know about the client
-    try {
-        m_ClientId.Update(this->x_GetPeerAddress(), params);
-        if (parse_failed)
-            m_ClientId.SetClientName(m_RawAuthString);
-    }
-    catch (const CNetScheduleException &  ex) {
-        if (ex.GetErrCode() == CNetScheduleException::eAuthenticationError) {
-            x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                          ":" + ex.GetMsg());
-            ERR_POST("Server error: " << ex);
-            if (m_Server->IsLog()) {
-                CDiagContext::GetRequestContext().SetRequestStatus(
-                                                ex.ErrCodeToHTTPStatusCode());
-                GetDiagContext().PrintRequestStop();
-                m_ConnContext.Reset();
-            }
-            m_Server->CloseConnection(&GetSocket());
-            return;
-        }
-        throw;
-    }
+    m_ClientId.Update(this->x_GetPeerAddress(), params);
 
 
     if (m_Server->AdminHostValid(m_ClientId.GetAddress()) &&
@@ -836,7 +792,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
     }
 
     // Produce the log output if required
-    if (m_Server->IsLog()) {
+    if (m_ConnContext.NotNull()) {
         CDiagContext_Extra diag_extra = GetDiagContext().Extra();
         diag_extra.Print("queue", m_QueueName);
         ITERATE(TNSProtoParams, it, params) {
@@ -855,15 +811,11 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         }
         catch (const CNetScheduleException &  ex) {
             if (ex.GetErrCode() == CNetScheduleException::eUnknownQueue) {
-                x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                              ":" + ex.GetMsg());
-                ERR_POST("Server error: " << ex);
-                if (m_Server->IsLog()) {
-                    CDiagContext::GetRequestContext().SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
-                    GetDiagContext().PrintRequestStop();
-                    m_ConnContext.Reset();
-                }
-                m_Server->CloseConnection(&GetSocket());
+                ERR_POST(ex);
+                x_SetConnRequestStatus(ex.ErrCodeToHTTPStatusCode());
+                if (x_WriteMessage("ERR:" + string(ex.GetErrCodeString()) +
+                                   ":" + ex.GetMsg()) == eIO_Success)
+                    m_Server->CloseConnection(&GetSocket());
                 return;
             }
             throw;
@@ -888,9 +840,12 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 // Workhorse method
 void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 {
-    m_DiagContext.Reset(new CRequestContext());
-    m_DiagContext->SetRequestID();
-    InitDiagnostics();
+    if (m_ConnContext.NotNull()) {
+        m_CmdContext.Reset(new CRequestContext());
+        m_CmdContext->SetRequestStatus(eStatus_OK);
+        m_CmdContext->SetRequestID();
+        CDiagContext::SetRequestContext(m_CmdContext);
+    }
 
     SParsedCmd      cmd;
     string          msg;
@@ -903,7 +858,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
                                         cmd.command->cmd,
                                         GetSocket());
 
-        x_PrintRequestStart(cmd);
+        x_PrintCmdRequestStart(cmd);
     }
     catch (const CNSProtoParserException &  ex) {
         // This is the exception from m_SingleCmdParser.ParseCommand(msg)
@@ -917,7 +872,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         // This is an exception from AssignValues(...)
 
         // That is, the print request has not been printed yet
-        x_PrintRequestStart(cmd);
+        x_PrintCmdRequestStart(cmd);
         throw;
     }
 
@@ -959,8 +914,9 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusS) &&
         (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusW))
         if (!m_ClientId.CheckVersion(queue_ptr)) {
-            WriteMessage("ERR:eInvalidClientOrVersion:");
-            m_Server->CloseConnection(&GetSocket());
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            if (x_WriteMessage("ERR:eInvalidClientOrVersion:") == eIO_Success)
+                m_Server->CloseConnection(&GetSocket());
             return;
         }
 
@@ -999,10 +955,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
     catch (const CNetScheduleException &  ex) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                      ":" + ex.GetMsg());
         ERR_POST("Server error: " << ex);
-        x_PrintRequestStop(ex.ErrCodeToHTTPStatusCode());
+        x_SetCmdRequestStatus(ex.ErrCodeToHTTPStatusCode());
+        x_WriteMessage("ERR:" + string(ex.GetErrCodeString()) +
+                       ":" + ex.GetMsg());
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1010,10 +967,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
     catch (const CException &  ex) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
-                                      "Error processing BTCH or ENDS.");
         ERR_POST("Error processing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eProtocolSyntaxError:"
+                       "Error processing BTCH or ENDS.");
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1021,10 +979,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
     catch (...) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", "eInternalError:Unknown error "
-                                      "while expecting BTCH or ENDS.");
         ERR_POST("Unknown error while expecting BTCH or ENDS");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInternalError:Unknown error "
+                       "while expecting BTCH or ENDS.");
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1054,10 +1013,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     catch (const CNetScheduleException &  ex) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                      ":" + ex.GetMsg());
         ERR_POST(ex.GetMsg());
-        x_PrintRequestStop(ex.ErrCodeToHTTPStatusCode());
+        x_SetCmdRequestStatus(ex.ErrCodeToHTTPStatusCode());
+        x_WriteMessage("ERR:" + string(ex.GetErrCodeString()) +
+                       ":" + ex.GetMsg());
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1066,10 +1026,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     catch (const CException &  ex) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
-                                      "Invalid batch submission, syntax error");
         ERR_POST("Error processing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eProtocolSyntaxError:"
+                       "Invalid batch submission, syntax error");
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1078,10 +1039,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     catch (...) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
-                                      "Arguments parsing unknown exception");
         ERR_POST("Arguments parsing unknown exception. Batch submit is rejected.");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eProtocolSyntaxError:"
+                       "Arguments parsing unknown exception");
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1124,10 +1086,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
         BUF_Read(buffer, 0, BUF_Size(buffer));
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
-                              "Batch submit error - unexpected end of batch");
         ERR_POST("Error processing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eProtocolSyntaxError:"
+                       "Batch submit error - unexpected end of batch");
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1136,10 +1099,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
     catch (...) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        x_WriteMessageNoThrow("ERR:", "eInternalError:"
-                              "Unknown error while expecting ENDB.");
         ERR_POST("Unknown error while expecting ENDB.");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInternalError:"
+                       "Unknown error while expecting ENDB.");
+        x_PrintCmdRequestStop();
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1151,13 +1115,13 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
     // BTCH logging is in a separate context
     CRef<CRequestContext>   current_context(& CDiagContext::GetRequestContext());
     try {
-        if (m_Server->IsLog()) {
+        if (m_ConnContext.NotNull()) {
             CRequestContext *   ctx(new CRequestContext());
             ctx->SetRequestID();
             GetDiagContext().SetRequestContext(ctx);
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
-                            .Print("bsub", m_DiagContext->GetRequestID())
+                            .Print("bsub", m_CmdContext->GetRequestID())
                             .Print("cmd", "BTCH")
                             .Print("size", m_BatchJobs.size());
             ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
@@ -1170,7 +1134,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
                                                      m_BatchGroup);
         double      db_elapsed = sw.Elapsed();
 
-        if (m_Server->IsLog())
+        if (m_ConnContext.NotNull())
             GetDiagContext().Extra()
                 .Print("start_job", job_id)
                 .Print("commit_time",
@@ -1178,15 +1142,15 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
                 .Print("transaction_time",
                        NStr::DoubleToString(db_elapsed, 4, NStr::fDoubleFixed));
 
-        WriteMessage("OK:", NStr::UIntToString(job_id) + " " +
-                            m_Server->GetHost().c_str() + " " +
-                            NStr::UIntToString(unsigned(m_Server->GetPort())));
+        x_WriteMessage("OK:" + NStr::UIntToString(job_id) + " " +
+                       m_Server->GetHost().c_str() + " " +
+                       NStr::UIntToString(unsigned(m_Server->GetPort())));
 
     }
     catch (const CNetScheduleException &  ex) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        if (m_Server->IsLog()) {
+        if (m_ConnContext.NotNull()) {
             CDiagContext::GetRequestContext().SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
             GetDiagContext().PrintRequestStop();
             GetDiagContext().SetRequestContext(current_context);
@@ -1198,7 +1162,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
     catch (...) {
         m_WithinBatchSubmit = false;
         m_Server->DecrementCurrentSubmitsCounter();
-        if (m_Server->IsLog()) {
+        if (m_ConnContext.NotNull()) {
             CDiagContext::GetRequestContext().SetRequestStatus(eStatus_ServerError);
             GetDiagContext().PrintRequestStop();
             GetDiagContext().SetRequestContext(current_context);
@@ -1208,7 +1172,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         throw;
     }
 
-    if (m_Server->IsLog()) {
+    if (m_ConnContext.NotNull()) {
         GetDiagContext().PrintRequestStop();
         GetDiagContext().SetRequestContext(current_context);
     }
@@ -1229,25 +1193,23 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        if (cmdv2)
-            WriteMessage("ERR:eJobNotFound:");
-        else
-            WriteMessage("OK:", NStr::IntToString((int) status));
-
         ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+
+        if (cmdv2)
+            x_WriteMessage("ERR:eJobNotFound:");
+        else
+            x_WriteMessage("OK:" + NStr::IntToString((int) status));
     } else {
         if (cmdv2)
-            WriteMessage(
-                    "OK:job_status=" +
-                    CNetScheduleAPI::StatusToString(status) +
-                    "&job_exptime=" + NStr::NumericToString(lifetime)
-                    );
+            x_WriteMessage("OK:job_status=" +
+                           CNetScheduleAPI::StatusToString(status) +
+                           "&job_exptime=" + NStr::NumericToString(lifetime));
         else
-            WriteMessage("OK:", NStr::IntToString((int) status));
-        x_PrintRequestStop(eStatus_OK);
+            x_WriteMessage("OK:" + NStr::IntToString((int) status));
     }
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1260,25 +1222,23 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        if (cmdv2)
-            WriteMessage("ERR:eJobNotFound:");
-        else
-            WriteMessage("OK:", NStr::IntToString((int) status));
-
         ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+
+        if (cmdv2)
+            x_WriteMessage("ERR:eJobNotFound:");
+        else
+            x_WriteMessage("OK:" + NStr::IntToString((int) status));
     } else {
         if (cmdv2)
-            WriteMessage(
-                    "OK:job_status=" +
-                    CNetScheduleAPI::StatusToString(status) +
-                    "&job_exptime=" + NStr::NumericToString(lifetime)
-                    );
+            x_WriteMessage("OK:job_status=" +
+                           CNetScheduleAPI::StatusToString(status) +
+                           "&job_exptime=" + NStr::NumericToString(lifetime));
         else
-            WriteMessage("OK:", NStr::IntToString((int) status));
-        x_PrintRequestStop(eStatus_OK);
+            x_WriteMessage("OK:" + NStr::IntToString((int) status));
     }
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1290,8 +1250,9 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     if (m_CommandArguments.aff_to_add.empty() &&
         m_CommandArguments.aff_to_del.empty()) {
         ERR_POST(Warning << "CHAFF with neither add list nor del list");
-        x_WriteMessageNoThrow("ERR:eInvalidParameter:");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInvalidParameter:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -1306,26 +1267,29 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     string  msg = q->ChangeAffinity(m_ClientId, aff_to_add_list,
                                                 aff_to_del_list);
     if (msg.empty())
-        WriteMessage("OK:");
+        x_WriteMessage("OK:");
     else
-        WriteMessage("OK:WARNING:", msg + ";");
-    x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:WARNING:" + msg + ";");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 {
     if (q->GetRefuseSubmits() || m_Server->GetRefuseSubmits()) {
-        WriteMessage("ERR:eSubmitsDisabled:");
-        x_PrintRequestStop(eStatus_SubmitRefused);
+        x_SetCmdRequestStatus(eStatus_SubmitRefused);
+        x_WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintCmdRequestStop();
         return;
     }
 
-    if (m_Server->IncrementCurrentSubmitsCounter() < kSubmitCounterInitialValue) {
+    if (m_Server->IncrementCurrentSubmitsCounter() <
+        kSubmitCounterInitialValue) {
         // This is a drained shutdown mode
         m_Server->DecrementCurrentSubmitsCounter();
-        WriteMessage("ERR:eSubmitsDisabled:");
-        x_PrintRequestStop(eStatus_SubmitRefused);
+        x_SetCmdRequestStatus(eStatus_SubmitRefused);
+        x_WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -1333,9 +1297,9 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
     CJob        job(m_CommandArguments);
 
     try {
-        WriteMessage("OK:", q->MakeKey(q->Submit(m_ClientId, job,
-                                             m_CommandArguments.affinity_token,
-                                             m_CommandArguments.group)));
+        x_WriteMessage("OK:" + q->MakeKey(q->Submit(m_ClientId, job,
+                                          m_CommandArguments.affinity_token,
+                                          m_CommandArguments.group)));
         m_Server->DecrementCurrentSubmitsCounter();
     } catch (...) {
         m_Server->DecrementCurrentSubmitsCounter();
@@ -1344,23 +1308,25 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 
     // There is no need to log the job key, it is logged at lower level
     // together with all the submitted job parameters
-    x_PrintRequestStop(eStatus_OK);
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
 {
     if (q->GetRefuseSubmits() || m_Server->GetRefuseSubmits()) {
-        WriteMessage("ERR:eSubmitsDisabled:");
-        x_PrintRequestStop(eStatus_SubmitRefused);
+        x_SetCmdRequestStatus(eStatus_SubmitRefused);
+        x_WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintCmdRequestStop();
         return;
     }
 
     if (m_Server->IncrementCurrentSubmitsCounter() < kSubmitCounterInitialValue) {
         // This is a drained shutdown mode
         m_Server->DecrementCurrentSubmitsCounter();
-        WriteMessage("ERR:eSubmitsDisabled:");
-        x_PrintRequestStop(eStatus_SubmitRefused);
+        x_SetCmdRequestStatus(eStatus_SubmitRefused);
+        x_WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -1374,7 +1340,7 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
         m_BatchClientSID   = m_CommandArguments.sid;
         m_BatchGroup       = m_CommandArguments.group;
 
-        WriteMessage("OK:Batch submit ready");
+        x_WriteMessage("OK:Batch submit ready");
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgBatchHeader;
     }
     catch (...) {
@@ -1408,8 +1374,8 @@ void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
     m_Server->DecrementCurrentSubmitsCounter();
     m_BatchJobs.clear();
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1417,20 +1383,21 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
     // Job key or a group must be given
     if (m_CommandArguments.job_id == 0 && m_CommandArguments.group.empty()) {
-        x_WriteMessageNoThrow("ERR:eInvalidParameter:"
-                              "Job key or group must be given");
         LOG_POST(Message << Warning << "CANCEL must have a job key or a group");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInvalidParameter:"
+                       "Job key or group must be given");
+        x_PrintCmdRequestStop();
         return;
     }
 
     if (m_CommandArguments.job_id != 0 && !m_CommandArguments.group.empty()) {
-        x_WriteMessageNoThrow("ERR:eInvalidParameter:"
-                              "CANCEL can accept a job key or "
-                              "a group but not both");
         LOG_POST(Message << Warning << "CANCEL must have only one "
                                        "argument - a job key or a group");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInvalidParameter:CANCEL can accept a job key or "
+                       "a group but not both");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -1438,27 +1405,26 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
     if (!m_CommandArguments.group.empty()) {
         // CANCEL for a group
         q->CancelGroup(m_ClientId, m_CommandArguments.group);
-        WriteMessage("OK:");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
         return;
     }
 
     // Here: CANCEL for a job
     switch (q->Cancel(m_ClientId, m_CommandArguments.job_id)) {
         case CNetScheduleAPI::eJobNotFound:
-            x_WriteMessageNoThrow("OK:WARNING:Job not found;");
             ERR_POST(Warning << "CANCEL for unknown job: "
                              << m_CommandArguments.job_key);
-            x_PrintRequestStop(eStatus_NotFound);
+            x_SetCmdRequestStatus(eStatus_NotFound);
+            x_WriteMessage("OK:WARNING:Job not found;");
             break;
         case CNetScheduleAPI::eCanceled:
-            WriteMessage("OK:WARNING:Already canceled;");
-            x_PrintRequestStop(eStatus_OK);
+            x_WriteMessage("OK:WARNING:Already canceled;");
             break;
         default:
-            WriteMessage("OK:");
-            x_PrintRequestStop(eStatus_OK);
+            x_WriteMessage("OK:");
     }
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1471,36 +1437,39 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) ==
                 CNetScheduleAPI::eJobNotFound) {
         // Here: there is no such a job
-        if (cmdv2)
-            x_WriteMessageNoThrow("ERR:eJobNotFound:");
-        else
-            x_WriteMessageNoThrow("OK:",
-                     NStr::IntToString((int) CNetScheduleAPI::eJobNotFound));
         ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        if (cmdv2)
+            x_WriteMessage("ERR:eJobNotFound:");
+        else
+            x_WriteMessage("OK:" +
+                           NStr::IntToString(
+                                        (int)CNetScheduleAPI::eJobNotFound));
+        x_PrintCmdRequestStop();
         return;
     }
 
     // Here: the job was found
     if (cmdv2)
-        WriteMessage("OK:",
-                     "job_status=" + CNetScheduleAPI::StatusToString(job.GetStatus()) +
-                     "&job_exptime=" + NStr::NumericToString(lifetime) +
-                     "&ret_code=" + NStr::IntToString(job.GetRetCode()) +
-                     "&output=" + NStr::URLEncode(job.GetOutput()) +
-                     "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
-                     "&input=" + NStr::URLEncode(job.GetInput())
-                    );
+        x_WriteMessage("OK:"
+                       "job_status=" +
+                       CNetScheduleAPI::StatusToString(job.GetStatus()) +
+                       "&job_exptime=" + NStr::NumericToString(lifetime) +
+                       "&ret_code=" + NStr::IntToString(job.GetRetCode()) +
+                       "&output=" + NStr::URLEncode(job.GetOutput()) +
+                       "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
+                       "&input=" + NStr::URLEncode(job.GetInput())
+                      );
 
     else
-        WriteMessage("OK:", NStr::IntToString((int) job.GetStatus()) +
-                            " " + NStr::IntToString(job.GetRetCode()) +
-                            " \""   + NStr::PrintableString(job.GetOutput()) +
-                            "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
-                            "\" \"" + NStr::PrintableString(job.GetInput()) +
-                            "\"");
-    x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:" + NStr::IntToString((int) job.GetStatus()) +
+                       " " + NStr::IntToString(job.GetRetCode()) +
+                       " \""   + NStr::PrintableString(job.GetOutput()) +
+                       "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
+                       "\" \"" + NStr::PrintableString(job.GetInput()) +
+                       "\"");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1540,13 +1509,12 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                         &job) == false) {
         // Preferred affinities were reset for the client, so no job
         // and bad request
-        WriteMessage("ERR:ePrefAffExpired:");
-        x_PrintRequestStop(eStatus_BadRequest);
-    } else {
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:ePrefAffExpired:");
+    } else
         x_PrintGetJobResponse(q, job, cmdv2);
-        x_PrintRequestStop(eStatus_OK);
-    }
-    return;
+
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1555,8 +1523,8 @@ void CNetScheduleHandler::x_ProcessCancelWaitGet(CQueue* q)
     x_CheckNonAnonymousClient("cancel waiting after WGET");
 
     q->CancelWaitGet(m_ClientId);
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1577,38 +1545,39 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
                                           &output);
     if (old_status == CNetScheduleAPI::ePending ||
         old_status == CNetScheduleAPI::eRunning) {
-        WriteMessage("OK:");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
         return;
     }
     if (old_status == CNetScheduleAPI::eDone) {
-        WriteMessage("OK:WARNING:Already done;");
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:WARNING:Already done;");
+        x_PrintCmdRequestStop();
         return;
     }
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
         return;
     }
 
     // Here: invalid job status, nothing will be done
-    x_WriteMessageNoThrow("ERR:eInvalidJobStatus:"
-                          "Cannot accept job results; job is in " +
-                          CNetScheduleAPI::StatusToString(old_status) +
-                          " state");
     ERR_POST(Warning << "Cannot accept job "
                      << m_CommandArguments.job_key
                      << " results; job is in "
                      << CNetScheduleAPI::StatusToString(old_status)
                      << " state");
-    x_PrintRequestStop(eStatus_InvalidJobStatus);
+    x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+    x_WriteMessage("ERR:eInvalidJobStatus:"
+                   "Cannot accept job results; job is in " +
+                   CNetScheduleAPI::StatusToString(old_status) + " state");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1661,29 +1630,27 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         &job) == false) {
         // Preferred affinities were reset for the client, so no job
         // and bad request
-        WriteMessage("ERR:ePrefAffExpired:");
-        x_PrintRequestStop(eStatus_BadRequest);
-    } else {
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:ePrefAffExpired:");
+    } else
         x_PrintGetJobResponse(q, job, false);
-        x_PrintRequestStop(eStatus_OK);
-    }
-    return;
+
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
 {
     if (q->PutProgressMessage(m_CommandArguments.job_id,
-                              m_CommandArguments.progress_msg)) {
-        WriteMessage("OK:");
-        x_PrintRequestStop(eStatus_OK);
-    }
+                              m_CommandArguments.progress_msg))
+        x_WriteMessage("OK:");
     else {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "MPUT for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
     }
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1693,16 +1660,16 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
     time_t      lifetime;
 
     if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) !=
-            CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("OK:", job.GetProgressMsg());
-        x_PrintRequestStop(eStatus_OK);
-    } else {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
+            CNetScheduleAPI::eJobNotFound)
+        x_WriteMessage("OK:" + job.GetProgressMsg());
+    else {
         ERR_POST(Warning << m_CommandArguments.cmd
                          << "MGET for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
     }
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1726,49 +1693,49 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 warning);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "FPUT for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
         return;
     }
 
     if (old_status == CNetScheduleAPI::eFailed) {
-        WriteMessage("OK:WARNING:Already failed;");
         ERR_POST(Warning << "FPUT for already failed job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:WARNING:Already failed;");
+        x_PrintCmdRequestStop();
         return;
     }
 
     if (old_status != CNetScheduleAPI::eRunning) {
-        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:Cannot fail job; "
-                              "job is in " +
-                              CNetScheduleAPI::StatusToString(old_status) +
-                              " state");
         ERR_POST(Warning << "Cannot fail job "
                          << m_CommandArguments.job_key
                          << "; job is in "
                          << CNetScheduleAPI::StatusToString(old_status)
                          << " state");
-        x_PrintRequestStop(eStatus_InvalidJobStatus);
+        x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+        x_WriteMessage("ERR:eInvalidJobStatus:Cannot fail job; job is in " +
+                       CNetScheduleAPI::StatusToString(old_status) + " state");
+        x_PrintCmdRequestStop();
         return;
     }
 
     // Here: all is fine
     if (warning.empty())
-        WriteMessage("OK:");
+        x_WriteMessage("OK:");
     else
-        WriteMessage("OK:WARNING:", warning + ";");
-    x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:WARNING:" + warning + ";");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 {
     q->Truncate();
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1789,41 +1756,45 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 
     if (old_status == CNetScheduleAPI::eRunning) {
         if (warning.empty())
-            WriteMessage("OK:");
+            x_WriteMessage("OK:");
         else
-            WriteMessage("OK:WARNING:", warning + ";");
-        x_PrintRequestStop(eStatus_OK);
+            x_WriteMessage("OK:WARNING:" + warning + ";");
+        x_PrintCmdRequestStop();
         return;
     }
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "RETURN for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
         return;
     }
 
-    x_WriteMessageNoThrow("ERR:eInvalidJobStatus:Cannot return job; job is in " +
-                          CNetScheduleAPI::StatusToString(old_status) + " state");
     ERR_POST(Warning << "Cannot return job "
                      << m_CommandArguments.job_key
                      << "; job is in "
-                     << CNetScheduleAPI::StatusToString(old_status) << " state");
+                     << CNetScheduleAPI::StatusToString(old_status)
+                     << " state");
+    x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+    x_WriteMessage("ERR:eInvalidJobStatus:Cannot return job; job is in " +
+                   CNetScheduleAPI::StatusToString(old_status) + " state");
 
-    x_PrintRequestStop(eStatus_InvalidJobStatus);
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
-        x_WriteMessageNoThrow("ERR:eInvalidParameter:");
         ERR_POST(Warning << "Invalid timeout "
                          << m_CommandArguments.timeout
                          << " in JDEX for job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInvalidParameter:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -1831,27 +1802,28 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
                                                    m_CommandArguments.timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "JDEX for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
         return;
     }
     if (status != CNetScheduleAPI::eRunning) {
-        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:" +
-                              CNetScheduleAPI::StatusToString(status));
         ERR_POST(Warning << "Cannot change expiration for job "
                          << m_CommandArguments.job_key
                          << " in status "
                          << CNetScheduleAPI::StatusToString(status));
-
-        x_PrintRequestStop(eStatus_InvalidJobStatus);
+        x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+        x_WriteMessage("ERR:eInvalidJobStatus:" +
+                       CNetScheduleAPI::StatusToString(status));
+        x_PrintCmdRequestStop();
         return;
     }
 
     // Here: the new timeout has been applied
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1872,16 +1844,17 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
                                     &last_event_index);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "LISTEN for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
-        return;
-    }
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+    } else
+        x_WriteMessage("OK:job_status=" +
+                       CNetScheduleAPI::StatusToString(status) +
+                       "&last_event_index=" +
+                       NStr::NumericToString(last_event_index));
 
-    WriteMessage("OK:job_status=", CNetScheduleAPI::StatusToString(status) +
-                 "&last_event_index=" + NStr::NumericToString(last_event_index));
-    x_PrintRequestStop(eStatus_OK);
+    x_PrintCmdRequestStop();
 }
 
 
@@ -1912,42 +1885,43 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         string      info = m_Server->GetQueueClassesInfo();
 
         if (!info.empty())
-            WriteMessage(info);
+            x_WriteMessage(info);
 
-        WriteMessage("OK:END");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:END");
+        x_PrintCmdRequestStop();
         return;
     }
     if (what == "QUEUES") {
         string      info = m_Server->GetQueueInfo();
 
         if (!info.empty())
-            WriteMessage(info);
+            x_WriteMessage(info);
 
-        WriteMessage("OK:END");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:END");
+        x_PrintCmdRequestStop();
         return;
     }
 
 
     if (q == NULL) {
         if (what == "JOBS")
-            m_Server->PrintJobsStat(*this);
+            x_WriteMessage(m_Server->PrintJobsStat());
         else {
             // Transition counters for all the queues
-            WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
+            x_WriteMessage("OK:Started: " +
+                           m_Server->GetStartTime().AsString());
             if (m_Server->GetRefuseSubmits())
-                WriteMessage("OK:SubmitsDisabledEffective: 1");
+                x_WriteMessage("OK:SubmitsDisabledEffective: 1");
             else
-                WriteMessage("OK:SubmitsDisabledEffective: 0");
+                x_WriteMessage("OK:SubmitsDisabledEffective: 0");
             if (m_Server->IsDrainShutdown())
-                WriteMessage("OK:DrainedShutdown: 1");
+                x_WriteMessage("OK:DrainedShutdown: 1");
             else
-                WriteMessage("OK:DrainedShutdown: 0");
-            m_Server->PrintTransitionCounters(*this);
+                x_WriteMessage("OK:DrainedShutdown: 0");
+            x_WriteMessage(m_Server->PrintTransitionCounters());
         }
-        WriteMessage("OK:END");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:END");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -1958,43 +1932,46 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         return;
     }
 
-    WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
+    x_WriteMessage("OK:Started: " + m_Server->GetStartTime().AsString());
     if (m_Server->GetRefuseSubmits() || q->GetRefuseSubmits())
-        WriteMessage("OK:SubmitsDisabledEffective: 1");
+        x_WriteMessage("OK:SubmitsDisabledEffective: 1");
     else
-        WriteMessage("OK:SubmitsDisabledEffective: 0");
+        x_WriteMessage("OK:SubmitsDisabledEffective: 0");
     if (q->GetRefuseSubmits())
-        WriteMessage("OK:SubmitsDisabledPrivate: 1");
+        x_WriteMessage("OK:SubmitsDisabledPrivate: 1");
     else
-        WriteMessage("OK:SubmitsDisabledPrivate: 0");
+        x_WriteMessage("OK:SubmitsDisabledPrivate: 0");
 
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
         TJobStatus      st = g_ValidJobStatuses[k];
         unsigned        count = q->CountStatus(st);
 
-        WriteMessage("OK:", CNetScheduleAPI::StatusToString(st) +
-                            ": " + NStr::UIntToString(count));
+        x_WriteMessage("OK:" + CNetScheduleAPI::StatusToString(st) +
+                       ": " + NStr::UIntToString(count));
 
         if (what == "ALL") {
             TNSBitVector::statistics bv_stat;
             q->StatusStatistics(st, &bv_stat);
-            WriteMessage("OK:",
-                         "  bit_blk=" + NStr::UIntToString(bv_stat.bit_blocks) +
-                         "; gap_blk=" + NStr::UIntToString(bv_stat.gap_blocks) +
-                         "; mem_used=" + NStr::UIntToString(bv_stat.memory_used));
+            x_WriteMessage("OK:"
+                           "  bit_blk=" +
+                           NStr::UIntToString(bv_stat.bit_blocks) +
+                           "; gap_blk=" +
+                           NStr::UIntToString(bv_stat.gap_blocks) +
+                           "; mem_used=" +
+                           NStr::UIntToString(bv_stat.memory_used));
         }
     } // for
 
 
     if (what == "ALL") {
-        WriteMessage("OK:[Berkeley DB Mutexes]:");
+        x_WriteMessage("OK:[Berkeley DB Mutexes]:");
         {{
             CNcbiOstrstream ostr;
 
             try {
                 m_Server->PrintMutexStat(ostr);
                 ostr << ends;
-                WriteMessage("OK:", ostr.str());
+                x_WriteMessage(string("OK:") + ostr.str());
             } catch (...) {
                 ostr.freeze(false);
                 throw;
@@ -2002,14 +1979,14 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             ostr.freeze(false);
         }}
 
-        WriteMessage("OK:[Berkeley DB Locks]:");
+        x_WriteMessage("OK:[Berkeley DB Locks]:");
         {{
             CNcbiOstrstream ostr;
 
             try {
                 m_Server->PrintLockStat(ostr);
                 ostr << ends;
-                WriteMessage("OK:", ostr.str());
+                x_WriteMessage(string("OK:") + ostr.str());
             } catch (...) {
                 ostr.freeze(false);
                 throw;
@@ -2017,14 +1994,14 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             ostr.freeze(false);
         }}
 
-        WriteMessage("OK:[Berkeley DB Memory Usage]:");
+        x_WriteMessage("OK:[Berkeley DB Memory Usage]:");
         {{
             CNcbiOstrstream ostr;
 
             try {
                 m_Server->PrintMemStat(ostr);
                 ostr << ends;
-                WriteMessage("OK:", ostr.str());
+                x_WriteMessage(string("OK:") + ostr.str());
             } catch (...) {
                 ostr.freeze(false);
                 throw;
@@ -2032,14 +2009,14 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             ostr.freeze(false);
         }}
 
-        WriteMessage("OK:[BitVector block pool]:");
+        x_WriteMessage("OK:[BitVector block pool]:");
         {{
             const TBlockAlloc::TBucketPool::TBucketVector& bv =
                 TBlockAlloc::GetPoolVector();
             size_t      pool_vec_size = bv.size();
 
-            WriteMessage("OK:Pool vector size: ",
-                         NStr::SizetToString(pool_vec_size));
+            x_WriteMessage("OK:Pool vector size: " +
+                           NStr::SizetToString(pool_vec_size));
 
             for (size_t  i = 0; i < pool_vec_size; ++i) {
                 const TBlockAlloc::TBucketPool::TResourcePool* rp =
@@ -2047,19 +2024,19 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
                 if (rp) {
                     size_t pool_size = rp->GetSize();
                     if (pool_size) {
-                        WriteMessage("OK:Pool [ " + NStr::SizetToString(i) +
-                                     "] = " + NStr::SizetToString(pool_size));
+                        x_WriteMessage("OK:Pool [ " + NStr::SizetToString(i) +
+                                       "] = " + NStr::SizetToString(pool_size));
                     }
                 }
             }
         }}
     }
 
-    WriteMessage("OK:[Transitions counters]:");
-    q->PrintTransitionCounters(*this);
+    x_WriteMessage("OK:[Transitions counters]:");
+    x_WriteMessage(q->PrintTransitionCounters());
 
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:END");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2080,14 +2057,13 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         params.Read(reg, "server");
         string      what_changed = m_Server->SetNSParameters(params, true);
-        bool        is_log = m_Server->IsLog();
 
         if (what_changed.empty() && diff.empty()) {
-            if (is_log)
+            if (m_ConnContext.NotNull())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
-            WriteMessage("OK:WARNING:No changeable parameters were "
-                         "identified in the new cofiguration file;");
-            x_PrintRequestStop(eStatus_OK);
+            x_WriteMessage("OK:WARNING:No changeable parameters were "
+                           "identified in the new cofiguration file;");
+            x_PrintCmdRequestStop();
             return;
         }
 
@@ -2099,16 +2075,16 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         else
             total_changes = what_changed;
 
-        if (is_log)
+        if (m_ConnContext.NotNull())
             GetDiagContext().Extra().Print("config_changes", total_changes);
 
-        WriteMessage("OK:", total_changes);
+        x_WriteMessage("OK:" + total_changes);
     }
     else
-        WriteMessage("OK:WARNING:Configuration file has not "
-                     "been changed, RECO ignored;");
+        x_WriteMessage("OK:WARNING:Configuration file has not "
+                       "been changed, RECO ignored;");
 
-    x_PrintRequestStop(eStatus_OK);
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2116,8 +2092,8 @@ void CNetScheduleHandler::x_ProcessActiveCount(CQueue* q)
 {
     string      active_jobs = NStr::UIntToString(m_Server->CountActiveJobs());
 
-    WriteMessage("OK:", active_jobs);
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:" + active_jobs);
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2129,33 +2105,33 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
             !m_CommandArguments.job_status_string.empty()) {
             // The state parameter was provided but it was not possible to
             // convert it into a valid job state
-            x_WriteMessageNoThrow("ERR:eInvalidParameter:Status unknown: ",
-                                  m_CommandArguments.job_status_string);
-            x_PrintRequestStop(eStatus_BadRequest);
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            x_WriteMessage("ERR:eInvalidParameter:Status unknown: " +
+                           m_CommandArguments.job_status_string);
+            x_PrintCmdRequestStop();
             return;
         }
 
-        q->PrintAllJobDbStat(*this, m_CommandArguments.group,
-                                    m_CommandArguments.job_status,
-                                    m_CommandArguments.start_after_job_id,
-                                    m_CommandArguments.count);
-        WriteMessage("OK:END");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage(q->PrintAllJobDbStat(m_CommandArguments.group,
+                                            m_CommandArguments.job_status,
+                                            m_CommandArguments.start_after_job_id,
+                                            m_CommandArguments.count) +
+                       "OK:END");
+        x_PrintCmdRequestStop();
         return;
     }
 
 
     // Certain job dump
-    if (q->PrintJobDbStat(*this, m_CommandArguments.job_id) == 0) {
+    string      job_info = q->PrintJobDbStat(m_CommandArguments.job_id);
+    if (job_info.empty()) {
         // Nothing was printed because there is no such a job
-        x_WriteMessageNoThrow("ERR:eJobNotFound:");
-        x_PrintRequestStop(eStatus_NotFound);
-        return;
-    }
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+    } else
+        x_WriteMessage(job_info + "OK:END");
 
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
-    return;
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2163,23 +2139,24 @@ void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 {
     if (m_CommandArguments.drain) {
         if (m_Server->GetShutdownFlag()) {
-            WriteMessage("ERR:eShuttingDown:The server is in shutting down state");
-            x_PrintRequestStop(eStatus_BadRequest);
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            x_WriteMessage("ERR:eShuttingDown:The server is in "
+                           "shutting down state");
+            x_PrintCmdRequestStop();
             return;
         }
-        WriteMessage("OK:");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
         m_Server->SetRefuseSubmits(true);
         m_Server->SetDrainShutdown();
         return;
     }
 
     // Unconditional immediate shutdown.
-    x_PrintRequestStop(eStatus_OK);
-    WriteMessage("OK:");
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
     m_Server->SetRefuseSubmits(true);
     m_Server->SetShutdownFlag();
-    return;
 }
 
 
@@ -2189,40 +2166,34 @@ void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
 
     CNcbiApplication::Instance()->GetConfig().Write(ss);
     ss.flush();
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:END");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 {
-    WriteMessage("OK:",
-                 "server_version=" NETSCHEDULED_VERSION
-                 "&storage_version=" NETSCHEDULED_STORAGE_VERSION
-                 "&protocol_version=" NETSCHEDULED_PROTOCOL_VERSION
-                 "&build_date=" + NStr::URLEncode(NETSCHEDULED_BUILD_DATE) +
-                 "&ns_node=" + m_Server->GetNodeID() +
-                 "&ns_session=" + m_Server->GetSessionID() +
-                 "&pid=" + NStr::NumericToString(CDiagContext::GetPID()));
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:server_version=" NETSCHEDULED_VERSION
+                   "&storage_version=" NETSCHEDULED_STORAGE_VERSION
+                   "&protocol_version=" NETSCHEDULED_PROTOCOL_VERSION
+                   "&build_date=" + NStr::URLEncode(NETSCHEDULED_BUILD_DATE) +
+                   "&ns_node=" + m_Server->GetNodeID() +
+                   "&ns_session=" + m_Server->GetSessionID() +
+                   "&pid=" + NStr::NumericToString(CDiagContext::GetPID()));
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessQList(CQueue*)
 {
-    WriteMessage("OK:", m_Server->GetQueueNames(";"));
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:" + m_Server->GetQueueNames(";"));
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessQuitSession(CQueue*)
 {
     m_Server->CloseConnection(&GetSocket());
-
-    // Log the close request
-    CDiagContext::SetRequestContext(m_DiagContext);
-    x_PrintRequestStop(eStatus_OK);
-    CDiagContext::SetRequestContext(NULL);
 }
 
 
@@ -2232,16 +2203,16 @@ void CNetScheduleHandler::x_ProcessCreateDynamicQueue(CQueue*)
                         m_CommandArguments.qname,
                         m_CommandArguments.qclass,
                         NStr::ParseEscapes(m_CommandArguments.description));
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessDeleteDynamicQueue(CQueue*)
 {
     m_Server->DeleteDynamicQueue(m_CommandArguments.qname);
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2252,13 +2223,13 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 
     if (cmdv2)
         // Include queue classes and use URL encoding
-        WriteMessage("OK:", params.GetPrintableParameters(true, true));
+        x_WriteMessage("OK:" + params.GetPrintableParameters(true, true));
     else
-        WriteMessage("OK:", NStr::IntToString(params.kind) + "\t" +
-                            params.qclass + "\t\"" +
-                            NStr::PrintableString(params.description) + "\"");
+        x_WriteMessage("OK:" + NStr::IntToString(params.kind) + "\t" +
+                       params.qclass + "\t\"" +
+                       NStr::PrintableString(params.description) + "\"");
 
-    x_PrintRequestStop(eStatus_OK);
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2274,8 +2245,8 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
                                     eNSAC_Worker |
                                     eNSAC_Submitter);
 
-        WriteMessage("OK:");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -2287,8 +2258,9 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
         queue = m_Server->OpenQueue(m_CommandArguments.qname);
     }
     catch (...) {
-        x_WriteMessageNoThrow("ERR:eUnknownQueue:");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eUnknownQueue:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -2301,8 +2273,8 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
     if (queue->IsSubmitAllowed(m_ClientId.GetAddress()))
         m_ClientId.AddCapability(eNSAC_Submitter);
 
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2312,12 +2284,12 @@ void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
     unsigned int    max_output_size;
 
     q->GetMaxIOSizes(max_input_size, max_output_size);
-    WriteMessage("OK:", "max_input_size=" +
-                        NStr::IntToString(max_input_size) + ";"
-                        "max_output_size=" +
-                        NStr::IntToString(max_output_size) + ";" +
-                        NETSCHEDULED_FEATURES);
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:max_input_size=" +
+                   NStr::IntToString(max_input_size) + ";"
+                   "max_output_size=" +
+                   NStr::IntToString(max_output_size) + ";" +
+                   NETSCHEDULED_FEATURES);
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2326,10 +2298,10 @@ void CNetScheduleHandler::x_ProcessGetConfiguration(CQueue* q)
     CQueue::TParameterList      parameters = q->GetParameters();
 
     ITERATE(CQueue::TParameterList, it, parameters) {
-        WriteMessage("OK:", it->first + '=' + it->second);
+        x_WriteMessage("OK:" + it->first + '=' + it->second);
     }
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:END");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2348,21 +2320,22 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 
     if (job_id) {
         job_key = q->MakeKey(job_id);
-        WriteMessage("OK:job_key=" + job_key +
-                     "&auth_token=" + job.GetAuthToken() +
-                     "&status=" + CNetScheduleAPI::StatusToString(job.GetStatus()));
+        x_WriteMessage("OK:job_key=" + job_key +
+                       "&auth_token=" + job.GetAuthToken() +
+                       "&status=" +
+                       CNetScheduleAPI::StatusToString(job.GetStatus()));
     }
     else
-        WriteMessage("OK:");
+        x_WriteMessage("OK:");
 
-    if (m_Server->IsLog()) {
+    if (m_ConnContext.NotNull()) {
         if (job_id)
             GetDiagContext().Extra().Print("job_key", job_key)
                                     .Print("auth_token", job.GetAuthToken());
         else
             GetDiagContext().Extra().Print("job_key", "None");
     }
-    x_PrintRequestStop(eStatus_OK);
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2409,10 +2382,11 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
                                                 TJobStatus      old_status)
 {
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:eJobNotFound:");
         ERR_POST(Warning << command << " for unknown job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_NotFound);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -2423,43 +2397,40 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
         else if (command == "FRED") operation = "fail";
         else if (command == "RDRB") operation = "rollback";
 
-        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:Cannot " +
-                              operation + " job; job is in " +
-                              CNetScheduleAPI::StatusToString(old_status) +
-                              " state");
         ERR_POST(Warning << "Cannot " << operation << " read job; job is in "
                          << CNetScheduleAPI::StatusToString(old_status)
                          << " state");
+        x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+        x_WriteMessage("ERR:eInvalidJobStatus:Cannot " +
+                       operation + " job; job is in " +
+                       CNetScheduleAPI::StatusToString(old_status) + " state");
+    } else
+        x_WriteMessage("OK:");
 
-        x_PrintRequestStop(eStatus_InvalidJobStatus);
-        return;
-    }
-
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessGetAffinityList(CQueue* q)
 {
-    WriteMessage("OK:", q->GetAffinityList());
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:" + q->GetAffinityList());
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
     q->ClearWorkerNode(m_ClientId);
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 {
     q->CancelAllJobs(m_ClientId);
-    WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2467,17 +2438,18 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
 {
     if (m_CommandArguments.mode == false &&
             (m_Server->IsDrainShutdown() || m_Server->GetShutdownFlag())) {
-        WriteMessage("ERR:eShuttingDown:"
-                     "Server is in drained shutting down state");
-        x_PrintRequestStop(eStatus_BadRequest);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eShuttingDown:"
+                       "Server is in drained shutting down state");
+        x_PrintCmdRequestStop();
         return;
     }
 
     if (q == NULL) {
         // This is a whole server scope request
         m_Server->SetRefuseSubmits(m_CommandArguments.mode);
-        WriteMessage("OK:");
-        x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
         return;
     }
 
@@ -2486,24 +2458,26 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
 
     if (m_CommandArguments.mode == false &&
             m_Server->GetRefuseSubmits() == true)
-        WriteMessage("OK:WARNING:Submits are disabled on the server level;");
+        x_WriteMessage("OK:WARNING:Submits are disabled on the server level;");
     else
-        WriteMessage("OK:");
-    x_PrintRequestStop(eStatus_OK);
+        x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_CmdNotImplemented(CQueue *)
 {
-    x_WriteMessageNoThrow("ERR:eObsoleteCommand:");
-    x_PrintRequestStop(eStatus_NotImplemented);
+    x_SetCmdRequestStatus(eStatus_NotImplemented);
+    x_WriteMessage("ERR:eObsoleteCommand:");
+    x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_CmdObsolete(CQueue*)
 {
-    x_WriteMessageNoThrow("OK:WARNING:Obsolete;");
-    x_PrintRequestStop(eStatus_NotImplemented);
+    x_SetCmdRequestStatus(eStatus_NotImplemented);
+    x_WriteMessage("OK:WARNING:Obsolete;");
+    x_PrintCmdRequestStop();
 }
 
 
@@ -2513,7 +2487,6 @@ void CNetScheduleHandler::x_CheckNonAnonymousClient(const string &  message)
         NCBI_THROW(CNetScheduleException, eInvalidClient,
                    "Anonymous client (no client_node and client_session"
                    " at handshake) cannot " + message);
-    return;
 }
 
 
@@ -2526,7 +2499,6 @@ void CNetScheduleHandler::x_CheckPortAndTimeout(void)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Either both or neither of the port and "
                    "timeout parameters must be 0");
-    return;
 }
 
 
@@ -2535,7 +2507,6 @@ void CNetScheduleHandler::x_CheckAuthorizationToken(void)
     if (m_CommandArguments.auth_token.empty())
         NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
                    "Invalid authorization token. It cannot be empty.");
-    return;
 }
 
 
@@ -2555,13 +2526,13 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both any_affinity and "
                    "exclusive_new_aff GET2 flags set to 1.");
-    return;
 }
 
 
-void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
+void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd& cmd)
 {
-    if (m_Server->IsLog()) {
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
         CDiagContext_Extra    ctxt_extra =
                 GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
@@ -2579,31 +2550,31 @@ void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
             }
         }
     }
-    m_DiagContext->SetRequestStatus(eStatus_OK);
 }
 
 
-void CNetScheduleHandler::x_PrintRequestStart(CTempString  msg)
+void CNetScheduleHandler::x_PrintCmdRequestStart(CTempString  msg)
 {
-    if (m_Server->IsLog())
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStart()
                 .Print("_type", "cmd")
                 .Print("info", msg)
                 .Print("peer",  GetSocket().GetPeerAddress(eSAF_IP))
                 .Print("conn", m_ConnContext->GetRequestID());
-}
-
-
-void CNetScheduleHandler::x_PrintRequestStop(unsigned int  status)
-{
-    if (m_Server->IsLog()) {
-        CDiagContext::GetRequestContext().SetRequestStatus(status);
-        GetDiagContext().PrintRequestStop();
-        CDiagContext::SetRequestContext(m_ConnContext);
-        m_DiagContext.Reset();
     }
 }
 
+
+void CNetScheduleHandler::x_PrintCmdRequestStop(void)
+{
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
+        GetDiagContext().PrintRequestStop();
+        CDiagContext::SetRequestContext(m_ConnContext);
+        m_CmdContext.Reset();
+    }
+}
 
 // The function forms a responce for various 'get job' commands and prints
 // extra to the log if required
@@ -2614,44 +2585,39 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
 {
     if (!job.GetId()) {
         // No suitable job found
-        if (m_Server->IsLog())
+        if (m_ConnContext.NotNull())
             GetDiagContext().Extra().Print("job_key", "none");
-        WriteMessage("OK:");
+        x_WriteMessage("OK:");
         return;
     }
 
     string      job_key = q->MakeKey(job.GetId());
-    if (m_Server->IsLog()) {
+    if (m_ConnContext.NotNull()) {
         // The only piece required for logging is the job key
         GetDiagContext().Extra().Print("job_key", job_key);
     }
 
-    string          output;
     if (cmdv2)
-        output = "job_key=" + job_key +
-                 "&input=" + NStr::URLEncode(job.GetInput()) +
-                 "&affinity=" + NStr::URLEncode(q->GetAffinityTokenByID(job.GetAffinityId())) +
-                 "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
-                 "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
-                 "&mask=" + NStr::UIntToString(job.GetMask()) +
-                 "&auth_token=" + job.GetAuthToken();
+        x_WriteMessage("OK:job_key=" + job_key +
+                       "&input=" + NStr::URLEncode(job.GetInput()) +
+                       "&affinity=" + NStr::URLEncode(q->GetAffinityTokenByID(job.GetAffinityId())) +
+                       "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
+                       "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
+                       "&mask=" + NStr::UIntToString(job.GetMask()) +
+                       "&auth_token=" + job.GetAuthToken());
     else
-        output = job_key +
-                 " \"" + NStr::PrintableString(job.GetInput()) + "\""
-                 " \"" + NStr::PrintableString(
-                           q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
-                 " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
-                 " " + NStr::UIntToString(job.GetMask());
-
-
-    WriteMessage("OK:", output);
-    return;
+        x_WriteMessage("OK:" + job_key +
+                       " \"" + NStr::PrintableString(job.GetInput()) + "\""
+                       " \"" + NStr::PrintableString(
+                                q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
+                       " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
+                       " " + NStr::UIntToString(job.GetMask()));
 }
 
 
 static const unsigned int   kMaxParserErrMsgLength = 128;
 
-// Write into socket, logs the message and closes the connection
+// Writes into socket, logs the message and closes the connection
 void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
                                              const string &  msg,
                                              const string &  suffix)
@@ -2660,7 +2626,7 @@ void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
 
     if (need_request_start) {
         GetDiagContext().SetDefaultClientIP(GetSocket().GetPeerAddress(eSAF_IP));
-        x_PrintRequestStart("Invalid command");
+        x_PrintCmdRequestStart("Invalid command");
     }
 
     if (msg.size() < kMaxParserErrMsgLength * 2)
@@ -2669,21 +2635,18 @@ void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
         ERR_POST("Error parsing command: " <<
                  msg.substr(0, kMaxParserErrMsgLength * 2) <<
                  " (TRUNCATED)" + suffix);
-    x_PrintRequestStop(eStatus_BadRequest);
+    x_SetCmdRequestStatus(eStatus_BadRequest);
 
+    x_SetConnRequestStatus(eStatus_BadRequest);
+    string client_error = "ERR:eProtocolSyntaxError:";
     if (msg.size() < kMaxParserErrMsgLength)
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" + msg + suffix);
+        client_error += msg + suffix;
     else
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
-                                      msg.substr(0, kMaxParserErrMsgLength) +
-                                      " (TRUNCATED)" + suffix);
+        client_error += msg.substr(0, kMaxParserErrMsgLength) +
+                        " (TRUNCATED)" + suffix;
 
-    // Close the connection
-    if (m_ConnContext.NotNull())
-        m_ConnContext->SetRequestStatus(eStatus_BadRequest);
-
-    m_Server->CloseConnection(&GetSocket());
-    return;
+    if (x_WriteMessage(client_error) == eIO_Success)
+        m_Server->CloseConnection(&GetSocket());
 }
 
 
@@ -2691,25 +2654,38 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
                                           const string &  what,
                                           time_t          curr)
 {
-    if (what == "CLIENTS")
-        q->PrintClientsList(*this,
-                            m_CommandArguments.comment == "VERBOSE");
-    else if (what == "NOTIFICATIONS")
-        q->PrintNotificationsList(*this,
-                                  m_CommandArguments.comment == "VERBOSE");
-    else if (what == "AFFINITIES")
-        q->PrintAffinitiesList(*this,
-                               m_CommandArguments.comment == "VERBOSE");
-    else if (what == "GROUPS")
-        q->PrintGroupsList(*this,
-                           m_CommandArguments.comment == "VERBOSE");
-    else if (what == "JOBS")
-        q->PrintJobsStat(*this, m_CommandArguments.group,
-                                m_CommandArguments.affinity_token);
-    else if (what == "WNODE")
-        WriteMessage("OK:WARNING:Obsolete, use STAT CLIENTS instead;");
+    bool   verbose = (m_CommandArguments.comment == "VERBOSE");
+    string info;
 
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
+    if (what == "CLIENTS") {
+        info = q->PrintClientsList(verbose);
+        if (!info.empty())
+            x_WriteMessage(info);
+    }
+    else if (what == "NOTIFICATIONS") {
+        info = q->PrintNotificationsList(verbose);
+        if (!info.empty())
+            x_WriteMessage(info);
+    }
+    else if (what == "AFFINITIES") {
+        info = q->PrintAffinitiesList(verbose);
+        if (!info.empty())
+            x_WriteMessage(info);
+    }
+    else if (what == "GROUPS") {
+        info = q->PrintGroupsList(verbose);
+        if (!info.empty())
+            x_WriteMessage(info);
+    }
+    else if (what == "JOBS") {
+        x_WriteMessage(q->PrintJobsStat(m_CommandArguments.group,
+                                        m_CommandArguments.affinity_token));
+    }
+    else if (what == "WNODE") {
+        x_WriteMessage("OK:WARNING:Obsolete, use STAT CLIENTS instead;");
+    }
+
+    x_WriteMessage("OK:END");
+    x_PrintCmdRequestStop();
 }
 

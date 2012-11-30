@@ -35,7 +35,6 @@
 #include "background_host.hpp"
 #include "ns_util.hpp"
 #include "ns_server.hpp"
-#include "ns_handler.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -2254,37 +2253,29 @@ void CQueue::NotifyListenersPeriodically(time_t  current_time)
 }
 
 
-void CQueue::PrintClientsList(CNetScheduleHandler &  handler,
-                              bool                   verbose) const
+string CQueue::PrintClientsList(bool verbose) const
 {
-    m_ClientsRegistry.PrintClientsList(this, handler,
-                                       m_AffinityRegistry, verbose);
+    return m_ClientsRegistry.PrintClientsList(this, m_AffinityRegistry,
+                                              verbose);
 }
 
 
-void CQueue::PrintNotificationsList(CNetScheduleHandler &  handler,
-                                    bool                   verbose) const
+string CQueue::PrintNotificationsList(bool verbose) const
 {
-    m_NotificationsList.Print(handler,
-                              m_ClientsRegistry,
-                              m_AffinityRegistry, verbose);
+    return m_NotificationsList.Print(m_ClientsRegistry,
+                                     m_AffinityRegistry, verbose);
 }
 
 
-void CQueue::PrintAffinitiesList(CNetScheduleHandler &  handler,
-                                 bool                   verbose) const
+string CQueue::PrintAffinitiesList(bool verbose) const
 {
-    m_AffinityRegistry.Print(this,
-                             handler,
-                             m_ClientsRegistry,
-                             verbose);
+    return m_AffinityRegistry.Print(this, m_ClientsRegistry, verbose);
 }
 
 
-void CQueue::PrintGroupsList(CNetScheduleHandler &  handler,
-                             bool                   verbose) const
+string CQueue::PrintGroupsList(bool verbose) const
 {
-    m_GroupRegistry.Print(this, handler, verbose);
+    return m_GroupRegistry.Print(this, verbose);
 }
 
 
@@ -2754,31 +2745,13 @@ CBDB_FileCursor& CQueue::GetEventsCursor()
 }
 
 
-void CQueue::x_PrintShortJobStat(CNetScheduleHandler &  handler,
-                                 const CJob &           job)
-{
-    string      reply = MakeKey(job.GetId()) + "\t" +
-                        CNetScheduleAPI::StatusToString(job.GetStatus()) + "\t" +
-                        job.GetQuotedInput() + "\t" +
-                        job.GetQuotedOutput() + "\t";
-
-    const CJobEvent *   last_event = job.GetLastEvent();
-    if (last_event)
-        reply += last_event->GetQuotedErrorMsg();
-    else
-        reply += "''";
-    handler.WriteMessage("OK:", reply);
-}
-
-
-size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
-                              unsigned                  job_id)
+string CQueue::PrintJobDbStat(unsigned int job_id)
 {
     // Check first that the job has not been deleted yet
     {{
         CFastMutexGuard     guard(m_JobsToDeleteLock);
         if (m_JobsToDelete[job_id])
-            return 0;
+            return "";
     }}
 
     CJob                job;
@@ -2791,19 +2764,17 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
 
         CJob::EJobFetchResult   res = job.Fetch(this, job_id);
         if (res != CJob::eJF_Ok)
-            return 0;
+            return "";
     }}
 
-    job.Print(handler, *this, m_AffinityRegistry, m_GroupRegistry);
-    return 1;
+    return job.Print(*this, m_AffinityRegistry, m_GroupRegistry);
 }
 
 
-void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
-                               const string &          group,
-                               TJobStatus              job_status,
-                               unsigned int            start_after_job_id,
-                               unsigned int            count)
+string CQueue::PrintAllJobDbStat(const string &  group,
+                                 TJobStatus      job_status,
+                                 unsigned int    start_after_job_id,
+                                 unsigned int    count)
 {
     // Form a bit vector of all jobs to dump
     vector<CNetScheduleAPI::EJobStatus>     statuses;
@@ -2836,15 +2807,13 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
     if (!group.empty())
         jobs_to_dump &= m_GroupRegistry.GetJobs(group);
 
-    x_DumpJobs(handler, jobs_to_dump, start_after_job_id, count);
-    return;
+    return x_DumpJobs(jobs_to_dump, start_after_job_id, count);
 }
 
 
-void CQueue::x_DumpJobs(CNetScheduleHandler &   handler,
-                        const TNSBitVector &    jobs_to_dump,
-                        unsigned int            start_after_job_id,
-                        unsigned int            count)
+string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
+                          unsigned int            start_after_job_id,
+                          unsigned int            count)
 {
     // Skip the jobs which should not be dumped
     TNSBitVector::enumerator    en(jobs_to_dump.first());
@@ -2855,6 +2824,9 @@ void CQueue::x_DumpJobs(CNetScheduleHandler &   handler,
     size_t      buffer_size = m_DumpBufferSize;
     if (count != 0 && count < buffer_size)
         buffer_size = count;
+
+    string  result;
+    result.reserve(2048*buffer_size);
 
     {{
         CJob    buffer[buffer_size];
@@ -2882,13 +2854,13 @@ void CQueue::x_DumpJobs(CNetScheduleHandler &   handler,
 
             // Print what was read
             for (size_t  index = 0; index < read_jobs; ++index) {
-                handler.WriteMessage("");
-                buffer[index].Print(handler, *this,
-                                    m_AffinityRegistry, m_GroupRegistry);
                 CTime  gc_exp(m_GCRegistry.GetLifetime(buffer[index].GetId()));
                 gc_exp.ToLocalTime();
 
-                handler.WriteMessage("OK:GC erase time: " + gc_exp.AsString());
+                result += "\n" + buffer[index].Print(*this,
+                                                     m_AffinityRegistry,
+                                                     m_GroupRegistry) +
+                          "OK:GC erase time: " + gc_exp.AsString() + "\n";
             }
 
             if (count != 0)
@@ -2899,7 +2871,7 @@ void CQueue::x_DumpJobs(CNetScheduleHandler &   handler,
         }
     }}
 
-    return;
+    return result;
 }
 
 
@@ -3154,22 +3126,20 @@ void CQueue::PrintStatistics(size_t &  aff_count) const
 }
 
 
-void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler) const
+string CQueue::PrintTransitionCounters(void) const
 {
-    m_StatisticsCounters.PrintTransitions(handler);
-    handler.WriteMessage("OK:garbage_jobs: " +
-                         NStr::IntToString(m_JobsToDelete.count()));
-    handler.WriteMessage("OK:affinity_registry_size: " +
-                         NStr::SizetToString(m_AffinityRegistry.size()));
-    handler.WriteMessage("OK:client_registry_size: " +
-                         NStr::SizetToString(m_ClientsRegistry.size()));
-    return;
+    return m_StatisticsCounters.PrintTransitions() +
+           "OK:garbage_jobs: " +
+           NStr::IntToString(m_JobsToDelete.count()) + "\n"
+           "OK:affinity_registry_size: " +
+           NStr::SizetToString(m_AffinityRegistry.size()) + "\n"
+           "OK:client_registry_size: " +
+           NStr::SizetToString(m_ClientsRegistry.size()) + "\n";
 }
 
 
-void CQueue::PrintJobsStat(CNetScheduleHandler &  handler,
-                           const string &         group_token,
-                           const string &         aff_token) const
+string CQueue::PrintJobsStat(const string &  group_token,
+                             const string &  aff_token) const
 {
     size_t              jobs_per_state[g_ValidJobStatusesSize];
     TNSBitVector        group_jobs;
@@ -3203,14 +3173,14 @@ void CQueue::PrintJobsStat(CNetScheduleHandler &  handler,
     }}
 
     size_t              total = 0;
+    string              result;
     for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
-        handler.WriteMessage("OK:" + CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
-                             ": " + NStr::SizetToString(jobs_per_state[index]));
+        result += "OK:" + CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
+                  ": " + NStr::SizetToString(jobs_per_state[index]) + "\n";
         total += jobs_per_state[index];
     }
-    handler.WriteMessage("OK:Total: " +
-                         NStr::SizetToString(total));
-    return;
+    result += "OK:Total: " + NStr::SizetToString(total) + "\n";
+    return result;
 }
 
 

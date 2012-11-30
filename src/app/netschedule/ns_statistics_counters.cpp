@@ -35,7 +35,6 @@
 
 #include "queue_database.hpp"
 #include "ns_statistics_counters.hpp"
-#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -273,11 +272,14 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 }
 
 
-void CStatisticsCounters::PrintTransitions(CNetScheduleHandler &  handler) const
+string CStatisticsCounters::PrintTransitions(void) const
 {
-    handler.WriteMessage("OK:submits: ", NStr::IntToString(m_SubmitCounter.Get()));
-    handler.WriteMessage("OK:picked_as_outdated: ", NStr::IntToString(m_PickedAsOutdated.Get()));
-    handler.WriteMessage("OK:dbdeletions: ", NStr::IntToString(m_DBDeleteCounter.Get()));
+    string result = "OK:submits: " +
+                    NStr::IntToString(m_SubmitCounter.Get()) + "\n"
+                    "OK:picked_as_outdated: " +
+                    NStr::IntToString(m_PickedAsOutdated.Get()) + "\n"
+                    "OK:dbdeletions: " +
+                    NStr::IntToString(m_DBDeleteCounter.Get()) + "\n";
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -287,39 +289,40 @@ void CStatisticsCounters::PrintTransitions(CNetScheduleHandler &  handler) const
             // All invalid transitions are marked as -1
             if (m_Transitions[index_from][index_to].Get() !=
                     static_cast<TNCBIAtomicValue>(-1))
-                handler.WriteMessage("OK:" + x_GetTransitionCounterName(index_from, index_to) + ": ",
-                                     NStr::IntToString(m_Transitions[index_from][index_to].Get()));
+                result += "OK:" +
+                          x_GetTransitionCounterName(index_from, index_to) + ": " +
+                          NStr::IntToString(m_Transitions[index_from][index_to].Get()) + "\n";
         }
     }
-    handler.WriteMessage("OK:Running_Pending_timeout: ",
-                         NStr::IntToString(m_ToPendingDueToTimeoutCounter.Get()));
-    handler.WriteMessage("OK:Running_Pending_fail: ",
-                         NStr::IntToString(m_ToPendingDueToFailCounter.Get()));
-    handler.WriteMessage("OK:Running_Pending_clear: ",
-                         NStr::IntToString(m_ToPendingDueToClearCounter.Get()));
-    handler.WriteMessage("OK:Running_Failed_clear: ",
-                         NStr::IntToString(m_ToFailedDueToClearCounter.Get()));
-    handler.WriteMessage("OK:Running_Pending_new_session: ",
-                         NStr::IntToString(m_ToPendingDueToNewSessionCounter.Get()));
-    handler.WriteMessage("OK:Running_Failed_new_session: ",
-                         NStr::IntToString(m_ToFailedDueToNewSessionCounter.Get()));
-    handler.WriteMessage("OK:Running_Failed_timeout: ",
-                         NStr::IntToString(m_ToFailedDueToTimeoutCounter.Get()));
-    handler.WriteMessage("OK:Reading_Done_timeout: ",
-                         NStr::IntToString(m_ToDoneDueToTimeoutCounter.Get()));
-    handler.WriteMessage("OK:Reading_Done_fail: ",
-                         NStr::IntToString(m_ToDoneDueToFailCounter.Get()));
-    handler.WriteMessage("OK:Reading_Done_clear: ",
-                         NStr::IntToString(m_ToDoneDueToClearCounter.Get()));
-    handler.WriteMessage("OK:Reading_ReadFailed_clear: ",
-                         NStr::IntToString(m_ToReadFailedDueToClearCounter.Get()));
-    handler.WriteMessage("OK:Reading_Done_new_session: ",
-                         NStr::IntToString(m_ToDoneDueToNewSessionCounter.Get()));
-    handler.WriteMessage("OK:Reading_ReadFailed_new_session: ",
-                         NStr::IntToString(m_ToReadFailedDueToNewSessionCounter.Get()));
-    handler.WriteMessage("OK:Reading_ReadFailed_timeout: ",
-                         NStr::IntToString(m_ToReadFailedDueToTimeoutCounter.Get()));
-    return;
+    return result +
+           "OK:Running_Pending_timeout: " +
+           NStr::IntToString(m_ToPendingDueToTimeoutCounter.Get()) + "\n"
+           "OK:Running_Pending_fail: " +
+           NStr::IntToString(m_ToPendingDueToFailCounter.Get()) + "\n"
+           "OK:Running_Pending_clear: " +
+           NStr::IntToString(m_ToPendingDueToClearCounter.Get()) + "\n"
+           "OK:Running_Failed_clear: " +
+           NStr::IntToString(m_ToFailedDueToClearCounter.Get()) + "\n"
+           "OK:Running_Pending_new_session: " +
+           NStr::IntToString(m_ToPendingDueToNewSessionCounter.Get()) + "\n"
+           "OK:Running_Failed_new_session: " +
+           NStr::IntToString(m_ToFailedDueToNewSessionCounter.Get()) + "\n"
+           "OK:Running_Failed_timeout: " +
+           NStr::IntToString(m_ToFailedDueToTimeoutCounter.Get()) + "\n"
+           "OK:Reading_Done_timeout: " +
+           NStr::IntToString(m_ToDoneDueToTimeoutCounter.Get()) + "\n"
+           "OK:Reading_Done_fail: " +
+           NStr::IntToString(m_ToDoneDueToFailCounter.Get()) + "\n"
+           "OK:Reading_Done_clear: " +
+           NStr::IntToString(m_ToDoneDueToClearCounter.Get()) + "\n"
+           "OK:Reading_ReadFailed_clear: " +
+           NStr::IntToString(m_ToReadFailedDueToClearCounter.Get()) + "\n"
+           "OK:Reading_Done_new_session: " +
+           NStr::IntToString(m_ToDoneDueToNewSessionCounter.Get()) + "\n"
+           "OK:Reading_ReadFailed_new_session: " +
+           NStr::IntToString(m_ToReadFailedDueToNewSessionCounter.Get()) + "\n"
+           "OK:Reading_ReadFailed_timeout: " +
+           NStr::IntToString(m_ToReadFailedDueToTimeoutCounter.Get()) + "\n";
 }
 
 

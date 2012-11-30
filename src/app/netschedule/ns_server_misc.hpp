@@ -44,9 +44,6 @@
 BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
-class CRequestContext;
-class CNetScheduleHandler;
-
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -97,18 +94,6 @@ public:
 
 private:
     CNetScheduleServer* m_Server;
-};
-
-
-/// Special guard to properly initialize and de-initialize diagnostics
-class CDiagnosticsGuard
-{
-public:
-    CDiagnosticsGuard(CNetScheduleHandler*  handler);
-    ~CDiagnosticsGuard(void);
-
-private:
-    CNetScheduleHandler*    m_Handler;
 };
 
 

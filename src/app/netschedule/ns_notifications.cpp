@@ -36,11 +36,11 @@
 
 #include "ns_notifications.hpp"
 #include "queue_database.hpp"
-#include "ns_handler.hpp"
 
 #include "ns_clients.hpp"
 #include "ns_clients_registry.hpp"
 #include "ns_affinity.hpp"
+#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -491,9 +491,8 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
 // is going to be requested rare and rather manually, and that the printing
 // is done into a string under the lock, it seems reasonable to avoid
 // releasing the lock.
-void
-CNSNotificationList::Print(CNetScheduleHandler &        handler,
-                           const CNSClientsRegistry &   clients_registry,
+string
+CNSNotificationList::Print(const CNSClientsRegistry &   clients_registry,
                            const CNSAffinityRegistry &  aff_registry,
                            bool                         verbose) const
 {
@@ -516,10 +515,7 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
         buffer += current->Print(clients_registry, aff_registry,
                                  false, verbose);
 
-    if (!buffer.empty())
-        handler.WriteMessage(buffer.c_str());
-
-    return;
+    return buffer;
 }
 
 

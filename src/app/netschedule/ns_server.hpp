@@ -42,7 +42,6 @@
 BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
-class CNetScheduleHandler;
 
 const unsigned int   kSubmitCounterInitialValue = 1000000000;
 
@@ -91,8 +90,8 @@ public:
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
-    void PrintTransitionCounters(CNetScheduleHandler &  handler);
-    void PrintJobsStat(CNetScheduleHandler &  handler);
+    string PrintTransitionCounters(void);
+    string PrintJobsStat(void);
     string GetQueueClassesInfo(void);
     string GetQueueInfo(void);
 

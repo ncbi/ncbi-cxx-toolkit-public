@@ -66,7 +66,6 @@
 BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
-class CNetScheduleHandler;
 
 
 class CQueue;
@@ -284,14 +283,10 @@ public:
     void ClearWorkerNode(const CNSClientId &  client);
 
     void NotifyListenersPeriodically(time_t  current_time);
-    void PrintClientsList(CNetScheduleHandler &  handler,
-                          bool                   verbose) const;
-    void PrintNotificationsList(CNetScheduleHandler &  handler,
-                                bool                   verbose) const;
-    void PrintAffinitiesList(CNetScheduleHandler &  handler,
-                             bool                   verbose) const;
-    void PrintGroupsList(CNetScheduleHandler &  handler,
-                         bool                   verbose) const;
+    string PrintClientsList(bool verbose) const;
+    string PrintNotificationsList(bool verbose) const;
+    string PrintAffinitiesList(bool verbose) const;
+    string PrintGroupsList(bool verbose) const;
 
     /// Check execution timeout. Now checks reading timeout as well.
     /// All jobs failed to execute, go back to pending
@@ -322,14 +317,12 @@ public:
     CBDB_FileCursor& GetEventsCursor();
 
     // Dump a single job
-    size_t PrintJobDbStat(CNetScheduleHandler &   handler,
-                          unsigned                job_id);
+    string PrintJobDbStat(unsigned int job_id);
     // Dump all job records
-    void PrintAllJobDbStat(CNetScheduleHandler &   handler,
-                           const string &          group,
-                           TJobStatus              job_status,
-                           unsigned int            start_after_job_id,
-                           unsigned int            count);
+    string PrintAllJobDbStat(const string &  group,
+                             TJobStatus      job_status,
+                             unsigned int    start_after_job_id,
+                             unsigned int    count);
 
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus                  status,
@@ -342,10 +335,9 @@ public:
     void TouchClientsRegistry(CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;
-    void PrintTransitionCounters(CNetScheduleHandler &  handler) const;
-    void PrintJobsStat(CNetScheduleHandler &  handler,
-                       const string &         group_token,
-                       const string &         aff_token) const;
+    string PrintTransitionCounters(void) const;
+    string PrintJobsStat(const string &  group_token,
+                         const string &  aff_token) const;
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
@@ -402,8 +394,6 @@ private:
                                  time_t    curr_time,
                                  bool      logging);
 
-    void x_PrintShortJobStat(CNetScheduleHandler &  handler,
-                             const CJob&            job);
     void x_LogSubmit(const CJob &       job,
                      const string &     aff,
                      const string &     group);
@@ -438,10 +428,9 @@ private:
     /// Erase jobs from all structures, request delayed db deletion
     void x_Erase(const TNSBitVector& job_ids);
 
-    void x_DumpJobs(CNetScheduleHandler &  handler,
-                    const TNSBitVector &   jobs_to_dump,
-                    unsigned int           start_after_job_id,
-                    unsigned int           count);
+    string x_DumpJobs(const TNSBitVector &   jobs_to_dump,
+                      unsigned int           start_after_job_id,
+                      unsigned int           count);
     void x_CancelJobs(const CNSClientId &   client,
                       const TNSBitVector &  jobs_to_cancel);
     time_t x_GetEstimatedJobLifetime(unsigned int   job_id,

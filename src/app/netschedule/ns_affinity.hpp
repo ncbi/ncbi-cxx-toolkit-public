@@ -53,7 +53,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNetScheduleHandler;
 class CNSClientsRegistry;
 class CQueue;
 class CJobStatusTracker;
@@ -131,10 +130,9 @@ class CNSAffinityRegistry
         void  SetWaitClientForAffinities(unsigned int          client_id,
                                          const TNSBitVector &  aff_ids);
 
-        void  Print(const CQueue *              queue,
-                    CNetScheduleHandler &       handler,
-                    const CNSClientsRegistry &  clients_registry,
-                    bool                        verbose) const;
+        string Print(const CQueue *              queue,
+                     const CNSClientsRegistry &  clients_registry,
+                     bool                        verbose) const;
 
         // Used to load the affinity DB table and register loaded jobs.
         // The loading procedure has 3 steps:

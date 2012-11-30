@@ -78,20 +78,3 @@ CNetScheduleRequestExecutor::SubmitRequest(const CRef<CStdRequest>& request)
     m_Server->SubmitRequest(request);
 }
 
-
-//////////////////////////////////////////////////////////////////////////
-// CDiagnosticsGuard implementation
-
-CDiagnosticsGuard::CDiagnosticsGuard(CNetScheduleHandler*  handler)
-    : m_Handler(handler)
-{
-    m_Handler->InitDiagnostics();
-}
-
-
-CDiagnosticsGuard::~CDiagnosticsGuard(void)
-{
-    m_Handler->ResetDiagnostics();
-}
-
-

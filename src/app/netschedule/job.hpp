@@ -46,7 +46,6 @@ BEGIN_NCBI_SCOPE
 
 // Forward for CJob/CJobEvent friendship
 class CQueue;
-class CNetScheduleHandler;
 class CNSAffinityRegistry;
 class CNSGroupsRegistry;
 
@@ -371,10 +370,9 @@ public:
     bool ShouldNotifyListener(time_t          current_time,
                               TNSBitVector &  jobs_to_notify) const;
 
-    void Print(CNetScheduleHandler &        handler,
-               const CQueue &               queue,
-               const CNSAffinityRegistry &  aff_registry,
-               const CNSGroupsRegistry &    group_registry) const;
+    string Print(const CQueue &               queue,
+                 const CNSAffinityRegistry &  aff_registry,
+                 const CNSGroupsRegistry &    group_registry) const;
 
 private:
     // Service flags

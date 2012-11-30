@@ -570,14 +570,16 @@ bool CJob::ShouldNotifyListener(time_t          current_time,
 
 
 // Used to DUMP a job
-void CJob::Print(CNetScheduleHandler &        handler,
-                 const CQueue &               queue,
-                 const CNSAffinityRegistry &  aff_registry,
-                 const CNSGroupsRegistry &    group_registry) const
+string CJob::Print(const CQueue &               queue,
+                   const CNSAffinityRegistry &  aff_registry,
+                   const CNSGroupsRegistry &    group_registry) const
 {
     time_t      timeout = m_Timeout;
     time_t      run_timeout = m_RunTimeout;
     time_t      pending_timeout = queue.GetPendingTimeout();
+    string      result;
+
+    result.reserve(2048);   // Voluntary; must be enough for most of the cases
 
     if (m_Timeout == 0)
         timeout = queue.GetTimeout();
@@ -593,158 +595,144 @@ void CJob::Print(CNetScheduleHandler &        handler,
     touch_time.ToLocalTime();
 
 
-
-    handler.WriteMessage("OK:", "id: " + NStr::IntToString(m_Id));
-    handler.WriteMessage("OK:", "key: " + queue.MakeKey(m_Id));
-    handler.WriteMessage("OK:", "status: " +
-                                CNetScheduleAPI::StatusToString(m_Status));
-    handler.WriteMessage("OK:", "last_touch: " + touch_time.AsString());
+    result = "OK:id: " + NStr::IntToString(m_Id) + "\n"
+             "OK:key: " + queue.MakeKey(m_Id) + "\n"
+             "OK:status: " + CNetScheduleAPI::StatusToString(m_Status) + "\n"
+             "OK:last_touch: " + touch_time.AsString() +"\n";
 
     if (m_Status == CNetScheduleAPI::eRunning ||
         m_Status == CNetScheduleAPI::eReading)
-        handler.WriteMessage("OK:erase_time: n/a (timeout: " +
-                             NStr::ULongToString(timeout) +
-                             " sec, pending timeout: " +
-                             NStr::ULongToString(pending_timeout) + " sec)");
+        result += "OK:erase_time: n/a (timeout: " +
+                  NStr::ULongToString(timeout) +
+                  " sec, pending timeout: " +
+                  NStr::ULongToString(pending_timeout) + " sec)\n";
     else
-        handler.WriteMessage("OK:erase_time: " + exp_time.AsString() +
-                             " (timeout: " +
-                             NStr::ULongToString(timeout) +
-                             " sec, pending timeout: " +
-                             NStr::ULongToString(pending_timeout) + " sec)");
+        result += "OK:erase_time: " + exp_time.AsString() +
+                  " (timeout: " +
+                  NStr::ULongToString(timeout) +
+                  " sec, pending timeout: " +
+                  NStr::ULongToString(pending_timeout) + " sec)\n";
 
     if (m_Status != CNetScheduleAPI::eRunning &&
         m_Status != CNetScheduleAPI::eReading) {
-        handler.WriteMessage("OK:run_expiration: n/a (timeout: " +
-                             NStr::ULongToString(run_timeout) + " sec)");
-        handler.WriteMessage("OK:read_expiration: n/a (timeout: " +
-                             NStr::ULongToString(run_timeout) + " sec)");
+        result += "OK:run_expiration: n/a (timeout: " +
+                  NStr::ULongToString(run_timeout) + " sec)\n"
+                  "OK:read_expiration: n/a (timeout: " +
+                  NStr::ULongToString(run_timeout) + " sec)\n";
     } else {
         if (m_Status == CNetScheduleAPI::eRunning) {
-            handler.WriteMessage("OK:",
-                                 "run_expiration: " + exp_time.AsString() +
-                                 " (timeout: " +
-                                 NStr::ULongToString(run_timeout) + " sec)");
-            handler.WriteMessage("OK:read_expiration: n/a (timeout: " +
-                                 NStr::ULongToString(run_timeout) + " sec)");
+            result += "OK:run_expiration: " + exp_time.AsString() +
+                      " (timeout: " +
+                      NStr::ULongToString(run_timeout) + " sec)\n"
+                      "OK:read_expiration: n/a (timeout: " +
+                      NStr::ULongToString(run_timeout) + " sec)\n";
         } else {
             // Reading job
-            handler.WriteMessage("OK:run_expiration: n/a (timeout: " +
-                                 NStr::ULongToString(run_timeout) + " sec)");
-            handler.WriteMessage("OK:",
-                                 "read_expiration: " + exp_time.AsString() +
-                                 " (timeout: " +
-                                 NStr::ULongToString(run_timeout) + " sec)");
+            result += "OK:run_expiration: n/a (timeout: " +
+                      NStr::ULongToString(run_timeout) + " sec)\n"
+                      "OK:read_expiration: " + exp_time.AsString() +
+                      " (timeout: " +
+                      NStr::ULongToString(run_timeout) + " sec)\n";
         }
     }
 
     if (m_SubmNotifPort != 0)
-        handler.WriteMessage("OK:", "subm_notif_port: " +
-                                    NStr::IntToString(m_SubmNotifPort));
+        result += "OK:subm_notif_port: " +
+                  NStr::IntToString(m_SubmNotifPort) + "\n";
     else
-        handler.WriteMessage("OK:subm_notif_port: n/a");
+        result += "OK:subm_notif_port: n/a\n";
 
     if (m_SubmNotifTimeout != 0) {
         time_t      submit_timestamp = m_Events[0].m_Timestamp;
         CTime       subm_exp_time(submit_timestamp + m_SubmNotifTimeout);
 
         subm_exp_time.ToLocalTime();
-        handler.WriteMessage("OK:",
-                             "subm_notif_expiration: " +
-                             subm_exp_time.AsString() + " (timeout: " +
-                             NStr::IntToString(m_SubmNotifTimeout) + " sec)");
+        result += "OK:subm_notif_expiration: " +
+                  subm_exp_time.AsString() + " (timeout: " +
+                  NStr::IntToString(m_SubmNotifTimeout) + " sec)\n";
     }
     else
-        handler.WriteMessage("OK:subm_notif_expiration: n/a");
+        result += "OK:subm_notif_expiration: n/a\n";
 
-    string      listener("OK:listener_notif: ");
     if (m_ListenerNotifAddress == 0 || m_ListenerNotifPort == 0)
-        listener += "n/a";
+        result += "OK:listener_notif: n/a\n";
     else
-        listener += CSocketAPI::gethostbyaddr(m_ListenerNotifAddress) + ":" +
-                    NStr::IntToString(m_ListenerNotifPort);
-    handler.WriteMessage(listener);
+        result += "OK:listener_notif: " +
+                  CSocketAPI::gethostbyaddr(m_ListenerNotifAddress) + ":" +
+                  NStr::IntToString(m_ListenerNotifPort) + "\n";
 
     if (m_ListenerNotifAbsTime != 0) {
         CTime       listener_exp_time(m_ListenerNotifAbsTime);
 
         listener_exp_time.ToLocalTime();
-        handler.WriteMessage("OK:listener_notif_expiration: ",
-                             listener_exp_time.AsString());
+        result += "OK:listener_notif_expiration: " +
+                  listener_exp_time.AsString() + "\n";
     }
     else
-        handler.WriteMessage("OK:listener_notif_expiration: n/a");
+        result += "OK:listener_notif_expiration: n/a\n";
 
 
     // Print detailed information about the job events
     int                         event = 1;
 
     ITERATE(vector<CJobEvent>, it, m_Events) {
-        string          message("event" + NStr::IntToString(event++) + ": ");
         unsigned int    addr = it->GetNodeAddr();
 
-        // Address part
-        message += "client=";
+        result += "OK:event" + NStr::IntToString(event++) + ": "
+                  "client=";
         if (addr == 0)
-            message += "ns ";
+            result += "ns ";
         else
-            message += CSocketAPI::gethostbyaddr(addr) + " ";
+            result += CSocketAPI::gethostbyaddr(addr) + " ";
 
-        message += "event=" + CJobEvent::EventToString(it->GetEvent()) + " "
-                   "status=" +
-                   CNetScheduleAPI::StatusToString(it->GetStatus()) + " "
-                   "ret_code=" + NStr::IntToString(it->GetRetCode()) + " ";
+        result += "event=" + CJobEvent::EventToString(it->GetEvent()) + " "
+                  "status=" +
+                  CNetScheduleAPI::StatusToString(it->GetStatus()) + " "
+                  "ret_code=" + NStr::IntToString(it->GetRetCode()) + " ";
 
         // Time part
-        message += "timestamp=";
+        result += "timestamp=";
         unsigned int    start = it->GetTimestamp();
         if (start == 0) {
-            message += "n/a ";
+            result += "n/a ";
         }
         else {
             CTime   startTime(start);
             startTime.ToLocalTime();
-            message += "'" + startTime.AsString() + "' ";
+            result += "'" + startTime.AsString() + "' ";
         }
 
         // The rest
-        message += "node='" + it->GetClientNode() + "' "
-                   "session='" + it->GetClientSession() + "' "
-                   "err_msg=" + it->GetQuotedErrorMsg();
-        handler.WriteMessage("OK:", message);
+        result += "node='" + it->GetClientNode() + "' "
+                  "session='" + it->GetClientSession() + "' "
+                  "err_msg=" + it->GetQuotedErrorMsg() + "\n";
     }
 
-    handler.WriteMessage("OK:", "run_counter: " +
-                                NStr::IntToString(m_RunCount));
-    handler.WriteMessage("OK:", "read_counter: " +
-                                NStr::IntToString(m_ReadCount));
+    result += "OK:run_counter: " + NStr::IntToString(m_RunCount) + "\n"
+              "OK:read_counter: " + NStr::IntToString(m_ReadCount) + "\n";
 
     if (m_AffinityId != 0)
-        handler.WriteMessage("OK:", "affinity: " +
-            NStr::IntToString(m_AffinityId) + " ('" +
-            NStr::PrintableString(aff_registry.GetTokenByID(m_AffinityId)) +
-            "')");
+        result += "OK:affinity: " + NStr::IntToString(m_AffinityId) + " ('" +
+                  NStr::PrintableString(aff_registry.GetTokenByID(m_AffinityId)) +
+                  "')\n";
     else
-        handler.WriteMessage("OK:affinity: n/a");
+        result += "OK:affinity: n/a\n";
 
     if (m_GroupId != 0)
-        handler.WriteMessage("OK:", "group: " +
-            NStr::IntToString(m_GroupId) + " ('" +
+        result += "OK:group: " + NStr::IntToString(m_GroupId) + " ('" +
             NStr::PrintableString(group_registry.ResolveGroup(m_GroupId)) +
-            "')");
+            "')\n";
     else
-        handler.WriteMessage("OK:group: n/a");
+        result += "OK:group: n/a\n";
 
-    handler.WriteMessage("OK:", "mask: " + NStr::IntToString(m_Mask));
-    handler.WriteMessage("OK:", "input: '" +
-                                NStr::PrintableString(m_Input) + "'");
-    handler.WriteMessage("OK:", "output: '" +
-                                NStr::PrintableString(m_Output) + "'");
-    handler.WriteMessage("OK:", "progress_msg: '" + m_ProgressMsg + "'");
-    handler.WriteMessage("OK:", "remote_client_sid: " + m_ClientSID);
-    handler.WriteMessage("OK:", "remote_client_ip: " + m_ClientIP);
+    result += "OK:mask: " + NStr::IntToString(m_Mask) + "\n"
+              "OK:input: '" + NStr::PrintableString(m_Input) + "'\n"
+              "OK:output: '" + NStr::PrintableString(m_Output) + "'\n"
+              "OK:progress_msg: '" + m_ProgressMsg + "'\n"
+              "OK:remote_client_sid: " + m_ClientSID + "\n"
+              "OK:remote_client_ip: " + m_ClientIP + "\n";
 
-    return;
+    return result;
 }
 
 END_NCBI_SCOPE

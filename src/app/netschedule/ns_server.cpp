@@ -295,15 +295,15 @@ void CNetScheduleServer::PrintMemStat(CNcbiOstream& out)
 }
 
 
-void CNetScheduleServer::PrintTransitionCounters(CNetScheduleHandler &  handler)
+string CNetScheduleServer::PrintTransitionCounters(void)
 {
-    m_QueueDB->PrintTransitionCounters(handler);
+    return m_QueueDB->PrintTransitionCounters();
 }
 
 
-void CNetScheduleServer::PrintJobsStat(CNetScheduleHandler &  handler)
+string CNetScheduleServer::PrintJobsStat(void)
 {
-    m_QueueDB->PrintJobsStat(handler);
+    return m_QueueDB->PrintJobsStat();
 }
 
 

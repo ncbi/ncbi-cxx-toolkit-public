@@ -41,7 +41,7 @@
 
 #include "ns_group.hpp"
 #include "ns_db.hpp"
-#include "ns_handler.hpp"
+#include "ns_queue.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -270,10 +270,10 @@ void  CNSGroupsRegistry::ClearMemoryAndDatabase(void)
 }
 
 
-void  CNSGroupsRegistry::Print(const CQueue *         queue,
-                               CNetScheduleHandler &  handler,
-                               bool                   verbose) const
+string  CNSGroupsRegistry::Print(const CQueue *  queue,
+                                 bool            verbose) const
 {
+    string              result;
     const size_t        max_batch_size = 1000;
     TNSBitVector        batch;
 
@@ -285,16 +285,14 @@ void  CNSGroupsRegistry::Print(const CQueue *         queue,
         ++en;
 
         if (batch.count() >= max_batch_size) {
-            handler.WriteMessage(x_PrintSelected(batch, queue,
-                                                 verbose).c_str());
+            result += x_PrintSelected(batch, queue, verbose);
             batch.clear();
         }
     }
 
     if (batch.count() > 0)
-        handler.WriteMessage(x_PrintSelected(batch, queue,
-                                             verbose).c_str());
-    return;
+        result += x_PrintSelected(batch, queue, verbose);
+    return result;
 }
 
 

@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "ns_clients_registry.hpp"
-#include "ns_handler.hpp"
+#include "ns_affinity.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -323,13 +323,13 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
 }
 
 
-void CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
-                                          CNetScheduleHandler &        handler,
-                                          const CNSAffinityRegistry &  aff_registry,
-                                          bool                         verbose) const
+string CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
+                                            const CNSAffinityRegistry &  aff_registry,
+                                            bool                         verbose) const
 {
     const size_t        max_batch_size = 1000;
     TNSBitVector        batch;
+    string              result;
 
     TNSBitVector                registered_clients = GetRegisteredClients();
     TNSBitVector::enumerator    en(registered_clients.first());
@@ -339,18 +339,15 @@ void CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
         ++en;
 
         if (batch.count() >= max_batch_size) {
-            handler.WriteMessage(x_PrintSelected(batch, queue,
-                                                 aff_registry,
-                                                 verbose).c_str());
+            result += x_PrintSelected(batch, queue,
+                                      aff_registry, verbose) + "\n";
             batch.clear();
         }
     }
 
     if (batch.count() > 0)
-        handler.WriteMessage(x_PrintSelected(batch, queue,
-                                             aff_registry,
-                                             verbose).c_str());
-    return;
+        result += x_PrintSelected(batch, queue, aff_registry, verbose) + "\n";
+    return result;
 }
 
 

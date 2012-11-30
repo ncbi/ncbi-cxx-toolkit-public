@@ -47,7 +47,6 @@
 #include "ns_util.hpp"
 #include "netschedule_version.hpp"
 #include "ns_server.hpp"
-#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -1412,29 +1411,29 @@ void CQueueDataBase::TransactionCheckPoint(bool clean_log)
 }
 
 
-void CQueueDataBase::PrintTransitionCounters(CNetScheduleHandler &  handler)
+string CQueueDataBase::PrintTransitionCounters(void)
 {
+    string                      result;
     CFastMutexGuard             guard(m_ConfigureLock);
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
-         k != m_Queues.end(); ++k) {
-        handler.WriteMessage("OK:[queue " + k->first + "]");
-        k->second.second->PrintTransitionCounters(handler);
-    }
-    return;
+         k != m_Queues.end(); ++k)
+        result += "OK:[queue " + k->first + "]\n" +
+                  k->second.second->PrintTransitionCounters();
+    return result;
 }
 
 
-void CQueueDataBase::PrintJobsStat(CNetScheduleHandler &  handler)
+string CQueueDataBase::PrintJobsStat(void)
 {
+    string                      result;
     CFastMutexGuard             guard(m_ConfigureLock);
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
-         k != m_Queues.end(); ++k) {
-        handler.WriteMessage("OK:[queue " + k->first + "]");
+         k != m_Queues.end(); ++k)
         // Group and affinity tokens make no sense for the server,
         // so they are both "".
-        k->second.second->PrintJobsStat(handler, "", "");
-    }
-    return;
+        result += "OK:[queue " + k->first + "]\n" +
+                  k->second.second->PrintJobsStat("", "");
+    return result;
 }
 
 
@@ -1446,10 +1445,10 @@ string CQueueDataBase::GetQueueClassesInfo(void)
          k != m_QueueClasses.end(); ++k) {
         if (!output.empty())
             output += "\n";
-        output += "OK:[qclass " + k->first + "]\n";
         // false - not to include qclass
         // false - not URL encoded format
-        output += k->second.GetPrintableParameters(false, false);
+        output += "OK:[qclass " + k->first + "]\n" +
+                  k->second.GetPrintableParameters(false, false);
     }
     return output;
 }
@@ -1463,10 +1462,10 @@ string CQueueDataBase::GetQueueInfo(void)
          k != m_Queues.end(); ++k) {
         if (!output.empty())
             output += "\n";
-        output += "OK:[queue " + k->first + "]\n";
         // true - include qclass
         // false - not URL encoded format
-        output += x_SingleQueueInfo(k).GetPrintableParameters(true, false);
+        output += "OK:[queue " + k->first + "]\n" +
+                  x_SingleQueueInfo(k).GetPrintableParameters(true, false);
     }
     return output;
 }

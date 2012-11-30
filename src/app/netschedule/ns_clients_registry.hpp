@@ -44,7 +44,6 @@
 BEGIN_NCBI_SCOPE
 
 
-class CNetScheduleHandler;
 class CQueue;
 class CNSAffinityRegistry;
 
@@ -88,10 +87,9 @@ class CNSClientsRegistry
         TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client) const;
         TNSBitVector  GetBlacklistedJobs(const string &  client_node) const;
 
-        void  PrintClientsList(const CQueue *               queue,
-                               CNetScheduleHandler &        handler,
-                               const CNSAffinityRegistry &  aff_registry,
-                               bool                         verbose) const;
+        string  PrintClientsList(const CQueue *               queue,
+                                 const CNSAffinityRegistry &  aff_registry,
+                                 bool                         verbose) const;
 
         void  SetWaiting(const CNSClientId &          client,
                          unsigned short               port,

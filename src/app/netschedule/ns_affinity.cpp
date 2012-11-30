@@ -33,8 +33,8 @@
 #include <corelib/ncbistd.hpp>
 
 #include "ns_affinity.hpp"
+#include "ns_queue.hpp"
 #include "ns_db.hpp"
-#include "ns_handler.hpp"
 #include "job_status.hpp"
 
 
@@ -464,11 +464,11 @@ void  CNSAffinityRegistry::SetWaitClientForAffinities(unsigned int          clie
 }
 
 
-void  CNSAffinityRegistry::Print(const CQueue *              queue,
-                                 CNetScheduleHandler &       handler,
-                                 const CNSClientsRegistry &  clients_registry,
-                                 bool                        verbose) const
+string  CNSAffinityRegistry::Print(const CQueue *              queue,
+                                   const CNSClientsRegistry &  clients_registry,
+                                   bool                        verbose) const
 {
+    string              result;
     const size_t        max_batch_size = 1000;
     TNSBitVector        batch;
 
@@ -480,18 +480,16 @@ void  CNSAffinityRegistry::Print(const CQueue *              queue,
         ++en;
 
         if (batch.count() >= max_batch_size) {
-            handler.WriteMessage(x_PrintSelected(batch, queue,
-                                                 clients_registry,
-                                                 verbose).c_str());
+            result += x_PrintSelected(batch, queue, clients_registry,
+                                      verbose) + "\n";
             batch.clear();
         }
     }
 
     if (batch.count() > 0)
-        handler.WriteMessage(x_PrintSelected(batch, queue,
-                                             clients_registry,
-                                             verbose).c_str());
-    return;
+        result += x_PrintSelected(batch, queue, clients_registry,
+                                  verbose) + "\n";
+    return result;
 }
 
 

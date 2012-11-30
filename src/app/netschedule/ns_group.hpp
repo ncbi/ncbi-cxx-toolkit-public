@@ -53,7 +53,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNetScheduleHandler;
 class CQueue;
 
 
@@ -111,9 +110,8 @@ class CNSGroupsRegistry
         void  RemoveJob(unsigned int  group_id,
                         unsigned int  job_id);
         void  ClearMemoryAndDatabase(void);
-        void  Print(const CQueue *         queue,
-                    CNetScheduleHandler &  handler,
-                    bool                   verbose) const;
+        string  Print(const CQueue *  queue,
+                      bool            verbose) const;
 
         // Used to load the group DB table and register loaded jobs.
         // The loading procedure has 3 steps:

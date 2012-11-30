@@ -59,8 +59,6 @@
 BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
-class CNetScheduleHandler;
-
 
 
 struct SNSDBEnvironmentParams
@@ -182,8 +180,8 @@ public:
         m_Env->PrintMemStat(out);
     }
 
-    void PrintTransitionCounters(CNetScheduleHandler &  handler);
-    void PrintJobsStat(CNetScheduleHandler &  handler);
+    string PrintTransitionCounters(void);
+    string PrintJobsStat(void);
     string GetQueueClassesInfo(void);
     string GetQueueInfo(void);
 

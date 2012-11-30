@@ -35,6 +35,7 @@
 #include <string>
 #include <connect/services/netschedule_api.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/request_ctx.hpp>
 #include <connect/server.hpp>
 #include <connect/services/netservice_protocol_parser.hpp>
 
@@ -76,16 +77,6 @@ public:
     virtual void      OnOverflow(EOverflowReason reason);
     virtual void      OnMessage(BUF buffer);
 
-    /// Init diagnostics Client IP and Session ID for proper logging
-    void InitDiagnostics(void);
-    /// Reset diagnostics Client IP and Session ID to avoid logging
-    /// not related to the request
-    void ResetDiagnostics(void);
-
-    /// Writes a message to the socket
-    void WriteMessage(CTempString prefix, CTempString msg);
-    void WriteMessage(CTempString msg);
-
     /// Statuses of commands to be set in diagnostics' request context
     /// Additional statuses can be taken from
     /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
@@ -102,7 +93,8 @@ public:
 
         eStatus_ServerError         = 500, ///< Internal server error
         eStatus_NotImplemented      = 501, ///< Command is not implemented
-        eStatus_SubmitRefused       = 503  ///< In refuse submits mode and received SUBMIT
+        eStatus_SubmitRefused       = 503, ///< In refuse submits mode and received SUBMIT
+        eStatus_ShuttingDown        = 503  ///< Server is shutting down
     };
 
 
@@ -118,8 +110,16 @@ private:
     void x_ProcessMsgBatchSubmit(BUF buffer);
 
     void x_SetQuickAcknowledge(void);
-    unsigned int x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
-    unsigned int x_WriteMessageNoThrow(CTempString  msg);
+    void x_SetCmdRequestStatus(unsigned int  status)
+    { if (m_CmdContext.NotNull())
+        m_CmdContext->SetRequestStatus(status); }
+    void x_SetConnRequestStatus(unsigned int  status)
+    { if (m_ConnContext.NotNull())
+        m_ConnContext->SetRequestStatus(status); }
+    // Writes a message to the socket
+    // It closes the connection if there were socket writing errors
+    EIO_Status x_WriteMessage(CTempString msg);
+
 
 public:
 
@@ -204,9 +204,9 @@ private:
     // Moved from CNetScheduleServer
     void x_StatisticsNew(CQueue* q, const std::string& what, time_t curr);
 
-    void x_PrintRequestStart(const SParsedCmd& cmd);
-    void x_PrintRequestStart(CTempString  msg);
-    void x_PrintRequestStop(unsigned int  status);
+    void x_PrintCmdRequestStart(const SParsedCmd& cmd);
+    void x_PrintCmdRequestStart(CTempString  msg);
+    void x_PrintCmdRequestStop(void);
 
     void x_PrintGetJobResponse(const CQueue * q,
                                const CJob &   job,
@@ -239,10 +239,10 @@ private:
     std::string                     m_BatchClientSID;
     bool                            m_WithinBatchSubmit;
 
-    /// Quick local timer
+    // Quick local timer
     CFastLocalTime                  m_LocalTimer;
 
-    /// Parsers for incoming commands and their parser tables
+    // Parsers for incoming commands and their parser tables
     TProtoParser                    m_SingleCmdParser;
     static SCommandMap              sm_CommandMap[];
     TProtoParser                    m_BatchHeaderParser;
@@ -251,10 +251,10 @@ private:
     static SCommandMap              sm_BatchEndMap[];
 
 
-    /// Diagnostics context for the current connection
+    // Diagnostics context for the current connection
     CRef<CRequestContext>           m_ConnContext;
-    /// Diagnostics context for the currently executed command
-    CRef<CRequestContext>           m_DiagContext;
+    // Diagnostics context for the currently executed command
+    CRef<CRequestContext>           m_CmdContext;
 
 }; // CNetScheduleHandler
 
