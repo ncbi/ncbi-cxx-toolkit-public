@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
 }
 
 BOOST_AUTO_TEST_CASE(CheckBlastpMasks) {
-    const string rid("1143488953-21461-10186755953.BLASTQ1");
+    const string rid("BD4H4FMN014");
     CRemoteBlast rmt_blaster(rid);
 
     BOOST_REQUIRE_MESSAGE(rid == rmt_blaster.GetRID(), "RID=" << rid);
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
     {
         // Protein
         
-        string rid("1146695695-7342-94609740755.BLASTQ1");
+        string rid("BD4HUK3X014");
         
         CRemoteBlast rmt(rid);
         CRef<CBlastOptionsHandle> cboh = rmt.GetSearchOptions();
@@ -907,7 +907,7 @@ BOOST_AUTO_TEST_CASE(SearchOptionsFromRID)
         x_PushPairVec(rids, "1125679472-29663-68767107779.BLASTQ3",  "tblastn/plain");
         x_PushPairVec(rids, "1125682851-24545-80609495337.BLASTQ3",  "tblastx/plain");
         x_PushPairVec(rids, "1125682308-9604-184897235466.BLASTQ3",  "blastx/plain");
-        x_PushPairVec(rids, "1125682825-25068-64673485121.BLASTQ2",  "blastn/megablast");
+        x_PushPairVec(rids, "BD4GD2RE016",  "blastn/megablast");
         
         for(size_t i = 0; i < rids.size(); i++) {
             CRemoteBlast rmt(rids[i].first);
@@ -932,10 +932,10 @@ BOOST_AUTO_TEST_CASE(CheckLongLifeHits)
 
 BOOST_AUTO_TEST_CASE(CheckShortRIDs)
 {
-    BOOST_REQUIRE_EQUAL(102, x_CountHits("15AARZ8U012"));
+    BOOST_REQUIRE_EQUAL(102, x_CountHits("BD4HYZYB014"));
     BOOST_REQUIRE_EQUAL(102, x_CountHits("15ASW73R015"));
     BOOST_REQUIRE_EQUAL(102, x_CountHits("15AU5834013"));
-    BOOST_REQUIRE_EQUAL(102, x_CountHits("15AZSU2X012"));
+    BOOST_REQUIRE_EQUAL(102, x_CountHits("BD4ENAS7014"));
 }
 
 BOOST_AUTO_TEST_CASE(CheckDuplicateOptions)
