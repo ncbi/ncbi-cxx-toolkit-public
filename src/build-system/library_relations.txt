@@ -4640,6 +4640,7 @@ snputil needs seqcode
 snputil needs seqedit
 snputil needs seqset
 snputil needs sequtil
+snputil needs variation
 snputil needs xncbi
 snputil needs xobjmgr
 snputil needs xser
