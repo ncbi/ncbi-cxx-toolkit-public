@@ -31,6 +31,7 @@ digraph NetScheduleNew {
     Failed      -> Reading          [ label = "READ" ];
     Failed      -> Canceled         [ label = "CANCEL" ];
     Failed      -> Failed           [ label = "FPUT", style = "dashed" ];
+    Failed      -> Done             [ label = "PUT" ];
 
     Done        -> Reading          [ label = "READ" ];
     Done        -> Canceled         [ label = "CANCEL" ];
