@@ -992,9 +992,9 @@ CSrvDiagMsg::StopRequest(CRequestContext* ctx)
         *m_Data->cur_ptr++ = '.';
         s_AddToLog(m_Data, span.GetNanoSecondsAfterSecond(), 9);
         *m_Data->cur_ptr++ = ' ';
-        s_AddToLog(m_Data, ctx->GetBytesWr());
-        *m_Data->cur_ptr++ = ' ';
         s_AddToLog(m_Data, ctx->GetBytesRd());
+        *m_Data->cur_ptr++ = ' ';
+        s_AddToLog(m_Data, ctx->GetBytesWr());
         Flush();
     }
 
