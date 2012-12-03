@@ -1811,6 +1811,26 @@ public:
     static bool EndsWith(const CTempString& str, char end,
                          ECase use_case = eCase);
 
+    /// Determine the common prefix of two strings.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   The number of characters common to the start of each string.
+    static SIZE_TYPE CommonPrefixSize(const CTempString& s1, const CTempString& s2);
+
+    /// Determine the common suffix of two strings.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   The number of characters common to the end of each string.
+    static SIZE_TYPE CommonSuffixSize(const CTempString& s1, const CTempString& s2);
+
     /// Check if a string is blank (has no text).
     ///
     /// @param str
@@ -5284,6 +5304,32 @@ bool NStr::EndsWith(const CTempString& str, char end, ECase use_case)
                 tolower((unsigned char) last) == end);
     }
     return false;
+}
+
+inline
+SIZE_TYPE NStr::CommonPrefixSize(const CTempString& s1, const CTempString& s2)
+{
+    const SIZE_TYPE n = min(s1.length(), s2.length());
+    for (SIZE_TYPE i = 0;  i < n;  i++) {
+        if (s1[i] != s2[i]) {
+            return i;
+        }
+    }
+    return n;
+}
+
+inline
+SIZE_TYPE NStr::CommonSuffixSize(const CTempString& s1, const CTempString& s2)
+{
+    const SIZE_TYPE len1 = s1.length();
+    const SIZE_TYPE len2 = s2.length();
+    const SIZE_TYPE n = min(len1, len2);
+    for (SIZE_TYPE i = 1; i <= n; i++) {
+        if (s1[len1 - i] != s2[len2 - i]) {
+            return i - 1;
+        }
+    }
+    return n;
 }
 
 inline
