@@ -47,5 +47,5 @@ SunOSx86 : Release : WorkShop59.sh 64 --without-debug --with-optimization --with
 SunOSx86 : Debug : WorkShop59.sh 64 --with-debug --with-mt --without-bdb
 SunOSSparc : Release : WorkShop59.sh 64 --without-debug --with-optimization --with-symbols --with-mt --without-bdb
 SunOSSparc : Debug : WorkShop59.sh 64 --with-debug --with-mt --without-bdb
-Win32_9 : Release : static 32 ReleaseDLL
-Win32_9 : Debug : static 32 DebugDLL
+Win32_10 : Release : static 32 ReleaseDLL
+Win32_10 : Debug : static 32 DebugDLL
