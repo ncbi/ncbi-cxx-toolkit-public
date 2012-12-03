@@ -354,6 +354,7 @@ protected:
         CConstRef<objects::CSeq_id> id;
         int blast_rank;                // "Rank" of defline.
         int hspNum;                    //hsp number
+        Int8 totalLen;                 //total alignment length
         CRange<TSeqPos> subjRange;     //subject sequence range
         bool flip;					   //indicates opposite strands in the first seq align	
     };

@@ -387,6 +387,7 @@ public:
                                         //calulated as 100*match/align_length
 
         int hspNum;                     //hsp number, number of hits
+        Int8 totalLen;                  //total alignment length
 
         int raw_score;                  //raw score, read from the 'score' in first align in Seq Aln Set, not used        
         list<int> use_this_gi;          //Limit formatting by these GI's, read from the first align in Seq Aln Set        

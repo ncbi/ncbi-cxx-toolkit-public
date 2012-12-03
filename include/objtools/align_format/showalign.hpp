@@ -645,6 +645,8 @@ protected:
     string m_CurrAlnAccession;
     ///gi(if exists) that is used for html formatting otherwise id with db part like ti:xxxxxxx or GNOMON:XXXXXX
     string m_CurrAlnID_DbLbl;
+    //Total hsp number
+    int m_TotalHSPNum;
 
     TranslatedFrameForLocalSeq m_TranslatedFrameForLocalSeq;
 
