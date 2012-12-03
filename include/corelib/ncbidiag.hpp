@@ -1834,7 +1834,11 @@ public:
     CDiagContext_Extra(const CDiagContext_Extra& args);
     CDiagContext_Extra& operator=(const CDiagContext_Extra& args);
 
-    /// Print the message and reset object
+    /// Print the message and reset object. The object can then be
+    /// reused to print a new log line (with a new set of arguments
+    /// if necessary). This is only possible with 'extra' messages,
+    /// request start/stop messages can not be reused after flush
+    /// and will print error message instead.
     void Flush(void);
 
     /// Set extra message type.
@@ -1842,6 +1846,7 @@ public:
 
 private:
     void x_Release(void);
+    bool x_CanPrint(void);
 
     typedef SDiagMessage::TExtraArg  TExtraArg;
     typedef SDiagMessage::TExtraArgs TExtraArgs;
@@ -1866,6 +1871,7 @@ private:
     // PerfLog data
     int                      m_PerfStatus;
     double                   m_PerfTime;
+    bool                     m_Flushed;
 };
 
 

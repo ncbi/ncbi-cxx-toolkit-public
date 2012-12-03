@@ -1779,7 +1779,8 @@ CDiagContext_Extra::CDiagContext_Extra(SDiagMessage::EEventType event_type)
       m_Counter(new int(1)),
       m_Typed(false),
       m_PerfStatus(0),
-      m_PerfTime(0)
+      m_PerfTime(0),
+      m_Flushed(false)
 {
 }
 
@@ -1792,7 +1793,8 @@ CDiagContext_Extra::CDiagContext_Extra(int         status,
       m_Counter(new int(1)),
       m_Typed(false),
       m_PerfStatus(status),
-      m_PerfTime(timespan)
+      m_PerfTime(timespan),
+      m_Flushed(false)
 {
     if (args.empty()) return;
     m_Args = new TExtraArgs;
@@ -1806,7 +1808,8 @@ CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
       m_Counter(const_cast<CDiagContext_Extra&>(args).m_Counter),
       m_Typed(args.m_Typed),
       m_PerfStatus(args.m_PerfStatus),
-      m_PerfTime(args.m_PerfTime)
+      m_PerfTime(args.m_PerfTime),
+      m_Flushed(args.m_Flushed)
 {
     (*m_Counter)++;
 }
@@ -1817,9 +1820,12 @@ const TDiagPostFlags kApplogDiagPostFlags =
 
 void CDiagContext_Extra::Flush(void)
 {
-    if ( CDiagContext::IsSetOldPostFormat() ) {
+    if (m_Flushed  ||  CDiagContext::IsSetOldPostFormat()) {
         return;
     }
+
+    // Prevent double-flush
+    m_Flushed = true;
 
     // Ignore extra messages without arguments. Allow start/stop,
     // request-start/request-stop without arguments.
@@ -1884,6 +1890,7 @@ CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
         m_Typed = args.m_Typed;
         m_PerfStatus = args.m_PerfStatus;
         m_PerfTime = args.m_PerfTime;
+        m_Flushed = args.m_Flushed;
         (*m_Counter)++;
     }
     return *this;
@@ -1898,9 +1905,28 @@ CDiagContext_Extra::~CDiagContext_Extra(void)
     }
 }
 
+bool CDiagContext_Extra::x_CanPrint(void)
+{
+    // Only allow extra events to be printed/flushed multiple times
+    if (m_Flushed  &&  m_EventType != SDiagMessage::eEvent_Extra) {
+        ERR_POST_ONCE(
+            "Attempt to set request start/stop arguments after flushing");
+        return false;
+    }
+
+    // For extra messages reset flushed state.
+    m_Flushed = false;
+    return true;
+}
+
+
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, const string& value)
 {
+    if ( !x_CanPrint() ) {
+        return *this;
+    }
+
     if ( !m_Args ) {
         m_Args = new TExtraArgs;
     }
@@ -1976,6 +2002,10 @@ CDiagContext_Extra::Print(const string& name, bool value)
 CDiagContext_Extra&
 CDiagContext_Extra::Print(SDiagMessage::TExtraArgs& args)
 {
+    if ( !x_CanPrint() ) {
+        return *this;
+    }
+
     if ( !m_Args ) {
         m_Args = new TExtraArgs;
     }
