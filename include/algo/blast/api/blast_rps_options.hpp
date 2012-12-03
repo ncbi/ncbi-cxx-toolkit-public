@@ -99,6 +99,16 @@ public:
     /// @param hicut seg filtering parameter hicut [in]
     void SetSegFilteringHicut(double hicut) { m_Opts->SetSegFilteringHicut(hicut); }
 
+    /// Get composition based statistics mode
+    /// @return Composition based statistics mode
+    ECompoAdjustModes GetCompositionBasedStats(void) const
+    {return m_Opts->GetCompositionBasedStats();}
+
+    /// Set composition based statistics mode
+    /// @param mode Composition based statistics mode
+    void SetCompositionBasedStats(ECompoAdjustModes mode)
+    {m_Opts->SetCompositionBasedStats(mode);}
+
     /************************ Scoring options ************************/
     /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
