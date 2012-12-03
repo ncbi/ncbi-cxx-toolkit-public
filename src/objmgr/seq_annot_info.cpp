@@ -1106,20 +1106,20 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
 
 void CSeq_annot_Info::x_MapFeatById(const CFeat_id& id,
                                     CAnnotObject_Info& info,
-                                    bool xref)
+                                    EFeatIdType id_type)
 {
     if ( id.IsLocal() ) {
-        GetTSE_Info().x_MapFeatById(id.GetLocal(), info, xref);
+        GetTSE_Info().x_MapFeatById(id.GetLocal(), info, id_type);
     }
 }
 
 
 void CSeq_annot_Info::x_UnmapFeatById(const CFeat_id& id,
                                       CAnnotObject_Info& info,
-                                      bool xref)
+                                      EFeatIdType id_type)
 {
     if ( id.IsLocal() ) {
-        GetTSE_Info().x_UnmapFeatById(id.GetLocal(), info, xref);
+        GetTSE_Info().x_UnmapFeatById(id.GetLocal(), info, id_type);
     }
 }
 
@@ -1158,11 +1158,11 @@ void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
 {
     const CSeq_feat& feat = *info.GetFeatFast();
     if ( feat.IsSetId() ) {
-        x_MapFeatById(feat.GetId(), info, true);
+        x_MapFeatById(feat.GetId(), info, eFeatId_id);
     }
     if ( feat.IsSetIds() ) {
         ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
-            x_MapFeatById(**it, info, true);
+            x_MapFeatById(**it, info, eFeatId_id);
         }
     }
     if ( info.GetFeatType() == CSeqFeatData::e_Gene ) {
@@ -1172,7 +1172,7 @@ void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
         ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
             const CSeqFeatXref& xref = **it;
             if ( xref.IsSetId() ) {
-                x_MapFeatById(xref.GetId(), info, false);
+                x_MapFeatById(xref.GetId(), info, eFeatId_xref);
             }
         }
     }
@@ -1183,11 +1183,11 @@ void CSeq_annot_Info::x_UnmapFeatIds(CAnnotObject_Info& info)
 {
     const CSeq_feat& feat = *info.GetFeatFast();
     if ( feat.IsSetId() ) {
-        x_UnmapFeatById(feat.GetId(), info, true);
+        x_UnmapFeatById(feat.GetId(), info, eFeatId_id);
     }
     if ( feat.IsSetIds() ) {
         ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
-            x_UnmapFeatById(**it, info, true);
+            x_UnmapFeatById(**it, info, eFeatId_id);
         }
     }
     if ( info.GetFeatType() == CSeqFeatData::e_Gene ) {
@@ -1197,7 +1197,7 @@ void CSeq_annot_Info::x_UnmapFeatIds(CAnnotObject_Info& info)
         ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
             const CSeqFeatXref& xref = **it;
             if ( xref.IsSetId() ) {
-                x_UnmapFeatById(xref.GetId(), info, false);
+                x_UnmapFeatById(xref.GetId(), info, eFeatId_xref);
             }
         }
     }
@@ -1710,17 +1710,18 @@ void CSeq_annot_Info::ReorderFtable(const vector<CSeq_feat_Handle>& feats)
 
 
 void CSeq_annot_Info::AddFeatId(TAnnotIndex index,
-                                const CObject_id& id, bool xref)
+                                const CObject_id& id,
+                                EFeatIdType id_type)
 {
     _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
     CAnnotObject_Info& info = m_ObjectIndex.GetInfos()[index];
     _ASSERT(info.IsRegular());
     _ASSERT(&info.GetSeq_annot_Info() == this);
     CRef<CSeq_feat> feat(&const_cast<CSeq_feat&>(info.GetFeat()));
-    GetTSE_Info().x_MapFeatById(id, info, xref);
+    GetTSE_Info().x_MapFeatById(id, info, id_type);
     CRef<CFeat_id> feat_id(new CFeat_id);
     feat_id->SetLocal().Assign(id);
-    if ( xref ) {
+    if ( id_type == eFeatId_xref ) {
         CRef<CSeqFeatXref> feat_xref(new CSeqFeatXref);
         feat_xref->SetId(*feat_id);
         feat->SetXref().push_back(feat_xref);
@@ -1735,7 +1736,8 @@ void CSeq_annot_Info::AddFeatId(TAnnotIndex index,
 
 
 void CSeq_annot_Info::RemoveFeatId(TAnnotIndex index,
-                                   const CObject_id& id, bool xref)
+                                   const CObject_id& id,
+                                   EFeatIdType id_type)
 {
     _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
     CAnnotObject_Info& info = m_ObjectIndex.GetInfos()[index];
@@ -1743,7 +1745,7 @@ void CSeq_annot_Info::RemoveFeatId(TAnnotIndex index,
     _ASSERT(&info.GetSeq_annot_Info() == this);
     CRef<CSeq_feat> feat(&const_cast<CSeq_feat&>(info.GetFeat()));
     bool removed_id = false;
-    if ( xref ) {
+    if ( id_type == eFeatId_xref ) {
         if ( feat->IsSetXref() ) {
             NON_CONST_ITERATE ( CSeq_feat::TXref, it, feat->SetXref() ) {
                 const CSeqFeatXref& feat_xref = **it;
@@ -1786,18 +1788,19 @@ void CSeq_annot_Info::RemoveFeatId(TAnnotIndex index,
         NCBI_THROW(CAnnotException, eFindFailed,
                    "CSeq_feat_EditHandle::RemoveFeatId: Feat-id not found");
     }
-    GetTSE_Info().x_UnmapFeatById(id, info, xref);
+    GetTSE_Info().x_UnmapFeatById(id, info, id_type);
 }
 
 
-void CSeq_annot_Info::ClearFeatIds(TAnnotIndex index, bool xref)
+void CSeq_annot_Info::ClearFeatIds(TAnnotIndex index,
+                                   EFeatIdType id_type)
 {
     _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
     CAnnotObject_Info& info = m_ObjectIndex.GetInfos()[index];
     _ASSERT(info.IsRegular());
     _ASSERT(&info.GetSeq_annot_Info() == this);
     CRef<CSeq_feat> feat(&const_cast<CSeq_feat&>(info.GetFeat()));
-    if ( xref ) {
+    if ( id_type == eFeatId_xref ) {
         if ( feat->IsSetXref() ) {
             ERASE_ITERATE ( CSeq_feat::TXref, it, feat->SetXref() ) {
                 const CSeqFeatXref& feat_xref = **it;
@@ -1806,8 +1809,8 @@ void CSeq_annot_Info::ClearFeatIds(TAnnotIndex index, bool xref)
                 }
                 const CFeat_id& feat_id = feat_xref.GetId();
                 if ( feat_id.IsLocal() ) {
-                    GetTSE_Info().x_UnmapFeatById(feat_id.GetLocal(), info, xref);
-                    feat->SetXref().erase(it);
+                    GetTSE_Info().x_UnmapFeatById(feat_id.GetLocal(), info, id_type);
+                    VECTOR_ERASE(it, feat->SetXref());
                 }
             }
             feat->ResetXref();
@@ -1815,15 +1818,15 @@ void CSeq_annot_Info::ClearFeatIds(TAnnotIndex index, bool xref)
     }
     else {
         if ( feat->IsSetId() && feat->GetId().IsLocal() ) {
-            GetTSE_Info().x_UnmapFeatById(feat->GetId().GetLocal(), info, xref);
+            GetTSE_Info().x_UnmapFeatById(feat->GetId().GetLocal(), info, id_type);
             feat->ResetId();
         }
         else if ( feat->IsSetIds() ) {
             ERASE_ITERATE ( CSeq_feat::TIds, it, feat->SetIds() ) {
                 const CFeat_id& feat_id = **it;
                 if ( feat_id.IsLocal() ) {
-                    GetTSE_Info().x_UnmapFeatById(feat_id.GetLocal(), info, xref);
-                    feat->SetIds().erase(it);
+                    GetTSE_Info().x_UnmapFeatById(feat_id.GetLocal(), info, id_type);
+                    VECTOR_ERASE(it, feat->SetIds());
                 }
             }
             feat->ResetIds();

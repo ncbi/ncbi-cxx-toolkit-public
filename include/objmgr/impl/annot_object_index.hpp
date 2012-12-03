@@ -62,6 +62,13 @@ class CAnnotObject_Info;
 
 // forward declaration
 
+
+enum EFeatIdType {
+    eFeatId_id,
+    eFeatId_xref
+};
+
+
 struct SAnnotObject_Index
 {
     SAnnotObject_Index(void)

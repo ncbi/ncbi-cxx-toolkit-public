@@ -143,9 +143,14 @@ public:
 
     void Update(TAnnotIndex index);
 
-    void AddFeatId(TAnnotIndex index, const CObject_id& id, bool xref);
-    void RemoveFeatId(TAnnotIndex index, const CObject_id& id, bool xref);
-    void ClearFeatIds(TAnnotIndex index, bool xref);
+    void AddFeatId(TAnnotIndex index,
+                   const CObject_id& id,
+                   EFeatIdType id_type);
+    void RemoveFeatId(TAnnotIndex index,
+                      const CObject_id& id,
+                      EFeatIdType id_type);
+    void ClearFeatIds(TAnnotIndex index,
+                      EFeatIdType id_type);
 
     const CAnnotObject_Info& GetInfo(TAnnotIndex index) const;
 
@@ -207,8 +212,12 @@ protected:
 
     void x_MapFeatIds(CAnnotObject_Info& info);
     void x_UnmapFeatIds(CAnnotObject_Info& info);
-    void x_MapFeatById(const CFeat_id& id, CAnnotObject_Info& info, bool xref);
-    void x_UnmapFeatById(const CFeat_id& id, CAnnotObject_Info& info, bool xref);
+    void x_MapFeatById(const CFeat_id& id,
+                       CAnnotObject_Info& info,
+                       EFeatIdType id_type);
+    void x_UnmapFeatById(const CFeat_id& id,
+                         CAnnotObject_Info& info,
+                         EFeatIdType id_type);
     void x_MapFeatByGene(const CGene_ref& gene, CAnnotObject_Info& info);
     void x_UnmapFeatByGene(const CGene_ref& gene, CAnnotObject_Info& info);
 

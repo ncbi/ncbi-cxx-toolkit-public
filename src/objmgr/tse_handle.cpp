@@ -532,7 +532,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
                                TFeatureIdInt id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id));
 }
 
 
@@ -540,7 +540,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
                                TFeatureIdInt id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id));
 }
 
 
@@ -548,7 +548,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
                                  TFeatureIdInt id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_xref));
 }
 
 
@@ -556,21 +556,21 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
                                  TFeatureIdInt id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_xref));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
                                                TFeatureIdInt id) const
 {
-    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
                                                TFeatureIdInt id) const
 {
-    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id));
 }
 
 
@@ -580,7 +580,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
                                const TFeatureIdStr& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id));
 }
 
 
@@ -588,7 +588,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
                                const TFeatureIdStr& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id));
 }
 
 
@@ -596,7 +596,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
                                  const TFeatureIdStr& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_xref));
 }
 
 
@@ -604,21 +604,21 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
                                  const TFeatureIdStr& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_xref));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
                                                const TFeatureIdStr& id) const
 {
-    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
                                                const TFeatureIdStr& id) const
 {
-    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id));
 }
 
 
@@ -628,7 +628,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
                                const TFeatureId& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id));
 }
 
 
@@ -636,7 +636,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
                                const TFeatureId& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id));
 }
 
 
@@ -644,7 +644,7 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
                                  const TFeatureId& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_xref));
 }
 
 
@@ -652,21 +652,21 @@ CTSE_Handle::TSeq_feat_Handles
 CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
                                  const TFeatureId& id) const
 {
-    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_xref));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
                                                const TFeatureId& id) const
 {
-    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, eFeatId_id));
 }
 
 
 CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
                                                const TFeatureId& id) const
 {
-    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, eFeatId_id));
 }
 
 

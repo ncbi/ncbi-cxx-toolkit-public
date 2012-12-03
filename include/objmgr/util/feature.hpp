@@ -476,6 +476,17 @@ CreateSeqLocMapperFromFeat(const CSeq_feat& feat,
                            CSeq_loc_Mapper::EFeatMapDirection dir,
                            CScope* scope = 0);
 
+
+NCBI_XOBJUTIL_EXPORT
+void ClearFeatureIds(const CSeq_entry_EditHandle& entry);
+NCBI_XOBJUTIL_EXPORT
+void ClearFeatureIds(const CSeq_annot_EditHandle& annot);
+NCBI_XOBJUTIL_EXPORT
+void ReassignFeatureIds(const CSeq_entry_EditHandle& entry);
+NCBI_XOBJUTIL_EXPORT
+void ReassignFeatureIds(const CSeq_annot_EditHandle& annot);
+
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

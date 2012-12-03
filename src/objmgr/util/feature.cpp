@@ -2940,6 +2940,91 @@ CreateSeqLocMapperFromFeat(const CSeq_feat& feat,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// Assigning feature ids
+/////////////////////////////////////////////////////////////////////////////
+
+void ClearFeatureIds(const CSeq_annot_EditHandle& annot)
+{
+    for ( CFeat_CI feat_it(annot); feat_it; ++feat_it ) {
+        CSeq_feat_EditHandle feat(*feat_it);
+        feat.ClearFeatIds();
+        feat.ClearFeatXrefs();
+    }
+}
+
+
+void ClearFeatureIds(const CSeq_entry_EditHandle& entry)
+{
+    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) {
+        CSeq_feat_EditHandle feat(*feat_it);
+        feat.ClearFeatIds();
+        feat.ClearFeatXrefs();
+    }
+}
+
+
+static void s_SetFeatureId(CFeatTree& ft,
+                           const CMappedFeat& feat,
+                           int& last_id,
+                           const CMappedFeat& parent);
+static void s_SetChildrenFeatureIds(CFeatTree& ft,
+                                    const CMappedFeat& feat,
+                                    int& feat_id);
+
+static void s_SetFeatureId(CFeatTree& ft,
+                           const CMappedFeat& feat,
+                           int& last_id,
+                           const CMappedFeat& parent)
+{
+    CSeq_feat_EditHandle efeat(feat);
+    efeat.SetFeatId(++last_id);
+
+    if ( parent &&
+         parent.GetFeatType() == CSeqFeatData::e_Rna  &&
+         feat.GetFeatType() == CSeqFeatData::e_Cdregion ) {
+        // conservative choice: link only between RNA and Cdregion features
+        efeat.AddFeatXref(parent.GetId().GetLocal());
+        CSeq_feat_EditHandle parent_efeat(parent);
+        parent_efeat.AddFeatXref(last_id);
+    }
+
+    s_SetChildrenFeatureIds(ft, feat, last_id);
+}
+
+
+static void s_SetChildrenFeatureIds(CFeatTree& ft,
+                                    const CMappedFeat& parent,
+                                    int& last_id)
+{
+    vector<CMappedFeat> children = ft.GetChildren(parent);
+    ITERATE (vector<CMappedFeat>, it, children ) {
+        s_SetFeatureId(ft, *it, last_id, parent);
+    }
+}
+
+
+void ReassignFeatureIds(const CSeq_entry_EditHandle& entry)
+{
+    ClearFeatureIds(entry);
+    int feat_id = 0;
+    CFeat_CI feat_it(entry);
+    CFeatTree ft(feat_it);
+    s_SetChildrenFeatureIds(ft, CMappedFeat(), feat_id);
+}
+
+
+void ReassignFeatureIds(const CSeq_annot_EditHandle& annot)
+{
+    ClearFeatureIds(annot);
+    int feat_id = 0;
+    CFeat_CI feat_it(annot);
+    CFeatTree ft(feat_it);
+    s_SetChildrenFeatureIds(ft, CMappedFeat(), feat_id);
+}
+
+
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

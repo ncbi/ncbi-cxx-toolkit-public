@@ -521,7 +521,7 @@ void CSeq_feat_EditHandle::AddFeatId(const CObject_id& id)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_EditHandle::AddFeatId: not plain Seq-feat");
     }
-    GetAnnot().x_GetInfo().AddFeatId(x_GetFeatIndex(), id, false);
+    GetAnnot().x_GetInfo().AddFeatId(x_GetFeatIndex(), id, eFeatId_id);
 }
 
 
@@ -547,7 +547,7 @@ void CSeq_feat_EditHandle::AddFeatXref(const CObject_id& id)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_EditHandle::AddFeatXref: not plain Seq-feat");
     }
-    GetAnnot().x_GetInfo().AddFeatId(x_GetFeatIndex(), id, true);
+    GetAnnot().x_GetInfo().AddFeatId(x_GetFeatIndex(), id, eFeatId_xref);
 }
 
 
@@ -573,7 +573,7 @@ void CSeq_feat_EditHandle::RemoveFeatId(const CObject_id& id)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_EditHandle::RemoveFeatId: not plain Seq-feat");
     }
-    GetAnnot().x_GetInfo().RemoveFeatId(x_GetFeatIndex(), id, false);
+    GetAnnot().x_GetInfo().RemoveFeatId(x_GetFeatIndex(), id, eFeatId_id);
 }
 
 
@@ -599,7 +599,7 @@ void CSeq_feat_EditHandle::RemoveFeatXref(const CObject_id& id)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_EditHandle::RemoveFeatXref: not plain Seq-feat");
     }
-    GetAnnot().x_GetInfo().RemoveFeatId(x_GetFeatIndex(), id, true);
+    GetAnnot().x_GetInfo().RemoveFeatId(x_GetFeatIndex(), id, eFeatId_xref);
 }
 
 
@@ -625,7 +625,7 @@ void CSeq_feat_EditHandle::ClearFeatIds(void)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_EditHandle::ClearFeatIds: not plain Seq-feat");
     }
-    GetAnnot().x_GetInfo().ClearFeatIds(x_GetFeatIndex(), false);
+    GetAnnot().x_GetInfo().ClearFeatIds(x_GetFeatIndex(), eFeatId_id);
 }
 
 
@@ -635,7 +635,7 @@ void CSeq_feat_EditHandle::ClearFeatXrefs(void)
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_EditHandle::ClearFeatXrefs: not plain Seq-feat");
     }
-    GetAnnot().x_GetInfo().ClearFeatIds(x_GetFeatIndex(), true);
+    GetAnnot().x_GetInfo().ClearFeatIds(x_GetFeatIndex(), eFeatId_xref);
 }
 
 

@@ -522,18 +522,18 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
     if ( m_ExplicitFeatIds ) {
         ITERATE ( TFeatIdsMap, it, m_FeatIds ) {
             ITERATE ( TFeatIdIntList, it2, it->second.m_IntList ) {
-                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), false);
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), eFeatId_id);
             }
             ITERATE ( TFeatIdStrList, it2, it->second.m_StrList ) {
-                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), false);
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), eFeatId_id);
             }
         }
         ITERATE ( TFeatIdsMap, it, m_XrefIds ) {
             ITERATE ( TFeatIdIntList, it2, it->second.m_IntList ) {
-                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), true);
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), eFeatId_xref);
             }
             ITERATE ( TFeatIdStrList, it2, it->second.m_StrList ) {
-                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), true);
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), eFeatId_xref);
             }
         }
     }
