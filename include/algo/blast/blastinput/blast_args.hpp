@@ -347,9 +347,18 @@ class NCBI_BLASTINPUT_EXPORT CCompositionBasedStatsArgs : public IBlastCmdLineAr
 {
 public:
     /// Constructor
-    ///@param is_deltablast Are the arguments set up for Delta blast [in]
-    CCompositionBasedStatsArgs(bool is_deltablast = false)
-        : m_IsDeltaBlast(is_deltablast) {}
+    ///@param is_2and3supported Are composition based statistics options 2 and
+    /// 3 supported [in]
+    ///@param default_option Default composition based satatistics option [in]
+    ///@param zero_option_descr Non-standard description for composition
+    /// based statistics option zero [in]
+    CCompositionBasedStatsArgs(bool is_2and3supported = true,
+                               const string& default_option
+                               = kDfltArgCompBasedStats,
+                               const string& zero_option_descr = "")
+        : m_Is2and3Supported(is_2and3supported),
+          m_DefaultOpt(default_option),
+          m_ZeroOptDescr(zero_option_descr) {}
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
@@ -358,8 +367,12 @@ public:
                                          CBlastOptions& options);
 
 protected:
-    /// Are these areguments for Delta Blast
-    bool m_IsDeltaBlast;
+    /// Are options 2 and 3 supported
+    bool m_Is2and3Supported;
+    /// Default option
+    string m_DefaultOpt;
+    /// Non standard description for option zero
+    string m_ZeroOptDescr;
 };
 
 /** Argument class for collecting gapped options */

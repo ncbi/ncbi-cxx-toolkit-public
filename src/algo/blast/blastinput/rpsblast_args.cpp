@@ -50,6 +50,7 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
 {
     const bool kQueryIsProtein = true;
     const bool kIsRpsBlast = true;
+    const bool kIsCBS2and3Supported = false;
     CRef<IBlastCmdLineArgs> arg;
     static const string kProgram("rpsblast");
     arg.Reset(new CProgramDescriptionArgs(kProgram,
@@ -101,7 +102,11 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     arg.Reset(m_DebugArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CCompositionBasedStatsArgs(true));
+    string cbs_opt_zero_descr = "Simplified Composition-based statistics as in"
+        " Bioinformatics 15:1000-1011, 1999";
+    arg.Reset(new CCompositionBasedStatsArgs(kIsCBS2and3Supported,
+                                             kDfltArgCompBasedStatsRPS,
+                                             cbs_opt_zero_descr));
     m_Args.push_back(arg);
 }
 

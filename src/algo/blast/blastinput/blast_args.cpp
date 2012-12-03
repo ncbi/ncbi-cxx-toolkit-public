@@ -692,23 +692,31 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("General search options");
     // composition based statistics, keep in sync with ECompoAdjustModes
     // documentation in composition_constants.h
-    string default_cbs = (m_IsDeltaBlast ? "1" : "2");
-    arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
-              (string)"Use composition-based statistics for blastp, blastx, or tblastn:\n"
-                      "    D or d: default (equivalent to " + default_cbs + " )\n"
-                      "    0 or F or f: no composition-based statistics\n"
-                      "    1: Composition-based statistics "
-                                      "as in NAR 29:2994-3005, 2001\n" +
-                      (m_IsDeltaBlast ? "" : 
 
-              (string)"    2 or T or t : Composition-based score adjustment as in "
-                                      "Bioinformatics 21:902-911,\n"
-                      "    2005, conditioned on sequence properties\n"
-                      "    3: Composition-based score adjustment as in "
-                                      "Bioinformatics 21:902-911,\n"
-                      "    2005, unconditionally\n"),
-                      CArgDescriptions::eString, m_IsDeltaBlast ? kDfltArgCompBasedStatsDelta :
-                                                      kDfltArgCompBasedStats);
+    string zero_opt = !m_ZeroOptDescr.empty() ?
+        (string)"    0 or F or f: " + m_ZeroOptDescr + "\n" :
+        "    0 or F or f: No composition-based statistics\n";
+
+    string one_opt_insrt = m_Is2and3Supported ? "" : " or T or t";
+
+    string more_opts = m_Is2and3Supported ? 
+        "    2 or T or t : Composition-based score adjustment as in "
+        "Bioinformatics 21:902-911,\n"
+        "    2005, conditioned on sequence properties\n"
+        "    3: Composition-based score adjustment as in "
+        "Bioinformatics 21:902-911,\n"
+        "    2005, unconditionally\n" : "";
+
+    string legend = (string)"Use composition-based statistics:\n"
+        "    D or d: default (equivalent to " + m_DefaultOpt + " )\n"
+        + zero_opt
+        + "    1" + one_opt_insrt + ": Composition-based statistics "
+        "as in NAR 29:2994-3005, 2001\n"
+        + more_opts;
+
+    arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", legend,
+                           CArgDescriptions::eString, m_DefaultOpt);
+
 
     arg_desc.SetCurrentGroup("Miscellaneous options");
     // Use Smith-Waterman algorithm in traceback stage
@@ -738,8 +746,7 @@ static void
 s_SetCompositionBasedStats(CBlastOptions& opt,
                            const string& comp_stat_string,
                            bool smith_waterman_value,
-                           bool* ungapped,
-                           bool is_deltablast)
+                           bool* ungapped)
 {
     const EProgram program = opt.GetProgram();
     if (program == eBlastp || program == eTblastn || 
@@ -757,14 +764,25 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                 compo_mode = eCompositionBasedStats;
                 break;
             case 'D': case 'd':
-                compo_mode = is_deltablast ? eCompositionBasedStats
-                    : eCompositionMatrixAdjust;
-		break;
-            case '2': case 'T': case 't':
+                if (program == eRPSBlast) {
+                    compo_mode = eNoCompositionBasedStats;
+                }
+                else if (program == eDeltaBlast) {
+                    compo_mode = eCompositionBasedStats;
+                }
+                else {
+                    compo_mode = eCompositionMatrixAdjust;
+                }
+                break;
+            case '2':
                 compo_mode = eCompositionMatrixAdjust;
                 break;
             case '3':
                 compo_mode = eCompoForceFullMatrixAdjust;
+                break;
+            case 'T': case 't':
+                compo_mode = (program == eRPSBlast || program == eDeltaBlast) ?
+                    eCompositionBasedStats : eCompositionMatrixAdjust;
                 break;
         } 
 
@@ -799,8 +817,7 @@ CCompositionBasedStatsArgs::ExtractAlgorithmOptions(const CArgs& args,
         s_SetCompositionBasedStats(opt, 
                                    args[kArgCompBasedStats].AsString(),
                                    args[kArgUseSWTraceback],
-                                   ungapped.get(),
-                                   m_IsDeltaBlast);
+                                   ungapped.get());
     }
 
 }

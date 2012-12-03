@@ -57,6 +57,7 @@ CDeltaBlastAppArgs::CDeltaBlastAppArgs()
      bool const kQueryIsProtein = true;
      bool const kFilterByDefault = false;
      bool const kIsDeltaBlast = true;
+     bool const kIsCBS2and3Supported = false;
      m_ClientId = kProgram + " " + CBlastVersion().Print();
 
      static const string kDefaultTask = "deltablast";
@@ -105,7 +106,8 @@ CDeltaBlastAppArgs::CDeltaBlastAppArgs()
      arg.Reset(m_RemoteArgs);
      m_Args.push_back(arg);
 
-     arg.Reset(new CCompositionBasedStatsArgs(kIsDeltaBlast));
+     arg.Reset(new CCompositionBasedStatsArgs(kIsCBS2and3Supported,
+                                              kDfltArgCompBasedStatsDelta));
      m_Args.push_back(arg);
 
      arg.Reset(new CGapTriggerArgs(kQueryIsProtein));
