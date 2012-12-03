@@ -1846,8 +1846,9 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     // Produce HTML?
-    arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
-
+    if(!m_IsIgBlast){
+        arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
+    }
     /// Hit list size, listed here for convenience only
     arg_desc.SetCurrentGroup("Restrict search or results");
     arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
