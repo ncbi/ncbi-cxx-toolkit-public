@@ -3394,6 +3394,7 @@ s_GetBlastScore(const container&  scoreList,
                 int& percentCoverage,
                 int& percentIdent,
                 int& hspNum,
+                double& totalLen,
                 int &rawScore,
                 int& sum_n,                
                 list<int>& use_this_gi)
@@ -3415,6 +3416,8 @@ s_GetBlastScore(const container&  scoreList,
                 percentIdent = (*iter)->GetValue().GetInt();                      
             } else if (id.GetStr()=="seq_hspnum"){
                 hspNum = (*iter)->GetValue().GetInt();          
+            } else if (id.GetStr()=="seq_align_totlen"){
+                totalLen = (*iter)->GetValue().GetReal();
             } else if (id.GetStr()=="score"){
                 rawScore = (*iter)->GetValue().GetInt();
             } else if (id.GetStr()=="use_this_gi"){
@@ -3441,26 +3444,27 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     int percentCoverage = -1;
     int percentIdent = -1;
     int hspNum = 0;
+    double totalLen = 0;
     int rawScore = -1;
     int sum_n = -1;
     list<int> use_this_gi;
     
     const CSeq_align& aln = *(alnSet.Get().front()); 
 
-    hasScore = s_GetBlastScore(aln.GetScore(),evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+    hasScore = s_GetBlastScore(aln.GetScore(),evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);
         
         
     if(!hasScore){
         const CSeq_align::TSegs& seg = aln.GetSegs();
         if(seg.Which() == CSeq_align::C_Segs::e_Std){
             s_GetBlastScore(seg.GetStd().front()->GetScores(),  
-                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);
         } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
             s_GetBlastScore(seg.GetDendiag().front()->GetScores(), 
-                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);
         }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
             s_GetBlastScore(seg.GetDenseg().GetScores(),  
-                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);
         }
     }
     auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
@@ -3470,6 +3474,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     seqSetInfo->percent_coverage = percentCoverage;
     seqSetInfo->percent_identity = percentIdent;    
     seqSetInfo->hspNum = hspNum;	
+    seqSetInfo->totalLen = (Int8)totalLen;
 
     seqSetInfo->sum_n = sum_n == -1 ? 1:sum_n ;
     seqSetInfo->id = &(aln.GetSeq_id(1));

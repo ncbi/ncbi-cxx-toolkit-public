@@ -3465,7 +3465,7 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
     if(m_currAlignHsp == 0) {
         hidePrevNaviagtion = "disabled=\"disabled\"";
     }
-    if (m_currAlignHsp ==  m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber - 1) {
+    if (m_currAlignHsp ==  m_TotalHSPNum - 1) {
         hideNextNaviagtion = "disabled=\"disabled\"";
     }
 
@@ -3645,8 +3645,8 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
     string hspNum,isFirstDflAttr;
     if(isFirst) {
         string totalHsps = m_Ctx->GetRequestValue("TOTAL_HSPS").GetValue(); //Future use
-		hspNum = totalHsps.empty() ? NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber): totalHsps;
-        hspNum = (hspNum == "0") ? "" : hspNum;        
+        m_TotalHSPNum = totalHsps.empty() ? m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber : NStr::StringToInt(totalHsps);
+        hspNum = (m_TotalHSPNum != 0) ? NStr::IntToString(m_TotalHSPNum) : "";        
     }
     else {
         isFirstDflAttr =  "hidden";
@@ -3997,7 +3997,8 @@ string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)
     string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
     alignRows = CAlignFormatUtil::MapTemplate(alignRowsTemplate,"align_rows",alignRows);
     alignRows = CAlignFormatUtil::MapTemplate(alignRows,"aln_curr_num",NStr::IntToString(m_currAlignHsp));
-    
+    alignRows = CAlignFormatUtil::MapTemplate(alignRows,"alnSeqGi",m_CurrAlnID_Lbl);
+
     alignInfo += alignRows;
     return alignInfo;    
 }

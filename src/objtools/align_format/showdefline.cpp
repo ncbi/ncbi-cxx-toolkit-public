@@ -1331,6 +1331,8 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     score_info->percent_coverage = seqSetInfo->percent_coverage;
     score_info->percent_identity = seqSetInfo->percent_identity;
     score_info->hspNum = seqSetInfo->hspNum;
+    score_info->totalLen = seqSetInfo->totalLen;
+    
 
     score_info->use_this_gi = seqSetInfo->use_this_gi;
     score_info->sum_n = seqSetInfo->sum_n == -1 ? 1:seqSetInfo->sum_n ;
@@ -1484,8 +1486,8 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     else {        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",dflGi + seqid);        
     }
-    
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",CHTMLHelper::HTMLEncode(sdl->defline));
+    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",CHTMLHelper::HTMLEncode(descr));
 
     if(sdl->score_url != NcbiEmptyString) {        
         string scoreInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->scoreInfoTmpl,"score_url",sdl->score_url);
@@ -1520,6 +1522,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnAccs",deflAccs);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum); 
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_alnLen",iter->totalLen);     
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",m_StartIndex + iter->blast_rank); 
     
 	/*****************This block of code is for future use with AJAX end***************************/ 
