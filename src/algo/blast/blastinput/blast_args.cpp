@@ -1941,9 +1941,11 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 {
     ParseFormattingString(args, m_OutputFormat, m_CustomOutputFormatSpec);
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
-
-    m_Html = static_cast<bool>(args[kArgProduceHtml]);
-
+    if(m_IsIgBlast){
+        m_Html = false;
+    } else {
+        m_Html = static_cast<bool>(args[kArgProduceHtml]);
+    }
     // Default hitlist size 500, value can be changed if import search strategy is used
     int hitlist_size = opt.GetHitlistSize();
 
