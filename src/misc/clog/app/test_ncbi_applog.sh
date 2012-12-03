@@ -46,7 +46,7 @@ if [ $? -ne 0 -o -z "$token" ] ; then
     Error "start_app"
 fi
 echo "$token" | \
-    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{9\}" >/dev/null 2>&1 \
+    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
     || Error "Token have wrong format"
 Log 'start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID' 'start_app' "^00123/000/0000/AB $std start"
 
@@ -76,7 +76,7 @@ if [ $? -ne 0 -o -z "$request_token" ] ; then
     Error "start_request(1)"
 fi
 echo "$request_token" | \
-    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{9\}&rid=1&rsid=request1&client=1\.2\.3\.4&rtime=[0-9]\{10,\}\.[0-9]\{9\}" >/dev/null 2>&1 \
+    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{1,\}&rid=1&rsid=request1&client=1\.2\.3\.4&rtime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
     || Error "Request 1 token have wrong format"
 
 Log 'start_request "" -sid=request1 -rid=1 -client=1.2.3.4 -param="r11=value1&r12=value2"' 'start_request(1)' "^00123/000/0001/RB $req1 request-start r11=value1&r12=value2"
