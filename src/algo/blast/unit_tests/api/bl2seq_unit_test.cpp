@@ -64,6 +64,7 @@
 #include <objtools/simple/simple_om.hpp>        // for CSimpleOM
 #include <objtools/readers/fasta.hpp>           // for CFastaReader
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include "test_objmgr.hpp"
 
@@ -84,6 +85,68 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 BOOST_AUTO_TEST_SUITE(bl2seq)
+
+CRef<CSeq_loc> s_MakePackedInt2(CRef<CSeq_id> id, vector<TSeqRange>& range_vec)
+{
+     CRef<CSeq_loc> retval(new CSeq_loc());
+     NON_CONST_ITERATE(vector<TSeqRange>, itr, range_vec)
+     {
+          retval->SetPacked_int().AddInterval(*id, (*itr).GetFrom(), (*itr).GetTo());
+     }
+     return retval;
+}
+
+BOOST_AUTO_TEST_CASE(NucleotideMultipleSeqLocs1) {
+
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 224514841));
+    CRef<CScope> scope(CSimpleOM::NewScope());
+    TSeqLocVector query;
+
+    vector<TSeqRange> range_vec;
+
+    range_vec.push_back(TSeqRange(73011288, 73011591));
+    range_vec.push_back(TSeqRange(73080052, 73080223));
+    range_vec.push_back(TSeqRange(73096483, 73096589));
+    range_vec.push_back(TSeqRange(73097765, 73097864));
+    range_vec.push_back(TSeqRange(73113762, 73113809));
+    range_vec.push_back(TSeqRange(73119266, 73119340));
+    range_vec.push_back(TSeqRange(73168955, 73169141));
+    range_vec.push_back(TSeqRange(73178294, 73178376));
+    range_vec.push_back(TSeqRange(73220818, 73220920));
+    range_vec.push_back(TSeqRange(73223091, 73223365));
+
+    CRef<CSeq_loc> temp_loc1 = s_MakePackedInt2(id, range_vec);
+ofstream o1("temploc1.out.asn");
+o1 << MSerial_AsnText << *temp_loc1 ;
+    query.push_back(SSeqLoc(temp_loc1, scope));
+
+    TSeqLocVector subjects;
+    CRef<CSeq_id> sid1(new CSeq_id(CSeq_id::e_Gi, 262050671));
+    CRef<CSeq_loc> ssl1(new CSeq_loc());
+    ssl1->SetWhole(*sid1);
+    SSeqLoc subj_seqloc(ssl1, scope);
+    subjects.push_back(subj_seqloc);
+
+    CBl2Seq bl2seq(query, subjects, eMegablast);
+    TSeqAlignVector sav(bl2seq.Run());
+    BOOST_CHECK_EQUAL(10, (int) sav.size());
+    CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+    BOOST_CHECK_EQUAL(1, (int)sar->GetSegs().GetDenseg().GetNumseg());
+    int num_ident = 0;
+    sar->GetNamedScore(CSeq_align::eScore_IdentityCount, num_ident);
+    BOOST_CHECK_EQUAL(303, num_ident);
+    BOOST_CHECK_EQUAL(73011288, sar->GetSeqStart(0));
+    BOOST_CHECK_EQUAL(1, sar->GetSeqStart(1));
+    
+#if 1
+ofstream o("seqalign.out.asn");
+ITERATE(TSeqAlignVector, v, sav) {
+o << MSerial_AsnText << **v ;
+}
+o.close();
+#endif
+}
+
 
 BOOST_AUTO_TEST_CASE(ProteinBlastInvalidSeqIdSelfHit)
 {

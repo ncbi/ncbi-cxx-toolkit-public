@@ -332,10 +332,47 @@ CObjMgr_RemoteQueryData::GetSeqLocs()
 /////////////////////////////////////////////////////////////////////////////
 
 CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
-    : m_SSeqLocVector(queries)
 {
     if (queries.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Empty TSeqLocVector");
+    }
+
+    bool found_packedint = false;
+    ITERATE(TSeqLocVector, itr, queries)
+    {
+        if (((*itr).seqloc)->IsPacked_int())
+        {
+           found_packedint = true;
+           break;
+        }
+    }
+
+    if (found_packedint)
+    {
+        NON_CONST_ITERATE(TSeqLocVector, itr, queries)
+        {
+           if (((*itr).seqloc)->IsPacked_int())
+           {
+               CSeq_loc* mix = const_cast<CSeq_loc *> (&* (*itr).seqloc);
+               NON_CONST_ITERATE(CPacked_seqint::Tdata, it, mix->SetPacked_int().Set())
+               {
+                     CRef<CSeq_loc> ival(new CSeq_loc);
+                     ival->SetInt(**it);
+                     m_SSeqLocVector.push_back(SSeqLoc(ival, (*itr).scope, (*itr).mask)); 
+               }
+           }
+           else
+           {
+               m_SSeqLocVector.push_back(*itr);
+           }
+        }
+    }
+    else
+    {
+        NON_CONST_ITERATE(TSeqLocVector, itr, queries)
+        {
+               m_SSeqLocVector.push_back(*itr);
+        }
     }
 }
 
