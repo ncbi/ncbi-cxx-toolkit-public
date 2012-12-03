@@ -80,6 +80,7 @@ namespace DiscRepNmSpc {
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
       static bool   is_Prot_run;
+      static bool   is_Quals_run;
       static bool   is_Rna_run;
       static bool   is_SHORT_run;
   };
@@ -306,7 +307,7 @@ namespace DiscRepNmSpc {
 
 
   enum eMultiQual {
-        e_not_multi = 0,
+        e_no_multi = 0,
         e_same,
         e_dup,
         e_all_dif
@@ -326,7 +327,6 @@ namespace DiscRepNmSpc {
 
 
 //  new comb!!
-/*
   class CSeqEntry_test_on_quals : public CSeqEntryTestAndRepData
   {
     public:
@@ -338,9 +338,62 @@ namespace DiscRepNmSpc {
 
     protected:
       string GetName_asn1() const {return string("DISC_SOURCE_QUALS_ASNDISC"); }
-      string GetName_asn1_oncall() const {return string("DISC_SOURCE_QUALS_ASNDISC"); }
+      string GetName_asn1_oncall() const {
+                                      return string("DISC_SOURCE_QUALS_ASNDISC_oncaller"); }
+      string GetName_bad() const {return string("DISC_SRC_QUAL_PROBLEM"); }
+
+      void GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, 
+             const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name);
+      void GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name);
+      void GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, 
+                                     const vector <string>& desc_ls, Str2Ints& qual2src_idx);
+      string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
+                                                     const int& cur_idx, bool is_subsrc);
+      string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
+      void GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name,
+                                                                  vector <string>& multi_vlus);
+      string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
+      void GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name,
+                                                                  vector <string>& multi_vlus);
+      void GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name,
+                                                                  vector <string>& multi_vlus);
+      CRef <CClickableItem> MultiItem(const string& qual_name,
+        const vector <string>& multi_list, const string& ext_desc, const string& setting_name);
+      void CheckForMultiQual(const string& qual_name, const CBioSource& biosrc,
+                                                      eMultiQual& multi_type, bool is_subsrc);
+      void GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc,
+                                                  vector <string>& multi_vlus, bool is_subsrc);
   };
-*/
+
+
+  class CSeqEntry_DISC_SRC_QUAL_PROBLEM : public CSeqEntry_test_on_quals
+  {
+    public:
+      virtual ~CSeqEntry_DISC_SRC_QUAL_PROBLEM () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_quals::GetName_bad();}
+  };
+
+
+  class CSeqEntry_DISC_SOURCE_QUALS_ASNDISC : public CSeqEntry_test_on_quals
+  {
+    public:
+      virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_quals::GetName_asn1();}
+  };
+
+
+  class CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller : public CSeqEntry_test_on_quals
+  {
+    public:
+      virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_quals::GetName_asn1_oncall();}
+  };
 
 
   class CSeqEntry_test_on_biosrc_orgmod : public CSeqEntryTestAndRepData
@@ -684,80 +737,6 @@ namespace DiscRepNmSpc {
                         CRef <GeneralDiscSubDt>& item_list, const string& biosrc_txt);
       CRef <GeneralDiscSubDt> AddSeqEntry(const CSeqdesc& seqdesc,const CSeq_entry& seq_entry);
       bool HasNaInSet(const CBioseq_set& bioseq_set);
-  };
-
-
-  class CSeqEntry_DISC_SOURCE_QUALS : public CSeqEntryTestAndRepData
-  {
-    public:
-      CSeqEntry_DISC_SOURCE_QUALS () {};
-      virtual ~CSeqEntry_DISC_SOURCE_QUALS () {}; 
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const = 0;
-
-    protected:
-      bool isOncaller;
-
-/*
-      struct qualvlu_distribute {
-         Str2Strs qual_vlu2src;
-         vector <string> missing_item, multi_same, multi_dup, multi_all_dif;
-      };
-      typedef map <string, qualvlu_distribute > Str2QualVlus;
-*/
-
-      Str2Ints m_qual2src_idx_feat, m_qual2src_idx_seqdesc;
-      Str2MapStr2Strs  m_biosrc2qualvlu_nm;
-
-      void GetQual2SrcIdx(const CBioSource& biosrc,Str2Ints& qual2src_idx,const unsigned& idx);
-      string GetSrcQualValue(const string& qual_type, const int& cur_idx, bool is_subsrc);
-      string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
-      void GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name, 
-                                                                  vector <string>& multi_vlus);
-      string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
-      void GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name,
-                                                                  vector <string>& multi_vlus);
-      void GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name,
-                                                                  vector <string>& multi_vlus);
-      CRef <CClickableItem> MultiItem(const string& qual_name, 
-                                  const vector <string>& multi_list, const string& ext_desc);
-      void CheckForMultiQual(const string& qual_name, const CBioSource& biosrc, 
-                                                      eMultiQual& multi_type, bool is_subsrc);
-      void GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc, 
-                                                  vector <string>& multi_vlus, bool is_subsrc);
-      Str2QualVlus m_qual_nm2qual_vlus;
-      void GetQualDistribute(const Str2Ints& qual2src_idx, bool IsFromFeat = false);
-  };
-
-  class CSeqEntry_DISC_SOURCE_QUALS_ASNDISC : public CSeqEntry_DISC_SOURCE_QUALS
-  {
-      friend class CSeqEntry_DISC_SOURCE_QUALS;
-
-    public:
-      CSeqEntry_DISC_SOURCE_QUALS_ASNDISC () { isOncaller = false;}
-      virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item){
-            CSeqEntry_DISC_SOURCE_QUALS :: GetReport(c_item);
-      }
-      virtual string GetName() const {return string("DISC_SOURCE_QUALS_ASNDISC");}
-  }; 
-
-
-  class CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller : public CSeqEntry_DISC_SOURCE_QUALS
-  {
-      friend class CSeqEntry_DISC_SOURCE_QUALS;
-
-    public:
-      CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller() { isOncaller = true;}
-      virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item){
-            CSeqEntry_DISC_SOURCE_QUALS :: GetReport(c_item);
-      }
-      virtual string GetName() const {return string("DISC_SOURCE_QUALS_ASNDISC");}
   };
 
 

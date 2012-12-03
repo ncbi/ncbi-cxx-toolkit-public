@@ -128,6 +128,7 @@ bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_MolInfo_run;
 bool CDiscTestInfo :: is_MRNA_run;
 bool CDiscTestInfo :: is_Prot_run;
+bool CDiscTestInfo :: is_Quals_run;
 bool CDiscTestInfo :: is_Rna_run;
 bool CDiscTestInfo :: is_SHORT_run;
 
@@ -199,7 +200,7 @@ string CBioseq_ADJACENT_PSEUDOGENES :: GetGeneStringMatch (const string& str1, c
 void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
 {
    vector <const CSeq_feat*>::const_iterator jt;   
-   ENa_strand this_strand, next_strand;
+   ENa_strand this_strand;
    string match_txt;
    ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
      if (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()) continue;
@@ -243,7 +244,7 @@ void CBioseq_ADJACENT_PSEUDOGENES :: GetReport(CRef <CClickableItem>& c_item)
      AddSubcategories(c_item, GetName(), it->second, strtmp, strtmp, true, e_OtherComment);
    }
    c_item->description
-     = NStr::UIntToString(c_item->item_list.size()) + " pseudogenes match an adjacent pseudogene's text.";
+     = NStr::UIntToString((unsigned)c_item->item_list.size()) + " pseudogenes match an adjacent pseudogene's text.";
 };
 
 
@@ -3509,7 +3510,7 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_COUNT_PROTEINS :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description 
-     = NStr::UIntToString(c_item->item_list.size()) + " protein sequences in record";
+     = NStr::UIntToString((unsigned)c_item->item_list.size()) + " protein sequences in record";
 };
 
 
@@ -5415,6 +5416,681 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c
 
 
 // new method
+/*
+static map <string, vector <CRef <CBioSource*> > qualnm_src;
+static vector <string> desc_ls;            // for
+static vector <CRef <CBioSource>> src_ls;  // combine_seqentry_report
+static Str2Ints qual2src_idx;              //
+*/
+void CSeqEntry_test_on_quals :: GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
+{
+  ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
+     int type = (*it)->GetSubtype();
+     if ( (*it)->GetSubtypeName( type ) == type_name ) {
+        strtmp = (*it)->GetName();
+        if (strtmp.empty() && (type == CSubSource::eSubtype_germline
+                                 || type == CSubSource::eSubtype_transgenic
+                                 || type == CSubSource::eSubtype_metagenomic
+                                 || type == CSubSource::eSubtype_environmental_sample
+                                 || type == CSubSource::eSubtype_rearranged)) {
+           multi_vlus.push_back("TRUE");
+        }
+        else multi_vlus.push_back(strtmp);
+     }
+  }
+};
+
+
+string CSeqEntry_test_on_quals :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
+{
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
+      if ((*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) == type_name)
+                return ((*it)->GetSubname());
+   return (kEmptyStr);
+};
+
+
+void CSeqEntry_test_on_quals :: GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
+{
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
+      if ((*it)->GetSubtypeName((*it)->GetSubtype()) == type_name)
+          multi_vlus.push_back((*it)->GetSubname());
+};
+
+
+void CSeqEntry_test_on_quals :: GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name, vector <string>& multi_vlus)
+{
+   ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
+     if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
+       ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
+          if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
+              strtmp = (*kt)->GetName();
+              if (!strtmp.empty()) multi_vlus.push_back(strtmp);
+          }
+          if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
+              strtmp = (*kt)->GetSeq();
+              if (!strtmp.empty()) multi_vlus.push_back(strtmp);
+          }
+       }
+     }
+     else {
+        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
+           if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
+               strtmp = (*kt)->GetName();
+               if (!strtmp.empty()) multi_vlus.push_back(strtmp);
+           }
+           if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
+               strtmp = (*kt)->GetSeq();
+               if (!strtmp.empty()) multi_vlus.push_back(strtmp);
+           }
+        }
+     }
+   }
+};
+
+
+CRef <CClickableItem> CSeqEntry_test_on_quals :: MultiItem(const string& qual_name, const vector <string>& multi_list, const string& ext_desc, const string& setting_name)
+{
+    CRef <CClickableItem> c_sub (new CClickableItem);
+    c_sub->setting_name = setting_name;
+    c_sub->description = "  " + GetHasComment(multi_list.size(), "source") + "multiple "
+                         + qual_name + " qualifiers" + ext_desc;
+    if (setting_name == GetName_asn1_oncall()) c_sub->item_list = multi_list;
+    return (c_sub);
+};
+
+
+void CSeqEntry_test_on_quals :: CheckForMultiQual(const string& qual_name, const CBioSource& biosrc, eMultiQual& multi_type, bool is_subsrc)
+{
+   vector <string> multi_qual_vlus;
+   Str2Int  vlu_cnt;
+   GetMultiQualVlus(qual_name, biosrc, multi_qual_vlus, is_subsrc);
+   if (multi_qual_vlus.size() <= 1) multi_type = e_no_multi;
+   else {
+     ITERATE (vector <string>, it, multi_qual_vlus) {
+       if (vlu_cnt.find(*it) != vlu_cnt.end()) vlu_cnt[*it]++;
+       else vlu_cnt[*it] = 1;
+     }
+     if (vlu_cnt.size() == 1) multi_type = e_same;
+     else {
+        bool has_dup = false;
+        ITERATE (Str2Int, it, vlu_cnt) {
+          if (it->second > 1) {has_dup = true; break;}
+   }
+        multi_type = has_dup ? e_dup : e_all_dif;
+     }
+   }
+};
+
+
+
+void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc, vector <string>& multi_vlus, bool is_subsrc)
+{
+   ITERATE (vector <string>, it, thisInfo.no_multi_qual) if (qual_name == *it) return;
+
+   if (is_subsrc) GetMultiSubSrcVlus(biosrc, qual_name, multi_vlus);
+   if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
+             || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" )
+      GetMultiPrimerVlus(biosrc, qual_name, multi_vlus);
+   else GetMultiOrgModVlus(biosrc, qual_name, multi_vlus);
+};
+
+
+string CSeqEntry_test_on_quals :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
+{
+  ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
+     int type = (*it)->GetSubtype();
+     if ( (*it)->GetSubtypeName( type, CSubSource::eVocabulary_insdc) == type_name ) {
+        strtmp = (*it)->GetName();
+        if (strtmp.empty() && (type == CSubSource::eSubtype_germline
+                                 || type == CSubSource::eSubtype_transgenic
+                                 || type == CSubSource::eSubtype_metagenomic
+                                 || type == CSubSource::eSubtype_environmental_sample
+                                 || type == CSubSource::eSubtype_rearranged)) {
+           return ("TRUE");
+        }
+        else return (strtmp);
+     }
+  }
+  return (kEmptyStr);
+};
+
+string CSeqEntry_test_on_quals :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, const int& cur_idx, bool is_subsrc)
+{
+ string ret_str(kEmptyStr);
+ // DoesStringMatchConstraint missing
+ if (is_subsrc) ret_str = GetSubSrcValue(biosrc, qual_name);
+ else if (qual_name == "location") ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
+ else if (qual_name == "taxname") ret_str = biosrc.GetTaxname();
+ else if (qual_name == "common_name") ret_str = biosrc.GetCommon();
+ else if (qual_name == "lineage") ret_str = biosrc.GetLineage();
+ else if (qual_name == "div") ret_str = biosrc.GetDivision();
+ else if (qual_name == "dbxref") ret_str = "no ready yet";
+ else if (qual_name == "taxid") {
+   int tid = biosrc.GetOrg().GetTaxId();
+   if (tid > 0) ret_str = NStr::IntToString(tid);
+   else {
+     if (biosrc.GetOrg().CanGetDb()) {
+       ITERATE (vector <CRef <CDbtag> >, it, biosrc.GetOrg().GetDb()) {
+         strtmp = (*it)->GetDb();
+         if (NStr::FindNoCase(strtmp, "taxdb") != string::npos
+               && strtmp.size() == ((string)"taxdb").size()
+               && (*it)->GetTag().IsStr()) 
+             ret_str = (*it)->GetTag().GetStr();
+         }       
+       }
+   }
+ }
+ else if ( qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
+           || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" )
+ {
+   ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
+     if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
+       ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
+          if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
+              strtmp = (*kt)->GetName();
+              if (!strtmp.empty()) { ret_str = strtmp; break; }
+          }
+          if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
+              strtmp = (*kt)->GetSeq();
+              if (!strtmp.empty()) { ret_str = strtmp; break; }
+          }
+          if (!ret_str.empty()) break;
+       }
+     }
+     else {
+        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
+           if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
+               strtmp = (*kt)->GetName();
+               if (!strtmp.empty()) {ret_str = strtmp; break;}
+           }
+           if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
+               strtmp = (*kt)->GetSeq();
+               if (!strtmp.empty()) { ret_str = strtmp; break;}
+           }
+           if ( !ret_str.empty() ) break;
+        }
+     }
+     if ( !ret_str.empty() ) break;
+   }
+ }
+ else ret_str = GetOrgModValue(biosrc, qual_name);
+ 
+ return (ret_str);
+};
+
+
+
+void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name)
+{
+  int pre_idx, cur_idx, i;
+  string qual_name, src_qual_vlu, src_txt;
+  bool is_subsrc;
+  size_t pos;
+
+  ITERATE (Str2Ints, it, qual2src_idx) {
+     qual_name = it->first;
+     is_subsrc = false;
+     if ( (pos = qual_name.find("$subsrc")) != string::npos) {
+        is_subsrc = true;
+        qual_name = qual_name.substr(0, pos);
+     }
+     pre_idx = -1;
+     ITERATE (vector <int>, jt, it->second) {
+       cur_idx = *jt;
+       if (pre_idx +1 != cur_idx) {  // have missing
+    //      strtmp = (qual_name == "location") ? "$genomic#" : "$missing#";
+          strtmp = "$missing#";
+          for ( i = pre_idx+1; i < cur_idx; i++) 
+               thisInfo.test_item_list[setting_name].push_back(qual_name+ strtmp +desc_ls[i]);
+                //qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(desc_ls[i]);
+       }
+       src_qual_vlu= GetSrcQualValue(src_ls[cur_idx].GetObject(),qual_name,cur_idx,is_subsrc);
+       src_txt = desc_ls[cur_idx];
+       thisInfo.test_item_list[setting_name].push_back(
+                                          qual_name+"$"+ src_qual_vlu + "#" + src_txt);
+       //qual_nm2qual_vlus[qual_name].qual_vlu2src[src_qual_vlu].push_back(src_txt);
+
+       // have multiple qualifiers? 
+       eMultiQual multi_type;
+       CheckForMultiQual(qual_name, src_ls[cur_idx].GetObject(), multi_type, is_subsrc);
+       strtmp = kEmptyStr;
+       switch (multi_type) {
+          case e_same: strtmp = "$multi_same#"; break;
+          case e_dup:  strtmp = "$multi_dup#"; break;
+          case e_all_dif: strtmp = "$multi_all_dif#"; break;
+          default: break;
+       }
+       if (!strtmp.empty()) 
+          thisInfo.test_item_list[setting_name].push_back(qual_name + strtmp + src_txt);
+
+       // biosrc_val_qualnm:
+       strtmp = src_txt + "$" + src_qual_vlu + "#" + qual_name;
+       thisInfo.test_item_list[setting_name + "_src"].push_back(strtmp);
+
+       pre_idx = cur_idx;
+     }
+
+   //  strtmp = (qual_name == "location") ? "$genomic#" : "$missing#";
+     strtmp = "$missing#";
+     for (i = cur_idx +1; i < (int)src_ls.size(); i++)
+           thisInfo.test_item_list[setting_name].push_back(qual_name + strtmp +desc_ls[i]);
+  }
+};
+
+
+void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name)
+{
+   Str2Strs qnm2qvlu_src;
+   GetTestItemList(c_item->item_list, qnm2qvlu_src);
+   c_item->item_list.clear();
+
+   bool all_same, all_unique, all_present;
+   bool multi_same, multi_dup, multi_all_dif;
+   unsigned multi_type_cnt;
+   string qual_nm;
+
+   Str2Strs qvlu2src;
+   CRef <CClickableItem> c_main (new CClickableItem);
+   if (setting_name == GetName_asn1_oncall()) {
+     c_main = c_item;
+     c_main->setting_name = setting_name;
+     c_main->description = "Source Qualifer Report";
+     c_main->item_list.clear();
+     c_item = CRef <CClickableItem> (new CClickableItem);
+   }
+
+   unsigned i = 0;
+   ITERATE (Str2Strs, it, qnm2qvlu_src) {
+     qual_nm = it->first;
+     qvlu2src.clear();
+     GetTestItemList(it->second, qvlu2src, "#");
+     if (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1) all_same = true;
+     else {
+        all_same = false;
+        all_unique = true;
+        ITERATE (Str2Strs, jt, qvlu2src) {
+          if ( jt->first != "missing"
+                   && jt->first != "multi_same"
+                   && jt->first != "multi_dup"
+                   && jt->first != "multi_all_dif"
+                   && jt->second.size() > 1) {
+            all_unique = false; break;
+          }
+        }
+     } 
+     
+     all_present = (qvlu2src.find("missing") == qvlu2src.end())? true : false;
+
+     multi_same = (qvlu2src.find("multi_same") == qvlu2src.end()) ? false : true;
+     multi_dup = (qvlu2src.find("multi_dup") == qvlu2src.end()) ? false : true;
+     multi_all_dif= (qvlu2src.find("multi_all_dif") == qvlu2src.end()) ? false : true;
+
+     multi_type_cnt = 0;
+     multi_type_cnt += multi_same ? 1 : 0;
+     multi_type_cnt += multi_dup ? 1 : 0;
+     multi_type_cnt += multi_all_dif? 1 : 0;
+
+     if (qual_nm == "note") qual_nm += "-subsrc";
+     c_item->description = qual_nm;
+     if (all_present) {
+         c_item->description += " (all present, ";
+         if (all_same) {
+            c_item->description += "all same";
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            c_sub->setting_name = setting_name;
+            c_sub->description 
+                = GetHasComment( (qvlu2src.begin()->second).size(), "source")
+                   + " '" + qvlu2src.begin()->first + "' for " + qual_nm;
+            c_item->subcategories.push_back(c_sub);
+            if (setting_name == GetName_asn1_oncall()) 
+                    c_sub->item_list = qvlu2src.begin()->second;
+         }
+         else if (all_unique) {
+                 c_item->description += "all_unique";
+                 if (setting_name == GetName_asn1_oncall()) {
+                    ITERATE (Str2Strs, jt, qvlu2src) { 
+                       if ( jt->first != "missing" && jt->first != "multi_same"
+                                   && jt->first != "multi_dup" && jt->first != "multi_all_dif")
+                           c_item->item_list.push_back((jt->second)[0]);
+                    }
+                 }
+         }
+         else {
+           c_item->description += "some duplicate";
+           unsigned uni_cnt=0;
+           vector <string> uni_sub;
+           ITERATE (Str2Strs, jt, qvlu2src) {
+             if ( jt->first == "missing" || jt->first == "multi_same"
+                         || jt->first == "multi_dup" || jt->first == "multi_all_dif")
+                    continue;
+             unsigned sz = (jt->second).size();
+             if (sz > 1) {
+               CRef <CClickableItem> c_sub (new CClickableItem);
+               c_sub->setting_name = setting_name;
+               c_sub->description =
+                  GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_nm;
+               c_item->subcategories.push_back(c_sub);
+               if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second; 
+             }
+             else  {
+               uni_cnt ++;
+               if (setting_name == GetName_asn1_oncall()) uni_sub.push_back((jt->second)[0]);
+             }
+           }
+           if (uni_cnt) {
+             CRef <CClickableItem> c_sub (new CClickableItem);
+             c_sub->setting_name = GetName();
+             c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
+                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
+             c_item->subcategories.push_back(c_sub);
+             if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
+          }
+         }
+     }
+     else {
+        c_item->description += " (some missing, ";
+        CRef <CClickableItem> c_sub (new CClickableItem);
+        c_sub->setting_name = setting_name;
+        c_sub->description = 
+             GetIsComment(qvlu2src["missing"].size(), "source") + "missing " + qual_nm;
+        c_item->subcategories.push_back(c_sub);
+        if (setting_name == GetName_asn1_oncall()) c_sub->item_list = qvlu2src["missing"];
+
+        if (all_same) {
+            c_item->description += "all same";
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            c_sub->setting_name = GetName();
+            c_sub->description 
+                = GetHasComment( (qvlu2src.begin()->second).size(), "source")
+                   + " '" + qvlu2src.begin()->first + "' for " + qual_nm;
+            c_item->subcategories.push_back(c_sub);
+            if (setting_name == GetName_asn1_oncall()) 
+                     c_sub->item_list = qvlu2src.begin()->second;
+        }
+        else if (all_unique) {
+           c_item->description += "all unique"; 
+           CRef <CClickableItem> c_sub (new CClickableItem);
+           unsigned uni_cnt = 0;
+           ITERATE (Str2Strs, jt, qvlu2src) {
+              if ( jt->first == "missing" || jt->first == "multi_same"
+                         || jt->first == "multi_dup" || jt->first == "multi_all_dif")
+                    continue;
+              if (jt->second.size() == 1) {
+                 uni_cnt ++;
+                 if (setting_name == GetName_asn1_oncall()) 
+                                     c_sub->item_list.push_back((jt->second)[0]);
+              }
+           }
+           c_sub->setting_name = setting_name;
+           c_sub->description = GetHasComment(uni_cnt, "source") + "unique " 
+                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
+           c_item->subcategories.push_back(c_sub);
+        }
+        else {
+           c_item->description += "some duplicate";
+           unsigned uni_cnt=0, sz;
+           vector <string> uni_sub;
+           ITERATE (Str2Strs, jt, qvlu2src) {
+             if ( jt->first == "missing" || jt->first == "multi_same"
+                         || jt->first == "multi_dup" || jt->first == "multi_all_dif")
+                    continue;
+             sz = (jt->second).size();
+             if (sz > 1) {
+               CRef <CClickableItem> c_sub (new CClickableItem);
+               c_sub->setting_name = GetName();
+               c_sub->description =
+                  GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_nm;
+               c_item->subcategories.push_back(c_sub);
+               if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second;
+             }
+             else  {
+                 uni_cnt ++;
+                 uni_sub.push_back((jt->second)[0]);
+             }
+           }
+           if (uni_cnt) {
+             CRef <CClickableItem> c_sub (new CClickableItem);
+             c_sub->setting_name = GetName();
+             c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
+                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
+             c_item->subcategories.push_back(c_sub);
+             if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
+          }
+        }
+     }
+
+     //multiple
+     unsigned sz = qvlu2src["multi_same"].size() 
+                        + qvlu2src["multi_dup"].size() + qvlu2src["multi_all_dif"].size();
+     string ext_desc;
+     if ( multi_type_cnt) {
+          c_item->description += ", some multi";
+          CRef <CClickableItem> c_sub (new CClickableItem);
+          c_sub->setting_name = setting_name;
+          if (multi_type_cnt == 1) 
+              ext_desc = multi_same ? ", same_value" 
+                                       : (multi_dup ? ", some dupplicates" : kEmptyStr);
+          else {
+              ext_desc = kEmptyStr;
+              if (multi_same) {
+                 c_sub->subcategories.push_back(MultiItem(
+                               qual_nm, qvlu2src["multi_same"], ", same value", setting_name));
+              }
+              if (multi_dup) 
+                 c_sub->subcategories.push_back(MultiItem(
+                           qual_nm, qvlu2src["multi_dup"], ", some duplicates", setting_name));
+              if (multi_all_dif) 
+                 c_sub->subcategories.push_back(MultiItem(
+                             qual_nm, qvlu2src["multi_all_dif"], kEmptyStr, setting_name));
+          }
+          c_sub->description = GetHasComment(sz, "source") 
+                                   + "multiple " + qual_nm + " qualifiers" + ext_desc;
+          c_item->subcategories.push_back(c_sub);
+     }
+     
+     c_item->description += ")";
+     if (setting_name == GetName_asn1_oncall()) 
+           c_main->subcategories.push_back(c_item);
+     else {
+        c_item->item_list.clear();
+        if (i) thisInfo.disc_report_data.push_back(c_item);
+        if (i < qnm2qvlu_src.size() - 1 ) {
+             c_item = CRef <CClickableItem> (new CClickableItem);
+             c_item->setting_name = setting_name;
+        }
+     }
+     i++;
+   }  // it
+
+ // biosrc has 2 qual with same value: biosrc2qualvlu_nm
+    string biosrc_nm, quals;
+    unsigned cnt = 0;
+    vector < CRef <CClickableItem> > sub;
+    Str2Strs biosrc2qualvlu_nm, vlu2nms;
+    GetTestItemList(thisInfo.test_item_list[setting_name + "_src"], biosrc2qualvlu_nm);
+    thisInfo.test_item_list[setting_name + "_src"].clear();
+    ITERATE (Str2Strs, it, biosrc2qualvlu_nm) {
+         biosrc_nm = it->first;
+         vlu2nms.clear();
+         GetTestItemList(it->second, vlu2nms);
+         ITERATE (Str2Strs, jt, vlu2nms) {
+           if (jt->second.size() > 1) {
+              cnt ++;
+              quals = NStr::Join(jt->second, ", ");
+              CRef <CClickableItem> c_sub (new CClickableItem);
+              c_sub->setting_name = setting_name;
+              c_sub->description = 
+                "BioSource has value '" + jt->first + "' for these qualifiers: " + quals;
+              sub.push_back(c_sub);
+              if (setting_name == GetName_asn1_oncall()) c_sub->item_list.push_back(biosrc_nm);
+           }
+         }
+    }
+ 
+    if (!sub.empty()) {
+         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item->setting_name = setting_name;
+         c_item->description = GetHasComment(cnt, "source") 
+                                      + "two or more qualifiers with the same value";
+         c_item->item_list.push_back(biosrc_nm);
+         c_item->subcategories = sub;
+         thisInfo.disc_report_data.push_back(c_item);
+    }
+};
+
+
+void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, const vector <string>& desc_ls, Str2Ints& qual2src_idx)
+{
+   bool fwd_nm, fwd_seq, rev_nm, rev_seq;
+   unsigned i=0;
+   ITERATE (vector <CConstRef <CBioSource> >, it, src_ls) {
+    if ( (*it)->IsSetTaxname() ) qual2src_idx["taxname"].push_back(i);
+    if ( (*it)->GetOrg().GetTaxId() ) qual2src_idx["taxid"].push_back(i);
+
+    // add subtypes & orgmods
+    if ( (*it)->CanGetSubtype() ) {
+       ITERATE (list <CRef <CSubSource> >, jt, (*it)->GetSubtype()) {
+         strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), CSubSource::eVocabulary_insdc);
+         qual2src_idx[strtmp + "$subsrc"].push_back(i);
+       }
+    }
+
+    if ( (*it)->IsSetOrgname() && (*it)->GetOrgname().CanGetMod() ) {
+       ITERATE (list <CRef <COrgMod> >, jt, (*it)->GetOrgname().GetMod() ) {
+          strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), COrgMod::eVocabulary_insdc);
+          if (strtmp != "old_name" && strtmp != "old_lineage" && strtmp != "gb_acronym"
+                         && strtmp != "gb_anamorph" && strtmp != "gb_synonym")
+              qual2src_idx[strtmp].push_back(i);
+       }
+    }
+   
+    // add PCR primers
+    if ( (*it)->CanGetPcr_primers() ) {
+       fwd_nm = fwd_seq = rev_nm = rev_seq = false;
+       ITERATE (list <CRef <CPCRReaction> >, jt, (*it)->GetPcr_primers().Get()) {
+          if ( !fwd_nm && !fwd_seq && (*jt)->CanGetForward() ) {
+            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
+               if ( !fwd_nm && (*kt)->CanGetName() ) {
+                  strtmp = (*kt)->GetName();
+                  if (!strtmp.empty()) {
+                      qual2src_idx["fwd_primer_name"].push_back(i);
+                      fwd_nm = true;
+                  }
+               }
+               if ( !fwd_seq && (*kt)->CanGetSeq() ) {
+                  strtmp = (*kt)->GetSeq();
+                  if (!strtmp.empty()) {
+                     fwd_seq = true;
+                     qual2src_idx["fwd_primer_seq"].push_back(i);
+                  }
+               }
+               if (fwd_nm && fwd_seq) break;
+            }
+          }
+          if ( !rev_nm && !rev_seq && (*jt)->CanGetReverse() ) {
+            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
+               if (!rev_nm && (*kt)->CanGetName() ) {
+                  strtmp = (*kt)->GetName();
+                  if (!strtmp.empty()) {
+                      rev_nm = true;
+                      qual2src_idx["rev_primer_name"].push_back(i);
+                  }
+               }
+               if (!rev_seq && (*kt)->CanGetSeq() ) {
+                  strtmp = (*kt)->GetSeq();
+                  if (!strtmp.empty()) {
+                      rev_seq = true;
+                      qual2src_idx["rev_primer_seq"].push_back(i);
+                  }
+               }
+               if (rev_nm && rev_seq) break;
+            }
+          }
+          if (fwd_nm && fwd_seq && rev_nm && rev_seq) break;
+       }
+    }
+    
+    // genomic
+    if ((*it)->GetGenome() != CBioSource::eGenome_unknown) 
+             qual2src_idx["location"].push_back(i);
+    
+    i++;
+  } 
+};
+
+
+static vector <string> comb_desc_ls;
+static vector <CConstRef <CBioSource> > comb_src_ls;
+static Str2Ints comb_qual2src_idx;
+void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (thisTest.is_Quals_run) return;
+   vector <string> this_desc_ls;
+   vector <CConstRef <CBioSource> > this_src_ls;
+   Str2Ints this_qual2src_idx;
+
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
+     desc = GetDiscItemText(**it);
+     comb_desc_ls.push_back(desc); // for combine_seqentry_reports
+     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
+     comb_src_ls.push_back(CConstRef <CBioSource> (&biosrc));  // for combine_seqentry_reports
+     this_desc_ls.push_back(desc);
+     this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
+   }
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
+      desc = GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i]));
+      comb_desc_ls.push_back(desc);
+      this_desc_ls.push_back(desc);
+      const CBioSource& biosrc = (*it)->GetSource();
+      comb_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
+      this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
+      i++;
+   }
+
+   GetQual2SrcIdx(this_src_ls, this_desc_ls, this_qual2src_idx);
+   GetQualDistribute(this_qual2src_idx, this_desc_ls, this_src_ls, GetName_bad());
+
+   if (!this_qual2src_idx.empty()
+         && thisInfo.test_item_list.find(GetName_asn1()) == thisInfo.test_item_list.end()) {
+       thisInfo.test_item_list[GetName_asn1()].push_back("yes");
+       thisInfo.test_item_list[GetName_asn1_oncall()].push_back("yes");
+   }
+
+   thisTest.is_Quals_run = true;
+};
+
+
+void CSeqEntry_DISC_SRC_QUAL_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
+{
+   GetReport_quals(c_item, GetName());
+};
+
+
+void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC :: GetReport(CRef <CClickableItem>& c_item)
+{
+   thisInfo.test_item_list[GetName()].clear();
+   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
+   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName());
+   c_item->item_list = thisInfo.test_item_list[GetName()];
+   GetReport_quals(c_item, GetName());
+};
+
+
+void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller :: GetReport(CRef <CClickableItem>& c_item)
+{
+   thisInfo.test_item_list.clear();
+   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
+   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName());
+   c_item->item_list = thisInfo.test_item_list[GetName()];
+   GetReport_quals(c_item, GetName());
+};
+
+
+
 bool CSeqEntry_test_on_biosrc_orgmod :: HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, const COrgMod::ESubtype& check_type, const string& check_head)
 {
   size_t pos;
@@ -6610,719 +7286,6 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
                                                          "inconsistent contig sources") + diff;
 
    INCONSISTENT_BIOSOURCE_biosrc.clear();
-};
-
-
-/*
-void CSeqEntry_DISC_SOURCE_QUALS :: GetQual2Src(const CBioSource& biosrc, Str2Strs& qual2src, const string& desc, const string& idx)
-{
-    bool fwd_nm, fwd_seq, rev_nm, rev_seq; 
-    string idx_desc = idx + "$" + desc;
-    if ( biosrc.IsSetTaxname() ) qual2src_idx["taxname"].push_back(idx_desc);
-    if ( biosrc.GetOrg().GetTaxId() ) qual2src_idx["taxid"].push_back(idx_desc);
-
-    // add subtypes & orgmods
-    if ( biosrc.CanGetSubtype() ) {
-       ITERATE (list <CRef <CSubSource> >, jt, biosrc.GetSubtype()) {
-         qual2src_idx[ (*jt)->GetSubtypeName((*jt)->GetSubtype()) + "$subsrc" ].push_back(idx_desc);
-       }
-    }
-    if ( biosrc.IsSetOrgname() && biosrc.GetOrgname().CanGetMod() ) {
-       ITERATE (list <CRef <COrgMod> >, jt, biosrc.GetOrgname().GetMod() ) {
-          strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype());
-          if (strtmp != "old-name" 
-               && strtmp != "old-lineage"
-               && strtmp != "gb-acronym" 
-               && strtmp != "gb-anamorph" 
-               && strtmp != "gb-synonym")
-          qual2src_idx[ (*jt)->GetSubtypeName((*jt)->GetSubtype())].push_back(idx_desc);
-       }
-    }
-
-    // add PCR primers
-    if ( biosrc.CanGetPcr_primers() ) {
-       fwd_nm = fwd_seq = rev_nm = rev_seq = false;
-       ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
-          if ( !fwd_nm && !fwd_seq && (*jt)->CanGetForward() ) {
-            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-               if ( !fwd_nm && (*kt)->CanGetName() ) {
-                  strtmp = (*kt)->GetName();
-                  if (!strtmp.empty()) {
-                      qual2src_idx["fwd_primer_name"].push_back(idx_desc);
-                      fwd_nm = true;
-                  }
-               }
-               if ( !fwd_seq && (*kt)->CanGetSeq() ) {
-                  strtmp = (*kt)->GetSeq();
-                  if (!strtmp.empty()) {
-                     fwd_seq = true;
-                     qual2src_idx["fwd_primer_seq"].push_back(idx_desc);
-                  }
-               }
-               if (fwd_nm && fwd_seq) break;
-            }
-          }
-          if ( !rev_nm && !rev_seq && (*jt)->CanGetReverse() ) {
-            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-               if (!rev_nm && (*kt)->CanGetName() ) {
-                  strtmp = (*kt)->GetName();
-                  if (!strtmp.empty()) {
-                      rev_nm = true;
-                      qual2src_idx["rev_primer_name"].push_back(idx_desc);
-                  }
-               }
-               if (!rev_seq && (*kt)->CanGetSeq() ) {
-                  strtmp = (*kt)->GetSeq();
-                  if (!strtmp.empty()) {
-                      rev_seq = true;
-                      qual2src_idx["rev_primer_seq"].push_back(idx_desc);
-                  }
-               }
-               if (rev_nm && rev_seq) break;
-            }
-          }
-          if (fwd_nm && fwd_seq && rev_nm && rev_seq) break;
-       }
-    }
-
-    // genomic
-    if (biosrc.GetGenome() != CBioSource::eGenome_unknown) 
-              qual2src_idx["location"].push_back(idx_desc); 
-};
-
-*/
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetQual2SrcIdx(const CBioSource& biosrc, Str2Ints& qual2src_idx, const unsigned& i)
-{
-    bool fwd_nm, fwd_seq, rev_nm, rev_seq; 
-    if ( biosrc.IsSetTaxname() ) qual2src_idx["taxname"].push_back(i);
-    if ( biosrc.GetOrg().GetTaxId() ) qual2src_idx["taxid"].push_back(i);
-
-    // add subtypes & orgmods
-    if ( biosrc.CanGetSubtype() ) {
-       ITERATE (list <CRef <CSubSource> >, jt, biosrc.GetSubtype()) {
-         qual2src_idx[ (*jt)->GetSubtypeName((*jt)->GetSubtype()) + "$subsrc" ].push_back(i);
-       }
-    }
-    if ( biosrc.IsSetOrgname() && biosrc.GetOrgname().CanGetMod() ) {
-       ITERATE (list <CRef <COrgMod> >, jt, biosrc.GetOrgname().GetMod() ) {
-          strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype());
-          if (strtmp != "old-name" 
-               && strtmp != "old-lineage"
-               && strtmp != "gb-acronym" 
-               && strtmp != "gb-anamorph" 
-               && strtmp != "gb-synonym")
-          qual2src_idx[ (*jt)->GetSubtypeName((*jt)->GetSubtype())].push_back(i);
-       }
-    }
-
-    // add PCR primers
-    if ( biosrc.CanGetPcr_primers() ) {
-       fwd_nm = fwd_seq = rev_nm = rev_seq = false;
-       ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
-          if ( !fwd_nm && !fwd_seq && (*jt)->CanGetForward() ) {
-            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-               if ( !fwd_nm && (*kt)->CanGetName() ) {
-                  strtmp = (*kt)->GetName();
-                  if (!strtmp.empty()) {
-                      qual2src_idx["fwd_primer_name"].push_back(i);
-                      fwd_nm = true;
-                  }
-               }
-               if ( !fwd_seq && (*kt)->CanGetSeq() ) {
-                  strtmp = (*kt)->GetSeq();
-                  if (!strtmp.empty()) {
-                     fwd_seq = true;
-                     qual2src_idx["fwd_primer_seq"].push_back(i);
-                  }
-               }
-               if (fwd_nm && fwd_seq) break;
-            }
-          }
-          if ( !rev_nm && !rev_seq && (*jt)->CanGetReverse() ) {
-            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-               if (!rev_nm && (*kt)->CanGetName() ) {
-                  strtmp = (*kt)->GetName();
-                  if (!strtmp.empty()) {
-                      rev_nm = true;
-                      qual2src_idx["rev_primer_name"].push_back(i);
-                  }
-               }
-               if (!rev_seq && (*kt)->CanGetSeq() ) {
-                  strtmp = (*kt)->GetSeq();
-                  if (!strtmp.empty()) {
-                      rev_seq = true;
-                      qual2src_idx["rev_primer_seq"].push_back(i);
-                  }
-               }
-               if (rev_nm && rev_seq) break;
-            }
-          }
-          if (fwd_nm && fwd_seq && rev_nm && rev_seq) break;
-       }
-    }
-
-    // genomic
-    if (biosrc.GetGenome() != CBioSource::eGenome_unknown) 
-              qual2src_idx["location"].push_back(i); 
-} // GetQual2SrcIdx
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: TestOnObj(const CSeq_entry& seq_entry)
-{
-  unsigned i=0;
-  ITERATE ( vector <const CSeq_feat*>, it, biosrc_feat) 
-     GetQual2SrcIdx((*it)->GetData().GetBiosrc(), m_qual2src_idx_feat, i++);
-
-  i=0;
-  ITERATE ( vector <const CSeqdesc*>, it, biosrc_seqdesc)
-    GetQual2SrcIdx((*it)->GetSource(), m_qual2src_idx_seqdesc, i++);
-
-  if ((!m_qual2src_idx_feat.empty() || !m_qual2src_idx_seqdesc.empty())
-         && (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end()) )
-      thisInfo.test_item_list[GetName()].push_back(GetName());   // temp
-
-   GetQualDistribute(m_qual2src_idx_feat, true);
-   GetQualDistribute(m_qual2src_idx_seqdesc);
-};
-
-
-string CSeqEntry_DISC_SOURCE_QUALS :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
-{
-  ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
-     int type = (*it)->GetSubtype();
-     if ( (*it)->GetSubtypeName( type ) == type_name ) {
-        strtmp = (*it)->GetName();
-        if (strtmp.empty() && (type == CSubSource::eSubtype_germline
-                                 || type == CSubSource::eSubtype_transgenic
-                                 || type == CSubSource::eSubtype_metagenomic
-                                 || type == CSubSource::eSubtype_environmental_sample
-                                 || type == CSubSource::eSubtype_rearranged)) {
-           return ("TRUE");
-        }
-        else return (strtmp);
-     }
-  }
-  return (kEmptyStr);
-};
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
-{
-  ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
-     int type = (*it)->GetSubtype();
-     if ( (*it)->GetSubtypeName( type ) == type_name ) {
-        strtmp = (*it)->GetName();
-        if (strtmp.empty() && (type == CSubSource::eSubtype_germline
-                                 || type == CSubSource::eSubtype_transgenic
-                                 || type == CSubSource::eSubtype_metagenomic
-                                 || type == CSubSource::eSubtype_environmental_sample
-                                 || type == CSubSource::eSubtype_rearranged)) {
-           multi_vlus.push_back("TRUE");
-        }
-        else multi_vlus.push_back(strtmp);
-     }
-  }
-};
-
-
-
-string CSeqEntry_DISC_SOURCE_QUALS :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
-{
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
-      if ((*it)->GetSubtypeName((*it)->GetSubtype()) == type_name) 
-                return ((*it)->GetSubname());
-   return (kEmptyStr);
-};
-
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
-{
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
-      if ((*it)->GetSubtypeName((*it)->GetSubtype()) == type_name) 
-          multi_vlus.push_back((*it)->GetSubname());
-};
-
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name, vector <string>& multi_vlus)
-{
-   ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
-     if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
-       ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-          if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
-              strtmp = (*kt)->GetName();
-              if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-          }
-          if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
-              strtmp = (*kt)->GetSeq();
-              if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-          }
-       }
-     }
-     else {
-        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-           if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
-               strtmp = (*kt)->GetName();
-               if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-           }
-           if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
-               strtmp = (*kt)->GetSeq();
-               if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-           }
-        }
-     }
-   }
-};
-
-
-
-string CSeqEntry_DISC_SOURCE_QUALS :: GetSrcQualValue(const string& qual_name, const int& cur_idx, bool is_subsrc)
-{
- const CBioSource& biosrc = biosrc_seqdesc[cur_idx]->GetSource();
- string ret_str(kEmptyStr);
- // DoesStringMatchConstraint missing
- if (is_subsrc) ret_str = GetSubSrcValue(biosrc, qual_name);
- else if (qual_name == "location") ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
- else if (qual_name == "taxname") ret_str = biosrc.GetTaxname();
- else if (qual_name == "common_name") ret_str = biosrc.GetCommon();
- else if (qual_name == "lineage") ret_str = biosrc.GetLineage();
- else if (qual_name == "div") ret_str = biosrc.GetDivision();
- else if (qual_name == "dbxref") ret_str = "no ready yet";
- else if (qual_name == "taxid") {
-   int tid = biosrc.GetOrg().GetTaxId();
-   if (tid > 0) ret_str = NStr::IntToString(tid);
-   else {
-     if (biosrc.GetOrg().CanGetDb()) {
-       ITERATE (vector <CRef <CDbtag> >, it, biosrc.GetOrg().GetDb()) {
-         strtmp = (*it)->GetDb();
-         if (NStr::FindNoCase(strtmp, "taxdb") != string::npos
-               && strtmp.size() == ((string)"taxdb").size()
-               && (*it)->GetTag().IsStr()) 
-             ret_str = (*it)->GetTag().GetStr();
-         }       
-       }
-   }
- }
- else if ( qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
-           || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" )
- {
-   ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
-     if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
-       ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-          if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
-              strtmp = (*kt)->GetName();
-              if (!strtmp.empty()) { ret_str = strtmp; break; }
-          }
-          if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
-              strtmp = (*kt)->GetSeq();
-              if (!strtmp.empty()) { ret_str = strtmp; break; }
-          }
-          if (!ret_str.empty()) break;
-       }
-     }
-     else {
-        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-           if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
-               strtmp = (*kt)->GetName();
-               if (!strtmp.empty()) {ret_str = strtmp; break;}
-           }
-           if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
-               strtmp = (*kt)->GetSeq();
-               if (!strtmp.empty()) { ret_str = strtmp; break;}
-           }
-           if ( !ret_str.empty() ) break;
-        }
-     }
-     if ( !ret_str.empty() ) break;
-   }
- }
- else ret_str = GetOrgModValue(biosrc, qual_name);
- 
- return (ret_str);
-};
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc, vector <string>& multi_vlus, bool is_subsrc)
-{
-   ITERATE (vector <string>, it, thisInfo.no_multi_qual) if (qual_name == *it) return;
-
-   if (is_subsrc) GetMultiSubSrcVlus(biosrc, qual_name, multi_vlus);
-   if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
-             || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" ) 
-      GetMultiPrimerVlus(biosrc, qual_name, multi_vlus);
-   else GetMultiOrgModVlus(biosrc, qual_name, multi_vlus);
-}
-
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: CheckForMultiQual(const string& qual_name, const CBioSource& biosrc, eMultiQual& multi_type, bool is_subsrc)
-{
-   vector <string> multi_qual_vlus;
-   Str2Int  vlu_cnt;
-   GetMultiQualVlus(qual_name, biosrc, multi_qual_vlus, is_subsrc);
-   if (multi_qual_vlus.size() <= 1) multi_type = e_not_multi;
-   else {
-     ITERATE (vector <string>, it, multi_qual_vlus) {
-       if (vlu_cnt.find(*it) != vlu_cnt.end()) vlu_cnt[*it]++;
-       else vlu_cnt[*it] = 1; 
-     }
-     if (vlu_cnt.size() == 1) multi_type = e_same;
-     else {
-        bool has_dup = false;
-        ITERATE (Str2Int, it, vlu_cnt) {
-          if (it->second > 1) {has_dup = true; break;}
-   }
-        multi_type = has_dup ? e_dup : e_all_dif;
-     }
-   }
-};
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetQualDistribute(const Str2Ints& qual2src_idx, bool isFromFeat)
-{
-  int pre_idx, cur_idx, i;
-  string qual_name, src_qual_vlu, biosrc_txt;
-  bool is_subsrc;
-  size_t pos;
-
-  ITERATE (Str2Ints, it, qual2src_idx) {
-     qual_name = it->first;
-     is_subsrc = false;
-     if ( (pos = qual_name.find("$subsrc")) != string::npos) {
-        is_subsrc = true;
-        qual_name = qual_name.substr(0, pos);
-     }
-     pre_idx = -1;
-     ITERATE (vector <int>, jt, it->second) {
-       cur_idx = *jt;
-       if (pre_idx +1 != cur_idx) {  // have missing
-          if (qual_name != "location") {
-             if (isFromFeat) 
-                 for ( i = pre_idx+1; i < cur_idx; i++) 
-                      qual_nm2qual_vlus[qual_name].missing_item.push_back(
-                                                           GetDiscItemText(*(biosrc_feat[i])));
-             else for (i = pre_idx+1; i < cur_idx; i++)
-                      qual_nm2qual_vlus[qual_name].missing_item.push_back(
-                          GetDiscItemText(*(biosrc_seqdesc[i]),*(biosrc_seqdesc_seqentry[i])));
-          }
-          else {
-            if (isFromFeat)
-                 for (i = pre_idx+1; i < cur_idx; i++) 
-                     qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(
-                                                       GetDiscItemText(*(biosrc_feat[i])));
-            else for (i = pre_idx+1; i < cur_idx; i++) 
-                   qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(
-                        GetDiscItemText(*(biosrc_seqdesc[i]), *(biosrc_seqdesc_seqentry[i])));
-          }
-       }
-       src_qual_vlu= GetSrcQualValue(qual_name, cur_idx, is_subsrc); 
-       biosrc_txt = 
-         (isFromFeat ? GetDiscItemText(*(biosrc_feat[cur_idx]))
-                     : GetDiscItemText(*(biosrc_seqdesc[cur_idx]), 
-                                                  *(biosrc_seqdesc_seqentry[cur_idx])));
-       qual_nm2qual_vlus[qual_name].qual_vlu2src[src_qual_vlu].push_back(biosrc_txt);
-
-       // have multiple qualifiers? 
-       eMultiQual multi_type;
-
-       if (isFromFeat) 
-          CheckForMultiQual(qual_name, biosrc_feat[cur_idx]->GetData().GetBiosrc(), 
-                                                                       multi_type, is_subsrc);
-       else CheckForMultiQual(qual_name, biosrc_seqdesc[cur_idx]->GetSource(), 
-                                                                       multi_type,is_subsrc);
-
-       switch (multi_type) {
-          case e_same:     qual_nm2qual_vlus[qual_name].multi_same.push_back(biosrc_txt);
-                           break;
-          case e_dup:      qual_nm2qual_vlus[qual_name].multi_dup.push_back(biosrc_txt); break;
-          case e_all_dif:  qual_nm2qual_vlus[qual_name].multi_all_dif.push_back(biosrc_txt); 
-                           break;
-          default: break;
-       }
-
-       // biosrc_val_qualnm:
-       if (biosrc2qualvlu_nm.find(biosrc_txt) == biosrc2qualvlu_nm.end()) {
-          Str2Strs vlu_nm;
-          vlu_nm[src_qual_vlu].push_back(qual_name);
-	  biosrc2qualvlu_nm[biosrc_txt] = vlu_nm;
-       }
-       else {
-         Str2Strs& vlu_nm = biosrc2qualvlu_nm[biosrc_txt];
-         vlu_nm[src_qual_vlu].push_back(qual_name);
-       }
-
-       pre_idx = cur_idx;
-     }
-
-     if (qual_name != "location") {
-         if (isFromFeat)
-           for (i = cur_idx +1; i < (int)biosrc_feat.size(); i++)
-              qual_nm2qual_vlus[qual_name].missing_item.push_back(
-                                                          GetDiscItemText(*(biosrc_feat[i])));
-         else for (i = cur_idx +1; i < (int)biosrc_seqdesc.size(); i++)
-                  qual_nm2qual_vlus[qual_name].missing_item.push_back(
-                         GetDiscItemText(*(biosrc_seqdesc[i]), *(biosrc_seqdesc_seqentry[i])));
-     }
-     else {
-        if (isFromFeat) 
-           for (i = cur_idx +1; i < (int)biosrc_feat.size(); i++)
-              qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(
-                                                          GetDiscItemText(*(biosrc_feat[i])));
-        else for (i = cur_idx +1; i < (int)biosrc_seqdesc.size(); i++)
-                  qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(
-                         GetDiscItemText(*(biosrc_seqdesc[i]), *(biosrc_seqdesc_seqentry[i])));
-     }
-  }
-}
-
-
-CRef <CClickableItem> CSeqEntry_DISC_SOURCE_QUALS :: MultiItem(const string& qual_name, const vector <string>& multi_list, const string& ext_desc)
-{
-    CRef <CClickableItem> c_sub (new CClickableItem);
-    c_sub->setting_name = GetName();
-    c_sub->description = "  " + GetHasComment(multi_list.size(), "source") + "multiple " 
-                         + qual_name + " qualifiers" + ext_desc;
-    if (isOncaller) c_sub->item_list = multi_list;
-    return (c_sub);
-}
-
-
-void CSeqEntry_DISC_SOURCE_QUALS :: GetReport(CRef <CClickableItem>& c_item)
-{
-/*
-   GetQualDistribute(m_qual2src_idx_feat, true);
-   GetQualDistribute(m_qual2src_idx_seqdesc);
-*/
-
-   bool first_c_item = false, all_same, all_unique, all_present;
-   bool multi_same, multi_dup, multi_all_dif;
-   string qual_name;
-   unsigned multi_type_cnt;
-   CRef <CClickableItem> c_main;
-
-   if (isOncaller) {
-     c_main = c_item;
-     c_main->setting_name = GetName();
-     c_main->description = "Source Qualifer Report";
-     c_main->item_list.clear();
-   }
-   else first_c_item = true;
-
-   ITERATE (Str2QualVlus, it, qual_nm2qual_vlus) {
-     if (!first_c_item) c_item = CRef <CClickableItem> (new CClickableItem);
-     qual_name = it->first;
-     if (it->second.qual_vlu2src.size() == 1 
-           && it->second.qual_vlu2src.begin()->second.size() > 1) all_same = true;
-     else {
-        all_same = false;
-        all_unique = true;
-        ITERATE (Str2Strs, jt, it->second.qual_vlu2src) {
-          if ( jt->second.size() > 1) {
-            all_unique = false; break;
-          }
-        }
-     }
-
-     all_present = (it->second.missing_item.empty()) ? true : false;
-
-     multi_same = (it->second.multi_same.empty()) ? false : true;
-     multi_dup = (it->second.multi_dup.empty()) ? false : true;
-     multi_all_dif= (it->second.multi_all_dif.empty()) ? false : true;
-
-     multi_type_cnt = 0;
-     multi_type_cnt += multi_same ? 1 : 0;
-     multi_type_cnt += multi_dup ? 1 : 0;
-     multi_type_cnt += multi_all_dif? 1 : 0;
-
-     c_item->setting_name = GetName();
-     if (qual_name == "note") qual_name += "-subsrc";
-     else if (qual_name == "nat-host") qual_name = "host";
-     c_item->description = qual_name;
-     if (all_present) {
-         c_item->description += " (all present, ";
-         if (all_same) {
-            c_item->description += "all same";
-
-            CRef <CClickableItem> c_sub (new CClickableItem);
-            c_sub->setting_name = GetName();
-            c_sub->description 
-                = GetHasComment( (it->second.qual_vlu2src.begin()->second).size(), "source")
-                   + " '" + it->second.qual_vlu2src.begin()->first + "' for " + qual_name;
-            c_item->subcategories.push_back(c_sub);
-            if (isOncaller) c_sub->item_list = it->second.qual_vlu2src.begin()->second;
-         }
-         else if (all_unique) {
-                 c_item->description += "all_unique";
-                 if (isOncaller) {
-                    ITERATE (Str2Strs, jt, it->second.qual_vlu2src)
-                       c_item->item_list.push_back((jt->second)[0]);
-                 }
-         }
-         else {
-           c_item->description += "some duplicate";
-           unsigned uni_cnt=0;
-           vector <string> uni_sub;
-           ITERATE (Str2Strs, jt, it->second.qual_vlu2src) {
-             unsigned sz = (jt->second).size();
-             if (sz > 1) {
-               CRef <CClickableItem> c_sub (new CClickableItem);
-               c_sub->setting_name = GetName();
-               c_sub->description =
-                  GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_name;
-               c_item->subcategories.push_back(c_sub);
-               if (isOncaller) c_sub->item_list = jt->second; 
-             }
-             else  {
-               uni_cnt ++;
-               if (isOncaller) uni_sub.push_back((jt->second)[0]);
-             }
-           }
-           if (uni_cnt) {
-             CRef <CClickableItem> c_sub (new CClickableItem);
-             c_sub->setting_name = GetName();
-             c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
-                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_name;
-             c_item->subcategories.push_back(c_sub);
-             if (isOncaller) c_sub->item_list = uni_sub;
-          }
-         }
-     }
-     else {
-        c_item->description += " (some missing, ";
-        CRef <CClickableItem> c_sub (new CClickableItem);
-        c_sub->setting_name = GetName();
-        c_sub->description = 
-             GetIsComment(it->second.missing_item.size(), "source") + "missing " + qual_name;
-        c_item->subcategories.push_back(c_sub);
-        if (isOncaller) c_sub->item_list = it->second.missing_item;
-
-        if (all_same) {
-            c_item->description += "all same";
-            CRef <CClickableItem> c_sub (new CClickableItem);
-            c_sub->setting_name = GetName();
-            c_sub->description 
-                = GetHasComment( (it->second.qual_vlu2src.begin()->second).size(), "source")
-                   + " '" + it->second.qual_vlu2src.begin()->first + "' for " + qual_name;
-            c_item->subcategories.push_back(c_sub);
-            if (isOncaller) c_sub->item_list = it->second.qual_vlu2src.begin()->second;
-        }
-        else if (all_unique) {
-           c_item->description += "all unique"; 
-           CRef <CClickableItem> c_sub (new CClickableItem);
-           unsigned uni_cnt = 0;
-           ITERATE (Str2Strs, jt, it->second.qual_vlu2src) 
-              if (jt->second.size() == 1) {
-                 uni_cnt ++;
-                 if (isOncaller) c_sub->item_list.push_back((jt->second)[0]);
-              }
-           c_sub->setting_name = GetName();
-           c_sub->description = GetHasComment(uni_cnt, "source") + "unique " 
-                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_name;
-           c_item->subcategories.push_back(c_sub);
-        }
-        else {
-           c_item->description += "some duplicate";
-           unsigned uni_cnt=0, sz;
-           vector <string> uni_sub;
-           ITERATE (Str2Strs, jt, it->second.qual_vlu2src) {
-             sz = (jt->second).size();
-             if (sz > 1) {
-               CRef <CClickableItem> c_sub (new CClickableItem);
-               c_sub->setting_name = GetName();
-               c_sub->description =
-                  GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_name;
-               c_item->subcategories.push_back(c_sub);
-               if (isOncaller) c_sub->item_list = jt->second;
-             }
-             else  {
-                 uni_cnt ++;
-                 uni_sub.push_back((jt->second)[0]);
-             }
-           }
-           if (uni_cnt) {
-             CRef <CClickableItem> c_sub (new CClickableItem);
-             c_sub->setting_name = GetName();
-             c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
-                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_name;
-             c_item->subcategories.push_back(c_sub);
-             if (isOncaller) c_sub->item_list = uni_sub;
-          }
-        }
-     }
-
-     //multiple
-     unsigned sz = 
-        it->second.multi_same.size() + it->second.multi_dup.size() + it->second.multi_all_dif.size();
-     string ext_desc;
-     if ( multi_type_cnt) {
-          c_item->description += ", some multi";
-          CRef <CClickableItem> c_sub (new CClickableItem);
-          c_sub->setting_name = GetName();
-          if (multi_type_cnt == 1) 
-              ext_desc = multi_same ? ", same_value" 
-                                       : (multi_dup ? ", some dupplicates" : kEmptyStr);
-          else {
-              ext_desc = kEmptyStr;
-              if (multi_same) {
-                 c_sub->subcategories.push_back(MultiItem(
-                                          qual_name, it->second.multi_same, ", same value"));
-              }
-              if (multi_dup) 
-                 c_sub->subcategories.push_back(MultiItem(
-                                       qual_name, it->second.multi_dup, ", some duplicates"));
-              if (multi_all_dif) 
-                 c_sub->subcategories.push_back(MultiItem(
-                                                 qual_name, it->second.multi_all_dif, kEmptyStr));
-          }
-          c_sub->description = 
-                 GetHasComment(sz, "source") + "multiple " + qual_name + " qualifiers" + ext_desc;
-          c_item->subcategories.push_back(c_sub);
-     }
-     
-     c_item->description += ")";
-     if (isOncaller) c_main->subcategories.push_back(c_item);
-     else {
-        thisInfo.disc_report_data.push_back(c_item);
-        if (first_c_item) {
-           c_item->item_list.clear();
-           first_c_item = false;
-        }
-     }
-   }
-   if (isOncaller) thisInfo.disc_report_data.push_back(c_main);
-
- // biosrc has 2 qual with same value?
-    string biosrc_nm, quals;
-    unsigned cnt = 0;
-    vector < CRef <CClickableItem> > sub;
-    ITERATE (Str2MapStr2Strs, it, biosrc2qualvlu_nm) {
-         biosrc_nm = it->first;
-         ITERATE (Str2Strs, jt, it->second) {
-           if (jt->second.size() > 1) {
-              cnt ++;
-              quals = NStr::Join(jt->second, ", ");
-              CRef <CClickableItem> c_sub (new CClickableItem);
-              c_sub->setting_name = GetName();
-              c_sub->description = 
-                "BioSource has value '" + jt->first + "' for these qualifiers: " + quals;
-              sub.push_back(c_sub);
-              if (isOncaller) c_sub->item_list.push_back(biosrc_nm);
-           }
-         }
-    }
- 
-    if (!sub.empty()) {
-         c_item = CRef <CClickableItem> (new CClickableItem);
-         c_item->setting_name = GetName();
-         c_item->description = GetHasComment(cnt, "source") + "two or more qualifiers with the same value";
-         c_item->item_list.push_back(biosrc_nm);
-         c_item->subcategories = sub;
-         thisInfo.disc_report_data.push_back(c_item);
-    }
-
-// clean
 };
 
 

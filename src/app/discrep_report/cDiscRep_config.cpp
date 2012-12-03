@@ -258,6 +258,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT));
    tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTISRC));
+   tests_on_SeqEntry_feat_desc.push_back(
+                       CRef <CTestAndRepData>(new CSeqEntry_DISC_SRC_QUAL_PROBLEM));
    // asndisc version
    tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
@@ -298,7 +300,7 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back( 
           CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1)); // not tested
 
-// tests_on_BioseqSet
+// tests_on_BioseqSet   // redundant because of nested set?
    tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_NONWGS_SETS_PRESENT));
 
