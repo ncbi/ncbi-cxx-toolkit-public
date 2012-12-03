@@ -600,15 +600,9 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
     }
 
     if (flags & fFreqRatiosFile) {
-        // load PSSM file to get offsets
-        if (m_PssmFile.Empty()) {
-            m_PssmFile.Reset(new CRpsPssmFile(path));
-            m_RpsInfo->profile_header = 
-                const_cast<BlastRPSProfileHeader*>((*m_PssmFile)());
-        }
         try {
-        // read frequency ratios data
-        m_FreqRatiosFile.Reset(new CRpsFreqRatiosFile(path));
+            // read frequency ratios data
+            m_FreqRatiosFile.Reset(new CRpsFreqRatiosFile(path));
         } catch (const CBlastException& e) {
         	string msg = rps_dbname + " contains no frequency ratios needed for composition-based statistics.\n" \
         			     "Please disable composition-based statistics when searching against " + rps_dbname + ".";
@@ -616,11 +610,6 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
         }
         m_RpsInfo->freq_ratios_header =
             const_cast<BlastRPSFreqRatiosHeader*>((*m_FreqRatiosFile)());
-
-        // if the pssm file was not requested than free its memory
-        if (!(flags & fPssmFile)) {
-            m_PssmFile.Reset();
-        }
     }
 }
 
