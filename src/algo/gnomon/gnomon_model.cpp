@@ -1257,6 +1257,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Status()&CGeneModel::eSkipped)!=0)    attributes["flags"] += ",Skip";
     if ((a.Status()&CGeneModel::eBestPlacement)!=0)    attributes["flags"] += ",BestPlacement";
     if ((a.Status()&CGeneModel::eUnknownOrientation)!=0)    attributes["flags"] += ",UnknownOrientation";
+    if ((a.Status()&CGeneModel::ecDNAIntrons)!=0)    attributes["flags"] += ",cDNAIntrons";
 
     if (a.ReadingFrame().NotEmpty()) {
         _ASSERT( a.FShiftedLen(a.GetCdsInfo().Start()+a.ReadingFrame()+a.GetCdsInfo().Stop(), false)%3==0 );
@@ -1332,6 +1333,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "Cap")        a.Status()        |= CGeneModel::eCap;
         else if (*f == "BestPlacement") a.Status()     |= CGeneModel::eBestPlacement;
         else if (*f == "UnknownOrientation") a.Status()|= CGeneModel::eUnknownOrientation;
+        else if (*f == "cDNAIntrons") a.Status()       |= CGeneModel::ecDNAIntrons;
         else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
         else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
         else if (*f == "Start") has_start = true;

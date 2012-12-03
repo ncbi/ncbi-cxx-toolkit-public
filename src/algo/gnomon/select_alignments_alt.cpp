@@ -137,9 +137,14 @@ int HasRetainedIntron(const CGeneModel& under_test, const CGeneModel& control_mo
 
 bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
 {
+    if(a.Exons().size() > 1 && (a.Status()&CGeneModel::ecDNAIntrons) == 0 && a.TrustedmRNA().empty() && a.TrustedProt().empty()) {
+        return false;
+    }
+
     if (a.Support().empty()) {
         return false;
     }
+
     int composite = 0;
     ITERATE(CSupportInfoSet, s, a.Support()) {
         if(s->IsCore() && ++composite > maxcomposite) return false;
@@ -399,6 +404,8 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
         double ds = 0.025*(fabs(b.Score())+fabs(a.Score()));
         
         double as = a.Score();
+        if((a.Status()&CGeneModel::ecDNAIntrons) != 0)
+            as += 2*ds;
         if((a.Status()&CGeneModel::ePolyA) != 0)
             as += ds; 
         if((a.Status()&CGeneModel::eCap) != 0)
@@ -407,6 +414,8 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
             as -= ds;
         
         double bs = b.Score();
+        if((b.Status()&CGeneModel::ecDNAIntrons) != 0)
+            bs += 2*ds;
         if((b.Status()&CGeneModel::ePolyA) != 0)
             bs += ds; 
         if((b.Status()&CGeneModel::eCap) != 0)

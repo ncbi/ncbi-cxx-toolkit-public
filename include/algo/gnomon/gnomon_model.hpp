@@ -308,6 +308,7 @@ public:
     static string TypeToString(int type);
 
     enum EStatus {
+        ecDNAIntrons = 1,
         eReversed = 2,
         eSkipped = 4,
         eLeftTrimmed = 8,

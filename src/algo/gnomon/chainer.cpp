@@ -3523,7 +3523,15 @@ void CChainer::CChainerImpl::ReplicateFrameShifts(TGeneModelList& models)
 
 TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
 {
-    //    CollapsSimilarESTandSR(models);
+    set<TSignedSeqRange> cdnaintrons;
+    ITERATE (TGeneModelList, it, models) {
+        const CGeneModel& align = *it;
+        for(int i = 1; i < (int)align.Exons().size(); ++i) {
+            if((align.Type()&CGeneModel::eProt) == 0 && align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
+                cdnaintrons.insert(TSignedSeqRange(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom()));
+            }
+        }
+    }
 
     list<CChain> tmp_chains;
     MakeChains(models, tmp_chains);
@@ -3552,12 +3560,18 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& models)
     }
 
     TGeneModelList chains;
-    ITERATE(list<CChain>, it, tmp_chains) {
-        chains.push_back(*it);
+    NON_CONST_ITERATE(list<CChain>, it, tmp_chains) {
+        CGeneModel& chain = *it;
+        if(chain.Continuous() && chain.Exons().size() > 1) {
+            bool allcdnaintrons = true;
+            for(int i = 1; i < (int)chain.Exons().size() && allcdnaintrons; ++i) {
+                allcdnaintrons = (cdnaintrons.find(TSignedSeqRange(chain.Exons()[i-1].GetTo(),chain.Exons()[i].GetFrom())) != cdnaintrons.end());
+            }
+            if(allcdnaintrons)
+                chain.Status() |= CGeneModel::ecDNAIntrons;
+        }
+        chains.push_back(chain);
     }
-
-    //    FilterOutBadScoreChainsHavingBetterCompatibles(chains);
-
 
     return chains;
 }
