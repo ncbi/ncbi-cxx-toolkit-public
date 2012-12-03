@@ -40,6 +40,7 @@
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <algo/blast/api/blast_rps_options.hpp>
 #include <blast_seqalign.hpp>
 
 #include <algo/blast/core/lookup_wrap.h>
@@ -291,5 +292,33 @@ BOOST_AUTO_TEST_CASE(testPreliminarySearch)
     }
     BOOST_REQUIRE_EQUAL(kTotalHsps, hsp_index);
 }
+
+
+// test hanling of the case when CBS 1 is requested, but .freq file is missing
+BOOST_AUTO_TEST_CASE(TestCBSFreqsNotFound)
+{
+    // make sure that the '.freq' file does not exist for the test database
+    CFile freq_file(m_DbName + ".freq");
+    BOOST_REQUIRE(!freq_file.Exists());
+
+    // set coposition based statistics to 1 (requires .freq file)
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
+    (dynamic_cast<CBlastRPSOptionsHandle*>(
+              opts.GetNonNullPointer()))->SetCompositionBasedStats(
+                                                   eCompositionBasedStats);
+
+    CSeq_id id("gi|129295");
+    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    TSeqLocVector query_v;
+    query_v.push_back(*query);
+
+    CSearchDatabase dbinfo(m_DbName, CSearchDatabase::eBlastDbIsProtein);
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_v));
+
+    // exception must be throws when the file is not found
+    BOOST_REQUIRE_THROW(CLocalBlast(query_factory, opts, dbinfo),
+                        CBlastException);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
