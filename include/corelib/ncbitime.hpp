@@ -35,11 +35,14 @@
 
 /// @file ncbitime.hpp
 /// Defines:
-///   CTimeFormat - storage class for fime format.
-///   CTime       - standard Date/Time class to represent an absolute time.
-///   CTimeSpan   - class to represents a relative time span.
-///   CTimeout    - timeout interval for various I/O etc activity.
-///   CStopWatch  - stop watch class to measure elasped time.
+///   CTimeFormat    - storage class for fime format.
+///   CTime          - standard Date/Time class to represent an absolute time.
+///   CTimeSpan      - class to represents a relative time span.
+///   CStopWatch     - stop watch class to measure elasped time.
+///   CTimeout       - timeout interval for various I/O etc activity.
+///   CNanoTimeout   - timeout interval with nanoseconds precision.
+///   CAbsTimeout    - timeout that use absolute time mark (deadline time).
+///   CFastLocalTime - class for quick and dirty getting a local time.
 ///
 /// NOTE about CTime:
 ///
@@ -1623,9 +1626,12 @@ public:
     
     /// Initialize absolute timeout by adding relative one to the current time
     CAbsTimeout(const CTimeout& rel_timeout);
-    
+
     /// Check if the timeout is infinite
     bool IsInfinite(void) const { return m_Infinite; }
+
+    /// Check if the timeout is expired
+    bool IsExpired(void) const { return !IsInfinite()  &&  GetRemainingTime().IsZero(); }
 
     /// Get the number of seconds and nanoseconds (since 1/1/1970).
     /// Throw an exception if the timeout is infinite.
