@@ -4430,7 +4430,14 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat
         }
     }
 
-    break_loc = ReadLocFromText (str.substr(loc_pos, end_pos - loc_pos), feat_loc_seq_id, m_Scope);
+    string pos = str.substr(loc_pos, end_pos - loc_pos);
+
+    // handle multi-interval positions by adding a join() around them
+    if( pos.find_first_of(",") != string::npos ) {
+        pos = "join(" + pos + ")";
+    }
+
+    break_loc = ReadLocFromText (pos, feat_loc_seq_id, m_Scope);
     if( FIELD_IS_SET(feat.GetLocation(), Strand) && GET_FIELD(feat.GetLocation(), Strand) != eNa_strand_unknown ) {
         break_loc->SetStrand( GET_FIELD( feat.GetLocation(), Strand) );
     } else {
