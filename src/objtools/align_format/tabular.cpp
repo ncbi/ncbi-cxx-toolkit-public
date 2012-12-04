@@ -1361,8 +1361,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         } else  {
             SetFrame("OF");
         }
-        off = annot->m_GeneInfo[0];
-        off += (3 + annot->m_FrameInfo[1]%3 - off%3) %3;
+        off = annot->m_FrameInfo[0];
         len = (annot->m_GeneInfo[1] - off)/3*3;
         string seq_data(m_Query, off, len);
         CSeqTranslator::Translate(seq_data, seq_trans);
@@ -1371,30 +1370,29 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         } else {
             m_OtherInfo.push_back("No");
         }
-        off = annot->m_GeneInfo[4];
-        if (off >=0) {
-            off += (3 + annot->m_FrameInfo[2]%3 - off%3) %3;
-            len = (annot->m_GeneInfo[5] - off)/3*3;
-            string seq_data(m_Query, off, len);
-            CSeqTranslator::Translate(seq_data, seq_trans);
-            if (seq_trans.find('*') != string::npos) {
-                m_OtherInfo.push_back("Yes");
-                if (m_FrameInfo == "IF" && m_OtherInfo[0] == "Yes") {
-                    m_OtherInfo.push_back("Yes");
-                } else {
-                    m_OtherInfo.push_back("No");
-                }
-            } else {
-                m_OtherInfo.push_back("No");
-                m_OtherInfo.push_back("No");
-            }
-        } else {
-            m_OtherInfo.push_back("N/A");
-            m_OtherInfo.push_back("N/A");
-        }
     } else {
         SetFrame("N/A");
         m_OtherInfo.push_back("N/A");
+    }
+
+    int off = annot->m_FrameInfo[2];
+    if (off >=0) {
+        int len = (annot->m_GeneInfo[5] - off)/3*3;
+        string seq_data(m_Query, off, len);
+        string seq_trans;
+        CSeqTranslator::Translate(seq_data, seq_trans);
+        if (seq_trans.find('*') != string::npos) {
+            m_OtherInfo.push_back("Yes");
+            if (m_FrameInfo == "IF" && m_OtherInfo[0] == "Yes") {
+                m_OtherInfo.push_back("Yes");
+            } else {
+                m_OtherInfo.push_back("No");
+            }
+        } else {
+            m_OtherInfo.push_back("No");
+            m_OtherInfo.push_back("No");
+        }
+    } else {
         m_OtherInfo.push_back("N/A");
         m_OtherInfo.push_back("N/A");
     }
