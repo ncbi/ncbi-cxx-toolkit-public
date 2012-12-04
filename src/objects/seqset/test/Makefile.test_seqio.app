@@ -11,5 +11,6 @@ LIB = test_boost seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
 
 CHECK_CMD =
 CHECK_REQUIRES = in-house-resources
+CHECK_TIMEOUT = 300
 
 WATCHERS = vasilche
