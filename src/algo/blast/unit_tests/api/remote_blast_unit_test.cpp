@@ -746,7 +746,7 @@ BOOST_AUTO_TEST_CASE(RetrieveQuerySet)
 {
     // Another preserved query, with mixed ID types.
     
-    string rid("1121716447-26774-190697041164.BLASTQ2");
+    string rid("BWX50RMX016");  // GIs 104501, 129295, and FASTA for 400260645 vs swissprot   
     
     CRemoteBlast rb(rid);
     
@@ -761,9 +761,9 @@ BOOST_AUTO_TEST_CASE(RetrieveQuerySet)
         ids.push_back(L);
     }
     
-    BOOST_REQUIRE_EQUAL(string("gi|4507012"), ids[0]);
-    BOOST_REQUIRE_EQUAL(string("lcl|1_26774"), ids[1]);
-    BOOST_REQUIRE_EQUAL(string("lcl|2_26774"), ids[2]);
+    BOOST_REQUIRE_EQUAL(string("gi|104501"), ids[0]);
+    BOOST_REQUIRE_EQUAL(string("gi|129295"), ids[1]);
+    BOOST_REQUIRE_EQUAL(string("lcl|47622"), ids[2]);
 }
 
 BOOST_AUTO_TEST_CASE(GetRequestInfo)
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(FetchQuerySequence)
     // sequence (data) associated with the described sequence,
     // and checks that the length is correct.
     
-    string rid("1138907364-9206-202454460245.BLASTQ1");
+    string rid("BWY0XPAV014");  // P38398.2 and 129295 vs swissprot
     
     CRemoteBlast rb(rid);
     
@@ -830,7 +830,7 @@ BOOST_AUTO_TEST_CASE(FetchQuerySequence)
     
     // Assuming it is a "whole" Seq-loc, make a vector of Seq-ids.
     
-    CRef<CSeq_id> seqid(& query1->SetWhole());
+    CRef<CSeq_id> seqid(&query1->SetWhole());
     
     CBlastServices::TSeqIdVector getseq_queries;
     getseq_queries.push_back(seqid);
@@ -852,8 +852,9 @@ BOOST_AUTO_TEST_CASE(FetchQuerySequence)
     BOOST_REQUIRE(results[0]->CanGetInst());
 
     int length = results[0]->GetInst().GetLength();
-    
-    BOOST_REQUIRE_EQUAL(length, 320);
+    BOOST_REQUIRE_EQUAL(length, 1863);
+    //length = results[1]->GetInst().GetLength();
+    //BOOST_REQUIRE_EQUAL(length, 232);
 }
 
 BOOST_AUTO_TEST_CASE(FetchQuerySequence_NotFound)
