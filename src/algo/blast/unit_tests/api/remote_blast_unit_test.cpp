@@ -198,8 +198,9 @@ BOOST_AUTO_TEST_CASE(CheckRemoteRPSBlastOptionsHandle) {
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.Submit());
 }
 
+// Search of GIs 555 and 3090 against ecoli
 BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
-    const string rid("1143488952-21447-118405783159.BLASTQ1");
+    const string rid("BW3U058R01R");
     CRemoteBlast rmt_blaster(rid);
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
@@ -224,10 +225,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
 
     size_t index = 0;
     vector<TSeqRange> expected_masks;
-    expected_masks.push_back(TSeqRange(10, 40));
     expected_masks.push_back(TSeqRange(78, 89));
-    expected_masks.push_back(TSeqRange(178, 190));
-    expected_masks.push_back(TSeqRange(330, 370));
     BOOST_REQUIRE_EQUAL(expected_masks.size(), masks.front().size());
 
     ITERATE(TMaskedQueryRegions, seqlocinfo, masks.front()) {
@@ -257,9 +255,11 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
 
     index = 0;
     expected_masks.clear();
-    expected_masks.push_back(TSeqRange(90, 114));
-    expected_masks.push_back(TSeqRange(165, 249));
-    expected_masks.push_back(TSeqRange(258, 267));
+    expected_masks.push_back(TSeqRange(25, 31));
+    expected_masks.push_back(TSeqRange(35, 101));
+    expected_masks.push_back(TSeqRange(116, 123));
+    expected_masks.push_back(TSeqRange(131, 195));
+    expected_masks.push_back(TSeqRange(2022, 2337));
     BOOST_REQUIRE_EQUAL(expected_masks.size(), masks.back().size());
     ITERATE(TMaskedQueryRegions, seqlocinfo, masks.back()) {
         BOOST_REQUIRE(seqlocinfo->NotEmpty());
@@ -371,8 +371,9 @@ BOOST_AUTO_TEST_CASE(CheckBlastpMasks) {
     }
 }
 
+// Search of GIs 555 and 3090 against ecoli
 BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
-    const string rid("1143488953-21475-125029367489.BLASTQ1");
+    const string rid("BW41NPVB014");
     CRemoteBlast rmt_blaster(rid);
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
@@ -390,7 +391,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
     BOOST_REQUIRE(!masks.empty());
     BOOST_REQUIRE(!network_masks.empty());
     const size_t kNumQueries = 2;
-    const size_t kNumNetMasks = 8;
+    const size_t kNumNetMasks = 7;
     BOOST_REQUIRE_EQUAL(kNumQueries, masks.size());
     BOOST_REQUIRE_EQUAL(kNumNetMasks, network_masks.size());
 
@@ -399,19 +400,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
     typedef pair<TSeqRange, CSeqLocInfo::ETranslationFrame> TMask;
     typedef vector<TMask> TQueryMasks;
     TQueryMasks expected_masks;
-    expected_masks.push_back(make_pair(TSeqRange(9, 39),
-                                       CSeqLocInfo::eFramePlus1));
-    expected_masks.push_back(make_pair(TSeqRange(177, 189),
-                                       CSeqLocInfo::eFramePlus1));
-    expected_masks.push_back(make_pair(TSeqRange(330, 369),
-                                       CSeqLocInfo::eFramePlus1));
-    expected_masks.push_back(make_pair(TSeqRange(333, 371),
-                                       CSeqLocInfo::eFrameMinus1));
-    expected_masks.push_back(make_pair(TSeqRange(180, 191),
-                                       CSeqLocInfo::eFrameMinus1));
     expected_masks.push_back(make_pair(TSeqRange(114, 155),
-                                       CSeqLocInfo::eFrameMinus1));
-    expected_masks.push_back(make_pair(TSeqRange(12, 41),
                                        CSeqLocInfo::eFrameMinus1));
     BOOST_REQUIRE_EQUAL(expected_masks.size(), query1_masks.size());
 
@@ -425,7 +414,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
         BOOST_REQUIRE_EQUAL((int)mask.second, (*seqlocinfo)->GetFrame());
     }
     index = 0;
-    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_plus1,
+    BOOST_REQUIRE_EQUAL(eBlast4_frame_type_minus1,
                         network_masks.front()->GetFrame());
     CBlast4_mask::TLocations const* net_masks =
         &network_masks.front()->GetLocations();
@@ -443,28 +432,69 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
 
     index = 0;
     expected_masks.clear();
-    expected_masks.push_back(make_pair(TSeqRange(90, 123),
-                                       CSeqLocInfo::eFramePlus1));
-    expected_masks.push_back(make_pair(TSeqRange(198, 231),
-                                       CSeqLocInfo::eFramePlus1));
-    expected_masks.push_back(make_pair(TSeqRange(258, 267),
-                                       CSeqLocInfo::eFramePlus1));
-    expected_masks.push_back(make_pair(TSeqRange(196, 232),
-                                       CSeqLocInfo::eFramePlus2));
-    expected_masks.push_back(make_pair(TSeqRange(101, 125),
-                                       CSeqLocInfo::eFramePlus3));
-    expected_masks.push_back(make_pair(TSeqRange(197, 233),
-                                       CSeqLocInfo::eFramePlus3));
-    expected_masks.push_back(make_pair(TSeqRange(259, 267),
-                                       CSeqLocInfo::eFrameMinus1));
-    expected_masks.push_back(make_pair(TSeqRange(199, 252),
-                                       CSeqLocInfo::eFrameMinus1));
-    expected_masks.push_back(make_pair(TSeqRange(91, 114),
-                                       CSeqLocInfo::eFrameMinus1));
-    expected_masks.push_back(make_pair(TSeqRange(198, 233),
-                                       CSeqLocInfo::eFrameMinus2));
-    expected_masks.push_back(make_pair(TSeqRange(200, 232),
-                                       CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(36, 66), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(129, 240), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(363, 393), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(423, 471), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(933, 972), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(1092, 1137), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(1158, 1206), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(1224, 1260), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(1665, 1734), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(1842, 1899), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(1971, 2010), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(2058, 2226), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(2256, 2334), CSeqLocInfo::eFramePlus1));
+    expected_masks.push_back(make_pair(TSeqRange(37, 64), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(607, 652), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(1153, 1192), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(1702, 1744), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(2014, 2092), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(2104, 2194), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(2251, 2278), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(2305, 2335), CSeqLocInfo::eFramePlus2));
+    expected_masks.push_back(make_pair(TSeqRange(35, 56), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(92, 173), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(239, 275), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(359, 398), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(1679, 1733), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(2072, 2135), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(2159, 2294), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(2309, 2333), CSeqLocInfo::eFramePlus3));
+    expected_masks.push_back(make_pair(TSeqRange(2311, 2337), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(2221, 2280), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(2155, 2202), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(2035, 2148), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(1816, 1857), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(1684, 1761), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(1348, 1389), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(1249, 1287), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(982, 1014), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(613, 654), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(514, 552), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(256, 279), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(121, 174), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(22, 84), CSeqLocInfo::eFrameMinus1));
+    expected_masks.push_back(make_pair(TSeqRange(2274, 2336), CSeqLocInfo::eFrameMinus2));
+    expected_masks.push_back(make_pair(TSeqRange(2004, 2261), CSeqLocInfo::eFrameMinus2));
+    expected_masks.push_back(make_pair(TSeqRange(222, 242), CSeqLocInfo::eFrameMinus2));
+    expected_masks.push_back(make_pair(TSeqRange(183, 203), CSeqLocInfo::eFrameMinus2));
+    expected_masks.push_back(make_pair(TSeqRange(132, 164), CSeqLocInfo::eFrameMinus2));
+    expected_masks.push_back(make_pair(TSeqRange(30, 83), CSeqLocInfo::eFrameMinus2));
+    expected_masks.push_back(make_pair(TSeqRange(2255, 2335), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(2192, 2239), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(2060, 2185), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(1964, 2011), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(1850, 1888), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(1673, 1741), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(1226, 1261), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(1166, 1204), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(1097, 1135), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(431, 469), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(365, 394), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(242, 289), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(131, 208), CSeqLocInfo::eFrameMinus3));
+    expected_masks.push_back(make_pair(TSeqRange(38, 70), CSeqLocInfo::eFrameMinus3));
 
     BOOST_REQUIRE_EQUAL(expected_masks.size(), query2_masks.size());
     ITERATE(TMaskedQueryRegions, seqlocinfo, masks.back()) {
