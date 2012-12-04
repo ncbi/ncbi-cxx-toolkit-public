@@ -473,7 +473,8 @@ bool CStringDataType::CheckValue(const CDataValue& value) const
 TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
 {
     if (m_Type == eStringTypeUTF8) {
-        return new (CStringUTF8*)(new CStringUTF8(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+        return new (CStringUTF8*)(new CStringUTF8(
+            dynamic_cast<const CStringDataValue&>(value).GetValue(), eEncoding_UTF8));
     }
     return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
 }
@@ -530,7 +531,7 @@ AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
 const char* CStringDataType::GetDefaultCType(void) const
 {
     if (m_Type == eStringTypeUTF8) {
-        return "ncbi::CStringUTF8";
+        return "NCBI_NS_NCBI::CStringUTF8";
     }
     return "NCBI_NS_STD::string";
 }
@@ -603,7 +604,7 @@ AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
 
 const char* CBitStringDataType::GetDefaultCType(void) const
 {
-    return "ncbi::CBitString";
+    return "NCBI_NS_NCBI::CBitString";
 }
 
 const char* CBitStringDataType::GetXMLContents(void) const
@@ -878,7 +879,7 @@ AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
 
 const char* CAnyContentDataType::GetDefaultCType(void) const
 {
-    return "ncbi::CAnyContentObject";
+    return "NCBI_NS_NCBI::CAnyContentObject";
 }
 
 const char* CAnyContentDataType::GetASNKeyword(void) const

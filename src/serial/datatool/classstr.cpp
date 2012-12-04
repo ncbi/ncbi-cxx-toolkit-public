@@ -661,7 +661,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             string rType = methodPrefix + i->tName;
 #endif
             CTypeStrings::EKind kind = i->type->GetKind();
-
+            bool string_utf8 = false;
+            if (kind == eKindString) {
+                const CStringDataType* strtype =
+                    dynamic_cast<const CStringDataType*>(i->dataType);
+                string_utf8 = strtype && strtype->GetStringType() == CStringDataType::eStringTypeUTF8;
+            }
             // generate getter
             inl = true;//!i->ref;
             if (!isNull) {
@@ -953,8 +958,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                 "    if (!IsSet"<<i->cName<<"()) {\n"
                                 "        ";
                             if (kind == eKindString) {
-                                inlineMethods <<
-                                    i->valueName << " = ms_UnassignedStr;\n";
+                                if (string_utf8) {
+                                    inlineMethods <<
+                                        i->valueName << ".Assign(ms_UnassignedStr,NCBI_NS_NCBI::eEncoding_UTF8);\n";
+                                } else {
+                                    inlineMethods <<
+                                        i->valueName << " = ms_UnassignedStr;\n";
+                                }
                             } else {
                                 inlineMethods <<
                                     "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
@@ -1022,8 +1032,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    if (!IsSet"<<i->cName<<"()) {\n"
                             "        ";
                         if (kind == eKindString) {
-                            inlineMethods <<
-                                i->valueName << " = ms_UnassignedStr;\n";
+                            if (string_utf8) {
+                                inlineMethods <<
+                                    i->valueName << ".Assign(ms_UnassignedStr,NCBI_NS_NCBI::eEncoding_UTF8);\n";
+                            } else {
+                                inlineMethods <<
+                                    i->valueName << " = ms_UnassignedStr;\n";
+                            }
                         } else {
                             inlineMethods <<
                                 "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
