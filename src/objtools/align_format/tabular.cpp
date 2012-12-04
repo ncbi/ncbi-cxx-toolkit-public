@@ -1361,6 +1361,16 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         } else  {
             SetFrame("OF");
         }
+   
+    } else {
+        SetFrame("N/A");
+    }
+    //V frame
+    if (annot->m_FrameInfo[1] >= 0) {
+        int off;
+        int len;
+        string seq_trans;
+        
         off = annot->m_FrameInfo[0];
         len = (annot->m_GeneInfo[1] - off)/3*3;
         string seq_data(m_Query, off, len);
@@ -1371,19 +1381,20 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
             m_OtherInfo.push_back("No");
         }
     } else {
-        SetFrame("N/A");
         m_OtherInfo.push_back("N/A");
     }
 
+
+        //J frame
     int off = annot->m_FrameInfo[2];
     if (off >=0) {
         int len = (annot->m_GeneInfo[5] - off)/3*3;
         string seq_data(m_Query, off, len);
         string seq_trans;
         CSeqTranslator::Translate(seq_data, seq_trans);
-        if (seq_trans.find('*') != string::npos) {
-            m_OtherInfo.push_back("Yes");
-            if (m_FrameInfo == "IF" && m_OtherInfo[0] == "Yes") {
+        if (seq_trans.find('*') == string::npos) {
+            m_OtherInfo.push_back("No");
+            if (m_FrameInfo == "IF" && m_OtherInfo[0] == "No") {
                 m_OtherInfo.push_back("Yes");
             } else {
                 m_OtherInfo.push_back("No");
@@ -1430,8 +1441,8 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         m_Ostream << "(Top V gene match, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
-        m_Ostream << "Top J gene match, Chain type, Stop codon in V, Stop codon in J, ";
-        m_Ostream << "V-J Frame, Productive, Strand):" << endl;
+        m_Ostream << "Top J gene match, Chain type, V coding frame stop codon, J coding frame stop codon, ";
+        m_Ostream << "V-J frame, Productive, Strand):" << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
@@ -1499,10 +1510,10 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
         }
         m_Ostream << "<td>Top J gene match</td>"
                   << "<td>Chain type</td>"
-                  << "<td>Stop codon in V</td>"
-                  << "<td>Stop codon in J</td>"
-                  << "<td>V-J Frame</td>"
-                  << "<td>Productive?</td>"
+                  << "<td>V coding frame stop codon</td>"
+                  << "<td>J coding frame stop codon</td>"
+                  << "<td>V-J frame</td>"
+                  << "<td>Productive</td>"
                   << "<td>Strand</td></tr>\n";
 
         m_Ostream << "<tr><td>"  << m_VGene.sid;
