@@ -217,8 +217,45 @@ bool CGff3Writer::x_WriteAlignDisc(
         CRef<CSeq_align> pA(new CSeq_align);
         pA->Assign(**cit);
         if ( align.IsSetScore() ) {
-            pA->SetScore().insert( pA->SetScore().end(),
-                align.GetScore().begin(), align.GetScore().end() );
+            CSeq_align::TScore::const_iterator itsc = align.GetScore().begin();
+            for (/**/; itsc != align.GetScore().end(); ++itsc) {
+                const CScore& score = **itsc;
+
+                if (score.GetId().IsStr()) {
+                    const string& key = score.GetId().GetStr(); 
+                    CSeq_align::TScore::const_iterator itpa = pA->GetScore().begin();
+                    for (/**/; itpa != pA->GetScore().end(); ++itpa) {
+                        const CScore& paScore = **itpa;
+                        if (paScore.GetId().IsStr()) {
+                            const string& paKey = paScore.GetId().GetStr();
+                            if (paKey == key) {
+                                break;
+                            }
+                        }
+                    }
+                    if (itpa == pA->GetScore().end()) {
+                        pA->SetScore().push_back(*itsc);
+                    }
+                }
+
+                if (score.GetId().IsId()) {
+                    const CObject_id& id = score.GetId();
+                    CSeq_align::TScore::const_iterator itpa = pA->GetScore().begin();
+                    for (/**/; itpa != pA->GetScore().end(); ++itpa) {
+                        const CScore& paScore = **itpa;
+                        if (paScore.GetId().IsId()) {
+                            const CObject_id& paId = paScore.GetId();
+                            if (paId.Match(id)) {
+                                break;
+                            }
+                        }
+                    }
+                    if (itpa == pA->GetScore().end()) {
+                        pA->SetScore().push_back(*itsc);
+                    }
+                }
+
+            }
         }
         if (!x_WriteAlign(*pA, bInvertWidth)) {
             return false;
