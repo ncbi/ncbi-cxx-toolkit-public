@@ -620,6 +620,7 @@ private:
     SIgGene m_DGene;
     SIgGene m_JGene;
     vector<SIgDomain *> m_IgDomains;                                        
+    vector<string> m_OtherInfo;
 };
 
 END_SCOPE(align_format)
