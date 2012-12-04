@@ -92,9 +92,9 @@ tds_init_secdll(void)
 			if (!GetVersionEx(&osver))
 				break;
 			if (osver.dwPlatformId == VER_PLATFORM_WIN32_NT && osver.dwMajorVersion <= 4)
-				secdll = LoadLibrary("security.dll");
+				secdll = LoadLibraryA("security.dll");
 			else
-				secdll = LoadLibrary("secur32.dll");
+				secdll = LoadLibraryA("secur32.dll");
 			if (!secdll)
 				break;
 		}
@@ -164,7 +164,7 @@ tds_sspi_handle_next(TDSSOCKET * tds, struct tds_authentication * tds_auth, size
 	out_buf.pvBuffer   = auth->tds_auth.packet;
 	out_buf.cbBuffer   = NTLMBUF_LEN;
 
-	status = sec_fn->InitializeSecurityContext(&auth->cred, &auth->cred_ctx, auth->sname,
+	status = sec_fn->InitializeSecurityContextA(&auth->cred, &auth->cred_ctx, auth->sname,
 		ISC_REQ_CONFIDENTIALITY | ISC_REQ_REPLAY_DETECT | ISC_REQ_CONNECTION,
 		0, SECURITY_NETWORK_DREP, &in_desc,
 		0, &auth->cred_ctx, &out_desc,
@@ -229,7 +229,7 @@ tds_sspi_get_auth(TDSSOCKET * tds)
 	auth->tds_auth.handle_next = tds_sspi_handle_next;
 
 	/* using Negotiate system will use proper protocol (either NTLM or Kerberos) */
-	if (sec_fn->AcquireCredentialsHandle(NULL, (char *)"Negotiate", SECPKG_CRED_OUTBOUND,
+	if (sec_fn->AcquireCredentialsHandleA(NULL, (char *)"Negotiate", SECPKG_CRED_OUTBOUND,
 		NULL, identity.Domain ? &identity : NULL,
 		NULL, NULL, &auth->cred, &ts) != SEC_E_OK) {
 		free(auth);
@@ -268,7 +268,7 @@ tds_sspi_get_auth(TDSSOCKET * tds)
 		tdsdump_log(TDS_DBG_NETWORK, "kerberos name %s\n", auth->sname);
 	}
 
-	status = sec_fn->InitializeSecurityContext(&auth->cred, NULL, auth->sname,
+	status = sec_fn->InitializeSecurityContextA(&auth->cred, NULL, auth->sname,
 		ISC_REQ_CONFIDENTIALITY | ISC_REQ_REPLAY_DETECT | ISC_REQ_CONNECTION,
 		0, SECURITY_NETWORK_DREP,
 		NULL, 0,
