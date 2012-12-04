@@ -3208,10 +3208,6 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc*
 {
     CRef<CSeq_loc> merged_loc;
     
-    _ASSERT(loc2 == NULL ||
-            (loc1->Intersect(*loc2, 0, NULL)->IsNull() == false &&
-             loc1->Intersect(*loc2, 0, NULL)->IsEmpty() == false));
-    
     if (loc1->GetStart(eExtreme_Positional) < loc1->GetStop(eExtreme_Positional) &&
         (loc2==NULL ||
          loc2->GetStart(eExtreme_Positional) < loc2->GetStop(eExtreme_Positional))) {
@@ -3223,6 +3219,10 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc*
     } else {
         // cross the origin
 
+        _ASSERT(loc2 == NULL ||
+                (loc1->Intersect(*loc2, 0, NULL)->IsNull() == false &&
+                 loc1->Intersect(*loc2, 0, NULL)->IsEmpty() == false));
+    
         CRef<CSeq_id> id(new CSeq_id);
         id->Assign(*loc1->GetId());
         
