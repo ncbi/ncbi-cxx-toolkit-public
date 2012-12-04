@@ -138,11 +138,13 @@ CBlastFormatterApp::x_QueryBioseqToSSeqLoc(const CBioseq& bioseq,
     static bool first_time = true;
     _ASSERT(scope);
 
-    scope->AddBioseq(bioseq);
     if ( !HasRawSequenceData(bioseq) && first_time ) {
         _ASSERT(m_QueryScopeSource);
         m_QueryScopeSource->AddDataLoaders(scope);
         first_time = false;
+    }
+    else {
+        scope->AddBioseq(bioseq);
     }
     CRef<CSeq_loc> seqloc(new CSeq_loc);
     seqloc->SetWhole().Assign(*bioseq.GetFirstId());
