@@ -32,10 +32,10 @@ REM     make_ncbi.bat <configure|build|make|check> <static|dll> <32|64> [cfgs..]
 REM
 REM     %1% - Configure, build, check or build and configure (make) build tree.
 REM     %2% - Type of used libraries (static, dll).
-REM     %3% - This parameter is ignored on MSVC7, should be "32" always.
+REM     %3% - 32/64-bits architerture.
 REM     %4% - Configuration name(s)
-REM           (ALL, Debug, DebugDLL, DebugMT, Release, ReleaseDLL, ReleaseMT).
-REM           By default build all possible configurations (ALL).
+REM           (DEFAULT, DebugDLL, DebugMT, ReleaseDLL, ReleaseMT, Unicode_*).
+REM           By default build DebugDLL and ReleaseDLL only.
 REM
 REM ===========================================================================
 

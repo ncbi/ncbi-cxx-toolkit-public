@@ -12,6 +12,13 @@ cfgs="${1:-DebugDLL ReleaseDLL}"
 arch="$2"
 
 
+#---------------- Configuration ----------------
+
+# Enable Unicode configurations
+NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-UNICODE=1
+export NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-UNICODE
+
+
 #---------------- Global variables ----------------
 
 build_trees='static dll'
@@ -123,13 +130,6 @@ if [ ! -d $build_dir ] ; then
 fi
 cd $build_dir
 
-for cfg in $cfgs ; do
-    if [ $cfg = Release -o $cfg = Debug ] ; then
-       error "$cfg configuration is not buildable on this platform." 
-    fi
-done
-
-
 # Configuration to build configure
 cfg_configure='ReleaseDLL'
 out=".build.$$"
@@ -204,7 +204,7 @@ generate_msvc10_error_check_file $check_awk
 for tree in $build_trees ; do
     for cfg in $cfgs ; do
         if [ $tree = dll ] ; then
-            test $cfg != ReleaseDLL -a $cfg != DebugDLL  &&  continue  
+            test $cfg != ReleaseDLL -a $cfg != DebugDLL -a $cfg != Unicode_DebugDLL -a $cfg != Unicode_ReleaseDLL  &&  continue  
         fi
         sols=`eval echo "$"sol_${tree}""`
         for sol in $sols ; do

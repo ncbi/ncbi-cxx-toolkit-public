@@ -34,8 +34,9 @@ REM     %1% - Configure, build, make (configure and build_ or check build tree.
 REM     %2% - Solution file name without extention (relative path from build directory).
 REM     %3% - Type of used libraries (static, dll).
 REM     %4% - 32/64-bits architerture.
-REM     %5% - Configuration name(s) (ALL, DebugDLL, ReleaseDLL).
-REM           By default build all possible configurations (ALL).
+REM     %5% - Configuration name(s)
+REM           (DEFAULT, DebugDLL, DebugMT, ReleaseDLL, ReleaseMT, Unicode_*).
+REM           By default build DebugDLL and ReleaseDLL only.
 REM
 REM ===========================================================================
 
@@ -48,15 +49,17 @@ SET LIBDLL=%3%
 SET ARCH=%4%
 SET CFG=%5%
 
-SET COMPILER=msvc9
+SET COMPILER=msvc10
 IF _%SRV_NAME% == _ SET SRV_NAME=%COMPUTERNAME%
 
-IF _%CMD% == _      GOTO NOARGS
-IF _%SOLUTION% == _ GOTO USAGE
-IF _%LIBDLL% == _   GOTO USAGE
-IF _%ARCH% == _     GOTO USAGE
-IF _%CFG% == _      GOTO BUILDALL
-IF _%CFG% == _ALL   GOTO BUILDALL
+SET NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-UNICODE=1
+
+IF _%CMD% == _        GOTO NOARGS
+IF _%SOLUTION% == _   GOTO USAGE
+IF _%LIBDLL% == _     GOTO USAGE
+IF _%ARCH% == _       GOTO USAGE
+IF _%CFG% == _        GOTO BUILDDEF
+IF _%CFG% == _DEFAULT GOTO BUILDDEF
 GOTO CHECKCMD
 
 :NOARGS
@@ -73,7 +76,7 @@ ECHO FATAL: %0 %1 %2 %3 %4 %5 %6 %7 %8 %9
 GOTO ABORT
 
 
-:BUILDALL
+:BUILDDEF
 
 CALL %0 %CMD% %SOLUTION% %LIBDLL% %ARCH% ReleaseDLL DebugDLL
 GOTO EXIT
@@ -97,13 +100,18 @@ GOTO ABORT
 REM ###########################################################################
 :CONFIG
 
-IF %CFG% == DebugDLL   GOTO CONTCFG
-IF %CFG% == DebugMT    GOTO CONTCFG
-IF %CFG% == ReleaseDLL GOTO CONTCFG
-IF %CFG% == ReleaseMT  GOTO CONTCFG
-ECHO The following configuration names are recognized:
-ECHO     DebugDLL DebugMT ReleaseDLL ReleaseMT
-ECHO FATAL: Unknown configuration name %CFG%. Please correct.
+IF %CFG% == DebugDLL           GOTO CONTCFG
+IF %CFG% == DebugMT            GOTO CONTCFG
+IF %CFG% == ReleaseDLL         GOTO CONTCFG
+IF %CFG% == ReleaseMT          GOTO CONTCFG
+IF %CFG% == Unicode_DebugDLL   GOTO CONTCFG
+IF %CFG% == Unicode_DebugMT    GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseDLL GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseMT  GOTO CONTCFG
+ECHO FATAL: Unknown configuration name %CFG%.
+ECHO        The following configuration names are recognized:
+ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
+ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
 GOTO ABORT
 :CONTCFG
 TIME /T
@@ -117,13 +125,18 @@ REM ###########################################################################
 :BUILD
 
 :ARGLOOPB
-IF %CFG% == DebugDLL   GOTO CONTBLD
-IF %CFG% == DebugMT    GOTO CONTBLD
-IF %CFG% == ReleaseDLL GOTO CONTBLD
-IF %CFG% == ReleaseMT  GOTO CONTBLD
-ECHO The following configuration names are recognized:
-ECHO     DebugDLL DebugMT ReleaseDLL ReleaseMT
-ECHO FATAL: Unknown configuration name %CFG%. Please correct.
+IF %CFG% == DebugDLL           GOTO CONTCFG
+IF %CFG% == DebugMT            GOTO CONTCFG
+IF %CFG% == ReleaseDLL         GOTO CONTCFG
+IF %CFG% == ReleaseMT          GOTO CONTCFG
+IF %CFG% == Unicode_DebugDLL   GOTO CONTCFG
+IF %CFG% == Unicode_DebugMT    GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseDLL GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseMT  GOTO CONTCFG
+ECHO FATAL: Unknown configuration name %CFG%.
+ECHO        The following configuration names are recognized:
+ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
+ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
 GOTO ABORT
 :CONTBLD
 TIME /T
@@ -143,13 +156,18 @@ ECHO INFO: Checking init
 bash -c "../../scripts/common/check/check_make_win_cfg.sh init; exit $?"
 SET ERRORLEV=0
 :ARGLOOPC
-IF %CFG% == DebugMT    GOTO CONTCH
-IF %CFG% == DebugDLL   GOTO CONTCH
-IF %CFG% == ReleaseMT  GOTO CONTCH
-IF %CFG% == ReleaseDLL GOTO CONTCH
-ECHO The following configuration names are recognized:
-ECHO     DebugDLL DebugMT ReleaseDLL ReleaseMT
-ECHO FATAL: Unknown configuration name %CFG%. Please correct.
+IF %CFG% == DebugDLL           GOTO CONTCFG
+IF %CFG% == DebugMT            GOTO CONTCFG
+IF %CFG% == ReleaseDLL         GOTO CONTCFG
+IF %CFG% == ReleaseMT          GOTO CONTCFG
+IF %CFG% == Unicode_DebugDLL   GOTO CONTCFG
+IF %CFG% == Unicode_DebugMT    GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseDLL GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseMT  GOTO CONTCFG
+ECHO FATAL: Unknown configuration name %CFG%.
+ECHO        The following configuration names are recognized:
+ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
+ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
 GOTO ABORT
 :CONTCH
 ECHO INFO: Create check script for "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
