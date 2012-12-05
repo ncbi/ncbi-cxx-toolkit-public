@@ -1080,7 +1080,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     display.SetLineLen(70);
 
     if (annots->m_FrameInfo[0] >= 0 && m_IgOptions->m_Translate) {
-        display.SetTranslatedFrameForLocalSeq((CDisplaySeqalign::TranslatedFrameForLocalSeq) annots->m_FrameInfo[0]); 
+        display.SetTranslatedFrameForLocalSeq((CDisplaySeqalign::TranslatedFrameForLocalSeq) (annots->m_FrameInfo[0]%3)); 
         flags += CDisplaySeqalign::eShowTranslationForLocalSeq;
     }
     flags += CDisplaySeqalign::eShowSequencePropertyLabel;
