@@ -1470,8 +1470,6 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     Int4 q_start, s_start;     /* starting point in query and subject */
     /* BLAST-specific parameters needed to compute a gapped alignment */
     BlastKappa_GappingParamsContext * context = gapping_params->context;
-    /* Score block for this search */
-    BlastScoreBlk* sbp = context->sbp;
     /* Auxiliary structure for computing gapped alignments */
     BlastGapAlignStruct* gapAlign = context->gap_align;
     /* The preliminary gapped HSP that were are recomputing */

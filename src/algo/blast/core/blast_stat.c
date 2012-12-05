@@ -815,7 +815,6 @@ SPsiBlastScoreMatrixNew(size_t ncols)
 */
 static Blast_GumbelBlk*
 s_BlastGumbelBlkNew() {
-   Blast_GumbelBlk* retv;
    return (Blast_GumbelBlk*) calloc(1, sizeof(Blast_GumbelBlk));
 }
 
