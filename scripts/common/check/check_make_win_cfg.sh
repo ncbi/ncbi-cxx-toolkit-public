@@ -12,13 +12,13 @@
 #    check_make_win_cfg.sh <action> <solution> <static|dll> <cfg> [build_dir]
 #
 #    <action>      - { init | create } 
-#                      init   - initialize master script directory;
+#                      init   - initialize master script directory (MSVC only);
 #                      create - create check script.
 #    <solution>    - solution file name without .sln extention
 #                    (relative path from build directory).
 #    <static|dll>  - type of used libraries (static, dll).
 #    <cfg>         - configuration name
-#                    (Debug, DebugDLL, DebugMT, Release, ReleaseDLL, ReleaseMT).
+#                    (DebugDLL, DebugMT, ReleaseDLL, ReleaseMT, Unicode_*).
 #    [build_dir]   - path to MSVC build tree like ".../msvc_prj"
 #                    (default: will try determine path from current work
 #                    directory -- root of build tree) 

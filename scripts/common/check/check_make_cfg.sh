@@ -19,7 +19,7 @@
 #                    (relative path from build directory).
 #    <static|dll>  - type of used libraries (static, dll).
 #    <cfg>         - configuration name
-#                    (Debug, DebugDLL, DebugMT, Release, ReleaseDLL, ReleaseMT).
+#                    (Debug, DebugDLL, DebugMT, Release, ReleaseDLL, ReleaseMT,...).
 #    [build_dir]   - path to build tree like ".../msvc800_prj"
 #                    (default: will try determine path from current work
 #                    directory -- root of build tree) 
