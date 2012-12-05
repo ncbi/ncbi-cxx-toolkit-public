@@ -922,7 +922,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         int q_mid = q_start + q_stop;
                         int q_dif = q_stop - q_start;
                         int frame_adj = ((*it)->GetSeqStart(1) + 3 - frame_offset) % 3;
-                        annot->m_FrameInfo[0] = ((q_mid - q_dir *q_dif)/2 + 3 - q_dir * frame_adj) % 3;
+                        annot->m_FrameInfo[0] = (q_mid - q_dir *q_dif)/2 - q_dir * frame_adj + 3;
                         frame_adj = ((*it)->GetSeqStop(1) + 3 - frame_offset) % 3;
                         annot->m_FrameInfo[1] = (q_mid + q_dir *q_dif)/2 - q_dir * frame_adj;
                     }

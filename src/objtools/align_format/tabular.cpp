@@ -1365,15 +1365,13 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     } else {
         SetFrame("N/A");
     }
+
     //V frame
-    if (annot->m_FrameInfo[1] >= 0) {
-        int off;
-        int len;
-        string seq_trans;
-        
-        off = annot->m_FrameInfo[0];
-        len = (annot->m_GeneInfo[1] - off)/3*3;
+    if (annot->m_FrameInfo[0] >= 0) {
+        int off = annot->m_FrameInfo[0];
+        int len = (annot->m_GeneInfo[1] - off)/3*3;
         string seq_data(m_Query, off, len);
+        string seq_trans;
         CSeqTranslator::Translate(seq_data, seq_trans);
         if (seq_trans.find('*') != string::npos) {
             m_OtherInfo.push_back("Yes");
@@ -1385,9 +1383,9 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     }
 
 
-        //J frame
-    int off = annot->m_FrameInfo[2];
-    if (off >=0) {
+    //J frame
+    if (annot->m_FrameInfo[2] >=0) {
+        int off = annot->m_FrameInfo[2];
         int len = (annot->m_GeneInfo[5] - off)/3*3;
         string seq_data(m_Query, off, len);
         string seq_trans;
@@ -1400,7 +1398,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                 m_OtherInfo.push_back("No");
             }
         } else {
-            m_OtherInfo.push_back("No");
+            m_OtherInfo.push_back("Yes");
             m_OtherInfo.push_back("No");
         }
     } else {
