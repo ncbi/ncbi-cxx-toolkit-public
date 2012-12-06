@@ -110,7 +110,7 @@ public:
         m_Obj = obj;
         m_Ready.Post();
         m_Resume.Wait();
-        if (m_Stop && m_Obj) {
+        if (m_Stop) {
             Exit(0);
         }
     }
