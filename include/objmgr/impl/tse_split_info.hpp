@@ -126,6 +126,10 @@ public:
 
     void x_UpdateAnnotIndex(void);
     void x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
+    void x_UpdateFeatIdIndex(CSeqFeatData::E_Choice type,
+                             EFeatIdType id_type);
+    void x_UpdateFeatIdIndex(CSeqFeatData::ESubtype subtype,
+                             EFeatIdType id_type);
     
     // append ids with all Bioseqs Seq-ids from this Split-Info
     void GetBioseqsIds(TSeqIds& ids) const;

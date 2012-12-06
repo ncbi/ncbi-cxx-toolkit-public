@@ -927,6 +927,26 @@ void CTSE_Info::x_ResetDirtyAnnotIndexNoParent(void)
 }
 
 
+void CTSE_Info::UpdateFeatIdIndex(CSeqFeatData::E_Choice type,
+                                  EFeatIdType id_type) const
+{
+    if ( m_Split ) {
+        m_Split.GetNCObject().x_UpdateFeatIdIndex(type, id_type);
+    }
+    UpdateAnnotIndex();
+}
+
+
+void CTSE_Info::UpdateFeatIdIndex(CSeqFeatData::ESubtype subtype,
+                                  EFeatIdType id_type) const
+{
+    if ( m_Split ) {
+        m_Split.GetNCObject().x_UpdateFeatIdIndex(subtype, id_type);
+    }
+    UpdateAnnotIndex();
+}
+
+
 void CTSE_Info::UpdateAnnotIndex(const CSeq_id_Handle& id) const
 {
     x_GetRecords(id, false);
@@ -1313,6 +1333,7 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
 {
     if ( !index.m_Chunks.empty() ) {
         x_LoadChunks(index.m_Chunks);
+        UpdateAnnotIndex();
     }
     if ( !index.m_IndexInt ) {
         return;
@@ -1324,6 +1345,7 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
         if ( info.m_Type == id_type ) {
             if ( info.m_IsChunk ) {
                 x_LoadChunk(info.m_ChunkId);
+                UpdateAnnotIndex();
             }
             else {
                 objects.push_back(info.m_Info);
@@ -1371,6 +1393,7 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
 {
     if ( !index.m_Chunks.empty() ) {
         x_LoadChunks(index.m_Chunks);
+        UpdateAnnotIndex();
     }
     if ( !index.m_IndexStr ) {
         return;
@@ -1382,6 +1405,7 @@ void CTSE_Info::x_AddFeaturesById(TAnnotObjects& objects,
         if ( info.m_Type == id_type ) {
             if ( info.m_IsChunk ) {
                 x_LoadChunk(info.m_ChunkId);
+                UpdateAnnotIndex();
             }
             else {
                 objects.push_back(info.m_Info);
@@ -1708,8 +1732,8 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                              TFeatIdInt id,
                              EFeatIdType id_type) const
 {
-    UpdateAnnotIndex();
     TAnnotObjects objects;
+    UpdateFeatIdIndex(subtype, id_type);
     if ( subtype == CSeqFeatData::eSubtype_any ) {
         x_AddAllFeaturesById(objects, id, id_type);
     }
@@ -1725,8 +1749,8 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
                              TFeatIdInt id,
                              EFeatIdType id_type) const
 {
-    UpdateAnnotIndex();
     TAnnotObjects objects;
+    UpdateFeatIdIndex(type, id_type);
     if ( type == CSeqFeatData::e_not_set ) {
         x_AddAllFeaturesById(objects, id, id_type);
     }
@@ -1748,8 +1772,8 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
                              const TFeatIdStr& id,
                              EFeatIdType id_type) const
 {
-    UpdateAnnotIndex();
     TAnnotObjects objects;
+    UpdateFeatIdIndex(subtype, id_type);
     if ( subtype == CSeqFeatData::eSubtype_any ) {
         x_AddAllFeaturesById(objects, id, id_type);
     }
@@ -1765,8 +1789,8 @@ CTSE_Info::x_GetFeaturesById(CSeqFeatData::E_Choice type,
                              const TFeatIdStr& id,
                              EFeatIdType id_type) const
 {
-    UpdateAnnotIndex();
     TAnnotObjects objects;
+    UpdateFeatIdIndex(type, id_type);
     if ( type == CSeqFeatData::e_not_set ) {
         x_AddAllFeaturesById(objects, id, id_type);
     }

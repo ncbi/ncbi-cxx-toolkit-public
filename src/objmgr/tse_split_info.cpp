@@ -306,17 +306,43 @@ bool CTSE_Split_Info::x_CanAddBioseq(const TBioseqId& id) const
 
 
 // annot index
+void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::E_Choice type,
+                                          EFeatIdType id_type)
+{
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        CTSE_Chunk_Info& chunk = *it->second;
+        if ( !chunk.IsLoaded() && !chunk.m_AnnotIndexEnabled &&
+             chunk.x_ContainsFeatIds(type, id_type) ) {
+            x_UpdateAnnotIndex(chunk);
+        }
+    }
+}
+
+
+void CTSE_Split_Info::x_UpdateFeatIdIndex(CSeqFeatData::ESubtype subtype,
+                                          EFeatIdType id_type)
+{
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        CTSE_Chunk_Info& chunk = *it->second;
+        if ( !chunk.IsLoaded() && !chunk.m_AnnotIndexEnabled &&
+             chunk.x_ContainsFeatIds(subtype, id_type) ) {
+            x_UpdateAnnotIndex(chunk);
+        }
+    }
+}
+
+
 void CTSE_Split_Info::x_UpdateAnnotIndex(void)
 {
-    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        it->first->UpdateAnnotIndex();
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        x_UpdateAnnotIndex(*it->second);
     }
 }
 
 
 void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
-    if ( !chunk.m_AnnotIndexEnabled ) {
+    if ( !chunk.IsLoaded() && !chunk.m_AnnotIndexEnabled ) {
         NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
             CTSE_Info& tse = *it->first;
             ITSE_Assigner& listener = *it->second;

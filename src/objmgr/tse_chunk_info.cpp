@@ -41,6 +41,7 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objmgr/seq_map.hpp>
 #include <algorithm>
@@ -495,6 +496,136 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
         infos.PackKeys();
         infos.SetIndexed();
     }
+}
+
+
+static
+bool x_HasFeatType(const CTSE_Chunk_Info::TAnnotTypes& types,
+                   CSeqFeatData::E_Choice type)
+{
+    if ( type == CSeqFeatData::e_not_set ) {
+        return !types.empty();
+    }
+    if ( types.find(SAnnotTypeSelector(type)) != types.end() ) {
+        return true;
+    }
+    CAnnotType_Index::TIndexRange range =
+        CAnnotType_Index::GetFeatTypeRange(type);
+    for ( size_t index = range.first; index < range.second; ++index ) {
+        CSeqFeatData::ESubtype subtype =
+            CAnnotType_Index::GetSubtypeForIndex(index);
+        if ( types.find(SAnnotTypeSelector(subtype)) != types.end() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static
+bool x_HasFeatType(const CTSE_Chunk_Info::TAnnotTypes& types,
+                   CSeqFeatData::ESubtype subtype)
+{
+    if ( subtype == CSeqFeatData::eSubtype_any ) {
+        return !types.empty();
+    }
+    if ( types.find(SAnnotTypeSelector(subtype)) != types.end() ) {
+        return true;
+    }
+    CSeqFeatData::E_Choice type = CSeqFeatData::GetTypeFromSubtype(subtype);
+    if ( types.find(SAnnotTypeSelector(type)) != types.end() ) {
+        return true;
+    }
+    return false;
+}
+
+
+static
+bool x_HasFeatIds(const CTSE_Chunk_Info::TFeatIdsMap& types,
+                  CSeqFeatData::E_Choice type)
+{
+    if ( type == CSeqFeatData::e_not_set ) {
+        return !types.empty();
+    }
+    if ( types.find(SAnnotTypeSelector(type)) != types.end() ) {
+        return true;
+    }
+    CAnnotType_Index::TIndexRange range =
+        CAnnotType_Index::GetFeatTypeRange(type);
+    for ( size_t index = range.first; index < range.second; ++index ) {
+        CSeqFeatData::ESubtype subtype =
+            CAnnotType_Index::GetSubtypeForIndex(index);
+        if ( types.find(SAnnotTypeSelector(subtype)) != types.end() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static
+bool x_HasFeatIds(const CTSE_Chunk_Info::TFeatIdsMap& types,
+                  CSeqFeatData::ESubtype subtype)
+{
+    if ( subtype == CSeqFeatData::eSubtype_any ) {
+        return !types.empty();
+    }
+    if ( types.find(SAnnotTypeSelector(subtype)) != types.end() ) {
+        return true;
+    }
+    CSeqFeatData::E_Choice type = CSeqFeatData::GetTypeFromSubtype(subtype);
+    if ( types.find(SAnnotTypeSelector(type)) != types.end() ) {
+        return true;
+    }
+    return false;
+}
+
+
+bool CTSE_Chunk_Info::x_ContainsFeatType(CSeqFeatData::E_Choice type) const
+{
+    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+        if ( x_HasFeatType(it->second, type) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CTSE_Chunk_Info::x_ContainsFeatType(CSeqFeatData::ESubtype subtype) const
+{
+    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+        if ( x_HasFeatType(it->second, subtype) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CTSE_Chunk_Info::x_ContainsFeatIds(CSeqFeatData::E_Choice type,
+                                        EFeatIdType id_type) const
+{
+    if ( !x_ContainsFeatType(type) ) {
+        return false;
+    }
+    if ( !m_ExplicitFeatIds ) {
+        return true;
+    }
+    return x_HasFeatIds(id_type == eFeatId_id? m_FeatIds: m_XrefIds, type);
+}
+
+
+bool CTSE_Chunk_Info::x_ContainsFeatIds(CSeqFeatData::ESubtype subtype,
+                                        EFeatIdType id_type) const
+{
+    if ( !x_ContainsFeatType(subtype) ) {
+        return false;
+    }
+    if ( !m_ExplicitFeatIds ) {
+        return true;
+    }
+    return x_HasFeatIds(id_type == eFeatId_id? m_FeatIds: m_XrefIds, subtype);
 }
 
 

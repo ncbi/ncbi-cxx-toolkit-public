@@ -348,6 +348,10 @@ public:
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(CTSE_Info_Object& object);
+    void UpdateFeatIdIndex(CSeqFeatData::E_Choice type,
+                           EFeatIdType id_type) const;
+    void UpdateFeatIdIndex(CSeqFeatData::ESubtype subtype,
+                           EFeatIdType id_type) const;
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 

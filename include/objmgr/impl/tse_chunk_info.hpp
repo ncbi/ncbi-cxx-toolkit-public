@@ -261,6 +261,12 @@ protected:
     void x_DisableAnnotIndexWhenLoaded(void);
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
+    bool x_ContainsFeatType(CSeqFeatData::E_Choice type) const;
+    bool x_ContainsFeatType(CSeqFeatData::ESubtype subtype) const;
+    bool x_ContainsFeatIds(CSeqFeatData::E_Choice type,
+                           EFeatIdType id_type) const;
+    bool x_ContainsFeatIds(CSeqFeatData::ESubtype subtype,
+                           EFeatIdType id_type) const;
 
     //void x_UnmapAnnotObjects(CTSE_Info& tse);
     //void x_DropAnnotObjects(CTSE_Info& tse);
