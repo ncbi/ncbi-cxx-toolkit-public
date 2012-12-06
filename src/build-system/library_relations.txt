@@ -1049,6 +1049,7 @@ gc_load_utils needs ncbi_xdbapi_ftds
 gc_load_utils needs ncbi_xloader_asn_cache
 gc_load_utils needs ncbi_xloader_blastdb
 gc_load_utils needs ncbi_xloader_blastdb_rmt
+gc_load_utils needs ncbi_xloader_csra
 gc_load_utils needs ncbi_xloader_genbank
 gc_load_utils needs ncbi_xloader_lds
 gc_load_utils needs ncbi_xloader_lds2
@@ -1148,6 +1149,7 @@ gc_utils needs ncbi_xdbapi_ftds
 gc_utils needs ncbi_xloader_asn_cache
 gc_utils needs ncbi_xloader_blastdb
 gc_utils needs ncbi_xloader_blastdb_rmt
+gc_utils needs ncbi_xloader_csra
 gc_utils needs ncbi_xloader_genbank
 gc_utils needs ncbi_xloader_lds
 gc_utils needs ncbi_xloader_lds2
@@ -1245,6 +1247,7 @@ gcaccess_utils needs ncbi_xdbapi_ftds
 gcaccess_utils needs ncbi_xloader_asn_cache
 gcaccess_utils needs ncbi_xloader_blastdb
 gcaccess_utils needs ncbi_xloader_blastdb_rmt
+gcaccess_utils needs ncbi_xloader_csra
 gcaccess_utils needs ncbi_xloader_genbank
 gcaccess_utils needs ncbi_xloader_lds
 gcaccess_utils needs ncbi_xloader_lds2
@@ -1491,6 +1494,7 @@ gpinit needs ncbi_xdbapi_ftds
 gpinit needs ncbi_xloader_asn_cache
 gpinit needs ncbi_xloader_blastdb
 gpinit needs ncbi_xloader_blastdb_rmt
+gpinit needs ncbi_xloader_csra
 gpinit needs ncbi_xloader_genbank
 gpinit needs ncbi_xloader_lds
 gpinit needs ncbi_xloader_lds2
@@ -1603,6 +1607,7 @@ gpinit_admin needs ncbi_xdbapi_ftds
 gpinit_admin needs ncbi_xloader_asn_cache
 gpinit_admin needs ncbi_xloader_blastdb
 gpinit_admin needs ncbi_xloader_blastdb_rmt
+gpinit_admin needs ncbi_xloader_csra
 gpinit_admin needs ncbi_xloader_genbank
 gpinit_admin needs ncbi_xloader_lds
 gpinit_admin needs ncbi_xloader_lds2
@@ -1706,6 +1711,7 @@ gpinit_buildinfo needs ncbi_xdbapi_ftds
 gpinit_buildinfo needs ncbi_xloader_asn_cache
 gpinit_buildinfo needs ncbi_xloader_blastdb
 gpinit_buildinfo needs ncbi_xloader_blastdb_rmt
+gpinit_buildinfo needs ncbi_xloader_csra
 gpinit_buildinfo needs ncbi_xloader_genbank
 gpinit_buildinfo needs ncbi_xloader_lds
 gpinit_buildinfo needs ncbi_xloader_lds2
@@ -1820,6 +1826,7 @@ gpipe_alnutil needs ncbi_xdbapi_ftds
 gpipe_alnutil needs ncbi_xloader_asn_cache
 gpipe_alnutil needs ncbi_xloader_blastdb
 gpipe_alnutil needs ncbi_xloader_blastdb_rmt
+gpipe_alnutil needs ncbi_xloader_csra
 gpipe_alnutil needs ncbi_xloader_genbank
 gpipe_alnutil needs ncbi_xloader_lds
 gpipe_alnutil needs ncbi_xloader_lds2
@@ -1951,6 +1958,7 @@ gpipe_objutil needs ncbi_xdbapi_ftds
 gpipe_objutil needs ncbi_xloader_asn_cache
 gpipe_objutil needs ncbi_xloader_blastdb
 gpipe_objutil needs ncbi_xloader_blastdb_rmt
+gpipe_objutil needs ncbi_xloader_csra
 gpipe_objutil needs ncbi_xloader_genbank
 gpipe_objutil needs ncbi_xloader_lds
 gpipe_objutil needs ncbi_xloader_lds2
@@ -5015,6 +5023,7 @@ validate_regions needs ncbi_xdbapi_ftds
 validate_regions needs ncbi_xloader_asn_cache
 validate_regions needs ncbi_xloader_blastdb
 validate_regions needs ncbi_xloader_blastdb_rmt
+validate_regions needs ncbi_xloader_csra
 validate_regions needs ncbi_xloader_genbank
 validate_regions needs ncbi_xloader_lds
 validate_regions needs ncbi_xloader_lds2
@@ -7839,6 +7848,7 @@ xgencoll needs ncbi_xdbapi_ftds
 xgencoll needs ncbi_xloader_asn_cache
 xgencoll needs ncbi_xloader_blastdb
 xgencoll needs ncbi_xloader_blastdb_rmt
+xgencoll needs ncbi_xloader_csra
 xgencoll needs ncbi_xloader_genbank
 xgencoll needs ncbi_xloader_lds
 xgencoll needs ncbi_xloader_lds2
@@ -7938,6 +7948,7 @@ xgencollstats needs ncbi_xdbapi_ftds
 xgencollstats needs ncbi_xloader_asn_cache
 xgencollstats needs ncbi_xloader_blastdb
 xgencollstats needs ncbi_xloader_blastdb_rmt
+xgencollstats needs ncbi_xloader_csra
 xgencollstats needs ncbi_xloader_genbank
 xgencollstats needs ncbi_xloader_lds
 xgencollstats needs ncbi_xloader_lds2
@@ -8603,6 +8614,7 @@ xsmall_assembly needs ncbi_xdbapi_ftds
 xsmall_assembly needs ncbi_xloader_asn_cache
 xsmall_assembly needs ncbi_xloader_blastdb
 xsmall_assembly needs ncbi_xloader_blastdb_rmt
+xsmall_assembly needs ncbi_xloader_csra
 xsmall_assembly needs ncbi_xloader_genbank
 xsmall_assembly needs ncbi_xloader_lds
 xsmall_assembly needs ncbi_xloader_lds2
