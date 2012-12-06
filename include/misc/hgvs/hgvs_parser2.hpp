@@ -897,6 +897,7 @@ private:
             TSeqPos anchor_pos,             //anchor position in absolute seq-loc coordinates
             const CInt_fuzz* anchor_fuzz,   //..of anchor-pos, can be NULL
             TSeqPos anchor_ref_pos,         //first-pos in HGVS coordinates (e.g. 0 for "g.", start_codon or stop_codon+1 for "c."
+            TSeqPos effective_seq_length,   //length of sequence. If transcript, excludes polyA
             const long* offset_pos,         //if not specified, this is a "native" coordinate; otherwise "c."|"p." -intronic
             const CInt_fuzz* offset_fuzz);  //..of offset position, can be NULL
 

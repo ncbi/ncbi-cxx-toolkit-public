@@ -481,16 +481,25 @@ string CHgvsParser::s_OffsetPointToString(
         TSeqPos anchor_pos,
         const CInt_fuzz* anchor_fuzz,
         TSeqPos anchor_ref_pos,
+        TSeqPos effective_seq_length,
         const long* offset_pos,
         const CInt_fuzz* offset_fuzz)
 {
-    string anchor_str = s_IntWithFuzzToStr(anchor_pos, &anchor_ref_pos, false, anchor_fuzz);
-
-    string offset_str = "";
-    if(offset_pos) {
-        offset_str = s_IntWithFuzzToStr(*offset_pos, NULL, true, offset_fuzz);
+    if(offset_pos && (anchor_pos == 0 || anchor_pos >= effective_seq_length - 1)) {
+        //JIRA:VAR-343
+        //If we have an offset-point anchored to either start of end of the transcript (less polyA),
+        //then the anchor+offset must be resolved, i.e. reported as absolute position relative the origin of the coordinate system.
+        //That is, intronic positions are reported relative to closest exon boundary, while near-gene positions are reported
+        //relative to the coordinate system origin, which could be start of the sequence, cds-start, or cds-stop, depending on the context.
+        //
+        // Note: not sure whether anchor_fuzz and/or offset_fuzz should be used, and whether it needs to be modified 
+        long resolved_pos = anchor_pos + *offset_pos;
+        return s_IntWithFuzzToStr(resolved_pos, &anchor_ref_pos, false, anchor_fuzz);
+    } else {
+        string anchor_str = s_IntWithFuzzToStr(anchor_pos, &anchor_ref_pos, false, anchor_fuzz);
+        string offset_str = !offset_pos ? "" : s_IntWithFuzzToStr(*offset_pos, NULL, true, offset_fuzz);
+        return anchor_str+offset_str;
     }
-    return anchor_str+offset_str;
 }
 
 string CHgvsParser::AsHgvsExpression(const CVariantPlacement& p)
@@ -499,23 +508,30 @@ string CHgvsParser::AsHgvsExpression(const CVariantPlacement& p)
 }
 
 string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
-{
+{    
     //For protein placement we'll need seq-data (e.g. p.123Glu)
     CRef<CVariantPlacement> vp_ref;
+
+    CVariationUtil util(*m_scope);
+
     if(orig_vp.GetMol() == CVariantPlacement::eMol_protein && !orig_vp.IsSetSeq()) {
-        CVariationUtil util(*m_scope);
         vp_ref.Reset(new CVariantPlacement);
         vp_ref->Assign(orig_vp);
         util.AttachSeq(*vp_ref);
     }
     const CVariantPlacement& vp = vp_ref ? *vp_ref : orig_vp;
         
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(vp.GetLoc(), NULL));
 
-    //for c.-based coordinates, the first pos as start of CDS.
+    //we'll need to detect when an anchor in anchor+offset case occurs at lost position of 
+    //the last exon; we'll need to know the effective length.
+    size_t effective_seq_length = util.GetEffectiveTranscriptLength(bsh);
+
+    //For c.-based coordinates, the first pos as start of CDS.
+    //If the position falls it 3'-UTR, the origin is CDS-stop.
     TSeqPos first_pos = 0;
     TSeqPos cds_last_pos = 0;
     if(vp.GetMol() == CVariantPlacement::eMol_cdna) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(vp.GetLoc(), NULL));
         for(CFeat_CI ci(bsh); ci; ++ci) {
             const CMappedFeat& mf = *ci;
             if(mf.GetData().IsCdregion()) {
@@ -559,6 +575,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
                 vp.GetLoc().GetPnt().GetPoint(),
                 vp.GetLoc().GetPnt().IsSetFuzz() ? &vp.GetLoc().GetPnt().GetFuzz() : NULL,
                 is_cdsstop_relative ? cds_last_pos + 1 : first_pos,
+                effective_seq_length,
                 (vp.IsSetStart_offset() ? &start_offset : NULL),
                 vp.IsSetStart_offset_fuzz() ? &vp.GetStart_offset_fuzz() : NULL);
 
@@ -591,6 +608,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
                 int_loc->GetStart(eExtreme_Biological),
                 biostart_fuzz,
                 is_biostart_cdsstop_relative ? cds_last_pos + 1 : first_pos,
+                effective_seq_length,
                 vp.IsSetStart_offset() ? &biostart_offset : NULL,
                 vp.IsSetStart_offset_fuzz() ? &vp.GetStart_offset_fuzz() : NULL);
         if(vp.GetMol() == CVariantPlacement::eMol_protein) {
@@ -614,6 +632,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
                 int_loc->GetStop(eExtreme_Biological),
                 biostop_fuzz,
                 is_biostop_cdsstop_relative ? cds_last_pos + 1 : first_pos,
+                effective_seq_length,
                 vp.IsSetStop_offset() ? &biostop_offset : NULL,
                 vp.IsSetStop_offset_fuzz() ? &vp.GetStop_offset_fuzz() : NULL);
         if(vp.GetMol() == CVariantPlacement::eMol_protein) {
