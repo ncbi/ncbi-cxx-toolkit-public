@@ -2559,6 +2559,14 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd& cmd)
                 ctxt_extra.Print(it->first, it->second);
             }
         }
+        ctxt_extra.Flush();
+
+        // Workaround:
+        // When extra of the GetDiagContext().PrintRequestStart() is destroyed
+        // or flushed it also resets the status to 0 so I need to set it here
+        // to 200 though it was previously set to 200 when the request context
+        // is created.
+        m_CmdContext->SetRequestStatus(eStatus_OK);
     }
 }
 
@@ -2571,7 +2579,15 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(CTempString  msg)
                 .Print("_type", "cmd")
                 .Print("info", msg)
                 .Print("peer",  GetSocket().GetPeerAddress(eSAF_IP))
-                .Print("conn", m_ConnContext->GetRequestID());
+                .Print("conn", m_ConnContext->GetRequestID())
+                .Flush();
+
+        // Workaround:
+        // When extra of the GetDiagContext().PrintRequestStart() is destroyed
+        // or flushed it also resets the status to 0 so I need to set it here
+        // to 200 though it was previously set to 200 when the request context
+        // is created.
+        m_CmdContext->SetRequestStatus(eStatus_OK);
     }
 }
 
