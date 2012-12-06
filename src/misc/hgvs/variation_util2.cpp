@@ -2218,8 +2218,13 @@ void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
 
 
 //transcript length less polyA
-TSeqPos CVariationUtil::s_GetEffectiveTranscriptLength(const CBioseq_Handle& bsh)
+TSeqPos CVariationUtil::GetEffectiveTranscriptLength(const CBioseq_Handle& bsh)
 {
+    CVariantPlacement::TMol mol = GetMolType(*bsh.GetSeqId());
+    if(mol != CVariantPlacement::eMol_rna && mol != CVariantPlacement::eMol_cdna) {
+        return bsh.GetInst_Length();
+    }
+
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_polyA_site);
@@ -2253,7 +2258,7 @@ void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int
         offset *= -1;
     }
 
-    if(loc.GetStop(eExtreme_Positional) + 1 >= s_GetEffectiveTranscriptLength(bsh) && offset > 0) {
+    if(loc.GetStop(eExtreme_Positional) + 1 >= GetEffectiveTranscriptLength(bsh) && offset > 0) {
         //at the 3'-end; check if near-gene or intergenic
         if(offset <= 500) {
             p.SetGene_location() |= CVariantProperties::eGene_location_near_gene_3;
