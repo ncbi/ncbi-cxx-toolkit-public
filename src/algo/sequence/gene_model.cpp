@@ -2604,6 +2604,14 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         return;
     }
 
+    if (feat.IsSetExcept_text() &&
+        feat.GetExcept_text().find("ribosomal slippage") != string::npos)
+    {
+        /// The existing exception indicates ribosomal slippage; this overrides
+        /// all other exceptions we might find
+        return;
+    }
+
     ///
     /// exceptions here are easy:
     /// we compare the annotated product to the conceptual translation and
