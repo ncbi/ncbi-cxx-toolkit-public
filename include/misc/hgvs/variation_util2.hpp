@@ -278,6 +278,10 @@ public:
     static CConstRef<CVariation> s_FindConsequenceForPlacement(const CVariation& v, const CVariantPlacement& p);
 
 
+    /// Length up to last position of the last exon (i.e. not including polyA)
+    /// If neither is annotated, return normal length
+    static TSeqPos s_GetEffectiveTranscriptLength(const CBioseq_Handle& bsh);
+
 private:
 
 
