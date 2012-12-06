@@ -141,6 +141,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
+   tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_ADJACENT_PSEUDOGENES));
    tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_PROTEIN));
@@ -244,6 +246,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_HAPLOTYPE_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_VIRAL_QUALS));
    tests_on_SeqEntry_feat_desc.push_back( 

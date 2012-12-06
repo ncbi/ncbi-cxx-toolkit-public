@@ -64,6 +64,7 @@ namespace DiscRepNmSpc {
   typedef map <string, int> Str2Int;
   typedef map <int, int> Int2Int;
   typedef map <string, Str2Strs> Str2MapStr2Strs;
+  typedef map <string, vector <CConstRef <CBioseq> > > Str2Seqs;
 
   class CDiscTestInfo 
   {
@@ -75,7 +76,6 @@ namespace DiscRepNmSpc {
       static bool   is_BIOSRC1_run;
       static bool   is_CdTransl_run;
       static bool   is_DESC_user_run; // checked
-      static bool   is_FEAT_DESC_biosrc_run;
       static bool   is_GP_Set_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
@@ -209,18 +209,20 @@ namespace DiscRepNmSpc {
 
       static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat, prot_feat;
       static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat, rbs_feat;
+      static vector <const CSeq_feat*> biosrc_subsrc_feat;
       static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
       static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
       static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
-      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc;
+      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc, biosrc_subsrc_seqdesc;
       static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo, bioseq_title;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_orgmod_seqdesc_seqentry, user_seqdesc_seqentry;
+      static vector <const CSeq_entry*> biosrc_subsrc_seqdesc_seqentry;
 
     protected:
       void GetSeqFeatLabel(const CSeq_feat& seq_feat, string* label);      
@@ -287,13 +289,6 @@ namespace DiscRepNmSpc {
      protected:
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
-       void TestOnFeatDesc_Biosrc();
-       string GetName_iden_nm() const {return ("MORE_OR_SPEC_NAMES_IDENTIFIED_BY"); } 
-       string GetName_col_nm() const {return ("MORE_NAMES_COLLECTED_BY"); } 
-       bool HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, 
-                                 vector <string>& submit_text, bool check_mul_nm_only = false);
-       void GetSubmitText(const CAuth_list& authors, vector <string>& submit_text);
-       void FindSpecSubmitText(vector <string>& submit_text);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
                               const string& setting_name, bool be_na = true, bool be_aa=true);
 
@@ -411,7 +406,9 @@ namespace DiscRepNmSpc {
                                     string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
       string GetName_cbs() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
       string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
+      string GetName_strain() const {return string("DISC_REQUIRED_STRAIN");}
 
+      bool IsMissingRequiredStrain(const CBioSource& biosrc);
       bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, 
                         const string& strain_head, const string& culture_head);
       void RunTests(const CBioSource& biosrc, const string& desc);
@@ -421,6 +418,16 @@ namespace DiscRepNmSpc {
 
       bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
                                const COrgMod::ESubtype& check_type, const string& check_head);
+  };
+
+
+  class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_strain();}
   };
 
 
@@ -549,12 +556,16 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
     protected:
+      vector <string> m_submit_text;
       string GetName_iso() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
       string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
       string GetName_tbad () const {return string("TAX_LOOKUP_MISMATCH"); }
       string GetName_flu() const {return string("DISC_INFLUENZA_DATE_MISMATCH"); }
       string GetName_quals() const {return string("DISC_MISSING_VIRAL_QUALS"); }
+      string GetName_iden() const {return string("MORE_OR_SPEC_NAMES_IDENTIFIED_BY"); }
+      string GetName_col() const {return string("MORE_NAMES_COLLECTED_BY"); }
+      string GetName_div() const {return string("DIVISION_CODE_CONFLICTS");}
 
       bool HasMulSrc(const CBioSource& biosrc);
       bool IsBacterialIsolate(const CBioSource& biosrc);
@@ -562,8 +573,41 @@ namespace DiscRepNmSpc {
       bool DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& biosrc);
       void AddMissingViralQualsDiscrepancies(const CBioSource& biosrc, const string& desc);
+      bool HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, bool check_mul_nm_only = false);
+      void GetSubmitText(const CAuth_list& authors);
+      void FindSpecSubmitText();
 
       void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+
+  class CSeqEntry_DIVISION_CODE_CONFLICTS :  public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DIVISION_CODE_CONFLICTS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_div();}
+  };
+
+
+  class CSeqEntry_MORE_NAMES_COLLECTED_BY : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_MORE_NAMES_COLLECTED_BY () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_col();}
+  };
+
+  
+  class CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_iden();}
   };
 
 
@@ -629,6 +673,31 @@ namespace DiscRepNmSpc {
   
 // new comb
 
+  class CSeqEntry_DISC_HAPLOTYPE_MISMATCH : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_DISC_HAPLOTYPE_MISMATCH () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("DISC_HAPLOTYPE_MISMATCH");}
+
+    protected:
+      Str2Seqs m_tax_hap2seqs;
+      unsigned m_entry_cnt;
+
+      void ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set);
+      bool SeqMatch(const CConstRef <CBioseq>& seq1, int beg1, const CConstRef <CBioseq>& seq2,
+                       int beg2, unsigned& len, bool Ndiff = true);
+      bool SeqsMatch(const vector <CConstRef <CBioseq> >& seqs, bool Ndiff = true);
+      void ReportOneHaplotypeSequenceMismatch(Str2Seqs::const_iterator& iter, bool Ndiff=true);
+      void ReportHaplotypeSequenceMismatchForList();
+      void MakeCitem4DiffSeqs(CRef <CClickableItem>& c_item, 
+                            const vector <string> tax_hap_seqs, bool Ndiff = true);
+      void MakeCitem4SameSeqs(CRef <CClickableItem>& c_item, 
+                            const vector <string>& idx_seqs, bool Ndiff = true);
+  };
+
 
   class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntryTestAndRepData
   {
@@ -658,57 +727,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {
                                return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE");}
       virtual void Check(const string& desc) {cerr << "check1 " << desc << endl;}
-  };
-
-
-  class CSeqEntry_MORE_NAMES_COLLECTED_BY : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_MORE_NAMES_COLLECTED_BY () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MORE_NAMES_COLLECTED_BY");}
-  };
-
-
-  class CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MORE_OR_SPEC_NAMES_IDENTIFIED_BY");}
-  };
-
-
-
-  class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_REQUIRED_STRAIN");}
- 
-    protected:
-      bool IsMissingRequiredStrain(const CBioSource& biosrc); 
-  };
-
-
-  class CSeqEntry_DIVISION_CODE_CONFLICTS : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DIVISION_CODE_CONFLICTS () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DIVISION_CODE_CONFLICTS");}
-
-    protected:
-      bool HasDivCode(const CBioSource& biosrc, string& div_code);
   };
 
 
@@ -1196,6 +1214,20 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+
+  class CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH  : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_FEATURE_MOLTYPE_MISMATCH"); }
+
+    protected:
+      bool IsGenomicDNASequence (const CBioseq& bioseq);
+  };
 
  
   class CBioseq_ADJACENT_PSEUDOGENES : public CBioseqTestAndRepData

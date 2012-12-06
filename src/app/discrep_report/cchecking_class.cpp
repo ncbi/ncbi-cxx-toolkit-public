@@ -52,6 +52,7 @@ string strtmp;
 static CDiscRepInfo  thisInfo;
 static CDiscTestInfo thisTest;
 
+// unused
 bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
 {
   if (biosrc.GetOrg().CanGetOrgname() && biosrc.GetOrg().GetOrgname().CanGetMod())
@@ -78,9 +79,15 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
                CTestAndRepData :: biosrc_seqdesc.push_back( &(*seqdesc_it) );
                CTestAndRepData :: biosrc_seqdesc_seqentry.push_back(
                                                 seq_entry_h.GetCompleteObject().GetPointer());
-               if ( CanGetOrgMod(seqdesc_it->GetSource()) ) {
+//               if ( CanGetOrgMod(seqdesc_it->GetSource()) ) {
+               if ( seqdesc_it->GetSource().IsSetOrgMod() ) {
                   CTestAndRepData :: biosrc_orgmod_seqdesc.push_back( &(*seqdesc_it) );
                   CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.push_back(
+                                                seq_entry_h.GetCompleteObject().GetPointer());
+               }
+               if ( seqdesc_it->GetSource().CanGetSubtype()) {
+                  CTestAndRepData :: biosrc_subsrc_seqdesc.push_back( &(*seqdesc_it) );
+                  CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.push_back(
                                                 seq_entry_h.GetCompleteObject().GetPointer());
                }
          }
@@ -114,7 +121,6 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      thisTest.is_BIOSRC_run = false;
      thisTest.is_BIOSRC1_run = false;
      thisTest.is_Biosrc_Orgmod_run = false;
-     thisTest.is_FEAT_DESC_biosrc_run = false;
      thisTest.is_DESC_user_run = false;
      thisTest.is_Quals_run = false;
 
@@ -123,14 +129,19 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      CTestAndRepData::pub_feat.clear();
      CTestAndRepData::biosrc_feat.clear();
      CTestAndRepData::biosrc_orgmod_feat.clear();
+     CTestAndRepData::biosrc_subsrc_feat.clear();
+
      for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
         const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
         const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
         if (seq_feat_dt.IsPub()) CTestAndRepData::pub_feat.push_back(&seq_feat);
         else if (seq_feat_dt.IsBiosrc()) {
             CTestAndRepData::biosrc_feat.push_back(&seq_feat);
-            if ( CanGetOrgMod(seq_feat_dt.GetBiosrc()) ) 
+//            if ( CanGetOrgMod(seq_feat_dt.GetBiosrc()) ) 
+            if ( seq_feat_dt.GetBiosrc().IsSetOrgMod() ) 
                 CTestAndRepData::biosrc_orgmod_feat.push_back(&seq_feat);
+            if (seq_feat_dt.GetBiosrc().CanGetSubtype())
+                CTestAndRepData::biosrc_subsrc_feat.push_back(&seq_feat);
         }
         else NCBI_THROW(CException, eUnknown, "CheckSeqEntry failed");
      }
@@ -138,12 +149,14 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      CTestAndRepData :: pub_seqdesc.clear();
      CTestAndRepData :: biosrc_seqdesc.clear();
      CTestAndRepData :: biosrc_orgmod_seqdesc.clear();
+     CTestAndRepData :: biosrc_subsrc_seqdesc.clear();
      CTestAndRepData :: title_seqdesc.clear();
      CTestAndRepData :: user_seqdesc.clear();
 
      CTestAndRepData :: pub_seqdesc_seqentry.clear();
      CTestAndRepData :: biosrc_seqdesc_seqentry.clear();
      CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.clear();
+     CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.clear();
      CTestAndRepData :: title_seqdesc_seqentry.clear();
      CTestAndRepData :: user_seqdesc_seqentry.clear();
      CollectSeqdescFromSeqEntry(seq_entry_h);
