@@ -601,7 +601,6 @@ int CNcbiApplogApp::Run(void)
 {
     string     s;  
     bool       is_api_init = false;         ///< C Logging API is initialized
-    bool       redirect    = false;         ///< Redirect request to CGI
     string     token;                       ///< Token string
     ETokenType token_gen_type = eUndefined; ///< Token type to generate (app, request)
     ETokenType token_par_type = eUndefined; ///< Parsed token type (app, request)
@@ -654,7 +653,6 @@ int CNcbiApplogApp::Run(void)
         ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
         if (cur_dst != eNcbiLog_Default) {
             // The /log is not writable, use external CGI for logging
-            redirect = true;
             is_api_init = false;
             NcbiLog_Destroy();
             // Recursive redirection is not allowed
