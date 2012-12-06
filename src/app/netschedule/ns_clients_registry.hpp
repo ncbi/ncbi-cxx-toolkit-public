@@ -121,6 +121,8 @@ class CNSClientsRegistry
                 Purge(time_t                  current_time,
                       time_t                  timeout,
                       CNSAffinityRegistry &   aff_registry);
+        void SetBlacklistTimeout(time_t  blacklist_timeout)
+        { m_BlacklistTimeout = blacklist_timeout; }
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients
@@ -138,6 +140,8 @@ class CNSClientsRegistry
                                                          // in the registry
         TNSBitVector                m_WNAffinities; // Union of all affinities,
                                                     // assigned to all WNodes.
+
+        time_t                      m_BlacklistTimeout;
 
         unsigned int  x_GetNextID(void);
 

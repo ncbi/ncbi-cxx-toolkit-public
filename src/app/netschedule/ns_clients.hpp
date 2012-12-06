@@ -136,6 +136,10 @@ class CNSClientId
 // The CNSClient stores information about new style clients only;
 // The information includes the given jobs,
 // type of the client (worker node, submitter) etc.
+
+// Note: access to the instances of this class is possible only via the client
+// registry and the corresponding container access is always done under a lock.
+// So it is safe to do any modifications in the members without any locks here.
 class CNSClient
 {
     public:
@@ -149,16 +153,15 @@ class CNSClient
 
     public:
         CNSClient();
-        CNSClient(const CNSClientId &  client_id);
+        CNSClient(const CNSClientId &  client_id,
+                  time_t *             blacklist_timeout);
         bool Clear(void);
         TNSBitVector GetRunningJobs(void) const
         { return m_RunningJobs; }
         TNSBitVector GetReadingJobs(void) const
         { return m_ReadingJobs; }
-        TNSBitVector GetBlacklistedJobs(void) const
-        { return m_BlacklistedJobs; }
-        bool IsJobBlacklisted(unsigned int  job_id) const
-        { return m_BlacklistedJobs[job_id]; }
+        TNSBitVector GetBlacklistedJobs(void) const;
+        bool IsJobBlacklisted(unsigned int  job_id) const;
         void SetWaitPort(unsigned short  port)
         { m_WaitPort = port; }
         string GetSession(void) const
@@ -234,6 +237,7 @@ class CNSClient
                                             // executing
         TNSBitVector    m_ReadingJobs;      // The jobs the client is currently
                                             // reading
+        mutable
         TNSBitVector    m_BlacklistedJobs;  // The jobs that should not be given
                                             // to the node neither for
                                             // executing nor for reading
@@ -250,7 +254,16 @@ class CNSClient
         bool            m_AffReset;         // true => affinities were reset due to
                                             // client inactivity timeout
 
+        time_t *        m_BlacklistTimeout;
+        mutable
+        map<unsigned int,
+            time_t>     m_BlacklistLimits;  // job id -> last second the job is in
+                                            // the blacklist
+
         string  x_TypeAsString(void) const;
+        void    x_AddToBlacklist(unsigned int  job_id);
+        void    x_UpdateBlacklist(void) const;
+        void    x_UpdateBlacklist(unsigned int  job_id) const;
 };
 
 

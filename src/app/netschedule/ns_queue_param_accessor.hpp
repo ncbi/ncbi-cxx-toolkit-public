@@ -61,9 +61,6 @@ public:
     unsigned int GetFailedRetries() const
     { return m_Queue.m_FailedRetries; }
 
-    time_t GetBlacklistTime() const
-    { return m_Queue.m_BlacklistTime; }
-
     unsigned int GetMaxInputSize() const
     { return m_Queue.m_MaxInputSize; }
 
@@ -118,7 +115,7 @@ public:
         case 5:  return NStr::NumericToString(m_Queue.m_RunTimeout);
         case 6:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
         case 7:  return NStr::IntToString(m_Queue.m_FailedRetries);
-        case 8:  return NStr::Int8ToString(m_Queue.m_BlacklistTime);
+        case 8:  return NStr::NumericToString(m_Queue.m_BlacklistTime);
         case 9:  return NStr::IntToString(m_Queue.m_MaxInputSize);
         case 10: return NStr::IntToString(m_Queue.m_MaxOutputSize);
         case 11: return m_Queue.m_ProgramVersionList.Print();

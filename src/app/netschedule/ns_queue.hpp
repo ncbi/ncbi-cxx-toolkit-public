@@ -121,7 +121,6 @@ public:
     CNSPreciseTime  GetMaxPendingWaitTimeout() const;
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
-    time_t GetBlacklistTime() const;
     bool IsVersionControl() const;
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     bool IsSubmitAllowed(unsigned host) const;
@@ -492,7 +491,6 @@ private:
     int                          m_RunTimeoutPrecision;
     /// How many attempts to make on different nodes before failure
     unsigned                     m_FailedRetries;
-    /// How long a job lives in blacklist
     time_t                       m_BlacklistTime;
     unsigned                     m_MaxInputSize;
     unsigned                     m_MaxOutputSize;
@@ -568,13 +566,6 @@ inline int CQueue::GetRunTimeoutPrecision() const
 inline unsigned CQueue::GetFailedRetries() const
 {
     return m_FailedRetries;
-}
-inline time_t CQueue::GetBlacklistTime() const
-{
-    // On some platforms time_t is 64-bit disregarding of
-    // processor word size, so we need to lock parameters
-    CReadLockGuard guard(m_ParamLock);
-    return m_BlacklistTime;
 }
 inline bool CQueue::IsVersionControl() const
 {

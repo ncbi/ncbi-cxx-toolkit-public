@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 
 CNSClientsRegistry::CNSClientsRegistry() :
-    m_LastID(0)
+    m_LastID(0), m_BlacklistTimeout(0)
 {}
 
 
@@ -67,7 +67,7 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
 
     if (known_client == m_Clients.end()) {
         // The client is not known yet
-        CNSClient       new_ns_client(client);
+        CNSClient       new_ns_client(client, &m_BlacklistTimeout);
         unsigned int    client_id = x_GetNextID();
 
         new_ns_client.SetID(client_id);

@@ -34,6 +34,7 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include "ns_clients.hpp"
 #include "ns_queue.hpp"
@@ -42,6 +43,9 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+const time_t    kMaxTimet = numeric_limits<time_t>::max();
 
 
 // The CClientId serves two types of clients:
@@ -278,11 +282,13 @@ CNSClient::CNSClient() :
     m_NumberOfSubmitted(0),
     m_NumberOfRead(0),
     m_NumberOfRun(0),
-    m_AffReset(false)
+    m_AffReset(false),
+    m_BlacklistTimeout(NULL)
 {}
 
 
-CNSClient::CNSClient(const CNSClientId &  client_id) :
+CNSClient::CNSClient(const CNSClientId &  client_id,
+                     time_t *             blacklist_timeout) :
     m_Cleared(false),
     m_Type(0),
     m_Addr(client_id.GetAddress()),
@@ -300,7 +306,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_NumberOfSubmitted(0),
     m_NumberOfRead(0),
     m_NumberOfRun(0),
-    m_AffReset(false)
+    m_AffReset(false),
+    m_BlacklistTimeout(blacklist_timeout)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -325,6 +332,22 @@ bool CNSClient::Clear(void)
         return true;
     }
     return false;
+}
+
+
+TNSBitVector CNSClient::GetBlacklistedJobs(void) const
+{
+    // This will update the blacklisted jobs if necessery
+    x_UpdateBlacklist();
+    return m_BlacklistedJobs;
+}
+
+
+bool CNSClient::IsJobBlacklisted(unsigned int  job_id) const
+{
+    // This will update the blacklisted jobs if necessery
+    x_UpdateBlacklist(job_id);
+    return m_BlacklistedJobs[job_id];
 }
 
 
@@ -374,8 +397,7 @@ void CNSClient::RegisterBlacklistedJob(unsigned int  job_id)
     // This operation is always prepended by GET/READ so the client type is
     // set anyway.
     m_LastAccess = time(0);
-    m_BlacklistedJobs.set_bit(job_id, true);
-    return;
+    x_AddToBlacklist(job_id);
 }
 
 
@@ -390,8 +412,8 @@ void CNSClient::UnregisterReadingJob(unsigned int  job_id)
 bool CNSClient::MoveReadingJobToBlacklist(unsigned int  job_id)
 {
     if (m_ReadingJobs[job_id]) {
-        m_BlacklistedJobs.set(job_id, true);
         m_ReadingJobs.set(job_id, false);
+        x_AddToBlacklist(job_id);
         return true;
     }
     return false;
@@ -409,8 +431,8 @@ void CNSClient::UnregisterRunningJob(unsigned int  job_id)
 bool CNSClient::MoveRunningJobToBlacklist(unsigned int  job_id)
 {
     if (m_RunningJobs[job_id]) {
-        m_BlacklistedJobs.set(job_id, true);
         m_RunningJobs.set(job_id, false);
+        x_AddToBlacklist(job_id);
         return true;
     }
     return false;
@@ -506,65 +528,61 @@ string CNSClient::Print(const string &               node_name,
     buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
               NStr::SizetToString(m_NumberOfSubmitted) + "\n";
 
+    x_UpdateBlacklist();
+    buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
+              NStr::UIntToString(m_BlacklistedJobs.count()) + "\n";
     if (verbose && m_BlacklistedJobs.any()) {
         buffer += "OK:  BLACKLISTED JOBS:\n";
 
         TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeKey(*en) + "\n";
-    } else {
-        buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
-                  NStr::UIntToString(m_BlacklistedJobs.count()) + "\n";
     }
 
+    buffer += "OK:  NUMBER OF RUNNING JOBS: " +
+              NStr::UIntToString(m_RunningJobs.count()) + "\n";
     if (verbose && m_RunningJobs.any()) {
         buffer += "OK:  RUNNING JOBS:\n";
 
         TNSBitVector::enumerator    en(m_RunningJobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeKey(*en) + "\n";
-    } else {
-        buffer += "OK:  NUMBER OF RUNNING JOBS: " +
-                  NStr::UIntToString(m_RunningJobs.count()) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
               NStr::SizetToString(m_NumberOfRun) + "\n";
 
+    buffer += "OK:  NUMBER OF READING JOBS: " +
+              NStr::UIntToString(m_ReadingJobs.count()) + "\n";
     if (verbose && m_ReadingJobs.any()) {
         buffer += "OK:  READING JOBS:\n";
 
         TNSBitVector::enumerator    en(m_ReadingJobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeKey(*en) + "\n";
-    } else {
-        buffer += "OK:  NUMBER OF READING JOBS: " +
-                  NStr::UIntToString(m_ReadingJobs.count()) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +
               NStr::SizetToString(m_NumberOfRead) + "\n";
 
+    buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
+              NStr::UIntToString(m_Affinities.count()) + "\n";
     if (verbose && m_Affinities.any()) {
         buffer += "OK:  PREFERRED AFFINITIES:\n";
 
         TNSBitVector::enumerator    en(m_Affinities.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
-    } else {
-        buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
-                  NStr::UIntToString(m_Affinities.count()) + "\n";
     }
 
+    buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
+              NStr::UIntToString(m_WaitAffinities.count()) + "\n";
     if (verbose && m_WaitAffinities.any()) {
         buffer += "OK:  REQUESTED AFFINITIES:\n";
 
         TNSBitVector::enumerator    en(m_WaitAffinities.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
-    } else {
-        buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
-                  NStr::UIntToString(m_WaitAffinities.count()) + "\n";
     }
 
     return buffer;
@@ -667,6 +685,71 @@ string  CNSClient::x_TypeAsString(void) const
     return result;
 }
 
+
+void  CNSClient::x_AddToBlacklist(unsigned int  job_id)
+{
+    if (m_BlacklistTimeout == NULL) {
+        ERR_POST("Design error in NetSchedule. "
+                 "Blacklist timeout pointer must not be NULL. "
+                 "Ignoring blacklisting request and continue.");
+        return;
+    }
+
+    if (*m_BlacklistTimeout == 0)
+        return;     // No need to blacklist the job (per configuration)
+
+    // Here: the job must be blacklisted. So be attentive to overflow.
+    time_t      last_time_in_list = m_LastAccess + *m_BlacklistTimeout;
+    if (last_time_in_list < m_LastAccess)
+        last_time_in_list = kMaxTimet;  // overflow
+
+    m_BlacklistLimits[job_id] = last_time_in_list;
+    m_BlacklistedJobs.set_bit(job_id, true);
+    return;
+}
+
+
+void  CNSClient::x_UpdateBlacklist(void) const
+{
+    // Checks if jobs should be removed from a worker node blacklist
+    if (m_BlacklistLimits.size() == 0)
+        return;
+
+    time_t                  current_time = time(0);
+    vector<unsigned int>    to_be_removed;
+
+    for (map<unsigned int, time_t>::const_iterator k = m_BlacklistLimits.begin();
+         k != m_BlacklistLimits.end(); ++k) {
+        if (k->second < current_time)
+            to_be_removed.push_back(k->first);
+    }
+
+    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
+         j != to_be_removed.end(); ++j) {
+        m_BlacklistedJobs.set_bit(*j, false);
+        m_BlacklistLimits.erase(m_BlacklistLimits.find(*j));
+    }
+}
+
+
+void  CNSClient::x_UpdateBlacklist(unsigned int  job_id) const
+{
+    // Checks if a single job is in a blacklist and
+    // whether it should be removed from there
+    if (m_BlacklistLimits.size() == 0)
+        return;
+
+    if (m_BlacklistedJobs[job_id] == false)
+        return;
+
+    map<unsigned int, time_t>::iterator found = m_BlacklistLimits.find(job_id);
+    if (found != m_BlacklistLimits.end()) {
+        if (found->second < time(0)) {
+            m_BlacklistedJobs.set_bit(job_id, false);
+            m_BlacklistLimits.erase(found);
+        }
+    }
+}
 
 END_NCBI_SCOPE
 

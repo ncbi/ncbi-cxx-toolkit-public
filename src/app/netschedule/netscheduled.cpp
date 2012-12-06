@@ -211,8 +211,6 @@ int CNetScheduleDApp::Run(void)
                          <<"Effective [server] parameters: " << str_params);
     }}
 
-    bool reinit = params.reinit || args[kReinitArgName];
-
     m_ServerAcceptTimeout.sec  = 1;
     m_ServerAcceptTimeout.usec = 0;
     params.accept_timeout      = &m_ServerAcceptTimeout;
@@ -233,6 +231,7 @@ int CNetScheduleDApp::Run(void)
 
     LOG_POST(Message << Warning
                      << "Mounting database at " << bdb_params.db_path);
+    bool reinit = params.reinit || args[kReinitArgName];
     auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
                                                        bdb_params, reinit));
 

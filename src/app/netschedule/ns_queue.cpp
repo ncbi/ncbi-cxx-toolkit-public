@@ -217,6 +217,8 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_NotifLofreqMult       = params.notif_lofreq_mult;
     m_DumpBufferSize        = params.dump_buffer_size;
 
+    m_ClientsRegistry.SetBlacklistTimeout(m_BlacklistTime);
+
     // program version control
     m_ProgramVersionList.Clear();
     if (!params.program_name.empty()) {
@@ -2023,7 +2025,6 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         CQueueParamAccessor     qp(*this);
         failed_retries  = qp.GetFailedRetries();
         max_output_size = qp.GetMaxOutputSize();
-        // blacklist_time  = qp.GetBlacklistTime();
     }}
 
     if (output.size() > max_output_size) {

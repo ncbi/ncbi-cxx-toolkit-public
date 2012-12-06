@@ -158,7 +158,7 @@ class Scenario03( TestBase ):
     def __init__( self, netschedule ):
         TestBase.__init__( self, netschedule )
         return
-
+ 
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
