@@ -96,8 +96,8 @@ public:
     void Stop(void)
     {
         m_Stop = true;
-        Detach();
         m_Resume.Post();
+        Join(0);
     }
     void Fail(void)
     {
