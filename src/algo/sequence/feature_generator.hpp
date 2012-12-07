@@ -152,6 +152,7 @@ private:
                                const CSeq_align& align,
                                const CSeq_loc& loc,
                                bool add_unaligned_parts = true,
+                               bool mark_transcript_deletions = true,
                                bool* has_gap = NULL,
                                bool* has_indel = NULL);
     const CBioseq& x_CreateMrnaBioseq(const CSeq_align& align,

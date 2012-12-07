@@ -1086,6 +1086,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                                        const CSeq_align& align,
                                        const CSeq_loc& loc,
                                        bool add_unaligned_parts,
+                                       bool mark_transcript_deletions,
                                        bool* has_gap,
                                        bool* has_indel)
 {
@@ -1145,7 +1146,14 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                 }
             }
             int deletion_len = part_it.GetRange().GetFrom()-(prev_product_to+1);
-            if (deletion_len > 0) {
+            /// If this is the first part of the mapped segment, the deletion is
+            /// in the CDS location on the transcript; mark with Ns only if
+            /// mark_transcript_deletions is set. If this is a later part, the
+            /// deletion is in the transcript mapping to the genomic sequence;
+            /// mark always
+            if (deletion_len > 0 &&
+                (mark_transcript_deletions || part_count > 1))
+            {
                 if (has_indel != NULL) {
                     *has_indel = true;
                 }
@@ -2604,14 +2612,6 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         return;
     }
 
-    if (feat.IsSetExcept_text() &&
-        feat.GetExcept_text().find("ribosomal slippage") != string::npos)
-    {
-        /// The existing exception indicates ribosomal slippage; this overrides
-        /// all other exceptions we might find
-        return;
-    }
-
     ///
     /// exceptions here are easy:
     /// we compare the annotated product to the conceptual translation and
@@ -2627,7 +2627,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
 
     if (align != NULL) {
         CBioseq bioseq;
-        x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), false, &has_gap, &has_indel);
+        x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), false, false, &has_gap, &has_indel);
         CSeqVector seq(bioseq, m_scope.GetPointer(),
                        CBioseq_Handle::eCoding_Iupac);
         string mrna;
@@ -2851,11 +2851,6 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
 {
     string except_text = text;
 
-    // there are some exceptions we don't account for
-    // we would like to set the exception state to whatever we compute above
-    // on the other hand, an annotated exception such as ribosomal slippage or
-    // rearrangement required for assembly trumps any computed values
-    // scan to see if it is set to an exception state we can account for
     list<string> except_toks;
     if (feat.IsSetExcept_text()) {
         NStr::Split(feat.GetExcept_text(), ",", except_toks);
@@ -2870,10 +2865,6 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
                 *it == "unclassified translation discrepancy"  ||
                 *it == "mismatches in translation") {
                 except_toks.erase(it++);
-            }
-            else if (*it == "ribosomal slippage") {
-                except_text.clear();
-                ++it;
             }
             else {
                 ++it;
