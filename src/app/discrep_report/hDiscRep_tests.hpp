@@ -229,7 +229,7 @@ namespace DiscRepNmSpc {
       void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
       void AddSubcategories(CRef <CClickableItem>& c_item, const string& setting_name, 
            const vector <string>& itemlist, const string& desc1, const string& desc2, 
-           bool copy2parent = true, ECommentTp comm=e_IsComment, const string& desc3="",
+           ECommentTp comm=e_IsComment, bool copy2parent = true, const string& desc3="",
            bool halfsize = false);
       void GetTestItemList(const vector <string>& itemlist, Str2Strs& setting2list, 
                                                                    const string& delim = "$");
@@ -1214,6 +1214,24 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+
+  class CBioseq_DISC_EXON_INTRON_CONFLICT : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_EXON_INTRON_CONFLICT () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_EXON_INTRON_CONFLICT"); }
+ 
+    protected:
+      vector <unsigned> m_e_exist, m_i_exist;
+      void CompareIntronExonList(const string& seq_id_desc, const vector <const CSeq_feat*>& exon_ls,
+                                        const vector <const CSeq_feat*>& intron_ls);
+      void  GetFeatureList4Gene(const CSeq_feat* gene, const vector <const CSeq_feat*> feats, 
+                                        vector <unsigned> exist_ls);
+  };
 
 
   class CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH  : public CBioseqTestAndRepData

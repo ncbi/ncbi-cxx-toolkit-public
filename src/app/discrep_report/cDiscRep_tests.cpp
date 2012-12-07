@@ -170,6 +170,134 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_EXON_INTRON_CONFLICT :: CompareIntronExonList(const string& seq_id_desc, const vector <const CSeq_feat*>& exon_ls, const vector <const CSeq_feat*>& intron_ls)
+{
+   unsigned e_idx=0, i_idx=0, exon_start, exon_stop, intron_start, intron_stop;
+   unsigned e_sz = exon_ls.size(), i_sz = intron_ls.size();
+   bool has_exon = true, has_intron = true;
+   while (e_idx < e_sz && !m_e_exist[e_idx]) e_idx++;
+   if (e_idx < e_sz) {
+      exon_start = exon_ls[e_idx]->GetLocation().GetStart(eExtreme_Biological);
+      exon_stop =  exon_ls[e_idx]->GetLocation().GetStop(eExtreme_Biological);
+   }
+   else has_exon = false;
+   while (i_idx < i_sz && !m_i_exist[i_idx]) i_idx ++;
+   if (i_idx < e_sz) {
+     intron_start = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
+     intron_stop =  intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
+   }
+   else has_intron = false;
+
+   if (!has_exon || !has_intron) return;
+
+   if (intron_start < exon_start) {
+      if (intron_stop != exon_start - 1) {
+        thisInfo.test_item_list[GetName()].push_back(
+                              seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+        thisInfo.test_item_list[GetName()].push_back(
+                              seq_id_desc + GetDiscItemText(*intron_ls[e_idx]));
+      }
+      while (i_idx < i_sz && !m_i_exist[i_idx]) i_idx ++;
+      if (i_idx < i_sz) {
+        intron_start = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
+        intron_stop = intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
+      }
+  };
+
+  unsigned next_exon_start, next_exon_stop;
+  while (e_idx < e_sz && i_idx < i_sz) {
+      while ( ++ e_idx < e_sz && !m_e_exist[e_idx]);
+      next_exon_start = exon_ls[e_idx]->GetLocation().GetStart(eExtreme_Biological);
+      next_exon_stop = exon_ls[e_idx]->GetLocation().GetStop(eExtreme_Biological);
+      while (i_idx < i_sz && intron_start < next_exon_start) {
+        if (intron_start != exon_stop + 1 || intron_stop != next_exon_start - 1) {
+          if (intron_start != exon_stop + 1) 
+              thisInfo.test_item_list[GetName()].push_back(
+                           seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+          thisInfo.test_item_list[GetName()].push_back(
+                           seq_id_desc + GetDiscItemText(*intron_ls[i_idx]));
+          if (intron_stop != next_exon_start - 1)
+              thisInfo.test_item_list[GetName()].push_back(
+                           seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+        }
+        while ( ++ i_idx < i_sz && !m_i_exist[i_idx]);
+        if ( i_idx < i_sz) {
+          intron_start = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
+          intron_stop = intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
+        }
+      }
+      exon_start = next_exon_start;
+      exon_stop = next_exon_stop;
+  }
+  if (i_idx < i_sz)
+      if (intron_start != exon_stop + 1) {
+          thisInfo.test_item_list[GetName()].push_back(
+                           seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+          thisInfo.test_item_list[GetName()].push_back(
+                           seq_id_desc + GetDiscItemText(*intron_ls[i_idx]));
+      }
+};
+
+
+void CBioseq_DISC_EXON_INTRON_CONFLICT :: GetFeatureList4Gene(const CSeq_feat* gene, const vector <const CSeq_feat*> feats, vector <unsigned> exist_ls)
+{
+   unsigned i=0;
+   ITERATE (vector <const CSeq_feat*>, it, feats) {
+      const CGene_ref* feat_gene_ref = (*it)->GetGeneXref();
+      if (feat_gene_ref) {
+         CConstRef <CSeq_feat> 
+            feat_gene = GetBestOverlappingFeat((*it)->GetLocation(), CSeqFeatData::e_Gene, 
+                                       eOverlap_Contained, *thisInfo.scope);
+         if (feat_gene.GetPointer() == *it) // ? need to check the pointers
+            exist_ls[i] = 1; 
+         else exist_ls[i] = 0;
+      }
+   }
+};
+
+
+void CBioseq_DISC_EXON_INTRON_CONFLICT :: TestOnObj(const CBioseq& bioseq)
+{
+   string seq_id_desc(BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank)+"$");
+   unsigned i=0;
+   m_e_exist.clear();
+   m_i_exist.clear();
+   if (bioseq.IsAa()) return;
+   if (gene_feat.empty()) {
+       /* no genes - just do all exons and introns present */
+       if (!exon_feat.empty() && !intron_feat.empty()) {
+            for (i=0; i< exon_feat.size(); i++) m_e_exist.push_back(1);
+            for (i=0; i< intron_feat.size(); i++) m_i_exist.push_back(1);
+            CompareIntronExonList(seq_id_desc, exon_feat, intron_feat);
+       }
+   }
+   else {
+      ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
+         if ( (*it)->CanGetExcept_text() && (*it)->GetExcept_text() != "trans-splicing") {
+            GetFeatureList4Gene( *it, exon_feat, m_e_exist);
+            GetFeatureList4Gene( *it, intron_feat, m_i_exist);
+            if (!exon_feat.empty() && !intron_feat.empty())
+              CompareIntronExonList(seq_id_desc, exon_feat, intron_feat);
+         }
+      }
+   }
+};
+
+
+void CBioseq_DISC_EXON_INTRON_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs seq2cflts;
+   GetTestItemList(c_item->item_list, seq2cflts);
+   c_item->item_list.clear();
+   ITERATE (Str2Strs, it, seq2cflts) {
+     AddSubcategories(c_item, GetName(), it->second, "introns and exon", 
+                      "location conflicts on " + it->first, e_HasComment);
+   } 
+   c_item->description = GetIsComment(c_item->item_list.size(), "introns and exon") 
+                          + "incorrectly positioned";
+};
+
+
 void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: TestOnObj(const CBioseq& bioseq)
 {
    bool is_genomic = false;
@@ -263,7 +391,7 @@ void CBioseq_ADJACENT_PSEUDOGENES :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, txt2feats) {
      strtmp = "genes: Adjacent pseudogenes have the same text: " + it->first;
-     AddSubcategories(c_item, GetName(), it->second, strtmp, strtmp, true, e_OtherComment);
+     AddSubcategories(c_item, GetName(), it->second, strtmp, strtmp, e_OtherComment);
    }
    c_item->description
      = NStr::UIntToString((unsigned)c_item->item_list.size()) + " pseudogenes match an adjacent pseudogene's text.";
@@ -351,7 +479,7 @@ void CBioseq_CDS_TRNA_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
       ITERATE (Str2Strs, jt, cd2trnas) {
           c_sub->item_list.push_back(jt->first);
           AddSubcategories(c_sub, GetName(), jt->second, "Coding region overlaps tRNAs", 
-                                    "Coding region overlaps tRNAs", true, e_OtherComment); 
+                                    "Coding region overlaps tRNAs", e_OtherComment); 
       }
       c_sub->description 
                  = GetHasComment(cd2trnas.size(), "coding region") + "overlapping tRNAs";
@@ -400,7 +528,7 @@ void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem>& c_i
       ITERATE (Str2Strs, it, tax2list) {
          AddSubcategories(c_item, GetName(), it->second,
               "Organism description not found in definition line: " + it->first, "",
-              false, e_OtherComment);
+              e_OtherComment, false);
       }
       c_item->description
         = GetDoesComment(tax2list.size(), "source") + + "not match definition lines.";
@@ -824,8 +952,8 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
     else if (it->first.find("misc_feature") != string::npos) strtmp = "misc_feature";
     if (!strtmp.empty()) {
         AddSubcategories(c_item, GetName(), it->second, strtmp + " location conflicts ", 
-                   strtmp + " locations conflict ", true, e_OtherComment,
-                                      "with partialness of overlapping gene.", true);
+                   strtmp + " locations conflict ", e_OtherComment, true, 
+                   "with partialness of overlapping gene.", true);
     }
     else {
       if (!has_other) {
@@ -833,13 +961,13 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
         ITERATE (Str2Strs, jt, label2lists) {
            if (jt->first.find("coding region") == string::npos
                 && jt->first.find("misc_feature") == string::npos) 
-              AddSubcategories(citem_other, GetName(), jt->second, jt->first, jt->first, true,
-                       e_OtherComment, "", true);
+              AddSubcategories(citem_other, GetName(), jt->second, jt->first, jt->first, 
+                       e_OtherComment, true, "", true);
         }
         AddSubcategories(c_item, GetName(), citem_other->item_list, 
               "feature that is not coding regions or misc_feature conflicts",
-              "features that are not coding regions or misc_features conflict", true, e_OtherComment,
-              " with partialness of overlapping gene.", true);
+              "features that are not coding regions or misc_features conflict", e_OtherComment,
+              true, " with partialness of overlapping gene.", true);
         has_other = true; 
       }
     } 
@@ -1535,7 +1663,7 @@ void CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: GetReport(CRef <CClickableItem>& c_ite
   c_item->item_list.clear();
   ITERATE (Str2Strs, it, sus_str2list) {
     AddSubcategories(c_item, GetName(), it->second, 
-           "note text conains ","note texts contain ", true, e_OtherComment, it->first);
+           "note text conains ","note texts contain ", e_OtherComment, true, it->first);
   }
 
   c_item->description 
@@ -3460,7 +3588,7 @@ void CBioseq_test_on_genprod_set :: GetReport_dup(CRef <CClickableItem>& c_item,
       ITERATE (Str2Strs, it, label2feats) {
          if (it->second.size() > 1) {
             AddSubcategories(c_item, setting_name, it->second, desc1,
-                              desc2 + it->first, true, e_HasComment); 
+                              desc2 + it->first, e_HasComment); 
          } 
       }
       c_item->description 
@@ -4304,8 +4432,8 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
          desc2 = "coding regions completely contain";
          desc3 = " RNAs";
        }
-       AddSubcategories(c_item, GetName(), it->second, desc1, desc2, true, 
-                                                           e_OtherComment, desc3, true); 
+       AddSubcategories(c_item, GetName(), it->second, desc1, desc2, e_OtherComment, true, 
+                           desc3, true); 
      }
      else {
        desc1 = "coding region overlaps";
@@ -4313,8 +4441,8 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
        if (it->first == "overlap_opp_strand") 
              desc3 = " RNAs on the opposite strand (no containment)";
        else desc3 = " RNAs on the same strand (no containment)";
-       AddSubcategories(ovp_subcat, GetName(), it->second, desc1, desc2, true, 
-                                                          e_OtherComment, desc3, true); 
+       AddSubcategories(ovp_subcat, GetName(), it->second, desc1, desc2, e_OtherComment, true,
+                        desc3, true); 
      } 
    }
    if (!ovp_subcat->item_list.empty()) {
@@ -4457,8 +4585,7 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
        desc2 = "coding regions overlap";
        desc3 = " another coding region with a similar or identical name but have the appropriate note text";
      }
-     AddSubcategories(c_item, GetName(), it->second, desc1, desc2, true, 
-                                                                 e_OtherComment,desc3);
+     AddSubcategories(c_item, GetName(), it->second, desc1, desc2, e_OtherComment, true,desc3);
    }
    c_item->description 
      = GetOtherComment(c_item->item_list.size(), "coding region overlapps", 
@@ -6603,7 +6730,7 @@ void CSeqEntry_DIVISION_CODE_CONFLICTS :: GetReport(CRef <CClickableItem>& c_ite
    if (div2item.size() > 1) {
      ITERATE (Str2Strs, it, div2item) {
        AddSubcategories(c_item, GetName(), it->second, "bioseq", "division code " + it->first,
-                                                                         false, e_HasComment);
+                           e_HasComment, false);
      }
      c_item->description = "Division code conflicts found.";
    }
@@ -6631,7 +6758,8 @@ void CSeqEntry_DISC_MISSING_VIRAL_QUALS :: GetReport(CRef <CClickableItem>& c_it
    GetTestItemList(c_item->item_list, qual2src);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, qual2src) {
-      AddSubcategories(c_item, GetName(), it->second, "virus organism", "missing suggested qualifier " + it->first, true);
+      AddSubcategories(c_item, GetName(), it->second, "virus organism", 
+                         "missing suggested qualifier " + it->first);
    } 
    RmvRedundancy(c_item->item_list);
    c_item->description
@@ -6902,7 +7030,7 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
        desc =
          (it->first=="1"||it->first=="0")? " structured comment":" structured comments";
        AddSubcategories(c_item,  GetName(), it->second, "sequence", it->first + desc,
-                                                                   false, e_HasComment);
+                          e_HasComment, false);
     }
     c_item->description = "Sequences have different numbers of structured comments.";
   }
@@ -6964,10 +7092,9 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
                                 "sequencs have project IDs " + tot_add_desc);
        AddSubcategories(c_item, GetName(), mol2list["nuc"],
            "nucleotide sequence has project ID", "nucleotide sequences have project IDs",
-           false, e_OtherComment);
-       AddSubcategories(c_item, GetName(), mol2list["prot"], 
-                       "protein sequence has project ID",
-                       "protein sequences have project IDs", false, e_OtherComment);
+           e_OtherComment, false);
+       AddSubcategories(c_item, GetName(), mol2list["prot"], "protein sequence has project ID",
+                       "protein sequences have project IDs", e_OtherComment, false);
 
        //c_item->expanded = true;  what does the expanded work for?
    }
@@ -7154,7 +7281,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableIte
       strtmp 
          = "organism " + tax_nm + " haplotype " + hap_tp + " but the sequences do not match " 
           + (Ndiff ? "(allowing N to match any)." : "(strict match).");
-      AddSubcategories(c_item, GetName(), it->second, "sequence",strtmp,true,e_HasComment);
+      AddSubcategories(c_item, GetName(), it->second, "sequence", strtmp, e_HasComment);
    }
 
 };
@@ -7167,7 +7294,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4SameSeqs(CRef <CClickableIte
    strtmp = (string)"identical " + (Ndiff ? "(allowing N to match any)" : "(strict match)")
             + " but have different haplotypes.";
    ITERATE (Str2Strs, it, idx2seqs)
-      AddSubcategories(c_item, GetName(), it->second, "sequences", strtmp, true);
+      AddSubcategories(c_item, GetName(), it->second, "sequences", strtmp);
 
 };
 
