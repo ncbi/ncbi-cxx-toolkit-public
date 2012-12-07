@@ -1366,7 +1366,6 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         SetFrame("N/A");
     }
 
-    //V frame
     if (annot->m_FrameInfo[0] >= 0) {
         int off = annot->m_FrameInfo[0];
         int len = (annot->m_GeneInfo[1] - off)/3*3;
@@ -1382,8 +1381,6 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         m_OtherInfo.push_back("N/A");
     }
 
-
-    //J frame
     if (annot->m_FrameInfo[2] >=0) {
         int off = annot->m_FrameInfo[2];
         int len = (annot->m_GeneInfo[5] - off)/3*3;
@@ -1406,6 +1403,35 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         m_OtherInfo.push_back("N/A");
     }
 
+    //stop codon anywhere between start of V and end of J
+    if (annot->m_FrameInfo[0] >= 0) {
+        int v_start = annot->m_FrameInfo[0];
+        int v_j_length = max(max(annot->m_GeneInfo[5], annot->m_GeneInfo[3]), annot->m_GeneInfo[1]) - annot->m_FrameInfo[0];
+  
+        string seq_data(m_Query, v_start, v_j_length);
+        string seq_trans;
+      
+        CSeqTranslator::Translate(seq_data, seq_trans);
+
+        if (seq_trans.find('*') == string::npos) {
+            m_OtherInfo.push_back("No");
+            if (m_FrameInfo == "IF" || m_FrameInfo == "IP") {
+                m_OtherInfo.push_back("Yes");
+            } else if (m_FrameInfo == "OF"){
+                m_OtherInfo.push_back("No");
+            } else {
+               m_OtherInfo.push_back("N/A"); 
+            }
+        } else {
+            m_OtherInfo.push_back("Yes");
+            m_OtherInfo.push_back("No");
+        }
+        
+    } else {
+        m_OtherInfo.push_back("N/A");
+        m_OtherInfo.push_back("N/A");
+    }
+ 
     // Domain info coordinates are inclusive (and always on positive strand)
     AddIgDomain("FWR1", annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1,
                         annot->m_DomainInfo_S[0], annot->m_DomainInfo_S[1]+1);
@@ -1439,20 +1465,19 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         m_Ostream << "(Top V gene match, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
-        m_Ostream << "Top J gene match, Chain type, V coding frame stop codon, J coding frame stop codon, ";
+        m_Ostream << "Top J gene match, Chain type, stop codon, ";
         m_Ostream << "V-J frame, Productive, Strand):" << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
         m_Ostream << m_JGene.sid << m_FieldDelimiter;
         m_Ostream << m_MasterChainTypeToShow << m_FieldDelimiter;
-        m_Ostream << m_OtherInfo[0] << m_FieldDelimiter;
-        m_Ostream << m_OtherInfo[1] << m_FieldDelimiter;
+        m_Ostream << m_OtherInfo[3] << m_FieldDelimiter;
         if (m_FrameInfo == "IF") m_Ostream << "In-frame";
         else if (m_FrameInfo == "OF") m_Ostream << "Out-of-frame";
-        else if (m_FrameInfo == "IP") m_Ostream << "In-frame with stop codon";
+        else if (m_FrameInfo == "IP") m_Ostream << "In-frame";
         else m_Ostream << "N/A";
-        m_Ostream << m_FieldDelimiter << m_OtherInfo[2];
+        m_Ostream << m_FieldDelimiter << m_OtherInfo[4];
         m_Ostream << m_FieldDelimiter << ((m_IsMinusStrand) ? '-' : '+' ) << endl << endl;
         x_PrintIgGenes(false, header);
     }
@@ -1508,8 +1533,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
         }
         m_Ostream << "<td>Top J gene match</td>"
                   << "<td>Chain type</td>"
-                  << "<td>V coding frame stop codon</td>"
-                  << "<td>J coding frame stop codon</td>"
+                  << "<td>stop codon</td>"
                   << "<td>V-J frame</td>"
                   << "<td>Productive</td>"
                   << "<td>Strand</td></tr>\n";
@@ -1522,16 +1546,15 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
         m_Ostream << "</td><td>" << m_JGene.sid
                   << "</td><td>" << m_MasterChainTypeToShow 
                   << "</td><td>";
-        m_Ostream << (m_OtherInfo[0]!="N/A" ? m_OtherInfo[0] : "") << "</td><td>";
-        m_Ostream << (m_OtherInfo[1]!="N/A" ? m_OtherInfo[1] : "") << "</td><td>";
+        m_Ostream << (m_OtherInfo[3]!="N/A" ? m_OtherInfo[3] : "") << "</td><td>";
         if (m_FrameInfo == "IF") {
             m_Ostream << "In-frame";
         } else if (m_FrameInfo == "OF") {
             m_Ostream << "Out-of-frame";
         } else if (m_FrameInfo == "IP") {
-            m_Ostream << "In-frame with stop codon";
+            m_Ostream << "In-frame";
         } 
-        m_Ostream << "</td><td>" << (m_OtherInfo[2]!="N/A" ? m_OtherInfo[2] : "");
+        m_Ostream << "</td><td>" << (m_OtherInfo[4]!="N/A" ? m_OtherInfo[4] : "");
         m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+') 
                   << "</td></tr></table></pre>\n";
         x_PrintIgGenes(true, "");
