@@ -95,7 +95,7 @@ Improvements and bug fixes
     * NetSchedule: move the peer address from parameters to client IP field in
       the connection start request (JIRA: CXX-3216)
     * NetSchedule GET2 to return output in URL-encoded format (JIRA: CXX-3217)
-    * NetSchedule: extension to the SHUTDOWN command (JIRA: CXX-3237)
+    * NetSchedule: extension to the SHUTDOWN command -- added drain option (JIRA: CXX-3237)
     * NetSchedule: STAT to produce additional output (JIRA: CXX-3242)
     * NetSchedule: changes in the ACNT command (JIRA: CXX-3253)
     * NetSchedule: Extend STAT JOBS with ability to print info with and without
