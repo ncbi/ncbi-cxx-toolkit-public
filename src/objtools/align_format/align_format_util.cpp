@@ -3349,6 +3349,8 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     int highest_length = 1;
     int highest_ident = 0;
     int highest_identity = 0;
+    double totalLen = 0;
+    
     list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.    
     
     seqSetInfo->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&seqSetInfo->master_covered_length,&seqSetInfo->flip);	
@@ -3356,6 +3358,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
 
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
         int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, do_translation);
+        totalLen += align_length;
                                                         
         CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
                                    num_ident, use_this_gi);  
@@ -3382,6 +3385,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     seqSetInfo->bit_score = highest_bits;    
     seqSetInfo->evalue = lowest_evalue;    
     seqSetInfo->hspNum = aln.Size();	
+    seqSetInfo->totalLen = (Int8)totalLen;
 
     return seqSetInfo;
 }

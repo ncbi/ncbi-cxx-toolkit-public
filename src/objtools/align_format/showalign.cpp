@@ -3461,9 +3461,10 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_curr_num",NStr::IntToString(m_currAlignHsp + 1));
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"alnSeqGi",m_CurrAlnID_Lbl);//not used now
 
-    string hidePrevNaviagtion,hideNextNaviagtion;
+    string hidePrevNaviagtion,hideNextNaviagtion, hideFirstNavigation;
     if(m_currAlignHsp == 0) {
         hidePrevNaviagtion = "disabled=\"disabled\"";
+        hideFirstNavigation = "hidden";
     }
     if (m_currAlignHsp ==  m_TotalHSPNum - 1) {
         hideNextNaviagtion = "disabled=\"disabled\"";
@@ -3477,6 +3478,7 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
 
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_prev",hidePrevNaviagtion);
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_next",hideNextNaviagtion);
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_fst",hideFirstNavigation);
     alignParams  = CAlignFormatUtil::MapTemplate(alignParams,"firstSeqID",m_CurrAlnAccession);//displays the first accession if multiple    
     //current segment number = m_currAlignHsp + 1
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_next_num",NStr::IntToString(m_currAlignHsp + 2));
@@ -3814,8 +3816,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
 	//fill sort info
 	string sortInfo;	
-	if(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber > 1 &&	
-		m_AlignOption & eShowSortControls){
+    if(m_TotalHSPNum > 1) {		
 		//3. Display sort info
 		sortInfo = x_FormatAlignSortInfo();					
 	}
@@ -3992,7 +3993,7 @@ string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)
     alignInfo =  x_FormatAlnHSPLinks(alignInfo);        
     
 	m_currAlignHsp++;	
-	string alignRowsTemplate = (m_currAlignHsp == m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber) ? m_AlignTemplates->alignRowTmplLast : m_AlignTemplates->alignRowTmpl;
+	string alignRowsTemplate = (m_currAlignHsp == m_TotalHSPNum) ? m_AlignTemplates->alignRowTmplLast : m_AlignTemplates->alignRowTmpl;
 	
     string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
     alignRows = CAlignFormatUtil::MapTemplate(alignRowsTemplate,"align_rows",alignRows);
