@@ -1182,6 +1182,7 @@ CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
         int pos = annots->m_FrameInfo[i];
         if (pos >= 0) {
             annots->m_FrameInfo[i] = len -1 - pos;
+            while (annots->m_FrameInfo[i] < 0) annots->m_FrameInfo[i] += 3;
         }
     }
 }
