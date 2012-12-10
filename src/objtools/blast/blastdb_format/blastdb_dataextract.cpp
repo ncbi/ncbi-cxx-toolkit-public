@@ -437,7 +437,7 @@ int CBlastDBExtractor::x_ExtractTaxId()
     // for database without Gi:
     vector <int> taxid;
     m_BlastDb.GetTaxIDs(m_Oid, taxid);
-    return taxid[0];
+    return taxid.size() ? taxid[0] : 0;
 }
 
 void 
