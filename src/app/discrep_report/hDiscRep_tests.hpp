@@ -75,6 +75,7 @@ namespace DiscRepNmSpc {
       static bool   is_Biosrc_Orgmod_run;
       static bool   is_BIOSRC1_run;
       static bool   is_CdTransl_run;
+      static bool   is_Defl_run; // checked
       static bool   is_DESC_user_run; // checked
       static bool   is_GP_Set_run;
       static bool   is_MolInfo_run;
@@ -83,6 +84,7 @@ namespace DiscRepNmSpc {
       static bool   is_Quals_run;
       static bool   is_Rna_run;
       static bool   is_SHORT_run;
+      static bool   is_TaxCflts_run;
   };
 
 
@@ -235,6 +237,10 @@ namespace DiscRepNmSpc {
                                                                    const string& delim = "$");
       void RmvRedundancy(vector <string>& item_list); //all CSeqEntry_Feat_desc tests need this
       CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
+      bool DoesStringContainPhrase(const string& str, const string& phrase, 
+                            bool case_sensitive=true, bool whole_word=true);
+      bool DoesStringContainPhrase(const string& str, const vector <string>& phrases, 
+                            bool case_sensitive=true, bool whole_word=true);
   };
 
 
@@ -322,6 +328,74 @@ namespace DiscRepNmSpc {
 
 
 //  new comb!!
+  class CSeqEntry_test_on_defline : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_defline () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+   protected:
+      string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
+      string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
+  };
+
+  
+  class CSeqEntry_DISC_DUP_DEFLINE : public CSeqEntry_test_on_defline
+  {
+    public:
+      virtual ~CSeqEntry_DISC_DUP_DEFLINE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_defline::GetName_dup();}
+  };
+
+
+  class CSeqEntry_ONCALLER_DEFLINE_ON_SET : public CSeqEntry_test_on_defline
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_DEFLINE_ON_SET () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_defline::GetName_set();}
+  };
+ 
+
+  class CSeqEntry_test_on_tax_cflts : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_tax_cflts () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+   protected:
+      string GetName_vou() const {return string("DISC_SPECVOUCHER_TAXNAME_MISMATCH"); }
+
+      bool s_StringHasVoucherSN(const string& vou_nm);
+      void CollectSpecVoucherTaxnameDiscrepancies(const CBioSource& biosrc, 
+                                                               const string& desc); 
+      void RunTests(const CBioSource& biosrc, const string& desc);
+      void GetReport_cflts(CRef <CClickableItem>& c_item, const string& setting_name, 
+                                                              const string& qual_nm);
+  };
+
+
+  class CSeqEntry_DISC_SPECVOUCHER_TAXNAME_MISMATCH : public CSeqEntry_test_on_tax_cflts
+  {
+    public:
+      virtual ~CSeqEntry_DISC_SPECVOUCHER_TAXNAME_MISMATCH () {};
+
+      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_vou();}
+      virtual void GetReport(CRef <CClickableItem>& c_item) {
+          GetReport_cflts(c_item, GetName(), "specimen voucher");
+      };
+  };
+
+
   class CSeqEntry_test_on_quals : public CSeqEntryTestAndRepData
   {
     public:
@@ -673,6 +747,7 @@ namespace DiscRepNmSpc {
   
 // new comb
 
+
   class CSeqEntry_DISC_HAPLOTYPE_MISMATCH : public CSeqEntryTestAndRepData
   {
     public:
@@ -757,17 +832,6 @@ namespace DiscRepNmSpc {
       bool HasNaInSet(const CBioseq_set& bioseq_set);
   };
 
-
-  class CSeqEntry_ONCALLER_DEFLINE_ON_SET : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_ONCALLER_DEFLINE_ON_SET () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("ONCALLER_DEFLINE_ON_SET");}
-  };
-   
 
   class CSeqEntry_DISC_FEATURE_COUNT : public CSeqEntryTestAndRepData
   {

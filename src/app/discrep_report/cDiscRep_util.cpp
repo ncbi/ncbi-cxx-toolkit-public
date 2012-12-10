@@ -77,6 +77,7 @@
 #include <objmgr/seq_vector_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_map.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include "hDiscRep_app.hpp"
 #include "hDiscRep_tests.hpp"
@@ -139,6 +140,35 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
+bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
+{
+  if (case_sensitive) {
+    if ( str.find(phrase) == string::npos) return false;
+  }
+  else if ( NStr::FindNoCase(str, phrase) == string::npos) return false;
+
+  if (whole_word) {
+     string pattern("\\b" + CRegexp::Escape(phrase) + "\\b");
+     CRegexp :: ECompile 
+      comp_flag = case_sensitive ? 
+                            CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
+     CRegexp rx(pattern, comp_flag);
+     if (rx.IsMatch(str)) return true;
+     else return false;
+  }
+  else return true;
+};
+
+
+bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const vector <string>& phrases, bool case_sensitive, bool whole_word)
+{
+   ITERATE (vector <string>, it, phrases) {
+      if (DoesStringContainPhrase(str, *it, case_sensitive, whole_word)) return true;   
+   }
+   return false;
+};
+
+
 CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_feat)
 {
   const CGene_ref* gene = seq_feat.GetGeneXref();

@@ -122,6 +122,7 @@ bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC1_run;
 bool CDiscTestInfo :: is_Biosrc_Orgmod_run;
 bool CDiscTestInfo :: is_CdTransl_run;
+bool CDiscTestInfo :: is_Defl_run;
 bool CDiscTestInfo :: is_DESC_user_run;
 bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_MolInfo_run;
@@ -130,6 +131,7 @@ bool CDiscTestInfo :: is_Prot_run;
 bool CDiscTestInfo :: is_Quals_run;
 bool CDiscTestInfo :: is_Rna_run;
 bool CDiscTestInfo :: is_SHORT_run;
+bool CDiscTestInfo :: is_TaxCflts_run;
 
 typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
 typedef map <int, vector <string> > Int2Strs;
@@ -786,7 +788,7 @@ string CBioseqTestAndRepData :: GetRNAProductString(const CSeq_feat& seq_feat)
 };
 
 
-bool CBioseqTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
+bool CBioseqTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)   // may not be needed anymore
 {
   size_t pos;
   if (case_sensitive) {
@@ -5565,6 +5567,98 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c
 
 
 // new method
+bool CSeqEntry_test_on_tax_cflts :: s_StringHasVoucherSN(const string& vou_nm)
+{
+  vector <string> spec_vou;
+  spec_vou.push_back("s.n.");
+  spec_vou.push_back("sn");
+  return (DoesStringContainPhrase(vou_nm, spec_vou));
+};
+
+
+void CSeqEntry_test_on_tax_cflts :: CollectSpecVoucherTaxnameDiscrepancies(const CBioSource& biosrc, const string& desc)
+{
+   string vou_nm, tax_nm;
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+     if ( (*it)->GetSubtype() == COrgMod :: eSubtype_specimen_voucher
+              && !s_StringHasVoucherSN( vou_nm = (*it)->GetSubname())) {
+        if (biosrc.IsSetTaxname() && !(tax_nm = biosrc.GetTaxname()).empty())
+            thisInfo.test_item_list[GetName_vou()].push_back(
+                                     vou_nm + "$" + tax_nm + "#" + desc);
+     }
+   }
+};
+
+
+
+void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const string& desc)
+{
+    // DISC_SPECVOUCHER_TAXNAME_MISMATCH
+    CollectSpecVoucherTaxnameDiscrepancies(biosrc, desc);
+};
+
+
+void CSeqEntry_test_on_tax_cflts :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (thisTest.is_TaxCflts_run) return;
+
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat)
+      RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
+  
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
+      desc = GetDiscItemText( **it, *(biosrc_orgmod_seqdesc_seqentry[i]));
+      RunTests((*it)->GetSource(), desc);
+      i++;
+   }
+
+   thisTest.is_TaxCflts_run = true;
+};
+
+
+void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_item, const string& setting_name, const string& qual_nm)
+{
+   Str2Strs qual2tax_seqs, tax2seqs;
+   GetTestItemList(c_item->item_list, qual2tax_seqs);
+   c_item->item_list.clear();
+   if (qual2tax_seqs.size() == 1) {
+       tax2seqs.clear();
+       GetTestItemList(qual2tax_seqs.begin()->second, tax2seqs, "#");
+       if (tax2seqs.size() > 1) {
+          ITERATE (Str2Strs, jt, tax2seqs) 
+             c_item->item_list.insert(c_item->item_list.end(), 
+                                        jt->second.begin(), jt->second.end());
+          c_item->description 
+            = GetHasComment(c_item->item_list.size(), "biosource") + qual_nm + " "
+              + qual2tax_seqs.begin()->first + " but do not have the same taxnames.";
+       }
+   }
+   else {
+     ITERATE (Str2Strs, it, qual2tax_seqs) {
+       tax2seqs.clear();
+       GetTestItemList(it->second, tax2seqs, "#");
+       if (tax2seqs.size() > 1) {
+           CRef <CClickableItem> c_sub (new CClickableItem);
+           ITERATE (Str2Strs, jt, tax2seqs)
+             c_sub->item_list.insert(c_sub->item_list.end(),
+                                        jt->second.begin(), jt->second.end());
+           c_sub->description
+              = GetHasComment(c_sub->item_list.size(), "biosource") + qual_nm + " "
+                + it->first + " but do not have the same taxnames.";    
+           c_item->item_list.insert(c_item->item_list.end(), 
+                                     c_sub->item_list.begin(), c_sub->item_list.end());
+           c_item->subcategories.push_back(c_sub);
+       }   
+     }
+     c_item->description = GetHasComment(c_item->item_list.size(), "BioSource") 
+                           + qual_nm + "/taxname conflicts.";
+   }
+};
+
+
+
+
 void CSeqEntry_test_on_quals :: GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
 {
   ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
@@ -6371,17 +6465,13 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
    if (thisTest.is_Biosrc_Orgmod_run) return;
 
    string desc;
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
-     desc = GetDiscItemText(**it);
-     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
-     RunTests(biosrc, desc);
-   }
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat)
+     RunTests((*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
       desc = GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i]));
-      const CBioSource& biosrc = (*it)->GetSource();
-      RunTests(biosrc, desc);
+      RunTests((*it)->GetSource(), desc);
       i++;
    }
 
@@ -6703,17 +6793,13 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    FindSpecSubmitText();
 
    string desc;
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
-     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
-     desc = GetDiscItemText(**it);
-     RunTests(biosrc, desc);
-   };
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_feat)
+     RunTests((*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
-     const CBioSource& biosrc = (*it)->GetSource();
      desc = GetDiscItemText( **it, *(biosrc_seqdesc_seqentry[i]));
-     RunTests(biosrc, desc);
+     RunTests((*it)->GetSource(), desc);
      i++;
    };
 
@@ -7583,14 +7669,76 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
 };
 
 
-void  CSeqEntry_ONCALLER_DEFLINE_ON_SET :: TestOnObj(const CSeq_entry& seq_entry)
+//new comb
+void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
 {
+    if (thisTest.is_Defl_run) return;
+
     unsigned i=0; 
-    ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc)
-       thisInfo.test_item_list[GetName()].push_back( 
-                                    GetDiscItemText(**it, *(title_seqdesc_seqentry[i++])) );
+    string desc, title;
+    ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {
+       if ((title = (*it)->GetTitle()).empty()) continue; 
+       desc = GetDiscItemText(**it, *(title_seqdesc_seqentry[i]));
+       // ONCALLER_DEFLINE_ON_SET
+       if (title_seqdesc_seqentry[i]->IsSet()) 
+            thisInfo.test_item_list[GetName_set()].push_back(desc);
+     
+       // DISC_DUP_DEFLINE
+       title = NStr::ToUpper(title); 
+       thisInfo.test_item_list[GetName_dup()].push_back(title + "$" + desc);
+
+       i++;
+    }
+
+    thisTest.is_Defl_run = true;
 };
 
+
+void CSeqEntry_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs def2ls;
+   GetTestItemList(c_item->item_list, def2ls);
+   c_item->item_list.clear();
+
+   vector <string> unique;
+   unsigned dup_cnt = 0;
+   Str2Strs::const_iterator iit;
+   ITERATE (Str2Strs, it, def2ls) {
+      if (it->second.size() > 1) {
+              dup_cnt++;
+              iit = it;
+      }
+      else unique.push_back(it->second[0]);
+   }  
+   if (!dup_cnt) c_item->description = "All deflines are unique";
+   else {
+      if (dup_cnt == 1) { 
+          if ( unique.empty()) {
+             c_item->item_list = iit->second;
+             c_item->description 
+                   = GetIsComment(c_item->item_list.size(), "definition line") 
+                      + "identical";
+          }
+          else {
+              AddSubcategories(c_item, GetName(), iit->second, "definition line",
+                                                    "identical", e_IsComment, false);
+              AddSubcategories(c_item, GetName(), unique, "definition line", 
+                                                    "unique", e_IsComment, false);
+              c_item->description = "Defline Problem Report";
+          }
+      }
+      else {
+         ITERATE (Str2Strs, it, def2ls) {
+            if (it->second.size() > 1)
+              AddSubcategories(c_item, GetName(), it->second, "definition line",
+                                                    "identical", e_IsComment, false);
+         }
+         AddSubcategories(c_item, GetName(), unique, "definition line",
+                                                    "unique", e_IsComment, false);
+         c_item->description = "Defline Problem Report";
+      }
+   }
+};
 
 
 void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_item)
@@ -7606,9 +7754,12 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
       c_item->subcategories.push_back(c_sub); 
    }
 
-   if (thisInfo.expand_defline_on_set == "true" || thisInfo.expand_defline_on_set == "TRUE")
+   if (thisInfo.expand_defline_on_set == "true" 
+                              || thisInfo.expand_defline_on_set == "TRUE")
      c_item->expanded = true;
 };
+
+//new comb
 
 
 void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)

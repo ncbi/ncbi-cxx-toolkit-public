@@ -9,8 +9,8 @@ APP = disc_report
 SRC = cDiscRep_app cchecking_class cauto_disc_class cDiscRep_config \
 	cDiscRep_tests cDiscRep_output cDiscRep_util cUtilib
 
-LIB = taxon1 xobjutil submit macro xobjutil $(OBJMGR_LIBS)
+LIB = xobjutil taxon1 submit macro xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
  
 REQUIRES = objects
