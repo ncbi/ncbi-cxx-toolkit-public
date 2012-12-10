@@ -74,9 +74,9 @@ template<typename TRoot, typename TObject>
 class CIStreamIteratorThread_Base : public CThread
 {
 public:
-    CIStreamIteratorThread_Base(CObjectIStream& in)
+    CIStreamIteratorThread_Base(CObjectIStream& in, EOwnership deleteInStream)
         : m_In(in), m_Resume(0,1), m_Ready(0,1), m_Obj(0),
-          m_Stop(false), m_Failed(false)
+          m_Ownership(deleteInStream), m_Stop(false), m_Failed(false)
     {
     }
     // Resume thread, wait for the next object
@@ -121,6 +121,9 @@ public:
 protected:
     ~CIStreamIteratorThread_Base(void)
     {
+        if (m_Ownership == eTakeOwnership) {
+            delete &m_In;
+        }
     }
     virtual void* Main(void)
     {
@@ -131,6 +134,7 @@ protected:
     CSemaphore           m_Resume;
     CSemaphore           m_Ready;
     const TObject*       m_Obj;
+    EOwnership           m_Ownership;
     bool                 m_Stop;
     bool                 m_Failed;
 };
@@ -141,8 +145,8 @@ class CIStreamObjectIteratorThread
     : public CIStreamIteratorThread_Base< TRoot,TObject >
 {
 public:
-    CIStreamObjectIteratorThread(CObjectIStream& in)
-        : CIStreamIteratorThread_Base< TRoot,TObject >(in)
+    CIStreamObjectIteratorThread(CObjectIStream& in, EOwnership deleteInStream)
+        : CIStreamIteratorThread_Base< TRoot,TObject >(in, deleteInStream)
     {
     }
 protected:
@@ -171,8 +175,8 @@ class CIStreamStdIteratorThread
     : public CIStreamIteratorThread_Base< TRoot,TObject >
 {
 public:
-    CIStreamStdIteratorThread(CObjectIStream& in)
-        : CIStreamIteratorThread_Base< TRoot,TObject >(in)
+    CIStreamStdIteratorThread(CObjectIStream& in, EOwnership deleteInStream)
+        : CIStreamIteratorThread_Base< TRoot,TObject >(in, deleteInStream)
     {
     }
 protected:
@@ -263,11 +267,11 @@ class CIStreamObjectIterator
     : public CIStreamIterator_Base< TRoot, TObject>
 {
 public:
-    CIStreamObjectIterator(CObjectIStream& in)
+    CIStreamObjectIterator(CObjectIStream& in, EOwnership deleteInStream = eNoOwnership)
     {
         // Create reading thread, wait until it finds the next object
         this->m_Reader =
-            new CIStreamObjectIteratorThread< TRoot, TObject >(in);
+            new CIStreamObjectIteratorThread< TRoot, TObject >(in, deleteInStream);
         this->m_Reader->Run();
         this->m_Reader->Next();
     }
@@ -293,11 +297,11 @@ class CIStreamStdIterator
     : public CIStreamIterator_Base< TRoot, TObject>
 {
 public:
-    CIStreamStdIterator(CObjectIStream& in)
+    CIStreamStdIterator(CObjectIStream& in, EOwnership deleteInStream = eNoOwnership)
     {
         // Create reading thread, wait until it finds the next object
         this->m_Reader =
-            new CIStreamStdIteratorThread< TRoot, TObject >(in);
+            new CIStreamStdIteratorThread< TRoot, TObject >(in,deleteInStream);
         this->m_Reader->Run();
         this->m_Reader->Next();
     }
