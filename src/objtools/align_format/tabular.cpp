@@ -1410,9 +1410,8 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
   
         string seq_data(m_Query, v_start, v_j_length);
         string seq_trans;
-      
-        CSeqTranslator::Translate(seq_data, seq_trans);
-
+        CSeqTranslator::Translate(seq_data, seq_trans, NULL, true, false, NULL, false);
+       
         if (seq_trans.find('*') == string::npos) {
             m_OtherInfo.push_back("No");
             if (m_FrameInfo == "IF" || m_FrameInfo == "IP") {
