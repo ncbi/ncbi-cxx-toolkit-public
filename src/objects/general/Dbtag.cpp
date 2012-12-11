@@ -549,7 +549,6 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog=" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" },
     { CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/" },
-    { CDbtag::eDbtagType_ERIC, "http://www.ericbrc.org/genbank/dbxref/" },
     { CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id=" },
     { CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" },
