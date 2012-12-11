@@ -244,7 +244,7 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
         opts.SetWordSize(7);
         opts.SetMismatchPenalty(-3);
     } else {
-        opts.SetWordSize(5);
+        opts.SetWordSize(m_IgOptions->m_Min_D_match);
     }
 
     opts.SetGapOpeningCost(5);

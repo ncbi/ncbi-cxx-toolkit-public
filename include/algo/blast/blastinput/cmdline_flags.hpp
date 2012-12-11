@@ -288,6 +288,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLDomainSystem;
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
 /// Arugment to specify if Igblast alignment should be translated to protein
 NCBI_BLASTINPUT_EXPORT extern const string kArgTranslate;
+///Arugment to specify if Igblast min D gene match
+NCBI_BLASTINPUT_EXPORT extern const string kArgMinDMatch;
 
 /// Argument to specify non-greedy dynamic programming extension
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoGreedyExtension;

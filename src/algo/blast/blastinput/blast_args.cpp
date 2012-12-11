@@ -1341,6 +1341,13 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing the coding frame start positions for sequences in germline J database",
                             CArgDescriptions::eString);
+        
+        arg_desc.AddOptionalKey(kArgMinDMatch, "min_D_match",
+                                "Required minimal number of D gene matches ",
+                                CArgDescriptions::eInteger);
+        arg_desc.SetConstraint(kArgMinDMatch, 
+                               new CArgAllowValuesGreaterThanOrEqual(5));
+        
     }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
@@ -1435,6 +1442,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             break;
         }
     }
+  
     string df_db_name = CDirEntry::ConcatPath(
                         CDirEntry::ConcatPath(m_IgOptions->m_IgDataPath, 
                            m_IgOptions->m_Origin), m_IgOptions->m_Origin + "_V");
@@ -1446,6 +1454,12 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         NCBI_THROW(CInputException, eInvalidInput,
            "Germline annotation database " + df_db_name + " could not be found in [internal_data] directory");
     }
+
+    m_IgOptions->m_Min_D_match = 5;
+    if (args.Exist(kArgMinDMatch) && args[kArgMinDMatch]) {
+        m_IgOptions->m_Min_D_match = args[kArgMinDMatch].AsInteger();
+    }
+
 
     CRef<CBlastOptionsHandle> opts_hndl;
     if (m_IgOptions->m_IsProtein) {
