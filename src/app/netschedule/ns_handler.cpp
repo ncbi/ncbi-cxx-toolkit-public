@@ -1121,6 +1121,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
             GetDiagContext().SetRequestContext(ctx);
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
+                            .Print("_queue", m_QueueName)
                             .Print("bsub", m_CmdContext->GetRequestID())
                             .Print("cmd", "BTCH")
                             .Print("size", m_BatchJobs.size());
@@ -2546,6 +2547,7 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd& cmd)
         CDiagContext_Extra    ctxt_extra =
                 GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
+                            .Print("_queue", m_QueueName)
                             .Print("cmd", cmd.command->cmd)
                             .Print("peer", GetSocket().GetPeerAddress(eSAF_IP))
                             .Print("conn", m_ConnContext->GetRequestID());
@@ -2577,6 +2579,7 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(CTempString  msg)
         CDiagContext::SetRequestContext(m_CmdContext);
         GetDiagContext().PrintRequestStart()
                 .Print("_type", "cmd")
+                .Print("_queue", m_QueueName)
                 .Print("info", msg)
                 .Print("peer",  GetSocket().GetPeerAddress(eSAF_IP))
                 .Print("conn", m_ConnContext->GetRequestID())
