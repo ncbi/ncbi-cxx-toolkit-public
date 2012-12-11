@@ -44,6 +44,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/seqalign_exception.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objtools/error_codes.hpp>
@@ -265,10 +266,16 @@ void CLDS2_AnnotType_Hook::SkipObject(CObjectIStream& in,
     else if (m_Ids  &&  m_Type == "Seq-align") {
         CSeq_align align;
         DefaultRead(in, ObjectInfo(align));
-        CSeq_align::TDim dim = align.GetDim();
-        for (CSeq_align::TDim row = 0; row < dim; row++) {
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(row));
-            (*m_Ids)[idh].range.CombineWith(align.GetSeqRange(row));
+        // Hack: if dim is not set, iterate rows until CSeqalignException
+        // is thrown.
+        CSeq_align::TDim dim = align.IsSetDim() ? align.GetDim() : 0;
+        try {
+            for (CSeq_align::TDim row = 0; row < dim  ||  dim == 0; row++) {
+                CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(row));
+                (*m_Ids)[idh].range.CombineWith(align.GetSeqRange(row));
+            }
+        }
+        catch (CSeqalignException) {
         }
     }
     else if (m_Ids  &&  m_Type == "Seq-graph") {
@@ -867,7 +874,7 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
             m_LastBlobPos += NcbiStreamposToInt8(objstr->GetStreamPos());
             m_LastBlobType = m_BlobType;
         }
-        catch (CSerialException) {
+        catch (CSerialException& e) {
             ResetBlob();
             m_BlobType = SLDS2_Blob::eUnknown;
             return false;
