@@ -136,7 +136,8 @@ namespace DiscRepNmSpc{
      class CDiscRepInfo
      {
         public:
- 
+           static CConstRef <CNcbiRegistry>         registry;
+
            static CRef < CScope >                   scope;
            static string                            infile;
            static COutputConfig                      output_config;
@@ -160,7 +161,8 @@ namespace DiscRepNmSpc{
            static vector <string>                    suspicious_notes;
            static vector <string>                    trna_list; 
            static Str2UInt                           desired_aaList;
-           static CTaxon1                           tax_db_conn;
+           static CTaxon1                            tax_db_conn;
+           static list <string>                      state_abbrev;
      };
 
 /*

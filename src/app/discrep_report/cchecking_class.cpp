@@ -65,15 +65,20 @@ bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
 void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h)
 {
    for (CSeqdesc_CI seqdesc_it(seq_entry_h, sel_seqdesc, 1); seqdesc_it; ++seqdesc_it) {
-         if ( seqdesc_it->IsPub() ) {
+         if (seqdesc_it->IsMolinfo()) {
+               CTestAndRepData :: molinfo_seqdesc.push_back( &(*seqdesc_it) );
+               CTestAndRepData :: molinfo_seqdesc_seqentry.push_back(
+                                                 seq_entry_h.GetCompleteObject().GetPointer());
+         }
+         else if ( seqdesc_it->IsPub() ) {
                CTestAndRepData :: pub_seqdesc.push_back( &(*seqdesc_it) );
                CTestAndRepData :: pub_seqdesc_seqentry.push_back(
-                                                      seq_entry_h.GetCompleteObject().GetPointer());
+                                                 seq_entry_h.GetCompleteObject().GetPointer());
          }
          else if ( seqdesc_it->IsComment() ) {
                CTestAndRepData :: comm_seqdesc.push_back( &(*seqdesc_it) );
                CTestAndRepData :: comm_seqdesc_seqentry.push_back(
-                                                     seq_entry_h.GetCompleteObject().GetPointer());
+                                                seq_entry_h.GetCompleteObject().GetPointer());
          }
          else if ( seqdesc_it->IsSource() ) {
                CTestAndRepData :: biosrc_seqdesc.push_back( &(*seqdesc_it) );
@@ -94,12 +99,12 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
          else if ( seqdesc_it->IsTitle() && seq_entry_h.IsSet()) {  // why IsSet()?
                CTestAndRepData :: title_seqdesc.push_back( &(*seqdesc_it) );
                CTestAndRepData :: title_seqdesc_seqentry.push_back(
-                                                       seq_entry_h.GetCompleteObject().GetPointer());
+                                                 seq_entry_h.GetCompleteObject().GetPointer());
          }
          else if ( seqdesc_it->IsUser()) {
                CTestAndRepData :: user_seqdesc.push_back( &(*seqdesc_it) );
                CTestAndRepData :: user_seqdesc_seqentry.push_back(
-                                                       seq_entry_h.GetCompleteObject().GetPointer());
+                                                seq_entry_h.GetCompleteObject().GetPointer());
          }
    }
    if (seq_entry_h.IsSet()) {
@@ -123,6 +128,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      thisTest.is_Biosrc_Orgmod_run = false;
      thisTest.is_Defl_run = false;
      thisTest.is_DESC_user_run = false;
+     thisTest.is_Pub_run = false;
      thisTest.is_Quals_run = false;
      thisTest.is_TaxCflts_run = false;
 

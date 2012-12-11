@@ -81,6 +81,7 @@ namespace DiscRepNmSpc {
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
       static bool   is_Prot_run;
+      static bool   is_Pub_run;
       static bool   is_Quals_run;
       static bool   is_Rna_run;
       static bool   is_SHORT_run;
@@ -218,13 +219,15 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
-      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc, biosrc_subsrc_seqdesc;
+      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc;
+      static vector <const CSeqdesc*>  molinfo_seqdesc, biosrc_subsrc_seqdesc;
       static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo, bioseq_title;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_orgmod_seqdesc_seqentry, user_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_subsrc_seqdesc_seqentry;
+      static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
 
     protected:
       void GetSeqFeatLabel(const CSeq_feat& seq_feat, string* label);      
@@ -328,6 +331,63 @@ namespace DiscRepNmSpc {
 
 
 //  new comb!!
+  class CSeqEntry_test_on_pub : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_pub () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+   protected:
+      string GetName_dup() const {return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
+      string GetName_cap() const {return string("DISC_CHECK_AUTH_CAPS"); }
+      string GetName_usa() const {return string("DISC_USA_STATE"); }
+
+      void RunTests(const list <CRef <CPub> >& pubs, const string& desc);
+      CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
+      bool AffilStreetContainsDuplicateText(const CAffil& affil);
+      bool AffilStreetEndsWith(const string& street, const string& end_str);
+      bool IsNameCapitalizationOk(const string& name);
+      bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
+      bool NameIsBad(const CRef <CAuthor> nm_std);
+      bool HasBadAuthorName(const CAuth_list& auths);
+      bool AreBadAuthCapsInPubdesc(const list <CRef <CPub> >& pubs);
+      bool CorrectUSAStates(const list <CRef <CPub> >& pubs);
+  };
+
+
+  class CSeqEntry_DISC_USA_STATE : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_USA_STATE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_usa();}
+  };
+
+
+  class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_dup();}
+  };
+
+
+  class CSeqEntry_DISC_CHECK_AUTH_CAPS : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_CHECK_AUTH_CAPS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_cap();}
+  };
+
+
   class CSeqEntry_test_on_defline : public CSeqEntryTestAndRepData
   {
     public:
@@ -747,6 +807,20 @@ namespace DiscRepNmSpc {
   
 // new comb
 
+  class CSeqEntry_DISC_INCONSISTENT_MOLTYPES : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_DISC_INCONSISTENT_MOLTYPES () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("DISC_INCONSISTENT_MOLTYPES");}
+
+    protected:
+      unsigned m_entry_no;
+      void AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc);
+  };
+
 
   class CSeqEntry_DISC_HAPLOTYPE_MISMATCH : public CSeqEntryTestAndRepData
   {
@@ -774,6 +848,7 @@ namespace DiscRepNmSpc {
   };
 
 
+/*
   class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntryTestAndRepData
   {
     public:
@@ -788,6 +863,7 @@ namespace DiscRepNmSpc {
       bool AffilStreetContainsDuplicateText(const CAffil& affil);       
       bool AffilStreetEndsWith(const string& street, const string& end_str);
   };
+*/
 
 
 
@@ -860,6 +936,7 @@ namespace DiscRepNmSpc {
   };
 
 
+/*
   class CSeqEntry_DISC_CHECK_AUTH_CAPS : public CSeqEntryTestAndRepData
   {
     public:
@@ -878,6 +955,7 @@ namespace DiscRepNmSpc {
       bool AreBadAuthCapsInPubdesc(const CPubdesc& pubdesc);
       bool AreAuthCapsOkInSubmitBlock(const CSubmit_block& submit_block);
   };
+*/
 
 
 

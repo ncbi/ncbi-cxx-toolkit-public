@@ -76,6 +76,7 @@ static CDiscRepInfo thisInfo;
 static string       strtmp;
 
 // Initialization
+CConstRef <CNcbiRegistry>               CDiscRepInfo :: registry;
 CRef < CScope >                         CDiscRepInfo :: scope;
 string				        CDiscRepInfo :: infile;
 vector < CRef < CClickableItem > >      CDiscRepInfo :: disc_report_data;
@@ -99,6 +100,7 @@ vector <string>                         CDiscRepInfo :: trna_list;
 vector <string>                         CDiscRepInfo :: rrna_standard_name;
 Str2UInt                                CDiscRepInfo :: desired_aaList;
 CTaxon1                                 CDiscRepInfo :: tax_db_conn;
+list <string>                           CDiscRepInfo :: state_abbrev;
 
 void CDiscRepApp::Init(void)
 {
@@ -131,6 +133,8 @@ void CDiscRepApp::Init(void)
 
     // read suspect rule file
     const CNcbiRegistry& reg = GetConfig();
+    thisInfo.registry = CConstRef <CNcbiRegistry> (&reg);
+
     string suspect_rule_file = reg.Get("SuspectProductRule", "SuspectRuleFile");
     ifstream ifile(suspect_rule_file.c_str());
     
@@ -326,6 +330,9 @@ cerr << "222can get\n";
 
     // ini. of tax_db_conn: taxonomy db connection
     thisInfo.tax_db_conn.Init();
+
+    // ini. of usa_state_abbv;
+    reg.EnumerateEntries("US-state-abbrev-fixes", &(thisInfo.state_abbrev));
 }
 
 

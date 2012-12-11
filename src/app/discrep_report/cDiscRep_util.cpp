@@ -122,6 +122,7 @@ vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: biosrc_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: biosrc_orgmod_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: biosrc_subsrc_seqdesc;
+vector <const CSeqdesc*>  CTestAndRepData :: molinfo_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: title_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: user_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc_seqdesc;
@@ -135,6 +136,7 @@ vector <const CSeq_entry*>  CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: title_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: user_seqdesc_seqentry;
+vector <const CSeq_entry*>  CTestAndRepData :: molinfo_seqdesc_seqentry;
 
 static CDiscRepInfo thisInfo;
 static string strtmp;

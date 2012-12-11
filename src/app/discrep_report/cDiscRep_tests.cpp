@@ -128,6 +128,7 @@ bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_MolInfo_run;
 bool CDiscTestInfo :: is_MRNA_run;
 bool CDiscTestInfo :: is_Prot_run;
+bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
 bool CDiscTestInfo :: is_Rna_run;
 bool CDiscTestInfo :: is_SHORT_run;
@@ -6279,7 +6280,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
-      desc = GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i]));
+      desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
       comb_desc_ls.push_back(desc);
       this_desc_ls.push_back(desc);
       const CBioSource& biosrc = (*it)->GetSource();
@@ -7192,6 +7193,72 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 // new method
 
 
+void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc)
+{
+   const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
+   ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
+     if ((*it)->IsSeq()) {
+         const CBioseq& bioseq = (*it)->GetSeq();
+         if ( !bioseq.IsAa() ) {
+              thisInfo.test_item_list[GetName()].push_back( 
+                         desc + mol_vlu->FindName(bioseq.GetInst().GetMol(), false) + "#" 
+                         + GetDiscItemText(bioseq));
+         }
+     }
+     else AddMolinfoToBioseqsOfSet((*it)->GetSet(), desc);
+  }
+};
+
+
+
+void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   string desc;
+   const CEnumeratedTypeValues* biomol_vlu = CMolInfo::GetTypeInfo_enum_EBiomol();
+   const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, molinfo_seqdesc) {
+      desc = NStr::UIntToString(m_entry_no) + "$" 
+              + biomol_vlu->FindName((*it)->GetMolinfo().GetBiomol(), false) + " ";
+      if ( molinfo_seqdesc_seqentry[i]->IsSeq()) {
+        const CBioseq& bioseq = molinfo_seqdesc_seqentry[i]->GetSeq();
+        if (!bioseq.IsAa()) {
+              thisInfo.test_item_list[GetName()].push_back( 
+                         desc + mol_vlu->FindName(bioseq.GetInst().GetMol(), false) + "#" 
+                         + GetDiscItemText(bioseq));
+        }
+      } 
+      else AddMolinfoToBioseqsOfSet(molinfo_seqdesc_seqentry[i]->GetSet(), desc);
+      i++;
+   }
+
+   m_entry_no ++;
+};
+
+
+void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list);
+  Str2Strs entry2moltps, moltp2seqs;  
+  GetTestItemList(c_item->item_list, entry2moltps);
+  c_item->item_list.clear();
+  ITERATE (Str2Strs, it, entry2moltps) {
+    moltp2seqs.clear();
+    GetTestItemList(it->second, moltp2seqs);
+    if (moltp2seqs.size() > 1) {
+       ITERATE (Str2Strs, jt, moltp2seqs) {
+         AddSubcategories(c_item, GetName(), jt->second, "sequence", "moltype" + jt->first,
+                          e_HasComment); 
+       } 
+    }
+  } 
+  if (c_item->subcategories.empty()) c_item->description = "Moltypes are consistent";
+  else c_item->description 
+        = NStr::UIntToString((unsigned)c_item->item_list.size()) 
+             + "sequences have inconsistent moltypes"; 
+};
+
+
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set)
 {
    ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
@@ -7425,7 +7492,8 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_ite
 };
 
 
-CConstRef <CCit_sub> CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: CitSubFromPubEquiv(const list <CRef <CPub> >& pubs)
+// CConstRef <CCit_sub> CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: CitSubFromPubEquiv(const list <CRef <CPub> >& pubs)
+CConstRef <CCit_sub> CSeqEntry_test_on_pub :: CitSubFromPubEquiv(const list <CRef <CPub> >& pubs)
 {
    ITERATE (list <CRef <CPub> >, it, pubs) {
       if ((*it)->IsSub())
@@ -7436,8 +7504,11 @@ CConstRef <CCit_sub> CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: CitSubFromPubEquiv(
    return (CConstRef <CCit_sub>());
 };
 
+
+
 static string uni_str("University of");
-bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetEndsWith(const string& street, const string& end_str)
+//bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetEndsWith(const string& street, const string& end_str)
+bool CSeqEntry_test_on_pub :: AffilStreetEndsWith(const string& street, const string& end_str)
 {
   unsigned street_sz = street.size();
   unsigned end_sz = end_str.size();
@@ -7456,7 +7527,8 @@ bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetEndsWith(const string& s
 };
 
 
-bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetContainsDuplicateText(const CAffil& affil)
+//bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetContainsDuplicateText(const CAffil& affil)
+bool CSeqEntry_test_on_pub :: AffilStreetContainsDuplicateText(const CAffil& affil)
 {
   if (affil.IsStd() && affil.GetStd().CanGetStreet() 
                               && !(affil.GetStd().GetStreet().empty())) {
@@ -7477,56 +7549,119 @@ bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetContainsDuplicateText(co
 };
 
 
-void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
-     CConstRef <CCit_sub> cit_sub (
-                   CitSubFromPubEquiv((*it)->GetData().GetPub().GetPub().Get()));
-     if (cit_sub.NotEmpty() && cit_sub->GetAuthors().CanGetAffil()) {
-       const CAffil& affil = cit_sub->GetAuthors().GetAffil();
-       if (affil.IsStd() && affil.GetStd().CanGetStreet() 
-              && !(affil.GetStd().GetStreet().empty())
-              && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
-          thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
-       }
-     }
-   }
 
-   unsigned i=0;
-   ITERATE (vector <const CSeqdesc*>, it, pub_seqdesc) {
-     CConstRef <CCit_sub> cit_sub (
-                  CitSubFromPubEquiv( (*it)->GetPub().GetPub().Get()));
-     if (cit_sub.NotEmpty() && cit_sub->GetAuthors().CanGetAffil()) {
+// new comb
+bool CSeqEntry_test_on_pub :: CorrectUSAStates(const list <CRef <CPub> >& pubs)
+{
+   string country, state;
+   ITERATE (list <CRef <CPub> >, it, pubs) {
+      if ( (*it)->IsSub()) {
+         if ((*it)->GetAuthors().CanGetAffil()) {
+            const CAffil& affil = (*it)->GetAuthors().GetAffil();
+            if (affil.IsStd()) {
+               country 
+                   =(affil.GetStd().CanGetCountry()) ? affil.GetStd().GetCountry() : kEmptyStr;
+               state = (affil.GetStd().CanGetSub()) ? affil.GetStd().GetSub() : kEmptyStr;
+               if (country == "USA") {
+                  if (state != "Washington DC") {
+                     if (state.empty() || state.size() > 2 
+                                   || !isupper(state[0]) || !isupper(state[1]))
+                          return false;
+                     else {
+                        ITERATE (list <string>, it, thisInfo.state_abbrev) {
+                           if (state == thisInfo.registry->Get("USA-state-abbrev-fixes", *it))
+                              return true;
+                        }
+                        return false;
+                     }
+                  }
+               } 
+            }
+        }
+      }
+   }
+   return true;
+};
+
+
+void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const string& desc)
+{
+   // DISC_CITSUB_AFFIL_DUP_TEXT
+   CConstRef <CCit_sub> cit_sub = CitSubFromPubEquiv(pubs);
+   if (cit_sub.NotEmpty() && cit_sub->GetAuthors().CanGetAffil()) {
        const CAffil& affil = cit_sub->GetAuthors().GetAffil();
        if (affil.IsStd() && affil.GetStd().CanGetStreet()
               && !(affil.GetStd().GetStreet().empty())
               && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
-          thisInfo.test_item_list[GetName()].push_back(
-                         GetDiscItemText(**it, *(pub_seqdesc_seqentry[i])));
+          thisInfo.test_item_list[GetName_dup()].push_back(desc);
        }
-     }
-     i++;
+   }
+
+   // DISC_CHECK_AUTH_CAPS
+   if (AreBadAuthCapsInPubdesc(pubs))
+         thisInfo.test_item_list[GetName_cap()].push_back(desc);
+
+   // DISC_USA_STATE
+   if (!CorrectUSAStates(pubs))
+         thisInfo.test_item_list[GetName_usa()].push_back(desc);
+  
+};
+
+
+void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (thisTest.is_Pub_run) return;
+
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
+      const list <CRef <CPub> >& pubs = (*it)->GetData().GetPub().GetPub().Get();
+      RunTests(pubs, GetDiscItemText(**it));
+   };
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, pub_seqdesc) {
+      desc = GetDiscItemText(**it, *(pub_seqdesc_seqentry[i]));
+      const list <CRef <CPub> >& pubs = (*it)->GetPub().GetPub().Get();
+      RunTests(pubs, desc);
+      i++;
+   };
+
+   CSubmit_block this_submit_blk;
+   if (thisInfo.submit_block.NotEmpty()) {
+      if (seq_entry.IsSeq()) desc = GetDiscItemText(seq_entry.GetSeq());
+      else desc = GetDiscItemText(seq_entry.GetSet());
+
+      // DISC_CITSUB_AFFIL_DUP_TEXT
+      if (AffilStreetContainsDuplicateText(
+                   thisInfo.submit_block->GetCit().GetAuthors().GetAffil())) {
+          size_t pos = desc.find(": ");
+          strtmp = desc.substr(0, pos + 2) + "Cit-sub for " + desc.substr(pos+3);
+          thisInfo.test_item_list[GetName_dup()].push_back(strtmp);
+      }
+
+      // DISC_CHECK_AUTH_CAPS
+      if ( HasBadAuthorName(thisInfo.submit_block->GetCit().GetAuthors()) )
+                   thisInfo.test_item_list[GetName_cap()].push_back(desc);
    }
   
-   CSubmit_block this_submit_blk;
-   string desc;
-   if (thisInfo.submit_block.NotEmpty()
-        && AffilStreetContainsDuplicateText(
-                   thisInfo.submit_block->GetCit().GetAuthors().GetAffil())) {
-        if (seq_entry.IsSeq()) 
-           desc = GetDiscItemText(seq_entry.GetSeq());
-        else desc = GetDiscItemText(seq_entry.GetSet());
-        size_t pos = desc.find(": ");
-        desc = desc.substr(0, pos + 2) + "Cit-sub for " + desc.substr(pos+3);
-        thisInfo.test_item_list[GetName()].push_back(desc);
-   }
+   thisTest.is_Pub_run = true;
 };
+
+
+void CSeqEntry_DISC_USA_STATE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   sort(c_item->item_list.begin(), c_item->item_list.end());
+   c_item->description 
+       = GetIsComment(c_item->item_list.size(), "cit-sub") + "missing state abbreviations.";
+};
+
 
 void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description
      = GetHasComment(c_item->item_list.size(), "Cit-sub pub") + "duplicate affil text.";
 };
+// new comb
 
 
 
@@ -7835,7 +7970,8 @@ void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_it
 
 
 
-bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsNameCapitalizationOk(const string& name)
+//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsNameCapitalizationOk(const string& name)
+bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
 {
   if (name.empty()) return (true);
 
@@ -7881,7 +8017,8 @@ bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsNameCapitalizationOk(const string& name
 }; //IsNameCapitalizationOK
 
 
-bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsAuthorInitialsCapitalizationOk(const string& nm_init)
+//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsAuthorInitialsCapitalizationOk(const string& nm_init)
+bool CSeqEntry_test_on_pub :: IsAuthorInitialsCapitalizationOk(const string& nm_init)
 {
    strtmp = nm_init;
    size_t pos = 0;
@@ -7894,7 +8031,8 @@ bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsAuthorInitialsCapitalizationOk(const st
 
 
 
-bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: NameIsBad(const CRef <CAuthor> nm_std) 
+//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: NameIsBad(const CRef <CAuthor> nm_std) 
+bool CSeqEntry_test_on_pub :: NameIsBad(const CRef <CAuthor> nm_std) 
 {
    const CPerson_id& pid = nm_std->GetName();
    if (pid.IsName()) {
@@ -7910,7 +8048,8 @@ bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: NameIsBad(const CRef <CAuthor> nm_std)
    return false;
 }
 
-bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: HasBadAuthorName(const CAuth_list& auths)
+//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: HasBadAuthorName(const CAuth_list& auths)
+bool CSeqEntry_test_on_pub :: HasBadAuthorName(const CAuth_list& auths)
 {
   if (auths.GetNames().IsStd()) 
     ITERATE (list <CRef <CAuthor> >, it, auths.GetNames().GetStd()) {
@@ -7923,11 +8062,13 @@ bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: HasBadAuthorName(const CAuth_list& auths)
 
 
 
-bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: AreBadAuthCapsInPubdesc(const CPubdesc& pubdesc)
+//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: AreBadAuthCapsInPubdesc(const CPubdesc& pubdesc)
+bool CSeqEntry_test_on_pub :: AreBadAuthCapsInPubdesc(const list <CRef <CPub> >& pubs)
 {
   bool isBad = false;
 
-  ITERATE (list <CRef <CPub> >, it, pubdesc.GetPub().Get()) {
+//  ITERATE (list <CRef <CPub> >, it, pubdesc.GetPub().Get()) {
+  ITERATE (list <CRef <CPub> >, it, pubs) {
     if ( !(*it)->IsProc() && (*it)->IsSetAuthors() )
       isBad = HasBadAuthorName( (*it)->GetAuthors() );
   }
@@ -7936,6 +8077,7 @@ bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: AreBadAuthCapsInPubdesc(const CPubdesc& p
 }; //AreBadAuthCapsInPubdesc
 
 
+/*
 
 bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: AreAuthCapsOkInSubmitBlock(const CSubmit_block& submit_block)
 {
@@ -7971,6 +8113,7 @@ void CSeqEntry_DISC_CHECK_AUTH_CAPS :: TestOnObj(const CSeq_entry& seq_entry)
        }
    }
 };
+*/
 
 
 void CSeqEntry_DISC_CHECK_AUTH_CAPS :: GetReport(CRef <CClickableItem>& c_item)
