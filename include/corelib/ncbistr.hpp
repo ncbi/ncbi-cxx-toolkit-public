@@ -1831,6 +1831,17 @@ public:
     ///   The number of characters common to the end of each string.
     static SIZE_TYPE CommonSuffixSize(const CTempString& s1, const CTempString& s2);
 
+    /// Determine if the suffix of one string is the prefix of another.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   The number of characters common to the end of the first string
+    ///   and the start of the second string.
+    static SIZE_TYPE CommonOverlapSize(const CTempString& s1, const CTempString& s2);
+
     /// Check if a string is blank (has no text).
     ///
     /// @param str

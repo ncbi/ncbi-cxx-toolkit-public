@@ -1829,25 +1829,35 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
 
 
 //----------------------------------------------------------------------------
-// CommonPrefixSize / CommonSuffixSize
+// CommonPrefixSize / CommonSuffixSize / CommonOverlapSize
 //----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(s_CommonSize)
 {
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("", ""),           0 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", ""),        0 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "123"),     3 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "12345"),   3 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("12367", "12345"), 3 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),     0 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("", ""),            0 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", ""),         0 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "123"),      3 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "12345"),    3 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("12367", "12345"),  3 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),      0 );
 
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("", ""),           0 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", ""),        0 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "123"),     3 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "12345"),   0 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "345"),   3 );
-    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "145"),   2 );
-    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),     0 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("", ""),            0 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", ""),         0 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "123"),      3 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("123", "12345"),    0 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "345"),    3 );
+    BOOST_CHECK_EQUAL( NStr::CommonSuffixSize("12345", "145"),    2 );
+    BOOST_CHECK_EQUAL( NStr::CommonPrefixSize("123", "456"),      0 );
+
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("", ""),           0 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("", "123"),        0 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", ""),        0 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "123"),     3 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "456"),     0 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("123", "1234"),    3 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("1234", "123"),    0 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("1234", "234561"), 3 );
+    BOOST_CHECK_EQUAL( NStr::CommonOverlapSize("234561", "1234"), 1 );
 }
 
 

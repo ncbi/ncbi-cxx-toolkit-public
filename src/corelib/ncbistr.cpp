@@ -2727,6 +2727,54 @@ const string* NStr::Find(const vector <string>& vec, const CTempString& val,
 }
 
 
+SIZE_TYPE NStr::CommonOverlapSize(const CTempString& s1, const CTempString& s2)
+{
+    const SIZE_TYPE len1 = s1.length();
+    const SIZE_TYPE len2 = s2.length();
+
+    // Eliminate the null case
+    if (len1 == 0 || len2 == 0) {
+        return 0;
+    }
+    SIZE_TYPE len = min(len1, len2);
+
+    // Truncate the longer string
+    CTempString t1, t2;
+    if (len1 > len2) {
+        t1 = s1.substr(len1-len, len);
+        t2 = s2;
+    } else {
+        t1 = s1;
+        t2 = s2.substr(0, len);
+    }
+    // Quick check for the worst case
+    if (memcmp(t1.data(), t2.data(), len) == 0) {
+        return len;
+    }
+
+    // Start by looking for a single character match
+    // and increase length until no match is found.
+    // Performance analysis: http://neil.fraser.name/news/2010/11/04/
+    SIZE_TYPE best = 0;
+    SIZE_TYPE n = 1;
+    for (;;) {
+        // Right 'n' symbols of 't1'
+        CTempString pattern(t1.data() + len - n, n);
+        SIZE_TYPE pos = t2.find(pattern);
+        if (pos == NPOS) {
+            return best;
+        }
+        n += pos;
+        if (pos == 0 || memcmp(pattern.data(), t2.data(), n) == 0) {
+            best = n;
+            n++;
+        }
+    }
+    // Unreachable
+    return best;
+}
+
+
 template <class TStr>
 TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
                       const TStr& empty_str)
