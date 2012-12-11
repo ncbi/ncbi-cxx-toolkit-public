@@ -360,11 +360,10 @@ void CNetScheduleSubmitter::ReadFail(const string& job_id,
 void CNetScheduleNotificationHandler::SubmitJob(
         CNetScheduleSubmitter::TInstance submitter,
         CNetScheduleJob& job,
-        CAbsTimeout& abs_timeout,
+        unsigned wait_time,
         CNetServer* server)
 {
-    submitter->SubmitJobImpl(job, GetPort(),
-            s_GetRemainingSeconds(abs_timeout), server);
+    submitter->SubmitJobImpl(job, GetPort(), wait_time, server);
 }
 
 static const char* const s_JobStatusAttrNames[3] =
@@ -398,7 +397,7 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
 
     CNetScheduleNotificationHandler submit_job_handler;
 
-    submit_job_handler.SubmitJob(m_Impl, job, abs_timeout);
+    submit_job_handler.SubmitJob(m_Impl, job, wait_time);
 
     return submit_job_handler.WaitForJobCompletion(job,
             abs_timeout, m_Impl->m_API);
@@ -416,14 +415,12 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 
     bool last_timeout = false;
     for (;;) {
-        CNanoTimeout abs_timeout_remaining(abs_timeout.GetRemainingTime());
-
-        if (abs_timeout_remaining.IsZero())
-            return ns_api.GetJobDetails(job);
-
         CAbsTimeout timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
-        if (timeout.GetRemainingTime() >= abs_timeout_remaining) {
+        if (!(timeout < abs_timeout)) {
+            if (abs_timeout.GetRemainingTime().IsZero())
+                return ns_api.GetJobDetails(job);
+
             timeout = abs_timeout;
             last_timeout = true;
         }
@@ -447,7 +444,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 bool CNetScheduleNotificationHandler::RequestJobWatching(
         CNetScheduleAPI::TInstance ns_api,
         const string& job_id,
-        CAbsTimeout& abs_timeout,
+        const CAbsTimeout& abs_timeout,
         CNetScheduleAPI::EJobStatus* job_status,
         int* last_event_index)
 {
@@ -489,13 +486,14 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
-    for (;;) {
-        CNanoTimeout abs_timeout_remaining(abs_timeout.GetRemainingTime());
-
+    bool last_timeout = false;
+    do {
         CAbsTimeout timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
-        if (timeout.GetRemainingTime() >= abs_timeout_remaining)
+        if (!(timeout < abs_timeout)) {
             timeout = abs_timeout;
+            last_timeout = true;
+        }
 
         if (RequestJobWatching(ns_api, job_key,
                         timeout, &job_status, new_event_index) &&
@@ -503,7 +501,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
                 *new_event_index > last_event_index))
             break;
 
-        if (abs_timeout_remaining.IsZero())
+        if (abs_timeout.GetRemainingTime().IsZero())
             break;
 
         if (WaitForNotification(timeout) &&
@@ -512,7 +510,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
                 ((status_mask & (1 << job_status)) != 0 ||
                 *new_event_index > last_event_index))
             break;
-    }
+    } while (!last_timeout);
 
     return job_status;
 }

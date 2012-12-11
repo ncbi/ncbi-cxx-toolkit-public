@@ -135,7 +135,7 @@ bool CNetScheduleNotificationHandler::ReceiveNotification(string* server_host)
 }
 
 bool CNetScheduleNotificationHandler::WaitForNotification(
-        CAbsTimeout& abs_timeout, string* server_host)
+        const CAbsTimeout& abs_timeout, string* server_host)
 {
     STimeout timeout;
 

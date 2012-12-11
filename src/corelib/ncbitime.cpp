@@ -2888,6 +2888,21 @@ CNanoTimeout CAbsTimeout::GetRemainingTime(void) const
     return CNanoTimeout((unsigned int)thenS,thenNS);
 }
 
+bool CAbsTimeout::operator <(const CAbsTimeout& right_hand_operand) const
+{
+    if (!IsInfinite())
+        return right_hand_operand.IsInfinite() ||
+                m_Seconds < right_hand_operand.m_Seconds ||
+                (m_Seconds == right_hand_operand.m_Seconds &&
+                        m_Nanoseconds < right_hand_operand.m_Nanoseconds);
+    else if (!right_hand_operand.IsInfinite())
+        return false;
+    else {
+        NCBI_THROW(CTimeException, eInvalid, "Cannot compare two '" +
+                s_SpecialValueName(CTimeout::eInfinite) + "' values");
+    }
+}
+
 //=============================================================================
 //
 //  CFastLocalTime

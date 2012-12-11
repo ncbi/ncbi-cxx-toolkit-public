@@ -859,7 +859,7 @@ public:
 
     bool ReceiveNotification(string* server_host = NULL);
 
-    bool WaitForNotification(CAbsTimeout& abs_timeout,
+    bool WaitForNotification(const CAbsTimeout& abs_timeout,
             string* server_host = NULL);
 
     unsigned short GetPort() const {return m_UDPPort;}
@@ -872,7 +872,7 @@ public:
 public:
     void SubmitJob(CNetScheduleSubmitter::TInstance submitter,
             CNetScheduleJob& job,
-            CAbsTimeout& abs_timeout,
+            unsigned wait_time,
             CNetServer* server = NULL);
 
     bool CheckJobStatusNotification(const string& job_id,
@@ -884,7 +884,7 @@ public:
 
     bool RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
             const string& job_id,
-            CAbsTimeout& abs_timeout,
+            const CAbsTimeout& abs_timeout,
             CNetScheduleAPI::EJobStatus* job_status,
             int* last_event_index);
 
@@ -901,7 +901,8 @@ public:
     static string MkBaseGETCmd(
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
-    string CmdAppendTimeoutAndClientInfo(const string& base_cmd, CAbsTimeout* timeout);
+    string CmdAppendTimeoutAndClientInfo(const string& base_cmd,
+            const CAbsTimeout* timeout);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
             CNetScheduleJob& job,
             const string& cmd);
@@ -917,7 +918,7 @@ protected:
 };
 
 /// @internal
-inline unsigned s_GetRemainingSeconds(CAbsTimeout& timeout)
+inline unsigned s_GetRemainingSeconds(const CAbsTimeout& timeout)
 {
     unsigned sec;
     unsigned nanosec;

@@ -379,16 +379,20 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
 }
 
 string CNetScheduleNotificationHandler::CmdAppendTimeoutAndClientInfo(
-        const string& base_cmd, CAbsTimeout* timeout)
+        const string& base_cmd, const CAbsTimeout* timeout)
 {
     string cmd(base_cmd);
 
     if (timeout != NULL) {
-        cmd += " port=";
-        cmd += NStr::UIntToString(GetPort());
+        unsigned remaining_seconds = s_GetRemainingSeconds(*timeout);
 
-        cmd += " timeout=";
-        cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
+        if (remaining_seconds > 0) {
+            cmd += " port=";
+            cmd += NStr::UIntToString(GetPort());
+
+            cmd += " timeout=";
+            cmd += NStr::UIntToString(remaining_seconds);
+        }
     }
 
     g_AppendClientIPAndSessionID(cmd);

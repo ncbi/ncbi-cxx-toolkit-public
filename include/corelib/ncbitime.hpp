@@ -1640,6 +1640,9 @@ public:
     /// Get time left to the expiration time
     CNanoTimeout GetRemainingTime(void) const;
 
+    /// Compare two CAbsTimeout values.
+    bool operator <(const CAbsTimeout& right_hand_operand) const;
+
 private:
     void x_Now(void);
     void x_Add(unsigned int seconds, unsigned int nanoseconds);

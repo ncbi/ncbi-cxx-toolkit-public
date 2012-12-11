@@ -490,7 +490,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             CNetScheduleNotificationHandler submit_job_handler;
 
             submit_job_handler.SubmitJob(m_NetScheduleSubmitter,
-                job, abs_timeout);
+                job, m_Opts.timeout);
 
             PrintLine(job.job_id);
 
