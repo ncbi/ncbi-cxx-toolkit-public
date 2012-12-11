@@ -185,16 +185,26 @@ public:
     // convert SNP bitfield data to fields in CVariantProperties
     static void DecodeBitfield(CVariantProperties& prop, const CSnpBitfield& bf);
 
-    // get a string representation of various CVariantProperties
+    // list of all possible substitutions in eSNPPropName_ResourceLinkURL
+    static const string sResourceLink_RsID;
+
+    // get a string list representation of various CVariantProperties
     enum ESNPPropTypes {
         eSNPPropName_Undef,
-        eSNPPropName_FxnClass,      // combination of properties from prop.gene-location and prop.effect
+        eSNPPropName_GeneLocation,  // prop.gene-location
+        eSNPPropName_Effect,        // prop.effect
         eSNPPropName_Mapping,       // prop.mapping
         eSNPPropName_FreqValidation,// prop.frequence-based-validation
         eSNPPropName_QualityCheck,  // prop.quality-check
-        eSNPPropName_ResourceLink   // prop.resource-link
+        eSNPPropName_ResourceLink,  // prop.resource-link
+        
+        // this will generate URL templates, with one of sResourceLink_ substrings potentially inside
+        // the user should perform correct substitution for the actual value
+        // an empty string will be returned when the resource URL is not known
+        // the order is guaranteed to be exactly the same as for _ResourceLink for the same prop
+        eSNPPropName_ResourceLinkURL// prop.resource-link
     };
-    static string VariantPropAsString(const CVariantProperties& prop, ESNPPropTypes ePropType);
+    static void VariantPropAsStrings(list<string>& ResList, const CVariantProperties& prop, ESNPPropTypes ePropType);
 
     // add alleles to a list<string> from deltas in variation data
     template <class TVariation> static void GetDeltas(list<string>& Alleles, const TVariation* pVariation);
