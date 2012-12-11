@@ -85,8 +85,10 @@ public:
     };
 
     /// Compression flags. The flag selection depends from compression
-    /// algorithm implementation.
-    typedef unsigned int TFlags;    ///< Bitwise OR of EFlags*
+    /// algorithm implementation. For examples see the flags defined
+    /// in the derived classes:  CBZip2Compression::EFlags,
+    /// CLZOCompression::EFlags, CZipCompression::EFlags, etc.
+    typedef unsigned int TFlags;    ///< Bitwise OR of CXxxCompression::EFlags
 
 public:
     /// Destructor
