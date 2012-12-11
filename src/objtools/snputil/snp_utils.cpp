@@ -215,6 +215,8 @@ bool NSnp::IsSnpKnown( CScope& scope, const CSeq_loc& loc, const string & allele
 }
 
 
+const string NSNPVariationHelper::sResourceLink_RsID("%rsid%");
+
 bool NSNPVariationHelper::ConvertFeat(CVariation& Variation, const CSeq_feat& SrcFeat)
 {
     if(!x_CommonConvertFeat(&Variation, SrcFeat))
@@ -409,11 +411,11 @@ void NSNPVariationHelper::DecodeBitfield(CVariantProperties& prop, const CSnpBit
     }
 }
 
-string NSNPVariationHelper::VariantPropAsString(const CVariantProperties& prop, ESNPPropTypes ePropType)
+void NSNPVariationHelper::VariantPropAsStrings(list<string>& ResList, const CVariantProperties& prop, ESNPPropTypes ePropType)
 {
-    list<string> ResList;
+    ResList.clear();
     switch(ePropType) {
-    case eSNPPropName_FxnClass:
+    case eSNPPropName_GeneLocation:
         if(prop.CanGetGene_location()) {
             CVariantProperties::TGene_location gene_loc(prop.GetGene_location());
             if(gene_loc & CVariantProperties::eGene_location_in_gene)
@@ -441,6 +443,8 @@ string NSNPVariationHelper::VariantPropAsString(const CVariantProperties& prop, 
             if(gene_loc & CVariantProperties::eGene_location_conserved_noncoding)
                 ResList.push_back("In Conserved Non-coding region");
         }
+        break;
+    case eSNPPropName_Effect:
         if(prop.CanGetEffect()) {
             CVariantProperties::TEffect effect(prop.GetEffect());
             if(effect == CVariantProperties::eEffect_no_change)
@@ -527,10 +531,27 @@ string NSNPVariationHelper::VariantPropAsString(const CVariantProperties& prop, 
                 ResList.push_back("SubmitterLinkOut");
         }
         break;
+    case eSNPPropName_ResourceLinkURL:
+        // NB: take care to have the same order as in eSNPPropName_ResourceLink
+        if(prop.CanGetResource_link()) {
+            CVariantProperties::TResource_link resource_link(prop.GetResource_link());
+            if(resource_link & CVariantProperties::eResource_link_clinical)
+                ResList.push_back("");
+            if(resource_link & CVariantProperties::eResource_link_provisional)
+                ResList.push_back("");
+            if(resource_link & CVariantProperties::eResource_link_preserved)
+                ResList.push_back("");
+            if(resource_link & CVariantProperties::eResource_link_genotypeKit)
+                ResList.push_back("");
+            if(resource_link & CVariantProperties::eResource_link_has3D)
+                ResList.push_back("http://www.ncbi.nlm.nih.gov/SNP/snp3D.cgi?rsnum=" + sResourceLink_RsID);
+            if(resource_link & CVariantProperties::eResource_link_submitterLinkout)
+                ResList.push_back("");
+        }
+        break;
     default:
         break;
     }
-    return NStr::Join(ResList, ", ");
 }
 
 
