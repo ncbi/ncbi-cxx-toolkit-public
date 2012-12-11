@@ -527,8 +527,8 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 bool keep = false;
                 int q_ds = (*it)->GetSeqStart(0);
                 int q_de = (*it)->GetSeqStop(0);
-                if (q_ms) keep = (q_de >= q_ve - 30 && q_ds <= q_ve);
-                else      keep = (q_ds <= q_ve + 30 && q_de >= q_ve);
+                if (q_ms) keep = (q_de >= q_ve - 30 && q_ds <= q_ve - 3);
+                else      keep = (q_ds <= q_ve + 30 && q_de >= q_ve + 3);
                 if (!keep) it = align_list.erase(it);
                 else ++it;
             }
