@@ -89,8 +89,9 @@ enum {
 
 /// Types of tests (bit).
 enum {
-    e_IsamLookup = 1,
-    e_Legacy = 2
+    e_IsamLookup    = (1<<0),
+    e_Legacy        = (1<<1),
+    e_TaxIDSet      = (1<<2)
 };
 
 static string s_VerbosityString(int v)
@@ -224,6 +225,10 @@ void CBlastDbCheckApplication::Init(void)
         ("legacy", 
          "Enable check for existence of temporary files.");
          
+    arg_desc->AddFlag
+        ("must_have_taxids", 
+         "Require that all sequences in the database have taxid set.");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -260,7 +265,7 @@ private:
     
     int m_Level;
     ostream & m_Output;
-    ostringstream m_DevNull;
+    CNcbiOstrstream m_DevNull;
 };
 
 
@@ -375,85 +380,70 @@ public:
         int num_failures = 0;
 
         try {
-        int noid = db.GetNumOIDs();
-        int nseq = db.GetNumSeqs();
-        /*string t =*/ db.GetTitle();
-        string d = db.GetDate();
-        Uint8 tl = db.GetTotalLength();
-        Uint8 vl = db.GetVolumeLength();
-        
-        vector<string> vols;
-        db.FindVolumePaths(vols);
-
-        int nv = vols.size();
-        
-        SSeqDBTaxInfo taxinfo;
-        db.GetTaxInfo(9606, taxinfo);
-        
-        if (! d.size()) {
-            Log(db, e_Brief) << "[ERROR] db has empty date string" << endl;
-            num_failures++;
-        }
-        if (! nv) {
-            Log(db, e_Brief) << "[ERROR] db has no volumes" << endl;
-            num_failures++;
-        }
-
-        ITERATE(vector<string>, vol, vols) {
+            int noid = db.GetNumOIDs();
+            int nseq = db.GetNumSeqs();
+            /*string t =*/ db.GetTitle();
+            string d = db.GetDate();
+            Uint8 tl = db.GetTotalLength();
+            Uint8 vl = db.GetVolumeLength();
             
-            CMaskFileName db_mask;
-            db_mask.Add(CFile(*vol).GetName()+".???");
+            vector<string> vols;
+            db.FindVolumePaths(vols);
 
-            CDir dir(CFile(*vol).GetDir());
+            int nv = vols.size();
+            
+            SSeqDBTaxInfo taxinfo;
+            db.GetTaxInfo(9606, taxinfo);
+            
+            if (! d.size()) {
+                Log(db, e_Brief) << "[ERROR] db has empty date string" << endl;
+                num_failures++;
+            }
+            if (! nv) {
+                Log(db, e_Brief) << "[ERROR] db has no volumes" << endl;
+                num_failures++;
+            }
 
-            CDir::TEntries entries(dir.GetEntries(db_mask));
-            ITERATE(CDir::TEntries, entry, entries) {
+            ITERATE(vector<string>, vol, vols) {
                 
-                // check for legacy files
-                if (m_Flags & e_Legacy) {
-                    CMaskFileName legacy_name;
-                    legacy_name.Add("*tm");
-                    if (legacy_name.Match((*entry)->GetExt())) {
-                        Log(db, e_Brief) << "[ERROR] legacy file " << (*entry)->GetPath() <<
-                             " exists." << endl;
+                CMaskFileName db_mask;
+                db_mask.Add(CFile(*vol).GetName()+".???");
+
+                CDir dir(CFile(*vol).GetDir());
+
+                CDir::TEntries entries(dir.GetEntries(db_mask));
+                ITERATE(CDir::TEntries, entry, entries) {
+                    
+                    // check for legacy files
+                    if (m_Flags & e_Legacy) {
+                        CMaskFileName legacy_name;
+                        legacy_name.Add("*tm");
+                        if (legacy_name.Match((*entry)->GetExt())) {
+                            Log(db, e_Brief) << "[ERROR] legacy file " << (*entry)->GetPath() <<
+                                 " exists." << endl;
+                            num_failures++;
+                        }
+                    }
+
+                    // check for zero-length files
+                    if ((*entry)->IsFile() && (CFile((*entry)->GetPath()).GetLength() <= 0)) {
+                        Log(db, e_Brief) << "[ERROR] file " << (*entry)->GetPath() <<
+                                 " has zero length." << endl;
                         num_failures++;
                     }
                 }
+            }
 
-                // check for zero-length files
-                if ((*entry)->IsFile() && (CFile((*entry)->GetPath()).GetLength() <= 0)) {
-                    Log(db, e_Brief) << "[ERROR] file " << (*entry)->GetPath() <<
-                             " has zero length." << endl;
-                    num_failures++;
-                }
+            if ((nseq > noid) || ((! tl) != (! noid)) || ((! vl) && tl)) {
+                Log(db, e_Brief) << "[ERROR] sequence count/length mismatch" << endl;
+                num_failures++;
             }
-        }
-
-        if ((nseq > noid) || ((! tl) != (! noid)) || ((! vl) && tl)) {
-            Log(db, e_Brief) << "[ERROR] sequence count/length mismatch" << endl;
-            num_failures++;
-        }
-        string hs = taxinfo.scientific_name;
-        if (hs != "Homo sapiens") {
-            Log(db, e_Brief) << "[ERROR] tax info looks wrong (" << hs << ")" << endl;
-            num_failures++;
-        }
-        
-        string s1("a"), s2("b");
-        
-        for(int i = 0; i < 100000; i++) {
-            string s3 = s1 + s2;
-            
-            if (s3.size() > 100) {
-                s3 = "c";
+            string hs = taxinfo.scientific_name;
+            if (hs != "Homo sapiens") {
+                Log(db, e_Brief) << "[ERROR] tax info looks wrong (" << hs << ")" << endl;
+                num_failures++;
             }
-            
-            if (i & 1) {
-                s1 = s3;
-            } else {
-                s2 = s3;
-            }
-        }} catch(exception &e) {
+        } catch(exception &e) {
             num_failures++;
             Log(db, e_Brief) << "  [ERROR] caught exception." << endl;
             Log(db, e_Details) << e.what() << endl;
@@ -465,8 +455,8 @@ public:
 
 bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
 {
-    ostringstream details;
-    ostringstream minutiae;
+    CNcbiOstrstream details;
+    CNcbiOstrstream minutiae;
     
     // If we've seen this OID before (for this db instance), assume 'true'.
     
@@ -505,6 +495,12 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
         if (bs.Empty()) {
             throw runtime_error("no bioseq");
         }
+
+        // If requested, make sure there's a taxID set for this Bioseq
+        if (((m_Flags & e_TaxIDSet) != 0) && (bs->GetTaxId() == 0)) {
+            where = "taxid";
+            throw runtime_error("no taxid set");
+        }
         
         // Reverse look up all the Seq-ids.
         
@@ -513,17 +509,17 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
             ITERATE(list< CRef<CSeq_id> >, iter, seqids) {
                 int oid2(-1);
             
-                ostringstream msg;
+                CNcbiOstrstream msg;
             
                 if ((! db.SeqidToOid(**iter, oid2)) || (oid != oid2)) {
                     if (! db.SeqidToOid(**iter, oid2)) {
                         msg << "seqid=" << (**iter).AsFastaString();
-                        throw runtime_error(msg.str());
+                        throw runtime_error(CNcbiOstrstreamToString(msg));
                     } else if (oid != oid2) {
                         msg << "oid1=" << oid
                             << " oid2=" << oid2
                             << " seqid=" << (**iter).AsFastaString();
-                        throw runtime_error(msg.str());
+                        throw runtime_error(CNcbiOstrstreamToString(msg));
                     }
                 }
             }
@@ -547,8 +543,8 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
     minutiae << "Status for OID " << oid << ": "
              << (rv ? "PASS" : "FAIL") << endl;
     
-    string msg = details.str();
-    string msg2 = minutiae.str();
+    string msg = CNcbiOstrstreamToString(details);
+    string msg2 = CNcbiOstrstreamToString(minutiae);
     
     if (msg.size()) {
         Log(db, e_Details) << "    " << msg << flush;
@@ -816,7 +812,7 @@ private:
                                << " does not have .msk extension" << endl;
             }
 
-            if (tokens[0] == "GILIST" && f.GetExt() != "gil") {
+            if (tokens[0] == "GILIST" && f.GetExt() != ".gil") {
                 Log(name, e_Details) << "  [WARNING] gilist file " << tokens[i]
                                << " does not have .gil extension" << endl;
             }
@@ -1214,13 +1210,17 @@ int CBlastDbCheckApplication::Run(void)
         
         int flags = 0;
 
-        if (!args["no_isam"])  flags |= e_IsamLookup;
+        if (!args["no_isam"]) flags |= e_IsamLookup;
         output.Log(e_Summary)
             << "ISAM testing is " << (args["no_isam"] ? "DIS" : "EN") << "ABLED." << endl;
         
         if (args["legacy"]) flags |= e_Legacy;
         output.Log(e_Summary)
             << "Legacy testing is " << (args["legacy"] ? "EN" : "DIS") << "ABLED." << endl;
+
+        if (args["must_have_taxids"]) flags |= e_TaxIDSet;
+        output.Log(e_Summary)
+            << "TaxID testing is " << (args["must_have_taxids"] ? "EN" : "DIS") << "ABLED." << endl;
 
         //bool fork1 = !! args["fork"];
         
