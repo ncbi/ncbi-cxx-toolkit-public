@@ -58,7 +58,15 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CRequestContext : public CObject
 {
 public:
-    CRequestContext(void);
+    /// Request context flags.
+    enum EContextFlags {
+        fResetOnStart = 1, ///< Reset values when printing request-start.
+
+        fDefault = 0
+    };
+    typedef int TContextFlags;
+
+    CRequestContext(TContextFlags flags = fDefault);
     virtual ~CRequestContext(void);
 
     typedef SDiagMessage::TCount TCount;
@@ -236,6 +244,7 @@ private:
     TPropSet       m_PropSet;
     bool           m_IsRunning;
     bool           m_AutoIncOnPost;
+    TContextFlags  m_Flags;
 };
 
 

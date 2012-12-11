@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CRequestContext::CRequestContext(void)
+CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
       m_ReqStatus(0),
@@ -52,7 +52,8 @@ CRequestContext::CRequestContext(void)
       m_BytesWr(0),
       m_PropSet(0),
       m_IsRunning(false),
-      m_AutoIncOnPost(false)
+      m_AutoIncOnPost(false),
+      m_Flags(flags)
 {
 }
 
@@ -159,9 +160,11 @@ void CRequestContext::SetClientIP(const string& client)
 
 void CRequestContext::StartRequest(void)
 {
-    UnsetRequestStatus();
-    SetBytesRd(0);
-    SetBytesWr(0);
+    if (m_Flags & fResetOnStart) {
+        UnsetRequestStatus();
+        SetBytesRd(0);
+        SetBytesWr(0);
+    }
     GetRequestTimer().Restart();
     m_IsRunning = true;
 }

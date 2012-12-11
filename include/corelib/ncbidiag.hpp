@@ -2007,7 +2007,8 @@ public:
     }
 
     /// Print request start message (for request-driven applications)
-    void PrintRequestStart(const string& message);
+    /// @deprecated Use CDiagContext_Extra version.
+    NCBI_DEPRECATED void PrintRequestStart(const string& message);
     /// Create a temporary CDiagContext_Extra object. The object will print
     /// arguments automatically from destructor. Can be used like:
     ///   PrintRequestStart().Print(name1, val1).Print(name2, val2);

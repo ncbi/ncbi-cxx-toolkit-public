@@ -735,7 +735,9 @@ CDiagContextThreadData::CDiagContextThreadData(void)
       m_RequestCtx(new SRequestCtxWrapper),
       m_DefaultRequestCtx(new SRequestCtxWrapper)
 {
-    m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx = new CRequestContext;
+    // Default context should auto-reset on request start.
+    m_RequestCtx->m_Ctx = m_DefaultRequestCtx->m_Ctx =
+        new CRequestContext(CRequestContext::fResetOnStart);
     m_RequestCtx->m_Ctx->SetAutoIncRequestIDOnPost(
         CRequestContext::GetDefaultAutoIncRequestIDOnPost());
 }
