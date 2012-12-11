@@ -402,7 +402,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,8,3) );
+    SetVersion( CVersionInfo(3,8,4) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -2015,7 +2015,25 @@ void CProjBulderApp::ParseArguments(void)
         if (m_CustomConfiguration.GetValue("__TweakVTuneD", v)) {
             m_TweakVTuneD = NStr::StringToBool(v);
         }
-        m_AddUnicode = GetSite().IsProvided("Ncbi-Unicode", false);
+        m_AddUnicode = GetSite().IsProvided("Ncbi_Unicode", false) ||
+                       GetSite().IsProvided("Ncbi-Unicode", false);
+        if (m_AddUnicode) {
+            //workaround to handle both
+            string add;
+            if (GetSite().IsProvided("Ncbi_Unicode", false)) {
+                add = "Ncbi-Unicode";
+            } else {
+                add = "Ncbi_Unicode";
+            }
+            string section("__EnabledUserRequests");
+            string value;
+            m_CustomConfiguration.GetValue(section, value);
+            if (!value.empty()) {
+                value += " ";
+            }
+            value += add;            
+            GetApp().m_CustomConfiguration.AddDefinition(section, value);
+        }
     }
     tmp = GetConfig().Get("Configure", "UserRequests");
     if (!tmp.empty()) {
