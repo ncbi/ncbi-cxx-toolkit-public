@@ -49,24 +49,13 @@ BEGIN_NCBI_SCOPE
 
 bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response);
 
-template<typename T> struct ToStr { static string Convert(T t); };
-
-template<> struct ToStr<string> {
-    static string Convert(const string& val) {
-        return '\"' + NStr::PrintableString(val) + '\"';
-    }
-};
-template<> struct ToStr<unsigned int> {
-    static string Convert(unsigned int val) {
-        return NStr::UIntToString(val);
-    }
-};
-
-template<> struct ToStr<int> {
-    static string Convert(int val) {
-        return NStr::IntToString(val);
-    }
-};
+inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
+{
+    string cmd(cmd_name);
+    cmd += ' ';
+    cmd += job_key;
+    return cmd;
+}
 
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
@@ -106,40 +95,11 @@ struct SNetScheduleAPIImpl : public CObject
                 m_Service->m_Listener.GetPointer());
     }
 
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
+    string x_SendJobCmdWaitResponse(const string& cmd_name, const string& job_key)
     {
-        string tmp(cmd + ' ');
-        tmp += job_key;
-        g_AppendClientIPAndSessionID(tmp);
-        return GetServer(job_key).ExecWithRetry(tmp).response;
-    }
-    template<typename Arg1>
-    string x_SendJobCmdWaitResponse(const string& cmd,
-        const string& job_key, Arg1 arg1)
-    {
-        string tmp(cmd + ' ');
-        if (!job_key.empty()) {
-            tmp += job_key;
-            tmp += ' ';
-        }
-        tmp += ToStr<Arg1>::Convert(arg1);
-        g_AppendClientIPAndSessionID(tmp);
-        return GetServer(job_key).ExecWithRetry(tmp).response;
-    }
-    template<typename Arg1, typename Arg2>
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
-                                    Arg1 arg1, Arg2 arg2)
-    {
-        string tmp(cmd + ' ');
-        if (!job_key.empty()) {
-            tmp += job_key;
-            tmp += ' ';
-        }
-        tmp += ToStr<Arg1>::Convert(arg1);
-        tmp += ' ';
-        tmp += ToStr<Arg2>::Convert(arg2);
-        g_AppendClientIPAndSessionID(tmp);
-        return GetServer(job_key).ExecWithRetry(tmp).response;
+        string cmd(g_MakeBaseCmd(cmd_name, job_key));
+        g_AppendClientIPAndSessionID(cmd);
+        return GetServer(job_key).ExecWithRetry(cmd).response;
     }
 
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,
@@ -215,9 +175,12 @@ struct SNetScheduleExecutorImpl : public CObject
 {
     SNetScheduleExecutorImpl(CNetScheduleAPI::TInstance ns_api_impl) :
         m_API(ns_api_impl),
-        m_AffinityPreference(ns_api_impl->m_AffinityPreference)
+        m_AffinityPreference(ns_api_impl->m_AffinityPreference),
+        m_WorkerNodeMode(false)
     {
     }
+
+    void ExecWithOrWithoutRetry(const string& job_key, const string& cmd);
 
     enum EChangeAffAction {
         eAddAffs,
@@ -234,6 +197,7 @@ struct SNetScheduleExecutorImpl : public CObject
 
     CFastMutex m_PreferredAffMutex;
     set<string> m_PreferredAffinities;
+    bool m_WorkerNodeMode;
 };
 
 struct SNetScheduleAdminImpl : public CObject

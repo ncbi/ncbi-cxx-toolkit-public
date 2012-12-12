@@ -60,7 +60,7 @@ public:
     bool ExecRemoteApp(const vector<string>& args,
         CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
         int& exit_value,
-        CWorkerNodeJobContext& context,
+        CWorkerNodeJobContext& job_context,
         int app_run_timeout,
         const char* const env[]);
 

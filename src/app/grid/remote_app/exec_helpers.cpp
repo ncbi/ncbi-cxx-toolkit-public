@@ -276,17 +276,16 @@ private:
 class CPipeProcessWatcher : public CPipeProcessWatcher_Base
 {
 public:
-    CPipeProcessWatcher(CWorkerNodeJobContext& context,
+    CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
                    int max_app_running_time,
                    int keep_alive_period,
                    const string& job_wdir)
         : CPipeProcessWatcher_Base(max_app_running_time),
-          m_Context(context), m_KeepAlivePeriod(keep_alive_period),
+          m_JobContext(job_context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL), m_JobWDir(job_wdir)
     {
         if (m_KeepAlivePeriod > 0)
             m_KeepAlive.reset(new CStopWatch(CStopWatch::eStart));
-
     }
 
     void SetMonitor(CRAMonitor& monitor, int monitor_perod)
@@ -295,12 +294,11 @@ public:
         m_MonitorPeriod = monitor_perod;
         if (m_MonitorPeriod)
             m_MonitorWatch.reset(new CStopWatch(CStopWatch::eStart));        
-        
     }
 
     virtual EAction OnStart(TProcessHandle pid)
     {
-        if (m_Context.GetShutdownLevel() ==
+        if (m_JobContext.GetShutdownLevel() ==
             CNetScheduleAdmin::eShutdownImmediate) {
             return CPipe::IProcessWatcher::eStop;
         }
@@ -312,7 +310,7 @@ public:
 
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid) 
     {
-        if (m_Context.GetShutdownLevel() ==
+        if (m_JobContext.GetShutdownLevel() ==
             CNetScheduleAdmin::eShutdownImmediate) {
             return CPipe::IProcessWatcher::eStop;
         }
@@ -323,7 +321,7 @@ public:
 
         if (m_KeepAlive.get()
             && m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod ) {
-            m_Context.JobDelayExpiration(m_KeepAlivePeriod + 10);
+            m_JobContext.JobDelayExpiration(m_KeepAlivePeriod + 10);
             m_KeepAlive->Restart();
         }
         if (m_Monitor && m_MonitorWatch.get() 
@@ -331,21 +329,21 @@ public:
             CNcbiStrstream out;
             CNcbiStrstream err;
             vector<string> args;
-            args.push_back( "-pid");
-            args.push_back( NStr::UInt8ToString((Uint8)pid) );
-            args.push_back( "-jid");
-            args.push_back( m_Context.GetJobKey() );
-            args.push_back( "-jwdir");
-            args.push_back( m_JobWDir );
+            args.push_back("-pid");
+            args.push_back(NStr::UInt8ToString((Uint8)pid) );
+            args.push_back("-jid");
+            args.push_back(m_JobContext.GetJobKey());
+            args.push_back("-jwdir");
+            args.push_back(m_JobWDir );
 
             int ret = m_Monitor->Run(args, out, err);
             switch(ret) {
             case 0:
                 if (out.pcount() > 0) {
                     out << '\0';
-                    m_Context.PutProgressMessage(out.str(), true);
+                    m_JobContext.PutProgressMessage(out.str(), true);
                 }
-                if (err.pcount() > 0 && m_Context.IsLogRequested())
+                if (err.pcount() > 0 && m_JobContext.IsLogRequested())
                     x_Log("Info", err);
                 break;
             case 1:
@@ -377,18 +375,18 @@ private:
     inline void x_Log(const string& what, CNcbiStrstream& sstream) 
     {
         if( sstream.pcount() > 0 ) {
-            LOG_POST( GetFastLocalTime().AsString() 
-                      << ": Job " << m_Context.GetJobKey() 
-                      << " (Monitor): " << what << ": " << sstream.rdbuf());
+            LOG_POST(GetFastLocalTime().AsString() <<
+                    ": Job " << m_JobContext.GetJobKey() <<
+                    " (Monitor): " << what << ": " << sstream.rdbuf());
         } else {
-            LOG_POST( GetFastLocalTime().AsString() 
-                      << ": Job " << m_Context.GetJobKey() 
-                      << " (Monitor): " << what << ".");
+            LOG_POST(GetFastLocalTime().AsString() <<
+                    ": Job " << m_JobContext.GetJobKey() <<
+                    " (Monitor): " << what << ".");
         }
 
     }
 
-    CWorkerNodeJobContext& m_Context;
+    CWorkerNodeJobContext& m_JobContext;
     int m_KeepAlivePeriod;
     auto_ptr<CStopWatch> m_KeepAlive;
     CRAMonitor* m_Monitor;
@@ -482,7 +480,7 @@ private:
 bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
     CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
     int& exit_value,
-    CWorkerNodeJobContext& context,
+    CWorkerNodeJobContext& job_context,
     int app_run_timeout,
     const char* const env[])
 {
@@ -499,10 +497,10 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                 tmp_path.replace(subst_pos, 2, 1, '%');
                 continue;
             case 'q':
-                tmp_path.replace(subst_pos, 2, context.GetQueueName());
+                tmp_path.replace(subst_pos, 2, job_context.GetQueueName());
                 break;
             case 'j':
-                tmp_path.replace(subst_pos, 2, context.GetJobKey());
+                tmp_path.replace(subst_pos, 2, job_context.GetJobKey());
                 break;
             case 'r':
                 tmp_path.replace(subst_pos, 2, NStr::UInt8ToString(
@@ -519,8 +517,8 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         }
         if (!substitution_found)
             tmp_path += CDirEntry::GetPathSeparator() +
-                context.GetQueueName() + "_"  +
-                context.GetJobKey() + "_" +
+                job_context.GetQueueName() + "_"  +
+                job_context.GetJobKey() + "_" +
                 NStr::UIntToString((unsigned) lt.GetLocalTime().GetTimeT());
     }
 
@@ -543,7 +541,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         NStr::ReplaceInPlace(working_dir, "\\", "/");
 #endif
 
-        CPipeProcessWatcher callback(context,
+        CPipeProcessWatcher callback(job_context,
             max_app_run_time,
             m_KeepAlivePeriod,
             working_dir);
@@ -563,7 +561,6 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                                exit_value, 
                                tmp_path, env, &callback, 
                                &kill_tm) == CPipe::eDone;
-
     }
 }
 

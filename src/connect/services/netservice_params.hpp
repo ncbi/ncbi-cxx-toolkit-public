@@ -92,6 +92,8 @@
 
 #define FIRST_SERVER_TIMEOUT_DEFAULT 0.3
 
+#define COMMIT_JOB_INTERVAL_DEFAULT 2
+
 BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DECL(string, netservice_api, communication_timeout);

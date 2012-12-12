@@ -34,6 +34,7 @@
 #include "exec_helpers.hpp"
 
 #include <connect/services/grid_worker_app.hpp>
+#include <connect/services/grid_globals.hpp>
 #include <connect/services/remote_app.hpp>
 
 #include <corelib/ncbiapp.hpp>
@@ -231,6 +232,8 @@ const char* const* CRemoteAppJob:: x_GetEnv()
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context) :
     m_NetCacheAPI(context.GetConfig())
 {
+    CGridGlobals::GetInstance().SetReuseJobObject(true);
+
     const IRegistry& reg = context.GetConfig();
     m_RemoteAppLauncher.LoadParams("remote_app", reg);
 

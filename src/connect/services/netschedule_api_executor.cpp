@@ -181,7 +181,11 @@ bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
                                               unsigned      runtime_inc)
 {
-    m_Impl->m_API->x_SendJobCmdWaitResponse("JDEX" , job_key, runtime_inc);
+    string cmd(g_MakeBaseCmd("JDEX", job_key));
+    cmd += ' ';
+    cmd += NStr::NumericToString(runtime_inc);
+    g_AppendClientIPAndSessionID(cmd);
+    m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd);
 }
 
 class CGetJobCmdExecutor : public INetServerFinder
@@ -462,6 +466,19 @@ void static s_CheckOutputSize(const string& output, size_t max_output_size)
     }
 }
 
+void SNetScheduleExecutorImpl::ExecWithOrWithoutRetry(const string& job_key,
+        const string& cmd)
+{
+    CNetServer server(m_API->GetServer(job_key));
+
+    if (!m_WorkerNodeMode)
+        server.ExecWithRetry(cmd);
+    else {
+        CNetServer::SExecResult exec_result;
+
+        server->ConnectAndExec(cmd, exec_result);
+    }
+}
 
 void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
 {
@@ -483,7 +500,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
 
     g_AppendClientIPAndSessionID(cmd);
 
-    m_Impl->m_API->GetServer(job.job_id).ExecWithRetry(cmd);
+    m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
 }
 
 void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
@@ -492,8 +509,12 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Progress message too long");
     }
-    m_Impl->m_API->x_SendJobCmdWaitResponse("MPUT",
-        job.job_id, job.progress_msg);
+    string cmd(g_MakeBaseCmd("MPUT", job.job_id));
+    cmd += " \"";
+    cmd += NStr::PrintableString(job.progress_msg);
+    g_AppendClientIPAndSessionID(cmd);
+    CNetServer::SExecResult exec_result;
+    m_Impl->m_API->GetServer(job.job_id)->ConnectAndExec(cmd, exec_result);
 }
 
 void CNetScheduleExecutor::GetProgressMsg(CNetScheduleJob& job)
@@ -528,7 +549,7 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
 
     g_AppendClientIPAndSessionID(cmd);
 
-    m_Impl->m_API->GetServer(job.job_id).ExecWithRetry(cmd);
+    m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
@@ -548,7 +569,7 @@ void CNetScheduleExecutor::ReturnJob(const string& job_key,
 
     g_AppendClientIPAndSessionID(cmd);
 
-    m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd);
+    m_Impl->ExecWithOrWithoutRetry(job_key, cmd);
 }
 
 int SNetScheduleExecutorImpl::AppendAffinityTokens(string& cmd,

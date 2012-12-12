@@ -34,6 +34,7 @@
 #include "exec_helpers.hpp"
 
 #include <connect/services/grid_worker_app.hpp>
+#include <connect/services/grid_globals.hpp>
 
 #include <cgi/ncbicgi.hpp>
 
@@ -128,16 +129,20 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
     list<string> cln_names;
     client_env.Enumerate(cln_names);
     list<string> names(cln_names.begin(), cln_names.end());
-    names.erase(remove_if(names.begin(),names.end(),
-                          not1(IsStandard())),
-                names.end());
-    names.erase(remove_if(names.begin(),names.end(),
-                          HasValue<list<string> >(remote_app_launcher.GetExcludedEnv())),
-                names.end());
+
+    names.erase(remove_if(names.begin(), names.end(),
+            not1(IsStandard())), names.end());
+
+    names.erase(remove_if(names.begin(), names.end(),
+            HasValue<list<string> >(remote_app_launcher.GetExcludedEnv())),
+            names.end());
+
     list<string> inc_names(cln_names.begin(), cln_names.end());
+
     inc_names.erase(remove_if(inc_names.begin(),inc_names.end(),
-                              not1(HasValue<list<string> >(remote_app_launcher.GetIncludedEnv()))),
-                    inc_names.end());
+        not1(HasValue<list<string> >(remote_app_launcher.GetIncludedEnv()))),
+            inc_names.end());
+
     names.insert(names.begin(),inc_names.begin(), inc_names.end());
     const CRemoteAppLauncher::TEnvMap& added_env =
             remote_app_launcher.GetAddedEnv();
@@ -181,28 +186,28 @@ public:
 
     virtual ~CRemoteCgiJob() {}
 
-    int Do(CWorkerNodeJobContext& context)
+    int Do(CWorkerNodeJobContext& job_context)
     {
-        if (context.IsLogRequested()) {
-            LOG_POST("Job " << context.GetJobKey() + " input: " +
-                context.GetJobInput());
+        if (job_context.IsLogRequested()) {
+            LOG_POST("Job " << job_context.GetJobKey() + " input: " +
+                job_context.GetJobInput());
         }
 
         auto_ptr<CCgiRequest> request;
 
         try {
-            request.reset(new CCgiRequest(context.GetIStream(),
+            request.reset(new CCgiRequest(job_context.GetIStream(),
                 CCgiRequest::fIgnoreQueryString |
                 CCgiRequest::fDoNotParseContent));
         }
         catch (...) {
-            context.CommitJobWithFailure(
+            job_context.CommitJobWithFailure(
                 "Error while parsing CGI request stream");
             return -1;
         }
 
         CCgiEnvHolder env(m_RemoteAppLauncher, request->GetEnvironment(),
-            context.GetJob().job_id, context.GetQueueName());
+            job_context.GetJob().job_id, job_context.GetQueueName());
         vector<string> args;
 
         CNcbiStrstream err;
@@ -214,41 +219,41 @@ public:
         int ret = -1;
         bool finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                          *in,
-                                         context.GetOStream(),
+                                         job_context.GetOStream(),
                                          err,
                                          ret,
-                                         context,
+                                         job_context,
                                          0,
                                          env.GetEnv());
 
         string stat;
 
         if (!finished_ok) {
-            if (!context.IsCanceled())
-                context.CommitJobWithFailure("Job has been canceled");
+            if (!job_context.IsCanceled())
+                job_context.CommitJobWithFailure("Job has been canceled");
             stat = " was canceled.";
         } else
             if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
                     CRemoteAppLauncher::eDoneOnNonZeroExit) {
-                context.CommitJob();
+                job_context.CommitJob();
                 stat = " is done.";
             } else
                 if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
                         CRemoteAppLauncher::eReturnOnNonZeroExit) {
-                    context.ReturnJob();
+                    job_context.ReturnJob();
                     stat = " has been returned.";
                 } else {
-                    context.CommitJobWithFailure(
+                    job_context.CommitJobWithFailure(
                         "Exited with return code " + NStr::IntToString(ret));
                     stat = " failed.";
                 }
 
-        if (context.IsLogRequested()) {
+        if (job_context.IsLogRequested()) {
             if (err.pcount() > 0 )
                 LOG_POST("STDERR: " << err.rdbuf());
 
-            LOG_POST("Job " << context.GetJobKey() << " " <<
-                context.GetJobOutput() << stat << " Retcode: " << ret);
+            LOG_POST("Job " << job_context.GetJobKey() << " " <<
+                job_context.GetJobOutput() << stat << " Retcode: " << ret);
         }
 
         return ret;
@@ -259,17 +264,21 @@ private:
 
 CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context)
 {
-    const IRegistry& reg = context.GetConfig();
-    m_RemoteAppLauncher.LoadParams("remote_cgi", reg);
+    CGridGlobals::GetInstance().SetReuseJobObject(true);
+
+    m_RemoteAppLauncher.LoadParams("remote_cgi", context.GetConfig());
 
     CFile file(m_RemoteAppLauncher.GetAppPath());
-    if (!file.Exists())
-        NCBI_THROW(CException, eInvalid,
-                   "File : " + m_RemoteAppLauncher.GetAppPath() + " doesn't exists.");
-    if (!CanExecRemoteApp(file))
-        NCBI_THROW(CException, eInvalid,
-                   "Could not execute " + m_RemoteAppLauncher.GetAppPath() + " file.");
 
+    if (!file.Exists()) {
+        NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
+                m_RemoteAppLauncher.GetAppPath() << "\" doesn't exists.");
+    }
+
+    if (!CanExecRemoteApp(file)) {
+        NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
+                m_RemoteAppLauncher.GetAppPath() << "\" is not executable.");
+    }
 }
 
 class CRemoteAppIdleTask : public IWorkerNodeIdleTask
@@ -277,11 +286,12 @@ class CRemoteAppIdleTask : public IWorkerNodeIdleTask
 public:
     CRemoteAppIdleTask(const IWorkerNodeInitContext& context)
     {
-        const IRegistry& reg = context.GetConfig();
-        m_AppCmd = reg.GetString("remote_cgi", "idle_app_cmd", "" );
+        m_AppCmd = context.GetConfig().GetString("remote_cgi",
+                "idle_app_cmd", kEmptyStr);
         if (m_AppCmd.empty())
             throw runtime_error("Idle application is not set.");
     }
+
     virtual ~CRemoteAppIdleTask() {}
 
     virtual void Run(CWorkerNodeIdleTaskContext& context)
@@ -289,6 +299,7 @@ public:
         if (!m_AppCmd.empty())
             CExec::System(m_AppCmd.c_str());
     }
+
 private:
     string m_AppCmd;
 };

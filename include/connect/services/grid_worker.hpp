@@ -38,10 +38,11 @@
 /// Grid Framework specs.
 ///
 
-#include <connect/services/netschedule_api.hpp>
-#include <connect/services/netcache_api.hpp>
-#include <connect/services/error_codes.hpp>
-#include <connect/services/grid_app_version_info.hpp>
+#include "netschedule_api.hpp"
+#include "netcache_api.hpp"
+#include "error_codes.hpp"
+#include "grid_app_version_info.hpp"
+#include "timeline.hpp"
 
 #include <connect/connect_export.h>
 
@@ -49,10 +50,11 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
-#include <corelib/ncbitime.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/request_control.hpp>
+#include <corelib/request_ctx.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -169,7 +171,6 @@ public:
 };
 
 class CGridWorkerNode;
-class CGridThreadContext;
 class CWorkerNodeRequest;
 
 /// Worker Node job context
@@ -179,11 +180,12 @@ class CWorkerNodeRequest;
 ///
 /// @sa IWorkerNodeJob
 ///
-class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
+class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext :
+        public CWorkerNodeTimelineEntry
 {
 public:
     /// Get the associated job structure to access all of its fields.
-    const CNetScheduleJob& GetJob() const {return m_Job;}
+    CNetScheduleJob& GetJob() {return m_Job;}
 
     /// Get a job key
     const string& GetJobKey() const        { return m_Job.job_id; }
@@ -230,6 +232,8 @@ public:
     /// Get a stream where a job can write its result
     ///
     CNcbiOstream& GetOStream();
+
+    void CloseStreams();
 
     /// Confirm that a job is done and result is ready to be sent
     /// back to the client.
@@ -286,7 +290,7 @@ public:
     ///    successfully finished.
     /// 3. The job has expired.
     ///
-    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void) const;
+    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -311,7 +315,7 @@ public:
 
     /// Check if logging was requested in config file
     ///
-    bool IsLogRequested(void) const { return m_LogRequested; }
+    bool IsLogRequested() const;
 
     /// Instruct the system that this job requires all system's resources
     /// If this method is call, the node will not accept any other jobs
@@ -342,38 +346,50 @@ public:
 
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
-    CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
+    CGridWorkerNode& GetWorkerNode() const {return m_WorkerNode;}
+
+    CWorkerNodeJobContext(CGridWorkerNode& worker_node);
 
 private:
-    friend class CGridThreadContext;
-    void SetThreadContext(CGridThreadContext* ctxt) { m_ThreadContext = ctxt; }
     string& SetJobOutput()             { return m_Job.output; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
     bool IsJobExclusive() const        { return m_ExclusiveJob; }
     const string& GetErrMsg() const    { return m_Job.error_msg; }
 
+    friend class CJobCommitterThread;
     friend class CWorkerNodeRequest;
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
-    CWorkerNodeJobContext(CGridWorkerNode&   worker_node,
-                          const CNetScheduleJob& job,
-                          bool               log_requested);
 
-    void SetCanceled() { m_JobCommitted = eCanceled; }
+    void x_SetCanceled() { m_JobCommitted = eCanceled; }
     void CheckIfCanceled();
 
-    void Reset(const CNetScheduleJob& job);
+    void x_PrintRequestStop();
+    void x_RunJob();
+    void x_SendJobResults();
+
+    void Reset();
 
     CGridWorkerNode&     m_WorkerNode;
     CNetScheduleJob      m_Job;
     ECommitStatus        m_JobCommitted;
     size_t               m_InputBlobSize;
-    bool                 m_LogRequested;
     unsigned int         m_JobNumber;
-    CGridThreadContext*  m_ThreadContext;
     bool                 m_ExclusiveJob;
 
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
+
+    CRef<CRequestContext> m_RequestContext;
+    CRequestRateControl m_StatusThrottler;
+    CRequestRateControl m_ProgressMsgThrottler;
+    CNetScheduleExecutor m_NetScheduleExecutor;
+    CNetCacheAPI m_NetCacheAPI;
+    auto_ptr<CNcbiIstream> m_RStream;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
+    auto_ptr<CNcbiOstream> m_WStream;
+
+    CAbsTimeout m_CommitExpiration;
+    bool m_FirstCommitAttempt;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -575,13 +591,13 @@ public:
     virtual ~IWorkerNodeJobWatcher();
 
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event) = 0;
-
 };
 
 class CWorkerNodeJobWatchers;
 class CWorkerNodeIdleThread;
+class CJobCommitterThread;
 class IGridWorkerNodeApp_Listener;
-class CWNJobsWatcher;
+class CWNJobWatcher;
 /// Grid Worker Node
 ///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -616,7 +632,7 @@ public:
 
     void SetListener(IGridWorkerNodeApp_Listener* listener);
 
-    IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
+    IWorkerNodeJobFactory& GetJobFactory() { return *m_JobProcessorFactory; }
 
     /// Get the maximum threads running simultaneously
     ///
@@ -630,10 +646,12 @@ public:
     ///
     int GetTotalTimeLimit() const { return m_TotalTimeLimit; }
     time_t GetStartupTime() const { return m_StartupTime; }
+    unsigned GetQueueTimeout() const {return m_QueueTimeout;}
 
     bool IsHostInAdminHostsList(const string& host) const;
 
-    unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
+    unsigned GetCommitJobInterval() const {return m_CommitJobInterval;}
+    unsigned GetCheckStatusPeriod() const {return m_CheckStatusPeriod;}
     size_t GetServerOutputSize();
 
     const string& GetQueueName() const;
@@ -642,18 +660,18 @@ public:
 
     string GetAppName() const
     {
-        CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory->GetAppName();
+        CFastMutexGuard guard(m_JobProcessorMutex);
+        return m_JobProcessorFactory->GetAppName();
     }
     string GetAppVersion() const
     {
-        CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory->GetAppVersion();
+        CFastMutexGuard guard(m_JobProcessorMutex);
+        return m_JobProcessorFactory->GetAppVersion();
     }
     string GetBuildDate() const
     {
-        CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory->GetAppBuildDate();
+        CFastMutexGuard guard(m_JobProcessorMutex);
+        return m_JobProcessorFactory->GetAppBuildDate();
     }
 
     const string& GetServiceName() const;
@@ -680,7 +698,7 @@ public:
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
 private:
-    auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
+    auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
     auto_ptr<CWorkerNodeJobWatchers>     m_JobWatchers;
 
     CNetCacheAPI m_NetCacheAPI;
@@ -689,24 +707,21 @@ private:
 
     unsigned int                 m_MaxThreads;
     unsigned int                 m_NSTimeout;
-    mutable CFastMutex           m_JobFactoryMutex;
-    CFastMutex                   m_StorageFactoryMutex;
+    mutable CFastMutex           m_JobProcessorMutex;
     CFastMutex                   m_JobWatcherMutex;
-    unsigned int                 m_CheckStatusPeriod;
+    unsigned                     m_CommitJobInterval;
+    unsigned                     m_CheckStatusPeriod;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     Uint8                        m_TotalMemoryLimit;
     unsigned                     m_TotalTimeLimit;
     time_t                       m_StartupTime;
+    unsigned                     m_QueueTimeout;
 
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 
-    friend class CGridThreadContext;
-    IWorkerNodeJob* CreateJob()
-    {
-        CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory->CreateInstance();
-    }
+    IWorkerNodeJob* GetJobProcessor();
+
     friend class CWorkerNodeJobContext;
 
     void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
@@ -715,128 +730,72 @@ private:
     set<SServerAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
 
-    struct STimeline;
-
-    struct STimelineEntry {
-        CAbsTimeout m_NotificationExpiration;
-
+private:
+    struct SNotificationTimelineEntry : public CWorkerNodeTimelineEntry
+    {
         SServerAddress m_ServerAddress;
 
         unsigned m_DiscoveryIteration;
 
-        STimeline* m_Timeline;
-        STimelineEntry* m_Prev;
-        STimelineEntry* m_Next;
-
-        STimelineEntry(const SServerAddress& server_address,
-                unsigned timeout, unsigned discovery_iteration) :
-            m_NotificationExpiration(timeout, 0),
+        SNotificationTimelineEntry(const SServerAddress& server_address,
+                unsigned discovery_iteration) :
             m_ServerAddress(server_address),
-            m_DiscoveryIteration(discovery_iteration),
-            m_Timeline(NULL)
+            m_DiscoveryIteration(discovery_iteration)
         {
         }
 
-        STimelineEntry(unsigned h, unsigned short p,
-                unsigned timeout, unsigned discovery_iteration) :
-            m_NotificationExpiration(timeout, 0),
-            m_ServerAddress(h, p),
-            m_DiscoveryIteration(discovery_iteration),
-            m_Timeline(NULL)
+        // Special constructor for m_TimelineSearchPattern (see below).
+        SNotificationTimelineEntry() :
+            m_ServerAddress(0, 0),
+            m_DiscoveryIteration(0)
         {
-        }
-
-        void Cut()
-        {
-            if (m_Timeline != NULL) {
-                if (m_Prev == NULL)
-                    if ((m_Timeline->m_Head = m_Next) == NULL)
-                        m_Timeline->m_Tail = NULL;
-                    else
-                        m_Next->m_Prev = NULL;
-                else if (m_Next == NULL)
-                    (m_Timeline->m_Tail = m_Prev)->m_Next = NULL;
-                else
-                    (m_Prev->m_Next = m_Next)->m_Prev = m_Prev;
-                m_Timeline = NULL;
-            }
         }
 
         bool IsDiscoveryAction() const {return m_DiscoveryIteration == 0;}
 
         struct SLess {
-            bool operator ()(const STimelineEntry* left,
-                    const STimelineEntry* right) const
+            bool operator ()(const SNotificationTimelineEntry* left,
+                    const SNotificationTimelineEntry* right) const
             {
                 return left->m_ServerAddress < right->m_ServerAddress;
             }
         };
     };
 
-    struct STimeline {
-        STimelineEntry* m_Head;
-        STimelineEntry* m_Tail;
-
-        STimeline() : m_Head(NULL), m_Tail(NULL)
-        {
-        }
-
-        bool IsEmpty() const {return m_Head == NULL;}
-
-        void Push(STimelineEntry* new_entry)
-        {
-            _ASSERT(new_entry->m_Timeline == NULL);
-            if (m_Tail != NULL)
-                (m_Tail->m_Next = new_entry)->m_Prev = m_Tail;
-            else
-                (m_Head = new_entry)->m_Prev = NULL;
-            new_entry->m_Next = NULL;
-            (m_Tail = new_entry)->m_Timeline = this;
-        }
-
-        STimelineEntry* Shift()
-        {
-            _ASSERT(m_Head != NULL);
-            STimelineEntry* old_head = m_Head;
-            if ((m_Head = old_head->m_Next) != NULL)
-                m_Head->m_Prev = NULL;
-            else
-                m_Tail = NULL;
-            old_head->m_Timeline = NULL;
-            return old_head;
-        }
-    };
-
     unsigned m_DiscoveryIteration;
 
-    STimeline m_Timeline;
-    STimeline m_ImmediateActions;
+    CWorkerNodeTimeline<SNotificationTimelineEntry>
+            m_ImmediateActions, m_Timeline;
 
-    typedef set<STimelineEntry*, STimelineEntry::SLess> TTimelineEntries;
+    typedef set<SNotificationTimelineEntry*,
+            SNotificationTimelineEntry::SLess> TTimelineEntries;
 
     TTimelineEntries m_TimelineEntryByAddress;
 
-    STimelineEntry m_TimelineSearchPattern;
+    SNotificationTimelineEntry m_TimelineSearchPattern;
 
-    bool x_PerformTimelineAction(STimelineEntry* action, CNetScheduleJob& job);
+    bool x_PerformTimelineAction(SNotificationTimelineEntry* action,
+            CNetScheduleJob& job);
     void x_ProcessRequestJobNotification();
     bool x_WaitForNewJob(CNetScheduleJob& job);
     bool x_GetNextJob(CNetScheduleJob& job);
 
-    friend class CWNJobsWatcher;
+    friend class CWNJobWatcher;
     friend class CWorkerNodeRequest;
-    void x_ReturnJob(const string& job_key, const string& auth_token);
-    void x_FailJob(const CNetScheduleJob& job, const string& reason);
+    void x_ReturnJob(const CNetScheduleJob& job);
     bool x_AreMastersBusy() const;
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
+    CRef<CJobCommitterThread> m_JobCommitterThread;
     CRef<CWorkerNodeIdleThread>  m_IdleThread;
 
     auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
 
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
+    bool m_LogRequested;
+    size_t m_QueueEmbeddedOutputSize;
 };
 
 inline const string& CGridWorkerNode::GetQueueName() const

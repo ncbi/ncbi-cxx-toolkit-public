@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "grid_debug_context.hpp"
+
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -40,31 +42,34 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
+#define RESOURCE_OVERUSE_EXIT_CODE 100
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CWorkerNodeStatictics
 /// @internal
-CWNJobsWatcher::CWNJobsWatcher()
+CWNJobWatcher::CWNJobWatcher()
     : m_JobsStarted(0), m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
       m_JobsCanceled(0), m_JobsLost(0),
       m_MaxJobsAllowed(0), m_MaxFailuresAllowed(0),
       m_InfiniteLoopTime(0)
 {
 }
-CWNJobsWatcher::~CWNJobsWatcher()
+CWNJobWatcher::~CWNJobWatcher()
 {
 }
 
-void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
+void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
                             EEvent event)
 {
-    switch(event) {
-    case eJobStarted :
+    switch (event) {
+    case eJobStarted:
         {
             CMutexGuard guard(m_ActiveJobsMutex);
-            m_ActiveJobs[&job] = SJobActivity();
+            m_ActiveJobs[const_cast<CWorkerNodeJobContext*>(&job_context)] =
+                    SJobActivity();
             ++m_JobsStarted;
             if (m_MaxJobsAllowed > 0 && m_JobsStarted > m_MaxJobsAllowed - 1) {
                 LOG_POST_X(1, "The maximum number of allowed jobs (" <<
@@ -75,38 +80,65 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
             }
         }
         break;
-    case eJobStopped :
+    case eJobStopped:
         {
             CMutexGuard guard(m_ActiveJobsMutex);
-            m_ActiveJobs.erase(&job);
+            m_ActiveJobs.erase(
+                    const_cast<CWorkerNodeJobContext*>(&job_context));
         }
         break;
-    case eJobFailed :
+    case eJobFailed:
         ++m_JobsFailed;
-        if (m_MaxFailuresAllowed > 0 && m_JobsFailed > m_MaxFailuresAllowed - 1) {
-                LOG_POST_X(2, "The maximum number of failed jobs (" <<
-                              m_MaxFailuresAllowed << ") has been reached. "
-                              "Sending the shutdown request." );
-                CGridGlobals::GetInstance().
-                    RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
-            }
+        if (m_MaxFailuresAllowed > 0 &&
+                m_JobsFailed > m_MaxFailuresAllowed - 1) {
+            LOG_POST_X(2, "The maximum number of failed jobs (" <<
+                          m_MaxFailuresAllowed << ") has been reached. "
+                          "Shutting down..." );
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
+        }
         break;
-    case eJobSucceed :
+    case eJobSucceed:
         ++m_JobsSucceed;
         break;
-    case eJobReturned :
+    case eJobReturned:
         ++m_JobsReturned;
         break;
-    case eJobCanceled :
+    case eJobCanceled:
         ++m_JobsCanceled;
         break;
     case eJobLost:
         ++m_JobsLost;
         break;
     }
+
+    if (event != eJobStarted) {
+        CGridWorkerNode& worker_node = job_context.GetWorkerNode();
+        Uint8 total_memory_limit = worker_node.GetTotalMemoryLimit();
+        if (total_memory_limit > 0) {  // memory check requested
+            size_t memory_usage;
+            if (!GetMemoryUsage(&memory_usage, 0, 0)) {
+                ERR_POST("Could not check self memory usage" );
+            } else if (memory_usage > total_memory_limit) {
+                ERR_POST(Warning << "Memory usage (" << memory_usage <<
+                    ") is above the configured limit (" <<
+                    total_memory_limit << ")");
+
+                CGridGlobals::GetInstance().RequestShutdown(
+                    CNetScheduleAdmin::eNormalShutdown,
+                        RESOURCE_OVERUSE_EXIT_CODE);
+            }
+        }
+
+        int total_time_limit = worker_node.GetTotalTimeLimit();
+        if (total_time_limit > 0 &&  // time check requested
+                time(0) > worker_node.GetStartupTime() + total_time_limit)
+            CGridGlobals::GetInstance().RequestShutdown(
+                CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
+    }
 }
 
-void CWNJobsWatcher::Print(CNcbiOstream& os) const
+void CWNJobWatcher::Print(CNcbiOstream& os) const
 {
     os << "Started: " <<
                     CGridGlobals::GetInstance().GetStartTime().AsString() <<
@@ -128,7 +160,7 @@ void CWNJobsWatcher::Print(CNcbiOstream& os) const
     }
 }
 
-void CWNJobsWatcher::CheckForInfiniteLoop()
+void CWNJobWatcher::CheckForInfiniteLoop()
 {
     if (m_InfiniteLoopTime > 0) {
         size_t count = 0;
@@ -153,18 +185,23 @@ void CWNJobsWatcher::CheckForInfiniteLoop()
     }
 }
 
-void CWNJobsWatcher::x_KillNode(CGridWorkerNode& worker)
+void CWNJobWatcher::x_KillNode(CGridWorkerNode& worker)
 {
     CMutexGuard guard(m_ActiveJobsMutex);
     NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
-        const CNetScheduleJob& job = it->first->GetJob();
+        CNetScheduleJob& job = it->first->GetJob();
         if (!it->second.flag) {
-            worker.x_ReturnJob(job.job_id, job.auth_token);
+            worker.x_ReturnJob(job);
         } else {
-            worker.x_FailJob(job,
-                "An long running job has been detected after " +
-                NStr::IntToString((int)it->second.elasped_time.Elapsed()) +
-                " seconds of execution.");
+            CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+            if (!debug_context || debug_context->GetDebugMode() !=
+                    CGridDebugContext::eGDC_Execute) {
+                job.error_msg = "Job execution time exceeded " +
+                        NStr::NumericToString(
+                                unsigned(it->second.elasped_time.Elapsed()));
+                job.error_msg += " seconds.";
+                worker.GetNSExecutor().PutFailure(job);
+            }
         }
     }
     TPid cpid = CProcess::GetCurrentPid();
@@ -199,21 +236,21 @@ CGridGlobals& CGridGlobals::GetInstance()
 
 unsigned int CGridGlobals::GetNewJobNumber()
 {
-    return (unsigned int)m_JobsStarted.Add(1);
+    return (unsigned) m_JobsStarted.Add(1);
 }
 
-CWNJobsWatcher& CGridGlobals::GetJobsWatcher()
+CWNJobWatcher& CGridGlobals::GetJobWatcher()
 {
-    if (!m_JobsWatcher.get())
-        m_JobsWatcher.reset(new CWNJobsWatcher);
-    return *m_JobsWatcher;
+    if (!m_JobWatcher.get())
+        m_JobWatcher.reset(new CWNJobWatcher);
+    return *m_JobWatcher;
 }
 
 void CGridGlobals::KillNode()
 {
     _ASSERT(m_Worker);
-    if( m_Worker )
-        GetJobsWatcher().x_KillNode(*m_Worker);
+    if (m_Worker)
+        GetJobWatcher().x_KillNode(*m_Worker);
 }
 
 END_NCBI_SCOPE

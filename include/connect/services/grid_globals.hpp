@@ -47,11 +47,11 @@ BEGIN_NCBI_SCOPE
 
 /// @internal
 class CGridGlobals;
-class NCBI_XCONNECT_EXPORT CWNJobsWatcher : public IWorkerNodeJobWatcher
+class NCBI_XCONNECT_EXPORT CWNJobWatcher : public IWorkerNodeJobWatcher
 {
 public:
-    CWNJobsWatcher();
-    virtual ~CWNJobsWatcher();
+    CWNJobWatcher();
+    virtual ~CWNJobWatcher();
 
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event);
 
@@ -88,7 +88,7 @@ private:
             elasped_time(CStopWatch(CStopWatch::eStart)), flag(false) {}
     };
 
-    typedef map<const CWorkerNodeJobContext*, SJobActivity> TActiveJobs;
+    typedef map<CWorkerNodeJobContext*, SJobActivity> TActiveJobs;
     TActiveJobs    m_ActiveJobs;
     mutable CMutex m_ActiveJobsMutex;
 
@@ -96,8 +96,8 @@ private:
     void x_KillNode(CGridWorkerNode&);
 
 private:
-    CWNJobsWatcher(const CWNJobsWatcher&);
-    CWNJobsWatcher& operator=(const CWNJobsWatcher&);
+    CWNJobWatcher(const CWNJobWatcher&);
+    CWNJobWatcher& operator=(const CWNJobWatcher&);
 };
 
 
@@ -135,7 +135,7 @@ public:
     void SetExitCode(int exit_code) { m_ExitCode = exit_code; }
     int GetExitCode() const { return m_ExitCode; }
 
-    CWNJobsWatcher& GetJobsWatcher();
+    CWNJobWatcher& GetJobWatcher();
 
     const CTime& GetStartTime() const { return m_StartTime; }
 
@@ -151,7 +151,7 @@ private:
 
     volatile CNetScheduleAdmin::EShutdownLevel m_ShutdownLevel;
     volatile int                               m_ExitCode;
-    auto_ptr<CWNJobsWatcher> m_JobsWatcher;
+    auto_ptr<CWNJobWatcher> m_JobWatcher;
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;
 

@@ -151,7 +151,7 @@ public:
         if (node.IsExclusiveMode())
             os << "The node is processing an exclusive job\n";
 
-        CGridGlobals::GetInstance().GetJobsWatcher().Print(os);
+        CGridGlobals::GetInstance().GetJobWatcher().Print(os);
 
         os << "OK:END\n";
     }
@@ -190,7 +190,7 @@ public:
                          CWorkerNodeControlServer* control_server)
     {
         int load = control_server->GetWorkerNode().GetMaxThreads() -
-            CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
+            CGridGlobals::GetInstance().GetJobWatcher().GetJobsRunningNumber();
         os << "OK:" << load << "\n";
     }
 };
@@ -282,7 +282,7 @@ bool CWorkerNodeControlServer::ShutdownRequested(void)
 
 void CWorkerNodeControlServer::ProcessTimeout(void)
 {
-    CGridGlobals::GetInstance().GetJobsWatcher().CheckForInfiniteLoop();
+    CGridGlobals::GetInstance().GetJobWatcher().CheckForInfiniteLoop();
 }
 
 
