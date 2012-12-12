@@ -73,6 +73,9 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/RNA_qual_set.hpp>
+#include <objects/seqfeat/RNA_qual.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
@@ -113,6 +116,7 @@ public:
         eQual_compare,
         eQual_cons_splice,
         eQual_ctgcnt,
+        eQual_cyt_map,
         eQual_db_xref,
         eQual_direction,
         eQual_EC_number,
@@ -121,6 +125,7 @@ public:
         eQual_experiment,
         eQual_frequency,
         eQual_function,
+        eQual_gen_map,
         eQual_gene,
         eQual_gene_desc,
         eQual_gene_syn,
@@ -156,6 +161,7 @@ public:
         eQual_protein_id,
         eQual_pseudo,
         eQual_PubMed,
+        eQual_rad_map,
         eQual_region_name,
         eQual_replace,
         eQual_ribosomal_slippage,
@@ -452,6 +458,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "compare",              CFeature_table_reader_imp::eQual_compare               },
     {  "cons_splice",          CFeature_table_reader_imp::eQual_cons_splice           },
     {  "ctgcnt",               CFeature_table_reader_imp::eQual_ctgcnt                },
+    {  "cyt_map",              CFeature_table_reader_imp::eQual_cyt_map               },
     {  "db_xref",              CFeature_table_reader_imp::eQual_db_xref               },
     {  "direction",            CFeature_table_reader_imp::eQual_direction             },
     {  "evidence",             CFeature_table_reader_imp::eQual_evidence              },
@@ -459,6 +466,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "experiment",           CFeature_table_reader_imp::eQual_experiment            },
     {  "frequency",            CFeature_table_reader_imp::eQual_frequency             },
     {  "function",             CFeature_table_reader_imp::eQual_function              },
+    {  "gen_map",              CFeature_table_reader_imp::eQual_gen_map               },
     {  "gene",                 CFeature_table_reader_imp::eQual_gene                  },
     {  "gene_desc",            CFeature_table_reader_imp::eQual_gene_desc             },
     {  "gene_syn",             CFeature_table_reader_imp::eQual_gene_syn              },
@@ -490,6 +498,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "prot_note",            CFeature_table_reader_imp::eQual_prot_note             },
     {  "protein_id",           CFeature_table_reader_imp::eQual_protein_id            },
     {  "pseudo",               CFeature_table_reader_imp::eQual_pseudo                },
+    {  "rad_map",              CFeature_table_reader_imp::eQual_rad_map               },
     {  "replace",              CFeature_table_reader_imp::eQual_replace               },
     {  "ribosomal_slippage",   CFeature_table_reader_imp::eQual_ribosomal_slippage    },
     {  "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family            },
@@ -1122,13 +1131,25 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
         case eQual_prot_note:
             return x_AddGBQualToFeature(sfp, "prot_note", val);
         case eQual_transl_except:
-            /* !!! */
-            /* if (x_ParseCodeBreak (sfp, crp, val)) return true; */
-            return true;
+            // add as GBQual, let cleanup convert to code_break
+            return x_AddGBQualToFeature(sfp, "transl_except", val);
         case eQual_translation:
             // we should accept, but ignore this qual on CDSs.
             // so, do nothing but return success
             return true;
+        case eQual_transl_table:
+            // set genetic code directly, or add qualifier and let cleanup convert?
+            try {
+                int num = NStr::StringToLong(val);
+                CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E());
+                code->SetId(num);
+                crp.SetCode().Set().push_back(code);
+                return true;
+            } catch( ... ) {
+                return x_AddGBQualToFeature(sfp, "transl_table", val);
+            }
+            break;
+            
         default:
             break;
     }
@@ -1399,6 +1420,38 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
                         tex.SetName (val);
                         return true;
                     }
+                default:
+                    break;
+            }
+            break;
+        case CRNA_ref::eType_ncRNA:
+            switch (qtype) {
+                case eQual_product:
+                    rrp.SetExt().SetGen().SetProduct(val);
+                    return true;
+                    break;
+                case eQual_ncRNA_class:
+                    rrp.SetExt().SetGen().SetClass(val);
+                    return true;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case CRNA_ref::eType_tmRNA:
+            switch (qtype) {
+                case eQual_product:
+                    rrp.SetExt().SetGen().SetProduct(val);
+                    return true;
+                case eQual_tag_peptide:
+                  {
+                    CRef<CRNA_qual> q(new CRNA_qual());
+                    q->SetQual("tag_peptide");
+                    q->SetVal(val);
+                    rrp.SetExt().SetGen().SetQuals().Set().push_back(q);
+                    return true;
+                  }
+                  break;
                 default:
                     break;
             }
@@ -1853,6 +1906,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_experiment:
                 case eQual_frequency:
                 case eQual_function:
+                
                 case eQual_insertion_seq:
                 case eQual_label:
                 case eQual_map:
@@ -1876,6 +1930,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_transcript_id:
                 case eQual_transposon:
                 case eQual_usedin:
+                case eQual_cyt_map:
+                case eQual_gen_map:
+                case eQual_rad_map:
+
                     {
                         x_AddGBQualToFeature (sfp, qual, val);
                         return true;
@@ -1918,11 +1976,11 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             CRef<CDbtag> dbt (new CDbtag);
                             dbt->SetDb (db);
                             CRef<CObject_id> oid (new CObject_id);
-                            num = x_StringToLongNoThrow (tag, container, seq_id, line, feat_name, qual);
-                            if (num != -1) {
-                                oid->SetId (num);
-                            } else {
-                                oid->SetStr (tag);
+                            try {
+                                num = NStr::StringToLong(tag);
+                                oid->SetId(num);
+                            } catch( ... ) {
+                                oid->SetStr(tag);
                             }
                             dbt->SetTag (*oid);
                             dblist.push_back (dbt);
@@ -2083,27 +2141,24 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
                         rnatyp = CRNA_ref::eType_rRNA;
                         break;
                     case CSeqFeatData::eSubtype_snRNA :
-                        rrp.SetExt().SetName("ncRNA");
-                        rnatyp = CRNA_ref::eType_other;
-                        x_AddGBQualToFeature (sfp, "ncRNA_class", "snRNA");
+                        rnatyp = CRNA_ref::eType_ncRNA;
+                        rrp.SetExt().SetGen().SetClass("snRNA");
                         break;
                     case CSeqFeatData::eSubtype_scRNA :
-                        rrp.SetExt().SetName("ncRNA");
-                        rnatyp = CRNA_ref::eType_other;
-                        x_AddGBQualToFeature (sfp, "ncRNA_class", "scRNA");
+                        rnatyp = CRNA_ref::eType_ncRNA;
+                        rrp.SetExt().SetGen().SetClass("scRNA");
                         break;
                     case CSeqFeatData::eSubtype_snoRNA :
-                        rrp.SetExt().SetName("ncRNA");
-                        rnatyp = CRNA_ref::eType_other;
-                        x_AddGBQualToFeature (sfp, "ncRNA_class", "snoRNA");
+                        rnatyp = CRNA_ref::eType_ncRNA;
+                        rrp.SetExt().SetGen().SetClass("snoRNA");
                         break;
                     case CSeqFeatData::eSubtype_ncRNA :
-                        rrp.SetExt().SetName("ncRNA");
-                        rnatyp = CRNA_ref::eType_other;
+                        rnatyp = CRNA_ref::eType_ncRNA;
+                        rrp.SetExt().SetGen();
                         break;
                     case CSeqFeatData::eSubtype_tmRNA :
-                        rrp.SetExt().SetName("tmRNA");
-                        rnatyp = CRNA_ref::eType_other;
+                        rnatyp = CRNA_ref::eType_tmRNA;
+                        rrp.SetExt().SetGen();
                         break;
                     case CSeqFeatData::eSubtype_otherRNA :
                         rrp.SetExt().SetName("misc_RNA");
@@ -2203,6 +2258,19 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
 
+    // if sequence ID is a list, use just one sequence ID string    
+    string real_seqid = seqid;
+    if (!NStr::IsBlank(real_seqid)) {
+        try {
+            CSeq_id seq_id (seqid);
+        } catch (...) {
+            CBioseq::TId ids;
+            CSeq_id::ParseIDs(ids, seqid);
+            real_seqid.clear();
+            ids.front()->GetLabel(&real_seqid, CSeq_id::eFasta);
+        }
+    }
+
     // Use this to efficiently find the best CDS for a prot feature
     // (only add CDS's for it to work right)
     CBestFeatFinder best_CDS_finder;
@@ -2240,7 +2308,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
             } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
                                                 &ispoint, &isminus, feat, qual, val, offset,
-                                                container, reader.GetLineNumber(), seqid)) {
+                                                container, reader.GetLineNumber(), real_seqid)) {
 
                 // process line in feature table
 
@@ -2253,7 +2321,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     sfp.Reset (new CSeq_feat);
                     sfp->ResetLocation ();
 
-                    if (x_SetupSeqFeat (sfp, feat, flags, reader.GetLineNumber(), seqid, container, filter)) {
+                    if (x_SetupSeqFeat (sfp, feat, flags, reader.GetLineNumber(), real_seqid, container, filter)) {
 
                         ftable.push_back (sfp);
 
@@ -2269,7 +2337,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                         // and add first interval
                         x_AddIntervalToFeature (sfp, location->SetMix(), 
-                                                seqid, start, stop, partial5, partial3, ispoint, isminus);
+                                                real_seqid, start, stop, partial5, partial3, ispoint, isminus);
 
                         ignore_until_next_feature_key = false;
 
@@ -2292,12 +2360,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
                         x_AddIntervalToFeature (sfp, sfp->SetLocation().SetMix(), 
-                                                seqid, start, stop, partial5, partial3, ispoint, isminus);
+                                                real_seqid, start, stop, partial5, partial3, ispoint, isminus);
                     } else {
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                             x_ProcessMsg(container, ILineError::eProblem_NoFeatureProvidedOnIntervals,
                                 eDiag_Warning,
-                                seqid,
+                                real_seqid,
                                 reader.GetLineNumber() );
                         }
                     }
@@ -2311,17 +2379,17 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             x_ProcessMsg(container, 
                                 ILineError::eProblem_QualifierWithoutFeature, 
                                 eDiag_Warning,
-                                seqid,
+                                real_seqid,
                                 reader.GetLineNumber(), kEmptyStr, qual, val );
                         }
-                    } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, container, reader.GetLineNumber(), seqid) ) {
+                    } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, container, reader.GetLineNumber(), real_seqid) ) {
 
                         // unrecognized qualifier key
 
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                             x_ProcessMsg(container,
                                 ILineError::eProblem_UnrecognizedQualifierName, 
-                                eDiag_Warning, seqid, reader.GetLineNumber(), curr_feat_name, qual, val );
+                                eDiag_Warning, real_seqid, reader.GetLineNumber(), curr_feat_name, qual, val );
                         }
 
                         if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
@@ -2336,14 +2404,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                             x_ProcessMsg(container, 
                                 ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
-                                seqid, reader.GetLineNumber(),
+                                real_seqid, reader.GetLineNumber(),
                                 kEmptyStr, qual );
                         }
                     } else {
                         TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
                         if (s_iter != sc_SingleKeys.end ()) {
 
-                            x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, container, reader.GetLineNumber(), seqid);
+                            x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, container, reader.GetLineNumber(), real_seqid);
                         }
                     }
                 } else if (! feat.empty ()) {
@@ -2353,7 +2421,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                         x_ProcessMsg( container, 
                             ILineError::eProblem_FeatureBadStartAndOrStop, eDiag_Warning,
-                            seqid, reader.GetLineNumber(),
+                            real_seqid, reader.GetLineNumber(),
                             feat );
                     }
                 }
