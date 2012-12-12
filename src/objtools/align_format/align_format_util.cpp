@@ -2920,8 +2920,8 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
             string user_url = m_Reg->Get("LOCAL_ID","TOOL_URL");
             string id_string;
             wid->GetLabel(&id_string, CSeq_id::eContent);
-            url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", id_string);  
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"db_name", seqUrlInfo->database); 
+            url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", NStr::URLEncode(id_string));  
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"db_name", NStr::URLEncode(seqUrlInfo->database)); 
             url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid", seqUrlInfo->taxid);
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"title", id_string);
