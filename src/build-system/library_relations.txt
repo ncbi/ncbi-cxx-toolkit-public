@@ -1495,8 +1495,10 @@ geodataset needs general
 geodataset needs xncbi
 geodataset needs xser
 geodataset needs xutil
+geoindex needs xcompress
 geoindex needs xmlwrapp
 geoindex needs xncbi
+geoindex needs xutil
 geometa needs GMA
 geometa needs connect
 geometa needs connext
