@@ -2787,7 +2787,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "USO1",
-        desc "USO1 vesicle docking protein homolog (yeast)",
+        desc "USO1 vesicle transport factor",
         syn {
           "P115",
           "TAP",
@@ -2826,7 +2826,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "USO1 vesicle docking protein homolog (yeast)"
+        ext name "USO1 vesicle transport factor"
       },
       partial TRUE,
       except TRUE,
@@ -3317,7 +3317,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "USO1 vesicle docking protein homolog (yeast)"
+        ext name "USO1 vesicle transport factor"
       },
       partial TRUE,
       except TRUE,
@@ -3808,7 +3808,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "USO1 vesicle docking protein homolog (yeast)"
+        ext name "USO1 vesicle transport factor"
       },
       partial TRUE,
       except TRUE,
