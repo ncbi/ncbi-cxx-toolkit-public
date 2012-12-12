@@ -291,7 +291,7 @@ bool CTestOM::Thread_Run(int idx)
     if ( m_adaptive ) {
         sel.SetAdaptiveDepth();
     }
-    sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
+    sel.SetFeatComparator(new feature::CFeatComparatorByLabel());
     if ( idx%2 == 0 ) {
         sel.SetOverlapType(sel.eOverlap_Intervals);
         sel.SetResolveMethod(sel.eResolve_All);
@@ -419,6 +419,8 @@ bool CTestOM::Thread_Run(int idx)
                         if ( m_verbose ) {
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
+                            string msg = CNcbiOstrstreamToString(out);
+                            LOG_POST("T" << idx << ": " << msg);
                         }
 
                         // verify result
@@ -449,6 +451,8 @@ bool CTestOM::Thread_Run(int idx)
                         if ( m_verbose ) {
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
+                            string msg = CNcbiOstrstreamToString(out);
+                            LOG_POST("T" << idx << ": " << msg);
                         }
 
                         // verify result
@@ -472,6 +476,8 @@ bool CTestOM::Thread_Run(int idx)
                         if ( m_verbose ) {
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
+                            string msg = CNcbiOstrstreamToString(out);
+                            LOG_POST("T" << idx << ": " << msg);
                         }
 
                         _ASSERT(annot_it.size() == annots.size());
@@ -482,11 +488,6 @@ bool CTestOM::Thread_Run(int idx)
                         _ASSERT(annots.size() == annots2.size());
                         _ASSERT(annots == annots2);
                     }
-                }
-                if ( m_verbose ) {
-                    out << NcbiEndl;
-                    string msg = CNcbiOstrstreamToString(out);
-                    NcbiCout << msg << NcbiFlush;
                 }
                 if ( m_no_reset && m_keep_handles ) {
                     handles.insert(handle);
@@ -674,6 +675,8 @@ bool CTestOM::TestApp_Init(void)
 
 bool CTestOM::TestApp_Exit(void)
 {
+    NcbiCout << "Closing" << NcbiEndl;
+    CObjectManager::GetInstance()->RevokeDataLoader("GBLOADER");
     if ( failed ) {
         NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
         return false;
