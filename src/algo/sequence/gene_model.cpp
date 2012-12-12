@@ -833,15 +833,15 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         cds_feat_on_mrna->Assign(*cdregion);
     }
 
-    if (m_flags & fForceTranscribeMrna ||
-        (is_protein_align && m_flags & fForceTranslateCds))
+    if ((m_flags & fForceTranscribeMrna) ||
+        (is_protein_align && (m_flags & fForceTranslateCds)))
     {
         /// create a new bioseq for this mRNA; if the mRna sequence is not found,
         /// this is needed in order to translate the protein
         /// alignment, even if flag fForceTranscribeMrna wasn't set
         x_CreateMrnaBioseq(
             *align, loc, time, model_num, seqs, rna_id, cds_feat_on_mrna);
-        if (is_protein_align && m_flags & fGenerateLocalIds) {
+        if (is_protein_align && (m_flags & fGenerateLocalIds)) {
             cds_feat_on_mrna->SetLocation().SetInt().SetId().Assign(rna_id);
         }
     }
@@ -873,7 +873,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                    CSeq_id_Handle::GetHandle(rna_id).AsString());
     }
 
-    CRef<CSeq_feat> mrna_feat = full_length_rna && m_flags&fPropagateNcrnaFeats
+    CRef<CSeq_feat> mrna_feat = full_length_rna && (m_flags&fPropagateNcrnaFeats)
         /// If there is a full-length RNA feature, propagate it instead of
         /// creating a new one. Create the bioseq separately
         ? x_CreateNcRnaFeature(&full_length_rna.GetOriginalFeature(),
@@ -1711,7 +1711,7 @@ SImplementation::x_CreateCdsFeature(CRef<CSeq_feat> cds_feat_on_mrna,
                                     CSeq_loc_Mapper::TMapOptions opts)
 {
     CRef<CSeq_feat> cds_feat;
-    if (m_flags & fCreateCdregion && cds_feat_on_mrna.NotNull()) {
+    if ((m_flags & fCreateCdregion) && cds_feat_on_mrna.NotNull()) {
 
             TSeqPos offset;
             CRef<CSeq_loc> cds_loc = x_PropagateFeatureLocation(cds_feat_on_mrna.GetNonNullPointer(),
@@ -1925,7 +1925,7 @@ SImplementation::x_CreateNcRnaFeature(const CSeq_feat* ncrnafeature_on_mrna,
                                       CSeq_loc_Mapper::TMapOptions opts)
 {
     CRef<CSeq_feat> ncrna_feat;
-    if (m_flags & fPropagateNcrnaFeats && ncrnafeature_on_mrna != NULL) {
+    if ((m_flags & fPropagateNcrnaFeats) && ncrnafeature_on_mrna != NULL) {
 
             TSeqPos offset;
             CRef<CSeq_loc> ncrna_loc = x_PropagateFeatureLocation(ncrnafeature_on_mrna,
@@ -2120,7 +2120,7 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
     }
 
     ///
-    /// set geen partialness if mRNA is partial
+    /// set gene partialness if mRNA is partial
     if (gene_feat  &&  mrna_feat){
         CSeq_loc& mrna_loc = mrna_feat->SetLocation();
         CSeq_loc& gene_loc = gene_feat->SetLocation();
@@ -2128,6 +2128,19 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
             gene_loc.SetPartialStart(true, eExtreme_Biological);
         }
         if (mrna_loc.IsPartialStop(eExtreme_Biological)) {
+            gene_loc.SetPartialStop(true, eExtreme_Biological);
+        }
+    }
+
+    ///
+    /// set gene partialness if CDS is partial
+    if (gene_feat  &&  propagated_feat){
+        CSeq_loc& propagated_loc = propagated_feat->SetLocation();
+        CSeq_loc& gene_loc = gene_feat->SetLocation();
+        if (propagated_loc.IsPartialStart(eExtreme_Biological)) {
+            gene_loc.SetPartialStart(true, eExtreme_Biological);
+        }
+        if (propagated_loc.IsPartialStop(eExtreme_Biological)) {
             gene_loc.SetPartialStop(true, eExtreme_Biological);
         }
     }

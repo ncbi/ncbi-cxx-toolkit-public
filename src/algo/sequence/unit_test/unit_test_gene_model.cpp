@@ -1295,11 +1295,6 @@ BOOST_AUTO_TEST_CASE(TestCasePartialCDS)
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
 
-    CRef<CScope> scope(new CScope(*om));
-    scope->AddDefaults();
-    
-    CFeatureGenerator feat_gen(*scope);
-
 string buf = " \
 Seq-align ::= { \
   type disc, \
@@ -1412,10 +1407,89 @@ Seq-feat ::= { \
         CSeq_annot annot;
         annot.SetData().SetFtable();
         
+        CRef<CScope> scope(new CScope(*om));
+        scope->AddDefaults();
+    
+        CFeatureGenerator feat_gen(*scope);
+
         int flags = (CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
-            CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
+            CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna |
+            CFeatureGenerator::fDeNovoProducts;
         feat_gen.SetFlags(flags);
         BOOST_CHECK_NO_THROW(feat_gen.ConvertAlignToAnnot(align, annot, seqs, 0, &feat));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestCaseGeneForPartialFeatureIsPartial)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 16762324, \
+    genomic-id gi 188504888, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 25, \
+          frame 1 \
+        }, \
+        product-end protpos { \
+          amin 576, \
+          frame 3 \
+        }, \
+        genomic-start 0, \
+        genomic-end 1655 \
+      } \
+    }, \
+    product-length 577, \
+    modifiers { \
+      stop-codon-found TRUE \
+    } \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+        
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    CBioseq_set& seqs = seq_entry->SetSet();
+    seqs.SetSeq_set();
+    CSeq_annot annot;
+    annot.SetData().SetFtable();
+        
+    int flags =
+        CFeatureGenerator::fCreateGene |
+        CFeatureGenerator::fCreateCdregion |
+        CFeatureGenerator::fForceTranslateCds;
+    feat_gen.SetFlags(flags);
+
+    TSeqRange range(0, 1655);
+    CConstRef<CSeq_align> modified_align = feat_gen.AdjustAlignment(align, range);
+    feat_gen.ConvertAlignToAnnot(*modified_align, annot, seqs);
+
+    ITERATE(CSeq_annot::C_Data::TFtable, it, annot.GetData().GetFtable()){
+        if ((*it)->GetData().IsGene()) {
+            BOOST_CHECK( (*it)->GetLocation().IsPartialStart(eExtreme_Biological) );
+        }
     }
 }
 
