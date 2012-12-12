@@ -49,6 +49,7 @@
 #include <objects/general/User_field.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/biblio/PubMedId.hpp>
@@ -432,6 +433,41 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
 
 }
 
+static bool x_IsWgsSecondary (const CBioseq& seq)
+
+{
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (sd, seq) {
+        const list< string > *extra_acc = 0;
+        const CSeqdesc& desc = **sd;
+        switch (desc.Which()) {
+            case CSeqdesc::e_Genbank:
+                if (desc.GetGenbank().IsSetExtra_accessions()) {
+                    extra_acc = &(desc.GetGenbank().GetExtra_accessions());
+                }
+                break;
+            case CSeqdesc::e_Embl:
+                if (desc.GetEmbl().IsSetExtra_acc()) {
+                    extra_acc = &(desc.GetEmbl().GetExtra_acc());
+                }
+                break;
+            default:
+                break;
+        }
+        if ( extra_acc ) {
+            FOR_EACH_STRING_IN_LIST (acc, *extra_acc) {
+                CRef<CSeq_id> id(new CSeq_id(*acc));
+                CSeq_id::EAccessionInfo info = id->IdentifyAccession ();
+                if ((info & CSeq_id::eAcc_wgs) != 0) {
+                    if (acc->length() > 8 && NStr::EndsWith (*acc, "000000")) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
 
 void CValidError_bioseq::ValidateSeqIds
 (const CBioseq& seq)
@@ -584,7 +620,8 @@ void CValidError_bioseq::ValidateSeqIds
                     mi->GetTech() == CMolInfo::eTech_wgs  &&
                     wgs_tech_needs_wgs_accession &&
                     !is_segset_accession &&
-                    !has_wgs_general) {
+                    !has_wgs_general &&
+                    !x_IsWgsSecondary(seq)) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
                 "Mol-info.tech of wgs should have WGS accession", seq);
         }
