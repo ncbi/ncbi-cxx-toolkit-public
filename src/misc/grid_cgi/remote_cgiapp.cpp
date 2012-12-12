@@ -68,15 +68,15 @@ public:
     CCgiWorkerNodeJob(CRemoteCgiApp& app) : m_App(app) {}
     virtual ~CCgiWorkerNodeJob() {} 
 
-    int Do(CWorkerNodeJobContext& context)
-    {        
-        CNcbiIstream& is = context.GetIStream();
-        CNcbiOstream& os = context.GetOStream();
+    int Do(CWorkerNodeJobContext& job_context)
+    {
+        CNcbiIstream& is = job_context.GetIStream();
+        CNcbiOstream& os = job_context.GetOStream();
 
-        int ret = m_App.RunJob(is, os, context);
+        int ret = m_App.RunJob(is, os, job_context);
 
-        context.CommitJob();
-        return ret;;
+        job_context.CommitJob();
+        return ret;
     }
 
 private:
@@ -112,7 +112,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 CRemoteCgiApp::CRemoteCgiApp()
-    : m_WorkerNodeContext(NULL)
+    : m_JobContext(NULL)
 {
     m_AppImpl.reset(new CGridWorkerNode(*this,
         new CCgiWorkerNodeJobFactory(*this)));
@@ -170,13 +170,13 @@ string CRemoteCgiApp::GetJobVersion() const
 }
 
 int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
-                              CWorkerNodeJobContext& wn_context)
+                              CWorkerNodeJobContext& job_context)
 {
     auto_ptr<CCgiContext> cgi_context( 
                          new CCgiContext(*this, &is, &os,
                          m_RequestFlags | CCgiRequest::fSetDiagProperties) );
 
-    m_WorkerNodeContext = &wn_context;
+    m_JobContext = &job_context;
     CDiagRestorer diag_restorer;
 
     int ret;
@@ -191,14 +191,14 @@ int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
     }
     OnEvent(eEndRequest, 120);
     OnEvent(eExit, ret);
-    m_WorkerNodeContext = NULL;
+    m_JobContext = NULL;
     return ret;
 }
 
 void  CRemoteCgiApp::PutProgressMessage(const string& msg, bool send_immediately)
 {
-    if (m_WorkerNodeContext)
-        m_WorkerNodeContext->PutProgressMessage(msg, send_immediately);
+    if (m_JobContext)
+        m_JobContext->PutProgressMessage(msg, send_immediately);
 }
 
 
