@@ -1677,7 +1677,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
     }
 
     if (isHtml) {
-        m_Ostream << "<br>Nucleotide details around V(D)J junctions:\n";
+        m_Ostream << "<br>V(D)J junction details based on top germline gene matches:\n";
         m_Ostream << "<pre><table border=1>\n";
         m_Ostream << "<tr><td>V region end</td>";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
@@ -1690,7 +1690,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         }
         m_Ostream << "<td>J region start</td></tr>\n<tr>";
     } else {
-        m_Ostream << header << "V(D)J junction details (V end, ";
+        m_Ostream << header << "V(D)J junction details based on top germline gene matches (V end, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB")  m_Ostream << "V-D junction, D region, D-J junction, ";
         else m_Ostream << "V-J junction, ";
