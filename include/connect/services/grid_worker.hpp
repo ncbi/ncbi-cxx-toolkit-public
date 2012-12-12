@@ -185,6 +185,7 @@ class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext :
 {
 public:
     /// Get the associated job structure to access all of its fields.
+    const CNetScheduleJob& GetJob() const {return m_Job;}
     CNetScheduleJob& GetJob() {return m_Job;}
 
     /// Get a job key
