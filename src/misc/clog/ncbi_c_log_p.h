@@ -117,6 +117,7 @@ struct SInfo_tag {
     STime             app_start_time;           /**< Application start time                       */
     char*             app_full_name;            /**< Pointer to a full application name (argv[0]) */
     char*             app_base_name;            /**< Pointer to application base name             */
+    char*             logsite;                  /**< Pointer to log_site value                    */
 
 
     /* Log file names and handles */
@@ -212,6 +213,11 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
  *  SERVER_ADDR, empty string.
  */
 extern const char* NcbiLogP_GetHostName(void);
+
+
+/** Get log_site value from environment.
+ */
+extern const char* NcbiLogP_GetLogSite(void);
 
 
 #ifdef __cplusplus

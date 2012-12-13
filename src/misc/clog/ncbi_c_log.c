@@ -497,6 +497,24 @@ const char* NcbiLogP_GetHostName(void)
 }
 
 
+/** Get log_site value from environment.
+ */
+const char* NcbiLogP_GetLogSite(void)
+{
+    static char* logsite = NULL;
+    char* value;
+
+    if ( logsite ) {
+        return logsite;
+    }
+    value = getenv("NCBI_LOG_SITE");
+    if ( value  &&  *value ) {
+        logsite = value;
+    }
+    return logsite;
+}
+
+
 /** Get current process ID.
 */
 static TNcbiLog_PID s_GetPID(void)
@@ -1500,47 +1518,61 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
 }
 
 
+/** Print one parameter's pair (key, value) to message buffer.
+ *  Automatically URL encode each key and value.
+ *  Return current position in the buffer.
+ */
+static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const char* value)
+{
+    size_t len, r_len, w_len;
+
+    if (!key  ||  key[0] == '\0' || !value  ||  value[0] == '\0') {
+        return pos;
+    }
+    /* Key */
+    len = strlen(key);
+    s_URL_Encode(key, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
+    pos += w_len;
+    if (pos >= NCBILOG_ENTRY_MAX-1) {
+        return pos;
+    }
+    /* Value */
+    dst[pos++] = '=';
+    len = strlen(value);
+    s_URL_Encode(value, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
+    pos += w_len;
+
+    return pos;
+}
+
+
 /** Print parameters to message buffer.
  *  Return current position in the buffer, or zero on error.
  */
-static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params)
+static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params, int /*bool*/ add_log_site)
 {
     int/*bool*/ amp = 0;
-    size_t len, r_len, w_len;
 
-    if (!params) {
-        return pos;
-    }
     /* Walk through the list of arguments */
-    while (params->key  &&  pos < NCBILOG_ENTRY_MAX) {
-        if (params->key[0] != '\0') {
-            if (amp) {
-                dst[pos++] = '&';
-            } else {
-                amp = 1;
-            }
-
-            /* Key */
-            len = strlen(params->key);
-            if (len) {
-                s_URL_Encode(params->key, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
-                pos += w_len;
-            }
-
-            /* Value */
-            if (params->value  &&  params->value[0] != '\0') {
-                if (pos == NCBILOG_ENTRY_MAX) {
-                    return pos;
+    if (params) {
+        while (params  &&  params->key  &&  pos < NCBILOG_ENTRY_MAX) {
+            if (params->key[0] != '\0') {
+                if (amp) {
+                    dst[pos++] = '&';
+                } else {
+                    amp = 1;
                 }
-                dst[pos++] = '=';
-                len = strlen(params->value);
-                if (len) {
-                    s_URL_Encode(params->value, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
-                    pos += w_len;
-                }
+                pos = s_PrintParamsPair(dst, pos, params->key, params->value);
             }
+            params++;
         }
-        params++;
+    }
+    /* Append log_site parameter to the end, if specified */
+    if (add_log_site  &&  sx_Info->logsite  &&  sx_Info->logsite[0]) {
+        if (amp) {
+            dst[pos++] = '&';
+        }
+        pos = s_PrintParamsPair(dst, pos, "log_site", sx_Info->logsite);
     }
     dst[pos] = '\0';
     return pos;
@@ -1559,7 +1591,7 @@ static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
         return pos;
     }
     len = strlen(params);
-    if (len > NCBILOG_ENTRY_MAX - pos) {
+    if (len >= NCBILOG_ENTRY_MAX - pos) {
         return pos;
     }
     memcpy(dst + pos, params, len);
@@ -1638,6 +1670,7 @@ void s_Init(const char* appname)
 {
     size_t len, r_len, w_len;
     char* app = NULL;
+    const char* logsite = NULL;
 
     /* Initialize TLS; disable using TLS for ST applications */
     if (sx_MTLock) {
@@ -1683,6 +1716,12 @@ void s_Init(const char* appname)
     s_URL_Encode(sx_Info->app_base_name, len, &r_len,
                 (char*)sx_Info->appname, 3*NCBILOG_APPNAME_MAX, &w_len);
     sx_Info->appname[w_len] = '\0';
+
+    /* Set log_site */
+    logsite = NcbiLogP_GetLogSite();
+    if (logsite) {
+        sx_Info->logsite = s_StrDup(logsite);
+    }
 
     /* Allocate memory for message buffer */
     sx_Info->message = (char*) malloc(NCBILOG_ENTRY_MAX + 1 /* '\0' */);
@@ -1793,6 +1832,9 @@ extern void NcbiLog_Destroy(void)
     }
     if (sx_Info->app_base_name) {
         free(sx_Info->app_base_name);
+    }
+    if (sx_Info->logsite) {
+        free(sx_Info->logsite);
     }
     if (sx_Info) {
         free((void*)sx_Info);
@@ -1955,6 +1997,20 @@ ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned i
 }
 
 
+void NcbiLog_SetLogSite(const char* logsite)
+{
+    MT_LOCK_API;
+    if (sx_Info->logsite) {
+        free(sx_Info->logsite);
+        sx_Info->logsite = NULL;
+    }
+    if (logsite  &&  *logsite) {
+        sx_Info->logsite = s_StrDup(logsite);
+    }
+    MT_UNLOCK;
+}
+
+
 void NcbiLog_SetProcessId(TNcbiLog_PID pid)
 {
     MT_LOCK_API;
@@ -2047,6 +2103,9 @@ ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
     return prev;
 }
 
+/* Forward declaration */
+void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params);
+
 
 /** Print "start" message. 
  *  We should print "start" message always, before any other message.
@@ -2057,6 +2116,7 @@ void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     int    i, n;
     size_t pos;
     char*  buf;
+    SNcbiLog_Param params[2];
 
     s_SetState(ctx, eNcbiLog_AppBegin);
     /* Prefix */
@@ -2082,6 +2142,15 @@ void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     }
     /* Post a message */
     s_Post(ctx, eDiag_Log);
+
+    /* Print log_site, if specified and not empty */
+    if (sx_Info->logsite  &&  sx_Info->logsite[0]) {
+        params[0].key   = "log_site";
+        params[0].value = sx_Info->logsite;
+        params[1].key   = NULL;
+        params[1].value = NULL;
+        s_Extra(ctx, params);
+    }
 }
 
 
@@ -2210,7 +2279,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     pos = s_ReqStart(ctx);
     VERIFY(pos > 0);
     /* Parameters */
-    n = s_PrintParams(sx_Info->message, pos, params);
+    n = s_PrintParams(sx_Info->message, pos, params, 1 /*log_site*/);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
@@ -2282,16 +2351,11 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 }
 
 
-void NcbiLog_Extra(const SNcbiLog_Param* params)
+void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 {
-    TNcbiLog_Context ctx = NULL;
     int    n;
     size_t nu, pos;
     char*  buf;
-
-    MT_LOCK_API;
-    ctx = s_GetContext();
-    CHECK_APP_START(ctx);
 
     /* Prefix */
     buf = sx_Info->message;
@@ -2302,11 +2366,20 @@ void NcbiLog_Extra(const SNcbiLog_Param* params)
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    nu = s_PrintParams(buf, pos, params);
+    nu = s_PrintParams(buf, pos, params, 0 /*log_site*/);
     VERIFY(nu > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
+}
 
+
+void NcbiLog_Extra(const SNcbiLog_Param* params)
+{
+    TNcbiLog_Context ctx = NULL;
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    CHECK_APP_START(ctx);
+    s_Extra(ctx, params);
     MT_UNLOCK;
 }
 
@@ -2361,7 +2434,7 @@ void NcbiLog_Perf(int status, double timespan,
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    nu = s_PrintParams(buf, pos, params);
+    nu = s_PrintParams(buf, pos, params, 0 /*log_site*/);
     VERIFY(nu > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Perf);

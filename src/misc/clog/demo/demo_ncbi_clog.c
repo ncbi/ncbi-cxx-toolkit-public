@@ -80,7 +80,11 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
     /* Set host name
        NcbiLog_SetHost("SOMEHOSTNAME");
     */
-    
+
+    /* Set log_site
+       NcbiLog_SetLogSite("");
+    */
+
     /* Set process/thread ID
        NcbiLog_SetProcessId(pid);
        NcbiLog_SetThreadId(tid);
