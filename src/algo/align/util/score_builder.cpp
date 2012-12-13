@@ -45,6 +45,8 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
+#include <util/sequtil/sequtil_manip.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -438,25 +440,6 @@ void CScoreBuilder::AddScore(CScope& scope,
     }
 }
 
-static inline char s_Complement(char residue)
-{
-    switch (residue) {
-    case 'A':
-        return 'T';
-    case 'C':
-        return 'G';
-    case 'G':
-        return 'C';
-    case 'T':
-        return 'A';
-    case 'N':
-        return 'N';
-    default:
-        NCBI_THROW(CException, eUnknown, string("Unexpected residue: ") + residue);
-        return 0;
-    }
-}
-
 static inline void s_RecordMatch(size_t match, string &BTOP, string &flipped_BTOP)
 {
     if (match) {
@@ -483,18 +466,24 @@ static pair<string,string> s_ComputeTraceback(CScope& scope,
         vec.GetSegSeqString(query, 0, i);
         vec.GetSegSeqString(subject, 1, i);
         if (query.empty()) {
-            ITERATE (string, it, subject) {
+            for (size_t idx = 0; idx < subject.size(); ++idx) {
+                string complement;
+                CSeqManip::Complement(subject, CSeqUtil::e_Iupacna,
+                                      idx, 1, complement);
                 BTOP += '-';
-                BTOP += *it;
-                flipped_BTOP.insert(flipped_BTOP.begin(), s_Complement(*it));
+                BTOP += subject[idx];
+                flipped_BTOP.insert(flipped_BTOP.begin(), complement[0]);
                 flipped_BTOP.insert(flipped_BTOP.begin(), '-');
             }
         } else if (subject.empty()) {
-            ITERATE (string, it, query) {
-                BTOP += *it;
+            for (size_t idx = 0; idx < query.size(); ++idx) {
+                string complement;
+                CSeqManip::Complement(query, CSeqUtil::e_Iupacna,
+                                      idx, 1, complement);
+                BTOP += query[idx];
                 BTOP += '-';
                 flipped_BTOP.insert(flipped_BTOP.begin(), '-');
-                flipped_BTOP.insert(flipped_BTOP.begin(), s_Complement(*it));
+                flipped_BTOP.insert(flipped_BTOP.begin(), complement[0]);
             }
         } else {
             size_t match = 0;
@@ -508,10 +497,16 @@ static pair<string,string> s_ComputeTraceback(CScope& scope,
                     match = 0;
                     BTOP += query[idx];
                     BTOP += subject[idx];
+                    string query_complement;
+                    CSeqManip::Complement(query, CSeqUtil::e_Iupacna,
+                                          idx, 1, query_complement);
+                    string subject_complement;
+                    CSeqManip::Complement(subject, CSeqUtil::e_Iupacna,
+                                          idx, 1, subject_complement);
                     flipped_BTOP.insert(flipped_BTOP.begin(),
-                                        s_Complement(subject[idx]));
+                                        subject_complement[0]);
                     flipped_BTOP.insert(flipped_BTOP.begin(),
-                                        s_Complement(query[idx]));
+                                        query_complement[0]);
                 }
             }
             s_RecordMatch(match, BTOP, flipped_BTOP);
