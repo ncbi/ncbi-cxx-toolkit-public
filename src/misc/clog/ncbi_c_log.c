@@ -1526,7 +1526,7 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
 {
     size_t len, r_len, w_len;
 
-    if (!key  ||  key[0] == '\0' || !value  ||  value[0] == '\0') {
+    if (!key  ||  key[0] == '\0') {
         return pos;
     }
     /* Key */
@@ -1538,6 +1538,9 @@ static size_t s_PrintParamsPair(char* dst, size_t pos, const char* key, const ch
     }
     /* Value */
     dst[pos++] = '=';
+    if (!value  ||  value[0] == '\0') {
+        return pos;
+    }
     len = strlen(value);
     s_URL_Encode(value, len, &r_len, dst + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
