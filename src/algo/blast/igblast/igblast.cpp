@@ -54,6 +54,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+static int max_allowed_VJ_distance_with_D = 90;
+static int max_allowed_VJ_distance_without_D = 40;
+static int max_allowed_VD_distance = 40;
+
 static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
 {
     CNcbiIfstream fs(fn.c_str(), IOS_BASE::in);
@@ -452,7 +456,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                            int iq,
                            bool va_or_vd_as_heavy_chain) {
     
- 
+    int allowed_VJ_distance = max_allowed_VJ_distance_with_D;
         /* preprocess D */
         if (align_D && !align_D->Get().empty()) {
             CSeq_align_set::Tdata & align_list = align_D->Set();
@@ -462,6 +466,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 while (it != align_list.end()) {
                     it = align_list.erase(it);
                 }
+                allowed_VJ_distance = max_allowed_VJ_distance_without_D;
             } else if (q_ct =="VA" || q_ct =="VD") {
                 if (va_or_vd_as_heavy_chain) {
                     //VA could behave like VD and is allowed to rearrange to JA or DD/JD
@@ -472,6 +477,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                     while (it != align_list.end()) {
                         it = align_list.erase(it);
                     } 
+                    allowed_VJ_distance = max_allowed_VJ_distance_without_D;
                 }
             }
             //test compatability between V and D
@@ -527,8 +533,8 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 bool keep = false;
                 int q_ds = (*it)->GetSeqStart(0);
                 int q_de = (*it)->GetSeqStop(0);
-                if (q_ms) keep = (q_de >= q_ve - 30 && q_ds <= q_ve - 3);
-                else      keep = (q_ds <= q_ve + 30 && q_de >= q_ve + 3);
+                if (q_ms) keep = (q_de >= q_ve - max_allowed_VD_distance && q_ds <= q_ve - 3);
+                else      keep = (q_ds <= q_ve + max_allowed_VD_distance && q_de >= q_ve + 3);
                 if (!keep) it = align_list.erase(it);
                 else ++it;
             }
@@ -573,9 +579,9 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 int q_js = (*it)->GetSeqStart(0);
                 int q_je = (*it)->GetSeqStop(0);
                 if (q_ms) { 
-                    if (q_je < q_ve - 60 || q_js > q_ve) keep = false;
+                    if (q_je < q_ve - allowed_VJ_distance  || q_js > q_ve) keep = false;
                 } else {
-                    if (q_js > q_ve + 60 || q_je < q_ve) keep = false;
+                    if (q_js > q_ve + allowed_VJ_distance || q_je < q_ve) keep = false;
                 }
                 /* remove failed seq_align */
                 if (!keep) it = align_list.erase(it);
@@ -599,12 +605,30 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                         it = al_D.erase(it);
                     } else ++it;
                 }
+
+                if (align_D.NotEmpty() && !align_D->IsEmpty()){
+                    it = al_J.begin();
+                    while (it != al_J.end()) {
+                        if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms)) {
+                            it = al_J.erase(it);
+                        } else ++it;
+                    }
+                }
             } else {
                 it = al_J.begin();
                 while (it != al_J.end()) {
                     if (s_DJNotCompatible(**(al_D.begin()), **it, q_ms)) {
                         it = al_J.erase(it);
                     } else ++it;
+                }
+                if (align_J.NotEmpty() && !align_J->IsEmpty()) {
+                    it = al_D.begin();
+                    while (it != al_D.end()) {
+                        if (s_DJNotCompatible(**it, **(al_J.begin()), q_ms)) {
+                            it = al_D.erase(it);
+                        } else ++it;
+                    }
+                    
                 }
             }
         }
