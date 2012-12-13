@@ -565,16 +565,22 @@ EEncodingForm ReadIntoUtf8(
         case eEncodingForm_Utf16Native:
             {
                 Uint2* u = us;
+#if 0
                 for (n = n/2; n--; ++u) {
                     result->Append(*u);
                 }
+#else
+                *result += CUtf8::AsUTF8(u,n/2);
+#endif
             }
             break;
         case eEncodingForm_ISO8859_1:
-            result->Append(tmp,eEncoding_ISO8859_1);
+            //result->Append(tmp,eEncoding_ISO8859_1);
+            *result += CUtf8::AsUTF8(tmp,eEncoding_ISO8859_1);
             break;
         case eEncodingForm_Windows_1252:
-            result->Append(tmp,eEncoding_Windows_1252);
+            //result->Append(tmp,eEncoding_Windows_1252);
+            *result += CUtf8::AsUTF8(tmp,eEncoding_Windows_1252);
             break;
         case eEncodingForm_Utf8:
 //            result->Append(tmp,eEncoding_UTF8);   
@@ -588,13 +594,14 @@ EEncodingForm ReadIntoUtf8(
                     result->reserve(max(result->capacity(), result->size() + n));
                 }
                 tmp[n] = '\0';
-                EEncoding enc = CStringUTF8::GuessEncoding(tmp);
+                EEncoding enc = CUtf8::GuessEncoding(tmp);
                 switch (enc) {
                 default:
                 case eEncoding_Unknown:
-                    if (CStringUTF8::GetValidBytesCount(tmp, n) != 0) {
+                    if (CUtf8::GetValidBytesCount( CTempString(tmp, n)) != 0) {
                         ef = eEncodingForm_Utf8;
-                        result->Append(tmp,enc);
+                        //result->Append(tmp,enc);
+                        *result += CUtf8::AsUTF8(tmp,enc);
                     }
                     else {
                         NCBI_THROW(CCoreException, eCore,
@@ -607,7 +614,8 @@ EEncodingForm ReadIntoUtf8(
                 case eEncoding_Ascii:
                 case eEncoding_ISO8859_1:
                 case eEncoding_Windows_1252:
-                    result->Append(tmp,enc);
+                    //result->Append(tmp,enc);
+                    *result += CUtf8::AsUTF8(tmp,enc);
                     break;
                 }
             } else {

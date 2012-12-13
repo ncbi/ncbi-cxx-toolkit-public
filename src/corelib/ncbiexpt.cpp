@@ -748,7 +748,7 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   (TXChar*)&xptr, 0, NULL);
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-    CStringUTF8 tmp(xptr);
+    CStringUTF8 tmp( CUtf8::AsUTF8(xptr));
     char* ptr = (char*)LocalAlloc( LPTR, tmp.size() + 1);
     strcpy(ptr, tmp.c_str());
     LocalFree(xptr);

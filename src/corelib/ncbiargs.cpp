@@ -92,7 +92,7 @@ void s_WriteEscapedStr(CNcbiOstream& out, const char* s)
 
 void s_WriteXmlLine(CNcbiOstream& out, const string& tag, const string& data)
 {
-    CStringUTF8 u(data,eEncoding_Unknown);
+    CStringUTF8 u( CUtf8::AsUTF8(data,eEncoding_Unknown) );
     out << "<"  << tag << ">";
     s_WriteEscapedStr(out, u.c_str());
     out << "</" << tag << ">" << endl;
@@ -858,7 +858,7 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
 
 // name
     out << "<" << role << " name=\"";
-    string name = CStringUTF8(GetName(),eEncoding_Unknown);
+    string name = CUtf8::AsUTF8(GetName(),eEncoding_Unknown);
     s_WriteEscapedStr(out,name.c_str());
     out  << "\"";
 // type
@@ -885,7 +885,7 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
     }
 
 // constraint
-    string constraint = CStringUTF8(GetUsageConstraint(),eEncoding_Unknown);
+    string constraint = CUtf8::AsUTF8(GetUsageConstraint(),eEncoding_Unknown);
     if (!constraint.empty()) {
         out << "<" << "constraint";
         if (IsConstraintInverted()) {
