@@ -455,12 +455,10 @@ static bool x_IsWgsSecondary (const CBioseq& seq)
         }
         if ( extra_acc ) {
             FOR_EACH_STRING_IN_LIST (acc, *extra_acc) {
-                CRef<CSeq_id> id(new CSeq_id(*acc));
-                CSeq_id::EAccessionInfo info = id->IdentifyAccession ();
-                if ((info & CSeq_id::eAcc_wgs) != 0) {
-                    if (acc->length() > 8 && NStr::EndsWith (*acc, "000000")) {
-                        return true;
-                    }
+                CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession (*acc);
+                if ((info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs
+                     && (info & CSeq_id::fAcc_master) != 0) {
+                    return true;
                 }
             }
         }
