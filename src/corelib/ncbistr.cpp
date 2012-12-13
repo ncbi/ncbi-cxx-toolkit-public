@@ -5068,6 +5068,7 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8_Helper
+
 #if !defined(__NO_EXPORT_STRINGUTF8__)
 #  define CStringUTF8_Helper  CStringUTF8
 #endif
@@ -5092,6 +5093,37 @@ SIZE_TYPE CStringUTF8::GetSymbolCount( const CTempString& str)
                         "String is not in UTF8 format",
                         (src - str.begin()));
         }
+    }
+    return count;
+}
+
+SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
+     CTempString::const_iterator& src)
+{
+    SIZE_TYPE count = 0;
+    src = str.begin();
+    CTempString::const_iterator to = str.end();
+    for (; src != to; ++src, ++count) {
+        SIZE_TYPE more = 0;
+        bool good = x_EvalFirst(*src, more);
+        while (more-- && good) {
+            good = x_EvalNext(*(++src));
+        }
+        if ( !good ) {
+            return count;
+        }
+    }
+    return count;
+}
+
+SIZE_TYPE CUtf8::GetSymbolCount( const CTempString& str)
+{
+    CTempString::const_iterator err;
+    SIZE_TYPE count = x_GetValidSymbolCount(str,err);
+    if (err != str.end()) {
+        NCBI_THROW2(CStringException, eFormat,
+                    "String is not in UTF8 format",
+                    (err - str.begin()));
     }
     return count;
 }
@@ -5149,10 +5181,17 @@ string CStringUTF8::AsSingleByteString(
     EEncoding encoding, const char* substitute_on_error) const
 #endif
 {
-    string result;
 #if defined(__NO_EXPORT_STRINGUTF8__)
+    if( encoding == eEncoding_UTF8) {
+        return self;
+    }
+    string result;
     result.reserve( GetSymbolCount(self)+1 );
 #else
+    if( encoding == eEncoding_UTF8) {
+        return *this;
+    }
+    string result;
     result.reserve( GetSymbolCount()+1 );
     const CStringUTF8& self(*this);
 #endif
@@ -5160,6 +5199,38 @@ string CStringUTF8::AsSingleByteString(
     CStringUTF8::const_iterator to = self.end();
     for ( ; src != to; ++src ) {
         TUnicodeSymbol sym = CStringUTF8::Decode( src );
+        if (substitute_on_error) {
+            try {
+                result.append(1, SymbolToChar( sym, encoding));
+            }
+            catch (CStringException&) {
+                result.append(substitute_on_error);
+            }
+        } else {
+            result.append(1, SymbolToChar( sym, encoding));
+        }
+    }
+    return result;
+}
+
+string CUtf8::AsSingleByteString( const CTempString& str,
+    EEncoding encoding, const char* substitute_on_error, EValidate validate)
+{
+    if (validate == eValidate) {
+        if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Source string is not in UTF8 format", 0);
+        }
+    }
+    if( encoding == eEncoding_UTF8) {
+        return str;
+    }
+    string result;
+    result.reserve( GetSymbolCount(str)+1 );
+    CTempString::const_iterator src = str.begin();
+    CTempString::const_iterator to = str.end();
+    for ( ; src != to; ++src ) {
+        TUnicodeSymbol sym = CUtf8::Decode( src );
         if (substitute_on_error) {
             try {
                 result.append(1, SymbolToChar( sym, encoding));
@@ -5223,8 +5294,82 @@ EEncoding CStringUTF8_Helper::GuessEncoding( const CTempString& src)
     return eEncoding_Unknown;
 }
 
+EEncoding CUtf8::GuessEncoding( const CTempString& src)
+{
+    SIZE_TYPE more = 0;
+    CTempString::const_iterator i = src.begin();
+    CTempString::const_iterator end = src.end();
+    bool cp1252, iso1, ascii, utf8;
+    for (cp1252 = iso1 = ascii = utf8 = true; i != end; ++i) {
+        Uint1 ch = *i;
+        bool skip = false;
+        if (more != 0) {
+            if (x_EvalNext(ch)) {
+                --more;
+                if (more == 0) {
+                    ascii = false;
+                }
+                skip = true;
+            } else {
+                more = 0;
+                utf8 = false;
+            }
+        }
+        if (ch > 0x7F) {
+            ascii = false;
+// http://en.wikipedia.org/wiki/ISO/IEC_8859-1
+            if (ch < 0xA0) {
+                iso1 = false;
+// http://en.wikipedia.org/wiki/Windows-1252
+                if (ch == 0x81 || ch == 0x8D || ch == 0x8F ||
+                    ch == 0x90 || ch == 0x9D) {
+                    cp1252 = false;
+                }
+            }
+            if (!skip && utf8 && !x_EvalFirst(ch, more)) {
+                utf8 = false;
+            }
+        }
+    }
+    if (more != 0) {
+        utf8 = false;
+    }
+    if (ascii) {
+        return eEncoding_Ascii;
+    } else if (utf8) {
+        return eEncoding_UTF8;
+    } else if (cp1252) {
+        return iso1 ? eEncoding_ISO8859_1 : eEncoding_Windows_1252;
+    }
+    return eEncoding_Unknown;
+}
+
 
 bool CStringUTF8_Helper::MatchEncoding( const CTempString& src, EEncoding encoding)
+{
+    bool matches = false;
+    EEncoding enc_src = GuessEncoding(src);
+    switch ( enc_src ) {
+    default:
+    case eEncoding_Unknown:
+        matches = false;
+        break;
+    case eEncoding_Ascii:
+        matches = true;
+        break;
+    case eEncoding_UTF8:
+    case eEncoding_Windows_1252:
+        matches = (encoding == enc_src);
+        break;
+    case eEncoding_ISO8859_1:
+        matches = (encoding == enc_src || encoding == eEncoding_Windows_1252);
+        break;
+    }
+    return matches;
+}
+
+
+bool CUtf8::MatchEncoding( const CTempString& src, EEncoding encoding)
 {
     bool matches = false;
     EEncoding enc_src = GuessEncoding(src);
@@ -5262,8 +5407,52 @@ string  CStringUTF8_Helper::EncodingToString(EEncoding encoding)
     return "UTF-8";
 }
 
+string  CUtf8::EncodingToString(EEncoding encoding)
+{
+    switch (encoding) {
+    case eEncoding_UTF8:         break;
+    case eEncoding_Ascii:        return "US-ASCII";
+    case eEncoding_ISO8859_1:    return "ISO-8859-1";
+    case eEncoding_Windows_1252: return "windows-1252";
+    default:
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Cannot convert encoding to string", 0);
+        break;
+    }
+    return "UTF-8";
+}
+
 // see http://www.iana.org/assignments/character-sets
 EEncoding CStringUTF8_Helper::StringToEncoding(const CTempString& str)
+{
+    if (NStr::CompareNocase(str,"UTF-8")==0) {
+        return eEncoding_UTF8;
+    }
+    if (NStr::CompareNocase(str,"windows-1252")==0) {
+        return eEncoding_Windows_1252;
+    }
+    int i;
+    const char* ascii[] = {
+    "ANSI_X3.4-1968","iso-ir-6","ANSI_X3.4-1986","ISO_646.irv:1991",
+    "ASCII","ISO646-US","US-ASCII","us","IBM367","cp367","csASCII", NULL};
+    for (i=0; ascii[i]; ++i) {
+        if (NStr::CompareNocase(str,ascii[i])==0) {
+            return eEncoding_Ascii;
+        }
+    }
+    const char* iso8859_1[] = {
+    "ISO_8859-1:1987","iso-ir-100","ISO_8859-1","ISO-8859-1",
+    "latin1","l1","IBM819","CP819","csISOLatin1", NULL};
+    for (i=0; iso8859_1[i]; ++i) {
+        if (NStr::CompareNocase(str,iso8859_1[i])==0) {
+            return eEncoding_ISO8859_1;
+        }
+    }
+    return eEncoding_Unknown;
+}
+
+// see http://www.iana.org/assignments/character-sets
+EEncoding CUtf8::StringToEncoding(const CTempString& str)
 {
     if (NStr::CompareNocase(str,"UTF-8")==0) {
         return eEncoding_UTF8;
@@ -5325,8 +5514,56 @@ TUnicodeSymbol CStringUTF8_Helper::CharToSymbol(char c, EEncoding encoding)
     return (TUnicodeSymbol)ch;
 }
 
+TUnicodeSymbol CUtf8::CharToSymbol(char c, EEncoding encoding)
+{
+    Uint1 ch = c;
+    switch (encoding)
+    {
+    case eEncoding_Unknown:
+    case eEncoding_UTF8:
+        NCBI_THROW2(CStringException, eBadArgs,
+                    "Unacceptable character encoding", 0);
+    case eEncoding_Ascii:
+    case eEncoding_ISO8859_1:
+        break;
+    case eEncoding_Windows_1252:
+        if (ch > 0x7F && ch < 0xA0) {
+            return s_cp1252_table[ ch - 0x80 ];
+        }
+        break;
+    default:
+        NCBI_THROW2(CStringException, eBadArgs,
+                    "Unsupported character encoding", 0);
+    }
+    return (TUnicodeSymbol)ch;
+}
+
 
 char CStringUTF8_Helper::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
+{
+    if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
+        NCBI_THROW2(CStringException, eBadArgs,
+                    "Unacceptable character encoding", 0);
+    }
+    if ( cp <= 0xFF) {
+        return (char)cp;
+    }
+    if ( encoding == eEncoding_Windows_1252 ) {
+        for (Uint1 ch = 0x80; ch <= 0x9F; ++ch) {
+            if (s_cp1252_table[ ch - 0x80 ] == cp) {
+                return (char)ch;
+            }
+        }
+    }
+    if (cp > 0xFF) {
+        NCBI_THROW2(CStringException, eConvert,
+                    "Failed to convert symbol to requested encoding", 0);
+    }
+    return (char)cp;
+}
+
+
+char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 {
     if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
         NCBI_THROW2(CStringException, eBadArgs,
@@ -5394,6 +5631,28 @@ void CStringUTF8::x_AppendChar( TUnicodeSymbol c)
     }
 }
 
+CStringUTF8& CUtf8::x_AppendChar( CStringUTF8& self, TUnicodeSymbol c)
+{
+    Uint4 ch = c;
+    if (ch < 0x80) {
+        self.append(1, Uint1(ch));
+    }
+    else if (ch < 0x800) {
+        self.append(1, Uint1( (ch >>  6)         | 0xC0));
+        self.append(1, Uint1( (ch        & 0x3F) | 0x80));
+    } else if (ch < 0x10000) {
+        self.append(1, Uint1( (ch >> 12)         | 0xE0));
+        self.append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
+        self.append(1, Uint1(( ch        & 0x3F) | 0x80));
+    } else {
+        self.append(1, Uint1( (ch >> 18)         | 0xF0));
+        self.append(1, Uint1(((ch >> 12) & 0x3F) | 0x80));
+        self.append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
+        self.append(1, Uint1( (ch        & 0x3F) | 0x80));
+    }
+    return self;
+}
+
 
 #if defined(__NO_EXPORT_STRINGUTF8__)
 void CStringUTF8_Helper::x_Append(
@@ -5443,7 +5702,56 @@ void CStringUTF8::x_Append(
     }
 }
 
+CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString& src,
+    EEncoding encoding, EValidate validate)
+{
+    if (encoding == eEncoding_Unknown) {
+        encoding = GuessEncoding(src);
+        if (encoding == eEncoding_Unknown) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Unable to guess the source string encoding", 0);
+        }
+    } else if (validate == eValidate) {
+        if ( !MatchEncoding( src,encoding ) ) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Source string does not match the declared encoding", 0);
+        }
+    }
+    if (encoding == eEncoding_UTF8 || encoding == eEncoding_Ascii) {
+        self.append(src);
+        return self;
+    }
+
+    SIZE_TYPE needed = 0;
+    CTempString::const_iterator i;
+    CTempString::const_iterator end = src.end();
+    for (i = src.begin(); i != end; ++i) {
+        needed += x_BytesNeeded( CharToSymbol( *i,encoding ) );
+    }
+    if ( !needed ) {
+        return self;
+    }
+    self.reserve(max(self.capacity(),self.length()+needed+1));
+    for (i = src.begin(); i != end; ++i) {
+        x_AppendChar( self, CharToSymbol( *i, encoding ) );
+    }
+    return self;
+}
+
 SIZE_TYPE CStringUTF8_Helper::x_BytesNeeded(TUnicodeSymbol c)
+{
+    Uint4 ch = c;
+    if (ch < 0x80) {
+        return 1;
+    } else if (ch < 0x800) {
+        return 2;
+    } else if (ch < 0x10000) {
+        return 3;
+    }
+    return 4;
+}
+
+SIZE_TYPE CUtf8::x_BytesNeeded(TUnicodeSymbol c)
 {
     Uint4 ch = c;
     if (ch < 0x80) {
@@ -5483,12 +5791,66 @@ bool CStringUTF8_Helper::x_EvalFirst(char ch, SIZE_TYPE& more)
 }
 
 
+bool CUtf8::x_EvalFirst(char ch, SIZE_TYPE& more)
+{
+    more = 0;
+    if ((ch & 0x80) != 0) {
+        if ((ch & 0xE0) == 0xC0) {
+            if ((ch & 0xFE) == 0xC0) {
+                // C0 and C1 are not valid UTF-8 chars
+                return false;
+            }
+            more = 1;
+        } else if ((ch & 0xF0) == 0xE0) {
+            more = 2;
+        } else if ((ch & 0xF8) == 0xF0) {
+            if ((unsigned char)ch > (unsigned char)0xF4) {
+                // F5-FF are not valid UTF-8 chars
+                return false;
+            }
+            more = 3;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool CStringUTF8_Helper::x_EvalNext(char ch)
 {
     return (ch & 0xC0) == 0x80;
 }
 
+
+bool CUtf8::x_EvalNext(char ch)
+{
+    return (ch & 0xC0) == 0x80;
+}
+
 TUnicodeSymbol CStringUTF8_Helper::DecodeFirst(char ch, SIZE_TYPE& more)
+{
+    TUnicodeSymbol chRes = 0;
+    more = 0;
+    if ((ch & 0x80) == 0) {
+        chRes = ch;
+    } else if ((ch & 0xE0) == 0xC0) {
+        chRes = (ch & 0x1F);
+        more = 1;
+    } else if ((ch & 0xF0) == 0xE0) {
+        chRes = (ch & 0x0F);
+        more = 2;
+    } else if ((ch & 0xF8) == 0xF0) {
+        chRes = (ch & 0x07);
+        more = 3;
+    } else {
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Source string is not in UTF8 format", 0);
+    }
+    return chRes;
+}
+
+TUnicodeSymbol CUtf8::DecodeFirst(char ch, SIZE_TYPE& more)
 {
     TUnicodeSymbol chRes = 0;
     more = 0;
@@ -5522,7 +5884,37 @@ TUnicodeSymbol CStringUTF8_Helper::DecodeNext(TUnicodeSymbol chU, char ch)
     return 0;
 }
 
+
+TUnicodeSymbol CUtf8::DecodeNext(TUnicodeSymbol chU, char ch)
+{
+    if ((ch & 0xC0) == 0x80) {
+        return (chU << 6) | (ch & 0x3F);
+    } else {
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Source string is not in UTF8 format", 0);
+    }
+    return 0;
+}
+
 bool CStringUTF8_Helper::IsWhiteSpace(TUnicodeSymbol chU)
+{
+/*
+    {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x85, 0xA0, 0x1680, 0x180E,
+    0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A,
+    0x2028, 0x2029, 0x202F, 0x205F, 0x3000 };
+*/
+    if (chU >= 0x85) {
+        if (chU < 0x2000) {
+            return chU == 0x85 || chU == 0xA0 || chU == 0x1680 || chU == 0x180E;
+        } else if (chU >= 0x3000) {
+            return chU == 0x3000;
+        }
+        return chU <=0x200A || chU == 0x2028 || chU == 0x2029 || chU == 0x202F || chU ==  0x205F;
+    }
+    return iswspace(chU)!=0;
+}
+
+bool CUtf8::IsWhiteSpace(TUnicodeSymbol chU)
 {
 /*
     {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x85, 0xA0, 0x1680, 0x180E,
@@ -5562,6 +5954,19 @@ CStringUTF8& CStringUTF8_Helper::TruncateSpacesInPlace(
     return self;
 }
 
+CStringUTF8& CUtf8::TruncateSpacesInPlace( CStringUTF8& str, NStr::ETrunc side)
+{
+    if (!str.empty()) {
+        CTempString t( TruncateSpaces_Unsafe( str,side));
+        if (t.empty()) {
+            str.erase();
+        } else {
+            str.replace(0,str.length(),t.data(),t.length());
+        }
+    }
+    return str;
+}
+
 CTempString CStringUTF8_Helper::TruncateSpaces_Unsafe(
     const CTempString& str, NStr::ETrunc side)
 {
@@ -5587,6 +5992,43 @@ CTempString CStringUTF8_Helper::TruncateSpaces_Unsafe(
             }
             CTempString::const_iterator next = end;
             if (!IsWhiteSpace( CStringUTF8::Decode( next ) )) {
+                end = ++next;
+                break;
+            }
+        }
+    }
+    CTempString res;
+    if (beg != end) {
+        res.assign(beg,end-beg);
+    }
+    return res;
+}
+
+CTempString CUtf8::TruncateSpaces_Unsafe(
+    const CTempString& str, NStr::ETrunc side)
+{
+    if (str.empty()) {
+        return str;
+    }
+    CTempString::const_iterator beg = str.begin();
+    CTempString::const_iterator end = str.end();
+    if (side == NStr::eTrunc_Begin  ||  side == NStr::eTrunc_Both) {
+        for (CTempString::const_iterator next = beg; beg != end; beg = ++next) {
+            if (!IsWhiteSpace( CUtf8::Decode( next ) )) {
+                break;
+            }
+        }
+    }
+    if (side == NStr::eTrunc_End  ||  side == NStr::eTrunc_Both) {
+        while (end != beg) {
+            while (end != beg) {
+                char ch = *(--end);
+                if ((ch & 0x80) == 0 || (ch & 0xC0) == 0xC0) {
+                    break;
+                }
+            }
+            CTempString::const_iterator next = end;
+            if (!IsWhiteSpace( CUtf8::Decode( next ) )) {
                 end = ++next;
                 break;
             }

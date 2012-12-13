@@ -134,13 +134,12 @@ typedef wstring TXString;
 
 #  if defined(_DEBUG)
 #    define _T_XSTRING(x) \
-    CStringUTF8::AsBasicString<TXChar>(x, NULL, CStringUTF8::eValidate)
+    CUtf8::AsBasicString<TXChar>(x, NULL, CUtf8::eValidate)
 #  else
 #    define _T_XSTRING(x) \
-    CStringUTF8::AsBasicString<TXChar>(x, NULL, CStringUTF8::eNoValidate)
-
+    CUtf8::AsBasicString<TXChar>(x, NULL, CUtf8::eNoValidate)
 #  endif
-#  define _T_STDSTRING(x)     CStringUTF8(x)
+#  define _T_STDSTRING(x)     CUtf8::AsUTF8(x)
 #  define _T_XCSTRING(x)      _T_XSTRING(x).c_str()
 #  define _T_CSTRING(x)       _T_STDSTRING(x).c_str()
 
@@ -2745,6 +2744,21 @@ public:
 }; // class NStr
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+
+
+/// Unicode character
+typedef Uint4 TUnicodeSymbol;
+/// Unicode string
+typedef basic_string<TUnicodeSymbol> TStringUnicode;
+
+/// UCS-4 character
+typedef unsigned long TCharUCS4;
+/// UCS-4 string
+typedef basic_string<TCharUCS4> TStringUCS4;
+
 /// Type for character in UCS-2 encoding
 typedef Uint2 TCharUCS2;
 /// Type for string in UCS-2 encoding
@@ -2753,12 +2767,327 @@ typedef basic_string<TCharUCS2> TStringUCS2;
 
 /// Operator for writing TStringUCS2 to stream.
 /// Operator is needed for using in SDBAPI.
-inline CNcbiOstream&
-operator<< (CNcbiOstream& os, const TStringUCS2& str)
+inline CNcbiOstream& operator<< (CNcbiOstream& os, const TStringUCS2& str)
 {
     os.write((const char*)str.data(), str.size() * sizeof(TCharUCS2));
     return os;
 }
+
+// fwd decl
+class CStringUTF8;
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CUtf8 --
+///
+///   Utility class to handle strings in UTF8 encoding.
+///   Can convert data to and from the following encodings:
+///      ISO 8859-1 (Latin1)
+///      Microsoft Windows code page 1252
+///      UCS-2, UCS-4 (no surrogates)
+
+enum EEncoding {
+    eEncoding_Unknown,
+    eEncoding_UTF8,
+    eEncoding_Ascii,
+    eEncoding_ISO8859_1,
+    eEncoding_Windows_1252
+};
+
+
+class NCBI_XNCBI_EXPORT CUtf8
+{
+public:
+    /// How to verify character encoding of the source data
+    enum EValidate {
+        eNoValidate,
+        eValidate
+    };
+
+    /// Convert into UTF8 from a C/C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    static CStringUTF8 AsUTF8(const CTempString& src,
+                              EEncoding          encoding,
+                              EValidate          validate = eNoValidate);
+
+    /// Convert into UTF8 from a Unicode C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @attention
+    ///   Only for TStringUnicode, TStringUCS4, TStringUCS2, wstring types
+    template <typename TChar>
+    static CStringUTF8 AsUTF8(const basic_string<TChar>& src);
+
+    /// Convert into UTF8 from a Unicode character buffer
+    ///
+    /// @param src
+    ///   Source chracter buffer
+    /// @param tchar_count
+    ///   Number of characters in the buffer;
+    ///   If it equals to NPOS, buffer is assumed to be zero-terminated
+    static CStringUTF8 AsUTF8(const TUnicodeSymbol* src,
+                              SIZE_TYPE             tchar_count = NPOS);
+    static CStringUTF8 AsUTF8(const TCharUCS4*      src,
+                              SIZE_TYPE             tchar_count = NPOS);
+    static CStringUTF8 AsUTF8(const TCharUCS2*      src,
+                              SIZE_TYPE             tchar_count = NPOS);
+#if defined(HAVE_WSTRING)
+    static CStringUTF8 AsUTF8(const wchar_t*        src,
+                              SIZE_TYPE             tchar_count = NPOS);
+#endif
+
+    /// Convert UTF8 string into a single-byte character representation
+    ///
+    /// Can throw a CStringException if the conversion is impossible
+    /// or the string has invalid UTF-8 encoding.
+    ///
+    /// @param src
+    ///   Source UTF8 string   
+    /// @param encoding
+    ///   Encoding of the result
+    /// @param substitute_on_error
+    ///   If the conversion is impossible, append the provided string
+    ///   or, if substitute_on_error equals 0, throw an exception
+    /// @param validate
+    ///   Verify UTF8 character encoding of the source
+    /// @return
+    ///   C++ string
+    static string AsSingleByteString
+    (const CTempString& src, EEncoding encoding,
+     const char* substitute_on_error = 0, EValidate validate = eNoValidate);
+
+    /// Convert UTF8 string into Unicode
+    ///
+    /// Can throw a CStringException if the conversion is impossible
+    /// or the string has invalid UTF-8 encoding.
+    ///
+    /// @param src
+    ///   Source UTF8 string   
+    /// @param substitute_on_error
+    ///   If the conversion is impossible, append the provided string
+    ///   or, if substitute_on_error equals 0, throw an exception
+    /// @param validate
+    ///   Verify UTF8 character encoding of the source
+    /// @attention
+    ///   Only for TStringUnicode, TStringUCS4, TStringUCS2, wstring types
+    template <typename TChar>
+    static basic_string<TChar> AsBasicString
+    (const CTempString& src,
+     const TChar* substitute_on_error, EValidate validate = eNoValidate);
+    template <typename TChar>
+    static basic_string<TChar> AsBasicString(const CTempString& src);
+
+    /// Get the number of symbols (code points) in UTF8 string
+    ///
+    /// @param src
+    ///   Source UTF8 string   
+    /// @return
+    ///   Number of symbols (code points)
+    static SIZE_TYPE GetSymbolCount(const CTempString& src);
+
+    /// Get the number of valid UTF-8 symbols (code points) in buffer
+    ///
+    /// @param src
+    ///   Character buffer
+    /// @return
+    ///   Number of valid symbols (no exception thrown)
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
+
+    /// Get the number of valid UTF-8 bytes (code units) in buffer
+    ///
+    /// @param src
+    ///   Character buffer
+    /// @return
+    ///   Number of valid bytes (no exception thrown)
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
+
+    /// Check the encoding of the C/C++ string
+    ///
+    /// Check that the encoding of the source is the same, or
+    /// is compatible with the specified one
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding form to check against
+    /// @return
+    ///   Boolean result: encoding is same or compatible
+    static bool MatchEncoding(const CTempString& src, EEncoding encoding);
+    
+    /// Guess the encoding of the C/C++ string
+    ///
+    /// It can distinguish between UTF-8, Latin1, and Win1252 only
+    /// @param src
+    ///   Character buffer
+    /// @return
+    ///   Encoding as guessed;  eEncoding_Unknown if cannot guess
+    static EEncoding GuessEncoding(const CTempString& src);
+
+    /// Give Encoding name as string
+    ///
+    /// @param encoding
+    ///   EEncoding enum. (Throw CStringException if passed eEncoding_Unknown.)
+    /// @return
+    ///   Encoding name
+    static string EncodingToString(EEncoding encoding);
+
+    /// Convert encoding name into EEncoding enum, taking into account synonyms
+    /// as per  http://www.iana.org/assignments/character-sets
+    ///
+    /// @param encoding_name
+    ///   Name of the encoding
+    /// @return
+    ///   EEncoding enum;  eEncoding_Unknown for unsupported encodings
+    static EEncoding StringToEncoding(const CTempString& encoding_name);
+
+    /// Convert encoded character into Unicode
+    ///
+    /// @param ch
+    ///   Encoded character
+    /// @param encoding
+    ///   Character encoding
+    /// @return
+    ///   Unicode code point (symbol)
+    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
+
+    /// Convert Unicode code point into encoded character
+    ///
+    /// @param sym
+    ///   Unicode code point (symbol)
+    /// @param encoding
+    ///   Character encoding
+    /// @return
+    ///   Encoded character
+    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
+
+    /// Determines if a symbol is whitespace
+    /// per  http://unicode.org/charts/uca/chart_Whitespace.html
+    ///
+    /// @param sym
+    ///   Unicode code point (symbol)
+    /// @sa
+    ///   TruncateSpacesInPlace, TruncateSpaces_Unsafe, TruncateSpaces
+    static bool IsWhiteSpace(TUnicodeSymbol sym);
+
+    /// Truncate spaces in the string (in-place)
+    ///
+    /// @param src
+    ///   UTF8 string
+    /// @param side
+    ///   Which end of the string to truncate spaces from. Default is to
+    ///   truncate spaces from both ends.
+    /// @return
+    ///   Reference to src
+    /// @sa
+    ///   IsWhiteSpace, TruncateSpaces_Unsafe, TruncateSpaces
+    static CStringUTF8& TruncateSpacesInPlace
+    (CStringUTF8& str, NStr::ETrunc side = NStr::eTrunc_Both);
+
+    /// Truncate spaces in the string
+    ///
+    /// @param str
+    ///   Source string, in UTF8 encoding
+    /// @param side
+    ///   Which end of the string to truncate spaces from. Default is to
+    ///   truncate spaces from both ends.
+    /// @sa
+    ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
+    static CStringUTF8 TruncateSpaces
+    (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
+
+    /// Truncate spaces in the string
+    ///
+    /// @param str
+    ///   Source string, in UTF8 encoding
+    /// @param side
+    ///   Which end of the string to truncate spaces from. Default is to
+    ///   truncate spaces from both ends.
+    /// @attention
+    ///   The lifespan of the result string is the same as one of the source.
+    ///   So, for example, if the source is temporary string, then the result
+    ///   will be invalid right away (will point to already released memory).
+    /// @sa
+    ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces
+    static CTempString TruncateSpaces_Unsafe
+    (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
+
+    /// Convert sequence of UTF8 code units into Unicode code point
+    ///
+    /// @param src
+    ///   Zero-terminated buffer, in UTF8 encoding
+    /// @return
+    ///   Unicode code point
+    static TUnicodeSymbol Decode(const char*& src);
+
+    /// Convert sequence of UTF8 code units into Unicode code point
+    ///
+    /// @param src
+    ///   C++ string iterator
+    /// @return
+    ///   Unicode code point
+    static TUnicodeSymbol Decode(string::const_iterator& src);
+
+    /// Begin converting first character of UTF8 sequence into Unicode
+    ///
+    /// @param ch
+    ///   Character
+    /// @param more
+    ///   If the character is valid, - how many more characters to expect
+    /// @return
+    ///   Part of Unicode code point. Zero if the character is invalid.
+    static TUnicodeSymbol DecodeFirst(char ch, SIZE_TYPE& more);
+
+    /// Convert next character of UTF8 sequence into Unicode
+    ///
+    /// @param ch
+    ///   Character
+    /// @param chU
+    ///   Incomplete Unicode code point
+    /// @return
+    ///   Accumulated Unicode code point. Zero if the character is invalid.
+    static TUnicodeSymbol DecodeNext(TUnicodeSymbol chU, char ch);
+
+private:
+    static SIZE_TYPE x_GetValidSymbolCount
+    (const CTempString& src, CTempString::const_iterator& err);
+
+    static CStringUTF8& x_AppendChar(CStringUTF8& u8str, TUnicodeSymbol ch);
+
+    static CStringUTF8& x_Append(CStringUTF8& u8str, const CTempString& src,
+                                 EEncoding encoding, EValidate validate);
+    template <typename TChar>
+    static TUnicodeSymbol x_TCharToSymbol(TChar ch);
+
+    template <typename TIterator>
+    static CStringUTF8& x_Append(CStringUTF8& u8str,
+                                 TIterator from, TIterator to);
+
+    template <typename TChar>
+    static CStringUTF8& x_Append(CStringUTF8& u8str,
+                                 const TChar* src, SIZE_TYPE tchar_count);
+
+    template <typename TChar>
+    static basic_string<TChar> x_AsBasicString
+    (const CTempString& src,
+     const TChar* substitute_on_error, EValidate validate);
+    
+    template <typename TIterator>
+    static TUnicodeSymbol x_Decode(TIterator& src);
+
+    static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
+    static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
+    static bool   x_EvalNext(char ch);
+
+    template<class Type> class CNotImplemented {};
+};
 
 
 
@@ -2775,14 +3104,6 @@ operator<< (CNcbiOstream& os, const TStringUCS2& str)
 ///      Microsoft Windows code page 1252
 ///      UCS-2, UCS-4 (no surrogates)
 
-enum EEncoding {
-    eEncoding_Unknown,
-    eEncoding_UTF8,
-    eEncoding_Ascii,
-    eEncoding_ISO8859_1,
-    eEncoding_Windows_1252
-};
-typedef Uint4 TUnicodeSymbol;
 
 // On MSVC2010, we cannot export CStringUTF8
 // So, all its methods must be inline
@@ -2800,8 +3121,8 @@ public:
 
     /// How to verify the character encoding of the source data
     enum EValidate {
-        eNoValidate =0,
-        eValidate   =1
+        eNoValidate,
+        eValidate
     };
 
     /// How to interpret zeros in the source character buffer -
@@ -2811,12 +3132,10 @@ public:
         eCharBuffer      ///< Zeros are part of the data
     };
 
-    CStringUTF8(void)
-    {
+    CStringUTF8(void) {
     }
 
-    ~CStringUTF8(void)
-    {
+    ~CStringUTF8(void) {
     }
 
     /// Copy constructor.
@@ -2825,13 +3144,7 @@ public:
     ///   Source UTF-8 string
     /// @param validate
     ///   Verify that the source character encoding is really UTF-8
-    CStringUTF8(const CStringUTF8& src, EValidate validate = eNoValidate)
-        : string(src)
-    {
-        if (validate == eValidate) {
-            x_Validate();
-        }
-    }
+    CStringUTF8(const CStringUTF8& src, EValidate validate = eNoValidate);
 
     /// Constructor from a C/C++ string
     ///
@@ -2841,138 +3154,45 @@ public:
     ///   Character encoding of the source string
     /// @param validate
     ///   Verify the character encoding of the source
+    /// @deprecated  Use utility class CUtf8 instead
+    NCBI_DEPRECATED_CTOR( CStringUTF8(const CTempString& src) );
+    NCBI_DEPRECATED_CTOR( CStringUTF8(const char* src ) );
+    NCBI_DEPRECATED_CTOR( CStringUTF8(const string& src) );
     CStringUTF8(const CTempString& src,
-                EEncoding encoding = eEncoding_ISO8859_1,
-                EValidate validate = eNoValidate)
-        : string()
-    {
-        x_Append(src, encoding, validate);
-    }
+                  EEncoding encoding,
+                  EValidate validate = eNoValidate);
+    CStringUTF8(const char* src,
+                EEncoding encoding,
+                EValidate validate = eNoValidate);
+    CStringUTF8(const string& src,
+                EEncoding encoding,
+                EValidate validate = eNoValidate);
 
-    /// Constructor from any string (ISO8859-1, USC-2 or USC-4,
-    /// depending on the size of TChar).
-    template <class T>
-    CStringUTF8(const basic_string<T>& src)
-        : string()
-    {
-        x_Append(src.begin(), src.end());
-    }
-
-    /// Constructor from any character sequence (ISO8859-1, USC-2 or USC-4,
-    /// depending on the size of TChar).
-    template <typename TChar>
-    CStringUTF8(const TChar* src)
-        : string()
-    {
-        x_Append(src);
-    }
-
-    /// Constructor from any character sequence (ISO8859-1, USC-2 or USC-4,
-    /// depending on the size of TChar).
-    template <typename TChar>
-    CStringUTF8(ECharBufferType type, const TChar* src, SIZE_TYPE char_count)
-        : string()
-    {
-        x_Append(src,char_count,type);
-    }
-
-    /// Assign to UTF8 string
-    CStringUTF8& operator= (const CStringUTF8& src)
-    {
-        string::operator= (src);
-        return *this;
-    }
-
-    /// Assign to C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
-    template <typename TChar>
-    CStringUTF8& operator= (const basic_string<TChar>& src)
-    {
-        erase();
-        x_Append(src.begin(), src.end());
-        return *this;
-    }
-
-    /// Assign to C string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
-    template <typename TChar>
-    CStringUTF8& operator= (const TChar* src)
-    {
-        erase();
-        x_Append(src);
-        return *this;
-    }
-
-    /// Append a string in UTF8 encoding
-    CStringUTF8& operator+= (const CStringUTF8& src)
-    {
-        string::operator+= (src);
-        return *this;
-    }
-
-    /// Append a C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
-    template <typename TChar>
-    CStringUTF8& operator+= (const basic_string<TChar>& src)
-    {
-        x_Append(src.begin(), src.end());
-        return *this;
-    }
-
-    /// Append a C string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
-    template <typename TChar>
-    CStringUTF8& operator+= (const TChar* src)
-    {
-        x_Append(src);
-        return *this;
-    }
-
-    /// Assign to C/C++ string
+    /// Constructor from Unicode string
     ///
     /// @param src
     ///   Source string
-    /// @param encoding
-    ///   Character encoding of the source string
-    /// @param validate
-    ///   Verify the character encoding of the source
-    CStringUTF8& Assign(const CTempString& src,
-                        EEncoding encoding,
-                        EValidate validate = eNoValidate)
-    {
-        erase();
-        x_Append(src, encoding, validate);
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8(const TStringUnicode& src);
+    CStringUTF8(const TStringUCS4&    src);
+    CStringUTF8(const TStringUCS2&    src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8(const wstring&        src);
+#endif
 
-    /// Assign to C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
-    ///
-    /// @param src
-    ///   Source string
-    template <typename TChar>
-    CStringUTF8& Assign(const basic_string<TChar>& src)
-    {
-        erase();
-        x_Append(src.begin(), src.end());
-        return *this;
-    }
-
-    /// Assign to C string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
+    /// Constructor from Unicode character sequence
     ///
     /// @param src
     ///   Source zero-terminated character buffer
-    template <typename TChar>
-    CStringUTF8& Assign(const TChar* src)
-    {
-        erase();
-        x_Append(src);
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8(const TUnicodeSymbol* src);
+    CStringUTF8(const TCharUCS4*      src);
+    CStringUTF8(const TCharUCS2*      src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8(const wchar_t*        src);
+#endif
 
-    /// Assign to C string or character buffer in ISO8859-1, USC-2 or USC-4
-    /// (depending on the size of TChar)
+    /// Constructor from Unicode character sequence
     ///
     /// @param type
     ///   How to interpret zeros in the source character buffer -
@@ -2981,27 +3201,138 @@ public:
     ///   Source character buffer
     /// @char_count
     ///   Number of TChars in the buffer
-    template <typename TChar>
-    CStringUTF8& Assign(ECharBufferType type, const TChar* src, SIZE_TYPE char_count)
-    {
-        erase();
-        x_Append(src,char_count,type);
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8(ECharBufferType type,
+                const TUnicodeSymbol* src, SIZE_TYPE char_count);
+    CStringUTF8(ECharBufferType type,
+                const TCharUCS4*      src, SIZE_TYPE char_count);
+    CStringUTF8(ECharBufferType type,
+                const TCharUCS2*      src, SIZE_TYPE char_count);
+#if defined(HAVE_WSTRING)
+    CStringUTF8(ECharBufferType type,
+                const wchar_t*        src, SIZE_TYPE char_count);
+#endif
 
-    /// Assign to a single character
+    /// Assign UTF8 string
+    CStringUTF8& operator= (const CStringUTF8&  src);
+
+    /// Assign Unicode C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& operator= (const TStringUnicode& src);
+    CStringUTF8& operator= (const TStringUCS4&    src);
+    CStringUTF8& operator= (const TStringUCS2&    src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& operator= (const wstring&        src);
+#endif
+
+    /// Assign Unicode C string
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& operator= (const TUnicodeSymbol* src);
+    CStringUTF8& operator= (const TCharUCS4*      src);
+    CStringUTF8& operator= (const TCharUCS2*      src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& operator= (const wchar_t*        src);
+#endif
+
+    /// Append UTF8 string
+    CStringUTF8& operator+= (const CStringUTF8& src);
+
+    /// Append Unicode C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& operator+= (const TStringUnicode& src);
+    CStringUTF8& operator+= (const TStringUCS4&    src);
+    CStringUTF8& operator+= (const TStringUCS2&    src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& operator+= (const wstring&        src);
+#endif
+
+    /// Append Unicode C string
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& operator+= (const TUnicodeSymbol* src);
+    CStringUTF8& operator+= (const TCharUCS4*      src);
+    CStringUTF8& operator+= (const TCharUCS2*      src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& operator+= (const wchar_t*        src);
+#endif
+
+    /// Assign C/C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Assign(const CTempString& src,
+                        EEncoding          encoding,
+                        EValidate          validate = eNoValidate);
+
+    /// Assign Unicode C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Assign(const TStringUnicode& src);
+    CStringUTF8& Assign(const TStringUCS4&    src);
+    CStringUTF8& Assign(const TStringUCS2&    src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& Assign(const wstring&        src);
+#endif
+
+    /// Assign Unicode C string
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Assign(const TUnicodeSymbol* src);
+    CStringUTF8& Assign(const TCharUCS4*      src);
+    CStringUTF8& Assign(const TCharUCS2*      src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& Assign(const wchar_t*        src);
+#endif
+
+    /// Assign Unicode C string or character buffer
+    ///
+    /// @param type
+    ///   How to interpret zeros in the source character buffer -
+    ///   as end of string, or as part of the data
+    /// @param src
+    ///   Source character buffer
+    /// @char_count
+    ///   Number of TChars in the buffer
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Assign(ECharBufferType type,
+                        const TUnicodeSymbol* src, SIZE_TYPE char_count);
+    CStringUTF8& Assign(ECharBufferType type,
+                        const TCharUCS4*      src, SIZE_TYPE char_count);
+    CStringUTF8& Assign(ECharBufferType type,
+                        const TCharUCS2*      src, SIZE_TYPE char_count);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& Assign(ECharBufferType type,
+                        const wchar_t*        src, SIZE_TYPE char_count);
+#endif
+
+    /// Assign a single character
     ///
     /// @param ch
     ///   Character
     /// @param encoding
     ///   Character encoding
-    CStringUTF8& Assign(char ch,
-                        EEncoding encoding)
-    {
-        erase();
-        x_AppendChar( CharToSymbol( ch, encoding ) );
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Assign(char ch, EEncoding encoding);
 
     /// Append a C/C++ string
     ///
@@ -3011,40 +3342,36 @@ public:
     ///   Character encoding of the source string
     /// @param validate
     ///   Verify the character encoding of the source
+    /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8& Append(const CTempString& src,
                         EEncoding encoding,
-                        EValidate validate = eNoValidate)
-    {
-        x_Append(src, encoding, validate);
-        return *this;
-    }
+                        EValidate validate = eNoValidate);
 
-    /// Append a C++ string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
+    /// Append Unicode C++ string
     ///
     /// @param src
     ///   Source string
-    template <typename TChar>
-    CStringUTF8& Append(const basic_string<TChar>& src)
-    {
-        x_Append(src.begin(),src.end());
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Append(const TStringUnicode& src);
+    CStringUTF8& Append(const TStringUCS4&    src);
+    CStringUTF8& Append(const TStringUCS2&    src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& Append(const wstring&        src);
+#endif
 
-    /// Append a C string in ISO8859-1, USC-2 or USC-4 (depending on the
-    /// size of TChar)
+    /// Append Unicode C string
     ///
     /// @param src
     ///   Source zero-terminated character buffer
-    template <typename TChar>
-    CStringUTF8& Append(const TChar* src)
-    {
-        x_Append(src);
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Append(const TUnicodeSymbol* src);
+    CStringUTF8& Append(const TCharUCS4*      src);
+    CStringUTF8& Append(const TCharUCS2*      src);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& Append(const wchar_t*        src);
+#endif
 
-    /// Append a C string or character buffer in ISO8859-1, USC-2 or USC-4
-    /// (depending on the size of TChar)
+    /// Append Unicode C string or character buffer
     ///
     /// @param type
     ///   How to interpret zeros in the source character buffer -
@@ -3053,12 +3380,17 @@ public:
     ///   Source character buffer
     /// @char_count
     ///   Number of TChars in the buffer
-    template <typename TChar>
-    CStringUTF8& Append(ECharBufferType type, const TChar* src, SIZE_TYPE char_count)
-    {
-        x_Append(src,char_count,type);
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Append(ECharBufferType type,
+                        const TUnicodeSymbol* src, SIZE_TYPE char_count);
+    CStringUTF8& Append(ECharBufferType type,
+                        const TCharUCS4*      src, SIZE_TYPE char_count);
+    CStringUTF8& Append(ECharBufferType type,
+                        const TCharUCS2*      src, SIZE_TYPE char_count);
+#if defined(HAVE_WSTRING)
+    CStringUTF8& Append(ECharBufferType type,
+                        const wchar_t*        src, SIZE_TYPE char_count);
+#endif
 
     /// Append single character
     ///
@@ -3066,36 +3398,28 @@ public:
     ///   Character
     /// @param encoding
     ///   Character encoding
-    CStringUTF8& Append(char ch,
-                        EEncoding encoding)
-    {
-        x_AppendChar( CharToSymbol( ch, encoding ) );
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Append(char ch, EEncoding encoding);
 
     /// Append single Unicode code point
     ///
     /// @param ch
     ///   Unicode code point
-    CStringUTF8& Append(TUnicodeSymbol ch)
-    {
-        x_AppendChar(ch);
-        return *this;
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    CStringUTF8& Append(TUnicodeSymbol ch);
 
     /// Get the number of symbols (code points) in the string
     ///
     /// @return
     ///   Number of symbols (code points)
-    SIZE_TYPE GetSymbolCount(void) const
-    {
-        return GetSymbolCount(*this);
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    SIZE_TYPE GetSymbolCount(void) const;
     
     /// Get the number of symbols (code points) in the string
     ///
     /// @return
     ///   Number of symbols (code points)
+    /// @deprecated  Use utility class CUtf8 instead
     static SIZE_TYPE GetSymbolCount(const CTempString& src);
 
     /// Get the number of valid UTF-8 symbols (code points) in the buffer
@@ -3106,14 +3430,16 @@ public:
     ///   The number of bytes in the buffer
     /// @return
     ///   Number of valid symbols (no exception thrown)
+    /// @deprecated  Use utility class CUtf8 instead
     static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
 
-    /// Get the number of valid UTF-8 symbols (code points) in the character buffer
+    /// Get the number of valid UTF-8 symbols (code points) in the char buffer
     ///
     /// @param src
     ///   Zero-terminated character buffer, or string
     /// @return
     ///   Number of valid symbols (no exception thrown)
+    /// @deprecated  Use utility class CUtf8 instead
     static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
     
     /// Get the number of valid UTF-8 bytes (code units) in the buffer
@@ -3124,40 +3450,39 @@ public:
     ///   The number of bytes in the buffer
     /// @return
     ///   Number of valid bytes (no exception thrown)
+    /// @deprecated  Use utility class CUtf8 instead
     static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
 
-    /// Get the number of valid UTF-8 bytes (code units) in the character buffer
+    /// Get the number of valid UTF-8 bytes (code units) in the char buffer
     ///
     /// @param src
     ///   Zero-terminated character buffer, or string
     /// @return
     ///   Number of valid bytes (no exception thrown)
+    /// @deprecated  Use utility class CUtf8 instead
     static SIZE_TYPE GetValidBytesCount(const CTempString& src);
 
     /// Check that the character encoding of the string is valid UTF-8
     ///
     /// @return
     ///   Result of the check
-    bool IsValid(void) const
-    {
-        return MatchEncoding(*this, eEncoding_UTF8);
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    bool IsValid(void) const;
+
     /// Convert to ISO 8859-1 (Latin1) character representation
     ///
     /// Can throw a CStringException if the conversion is impossible
-    /// or the string has invalid UTF-8 format.
+    /// or the string has invalid UTF-8 encoding.
     /// @param substitute_on_error
     ///   If the conversion is impossible, append the provided string
     ///   or, if substitute_on_error equals 0, throw the exception
-    string AsLatin1(const char* substitute_on_error = 0) const
-    {
-        return AsSingleByteString(eEncoding_ISO8859_1,substitute_on_error);
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    string AsLatin1(const char* substitute_on_error = 0) const;
     
     /// Convert the string to a single-byte character representation
     ///
     /// Can throw a CStringException if the conversion is impossible
-    /// or the string has invalid UTF-8 format.
+    /// or the string has invalid UTF-8 encoding.
     /// @param encoding
     ///   Desired encoding
     /// @param substitute_on_error
@@ -3165,50 +3490,55 @@ public:
     ///   or, if substitute_on_error equals 0, throw the exception
     /// @return
     ///   C++ string
-    string AsSingleByteString(EEncoding encoding,
-        const char* substitute_on_error = 0) const;
+    /// @deprecated  Use utility class CUtf8 instead
+    string AsSingleByteString(EEncoding   encoding,
+                              const char* substitute_on_error = 0) const;
 
 #if defined(HAVE_WSTRING)
     /// Convert to Unicode (UCS-2 with no surrogates where
     /// sizeof(wchar_t) == 2 and UCS-4 where sizeof(wchar_t) == 4).
     ///
     /// Can throw a CStringException if the conversion is impossible
-    /// or the string has invalid UTF-8 format.
+    /// or the string has invalid UTF-8 encoding.
     /// Defined only if wstring is supported by the compiler.
     ///
     /// @param substitute_on_error
     ///   If the conversion is impossible, append the provided string
     ///   or, if substitute_on_error equals 0, throw the exception
-    wstring AsUnicode(const wchar_t* substitute_on_error = 0) const
-    {
-        return AsBasicString<wchar_t>(substitute_on_error);
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    wstring AsUnicode(const wchar_t* substitute_on_error = 0) const;
 #endif // HAVE_WSTRING
 
     /// Convert to UCS-2 for all platforms
     ///
     /// Can throw a CStringException if the conversion is impossible
-    /// or the string has invalid UTF-8 format.
+    /// or the string has invalid UTF-8 encoding.
     ///
     /// @param substitute_on_error
     ///   If the conversion is impossible, append the provided string
     ///   or, if substitute_on_error equals 0, throw the exception
-    TStringUCS2 AsUCS2(const TCharUCS2* substitute_on_error = 0) const
-    {
-        return AsBasicString<TCharUCS2>(substitute_on_error);
-    }
+    /// @deprecated  Use utility class CUtf8 instead
+    TStringUCS2 AsUCS2(const TCharUCS2* substitute_on_error = 0) const;
 
-    /// Conversion to basic_string with any base type we need
-    template <typename TChar>
-    basic_string<TChar> AsBasicString(const TChar* substitute_on_error) const;
+    /// Conversion to Unicode string with any base type we need
+    /// @deprecated  Use utility class CUtf8 instead
+    template <typename TChar> 
+    basic_string<TChar> AsBasicString(const TChar* substitute_on_error = 0)
+        const;
 
-    /// Conversion to basic_string with any base type we need
+    /// Conversion to Unicode string with any base type we need
+    /// @deprecated  Use utility class CUtf8 instead
     template <typename TChar>
-    static
+    static  
     basic_string<TChar> AsBasicString(
         const CTempString& src,
-        const TChar* substitute_on_error = 0,
+        const TChar* substitute_on_error,
         EValidate validate = eNoValidate);
+
+    /// Conversion to Unicode string with any base type we need
+    /// @deprecated  Use utility class CUtf8 instead
+    template <typename TChar>
+    static basic_string<TChar> AsBasicString(const CTempString& src);
 
     /// Guess the encoding of the C/C++ string
     ///
@@ -3217,7 +3547,8 @@ public:
     ///   Source zero-terminated character buffer
     /// @return
     ///   Encoding
-    static EEncoding GuessEncoding( const CTempString& src);
+    /// @deprecated  Use utility class CUtf8 instead
+    static EEncoding GuessEncoding(const CTempString& src);
 
     /// Check the encoding of the C/C++ string
     ///
@@ -3229,7 +3560,8 @@ public:
     ///   Character encoding form to check against
     /// @return
     ///   Boolean result: encoding is same or compatible
-    static bool MatchEncoding( const CTempString& src, EEncoding encoding);
+    /// @deprecated  Use utility class CUtf8 instead
+    static bool MatchEncoding(const CTempString& src, EEncoding encoding);
 
     /// Give Encoding name as string
     ///
@@ -3240,6 +3572,7 @@ public:
     ///   EEncoding enum
     /// @return
     ///   Encoding name
+    /// @deprecated  Use utility class CUtf8 instead
     static string EncodingToString(EEncoding encoding);
     
     /// Convert encoding name into EEncoding enum, taking into account synonyms
@@ -3252,6 +3585,7 @@ public:
     ///   Encoding name
     /// @return
     ///   EEncoding enum
+    /// @deprecated  Use utility class CUtf8 instead
     static EEncoding StringToEncoding(const CTempString& str);
     
     /// Convert encoded character into UTF16
@@ -3262,16 +3596,18 @@ public:
     ///   Character encoding
     /// @return
     ///   Code point
+    /// @deprecated  Use utility class CUtf8 instead
     static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
     
     /// Convert Unicode code point into encoded character
     ///
-    /// @param ch
+    /// @param sym
     ///   Code point
     /// @param encoding
     ///   Character encoding
     /// @return
     ///   Encoded character
+    /// @deprecated  Use utility class CUtf8 instead
     static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
 
     /// Convert sequence of UTF8 code units into Unicode code point
@@ -3280,37 +3616,19 @@ public:
     ///   UTF8 zero-terminated buffer
     /// @return
     ///   Unicode code point
-    template <typename TIterator>
-    static
-    TUnicodeSymbol Decode(TIterator& src);
-
-    /// Convert first character of UTF8 sequence into Unicode
-    ///
-    /// @param ch
-    ///   character
-    /// @param more
-    ///   if the character is valid, - how many more characters to expect
-    /// @return
-    ///   non-zero, if the character is valid
-    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
-
-    /// Convert next character of UTF8 sequence into Unicode
-    ///
-    /// @param ch
-    ///   character
-    /// @param ch16
-    ///   Unicode character
-    /// @return
-    ///   non-zero, if the character is valid
-    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
+    /// @deprecated  Use utility class CUtf8 instead
+    static TUnicodeSymbol Decode(const char*& src);
+    /// @deprecated  Use utility class CUtf8 instead
+    static TUnicodeSymbol Decode(string::const_iterator& src);
     
     /// Determines if a symbol is whitespace
     /// per  http://unicode.org/charts/uca/chart_Whitespace.html
     ///
     /// @param chU
-    ///   Unicode character
+    ///   Unicode code point
     /// @sa
     ///   TruncateSpacesInPlace, TruncateSpaces_Unsafe, TruncateSpaces
+    /// @deprecated  Use utility class CUtf8 instead
     static bool IsWhiteSpace(TUnicodeSymbol chU);
     
     /// Truncate spaces in the string (in-place)
@@ -3322,13 +3640,14 @@ public:
     ///   Reference to itself
     /// @sa
     ///   IsWhiteSpace, TruncateSpaces_Unsafe, TruncateSpaces
+    /// @deprecated  Use utility class CUtf8 instead
     CStringUTF8& TruncateSpacesInPlace(NStr::ETrunc side = NStr::eTrunc_Both);
 
     /// Truncate spaces in the string
     ///
     /// @param str
-    ///   source string, in UTF8 format
-    /// @param side                                                        svn st inc   
+    ///   source string, in UTF8 encoding
+    /// @param side
     ///   Which end of the string to truncate spaces from. Default is to
     ///   truncate spaces from both ends (eTrunc_Both).
     /// @attention
@@ -3337,29 +3656,46 @@ public:
     ///   will be invalid right away (will point to already released memory).
     /// @sa
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces, CTempString
-    static CTempString TruncateSpaces_Unsafe(const CTempString& str,
-                                             NStr::ETrunc side = NStr::eTrunc_Both);
+    /// @deprecated  Use utility class CUtf8 instead
+    static CTempString TruncateSpaces_Unsafe
+    (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
     /// Truncate spaces in the string
     ///
     /// @param str
-    ///   source string, in UTF8 format
+    ///   source string, in UTF8 encoding
     /// @param side
     ///   Which end of the string to truncate spaces from. Default is to
     ///   truncate spaces from both ends (eTrunc_Both).
     /// @sa
-    ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe, CTempString
+    ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
+    /// @deprecated  Use utility class CUtf8 instead
     static CStringUTF8 TruncateSpaces(const CTempString& str,
-                                      NStr::ETrunc side = NStr::eTrunc_Both)
-    {
-        return CStringUTF8(TruncateSpaces_Unsafe( str,side), eEncoding_UTF8);
-    }
+                                      NStr::ETrunc side = NStr::eTrunc_Both);
+
+
+    /// Convert first character of UTF8 sequence into Unicode
+    ///
+    /// @param ch
+    ///   character
+    /// @param more
+    ///   if the character is valid, - how many more characters to expect
+    /// @return
+    ///   non-zero, if the character is valid
+    /// @deprecated  Use utility class CUtf8 instead
+    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
+
+    /// Convert next character of UTF8 sequence into Unicode
+    ///
+    /// @param ch
+    ///   character
+    /// @param chU
+    ///   Unicode code point
+    /// @return
+    ///   non-zero, if the character is valid
+    /// @deprecated  Use utility class CUtf8 instead
+    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
 
 private:
-    /// Function AsAscii is deprecated - use AsLatin1() instead
-    string AsAscii(void) const
-    {
-        return AsLatin1();
-    }
 
     void   x_Validate(void) const;
 
@@ -3367,7 +3703,7 @@ private:
     void   x_AppendChar(TUnicodeSymbol ch);
     /// Convert coded character sequence into UTF8 and append
     void   x_Append(const CTempString& src,
-                    EEncoding encoding = eEncoding_ISO8859_1,
+                    EEncoding encoding,
                     EValidate validate = eNoValidate);
 
     template <typename TChar>
@@ -3380,8 +3716,16 @@ private:
     void x_Append(TIterator from, TIterator to);
 
     template <typename TChar>
-    void x_Append(const TChar* src,
-        SIZE_TYPE to = NPOS, ECharBufferType type = eZeroTerminated);
+    void x_Append(const TChar* src, SIZE_TYPE to = NPOS,
+                  ECharBufferType type = eZeroTerminated);
+
+    template <typename TChar> static
+    basic_string<TChar> x_AsBasicString
+    (const CTempString& src,
+     const TChar* substitute_on_error, EValidate validate);
+
+    template <typename TIterator> static
+    TUnicodeSymbol x_Decode(TIterator& src);
 
     /// Check how many bytes is needed to represent the code point in UTF8
     static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
@@ -3389,163 +3733,12 @@ private:
     static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
     /// Check if the character is valid non-first code unit of UTF8
     static bool   x_EvalNext(char ch);
+
+    // Template class for better error messages
+    // from unimplemented template methods
+    template<class Type> class CNotImplemented {};
 };
 
-#if defined(__NO_EXPORT_STRINGUTF8__)
-class NCBI_XNCBI_EXPORT CStringUTF8_Helper
-{
-friend class CStringUTF8;
-public:
-    enum EValidate {
-        eNoValidate =0,
-        eValidate   =1
-    };
-    static SIZE_TYPE GetSymbolCount(const CTempString& src);
-    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
-    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
-    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
-    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
-    static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
-    static EEncoding GuessEncoding( const CTempString& src);
-    static bool MatchEncoding( const CTempString& src, EEncoding encoding);
-    static string EncodingToString(EEncoding encoding);
-    static EEncoding StringToEncoding(const CTempString& str);
-    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
-    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
-    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
-    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
-    static bool IsWhiteSpace(TUnicodeSymbol chU);
-    static CStringUTF8& TruncateSpacesInPlace(CStringUTF8& self, NStr::ETrunc side);
-    static CTempString  TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side);
-
-private:
-    static void   x_Validate(const CStringUTF8& self);
-    static void   x_AppendChar(CStringUTF8& self, TUnicodeSymbol ch);
-    static void   x_Append(CStringUTF8& self, const CTempString& src,EEncoding encoding, EValidate validate);
-    static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
-    static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
-    static bool   x_EvalNext(char ch);
-};
-
-inline
-SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString& src)
-{
-    return CStringUTF8_Helper::GetSymbolCount(src);
-}
-inline
-SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
-{
-    return CStringUTF8_Helper::GetValidSymbolCount(src, buf_size);
-}
-inline
-SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src)
-{
-    return CStringUTF8_Helper::GetValidSymbolCount(src);
-}
-inline
-SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
-{
-    return CStringUTF8_Helper::GetValidBytesCount(src,buf_size);
-}
-inline
-SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src)
-{
-    return CStringUTF8_Helper::GetValidBytesCount(src);
-}
-inline
-string CStringUTF8::AsSingleByteString(EEncoding encoding,
-    const char* substitute_on_error) const
-{
-    return CStringUTF8_Helper::AsSingleByteString(*this,encoding,substitute_on_error);
-}
-inline
-EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
-{
-    return CStringUTF8_Helper::GuessEncoding(src);
-}
-inline
-bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
-{
-    return CStringUTF8_Helper::MatchEncoding(src,encoding);
-}
-inline
-string CStringUTF8::EncodingToString(EEncoding encoding)
-{
-    return CStringUTF8_Helper::EncodingToString(encoding);
-}
-inline
-EEncoding CStringUTF8::StringToEncoding(const CTempString& str)
-{
-    return CStringUTF8_Helper::StringToEncoding(str);
-}
-
-inline
-TUnicodeSymbol CStringUTF8::CharToSymbol(char ch, EEncoding encoding)
-{
-    return CStringUTF8_Helper::CharToSymbol(ch,encoding);
-}
-inline
-char CStringUTF8::SymbolToChar(TUnicodeSymbol sym, EEncoding encoding)
-{
-    return CStringUTF8_Helper::SymbolToChar(sym,encoding);
-}
-inline
-TUnicodeSymbol  CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
-{
-    return CStringUTF8_Helper::DecodeFirst(ch,more);
-}
-inline
-TUnicodeSymbol  CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
-{
-    return CStringUTF8_Helper::DecodeNext(chU,ch);
-}
-inline
-bool  CStringUTF8::IsWhiteSpace(TUnicodeSymbol chU)
-{
-    return CStringUTF8_Helper::IsWhiteSpace(chU);
-}
-inline
-CStringUTF8& CStringUTF8::TruncateSpacesInPlace(NStr::ETrunc side)
-{
-    return CStringUTF8_Helper::TruncateSpacesInPlace(*this,side);
-}
-inline
-CTempString CStringUTF8::TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side)
-{
-    return CStringUTF8_Helper::TruncateSpaces_Unsafe(str,side);
-}
-inline
-void   CStringUTF8::x_Validate(void) const
-{
-    CStringUTF8_Helper::x_Validate(*this);
-}
-inline
-void   CStringUTF8::x_AppendChar(TUnicodeSymbol ch)
-{
-    CStringUTF8_Helper::x_AppendChar(*this, ch);
-}
-inline
-void   CStringUTF8::x_Append(const CTempString& src,
-                EEncoding encoding, EValidate validate)
-{
-    CStringUTF8_Helper::x_Append(*this, src, encoding, (CStringUTF8_Helper::EValidate)validate);
-}
-inline
-SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol ch)
-{
-    return CStringUTF8_Helper::x_BytesNeeded(ch);
-}
-inline
-bool   CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
-{
-    return CStringUTF8_Helper::x_EvalFirst(ch, more);
-}
-inline
-bool   CStringUTF8::x_EvalNext(char ch)
-{
-    return CStringUTF8_Helper::x_EvalNext(ch);
-}
-#endif // __NO_EXPORT_STRINGUTF8__
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -5487,30 +5680,774 @@ string NStr::HtmlEncode(const CTempString& str)
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CStringUTF8::
+//  CUtf8:: 
 //
 
-template <typename TIterator>
-inline
-TUnicodeSymbol CStringUTF8::Decode(TIterator& src)
+inline CStringUTF8
+CUtf8::AsUTF8(const CTempString& src, EEncoding encoding, EValidate validate) {
+    CStringUTF8 u8;
+    return  x_Append(u8,src,encoding,validate);
+}
+
+template <typename TChar> inline CStringUTF8
+CUtf8::AsUTF8(const basic_string<TChar>& src) {
+    return CNotImplemented<TChar>::Cannot_convert_to_UTF8_string();
+}
+template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<TUnicodeSymbol>& src) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src.begin(), src.end());
+}
+template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<TCharUCS4>& src) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src.begin(), src.end());
+}
+template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<TCharUCS2>& src) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src.begin(), src.end());
+}
+#if defined(HAVE_WSTRING)
+template <> inline CStringUTF8 CUtf8::AsUTF8(const basic_string<wchar_t>& src) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src.begin(), src.end());
+}
+#endif
+
+inline CStringUTF8
+CUtf8::AsUTF8(const TUnicodeSymbol* src, SIZE_TYPE tchar_count) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src, tchar_count);
+}
+inline CStringUTF8
+CUtf8::AsUTF8(const TCharUCS4* src, SIZE_TYPE tchar_count) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src, tchar_count);
+}
+inline CStringUTF8
+CUtf8::AsUTF8(const TCharUCS2* src, SIZE_TYPE tchar_count) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src, tchar_count);
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8
+CUtf8::AsUTF8(const wchar_t* src, SIZE_TYPE tchar_count) {
+    CStringUTF8 u8;
+    return  x_Append(u8, src, tchar_count);
+}
+#endif
+
+template <typename TChar> inline basic_string<TChar>
+CUtf8::AsBasicString(const CTempString& str) {
+    return CUtf8::AsBasicString<TChar>(str,nullptr,eNoValidate);
+}
+template <typename TChar> inline basic_string<TChar>
+CUtf8::AsBasicString(const CTempString& str,
+    const TChar* on_error, EValidate validate) {
+    return CNotImplemented<TChar>::Cannot_convert_to_nonUnicode_string();
+}
+template <> inline basic_string<TUnicodeSymbol>
+CUtf8::AsBasicString(const CTempString& str,
+    const TUnicodeSymbol* on_error, EValidate validate) {
+    return CUtf8::x_AsBasicString<TUnicodeSymbol>(str,on_error,validate);
+}
+template <> inline basic_string<TCharUCS4>
+CUtf8::AsBasicString(const CTempString& str,
+    const TCharUCS4* on_error, EValidate validate) {
+    return CUtf8::x_AsBasicString<TCharUCS4>(str,on_error,validate);
+}
+template <> inline basic_string<TCharUCS2>
+CUtf8::AsBasicString(const CTempString& str,
+    const TCharUCS2* on_error, EValidate validate) {
+    return CUtf8::x_AsBasicString<TCharUCS2>(str,on_error,validate);
+}
+#if defined(HAVE_WSTRING)
+template <> inline basic_string<wchar_t>
+CUtf8::AsBasicString(const CTempString& str,
+    const wchar_t* on_error, EValidate validate) {
+    return CUtf8::x_AsBasicString<wchar_t>(str,on_error,validate);
+}
+#endif
+
+inline SIZE_TYPE CUtf8::GetValidSymbolCount(const CTempString& src) {
+    CTempString::const_iterator err;
+    return x_GetValidSymbolCount(src, err);
+}
+
+inline SIZE_TYPE CUtf8::GetValidBytesCount(const CTempString& src) {
+    CTempString::const_iterator err;
+    x_GetValidSymbolCount(src,err);
+    return (err-src.begin());
+}
+inline TUnicodeSymbol CUtf8::Decode(const char*& src) {
+    return x_Decode(src);
+}
+inline TUnicodeSymbol CUtf8::Decode(string::const_iterator& src) {
+    return x_Decode(src);
+}
+
+template <typename TIterator> inline TUnicodeSymbol
+CUtf8::x_Decode(TIterator& src)
 {
     SIZE_TYPE more=0;
-    TUnicodeSymbol chRes = DecodeFirst(*src,more);
+    TUnicodeSymbol sym = DecodeFirst(*src,more);
     while (more--) {
-        chRes = DecodeNext(chRes, *(++src));
+        sym = DecodeNext(sym, *(++src));
     }
-    return chRes;
+    return sym;
 }
+
+template <typename TChar> basic_string<TChar>
+CUtf8::x_AsBasicString(const CTempString& str,
+    const TChar* substitute_on_error, EValidate validate)
+{
+    if (validate == eValidate) {
+        if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Source string is not in UTF8 format", 0);
+        }
+    }
+    TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
+    basic_string<TChar> result;
+    result.reserve(CUtf8::GetSymbolCount(str) + 1);
+    CTempString::const_iterator src = str.begin();
+    CTempString::const_iterator to  = str.end();
+    for (; src != to; ++src) {
+        TUnicodeSymbol ch = Decode(src);
+        if (ch > max_char) {
+            if (substitute_on_error) {
+                result.append(substitute_on_error);
+                continue;
+            } else {
+                NCBI_THROW2(CStringException, eConvert,
+                    "Failed to convert symbol to wide character",
+                    (src - str.begin()));
+            }
+        }
+        result.append(1, (TChar)ch);
+    }
+    return result;
+}
+
+template <typename TChar> inline TUnicodeSymbol
+CUtf8::x_TCharToSymbol(TChar ch)
+{
+    if (ch < 0) { /* NCBI_FAKE_WARNING */
+        return 1 + (TUnicodeSymbol)(numeric_limits<TChar>::max()) +
+              (TUnicodeSymbol)(ch - numeric_limits<TChar>::min());
+    }
+    return ch;
+}
+
+template <typename TIterator> CStringUTF8&
+CUtf8::x_Append(CStringUTF8& u8str, TIterator from, TIterator to)
+{
+    TIterator srcBuf;
+    SIZE_TYPE needed = 0;
+
+    for (srcBuf = from; srcBuf != to; ++srcBuf) {
+        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+    }
+    if ( !needed ) {
+        return u8str;
+    }
+    u8str.reserve(max(u8str.capacity(),u8str.length()+needed+1));
+    for (srcBuf = from; srcBuf != to; ++srcBuf) {
+        x_AppendChar( u8str, x_TCharToSymbol(*srcBuf) );
+    }
+    return u8str;
+}
+
+template <typename TChar> CStringUTF8&
+CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
+{
+    const TChar* srcBuf;
+    SIZE_TYPE needed = 0;
+    SIZE_TYPE pos=0;
+
+    for (pos=0, srcBuf=src;
+            (to == NPOS) ? (*srcBuf != 0) : (pos<to); ++pos, ++srcBuf) {
+        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+    }
+    if ( !needed ) {
+        return u8str;
+    }
+    u8str.reserve(max(u8str.capacity(),u8str.length()+needed+1));
+    for (pos=0, srcBuf=src;
+            (to == NPOS) ? (*srcBuf != 0) : (pos<to); ++pos, ++srcBuf) {
+        x_AppendChar( u8str, x_TCharToSymbol(*srcBuf) );
+    }
+    return u8str;
+}
+
+inline  CStringUTF8
+CUtf8::TruncateSpaces(const CTempString& str, NStr::ETrunc side) {
+    CStringUTF8 u8;
+    return x_Append(u8, TruncateSpaces_Unsafe(str,side),
+                    eEncoding_UTF8, eNoValidate);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CStringUTF8:: 
+//
+
+
+inline string CStringUTF8::AsLatin1(const char* substitute_on_error) const
+{
+    return AsSingleByteString(eEncoding_ISO8859_1,substitute_on_error);
+}
+inline wstring CStringUTF8::AsUnicode(const wchar_t* substitute_on_error) const
+{
+    return AsBasicString<wchar_t>(substitute_on_error);
+}
+inline TStringUCS2 CStringUTF8::AsUCS2(const TCharUCS2* substitute_on_error) const
+{
+    return AsBasicString<TCharUCS2>(substitute_on_error);
+}
+template <typename TChar> inline
+basic_string<TChar> CStringUTF8::AsBasicString(const CTempString& src) {
+    return AsBasicString<TChar>(src, 0);
+}
+inline
+CStringUTF8 CStringUTF8::TruncateSpaces(const CTempString& str,
+                                    NStr::ETrunc side)
+{
+    return CStringUTF8(TruncateSpaces_Unsafe(str,side), eEncoding_UTF8);
+}
+
+
+inline
+CStringUTF8::CStringUTF8(const CStringUTF8& src, EValidate validate)
+    : string(src)
+{
+    if (validate == eValidate) {
+        x_Validate();
+    }
+}
+
+inline CStringUTF8::CStringUTF8(const CTempString& src) {
+    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
+}
+inline CStringUTF8::CStringUTF8(const char* src ) {
+    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
+}
+inline CStringUTF8::CStringUTF8(const string& src) {
+    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
+}
+inline
+CStringUTF8::CStringUTF8(
+    const CTempString& src, EEncoding encoding,EValidate validate) {
+    x_Append(src, encoding, validate);
+}
+inline
+CStringUTF8::CStringUTF8(
+    const char* src, EEncoding encoding, EValidate validate) {
+    x_Append(src, encoding, validate);
+}
+inline
+CStringUTF8::CStringUTF8(
+    const string& src, EEncoding encoding, EValidate validate) {
+    x_Append(src, encoding, validate);
+}
+inline CStringUTF8::CStringUTF8(const TStringUnicode& src) {
+    x_Append(src.begin(), src.end());
+}
+inline CStringUTF8::CStringUTF8(const TStringUCS4& src) {
+    x_Append(src.begin(), src.end());
+}
+inline CStringUTF8::CStringUTF8(const TStringUCS2& src) {
+    x_Append(src.begin(), src.end());
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8::CStringUTF8(const wstring& src) {
+    x_Append(src.begin(), src.end());
+}
+#endif
+inline CStringUTF8::CStringUTF8(const TUnicodeSymbol* src) {
+    x_Append(src);
+}
+inline CStringUTF8::CStringUTF8(const TCharUCS4* src) {
+    x_Append(src);
+}
+inline CStringUTF8::CStringUTF8(const TCharUCS2* src) {
+    x_Append(src);
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8::CStringUTF8(const wchar_t* src) {
+    x_Append(src);
+}
+#endif
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+}
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+}
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+}
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+}
+inline CStringUTF8& CStringUTF8::operator= (const CStringUTF8& src) {
+    string::operator= (src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TStringUnicode& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TStringUCS4& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TStringUCS2& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::operator= (const wstring& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::operator= (const TUnicodeSymbol* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TCharUCS4* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TCharUCS2* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::operator= (const wchar_t* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::operator+= (const CStringUTF8& src) {
+    string::operator+= (src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator+= (const TStringUnicode& src) {
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator+= (const TStringUCS4& src) {
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator+= (const TStringUCS2& src) {
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::operator+= (const wstring& src) {
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::operator+= (const TUnicodeSymbol* src) {
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator+= (const TCharUCS4* src) {
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator+= (const TCharUCS2* src) {
+    x_Append(src);
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::operator+= (const wchar_t* src) {
+    x_Append(src);
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::Assign(
+    const CTempString& src, EEncoding encoding, EValidate validate) {
+    erase();
+    x_Append(src, encoding, validate);
+    return *this;
+}
+
+inline CStringUTF8& CStringUTF8::Assign(const TStringUnicode& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Assign(const TStringUCS4& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Assign(const TStringUCS2& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::Assign(const wstring& src) {
+    erase();
+    x_Append(src.begin(), src.end());
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::Assign(const TUnicodeSymbol* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Assign(const TCharUCS4* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Assign(const TCharUCS2* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::Assign(const wchar_t* src) {
+    erase();
+    x_Append(src);
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::Assign(
+    ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
+    erase();
+    x_Append(src,char_count,type);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Assign(
+    ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
+    erase();
+    x_Append(src,char_count,type);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Assign(
+    ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
+    erase();
+    x_Append(src,char_count,type);
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::Assign(
+    ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
+    erase();
+    x_Append(src,char_count,type);
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::Assign(char ch, EEncoding encoding) {
+    erase();
+    x_AppendChar( CharToSymbol( ch, encoding ) );
+    return *this;
+}
+inline  CStringUTF8& CStringUTF8::Append(
+    const CTempString& src, EEncoding encoding, EValidate validate) {
+    x_Append(src, encoding, validate);
+    return *this;
+}
+inline  CStringUTF8& CStringUTF8::Append(const TStringUnicode& src) {
+    x_Append(src.begin(),src.end());
+    return *this;
+}
+inline  CStringUTF8& CStringUTF8::Append(const TStringUCS4& src) {
+    x_Append(src.begin(),src.end());
+    return *this;
+}
+inline  CStringUTF8& CStringUTF8::Append(const TStringUCS2& src) {
+    x_Append(src.begin(),src.end());
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline  CStringUTF8& CStringUTF8::Append(const wstring& src) {
+    x_Append(src.begin(),src.end());
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::Append(const TUnicodeSymbol* src) {
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Append(const TCharUCS4* src) {
+    x_Append(src);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Append(const TCharUCS2* src) {
+    x_Append(src);
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::Append(const wchar_t* src) {
+    x_Append(src);
+    return *this;
+}
+#endif
+inline  CStringUTF8& CStringUTF8::Append(
+    ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Append(
+    ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Append(
+    ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::Append(
+    ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
+    x_Append(src,char_count,type);
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::Append(char ch, EEncoding encoding) {
+    x_AppendChar( CharToSymbol( ch, encoding ) );
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::Append(TUnicodeSymbol ch) {
+    x_AppendChar(ch);
+    return *this;
+}
+inline SIZE_TYPE CStringUTF8::GetSymbolCount(void) const {
+    return GetSymbolCount(*this);
+}
+inline bool CStringUTF8::IsValid(void) const {
+    return MatchEncoding(*this, eEncoding_UTF8);
+}
+inline TUnicodeSymbol CStringUTF8::Decode(const char*& src) {
+    return x_Decode(src);
+}
+inline TUnicodeSymbol CStringUTF8::Decode(string::const_iterator& src) {
+    return x_Decode(src);
+}
+
+#if defined(__NO_EXPORT_STRINGUTF8__)
+class NCBI_XNCBI_EXPORT CStringUTF8_Helper
+{
+friend class CStringUTF8;
+public:
+    enum EValidate {
+        eNoValidate =0,
+        eValidate   =1
+    };
+    static SIZE_TYPE GetSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
+    static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
+    static EEncoding GuessEncoding( const CTempString& src);
+    static bool MatchEncoding( const CTempString& src, EEncoding encoding);
+    static string EncodingToString(EEncoding encoding);
+    static EEncoding StringToEncoding(const CTempString& str);
+    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
+    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
+    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
+    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
+    static bool IsWhiteSpace(TUnicodeSymbol chU);
+    static CStringUTF8& TruncateSpacesInPlace(CStringUTF8& self, NStr::ETrunc side);
+    static CTempString  TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side);
+
+private:
+    static void   x_Validate(const CStringUTF8& self);
+    static void   x_AppendChar(CStringUTF8& self, TUnicodeSymbol ch);
+    static void   x_Append(CStringUTF8& self, const CTempString& src,EEncoding encoding, EValidate validate);
+    static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
+    static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
+    static bool   x_EvalNext(char ch);
+};
+
+inline
+SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString& src)
+{
+    return CStringUTF8_Helper::GetSymbolCount(src);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
+{
+    return CStringUTF8_Helper::GetValidSymbolCount(src, buf_size);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src)
+{
+    return CStringUTF8_Helper::GetValidSymbolCount(src);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
+{
+    return CStringUTF8_Helper::GetValidBytesCount(src,buf_size);
+}
+inline
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src)
+{
+    return CStringUTF8_Helper::GetValidBytesCount(src);
+}
+inline
+string CStringUTF8::AsSingleByteString(EEncoding encoding,
+    const char* substitute_on_error) const
+{
+    return CStringUTF8_Helper::AsSingleByteString(*this,encoding,substitute_on_error);
+}
+inline
+EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
+{
+    return CStringUTF8_Helper::GuessEncoding(src);
+}
+inline
+bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
+{
+    return CStringUTF8_Helper::MatchEncoding(src,encoding);
+}
+inline
+string CStringUTF8::EncodingToString(EEncoding encoding)
+{
+    return CStringUTF8_Helper::EncodingToString(encoding);
+}
+inline
+EEncoding CStringUTF8::StringToEncoding(const CTempString& str)
+{
+    return CStringUTF8_Helper::StringToEncoding(str);
+}
+
+inline
+TUnicodeSymbol CStringUTF8::CharToSymbol(char ch, EEncoding encoding)
+{
+    return CStringUTF8_Helper::CharToSymbol(ch,encoding);
+}
+inline
+char CStringUTF8::SymbolToChar(TUnicodeSymbol sym, EEncoding encoding)
+{
+    return CStringUTF8_Helper::SymbolToChar(sym,encoding);
+}
+inline
+TUnicodeSymbol  CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
+{
+    return CStringUTF8_Helper::DecodeFirst(ch,more);
+}
+inline
+TUnicodeSymbol  CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
+{
+    return CStringUTF8_Helper::DecodeNext(chU,ch);
+}
+inline
+bool  CStringUTF8::IsWhiteSpace(TUnicodeSymbol chU)
+{
+    return CStringUTF8_Helper::IsWhiteSpace(chU);
+}
+inline
+CStringUTF8& CStringUTF8::TruncateSpacesInPlace(NStr::ETrunc side)
+{
+    return CStringUTF8_Helper::TruncateSpacesInPlace(*this,side);
+}
+inline
+CTempString CStringUTF8::TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side)
+{
+    return CStringUTF8_Helper::TruncateSpaces_Unsafe(str,side);
+}
+inline
+void   CStringUTF8::x_Validate(void) const
+{
+    CStringUTF8_Helper::x_Validate(*this);
+}
+inline
+void   CStringUTF8::x_AppendChar(TUnicodeSymbol ch)
+{
+    CStringUTF8_Helper::x_AppendChar(*this, ch);
+}
+inline
+void   CStringUTF8::x_Append(const CTempString& src,
+                EEncoding encoding, EValidate validate)
+{
+    CStringUTF8_Helper::x_Append(*this, src, encoding, (CStringUTF8_Helper::EValidate)validate);
+}
+inline
+SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol ch)
+{
+    return CStringUTF8_Helper::x_BytesNeeded(ch);
+}
+inline
+bool   CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
+{
+    return CStringUTF8_Helper::x_EvalFirst(ch, more);
+}
+inline
+bool   CStringUTF8::x_EvalNext(char ch)
+{
+    return CStringUTF8_Helper::x_EvalNext(ch);
+}
+#endif // __NO_EXPORT_STRINGUTF8__
 
 template <typename TChar>
 basic_string<TChar> CStringUTF8::AsBasicString(
     const TChar* substitute_on_error) const
 {
-    return CStringUTF8::AsBasicString<TChar>(*this, substitute_on_error);
+    return CStringUTF8::AsBasicString<TChar>(*this, substitute_on_error, eNoValidate);
 }
+template <typename TChar> inline
+basic_string<TChar> CStringUTF8::AsBasicString(
+    const CTempString& str, const TChar* substitute_on_error, EValidate validate)
+{
+    return CNotImplemented<TChar>::Cannot_convert_to_nonUnicode_string();
+}
+template <> inline
+basic_string<TUnicodeSymbol> CStringUTF8::AsBasicString(
+    const CTempString& str, const TUnicodeSymbol* substitute_on_error, EValidate validate)
+{
+    return x_AsBasicString(str,substitute_on_error, validate);
+}
+template <> inline
+basic_string<TCharUCS4> CStringUTF8::AsBasicString(
+    const CTempString& str, const TCharUCS4* substitute_on_error, EValidate validate)
+{
+    return x_AsBasicString(str,substitute_on_error, validate);
+}
+template <> inline
+basic_string<TCharUCS2> CStringUTF8::AsBasicString(
+    const CTempString& str, const TCharUCS2* substitute_on_error, EValidate validate)
+{
+    return x_AsBasicString(str,substitute_on_error, validate);
+}
+#if defined(HAVE_WSTRING)
+template <> inline
+basic_string<wchar_t> CStringUTF8::AsBasicString(
+    const CTempString& str, const wchar_t* substitute_on_error, EValidate validate)
+{
+    return x_AsBasicString(str,substitute_on_error, validate);
+}
+#endif
 
 template <typename TChar>
-basic_string<TChar> CStringUTF8::AsBasicString(
+basic_string<TChar> CStringUTF8::x_AsBasicString(
     const CTempString& str,
     const TChar* substitute_on_error,
     EValidate validate)
@@ -5593,7 +6530,17 @@ void CStringUTF8::x_Append(const TChar* src, SIZE_TYPE to, ECharBufferType type)
     }
 }
 
-
+template <typename TIterator>
+inline
+TUnicodeSymbol CStringUTF8::x_Decode(TIterator& src)
+{
+    SIZE_TYPE more=0;
+    TUnicodeSymbol chRes = DecodeFirst(*src,more);
+    while (more--) {
+        chRes = DecodeNext(chRes, *(++src));
+    }
+    return chRes;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  PCase_Generic::
