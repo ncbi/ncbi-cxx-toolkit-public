@@ -1352,7 +1352,8 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         string seq_trans;
         if ( len % 3 == 0) {
             string seq_data(m_Query, off, len);
-            CSeqTranslator::Translate(seq_data, seq_trans);
+            CSeqTranslator::Translate(seq_data, seq_trans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
             if (seq_trans.find('*') != string::npos) {
                 SetFrame("IP");
             } else {
@@ -1371,7 +1372,8 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         int len = (annot->m_GeneInfo[1] - off)/3*3;
         string seq_data(m_Query, off, len);
         string seq_trans;
-        CSeqTranslator::Translate(seq_data, seq_trans);
+        CSeqTranslator::Translate(seq_data, seq_trans, 
+                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         if (seq_trans.find('*') != string::npos) {
             m_OtherInfo.push_back("Yes");
         } else {
@@ -1386,7 +1388,8 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
         int len = (annot->m_GeneInfo[5] - off)/3*3;
         string seq_data(m_Query, off, len);
         string seq_trans;
-        CSeqTranslator::Translate(seq_data, seq_trans);
+        CSeqTranslator::Translate(seq_data, seq_trans, 
+                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         if (seq_trans.find('*') == string::npos) {
             m_OtherInfo.push_back("No");
             if (m_FrameInfo == "IF" && m_OtherInfo[0] == "No") {
@@ -1410,7 +1413,8 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
   
         string seq_data(m_Query, v_start, v_j_length);
         string seq_trans;
-        CSeqTranslator::Translate(seq_data, seq_trans, NULL, true, false, NULL, false);
+        CSeqTranslator::Translate(seq_data, seq_trans, 
+                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
        
         if (seq_trans.find('*') == string::npos) {
             m_OtherInfo.push_back("No");
