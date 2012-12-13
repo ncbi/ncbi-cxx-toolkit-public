@@ -42,6 +42,7 @@
 #include <corelib/ncbi_mask.hpp>
 
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 #include "../blast/blast_app_util.hpp"
 
 #include <iostream>
@@ -498,8 +499,14 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
 
         // If requested, make sure there's a taxID set for this Bioseq
         if (((m_Flags & e_TaxIDSet) != 0) && (bs->GetTaxId() == 0)) {
-            where = "taxid";
-            throw runtime_error("no taxid set");
+            // Try a different approach specific to Bioseqs created from BLAST DBs
+            using namespace align_format;
+            CScope scope(*CObjectManager::GetInstance());
+            scope.AddBioseq(*bs);
+            if (CAlignFormatUtil::GetTaxidForSeqid(*bs->GetFirstId(), scope) == 0) {
+                where = "taxid";
+                throw runtime_error("no taxid set");
+            }
         }
         
         // Reverse look up all the Seq-ids.
