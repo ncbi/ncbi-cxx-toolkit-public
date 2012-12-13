@@ -385,7 +385,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
                 m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
-            exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);
+            exec_result = m_Service.GetServer(*backup).ExecWithRetry(cmd);
         }
     }
 

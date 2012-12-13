@@ -641,21 +641,21 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer SNetServiceImpl::GetServer(unsigned host, unsigned short port)
+CNetServer CNetService::GetServer(unsigned host, unsigned short port)
 {
-    m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
+    m_Impl->m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
 
-    CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
+    CFastMutexGuard server_mutex_lock(m_Impl->m_ServerPool->m_ServerMutex);
 
-    SNetServerInPool* server = m_ServerPool->m_EnforcedServerHost == 0 ?
-            m_ServerPool->FindOrCreateServerImpl(host, port) :
-            m_ServerPool->FindOrCreateServerImpl(
-                    m_ServerPool->m_EnforcedServerHost,
-                    m_ServerPool->m_EnforcedServerPort);
+    SNetServerInPool* server = m_Impl->m_ServerPool->m_EnforcedServerHost == 0 ?
+            m_Impl->m_ServerPool->FindOrCreateServerImpl(host, port) :
+            m_Impl->m_ServerPool->FindOrCreateServerImpl(
+                    m_Impl->m_ServerPool->m_EnforcedServerHost,
+                    m_Impl->m_ServerPool->m_EnforcedServerPort);
 
-    server->m_ServerPool = m_ServerPool;
+    server->m_ServerPool = m_Impl->m_ServerPool;
 
-    return new SNetServerImpl(this, server);
+    return new SNetServerImpl(m_Impl, server);
 }
 
 class SRandomIterationBeginner : public IIterationBeginner

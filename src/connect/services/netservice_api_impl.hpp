@@ -271,9 +271,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         IIterationBeginner* iteration_beginner,
         EServerErrorHandling error_handling);
 
-    CNetServer GetServer(unsigned host, unsigned short port);
-    CNetServer GetServer(const SServerAddress& server_address);
-
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -308,12 +305,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     bool m_UseSmartRetries;
 };
-
-inline CNetServer SNetServiceImpl::GetServer(
-        const SServerAddress& server_address)
-{
-    return GetServer(server_address.host, server_address.port);
-}
 
 END_NCBI_SCOPE
 

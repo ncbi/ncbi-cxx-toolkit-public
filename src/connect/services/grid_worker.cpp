@@ -1399,7 +1399,7 @@ bool CGridWorkerNode::x_PerformTimelineAction(
     if (timeline_entry->m_DiscoveryIteration != m_DiscoveryIteration)
         return false;
 
-    CNetServer server(m_NetScheduleAPI->m_Service->GetServer(
+    CNetServer server(m_NetScheduleAPI->m_Service.GetServer(
             timeline_entry->m_ServerAddress));
 
     timeline_entry->ResetTimeout(m_NSTimeout);

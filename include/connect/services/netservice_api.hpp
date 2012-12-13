@@ -93,6 +93,10 @@ class NCBI_XCONNECT_EXPORT CNetService
         eIncludePenalized
     };
 
+    CNetServer GetServer(unsigned host, unsigned short port);
+    CNetServer GetServer(const string& host, unsigned short port);
+    CNetServer GetServer(const SServerAddress& server_address);
+
     CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
     CNetServiceIterator Iterate(CNetServer::TInstance priority_server);
 
@@ -120,6 +124,17 @@ class NCBI_XCONNECT_EXPORT CNetService
     void AllowXSiteConnections();
 #endif
 };
+
+inline CNetServer CNetService::GetServer(const string& host,
+        unsigned short port)
+{
+    return GetServer(g_NetService_gethostbyname(host), port);
+}
+
+inline CNetServer CNetService::GetServer(const SServerAddress& server_address)
+{
+    return GetServer(server_address.host, server_address.port);
+}
 
 END_NCBI_SCOPE
 
