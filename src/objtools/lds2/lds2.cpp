@@ -874,7 +874,7 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
             m_LastBlobPos += NcbiStreamposToInt8(objstr->GetStreamPos());
             m_LastBlobType = m_BlobType;
         }
-        catch (CSerialException& e) {
+        catch (CSerialException) {
             ResetBlob();
             m_BlobType = SLDS2_Blob::eUnknown;
             return false;
