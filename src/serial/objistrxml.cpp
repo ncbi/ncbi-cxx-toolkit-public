@@ -736,14 +736,15 @@ int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool* 
         }
         if (enc_out != eEncoding_UTF8) {
             TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
-                ReadUtf8Char(c) : CStringUTF8::CharToSymbol( c, enc_in);
-            Uint1 ch = CStringUTF8::SymbolToChar( chU, enc_out);
+                ReadUtf8Char(c) : CUtf8::CharToSymbol( c, enc_in);
+            Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
             return ch & 0xFF;
         }
         if ((c & 0x80) == 0) {
             return c;
         }
-        m_Utf8Buf.Assign(c,enc_in);
+        char ch = c;
+        m_Utf8Buf = CUtf8::AsUTF8( CTempString(&ch,1), enc_in);
         m_Utf8Pos = m_Utf8Buf.begin();
         return *m_Utf8Pos & 0xFF;
     }
@@ -753,9 +754,9 @@ int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool* 
 TUnicodeSymbol CObjectIStreamXml::ReadUtf8Char(char c)
 {
     size_t more = 0;
-    TUnicodeSymbol chU = CStringUTF8::DecodeFirst(c, more);
+    TUnicodeSymbol chU = CUtf8::DecodeFirst(c, more);
     while (chU && more--) {
-        chU = CStringUTF8::DecodeNext(chU, m_Input.GetChar());
+        chU = CUtf8::DecodeNext(chU, m_Input.GetChar());
     }
     if (chU == 0) {
         ThrowError(fInvalidData, "invalid UTF8 string");
@@ -1106,11 +1107,11 @@ void CObjectIStreamXml::ReadString(string& str, EStringType type)
     str.erase();
     if (UseDefaultData()) {
         EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
-        CStringUTF8 u( CTypeConverter<string>::Get(GetMemberDefault()),enc_in);
+        CStringUTF8 u( CUtf8::AsUTF8(CTypeConverter<string>::Get(GetMemberDefault()),enc_in));
         if (type == eStringTypeUTF8 || m_StringEncoding == eEncoding_Unknown) {
             str = u;
         } else {
-            str = u.AsSingleByteString(m_StringEncoding);
+            str = CUtf8::AsSingleByteString(u,m_StringEncoding);
         }
         return;
     }

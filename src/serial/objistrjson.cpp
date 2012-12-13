@@ -221,7 +221,7 @@ char CObjectIStreamJson::ReadEncodedChar(
     if (enc_in != enc_out && enc_out != eEncoding_Unknown) {
         int c = ReadEscapedChar(encoded);
         TUnicodeSymbol chU = ReadUtf8Char(c);
-        Uint1 ch = CStringUTF8::SymbolToChar( chU, enc_out);
+        Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
         return ch & 0xFF;
     }
     return ReadEscapedChar(encoded);
@@ -230,9 +230,9 @@ char CObjectIStreamJson::ReadEncodedChar(
 TUnicodeSymbol CObjectIStreamJson::ReadUtf8Char(char c)
 {
     size_t more = 0;
-    TUnicodeSymbol chU = CStringUTF8::DecodeFirst(c, more);
+    TUnicodeSymbol chU = CUtf8::DecodeFirst(c, more);
     while (chU && more--) {
-        chU = CStringUTF8::DecodeNext(chU, m_Input.GetChar());
+        chU = CUtf8::DecodeNext(chU, m_Input.GetChar());
     }
     if (chU == 0) {
         ThrowError(fInvalidData, "invalid UTF8 string");

@@ -502,11 +502,10 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
         WriteEscapedChar(*src);
     } else if (enc_out != eEncoding_UTF8) {
         TUnicodeSymbol chU = (enc_in == eEncoding_UTF8) ?
-            CStringUTF8::Decode(src) : CStringUTF8::CharToSymbol( *src, enc_in);
-        WriteEscapedChar( CStringUTF8::SymbolToChar( chU, enc_out) );
+            CUtf8::Decode(src) : CUtf8::CharToSymbol( *src, enc_in);
+        WriteEscapedChar( CUtf8::SymbolToChar( chU, enc_out) );
     } else {
-        CStringUTF8 tmp;
-        tmp.Assign(*src,enc_in);
+        CStringUTF8 tmp( CUtf8::AsUTF8( CTempString(src,1),enc_in));
         for ( string::const_iterator t = tmp.begin(); t != tmp.end(); ++t ) {
             WriteEscapedChar(*t);
         }

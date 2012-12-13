@@ -670,8 +670,7 @@ void CObjectOStreamJson::WriteEncodedChar(const char*& src, EStringType type)
     if (enc_in == enc_out || enc_in == eEncoding_Unknown || (*src & 0x80) == 0) {
         WriteEscapedChar(*src, enc_in);
     } else {
-        CStringUTF8 tmp;
-        tmp.Assign(*src,enc_in);
+        CStringUTF8 tmp( CUtf8::AsUTF8( CTempString(src,1),enc_in));
         for ( string::const_iterator t = tmp.begin(); t != tmp.end(); ++t ) {
             m_Output.PutChar(*t);
         }
