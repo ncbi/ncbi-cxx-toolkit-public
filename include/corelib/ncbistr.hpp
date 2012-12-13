@@ -3027,6 +3027,7 @@ public:
     ///   Unicode code point
     static TUnicodeSymbol Decode(const char*& src);
 
+#ifndef NCBI_COMPILER_WORKSHOP
     /// Convert sequence of UTF8 code units into Unicode code point
     ///
     /// @param src
@@ -3034,6 +3035,7 @@ public:
     /// @return
     ///   Unicode code point
     static TUnicodeSymbol Decode(string::const_iterator& src);
+#endif
 
     /// Begin converting first character of UTF8 sequence into Unicode
     ///
@@ -3618,8 +3620,10 @@ public:
     ///   Unicode code point
     /// @deprecated  Use utility class CUtf8 instead
     static TUnicodeSymbol Decode(const char*& src);
+#ifndef NCBI_COMPILER_WORKSHOP
     /// @deprecated  Use utility class CUtf8 instead
     static TUnicodeSymbol Decode(string::const_iterator& src);
+#endif
     
     /// Determines if a symbol is whitespace
     /// per  http://unicode.org/charts/uca/chart_Whitespace.html
@@ -5780,9 +5784,11 @@ inline SIZE_TYPE CUtf8::GetValidBytesCount(const CTempString& src) {
 inline TUnicodeSymbol CUtf8::Decode(const char*& src) {
     return x_Decode(src);
 }
+#ifndef NCBI_COMPILER_WORKSHOP
 inline TUnicodeSymbol CUtf8::Decode(string::const_iterator& src) {
     return x_Decode(src);
 }
+#endif
 
 template <typename TIterator> inline TUnicodeSymbol
 CUtf8::x_Decode(TIterator& src)
@@ -5925,6 +5931,7 @@ CStringUTF8::CStringUTF8(const CStringUTF8& src, EValidate validate)
     }
 }
 
+#ifdef __NO_EXPORT_STRINGUTF8__
 inline CStringUTF8::CStringUTF8(const CTempString& src) {
     x_Append(src, eEncoding_ISO8859_1, eNoValidate);
 }
@@ -5934,6 +5941,8 @@ inline CStringUTF8::CStringUTF8(const char* src ) {
 inline CStringUTF8::CStringUTF8(const string& src) {
     x_Append(src, eEncoding_ISO8859_1, eNoValidate);
 }
+#endif
+
 inline
 CStringUTF8::CStringUTF8(
     const CTempString& src, EEncoding encoding,EValidate validate) {
@@ -6247,9 +6256,11 @@ inline bool CStringUTF8::IsValid(void) const {
 inline TUnicodeSymbol CStringUTF8::Decode(const char*& src) {
     return x_Decode(src);
 }
+#ifndef NCBI_COMPILER_WORKSHOP
 inline TUnicodeSymbol CStringUTF8::Decode(string::const_iterator& src) {
     return x_Decode(src);
 }
+#endif
 
 #if defined(__NO_EXPORT_STRINGUTF8__)
 class NCBI_XNCBI_EXPORT CStringUTF8_Helper

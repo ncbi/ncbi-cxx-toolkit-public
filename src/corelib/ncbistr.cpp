@@ -5071,6 +5071,16 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 
 #if !defined(__NO_EXPORT_STRINGUTF8__)
 #  define CStringUTF8_Helper  CStringUTF8
+
+CStringUTF8::CStringUTF8(const CTempString& src) {
+    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
+}
+CStringUTF8::CStringUTF8(const char* src ) {
+    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
+}
+CStringUTF8::CStringUTF8(const string& src) {
+    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
+}
 #endif
 
 #if defined(__NO_EXPORT_STRINGUTF8__)
