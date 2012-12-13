@@ -2848,8 +2848,6 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
     BOOST_CHECK(ver.IsAny());
 }
 
-BOOST_AUTO_TEST_CASE(s_StringUTF8)
-{
     const unsigned char s_ExtAscii[] = {
         0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
 0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
@@ -2885,11 +2883,18 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
 0xc3,0xb0,0xc3,0xb1,0xc3,0xb2,0xc3,0xb3,0xc3,0xb4,0xc3,0xb5,0xc3,0xb6,0xc3,0xb7,
 0xc3,0xb8,0xc3,0xb9,0xc3,0xba,0xc3,0xbb,0xc3,0xbc,0xc3,0xbd,0xc3,0xbe,0xc3,0xbf};
 
+#if defined(NCBI_COMPILER_MSVC)
+#pragma warning( push )
+#pragma warning( disable : 4996 )
+#endif
+
+BOOST_AUTO_TEST_CASE(s_StringUTF8)
+{
     const char *src, *res, *conv;
     src = (char*)s_ExtAscii;
     conv= (char*)s_Converted;
-    CStringUTF8 str(src);
-    res = str.c_str();
+    CStringUTF8 u8str(src,eEncoding_ISO8859_1);
+    res = u8str.c_str();
 
     BOOST_CHECK_EQUAL( strncmp(src,res,126), 0);
     BOOST_CHECK( strlen(res+127) == 256 );
@@ -2897,26 +2902,300 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     BOOST_CHECK_EQUAL( strncmp(conv,res,256), 0);
 
     string sample("micro=µ Agrave=À atilde=ã ccedil=ç");
-    str = sample;
-    BOOST_CHECK_EQUAL(strcmp(str.c_str(),"micro=Âµ Agrave=Ã€ atilde=Ã£ ccedil=Ã§"), 0);
-    BOOST_CHECK_EQUAL( str.AsLatin1(), sample);
+    string u8sample("micro=Âµ Agrave=Ã€ atilde=Ã£ ccedil=Ã§");
+    u8str.Assign(sample,eEncoding_ISO8859_1);
+
+    BOOST_CHECK_EQUAL(u8str,u8sample);
+    BOOST_CHECK_EQUAL( u8str.AsLatin1(), sample);
 
     BOOST_CHECK_EQUAL(128u, CStringUTF8::GetValidSymbolCount((const char*)s_Converted, sizeof(s_Converted)));
     BOOST_CHECK_EQUAL(127u, CStringUTF8::GetValidSymbolCount((const char*)s_ExtAscii));
-    BOOST_CHECK_EQUAL(34u,  CStringUTF8::GetValidSymbolCount(str.data(), str.length()));
-    BOOST_CHECK_EQUAL(34u,  CStringUTF8::GetValidSymbolCount(str));
+    BOOST_CHECK_EQUAL(34u,  CStringUTF8::GetValidSymbolCount(u8str.data(), u8str.length()));
+    BOOST_CHECK_EQUAL(34u,  CStringUTF8::GetValidSymbolCount(u8str));
 
     BOOST_CHECK_EQUAL(256u, CStringUTF8::GetValidBytesCount((const char*)s_Converted, sizeof(s_Converted)));
     BOOST_CHECK_EQUAL(127u, CStringUTF8::GetValidBytesCount((const char*)s_ExtAscii));
-    BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(str.data(), str.length()));
-    BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(str));
+    BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(u8str.data(), u8str.length()));
+    BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(u8str));
 
     BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("UtF-8"),        eEncoding_UTF8);
     BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("Windows-1252"), eEncoding_Windows_1252);
     BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("cp367"),        eEncoding_Ascii);
     BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("csISOLatin1"),  eEncoding_ISO8859_1);
     BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("ISO-2022-CN-EXT"), eEncoding_Unknown);
+
+    u8str.Assign(u8sample,eEncoding_UTF8);
+    TStringUnicode uus = u8str.AsBasicString<TUnicodeSymbol>();
+    uus = CStringUTF8::AsBasicString<TUnicodeSymbol>(u8str);
+    TStringUCS4 u4s = u8str.AsBasicString<TCharUCS4>();
+    u4s = u8str.AsBasicString<TCharUCS4>(u8str);
+    TStringUCS2 u2s = u8str.AsBasicString<TCharUCS2>();
+    u2s = u8str.AsBasicString<TCharUCS2>(u8str);
+#if defined(HAVE_WSTRING)
+    wstring uws =  u8str.AsBasicString<wchar_t>();
+    uws = u8str.AsBasicString<wchar_t>(u8str);
+#endif
+
+#if defined(HAVE_WSTRING)
+    wstring wss;
+#else
+    TStringUnicode wss;
+#endif
+    wss.append(1,0x61).append(1,0x62).append(1,0x0).append(1,0x63);
+    // constructors
+    {
+        CStringUTF8 u8test(sample,eEncoding_ISO8859_1);
+        BOOST_CHECK_EQUAL(u8test,u8sample);
+    }
+    {
+        CStringUTF8 w8test(wss);
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+    }
+    {
+        CStringUTF8 u8test(sample.c_str(),eEncoding_ISO8859_1);
+        BOOST_CHECK_EQUAL(u8test,u8sample);
+        CStringUTF8 w8test(wss.c_str());
+        BOOST_CHECK_EQUAL(w8test,"ab");
+        BOOST_CHECK_EQUAL(w8test.size(),2);
+
+// att: should not compile. No encoding info - no conversion
+        //CStringUTF8 u8test2(CStringUTF8::eZeroTerminated, sample.c_str(), sample.size());
+        //string test = w8test.AsBasicString<char>(NULL);
+
+        CStringUTF8 w8test2(CStringUTF8::eZeroTerminated, wss.c_str(), wss.size()+10);
+        BOOST_CHECK_EQUAL(w8test2.size(),2);
+        CStringUTF8 w8test3(CStringUTF8::eCharBuffer, wss.c_str(), wss.size());
+        BOOST_CHECK_EQUAL(w8test3.size(),wss.size());
+
+        string ss = w8test2.AsSingleByteString(eEncoding_UTF8);
+        ss = w8test2.AsSingleByteString(eEncoding_Ascii);
+    }
+// other types
+#if defined(HAVE_WSTRING)
+    {
+        typedef wchar_t xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        CStringUTF8 w8test(xxxwss);
+        xxxwss = w8test.AsBasicString<xxxMywchar>();
+        xxxwss = w8test.AsBasicString<xxxMywchar>(NULL);
+    }
+#endif
+    {
+        typedef unsigned short xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        CStringUTF8 w8test(xxxwss);
+        xxxwss = w8test.AsBasicString<xxxMywchar>();
+        xxxwss = w8test.AsBasicString<xxxMywchar>(NULL);
+    }
+    {
+        typedef unsigned int xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        CStringUTF8 w8test(xxxwss);
+        xxxwss = w8test.AsBasicString<xxxMywchar>();
+        xxxwss = w8test.AsBasicString<xxxMywchar>(NULL);
+    }
+    {
+        typedef unsigned long xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        CStringUTF8 w8test(xxxwss);
+        xxxwss = w8test.AsBasicString<xxxMywchar>();
+        xxxwss = w8test.AsBasicString<xxxMywchar>(NULL);
+    }
+    // assignment
+    {
+        CStringUTF8 w8test;
+// att: should not compile. No encoding info - no conversion
+        //w8test = sample;
+//        w8test = sample.c_str();
+//        w8test.Assign(sample);
+//        w8test.Assign(sample.c_str());
+//        w8test.Assign(CStringUTF8::eZeroTerminated, sample.c_str(), sample.size());
+
+        w8test.Assign(sample, eEncoding_ISO8859_1);
+        w8test.Assign(sample.c_str(), eEncoding_ISO8859_1);
+
+        w8test = wss;
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+        w8test.Assign(wss);
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+        w8test.Assign(wss.c_str());
+        BOOST_CHECK_EQUAL(w8test.size(),2);
+        w8test.Assign(CStringUTF8::eZeroTerminated, wss.c_str(), wss.size());
+        BOOST_CHECK_EQUAL(w8test.size(),2);
+    }
+    // append
+    {
+        CStringUTF8 w8test;
+// att: should not compile. No encoding info - no conversion
+        //w8test += sample;
+//        w8test += sample.c_str();
+//        w8test.Append(sample);
+//        w8test.Append(sample.c_str());
+//        w8test.Append(CStringUTF8::eZeroTerminated, sample.c_str(), sample.size());
+
+        w8test.erase();
+        w8test += wss;
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+    }
 }
+
+BOOST_AUTO_TEST_CASE(s_CUtf8)
+{
+    const char *src, *res, *conv;
+    src = (char*)s_ExtAscii;
+    conv= (char*)s_Converted;
+    // extended ASCII does not match any encoding
+    {
+        CStringUTF8 u1( CUtf8::AsUTF8(src,eEncoding_ISO8859_1,CUtf8::eNoValidate) );
+        CStringUTF8 u2 = CUtf8::AsUTF8(src,eEncoding_ISO8859_1,CUtf8::eNoValidate);
+    }
+
+    CStringUTF8 u8str( CUtf8::AsUTF8(src,eEncoding_ISO8859_1,CUtf8::eNoValidate) );
+    res = u8str.c_str();
+
+    BOOST_CHECK_EQUAL( strncmp(src,res,126), 0);
+    BOOST_CHECK( strlen(res+127) == 256 );
+    res += 127;
+    BOOST_CHECK_EQUAL( strncmp(conv,res,256), 0);
+
+    string sample("micro=µ Agrave=À atilde=ã ccedil=ç");
+    string u8sample("micro=Âµ Agrave=Ã€ atilde=Ã£ ccedil=Ã§");
+
+    u8str = CUtf8::AsUTF8( sample, eEncoding_ISO8859_1);
+    u8str = CUtf8::AsUTF8( sample, eEncoding_ISO8859_1, CUtf8::eValidate);
+
+#if defined(HAVE_WSTRING)
+    wstring wss, wss2;
+#else
+    TStringUnicode wss, wss2;
+#endif
+    string ssab("ab");
+    wss.append(1,0x61).append(1,0x62).append(1,0x0).append(1,0x63);
+    {
+// string to string
+        string u8test( CUtf8::AsUTF8(sample, eEncoding_ISO8859_1));
+        BOOST_CHECK_EQUAL(u8test,u8sample);
+
+        string u8test2( CUtf8::AsUTF8( sample.c_str(),eEncoding_ISO8859_1));
+        BOOST_CHECK_EQUAL(u8test2,u8sample);
+
+        string u8test3( CUtf8::AsUTF8( CTempString(sample.c_str(),sample.size()),eEncoding_ISO8859_1));
+        BOOST_CHECK_EQUAL(u8test3,u8sample);
+
+// should not compile!
+//        u8test = CUtf8::AsUTF8( sample.c_str(), 1);
+//        u8test = CUtf8::AsUTF8( sample);
+//        u8test = CUtf8::AsBasicString<char>(sample);
+    }
+    {
+// wide string to string
+        string w8test(CUtf8::AsUTF8(wss));
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+        w8test = CUtf8::AsUTF8(wss);
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+        w8test = CUtf8::AsUTF8(wss.c_str());
+        BOOST_CHECK_EQUAL(w8test.size(),2);
+
+        string w8test2( CUtf8::AsUTF8(wss.c_str()));
+        BOOST_CHECK_EQUAL(w8test2,ssab);
+        BOOST_CHECK_EQUAL(w8test2.size(),2);
+
+        string w8test3( CUtf8::AsUTF8( wss.c_str(), wss.size()));
+        BOOST_CHECK_EQUAL(w8test3.size(),wss.size());
+
+        string ss = CUtf8::AsSingleByteString(w8test2,eEncoding_UTF8);
+        ss = CUtf8::AsSingleByteString(w8test2,eEncoding_Ascii);
+        BOOST_CHECK_EQUAL(ss,ssab);
+    }
+    {
+// string or wide string to CStringUTF8
+        CStringUTF8 w8test;
+        w8test = CUtf8::AsUTF8( sample, eEncoding_ISO8859_1);
+        w8test = CUtf8::AsUTF8( sample.c_str(), eEncoding_ISO8859_1);
+
+        w8test = CUtf8::AsUTF8(wss);
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+        w8test = CUtf8::AsUTF8(wss.c_str());
+        BOOST_CHECK_EQUAL(w8test.size(),2);
+        w8test = CUtf8::AsUTF8(wss.c_str(), wss.size());
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+        w8test = CUtf8::AsUTF8(wss.c_str());
+        BOOST_CHECK_EQUAL(w8test.size(),2);
+        w8test += CUtf8::AsUTF8(wss.c_str());
+        BOOST_CHECK_EQUAL(w8test.size(),4);
+    }
+
+    BOOST_CHECK_EQUAL(u8str,u8sample);
+    BOOST_CHECK_EQUAL( CUtf8::AsSingleByteString( u8str, eEncoding_ISO8859_1), sample);
+
+    BOOST_CHECK_EQUAL(128u, CUtf8::GetValidSymbolCount(CTempString((const char*)s_Converted, sizeof(s_Converted))));
+    BOOST_CHECK_EQUAL(127u, CUtf8::GetValidSymbolCount((const char*)s_ExtAscii));
+    BOOST_CHECK_EQUAL(34u,  CUtf8::GetValidSymbolCount(CTempString(u8str.data(), u8str.length())));
+    BOOST_CHECK_EQUAL(34u,  CUtf8::GetValidSymbolCount(u8str));
+
+    BOOST_CHECK_EQUAL(256u, CUtf8::GetValidBytesCount(CTempString((const char*)s_Converted, sizeof(s_Converted))));
+    BOOST_CHECK_EQUAL(127u, CUtf8::GetValidBytesCount((const char*)s_ExtAscii));
+    BOOST_CHECK_EQUAL(38u,  CUtf8::GetValidBytesCount(CTempString(u8str.data(), u8str.length())));
+    BOOST_CHECK_EQUAL(38u,  CUtf8::GetValidBytesCount(u8str));
+
+    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("UtF-8"),        eEncoding_UTF8);
+    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("Windows-1252"), eEncoding_Windows_1252);
+    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("cp367"),        eEncoding_Ascii);
+    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("csISOLatin1"),  eEncoding_ISO8859_1);
+    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("ISO-2022-CN-EXT"), eEncoding_Unknown);
+
+    TStringUnicode uus = CUtf8::AsBasicString<TUnicodeSymbol>(u8sample);
+    TStringUCS4    u4s = CUtf8::AsBasicString<TCharUCS4>(u8sample);
+    TStringUCS2    u2s = CUtf8::AsBasicString<TCharUCS2>(u8sample);
+#if defined(HAVE_WSTRING)
+    wstring        uws = CUtf8::AsBasicString<wchar_t>(u8sample);
+#endif
+
+// other types
+#if defined(HAVE_WSTRING)
+    {
+        typedef wchar_t xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        string w8test( CUtf8::AsUTF8(xxxwss));
+        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test, 0);
+        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test, 0, CUtf8::eNoValidate);
+    }
+#endif
+    {
+        typedef unsigned short xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        string w8test( CUtf8::AsUTF8(xxxwss));
+        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+    }
+    {
+        typedef unsigned int xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        string w8test( CUtf8::AsUTF8(xxxwss));
+        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+    }
+    {
+        typedef unsigned long xxxMywchar;
+        basic_string<xxxMywchar> xxxwss;
+        string w8test( CUtf8::AsUTF8(xxxwss));
+        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+    }
+    {
+// iteration
+        wss.erase().append(1,0x1000).append(1,0x1100).append(1,0x1110).append(1,0x1111);
+        wss2.erase();
+        string s(CUtf8::AsUTF8(wss));
+        string s2;
+        for (string::const_iterator i = s.begin(); i != s.end(); ++i) {
+            TUnicodeSymbol sym = CUtf8::Decode(i);
+            wss2.append(1,sym);
+            s2 += CUtf8::AsUTF8(&sym,1);
+        }
+        BOOST_CHECK(s == s2);
+        BOOST_CHECK(wss == wss2);
+    }
+}
+
 
 BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
 {
@@ -3003,7 +3282,7 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
 
 // http://unicode.org/charts/uca/chart_Whitespace.html
 // http://en.wikipedia.org/wiki/Whitespace_character
-    wchar_t ws[] = {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x85, 0xA0, 0x1680, 0x180E,
+    TUnicodeSymbol ws[] = {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0x85, 0xA0, 0x1680, 0x180E,
     0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A,
     0x2028, 0x2029, 0x202F, 0x205F, 0x3000, 0 };
     int i;
@@ -3016,9 +3295,10 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     cout << "Testing CStringUTF8::IsWhiteSpace" << endl;
     for (i=0; ws[i]; ++i) {
         BOOST_CHECK( CStringUTF8::IsWhiteSpace(ws[i]) );
+        BOOST_CHECK( CUtf8::IsWhiteSpace(ws[i]) );
     }
-    for (wchar_t t=1; t<=0x3000; ++t) {
-        if (CStringUTF8::IsWhiteSpace(t)) {
+    for (TUnicodeSymbol t=1; t<=0x3000; ++t) {
+        if (CUtf8::IsWhiteSpace(t)) {
             bool found=false;
             for (i=0; !found && ws[i]; ++i) {
                 found = ws[i] == t;
@@ -3027,24 +3307,47 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
         }
     }
 
-#if !defined(HAVE_WSTRING)
+#if defined(HAVE_WSTRING)
     wstring wss;
 #else
-    TStringUCS2 wss;
+    TStringUnicode wss;
 #endif
+// CStringUTF8
     wss.erase().append(1, 0x2003).append(1, 0x2004).append(1, 0x2028).append(1, 0x205F);
     BOOST_CHECK( CStringUTF8(wss).TruncateSpacesInPlace(NStr::eTrunc_Begin).empty() );
     BOOST_CHECK( CStringUTF8(wss).TruncateSpacesInPlace(NStr::eTrunc_End).empty() );
     BOOST_CHECK( CStringUTF8(wss).TruncateSpacesInPlace().empty() );
 
-    wss.append(1,L'a').append(1,L'b');
+    wss.append(1,0x61).append(1,0x62);
     BOOST_CHECK_EQUAL( CStringUTF8(wss).TruncateSpacesInPlace(), "ab" );
 
     wss.append(1, 0x2028).append(1, 0x205F).append(1,0x0D);
     BOOST_CHECK_EQUAL( CStringUTF8(wss).TruncateSpacesInPlace(), "ab" );
     BOOST_CHECK_EQUAL( CStringUTF8::TruncateSpaces(CStringUTF8(wss)), "ab" );
-}
 
+
+// CUtf8
+    wss.erase().append(1, 0x2003).append(1, 0x2004).append(1, 0x2028).append(1, 0x205F);
+    CStringUTF8 u8 = CUtf8::AsUTF8(wss);
+    BOOST_CHECK( CUtf8::TruncateSpacesInPlace(u8,NStr::eTrunc_Begin).empty() );
+    u8 = CUtf8::AsUTF8(wss);
+    BOOST_CHECK( CUtf8::TruncateSpacesInPlace(u8,NStr::eTrunc_End).empty() );
+    u8 = CUtf8::AsUTF8(wss);
+    BOOST_CHECK( CUtf8::TruncateSpacesInPlace(u8).empty() );
+
+    wss.append(1,0x61).append(1,0x62);
+    u8 = CUtf8::AsUTF8(wss);
+    BOOST_CHECK_EQUAL( CUtf8::TruncateSpacesInPlace(u8), "ab" );
+
+    wss.append(1, 0x2028).append(1, 0x205F).append(1,0x0D);
+    u8 = CUtf8::AsUTF8(wss);
+    BOOST_CHECK_EQUAL( CUtf8::TruncateSpacesInPlace(u8), "ab" );
+    u8 = CUtf8::AsUTF8(wss);
+    BOOST_CHECK_EQUAL( CUtf8::TruncateSpaces(u8), "ab" );
+}
+#if defined(NCBI_COMPILER_MSVC)
+#pragma warning( pop )
+#endif
 
 
 BOOST_AUTO_TEST_CASE(s_GetField)
@@ -3154,14 +3457,22 @@ BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter_Unsafe)
 
 BOOST_AUTO_TEST_CASE(s_SQLEncode)
 {
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("should not be touched"), CStringUTF8("'should not be touched'") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(""), CStringUTF8("''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("'"), CStringUTF8("''''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("\\'"), CStringUTF8("'\\'''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("'a"), CStringUTF8("'''a'") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("a'"), CStringUTF8("'a'''") );
-    BOOST_CHECK_EQUAL( NStr::SQLEncode("`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?"),
-                               CStringUTF8("'`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?'") );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("should not be touched",eEncoding_ISO8859_1)),
+        CUtf8::AsUTF8("'should not be touched'",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("",   eEncoding_ISO8859_1)), CUtf8::AsUTF8("''",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("'",  eEncoding_ISO8859_1)), CUtf8::AsUTF8("''''",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("\\'",eEncoding_ISO8859_1)), CUtf8::AsUTF8("'\\'''",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("'a", eEncoding_ISO8859_1)), CUtf8::AsUTF8("'''a'",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("a'", eEncoding_ISO8859_1)), CUtf8::AsUTF8("'a'''",eEncoding_ISO8859_1) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(
+        CUtf8::AsUTF8("`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?",eEncoding_ISO8859_1)),
+        CUtf8::AsUTF8("'`1234567890-=~!@#$%^&*()_+qwertyuiop[]\\asdfghjkl;zxcvbnm,./QWERTYUIOP{}|ASDFGHJKL:\"ZXCVBNM<>?'",eEncoding_ISO8859_1) );
 
     const unsigned char s_UpperHalf[] = {
         0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F,
@@ -3185,10 +3496,10 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
         0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF, '\''
     };
 
-    CStringUTF8      upperHalf( string((char*)s_UpperHalf, 128) );
-    CStringUTF8      expected( string((char*)s_Expected, 130) );
+    CStringUTF8      upperHalf( CUtf8::AsUTF8(CTempString((char*)s_UpperHalf, 128),eEncoding_ISO8859_1 ));
+    CStringUTF8      expected( CUtf8::AsUTF8( CTempString((char*)s_Expected, 130),eEncoding_ISO8859_1 ));
 
-    BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), CStringUTF8(expected) );
+    BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), expected );
 }
 
 BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
