@@ -53,7 +53,7 @@ class Scenario600( TestBase ):
             raise Exception( "No blacklisted jobs found" )
         if len( client[ 'blacklisted_jobs' ] ) != 1:
             raise Exception( "Unexpected number of blacklisted jobs" )
-        if client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+        if client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Unexpected job is in the blacklist" )
 
         # wait till the job is gone from the blacklist
@@ -105,7 +105,7 @@ class Scenario601( TestBase ):
             raise Exception( "No blacklisted jobs found" )
         if len( client[ 'blacklisted_jobs' ] ) != 1:
             raise Exception( "Unexpected number of blacklisted jobs" )
-        if client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+        if client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Unexpected job is in the blacklist" )
 
         # wait till the job is gone from the blacklist
