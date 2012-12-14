@@ -143,6 +143,7 @@ CSeqDBTaxInfo::~CSeqDBTaxInfo()
         m_Atlas.RetRegion((const char*) m_TaxData);
         m_TaxData = 0;
     }
+    m_Initialized = true;
 }
 
 bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
