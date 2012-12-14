@@ -138,6 +138,12 @@ private:
     
     /// Memory map of the index file
     CSeqDBTaxId * m_TaxData;
+
+    /// Initialization status indicator
+    bool m_Initialized;
+
+    /// Lazy initialization
+    void x_Init(CSeqDBLockHold & locked);
 };
 
 END_NCBI_SCOPE

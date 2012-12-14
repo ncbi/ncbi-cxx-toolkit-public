@@ -48,13 +48,20 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     : m_Atlas        (atlas),
       m_Lease        (atlas),
       m_AllTaxidCount(0),
-      m_TaxData      (0)
+      m_TaxData      (0),
+      m_Initialized   (false)
+{
+}
+
+void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
 {
     typedef CSeqDBAtlas::TIndx TIndx;
     
+    m_Atlas.Lock(locked);
+
+    if (m_Initialized) return;
+
     // It is reasonable for this database to not exist.
-    
-    CSeqDBLockHold locked(m_Atlas);
     
     m_IndexFN =
         SeqDB_FindBlastDBPath("taxdb.bti", '-', 0, true, m_Atlas, locked);
@@ -91,7 +98,6 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     
     // Last check-up of the database validity
     
-    m_Atlas.Lock(locked);
     m_Atlas.GetRegion(lease, m_IndexFN, 0, data_start);
     
     Uint4 * magic_num_ptr = (Uint4 *) lease.GetPtr(0);
@@ -129,6 +135,7 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
 
 CSeqDBTaxInfo::~CSeqDBTaxInfo()
 {
+    if (! m_Initialized) return;
     if (! m_Lease.Empty()) {
         m_Atlas.RetRegion(m_Lease);
     }
@@ -142,6 +149,8 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
                                 SSeqDBTaxInfo  & info,
                                 CSeqDBLockHold & locked)
 {
+    x_Init(locked);
+
     Int4 low_index  = 0;
     Int4 high_index = m_AllTaxidCount - 1;
     
