@@ -30,6 +30,7 @@ max_lockers=25000
 max_lockobjects=100000
 direct_db=false
 direct_log=false
+max_queues=5
 
 [qclass_class1]
 description="class one"
