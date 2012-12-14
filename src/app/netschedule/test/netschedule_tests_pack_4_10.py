@@ -2775,7 +2775,7 @@ class Scenario169( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario169' )
         client = getClientInfo( ns_client, 'scenario169' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
         return True
 
@@ -2811,7 +2811,7 @@ class Scenario170( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario170' )
         client = getClientInfo( ns_client, 'scenario170' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
         return True
 
@@ -2846,7 +2846,7 @@ class Scenario171( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario171' )
         client = getClientInfo( ns_client, 'scenario171' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
         return True
 
@@ -2894,7 +2894,7 @@ class Scenario172( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario172' )
         client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
         return True
 
@@ -2942,7 +2942,7 @@ class Scenario173( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario173' )
         client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
         return True
 
@@ -2989,7 +2989,7 @@ class Scenario174( TestBase ):
         ns_client = self.getNetScheduleService( 'TEST', 'scenario173' )
         client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ] != jobID:
+           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
         return True
 
