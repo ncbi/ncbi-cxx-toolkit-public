@@ -235,8 +235,6 @@ int CNetScheduleDApp::Run(void)
     auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
                                                        bdb_params, reinit));
 
-    server->InitNodeID(bdb_params.db_path);
-
     if (!args[kNodaemonArgName]) {
         LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
         // Here's workaround for SQLite3 bug: if stdin is closed in forked

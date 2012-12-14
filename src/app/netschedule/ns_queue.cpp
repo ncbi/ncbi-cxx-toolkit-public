@@ -35,6 +35,7 @@
 #include "background_host.hpp"
 #include "ns_util.hpp"
 #include "ns_server.hpp"
+#include "ns_precise_time.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -71,7 +72,8 @@ static const unsigned int       s_ReserveDelta = 10000;
 CQueue::CQueue(CRequestExecutor&     executor,
                const string&         queue_name,
                TQueueKind            queue_kind,
-               CNetScheduleServer *  server)
+               CNetScheduleServer *  server,
+               CQueueDataBase &      qdb)
   :
     m_RunTimeLine(NULL),
     m_Executor(executor),
@@ -104,10 +106,11 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_AffinityHighRemoval(server->GetAffinityHighRemoval()),
     m_AffinityLowRemoval(server->GetAffinityLowRemoval()),
     m_AffinityDirtPercentage(server->GetAffinityDirtPercentage()),
-    m_NotificationsList(server->GetNodeID(), queue_name),
+    m_NotificationsList(qdb, server->GetNodeID(), queue_name),
     m_NotifHifreqInterval(0.1),
     m_NotifHifreqPeriod(5),
     m_NotifLofreqMult(50),
+    m_HandicapTimeout(),
     m_DumpBufferSize(100)
 {
     _ASSERT(!queue_name.empty());
@@ -215,6 +218,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_NotifHifreqInterval   = params.notif_hifreq_interval;
     m_NotifHifreqPeriod     = params.notif_hifreq_period;
     m_NotifLofreqMult       = params.notif_lofreq_mult;
+    m_HandicapTimeout       = CNSPreciseTime(params.notif_handicap);
     m_DumpBufferSize        = params.dump_buffer_size;
 
     m_ClientsRegistry.SetBlacklistTimeout(m_BlacklistTime);
@@ -450,7 +454,8 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         m_NotificationsList.Notify(job_id, aff_id,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
-                                   m_NotifHifreqPeriod);
+                                   m_NotifHifreqPeriod,
+                                   m_HandicapTimeout);
 
         m_GCRegistry.RegisterJob(job_id, CNSPreciseTime::Current(),
                                  aff_id, group_id,
@@ -535,7 +540,8 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
         m_NotificationsList.Notify(jobs, affinities, no_aff_jobs,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
-                                   m_NotifHifreqPeriod);
+                                   m_NotifHifreqPeriod,
+                                   m_HandicapTimeout);
 
         CNSPreciseTime      current_precise = CNSPreciseTime::Current();
         for (size_t  k = 0; k < batch_size; ++k)
@@ -798,6 +804,12 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                                                                 MakeKey(new_job->GetId()),
                                                                 new_job->GetStatus(),
                                                                 new_job->GetLastEventIndex());
+
+                        // If there are no more pending jobs, let's clear the
+                        // list of delayed exact notifications.
+                        if (!m_StatusTracker.AnyPending())
+                            m_NotificationsList.ClearExactNotifications();
+
                         return true;
                     }
 
@@ -1231,7 +1243,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
 
     m_NotificationsList.Notify(job_id,
                                job.GetAffinityId(), m_ClientsRegistry,
-                               m_AffinityRegistry, m_NotifHifreqPeriod);
+                               m_AffinityRegistry, m_NotifHifreqPeriod,
+                               m_HandicapTimeout);
     return old_status;
 }
 
@@ -2154,7 +2167,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         if (rescheduled)
             m_NotificationsList.Notify(job_id,
                                        job.GetAffinityId(), m_ClientsRegistry,
-                                       m_AffinityRegistry, m_NotifHifreqPeriod);
+                                       m_AffinityRegistry, m_NotifHifreqPeriod,
+                                       m_HandicapTimeout);
 
         if (job.ShouldNotifyListener(curr, m_JobsToNotify))
             m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
@@ -2250,8 +2264,12 @@ void CQueue::NotifyListenersPeriodically(time_t  current_time)
         m_NotificationsList.CheckTimeout(current_time,
                                          m_ClientsRegistry,
                                          m_AffinityRegistry);
+}
 
-    return;
+
+CNSPreciseTime CQueue::NotifyExactListeners(void)
+{
+    return m_NotificationsList.NotifyExactListeners();
 }
 
 
@@ -2413,7 +2431,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
         if (new_status == CNetScheduleAPI::ePending)
             m_NotificationsList.Notify(job_id,
                                        job.GetAffinityId(), m_ClientsRegistry,
-                                       m_AffinityRegistry, m_NotifHifreqPeriod);
+                                       m_AffinityRegistry, m_NotifHifreqPeriod,
+                                       m_HandicapTimeout);
 
         if (job.ShouldNotifyListener(curr_time, m_JobsToNotify))
             m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
@@ -2538,6 +2557,9 @@ SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
                 m_JobsToNotify.set_bit(id, false);
             }
         }
+
+        if (!m_StatusTracker.AnyPending())
+            m_NotificationsList.ClearExactNotifications();
     }
 
 
@@ -2712,8 +2734,6 @@ void  CQueue::PurgeWNodes(time_t  current_time)
                        unsigned short > >::const_iterator  k = notif_to_reset.begin();
          k != notif_to_reset.end(); ++k)
         m_NotificationsList.UnregisterListener(k->first, k->second);
-
-    return;
 }
 
 
@@ -2911,7 +2931,6 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client)
         x_ResetRunningDueToNewSession(client, running_jobs);
     if (reading_jobs.any())
         x_ResetReadingDueToNewSession(client, reading_jobs);
-    return;
 }
 
 
@@ -2992,7 +3011,8 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &   client,
         m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
-                                   m_NotifHifreqPeriod);
+                                   m_NotifHifreqPeriod,
+                                   m_HandicapTimeout);
 
     if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
         m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),

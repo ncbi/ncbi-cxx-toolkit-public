@@ -151,8 +151,10 @@ string  SNSNotificationAttributes::Print(
 }
 
 
-CNSNotificationList::CNSNotificationList(const string &  ns_node,
-                                         const string &  qname)
+CNSNotificationList::CNSNotificationList(CQueueDataBase &  qdb,
+                                         const string &    ns_node,
+                                         const string &    qname) :
+    m_QueueDB(qdb)
 {
     m_JobStateConstPartLength = snprintf(m_JobStateConstPart,
                                          k_MessageBufferSize,
@@ -233,7 +235,6 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
         attributes.m_AnyJob = true;
 
     m_PassiveListeners.push_back(attributes);
-    return;
 }
 
 
@@ -241,7 +242,6 @@ void CNSNotificationList::UnregisterListener(const CNSClientId &  client,
                                              unsigned short       port)
 {
     UnregisterListener(client.GetAddress(), port);
-    return;
 }
 
 
@@ -260,8 +260,6 @@ void CNSNotificationList::UnregisterListener(unsigned int         address,
     found = x_FindListener(m_ActiveListeners, address, port);
     if (found != m_ActiveListeners.end())
         m_ActiveListeners.erase(found);
-
-    return;
 }
 
 
@@ -288,7 +286,6 @@ void CNSNotificationList::NotifyJobStatus(unsigned int    address,
                                 buffer,
                                 strlen(buffer) + 1,
                                 CSocketAPI::ntoa(address), port);
-    return;
 }
 
 
@@ -322,8 +319,6 @@ void CNSNotificationList::CheckTimeout(time_t                 current_time,
         m_PassiveListeners.push_back(SNSNotificationAttributes(*rec));
         rec = m_ActiveListeners.erase(rec);
     }
-
-    return;
 }
 
 
@@ -352,16 +347,19 @@ CNSNotificationList::NotifyPeriodically(time_t                 current_time,
                 k->m_SlowRateCount = 0;
                 // Send the same packet twice: Denis wanted to increase
                 // the UDP delivery probability
-                x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
-                x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+                x_SendNotificationPacket(k->m_Address, k->m_Port,
+                                         k->m_NewFormat);
+                x_SendNotificationPacket(k->m_Address, k->m_Port,
+                                         k->m_NewFormat);
             }
         } else {
             // We are at fast rate
-            x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+            if (x_IsInExactList(k->m_Address, k->m_Port) == false)
+                x_SendNotificationPacket(k->m_Address, k->m_Port,
+                                         k->m_NewFormat);
         }
         ++k;
     }
-    return;
 }
 
 
@@ -390,7 +388,6 @@ CNSNotificationList::CheckOutdatedJobs(const TNSBitVector &  outdated_jobs,
         }
         ++k;
     }
-    return;
 }
 
 
@@ -400,7 +397,8 @@ void CNSNotificationList::Notify(unsigned int           job_id,
                                  unsigned int           aff_id,
                                  CNSClientsRegistry &   clients_registry,
                                  CNSAffinityRegistry &  aff_registry,
-                                 unsigned int           notif_highfreq_period)
+                                 unsigned int           notif_highfreq_period,
+                                 const CNSPreciseTime & notif_handicap)
 {
     TNSBitVector    aff_ids;
     TNSBitVector    jobs;
@@ -411,8 +409,8 @@ void CNSNotificationList::Notify(unsigned int           job_id,
     jobs.set_bit(job_id, true);
 
     Notify(jobs, aff_ids, aff_id == 0,
-           clients_registry, aff_registry, notif_highfreq_period);
-    return;
+           clients_registry, aff_registry,
+           notif_highfreq_period, notif_handicap);
 }
 
 
@@ -424,11 +422,18 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             bool                   no_aff_jobs,
                             CNSClientsRegistry &   clients_registry,
                             CNSAffinityRegistry &  aff_registry,
-                            unsigned int           notif_highfreq_period)
+                            unsigned int           notif_highfreq_period,
+                            const CNSPreciseTime & notif_handicap)
 {
     time_t          current_time = time(0);
     TNSBitVector    all_preferred_affs =
                                 clients_registry.GetAllPreferredAffinities();
+
+    // Support randomized UDP notifications
+    // See CXX-3662
+    vector<SNSNotificationAttributes*>  targets;
+    bool  be_random = (notif_handicap.tv_sec != 0 ||
+                       notif_handicap.tv_nsec != 0);
 
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
@@ -472,8 +477,13 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
 
         if (should_send) {
             k->m_HifreqNotifyLifetime = current_time + notif_highfreq_period;
-            x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
             m_ActiveListeners.push_back(SNSNotificationAttributes(*k));
+            if (be_random) {
+                targets.push_back(&(*(m_ActiveListeners.rbegin())));
+            } else {
+                x_SendNotificationPacket(k->m_Address, k->m_Port,
+                                         k->m_NewFormat);
+            }
             k = m_PassiveListeners.erase(k);
             continue;
         }
@@ -481,7 +491,22 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         ++k;
     }
 
-    return;
+    if (be_random && !targets.empty()) {
+        random_shuffle(targets.begin(), targets.end());
+
+        x_SendNotificationPacket(targets[0]->m_Address,
+                                 targets[0]->m_Port,
+                                 targets[0]->m_NewFormat);
+        CNSPreciseTime  when = CNSPreciseTime::Current() + notif_handicap;
+        for (size_t j(1); j < targets.size(); ++j)
+            AddToExactNotifications(targets[j]->m_Address,
+                                    targets[j]->m_Port,
+                                    when,
+                                    targets[j]->m_NewFormat);
+
+        // This will reschedule when the thread should wake up net time
+        m_QueueDB.WakeupNotifThread();
+    }
 }
 
 
@@ -520,6 +545,70 @@ CNSNotificationList::Print(const CNSClientsRegistry &   clients_registry,
 
 
 void
+CNSNotificationList::AddToExactNotifications(unsigned int            address,
+                                             unsigned short          port,
+                                             const CNSPreciseTime &  when,
+                                             bool                    new_format)
+{
+    // The records in the m_ExactTimeNotifications list should be sorted in
+    // accordance to the time when a notification should be sent.
+    // It is nearly always when a record must be added to the end except one
+    // case - if a handicap timeout has been decreased at runtime and there
+    // were records already in the list and the new record does not exceed the
+    // time when a previous record should be sent. It is also beleived that
+    // such circumstances are very rare and even so that would not be very
+    // harmful if a notification is not sent immediately. Therefore the new
+    // records are always added at the end of the list.
+
+    SExactTimeNotification      notification;
+    notification.m_Address = address;
+    notification.m_Port = port;
+    notification.m_TimeToSend = when;
+    notification.m_NewFormat = new_format;
+
+    CMutexGuard     guard(m_ExactTimeNotifLock);
+    m_ExactTimeNotifications.push_back(notification);
+}
+
+
+void
+CNSNotificationList::ClearExactNotifications(void)
+{
+    CMutexGuard     guard(m_ExactTimeNotifLock);
+    m_ExactTimeNotifications.clear();
+}
+
+
+// Notifies all those which exact time has reached.
+// Returns the next exact time to send notification.
+CNSPreciseTime
+CNSNotificationList::NotifyExactListeners(void)
+{
+    static CNSPreciseTime   never = CNSPreciseTime::Never();
+
+    CMutexGuard     guard(m_ExactTimeNotifLock);
+    if (m_ExactTimeNotifications.empty())
+        return never;
+
+    CNSPreciseTime  current = CNSPreciseTime::Current();
+    while (!m_ExactTimeNotifications.empty()) {
+        list<SExactTimeNotification>::iterator  first =
+                                m_ExactTimeNotifications.begin();
+        if (first->m_TimeToSend > current)
+            return first->m_TimeToSend;
+
+        // Here: send the notification and delete the record
+        x_SendNotificationPacket(first->m_Address,
+                                 first->m_Port,
+                                 first->m_NewFormat);
+        m_ExactTimeNotifications.erase(first);
+    }
+
+    return never;
+}
+
+
+void
 CNSNotificationList::x_SendNotificationPacket(unsigned int    address,
                                               unsigned short  port,
                                               bool            new_format)
@@ -531,7 +620,6 @@ CNSNotificationList::x_SendNotificationPacket(unsigned int    address,
         m_GetNotificationSocket.Send(m_GetMsgBufferObsoleteVersion,
                                      m_GetMsgLengthObsoleteVersion,
                                      CSocketAPI::ntoa(address), port);
-    return;
 }
 
 
@@ -561,6 +649,23 @@ CNSNotificationList::x_TestTimeout(
 }
 
 
+bool
+CNSNotificationList::x_IsInExactList(unsigned int    address,
+                                     unsigned short  port) const
+{
+    CMutexGuard     guard(m_ExactTimeNotifLock);
+    for (list<SExactTimeNotification>::const_iterator
+                k(m_ExactTimeNotifications.begin());
+                k != m_ExactTimeNotifications.end();
+                ++k) {
+        if (k->m_Address == address &&
+            k->m_Port == port)
+            return true;
+    }
+    return false;
+}
+
+
 // Get job notification thread implementation
 CGetJobNotificationThread::CGetJobNotificationThread(
                                         CQueueDataBase &  qdb,
@@ -568,8 +673,9 @@ CGetJobNotificationThread::CGetJobNotificationThread(
                                         unsigned int      nanosec_delay,
                                         const bool &      logging) :
     m_QueueDB(qdb), m_NotifLogging(logging),
-    m_SecDelay(sec_delay), m_NanosecDelay(nanosec_delay),
-    m_StopSignal(0, 10000000)
+    m_Period(sec_delay, nanosec_delay),
+    m_StopSignal(0, 10000000),
+    m_StopFlag(false)
 {}
 
 
@@ -579,24 +685,78 @@ CGetJobNotificationThread::~CGetJobNotificationThread()
 
 void CGetJobNotificationThread::RequestStop(void)
 {
-    m_StopFlag.Add(1);
+    m_StopFlag = true;
     m_StopSignal.Post();
-    return;
+}
+
+
+void CGetJobNotificationThread::WakeUp(void)
+{
+    m_StopSignal.Post();
 }
 
 
 void *  CGetJobNotificationThread::Main(void)
 {
     prctl(PR_SET_NAME, "netscheduled_nt", 0, 0, 0);
-    while (1) {
-        x_DoJob();
+    m_NextScheduled = CNSPreciseTime::Current() + m_Period;
 
-        if (m_StopSignal.TryWait(m_SecDelay, m_NanosecDelay))
-            if (m_StopFlag.Get() != 0)
-                break;
+    CNSPreciseTime  delay = m_Period;
+    CNSPreciseTime  current;
+    CNSPreciseTime  next_exact;
+
+    while (1) {
+        m_StopSignal.TryWait(delay.tv_sec, delay.tv_nsec);
+        if (m_StopFlag)
+           break;
+
+        if (CNSPreciseTime::Current() >= m_NextScheduled) {
+            x_DoJob();
+            m_NextScheduled = CNSPreciseTime::Current() + m_Period;
+        }
+
+        // Sends notifications scheduled for an exact time
+        do {
+            next_exact = x_ProcessExactTimeNotifications();
+            current = CNSPreciseTime::Current();
+        } while (next_exact <= current);
+
+        // Calculate delay to the next loop
+        if (next_exact < m_NextScheduled)
+            delay = next_exact - current;
+        else {
+            if (current < m_NextScheduled)
+                delay = m_NextScheduled - current;
+            else {
+                // Spin one more time
+                delay.tv_sec = 0;
+                delay.tv_nsec = 0;
+            }
+        }
+
     } // while (1)
 
     return 0;
+}
+
+
+CNSPreciseTime
+CGetJobNotificationThread::x_ProcessExactTimeNotifications(void)
+{
+    try {
+        return m_QueueDB.SendExactNotifications();
+    }
+    catch (exception &  ex) {
+        RequestStop();
+        ERR_POST("Error during sending exact time scheduled notifications: "
+                 << ex.what() << ". Notification thread has been stopped.");
+    }
+    catch (...) {
+        RequestStop();
+        ERR_POST("Unknown error during sending exact time scheduled "
+                 "notifications. Notification thread has been stopped.");
+    }
+    return CNSPreciseTime::Never();
 }
 
 

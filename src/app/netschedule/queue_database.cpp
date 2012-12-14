@@ -397,7 +397,10 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
 
     // Allocate SQueueDbBlock's here, open/create corresponding databases
     m_QueueDbBlockArray.Init(*m_Env, m_Path, params.max_queues);
-    return;
+
+    // The initialization must be done before the queues are created but after
+    // the directory is possibly re-created
+    m_Server->InitNodeID(db_path);
 }
 
 
@@ -475,8 +478,6 @@ CQueueDataBase::x_DeleteDBRecordsWithPrefix(const string &  prefix)
         m_QueueDescriptionDB.queue = *k;
         m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
     }
-
-    return;
 }
 
 
@@ -512,7 +513,6 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.run_timeout_precision = params.run_timeout_precision;
 
     m_QueueDescriptionDB.UpdateInsert();
-    return;
 }
 
 
@@ -533,7 +533,6 @@ CQueueDataBase::x_WriteDBQueueDescriptions(const TQueueParams &   queue_classes)
         x_InsertParamRecord("qclass_" + k->first, k->second);
 
     trans.Commit();
-    return;
 }
 
 
@@ -554,7 +553,6 @@ CQueueDataBase::x_WriteDBQueueDescriptions(const TQueueInfo &  queues)
         x_InsertParamRecord("queue_" + k->first, k->second.first);
 
     trans.Commit();
-    return;
 }
 
 
@@ -734,7 +732,6 @@ CQueueDataBase::x_ValidateConfiguration(
     }
 
     // Config file is OK for the current configuration
-    return;
 }
 
 
@@ -1210,7 +1207,7 @@ CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
                                       SQueueDbBlock *           queue_db_block)
 {
     auto_ptr<CQueue>    q(new CQueue(m_Executor, qname,
-                                     params.kind, m_Server));
+                                     params.kind, m_Server, *this));
 
     q->Attach(queue_db_block);
     q->SetParameters(params);
@@ -1228,7 +1225,6 @@ CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
                                     << params.qclass
                                     << "' mounted. Number of records: "
                                     << recs);
-    return;
 }
 
 
@@ -1284,7 +1280,6 @@ void CQueueDataBase::CreateDynamicQueue(const string &  qname,
     x_CreateAndMountQueue(qname, params, m_QueueDbBlockArray.Get(new_position));
 
     x_WriteDBQueueDescriptions(m_Queues);
-    return;
 }
 
 
@@ -1307,7 +1302,6 @@ void  CQueueDataBase::DeleteDynamicQueue(const string &  qname)
 
     CRef<CQueue>    queue = found_queue->second.second;
     queue->SetRefuseSubmits(true);
-    return;
 }
 
 
@@ -1399,7 +1393,6 @@ void CQueueDataBase::Close(bool  drained_shutdown)
 
     delete m_Env;
     m_Env = 0;
-    return;
 }
 
 
@@ -1480,7 +1473,6 @@ void CQueueDataBase::NotifyListeners(void)
             break;
         queue->NotifyListenersPeriodically(current_time);
     }
-    return;
 }
 
 
@@ -1491,8 +1483,6 @@ void CQueueDataBase::PrintStatistics(size_t &  aff_count)
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k)
         k->second.second->PrintStatistics(aff_count);
-
-    return;
 }
 
 
@@ -1504,7 +1494,6 @@ void CQueueDataBase::CheckExecutionTimeout(bool  logging)
             break;
         queue->CheckExecutionTimeout(logging);
     }
-    return;
 }
 
 
@@ -1576,8 +1565,6 @@ void  CQueueDataBase::x_DeleteQueuesAndClasses(void)
         // it's safe not  to check the iterator
         m_QueueClasses.erase(m_QueueClasses.find(*k));
     }
-
-    return;
 }
 
 
@@ -1691,8 +1678,6 @@ void CQueueDataBase::Purge(void)
     TransactionCheckPoint();
 
     x_OptimizeStatusMatrix(current_time);
-
-    return;
 }
 
 
@@ -1836,7 +1821,6 @@ void  CQueueDataBase::x_SetSignallingFile(bool  drained)
         ERR_POST("Error creating signalling file. "
                  "The server might not start correct with this DB.");
     }
-    return;
 }
 
 
@@ -1939,7 +1923,6 @@ void CQueueDataBase::PurgeAffinities(void)
         if (x_CheckStopPurge())
             break;
     }
-    return;
 }
 
 
@@ -1953,7 +1936,6 @@ void CQueueDataBase::PurgeGroups(void)
         if (x_CheckStopPurge())
             break;
     }
-    return;
 }
 
 
@@ -1976,7 +1958,6 @@ void CQueueDataBase::PurgeWNodes(void)
         if (x_CheckStopPurge())
             break;
     }
-    return;
 }
 
 
@@ -2013,6 +1994,31 @@ void CQueueDataBase::StopNotifThread(void)
         m_NotifThread->Join();
         m_NotifThread.Reset(0);
     }
+}
+
+
+void CQueueDataBase::WakeupNotifThread(void)
+{
+    if (!m_NotifThread.Empty())
+        m_NotifThread->WakeUp();
+}
+
+
+CNSPreciseTime
+CQueueDataBase::SendExactNotifications(void)
+{
+    CNSPreciseTime      next = CNSPreciseTime::Never();
+    CNSPreciseTime      from_queue;
+
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        from_queue = queue->NotifyExactListeners();
+        if (from_queue < next )
+            next = from_queue;
+    }
+    return next;
 }
 
 

@@ -102,7 +102,8 @@ public:
     CQueue(CRequestExecutor&     executor,
            const string&         queue_name,
            TQueueKind            queue_kind,
-           CNetScheduleServer *  server);
+           CNetScheduleServer *  server,
+           CQueueDataBase &      qdb);
     ~CQueue();
 
     void Attach(SQueueDbBlock* block);
@@ -282,6 +283,7 @@ public:
     void ClearWorkerNode(const CNSClientId &  client);
 
     void NotifyListenersPeriodically(time_t  current_time);
+    CNSPreciseTime NotifyExactListeners(void);
     string PrintClientsList(bool verbose) const;
     string PrintNotificationsList(bool verbose) const;
     string PrintAffinitiesList(bool verbose) const;
@@ -526,6 +528,7 @@ private:
     double                       m_NotifHifreqInterval;
     unsigned int                 m_NotifHifreqPeriod;
     unsigned int                 m_NotifLofreqMult;
+    CNSPreciseTime               m_HandicapTimeout;
 
     unsigned int                 m_DumpBufferSize;
 

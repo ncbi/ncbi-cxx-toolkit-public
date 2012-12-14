@@ -55,6 +55,7 @@
 #include "queue_vc.hpp"
 #include "background_host.hpp"
 #include "ns_service_thread.hpp"
+#include "ns_precise_time.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -150,6 +151,8 @@ public:
     void NotifyListeners(void);
     void RunNotifThread(void);
     void StopNotifThread(void);
+    void WakeupNotifThread(void);
+    CNSPreciseTime SendExactNotifications(void);
 
     // Print statistics
     void PrintStatistics(size_t &  aff_count);

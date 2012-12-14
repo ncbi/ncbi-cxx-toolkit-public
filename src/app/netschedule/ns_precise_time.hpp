@@ -32,7 +32,8 @@
  */
 
 
-# include <sys/time.h>
+#include <corelib/ncbi_limits.hpp>
+#include <sys/time.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,6 +56,12 @@ class CNSPreciseTime : public timespec
         { CNSPreciseTime    result;
           clock_gettime(CLOCK_REALTIME, &result);
           return result; }
+        static CNSPreciseTime  Never(void)
+        { CNSPreciseTime    result;
+          result.tv_sec = numeric_limits<time_t>::max();
+          result.tv_nsec = kNSecsPerSecond - 1;
+          return result;
+        }
 
         CNSPreciseTime(void)
         { tv_sec = 0;
@@ -64,8 +71,10 @@ class CNSPreciseTime : public timespec
           tv_nsec = 0; }
         CNSPreciseTime(double  time)
         { tv_sec = int(time);
-          tv_nsec = int( (time - tv_sec) * kNSecsPerSecond );
-        }
+          tv_nsec = int( (time - tv_sec) * kNSecsPerSecond ); }
+        CNSPreciseTime(unsigned int sec, unsigned int  nsec)
+        { tv_sec = sec;
+          tv_nsec = nsec; }
         time_t &  Sec(void)
         { return tv_sec; }
         time_t Sec(void) const

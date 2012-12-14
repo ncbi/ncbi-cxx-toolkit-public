@@ -59,6 +59,7 @@ struct SQueueParameters
     double          notif_hifreq_interval;
     unsigned int    notif_hifreq_period;
     unsigned int    notif_lofreq_mult;
+    double          notif_handicap;
     unsigned int    dump_buffer_size;
     unsigned int    run_timeout;
     string          program_name;
@@ -100,6 +101,7 @@ struct SQueueParameters
     double        ReadNotifHifreqInterval(const IRegistry &, const string &);
     unsigned int  ReadNotifHifreqPeriod(const IRegistry &, const string &);
     unsigned int  ReadNotifLofreqMult(const IRegistry &, const string &);
+    double        ReadNotifHandicap(const IRegistry &, const string &);
     unsigned int  ReadDumpBufferSize(const IRegistry &, const string &);
     unsigned int  ReadRunTimeout(const IRegistry &, const string &);
     string        ReadProgram(const IRegistry &, const string &);

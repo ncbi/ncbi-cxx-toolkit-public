@@ -46,6 +46,7 @@ static unsigned int     default_timeout = 3600;
 static double           default_notif_hifreq_interval = 0.1;
 static unsigned int     default_notif_hifreq_period = 5;
 static unsigned int     default_notif_lofreq_mult = 50;
+static double           default_notif_handicap = 0.0;
 static unsigned int     default_dump_buffer_size = 100;
 static unsigned int     default_run_timeout = 3600;
 static unsigned int     default_failed_retries = 0;
@@ -65,6 +66,7 @@ SQueueParameters::SQueueParameters() :
     notif_hifreq_interval(default_notif_hifreq_interval),
     notif_hifreq_period(default_notif_hifreq_period),
     notif_lofreq_mult(default_notif_lofreq_mult),
+    notif_handicap(default_notif_handicap),
     dump_buffer_size(default_dump_buffer_size),
     run_timeout(default_run_timeout),
     program_name(""),
@@ -95,6 +97,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     notif_hifreq_interval = ReadNotifHifreqInterval(reg, sname);
     notif_hifreq_period = ReadNotifHifreqPeriod(reg, sname);
     notif_lofreq_mult = ReadNotifLofreqMult(reg, sname);
+    notif_handicap = ReadNotifHandicap(reg, sname);
     dump_buffer_size = ReadDumpBufferSize(reg, sname);
     run_timeout = ReadRunTimeout(reg, sname);
     program_name = ReadProgram(reg, sname);
@@ -147,6 +150,11 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         AddParameterToDiffString(diff, "notif_lofreq_mult",
                                  notif_lofreq_mult,
                                  other.notif_lofreq_mult);
+
+    if (notif_handicap != other.notif_handicap)
+        AddParameterToDiffString(diff, "notif_handicap",
+                                 notif_handicap,
+                                 other.notif_handicap);
 
     if (dump_buffer_size != other.dump_buffer_size)
         AddParameterToDiffString(diff, "dump_buffer_size",
@@ -264,6 +272,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "notif_hifreq_interval" + suffix + NStr::NumericToString(notif_hifreq_interval) + separator +
     prefix + "notif_hifreq_period" + suffix + NStr::NumericToString(notif_hifreq_period) + separator +
     prefix + "notif_lofreq_mult" + suffix + NStr::NumericToString(notif_lofreq_mult) + separator +
+    prefix + "notif_handicap" + suffix + NStr::NumericToString(notif_handicap) + separator +
     prefix + "dump_buffer_size" + suffix + NStr::NumericToString(dump_buffer_size) + separator +
     prefix + "run_timeout" + suffix + NStr::NumericToString(run_timeout) + separator +
     prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
@@ -306,7 +315,7 @@ SQueueParameters::ReadNotifHifreqInterval(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("notif_hifreq_interval",
                                  default_notif_hifreq_interval);
-    val = (int(notif_hifreq_interval * 10)) / 10.0;
+    val = (int(val * 10)) / 10.0;
     if (val <= 0)
         val = default_notif_hifreq_interval;
     return val;
@@ -331,6 +340,17 @@ SQueueParameters::ReadNotifLofreqMult(const IRegistry &  reg,
                                       default_notif_lofreq_mult);
     if (val <= 0)
         val = default_notif_lofreq_mult;
+    return val;
+}
+
+double
+SQueueParameters::ReadNotifHandicap(const IRegistry &  reg,
+                                    const string &     sname)
+{
+    double  val = GetDoubleNoErr("notif_handicap",
+                                 default_notif_handicap);
+    if (val <= 0)
+        val = default_notif_handicap;
     return val;
 }
 

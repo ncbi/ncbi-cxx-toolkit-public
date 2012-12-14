@@ -41,6 +41,7 @@
 #include <list>
 
 #include "ns_types.hpp"
+#include "ns_precise_time.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -48,6 +49,7 @@ BEGIN_NCBI_SCOPE
 class CNSClientId;
 class CNSClientsRegistry;
 class CNSAffinityRegistry;
+class CQueueDataBase;
 
 
 struct SNSNotificationAttributes
@@ -84,13 +86,26 @@ struct SNSNotificationAttributes
 };
 
 
+// The structure holds information about one time notification
+// which is going to be sent at exactly specified time
+struct SExactTimeNotification
+{
+    unsigned int    m_Address;
+    unsigned short  m_Port;
+    CNSPreciseTime  m_TimeToSend;
+    bool            m_NewFormat;
+};
+
+
+
 const size_t        k_MessageBufferSize = 512;
 
 class CNSNotificationList
 {
     public:
-        CNSNotificationList(const string &  ns_node,
-                            const string &  qname);
+        CNSNotificationList(CQueueDataBase &  qdb,
+                            const string &    ns_node,
+                            const string &    qname);
 
         void RegisterListener(const CNSClientId &   client,
                               unsigned short        port,
@@ -123,13 +138,15 @@ class CNSNotificationList
                     unsigned int           aff_id,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
-                    unsigned int           notif_highfreq_period);
+                    unsigned int           notif_highfreq_period,
+                    const CNSPreciseTime & notif_handicap);
         void Notify(const TNSBitVector &   jobs,
                     const TNSBitVector &   affinities,
                     bool                   no_aff_jobs,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
-                    unsigned int           notif_highfreq_period);
+                    unsigned int           notif_highfreq_period,
+                    const CNSPreciseTime & notif_handicap);
         string Print(const CNSClientsRegistry &   clients_registry,
                      const CNSAffinityRegistry &  aff_registry,
                      bool                         verbose) const;
@@ -138,6 +155,11 @@ class CNSNotificationList
             CMutexGuard guard(m_ListenersLock);
             return m_PassiveListeners.size() + m_ActiveListeners.size();
         }
+
+        void AddToExactNotifications(unsigned int  address, unsigned short  port,
+                                     const CNSPreciseTime &  when, bool  new_format);
+        void ClearExactNotifications(void);
+        CNSPreciseTime NotifyExactListeners(void);
 
     private:
         void x_SendNotificationPacket(unsigned int    address,
@@ -148,11 +170,15 @@ class CNSNotificationList
                            CNSAffinityRegistry &        aff_registry,
                            list<SNSNotificationAttributes> &            container,
                            list<SNSNotificationAttributes>::iterator &  record);
+        bool x_IsInExactList(unsigned int  address, unsigned short  port) const;
 
     private:
         list<SNSNotificationAttributes>     m_PassiveListeners;
         list<SNSNotificationAttributes>     m_ActiveListeners;
         mutable CMutex                      m_ListenersLock;
+
+        list<SExactTimeNotification>        m_ExactTimeNotifications;
+        mutable CMutex                      m_ExactTimeNotifLock;
 
         list<SNSNotificationAttributes>::iterator
                 x_FindListener(list<SNSNotificationAttributes> &  container,
@@ -168,6 +194,8 @@ class CNSNotificationList
         CDatagramSocket         m_StatusNotificationSocket;
         char                    m_JobStateConstPart[k_MessageBufferSize];
         size_t                  m_JobStateConstPartLength;
+
+        CQueueDataBase &        m_QueueDB;
 
     private:
         CNSNotificationList(const CNSNotificationList &);
@@ -191,26 +219,29 @@ class CGetJobNotificationThread : public CThread
         ~CGetJobNotificationThread();
 
         void RequestStop(void);
+        void WakeUp(void);
 
     private:
         void x_DoJob(void);
+        CNSPreciseTime x_ProcessExactTimeNotifications(void);
 
     protected:
         virtual void *  Main(void);
 
     private:
-        CQueueDataBase &                        m_QueueDB;
-        const bool &                            m_NotifLogging;
-        unsigned int                            m_SecDelay;
-        unsigned int                            m_NanosecDelay;
+        CQueueDataBase &        m_QueueDB;
+        const bool &            m_NotifLogging;
+        CNSPreciseTime          m_Period;
+        CNSPreciseTime          m_NextScheduled;
 
     private:
-        mutable CSemaphore                      m_StopSignal;
-        mutable CAtomicCounter_WithAutoInit     m_StopFlag;
+        mutable CSemaphore      m_StopSignal;
+        mutable bool            m_StopFlag;
 
     private:
         CGetJobNotificationThread(const CGetJobNotificationThread &);
-        CGetJobNotificationThread &  operator=(const CGetJobNotificationThread &);
+        CGetJobNotificationThread &
+        operator=(const CGetJobNotificationThread &);
 };
 
 
