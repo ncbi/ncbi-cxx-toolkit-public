@@ -153,6 +153,9 @@ static void s_LOG_Handler(void*       /*user_data*/,
         if (call_data->line) {
             diag.SetLine(call_data->line);
         }
+        if (call_data->func) {
+            diag.SetFunction(call_data->func);
+        }
         if (call_data->module) {
             diag.SetModule(call_data->module);
         }

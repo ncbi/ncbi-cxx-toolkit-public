@@ -330,6 +330,7 @@ typedef struct {
     const char* message;
     ELOG_Level  level;
     const char* module;
+    const char* func;
     const char* file;
     int         line;
     const void* raw_data;
