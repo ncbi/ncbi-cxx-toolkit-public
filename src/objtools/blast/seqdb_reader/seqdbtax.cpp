@@ -131,6 +131,7 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
         m_Atlas.GetRegion(m_IndexFN, data_start, idx_file_len, locked);
     
     m_Atlas.RetRegion(lease);
+    m_Initialized = true;
 }
 
 CSeqDBTaxInfo::~CSeqDBTaxInfo()
@@ -143,7 +144,6 @@ CSeqDBTaxInfo::~CSeqDBTaxInfo()
         m_Atlas.RetRegion((const char*) m_TaxData);
         m_TaxData = 0;
     }
-    m_Initialized = true;
 }
 
 bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
