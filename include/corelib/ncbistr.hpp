@@ -3065,8 +3065,6 @@ private:
 
     static CStringUTF8& x_Append(CStringUTF8& u8str, const CTempString& src,
                                  EEncoding encoding, EValidate validate);
-    template <typename TChar>
-    static TUnicodeSymbol x_TCharToSymbol(TChar ch);
 
     template <typename TIterator>
     static CStringUTF8& x_Append(CStringUTF8& u8str,
@@ -3089,6 +3087,7 @@ private:
     static bool   x_EvalNext(char ch);
 
     template<class Type> class CNotImplemented {};
+    friend class CStringUTF8;
 };
 
 
@@ -3709,9 +3708,6 @@ private:
     void   x_Append(const CTempString& src,
                     EEncoding encoding,
                     EValidate validate = eNoValidate);
-
-    template <typename TChar>
-    TUnicodeSymbol x_TCharToSymbol(TChar ch);
 
     /// Convert Unicode character sequence into UTF8 and append
     /// Sequence can be in UCS-4 (TChar == (U)Int4), UCS-2 (TChar == (U)Int2)
@@ -5833,16 +5829,6 @@ CUtf8::x_AsBasicString(const CTempString& str,
     return result;
 }
 
-template <typename TChar> inline TUnicodeSymbol
-CUtf8::x_TCharToSymbol(TChar ch)
-{
-    if (ch < 0) { /* NCBI_FAKE_WARNING */
-        return 1 + (TUnicodeSymbol)(numeric_limits<TChar>::max()) +
-              (TUnicodeSymbol)(ch - numeric_limits<TChar>::min());
-    }
-    return ch;
-}
-
 template <typename TIterator> CStringUTF8&
 CUtf8::x_Append(CStringUTF8& u8str, TIterator from, TIterator to)
 {
@@ -5850,14 +5836,14 @@ CUtf8::x_Append(CStringUTF8& u8str, TIterator from, TIterator to)
     SIZE_TYPE needed = 0;
 
     for (srcBuf = from; srcBuf != to; ++srcBuf) {
-        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+        needed += x_BytesNeeded( *srcBuf );
     }
     if ( !needed ) {
         return u8str;
     }
     u8str.reserve(max(u8str.capacity(),u8str.length()+needed+1));
     for (srcBuf = from; srcBuf != to; ++srcBuf) {
-        x_AppendChar( u8str, x_TCharToSymbol(*srcBuf) );
+        x_AppendChar( u8str, *srcBuf );
     }
     return u8str;
 }
@@ -5871,7 +5857,7 @@ CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
 
     for (pos=0, srcBuf=src;
             (to == NPOS) ? (*srcBuf != 0) : (pos<to); ++pos, ++srcBuf) {
-        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+        needed += x_BytesNeeded( *srcBuf );
     }
     if ( !needed ) {
         return u8str;
@@ -5879,7 +5865,7 @@ CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
     u8str.reserve(max(u8str.capacity(),u8str.length()+needed+1));
     for (pos=0, srcBuf=src;
             (to == NPOS) ? (*srcBuf != 0) : (pos<to); ++pos, ++srcBuf) {
-        x_AppendChar( u8str, x_TCharToSymbol(*srcBuf) );
+        x_AppendChar( u8str, *srcBuf );
     }
     return u8str;
 }
@@ -6491,17 +6477,6 @@ basic_string<TChar> CStringUTF8::x_AsBasicString(
     return result;
 }
 
-template <typename TChar>
-inline
-TUnicodeSymbol CStringUTF8::x_TCharToSymbol(TChar ch)
-{
-    if (ch < 0) { /* NCBI_FAKE_WARNING */
-        return 1 + (TUnicodeSymbol)(numeric_limits<TChar>::max()) +
-              (TUnicodeSymbol)(ch - numeric_limits<TChar>::min());
-    }
-    return ch;
-}
-
 template <typename TIterator>
 void CStringUTF8::x_Append(TIterator from, TIterator to)
 {
@@ -6509,14 +6484,14 @@ void CStringUTF8::x_Append(TIterator from, TIterator to)
     SIZE_TYPE needed = 0;
 
     for (srcBuf = from; srcBuf != to; ++srcBuf) {
-        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+        needed += x_BytesNeeded( *srcBuf );
     }
     if ( !needed ) {
         return;
     }
     reserve(max(capacity(),length()+needed+1));
     for (srcBuf = from; srcBuf != to; ++srcBuf) {
-        x_AppendChar( x_TCharToSymbol(*srcBuf) );
+        x_AppendChar( *srcBuf );
     }
 }
 
@@ -6529,7 +6504,7 @@ void CStringUTF8::x_Append(const TChar* src, SIZE_TYPE to, ECharBufferType type)
 
     for (pos=0, srcBuf=src;
             pos<to && (*srcBuf || type == eCharBuffer); ++pos, ++srcBuf) {
-        needed += x_BytesNeeded( x_TCharToSymbol(*srcBuf) );
+        needed += x_BytesNeeded( *srcBuf );
     }
     if ( !needed ) {
         return;
@@ -6537,7 +6512,7 @@ void CStringUTF8::x_Append(const TChar* src, SIZE_TYPE to, ECharBufferType type)
     reserve(max(capacity(),length()+needed+1));
     for (pos=0, srcBuf=src;
             pos<to && (*srcBuf || type == eCharBuffer); ++pos, ++srcBuf) {
-        x_AppendChar( x_TCharToSymbol(*srcBuf) );
+        x_AppendChar( *srcBuf );
     }
 }
 
