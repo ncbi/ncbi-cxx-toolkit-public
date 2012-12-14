@@ -1,2 +1,9 @@
+December 12, 2012
+* Release 1.1.0
+* Added option to specify minimal required D gene matches.
+* Result summary now reports if there is stop codon and if the rearrangement is productive or not.
+* Improved D and J gene match logic.
+* Added capability to analyze rat and rabbit sequences.
+
 March 20, 2012
 * First stand alone release
