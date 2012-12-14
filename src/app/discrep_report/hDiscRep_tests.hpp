@@ -712,7 +712,9 @@ namespace DiscRepNmSpc {
       string GetName_iden() const {return string("MORE_OR_SPEC_NAMES_IDENTIFIED_BY"); }
       string GetName_col() const {return string("MORE_NAMES_COLLECTED_BY"); }
       string GetName_div() const {return string("DIVISION_CODE_CONFLICTS");}
+      string GetName_map() const {return string("DISC_MAP_CHROMOSOME_CONFLICT");}
 
+      void AddEukaryoticBioseqsToReport(const CBioseq_set& set);
       bool HasMulSrc(const CBioSource& biosrc);
       bool IsBacterialIsolate(const CBioSource& biosrc);
       bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc);
@@ -723,7 +725,17 @@ namespace DiscRepNmSpc {
       void GetSubmitText(const CAuth_list& authors);
       void FindSpecSubmitText();
 
-      void RunTests(const CBioSource& biosrc, const string& desc);
+      void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+  };
+
+
+  class CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT :  public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_map();}
   };
 
 

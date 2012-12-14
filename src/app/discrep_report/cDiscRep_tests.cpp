@@ -6813,7 +6813,7 @@ bool CSeqEntry_test_on_biosrc :: HasMoreOrSpecNames(const CBioSource& biosrc, CS
 };
 
 
-void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string& desc)
+void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string& desc, int idx)
 {
   // ONCALLER_MULTISRC
   if (HasMulSrc( biosrc ))   thisInfo.test_item_list[GetName_mult()].push_back(desc);
@@ -6828,7 +6828,8 @@ void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string
       thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
   else {
     string org_tax = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
-    string db_tax =lookup_tax->GetOrg().CanGetTaxname() ?lookup_tax->GetOrg().GetTaxname():kEmptyStr;
+    string db_tax =lookup_tax->GetOrg().CanGetTaxname() ?
+                                  lookup_tax->GetOrg().GetTaxname() : kEmptyStr;
     if (org_tax != db_tax)
       thisInfo.test_item_list[GetName_tbad()].push_back(desc);
     else {
@@ -6856,7 +6857,39 @@ void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string
   string div_code;
   if (biosrc.IsSetDivision() && !(div_code= biosrc.GetDivision()).empty())
      thisInfo.test_item_list[GetName_div()].push_back(div_code + "$" + desc);
+
+  // DISC_MAP_CHROMOSOME_CONFLICT
+  bool has_map = false, has_chrom = false;
+  if (idx >=0 && biosrc.CanGetSubtype()) {
+    ITERATE (list <CRef< CSubSource > >, it, biosrc.GetSubtype()) {
+       if ( (*it)->GetSubtype() == CSubSource :: eSubtype_map) has_map = true;
+       else if ( (*it)->GetSubtype() == CSubSource :: eSubtype_chromosome) has_chrom = true;
+       if (has_map && has_chrom) break;
+    }
+    if (has_map && !has_chrom) {
+      if (biosrc_seqdesc_seqentry[idx]->IsSeq()) {
+          const CBioseq& bioseq = biosrc_seqdesc_seqentry[idx]->GetSeq();
+          if (IsBioseqHasLineage(bioseq, "Eukaryota") && !bioseq.IsAa()) 
+              thisInfo.test_item_list[GetName_map()].push_back(GetDiscItemText(bioseq)); 
+      }
+      else AddEukaryoticBioseqsToReport(biosrc_seqdesc_seqentry[idx]->GetSet());
+    }
+  }
 };
+
+
+void CSeqEntry_test_on_biosrc :: AddEukaryoticBioseqsToReport(const CBioseq_set& set)
+{
+   ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
+      if ((*it)->IsSeq()) {
+         const CBioseq& bioseq = (*it)->GetSeq();
+         if ( IsBioseqHasLineage(bioseq, "Eukaryota") && !bioseq.IsAa())
+           thisInfo.test_item_list[GetName_map()].push_back(GetDiscItemText(bioseq));
+         else AddEukaryoticBioseqsToReport( (*it)->GetSet() );
+     }
+   }
+};
+
 
 
 void CSeqEntry_test_on_biosrc :: GetSubmitText(const CAuth_list& authors)
@@ -6911,12 +6944,21 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
      desc = GetDiscItemText( **it, *(biosrc_seqdesc_seqentry[i]));
-     RunTests((*it)->GetSource(), desc);
+     RunTests((*it)->GetSource(), desc, (int)i);
      i++;
    };
 
   thisTest.is_BIOSRC1_run = true;
 };
+
+
+void CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetOtherComment(c_item->item_list.size(), 
+                "source on eukaryotic sequence has", "sources on eukaryotic sequences have") 
+         + " map but not chromosome.";
+};
+  
 
 
 void CSeqEntry_DIVISION_CODE_CONFLICTS :: GetReport(CRef <CClickableItem>& c_item)
