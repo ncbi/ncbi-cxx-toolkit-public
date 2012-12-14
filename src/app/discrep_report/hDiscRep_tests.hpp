@@ -247,7 +247,6 @@ namespace DiscRepNmSpc {
   };
 
 
-
 // CBioseqSet_
   class CBioseqSetTestAndRepData : public CTestAndRepData
   {
@@ -344,6 +343,7 @@ namespace DiscRepNmSpc {
       string GetName_dup() const {return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
       string GetName_cap() const {return string("DISC_CHECK_AUTH_CAPS"); }
       string GetName_usa() const {return string("DISC_USA_STATE"); }
+      string GetName_tlt() const {return string("DISC_TITLE_AUTHOR_CONFLICT"); }
 
       void RunTests(const list <CRef <CPub> >& pubs, const string& desc);
       CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
@@ -351,10 +351,22 @@ namespace DiscRepNmSpc {
       bool AffilStreetEndsWith(const string& street, const string& end_str);
       bool IsNameCapitalizationOk(const string& name);
       bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
-      bool NameIsBad(const CRef <CAuthor> nm_std);
+      bool NameIsBad(const CRef <CAuthor>& auth_nm);
       bool HasBadAuthorName(const CAuth_list& auths);
       bool AreBadAuthCapsInPubdesc(const list <CRef <CPub> >& pubs);
-      bool CorrectUSAStates(const list <CRef <CPub> >& pubs);
+      bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
+      void GetTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
+      string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
+  };
+
+
+  class CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_tlt();}
   };
 
 
@@ -807,6 +819,22 @@ namespace DiscRepNmSpc {
   
 // new comb
 
+  class CSeqEntry_DISC_SUBMITBLOCK_CONFLICT : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_DISC_SUBMITBLOCK_CONFLICT () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("DISC_SUBMITBLOCK_CONFLICT");}
+
+    protected:
+      bool CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2);
+      bool DateMatch(const CSubmit_block& blk1, const CSubmit_block& blk2);
+      string SubmitBlockMatchExceptDate(const CSubmit_block& this_blk);
+  };
+
+
   class CSeqEntry_DISC_INCONSISTENT_MOLTYPES : public CSeqEntryTestAndRepData
   {
     public:
@@ -1016,13 +1044,50 @@ namespace DiscRepNmSpc {
                                                                         bool look_xref=true);
        bool IsLocationOrganelle(const CBioSource::EGenome& genome);
        bool ProductsMatchForRefSeq(const string& feat_prod, const string& mRNA_prod);
-       bool DoesStringContainPhrase(const string& str, const string& phrase, 
-                                           bool case_sensitive = true, bool whole_word = true);
        bool IsMrnaSequence();
   }; // CBioseqTest:
 
 
 // new comb.
+  class CBioseq_test_on_prod : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_prod () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+   
+    protected:
+      string GetName_cds() const {return string("DISC_CDS_PRODUCT_FIND");}
+      string GetName_ec() const {return string("EC_NUMBER_ON_UNKNOWN_PROTEIN"); }
+
+      bool EndsWithPattern(const string& pattern, const list <string>& strs);
+      bool ContainsPseudo(const string& pattern, const list <string>& strs);
+      bool ContainsWholeWord(const string& pattern, const list <string>& strs);
+  };
+
+
+  class CBioseq_DISC_CDS_PRODUCT_FIND : public CBioseq_test_on_prod
+  {
+    public:
+      virtual ~CBioseq_DISC_CDS_PRODUCT_FIND () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_prod::GetName_cds(); }
+  };
+
+
+  class CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN : public CBioseq_test_on_prod
+  {
+    public:
+      virtual ~CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_prod::GetName_ec(); }
+  };
+
+
   class CBioseq_test_on_genprod_set : public CBioseqTestAndRepData
   {
     public:
@@ -1278,6 +1343,17 @@ namespace DiscRepNmSpc {
       string GetName_mrna() const {return string("MOLTYPE_NOT_MRNA"); }
       string GetName_tsa() const {return string("TECHNIQUE_NOT_TSA"); }
       string GetName_part() const { return string("PARTIAL_CDS_COMPLETE_SEQUENCE"); }
+      string GetName_link() const { return string("DISC_POSSIBLE_LINKER"); }
+  };
+
+
+  class CBioseq_DISC_POSSIBLE_LINKER : public CBioseq_test_on_molinfo
+  {
+    public:
+      virtual ~CBioseq_DISC_POSSIBLE_LINKER () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_link();}
   };
 
 
@@ -1842,6 +1918,7 @@ namespace DiscRepNmSpc {
 
 
 
+/*
   class CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN : public CBioseqTestAndRepData
   {
     public:
@@ -1851,6 +1928,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("EC_NUMBER_ON_UNKNOWN_PROTEIN");}
   };
+*/
 
 
 

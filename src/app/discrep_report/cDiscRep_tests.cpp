@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/enumvalues.hpp>
+#include <objects/submit/Contact_info.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -169,7 +170,6 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
   }
   else return false;
 };
-
 
 
 // CBioseq
@@ -347,6 +347,7 @@ string CBioseq_ADJACENT_PSEUDOGENES :: GetGeneStringMatch (const string& str1, c
    ITERATE (Str2Int, it, txts)
      if (it->second > 1) rval += (it->first + ";");
    rval = rval.substr(0, rval.size()-1);
+   return rval;
 };
 
 
@@ -787,31 +788,6 @@ string CBioseqTestAndRepData :: GetRNAProductString(const CSeq_feat& seq_feat)
   }
   return rna_str;
 };
-
-
-bool CBioseqTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)   // may not be needed anymore
-{
-  size_t pos;
-  if (case_sensitive) {
-    if ( (pos = str.find(phrase)) == string::npos) return false;
-  }
-  else if ( (pos = NStr::FindNoCase(str, phrase)) == string::npos) return false;
-
-  if (whole_word) {
-      while (pos != string::npos) {
-        strtmp = str.substr(pos);
-        if ( (!pos || !isalnum(str[pos-1])) 
-                 && (strtmp.size() == phrase.size() || !isalnum(strtmp[phrase.size()])))
-             return true;
-        else {
-          if (case_sensitive) pos = str.substr(pos + 1).find(phrase);
-          else pos = NStr::FindNoCase(str.substr(pos + 1), phrase);
-        }
-      }
-  } 
-  else return true;
-};
-
 
 
 bool CBioseq_DISC_GENE_PARTIAL_CONFLICT :: Is5EndInUTRList(const unsigned& start)
@@ -2541,7 +2517,113 @@ void CBioseq_RNA_NO_PRODUCT :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+// new comb
+bool CBioseq_test_on_prod :: EndsWithPattern(const string& pattern, const list <string>& strs)
+{
+  unsigned len_patt = pattern.size(), len_str;
+  ITERATE (list <string>, it, strs) {
+     len_str = (*it).size(); 
+     if ( len_str >= len_patt && (*it).substr(len_str - len_patt) == pattern) return true;
+  }
+  return false;
+};
 
+
+bool CBioseq_test_on_prod :: ContainsPseudo(const string& pattern, const list <string>& strs)
+{
+  bool right_pseudo;
+  size_t pos;
+  ITERATE (list <string>, it, strs) {
+    strtmp = *it;
+    while ( !strtmp.empty() && (pos = strtmp.find("pseudo")) != string::npos) {
+        right_pseudo = true;
+        ITERATE (vector <string>, jt, thisInfo.s_pseudoweasels) {
+           if ( strtmp.substr(pos, (*jt).size()) == *jt) {
+               right_pseudo = false;
+               strtmp = strtmp.substr(pos + (*jt).size());      
+               break;
+           }
+        }
+        if (right_pseudo) return true;
+    }  
+  };
+  return false;
+};
+
+
+bool CBioseq_test_on_prod :: ContainsWholeWord(const string& pattern, const list <string>& strs)
+{
+   ITERATE (list <string>, it, strs) {
+      if (DoesStringContainPhrase(*it, pattern, false, true)) return true;
+   } 
+   return false;
+};
+
+
+void CBioseq_test_on_prod :: TestOnObj(const CBioseq& bioseq) 
+{
+   string desc, head_desc;
+   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+     const CProt_ref& prot = (*it)->GetData().GetProt();
+     const list <string>& names = prot.GetName();
+     desc = GetDiscItemText(**it);
+
+     // EC_NUMBER_ON_UNKNOWN_PROTEIN
+     if (prot.CanGetName() && prot.CanGetEc() && !prot.GetEc().empty()) {
+        strtmp = *(names.begin());
+        if ((NStr::FindNoCase(strtmp, "hypothetical protein") != string::npos)
+                 || (NStr::FindNoCase(strtmp, "unknown protein") != string::npos))
+             thisInfo.test_item_list[GetName_ec()].push_back(desc);
+     }
+
+     // DISC_CDS_PRODUCT_FIND
+     if ( (*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+          const CSeq_feat* 
+             cds =GetCDSForProduct( GetBioseqFromSeqLoc((*it)->GetLocation(),*thisInfo.scope));
+          if (cds) desc = GetDiscItemText(*cds);
+     }
+     ITERATE (list <string>, it, thisInfo.cds_prod_find) {
+       const string& func = thisInfo.registry->Get("Cds-product-find", *it); 
+       head_desc = kEmptyStr;
+       if (func == "EndsWithPattern") {
+         if (EndsWithPattern(*it, names)) head_desc = "end# with " + *it;
+       }
+       else if (func == "ContainsPseudo") {
+         if (ContainsPseudo(*it, names)) head_desc = "contain# '" + *it + "'";
+       }
+       else if (func == "ContainsWholeWord") {
+         if ( (*it == "related-to" && ContainsWholeWord("related to", names))
+                   || ContainsWholeWord(*it, names) ) 
+             head_desc = "contain# '" + *it + "'";
+       }
+       if (!head_desc.empty())
+         thisInfo.test_item_list[GetName_cds()].push_back(head_desc + "$" + desc);
+     }
+   }
+};
+
+
+void CBioseq_DISC_CDS_PRODUCT_FIND :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs cd2feats;
+   GetTestItemList(c_item->item_list, cd2feats);
+   c_item->item_list.size();
+   string desc1, desc2;
+   vector <string> arr;
+   ITERATE (Str2Strs, it, cd2feats) {
+      arr = NStr::Tokenize(it->first, "#", arr);
+      arr.clear();
+      AddSubcategories(c_item, GetName(), it->second, "coding region product " + arr[0] + "s", 
+         "coding region products " + arr[0], e_OtherComment, true, arr[1]); 
+   } 
+   c_item->description 
+        = GetOtherComment(c_item->item_list.size(), "coding region product contains",
+                                                    "coding region products contain")
+            + " suspect phrase or characters";
+};
+
+
+/*
 void CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN :: TestOnObj(const CBioseq& bioseq)
 {
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
@@ -2555,7 +2637,7 @@ void CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN :: TestOnObj(const CBioseq& bioseq)
      }
    }
 };
-
+*/
 
 
 void CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN :: GetReport(CRef <CClickableItem>& c_item)
@@ -2565,6 +2647,7 @@ void CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN :: GetReport(CRef <CClickableItem>& c_
        + "an EC number and a protein name of 'unknown protein' or 'hypothetical protein'";
 };
 
+// new comb
 
 
 bool CBioseq_FEATURE_LOCATION_CONFLICT :: IsMixStrand(const CSeq_feat* seq_feat)
@@ -2678,6 +2761,7 @@ bool CBioseq_FEATURE_LOCATION_CONFLICT :: IsGeneLocationOk(const CSeq_feat* seq_
          }
          else if (rbs_left == gene_left && rbs_right <= feat_left) return true;
        } 
+       return false;
     }
     else return false;
   }
@@ -4010,7 +4094,7 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
     if ( src_genome == CBioSource ::eGenome_plastid
            || src_genome == CBioSource ::eGenome_mitochondrion
            || src_genome == CBioSource ::eGenome_chloroplast ) {
-        run_test == true;
+        run_test = true;
         break;
     }
   }
@@ -4160,20 +4244,47 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
       }
    }
 
-   if (!bioseq.IsNa()) return;
    string desc(GetDiscItemText(bioseq));
-   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-      const CMolInfo& molinfo = (*it)->GetMolinfo();
-     // MOLTYPE_NOT_MRNA
-     if ( (molinfo.GetBiomol() != CMolInfo :: eBiomol_mRNA)) 
+   if (bioseq.IsNa()) {
+     ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
+        const CMolInfo& molinfo = (*it)->GetMolinfo();
+       // MOLTYPE_NOT_MRNA
+       if ( (molinfo.GetBiomol() != CMolInfo :: eBiomol_mRNA)) 
            thisInfo.test_item_list[GetName_mrna()].push_back(desc);
 
-     // TECHNIQUE_NOT_TSA
-     if ( molinfo.GetTech() != CMolInfo :: eTech_tsa)
+       // TECHNIQUE_NOT_TSA
+       if ( molinfo.GetTech() != CMolInfo :: eTech_tsa)
            thisInfo.test_item_list[GetName_tsa()].push_back(desc);
+     }
+   }
+   else if (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+      // DISC_POSSIBLE_LINKER
+      if (!IsMrnaSequence()
+            || (bioseq.IsSetLength() && bioseq.GetLength() < 30) ) return;
+      else {
+        CSeqVector seq_vec = thisInfo.scope->GetBioseqHandle(bioseq).GetSeqVector(
+                                             CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+        unsigned tail_len = 0;
+        bool found_linker = false;
+        for (CSeqVector_CI seq_ci(seq_vec.end());  
+                               !found_linker && (seq_ci > seq_vec.end() - 30); -- seq_ci) {
+           if (*seq_ci == 'A') tail_len++;
+           else if (tail_len > 20) found_linker = true;
+           else tail_len = 0;
+        }
+        if (!found_linker)
+           thisInfo.test_item_list[GetName_link()].push_back(desc);
+      }
    }
 
    thisTest.is_MolInfo_run = true;
+};
+
+
+void CBioseq_DISC_POSSIBLE_LINKER :: GetReport(CRef <CClickableItem>& c_item)
+{ 
+  c_item->description = GetHasComment(c_item->item_list.size(), "bioseq") 
+                         + "linker sequence after the poly-A tail";
 };
 
 
@@ -6954,7 +7065,7 @@ const CBioseq& CSeqEntry_test_on_user :: Get1stBioseqOfSet(const CBioseq_set& bi
        if ( (*(seq_entrys.begin()))->GetSeq().IsNa() )
            return ((*(seq_entrys.begin()))->GetSeq());
    }
-   else Get1stBioseqOfSet((*(seq_entrys.begin()))->GetSet());
+   else return (Get1stBioseqOfSet((*(seq_entrys.begin()))->GetSet()));
 };
 
 
@@ -7191,6 +7302,109 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 // new method
+
+bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2)
+{
+   if (Blob2Str(cit1.GetAuthors()) != Blob2Str(cit2.GetAuthors())) return false; 
+   if (cit1.CanGetImp() != cit2.CanGetImp()) return false;
+   else if (cit1.CanGetImp() && Blob2Str(cit1.GetImp()) != Blob2Str(cit2.GetImp())) 
+         return false;
+   string desc1 = cit1.CanGetDescr()? cit1.GetDescr() : kEmptyStr;
+   string desc2 = cit2.CanGetDescr()? cit2.GetDescr() : kEmptyStr;
+   if (desc1 != desc2) return false;
+   int med1 = cit1.CanGetMedium()? cit2.GetMedium() : 0;
+   int med2 = cit2.CanGetMedium() ? cit2.GetMedium() : 0; 
+   if (med1 != med2) return false;
+   return true; 
+};
+
+
+bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: DateMatch(const CSubmit_block& blk1, const CSubmit_block& blk2) 
+{
+   if (blk1.CanGetReldate() != blk2.CanGetReldate()) return false;
+   else if (blk1.CanGetReldate()
+            && CDate::eCompare_same != blk1.GetReldate().Compare(blk2.GetReldate()))
+      return false;
+
+   return true;
+};
+
+
+static vector <string> SUBMIT_BLKs;
+string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const CSubmit_block& this_blk)
+{
+   CSubmit_block blk_in_ls;
+   bool match = true;
+   string ctat, this_ctat, str1, str2;
+   this_ctat = Blob2Str(this_blk.GetContact());
+   int subtp1, subtp2;
+   unsigned i=0;
+   ITERATE (vector <string>, it, SUBMIT_BLKs) {
+      blk_in_ls.Reset();
+      Str2Blob(*it, blk_in_ls);
+      ctat = Blob2Str(blk_in_ls.GetContact());
+      if (this_ctat != ctat) match = false;
+      else if (!CitSubMatchExceptDate(this_blk.GetCit(), blk_in_ls.GetCit())) match = false;
+      else if ( this_blk.GetHup() != blk_in_ls.GetHup()) match = false;
+      else if ( this_blk.GetHup() && !DateMatch(this_blk, blk_in_ls)) match = false;
+      else {
+         subtp1 = blk_in_ls.CanGetSubtype() ? blk_in_ls.GetSubtype() : 0;
+         subtp2 = this_blk.CanGetSubtype() ? this_blk.GetSubtype() : 0;
+         if (subtp1 != subtp2) match = false;
+         else {
+            str1 = blk_in_ls.CanGetTool() ? blk_in_ls.GetTool() : kEmptyStr;
+            str2 = this_blk.CanGetTool() ? this_blk.GetTool() : kEmptyStr;
+            if (str1 != str2) match = false;
+            else {
+              str1 = blk_in_ls.CanGetUser_tag() ? blk_in_ls.GetUser_tag() : kEmptyStr;
+              str2 = this_blk.CanGetUser_tag() ? this_blk.GetUser_tag() : kEmptyStr;
+              if (str1 != str2) match = false;
+              else {
+                 str1 = blk_in_ls.CanGetComment() ? blk_in_ls.GetComment() : kEmptyStr;
+                 str2 = this_blk.CanGetComment() ? this_blk.GetComment() : kEmptyStr;
+                 if (str1 != str2) match = false;
+              }
+            } 
+         }
+      }
+
+      if (match) return (NStr::UIntToString(i) + "$");
+      i++;
+      match = true;
+   }
+   SUBMIT_BLKs.push_back(Blob2Str(this_blk));
+   return (NStr::UIntToString((unsigned)SUBMIT_BLKs.size()) + "$");
+};
+
+
+
+void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   string desc;
+   if (thisInfo.submit_block.Empty()) desc = "0$";
+   else {
+     if (SUBMIT_BLKs.empty()) SUBMIT_BLKs.push_back(Blob2Str(*thisInfo.submit_block));
+     else desc = SubmitBlockMatchExceptDate(*thisInfo.submit_block);
+   }
+   if (seq_entry.IsSeq()) desc += GetDiscItemText(seq_entry.GetSeq());
+   else desc += GetDiscItemText(seq_entry.GetSet());
+   thisInfo.test_item_list[GetName()].push_back(desc);
+};
+
+
+void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs blk2ords;
+   GetTestItemList(c_item->item_list, blk2ords);
+   c_item->item_list.clear();
+   if (blk2ords.size() > 1) {
+      ITERATE (Str2Strs, it, blk2ords) {
+        strtmp = (it->first == "0") ? "no submit-block" : "identical submit-blocks";
+        AddSubcategories(c_item, GetName(), it->second, "record", strtmp, e_HasComment, false);
+      }
+      c_item->description = "SubmitBlock Conflicts";
+   }
+};
 
 
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc)
@@ -7507,7 +7721,6 @@ CConstRef <CCit_sub> CSeqEntry_test_on_pub :: CitSubFromPubEquiv(const list <CRe
 
 
 static string uni_str("University of");
-//bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetEndsWith(const string& street, const string& end_str)
 bool CSeqEntry_test_on_pub :: AffilStreetEndsWith(const string& street, const string& end_str)
 {
   unsigned street_sz = street.size();
@@ -7527,7 +7740,6 @@ bool CSeqEntry_test_on_pub :: AffilStreetEndsWith(const string& street, const st
 };
 
 
-//bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetContainsDuplicateText(const CAffil& affil)
 bool CSeqEntry_test_on_pub :: AffilStreetContainsDuplicateText(const CAffil& affil)
 {
   if (affil.IsStd() && affil.GetStd().CanGetStreet() 
@@ -7551,60 +7763,114 @@ bool CSeqEntry_test_on_pub :: AffilStreetContainsDuplicateText(const CAffil& aff
 
 
 // new comb
-bool CSeqEntry_test_on_pub :: CorrectUSAStates(const list <CRef <CPub> >& pubs)
+bool CSeqEntry_test_on_pub :: CorrectUSAStates(CConstRef <CCit_sub>& cit_sub)
 {
    string country, state;
-   ITERATE (list <CRef <CPub> >, it, pubs) {
-      if ( (*it)->IsSub()) {
-         if ((*it)->GetAuthors().CanGetAffil()) {
-            const CAffil& affil = (*it)->GetAuthors().GetAffil();
-            if (affil.IsStd()) {
-               country 
-                   =(affil.GetStd().CanGetCountry()) ? affil.GetStd().GetCountry() : kEmptyStr;
-               state = (affil.GetStd().CanGetSub()) ? affil.GetStd().GetSub() : kEmptyStr;
-               if (country == "USA") {
-                  if (state != "Washington DC") {
-                     if (state.empty() || state.size() > 2 
+   if (cit_sub->GetAuthors().CanGetAffil()) {
+       const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+       if (affil.IsStd()) {
+           country =(affil.GetStd().CanGetCountry()) ? affil.GetStd().GetCountry() : kEmptyStr;
+           state = (affil.GetStd().CanGetSub()) ? affil.GetStd().GetSub() : kEmptyStr;
+           if (country == "USA") {
+               if (state != "Washington DC") {
+                   if (state.empty() || state.size() > 2 
                                    || !isupper(state[0]) || !isupper(state[1]))
                           return false;
-                     else {
-                        ITERATE (list <string>, it, thisInfo.state_abbrev) {
-                           if (state == thisInfo.registry->Get("USA-state-abbrev-fixes", *it))
-                              return true;
-                        }
+                   else {
+                        ITERATE (list <string>, it, thisInfo.state_abbrev) 
+                              if (state == *it) return true;
                         return false;
-                     }
-                  }
-               } 
-            }
-        }
-      }
+                   }
+               }
+           } 
+       }
    }
    return true;
 };
 
 
+string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_initials)
+{
+  string str;
+  const CPerson_id& pid = auth.GetName();
+  switch (pid.Which()) {
+    case CPerson_id::e_Dbtag:
+          pid.GetDbtag().GetLabel(&str);
+          break;
+    case CPerson_id::e_Name:
+         { const CName_std& nm_std = pid.GetName();
+          if (use_initials)
+              str = (nm_std.CanGetInitials()? nm_std.GetInitials() + " " : "") + nm_std.GetLast();
+          else {
+            str = (nm_std.CanGetFirst()? nm_std.GetFirst() + " " : "")
+                    + ( (nm_std.CanGetInitials() && nm_std.GetInitials().size()>2)? 
+                          nm_std.GetInitials().substr(2) + " " : "")
+                    + nm_std.GetLast();
+          }
+          }
+          break;
+    case CPerson_id::e_Ml:
+          str = pid.GetMl(); break;
+    case CPerson_id::e_Str:
+          str = pid.GetStr(); break;
+    case CPerson_id::e_Consortium: 
+          str = pid.GetConsortium(); break;
+    default:   break;
+  }
+  return str;
+};
+
+
+void CSeqEntry_test_on_pub :: GetTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc)
+{
+   string title = cit_sub->CanGetDescr()? cit_sub->GetDescr() : kEmptyStr;
+   string authors(kEmptyStr);
+   switch (cit_sub->GetAuthors().GetNames().Which()) {
+        case CAuth_list::C_Names::e_Std:
+                ITERATE (list <CRef <CAuthor> >, it, cit_sub->GetAuthors().GetNames().GetStd())
+                      authors += ", " + GetAuthNameList(**it);
+                break;
+        case CAuth_list::C_Names::e_Ml:
+                ITERATE (list <string>, it, cit_sub->GetAuthors().GetNames().GetMl())
+                      authors += ", " + *it; 
+                break;
+        case CAuth_list::C_Names::e_Str:
+                ITERATE (list <string>, it, cit_sub->GetAuthors().GetNames().GetStr())
+                      authors += ", " + *it; 
+                break;
+        default: break;
+   };
+
+   if (!authors.empty())  authors = authors.substr(2);
+   thisInfo.test_item_list[GetName_tlt()].push_back(title + "$" + authors + "#" + desc);
+};
+
+
 void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const string& desc)
 {
-   // DISC_CITSUB_AFFIL_DUP_TEXT
    CConstRef <CCit_sub> cit_sub = CitSubFromPubEquiv(pubs);
-   if (cit_sub.NotEmpty() && cit_sub->GetAuthors().CanGetAffil()) {
-       const CAffil& affil = cit_sub->GetAuthors().GetAffil();
-       if (affil.IsStd() && affil.GetStd().CanGetStreet()
-              && !(affil.GetStd().GetStreet().empty())
-              && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
-          thisInfo.test_item_list[GetName_dup()].push_back(desc);
+   if (cit_sub.NotEmpty()) {
+       // DISC_CITSUB_AFFIL_DUP_TEXT
+       if (cit_sub->GetAuthors().CanGetAffil()) {
+          const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+          if (affil.IsStd() && affil.GetStd().CanGetStreet()
+                 && !(affil.GetStd().GetStreet().empty())
+                 && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
+             thisInfo.test_item_list[GetName_dup()].push_back(desc);
+          }
        }
+
+      // DISC_USA_STATE
+      if (!CorrectUSAStates(cit_sub))
+         thisInfo.test_item_list[GetName_usa()].push_back(desc);
+  
+      // DISC_TITLE_AUTHOR_CONFLICT;
+      GetTitleAndAuths(cit_sub, desc);
    }
 
    // DISC_CHECK_AUTH_CAPS
    if (AreBadAuthCapsInPubdesc(pubs))
          thisInfo.test_item_list[GetName_cap()].push_back(desc);
-
-   // DISC_USA_STATE
-   if (!CorrectUSAStates(pubs))
-         thisInfo.test_item_list[GetName_usa()].push_back(desc);
-  
 };
 
 
@@ -7645,6 +7911,34 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
    }
   
    thisTest.is_Pub_run = true;
+};
+
+
+void CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs tlt2auths, auth2feats;
+   GetTestItemList(c_item->item_list, tlt2auths);
+   c_item->item_list.clear();
+   ITERATE (Str2Strs, it, tlt2auths) {
+      auth2feats.clear();
+      GetTestItemList(it->second, auth2feats);
+      if (auth2feats.size() > 1) {
+         CRef <CClickableItem> c_tlt (new CClickableItem);
+         c_tlt->setting_name = GetName();
+         ITERATE (Str2Strs, jt, auth2feats) {
+           AddSubcategories(c_tlt, GetName(), jt->second, "article", 
+                         "title '" + it->first + "' and author list '" + jt->first + "'", 
+                          e_HasComment, true);
+         }
+         c_tlt->description = NStr::UIntToString((unsigned)c_tlt->item_list.size()) 
+             + " articles have title '" + it->first + " but do not have the same author list";
+         c_item->item_list.insert(c_item->item_list.end(),
+                                   c_tlt->item_list.begin(), c_tlt->item_list.end());
+         c_item->subcategories.push_back(c_tlt);
+      } 
+   };
+   if (!c_item->item_list.empty())
+      c_item->description = "Publication Title/Author Inconsistencies";
 };
 
 
@@ -7912,13 +8206,6 @@ void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
       it = feat_count_list.find(strtmp);
       if (it == feat_count_list.end())  feat_count_list[strtmp] = 1;
       else it->second ++;
-/*
-          CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetLocation(),
-                                                      *thisInfo.scope);
-          CConstRef <CBioseq> bioseq = bioseq_h.GetCompleteBioseq();
-          if (bioseq.NotEmpty()) 
-              feat_bioseq_list[seq_feat_dt.which()].push_back(bioseq);
-*/
    }
 
    ITERATE (Str2Int, it, feat_count_list) 
@@ -8031,10 +8318,9 @@ bool CSeqEntry_test_on_pub :: IsAuthorInitialsCapitalizationOk(const string& nm_
 
 
 
-//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: NameIsBad(const CRef <CAuthor> nm_std) 
-bool CSeqEntry_test_on_pub :: NameIsBad(const CRef <CAuthor> nm_std) 
+bool CSeqEntry_test_on_pub :: NameIsBad(const CRef <CAuthor>& auth_nm) 
 {
-   const CPerson_id& pid = nm_std->GetName();
+   const CPerson_id& pid = auth_nm->GetName();
    if (pid.IsName()) {
        const CName_std& name_std = pid.GetName();
        if ( !IsNameCapitalizationOk(name_std.GetLast()) ) return true;
@@ -8048,7 +8334,6 @@ bool CSeqEntry_test_on_pub :: NameIsBad(const CRef <CAuthor> nm_std)
    return false;
 }
 
-//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: HasBadAuthorName(const CAuth_list& auths)
 bool CSeqEntry_test_on_pub :: HasBadAuthorName(const CAuth_list& auths)
 {
   if (auths.GetNames().IsStd()) 

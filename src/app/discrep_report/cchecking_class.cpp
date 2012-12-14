@@ -61,7 +61,6 @@ bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
 };
 
 
-
 void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h)
 {
    for (CSeqdesc_CI seqdesc_it(seq_entry_h, sel_seqdesc, 1); seqdesc_it; ++seqdesc_it) {
@@ -120,6 +119,8 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
 
 void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 {
+  GoTests(CRepConfig :: tests_on_SubmitBlk, *seq_entry);
+
   if (!CRepConfig::tests_on_SeqEntry_feat_desc.empty()) {
 
      // ini.  

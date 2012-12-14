@@ -96,6 +96,7 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
         static vector < CRef < CTestAndRepData > > tests_4_once;
         static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
+        static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
 
      protected:
         void WriteDiscRepSummary();

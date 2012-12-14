@@ -163,6 +163,8 @@ namespace DiscRepNmSpc{
            static Str2UInt                           desired_aaList;
            static CTaxon1                            tax_db_conn;
            static list <string>                      state_abbrev;
+           static list <string>                      cds_prod_find;
+           static vector <string>                    s_pseudoweasels;
      };
 
 /*

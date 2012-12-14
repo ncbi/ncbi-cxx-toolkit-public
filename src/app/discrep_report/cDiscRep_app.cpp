@@ -101,6 +101,8 @@ vector <string>                         CDiscRepInfo :: rrna_standard_name;
 Str2UInt                                CDiscRepInfo :: desired_aaList;
 CTaxon1                                 CDiscRepInfo :: tax_db_conn;
 list <string>                           CDiscRepInfo :: state_abbrev;
+list <string>                           CDiscRepInfo :: cds_prod_find;
+vector <string>                         CDiscRepInfo :: s_pseudoweasels;
 
 void CDiscRepApp::Init(void)
 {
@@ -166,6 +168,10 @@ cerr << "222can get\n";
     if (thisInfo.expand_defline_on_set.empty())
       NCBI_THROW(CException, eUnknown, "Missing config parameters.");
 
+    // ini. of s_pseudoweasels
+    strtmp = reg.Get("SingleDataIni", "SPseudoWeasels");
+    thisInfo.s_pseudoweasels = NStr::Tokenize(strtmp, ",", thisInfo.s_pseudoweasels);
+    
     // ini. of weasels
     thisInfo.weasels.reserve(11);
     thisInfo.weasels.push_back("candidate");
@@ -333,6 +339,9 @@ cerr << "222can get\n";
 
     // ini. of usa_state_abbv;
     reg.EnumerateEntries("US-state-abbrev-fixes", &(thisInfo.state_abbrev));
+
+    // ini. of cds_prod_find
+    reg.EnumerateEntries("Cds-product-find", &(thisInfo.cds_prod_find));
 }
 
 
