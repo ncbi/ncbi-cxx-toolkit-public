@@ -644,6 +644,9 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     if (!saved_content.empty())
                         os.write(saved_content.data(), saved_content.length());
 
+                    grid_ctx.DefinePersistentEntry(kSinceTime,
+                        NStr::NumericToString(GetFastLocalTime().GetTimeT()));
+
                     CNetScheduleAPI::EJobStatus status =
                             m_GridClient->SubmitAndWait(m_FirstDelay);
 
@@ -670,9 +673,6 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     if (phase != eTerminated) {
                         // The job has just been submitted.
                         // Render a report page
-                        CTime time(GetFastLocalTime());
-                        grid_ctx.DefinePersistentEntry(kSinceTime,
-                            NStr::NumericToString(time.GetTimeT()));
                         grid_ctx.SelectView("JOB_SUBMITTED");
                         DefineRefreshTags(grid_ctx.GetSelfURL(),
                             m_RefreshDelay);
@@ -737,10 +737,17 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         m_Page->AddTagMap("JOB_ID", new CHTMLText(job_key));
         m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(job_key));
         if (phase == eRunning) {
-            grid_ctx.SetJobProgressMessage(m_GridClient->GetProgressMessage());
+            string progress_message;
+            try {
+                progress_message = m_GridClient->GetProgressMessage();
+            }
+            catch (CException& e) {
+                ERR_POST("Could not retrieve progress message for " <<
+                        job_key << ": " << e);
+            }
+            grid_ctx.SetJobProgressMessage(progress_message);
             grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",
-                    new CHTMLPlainText(m_TargetEncodeMode,
-                            grid_ctx.GetJobProgressMessage()));
+                    new CHTMLPlainText(m_TargetEncodeMode, progress_message));
         }
     } //try
     catch (exception& e) {
@@ -814,7 +821,42 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
     m_GridClient->SetJobKey(job_key);
 
     CNetScheduleAPI::EJobStatus status;
-    status = m_GridClient->GetStatus();
+    try {
+        status = m_GridClient->GetStatus();
+    }
+    catch (CNetSrvConnException& e) {
+        LOG_POST("Failed to retrieve job status for " << job_key << ": " << e);
+
+        CNetService service(m_NetScheduleAPI.GetService());
+
+        CNetScheduleKey key(job_key);
+
+        CNetServer bad_server(service.GetServer(key.host, key.port));
+
+        CNetServiceIterator it(service.Iterate(bad_server));
+
+        // Skip to the next available server in the service.
+        // If the server that caused a connection exception
+        // was the only server in the service, rethrow the
+        // exception.
+        if (!++it)
+            throw;
+
+        CNetScheduleAdmin::TQueueInfo queue_info;
+
+        m_NetScheduleAPI.GetAdmin().GetQueueInfo(it.GetServer(), queue_info);
+
+        if (GetFastLocalTime().GetTimeT() > NStr::StringToUInt8(
+                grid_ctx.GetPersistentEntryValue(kSinceTime)) +
+                NStr::StringToUInt(queue_info["timeout"]))
+            status = CNetScheduleAPI::eJobNotFound;
+        else {
+            status = CNetScheduleAPI::eRunning;
+            grid_ctx.GetHTMLPage().AddTagMap("MSG",
+                    new CHTMLPlainText(m_TargetEncodeMode,
+                            "Failed to retrieve job status: " + e.GetMsg()));
+        }
+    }
 
     EJobPhase phase = eTerminated;
     bool save_result = false;

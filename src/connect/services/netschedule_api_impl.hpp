@@ -95,11 +95,15 @@ struct SNetScheduleAPIImpl : public CObject
                 m_Service->m_Listener.GetPointer());
     }
 
-    string x_SendJobCmdWaitResponse(const string& cmd_name, const string& job_key)
+    string x_ExecOnce(const string& cmd_name, const string& job_key)
     {
         string cmd(g_MakeBaseCmd(cmd_name, job_key));
         g_AppendClientIPAndSessionID(cmd);
-        return GetServer(job_key).ExecWithRetry(cmd).response;
+
+        CNetServer::SExecResult exec_result;
+        GetServer(job_key)->ConnectAndExec(cmd, exec_result);
+
+        return exec_result.response;
     }
 
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,

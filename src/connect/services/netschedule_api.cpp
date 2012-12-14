@@ -484,6 +484,8 @@ CNetService CNetScheduleAPI::GetService()
 CNetScheduleAPI::EJobStatus
     CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job, time_t* job_exptime)
 {
+    string resp = m_Impl->x_ExecOnce("STATUS2", job.job_id);
+
     job.input.erase();
     job.affinity.erase();
     job.mask = CNetScheduleAPI::eEmptyMask;
@@ -491,8 +493,6 @@ CNetScheduleAPI::EJobStatus
     job.output.erase();
     job.error_msg.erase();
     job.progress_msg.erase();
-
-    string resp = m_Impl->x_SendJobCmdWaitResponse("STATUS2" , job.job_id);
 
     static const char* const s_JobStatusAttrNames[] = {
             "job_status",       // 0
@@ -544,7 +544,7 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
     string response;
 
     try {
-        response = x_SendJobCmdWaitResponse(cmd, job_key);
+        response = x_ExecOnce(cmd, job_key);
     }
     catch (CNetScheduleException& e) {
         if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
@@ -616,7 +616,7 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
     job.progress_msg = NStr::ParseEscapes(
-            m_Impl->x_SendJobCmdWaitResponse("MGET", job.job_id));
+            m_Impl->x_ExecOnce("MGET", job.job_id));
 }
 
 static void s_VerifyClientCredentialString(const string& str,

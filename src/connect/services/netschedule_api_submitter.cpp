@@ -409,7 +409,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
         CAbsTimeout& abs_timeout,
         CNetScheduleAPI ns_api)
 {
-    CNetScheduleAPI::EJobStatus status;
+    CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::ePending;
 
     unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
 
@@ -419,7 +419,14 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 
         if (!(timeout < abs_timeout)) {
             if (abs_timeout.GetRemainingTime().IsZero())
-                return ns_api.GetJobDetails(job);
+                try {
+                    return ns_api.GetJobDetails(job);
+                }
+                catch (CException& e) {
+                    ERR_POST(job.job_id << ": error while "
+                            "retrieving job details: " << e);
+                    return status;
+                }
 
             timeout = abs_timeout;
             last_timeout = true;
@@ -432,12 +439,19 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 
                 return status;
             }
-        } else {
-            status = ns_api.GetJobDetails(job);
-            if ((status != CNetScheduleAPI::eRunning &&
-                    status != CNetScheduleAPI::ePending) || last_timeout)
-                return status;
-        }
+        } else
+            try {
+                status = ns_api.GetJobDetails(job);
+                if ((status != CNetScheduleAPI::eRunning &&
+                        status != CNetScheduleAPI::ePending) || last_timeout)
+                    return status;
+            }
+            catch (CException& e) {
+                ERR_POST(job.job_id << ": error while "
+                        "retrieving job details: " << e);
+                if (last_timeout)
+                    return status;
+            }
     }
 }
 
@@ -517,7 +531,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
 void CNetScheduleSubmitter::CancelJob(const string& job_key)
 {
-    m_Impl->m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
+    m_Impl->m_API->x_ExecOnce("CANCEL", job_key);
 }
 
 void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
