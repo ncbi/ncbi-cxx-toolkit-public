@@ -56,8 +56,9 @@
 BEGIN_NCBI_SCOPE
 
 /// Incapsulate compile time information such as
-/// _FILE_ _LINE NCBI_MODULE
-/// NCBI_MODULE is used only in .cpp file
+/// __FILE__, __LINE__, NCBI_MODULE, current function.
+/// @note
+///   NCBI_MODULE is used only in .cpp files
 /// @sa
 ///   DIAG_COMPILE_INFO
 class CDiagCompileInfo
@@ -154,11 +155,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   CDiagCompileInfo
-#define DIAG_COMPILE_INFO                               \
-  NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,              \
-                                 __LINE__,              \
-                                 NCBI_CURRENT_FUNCTION, \
-                                 NCBI_MAKE_MODULE(NCBI_MODULE))
+#define DIAG_COMPILE_INFO                                           \
+    NCBI_NS_NCBI::CDiagCompileInfo(__FILE__,                        \
+                                   __LINE__,                        \
+                                   NCBI_CURRENT_FUNCTION,           \
+                                   NCBI_MAKE_MODULE(NCBI_MODULE))
 
 
 
@@ -183,11 +184,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   LOG_POST_EX, LOG_POST_X
-#define LOG_POST(message)                          \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,   \
+#define LOG_POST(message)                                               \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
       NCBI_NS_NCBI::eDiag_Error,                                        \
       NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()   \
-      << message                                   \
+      << message                                                        \
       << NCBI_NS_NCBI::Endm )
 
 /// Error posting with error codes.
@@ -198,10 +199,10 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   ERR_POST, ERR_POST_X
-#define ERR_POST_EX(err_code, err_subcode, message)         \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()   \
-      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
-      << message                                            \
+#define ERR_POST_EX(err_code, err_subcode, message)          \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()    \
+      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )  \
+      << message                                             \
       << NCBI_NS_NCBI::Endm )
 
 /// Log posting with error codes.
@@ -212,11 +213,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   LOG_POST, LOG_POST_X
-#define LOG_POST_EX(err_code, err_subcode, message)         \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,            \
-      NCBI_NS_NCBI::eDiag_Error,                                          \
-      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()     \
-      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
+#define LOG_POST_EX(err_code, err_subcode, message)                     \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,                        \
+      NCBI_NS_NCBI::eDiag_Error,                                        \
+      NCBI_NS_NCBI::eDPF_Log | NCBI_NS_NCBI::eDPF_IsMessage).GetRef()   \
+      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) )             \
       << message << NCBI_NS_NCBI::Endm )
 
 

@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -66,4 +66,3 @@
      NCBI_PACKAGE_VERSION_PATCH)
 
 #endif  /* COMMON__NCBI_PACKAGE_VER__H */
-

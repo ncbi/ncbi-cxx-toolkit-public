@@ -5998,7 +5998,7 @@ const CNcbiDiag& CNcbiDiag::SetModule(const char* module) const
 }
 
 
-const CNcbiDiag& CNcbiDiag::SetClass(const char* nclass ) const
+const CNcbiDiag& CNcbiDiag::SetClass(const char* nclass) const
 {
     m_Class = nclass;
     m_ValChngFlags |= fClassIsChanged;
