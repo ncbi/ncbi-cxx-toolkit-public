@@ -432,6 +432,7 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.notif_hifreq_interval = m_QueueDescriptionDB.notif_hifreq_interval;
         params.notif_hifreq_period = m_QueueDescriptionDB.notif_hifreq_period;
         params.notif_lofreq_mult = m_QueueDescriptionDB.notif_lofreq_mult;
+        params.notif_handicap = m_QueueDescriptionDB.notif_handicap;
         params.dump_buffer_size = m_QueueDescriptionDB.dump_buffer_size;
         params.run_timeout = m_QueueDescriptionDB.run_timeout;
         params.program_name = m_QueueDescriptionDB.program_name;
@@ -497,6 +498,7 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.notif_hifreq_interval = params.notif_hifreq_interval;
     m_QueueDescriptionDB.notif_hifreq_period = params.notif_hifreq_period;
     m_QueueDescriptionDB.notif_lofreq_mult = params.notif_lofreq_mult;
+    m_QueueDescriptionDB.notif_handicap = params.notif_handicap;
     m_QueueDescriptionDB.dump_buffer_size = params.dump_buffer_size;
     m_QueueDescriptionDB.run_timeout = params.run_timeout;
     m_QueueDescriptionDB.program_name = params.program_name;
@@ -646,6 +648,9 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "notif_lofreq_mult")
                 params.notif_lofreq_mult =
                         params.ReadNotifLofreqMult(reg, section_name);
+            else if (*val == "notif_handicap")
+                params.notif_handicap =
+                        params.ReadNotifHandicap(reg, section_name);
             else if (*val == "dump_buffer_size")
                 params.dump_buffer_size =
                         params.ReadDumpBufferSize(reg, section_name);

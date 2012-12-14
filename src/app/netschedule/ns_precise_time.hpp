@@ -129,6 +129,10 @@ class CNSPreciseTime : public timespec
         { return Compare(t) < 0; }
         bool operator<= (const CNSPreciseTime &  t) const
         { return Compare(t) <= 0; }
+
+        operator double () const
+        { return (double)tv_sec + ((double)tv_nsec / (double)kNSecsPerSecond); }
+
 };
 
 inline

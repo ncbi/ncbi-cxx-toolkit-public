@@ -250,6 +250,7 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldDouble    notif_hifreq_interval;
     CBDB_FieldUint4     notif_hifreq_period;
     CBDB_FieldUint4     notif_lofreq_mult;
+    CBDB_FieldDouble    notif_handicap;
     CBDB_FieldUint4     dump_buffer_size;
     CBDB_FieldUint4     run_timeout;
     CBDB_FieldLString   program_name;
@@ -278,6 +279,7 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("notif_hifreq_interval",    &notif_hifreq_interval);
         BindData("notif_hifreq_period",      &notif_hifreq_period);
         BindData("notif_lofreq_mult",        &notif_lofreq_mult);
+        BindData("notif_handicap",           &notif_handicap);
         BindData("dump_buffer_size",         &dump_buffer_size);
         BindData("run_timeout",              &run_timeout);
         BindData("program_name",             &program_name);
