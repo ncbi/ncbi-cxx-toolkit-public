@@ -536,7 +536,8 @@ string CNSClient::Print(const string &               node_name,
 
         TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
         for ( ; en.valid(); ++en)
-            buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+            buffer += "OK:    " + queue->MakeKey(*en) + " " +
+                      x_GetFormattedBlacklistLimit(*en) + "\n";
     }
 
     buffer += "OK:  NUMBER OF RUNNING JOBS: " +
@@ -749,6 +750,25 @@ void  CNSClient::x_UpdateBlacklist(unsigned int  job_id) const
             m_BlacklistLimits.erase(found);
         }
     }
+}
+
+
+time_t  CNSClient::x_GetBlacklistLimit(unsigned int  job_id) const
+{
+    map<unsigned int, time_t>::iterator found = m_BlacklistLimits.find(job_id);
+    if (found != m_BlacklistLimits.end())
+        return found->second;
+    return 0;
+}
+
+
+string  CNSClient::x_GetFormattedBlacklistLimit(unsigned int  job_id) const
+{
+    CTime       limit;
+
+    limit.SetTimeT(x_GetBlacklistLimit(job_id));
+    limit.ToLocalTime();
+    return limit.AsString();
 }
 
 END_NCBI_SCOPE

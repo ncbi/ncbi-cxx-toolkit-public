@@ -264,6 +264,8 @@ class CNSClient
         void    x_AddToBlacklist(unsigned int  job_id);
         void    x_UpdateBlacklist(void) const;
         void    x_UpdateBlacklist(unsigned int  job_id) const;
+        time_t  x_GetBlacklistLimit(unsigned int  job_id) const;
+        string  x_GetFormattedBlacklistLimit(unsigned int  job_id) const;
 };
 
 
