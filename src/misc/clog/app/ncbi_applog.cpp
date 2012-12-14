@@ -46,7 +46,7 @@
 
  /*
  Command lines:
-    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID]  // -> token
+    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]  // -> token
     ncbi_applog stop_app      <token> [-status STATUS]
     ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS]  // -> request_token
     ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]
@@ -60,14 +60,14 @@
                 [NCBI]
                 NcbiApplogCGI = http://...
             Environment variable:
-                NCBI_CONFIG__NCBI__NcbiApplogCGI
+                NCBI_CONFIG__NCBIAPPLOG_CGI
      2) Output destination ("default" if not specified) (see C Logging API for details)
         If this parameter is used and not "default", CGI redirecting will be disabled.
             Registry file:
                 [NCBI]
                 NcbiApplogDestination = default|cwd|stdlog|stdout|stderr
             Environment variable:
-                NCBI_CONFIG__NCBI__NcbiApplogDestination
+                NCBI_CONFIG__NCBIAPPLOG_DESTINATION
  */
 
 
@@ -87,11 +87,11 @@ const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncb
 
 /// Declare the parameter for logging CGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
-NCBI_PARAM_DEF (string, NCBI, NcbiApplogCGI, kDefaultCGI);
+NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogCGI, kDefaultCGI, eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_CGI);
 
 /// Declare the parameter for logging output destination
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogDestination); 
-NCBI_PARAM_DEF (string, NCBI, NcbiApplogDestination, kEmptyStr /*default*/);
+NCBI_PARAM_DEF_EX(string, NCBI, NcbiApplogDestination, kEmptyStr, eParam_NoThread, NCBI_CONFIG__NCBIAPPLOG_DESTINATION);
 
 
 /// Structure to store logging information
@@ -105,6 +105,7 @@ struct SInfo {
     string            client;           ///< Client IP address (UNK_CLIENT if unknown)
     string            sid_app;          ///< Application-wide session ID (set in "start_app")
     string            sid_req;          ///< Session (request) ID (UNK_SESSION if unknown)
+    string            logsite;          ///< LogSite value (set in "start_app")
     STime             app_start_time;   ///< Application start time
     STime             req_start_time;   ///< Request start time
     STime             post_time;        ///< Posting time (defined only for redirect mode)
@@ -188,6 +189,9 @@ void CNcbiApplogApp::Init(void)
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
+        arg->AddDefaultKey
+            ("logsite", "SITE", "Value for log_site parameter. If empty $NCBI_LOG_SITE will be used.", 
+            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
@@ -341,11 +345,12 @@ int CNcbiApplogApp::Redirect() const
     // Get URL of logging CGI (from registry file, env.variable or default value)
     string url = NCBI_PARAM_TYPE(NCBI, NcbiApplogCGI)::GetDefault();
 
-    // We need host name and sid in the command line for 'start_app' command,
-    // only, all other should have it in the token
+    // We need host name, sid and log_site in the command line for 'start_app' command,
+    // only, all other information it should take from the token.
     bool is_start_app  = (GetArgs().GetCommand() == "start_app");
     bool need_hostname = true;
     bool need_sid      = true;
+    bool need_logsite  = true;
 
     // Create new command line to pass it to CGI
     string s_args;
@@ -356,13 +361,16 @@ int CNcbiApplogApp::Redirect() const
             // env.variable, insert real value into command line.
             s_args += " \"" + m_Token + "\"";
         } else {
-            // Check -host and -sid parameters
+            // Check -host, -sid and -logsite parameters
             if (is_start_app) {
                 if (need_hostname  &&  NStr::StartsWith(raw_args[i], "-host")) {
                     need_hostname = false;
                 }
                 if (need_sid  &&  NStr::StartsWith(raw_args[i], "-sid")) {
                     need_sid = false;
+                }
+                if (need_logsite  &&  NStr::StartsWith(raw_args[i], "-logsite")) {
+                    need_logsite = false;
                 }
             }
             // Mode will be set to 'cgi' in CGI, remove it from the command line now
@@ -371,22 +379,31 @@ int CNcbiApplogApp::Redirect() const
             }
         }
     }
+
+    // Add necessary missing parameters to the command line
     if (is_start_app) {
-        // Add global SID to command line if necessary
+        // Global SID
         if (need_sid) {
             string sid = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
             if (!sid.empty()) {
                 s_args += string(" \"-sid=") + sid + "\"";
             }
         }
-        // Add current host name to command line
+        // Logsite information
+        if (need_logsite) {
+            string logsite = GetEnvironment().Get("NCBI_LOG_SITE");
+            if (!logsite.empty()) {
+                s_args += string(" \"-logsite=") + NStr::URLEncode(logsite) + "\"";
+            }
+        }
+        // Current host name
         if (need_hostname) {
             const char* hostname = NcbiLogP_GetHostName();
             if (hostname) {
                 s_args += string(" \"-host=") + hostname + "\"";
             }
         }
-        // Add value of if environment variable $SERVER_PORT on this host
+        // $SERVER_PORT on this host
         string port = GetEnvironment().Get("SERVER_PORT");
         if (!port.empty()) {
             s_args += string(" \"-srvport=") + port + "\"";
@@ -442,11 +459,16 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
     if (!m_Info.sid_app.empty()) {
         token += "&asid="  + m_Info.sid_app;
     }
+    if (!m_Info.logsite.empty()) {
+        token += "&logsite="  + m_Info.logsite;
+    }
     if (m_Info.server_port) {
         token += "&srvport=" + NStr::UIntToString(m_Info.server_port);
     }
     token += "&atime=" + NStr::UInt8ToString(m_Info.app_start_time.sec) + "." 
                        + NStr::ULongToString(m_Info.app_start_time.ns);
+
+    // Request specific pairs
     if (type ==  eRequest) {
         token += "&rid=" + NStr::UInt8ToString(m_Info.rid);
         if (!m_Info.sid_req.empty()) {
@@ -466,7 +488,7 @@ ETokenType CNcbiApplogApp::ParseToken()
 {
     // Minimal token looks as:
     //     "name=STR&pid=NUM&guid=HEX&asid=STR&atime=N.N"
-    // Also, can have: 'rsid', 'rtime', 'client', 'host', 'srvport'.
+    // Also, can have: 'rsid', 'rtime', 'client', 'host', 'srvport', 'logsite'.
 
     ETokenType type = eApp;
 
@@ -505,6 +527,8 @@ ETokenType CNcbiApplogApp::ParseToken()
         } else if ( key == "rsid") {
             m_Info.sid_req = value;
             type = eRequest;
+        } else if ( key == "logsite") {
+            m_Info.logsite = value;
         } else if ( key == "rid") {
             m_Info.rid = NStr::StringToUInt8(value);
             have_rid = true;
@@ -568,6 +592,11 @@ void CNcbiApplogApp::SetInfo()
         NcbiLog_SetSession(m_Info.sid_req.c_str());
     } else if (!m_Info.sid_app.empty()) {
         NcbiLog_SetSession(m_Info.sid_app.c_str());
+    }
+    // If log_site is not specified (or empty), the value from
+    // $NCBI_LOG_SITE will be used automatically in the C Logging API.
+    if (!m_Info.logsite.empty()) {
+        NcbiLog_SetLogSite(m_Info.logsite.c_str());
     }
 }
 
@@ -712,6 +741,9 @@ int CNcbiApplogApp::Run(void)
         if (m_Info.sid_app.empty()) {
             m_Info.sid_app = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
         }
+        // If log_site is not specified (or empty), the value from
+        // $NCBI_LOG_SITE will be used automatically in the C Logging API.
+        m_Info.logsite = args["logsite"].AsString();
         SetInfo();
         NcbiLog_AppStart(NULL);
         token_gen_type = eApp;
