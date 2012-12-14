@@ -1,6 +1,6 @@
 Name:        ncbi-igblast
 Version:     BLAST_VERSION
-Release:     2
+Release:     1
 Source0:     %{name}-%{version}.tgz
 Summary:     NCBI igBLAST finds regions of similarity between biological sequences. 
 Exclusiveos: linux
