@@ -13212,3 +13212,99 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+  segs spliced {
+    product-id gi 238695321,
+    genomic-id gi 323511446,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 61,
+          frame 1
+        },
+        product-end protpos {
+          amin 90,
+          frame 3
+        },
+        genomic-start 653,
+        genomic-end 745,
+        parts {
+          diag 30,
+          genomic-ins 3,
+          diag 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 91
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        },
+        {
+          label str "AdjustRange", 
+          data ints { 0, 928 }
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type disc,
+  dim 2,
+  segs spliced {
+    product-id gi 238695321,
+    genomic-id gi 323511446,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 90,
+          frame 3
+        },
+        genomic-start 653,
+        genomic-end 928,
+        parts {
+          diag 213,
+          genomic-ins 3,
+          diag 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 91,
+    modifiers {
+      start-codon-found TRUE,
+      stop-codon-found FALSE
+    }
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        },
+        {
+          label str "AdjustRange", 
+          data ints { 1, 928 }
+        }
+      }
+    }
+  }
+}

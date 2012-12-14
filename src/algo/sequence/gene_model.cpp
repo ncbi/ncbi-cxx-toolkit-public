@@ -2657,7 +2657,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                 break;
             }
         }
-        seq.GetSeqData(frame, seq.size(), mrna);
+        seq.GetSeqData(frame, frame +((seq.size()-frame)/3)*3, mrna);
         const CGenetic_code *code = NULL;
         if (feat.GetData().GetCdregion().IsSetCode()) {
             code = &feat.GetData().GetCdregion().GetCode();

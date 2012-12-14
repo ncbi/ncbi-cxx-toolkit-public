@@ -16884,3 +16884,257 @@ SDDVVKGKACPLNVYTDRRDEKANVSA"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_12_38"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness no-left
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 933,
+        ext delta {
+          literal {
+            length 929,
+            seq-data ncbi2na '3B48DC0413161C73E3823AC380DF038BF8B316382002580D
+882F83002923DE10E08608C384181C8638FFB228FC7000C38208E28230058E02431165F6D22863
+8014230E18E0F235EB1001A30E00E0BE38C0803A900615FCBE08E0BE05FC5C3F63812F2081D852
+499425912A40B0B8E4FCB03C8A07EB812FE30E988DA50AC2CE11D00A773C89B80C610CE0A20B34
+09C8E70B3824F090C49248053E39F30C0D909E303F0D083CF03F6C000820043C7E3860D707C9EB
+83F852FBC026F6B0E4AECFE3A0EDC13D03CF884B030C4F9FBD94D783C086BC85C0DC2923520400
+3E000E50965C25004600D608F540'H
+          },
+          literal {
+            length 4
+          }
+        },
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_12",
+                genomic-id gi 323511446,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 928,
+                    genomic-start 0,
+                    genomic-end 928,
+                    parts {
+                      diag 183,
+                      diag 30,
+                      diag 3,
+                      diag 60,
+                      diag 653
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 933
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    },
+                    {
+                      label str "AdjustRange",
+                      data ints {
+                        0,
+                        928
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole local str "PROT_12_38",
+              location int {
+                from 0,
+                to 932,
+                id local str "CDNA_12_38",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_12_38"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 309,
+        seq-data iupacaa "MSDLNNIPTTIDEDGNEILNEFEYTDEEKAEIEKLNKKADSDNEDEDNDNEL
+DDDFVEDLLKNNEEDEEDKTDESNTPPSSEDDENQDNDDELDPGTKTDNENEVDDKENGQNDPLVEDEVEPLPNFDEQ
+LEELDQQRQAAQGKVSDAFSKLEELGEQFDNGEIGQGKYDTQKALLEREIRQYEGEVSKLDAKYEALSNTAAETIDAY
+NKSQADKFNQELLNFVKKEENNYLMTNPNLAGEFDQLLKAFGNAGVFDGMSNIQIIETVNNTLLVRHPELKTVRPKSK
+ADPEQKIEKMPSRLSQNTKIRRF"
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_13_39"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 933,
+        ext delta {
+          literal {
+            length 928,
+            seq-data ncbi2na '3B48DC0413161C73E3823AC380DF038BF8B316382002580D
+882F83002923DE10E08608C384181C8638FFB228FC7000C38208E28230058E02431165F6D22863
+8014230E18E0F235EB1001A30E00E0BE38C0803A900615FCBE08E0BE05FC5C3F63812F2081D852
+499425912A40B0B8E4FCB03C8A07EB812FE30E988DA50AC2CE11D00A773C89B80C610CE0A20B34
+09C8E70B3824F090C49248053E39F30C0D909E303F0D083CF03F6C000820043C7E3860D707C9EB
+83F852FBC026F6B0E4AECFE3A0EDC13D03CF884B030C4F9FBD94D783C086BC85C0DC2923520400
+3E000E50965C25004600D608F5'H
+          },
+          literal {
+            length 5
+          }
+        },
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_13",
+                genomic-id gi 323511446,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 927,
+                    genomic-start 1,
+                    genomic-end 928,
+                    parts {
+                      diag 213,
+                      diag 3,
+                      diag 60,
+                      diag 652
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 933,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found FALSE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    },
+                    {
+                      label str "AdjustRange",
+                      data ints {
+                        1,
+                        928
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole local str "PROT_13_39",
+              location int {
+                from 0,
+                to 932,
+                id local str "CDNA_13_39"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_13_39"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-right
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 309,
+        seq-data iupacaa "MSDLNNIPTTIDEDGNEILNEFEYTDEEKAEIEKLNKKADSDNEDEDNDNEL
+DDDFVEDLLKNNEEDEEDKTDESNTPPSSEDDENQDNDDELDPGTKTDNENEVDDKENGQNDPLVEDEVEPLPNFDEQ
+LEELDQQRQAAQGKVSDAFSKLEELGEQFDNGEIGQGKYDTQKALLEREIRQYEGEVSKLDAKYEALSNTAAETIDAY
+NKSQADKFNQELLNFVKKEENNYLMTNPNLAGEFDQLLKAFGNAGVFDGMSNIQIIETVNNTLLVRHPELKTVRPKSK
+ADPEQKIEKMPSRLSQNTKIRRF"
+      }
+    }
+  }
+}
