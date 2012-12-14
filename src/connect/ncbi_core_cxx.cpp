@@ -146,19 +146,11 @@ static void s_LOG_Handler(void*       /*user_data*/,
         if (!IsVisibleDiagPostLevel(level))
             return;
 
-        CNcbiDiag diag(level);
-        if (call_data->file) {
-            diag.SetFile(call_data->file);
-        }
-        if (call_data->line) {
-            diag.SetLine(call_data->line);
-        }
-        if (call_data->func) {
-            diag.SetFunction(call_data->func);
-        }
-        if (call_data->module) {
-            diag.SetModule(call_data->module);
-        }
+        CDiagCompileInfo info(call_data->file,
+                              call_data->line,
+                              call_data->func,
+                              call_data->module);
+        CNcbiDiag diag(info, level);
         diag.SetErrorCode(call_data->err_code, call_data->err_subcode);
         diag << call_data->message;
         if (call_data->raw_size) {
