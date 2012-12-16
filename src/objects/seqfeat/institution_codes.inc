@@ -4234,6 +4234,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMC	s	New Mexico State University, Department of Biology",
 "NMC<CAN>	s	Canadian Museum of Nature",
 "NMCC<IND>	c	North Maharashtra Microbial Culture Collection Centre",
+"NMCDC	s	Inner Mongolia Center for Endemic Disease Control and Research",
 "NMCI<JPN>	s	Noto Marine Center Ishikawa Prefecture",
 "NMCI<JPN>:AR	s	Noto Marine Center Ishikawa Prefecture, Arthropoda collection",
 "NMCI<JPN>:EC	s	Noto Marine Center Ishikawa Prefecture, Echinodermata",
