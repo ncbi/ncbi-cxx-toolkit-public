@@ -678,6 +678,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// maintain job affinity for the client.
     void ClearNode();
 
+    void AddPreferredAffinities(const vector<string>& affs_to_add)
+        { ChangePreferredAffinities(&affs_to_add, NULL); }
+
+    void DeletePreferredAffinities(const vector<string>& affs_to_del)
+        { ChangePreferredAffinities(NULL, &affs_to_del); }
+
     void ChangePreferredAffinities(const vector<string>* affs_to_add,
         const vector<string>* affs_to_delete);
 
