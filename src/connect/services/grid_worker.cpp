@@ -1114,13 +1114,6 @@ int CGridWorkerNode::Run()
             "the port(s).");
     }
 
-    if (procinfo_file != NULL) {
-        fprintf(procinfo_file, "pid: %lu\nport: %s\n",
-                (unsigned long) CDiagContext::GetPID(),
-                control_port_str.c_str());
-        fclose(procinfo_file);
-    }
-
     if (m_NetScheduleAPI->m_ClientNode.empty()) {
         string client_node(m_NetScheduleAPI->
                 m_Service->m_ServerPool->m_ClientName);
@@ -1137,6 +1130,16 @@ int CGridWorkerNode::Run()
         session += GetDiagContext().GetStringUID();
 
         m_NetScheduleAPI.SetClientSession(session);
+    }
+
+    if (procinfo_file != NULL) {
+        fprintf(procinfo_file, "pid: %lu\nport: %s\n"
+                "client_node: %s\nclient_session: %s\n",
+                (unsigned long) CDiagContext::GetPID(),
+                control_port_str.c_str(),
+                m_NetScheduleAPI->m_ClientNode.c_str(),
+                m_NetScheduleAPI->m_ClientSession.c_str());
+        fclose(procinfo_file);
     }
 
     {{
