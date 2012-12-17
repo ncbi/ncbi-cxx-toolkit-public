@@ -2934,6 +2934,13 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client)
 }
 
 
+void CQueue::RegisterSocketWriteError(const CNSClientId &  client)
+{
+    CFastMutexGuard     guard(m_OperationLock);
+    m_ClientsRegistry.RegisterSocketWriteError(client);
+}
+
+
 // Moves the job to Pending/Failed or to Done/ReadFailed
 // when event event_type has come
 TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &   client,

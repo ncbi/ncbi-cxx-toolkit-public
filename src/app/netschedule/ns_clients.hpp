@@ -168,6 +168,8 @@ class CNSClient
         { return m_Session; }
         time_t GetLastAccess(void) const
         { return m_LastAccess; }
+        void RegisterSocketWriteError(void)
+        { ++m_NumberOfSockErrors; }
 
         unsigned short GetAndResetWaitPort(void);
 
@@ -253,6 +255,7 @@ class CNSClient
         size_t          m_NumberOfRun;      // Number of jobs given for executing
         bool            m_AffReset;         // true => affinities were reset due to
                                             // client inactivity timeout
+        size_t          m_NumberOfSockErrors;
 
         time_t *        m_BlacklistTimeout;
         mutable

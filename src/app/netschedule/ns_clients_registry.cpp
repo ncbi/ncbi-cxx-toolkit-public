@@ -100,6 +100,19 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
 }
 
 
+void CNSClientsRegistry::RegisterSocketWriteError(const CNSClientId &  client)
+{
+    // Check if it is an old-style client
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  cl = m_Clients.find(client.GetNode());
+    if (cl != m_Clients.end())
+        cl->second.RegisterSocketWriteError();
+}
+
+
 // Updates the submitter job.
 // No need to check session id, it's done in Touch()
 void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
@@ -118,7 +131,6 @@ void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
                    "' to set submitted job");
 
     submitter->second.RegisterSubmittedJobs(count);
-    return;
 }
 
 
@@ -140,7 +152,6 @@ void  CNSClientsRegistry::AddToReading(const CNSClientId &  client,
                    "' to set reading job");
 
     reader->second.RegisterReadingJob(job_id);
-    return;
 }
 
 
@@ -162,7 +173,6 @@ void  CNSClientsRegistry::AddToRunning(const CNSClientId &  client,
                    "' to set running job");
 
     worker_node->second.RegisterRunningJob(job_id);
-    return;
 }
 
 
@@ -184,7 +194,6 @@ void  CNSClientsRegistry::AddToBlacklist(const CNSClientId &  client,
                    "' to set blacklisted job");
 
     worker_node->second.RegisterBlacklistedJob(job_id);
-    return;
 }
 
 
@@ -202,7 +211,6 @@ void  CNSClientsRegistry::ClearReading(const CNSClientId &  client,
 
     if (reader != m_Clients.end())
         reader->second.UnregisterReadingJob(job_id);
-    return;
 }
 
 
@@ -218,7 +226,6 @@ void  CNSClientsRegistry::ClearReading(unsigned int  job_id)
 
     for ( ; k != m_Clients.end(); ++k)
         k->second.UnregisterReadingJob(job_id);
-    return;
 }
 
 
@@ -235,7 +242,6 @@ void  CNSClientsRegistry::ClearReadingSetBlacklist(unsigned int  job_id)
     for ( ; k != m_Clients.end(); ++k)
         if (k->second.MoveReadingJobToBlacklist(job_id))
             return;
-    return;
 }
 
 
@@ -253,7 +259,6 @@ void  CNSClientsRegistry::ClearExecuting(const CNSClientId &  client,
 
     if (worker_node != m_Clients.end())
         worker_node->second.UnregisterRunningJob(job_id);
-    return;
 }
 
 
@@ -269,7 +274,6 @@ void  CNSClientsRegistry::ClearExecuting(unsigned int  job_id)
 
     for ( ; k != m_Clients.end(); ++k)
         k->second.UnregisterRunningJob(job_id);
-    return;
 }
 
 
@@ -286,7 +290,6 @@ void  CNSClientsRegistry::ClearExecutingSetBlacklist(unsigned int  job_id)
     for ( ; k != m_Clients.end(); ++k)
         if (k->second.MoveRunningJobToBlacklist(job_id))
             return;
-    return;
 }
 
 
@@ -397,7 +400,6 @@ void  CNSClientsRegistry::SetWaiting(const CNSClientId &          client,
     worker_node->second.RegisterWaitAffinities(aff_ids);
     aff_registry.SetWaitClientForAffinities(worker_node->second.GetID(),
                                             worker_node->second.GetWaitAffinities());
-    return;
 }
 
 
@@ -561,8 +563,6 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
         x_BuildWNAffinities();
     else
         m_WNAffinities |= aff_to_add;
-
-    return;
 }
 
 
@@ -594,8 +594,6 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
     else
         if (aff_to_add != 0)
             m_WNAffinities.set_bit(aff_to_add);
-
-    return;
 }
 
 

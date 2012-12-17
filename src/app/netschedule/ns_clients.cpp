@@ -283,6 +283,7 @@ CNSClient::CNSClient() :
     m_NumberOfRead(0),
     m_NumberOfRun(0),
     m_AffReset(false),
+    m_NumberOfSockErrors(0),
     m_BlacklistTimeout(NULL)
 {}
 
@@ -307,6 +308,7 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_NumberOfRead(0),
     m_NumberOfRun(0),
     m_AffReset(false),
+    m_NumberOfSockErrors(0),
     m_BlacklistTimeout(blacklist_timeout)
 {
     if (!client_id.IsComplete())
@@ -585,6 +587,9 @@ string CNSClient::Print(const string &               node_name,
         for ( ; en.valid(); ++en)
             buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
     }
+
+    buffer += "OK:  NUMBER OF SOCKET WRITE ERRORS: " +
+              NStr::NumericToString(m_NumberOfSockErrors) + "\n";
 
     return buffer;
 }

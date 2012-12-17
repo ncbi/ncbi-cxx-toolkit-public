@@ -711,6 +711,14 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
                     m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
             }
         }
+
+        try {
+            if (!m_QueueName.empty()) {
+                CRef<CQueue>    ref = GetQueue();
+                ref->RegisterSocketWriteError(m_ClientId);
+            }
+        } catch (...) {}
+
         m_Server->CloseConnection(&GetSocket());
     }
     return result;

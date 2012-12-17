@@ -333,6 +333,7 @@ public:
     { return m_KeyGenerator.GenerateV1(job_id); }
 
     void TouchClientsRegistry(CNSClientId &  client);
+    void RegisterSocketWriteError(const CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;
     string PrintTransitionCounters(void) const;

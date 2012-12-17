@@ -123,6 +123,7 @@ class CNSClientsRegistry
                       CNSAffinityRegistry &   aff_registry);
         void SetBlacklistTimeout(time_t  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
+        void RegisterSocketWriteError(const CNSClientId &  client);
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients
