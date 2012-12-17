@@ -340,11 +340,14 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
    protected:
+      bool m_has_cit;
       string GetName_dup() const {return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
       string GetName_cap() const {return string("DISC_CHECK_AUTH_CAPS"); }
       string GetName_usa() const {return string("DISC_USA_STATE"); }
       string GetName_tlt() const {return string("DISC_TITLE_AUTHOR_CONFLICT"); }
+      string GetName_aff() const {return string("DISC_CITSUBAFFIL_CONFLICT"); }
 
+      void GetGroupedAffilString(const CAuth_list& authors, string& affil_str,string& grp_str);
       void RunTests(const list <CRef <CPub> >& pubs, const string& desc);
       CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
       bool AffilStreetContainsDuplicateText(const CAffil& affil);
@@ -355,8 +358,18 @@ namespace DiscRepNmSpc {
       bool HasBadAuthorName(const CAuth_list& auths);
       bool AreBadAuthCapsInPubdesc(const list <CRef <CPub> >& pubs);
       bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
-      void GetTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
+      void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
       string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
+  };
+
+
+  class CSeqEntry_DISC_CITSUBAFFIL_CONFLICT : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_CITSUBAFFIL_CONFLICT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_aff();}
   };
 
 
@@ -1444,6 +1457,17 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+
+  class CBioseq_DISC_RBS_WITHOUT_GENE : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_RBS_WITHOUT_GENE () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_RBS_WITHOUT_GENE"); }
+  };
 
 
   class CBioseq_DISC_EXON_INTRON_CONFLICT : public CBioseqTestAndRepData

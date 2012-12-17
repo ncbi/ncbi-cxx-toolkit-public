@@ -229,6 +229,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat_CSeqdesc
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                           new CBioseq_DISC_RBS_WITHOUT_GENE));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_DISC_EXON_INTRON_CONFLICT));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
@@ -272,6 +274,8 @@ void CRepConfDiscrepancy :: ConfigRep()
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
+   tests_on_SeqEntry_feat_desc.push_back( 
+                      CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUBAFFIL_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back( 

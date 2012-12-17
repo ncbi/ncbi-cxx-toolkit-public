@@ -173,6 +173,29 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_RBS_WITHOUT_GENE :: TestOnObj(const CBioseq& bioseq)
+{
+   if (bioseq.IsAa() || gene_feat.empty()) return;
+   ITERATE (vector <const CSeq_feat*>, it, rbs_feat) {
+     CConstRef <CSeq_feat> 
+         rbs_gene = GetBestOverlappingFeat((*it)->GetLocation(),
+                                      CSeqFeatData::e_Gene, eOverlap_Contained,
+                                      *thisInfo.scope);
+     if (rbs_gene.NotEmpty()) 
+         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+   }
+};
+ 
+
+void CBioseq_DISC_RBS_WITHOUT_GENE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+      = GetOtherComment(c_item->item_list.size(), "RBS feature does", "RBS features do") 
+        + " not have overlapping genes";
+};
+ 
+
+
 void CBioseq_DISC_EXON_INTRON_CONFLICT :: CompareIntronExonList(const string& seq_id_desc, const vector <const CSeq_feat*>& exon_ls, const vector <const CSeq_feat*>& intron_ls)
 {
    unsigned e_idx=0, i_idx=0, exon_start, exon_stop, intron_start, intron_stop;
@@ -7748,7 +7771,6 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_ite
 };
 
 
-// CConstRef <CCit_sub> CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: CitSubFromPubEquiv(const list <CRef <CPub> >& pubs)
 CConstRef <CCit_sub> CSeqEntry_test_on_pub :: CitSubFromPubEquiv(const list <CRef <CPub> >& pubs)
 {
    ITERATE (list <CRef <CPub> >, it, pubs) {
@@ -7863,7 +7885,7 @@ string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_in
 };
 
 
-void CSeqEntry_test_on_pub :: GetTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc)
+void CSeqEntry_test_on_pub :: CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc)
 {
    string title = cit_sub->CanGetDescr()? cit_sub->GetDescr() : kEmptyStr;
    string authors(kEmptyStr);
@@ -7907,7 +7929,15 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
          thisInfo.test_item_list[GetName_usa()].push_back(desc);
   
       // DISC_TITLE_AUTHOR_CONFLICT;
-      GetTitleAndAuths(cit_sub, desc);
+      CheckTitleAndAuths(cit_sub, desc);
+
+
+      // DISC_CITSUBAFFIL_CONFLICT
+      string affil_str, grp_str;
+      GetGroupedAffilString(cit_sub->GetAuthors(), affil_str, grp_str);
+      thisInfo.test_item_list[GetName_aff()].push_back(grp_str + "$" + desc);
+     
+      m_has_cit = true;
    }
 
    // DISC_CHECK_AUTH_CAPS
@@ -7916,9 +7946,96 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
 };
 
 
+void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   if (c_item->item_list[0] == "no cit") {
+     c_item->item_list.clear();
+     c_item->description = "No citsubs were found!";
+     return;
+   }
+    
+   Str2Strs affil2pubs;
+   GetTestItemList(c_item->item_list, affil2pubs);
+   c_item->item_list.clear();
+   if (affil2pubs.size() == 1) {
+      if ( affil2pubs.begin()->first != "no affil" )
+            c_item->description = "All citsub affiliations match";
+      else c_item->description = "All citsub have no affiliations";
+   }
+   else {
+      vector <string> subcat_pub, no_affil_pubs;
+      ITERATE (Str2Strs, it, affil2pubs) {
+         if (it->first == "no affil") no_affil_pubs = it->second;
+         else {
+            subcat_pub = NStr::Tokenize(it->first, ",", subcat_pub);  
+            NON_CONST_ITERATE (vector <string>, jt, subcat_pub)
+               (*jt) = (*jt) + "$" + it->second[0];
+         }
+      }
+      if (!no_affil_pubs.empty()) 
+          AddSubcategories(c_item,GetName(),no_affil_pubs,"Cit-sub", "no affiliation", 
+                                                                          e_HasComment, false);
+      Str2Strs subcat2pubs, subvlu2pubs;
+      GetTestItemList(subcat_pub, subcat2pubs, "@");
+      subcat_pub.clear();
+      ITERATE (Str2Strs, it, subcat2pubs) {
+         subvlu2pubs.clear();
+         GetTestItemList(it->second, subvlu2pubs);
+         if (subvlu2pubs.size() > 1) {
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            c_sub->setting_name = GetName();
+            ITERATE (Str2Strs, jt, subvlu2pubs)
+               AddSubcategories(c_sub, GetName(), jt->second, "affiliation", 
+                                       it->first + " value '" + jt->first + "'", e_HasComment);
+            c_sub->description = "Affiliations have different values for " + it->first;
+            c_item->subcategories.push_back(c_sub);
+         } 
+      }
+      c_item->description = "Citsub affiliation conflicts found";
+   }
+};
+
+
+void CSeqEntry_test_on_pub :: GetGroupedAffilString(const CAuth_list& authors, string& affil_str, string& grp_str)
+{
+   affil_str = grp_str = kEmptyStr;
+   if (authors.CanGetAffil()) {
+      const CAffil& affil = authors.GetAffil();
+      switch (affil.Which()) {
+      case CAffil :: e_not_set: return;
+      case CAffil :: e_Str:
+          affil_str = NStr::Replace(affil.GetStr(), "\"", "'");
+          grp_str  = "no group";
+          return;
+      case CAffil :: e_Std:
+        {
+ #define ADD_AFFIL_FIELD(X, Y) \
+         if (affil.GetStd().CanGet##X()  &&  !(affil.GetStd().Get##X().empty())) { \
+             string value = NStr::Replace(affil.GetStd().Get##X(), "\"", "'"); \
+             affil_str += "," + value; \
+             grp_str += "," #Y "@" + value; \
+         }
+         ADD_AFFIL_FIELD(Div, department)
+         ADD_AFFIL_FIELD(Affil, institution)
+         ADD_AFFIL_FIELD(Street, street)
+         ADD_AFFIL_FIELD(City, city)
+         ADD_AFFIL_FIELD(Sub, state/province)
+         ADD_AFFIL_FIELD(Postal_code, postal_code)
+         ADD_AFFIL_FIELD(Country, country)
+         affil_str = affil_str.empty() ? "no affil" : affil_str.substr(1);
+         grp_str = grp_str.empty() ? "no affil" : grp_str.substr(1);
+ #undef ADD_AFFIL_FIELD
+         return;
+       }
+     }    
+   }
+};
+
+
 void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Pub_run) return;
+   m_has_cit = false;
 
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
@@ -7950,8 +8067,16 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
       // DISC_CHECK_AUTH_CAPS
       if ( HasBadAuthorName(thisInfo.submit_block->GetCit().GetAuthors()) )
                    thisInfo.test_item_list[GetName_cap()].push_back(desc);
+
+      // DISC_CITSUBAFFIL_CONFLICT
+      string affil_str, grp_str;
+      GetGroupedAffilString(thisInfo.submit_block->GetCit().GetAuthors(), affil_str, grp_str);
+      thisInfo.test_item_list[GetName_aff()].push_back(grp_str + "$" + desc);
+      m_has_cit = true;
    }
-  
+ 
+   if (!m_has_cit) 
+       thisInfo.test_item_list[GetName_aff()].push_back("no cit");
    thisTest.is_Pub_run = true;
 };
 
