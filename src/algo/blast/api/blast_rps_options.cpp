@@ -89,7 +89,7 @@ CBlastRPSOptionsHandle::SetGappedExtensionDefaults()
     SetGapTrigger(BLAST_GAP_TRIGGER_PROT);
     m_Opts->SetGapExtnAlgorithm(eDynProgScoreOnly);
     m_Opts->SetGapTracebackAlgorithm(eDynProgTbck);
-    SetCompositionBasedStats(eNoCompositionBasedStats);
+    SetCompositionBasedStats(false);
 }
 
 

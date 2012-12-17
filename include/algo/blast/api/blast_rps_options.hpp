@@ -100,14 +100,16 @@ public:
     void SetSegFilteringHicut(double hicut) { m_Opts->SetSegFilteringHicut(hicut); }
 
     /// Get composition based statistics mode
-    /// @return Composition based statistics mode
-    ECompoAdjustModes GetCompositionBasedStats(void) const
-    {return m_Opts->GetCompositionBasedStats();}
+    /// @return True if composition based statistics mode is enabled, false
+    /// otherwise
+    bool GetCompositionBasedStats(void) const
+    {return !(m_Opts->GetCompositionBasedStats() == eNoCompositionBasedStats);}
 
     /// Set composition based statistics mode
     /// @param mode Composition based statistics mode
-    void SetCompositionBasedStats(ECompoAdjustModes mode)
-    {m_Opts->SetCompositionBasedStats(mode);}
+    void SetCompositionBasedStats(bool mode)
+    {m_Opts->SetCompositionBasedStats(mode ? eCompositionBasedStats
+                                      : eNoCompositionBasedStats);}
 
     /************************ Scoring options ************************/
     /// Returns GapOpeningCost

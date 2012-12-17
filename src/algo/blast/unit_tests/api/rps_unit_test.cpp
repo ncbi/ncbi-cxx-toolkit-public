@@ -304,8 +304,7 @@ BOOST_AUTO_TEST_CASE(TestCBSFreqsNotFound)
     // set coposition based statistics to 1 (requires .freq file)
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
     (dynamic_cast<CBlastRPSOptionsHandle*>(
-              opts.GetNonNullPointer()))->SetCompositionBasedStats(
-                                                   eCompositionBasedStats);
+              opts.GetNonNullPointer()))->SetCompositionBasedStats(true);
 
     CSeq_id id("gi|129295");
     auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
