@@ -1775,8 +1775,8 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
             }
         }
     }
-    string label = qual.substr(3);
-    label = NStr::ToUpper(qual.substr(0, 1)) + qual.substr(1);
+    string label (1, ((unsigned char) qual[0]));
+    label += qual.substr(1);
 
     sfp->SetExt().SetType().SetStr("GeneOntology");
     CUser_field& field = sfp->SetExt().SetField(label);
@@ -2312,8 +2312,7 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     const std::string & strQualifierName,
     const std::string & strQualifierValue )
 {
-    CLineError err( eProblem, eSeverity, strSeqId, uLine, 
-        strFeatureName, strQualifierName, strQualifierValue );
+    CObjReaderLineException err (eSeverity, uLine, "", eProblem, strSeqId, strFeatureName, strQualifierName, strQualifierValue);
     if (container == 0) {
         throw (err);
     }
