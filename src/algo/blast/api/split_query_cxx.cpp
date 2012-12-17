@@ -60,6 +60,8 @@ CQuerySplitter::CQuerySplitter(CRef<IQueryFactory> query_factory,
     m_TotalQueryLength = m_LocalQueryData->GetSumOfSequenceLengths();
     m_NumChunks = SplitQuery_CalculateNumChunks(m_Options->GetProgramType(), 
         &m_ChunkSize, m_TotalQueryLength, m_LocalQueryData->GetNumQueries());
+    /* No split for ungapped mode JIRA SB-1082 */
+    if (!options->GetGappedMode()) m_NumChunks = 1;
     x_ExtractCScopesAndMasks();
 }
 
