@@ -1096,6 +1096,19 @@ public:
 };
 
 EMPTY_TEMPLATE
+void CStringFunctions<CStringUTF8>::Read(CObjectIStream& in,
+                    TTypeInfo , TObjectPtr objectPtr)
+    {
+        in.ReadString(Get(objectPtr), eStringTypeUTF8);
+    }
+EMPTY_TEMPLATE
+void CStringFunctions<CStringUTF8>::Write(CObjectOStream& out,
+                    TTypeInfo , TConstObjectPtr objectPtr)
+    {
+        out.WriteString(Get(objectPtr), eStringTypeUTF8);
+    }
+
+EMPTY_TEMPLATE
 void CStringFunctions<CStringUTF8>::Copy(CObjectStreamCopier& copier,
                                          TTypeInfo )
 {
@@ -1108,6 +1121,33 @@ void CStringFunctions<CStringUTF8>::Skip(CObjectIStream& in, TTypeInfo )
     in.SkipString(eStringTypeUTF8);
 }
 
+EMPTY_TEMPLATE
+void CStringFunctions<utf8_string_type>::Read(CObjectIStream& in,
+                    TTypeInfo , TObjectPtr objectPtr)
+    {
+        in.ReadString( CTypeConverter<CStringUTF8>::Get(objectPtr), eStringTypeUTF8);
+    }
+EMPTY_TEMPLATE
+void CStringFunctions<utf8_string_type>::Write(CObjectOStream& out,
+                    TTypeInfo , TConstObjectPtr objectPtr)
+    {
+        out.WriteString( CTypeConverter<CStringUTF8>::Get(objectPtr), eStringTypeUTF8);
+    }
+
+EMPTY_TEMPLATE
+void CStringFunctions<utf8_string_type>::Copy(CObjectStreamCopier& copier,
+                                         TTypeInfo )
+{
+    copier.CopyString(eStringTypeUTF8);
+}
+
+EMPTY_TEMPLATE
+void CStringFunctions<utf8_string_type>::Skip(CObjectIStream& in, TTypeInfo )
+{
+    in.SkipString(eStringTypeUTF8);
+}
+
+
 CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(EType type)
     : CParent(sizeof(string), ePrimitiveValueString), m_Type(type)
 {
@@ -1117,10 +1157,10 @@ CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(EType type)
                         &CStringFunctions<CStringUTF8>::SetDefault,
                         &CStringFunctions<CStringUTF8>::Equals,
                         &CStringFunctions<CStringUTF8>::Assign);
-        SetIOFunctions(&CStringFunctions<CStringUTF8>::Read,
-                       &CStringFunctions<CStringUTF8>::Write,
-                       &CStringFunctions<CStringUTF8>::Copy,
-                       &CStringFunctions<CStringUTF8>::Skip);
+        SetIOFunctions(&CStringFunctions<utf8_string_type>::Read,
+                       &CStringFunctions<utf8_string_type>::Write,
+                       &CStringFunctions<utf8_string_type>::Copy,
+                       &CStringFunctions<utf8_string_type>::Skip);
     } else {
         SetMemFunctions(&CStringFunctions<string>::Create,
                         &CStringFunctions<string>::IsDefault,
@@ -1180,6 +1220,19 @@ CTypeInfo* CStdTypeInfo<ncbi::CStringUTF8>::CreateTypeInfo(void)
 {
     return new CPrimitiveTypeInfoString(CPrimitiveTypeInfoString::eStringTypeUTF8);
 }
+
+
+TTypeInfo CStdTypeInfo<ncbi::utf8_string_type>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<ncbi::utf8_string_type>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoString(CPrimitiveTypeInfoString::eStringTypeUTF8);
+}
+
 
 class CStringStoreFunctions : public CStringFunctions<string>
 {
