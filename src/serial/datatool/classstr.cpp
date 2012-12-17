@@ -960,14 +960,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             if (kind == eKindString) {
                                 if (string_utf8) {
                                     inlineMethods <<
-                                        i->valueName << ".Assign(ms_UnassignedStr,NCBI_NS_NCBI::eEncoding_UTF8);\n";
+                                        i->valueName << " = UnassignedStringUTF8();\n";
                                 } else {
                                     inlineMethods <<
-                                        i->valueName << " = ms_UnassignedStr;\n";
+                                        i->valueName << " = UnassignedString();\n";
                                 }
                             } else {
                                 inlineMethods <<
-                                    "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
+                                    "memset(&"<<i->valueName<<",UnassignedByte(),sizeof("<<i->valueName<<"));\n";
                             }
                             inlineMethods <<
                                 "    }\n"
@@ -1034,14 +1034,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         if (kind == eKindString) {
                             if (string_utf8) {
                                 inlineMethods <<
-                                    i->valueName << ".Assign(ms_UnassignedStr,NCBI_NS_NCBI::eEncoding_UTF8);\n";
+                                    i->valueName << " = UnassignedStringUTF8();\n";
                             } else {
                                 inlineMethods <<
-                                    i->valueName << " = ms_UnassignedStr;\n";
+                                    i->valueName << " = UnassignedString();\n";
                             }
                         } else {
                             inlineMethods <<
-                                "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
+                                "memset(&"<<i->valueName<<",UnassignedByte(),sizeof("<<i->valueName<<"));\n";
                         }
                         inlineMethods <<
                             "    }\n"

@@ -171,6 +171,16 @@ public:
     static const char* ms_UnassignedStr;
     static const char  ms_UnassignedByte;
 
+    static string UnassignedString(void) {
+        return ms_UnassignedStr;
+    }
+    static CStringUTF8 UnassignedStringUTF8(void) {
+        return CUtf8::AsUTF8(UnassignedString(),eEncoding_UTF8);
+    }
+    static char UnassignedByte(void) {
+        return ms_UnassignedByte;
+    }
+
     /// Check if object data type has namespace name
     bool HasNamespaceName(void) const;
     /// Get namespace name

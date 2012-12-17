@@ -66,8 +66,16 @@ string CStdTypeStrings::GetPrefixedCType(const CNamespace& ns,
     return GetCType(ns);
 }
 
+bool CStdTypeStrings::HaveSpecialRef(void) const
+{
+    return NStr::EndsWith(m_CType, "CStringUTF8");
+}
+
 string CStdTypeStrings::GetRef(const CNamespace& ns) const
 {
+    if (HaveSpecialRef()) {
+        return "CStringUTF8, ()";
+    }
     return "STD, ("+GetCType(ns)+')';
 }
 

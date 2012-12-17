@@ -106,6 +106,10 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_null() \
     &NCBI_NS_NCBI::CStdTypeInfo<bool>::GetTypeInfoNullBool
 
+#define SERIAL_TYPE_CStringUTF8() NCBI_NS_NCBI::CStringUTF8
+#define SERIAL_REF_CStringUTF8() \
+    &NCBI_NS_NCBI::CStdTypeInfo<NCBI_NS_NCBI::CStringUTF8>::GetTypeInfo
+
 #define SERIAL_TYPE_ENUM(CType, EnumName) CType
 #define SERIAL_REF_ENUM(CType, EnumName) \
     NCBI_NS_NCBI::CreateEnumeratedTypeInfo(CType(0), ENUM_METHOD_NAME(EnumName)())

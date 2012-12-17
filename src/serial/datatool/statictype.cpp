@@ -473,8 +473,8 @@ bool CStringDataType::CheckValue(const CDataValue& value) const
 TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
 {
     if (m_Type == eStringTypeUTF8) {
-        return new (CStringUTF8*)(new CStringUTF8(
-            dynamic_cast<const CStringDataValue&>(value).GetValue(), eEncoding_UTF8));
+        return new (CStringUTF8*)(new CStringUTF8( CUtf8::AsUTF8(
+            dynamic_cast<const CStringDataValue&>(value).GetValue(), eEncoding_UTF8)));
     }
     return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
 }
