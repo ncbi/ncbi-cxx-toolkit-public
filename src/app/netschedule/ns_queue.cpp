@@ -120,13 +120,13 @@ CQueue::CQueue(CRequestExecutor&     executor,
 CQueue::~CQueue()
 {
     delete m_RunTimeLine;
-    Detach();
+    x_Detach();
 }
 
 
 void CQueue::Attach(SQueueDbBlock* block)
 {
-    Detach();
+    x_Detach();
     m_QueueDbBlock = block;
     m_AffinityRegistry.Attach(&m_QueueDbBlock->aff_dict_db);
     m_GroupRegistry.Attach(&m_QueueDbBlock->group_dict_db);
@@ -166,7 +166,7 @@ private:
 };
 
 
-void CQueue::Detach()
+void CQueue::x_Detach(void)
 {
     m_AffinityRegistry.Detach();
     if (!m_QueueDbBlock)

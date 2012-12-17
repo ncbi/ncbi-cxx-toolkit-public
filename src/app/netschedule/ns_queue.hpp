@@ -107,7 +107,6 @@ public:
     ~CQueue();
 
     void Attach(SQueueDbBlock* block);
-    void Detach();
     int  GetPos() const { return m_QueueDbBlock->pos; }
 
     void x_ReadFieldInfo(void);
@@ -352,6 +351,8 @@ public:
     { m_TruncateAtDetach = true; }
 
 private:
+    void x_Detach(void);
+
     friend class CNSTransaction;
     CBDB_Env &  GetEnv() { return *m_QueueDbBlock->job_db.GetEnv(); }
 
