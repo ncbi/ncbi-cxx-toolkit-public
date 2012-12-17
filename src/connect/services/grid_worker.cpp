@@ -1056,6 +1056,22 @@ int CGridWorkerNode::Run()
         is_daemon = false;
     }
 
+    // Now that most of parameters have been checked, create the
+    // "procinfo" file.
+    FILE* procinfo_file;
+    string procinfo_file_name;
+
+    if (!args["procinfofile"].HasValue())
+        procinfo_file = NULL;
+    else {
+        procinfo_file_name = args["procinfofile"].AsString();
+
+        if ((procinfo_file = fopen(procinfo_file_name.c_str(), "wt")) == NULL) {
+            perror(procinfo_file_name.c_str());
+            return 2;
+        }
+    }
+
 #if defined(NCBI_OS_UNIX)
     if (is_daemon) {
         LOG_POST_X(53, "Entering UNIX daemon mode...");
@@ -1076,18 +1092,18 @@ int CGridWorkerNode::Run()
     CRef<CGridControlThread> control_thread(
         new CGridControlThread(this, start_port, end_port));
 
-    {{
-        string control_port_str(
-                NStr::NumericToString(control_thread->GetControlPort()));
-        LOG_POST_X(60, "Control port: " << control_port_str);
-        m_NetScheduleAPI.SetAuthParam("control_port", control_port_str);
-    }}
+    string control_port_str(
+            NStr::NumericToString(control_thread->GetControlPort()));
+    LOG_POST_X(60, "Control port: " << control_port_str);
+    m_NetScheduleAPI.SetAuthParam("control_port", control_port_str);
     m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
 
     try {
         control_thread->Prepare();
     }
     catch (CServer_Exception& e) {
+        fclose(procinfo_file);
+        unlink(procinfo_file_name.c_str());
         if (e.GetErrCode() != CServer_Exception::eCouldntListen)
             throw;
         NCBI_THROW_FMT(CGridWorkerNodeException, ePortBusy,
@@ -1096,6 +1112,13 @@ int CGridWorkerNode::Run()
             control_thread->GetControlPort() << ". Another process "
             "(probably another instance of this worker node) is occupying "
             "the port(s).");
+    }
+
+    if (procinfo_file != NULL) {
+        fprintf(procinfo_file, "pid: %lu\nport: %s\n",
+                (unsigned long) CDiagContext::GetPID(),
+                control_port_str.c_str());
+        fclose(procinfo_file);
     }
 
     if (m_NetScheduleAPI->m_ClientNode.empty()) {

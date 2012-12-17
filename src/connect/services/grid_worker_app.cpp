@@ -125,15 +125,17 @@ void CGridWorkerApp::Init(void)
 
 void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
-    arg_desc->AddOptionalKey("control_port",
-                             "control_port",
-                             "A TCP port number",
-                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("control_port", "control_port",
+            "A TCP port number for the worker node to listen on.",
+            CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey("logfile",
-                             "file_name",
-                             "File to which the program log should be redirected",
-                             CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("logfile", "file_name",
+            "File to which the program log should be redirected.",
+            CArgDescriptions::eOutputFile);
+
+    arg_desc->AddOptionalKey("procinfofile", "file_name",
+            "File to save the process ID and the control port number to.",
+            CArgDescriptions::eOutputFile);
 
     CNcbiApplication::SetupArgDescriptions(arg_desc);
 }
