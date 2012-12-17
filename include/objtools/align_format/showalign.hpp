@@ -431,6 +431,13 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     static CRef < objects::CSeq_align_set >
     PrepareBlastUngappedSeqalignEx(const objects::CSeq_align_set & alnset);
 
+    /// same as PrepareBlastUngappedSeqalign2, but sets aggregate scores.
+    ///@param alnset: input alnset
+    ///@return processed alnset
+    ///
+    static CRef < objects::CSeq_align_set >
+    PrepareBlastUngappedSeqalignEx2(objects::CSeq_align_set & alnset);
+
     void SetAlignTemplates(SAlignTemplates *alignTemplates) {m_AlignTemplates = alignTemplates;}    
     
     
