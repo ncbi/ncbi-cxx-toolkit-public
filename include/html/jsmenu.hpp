@@ -32,7 +32,11 @@
 
 /// @file jsmenu.hpp 
 /// JavaScript popup menu support.
-
+///
+/// @deprecated
+/// The JavaScript PopupMenu is no longer supported. The new component that took
+/// its place is part of the JIG library, ncbilinksmenu. Please see upgrade guide
+/// and documentation links at http://jira/browse/JSL-1128.
 
 #include <corelib/ncbistd.hpp>
 #include <html/node.hpp>
@@ -55,7 +59,7 @@ BEGIN_NCBI_SCOPE
 /// will be ignored.
 ///
 /// NOTE: See documentation for detail attribute description.
-
+/// @deprecated
 enum EHTML_PM_Attribute {
     //
     //  Old menu attributes
@@ -166,7 +170,12 @@ enum EHTML_PM_Attribute {
 /// NOTE: We must add menues to a BODY only, otherwise menu not will be work.
 /// NOTE: Menues of eKurdinSide type must be added (using AppendChild) only
 ///       to a HEAD node. And menu of this type must be only one on the page!
-
+///
+/// @deprecated
+/// The JavaScript PopupMenu is no longer supported. The new component that took
+/// its place is part of the JIG library, ncbilinksmenu. Please see upgrade guide
+/// and documentation links at http://jira/browse/JSL-1128.
+NCBI_DEPRECATED
 class NCBI_XHTML_EXPORT CHTMLPopupMenu : public CNCBINode
 {
     typedef CNCBINode CParent;

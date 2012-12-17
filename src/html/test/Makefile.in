@@ -3,7 +3,7 @@
 # Meta-makefile ("XHTML" tests)
 #################################
 
-APP_PROJ = test_html test_jsmenu
+APP_PROJ = test_html
 PROJ_TAG = test
 
 srcdir = @srcdir@
