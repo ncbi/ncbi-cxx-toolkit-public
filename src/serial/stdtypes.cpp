@@ -1085,6 +1085,16 @@ public:
         {
             CParent::Get(objectPtr).erase();
         }
+    static void Read(CObjectIStream& in,
+                        TTypeInfo , TObjectPtr objectPtr)
+        {
+            in.ReadStd(CParent::Get(objectPtr));
+        }
+    static void Write(CObjectOStream& out,
+                    TTypeInfo , TConstObjectPtr objectPtr)
+        {
+            out.WriteStd(CParent::Get(objectPtr));
+        }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
             copier.CopyString();
