@@ -49,6 +49,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CFeature_table_reader_imp;
 class IErrorContainer;
 class ITableFilter;
+class CSeq_entry;
 
 // public interface for (single instance) feature table reader
 

@@ -281,6 +281,9 @@ private:
     bool x_AddGBQualToFeature    (CRef<CSeq_feat> sfp,
                                   const string& qual, const string& val);
 
+    bool x_AddGeneOntologyToFeature (CRef<CSeq_feat> sfp, 
+                                     const string& qual, const string& val);
+
     bool x_StringIsJustQuotes (const string& str);
 
     int x_ParseTrnaString (const string& val);
@@ -1728,6 +1731,92 @@ bool CFeature_table_reader_imp::x_AddGBQualToFeature (
 }
 
 
+static const string k_GoQuals[] = { "go_process", "go_component", "go_function" };
+static const int k_NumGoQuals = sizeof (k_GoQuals) / sizeof (string);
+
+bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
+    CRef<CSeq_feat> sfp,
+    const string& qual,
+    const string& val
+)
+
+{
+    if (qual.empty ()) return false;
+
+    int j = 0;
+    while (j < k_NumGoQuals && !NStr::EqualNocase(k_GoQuals[j], qual)) {
+        j++;
+    }
+    if (j == k_NumGoQuals) {
+        return false;
+    }
+
+    vector<string> fields;
+    NStr::Tokenize(val, "|", fields);
+    while (fields.size() < 4) {
+        fields.push_back("");
+    }
+    if (NStr::StartsWith(fields[1], "GO:")) {
+        fields[1] = fields[1].substr(3);
+    }
+    if (NStr::StartsWith(fields[2], "GO_REF:")) {
+        fields[2] = fields[2].substr(7);
+    }
+
+    int pmid = 0;
+    
+    if (!NStr::IsBlank(fields[2])) {
+        if (!NStr::StartsWith(fields[2], "0")) {
+            try {
+                pmid = NStr::StringToLong(fields[2]);
+                fields[2] = "";
+            } catch( ... ) {
+                pmid = 0;
+            }
+        }
+    }
+    string label = qual.substr(3);
+    label = NStr::ToUpper(qual.substr(0, 1)) + qual.substr(1);
+
+    sfp->SetExt().SetType().SetStr("GeneOntology");
+    CUser_field& field = sfp->SetExt().SetField(label);
+    CRef<CUser_field> text_field (new CUser_field());
+    text_field->SetLabel().SetStr("text_string");
+    text_field->SetData().SetStr(fields[0]);
+    field.SetData().SetFields().push_back(text_field);
+  
+    if (!NStr::IsBlank(fields[1])) {
+        CRef<CUser_field> goid (new CUser_field());
+        goid->SetLabel().SetStr("go id");
+        goid->SetData().SetStr(fields[1]);
+        field.SetData().SetFields().push_back(goid);
+    }
+
+    if (pmid > 0) {
+        CRef<CUser_field> pubmed_id (new CUser_field());
+        pubmed_id->SetLabel().SetStr("pubmed id");
+        pubmed_id->SetData().SetInt(pmid);
+        field.SetData().SetFields().push_back(pubmed_id);
+    }
+
+    if (!NStr::IsBlank(fields[2])) {
+        CRef<CUser_field> goref (new CUser_field());
+        goref->SetLabel().SetStr("go ref");
+        goref->SetData().SetStr(fields[2]);
+        field.SetData().SetFields().push_back(goref);
+    }
+
+    if (!NStr::IsBlank(fields[3])) {
+        CRef<CUser_field> evidence (new CUser_field());
+        evidence->SetLabel().SetStr("evidence");
+        evidence->SetData().SetStr(fields[3]);
+        field.SetData().SetFields().push_back(evidence);
+    }
+
+    return true;
+}
+
+
 bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     CRef<CSeq_feat> sfp,
     const string &feat_name,
@@ -1770,8 +1859,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
         }
 
     } else {
-
-        TQualMap::const_iterator q_iter = sm_QualKeys.find (qual.c_str ());
+        string lqual = qual;
+        lqual = NStr::ToLower(lqual);
+        TQualMap::const_iterator q_iter = sm_QualKeys.find (lqual.c_str ());
         if (q_iter != sm_QualKeys.end ()) {
             EQual qtype = q_iter->second;
             switch (typ) {
@@ -1996,17 +2086,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_go_component:
                 case eQual_go_function:
                 case eQual_go_process:
-                    {
-                        /*
-                         CSeq_feat::TExt& ext = sfp->SetExt ();
-                         CObject_id& obj = ext.SetType ();
-                         if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
-                             obj.SetStr ("GeneOntology");
-                         }
-                         (need more implementation here)
-                         */
-                         return true;
+                    if (typ == CSeqFeatData::e_Gene || typ == CSeqFeatData::e_Cdregion || typ == CSeqFeatData::e_Rna) {
+                        return x_AddGeneOntologyToFeature(sfp, qual, val);
                     }
+                    return false;
                 default:
                     break;
             }

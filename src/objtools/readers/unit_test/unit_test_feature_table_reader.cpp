@@ -52,8 +52,11 @@
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/readers/readfeat.hpp>
@@ -512,4 +515,625 @@ BOOST_AUTO_TEST_CASE(Test_CPTableWithncRNAs)
     BOOST_REQUIRE(rna.GetExt().GetGen().IsSetClass());
     BOOST_CHECK_EQUAL(rna.GetExt().GetGen().GetProduct(), "Bacterial signal recognition particle RNA");
     BOOST_CHECK_EQUAL(rna.GetExt().GetGen().GetClass(), "SRP_RNA");
+}
+
+
+static const char * sc_Table6 = "\
+>Feature ref|NC_000008.9|NC_000008\n\
+<1\t>13208\tgene\n\
+\t\t\tgene\tFBXO25\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+\t\t\tdb_xref\tHGNC:13596\n\
+\t\t\tdb_xref\tMIM:609098\n\
+<4920\t5023\tmRNA\n\
+<6465\t6514\n\
+<9194\t9286\n\
+\t\t\tproduct\tF-box protein 25\n\
+\t\t\ttranscript_id\tNM_183421.1\n\
+\t\t\texception\tunclassified transcription discrepancy\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+\t\t\tdb_xref\tMIM:609098\n\
+<4920\t5023\tmRNA\n\
+<6465\t6514\n\
+<9194\t9286\n\
+\t\t\tproduct\tF-box protein 25\n\
+\t\t\ttranscript_id\tNM_183420.1\n\
+\t\t\texception\tunclassified transcription discrepancy\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+\t\t\tdb_xref\tMIM:609098\n\
+<4920\t5023\tmRNA\n\
+<9194\t9286\n\
+\t\t\tproduct\tF-box protein 25\n\
+\t\t\ttranscript_id\tNM_012173.3\n\
+\t\t\texception\tunclassified transcription discrepancy\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+\t\t\tdb_xref\tMIM:609098\n\
+<4920\t5023\tCDS\n\
+<6465\t6514\n\
+<9194\t9286\n\
+\t\t\tproduct\tF-box only protein 25 isoform 1\n\
+\t\t\tproduct\tF-box protein Fbx25\n\
+\t\t\tproduct\tF-box only protein 25\n\
+\t\t\tprotein_id\tNP_904357.1\n\
+\t\t\tnote\tisoform 1 is encoded by transcript variant 1\n\
+\t\t\tGO_function\tubiquitin-protein ligase activity|0004842|10531035|NAS\n\
+\t\t\tGO_process\tprotein ubiquitination|0016567|10531035|NAS\n\
+\t\t\tGO_component\tubiquitin ligase complex|0000151|10531035|NAS\n\
+\t\t\tdb_xref\tCCDS:CCDS5953.1\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+<4920\t5023\tCDS\n\
+<6465\t6514\n\
+<9194\t9286\n\
+\t\t\tproduct\tF-box only protein 25 isoform 2\n\
+\t\t\tproduct\tF-box protein Fbx25\n\
+\t\t\tproduct\tF-box only protein 25\n\
+\t\t\tprotein_id\tNP_904356.1\n\
+\t\t\tnote\tisoform 2 is encoded by transcript variant 2\n\
+\t\t\tGO_function\tubiquitin-protein ligase activity|0004842|10531035|NAS\n\
+\t\t\tGO_process\tprotein ubiquitination|0016567|10531035|NAS\n\
+\t\t\tGO_component\tubiquitin ligase complex|0000151|10531035|NAS\n\
+\t\t\tdb_xref\tCCDS:CCDS5952.1\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+1\t13208\tvariation\n\
+150\t150\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:55727401\n\
+150\t150\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:10793768\n\
+257\t257\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:12138618\n\
+266\t266\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:2427889\n\
+269\t269\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:7831204\n\
+299\t299\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:62483103\n\
+302\t302\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2427890\n\
+325\t325\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:2977629\n\
+408\t408\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:62483104\n\
+414\t414\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:2905047\n\
+438\t438\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:11786745\n\
+480\t480\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3115862\n\
+496\t496\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:3094316\n\
+501\t501\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:12547344\n\
+503\t504\tvariation\n\
+\t\t\treplace\tGAAAATAGGTTTCACATCTTTTTTTTAACTTATATAAAATTGACTGGACTTTCTCTTCTGTGTGTTGTGTTAGATATTTAGGAAGGAAT\n\
+\t\t\tdb_xref\tdbSNP:71202620\n\
+504\t504\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:12550258\n\
+504\t504\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3115863\n\
+537\t537\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:73525986\n\
+561\t561\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:11996480\n\
+594\t594\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:11985199\n\
+620\t620\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:11997205\n\
+637\t637\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3115864\n\
+733\t733\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:61688116\n\
+735\t735\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:57970854\n\
+786\t786\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:12184338\n\
+804\t804\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:55678681\n\
+810\t810\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:12184332\n\
+849\t849\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:12550792\n\
+852\t852\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:11783529\n\
+901\t901\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:58688196\n\
+901\t901\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:56426218\n\
+929\t929\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:11136669\n\
+976\t976\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:55837473\n\
+989\t989\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:7834538\n\
+1037\t1037\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:7844307\n\
+1135\t1135\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:56115318\n\
+1203\t1203\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:10089646\n\
+1226\t1226\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:7823777\n\
+1228\t1228\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:56312035\n\
+1425\t1425\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:7813883\n\
+1511\t1511\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:73525988\n\
+1569\t1569\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:11783748\n\
+1667\t1667\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:35389027\n\
+1721\t1721\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:4495405\n\
+1988\t1988\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:73669377\n\
+2471\t2471\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2954702\n\
+2512\t2512\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:7010178\n\
+2941\t2942\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tA\n\
+\t\t\tdb_xref\tdbSNP:34708162\n\
+3014\t3014\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:73669378\n\
+3233\t3233\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tA\n\
+\t\t\tdb_xref\tdbSNP:34374462\n\
+3630\t3631\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:36025637\n\
+4035\t4035\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:35310547\n\
+4349\t4349\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:17812912\n\
+4527\t4527\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:73669379\n\
+4790\t4790\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:9644342\n\
+4845\t4845\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:73525989\n\
+4923\t4923\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:28438773\n\
+4937\t5023\tCDS\n\
+9194\t9286\n\
+\t\t\tproduct\tF-box only protein 25 isoform 3\n\
+\t\t\tproduct\tF-box protein Fbx25\n\
+\t\t\tproduct\tF-box only protein 25\n\
+\t\t\tprotein_id\tNP_036305.2\n\
+\t\t\tnote\tisoform 3 is encoded by transcript variant 3\n\
+\t\t\tGO_function\tubiquitin-protein ligase activity|0004842|10531035|NAS\n\
+\t\t\tGO_process\tprotein ubiquitination|0016567|10531035|NAS\n\
+\t\t\tGO_component\tubiquitin ligase complex|0000151|10531035|NAS\n\
+\t\t\tdb_xref\tCCDS:CCDS5954.1\n\
+\t\t\tdb_xref\tGeneID:26260\n\
+5776\t5776\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:6981190\n\
+5977\t5977\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:56259539\n\
+6016\t6016\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:61012540\n\
+6130\t6130\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:2722516\n\
+6235\t6235\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:2722517\n\
+6290\t6290\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:9644272\n\
+6536\t6536\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:6998464\n\
+6842\t6842\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:73173380\n\
+7314\t7314\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2798496\n\
+7316\t7316\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:2488924\n\
+7421\t7421\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:4973692\n\
+7424\t7424\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:4973650\n\
+7431\t7431\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:2722519\n\
+7447\t7447\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2488925\n\
+7493\t7493\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:12550478\n\
+7545\t7545\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:12680761\n\
+7900\t7900\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:17064969\n\
+8491\t8491\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514143\n\
+8497\t8497\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514144\n\
+8559\t8559\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514145\n\
+8615\t8615\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514146\n\
+8637\t8637\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514147\n\
+8758\t8758\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:62483130\n\
+8785\t8785\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514148\n\
+8815\t8815\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514149\n\
+8819\t8819\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:13267767\n\
+8864\t8864\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514150\n\
+8924\t8924\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514151\n\
+9036\t9036\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514152\n\
+9067\t9067\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514153\n\
+9174\t9174\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:71219302\n\
+9187\t9187\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514154\n\
+9191\t9191\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:56016669\n\
+9191\t9191\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:17665428\n\
+9365\t9365\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514155\n\
+9405\t9405\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:71514156\n\
+9407\t9407\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:3965448\n\
+9415\t9415\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:71514157\n\
+9415\t9415\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3873815\n\
+9512\t9512\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tC\n\
+\t\t\tdb_xref\tdbSNP:7838909\n\
+10524\t10524\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3936437\n\
+10667\t10667\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:3931132\n\
+10711\t10711\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:3936436\n\
+10780\t10780\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2034353\n\
+10783\t10783\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3936435\n\
+10792\t10792\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:1992879\n\
+11159\t11159\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:61708689\n\
+11319\t11320\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tTT\n\
+\t\t\tdb_xref\tdbSNP:34339077\n\
+11332\t11332\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:11990180\n\
+11333\t11334\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tTT\n\
+\t\t\tdb_xref\tdbSNP:56674698\n\
+11343\t11343\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2335278\n\
+11406\t11406\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2878381\n\
+11443\t11443\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:2335279\n\
+11455\t11455\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2335280\n\
+11491\t11491\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3965449\n\
+11501\t11501\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:3965450\n\
+11537\t11537\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:58291483\n\
+11653\t11653\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:35051996\n\
+11765\t11765\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:9644275\n\
+11906\t11906\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:9644276\n\
+12198\t12198\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:58937369\n\
+12492\t12492\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:73173382\n\
+12569\t12569\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:73173383\n\
+12684\t12684\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:12546248\n\
+12744\t12744\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:59983968\n\
+12864\t12864\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:4045703\n\
+12888\t12888\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:3857917\n\
+12982\t12983\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:35231189\n\
+13029\t13029\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:880926\n\
+13041\t13041\tvariation\n\
+\t\t\treplace\tA\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2335281\n\
+13057\t13058\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tTTA\n\
+\t\t\tdb_xref\tdbSNP:4045704\n\
+13088\t13088\tvariation\n\
+\t\t\treplace\tC\n\
+\t\t\treplace\tG\n\
+\t\t\tdb_xref\tdbSNP:2003213\n\
+13208\t13208\tvariation\n\
+\t\t\treplace\tG\n\
+\t\t\treplace\tT\n\
+\t\t\tdb_xref\tdbSNP:7833133\n\
+\n\
+\n\
+";
+
+
+///
+/// Test a simple table
+///
+BOOST_AUTO_TEST_CASE(Test_TableWithVariationsAndGoTerms)
+{
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table6); 
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(ftable.size(), 138);
+
+    int num_variations = 0;
+    ITERATE(CSeq_annot::TData::TFtable, feat, ftable) {
+        if ((*feat)->GetData().IsImp()) {
+            if (NStr::Equal((*feat)->GetData().GetImp().GetKey(), "variation")) {
+                num_variations++;
+            }
+        } else if ((*feat)->GetData().IsCdregion()) {
+            BOOST_REQUIRE((*feat)->IsSetExt());
+            BOOST_CHECK_EQUAL((*feat)->GetExt().GetType().GetStr(), "GeneOntology");
+            ITERATE(CUser_object::TData, it, (*feat)->GetExt().GetData()) {
+                BOOST_REQUIRE ((*it)->GetData().IsFields());
+                BOOST_CHECK_EQUAL((*it)->GetData().GetFields().size(), 4);
+            }
+        }
+    }
+    BOOST_CHECK_EQUAL(num_variations, 131);
 }
