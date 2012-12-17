@@ -3207,6 +3207,85 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalignEx(const CSeq_align_set& alnset)
     return alnSetRef;
 }
 
+// this version will set aggregate scores 
+CRef<CSeq_align_set> 
+CDisplaySeqalign::PrepareBlastUngappedSeqalignEx2(CSeq_align_set& alnset) 
+{
+    CRef<CSeq_align_set> alnSetRef(new CSeq_align_set);
+
+    NON_CONST_ITERATE(CSeq_align_set::Tdata, iter, alnset.Set()){
+        bool first_align = true;
+        CSeq_align::TSegs& seg = (*iter)->SetSegs();
+        if(seg.Which() == CSeq_align::C_Segs::e_Std){
+            ITERATE (CSeq_align::C_Segs::TStd, iterStdseg, seg.GetStd()){
+                CRef<CSeq_align> aln(new CSeq_align);
+                if((*iterStdseg)->IsSetScores()){
+                    aln->SetScore() = (*iterStdseg)->GetScores();
+                    if (first_align) {
+                        // add aggegate scores to first seg, which becomes first alignment for subject
+                        first_align = false;
+                        std::vector< CRef< CScore > >& scores_in = (*iter)->SetScore();
+                        NON_CONST_ITERATE (std::vector< CRef< CScore > >, it_in, scores_in){
+                            if ((*it_in)->IsSetId()) {
+                                CObject_id& score_id = (*it_in)->SetId();
+                                bool found = false;
+                                std::vector< CRef< CScore > >& scores_out = aln->SetScore();
+                                ITERATE (std::vector< CRef< CScore > >, it_out, scores_out){
+                                    if ((*it_out)->IsSetId()) {
+                                        if (score_id.Match ((*it_out)->GetId())) {
+                                            found = true;
+                                        }
+                                    }
+                                }
+                                if (!found) {
+                                    scores_out.push_back (*it_in);
+                                }
+                            }
+                        }
+                    }
+                }
+                aln->SetSegs().SetStd().push_back(*iterStdseg);
+                alnSetRef->Set().push_back(aln);
+            }
+        } else if(seg.Which() == CSeq_align::C_Segs::e_Dendiag){
+            ITERATE (CSeq_align::C_Segs::TDendiag, iterDendiag, seg.GetDendiag()){
+                CRef<CSeq_align> aln(new CSeq_align);
+                if((*iterDendiag)->IsSetScores()){
+                    aln->SetScore() = (*iterDendiag)->GetScores();
+                    if (first_align) {
+                        first_align = false;
+                        std::vector< CRef< CScore > >& scores_in = (*iter)->SetScore();
+                        NON_CONST_ITERATE (std::vector< CRef< CScore > >, it_in, scores_in){
+                            if ((*it_in)->IsSetId()) {
+                                CObject_id& score_id = (*it_in)->SetId();
+                                bool found = false;
+                                std::vector< CRef< CScore > >& scores_out = aln->SetScore();
+                                ITERATE (std::vector< CRef< CScore > >, it_out, scores_out){
+                                    if ((*it_out)->IsSetId()) {
+                                        if (score_id.Match ((*it_out)->GetId())) {
+                                            found = true;
+                                        }
+                                    }
+                                }
+                                if (!found) {
+                                    scores_out.push_back (*it_in);
+                                }
+                            }
+                        }
+                    }
+                }
+                aln->SetSegs().SetDendiag().push_back(*iterDendiag);
+                alnSetRef->Set().push_back(aln);
+            }
+        } else { //Denseg, doing nothing.
+            
+            alnSetRef->Set().push_back(*iter);
+        }
+    }
+    
+    return alnSetRef;
+}
+
 
 bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 {
