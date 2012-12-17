@@ -575,6 +575,9 @@ void CDiagCompileInfo::SetFunction(const string& func)
 {
     m_Parsed = false;
     m_StrCurrFunctName = func;
+    if (m_StrCurrFunctName.find(')') == NPOS) {
+        m_StrCurrFunctName += "()";
+    }
     m_CurrFunctName = m_StrCurrFunctName.c_str();
     m_FunctName.clear();
     if ( !m_ClassSet ) {
