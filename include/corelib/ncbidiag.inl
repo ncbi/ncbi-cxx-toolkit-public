@@ -214,31 +214,31 @@ extern CDiagBuffer& GetDiagBuffer(void);
 ///////////////////////////////////////////////////////
 //  CDiagCompileInfo
 
-inline const char* CDiagCompileInfo::GetFile (void) const 
-{ 
-    return m_File; 
+inline const char* CDiagCompileInfo::GetFile (void) const
+{
+    return m_File;
 }
 
-inline const char* CDiagCompileInfo::GetModule(void) const 
-{ 
-    return m_Module; 
+inline const char* CDiagCompileInfo::GetModule(void) const
+{
+    return m_Module;
 }
 
-inline int CDiagCompileInfo::GetLine(void) const 
-{ 
-    return m_Line;                   
+inline int CDiagCompileInfo::GetLine(void) const
+{
+    return m_Line;
 }
 
-inline const string& CDiagCompileInfo::GetClass (void) const 
-{ 
-    if (!m_Parsed) {
+inline const string& CDiagCompileInfo::GetClass(void) const
+{
+    if (!m_ClassSet  &&  !m_Parsed) {
         ParseCurrFunctName();
     }
     return m_ClassName;
 }
 
-inline const string& CDiagCompileInfo::GetFunction(void) const 
-{ 
+inline const string& CDiagCompileInfo::GetFunction(void) const
+{
     if (!m_Parsed) {
         ParseCurrFunctName();
     }
@@ -274,8 +274,7 @@ inline const CNcbiDiag& CNcbiDiag::operator<< (FIosManip manip) const
 
 
 inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
-    m_Line = line;
-    m_ValChngFlags |= fLineIsChanged;
+    m_CompileInfo.SetLine(line);
     return *this;
 }
 
@@ -291,40 +290,25 @@ inline EDiagSev CNcbiDiag::GetSeverity(void) const {
 
 inline const char* CNcbiDiag::GetModule(void) const 
 { 
-    if (m_ValChngFlags & fModuleIsChanged) {
-        return m_Module.c_str();
-    }
     return m_CompileInfo.GetModule();
 }
 
 inline const char* CNcbiDiag::GetFile(void) const 
 { 
-    if (m_ValChngFlags & fFileIsChanged) {
-        return m_File.c_str();
-    }
     return m_CompileInfo.GetFile();
 }
 
 inline const char* CNcbiDiag::GetClass(void) const 
 { 
-    if (m_ValChngFlags & fClassIsChanged) {
-        return m_Class.c_str();
-    }
     return m_CompileInfo.GetClass().c_str();
 }
 
 inline const char* CNcbiDiag::GetFunction(void) const 
 { 
-    if (m_ValChngFlags & fFunctionIsChanged) {
-        return m_Function.c_str();
-    }
     return m_CompileInfo.GetFunction().c_str();
 }
 
 inline size_t CNcbiDiag::GetLine(void) const {
-    if (m_ValChngFlags & fLineIsChanged) {
-        return m_Line;
-    }
     return m_CompileInfo.GetLine();
 }
 

@@ -88,26 +88,36 @@ public:
     const string& GetFunction(void) const;
 
 private:
+    friend class CNcbiDiag;
+
+    void SetFile(const string& file);
+    void SetModule(const string& module);
+    void SetLine(int line);
+    // Setting function also sets class if it has not been set explicitly.
+    void SetFunction(const string& func);
+    // Override any class name parsed from function name.
+    void SetClass(const string& cls);
+
     NCBI_XNCBI_EXPORT
     void ParseCurrFunctName(void) const;
 
     // Check if module needs to be set
     bool x_NeedModule(void) const;
 
-private:
     const char*    m_File;
     const char*    m_Module;
     int            m_Line;
 
     const   char*  m_CurrFunctName;
     mutable bool   m_Parsed;
+    mutable bool   m_ClassSet;
     mutable string m_ClassName;
     mutable string m_FunctName;
 
     // Storage for data passed as strings rather than char*.
-    char*          m_StrFile;
-    char*          m_StrModule;
-    char*          m_StrCurrFunctName;
+    string         m_StrFile;
+    string         m_StrModule;
+    string         m_StrCurrFunctName;
 };
 
 NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
@@ -1122,29 +1132,13 @@ public:
     static TDiagPostFlags ForceImportantFlags(TDiagPostFlags flags);
 
 private:
-    enum EValChngFlags {
-        fFileIsChanged     = 0x1,
-        fLineIsChanged     = 0x2,
-        fModuleIsChanged   = 0x4,
-        fClassIsChanged    = 0x8,
-        fFunctionIsChanged = 0x10
-    };
-    typedef int TValChngFlags;
-
     mutable EDiagSev       m_Severity;     ///< Severity level of current msg
     mutable int            m_ErrCode;      ///< Error code
     mutable int            m_ErrSubCode;   ///< Error subcode
-            CDiagBuffer&   m_Buffer;       ///< This thread's error msg. buffer
+    CDiagBuffer&           m_Buffer;       ///< This thread's error msg. buffer
     mutable TDiagPostFlags m_PostFlags;    ///< Bitwise OR of "EDiagPostFlag"
 
-    CDiagCompileInfo       m_CompileInfo;
-
-    mutable string         m_File;         ///< File name
-    mutable size_t         m_Line;         ///< Line number
-    mutable string         m_Module;       ///< Module name
-    mutable string         m_Class;        ///< Class name
-    mutable string         m_Function;     ///< Function name
-    mutable TValChngFlags  m_ValChngFlags;
+    mutable CDiagCompileInfo m_CompileInfo;
 
     /// Private replacement for Endm called from manipulators. Unlike Endm,
     /// does not reset ErrCode if buffer is not set.
@@ -1824,11 +1818,14 @@ public:
     CDiagContext_Extra& Print(const string& name, double value);
     CDiagContext_Extra& Print(const string& name, bool value);
 
+    typedef SDiagMessage::TExtraArg  TExtraArg;
+    typedef SDiagMessage::TExtraArgs TExtraArgs;
+
     /// The method does not print the arguments, but adds it to the string.
     /// Name must contain only alphanumeric chars or '_'.
     /// Value is URL-encoded before printing.
-    /// The args will be modifies (emptied) by the function.
-    CDiagContext_Extra& Print(SDiagMessage::TExtraArgs& args);
+    /// The args will be modified (emptied) by the function.
+    CDiagContext_Extra& Print(TExtraArgs& args);
 
     /// Copying the object will prevent printing it on destruction.
     /// The new copy should take care of printing.
@@ -1848,9 +1845,6 @@ public:
 private:
     void x_Release(void);
     bool x_CanPrint(void);
-
-    typedef SDiagMessage::TExtraArg  TExtraArg;
-    typedef SDiagMessage::TExtraArgs TExtraArgs;
 
     // Can be created only by CDiagContext.
     CDiagContext_Extra(SDiagMessage::EEventType event_type);

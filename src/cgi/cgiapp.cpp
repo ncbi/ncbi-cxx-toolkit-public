@@ -759,6 +759,25 @@ const CArgs& CCgiApplication::GetArgs(void) const
 }
 
 
+class CExtraEntryCollector : public CEntryCollector_Base {
+public:
+    CExtraEntryCollector(void) {}
+    
+    virtual void AddEntry(const string& name,
+                          const string& value,
+                          bool          is_index)
+    {
+        _ASSERT(!is_index  ||  value.empty());
+        m_Args.push_back(CDiagContext_Extra::TExtraArg(name, value));
+    }
+
+    CDiagContext_Extra::TExtraArgs& GetArgs(void) { return m_Args; }
+
+private:
+    CDiagContext_Extra::TExtraArgs m_Args;
+};
+
+
 void CCgiApplication::x_OnEvent(EEvent event, int status)
 {
     switch ( event ) {
@@ -769,7 +788,9 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
 
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
-                GetDiagContext().PrintRequestStart(req.GetCGIEntriesStr());
+                CExtraEntryCollector collector;
+                req.GetCGIEntries(collector);
+                GetDiagContext().PrintRequestStart().Print(collector.GetArgs());
                 m_RequestStartPrinted = true;
             }
 

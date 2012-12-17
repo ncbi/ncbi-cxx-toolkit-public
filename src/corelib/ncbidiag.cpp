@@ -477,9 +477,7 @@ CDiagCompileInfo::CDiagCompileInfo(void)
       m_Line(0),
       m_CurrFunctName(0),
       m_Parsed(false),
-      m_StrFile(0),
-      m_StrModule(0),
-      m_StrCurrFunctName(0)
+      m_ClassSet(false)
 {
 }
 
@@ -492,9 +490,7 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
       m_Line(line),
       m_CurrFunctName(curr_funct),
       m_Parsed(false),
-      m_StrFile(0),
-      m_StrModule(0),
-      m_StrCurrFunctName(0)
+      m_ClassSet(false)
 {
     if (!file) {
         m_File = "";
@@ -517,25 +513,11 @@ CDiagCompileInfo::CDiagCompileInfo(const string& file,
       m_Line(line),
       m_CurrFunctName(""),
       m_Parsed(false),
-      m_StrFile(0),
-      m_StrModule(0),
-      m_StrCurrFunctName(0)
+      m_ClassSet(false)
 {
-    if ( !file.empty() ) {
-        m_StrFile = new char[file.size() + 1];
-        strcpy(m_StrFile, file.c_str());
-        m_File = m_StrFile;
-    }
-    if ( m_File  &&  !module.empty()  &&  x_NeedModule() ) {
-        m_StrModule = new char[module.size() + 1];
-        strcpy(m_StrModule, module.c_str());
-        m_Module = m_StrModule;
-    }
-    if ( !curr_funct.empty() ) {
-        m_StrCurrFunctName = new char[curr_funct.size() + 1];
-        strcpy(m_StrCurrFunctName, curr_funct.c_str());
-        m_CurrFunctName = m_StrCurrFunctName;
-    }
+    SetFile(file);
+    SetModule(module);
+    SetFunction(curr_funct);
 }
 
 
@@ -561,9 +543,50 @@ bool CDiagCompileInfo::x_NeedModule(void) const
 
 CDiagCompileInfo::~CDiagCompileInfo(void)
 {
-    delete[] m_StrFile;
-    delete[] m_StrModule;
-    delete[] m_StrCurrFunctName;
+}
+
+
+void CDiagCompileInfo::SetFile(const string& file)
+{
+    m_StrFile = file;
+    m_File = m_StrFile.c_str();
+}
+
+
+void CDiagCompileInfo::SetModule(const string& module)
+{
+    if ( m_File  &&  !module.empty()  &&  x_NeedModule() ) {
+        m_StrModule = module;
+    }
+    else {
+        m_StrModule.clear();
+    }
+    m_Module = m_StrModule.c_str();
+}
+
+
+void CDiagCompileInfo::SetLine(int line)
+{
+    m_Line = line;
+}
+
+
+void CDiagCompileInfo::SetFunction(const string& func)
+{
+    m_Parsed = false;
+    m_StrCurrFunctName = func;
+    m_CurrFunctName = m_StrCurrFunctName.c_str();
+    m_FunctName.clear();
+    if ( !m_ClassSet ) {
+        m_ClassName.clear();
+    }
+}
+
+
+void CDiagCompileInfo::SetClass(const string& cls)
+{
+    m_ClassName = cls;
+    m_ClassSet = true;
 }
 
 
@@ -640,7 +663,7 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
     m_FunctName = string(cur_funct_name, cur_funct_name_len);
 
     // Get a class name
-    if (has_class) {
+    if (has_class  &&  !m_ClassSet) {
         end_str = find_match('<', '>', m_CurrFunctName, start_str - 2);
         start_str = str_rev_str(m_CurrFunctName, end_str, " ");
         const char* cur_class_name =
@@ -1840,7 +1863,15 @@ void CDiagContext_Extra::Flush(void)
         return;
     }
 
+    CDiagContext& ctx = GetDiagContext();
+    EDiagAppState app_state = ctx.GetAppState();
+    bool app_state_updated = false;
     if (m_EventType == SDiagMessage::eEvent_RequestStart) {
+        if (app_state != eDiagAppState_RequestBegin  &&
+            app_state != eDiagAppState_Request) {
+            ctx.SetAppState(eDiagAppState_RequestBegin);
+            app_state_updated = true;
+        }
         string log_site = CDiagContext::GetRequestContext().GetLogSite();
         if ( !log_site.empty() ) {
             // Reset flush flag to add one more value.
@@ -1849,6 +1880,12 @@ void CDiagContext_Extra::Flush(void)
             m_Flushed = true;
         }
         CDiagContext::x_StartRequest();
+    }
+    else if (m_EventType == SDiagMessage::eEvent_RequestStop) {
+        if (app_state != eDiagAppState_RequestEnd) {
+            ctx.SetAppState(eDiagAppState_RequestEnd);
+            app_state_updated = true;
+        }
     }
 
     auto_ptr<CNcbiOstrstream> ostr;
@@ -1879,6 +1916,15 @@ void CDiagContext_Extra::Flush(void)
     GetDiagBuffer().DiagHandler(mess);
     if ( ostr.get() ) {
         ostr->rdbuf()->freeze(false);
+    }
+
+    if ( app_state_updated ) {
+        if (m_EventType == SDiagMessage::eEvent_RequestStart) {
+            ctx.SetAppState(eDiagAppState_Request);
+        }
+        else if (m_EventType == SDiagMessage::eEvent_RequestStop) {
+            ctx.SetAppState(eDiagAppState_AppRun);
+        }
     }
 }
 
@@ -2013,7 +2059,7 @@ CDiagContext_Extra::Print(const string& name, bool value)
 }
 
 CDiagContext_Extra&
-CDiagContext_Extra::Print(SDiagMessage::TExtraArgs& args)
+CDiagContext_Extra::Print(TExtraArgs& args)
 {
     if ( !x_CanPrint() ) {
         return *this;
@@ -2039,13 +2085,32 @@ CDiagContext_Extra& CDiagContext_Extra::SetType(const string& type)
 
 void CDiagContext::PrintRequestStart(const string& message)
 {
+    EDiagAppState app_state = GetAppState();
+    bool app_state_updated = false;
+    if (app_state != eDiagAppState_RequestBegin  &&
+        app_state != eDiagAppState_Request) {
+        SetAppState(eDiagAppState_RequestBegin);
+        app_state_updated = true;
+    }
     x_PrintMessage(SDiagMessage::eEvent_RequestStart, message);
+    if ( app_state_updated ) {
+        SetAppState(eDiagAppState_Request);
+    }
 }
 
 
 void CDiagContext::PrintRequestStop(void)
 {
+    EDiagAppState app_state = GetAppState();
+    bool app_state_updated = false;
+    if (app_state != eDiagAppState_RequestEnd) {
+        SetAppState(eDiagAppState_RequestEnd);
+        app_state_updated = true;
+    }
     x_PrintMessage(SDiagMessage::eEvent_RequestStop, kEmptyStr);
+    if ( app_state_updated ) {
+        SetAppState(eDiagAppState_AppRun);
+    }
 }
 
 
@@ -5946,9 +6011,7 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
       m_ErrCode(0), 
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), 
-      m_PostFlags(ForceImportantFlags(post_flags)),
-      m_Line(0),
-      m_ValChngFlags(0)
+      m_PostFlags(ForceImportantFlags(post_flags))
 {
 }
 
@@ -5960,9 +6023,7 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
       m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()),
       m_PostFlags(ForceImportantFlags(post_flags)),
-      m_CompileInfo(info),
-      m_Line(info.GetLine()),
-      m_ValChngFlags(0)
+      m_CompileInfo(info)
 {
     SetFile(   info.GetFile()   );
     SetModule( info.GetModule() );
@@ -5984,32 +6045,28 @@ TDiagPostFlags CNcbiDiag::ForceImportantFlags(TDiagPostFlags flags)
 
 const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
 {
-    m_File = file;
-    m_ValChngFlags |= fFileIsChanged;
+    m_CompileInfo.SetFile(file);
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetModule(const char* module) const
 {
-    m_Module = module;
-    m_ValChngFlags |= fModuleIsChanged;
+    m_CompileInfo.SetModule(module);
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetClass(const char* nclass) const
 {
-    m_Class = nclass;
-    m_ValChngFlags |= fClassIsChanged;
+    m_CompileInfo.SetClass(nclass);
     return *this;
 }
 
 
 const CNcbiDiag& CNcbiDiag::SetFunction(const char* function) const
 {
-    m_Function = function;
-    m_ValChngFlags |= fFunctionIsChanged;
+    m_CompileInfo.SetFunction(function);
     return *this;
 }
 

@@ -627,6 +627,15 @@ class CNcbiEnvironment;
 class CTrackingEnvHolder;
 
 
+// Base helper class for building query string from request arguments.
+class CEntryCollector_Base {
+public:
+    virtual void AddEntry(const string& name,
+                          const string& value,
+                          bool          is_index = false) = 0;
+};
+
+
 ///////////////////////////////////////////////////////
 ///
 ///  CCgiRequest::
@@ -832,6 +841,10 @@ public:
     /// Get full set of arguments (both GET and POST), URL-encoded.
     /// A &-separated list of exclusions can be set in CGI_LOG_EXCLUDE_ARGS
     /// variable or [CGI] LOG_EXCLUDE_ARGS value in ini file.
+    void GetCGIEntries(CEntryCollector_Base& collector) const;
+
+    /// Shortcut for collecting arguments into a URL-style string.
+    /// @sa GetCGIEntries
     string GetCGIEntriesStr(void) const;
 
     bool CalcChecksum(string& checksum, string& content) const;

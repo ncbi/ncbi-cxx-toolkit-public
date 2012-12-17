@@ -1553,21 +1553,19 @@ NCBI_PARAM_DEF_EX(string, CGI, LOG_LIMIT_ARGS, "*:1000000", eParam_NoThread,
 typedef NCBI_PARAM_TYPE(CGI, LOG_LIMIT_ARGS) TCGI_LogLimitArgs;
 
 
-string CCgiRequest::GetCGIEntriesStr(void) const
+void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
 {
-    string args;
+    typedef CDiagContext_Extra::TExtraArg TExtraArg;
+
     // If there are any indexes, ignore entries and limits
     if ( !m_Indexes.empty() ) {
         ITERATE(TCgiIndexes, idx, m_Indexes) {
             if ( idx->empty() ) {
                 continue;
             }
-            if ( !args.empty() ) {
-                args += '+';
-            }
-            args += NStr::URLEncode(*idx, NStr::eUrlEnc_PercentOnly);
+            collector.AddEntry(*idx, kEmptyStr, true);
         }
-        return args;
+        return;
     }
 
     list<string> excluded, limited;
@@ -1608,7 +1606,7 @@ string CCgiRequest::GetCGIEntriesStr(void) const
     NStr::Split(TCGI_LogExcludeArgs::GetDefault(), "&", excluded);
     ITERATE(list<string>, it, excluded) {
         if (*it == "*") {
-            return kEmptyStr;
+            return;
         }
         arg_limits[*it] = -2;
     }
@@ -1623,17 +1621,54 @@ string CCgiRequest::GetCGIEntriesStr(void) const
             // Excluded argument
             continue;
         }
-        if ( !args.empty() ) {
-            args += '&';
-        }
-        args += NStr::URLEncode(entry->first, NStr::eUrlEnc_URIQueryName);
-        args += '=';
-        args += NStr::URLEncode(lim >= 0 ?
-                                entry->second.substr(0, lim) :
-                                string(entry->second),
-                                NStr::eUrlEnc_URIQueryValue);
+        collector.AddEntry(entry->first,
+            lim >= 0 ? entry->second.substr(0, lim) : string(entry->second),
+            false);
     }
-    return args;
+}
+
+
+class CStringEntryCollector : public CEntryCollector_Base {
+public:
+    CStringEntryCollector(void) {}
+    
+    virtual void AddEntry(const string& name,
+                          const string& value,
+                          bool          is_index);
+
+    const string& GetArgs(void) const { return m_Args; }
+
+private:
+    string m_Args;
+};
+
+
+void CStringEntryCollector::AddEntry(const string& name,
+                                     const string& value,
+                                     bool          is_index)
+{
+    if ( is_index ) {
+        if ( !m_Args.empty() ) {
+            m_Args += '+';
+        }
+        m_Args += NStr::URLEncode(name, NStr::eUrlEnc_PercentOnly);
+    }
+    else {
+        if ( !m_Args.empty() ) {
+            m_Args += '&';
+        }
+        m_Args += NStr::URLEncode(name, NStr::eUrlEnc_URIQueryName);
+        m_Args += '=';
+        m_Args += NStr::URLEncode(value, NStr::eUrlEnc_URIQueryValue);
+    }
+}
+
+
+string CCgiRequest::GetCGIEntriesStr(void) const
+{
+    CStringEntryCollector collector;
+    GetCGIEntries(collector);
+    return collector.GetArgs();
 }
 
 
