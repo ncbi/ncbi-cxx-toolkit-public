@@ -124,6 +124,7 @@ private:
     typedef TDescList::const_iterator     TDescList_CI;
 
     void x_AddChoice(CSeqdesc::E_Choice choice);
+    void x_RemoveChoice(CSeqdesc::E_Choice choice);
     void x_SetChoice(CSeqdesc::E_Choice choice);
     void x_SetChoices(const TDescChoices& choices);
 
@@ -142,9 +143,14 @@ private:
 
     const CBioseq_Base_Info& x_GetBaseInfo(void) const;
 
+    void x_CheckRef(const CBioseq_Handle& handle);
+
     TDescTypeMask       m_Choice;
     CSeq_descr_CI       m_Entry;
     TDescList_CI        m_Desc_CI;
+    CBioseq_Handle      m_Ref;
+    bool                m_HaveTitle;
+    size_t              m_Depth;
 };
 
 
