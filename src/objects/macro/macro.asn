@@ -1373,7 +1373,12 @@ Update-replaced-ec-numbers-action ::= SEQUENCE {
   delete-unrecognized BOOLEAN ,
   delete-multiple-replacement BOOLEAN
 }
-  
+
+
+Retranslate-cds-action ::= SEQUENCE {
+  obey-stop-codon BOOLEAN
+}
+
 
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
@@ -1421,7 +1426,8 @@ Macro-action-choice ::= CHOICE {
   lookup-pubs NULL ,
   trim-terminal-ns NULL ,
   update-replaced-ecnumbers Update-replaced-ec-numbers-action ,
-  instantiate-protein-titles NULL }
+  instantiate-protein-titles NULL ,
+  retranslate-cds Retranslate-cds-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
