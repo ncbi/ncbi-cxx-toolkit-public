@@ -228,5 +228,9 @@ version 3.8.2
 Corrected to postpone initialization of LibChoices until after GUI validation of configuration paramaters.
 
 October 22, 2012
-versino 3.8.3
+version 3.8.3
 Corrected to make sure LIB projects never modify DLL ones.
+
+December 18, 2012
+version 3.8.4
+Corrected to recognize both user requests - NCBI-Unicode and NCBI_Unicode.
