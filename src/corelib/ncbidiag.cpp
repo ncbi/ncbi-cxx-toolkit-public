@@ -1008,7 +1008,7 @@ extern void SetDiagRequestId(Uint8 id)
 
 // AppState formatting/parsing
 static const char* s_AppStateStr[] = {
-    "NS", "AB", "A", "AE", "RB", "R", "RE"
+    "NS", "PB", "P", "PE", "RB", "R", "RE"
 };
 
 const char* s_AppStateToStr(EDiagAppState state)
