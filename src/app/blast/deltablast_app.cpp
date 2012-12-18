@@ -161,6 +161,32 @@ static void s_AddSeqTitleToPssm(CRef<CPssmWithParameters> pssm,
     }
 }
 
+// Add sequence data to pssm query
+static void s_AddSeqDataToPssm(CRef<CPssmWithParameters> pssm,
+                               CRef<CBlastQueryVector> query_batch,
+                               CRef<CScope> scope)
+{
+    CConstRef<CSeq_id> query_id =
+        query_batch->GetBlastSearchQuery(0)->GetQueryId();
+
+    // first make sure that query id and pssm query id are the same
+    if (!pssm->GetPssm().GetQuery().GetSeq().GetFirstId()->Match(*query_id)) {
+        NCBI_THROW(CException, eInvalid, "Query and PSSM sequence ids do not "
+                   "match");
+    }
+    
+    CBioseq_Handle bhandle = scope->GetBioseqHandle(*query_id);
+    CConstRef<CBioseq> scope_bioseq = bhandle.GetCompleteBioseq();
+
+    // set sequence data only if query bioseq has them and pssm does not
+    if (scope_bioseq->GetInst().IsSetSeq_data()
+        && !pssm->GetPssm().GetQuery().GetSeq().GetInst().IsSetSeq_data()) {
+        const CSeq_data& seq_data = scope_bioseq->GetInst().GetSeq_data();
+        pssm->SetQuery().SetSeq().SetInst().SetSeq_data(
+                                          const_cast<CSeq_data&>(seq_data));
+    }
+}
+
 int CDeltaBlastApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
@@ -294,6 +320,15 @@ int CDeltaBlastApp::Run(void)
                 == CFormattingArgs::eArchiveFormat) {
 
                 s_AddSeqTitleToPssm(pssm, query_batch, scope);
+            }
+
+            // remote blast remves sequence data from pssm for known ids
+            // the data must be added if pssm is requested after remote search
+            if (m_CmdLineArgs->ExecuteRemotely()
+                && (m_CmdLineArgs->SaveCheckpoint()
+                    || m_CmdLineArgs->SaveAsciiPssm())) {
+
+                s_AddSeqDataToPssm(pssm, query_batch, scope);
             }
 
             // only one PSI-BLAST iteration requested, then print results
