@@ -92,6 +92,8 @@ private:
 
     void SetFile(const string& file);
     void SetModule(const string& module);
+
+	NCBI_XNCBI_EXPORT
     void SetLine(int line);
     // Setting function also sets class if it has not been set explicitly.
     void SetFunction(const string& func);
