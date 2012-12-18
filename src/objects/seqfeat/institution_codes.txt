@@ -880,7 +880,7 @@ CGE	s	University of Cambridge, Department of Plant Sciences
 CGEC	s	China Entomological Research Institute
 CGG	s	Cambridge University Botanic Garden
 CGH	s	National Museum of Prague
-CGMCC	c	China General Microbiological Culture Collectio Center, Chinese Academy of Sciences
+CGMCC	c	China General Microbiological Culture Collection Center, Chinese Academy of Sciences
 CGMS	s	Universidade Federal de Mato Grosso do Sul, Departamento de Biologia
 CGSC	c	E. coli Genetic Stock Center
 CH	s	Circulo Herpetologico de Panama
@@ -2356,6 +2356,7 @@ IBL<USA-MD>	c	Insect Biocontrol Laboratory (USDA-ARS, Beltsville)
 IBLP	s	Instytut Badawczy Lesnictwa
 IBMUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal
 IBP	s	Instituto de Biologia do Parana
+IBRC	c	Iranian Biological Resources Center
 IBRP<BRA>	s	Instituto Biologico de Ribeirao Preto
 IBRP<JPN>	s	Institute for Breeding Research, Tokyo University of Agriculture
 IBS	s	Irish Biogeographical Society
@@ -4098,6 +4099,7 @@ NEW	s	University of Newcastle
 NEWHM	s	Hancock Museum
 NEZ	s	Museum, Zoology Department, University of New England
 NF	s	Nanjing Forestry University, Forest Resources and Environment
+NFCCI	c	National Fungal Culture Collection of India
 NFCCP	c	National Fungal Culture Collection of Pakistan
 NFLD	s	Memorial University of Newfoundland, Biology Department
 NFM	s	Newfoundland Museum
