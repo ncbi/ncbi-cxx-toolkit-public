@@ -207,9 +207,6 @@ namespace DiscRepNmSpc {
 
       void RmvChar (string& in_out_str, string rm_chars);
 
-      bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type);
-      bool HasLineage(const CBioSource& biosrc, const string& type);
-
       static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat, prot_feat;
       static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat, rbs_feat;
       static vector <const CSeq_feat*> biosrc_subsrc_feat;
@@ -230,6 +227,9 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
 
     protected:
+      bool HasLineage(const CBioSource& biosrc, const string& type);
+      bool IsBiosrcEukaryotic(const CBioSource& biosrc);
+      bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc=true);
       void GetSeqFeatLabel(const CSeq_feat& seq_feat, string* label);      
       void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
       void AddSubcategories(CRef <CClickableItem>& c_item, const string& setting_name, 
@@ -726,19 +726,31 @@ namespace DiscRepNmSpc {
       string GetName_col() const {return string("MORE_NAMES_COLLECTED_BY"); }
       string GetName_div() const {return string("DIVISION_CODE_CONFLICTS");}
       string GetName_map() const {return string("DISC_MAP_CHROMOSOME_CONFLICT");}
+      string GetName_clone() const {return string("DISC_REQUIRED_CLONE");}
 
+      bool IsMissingRequiredClone (const CBioSource& biosrc);
       void AddEukaryoticBioseqsToReport(const CBioseq_set& set);
       bool HasMulSrc(const CBioSource& biosrc);
       bool IsBacterialIsolate(const CBioSource& biosrc);
-      bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc);
       bool DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& biosrc);
       void AddMissingViralQualsDiscrepancies(const CBioSource& biosrc, const string& desc);
-      bool HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, bool check_mul_nm_only = false);
+      bool HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, 
+                                                         bool check_mul_nm_only = false);
       void GetSubmitText(const CAuth_list& authors);
       void FindSpecSubmitText();
 
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+  };
+
+
+  class CSeqEntry_DISC_REQUIRED_CLONE : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_REQUIRED_CLONE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_clone();}
   };
 
 
@@ -1457,6 +1469,27 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+  class CBioseq_DISC_RETROVIRIDAE_DNA : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_RETROVIRIDAE_DNA () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_RETROVIRIDAE_DNA"); }
+  };
+
+
+  class CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_mRNA_ON_WRONG_SEQUENCE_TYPE"); }
+  };
 
 
   class CBioseq_DISC_RBS_WITHOUT_GENE : public CBioseqTestAndRepData

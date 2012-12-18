@@ -229,6 +229,10 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat_CSeqdesc
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                           new CBioseq_DISC_RETROVIRIDAE_DNA));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                           new CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_DISC_RBS_WITHOUT_GENE));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_DISC_EXON_INTRON_CONFLICT));
@@ -282,6 +286,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_USA_STATE));
    tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT));
+   tests_on_SeqEntry_feat_desc.push_back( 
+                            CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_CLONE));
    tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTISRC));
    tests_on_SeqEntry_feat_desc.push_back(

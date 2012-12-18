@@ -242,29 +242,57 @@ bool CTestAndRepData :: HasLineage(const CBioSource& biosrc, const string& type)
 };
 
 
+bool CTestAndRepData :: IsBiosrcEukaryotic(const CBioSource& biosrc)
+{
+   CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc.GetGenome();
+   if (genome != CBioSource :: eGenome_mitochondrion
+                  && genome != CBioSource :: eGenome_chloroplast
+                  && genome != CBioSource :: eGenome_plastid
+                  && genome != CBioSource :: eGenome_apicoplast
+                  && HasLineage(biosrc, "Eukaryota"))
+         return true; 
+   else return false;
+};
 
-bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& type)
+
+bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc)
 {
    CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
    CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source);
    if (!it) return false;
    if (type == "Eukaryota") {
-      for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
-          CBioSource :: EGenome genome = (CBioSource::EGenome) it->GetSource().GetGenome();
-          if (genome != CBioSource :: eGenome_mitochondrion
+      if (has_biosrc) {
+         ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) 
+             if (IsBiosrcEukaryotic( (*it)->GetSource())) return true;            
+         else return false;
+      }
+      else {
+         for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
+               if (IsBiosrcEukaryotic(it->GetSource())) return true;
+/*
+             CBioSource :: EGenome genome = (CBioSource::EGenome) it->GetSource().GetGenome();
+             if (genome != CBioSource :: eGenome_mitochondrion
                   && genome != CBioSource :: eGenome_chloroplast
                   && genome != CBioSource :: eGenome_plastid
                   && genome != CBioSource :: eGenome_apicoplast
                   && HasLineage(it->GetSource(), type))
-           return true;
+              return true;
+*/
+         }
+         return false;
       }
-      return false;
    } 
    else if (type == "Bacteria") {
-      for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
-           if (HasLineage(it->GetSource(), type)) return true;
+      if (has_biosrc) { 
+          ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc)
+              if (HasLineage( (*it)->GetSource(), type)) return true;
+          return false;
       }
-      return false;
+      else {
+         for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) 
+             if (HasLineage(it->GetSource(), type)) return true;
+         return false;
+      }
    }
    else return false;
 };

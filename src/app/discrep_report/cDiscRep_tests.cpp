@@ -173,6 +173,54 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_RETROVIRIDAE_DNA :: TestOnObj(const CBioseq& bioseq)
+{
+    if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna) return;
+    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+       if ( (*it)->GetSource().GetGenome() != CBioSource :: eGenome_proviral
+             && HasLineage((*it)->GetSource(), "Retroviridae"))       
+          thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it, bioseq));
+    }
+};
+
+
+void CBioseq_DISC_RETROVIRIDAE_DNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetOtherComment(c_item->item_list.size(), "Retroviridae biosource on DNA sequences is",
+                          "Retroviridae biosourceson DNA sequences are") + " not proviral";
+};
+
+
+void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq)
+{
+  if (bioseq.GetInst().GetMol() != CSeq_inst :: eMol_dna) return;
+  if (!IsBioseqHasLineage(bioseq, "Eukaryota")) return;
+  bool is_genomic = false;
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
+     if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+       is_genomic = true; break;
+     }
+  }
+  if (!is_genomic) return;
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+     CBioSource :: EGenome genome = (CBioSource::EGenome)(*it)->GetSource().GetGenome();
+     if ( genome == CBioSource :: eGenome_unknown || genome == CBioSource :: eGenome_genomic
+              || genome == CBioSource :: eGenome_macronuclear) 
+        return; 
+  }
+  ITERATE (vector <const CSeq_feat*>, it, mrna_feat) 
+     thisInfo.test_item_list[GetName()].push_back( GetDiscItemText((**it)));
+};
+
+
+void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetIsComment(c_item->item_list.size(), "mRNA")
+              + "located on eukaryotic sequences that do not have genomic or plasmid sources";
+};
+
+
 void CBioseq_DISC_RBS_WITHOUT_GENE :: TestOnObj(const CBioseq& bioseq)
 {
    if (bioseq.IsAa() || gene_feat.empty()) return;
@@ -1270,7 +1318,7 @@ void CBioseqTestAndRepData :: TestOnMRna(const CBioseq& bioseq)
 {
   bool has_bad_molinfo = false, has_bad_biosrc = false, has_qual_ids = false;
   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna 
-           || !IsBioseqHasLineage(bioseq, "Eukaryota")) return;
+           || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) return;
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
     if (IsLocationOrganelle( (CBioSource::EGenome)(*it)->GetSource().GetGenome())) {
            has_bad_biosrc = true; break;
@@ -1961,7 +2009,7 @@ void CBioseq_TEST_BAD_GENE_NAME :: TestOnObj(const CBioseq& bioseq)
           if (NStr::FindNoCase(locus, *jt) != string::npos)
               thisInfo.test_item_list[GetName()].push_back(*jt + "$" + desc);
         if (GeneNameHas4Numbers(locus))
-           thisInfo.test_item_list[GetName()].push_back("4 or more consecutive numbers$" + desc);
+           thisInfo.test_item_list[GetName()].push_back("4 or more consecutive numbers$"+desc);
         is_euka = false;
  
         // bad_bacterial_gene_name
@@ -2888,7 +2936,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: CheckFeatureTypeForLocationDiscrepanci
 void CBioseq_FEATURE_LOCATION_CONFLICT :: TestOnObj(const CBioseq& bioseq)
 {
   if (bioseq.IsAa()) return;
-  if (!IsBioseqHasLineage(bioseq, "Eukaryota"))
+  if (!IsBioseqHasLineage(bioseq, "Eukaryota", false))
            CheckFeatureTypeForLocationDiscrepancies(cd_feat, "Coding region");        
   CheckFeatureTypeForLocationDiscrepancies(rna_feat, "RNA feature");
 };
@@ -4348,7 +4396,7 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
   else {
 
     // JOINED_FEATURES
-    if (IsBioseqHasLineage(bioseq, "Eukaryota")) return;
+    if (IsBioseqHasLineage(bioseq, "Eukaryota", false)) return;
     ITERATE (vector <const CSeq_feat*>, it, all_feat) {
        if ( (*it)->GetLocation().IsMix() || (*it)->GetLocation().IsPacked_int()) {
           if ((*it)->CanGetExcept()) {
@@ -6573,6 +6621,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: IsMissingRequiredStrain(const CBioSource
 };
 
 
+
 void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const string& desc)
 {
   // DUP_DISC_ATCC_CULTURE_CONFLICT
@@ -6670,6 +6719,7 @@ bool CSeqEntry_test_on_biosrc :: HasMulSrc(const CBioSource& biosrc)
 };
 
 
+/*
 bool CSeqEntry_test_on_biosrc :: HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc)
 {
   if (biosrc.CanGetSubtype()) {
@@ -6687,6 +6737,7 @@ bool CSeqEntry_test_on_biosrc :: HasAmplifiedWithSpeciesSpecificPrimerNote(const
   }
   return false;
 };
+*/
 
 
 bool CSeqEntry_test_on_biosrc :: IsBacterialIsolate(const CBioSource& biosrc)
@@ -6836,8 +6887,40 @@ bool CSeqEntry_test_on_biosrc :: HasMoreOrSpecNames(const CBioSource& biosrc, CS
 };
 
 
-void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string& desc, int idx)
+bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosrc)
 {
+   bool has_clone = false, needs_clone = false;
+   if (HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) return false;
+   if (biosrc.IsSetTaxname()
+         && NStr::FindNoCase(biosrc.GetTaxname(), "uncultured") != string::npos)
+      needs_clone = true;
+   ITERATE (list < CRef <CSubSource> >, it, biosrc.GetSubtype()) {
+      if ((*it)->GetSubtype() == CSubSource :: eSubtype_environmental_sample
+            || (*it)->GetSubtype() == CSubSource :: eSubtype_clone) {
+         has_clone = true; break;
+      }
+   }
+   if (needs_clone && !has_clone) {  // look for gel band isolate
+     if (biosrc.IsSetOrgMod()) {
+       ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
+          if ( (*it)->GetSubtype() == COrgMod :: eSubtype_isolate 
+                && NStr::FindNoCase((*it)->GetSubname(), "gel band") != string::npos) {
+                   needs_clone = false;  break;
+          }
+       }
+     }
+   }
+   if (needs_clone && !has_clone) return true;
+   return false;
+};
+
+
+void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string& desc, int idx)
+{
+  // DISC_REQUIRED_CLONE
+  if (IsMissingRequiredClone(biosrc))
+      thisInfo.test_item_list[GetName_clone()].push_back(desc);
+
   // ONCALLER_MULTISRC
   if (HasMulSrc( biosrc ))   thisInfo.test_item_list[GetName_mult()].push_back(desc);
 
@@ -6892,7 +6975,7 @@ void CSeqEntry_test_on_biosrc :: RunTests(const CBioSource& biosrc, const string
     if (has_map && !has_chrom) {
       if (biosrc_seqdesc_seqentry[idx]->IsSeq()) {
           const CBioseq& bioseq = biosrc_seqdesc_seqentry[idx]->GetSeq();
-          if (IsBioseqHasLineage(bioseq, "Eukaryota") && !bioseq.IsAa()) 
+          if (IsBioseqHasLineage(bioseq, "Eukaryota", false) && !bioseq.IsAa()) 
               thisInfo.test_item_list[GetName_map()].push_back(GetDiscItemText(bioseq)); 
       }
       else AddEukaryoticBioseqsToReport(biosrc_seqdesc_seqentry[idx]->GetSet());
@@ -6906,7 +6989,7 @@ void CSeqEntry_test_on_biosrc :: AddEukaryoticBioseqsToReport(const CBioseq_set&
    ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
       if ((*it)->IsSeq()) {
          const CBioseq& bioseq = (*it)->GetSeq();
-         if ( IsBioseqHasLineage(bioseq, "Eukaryota") && !bioseq.IsAa())
+         if ( IsBioseqHasLineage(bioseq, "Eukaryota", false) && !bioseq.IsAa())
            thisInfo.test_item_list[GetName_map()].push_back(GetDiscItemText(bioseq));
          else AddEukaryoticBioseqsToReport( (*it)->GetSet() );
      }
@@ -6972,6 +7055,13 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    };
 
   thisTest.is_BIOSRC1_run = true;
+};
+
+
+void CSeqEntry_DISC_REQUIRED_CLONE :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetIsComment(c_item->item_list.size(), "biosource")
+                          + "missing required clone value";
 };
 
 
