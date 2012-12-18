@@ -2035,6 +2035,11 @@ void NcbiLog_SetThreadId(TNcbiLog_TID tid)
 void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
 {
     MT_LOCK_API;
+    // Enforce setting request id only after NcbiLog_AppRun()
+    if (sx_Info->state == eNcbiLog_NotSet  ||
+        sx_Info->state == eNcbiLog_AppBegin) {
+        TROUBLE;
+    }
     sx_Info->rid = rid;
     MT_UNLOCK;
 }

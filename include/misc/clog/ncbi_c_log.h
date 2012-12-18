@@ -444,6 +444,8 @@ extern void NcbiLog_SetThreadId (TNcbiLog_TID tid);
 
 
 /** Set/get request ID. 
+ *  Calling this method before NcbiLog_AppRun() is not allowed.
+ * 
  *  @note
  *    NcbiLog_SetRequestId() do not affect already started requests.
  *    Only newly started request will have new ID.
