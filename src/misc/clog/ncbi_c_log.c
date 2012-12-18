@@ -1440,7 +1440,7 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
 
 /* Symbols abbreviation for application state, see ENcbiLog_AppState */
 static const char* sx_AppStateStr[] = {
-    "NS", "AB", "A", "AE", "RB", "R", "RE"
+    "NS", "PB", "P", "PE", "RB", "R", "RE"
 };
 
 /** Print common prefix to message buffer.

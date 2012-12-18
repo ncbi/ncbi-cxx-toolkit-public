@@ -62,9 +62,9 @@ extern "C" {
  */
 typedef enum {
     eNcbiLog_NotSet = 0,     /**< Reserved value, never used in messages */
-    eNcbiLog_AppBegin,       /**< AB  */
-    eNcbiLog_AppRun,         /**< A   */
-    eNcbiLog_AppEnd,         /**< AE  */
+    eNcbiLog_AppBegin,       /**< PB  */
+    eNcbiLog_AppRun,         /**< P   */
+    eNcbiLog_AppEnd,         /**< PE  */
     eNcbiLog_RequestBegin,   /**< RB  */
     eNcbiLog_Request,        /**< R   */
     eNcbiLog_RequestEnd      /**< RE  */

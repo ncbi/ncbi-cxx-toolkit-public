@@ -48,24 +48,24 @@ fi
 echo "$token" | \
     grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
     || Error "Token have wrong format"
-Log 'start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID' 'start_app' "^00123/000/0000/AB $std start"
+Log 'start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID' 'start_app' "^00123/000/0000/PB $std start"
 
 
 # --- Posting
 
-Log 'post $token -severity info -message "info message"'       'post(1)' "^00123/000/0000/A  $std Info: info message"
-Log 'post $token -severity warning -message "warning message"' 'post(2)' "^00123/000/0000/A  $std Warning: warning message"
+Log 'post $token -severity info -message "info message"'       'post(1)' "^00123/000/0000/P  $std Info: info message"
+Log 'post $token -severity warning -message "warning message"' 'post(2)' "^00123/000/0000/P  $std Warning: warning message"
 
 # Try to use logging token via $NCBI_APPLOG_TOKEN (the token parameter is empty below)
 NCBI_APPLOG_TOKEN=$token
 export NCBI_APPLOG_TOKEN
 
-Log 'post  "" -message "error message"'                 'post(3)'  "^00123/000/0000/A  $std Error: error message"
-Log 'post  "" -severity trace -message "trace message"' 'post(4)'  "^00123/000/0000/A  $std Trace: trace message"
-Log 'perf  "" -time 1.2'                                'perf(1)'  "^00123/000/0000/A  $std perf          0 1.200000"
-Log 'perf  "" -status=404 -time=4.5 -param="k1=1&k2=2"' 'perf(2)'  "^00123/000/0000/A  $std perf          404 4.500000 k1=1&k2=2"
-Log 'extra ""'                                          'extra(1)' "^00123/000/0000/A  $std extra"
-Log 'extra "" -param="extra1=1"'                        'extra(2)' "^00123/000/0000/A  $std extra         extra1=1"
+Log 'post  "" -message "error message"'                 'post(3)'  "^00123/000/0000/P  $std Error: error message"
+Log 'post  "" -severity trace -message "trace message"' 'post(4)'  "^00123/000/0000/P  $std Trace: trace message"
+Log 'perf  "" -time 1.2'                                'perf(1)'  "^00123/000/0000/P  $std perf          0 1.200000"
+Log 'perf  "" -status=404 -time=4.5 -param="k1=1&k2=2"' 'perf(2)'  "^00123/000/0000/P  $std perf          404 4.500000 k1=1&k2=2"
+Log 'extra ""'                                          'extra(1)' "^00123/000/0000/P  $std extra"
+Log 'extra "" -param="extra1=1"'                        'extra(2)' "^00123/000/0000/P  $std extra         extra1=1"
 
 
 # --- Request 1
@@ -96,7 +96,7 @@ Log 'stop_request $request_token -status=600 -input=21 -output=23' 'stop_request
 
 # --- Stop 
 
-Log 'stop_app "" -status=99' 'stop_app' "^00123/000/0000/AE $std stop          99 [0-9]\{1,\}\.[0-9]\{3\}"
+Log 'stop_app "" -status=99' 'stop_app' "^00123/000/0000/PE $std stop          99 [0-9]\{1,\}\.[0-9]\{3\}"
 
 echo "OK"
 
