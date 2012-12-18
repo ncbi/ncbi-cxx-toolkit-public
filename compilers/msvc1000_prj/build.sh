@@ -14,9 +14,9 @@ arch="$2"
 
 #---------------- Configuration ----------------
 
-# Enable Unicode configurations
-NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-UNICODE=1
-export NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-UNICODE
+# Configure with Unicode configurations enabled
+NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE=1
+export NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE
 
 
 #---------------- Global variables ----------------
