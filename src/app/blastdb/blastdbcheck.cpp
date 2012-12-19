@@ -496,6 +496,7 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
         if (bs.Empty()) {
             throw runtime_error("no bioseq");
         }
+        cerr << MSerial_AsnText << *bs << endl;
 
         // If requested, make sure there's a taxID set for this Bioseq
         if (((m_Flags & e_TaxIDSet) != 0) && (bs->GetTaxId() == 0)) {

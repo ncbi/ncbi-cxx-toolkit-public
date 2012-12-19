@@ -92,6 +92,7 @@ public:
     string ExtractMembershipInteger();
     string ExtractLinkoutTokens();
     string ExtractAsn1Defline();
+    string ExtractAsn1Bioseq();
     string ExtractFasta(const CBlastDBSeqId &seq_id);
 
     // Call before ExtractFasta or SetSeqId

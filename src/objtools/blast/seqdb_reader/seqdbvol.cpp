@@ -1055,8 +1055,6 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
     
     const TBDLL & dl = bdls->Get();
     
-    bool found = false;
-    
     // Lock for sake of tax cache
     
     m_Atlas.Lock(locked);
@@ -1067,6 +1065,9 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
         if ((*iter)->CanGetTaxid()) {
             taxid = (*iter)->GetTaxid();
         }
+        if (taxid <= 0) {
+            continue;
+        }
         
         bool have_org_desc = false;
         
@@ -1074,23 +1075,17 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
             have_org_desc = true;
         }
         
-        SSeqDBTaxInfo tnames;
+        SSeqDBTaxInfo tnames(taxid);
         
         if (tax_info.Empty()) {
             continue;
         }
         
-        bool worked = true;
+        bool found_taxid_in_taxonomy_blastdb = true;
         
         if ((! have_org_desc) && provide_new_taxonomy_info) {
-            worked = tax_info->GetTaxNames(taxid, tnames, locked);
+            found_taxid_in_taxonomy_blastdb = tax_info->GetTaxNames(taxid, tnames, locked);
         }
-        
-        if (! worked) {
-            continue;
-        }
-        
-        found = true;
         
         if (provide_new_taxonomy_info) {
             if (have_org_desc) {
@@ -1101,8 +1096,10 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
                 org_tag->SetTag().SetId(taxid);
                 
                 CRef<COrg_ref> org(new COrg_ref);
-                org->SetTaxname().swap(tnames.scientific_name);
-                org->SetCommon().swap(tnames.common_name);
+                if (found_taxid_in_taxonomy_blastdb) {
+                    org->SetTaxname().swap(tnames.scientific_name);
+                    org->SetCommon().swap(tnames.common_name);
+                }
                 org->SetDb().push_back(org_tag);
                 
                 CRef<CBioSource>   source;

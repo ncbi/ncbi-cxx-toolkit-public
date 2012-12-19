@@ -172,6 +172,10 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
             data2write.push_back(m_DataExtractor.ExtractAsn1Defline());
             break;
 
+        case 'b':
+            data2write.push_back(m_DataExtractor.ExtractAsn1Bioseq());
+            break;
+
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";
@@ -188,7 +192,11 @@ void CSeqFormatter::Write(CBlastDBSeqId& id)
         return;
     }
 
-    m_DataExtractor.SetSeqId(id);
+    bool get_data = false;
+#ifdef _BLAST_DEBUG
+    get_data = (m_ReplTypes.find('b') == m_ReplTypes.end()) ? false : true;
+#endif
+    m_DataExtractor.SetSeqId(id, get_data);
     vector<string> data2write;
     x_Builder(data2write);
     m_Out << x_Replacer(data2write) << endl;

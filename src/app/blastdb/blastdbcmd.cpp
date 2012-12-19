@@ -565,6 +565,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%P means PIG\n"
 #if _BLAST_DEBUG
             "\t\t%d means defline in text ASN.1 format\n"
+            "\t\t%b means Bioseq in text ASN.1 format\n"
 #endif /* _BLAST_DEBUG */
             "\t\t%m means sequence masking data.\n"
             "\t\t   Masking data will be displayed as a series of 'N-M' values\n"

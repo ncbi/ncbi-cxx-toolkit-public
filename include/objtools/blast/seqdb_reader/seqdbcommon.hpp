@@ -1369,8 +1369,9 @@ typedef map< string, TSeqDBAliasFileVersions > TSeqDBAliasFileValues;
 
 struct SSeqDBTaxInfo {
     /// Default constructor
-    SSeqDBTaxInfo()
-        : taxid(0)
+    /// @param t the taxonomy ID to set for this structure
+    SSeqDBTaxInfo(int t = 0)
+        : taxid(t)
     {
     }
     
