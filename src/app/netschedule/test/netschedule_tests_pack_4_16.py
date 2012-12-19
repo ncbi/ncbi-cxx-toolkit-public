@@ -200,3 +200,58 @@ class Scenario602( TestBase ):
                 raise
             pass
         return 0
+
+
+
+class Scenario603( TestBase ):
+    " Scenario 603 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Change affinity, wait till WN expired, set affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 7 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario603' )
+        ns_client.set_client_identification( 'mynode', 'mysession' )
+        changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
+
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'preferred_affinities_reset' ] != False:
+            raise Exception( "Expected non-resetted preferred affinities" )
+
+        # wait till the worker node is expired
+        time.sleep( 12 )
+
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'preferred_affinities_reset' ] != True:
+            raise Exception( "Expected resetted preferred affinities" )
+        if client[ 'number_of_preferred_affinities' ] != 0:
+            raise Exception( 'Unexpected length of preferred_affinities' )
+
+        execAny( ns_client, 'SETAFF' )
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+
+        if client[ 'preferred_affinities_reset' ] != False:
+            raise Exception( "Expected non-resetted preferred affinities" \
+                             " after SETAFF" )
+        if client[ 'number_of_preferred_affinities' ] != 0:
+            raise Exception( 'Unexpected length of preferred_affinities' )
+
+        execAny( ns_client, 'SETAFF a4,a7' )
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'preferred_affinities_reset' ] != False:
+            raise Exception( "Expected non-resetted preferred affinities" \
+                             " after SETAFF" )
+        if client[ 'number_of_preferred_affinities' ] != 2:
+            raise Exception( 'Unexpected length of preferred_affinities' )
+
+        return True
+
