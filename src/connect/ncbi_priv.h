@@ -193,19 +193,6 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
                      g_CORE_Sprintf fmt_args, 1)
 
 /* helpers follow */
-#if  defined(__PRETTY_FUNCTION__)
-#  define CORE_CURRENT_FUNCTION  __PRETTY_FUNCTION__
-#elif defined(__FUNCSIG__)
-#  define CORE_CURRENT_FUNCTION  __FUNCSIG__
-#elif defined(__FUNCTION__)
-#  define CORE_CURRENT_FUNCTION  __FUNCTION__
-#elif defined(__FUNC__)
-#  define CORE_CURRENT_FUNCTION  __FUNC__
-#elif defined(__func__)
-#  define CORE_CURRENT_FUNCTION  __func__
-#else
-#  define CORE_CURRENT_FUNCTION  0
-#endif
 #define DO_CORE_LOG_X(_code, _subcode, _level, _message, _dynamic,      \
                       _error, _descr, _raw_data, _raw_size)             \
     do {                                                                \
@@ -220,7 +207,7 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
             _mess.level       = xx_level;                               \
             _mess.module      = THIS_MODULE;                            \
             _mess.func        = CORE_CURRENT_FUNCTION;                  \
-            _mess.file        = THIS_FILE;                              \
+            _mess.file        = __FILE__;                               \
             _mess.line        = __LINE__;                               \
             _mess.raw_data    = (_raw_data);                            \
             _mess.raw_size    = (_raw_size);                            \

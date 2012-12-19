@@ -1159,7 +1159,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     char*  s;
 
     if (!info) {
-        LOG_Write(lg, NCBI_C_ERRCODE_X, 10, sev, 0, 0, 0,
+        LOG_Write(lg, NCBI_C_ERRCODE_X, 10, sev, 0, 0, 0, 0,
                   "ConnNetInfo_Log: NULL info", 0, 0);
         return;
     }
@@ -1264,7 +1264,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     strcat(s, "#################### [END] SConnNetInfo\n");
 
     assert(strlen(s) < len);
-    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, s, 0, 0);
+    LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, 0, s, 0, 0);
     free(s);
 }
 

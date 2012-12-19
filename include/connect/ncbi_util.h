@@ -36,7 +36,7 @@
  *
  * 1. CORE support:
  *    macros:     LOG_WRITE(), LOG_DATA(),
- *                THIS_FILE, THIS_MODULE,
+ *                THIS_MODULE,  CORE_CURRENT_FUNCTION
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    methods:    LOG_ComposeMessage(), LOG_ToFILE(), NcbiMessagePlusError(),
  *                CORE_SetLOCK(), CORE_GetLOCK(),
@@ -110,28 +110,46 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
  * @sa
  *  LOG_Write
  */
-#define  LOG_WRITE(lg, code, subcode, level, message)                   \
-    LOG_Write(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
-              message, 0, 0)
+#define  LOG_WRITE(lg, code, subcode, level, message)                        \
+    LOG_Write(lg, code, subcode, level, THIS_MODULE, CORE_CURRENT_FUNCTION,  \
+              __FILE__, __LINE__, message, 0, 0)
 
 #ifdef   LOG_DATA
 /* AIX's <pthread.h> defines LOG_DATA to be an integer constant;
    we must explicitly drop such definitions to avoid trouble */
 #  undef LOG_DATA
 #endif
-#define  LOG_DATA(lg, code, subcode, level, data, size, message)        \
-    LOG_Write(lg, code, subcode, level, THIS_MODULE, THIS_FILE, __LINE__, \
-              message, data, size)
+#define  LOG_DATA(lg, code, subcode, level, data, size, message)             \
+    LOG_Write(lg, code, subcode, level, THIS_MODULE, CORE_CURRENT_FUNCTION,  \
+              __FILE__, __LINE__, message, data, size)
 
 
-/** Defaults for the THIS_FILE and THIS_MODULE macros (used by LOG_WRITE).
+/** Default for THIS_MODULE.
  */
-#ifndef   THIS_FILE
-#  define THIS_FILE __FILE__
+#ifndef   THIS_MODULE
+#  define THIS_MODULE  0
 #endif
 
-#ifndef   THIS_MODULE
-#  define THIS_MODULE 0
+
+/** Get current function name.
+ * @note Defined inside of either a method or a function body only.
+ * See <corelib/ncbidiag.hpp> for definition of NCBI_CURRENT_FUNCTION.
+ */
+#if    defined(__GNUC__)                                       ||     \
+      (defined(__MWERKS__)        &&  (__MWERKS__ >= 0x3000))  ||     \
+      (defined(__ICC)             &&  (__ICC >= 600))
+#  define CORE_CURRENT_FUNCTION  __PRETTY_FUNCTION__
+#elif defined(__FUNCSIG__)
+#  define CORE_CURRENT_FUNCTION  __FUNCSIG__
+#elif (defined(__INTEL_COMPILER)  &&  (__INTEL_COMPILER >= 600))  ||  \
+      (defined(__IBMCPP__)        &&  (__IBMCPP__ >= 500))
+#  define CORE_CURRENT_FUNCTION  __FUNCTION__
+#elif  defined(__BORLANDC__)      &&  (__BORLANDC__ >= 0x550)
+#  define CORE_CURRENT_FUNCTION  __FUNC__
+#elif  defined(__STDC_VERSION__)  &&  (__STDC_VERSION__ >= 199901)
+#  define CORE_CURRENT_FUNCTION  __func__
+#else
+#  define CORE_CURRENT_FUNCTION  0
 #endif
 
 

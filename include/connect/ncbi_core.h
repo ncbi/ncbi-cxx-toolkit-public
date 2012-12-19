@@ -408,7 +408,7 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Create
  *  LOG_Create
  */
 extern NCBI_XCONNECT_EXPORT LOG LOG_Reset
-(LOG          lg,     
+(LOG          lg,
  void*        user_data,
  FLOG_Handler handler,
  FLOG_Cleanup cleanup
@@ -448,6 +448,8 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  *  The message severity
  * @param module
  *  Module name (can be NULL)
+ * @param func
+ *  Function name (can be NULL)
  * @param file
  *  Source file name (can be NULL)
  * @param line
@@ -462,12 +464,13 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WriteInternal
  */
 extern NCBI_XCONNECT_EXPORT void LOG_Write
-(LOG         lg,   
+(LOG         lg,
  int         code,
  int         subcode,
  ELOG_Level  level,
  const char* module,
- const char* file, 
+ const char* func,
+ const char* file,
  int         line,
  const char* message,
  const void* raw_data,

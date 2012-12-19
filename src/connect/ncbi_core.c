@@ -382,6 +382,7 @@ extern void LOG_Write
  int         subcode,
  ELOG_Level  level,
  const char* module,
+ const char* func,
  const char* file,
  int         line,
  const char* message,
@@ -395,6 +396,7 @@ extern void LOG_Write
     call_data.message     = message;
     call_data.level       = level;
     call_data.module      = module;
+    call_data.func        = func;
     call_data.file        = file;
     call_data.line        = line;
     call_data.raw_data    = raw_data;

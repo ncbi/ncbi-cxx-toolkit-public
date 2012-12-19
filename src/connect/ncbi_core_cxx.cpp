@@ -242,7 +242,7 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
  ***********************************************************************/
 
 extern "C" {
-static void s_Fini(void)
+static void s_Fini(void) THROWS_NONE
 {
     CORE_SetREG(0);
     CORE_SetLOG(0);
