@@ -244,6 +244,7 @@ enum ELOG_FormatFlag {
     fLOG_Module        = 0x2,
     fLOG_FileLine      = 0x4,
     fLOG_DateTime      = 0x8,
+    fLOG_Function      = 0x10,
     fLOG_FullOctal     = 0x2000, /**< do not do reduction in octal data bytes*/
     fLOG_OmitNoteLevel = 0x4000, /**< do not add NOTE if eLOG_Note is level  */
     fLOG_None          = 0x8000  /**< nothing but spec'd parts, msg and data */
@@ -259,12 +260,13 @@ extern NCBI_XCONNECT_EXPORT TLOG_FormatFlags CORE_SetLOGFormatFlags
 
 /** Compose message using the "call_data" info.
  * Full log record format:
- *     mm/dd/yy HH:MM:SS "<file>", line <line>: [<module>] <level>: <message>
+ *     mm/dd/yy HH:MM:SS "<file>", line <line>: [<module>::<function>] <level>: <message>
  *     \n----- [BEGIN] Raw Data (<raw_size> bytes) -----\n
  *     <raw_data>
  *     \n----- [END] Raw Data -----\n
  *
- * @li <b>NOTE:</b>  the returned string must be deallocated using "free()".
+ * @note The returned string must be deallocated using "free()".
+ *
  * @param call_data
  *  Parts of the message
  * @param format_flags

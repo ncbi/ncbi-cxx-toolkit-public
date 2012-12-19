@@ -303,6 +303,8 @@ static void TEST_UTIL_Log(void)
     LOG x_log = LOG_Create(0, 0, 0, 0);
     LOG_ToFILE(x_log, stdout, 0/*false*/);
 
+    CORE_SetLOGFormatFlags(fLOG_Full | fLOG_Function);
+
     /* simple logging */
     LOG_WRITE(x_log, 0, 0, eLOG_Trace, 0);
     LOG_Write(x_log, 0, 0, eLOG_Trace, 0, 0, 0, 0, 0, 0, 0);

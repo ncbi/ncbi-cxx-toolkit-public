@@ -346,14 +346,15 @@ extern char* LOG_ComposeMessage
     static const char kRawData_End[] =
         "\n#################### [END] Raw Data\n";
 
+    const char *function, *level = 0;
     char *str, *s, datetime[32];
-    const char* level = 0;
 
     /* Calculated length of ... */
     size_t datetime_len  = 0;
     size_t level_len     = 0;
-    size_t file_line_len = 0;
     size_t module_len    = 0;
+    size_t function_len  = 0;
+    size_t file_line_len = 0;
     size_t message_len   = 0;
     size_t data_len      = 0;
     size_t total_len;
@@ -409,6 +410,16 @@ extern char* LOG_ComposeMessage
         call_data->module  &&  *call_data->module) {
         module_len = strlen(call_data->module) + 3;
     }
+    if ((format_flags & fLOG_Function) != 0  &&
+        call_data->func  &&  *call_data->func) {
+        function = call_data->func;
+        if (!module_len)
+            function_len = 3;
+        function_len += strlen(function) + 2;
+        if (strncmp(function, "::", 2) == 0  &&  !*(function += 2))
+            function_len = 0;
+    } else
+        function = 0;
     if ((format_flags & fLOG_FileLine) != 0  &&
         call_data->file  &&  *call_data->file) {
         file_line_len = 12 + strlen(call_data->file) + 11;
@@ -426,7 +437,7 @@ extern char* LOG_ComposeMessage
     }
 
     /* Allocate memory for the resulting message */
-    total_len = (datetime_len + file_line_len + module_len
+    total_len = (datetime_len + file_line_len + module_len + function_len
                  + level_len + message_len + data_len);
     if (!(str = (char*) malloc(total_len + 1))) {
         assert(0);
@@ -443,10 +454,19 @@ extern char* LOG_ComposeMessage
         s += sprintf(s, "\"%s\", line %d: ",
                      call_data->file, (int) call_data->line);
     }
-    if (module_len) {
+    if (module_len | function_len)
         *s++ = '[';
+    if (module_len) {
         memcpy(s, call_data->module, module_len -= 3);
         s += module_len;
+    }
+    if (function_len) {
+        memcpy(s, "::", 2);
+        s += 2;
+        memcpy(s, function, function_len -= module_len ? 2 : 5);
+        s += function_len;
+    }
+    if (module_len | function_len) {
         *s++ = ']';
         *s++ = ' ';
     }
@@ -799,9 +819,9 @@ size_t CORE_GetVMPageSize(void)
         ps = (size_t) si.dwPageSize;
 #elif defined(NCBI_OS_UNIX) 
 #  if   defined(_SC_PAGESIZE)
-#    define NCBI_SC_PAGESIZE _SC_PAGESIZE
+#    define NCBI_SC_PAGESIZE  _SC_PAGESIZE
 #  elif defined(_SC_PAGE_SIZE)
-#    define NCBI_SC_PAGESIZE _SC_PAGE_SIZE
+#    define NCBI_SC_PAGESIZE  _SC_PAGE_SIZE
 #  elif defined(NCBI_SC_PAGESIZE)
 #    undef  NCBI_SC_PAGESIZE
 #  endif
