@@ -121,7 +121,7 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
                 ReadStrWithLen(*m_IStream, name);
         } catch (...) {
             if (!m_IStream->eof()) {
-                msg = "The Blob data does not match a remote app data";
+                msg = "Job output does not match remote_app output format";
                 ERR_POST_X(1, msg);
                 m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
             }

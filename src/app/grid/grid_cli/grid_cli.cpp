@@ -97,6 +97,19 @@ struct SOptionDefinition {
     {OPT_DEF(eOptionWithParameter, eInputFile),
         INPUT_FILE_OPTION, "Read input from the specified file.", {-1}},
 
+    {OPT_DEF(eOptionWithParameter, eRemoteAppArgs),
+        REMOTE_APP_ARGS_OPTION, "Submit a remote_app job and "
+            "specify its arguments.", {-1}},
+
+    {OPT_DEF(eSwitch, eRemoteAppStdOut),
+        "remote-app-stdout", "Treat the job as a 'remote_app' job "
+            "and extract the standard output stream of the "
+            "remote application.", {-1}},
+
+    {OPT_DEF(eSwitch, eRemoteAppStdErr),
+        "remote-app-stderr", "Extract the standard error stream of the "
+            "remote application.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eOutputFile),
         "o|" OUTPUT_FILE_OPTION, "Save output to the specified file.", {-1}},
 
@@ -513,21 +526,28 @@ struct SCommandDefinition {
         "are read from the standard input stream or the specified "
         "input file - one line per job. Each line must contain a "
         "space-separated list of job attributes as follows:\n\n"
-        "  input=\"DATA\"\n"
+        "  input=\"DATA\" OR args=\"REMOTE_APP_ARGS\"\n"
         "  affinity=\"TOKEN\"\n"
         "  exclusive\n\n"
         "Special characters in all quoted strings must be properly "
         "escaped. It is OK to omit quotation marks for a string that "
-        "doesn't contain spaces. The \"input\" attribute is required.\n\n"
-        "Example:\n\n"
-        "  input=\"db, 8548@394.701\" exclusive\n\n"
+        "doesn't contain spaces. The \"input\" attribute is required "
+        "unless the \"args\" attribute is specified. The latter "
+        "enables remote_app mode, in which case the \"input\" "
+        "attribute is ignored.\n\n"
+        "Examples:\n\n"
+        "  input=\"db, 8548@394.701\" exclusive\n"
+        "  args=\"checkout p1/d2\" affinity=\"bin1\"\n\n"
         "In batch mode, the IDs of the created jobs are printed to the "
         "standard output stream (or the specified output file) one job "
         "ID per line.\n\n"
         "In single job submission mode, unless the '--" INPUT_FILE_OPTION
         "' or '--" INPUT_OPTION "' options are given, job input is read "
         "from the standard input stream, and the rest of attributes are "
-        "taken from their respective command line options.\n\n"
+        "taken from their respective command line options. The '--"
+        REMOTE_APP_ARGS_OPTION "' option, just like the \"args\" field in "
+        "batch mode, prepares the job for processing by the 'remote_app' "
+        "worker node. The standard input stream is not read in this case.\n\n"
         "If the '--" WAIT_TIMEOUT_OPTION "' option is given in single "
         "job submission mode, " GRID_APP_NAME " will wait for the job "
         "to terminate, and if the job terminates within the specified "
@@ -540,7 +560,7 @@ struct SCommandDefinition {
         "A NetCache server is required for saving job input if it "
         "exceeds the capability of the NetSchedule internal storage.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
-            eGroup, eAffinity, eExclusiveJob, eOutputFile,
+            eRemoteAppArgs, eGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
 
@@ -583,8 +603,8 @@ struct SCommandDefinition {
         "completed successfully, an appropriate error message is printed "
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
-        {eID, eNetSchedule, eQueue, eOutputFile, eLoginToken, eAuth,
-            eClientNode, eClientSession,
+        {eID, eNetSchedule, eQueue, eRemoteAppStdOut, eRemoteAppStdErr,
+            eOutputFile, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJob,
@@ -637,10 +657,10 @@ struct SCommandDefinition {
         "In either mode, if there are no completed or failed jobs "
         "in the queue, nothing will be printed and the exit code "
         "will be zero.",
-        {eNetSchedule, eQueue, eOutputFile, eJobGroup,
-            eReliableRead, eTimeout, eJobId, eConfirmRead,
-            eRollbackRead, eFailRead, eErrorMessage, eLoginToken,
-            eAuth, eClientNode, eClientSession,
+        {eNetSchedule, eQueue, eRemoteAppStdOut, eRemoteAppStdErr,
+            eOutputFile, eJobGroup, eReliableRead, eTimeout, eJobId,
+            eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
+            eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_CancelJob,
@@ -1180,6 +1200,9 @@ int CGridCommandLineInterfaceApp::Run()
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
                     return 2;
                 }
+                break;
+            case eRemoteAppArgs:
+                m_Opts.remote_app_args = opt_value;
                 break;
             case eOutputFile:
                 if ((m_Opts.output_stream = fopen(opt_value, "wb")) == NULL) {

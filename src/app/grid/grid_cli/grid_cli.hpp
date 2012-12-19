@@ -65,6 +65,7 @@
 #define WORKER_NODE_OPTION "worker-node"
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
+#define REMOTE_APP_ARGS_OPTION "remote-app-args"
 #define OUTPUT_FILE_OPTION "output-file"
 #define QUEUE_OPTION "queue"
 #define BATCH_OPTION "batch"
@@ -120,6 +121,9 @@ enum EOption {
     eAuth,
     eInput,
     eInputFile,
+    eRemoteAppArgs,
+    eRemoteAppStdOut,
+    eRemoteAppStdErr,
     eOutputFile,
     eOutputFormat,
     eNetCache,
@@ -274,6 +278,7 @@ private:
         ESwitch on_off_switch;
         string error_message;
         string input;
+        string remote_app_args;
         string aggregation_interval;
         string command;
         FILE* input_stream;
@@ -449,6 +454,10 @@ private:
             CNetScheduleNotificationHandler& submit_job_handler,
             const string& job_key,
             const string& server_host);
+    void CheckJobInputStream(CNcbiOstream& job_input_stream);
+    void PrepareRemoteAppJobInput(const string& args,
+            CNcbiOstream& job_input_stream);
+    void SubmitJob_Batch();
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
 
