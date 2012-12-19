@@ -147,6 +147,10 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
+   tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS));
+   tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
    tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_ADJACENT_PSEUDOGENES));
@@ -228,6 +232,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
 
 // tests_on_Bioseq_CFeat_CSeqdesc
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                           new CBioseq_DISC_MITOCHONDRION_REQUIRED));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_DISC_RETROVIRIDAE_DNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(

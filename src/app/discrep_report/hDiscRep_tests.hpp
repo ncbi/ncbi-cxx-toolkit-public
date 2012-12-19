@@ -33,6 +33,7 @@
  */
 
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Title.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objects/macro/Constraint_choice.hpp>
@@ -85,6 +86,7 @@ namespace DiscRepNmSpc {
       static bool   is_Quals_run;
       static bool   is_Rna_run;
       static bool   is_SHORT_run;
+      static bool   is_SusPhrase_run;
       static bool   is_TaxCflts_run;
   };
 
@@ -128,6 +130,7 @@ namespace DiscRepNmSpc {
   enum ECommentTp {
      e_IsComment = 0,
      e_HasComment,
+     e_DoesComment,
      e_OtherComment
   };
 
@@ -209,7 +212,7 @@ namespace DiscRepNmSpc {
 
       static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat, prot_feat;
       static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat, rbs_feat;
-      static vector <const CSeq_feat*> biosrc_subsrc_feat;
+      static vector <const CSeq_feat*> biosrc_subsrc_feat, repeat_region_feat, D_loop_feat;
       static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
       static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
@@ -340,13 +343,27 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
    protected:
+      enum E_Status {
+        e_any = 0,
+        e_published,
+        e_unpublished,
+        e_in_press,
+        e_submitter_block
+      };
+
       bool m_has_cit;
       string GetName_dup() const {return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
       string GetName_cap() const {return string("DISC_CHECK_AUTH_CAPS"); }
       string GetName_usa() const {return string("DISC_USA_STATE"); }
       string GetName_tlt() const {return string("DISC_TITLE_AUTHOR_CONFLICT"); }
       string GetName_aff() const {return string("DISC_CITSUBAFFIL_CONFLICT"); }
+      string GetName_unp() const {return string("DISC_UNPUB_PUB_WITHOUT_TITLE"); }
 
+      E_Status GetPubMLStatus (const CPub& pub);
+      E_Status ImpStatus(const CImprint& imp, bool is_pub_sub = false); 
+      string Get1stTitle(const CTitle::C_E& title);
+      string GetTitleFromPub(const CPub& pub);
+      bool DoesPubdescContainUnpubPubWithoutTitle(const list <CRef <CPub> >& pubs);
       void GetGroupedAffilString(const CAuth_list& authors, string& affil_str,string& grp_str);
       void RunTests(const list <CRef <CPub> >& pubs, const string& desc);
       CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
@@ -360,6 +377,16 @@ namespace DiscRepNmSpc {
       bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
       void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
       string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
+  };
+
+
+  class CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_unp();}
   };
 
 
@@ -1086,6 +1113,34 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
+  class CBioseq_test_on_suspect_phrase : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_suspect_phrase () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_rna_comm() const {return string("DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS");}
+      
+      void GetRepOfSuspPhrase(CRef <CClickableItem>& c_item, const string& setting_name, 
+                             const string& phrase_loc_4_1, const string& phrase_loc_4_mul);
+      void CheckForProdAndComment(const CSeq_feat& seq_feat);
+  };
+
+
+  class CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS : public CBioseq_test_on_suspect_phrase
+  {
+    public:
+      virtual ~CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {
+                           return CBioseq_test_on_suspect_phrase::GetName_rna_comm(); }
+  };
+
   class CBioseq_test_on_prod : public CBioseqTestAndRepData
   {
     public:
@@ -1469,6 +1524,28 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+  class CBioseq_DISC_MITOCHONDRION_REQUIRED : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_MITOCHONDRION_REQUIRED () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_MITOCHONDRION_REQUIRED"); }
+  };
+
+
+  class CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_MICROSATELLITE_REPEAT_TYPE"); }
+  };
+
 
   class CBioseq_DISC_RETROVIRIDAE_DNA : public CBioseqTestAndRepData
   {

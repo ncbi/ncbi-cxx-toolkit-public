@@ -165,6 +165,7 @@ namespace DiscRepNmSpc{
            static list <string>                      state_abbrev;
            static list <string>                      cds_prod_find;
            static vector <string>                    s_pseudoweasels;
+           static vector <string>                    suspect_rna_product_names;
      };
 
 /*

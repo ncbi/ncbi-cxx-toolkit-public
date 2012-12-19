@@ -79,6 +79,7 @@
 #include <objects/biblio/Cit_proc.hpp>
 #include <objects/biblio/Cit_let.hpp>
 #include <objects/biblio/Cit_pat.hpp>
+#include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/citation_base.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Imprint.hpp>
@@ -133,6 +134,7 @@ bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
 bool CDiscTestInfo :: is_Rna_run;
 bool CDiscTestInfo :: is_SHORT_run;
+bool CDiscTestInfo :: is_SusPhrase_run;
 bool CDiscTestInfo :: is_TaxCflts_run;
 
 typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
@@ -173,6 +175,125 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_MITOCHONDRION_REQUIRED :: TestOnObj(const CBioseq& bioseq)
+{
+   bool needs_mitochondrial = false;
+   string comm;
+   if (D_loop_feat.empty()) {
+      ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) {
+         if ((*it)->CanGetComment() && !( (comm = (*it)->GetComment()).empty())
+                 && NStr::FindNoCase(comm, "control region") != string::npos) {
+            needs_mitochondrial = true; break;
+         }
+      }
+   }
+   else needs_mitochondrial = true; 
+  
+   if (needs_mitochondrial) {
+     string desc = GetDiscItemText(bioseq);
+     if (bioseq_biosrc_seqdesc.empty()) thisInfo.test_item_list[GetName()].push_back(desc);
+     ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+         if ( (*it)->GetSource().GetGenome() != CBioSource::eGenome_mitochondrion) {
+             thisInfo.test_item_list[GetName()].push_back(desc); break;
+         }
+     }
+   }
+};
+
+
+void CBioseq_DISC_MITOCHONDRION_REQUIRED :: GetReport(CRef <CClickableItem>& c_item)
+{
+   unsigned cnt = c_item->item_list.size();
+   c_item->description
+     = GetHasComment(cnt, "bioseq") + "D-loop or control region misc_feature, but "
+        + ( (cnt ==1)? "does" : "do" ) + " not have mitochondrial source";
+};
+
+
+void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: TestOnObj(const CBioseq& bioseq)
+{
+   bool is_microsatellite = false, is_tandem = false;
+   string qual_qual, qual_val;
+   ITERATE (vector <const CSeq_feat*>, it, repeat_region_feat) {
+     if ( (*it)->CanGetQual()) {
+        ITERATE (vector <CRef <CGb_qual> >, jt, (*it)->GetQual()) {
+          qual_qual = (*jt)->GetQual();
+          qual_val = (*jt)->GetVal(); 
+          if ( qual_qual == "satellite"
+                && (NStr::EqualNocase(qual_val, "microsatellite") //please check all FindNoCase
+                     || NStr::EqualNocase( qual_val, 0, 15, "microsatellite:")) ) {
+              is_microsatellite = true;
+          }
+          else if ( qual_qual == "rpt_type" && qual_val == "tandem") is_tandem = true;
+          if (is_microsatellite && is_tandem) break;
+        }
+     }
+     if (is_microsatellite && !is_tandem)
+        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+   }
+};
+
+
+void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetDoesComment(c_item->item_list.size(), "microsatellite") 
+                             + "not have a repeat type of tandem";
+};
+
+
+
+//new comb
+void CBioseq_test_on_suspect_phrase :: TestOnObj(const CBioseq& bioseq) 
+{
+   if (thisTest.is_SusPhrase_run) return;
+
+   // DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS
+   ITERATE (vector <const CSeq_feat*>, it, rrna_feat) CheckForProdAndComment(**it);
+   ITERATE (vector <const CSeq_feat*>, it, trna_feat) CheckForProdAndComment(**it);
+
+   thisTest.is_SusPhrase_run = true;
+}
+
+
+void CBioseq_test_on_suspect_phrase :: GetRepOfSuspPhrase(CRef <CClickableItem>& c_item, const string& setting_name, const string& phrase_loc_4_1, const string& phrase_loc_4_mul)
+{
+   Str2Strs tp2feats;
+   GetTestItemList(c_item->item_list, tp2feats);
+   c_item->item_list.clear();
+   string s_desc(phrase_loc_4_1 + " contains "), p_desc(phrase_loc_4_mul + " contain ");
+   ITERATE (Str2Strs, it, tp2feats) {
+     AddSubcategories(c_item, setting_name, it->second, s_desc, p_desc,
+         e_OtherComment, true, "'" + it->first + "'");
+   }
+   c_item->description
+     = GetOtherComment(c_item->item_list.size(), s_desc, p_desc) + "suspect phrase";
+};
+
+
+void CBioseq_test_on_suspect_phrase :: CheckForProdAndComment(const CSeq_feat& seq_feat)
+{
+   string prod_str = GetRNAProductString(seq_feat);                   
+   string desc(GetDiscItemText(seq_feat));
+   string comm;
+   ITERATE (vector <string>, it, thisInfo.suspect_rna_product_names) {
+      if (DoesStringContainPhrase(prod_str, *it, false)) 
+            thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
+      else if (seq_feat.CanGetComment() && !((comm = seq_feat.GetComment()).empty())
+                   && DoesStringContainPhrase(comm, *it, false))
+         thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
+   }
+};
+
+
+
+void CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   GetRepOfSuspPhrase(c_item, GetName(), "RNA product_name or comment", 
+                                                         "RNA product_names or comments");
+};
+// new comb
+
+
 void CBioseq_DISC_RETROVIRIDAE_DNA :: TestOnObj(const CBioseq& bioseq)
 {
     if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna) return;
@@ -238,8 +359,7 @@ void CBioseq_DISC_RBS_WITHOUT_GENE :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_DISC_RBS_WITHOUT_GENE :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description 
-      = GetOtherComment(c_item->item_list.size(), "RBS feature does", "RBS features do") 
-        + " not have overlapping genes";
+      = GetDoesComment(c_item->item_list.size(), "RBS feature") + "not have overlapping genes";
 };
  
 
@@ -8033,6 +8153,114 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
    // DISC_CHECK_AUTH_CAPS
    if (AreBadAuthCapsInPubdesc(pubs))
          thisInfo.test_item_list[GetName_cap()].push_back(desc);
+
+   // DISC_UNPUB_PUB_WITHOUT_TITLE
+   if (DoesPubdescContainUnpubPubWithoutTitle(pubs))
+      thisInfo.test_item_list[GetName_unp()].push_back(desc);
+};
+
+
+CSeqEntry_test_on_pub::E_Status CSeqEntry_test_on_pub :: GetPubMLStatus (const CPub& pub)
+{
+  switch (pub.Which()) {
+    case CPub::e_Gen:
+        if (pub.GetGen().CanGetCit() 
+              && NStr::FindNoCase(pub.GetGen().GetCit(), "unpublished") != string::npos)
+           return e_unpublished;
+        else return e_published;
+    case CPub::e_Sub: return e_submitter_block;
+    case CPub::e_Article:
+       switch (pub.GetArticle().GetFrom().Which() ) {
+         case CCit_art::C_From::e_Journal:
+              return ImpStatus(pub.GetArticle().GetFrom().GetJournal().GetImp());
+         case CCit_art::C_From::e_Book:
+              return ImpStatus(pub.GetArticle().GetFrom().GetBook().GetImp());
+         case CCit_art::C_From::e_Proc:
+              return ImpStatus(pub.GetArticle().GetFrom().GetProc().GetBook().GetImp());
+         default: return e_any;
+       }
+    case CPub::e_Journal: return ImpStatus(pub.GetJournal().GetImp()); 
+    case CPub::e_Book: return ImpStatus(pub.GetBook().GetImp());
+    case CPub::e_Man: return ImpStatus(pub.GetMan().GetCit().GetImp());
+    case CPub::e_Patent: return e_published;
+    default: return e_any;
+  }
+};
+
+
+CSeqEntry_test_on_pub::E_Status CSeqEntry_test_on_pub :: ImpStatus(const CImprint& imp, bool is_pub_sub)
+{ 
+  if (imp.CanGetPrepub()) {
+     switch (imp.GetPrepub()) {
+       case CImprint::ePrepub_submitted:
+          if (is_pub_sub) return e_submitter_block;
+          return e_unpublished;
+       case CImprint::ePrepub_in_press: return e_in_press;
+       case CImprint::ePrepub_other: return e_unpublished;
+     }
+  }
+  else return e_published;
+};
+
+
+string CSeqEntry_test_on_pub :: Get1stTitle(const CTitle::C_E& title)
+{
+   switch (title.Which()) {
+     case CTitle::C_E::e_Name:    return title.GetName();
+     case CTitle::C_E::e_Tsub:    return title.GetTsub();
+     case CTitle::C_E::e_Trans:   return title.GetTrans();
+     case CTitle::C_E::e_Jta:     return title.GetJta();
+     case CTitle::C_E::e_Iso_jta: return title.GetIso_jta();
+     case CTitle::C_E::e_Ml_jta:  return title.GetMl_jta();
+     case CTitle::C_E::e_Coden:   return title.GetCoden();
+     case CTitle::C_E::e_Issn:    return title.GetIssn();
+     case CTitle::C_E::e_Abr:     return title.GetAbr();
+     case CTitle::C_E::e_Isbn:    return title.GetIsbn();
+     default: return kEmptyStr;
+   }
+};
+
+string CSeqEntry_test_on_pub :: GetTitleFromPub(const CPub& pub)
+{
+  switch (pub.Which()) {
+    case CPub::e_Gen:
+      return (pub.GetGen().CanGetTitle() ? pub.GetGen().GetTitle() : kEmptyStr);
+    case CPub::e_Sub:
+      return (pub.GetSub().CanGetDescr() ? pub.GetSub().GetDescr() : kEmptyStr);
+    case CPub::e_Article:
+      if (pub.GetArticle().CanGetTitle()) {
+         Get1stTitle(**(pub.GetArticle().GetTitle().Get().begin()));  
+      }  
+      else return kEmptyStr;
+    case CPub::e_Book:
+      return Get1stTitle(**(pub.GetBook().GetTitle().Get().begin()));
+    case CPub::e_Man:
+      return Get1stTitle(**(pub.GetMan().GetCit().GetTitle().Get().begin()));
+    case CPub::e_Patent:
+      return (pub.GetPatent().GetTitle());
+    default: return kEmptyStr;
+  }
+};
+
+
+bool CSeqEntry_test_on_pub :: DoesPubdescContainUnpubPubWithoutTitle(const list <CRef <CPub> >& pubs)
+{
+  string title;
+  ITERATE (list <CRef <CPub> >, it, pubs) {
+     if (GetPubMLStatus( **it ) == e_unpublished) {
+       title = GetTitleFromPub(**it);
+       if (title.empty() || NStr::FindNoCase(title, "Direct Submission")!= string::npos)
+         return true;
+     }
+  }
+  return false;
+};
+
+
+void CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+       = GetHasComment(c_item->item_list.size(), "unpublished pub") + "no title";
 };
 
 

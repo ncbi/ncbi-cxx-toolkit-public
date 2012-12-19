@@ -103,6 +103,7 @@ CTaxon1                                 CDiscRepInfo :: tax_db_conn;
 list <string>                           CDiscRepInfo :: state_abbrev;
 list <string>                           CDiscRepInfo :: cds_prod_find;
 vector <string>                         CDiscRepInfo :: s_pseudoweasels;
+vector <string>                         CDiscRepInfo :: suspect_rna_product_names;
 
 void CDiscRepApp::Init(void)
 {
@@ -145,7 +146,7 @@ void CDiscRepApp::Init(void)
        suspect_rule_file = "/ncbi/data/product_rules.prt";
        ifile.open(suspect_rule_file.c_str());
        if (!ifile) 
-           ERR_POST(Warning<< "Unable to read syspect prodect rules from "<< suspect_rule_file);
+          ERR_POST(Warning<< "Unable to read syspect prodect rules from "<< suspect_rule_file);
     } 
 if (thisInfo.suspect_rules->IsSet())
 cerr << " is set\n";
@@ -171,6 +172,11 @@ cerr << "222can get\n";
     // ini. of s_pseudoweasels
     strtmp = reg.Get("SingleDataIni", "SPseudoWeasels");
     thisInfo.s_pseudoweasels = NStr::Tokenize(strtmp, ",", thisInfo.s_pseudoweasels);
+
+    // ini. of suspect_rna_product_names
+    strtmp = reg.Get("SingleDataIni", "SuspectRnaProdNms");
+    thisInfo.suspect_rna_product_names 
+        = NStr::Tokenize(strtmp, ",", thisInfo.suspect_rna_product_names);
     
     // ini. of weasels
     thisInfo.weasels.reserve(11);

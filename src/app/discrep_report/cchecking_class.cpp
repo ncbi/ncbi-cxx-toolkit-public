@@ -236,6 +236,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_Prot_run = false;
    thisTest.is_Rna_run = false;
    thisTest.is_SHORT_run = false;
+   thisTest.is_SusPhrase_run = false;
 
    GoTests(CRepConfig::tests_on_Bioseq, bioseq);
 
@@ -338,6 +339,12 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
         else if (seq_feat_dt.IsImp()) {
               CSeqFeatData::ESubtype subtp = seq_feat_dt.GetSubtype();
               switch (subtp) {
+                case CSeqFeatData::eSubtype_D_loop:
+                    CTestAndRepData::D_loop_feat.push_back(&seq_feat);
+                    break;
+                case CSeqFeatData::eSubtype_repeat_region:
+                    CTestAndRepData::repeat_region_feat.push_back(&seq_feat);
+                    break;
                 case CSeqFeatData::eSubtype_RBS :
                     CTestAndRepData::rbs_feat.push_back(&seq_feat);
                     CTestAndRepData::mix_feat.push_back(&seq_feat);

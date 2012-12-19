@@ -116,6 +116,8 @@ vector <const CSeq_feat*> CTestAndRepData :: promoter_feat;
 vector <const CSeq_feat*> CTestAndRepData :: mrna_feat;
 vector <const CSeq_feat*> CTestAndRepData :: trna_feat;
 vector <const CSeq_feat*> CTestAndRepData :: bioseq_biosrc_feat;
+vector <const CSeq_feat*> CTestAndRepData :: repeat_region_feat;
+vector <const CSeq_feat*> CTestAndRepData :: D_loop_feat;
 
 vector <const CSeqdesc*>  CTestAndRepData :: pub_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;
@@ -870,6 +872,9 @@ void CTestAndRepData :: AddSubcategories(CRef <CClickableItem>& c_item, const st
             break;
        case e_HasComment:
             c_sub->description = GetHasComment(cnt, desc1) + desc2; 
+            break;
+       case e_DoesComment:
+            c_sub->description = GetDoesComment(cnt, desc1) + desc2; 
             break;
        case e_OtherComment:
             c_sub->description = GetOtherComment(cnt, desc1, desc2) + desc3;
