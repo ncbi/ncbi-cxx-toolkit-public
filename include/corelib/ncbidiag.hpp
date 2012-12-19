@@ -70,7 +70,7 @@ public:
     CDiagCompileInfo(void);
     NCBI_XNCBI_EXPORT
     CDiagCompileInfo(const char* file,
-                     int line,
+                     int         line,
                      const char* curr_funct = NULL,
                      const char* module = NULL);
     NCBI_XNCBI_EXPORT
