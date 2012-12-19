@@ -1487,7 +1487,7 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
         s_SetHost(NcbiLogP_GetHostName());
     }
     x_pid     = sx_Info->pid        ? sx_Info->pid            : s_GetPID();
-    x_rid     = ctx->rid            ? ctx->rid                : sx_Info->rid;
+    x_rid     = ctx->rid            ? ctx->rid                : 0;
     x_host    = sx_Info->host[0]    ? (char*)sx_Info->host    : UNKNOWN_HOST;
     x_client  = ctx->client[0]      ? (char*)ctx->client      : UNKNOWN_CLIENT;
     x_session = ctx->session[0]     ? (char*)ctx->session     : UNKNOWN_SESSION;
