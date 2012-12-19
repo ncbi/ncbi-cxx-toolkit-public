@@ -525,6 +525,7 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
     string cmd(g_MakeBaseCmd("MPUT", job.job_id));
     cmd += " \"";
     cmd += NStr::PrintableString(job.progress_msg);
+    cmd += '\"';
     g_AppendClientIPAndSessionID(cmd);
     CNetServer::SExecResult exec_result;
     m_Impl->m_API->GetServer(job.job_id)->ConnectAndExec(cmd, exec_result);
