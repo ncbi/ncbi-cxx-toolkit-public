@@ -653,7 +653,7 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
         CNcbiIstream& std_stream(IsOptionSet(eRemoteAppStdOut) ?
                 remote_app_result.GetStdOut() : remote_app_result.GetStdErr());
 
-        std_stream.exceptions(0);
+        std_stream.exceptions((ios::iostate) 0);
 
         while (!std_stream.eof()) {
             std_stream.read(buffer, sizeof(buffer));
