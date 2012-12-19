@@ -516,7 +516,9 @@ CDiagCompileInfo::CDiagCompileInfo(const string& file,
       m_ClassSet(false)
 {
     SetFile(file);
-    SetModule(module);
+    if ( m_File  &&  !module.empty()  &&  x_NeedModule() ) {
+        SetModule(module);
+    }
     SetFunction(curr_funct);
 }
 
@@ -555,12 +557,7 @@ void CDiagCompileInfo::SetFile(const string& file)
 
 void CDiagCompileInfo::SetModule(const string& module)
 {
-    if ( m_File  &&  !module.empty()  &&  x_NeedModule() ) {
-        m_StrModule = module;
-    }
-    else {
-        m_StrModule.clear();
-    }
+    m_StrModule = module;
     m_Module = m_StrModule.c_str();
 }
 
@@ -1011,6 +1008,10 @@ static const char* s_AppStateStr[] = {
     "NS", "PB", "P", "PE", "RB", "R", "RE"
 };
 
+static const char* s_LegacyAppStateStr[] = {
+    "AB", "A", "AE"
+};
+
 const char* s_AppStateToStr(EDiagAppState state)
 {
     return s_AppStateStr[state];
@@ -1024,6 +1025,14 @@ EDiagAppState s_StrToAppState(const string& state)
             return (EDiagAppState)st;
         }
     }
+    // Backward compatibility - allow to use 'A' instead of 'P'
+    for (int st = (int)eDiagAppState_AppBegin;
+        st < eDiagAppState_AppEnd; st++) {
+        if (state == s_LegacyAppStateStr[st - 1]) {
+            return (EDiagAppState)st;
+        }
+    }
+
     // Throw to notify caller about invalid app state.
     NCBI_THROW(CException, eUnknown, "Invalid EDiagAppState value");
     /*NOTREACHED*/
@@ -3354,10 +3363,19 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     CRequestContext& rq_ctx = thr_data.GetRequestContext();
     m_PID = CDiagContext::GetPID();
     m_TID = thr_data.GetTID();
-    if ( rq_ctx.GetAutoIncRequestIDOnPost() ) {
-        rq_ctx.SetRequestID();
+    EDiagAppState app_state = GetAppState();
+    switch (app_state) {
+    case eDiagAppState_RequestBegin:
+    case eDiagAppState_Request:
+    case eDiagAppState_RequestEnd:
+        if ( rq_ctx.GetAutoIncRequestIDOnPost() ) {
+            rq_ctx.SetRequestID();
+        }
+        m_RequestId = rq_ctx.GetRequestID();
+        break;
+    default:
+        m_RequestId = 0;
     }
-    m_RequestId = rq_ctx.GetRequestID();
     m_ProcPost = CDiagContext::GetProcessPostNumber(ePostNumber_Increment);
     m_ThrPost = thr_data.GetThreadPostNumber(ePostNumber_Increment);
 }

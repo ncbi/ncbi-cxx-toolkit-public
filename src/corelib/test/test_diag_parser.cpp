@@ -288,7 +288,8 @@ void CDiagParserApp::x_CheckMessage(void)
     _ASSERT(msg->m_ProcPost != 0);
     _ASSERT(msg->m_ThrPost != 0);
 
-    _ASSERT(msg->m_RequestId == 6224);
+    // Request ID must be ignored outside of request-start/request-stop block
+    _ASSERT(msg->m_RequestId == 0);
 
     _ASSERT(msg->GetUID() == GetDiagContext().GetUID());
 }
@@ -298,7 +299,9 @@ void CDiagParserApp::x_CheckMessage(const string& message, bool valid)
 {
     bool parsed = false;
     SDiagMessage dmsg(message, &parsed);
-    _ASSERT(valid  ==  parsed);
+    if (valid != parsed) {
+        _ASSERT(valid  ==  parsed);
+    }
 }
 
 
