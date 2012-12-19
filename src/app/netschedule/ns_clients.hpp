@@ -201,6 +201,7 @@ class CNSClient
         void  AddPreferredAffinity(unsigned int  aff);
         void  RemovePreferredAffinities(const TNSBitVector &  aff);
         void  RemovePreferredAffinity(unsigned int  aff);
+        void  SetPreferredAffinities(const TNSBitVector &  aff);
 
         // WGET support
         void  RegisterWaitAffinities(const TNSBitVector &  aff);

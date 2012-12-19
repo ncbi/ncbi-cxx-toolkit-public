@@ -597,6 +597,26 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
 }
 
 
+void
+CNSClientsRegistry::SetPreferredAffinities(const CNSClientId &   client,
+                                           const TNSBitVector &  aff_to_set)
+{
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  found = m_Clients.find(client.GetNode());
+
+    if (found == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to update preferred affinities");
+
+    found->second.SetPreferredAffinities(aff_to_set);
+    x_BuildWNAffinities();
+}
+
+
 bool
 CNSClientsRegistry::IsRequestedAffinity(const string &         name,
                                         const TNSBitVector &   aff,

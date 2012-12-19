@@ -188,6 +188,8 @@ public:
     string ChangeAffinity(const CNSClientId &     client,
                           const list<string> &    aff_to_add,
                           const list<string> &    aff_to_del);
+    void SetAffinity(const CNSClientId &     client,
+                     const list<string> &    aff);
 
     TJobStatus  JobDelayExpiration(unsigned        job_id,
                                    time_t          tm);

@@ -937,7 +937,6 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
     vector<string>  already_added_affinities;
 
     {{
-
         CFastMutexGuard     guard(m_OperationLock);
         CNSTransaction      transaction(this);
 
@@ -982,6 +981,54 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                                                     aff_id_to_add,
                                                     aff_id_to_del);
     return msg;
+}
+
+
+void  CQueue::SetAffinity(const CNSClientId &     client,
+                          const list<string> &    aff)
+{
+    if (aff.size() > m_MaxAffinities) {
+        NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
+                   "The client '" + client.GetNode() +
+                   "' exceeds the limit (" +
+                   NStr::UIntToString(m_MaxAffinities) +
+                   ") of the preferred affinities. Set request ignored.");
+    }
+
+    unsigned int    client_id = client.GetID();
+    TNSBitVector    aff_id_to_set;
+    TNSBitVector    already_added_aff_id;
+
+
+    TNSBitVector    current_affinities =
+                         m_ClientsRegistry.GetPreferredAffinities(client);
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+        CNSTransaction      transaction(this);
+
+        // Convert the aff to the affinity IDs
+        for (list<string>::const_iterator  k(aff.begin());
+             k != aff.end(); ++k ) {
+            unsigned int    aff_id =
+                                 m_AffinityRegistry.ResolveAffinityToken(*k,
+                                                                 0, client_id);
+
+            if (current_affinities[aff_id] == true)
+                already_added_aff_id.set(aff_id, true);
+
+            aff_id_to_set.set(aff_id, true);
+        }
+
+        transaction.Commit();
+    }}
+
+    TNSBitVector    aff_id_to_del = current_affinities - already_added_aff_id;
+
+    if (aff_id_to_del.any())
+        m_AffinityRegistry.RemoveClientFromAffinities(client_id,
+                aff_id_to_del);
+
+    m_ClientsRegistry.SetPreferredAffinities(client, aff_id_to_set);
 }
 
 

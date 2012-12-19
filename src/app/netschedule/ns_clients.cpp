@@ -600,7 +600,6 @@ void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
     m_Type |= eWorkerNode;
     m_Affinities |= aff;
     m_AffReset = false;
-    return;
 }
 
 
@@ -610,7 +609,6 @@ void  CNSClient::AddPreferredAffinity(unsigned int  aff)
     if (aff != 0)
         m_Affinities.set_bit(aff, true);
     m_AffReset = false;
-    return;
 }
 
 
@@ -619,7 +617,6 @@ void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
     m_Type |= eWorkerNode;
     m_Affinities -= aff;
     m_AffReset = false;
-    return;
 }
 
 
@@ -629,9 +626,15 @@ void  CNSClient::RemovePreferredAffinity(unsigned int  aff)
     if (aff != 0)
         m_Affinities.set_bit(aff, false);
     m_AffReset = false;
-    return;
 }
 
+
+void  CNSClient::SetPreferredAffinities(const TNSBitVector &  aff)
+{
+    m_Type |= eWorkerNode;
+    m_Affinities = aff;
+    m_AffReset = false;
+}
 
 void  CNSClient::RegisterWaitAffinities(const TNSBitVector &  aff)
 {

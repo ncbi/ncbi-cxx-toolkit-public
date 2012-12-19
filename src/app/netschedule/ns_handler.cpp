@@ -287,6 +287,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "del",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SETAFF",        { &CNetScheduleHandler::x_ProcessSetAffinity,
+                         eNSCR_Worker },
+        { { "aff",              eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET",           { &CNetScheduleHandler::x_ProcessGetJob,
                          eNSCR_Worker },
         { { "port",              eNSPT_Id,  eNSPA_Optional      },
@@ -1279,6 +1284,20 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
         x_WriteMessage("OK:");
     else
         x_WriteMessage("OK:WARNING:" + msg + ";");
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
+{
+    // This functionality requires client name and the session
+    x_CheckNonAnonymousClient("use SETAFF command");
+
+    list<string>    aff_to_set;
+    NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
+                "\t,", aff_to_set, NStr::eNoMergeDelims);
+    q->SetAffinity(m_ClientId, aff_to_set);
+    x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
 

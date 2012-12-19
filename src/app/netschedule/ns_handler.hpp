@@ -138,6 +138,7 @@ private:
     void x_ProcessFastStatusS(CQueue*);
     void x_ProcessFastStatusW(CQueue*);
     void x_ProcessChangeAffinity(CQueue*);
+    void x_ProcessSetAffinity(CQueue*);
     void x_ProcessSubmit(CQueue*);
     void x_ProcessSubmitBatch(CQueue*);
     void x_ProcessBatchStart(CQueue*);

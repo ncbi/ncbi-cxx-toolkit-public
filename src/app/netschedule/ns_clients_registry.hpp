@@ -111,6 +111,8 @@ class CNSClientsRegistry
         void  UpdatePreferredAffinities(const CNSClientId &   client,
                                         unsigned int          aff_to_add,
                                         unsigned int          aff_to_del);
+        void  SetPreferredAffinities(const CNSClientId &   client,
+                                     const TNSBitVector &  aff_to_set);
         bool  IsRequestedAffinity(const string &         name,
                                   const TNSBitVector &   aff,
                                   bool                   use_preferred) const;

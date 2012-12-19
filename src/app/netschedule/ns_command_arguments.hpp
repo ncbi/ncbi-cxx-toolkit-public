@@ -61,7 +61,7 @@ struct SNSCommandArguments
     string          err_msg;
     string          comment;
     string          description;
-    string          ip;                 // ?
+    string          ip;
     string          option;
     string          progress_msg;
     string          qname;
