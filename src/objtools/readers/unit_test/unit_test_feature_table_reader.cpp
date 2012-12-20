@@ -107,7 +107,8 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (const char * str)
     for (size_t i = 0; i < err_container.Count(); i++) {
         const ILineError& line_error = err_container.GetError(i);
         if (!s_IgnoreError (line_error)) {
-            BOOST_CHECK_EQUAL("Unexpected Error", line_error.FeatureName() + ":" + line_error.QualifierName());
+            string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
+            BOOST_CHECK_EQUAL(error_text, "Unexpected Error");
         }
     }        
         
@@ -1136,4 +1137,28 @@ BOOST_AUTO_TEST_CASE(Test_TableWithVariationsAndGoTerms)
         }
     }
     BOOST_CHECK_EQUAL(num_variations, 131);
+}
+
+
+static const char * sc_Table7 = "\
+>Feature gb|CP003382.1|\n\
+1982606\t1982707\tgene\n\
+\t\t\tlocus_tag\tDeipe_1981\n\
+\t\t\tnote\tIMG reference gene:2509592968\n\
+1982606\t1982707\tncRNA\n\
+\t\t\tncRNA_class\tSRP_RNA\n\
+\t\t\tproduct\tBacterial signal recognition particle RNA\n\
+\t\t\tEC_number\t1.2.3.4\n\
+\t\t\tPCR_conditions\tabc\n\
+1\t20\tmisc_feature\n\
+\t\t\tSTS\tabc\n\
+";
+
+
+///
+/// Test a simple table
+///
+BOOST_AUTO_TEST_CASE(Test_CapitalizedQualifiers)
+{
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table7); 
 }

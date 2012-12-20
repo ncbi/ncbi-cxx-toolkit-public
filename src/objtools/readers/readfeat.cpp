@@ -1775,7 +1775,7 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
             }
         }
     }
-    string label (1, ((unsigned char) qual[0]));
+    string label (1, toupper((unsigned char) qual[0]));
     label += qual.substr(1);
 
     sfp->SetExt().SetType().SetStr("GeneOntology");
@@ -1814,6 +1814,30 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     }
 
     return true;
+}
+
+
+static const string s_QualsWithCaps[] = {
+  "EC_number",
+  "PCR_conditions",
+  "PubMed",
+  "STS",
+  "ncRNA_class"
+};
+
+static const int s_NumQualsWithCaps = sizeof (s_QualsWithCaps) / sizeof (string);
+
+static string s_FixQualCapitalization (const string& qual)
+{
+    string lqual = qual;
+    lqual = NStr::ToLower(lqual);
+    for (int j = 0; j < s_NumQualsWithCaps; j++) {    
+        if (NStr::EqualNocase(lqual, s_QualsWithCaps[j])) {
+            lqual = s_QualsWithCaps[j];
+            break;
+        }
+    }
+    return lqual;
 }
 
 
@@ -1859,8 +1883,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
         }
 
     } else {
-        string lqual = qual;
-        lqual = NStr::ToLower(lqual);
+        string lqual = s_FixQualCapitalization(qual);
         TQualMap::const_iterator q_iter = sm_QualKeys.find (lqual.c_str ());
         if (q_iter != sm_QualKeys.end ()) {
             EQual qtype = q_iter->second;
