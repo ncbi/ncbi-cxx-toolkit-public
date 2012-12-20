@@ -7450,6 +7450,10 @@ Seq-annot ::= {
       },
       comment "snoRNA:CG32479-a-RA; Dmel\snoRNA:CG32479-a-RA; CR43576-RA;
  Dmel\CR43576-RA",
+      product whole other {
+        accession "NR_048215",
+        version 1
+      },
       location packed-int {
         {
           from 891249,
@@ -7507,6 +7511,10 @@ Seq-annot ::= {
         ext name "mir-2279 precursor RNA"
       },
       comment "mir-2279-RM; Dmel\mir-2279-RM; CR42911-RM; Dmel\CR42911-RM",
+      product whole other {
+        accession "NR_047702",
+        version 1
+      },
       location packed-int {
         {
           from 1322832,
@@ -7559,6 +7567,10 @@ Seq-annot ::= {
         ext name "ribosomal RNA"
       },
       comment "CR41602-RA; Dmel\CR41602-RA",
+      product whole other {
+        accession "NR_004370",
+        version 1
+      },
       location packed-int {
         {
           from 190009,
@@ -7601,7 +7613,12 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
+      except TRUE,
       comment "similar to human chromosome 6 open reading frame 52",
+      product whole genbank {
+        accession "GU183135",
+        version 1
+      },
       location packed-int {
         {
           from 1871967,
@@ -7659,7 +7676,8 @@ Seq-annot ::= {
           },
           fuzz-to lim gt
         }
-      }
+      },
+      except-text "mismatches in transcription"
     }
   }
 }

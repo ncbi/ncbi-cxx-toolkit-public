@@ -6975,6 +6975,10 @@ Seq-annot ::= {
       },
       comment "snoRNA:CG32479-a-RA; Dmel\snoRNA:CG32479-a-RA; CR43576-RA;
  Dmel\CR43576-RA",
+      product whole other {
+        accession "NR_048215",
+        version 1
+      },
       location packed-int {
         {
           from 891249,
@@ -7028,6 +7032,10 @@ Seq-annot ::= {
         ext name "mir-2279 precursor RNA"
       },
       comment "mir-2279-RM; Dmel\mir-2279-RM; CR42911-RM; Dmel\CR42911-RM",
+      product whole other {
+        accession "NR_047702",
+        version 1
+      },
       location packed-int {
         {
           from 1322832,
@@ -7076,6 +7084,10 @@ Seq-annot ::= {
         ext name "ribosomal RNA"
       },
       comment "CR41602-RA; Dmel\CR41602-RA",
+      product whole other {
+        accession "NR_004370",
+        version 1
+      },
       location packed-int {
         {
           from 190009,
@@ -7114,7 +7126,12 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
+      except TRUE,
       comment "similar to human chromosome 6 open reading frame 52",
+      product whole genbank {
+        accession "GU183135",
+        version 1
+      },
       location packed-int {
         {
           from 1871967,
@@ -7172,7 +7189,8 @@ Seq-annot ::= {
           },
           fuzz-to lim gt
         }
-      }
+      },
+      except-text "mismatches in transcription"
     },
     {
       data gene {
@@ -8320,6 +8338,95 @@ Seq-annot ::= {
           to 154206,
           strand minus,
           id gi 346722692,
+          fuzz-from lim lt
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 0,
+        to 928,
+        strand minus,
+        id gi 323511446,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_12_38",
+      location packed-int {
+        {
+          from 0,
+          to 928,
+          strand minus,
+          id gi 323511446,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "PROT_12_38",
+      location packed-int {
+        {
+          from 0,
+          to 928,
+          strand minus,
+          id gi 323511446,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_13_39",
+      location packed-int {
+        {
+          from 1,
+          to 928,
+          strand minus,
+          id gi 323511446,
+          fuzz-from lim lt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      product whole local str "PROT_13_39",
+      location packed-int {
+        {
+          from 1,
+          to 928,
+          strand minus,
+          id gi 323511446,
           fuzz-from lim lt
         }
       }

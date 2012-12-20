@@ -880,6 +880,10 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                                *align, loc, opts)
         : x_CreateMrnaFeature(*align, loc, time, model_num,
                               seqs, rna_id);
+    if (mrna_feat &&!mrna_feat->IsSetProduct()) {
+        /// Propagated full-length feature; add product
+        mrna_feat->SetProduct().SetWhole().Assign(rna_id);
+    }
 
     CRef<CSeq_feat> gene_feat;
 
