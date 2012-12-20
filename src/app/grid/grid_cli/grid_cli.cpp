@@ -765,7 +765,8 @@ struct SCommandDefinition {
         JSON_OUTPUT_FORMAT "\". The default is \"" RAW_OUTPUT_FORMAT "\".",
         {eQueueArg, eNetSchedule, eAllQueues, eQueueClasses,
             eLoginToken, eAuth, eClientNode, eClientSession, eOutputFormat,
-            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1},
+        {eRaw, eJSON, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DumpQueue,
         "dumpqueue", "Dump a NetSchedule queue.",
