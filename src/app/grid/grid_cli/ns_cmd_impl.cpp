@@ -698,7 +698,7 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
 
 void CPrintJobInfo::ProcessJobMeta(const CNetScheduleKey& key)
 {
-    printf("server_address: %s:%hu\nid: %u\n",
+    printf("server_address: %s:%hu\njob_id: %u\n",
         g_NetService_TryResolveHost(key.host).c_str(), key.port, key.id);
 
     if (!key.queue.empty())
@@ -774,7 +774,7 @@ void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
     m_JobInfo.SetString("server_host", g_NetService_TryResolveHost(key.host));
     m_JobInfo.SetNumber("server_port", key.port);
 
-    m_JobInfo.SetNumber("id", key.id);
+    m_JobInfo.SetNumber("job_id", key.id);
 
     if (!key.queue.empty())
         m_JobInfo.SetString("queue_name", UnquoteIfQuoted(key.queue));
