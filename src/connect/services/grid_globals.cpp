@@ -218,7 +218,8 @@ CGridGlobals::CGridGlobals() :
     m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
     m_ExitCode(0),
     m_StartTime(GetFastLocalTime()),
-    m_Worker(NULL)
+    m_Worker(NULL),
+    m_UDPPort(0)
 {
 }
 
@@ -252,6 +253,13 @@ void CGridGlobals::KillNode()
     _ASSERT(m_Worker);
     if (m_Worker)
         GetJobWatcher().x_KillNode(*m_Worker);
+}
+
+void CGridGlobals::x_InterruptUDPPortListening()
+{
+    if (m_UDPPort != 0)
+        CDatagramSocket().Send("SHUTDOWN", sizeof("SHUTDOWN"),
+                "127.0.0.1", m_UDPPort);
 }
 
 END_NCBI_SCOPE

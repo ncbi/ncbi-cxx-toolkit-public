@@ -1170,6 +1170,8 @@ int CGridWorkerNode::Run()
     watcher.SetInfiniteLoopTime(reg.GetInt(kServerSec,
             "infinite_loop_time", 0, 0, IRegistry::eReturn));
     CGridGlobals::GetInstance().SetWorker(*this);
+    CGridGlobals::GetInstance().SetUDPPort(
+            m_NSExecutor->m_NotificationHandler.GetPort());
 
     IWorkerNodeIdleTask* task = NULL;
 
@@ -1502,7 +1504,7 @@ void CGridWorkerNode::x_ProcessRequestJobNotification()
 
 bool CGridWorkerNode::x_WaitForNewJob(CNetScheduleJob& job)
 {
-    while (!CGridGlobals::GetInstance().IsShuttingDown()) {
+    for (;;) {
         while (!m_ImmediateActions.IsEmpty()) {
             if (x_PerformTimelineAction(m_ImmediateActions.Shift(), job))
                 return true;
@@ -1515,6 +1517,9 @@ bool CGridWorkerNode::x_WaitForNewJob(CNetScheduleJob& job)
                 x_ProcessRequestJobNotification();
         }
 
+        if (CGridGlobals::GetInstance().IsShuttingDown())
+            return false;
+
         if (!m_Timeline.IsEmpty()) {
             if (m_NSExecutor->m_NotificationHandler.WaitForNotification(
                     m_Timeline.GetHead()->GetTimeout()))
@@ -1523,8 +1528,6 @@ bool CGridWorkerNode::x_WaitForNewJob(CNetScheduleJob& job)
                 return true;
         }
     }
-
-    return false;
 }
 
 bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
@@ -1534,7 +1537,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
 
     if (debug_context &&
-        debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
+            debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
         job_exists = debug_context->GetNextJob(job.job_id, job.input);
         if (!job_exists) {
             CGridGlobals::GetInstance().

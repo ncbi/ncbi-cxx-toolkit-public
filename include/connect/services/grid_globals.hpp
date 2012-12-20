@@ -114,16 +114,21 @@ public:
     bool ReuseJobObject() const { return m_ReuseJobObject; }
     void SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
     void SetWorker(CGridWorkerNode& worker) { m_Worker = &worker; }
+    void SetUDPPort(unsigned short udp_port) {m_UDPPort = udp_port;}
 
 
     /// Request node shutdown
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
-                      { m_ShutdownLevel = level; }
+    {
+        m_ShutdownLevel = level;
+        x_InterruptUDPPortListening();
+    }
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level,
-        int exit_code)
+            int exit_code)
     {
         m_ShutdownLevel = level;
         m_ExitCode = exit_code;
+        x_InterruptUDPPortListening();
     }
     bool IsShuttingDown();
 
@@ -142,7 +147,6 @@ public:
     void KillNode();
 
 private:
-
     CGridGlobals();
     static auto_ptr<CGridGlobals> sm_Instance;
 
@@ -154,6 +158,9 @@ private:
     auto_ptr<CWNJobWatcher> m_JobWatcher;
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;
+    unsigned short m_UDPPort;
+
+    void x_InterruptUDPPortListening();
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
