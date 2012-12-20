@@ -186,6 +186,10 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         return aln_row.m_Id;
     }
 
+    // Prepare insert point depending on the source strand
+    TSegments::iterator ins_point = seg_it;
+    bool src_reverse = aln_row.m_IsSetStrand ? IsReverse(aln_row.m_Strand) : false;
+
     // At least part of the interval was converted.
     TSeqPos dl = cvt.m_Src_from <= rg.GetFrom() ?
         0 : cvt.m_Src_from - rg.GetFrom();
@@ -193,8 +197,8 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         0 : rg.GetTo() - cvt.m_Src_to;
     if (dl > 0) {
         // Add segment for the skipped range
-        SAlignment_Segment& lseg = x_InsertSeg(seg_it, dl,
-            old_it->m_Rows.size());
+        SAlignment_Segment& lseg = x_InsertSeg(ins_point, dl,
+            old_it->m_Rows.size(), src_reverse);
         lseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < old_it->m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& lrow =
@@ -211,9 +215,10 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
         }
     }
     rg.SetFrom(rg.GetFrom() + dl);
-    SAlignment_Segment& mseg = x_InsertSeg(seg_it,
+    SAlignment_Segment& mseg = x_InsertSeg(ins_point,
         rg.GetLength() - dr,
-        old_it->m_Rows.size());
+        old_it->m_Rows.size(),
+        src_reverse);
     mseg.m_PartType = old_it->m_PartType;
     if (!dl  &&  !dr) {
         // copy scores if there's no truncation
@@ -253,9 +258,10 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
     rg.SetFrom(rg.GetTo() - dr);
     if (dr > 0) {
         // Add the remaining unmapped range
-        SAlignment_Segment& rseg = x_InsertSeg(seg_it,
+        SAlignment_Segment& rseg = x_InsertSeg(ins_point,
             dr,
-            old_it->m_Rows.size());
+            old_it->m_Rows.size(),
+            src_reverse);
         rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < old_it->m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =
@@ -308,6 +314,10 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
     }
     sort(cvts.begin(), cvts.end(), CConversionRef_Less());
 
+    // Prepare insert point depending on the source strand
+    TSegments::iterator ins_point = seg_it;
+    bool src_reverse = aln_row.m_IsSetStrand ? IsReverse(aln_row.m_Strand) : false;
+
     bool mapped = false;
     CSeq_id_Handle dst_id;
     EAlignFlags align_flags = eAlign_Normal;
@@ -332,8 +342,8 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
             0 : rg.GetTo() - cvt.m_Src_to;
         if (dl > 0) {
             // Add segment for the skipped range
-            SAlignment_Segment& lseg = x_InsertSeg(seg_it,
-                dl, seg.m_Rows.size());
+            SAlignment_Segment& lseg = x_InsertSeg(ins_point,
+                dl, seg.m_Rows.size(), src_reverse);
             lseg.m_PartType = old_it->m_PartType;
             for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
                 SAlignment_Segment::SAlignment_Row& lrow =
@@ -353,8 +363,8 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
             }
         }
         left_shift += dl;
-        SAlignment_Segment& mseg = x_InsertSeg(seg_it,
-            rg.GetLength() - dl - dr, seg.m_Rows.size());
+        SAlignment_Segment& mseg = x_InsertSeg(ins_point,
+            rg.GetLength() - dl - dr, seg.m_Rows.size(), src_reverse);
         mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
             // copy scores if there's no truncation
@@ -406,8 +416,8 @@ CSeq_align_Mapper::x_ConvertSegmentCvt(TSegments::iterator& seg_it,
     }
     if (rg.GetFrom() <= rg.GetTo()) {
         // Add the remaining unmapped range
-        SAlignment_Segment& rseg = x_InsertSeg(seg_it,
-            rg.GetLength(), seg.m_Rows.size());
+        SAlignment_Segment& rseg = x_InsertSeg(ins_point,
+            rg.GetLength(), seg.m_Rows.size(), src_reverse);
         rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
             SAlignment_Segment::SAlignment_Row& rrow =

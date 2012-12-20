@@ -187,7 +187,8 @@ protected:
     // Required to split segments which can not be mapped as a whole.
     SAlignment_Segment& x_InsertSeg(TSegments::iterator& where,
                                     int                  len,
-                                    size_t               dim);
+                                    size_t               dim,
+                                    bool                 reverse);
     // Reset scores for the given segment and/or for the whole alignment.
     // This always resets global scores. Segment scores are reset only if
     // the segment is not NULL.

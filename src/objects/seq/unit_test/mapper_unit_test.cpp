@@ -125,7 +125,7 @@ void TestMappingSeq_loc(CSeq_loc_Mapper_Base& mapper,
     if ( !eq ) {
         cout << "Expected mapped location:" << endl;
         cout << MSerial_AsnText << ref_mapped;
-        cout << "Real mapped location:" << endl;
+        cout << "Actual mapped location:" << endl;
         cout << MSerial_AsnText << *mapped;
     }
 }
@@ -164,7 +164,7 @@ void TestMappingSeq_align(CSeq_loc_Mapper_Base& mapper,
     if ( !eq ) {
         cout << "Expected mapped alignment:" << endl;
         cout << MSerial_AsnText << ref_mapped;
-        cout << "Real mapped alignment:" << endl;
+        cout << "Actual mapped alignment:" << endl;
         cout << MSerial_AsnText << *mapped;
     }
 }
@@ -203,7 +203,7 @@ void TestMappingSeq_graph(CSeq_loc_Mapper_Base& mapper,
     if ( !eq ) {
         cout << "Expected mapped graph:" << endl;
         cout << MSerial_AsnText << ref_mapped;
-        cout << "Real mapped graph:" << endl;
+        cout << "Actual mapped graph:" << endl;
         cout << MSerial_AsnText << *mapped;
     }
 }

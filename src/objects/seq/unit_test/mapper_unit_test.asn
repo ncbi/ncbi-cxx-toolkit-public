@@ -33335,7 +33335,7 @@ Seq-align ::= {
       type partial,
       segs denseg {
         dim 2,
-        numseg 26,
+        numseg 27,
         ids {
           gi 29569253,
           gi 224384764
@@ -33392,7 +33392,9 @@ Seq-align ::= {
           43432,
           -1,
           42764,
-          -1
+          -1,
+          41338,
+          69515672
         },
         lens {
           29,
@@ -33420,9 +33422,12 @@ Seq-align ::= {
           531,
           668,
           1,
-          668
+          668,
+          1426
         },
         strands {
+          minus,
+          plus,
           minus,
           plus,
           minus,
@@ -33482,56 +33487,14 @@ Seq-align ::= {
       type partial,
       segs denseg {
         dim 2,
-        numseg 1,
+        numseg 49,
         ids {
           gi 29171387,
           gi 224384764
         },
         starts {
           0,
-          69517098
-        },
-        lens {
-          1164
-        },
-        strands {
-          plus,
-          plus
-        }
-      }
-    },
-    {
-      type partial,
-      segs denseg {
-        dim 2,
-        numseg 1,
-        ids {
-          gi 29569253,
-          gi 224384764
-        },
-        starts {
-          41338,
-          69515672
-        },
-        lens {
-          1426
-        },
-        strands {
-          minus,
-          plus
-        }
-      }
-    },
-    {
-      type partial,
-      segs denseg {
-        dim 2,
-        numseg 47,
-        ids {
-          gi 29171387,
-          gi 224384764
-        },
-        starts {
+          69517098,
           1164,
           -1,
           1168,
@@ -33625,9 +33588,12 @@ Seq-align ::= {
           -1,
           69550231,
           33110,
+          -1,
+          33121,
           -1
         },
         lens {
+          1164,
           4,
           33,
           1,
@@ -33674,19 +33640,14 @@ Seq-align ::= {
           9,
           58,
           121598,
-          11
+          11,
+          85385
         },
         strands {
           plus,
           plus,
           plus,
           plus,
-          minus,
-          plus,
-          plus,
-          plus,
-          minus,
-          plus,
           plus,
           plus,
           minus,
@@ -33709,18 +33670,6 @@ Seq-align ::= {
           plus,
           plus,
           plus,
-          plus,
-          plus,
-          minus,
-          plus,
-          plus,
-          plus,
-          plus,
-          plus,
-          minus,
-          plus,
-          plus,
-          plus,
           minus,
           plus,
           plus,
@@ -33734,6 +33683,14 @@ Seq-align ::= {
           minus,
           plus,
           plus,
+          plus,
+          plus,
+          plus,
+          minus,
+          plus,
+          plus,
+          plus,
+          minus,
           plus,
           plus,
           plus,
@@ -33768,6 +33725,20 @@ Seq-align ::= {
           plus,
           plus,
           minus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          minus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          minus,
+          plus,
+          plus,
           plus,
           plus,
           plus
@@ -33778,39 +33749,16 @@ Seq-align ::= {
       type partial,
       segs denseg {
         dim 2,
-        numseg 2,
-        ids {
-          gi 29171387,
-          gi 224384764
-        },
-        starts {
-          33121,
-          -1,
-          -1,
-          69671829
-        },
-        lens {
-          85385,
-          1214
-        },
-        strands {
-          plus,
-          plus,
-          minus,
-          plus
-        }
-      }
-    },
-    {
-      type partial,
-      segs denseg {
-        dim 2,
-        numseg 10,
+        numseg 13,
         ids {
           gi 29569258,
           gi 224384764
         },
         starts {
+          158527,
+          -1,
+          -1,
+          69671829,
           158526,
           -1,
           157311,
@@ -33830,9 +33778,13 @@ Seq-align ::= {
           -1,
           69982595,
           142555,
+          -1,
+          87912,
           -1
         },
         lens {
+          35823,
+          1214,
           1,
           1215,
           1716,
@@ -33842,9 +33794,16 @@ Seq-align ::= {
           1,
           13045,
           68120,
-          2
+          2,
+          54643
         },
         strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
           minus,
           plus,
           minus,
@@ -33872,39 +33831,16 @@ Seq-align ::= {
       type partial,
       segs denseg {
         dim 2,
-        numseg 2,
-        ids {
-          gi 29569258,
-          gi 224384764
-        },
-        starts {
-          87912,
-          -1,
-          -1,
-          70050715
-        },
-        lens {
-          54643,
-          9666
-        },
-        strands {
-          minus,
-          plus,
-          minus,
-          plus
-        }
-      }
-    },
-    {
-      type partial,
-      segs denseg {
-        dim 2,
-        numseg 63,
+        numseg 66,
         ids {
           gi 28436252,
           gi 224384764
         },
         starts {
+          0,
+          -1,
+          -1,
+          70050715,
           13491,
           -1,
           13493,
@@ -34030,9 +33966,13 @@ Seq-align ::= {
           -1,
           70101044,
           85544,
+          -1,
+          85550,
           -1
         },
         lens {
+          13491,
+          9666,
           2,
           10929,
           1017,
@@ -34095,25 +34035,12 @@ Seq-align ::= {
           8,
           8219,
           4494,
-          6
+          6,
+          2913
         },
         strands {
           plus,
           plus,
-          plus,
-          plus,
-          minus,
-          plus,
-          plus,
-          plus,
-          plus,
-          plus,
-          plus,
-          plus,
-          minus,
-          plus,
-          plus,
-          plus,
           minus,
           plus,
           plus,
@@ -34132,11 +34059,13 @@ Seq-align ::= {
           plus,
           plus,
           plus,
-          plus,
-          plus,
           minus,
           plus,
           plus,
+          plus,
+          plus,
+          plus,
+          minus,
           plus,
           plus,
           plus,
@@ -34160,18 +34089,6 @@ Seq-align ::= {
           plus,
           plus,
           plus,
-          plus,
-          plus,
-          plus,
-          plus,
-          minus,
-          plus,
-          plus,
-          plus,
-          minus,
-          plus,
-          plus,
-          plus,
           minus,
           plus,
           plus,
@@ -34181,6 +34098,22 @@ Seq-align ::= {
           minus,
           plus,
           plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          minus,
+          plus,
+          plus,
+          plus,
+          minus,
           plus,
           plus,
           plus,
@@ -34221,6 +34154,20 @@ Seq-align ::= {
           plus,
           plus,
           minus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          minus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          minus,
+          plus,
+          plus,
           plus,
           plus,
           plus
@@ -34231,39 +34178,16 @@ Seq-align ::= {
       type partial,
       segs denseg {
         dim 2,
-        numseg 2,
-        ids {
-          gi 28436252,
-          gi 224384764
-        },
-        starts {
-          85550,
-          -1,
-          -1,
-          70105538
-        },
-        lens {
-          2913,
-          10
-        },
-        strands {
-          plus,
-          plus,
-          minus,
-          plus
-        }
-      }
-    },
-    {
-      type partial,
-      segs denseg {
-        dim 2,
-        numseg 249,
+        numseg 252,
         ids {
           gi 28973815,
           gi 224384764
         },
         starts {
+          0,
+          -1,
+          -1,
+          70105538,
           1572,
           -1,
           1582,
@@ -34761,9 +34685,13 @@ Seq-align ::= {
           -1,
           70291267,
           187296,
+          -1,
+          187297,
           -1
         },
         lens {
+          1572,
+          10,
           10,
           6,
           581,
@@ -35012,13 +34940,18 @@ Seq-align ::= {
           3,
           1486,
           842,
-          1
+          1,
+          607
         },
         strands {
           plus,
           plus,
+          minus,
+          plus,
+          plus,
           plus,
           plus,
+          plus,
           minus,
           plus,
           plus,
@@ -35510,6 +35443,8 @@ Seq-align ::= {
           plus,
           plus,
           minus,
+          plus,
+          plus,
           plus,
           plus,
           plus
@@ -35520,39 +35455,16 @@ Seq-align ::= {
       type partial,
       segs denseg {
         dim 2,
-        numseg 2,
-        ids {
-          gi 28973815,
-          gi 224384764
-        },
-        starts {
-          187297,
-          -1,
-          -1,
-          70292109
-        },
-        lens {
-          607,
-          6082
-        },
-        strands {
-          plus,
-          plus,
-          minus,
-          plus
-        }
-      }
-    },
-    {
-      type partial,
-      segs denseg {
-        dim 2,
-        numseg 23,
+        numseg 25,
         ids {
           gi 37497128,
           gi 224384764
         },
         starts {
+          0,
+          -1,
+          -1,
+          70292109,
           234,
           -1,
           235,
@@ -35601,6 +35513,8 @@ Seq-align ::= {
           70309486
         },
         lens {
+          234,
+          6082,
           1,
           6081,
           627,
@@ -35626,6 +35540,10 @@ Seq-align ::= {
           1445
         },
         strands {
+          plus,
+          plus,
+          minus,
+          plus,
           plus,
           plus,
           plus,

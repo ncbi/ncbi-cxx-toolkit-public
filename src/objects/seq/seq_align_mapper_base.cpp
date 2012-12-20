@@ -41,7 +41,6 @@
 #include <objects/general/Object_id.hpp>
 #include <algorithm>
 
-
 #define NCBI_USE_ERRCODE_X   Objects_SeqAlignMap
 
 BEGIN_NCBI_SCOPE
@@ -240,9 +239,15 @@ SAlignment_Segment& CSeq_align_Mapper_Base::x_PushSeg(int len,
 SAlignment_Segment&
 CSeq_align_Mapper_Base::x_InsertSeg(TSegments::iterator& where,
                                     int                  len,
-                                    size_t               dim)
+                                    size_t               dim,
+                                    bool                 reverse)
 {
-    return *m_Segs.insert(where, SAlignment_Segment(len, dim));
+    TSegments::iterator ins_it =
+        m_Segs.insert(where, SAlignment_Segment(len, dim));
+    if ( reverse ) {
+        where = ins_it;
+    }
+    return *ins_it;
 }
 
 
@@ -1046,6 +1051,10 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         return seg.m_Rows[row].m_Id;
     }
 
+    // Prepare insert point depending on the source strand
+    TSegments::iterator ins_point = seg_it;
+    bool src_reverse = aln_row.m_IsSetStrand ? IsReverse(aln_row.m_Strand) : false;
+
     bool mapped = false;
     EAlignFlags align_flags = eAlign_Normal;
     TSeqPos start = aln_row.m_Start;
@@ -1086,7 +1095,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
             // Add segment for the skipped range on the left.
             // Copy the original segment.
             SAlignment_Segment& lseg =
-                x_InsertSeg(seg_it, dl, seg.m_Rows.size());
+                x_InsertSeg(ins_point, dl, seg.m_Rows.size(), src_reverse);
             lseg.m_GroupIdx = group_idx;
             lseg.m_PartType = old_it->m_PartType;
             // Iterate all rows, adjust their starts.
@@ -1113,8 +1122,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         left_shift += dl;
         // At least part of the interval was converted. Add new segment for
         // this range.
-        SAlignment_Segment& mseg = x_InsertSeg(seg_it,
-            stop - dr - start + 1, seg.m_Rows.size());
+        SAlignment_Segment& mseg = x_InsertSeg(ins_point,
+            stop - dr - start + 1, seg.m_Rows.size(), src_reverse);
         mseg.m_GroupIdx = group_idx;
         mseg.m_PartType = old_it->m_PartType;
         if (!dl  &&  !dr) {
@@ -1184,8 +1193,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
     }
     if (start <= stop) {
         // Add the remaining unmapped range if any.
-        SAlignment_Segment& rseg = x_InsertSeg(seg_it,
-            stop - start + 1, seg.m_Rows.size());
+        SAlignment_Segment& rseg = x_InsertSeg(ins_point,
+            stop - start + 1, seg.m_Rows.size(), src_reverse);
         rseg.m_GroupIdx = group_idx;
         rseg.m_PartType = old_it->m_PartType;
         for (size_t r = 0; r < seg.m_Rows.size(); ++r) {
