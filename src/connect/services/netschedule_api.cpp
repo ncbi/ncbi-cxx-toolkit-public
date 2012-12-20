@@ -599,12 +599,12 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
     ITERATE(list<CTempString>, it, lst) {
         CTempString n, v;
-        if (NStr::SplitInTwo(*it, "=", n, v))
+        if (NStr::SplitInTwo(*it, "=", n, v)) {
             if (n == "max_input_size")
                 m_ServerParams->max_input_size = NStr::StringToInt(v) / 4;
             else if (n == "max_output_size")
                 m_ServerParams->max_output_size = NStr::StringToInt(v) / 4;
-
+        }
     }
 
     return *m_ServerParams;
