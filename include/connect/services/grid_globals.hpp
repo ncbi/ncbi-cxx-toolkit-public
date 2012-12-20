@@ -105,6 +105,13 @@ private:
 class NCBI_XCONNECT_EXPORT CGridGlobals
 {
 public:
+    CGridGlobals() :
+        m_ReuseJobObject(false),
+        m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
+        m_ExitCode(0),
+    {
+    }
+
     ~CGridGlobals();
 
     static CGridGlobals& GetInstance();
@@ -157,7 +164,6 @@ private:
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);
-
 };
 
 inline bool CGridGlobals::IsShuttingDown()
