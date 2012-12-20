@@ -1,0 +1,936 @@
+       
+div.ui-ncbiautocomplete-holder
+{
+    position: absolute;
+    top:0px;
+    left:0px;       
+    min-height: 218px;
+    *height: 218px;    
+    border: 1px solid #5a5a5a;
+    display: none;
+    font-family: helvetica, arial, sans-serif;
+}
+
+ul.ui-ncbiautocomplete-options
+{
+    height: 218px;
+    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    font-family: Arial, helvetica, serif;
+    font-size: 1.2em;
+    font-weight: normal;
+    cursor: pointer;
+    color: #0000FF;
+    background-color: #FFF;
+}
+
+ul.ui-ncbiautocomplete-options li span
+{
+    font-weight: normal;
+}
+
+ul.ui-ncbiautocomplete-options li
+{
+    padding: .2em;
+    padding-left: .8em;
+    white-space: nowrap;
+	overflow: hidden;
+	width: 100%;
+	text-overflow: ellipsis;
+}
+
+ul.ui-ncbiautocomplete-options li.ui-ncbiautocomplete-options-high
+{    
+    background-color: #DAEEF4;    
+    text-decoration: none;
+    color: #001155;
+}
+
+.ui-ncbiautocomplete-actions
+{
+    height: 1em;
+    background-color: #CECECE;
+    line-height: 1em;
+    padding: .5em;
+    padding-left: .8em;  
+    border-top: 1px solid #777;
+}
+
+.ui-ncbiautocomplete-link-off, .ui-ncbiautocomplete-link-pref
+{
+    font-size: 1.4em;
+    color: #5a5a5a;
+    text-decoration: none;
+}
+
+a.ui-ncbiautocomplete-link-off:hover, a.ui-ncbiautocomplete-link-pref:hover
+{
+    text-decoration: underline;
+    color: #003399;
+}
+
+.ui-ncbiautocomplete-link-off
+{
+    float: left; 
+    padding-right: .3em;
+}
+
+.ui-ncbiautocomplete-link-pref
+{
+    float: right;
+    padding-right: .8em;
+}
+
+li.ui-ncbiautocomplete-show-more
+{
+    background-color: #C3D2DB;
+    border-top: 1px solid black;
+}
+
+iframe.ui-ncbiautocomplete-iframe
+{
+    position: absolute;
+    top:0px;
+    left:0px;       
+    height: 200px;
+    z-index:1000; 
+    display: none;
+    filter:alpha(opacity=1);
+}
+/* Paged CSS */
+div.ui-ncbigrid-paged-toolbar{width: auto;border-width: 1px 0 0 0; border-color: #d4dfe9; border-style: solid; background-color: #fff;padding: auto .637em;line-height: .727em;-moz-border-radius-bottomright: 4px;-moz-border-radius-bottomleft: 4px;}
+div.ui-ncbigrid-paged-countItems{width: 25%;float: left;line-height: 1.2em;}
+div.ui-ncbigrid-paged-pageControl{width: 40%;margin-left: 28%;_width: auto;_margin-left: auto;text-align: center;line-height:1.2em;}
+div.ui-ncbigrid-paged-gotoControl{width: 32%;float: right;text-align: right; }
+div.ui-ncbigrid-paged-gotoControl input{text-align: center;font-size: .9em;    }
+tr.ui-ncbigrid-rowHidden{display: none;}
+div.ui-ncbigrid-paged-pageControl button{font-size: .9em;padding: 0em;margin: 0em;*margin: 0em .3em 0em .5em;width: 6em;background: none;border: 1px solid #ccc;color: #14376C; line-height: 1.2em;}
+/* Sortable CSS */
+table.ui-ncbigrid th.sortAsc a,table.ui-ncbigrid th.sortDsc a,table.ui-ncbigrid th.sortNone a{padding-right : 21px;background-repeat: no-repeat;background-position: right center;color: #333;}
+table.ui-ncbigrid th.sortAsc a{background-image : url(../img/sorted_asc.gif);}
+table.ui-ncbigrid th.sortDsc a{background-image : url(../img/sorted_dsc.gif);}
+table.ui-ncbigrid th.sortNone a{background-image: none;color: #14376c;}
+table.ui-ncbigrid th.sortNone a:hover { background-image: url('../img/sorted_non.gif');color: #985735; }
+table.ui-ncbigrid th a{display: block;text-decoration: none;_width : 100%;padding-right: 21px;border: 0; }
+table.ui-ncbigrid th a:hover, table.ui-ncbigrid th a, table.ui-ncbigrid th a:active { border: 0 !important; }
+table.ui-ncbigrid th, table.ui-ncbigrid th a { color: #14376c; }
+/* Scrollable CSS */
+/* Scrollable Table CSS Broken up by browsers so it is easier to undertand and code */
+/************************/
+/* Start of Firefox CSS */
+/************************/
+/* FF has a border collapse bug so all of this work needs to be done */
+div.ui-ncbigrid-scroll{padding : 0px;margin : 0px;}
+div.ui-ncbigrid-scroll.firefox table,div.ui-ncbigrid-scroll.firefox table tr,div.ui-ncbigrid-scroll.firefox table th,div.ui-ncbigrid-scroll.firefox table td {/*border: 1px solid #000;*/   }
+div.ui-ncbigrid-scroll.firefox table td {border-width: 0px 1px 1px 0px;}
+div.ui-ncbigrid-scroll.firefox table tr:last-child td {border-width: 0px 1px 0px 0px;}
+div.ui-ncbigrid-scroll.firefox table tfoot tr:last-child th,div.ui-ncbigrid-scroll.firefox table thead tr:last-child th {border-width: 0px 1px 1px 0px;}
+div.ui-ncbigrid-scroll.firefox table tfoot tr:first-child th {border-width: 1px 1px 0px 0px;}
+div.ui-ncbigrid-scroll.firefox table tfoot tr th:last-child{border-right: 0px;}
+/* end FF collapse Bug */
+/* Adjust for scrollbar */
+div.ui-ncbigrid-scroll.firefox table tr td:last-child  {padding-right: 17px;border-right: 0px;}
+div.ui-ncbigrid-scroll.firefox table caption{/* border-width: 1px 1px 0px;border-style: solid;border-color: #AAA; */}
+div.ui-ncbigrid-scroll.firefox table{position: relative;}
+div.ui-ncbigrid-scroll.firefox table tbody{overflow-y: scroll;overflow-x: hidden;position: relative;}
+/******************************/
+/* Start of Chrome/Safari CSS */
+/******************************/
+div.ui-ncbigrid-scroll.sa_ch{overflow-y: scroll;}
+div.ui-ncbigrid-scroll.sa_ch table,div.ui-ncbigrid-scroll.sa_ch table tr,div.ui-ncbigrid-scroll.sa_ch table tr th,div.ui-ncbigrid-scroll.sa_ch table tr td{border-collapse: collapse;}
+/*Keep border from being very thick against scrollbar*/
+div.ui-ncbigrid-scroll.sa_ch table th:last-child,div.ui-ncbigrid-scroll.sa_ch table td:last-child{border-right: 0;}
+div.ui-ncbigrid-scroll.sa_ch table{border-top: 0;width: 100%;}
+div.ui-ncbigrid-scroll.sa_ch table thead th{}
+div.ui-ncbigrid-scroll.sa_ch table tfoot th{}
+div.ui-ncbigrid-scroll.sa_ch caption{border-top: 0px solid #AAA;}
+/****************************/
+/* End of Chrome/Safari CSS */
+/****************************/
+/********************/
+/* Start of IE8 CSS */
+/********************/
+div.ui-ncbigrid-scroll.ie8{overflow-y: auto;overflow-x: hidden;}
+div.ui-ncbigrid-scroll.ie8 table, div.ui-ncbigrid-scroll.ie8 table tr th{border: 1px solid #AAA;border-collapse: collapse;}
+/* JSL-1085 div.ui-ncbigrid-scroll.ie8 table tr,, div.ui-ncbigrid-scroll.ie8 table tr td{border: 1px solid #AAA; } */
+div.ui-ncbigrid-scroll.ie8 table thead th,div.ui-ncbigrid-scroll.ie8 table tfoot th{background-color: #EEE;}
+div.ui-ncbigrid-scroll.ie8 table caption{border: 1px solid #AAA;border-width: 1px 1px 0px 1px;}
+/******************/
+/* End of IE8 CSS */
+/******************/
+/**********************/
+/* Start of IE6/7 CSS */
+/**********************/
+div.ui-ncbigrid-scroll.ie6_7{overflow-y: scroll;overflow-x: hidden;_border-left: 1px solid #AAA;border-bottom: 1px solid #AAA;padding:0px;margin:0px;padding-right: 11px;_padding-right: 0px;}
+div.ui-ncbigrid-scroll.ie6_7 table{padding:0px;margin:0px;_margin-left:-2px;}
+div.ui-ncbigrid-scroll.ie6_7 table,div.ui-ncbigrid-scroll.ie6_7 table tr,div.ui-ncbigrid-scroll.ie6_7 table tr th,div.ui-ncbigrid-scroll.ie6_7 table tr td{ /* border: 1px solid #AAA;border-collapse: collapse; */ }
+div.ui-ncbigrid-scroll.ie6_7 table,div.ui-ncbigrid-scroll.ie6_7 table tr td{border-bottom:0px;}
+div.ui-ncbigrid-scroll.ie6_7 table thead.orginal tr,div.ui-ncbigrid-scroll.ie6_7 table thead.orginal tr{position: absolute;}
+div.ui-ncbigrid-scroll.ie6_7 table thead.orginal th,div.ui-ncbigrid-scroll.ie6_7 table tfoot th{background-color: #EEE;position: relative;border-left:0px;_left: 3px;}
+/*!! I know expressions are bad, but the onscroll refresh rate does not match this performance !!*/
+div.ui-ncbigrid-scroll.ie6_7 table thead.orginal th{top: expression( (- this.parentNode.parentNode.parentNode.getElementsByTagName("tbody")[0].offsetHeight - this.offsetHeight + 1 ) + "px");}
+div.ui-ncbigrid-scroll.ie6_7 table tfoot.orginal th{top: expression( this.parentNode.parentNode.parentNode.parentNode.offsetHeight - this.parentNode.parentNode.parentNode.offsetHeight + 1 + (window["_scrollredrawIssueHeight"] || 0) + "px");border-bottom: 1px solid #AAA;_top: expression( this.parentNode.parentNode.parentNode.parentNode.offsetHeight - this.parentNode.parentNode.parentNode.offsetHeight + 1 + this.parentNode.parentNode.parentNode.parentNode.scrollTop + "px");}
+div.ui-ncbigrid-scroll-caption,div.ui-ncbigrid-scroll.ie6_7 table caption{border: 0px solid #AAA;border-width: 1px 1px 0px 1px;margin-bottom:-3px;}
+div.ui-ncbigrid-scroll-caption{position: relative;z-index: 1;zoom : 1;top: expression(this.parentNode.parentNode.parentNode.scrollTop - 1+ "px");_left: 1px;border: 1px solid #AAA;border-width: 1px 0px;_border-width: 1px;_margin-right: 1px;}
+div.ui-ncbigrid-scroll table caption{border 0px;padding: 0px;}
+div.ui-ncbigrid-scroll-caption{/*border-width: 1px 1px 0px;*/border-style: solid;border-color: #AAAAAA;background-color: #CCC;padding: .5em .4em;}
+div.ui-ncbigrid-scroll-caption{/*position: relative;*/}
+/* Code bewlow is for wonderful portal which has the xml line beofre the doctype! */
+div.ui-ncbigrid-scroll.ie6_docIgnored table thead.orginal{position: absolute;}
+div.ui-ncbigrid-scroll.ie6_docIgnored table thead.orginal tr{position: absolute;}
+/*div.ui-ncbigrid-scroll.ie6_7 table thead.orginal th    */
+div.ui-ncbigrid-scroll.ie6_docIgnored table thead.orginal th{position: relative;z-index: 1;zoom : 1;xtop: expression(this.parentNode.parentNode.parentNode.parentNode.scrollTop + "px");top: expression( (-this.parentNode.parentNode.parentNode.getElementsByTagName("tbody")[0].offsetHeight - this.offsetHeight + this.parentNode.parentNode.parentNode.parentNode.scrollTop) + "px");left: 1px;border: 1px solid #AAA;border-width: 1px 0px;_border-width: 1px;_margin-right: 1px;border-right: 0px solid #EEE;padding-right: 1px;}
+/********************/
+/* End of IE6/7 CSS */
+/********************/
+/***********************/
+/* Start of common CSS */
+/***********************/
+/* Non Scrollable CSS */
+table.ui-ncbigrid-nonscroll{border-collapse: collapse;}
+/* Zebra */
+tr.ui-ncbigrid-row-odd td{background-color: #F5F5F5;}
+tr.ui-ncbigrid-row-even td{background-color: #FFF;}
+/* filter */
+.ncbigrid-row-filtered{display: none;}
+/* highlighing */
+.ui-ncbigrid tbody tr.ui-ncbigrid-high td,.ui-ncbigrid tbody tr.ui-ncbigrid-high.ui-ncbigrid-row-odd td{background: #F2FF7F;_background: #FFF;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd td.sorted, .ui-ncbigrid tbody tr.ui-ncbigrid-row-odd.ui-ncbigrid-high td.sorted{background: #F5F5F5;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-high.ui-ncbigrid-row-even td{background: #E7FF00;_background: #F7F7F7;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-even.ui-ncbigrid-high td.sorted{background: #F2FF7F;_background: #EFEFEF;}
+/*IE6 Pain*/
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd-high-IE6 td{background: #F2FF7F;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd-high-IE6 td.sorted{background: #E5FF00;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-even-high-IE6 td{background: #F5F599;}
+.ui-ncbigrid tbody tr.ui-ncbigrid-row-even-high-IE6 td.sorted{background: #F2FF7F;}
+.ui-ncbigrid td.ui-ncbigrid-column-hidden, .ui-ncbigrid th.ui-ncbigrid-column-hidden{display: none;}
+/*********************/
+/* End of common CSS */ 
+/*********************/
+table.ui-ncbigrid {border: 1px solid #97B0C8;border-radius: 4px;-moz-border-radius: 4px; }
+.ui-tabs table.ui-ncbigrid {clear: both;}
+.ui-ncbigrid-paged-toolbar { padding: 0.4em; width: 100%; display: block; }
+.ui-tabs .jig-ncbigrid-panel, .ui-tabs div.ui-ncbigrid-scroll { }
+.ui-tabs .num_selected { color: #666; }
+table.ui-ncbigrid-scroll caption,table.ui-ncbigrid caption{
+/* border-width: 1px 1px 0px;
+border-style: solid;
+border-color: #AAAAAA;
+background-color: #CCC;
+padding: .5em .4em;
+font-size: 1.2em; */
+height: 0;text-indent: -99999px;padding: 0;margin: 0;border: 0 !important;background: none;display: none;}
+table.ui-ncbigrid,table.ui-ncbigrid td,table.ui-ncbigrid th{border: 1px solid #AAAAAA;}
+table.ui-ncbigrid td,table.ui-ncbigrid th { padding-left: .637em; }
+table.ui-ncbigrid td {border: 0;padding: .091em 0.637em;vertical-align: top; }
+table.ui-ncbigrid tbody tr:first-child td { padding-top: 4px; }
+table.ui-ncbigrid tbody tr:last-child td { padding-bottom: 4px; }
+table.ui-ncbigrid th {font-weight: normal;font-size: 1.1em;background-color: #EEE;text-align: left;background: url('images/gradient.png') repeat-x bottom left #fff !important;border-top: 0;border-width: 0 1px 1px 0;border-style: solid;border-color: #fff #cfcfcf #d4dfe9;}
+table.ui-ncbigrid th:last-child { border-right: 0; }
+table.ui-ncbigrid th.sortAsc,table.ui-ncbigrid th.sortDsc {background: none #fff;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd td.sorted{background-color: #EEE;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-even td.sorted{background-color: #f5f5f5;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-even-high-IE6 td.sorted,table.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd.ui-ncbigrid-high td.sorted{background-color: #E7FF00;}
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-odd-high-IE6 td.sorted,
+table.ui-ncbigrid tbody tr.ui-ncbigrid-row-even.ui-ncbigrid-high td.sorted{background-color: #F2FF7F;}
+div.ui-ncbigrid-loadingbar{width : 10em;height : 2.0em;text-align: center;padding: 1.5em;font-weight: bold;font-size: 1.5em;background-color: #CCC;border: 1px solid #AAA;}
+table.ui-ncbigrid td.select {padding-right: 7px;padding-left: 2px;width: 4px; }
+table.ui-ncbigrid tbody tr:hover td, table.ui-ncbigrid tr.hover td { background: #eaf0f4; }
+table.ui-ncbigrid tbody tr.active td { background-color: #cbd7e3; }
+table.ui-ncbigrid .table-controls {background: #FFF;border: 0;color: #333;clear: both;padding: .25em 7px; }
+table.ui-ncbigrid .table-controls a { color: #14376c; }
+
+/* JSL-1083 */
+table.ui-ncbigrid th.sortDsc, table.ui-ncbigrid th.sortAsc, table.ui-ncbigrid th.sortNone{ padding-left: 0px; }
+table.ui-ncbigrid th.sortDsc a, table.ui-ncbigrid th.sortAsc a, table.ui-ncbigrid th.sortNone a{ padding-left: .637em; }
+/* Nothing needed here right now all in the base ncbigrid */
+
+textarea.ui-ncbielastictextarea {
+}
+
+ul.jig-ncbimenu li {
+    z-index: 1\9; /* For IE resetting z-index bug: JSL-1126 */
+}
+
+.ui-ncbimenu, .ui-ncbimenu ul { /* all lists */
+	padding: 0;
+	margin: 0;
+	list-style: none;
+	line-height: 1;
+}
+.ui-ncbimenu li a {
+    
+	display: block;
+    white-space: nowrap;
+	/* padding: .3em .2em; */
+	padding: 0.5em 0.3em;
+	text-decoration: none;
+}
+
+.ui-ncbimenu li { /* all list items */
+	float: left;
+}
+.ui-ncbimenu li.ui-ncbimenu-item {
+	/* integreated from Eddies CSS */
+	border: none;
+	border-bottom: 1px dotted #E5E5E5;
+}
+
+.ui-ncbimenu li ul ul { /* third-and-above-level lists */
+	margin: -1.8em 0 0 9.75em;
+}
+
+/* 
+hide all submenus by default. Added by _init, so we can take off later 
+we need to explicity take off widths and positioning for hasLayout bug in IE
+*/
+ul.ui-ncbimenu ul {
+    display: none;
+    background-color: #fff;
+}
+       
+ul.ui-ncbimenu-has-active-submenu li{
+    z-index: 1003;
+}
+
+ul.ui-ncbimenu-submenu {
+    position: static;
+    width: auto;
+    
+    /* Integrated from Eddies */
+    border-color: #DDDDDD #AAAAAA #AAAAAA #DDDDDD;
+	border-style: solid;
+	border-width: 1px;
+	-moz-box-shadow: 0.4em 0.4em 0.5em #BBBBBB;
+	background-color: #FFFFFF;
+}
+
+/* when submenu is closed, we have to reset some properties that give hasLayout for IE */
+ul.ui-ncbimenu-submenu-open {
+	/* position: absolute; */
+}
+ul.jig-ncbimenu a {
+    text-decoration: none;
+}
+
+.ui-ncbimenu-item a:hover, .ui-ncbimenu-item-first a:hover {
+    text-decoration: none;
+
+
+}
+
+.ui-ncbimenu-item-active {
+	/* background-color: #ddd; */
+}
+
+/* integrated from Eddie */
+li a.ui-ncbimenu-item-first-active, a.ui-ncbimenu-item-active, .ui-ncbimenu a:focus {
+    background-color: #4C96DF;
+    color: #FFFFFF;
+    
+}
+
+/* in cases when we have a specified class we should not have a bg color on the <a> */
+li.ui-ncbimenu-item-no-hlt a:focus, li.ui-ncbimenu-item-skip a:focus {
+    background-color: transparent;
+}
+
+
+.ui-ncbimenu-link-first, li a.ui-ncbimenu-item-active {
+    color: #FFFFFF;
+}
+.ui-ncbimenu-first-link-has-submenu {
+    background: transparent url(../img/arrow-sprite.png) no-repeat scroll 96% -8%;
+}
+
+ul.ui-ncbimenu li a.ui-ncbimenu-first-link-has-submenu{
+    padding-right: 20px;
+}
+a.ui-ncbimenu-first-link-has-submenu-active {
+    background: transparent url(../img/arrow-sprite.png) no-repeat scroll 96% 26%;
+}
+
+.ui-ncbimenu-submenu a {
+    color: #000000;
+}
+
+ul.ui-ncbimenu a:hover {
+    border-bottom: none;
+}
+
+
+.ui-ncbimenu span.ui-icon {
+	display:inline;
+	right:0;
+	position:absolute;
+}
+.ui-ncbimenu li.ui-ncbimenu-item-first {
+    position: relative;  /* so we can position the child icon */
+    margin: 0 .75em 0 0;
+}
+
+.ui-ncbimenu-item-first a {
+    /* padding-right: 1em; */
+}
+
+.ui-ncbimenu li.ui-ncbimenu-item-first a span.ui-icon-carat-1-s {
+    bottom: .3em;
+}
+
+
+.ui-ncbipopper-wrapper{ 
+    position: absolute; 
+    top: 0px; 
+    left:0px;
+    z-index: 11;  /*Need to have it at 11 since the bread crumbs is at 10 in the footer. weird */
+}
+
+.ui-ncbipopper-arrow-left div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-right div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-top div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-bottom div.ui-ncbipopper-arrow-image{
+    width: 20px;
+    height: 20px;
+    background-image: url(../img/ncbipopper-arrow.gif);
+    background-repeat: no-repeat;
+}
+
+
+/* left arrow */
+.ui-ncbipopper-arrow-left {
+    width: 20px;
+    height: 100%;
+    float: left;
+}
+
+.ui-ncbipopper-arrow-left div.ui-ncbipopper-arrow-image{
+    background-position: center left;
+}
+
+
+/* right arrow */            
+.ui-ncbipopper-arrow-right {
+    width: 20px;
+    height: 100%;
+    float: left;
+}
+
+.ui-ncbipopper-arrow-right div.ui-ncbipopper-arrow-image{
+    background-position: center right;
+}
+
+/* top arrow */            
+.ui-ncbipopper-arrow-top {
+    width: 100%;
+    height: 20px;
+}
+
+.ui-ncbipopper-arrow-top div.ui-ncbipopper-arrow-image{
+    background-position: top center;
+}            
+
+/* bottom arrow */            
+.ui-ncbipopper-arrow-bottom {
+    width: 100%;
+    height: 20px;
+}
+
+.ui-ncbipopper-arrow-bottom div.ui-ncbipopper-arrow-image{
+    background-position: bottom center;
+}
+
+
+/* arrow positioning */            
+.ui-ncbipopper-arrow-top-left,
+.ui-ncbipopper-arrow-bottom-left{
+    *text-align: left;
+}
+
+
+.ui-ncbipopper-arrow-top-center,
+.ui-ncbipopper-arrow-bottom-center{
+    padding-left:50%;
+    width: 50%;
+    *padding-left: 5px;
+    _padding-left: 0px;
+    *width: 100%;
+    *text-align:center;
+    
+}
+
+.ui-ncbipopper-arrow-top-center div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-bottom-center div.ui-ncbipopper-arrow-image{
+    margin-left: -10px;
+    _margin-left: 0px;    
+}            
+
+
+
+
+.ui-ncbipopper-arrow-top-right div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-bottom-right div.ui-ncbipopper-arrow-image{
+    float:right;
+}
+
+
+
+
+.ui-ncbipopper-arrow-left-center,
+.ui-ncbipopper-arrow-right-center{
+    padding-top: 50%;
+    height: 50%;
+    _padding-top:0px;
+    _margin-top: 50%;
+}
+.ui-ncbipopper-arrow-left-center div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-right-center div.ui-ncbipopper-arrow-image{
+    margin-top: -10px;
+    _margin-top: 0px;
+    _position: relative;
+    _top: -15px;
+}
+
+div.ui-ncbipopper-arrow-left-bottom div.ui-ncbipopper-arrow-image,
+.ui-ncbipopper-arrow-right-bottom div.ui-ncbipopper-arrow-image{
+    bottom: 0px;
+    position: absolute;
+    *margin-left: -20px;
+}
+
+
+div.ui-ncbipopper-arrow-left-content{
+     margin-left: 20px;
+     _margin-left: 0px;
+     _float: left;
+}
+
+div.ui-ncbipopper-arrow-right-content{
+   float: left;
+}
+ 
+.ui-ncbipopper-basic{
+    border:1px solid #97b0c8;
+    background-color: #f2f9ff;
+    color: #303030;
+    padding: 1em 1.5em 2.8em 1em;
+    text-align: left;
+}
+
+button.ui-ncbipopper-close-button-generated
+{
+    display: block;
+    float:right;
+    margin: 1px 1px 5px 5px;
+    font-size: small;
+    *position: relative;
+    *margin-top:-4em;
+    *top: 4.1em;
+    width: 1.7em;
+    font-size: .8em;
+    *top: 5em;
+    *margin-right: 0px;
+    text-align: center;
+    padding:0;
+}
+
+.ui-ncbipopper-dest{
+   display: none;
+}
+
+.ui-ncbipopper-content-hook{
+    font-size: 1.2em;
+} 
+
+ul.ui-ncbislideshow-slides {
+  position:relative;
+  padding:0;
+  overflow:hidden;
+  margin:0;
+  margin-bottom:0;
+}
+
+ul.ui-ncbislideshow-slides li {
+  position:absolute;
+  top:0;
+  left:0;
+  padding:0;
+  margin:0;
+}
+
+ul.ui-ncbislideshow-slides img {
+  border:none;
+  padding:0;
+  margin:0;
+}
+
+ul.ui-ncbislideshow-skip {
+  display:block;
+  margin:0 0 1em 0;
+  padding:0;
+  height:1.3em;
+}
+
+ul.ui-ncbislideshow-skip li {
+  float:left;
+  list-style:none;
+}
+
+ul.ui-ncbislideshow-skip li a {
+  display:block;
+  text-align:center;
+  font-size:0.9em;
+  height:1.2em;
+  width:1em;
+  text-decoration:none;
+}
+
+ul.ui-ncbislideshow-skip li a.active {
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+}
+
+ul.ui-ncbislideshow-slides {
+  border:3px solid #ccc;
+}
+
+ul.ui-ncbislideshow-skip li {
+  background:#ccc;
+  border:3px solid #ccc;
+  margin-top:-2px;
+}
+
+ul.ui-ncbislideshow-skip li a {
+  padding:3px 5px;
+  background:#ccc;
+  color:#000;
+}
+
+ul.ui-ncbislideshow-skip li a.active {
+  background:#eee;
+}
+
+div.ui-ncbi-tabpopper{
+    position:absolute; 
+    top:0px; 
+    left: 0px; 
+    height: 200px; 
+    width: 300px; 
+    display: none;
+    background-color: #FFA600;
+    border: 1px solid black;
+    padding: 4px;          
+}
+
+div.ui-ncbi-tabpopper-cover{
+    position:absolute; 
+    top:0px; 
+    left: 0px; 
+    height: 1px;
+    background-color: #FFA600;
+    overflow:hidden;
+}
+a.ui-ncbitoggler {
+    color: #2222cc;
+}
+a.ui-ncbitoggler, a.ui-ncbitoggler-open {
+    padding-left: 16px;
+    position: relative;
+    display: block;
+}
+
+a.ui-ncbitoggler-no-icon {
+    padding-left: 0; /* if there is no icon, reset left padding of master to 0 */
+}
+a.ui-ncbitoggler span.ui-icon-plus-minus-big, a.ui-ncbitoggler-open span.ui-icon-plus-minus-big-open {
+    background-color: transparent;
+    background-image: url(../img/ncbitoggler-plus-minus-big.gif) ;
+    background-repeat: no-repeat;
+    top: 0.2em;
+    margin-left: -0.1em;
+    
+}
+a.ui-ncbitoggler span.ui-icon-plus-minus-big  {
+    background-position: left -30px;
+}
+a.ui-ncbitoggler-open span.ui-icon-plus-minus-big-open  {
+    background-position: left 0;
+}
+
+.ui-ncbitoggler-slave, .ui-ncbitoggler-slave-open {
+    margin: .2em 0 0 16px;
+}
+
+.ui-ncbitoggler-slave {
+    display: none;
+}
+.ui-ncbitoggler-slave-open {
+    display: block;
+}
+a.ui-ncbitoggler span.ui-icon, a.ui-ncbitoggler-open span.ui-icon {
+    display: inline;
+    position: absolute;
+    left: 0;
+    _left: -1em; /* IE6 bug */
+}
+a.ui-ncbitoggler-disabled {
+    outline: none;
+}
+a.ui-ncbitoggler-disabled:active {
+    outline: none;
+    color: #551A8B;
+}
+
+.jig-ncbitree_base, .jig-ncbitree_base ul, .jig-ncbitree_base li {
+  zoom: 1;
+}
+
+.jig-ncbitree_base ul.tree-group-collapsed {
+  display:none;
+}
+
+.jig-ncbitree_base span.tree-parent {
+  padding-left:27px;
+}
+
+.jig-ncbitree_base li > a {
+  padding-left:27px;
+}
+.jig-tree, .jig-tree ul, .jig-tree li {
+  list-style: none;
+  margin: 2px;
+  padding: 0;
+}
+.jig-tree ul {
+  margin-left: 8px;
+}
+
+.jig-tree li span {
+  border:1px solid transparent;
+}
+.jig-tree li span > a {
+  color: #555;
+  padding: 0;
+  text-decoration: none;
+  border: 1px solid transparent;
+  background:none;
+}
+
+.jig-tree li > a {
+  color: #555;
+  padding: .1em 7px .1em 15px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  background:none;
+}
+
+.jig-tree span.tree-parent {
+  padding: .1em 7px .1em 15px;
+  background: url(../img/plus.gif) 5px 50% no-repeat;
+}
+
+.jig-tree li.tree-expanded > span.tree-parent {
+  background: url(../img/minus.gif) 5px 50% no-repeat;
+}
+
+.jig-tree li span.ui-state-hover, .jig-tree li a.ui-state-hover {
+  color: #000;
+  border: 1px solid #eee;
+  background-color: #fafafa;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+.jig-tree li span.ui-state-focus, .jig-tree li a.ui-state-focus, .jig-tree li.tree-expanded > span.ui-state-focus {
+  border: 1px solid #e2f3fb;
+  background-color: #f2fafd;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.jig-ncbitree,.jig-ncbitree ul,.jig-ncbitree li {
+  zoom: 1;
+}
+
+.jig-ncbitree ul.tree-group-collapsed {
+  display:none;
+}
+.ui-ncbilinksmenu {
+    background: #fcfcfc;
+    border: 1px solid #CCCCCC;
+    -webkit-box-shadow: 0.4em 0.4em 0.5em #999999;
+    -moz-box-shadow: 0.4em 0.4em 0.5em #999999;
+    box-shadow: 0.4em 0.4em 0.5em #999999;
+    color: #999;
+    font-weight: bold; }
+
+.ui-ncbilinksmenu ul, .ui-ncbilinksmenu li { 
+    list-style: none; 
+    margin: 0;
+    padding: 0; }
+
+.ui-ncbilinksmenu li { margin-bottom: 0em; }
+
+.ui-ncbilinksmenu ul { padding: .25em 0; }
+    
+.ui-ncbilinksmenu ul ul { padding: 0; }
+    
+.ui-ncbilinksmenu ul li li { padding: 0; }
+
+.ui-ncbilinksmenu ul li li a { padding-left: 1.8175em; }
+
+.ui-ncbilinksmenu ul li a {
+    border-color: #fcfcfc;
+    border-style: solid;
+    border-width: 1px 0;
+    color: #14376c;
+    font-size: inherit;
+    font-weight: normal;
+    margin: 0;
+    text-decoration: none; }
+    
+.ui-ncbilinksmenu ul li a, .ui-ncbilinksmenu ul li span, .ui-ncbilinksmenu-loadingMessage {     
+    display: block;
+    padding: .2em .9em; }
+    
+.ui-ncbilinksmenu ul li a:hover, .ui-ncbilinksmenu ul li a:focus {
+    background: #E3F8FF;
+    background: -moz-linear-gradient(top, #E3F8FF 0%, #D7EBF1 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#E3F8FF), color-stop(100%,#D7EBF1));
+    background: -webkit-linear-gradient(top, #E3F8FF 0%,#D7EBF1 100%);
+    background: -o-linear-gradient(top, #E3F8FF 0%,#D7EBF1 100%);
+    background: -ms-linear-gradient(top, #E3F8FF 0%,#D7EBF1 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#E3F8FF', endColorstr='#D7EBF1',GradientType=0 );
+    background: linear-gradient(top, #E3F8FF 0%,#D7EBF1 100%);
+    border-color: #d1e5eb #d1e5eb #d6e6ea #d6e6ea;
+    text-decoration: underline; }
+/* Accordion
+----------------------------------*/
+.ui-accordion .ui-accordion-header { cursor: pointer; position: relative; margin-top: 1px; zoom: 1; }
+.ui-accordion .ui-accordion-li-fix { display: inline; }
+.ui-accordion .ui-accordion-header-active { border-bottom: 0 !important; }
+.ui-accordion .ui-accordion-header a { display: block; font-size: 1em; padding: .5em .5em .5em .7em; }
+.ui-accordion-icons .ui-accordion-header a { padding-left: 2.2em; }
+.ui-accordion .ui-accordion-header .ui-icon { position: absolute; left: .5em; top: 50%; margin-top: -8px; }
+.ui-accordion .ui-accordion-content { padding: 1em 2.2em; border-top: 0; margin-top: -2px; position: relative; top: 1px; margin-bottom: 2px; overflow: auto; display: none; zoom: 1; }
+.ui-accordion .ui-accordion-content-active { display: block; }/* Tabs
+----------------------------------*/
+.ui-tabs { position: relative; padding: .2em; zoom: 1; } /* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+.ui-tabs .ui-tabs-nav { margin: 0; padding: .2em .2em 0; }
+.ui-tabs .ui-tabs-nav li { list-style: none; float: left; position: relative; top: 1px; margin: 0 .2em 1px 0; border-bottom: 0 !important; padding: 0; white-space: nowrap; }
+.ui-tabs .ui-tabs-nav li a { float: left; padding: .5em 1em; text-decoration: none; }
+.ui-tabs .ui-tabs-nav li.ui-tabs-selected { margin-bottom: 0; padding-bottom: 1px; }
+.ui-tabs .ui-tabs-nav li.ui-tabs-selected a, .ui-tabs .ui-tabs-nav li.ui-state-disabled a, .ui-tabs .ui-tabs-nav li.ui-state-processing a { cursor: text; }
+.ui-tabs .ui-tabs-nav li a, .ui-tabs.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-selected a { cursor: pointer; } /* first selector in group seems obsolete, but required to overcome bug in Opera applying cursor: text overall if defined elsewhere... */
+.ui-tabs .ui-tabs-panel { display: block; border: 0; padding: 1em 1.4em; background: none; }
+.ui-tabs .ui-tabs-hide { display: none !important; }
+/* Resizable
+----------------------------------*/
+.ui-resizable { position: relative;}
+.ui-resizable-handle { position: absolute;font-size: 0.1px;z-index: 99999; display: block;}
+.ui-resizable-disabled .ui-resizable-handle, .ui-resizable-autohide .ui-resizable-handle { display: none; }
+.ui-resizable-n { cursor: n-resize; height: 7px; width: 100%; top: -5px; left: 0; }
+.ui-resizable-s { cursor: s-resize; height: 7px; width: 100%; bottom: -5px; left: 0; }
+.ui-resizable-e { cursor: e-resize; width: 7px; right: -5px; top: 0; height: 100%; }
+.ui-resizable-w { cursor: w-resize; width: 7px; left: -5px; top: 0; height: 100%; }
+.ui-resizable-se { cursor: se-resize; width: 12px; height: 12px; right: 1px; bottom: 1px; }
+.ui-resizable-sw { cursor: sw-resize; width: 9px; height: 9px; left: -5px; bottom: -5px; }
+.ui-resizable-nw { cursor: nw-resize; width: 9px; height: 9px; left: -5px; top: -5px; }
+.ui-resizable-ne { cursor: ne-resize; width: 9px; height: 9px; right: -5px; top: -5px;}/* Datepicker
+----------------------------------*/
+.ui-datepicker { width: 17em; padding: .2em .2em 0; }
+.ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; }
+.ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next { position:absolute; top: 2px; width: 1.8em; height: 1.8em; }
+.ui-datepicker .ui-datepicker-prev-hover, .ui-datepicker .ui-datepicker-next-hover { top: 1px; }
+.ui-datepicker .ui-datepicker-prev { left:2px; }
+.ui-datepicker .ui-datepicker-next { right:2px; }
+.ui-datepicker .ui-datepicker-prev-hover { left:1px; }
+.ui-datepicker .ui-datepicker-next-hover { right:1px; }
+.ui-datepicker .ui-datepicker-prev span, .ui-datepicker .ui-datepicker-next span { display: block; position: absolute; left: 50%; margin-left: -8px; top: 50%; margin-top: -8px;  }
+.ui-datepicker .ui-datepicker-title { margin: 0 2.3em; line-height: 1.8em; text-align: center; }
+.ui-datepicker .ui-datepicker-title select { font-size:1em; margin:1px 0; }
+.ui-datepicker select.ui-datepicker-month-year {width: 100%;}
+.ui-datepicker select.ui-datepicker-month, 
+.ui-datepicker select.ui-datepicker-year { width: 49%;}
+.ui-datepicker table {width: 100%; font-size: .9em; border-collapse: collapse; margin:0 0 .4em; }
+.ui-datepicker th { padding: .7em .3em; text-align: center; font-weight: bold; border: 0;  }
+.ui-datepicker td { border: 0; padding: 1px; }
+.ui-datepicker td span, .ui-datepicker td a { display: block; padding: .2em; text-align: right; text-decoration: none; }
+.ui-datepicker .ui-datepicker-buttonpane { background-image: none; margin: .7em 0 0 0; padding:0 .2em; border-left: 0; border-right: 0; border-bottom: 0; }
+.ui-datepicker .ui-datepicker-buttonpane button { float: right; margin: .5em .2em .4em; cursor: pointer; padding: .2em .6em .3em .6em; width:auto; overflow:visible; }
+.ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current { float:left; }
+
+/* with multiple calendars */
+.ui-datepicker.ui-datepicker-multi { width:auto; }
+.ui-datepicker-multi .ui-datepicker-group { float:left; }
+.ui-datepicker-multi .ui-datepicker-group table { width:95%; margin:0 auto .4em; }
+.ui-datepicker-multi-2 .ui-datepicker-group { width:50%; }
+.ui-datepicker-multi-3 .ui-datepicker-group { width:33.3%; }
+.ui-datepicker-multi-4 .ui-datepicker-group { width:25%; }
+.ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header { border-left-width:0; }
+.ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header { border-left-width:0; }
+.ui-datepicker-multi .ui-datepicker-buttonpane { clear:left; }
+.ui-datepicker-row-break { clear:both; width:100%; }
+
+/* RTL support */
+.ui-datepicker-rtl { direction: rtl; }
+.ui-datepicker-rtl .ui-datepicker-prev { right: 2px; left: auto; }
+.ui-datepicker-rtl .ui-datepicker-next { left: 2px; right: auto; }
+.ui-datepicker-rtl .ui-datepicker-prev:hover { right: 1px; left: auto; }
+.ui-datepicker-rtl .ui-datepicker-next:hover { left: 1px; right: auto; }
+.ui-datepicker-rtl .ui-datepicker-buttonpane { clear:right; }
+.ui-datepicker-rtl .ui-datepicker-buttonpane button { float: left; }
+.ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current { float:right; }
+.ui-datepicker-rtl .ui-datepicker-group { float:right; }
+.ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+.ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+
+/* IE6 IFRAME FIX (taken from datepicker 1.5.3 */
+.ui-datepicker-cover {
+    display: none; /*sorry for IE5*/
+    display/**/: block; /*sorry for IE5*/
+    position: absolute; /*must have*/
+    z-index: -1; /*must have*/
+    filter: mask(); /*must have*/
+    top: -4px; /*must have*/
+    left: -4px; /*must have*/
+    width: 200px; /*must have*/
+    height: 200px; /*must have*/
+}/* Dialog
+----------------------------------*/
+.ui-dialog { position: absolute; padding: .2em; width: 300px; overflow: hidden; }
+.ui-dialog .ui-dialog-titlebar { padding: .5em 1em .3em; position: relative;  }
+.ui-dialog .ui-dialog-title { float: left; margin: .1em 16px .2em 0; } 
+.ui-dialog .ui-dialog-titlebar-close { position: absolute; right: .3em; top: 50%; width: 19px; margin: -10px 0 0 0; padding: 1px; height: 18px; }
+.ui-dialog .ui-dialog-titlebar-close span { display: block; margin: 1px; }
+.ui-dialog .ui-dialog-titlebar-close:hover, .ui-dialog .ui-dialog-titlebar-close:focus { padding: 0; }
+.ui-dialog .ui-dialog-content { border: 0; padding: .5em 1em; background: none; overflow: auto; zoom: 1; }
+.ui-dialog .ui-dialog-buttonpane { text-align: left; border-width: 1px 0 0 0; background-image: none; margin: .5em 0 0 0; padding: .3em 1em .5em .4em; }
+.ui-dialog .ui-dialog-buttonpane button { float: right; margin: .5em .4em .5em 0; cursor: pointer; padding: .2em .6em .3em .6em; line-height: 1.4em; width:auto; overflow:visible; }
+.ui-dialog .ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
+.ui-draggable .ui-dialog-titlebar { cursor: move; }
+.jig-ncbidialog-dest {
+    display: none;
+}
+/* Dialog
+----------------------------------*/
+.ui-dialog { position: absolute; padding: .2em; width: 300px; overflow: hidden; }
+.ui-dialog .ui-dialog-titlebar { padding: .5em 1em .3em; position: relative;  }
+.ui-dialog .ui-dialog-title { float: left; margin: .1em 16px .2em 0; } 
+.ui-dialog .ui-dialog-titlebar-close { position: absolute; right: .3em; top: 50%; width: 19px; margin: -10px 0 0 0; padding: 1px; height: 18px; }
+.ui-dialog .ui-dialog-titlebar-close span { display: block; margin: 1px; }
+.ui-dialog .ui-dialog-titlebar-close:hover, .ui-dialog .ui-dialog-titlebar-close:focus { padding: 0; }
+.ui-dialog .ui-dialog-content { border: 0; padding: .5em 1em; background: none; overflow: auto; zoom: 1; }
+.ui-dialog .ui-dialog-buttonpane { text-align: left; border-width: 1px 0 0 0; background-image: none; margin: .5em 0 0 0; padding: .3em 1em .5em .4em; }
+.ui-dialog .ui-dialog-buttonpane button { float: right; margin: .5em .4em .5em 0; cursor: pointer; padding: .2em .6em .3em .6em; line-height: 1.4em; width:auto; overflow:visible; }
+.ui-dialog .ui-resizable-se { width: 14px; height: 14px; right: 3px; bottom: 3px; }
+.ui-draggable .ui-dialog-titlebar { cursor: move; }
+.jig-ncbidialog-dest {
+    display: none;
+}

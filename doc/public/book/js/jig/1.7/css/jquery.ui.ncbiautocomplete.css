@@ -1,0 +1,104 @@
+       
+div.ui-ncbiautocomplete-holder
+{
+    position: absolute;
+    top:0px;
+    left:0px;       
+    min-height: 218px;
+    *height: 218px;    
+    border: 1px solid #5a5a5a;
+    display: none;
+    font-family: helvetica, arial, sans-serif;
+}
+
+ul.ui-ncbiautocomplete-options
+{
+    height: 218px;
+    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    font-family: Arial, helvetica, serif;
+    font-size: 1.2em;
+    font-weight: normal;
+    cursor: pointer;
+    color: #0000FF;
+    background-color: #FFF;
+}
+
+ul.ui-ncbiautocomplete-options li span
+{
+    font-weight: normal;
+}
+
+ul.ui-ncbiautocomplete-options li
+{
+    padding: .2em;
+    padding-left: .8em;
+    white-space: nowrap;
+	overflow: hidden;
+	width: 100%;
+	text-overflow: ellipsis;
+}
+
+ul.ui-ncbiautocomplete-options li.ui-ncbiautocomplete-options-high
+{    
+    background-color: #DAEEF4;    
+    text-decoration: none;
+    color: #001155;
+}
+
+.ui-ncbiautocomplete-actions
+{
+    height: 1em;
+    background-color: #CECECE;
+    line-height: 1em;
+    padding: .5em;
+    padding-left: .8em;  
+    border-top: 1px solid #777;
+}
+
+.ui-ncbiautocomplete-link-off, .ui-ncbiautocomplete-link-pref
+{
+    font-size: 1.4em;
+    color: #5a5a5a;
+    text-decoration: none;
+}
+
+a.ui-ncbiautocomplete-link-off:hover, a.ui-ncbiautocomplete-link-pref:hover
+{
+    text-decoration: underline;
+    color: #003399;
+}
+
+.ui-ncbiautocomplete-link-off
+{
+    float: left; 
+    padding-right: .3em;
+}
+
+.ui-ncbiautocomplete-link-pref
+{
+    float: right;
+    padding-right: .8em;
+}
+
+li.ui-ncbiautocomplete-show-more
+{
+    background-color: #C3D2DB;
+    border-top: 1px solid black;
+}
+
+iframe.ui-ncbiautocomplete-iframe
+{
+    position: absolute;
+    top:0px;
+    left:0px;       
+    height: 200px;
+    z-index:1000; 
+    display: none;
+    filter:alpha(opacity=1);
+}
