@@ -214,10 +214,11 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode& worker)
 auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
 CGridGlobals::CGridGlobals() :
-      m_ReuseJobObject(false),
-      m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
-      m_StartTime(GetFastLocalTime()),
-      m_Worker(NULL)
+    m_ReuseJobObject(false),
+    m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
+    m_ExitCode(0),
+    m_StartTime(GetFastLocalTime()),
+    m_Worker(NULL)
 {
 }
 
