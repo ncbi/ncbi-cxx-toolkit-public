@@ -175,8 +175,7 @@ enum EHTML_PM_Attribute {
 /// The JavaScript PopupMenu is no longer supported. The new component that took
 /// its place is part of the JIG library, ncbilinksmenu. Please see upgrade guide
 /// and documentation links at http://jira/browse/JSL-1128.
-NCBI_DEPRECATED
-class NCBI_XHTML_EXPORT CHTMLPopupMenu : public CNCBINode
+NCBI_DEPRECATED_CLASS NCBI_XHTML_EXPORT CHTMLPopupMenu : public CNCBINode
 {
     typedef CNCBINode CParent;
     friend class CHTMLPage;
