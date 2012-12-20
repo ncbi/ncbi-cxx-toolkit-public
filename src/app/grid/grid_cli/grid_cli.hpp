@@ -461,10 +461,6 @@ private:
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
 
-    EOutputFormat GetOutputFormatOption(
-            EOutputFormat* allowed_formats,
-            EOutputFormat default_format);
-
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
 };
