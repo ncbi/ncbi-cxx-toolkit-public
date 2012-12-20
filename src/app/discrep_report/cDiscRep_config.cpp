@@ -149,6 +149,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
    tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_MISC_FEATURES));
+   tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS));
    tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
@@ -197,6 +199,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_NO_PRODUCT));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_INTRON));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_BAD_GENE_STRAND));
+   tests_on_Bioseq_CFeat.push_back(
+                   CRef <CTestAndRepData>(new CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_RRNA));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_OVERLAPPING_RRNAS));
    tests_on_Bioseq_CFeat.push_back(
@@ -232,6 +236,10 @@ void CRepConfDiscrepancy :: ConfigRep()
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
 
 // tests_on_Bioseq_CFeat_CSeqdesc
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                 new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                   new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                            new CBioseq_DISC_MITOCHONDRION_REQUIRED));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
@@ -329,6 +337,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
+   tests_on_SeqEntry_feat_desc.push_back(
+                         CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIA_MISSING_STRAIN));
    tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_STRAIN));
    tests_on_SeqEntry_feat_desc.push_back(

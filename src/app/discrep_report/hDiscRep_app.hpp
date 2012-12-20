@@ -136,8 +136,6 @@ namespace DiscRepNmSpc{
      class CDiscRepInfo
      {
         public:
-           static CConstRef <CNcbiRegistry>         registry;
-
            static CRef < CScope >                   scope;
            static string                            infile;
            static COutputConfig                      output_config;
@@ -151,8 +149,8 @@ namespace DiscRepNmSpc{
            static vector <string>                    strandsymbol;
            static bool                               exclude_dirsub;
            static string                             report;
-           static Str2UInt                           rRNATerms;
 
+           static Str2UInt                           rRNATerms;
            static vector <string>                    bad_gene_names_contained;
            static vector <string>                    no_multi_qual;
            static vector <string>                    rrna_standard_name; 
@@ -163,9 +161,10 @@ namespace DiscRepNmSpc{
            static Str2UInt                           desired_aaList;
            static CTaxon1                            tax_db_conn;
            static list <string>                      state_abbrev;
-           static list <string>                      cds_prod_find;
+           static Str2Str                            cds_prod_find;
            static vector <string>                    s_pseudoweasels;
            static vector <string>                    suspect_rna_product_names;
+           static string                             kNonExtendableException;
      };
 
 /*

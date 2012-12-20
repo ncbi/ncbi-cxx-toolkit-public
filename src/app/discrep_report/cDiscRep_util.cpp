@@ -146,6 +146,8 @@ static string strtmp;
 // CTestAndRepData
 bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
 {
+  if (str.empty()) return false;
+
   if (case_sensitive) {
     if ( str.find(phrase) == string::npos) return false;
   }

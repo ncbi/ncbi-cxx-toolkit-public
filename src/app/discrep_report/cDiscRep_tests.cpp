@@ -119,6 +119,7 @@ static CDiscTestInfo thisTest;
 
 // ini. CDiscTestInfo
 bool CDiscTestInfo :: is_AllAnnot_run;
+bool CDiscTestInfo :: is_BacPartial_run;
 bool CDiscTestInfo :: is_BASES_N_run;
 bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC1_run;
@@ -132,7 +133,8 @@ bool CDiscTestInfo :: is_MRNA_run;
 bool CDiscTestInfo :: is_Prot_run;
 bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
-bool CDiscTestInfo :: is_Rna_run;
+bool CDiscTestInfo :: is_TRRna_run;
+bool CDiscTestInfo :: is_RRna_run;
 bool CDiscTestInfo :: is_SHORT_run;
 bool CDiscTestInfo :: is_SusPhrase_run;
 bool CDiscTestInfo :: is_TaxCflts_run;
@@ -251,8 +253,27 @@ void CBioseq_test_on_suspect_phrase :: TestOnObj(const CBioseq& bioseq)
    ITERATE (vector <const CSeq_feat*>, it, rrna_feat) CheckForProdAndComment(**it);
    ITERATE (vector <const CSeq_feat*>, it, trna_feat) CheckForProdAndComment(**it);
 
+   // DISC_SUSPECT_MISC_FEATURES
+   ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) FindBadMiscFeatures(**it);
+
    thisTest.is_SusPhrase_run = true;
 }
+
+
+void CBioseq_test_on_suspect_phrase :: FindBadMiscFeatures(const CSeq_feat& seq_feat)
+{
+  string bad_misc_comment_phrases("catalytic intron");
+  if (seq_feat.CanGetComment() 
+      && DoesStringContainPhrase(seq_feat.GetComment(), bad_misc_comment_phrases, false,false))
+    thisInfo.test_item_list[GetName_misc()].push_back(
+                        bad_misc_comment_phrases + "$" + GetDiscItemText(seq_feat));
+};
+
+
+void CBioseq_DISC_SUSPECT_MISC_FEATURES :: GetReport(CRef <CClickableItem>& c_item)
+{
+   GetRepOfSuspPhrase(c_item, GetName(), "misc_feature comment", "misc_feature comments");
+};
 
 
 void CBioseq_test_on_suspect_phrase :: GetRepOfSuspPhrase(CRef <CClickableItem>& c_item, const string& setting_name, const string& phrase_loc_4_1, const string& phrase_loc_4_mul)
@@ -278,8 +299,8 @@ void CBioseq_test_on_suspect_phrase :: CheckForProdAndComment(const CSeq_feat& s
    ITERATE (vector <string>, it, thisInfo.suspect_rna_product_names) {
       if (DoesStringContainPhrase(prod_str, *it, false)) 
             thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
-      else if (seq_feat.CanGetComment() && !((comm = seq_feat.GetComment()).empty())
-                   && DoesStringContainPhrase(comm, *it, false))
+      else if (seq_feat.CanGetComment() 
+                   && DoesStringContainPhrase(seq_feat.GetComment(), *it, false))
          thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
    }
 };
@@ -1194,7 +1215,10 @@ void CBioseq_SHORT_PROT_SEQUENCES :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-bool CBioseq_RRNA_NAME_CONFLICTS :: NameNotStandard(const string& nm)
+// new comb
+
+//bool CBioseq_RRNA_NAME_CONFLICTS :: NameNotStandard(const string& nm)
+bool CBioseq_test_on_rrna :: NameNotStandard(const string& nm)
 {
   unsigned i=0;
   bool is_equal = false, is_no_case_equal = false;
@@ -1224,7 +1248,60 @@ bool CBioseq_RRNA_NAME_CONFLICTS :: NameNotStandard(const string& nm)
 
 
 
+void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
+{
+   if (thisTest.is_RRna_run) return;
 
+   string desc, rrna_name, prod_str;
+   unsigned len;
+   ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
+     desc = GetDiscItemText(**it); 
+     const CRNA_ref& rrna = (*it)->GetData().GetRna();
+
+     // RRNA_NAME_CONFLICTS
+     if ( rrna.CanGetExt() && rrna.GetExt().IsName()
+                                               && NameNotStandard(rrna.GetExt().GetName())) {
+        thisInfo.test_item_list[GetName_nm()].push_back(desc);
+     }
+
+     // DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA
+     prod_str = GetRNAProductString(**it); 
+     if (NStr::FindNoCase(prod_str, "internal") != string::npos
+             || NStr::FindNoCase(prod_str, "transcribed") != string::npos
+             || NStr::FindNoCase(prod_str, "spacer") != string::npos) 
+        thisInfo.test_item_list[GetName_its()].push_back(desc);
+
+     // DISC_SHORT_RRNA
+     if ((*it)->CanGetPartial() && (*it)->GetPartial()) continue;
+     len = sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope);
+     rrna_name = GetRNAProductString(**it);
+     ITERATE (Str2UInt, jt, thisInfo.rRNATerms) {
+        if (NStr::FindNoCase(rrna_name, jt->first) != string::npos && len < jt->second) {
+             thisInfo.test_item_list[GetName_short()].push_back(desc);
+             break;
+        }
+     }
+   }
+
+   thisTest.is_RRna_run = true;
+};
+
+
+void CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetOtherComment(c_item->item_list.size(), 
+                             "rRNA feature product contain", "rRNA feature products contain")
+         + " 'internal', 'transcribed', or 'spacer'";
+};
+
+
+void CBioseq_DISC_SHORT_RRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+      = GetIsComment(c_item->item_list.size(), "rRNA feature") + "too short.";
+};
+
+/*
 void CBioseq_RRNA_NAME_CONFLICTS :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
@@ -1235,7 +1312,7 @@ void CBioseq_RRNA_NAME_CONFLICTS :: TestOnObj(const CBioseq& bioseq)
      }
   }
 };
-
+*/
 
 void CBioseq_RRNA_NAME_CONFLICTS :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -1678,7 +1755,7 @@ void CBioseq_TEST_UNUSUAL_MISC_RNA :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-int CBioseq_DISC_PARTIAL_PROBLEMS :: DistanceToUpstreamGap(const unsigned& pos, const CBioseq& bioseq) 
+int CBioseqTestAndRepData :: DistanceToUpstreamGap(const unsigned& pos, const CBioseq& bioseq)
 {
    int offset = 0, last_gap = -1;
    ITERATE (list <CRef <CDelta_seq> >, it, bioseq.GetInst().GetExt().GetDelta().Get()) {
@@ -1699,7 +1776,6 @@ int CBioseq_DISC_PARTIAL_PROBLEMS :: DistanceToUpstreamGap(const unsigned& pos, 
 
 
 
-
 bool CBioseq_DISC_PARTIAL_PROBLEMS :: CouldExtendLeft(const CBioseq& bioseq, const unsigned& pos)
 {
   int dist;
@@ -1713,7 +1789,7 @@ bool CBioseq_DISC_PARTIAL_PROBLEMS :: CouldExtendLeft(const CBioseq& bioseq, con
 };
 
 
-int CBioseq_DISC_PARTIAL_PROBLEMS :: DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq)
+int CBioseqTestAndRepData :: DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq)
 {
   int offset = 0;
 
@@ -1747,7 +1823,6 @@ bool CBioseq_DISC_PARTIAL_PROBLEMS :: CouldExtendRight(const CBioseq& bioseq, co
 };
 
 
-
 void CBioseq_DISC_PARTIAL_PROBLEMS :: TestOnObj(const CBioseq& bioseq)
 {
   bool partial5, partial3, partialL, partialR;
@@ -1779,6 +1854,99 @@ void CBioseq_DISC_PARTIAL_PROBLEMS :: GetReport(CRef <CClickableItem>& c_item)
     = GetHasComment(c_item->item_list.size(), "feature") 
         + "partial ends that do not abut the end of the sequence or a gap, but could be extended by 3 or fewer nucleotides to do so"; 
 };
+
+
+
+// new comb
+
+bool CBioseq_test_on_bac_partial :: IsNonExtendableLeft(const CBioseq& bioseq, const unsigned& pos)
+{
+  int  dist;
+  if (pos < 3) return false; /* is either at the end or is within extending distance */
+  else if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+    /* wasn't close to the sequence end, but perhaps it is close to a gap */
+    dist = DistanceToUpstreamGap (pos, bioseq);
+    if (dist > -1 && dist < 3) return false;
+  }
+  return true;
+};
+
+
+bool CBioseq_test_on_bac_partial :: IsNonExtendableRight(const CBioseq& bioseq, const unsigned& pos)
+{
+  int  dist;
+  unsigned  len;
+
+  len = bioseq.IsSetLength()? bioseq.GetLength() : 0;
+  if ((int)pos > (int)(len - 4)) /* is either at the end or is within extending distance */
+       return false; 
+  else if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+    /* wasn't close to the sequence end, but perhaps it is close to a gap */
+    dist = DistanceToDownstreamGap (pos, bioseq);
+    if (dist > -1 && dist < 3) return false;
+  }
+
+  return true;
+};
+
+
+
+void CBioseq_test_on_bac_partial :: TestOnObj(const CBioseq& bioseq)
+{
+  if (thisTest.is_BacPartial_run) return;
+
+  if (bioseq.IsAa()) return;
+  string desc;
+  if (bioseq_biosrc_seqdesc.empty() || !IsBioseqHasLineage(bioseq, "Eukaryota")) {
+     bool partial5, partial3, partialL, partialR;
+     ENa_strand strand;
+     ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+       const CSeq_loc& seq_loc = (*it)->GetLocation();
+       strand = seq_loc.GetStrand();
+       partial5 = partial3 = false;
+       partial5 = seq_loc.IsPartialStart(eExtreme_Biological);
+       partial3 = seq_loc.IsPartialStop(eExtreme_Biological);
+       if (!partial3 && !partial5) continue;
+       if (strand == eNa_strand_minus) {
+           partialL = partial3;
+           partialR = partial5;
+       }
+       else {
+           partialL = partial5;
+           partialR = partial3;
+       }
+       if ( (partialL && IsNonExtendableLeft(bioseq, seq_loc.GetTotalRange().GetFrom()))
+            || (partialR && IsNonExtendableRight(bioseq, seq_loc.GetTotalRange().GetTo()))) {
+          desc = GetDiscItemText(**it);
+          // DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS
+          if ((*it)->CanGetExcept_text() && NStr::FindNoCase( 
+                                 (*it)->GetExcept_text(), thisInfo.kNonExtendableException)
+                                                                == string::npos)
+              thisInfo.test_item_list[GetName_noexc()].push_back(desc);
+          else  // DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION 
+             thisInfo.test_item_list[GetName_exc()].push_back(desc);
+       }
+     }
+  }
+
+  thisTest.is_BacPartial_run = true;
+};
+
+
+void CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetHasComment(c_item->item_list.size(), "feature")
+        + "partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so";
+};
+
+
+void CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetHasComment(c_item->item_list.size(), "feature")
+        + "partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but have the correct exception";
+};
+
+// new comb
 
 
 
@@ -2192,6 +2360,7 @@ void CBioseq_TEST_BAD_GENE_NAME :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+/*
 
 void CBioseq_DISC_SHORT_RRNA :: TestOnObj(const CBioseq& bioseq)
 {
@@ -2218,6 +2387,7 @@ void CBioseq_DISC_SHORT_RRNA :: GetReport(CRef <CClickableItem>& c_item)
       = GetIsComment(c_item->item_list.size(), "rRNA feature") + "too short.";
 };
 
+*/
 
 
 bool CBioseqTestAndRepData :: StrandOk(ENa_strand strand1, ENa_strand strand2)
@@ -2744,16 +2914,15 @@ bool CBioseq_test_on_prod :: ContainsPseudo(const string& pattern, const list <s
 
 bool CBioseq_test_on_prod :: ContainsWholeWord(const string& pattern, const list <string>& strs)
 {
-   ITERATE (list <string>, it, strs) {
+   ITERATE (list <string>, it, strs) 
       if (DoesStringContainPhrase(*it, pattern, false, true)) return true;
-   } 
    return false;
 };
 
 
 void CBioseq_test_on_prod :: TestOnObj(const CBioseq& bioseq) 
 {
-   string desc, head_desc;
+   string desc, head_desc, func;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CProt_ref& prot = (*it)->GetData().GetProt();
      const list <string>& names = prot.GetName();
@@ -2773,19 +2942,17 @@ void CBioseq_test_on_prod :: TestOnObj(const CBioseq& bioseq)
              cds =GetCDSForProduct( GetBioseqFromSeqLoc((*it)->GetLocation(),*thisInfo.scope));
           if (cds) desc = GetDiscItemText(*cds);
      }
-     ITERATE (list <string>, it, thisInfo.cds_prod_find) {
-       const string& func = thisInfo.registry->Get("Cds-product-find", *it); 
+     ITERATE (Str2Str, it, thisInfo.cds_prod_find) {
+       func = it->second;
        head_desc = kEmptyStr;
        if (func == "EndsWithPattern") {
-         if (EndsWithPattern(*it, names)) head_desc = "end# with " + *it;
+         if (EndsWithPattern(it->first, names)) head_desc = "end# with " + it->first;
        }
        else if (func == "ContainsPseudo") {
-         if (ContainsPseudo(*it, names)) head_desc = "contain# '" + *it + "'";
+         if (ContainsPseudo(it->first, names)) head_desc = "contain# '" + it->first + "'";
        }
        else if (func == "ContainsWholeWord") {
-         if ( (*it == "related-to" && ContainsWholeWord("related to", names))
-                   || ContainsWholeWord(*it, names) ) 
-             head_desc = "contain# '" + *it + "'";
+         if ( ContainsWholeWord(it->first, names) ) head_desc = "contain# '" + it->first + "'";
        }
        if (!head_desc.empty())
          thisInfo.test_item_list[GetName_cds()].push_back(head_desc + "$" + desc);
@@ -4257,7 +4424,7 @@ void CBioseq_test_on_rna :: FindtRNAsOnSameStrand()
 
 void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
 {
-  if (thisTest.is_Rna_run) return;
+  if (thisTest.is_TRRna_run) return;
  
   // FIND_BADLEN_TRNAS
   unsigned len;
@@ -4309,7 +4476,7 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
     }
   }
 
-  thisTest.is_Rna_run = true;
+  thisTest.is_TRRna_run = true;
 };
 
 
@@ -6758,9 +6925,46 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   // ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH
   BiosrcHasConflictingStrainAndCultureCollectionValues(biosrc, desc);
 
-  // DISC_REQUIRED_STRAIN
-  if (IsMissingRequiredStrain(biosrc))
+  if (IsMissingRequiredStrain(biosrc)) {
+      // DISC_REQUIRED_STRAIN
       thisInfo.test_item_list[GetName_strain()].push_back(desc);
+      
+      // DISC_BACTERIA_MISSING_STRAIN
+      thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
+  }
+  else { // DISC_BACTERIA_MISSING_STRAIN
+     if (HasMissingBacteriaStrain(biosrc))
+       thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
+  }
+};
+
+
+bool CSeqEntry_test_on_biosrc_orgmod :: HasMissingBacteriaStrain(const CBioSource& biosrc)
+{
+   if (!HasLineage(biosrc, "Bacteria")) return false;
+   string tax_nm(biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr);
+   size_t pos;
+   if (tax_nm.empty() 
+           || NStr::FindNoCase(tax_nm, "enrichment culture clone") != string::npos
+           || (pos = tax_nm.find(" sp. ")) == string::npos) return false;
+   tax_nm = tax_nm.substr(pos+5);
+   if (tax_nm.empty() 
+           || (tax_nm.find('(') != string::npos && tax_nm[tax_nm.size()-1] == ')')) 
+            return false;
+   if (NStr::FindNoCase(tax_nm, "enrichment culture clone") != string::npos) return false;
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
+       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain && (*it)->GetSubname() == tax_nm)
+            return false;
+   }
+   return true;
+};
+
+
+void CSeqEntry_DISC_BACTERIA_MISSING_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+     = GetHasComment(c_item->item_list.size(), "bacterial biosource")
+       + "taxname 'Genus sp. strain' but no strain";
 };
 
 

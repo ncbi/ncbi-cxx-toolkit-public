@@ -71,6 +71,7 @@ namespace DiscRepNmSpc {
   {
     public:
       static bool   is_AllAnnot_run;  // checked
+      static bool   is_BacPartial_run;
       static bool   is_BASES_N_run;
       static bool   is_BIOSRC_run;
       static bool   is_Biosrc_Orgmod_run;
@@ -84,7 +85,8 @@ namespace DiscRepNmSpc {
       static bool   is_Prot_run;
       static bool   is_Pub_run;
       static bool   is_Quals_run;
-      static bool   is_Rna_run;
+      static bool   is_TRRna_run;
+      static bool   is_RRna_run;
       static bool   is_SHORT_run;
       static bool   is_SusPhrase_run;
       static bool   is_TaxCflts_run;
@@ -593,7 +595,9 @@ namespace DiscRepNmSpc {
       string GetName_cbs() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
       string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
       string GetName_strain() const {return string("DISC_REQUIRED_STRAIN");}
+      string GetName_sp_strain() const {return string("DISC_BACTERIA_MISSING_STRAIN");}
 
+      bool HasMissingBacteriaStrain(const CBioSource& biosrc);
       bool IsMissingRequiredStrain(const CBioSource& biosrc);
       bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, 
                         const string& strain_head, const string& culture_head);
@@ -607,13 +611,25 @@ namespace DiscRepNmSpc {
   };
 
 
+  class CSeqEntry_DISC_BACTERIA_MISSING_STRAIN : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DISC_BACTERIA_MISSING_STRAIN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { 
+                            return CSeqEntry_test_on_biosrc_orgmod::GetName_sp_strain();}
+  };
+
+
   class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntry_test_on_biosrc_orgmod
   {
     public:
       virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_strain();}
+      virtual string GetName() const { 
+                            return CSeqEntry_test_on_biosrc_orgmod::GetName_strain();}
   };
 
 
@@ -1099,20 +1115,116 @@ namespace DiscRepNmSpc {
 
        void TestOnMRna(const CBioseq& bioseq);
        string GetName_no_mrna() const {return string("DISC_CDS_WITHOUT_MRNA");}
-       string GetName_pid_tid() const {return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
-       string GetFieldValueForObject(const CSeq_feat& seq_feat, const CFeat_qual_choice& feat_qual);
+       string GetName_pid_tid() const {
+                             return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
+       string GetFieldValueForObject(const CSeq_feat& seq_feat, 
+                                                           const CFeat_qual_choice& feat_qual);
        CSeqFeatData::ESubtype GetFeatdefFromFeatureType(EMacro_feature_type feat_field_type);
        string GetQualFromFeature(const CSeq_feat& seq_feat, const CField_type& field_type);
-       CConstRef <CSeq_feat> GetmRNAforCDS(const CSeq_feat& cd_feat, const CSeq_entry& seq_entry);
+       CConstRef <CSeq_feat> GetmRNAforCDS(const CSeq_feat& cd_feat, 
+                                                             const CSeq_entry& seq_entry);
        CConstRef <CProt_ref> GetProtRefForFeature(const CSeq_feat& seq_feat, 
                                                                         bool look_xref=true);
        bool IsLocationOrganelle(const CBioSource::EGenome& genome);
        bool ProductsMatchForRefSeq(const string& feat_prod, const string& mRNA_prod);
        bool IsMrnaSequence();
+       int DistanceToUpstreamGap(const unsigned& pos, const CBioseq& bioseq);
+       int DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq);
+
   }; // CBioseqTest:
 
 
 // new comb.
+  class CBioseq_test_on_bac_partial : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_bac_partial () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_noexc() const {
+                           return string("DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS");}
+      string GetName_exc() const {
+                           return string("DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION");}
+ 
+      bool IsNonExtendableLeft(const CBioseq& bioseq, const unsigned& pos);
+      bool IsNonExtendableRight(const CBioseq& bioseq, const unsigned& pos);
+  };
+
+
+  class CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION 
+                                              : public CBioseq_test_on_bac_partial
+  {
+    public:
+      virtual ~CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION () {};
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_bac_partial::GetName_exc();}
+  };
+
+
+
+  class CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS 
+                                              : public CBioseq_test_on_bac_partial
+  {
+    public:
+      virtual ~CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS () {};
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_bac_partial::GetName_noexc();}
+  };
+
+
+  class CBioseq_test_on_rrna : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_rrna () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_nm() const {return string("RRNA_NAME_CONFLICTS"); }
+      string GetName_its() const {return string("DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"); }
+      string GetName_short() const {return string("DISC_SHORT_RRNA"); }
+
+      bool NameNotStandard(const string& nm);
+  };
+
+
+  class CBioseq_DISC_SHORT_RRNA : public CBioseq_test_on_rrna
+  {
+    public:
+      virtual ~CBioseq_DISC_SHORT_RRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CBioseq_test_on_rrna::GetName_short(); }
+  };
+
+
+
+  class CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA : public CBioseq_test_on_rrna
+  {
+    public:
+      virtual ~CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CBioseq_test_on_rrna::GetName_its(); }
+  };
+
+
+  class CBioseq_RRNA_NAME_CONFLICTS : public CBioseq_test_on_rrna
+  {
+    public:
+      virtual ~CBioseq_RRNA_NAME_CONFLICTS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CBioseq_test_on_rrna::GetName_nm(); }
+  };
+
+
   class CBioseq_test_on_suspect_phrase : public CBioseqTestAndRepData
   {
     public:
@@ -1124,10 +1236,22 @@ namespace DiscRepNmSpc {
 
     protected:
       string GetName_rna_comm() const {return string("DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS");}
+      string GetName_misc() const {return string("DISC_SUSPECT_MISC_FEATURES"); }
       
       void GetRepOfSuspPhrase(CRef <CClickableItem>& c_item, const string& setting_name, 
                              const string& phrase_loc_4_1, const string& phrase_loc_4_mul);
       void CheckForProdAndComment(const CSeq_feat& seq_feat);
+      void FindBadMiscFeatures(const CSeq_feat& seq_feat);
+  };
+
+
+  class CBioseq_DISC_SUSPECT_MISC_FEATURES : public CBioseq_test_on_suspect_phrase
+  {
+    public:
+      virtual ~CBioseq_DISC_SUSPECT_MISC_FEATURES () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CBioseq_test_on_suspect_phrase::GetName_misc(); }
   };
 
 
@@ -1765,11 +1889,13 @@ namespace DiscRepNmSpc {
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
+      virtual string GetName() const {
+                          return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
   };
 
 
 
+/*
   class CBioseq_RRNA_NAME_CONFLICTS : public CBioseqTestAndRepData
   {
     public:
@@ -1782,6 +1908,7 @@ namespace DiscRepNmSpc {
     protected:
       bool NameNotStandard(const string& nm);
   };
+*/
   
 
 
@@ -1833,9 +1960,7 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("DISC_PARTIAL_PROBLEMS");}
 
     protected:
-      int DistanceToUpstreamGap(const unsigned& pos, const CBioseq& bioseq);
       bool CouldExtendLeft(const CBioseq& bioseq, const unsigned& pos);
-      int DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq);
       bool CouldExtendRight(const CBioseq& bioseq, const int& pos);
   };
 
@@ -1943,6 +2068,7 @@ namespace DiscRepNmSpc {
   };
 
 
+/*
   class CBioseq_DISC_SHORT_RRNA : public CBioseqTestAndRepData
   {
     public:
@@ -1952,6 +2078,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_SHORT_RRNA");}
   };
+*/
 
 
   class CBioseq_DISC_BAD_GENE_STRAND : public CBioseqTestAndRepData

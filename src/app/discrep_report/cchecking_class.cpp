@@ -228,13 +228,15 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 {
 // ini.
    thisTest.is_AllAnnot_run = false;
+   thisTest.is_BacPartial_run = false;
    thisTest.is_BASES_N_run = false;
    thisTest.is_CdTransl_run = false;
    thisTest.is_GP_Set_run = false;
    thisTest.is_MolInfo_run = false;
    thisTest.is_MRNA_run = false;
    thisTest.is_Prot_run = false;
-   thisTest.is_Rna_run = false;
+   thisTest.is_TRRna_run = false;
+   thisTest.is_RRna_run = false;
    thisTest.is_SHORT_run = false;
    thisTest.is_SusPhrase_run = false;
 

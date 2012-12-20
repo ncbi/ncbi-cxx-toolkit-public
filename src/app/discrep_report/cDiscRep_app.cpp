@@ -76,7 +76,6 @@ static CDiscRepInfo thisInfo;
 static string       strtmp;
 
 // Initialization
-CConstRef <CNcbiRegistry>               CDiscRepInfo :: registry;
 CRef < CScope >                         CDiscRepInfo :: scope;
 string				        CDiscRepInfo :: infile;
 vector < CRef < CClickableItem > >      CDiscRepInfo :: disc_report_data;
@@ -101,9 +100,10 @@ vector <string>                         CDiscRepInfo :: rrna_standard_name;
 Str2UInt                                CDiscRepInfo :: desired_aaList;
 CTaxon1                                 CDiscRepInfo :: tax_db_conn;
 list <string>                           CDiscRepInfo :: state_abbrev;
-list <string>                           CDiscRepInfo :: cds_prod_find;
+Str2Str                                 CDiscRepInfo :: cds_prod_find;
 vector <string>                         CDiscRepInfo :: s_pseudoweasels;
 vector <string>                         CDiscRepInfo :: suspect_rna_product_names;
+string                                  CDiscRepInfo :: kNonExtendableException;
 
 void CDiscRepApp::Init(void)
 {
@@ -136,7 +136,6 @@ void CDiscRepApp::Init(void)
 
     // read suspect rule file
     const CNcbiRegistry& reg = GetConfig();
-    thisInfo.registry = CConstRef <CNcbiRegistry> (&reg);
 
     string suspect_rule_file = reg.Get("SuspectProductRule", "SuspectRuleFile");
     ifstream ifile(suspect_rule_file.c_str());
@@ -170,13 +169,16 @@ cerr << "222can get\n";
       NCBI_THROW(CException, eUnknown, "Missing config parameters.");
 
     // ini. of s_pseudoweasels
-    strtmp = reg.Get("SingleDataIni", "SPseudoWeasels");
+    strtmp = reg.Get("StringVecIni", "SPseudoWeasels");
     thisInfo.s_pseudoweasels = NStr::Tokenize(strtmp, ",", thisInfo.s_pseudoweasels);
 
     // ini. of suspect_rna_product_names
-    strtmp = reg.Get("SingleDataIni", "SuspectRnaProdNms");
+    strtmp = reg.Get("StringVecIni", "SuspectRnaProdNms");
     thisInfo.suspect_rna_product_names 
         = NStr::Tokenize(strtmp, ",", thisInfo.suspect_rna_product_names);
+
+    // ini. of kNonExtendableException
+    thisInfo.kNonExtendableException = reg.Get("SingleDataIni", "KNonExtExc");
     
     // ini. of weasels
     thisInfo.weasels.reserve(11);
@@ -201,6 +203,13 @@ cerr << "222can get\n";
     thisInfo.strandsymbol.push_back("r");
 
     // ini. of rRNATerms
+    list <string> strs;
+    reg.EnumerateEntries("RRna-terms", &strs);
+    ITERATE (list <string>, it, strs) {
+       strtmp = (*it == "5-8S") ? "5.8S" : *it;
+       thisInfo.rRNATerms[strtmp] = NStr::StringToUInt(reg.Get("RRna-terms", *it));
+    }
+/*
     thisInfo.rRNATerms["16S"] = 1000;
     thisInfo.rRNATerms["18S"] = 1000;
     thisInfo.rRNATerms["23S"] = 2000;
@@ -211,6 +220,7 @@ cerr << "222can get\n";
     thisInfo.rRNATerms["large"] = 1000;
     thisInfo.rRNATerms["5.8S"] = 130;
     thisInfo.rRNATerms["5S"] = 90;
+*/
 
     // ini. of no_multi_qual
     thisInfo.no_multi_qual.reserve(3);
@@ -283,7 +293,9 @@ cerr << "222can get\n";
     thisInfo.trna_list.push_back("tRNA-TERM");
 
     // ini. of rrna_standard_name
-    thisInfo.rrna_standard_name.reserve(10);
+    strtmp = reg.Get("StringVecIni", "RrnaStandardName");
+    thisInfo.rrna_standard_name = NStr::Tokenize(strtmp, ",", thisInfo.rrna_standard_name);
+/*
     thisInfo.rrna_standard_name.push_back("5S ribosomal RNA");
     thisInfo.rrna_standard_name.push_back("5.8S ribosomal RNA");
     thisInfo.rrna_standard_name.push_back("12S ribosomal RNA");
@@ -294,6 +306,7 @@ cerr << "222can get\n";
     thisInfo.rrna_standard_name.push_back("28S ribosomal RNA");
     thisInfo.rrna_standard_name.push_back("large subunit ribosomal RNA");
     thisInfo.rrna_standard_name.push_back("small subunit ribosomal RNA");
+*/
 
     // ini. of short_auth_nms
     thisInfo.short_auth_nms.reserve(13);
@@ -347,11 +360,13 @@ cerr << "222can get\n";
     reg.EnumerateEntries("US-state-abbrev-fixes", &(thisInfo.state_abbrev));
 
     // ini. of cds_prod_find
-    reg.EnumerateEntries("Cds-product-find", &(thisInfo.cds_prod_find));
+    strs.clear();
+    reg.EnumerateEntries("Cds-product-find", &strs);
+    ITERATE (list <string>, it, strs) {
+      strtmp = ( *it == "related-to") ? "related to" : *it;
+      thisInfo.cds_prod_find[strtmp]= reg.Get("Cds-product-find", *it);
+    }
 }
-
-
-
 
 
 
