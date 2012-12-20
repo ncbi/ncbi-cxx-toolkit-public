@@ -592,17 +592,19 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
     string cmd("GETP");
     g_AppendClientIPAndSessionID(cmd);
+    string response(m_Service.FindServerAndExec(cmd).response);
 
     list<CTempString> lst;
-    NStr::Split(m_Service.FindServerAndExec(cmd).response, ";", lst);
+    NStr::Split(response, ";", lst);
 
     ITERATE(list<CTempString>, it, lst) {
         CTempString n, v;
-        NStr::SplitInTwo(*it, "=", n, v);
-        if (n == "max_input_size")
-            m_ServerParams->max_input_size = NStr::StringToInt(v) / 4;
-        else if (n == "max_output_size")
-            m_ServerParams->max_output_size = NStr::StringToInt(v) / 4;
+        if (NStr::SplitInTwo(*it, "=", n, v))
+            if (n == "max_input_size")
+                m_ServerParams->max_input_size = NStr::StringToInt(v) / 4;
+            else if (n == "max_output_size")
+                m_ServerParams->max_output_size = NStr::StringToInt(v) / 4;
+
     }
 
     return *m_ServerParams;
