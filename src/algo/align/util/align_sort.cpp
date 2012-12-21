@@ -346,6 +346,9 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 sorted_output.Write(*it);
             }
         }
+
+        // lastly, call Flush(); we're done
+        sorted_output.Flush();
     }
     catch (CException&) {
         ITERATE (vector<string>, it, tmp_volumes) {
