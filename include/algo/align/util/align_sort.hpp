@@ -68,6 +68,10 @@ public:
     public:
         virtual ~IAlignSortedOutput() {}
         virtual void Write(const TAlignment &aln) = 0;
+        virtual void Flush() = 0;
+
+        virtual size_t GetCountProcessed() const = 0;
+        virtual size_t GetCountEmitted() const = 0;
     };
 
     void SortAlignments(IAlignSource &align_source, 
