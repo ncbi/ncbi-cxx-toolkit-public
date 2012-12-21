@@ -846,7 +846,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
 
         m_NetScheduleAPI.GetAdmin().GetQueueInfo(it.GetServer(), queue_info);
 
-        if (GetFastLocalTime().GetTimeT() > NStr::StringToUInt8(
+        if ((Uint8) GetFastLocalTime().GetTimeT() > NStr::StringToUInt8(
                 grid_ctx.GetPersistentEntryValue(kSinceTime)) +
                 NStr::StringToUInt(queue_info["timeout"]))
             status = CNetScheduleAPI::eJobNotFound;
