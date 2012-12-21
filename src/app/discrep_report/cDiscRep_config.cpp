@@ -293,6 +293,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back( 
+                      CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_AFFIL));
+   tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUBAFFIL_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT));
@@ -319,6 +321,8 @@ void CRepConfDiscrepancy :: ConfigRep()
      CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_DUP_DEFLINE));
+   tests_on_SeqEntry_feat_desc.push_back(
+                         CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_DEFLINES));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_DEFLINE_ON_SET));
    tests_on_SeqEntry_feat_desc.push_back(

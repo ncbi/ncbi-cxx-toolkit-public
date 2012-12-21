@@ -184,6 +184,7 @@ namespace DiscRepNmSpc {
       string GetOtherComment(unsigned cnt, const string& single_str, const string& plural_str);
 
  //  GetDiscrepancyItemTextEx() 
+      string GetDiscItemText(const CSeq_submit& seq_submit);
       string GetDiscItemText(const CBioseq& obj);
       string GetDiscItemTextForBioseqSet(const CBioseq_set& obj);
       string GetDiscItemText(const CBioseq_set& obj);
@@ -360,7 +361,9 @@ namespace DiscRepNmSpc {
       string GetName_tlt() const {return string("DISC_TITLE_AUTHOR_CONFLICT"); }
       string GetName_aff() const {return string("DISC_CITSUBAFFIL_CONFLICT"); }
       string GetName_unp() const {return string("DISC_UNPUB_PUB_WITHOUT_TITLE"); }
+      string GetName_noaff() const {return string("DISC_MISSING_AFFIL"); }
 
+      bool IsMissingAffil(const CAffil& affil);
       E_Status GetPubMLStatus (const CPub& pub);
       E_Status ImpStatus(const CImprint& imp, bool is_pub_sub = false); 
       string Get1stTitle(const CTitle::C_E& title);
@@ -380,6 +383,17 @@ namespace DiscRepNmSpc {
       void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
       string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
   };
+
+
+  class CSeqEntry_DISC_MISSING_AFFIL : public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_MISSING_AFFIL () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_noaff();}
+  };
+
 
 
   class CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE : public CSeqEntry_test_on_pub
@@ -452,8 +466,24 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
    protected:
+      list <string> m_bioseqs;
+
       string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
       string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
+      string GetName_notlt() const {return string("DISC_MISSING_DEFLINES"); }
+
+      void AddBioseqsOfSet(const CBioseq_set& set);
+      void RmvBioseqsOfSet(const CBioseq_set& set);
+  };
+
+
+  class CSeqEntry_DISC_MISSING_DEFLINES  : public CSeqEntry_test_on_defline
+  {
+    public:
+      virtual ~CSeqEntry_DISC_MISSING_DEFLINES () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_defline::GetName_notlt();}
   };
 
   

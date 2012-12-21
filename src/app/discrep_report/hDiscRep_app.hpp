@@ -47,6 +47,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objects/macro/Suspect_rule.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/submit/Submit_block.hpp>
@@ -143,7 +144,7 @@ namespace DiscRepNmSpc{
            static Str2Strs                           test_item_list;
            static CRef < CSuspect_rule_set>          suspect_rules;
            static vector <string> 		     weasels;
-           static CConstRef <CSubmit_block>          submit_block;
+           static CConstRef <CSeq_submit>            seq_submit;
            static string                             expand_defline_on_set;
            static string                             report_lineage;
            static vector <string>                    strandsymbol;

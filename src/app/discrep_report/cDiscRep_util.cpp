@@ -456,6 +456,19 @@ string GetKey(CSeqdesc::E_Choice idx)
 */
 
 
+string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
+{
+  string desc;
+  if (seq_submit.GetData().IsEntrys()) {
+     const list <CRef <CSeq_entry> >& entrys = seq_submit.GetData().GetEntrys();
+     if ((*entrys.begin())->IsSeq()) 
+        desc =  BioseqToBestSeqIdString((*entrys.begin())->GetSeq(), CSeq_id::e_Genbank);
+     else desc = GetDiscItemTextForBioseqSet((*entrys.begin())->GetSet());
+  }
+  return (thisInfo.infile + ": " + desc);
+};
+
+
 string CTestAndRepData :: GetDiscItemTextForBioseqSet(const CBioseq_set& bioseq_set)
 {
   string     row_text(kEmptyStr);
@@ -631,8 +644,11 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
              len_txt += ", " + NStr::UIntToString(gap_cnt) + " gap"; 
       len_txt += ")";
 
+/*
       const CSeq_id& seq_id = BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank);
       return (thisInfo.infile + ": " + seq_id.GetSeqIdString() + len_txt);
+*/
+      return(thisInfo.infile +": " + BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank)+ len_txt);
 
 }; // GetDiscItemText(const CBioseq& obj)
 

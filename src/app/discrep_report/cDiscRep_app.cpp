@@ -83,7 +83,7 @@ Str2Strs                                CDiscRepInfo :: test_item_list;
 COutputConfig                           CDiscRepInfo :: output_config;
 CRef < CSuspect_rule_set >              CDiscRepInfo :: suspect_rules (new CSuspect_rule_set);
 vector <string> 	                CDiscRepInfo :: weasels;
-CConstRef <CSubmit_block>               CDiscRepInfo :: submit_block = CRef <CSubmit_block>(0);
+CConstRef <CSeq_submit>                 CDiscRepInfo :: seq_submit = CConstRef <CSeq_submit>();
 string                                  CDiscRepInfo :: expand_defline_on_set;
 string                                  CDiscRepInfo :: report_lineage;
 vector <string>                         CDiscRepInfo :: strandsymbol;
@@ -432,18 +432,16 @@ int CDiscRepApp :: Run(void)
 
     // read input file and go tests
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
-    CRef <CSeq_submit> seq_submit (new CSeq_submit);
+    CSeq_submit tmp_seq_submit;
     set <const CTypeInfo*> known_tp;
     known_tp.insert(CSeq_submit::GetTypeInfo());
     set <const CTypeInfo*> matching_tp = ois->GuessDataType(known_tp);
     if (matching_tp.size() == 1 && *(matching_tp.begin()) == CSeq_submit :: GetTypeInfo()) {
-         *ois >> *seq_submit;
-         thisInfo.submit_block.Reset();
-         thisInfo.submit_block = CConstRef <CSubmit_block> (&(seq_submit->GetSub()));
-         if (seq_submit->IsEntrys()) {
-             ITERATE (list <CRef <CSeq_entry> >, it, seq_submit->GetData().GetEntrys()) {
+         *ois >> tmp_seq_submit;
+         thisInfo.seq_submit = CConstRef <CSeq_submit> (&tmp_seq_submit);
+         if (thisInfo.seq_submit->IsEntrys()) {
+             ITERATE (list <CRef <CSeq_entry> >,it,thisInfo.seq_submit->GetData().GetEntrys())
                 CheckThisSeqEntry(*it);
-             } 
          }
     }
     else {

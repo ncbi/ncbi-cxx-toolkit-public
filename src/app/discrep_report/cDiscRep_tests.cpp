@@ -7343,8 +7343,8 @@ void CSeqEntry_test_on_biosrc :: GetSubmitText(const CAuth_list& authors)
 void CSeqEntry_test_on_biosrc :: FindSpecSubmitText()
 {
   string inst(kEmptyStr), dept(kEmptyStr);
-  if (thisInfo.submit_block.NotEmpty()) {
-    GetSubmitText(thisInfo.submit_block->GetCit().GetAuthors());
+  if (thisInfo.seq_submit.NotEmpty()) {
+    GetSubmitText(thisInfo.seq_submit->GetSub().GetCit().GetAuthors());
   }
 
   ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
@@ -7860,10 +7860,10 @@ string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const C
 void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
 {
    string desc;
-   if (thisInfo.submit_block.Empty()) desc = "0$";
+   if (thisInfo.seq_submit.Empty()) desc = "0$";
    else {
-     if (SUBMIT_BLKs.empty()) SUBMIT_BLKs.push_back(Blob2Str(*thisInfo.submit_block));
-     else desc = SubmitBlockMatchExceptDate(*thisInfo.submit_block);
+     if (SUBMIT_BLKs.empty()) SUBMIT_BLKs.push_back(Blob2Str(thisInfo.seq_submit->GetSub()));
+     else desc = SubmitBlockMatchExceptDate(thisInfo.seq_submit->GetSub());
    }
    if (seq_entry.IsSeq()) desc += GetDiscItemText(seq_entry.GetSeq());
    else desc += GetDiscItemText(seq_entry.GetSet());
@@ -8278,7 +8278,7 @@ string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_in
     case CPerson_id::e_Name:
          { const CName_std& nm_std = pid.GetName();
           if (use_initials)
-              str = (nm_std.CanGetInitials()? nm_std.GetInitials() + " " : "") + nm_std.GetLast();
+              str =(nm_std.CanGetInitials()? nm_std.GetInitials() + " " :"") +nm_std.GetLast();
           else {
             str = (nm_std.CanGetFirst()? nm_std.GetFirst() + " " : "")
                     + ( (nm_std.CanGetInitials() && nm_std.GetInitials().size()>2)? 
@@ -8350,8 +8350,14 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
       string affil_str, grp_str;
       GetGroupedAffilString(cit_sub->GetAuthors(), affil_str, grp_str);
       thisInfo.test_item_list[GetName_aff()].push_back(grp_str + "$" + desc);
-     
       m_has_cit = true;
+
+      // DISC_MISSING_AFFIL
+      if (cit_sub->GetAuthors().CanGetAffil()) {
+         const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+         if (IsMissingAffil(cit_sub->GetAuthors().GetAffil()))
+            thisInfo.test_item_list[GetName_noaff()].push_back(desc);
+      } 
    }
 
    // DISC_CHECK_AUTH_CAPS
@@ -8361,6 +8367,15 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
    // DISC_UNPUB_PUB_WITHOUT_TITLE
    if (DoesPubdescContainUnpubPubWithoutTitle(pubs))
       thisInfo.test_item_list[GetName_unp()].push_back(desc);
+};
+
+
+bool CSeqEntry_test_on_pub :: IsMissingAffil(const CAffil& affil)
+{
+   if ( (affil.IsStd() && affil.GetStd().CanGetAffil() && affil.GetStd().GetAffil().empty())
+         || (affil.IsStr() && affil.GetStr().empty()) ) 
+       return true;
+   return false;
 };
 
 
@@ -8574,32 +8589,51 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
    };
 
    CSubmit_block this_submit_blk;
-   if (thisInfo.submit_block.NotEmpty()) {
+   if (thisInfo.seq_submit.NotEmpty()) {
       if (seq_entry.IsSeq()) desc = GetDiscItemText(seq_entry.GetSeq());
       else desc = GetDiscItemText(seq_entry.GetSet());
 
+      const CAuth_list& auths = thisInfo.seq_submit->GetSub().GetCit().GetAuthors();
       // DISC_CITSUB_AFFIL_DUP_TEXT
-      if (AffilStreetContainsDuplicateText(
-                   thisInfo.submit_block->GetCit().GetAuthors().GetAffil())) {
+      if (auths.CanGetAffil() && AffilStreetContainsDuplicateText(auths.GetAffil())) {
           size_t pos = desc.find(": ");
           strtmp = desc.substr(0, pos + 2) + "Cit-sub for " + desc.substr(pos+3);
           thisInfo.test_item_list[GetName_dup()].push_back(strtmp);
       }
 
       // DISC_CHECK_AUTH_CAPS
-      if ( HasBadAuthorName(thisInfo.submit_block->GetCit().GetAuthors()) )
-                   thisInfo.test_item_list[GetName_cap()].push_back(desc);
+      if ( HasBadAuthorName(auths)) thisInfo.test_item_list[GetName_cap()].push_back(desc);
 
       // DISC_CITSUBAFFIL_CONFLICT
       string affil_str, grp_str;
-      GetGroupedAffilString(thisInfo.submit_block->GetCit().GetAuthors(), affil_str, grp_str);
+      GetGroupedAffilString(auths, affil_str, grp_str);
       thisInfo.test_item_list[GetName_aff()].push_back(grp_str + "$" + desc);
       m_has_cit = true;
+
+      // DISC_MISSING_AFFIL
+      const CContact_info& contact = thisInfo.seq_submit->GetSub().GetContact();
+      desc = GetDiscItemText(*thisInfo.seq_submit);
+      if (!contact.CanGetContact()
+            || !contact.GetContact().CanGetAffil()
+            || IsMissingAffil(contact.GetContact().GetAffil())) {
+          thisInfo.test_item_list[GetName_noaff()].push_back(desc);
+      }
+      else if (!auths.CanGetAffil() 
+                 || IsMissingAffil(auths.GetAffil())) {
+           thisInfo.test_item_list[GetName_noaff()].push_back(desc);
+      }
    }
  
    if (!m_has_cit) 
        thisInfo.test_item_list[GetName_aff()].push_back("no cit");
    thisTest.is_Pub_run = true;
+};
+
+
+void CSeqEntry_DISC_MISSING_AFFIL :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+          = GetIsComment(c_item->item_list.size(), "citsub") + "missing affiliation";
 };
 
 
@@ -8776,7 +8810,7 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
                  c_item->item_list.end(), (*it)->obj_text.begin(), (*it)->obj_text.end());
      
      sub_c_item->description = GetHasComment(sub_c_item->item_list.size()/2, "contig")
-                                 + "identical sources that do not match another contig source.";
+                             + "identical sources that do not match another contig source.";
      c_item->subcategories.push_back(sub_c_item);
    }
    c_item->description =
@@ -8788,9 +8822,40 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
 
 
 //new comb
+void CSeqEntry_test_on_defline :: AddBioseqsOfSet(const CBioseq_set& set)
+{
+   ITERATE (list <CRef <CSeq_entry> >, it, set.GetSeq_set()) {
+     if ( (*it)->IsSeq() ) {
+        if ( !((*it)->GetSeq().IsAa() ))
+           m_bioseqs.push_back(GetDiscItemText( (*it)->GetSeq() ));
+     }
+     else AddBioseqsOfSet( (*it)->GetSet());
+   }
+};
+
+
+void CSeqEntry_test_on_defline :: RmvBioseqsOfSet(const CBioseq_set& set)
+{
+   ITERATE (list <CRef <CSeq_entry> >, it, set.GetSeq_set()) {
+     if ( (*it)->IsSeq() ) {
+        if ( !((*it)->GetSeq().IsAa() ))
+           m_bioseqs.remove(GetDiscItemText( (*it)->GetSeq() ));
+     }
+     else RmvBioseqsOfSet( (*it)->GetSet());
+   }
+};
+
+
 void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
 {
     if (thisTest.is_Defl_run) return;
+    // DISC_MISSING_DEFLINES
+    if (seq_entry.IsSeq()) {
+        if (!seq_entry.GetSeq().IsAa()) 
+               m_bioseqs.push_back(GetDiscItemText(seq_entry.GetSeq()));
+    }
+    else AddBioseqsOfSet(seq_entry.GetSet());
+    m_bioseqs.sort();
 
     unsigned i=0; 
     string desc, title;
@@ -8805,10 +8870,28 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
        title = NStr::ToUpper(title); 
        thisInfo.test_item_list[GetName_dup()].push_back(title + "$" + desc);
 
+       // DISC_MISSING_DEFLINES
+       if (title_seqdesc_seqentry[i]->IsSeq()) {
+         if (!title_seqdesc_seqentry[i]->GetSeq().IsAa())
+             m_bioseqs.remove(GetDiscItemText(title_seqdesc_seqentry[i]->GetSeq()));
+       }
+       else RmvBioseqsOfSet(title_seqdesc_seqentry[i]->GetSet());
+
        i++;
     }
 
+    // DISC_MISSING_DEFLINES
+    ITERATE (list <string>, it, m_bioseqs)
+      thisInfo.test_item_list[GetName_notlt()].push_back(*it);
+ 
     thisTest.is_Defl_run = true;
+};
+
+
+void CSeqEntry_DISC_MISSING_DEFLINES :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description 
+        = GetHasComment(c_item->item_list.size(), "bioseq") + "no definition line";
 };
 
 
