@@ -531,6 +531,9 @@ void CGenbankFormatter::FormatHtmlAnchor(
     const CHtmlAnchorItem& html_anchor, 
     IFlatTextOStream& orig_text_os)
 {
+    if ( html_anchor.Skip() ) {
+        return;
+    }
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, html_anchor, orig_text_os);
 
