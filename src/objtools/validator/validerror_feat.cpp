@@ -6102,13 +6102,13 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         size_t prot_len = prot_vec.size(); 
         len = transl_prot.length();
 
-        if (prot_len > 1.2 * len
-            && feat.IsSetExcept_text() 
-            && NStr::Find(feat.GetExcept_text(), "annotated by transcript or proteomic data") != string::npos) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_TransLen,
-                    "Protein product length [" + NStr::SizetToString(prot_len) + 
-                    "] is more than 120% of the " + farstr + "translation length [" + 
-                    NStr::SizetToString(len) + "]", feat);
+        if (prot_len > 1.2 * len) {
+            if ((! feat.IsSetExcept_text()) || NStr::Find(feat.GetExcept_text(), "annotated by transcript or proteomic data") != string::npos) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProductLength,
+                        "Protein product length [" + NStr::SizetToString(prot_len) + 
+                        "] is more than 120% of the " + farstr + "translation length [" + 
+                        NStr::SizetToString(len) + "]", feat);
+            }
         }
 
         if (got_stop  &&  (len == prot_len + 1)) { // ok, got stop
