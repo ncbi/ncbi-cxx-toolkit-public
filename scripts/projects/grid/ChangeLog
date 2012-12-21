@@ -1,3 +1,28 @@
+2012-12-20 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* all: Cross-site (MAIN<->COLO) access to NetSchedule/NetCache servers.
+	* all: Job input/output NetCache blobs are prolonged for job liftime.
+	* all worker nodes: New command line option -procinfofile.
+	* all: Client identification is sent to NetSchedule for accountability.
+	* all: Web client tracking in all applications.
+	* grid_cli: Support for real-time job watching.
+	* grid_cli: NetSchedule reconfiguration now produces a list of changes.
+	* grid_cli: New options to submit and retrieve remote_app jobs.
+	* grid_cli: New queueinfo option to show information on queue classes.
+	* grid_cli: New command to purge NetCache databases.
+
+	* all worker nodes: Improved NetSchedule server querying.
+	* all worker nodes: Job result submission from a separate thread.
+	* all worker nodes: Keep running even if all NS servers are down.
+	* all worker nodes: When idle, terminate immediately upon request.
+	* cgi2rcgi: Shorter job submission timeout to skip unresponsive servers.
+	* cgi2rcgi, ncfetch: enable_mirroring="if_key_mirrored" by default.
+	* grid_cli: stats --ns --jobs-by-status now also work without --queue.
+
+	* all worker nodes: Fixed occasional GET2 errors due to zero timeout.
+	* all worker nodes: Recovery from ePrefAffExpired when no affinities.
+	* remote_app, remote_cgi: Treat $PATH as case-insensitive on Windows.
+
 2012-06-20 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* all: This release is not compatible with older NetSchedule anymore.
