@@ -120,7 +120,7 @@ AC_ARG_WITH(title2,
 AC_ARG_WITH(debug,
    [ --without-debug         build non-debug versions of libs and apps])
 AC_ARG_WITH(max-debug,
-   [ --with-max-debug,       enable extra runtime checks (esp. of STL usage)])
+   [ --with-max-debug        enable extra runtime checks (esp. of STL usage)])
 AC_ARG_WITH(symbols,
    [ --with-symbols          retain debugging symbols in non-debug mode])
 AC_ARG_WITH(optimization,
@@ -350,19 +350,19 @@ AC_ARG_WITH(boost-tag2,
 AC_ARG_WITH(sqlite3,
    [ --with-sqlite3=DIR      use SQLite 3.x installation in DIR])
 AC_ARG_WITH(sqlite3b,
-   [ --without-sqlite3,      do not use SQLite 3.x])
+   [ --without-sqlite3       do not use SQLite 3.x])
 AC_ARG_WITH(icu,
    [ --with-icu=DIR          use ICU installation in DIR])
 AC_ARG_WITH(icu2,
-   [ --without-icu,          do not use ICU])
+   [ --without-icu           do not use ICU])
 AC_ARG_WITH(expat,
    [ --with-expat=DIR        use Expat installation in DIR])
 AC_ARG_WITH(expat2,
-   [ --without-expat,        do not use Expat])
+   [ --without-expat         do not use Expat])
 AC_ARG_WITH(sablot,
    [ --with-sablot=DIR       use Sablotron installation in DIR])
 AC_ARG_WITH(sablot2,
-   [ --without-sablot,       do not use Sablotron])
+   [ --without-sablot        do not use Sablotron])
 AC_ARG_WITH(libxml,
    [ --with-libxml=DIR       use libxml2 installation in DIR])
 AC_ARG_WITH(libxml_,
@@ -378,15 +378,15 @@ AC_ARG_WITH(libexslt2,
 AC_ARG_WITH(xerces,
    [ --with-xerces=DIR       use Xerces-C++ installation in DIR])
 AC_ARG_WITH(xerces2,
-   [ --without-xerces,       do not use Xerces-C++])
+   [ --without-xerces        do not use Xerces-C++])
 AC_ARG_WITH(xalan,
    [ --with-xalan=DIR        use Xalan-C++ installation in DIR])
 AC_ARG_WITH(xalan2,
-   [ --without-xalan,        do not use Xalan-C++])
+   [ --without-xalan         do not use Xalan-C++])
 AC_ARG_WITH(zorba,
    [ --with-zorba=DIR        use Zorba installation in DIR])
 AC_ARG_WITH(zorba2,
-   [ --without-zorba,        do not use Zorba])
+   [ --without-zorba         do not use Zorba])
 AC_ARG_WITH(oechem,
    [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
 AC_ARG_WITH(oechem2,

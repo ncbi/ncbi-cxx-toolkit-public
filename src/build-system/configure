@@ -874,7 +874,7 @@ Optional Packages:
 ===============================================================================
 =============== NCBI C++ Toolkit specific configuration flags =================
  --without-debug         build non-debug versions of libs and apps
- --with-max-debug,       enable extra runtime checks (esp. of STL usage)
+ --with-max-debug        enable extra runtime checks (esp. of STL usage)
  --with-symbols          retain debugging symbols in non-debug mode
  --without-optimization  turn off optimization flags in non-debug mode
  --with-profiling        build profiled versions of libs and apps
@@ -986,13 +986,13 @@ Optional Packages:
  --with-boost-tag=TAG    use TAG as the tag appended to Boost library names
  --without-boost-tag     use untagged Boost library names
  --with-sqlite3=DIR      use SQLite 3.x installation in DIR
- --without-sqlite3,      do not use SQLite 3.x
+ --without-sqlite3       do not use SQLite 3.x
  --with-icu=DIR          use ICU installation in DIR
- --without-icu,          do not use ICU
+ --without-icu           do not use ICU
  --with-expat=DIR        use Expat installation in DIR
- --without-expat,        do not use Expat
+ --without-expat         do not use Expat
  --with-sablot=DIR       use Sablotron installation in DIR
- --without-sablot,       do not use Sablotron
+ --without-sablot        do not use Sablotron
  --with-libxml=DIR       use libxml2 installation in DIR
  --without-libxml        do not use libxml2
  --with-libxslt=DIR      use libxslt installation in DIR
@@ -1000,11 +1000,11 @@ Optional Packages:
  --with-libexslt=DIR     use libexslt installation in DIR
  --without-libexslt      do not use libexslt
  --with-xerces=DIR       use Xerces-C++ installation in DIR
- --without-xerces,       do not use Xerces-C++
+ --without-xerces        do not use Xerces-C++
  --with-xalan=DIR        use Xalan-C++ installation in DIR
- --without-xalan,        do not use Xalan-C++
+ --without-xalan         do not use Xalan-C++
  --with-zorba=DIR        use Zorba installation in DIR
- --without-zorba,        do not use Zorba
+ --without-zorba         do not use Zorba
  --with-oechem=DIR       use OpenEye OEChem installation in DIR
  --without-oechem        do not use OEChem
  --with-sge=DIR          use Sun Grid Engine installation in DIR
