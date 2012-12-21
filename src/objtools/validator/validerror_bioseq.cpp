@@ -393,6 +393,9 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             if (id.GetGeneral().IsSetDb()) {
                 const CDbtag& dbt = id.GetGeneral();
                 int dblen = dbt.GetDb().length();
+                if (dblen < 1) {
+                   PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
+                }
                 if (dblen > 20) {
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, "Database name longer than 20 characters", ctx);
                 }
