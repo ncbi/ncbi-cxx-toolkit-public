@@ -12135,6 +12135,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "Range",
                               "Location: SeqLoc [lcl|nuc:28-27] out of range"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ProductLength",
+                                                 "Protein product length [8] is more than 120% of the translation length [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "TransLen",
                                                  "Given protein length [8] does not match translation length [0]"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "NoStop",
