@@ -342,10 +342,14 @@ private:
     /// @param skip_from skipping display from [in]
     /// @param skip_to skipping display to [in]
     /// @param index to add index (if >=0)to quick url link to score [in]
+    /// @param int num_descriptions_to_show the number of descriptions to show,
+    /// this controls whether the header in the descriptions section is shown
+    /// or not: if its value is non-zero it's shown, otherwise it isn't [in]
     void x_ConfigCShowBlastDefline(align_format::CShowBlastDefline& showdef,
                                    int skip_from = -1,
                                    int skip_to = -1,
-                                   int index = -1);
+                                   int index = -1,
+                                   int num_descriptions_to_show = -1);
 
     /// Prints XML and both species of ASN.1
     /// @param results Results for one query or Phi-blast iteration [in]

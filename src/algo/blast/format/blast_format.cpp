@@ -347,7 +347,8 @@ s_HasLocalIDs(CConstRef<CBlastQueryVector> queries)
 
 void 
 CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef, 
-                                        int skip_from, int skip_to, int index)
+                                        int skip_from, int skip_to, int index,
+                                        int num_descriptions_to_show /* = -1 */)
 {
     int flags = 0;
     if (m_ShowLinkedSetSize)
@@ -360,6 +361,8 @@ CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef,
     }
     if (m_ShowGi)
         flags |= CShowBlastDefline::eShowGi;
+    if (num_descriptions_to_show == 0)
+        flags |= CShowBlastDefline::eNoShowHeader;
 
     showdef.SetOption(flags);
     showdef.SetDbName(m_DbName);
@@ -447,7 +450,8 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         CShowBlastDefline showdef(*aln_set, *m_Scope, 
                                   defline_length == -1 ? kFormatLineLength:defline_length,
                                   m_NumSummary + additional);
-        x_ConfigCShowBlastDefline(showdef, -1, -1, index);
+        x_ConfigCShowBlastDefline(showdef, -1, -1, index,
+                                  m_NumSummary+additional);
         showdef.DisplayBlastDefline(m_Outfile);
     }
     m_Outfile << "\n";

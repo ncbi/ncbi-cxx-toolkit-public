@@ -82,6 +82,28 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
     m_Opts->SetDefaultsMode(false);
 }
 
+void 
+CBlastNucleotideOptionsHandle::SetVecScreenDefaults()
+{
+    m_Opts->SetDefaultsMode(true);
+    m_Opts->SetRemoteProgramAndService_Blast3("blastn", "vecscreen");
+    m_Opts->SetProgram(eVecScreen);
+    
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
+
+    // based on VSBlastOptionNew from tools/vecscrn.c
+    m_Opts->SetGapOpeningCost(3);
+    m_Opts->SetGapExtensionCost(3);
+    m_Opts->SetMaskAtHash(true);
+    m_Opts->SetDustFiltering(true);
+    m_Opts->SetMatchReward(1);
+    m_Opts->SetMismatchPenalty(-5);
+    m_Opts->SetEvalueThreshold(700);
+    m_Opts->SetEffectiveSearchSpace(Int8(1.75e12));
+}
+
 void
 CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 {

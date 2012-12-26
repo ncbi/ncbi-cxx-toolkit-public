@@ -69,6 +69,7 @@ enum EProgram {
     ePHIBlastp,         ///< Protein PHI BLAST
     ePHIBlastn,         ///< Nucleotide PHI BLAST
     eDeltaBlast,        ///< Delta Blast
+    eVecScreen,         ///< Vector screening
     eBlastProgramMax    ///< Undefined program
 };
 

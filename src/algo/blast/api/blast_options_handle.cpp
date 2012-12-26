@@ -177,6 +177,15 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         retval = new CDeltaBlastOptionsHandle(locality);
         break;
 
+    case eVecScreen:
+	{
+		CBlastNucleotideOptionsHandle* opts = 
+			new CBlastNucleotideOptionsHandle(locality);
+		opts->SetVecScreenDefaults();
+		retval = opts;
+        break;
+	}
+
     case eBlastNotSet:
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "eBlastNotSet may not be used as argument");
@@ -237,7 +246,7 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
         retval.assign("BLASTN program optimized for sequences shorter than ");
         retval += "50 bases";
     } else if (task == "vecscreen") {
-        retval.assign("BLASTN with several options re-set for running Vecscreen");
+        retval.assign("BLASTN with several options re-set for running VecScreen");
     } else if (task == "rmblastn") {
         retval.assign("BLASTN with complexity adjusted scoring and masklevel");
         retval += "filtering";
@@ -312,14 +321,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         }
         else if (!NStr::CompareNocase(task, "vecscreen"))
         {
-            opts->SetGapOpeningCost(3);
-            opts->SetGapExtensionCost(3);
-            opts->SetFilterString("m D", true);/* NCBI_FAKE_WARNING */
-            opts->SetMatchReward(1);
-            opts->SetMismatchPenalty(-5);
-            opts->SetEvalueThreshold(700);
-            opts->SetOptions().SetEffectiveSearchSpace(Int8(1.75e12));
-            // based on VSBlastOptionNew from tools/vecscrn.c
+            opts->SetVecScreenDefaults();
         }else if ( !NStr::CompareNocase(task, "rmblastn") )
         {
             // -RMH- This blastn only supports full matrix scoring.

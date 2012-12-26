@@ -69,8 +69,24 @@ public:
 
     ///Match info
     struct AlnInfo {
-        CRange<TSeqPos> range;
+        TSeqRange range;
         MatchType type;
+
+        AlnInfo(TSeqRange r = TSeqRange::GetEmpty(), MatchType m = eNoMatch) 
+            : range(r), type(m) {}
+
+        /// to allow sorting in std::list
+        int operator<(const AlnInfo& rhs) const {
+            if (this == &rhs) {
+                return 0;
+            }
+            int rv = static_cast<int>(this->type < rhs.type);
+            if (rv == 0) {
+                // range is the tie-breaker
+                rv = this->range < rhs.range;
+            }
+            return rv;
+        }
     };
 
     ///Constructors

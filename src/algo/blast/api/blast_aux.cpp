@@ -685,6 +685,7 @@ string EProgramToTaskName(EProgram p)
     case ePHIBlastp:        retval.assign("phiblastp"); break;
     case ePHIBlastn:        retval.assign("phiblastn"); break;
     case eDeltaBlast:       retval.assign("deltablast"); break;
+    case eVecScreen:        retval.assign("vecscreen"); break;
     default:
         cerr << "Invalid EProgram value: " << (int)p << endl;
         abort();
@@ -704,6 +705,7 @@ EProgramToEBlastProgramType(EProgram p)
     case eBlastn:
     case eMegablast:
     case eDiscMegablast:
+    case eVecScreen:
         return eBlastTypeBlastn;
         
     case eBlastp:
@@ -780,6 +782,8 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         return eDiscMegablast;
     } else if (lowercase_program_name == "deltablast") {
         return eDeltaBlast;
+    } else if (lowercase_program_name == "vecscreen") {
+        return eVecScreen;
     } else {
         NCBI_THROW(CBlastException, eNotSupported, 
                    "Program type '" + program_name + "' not supported");

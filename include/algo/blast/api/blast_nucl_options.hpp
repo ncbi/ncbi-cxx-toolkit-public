@@ -210,6 +210,8 @@ public:
     void SetTraditionalBlastnDefaults();
     /// Sets TraditionalMegablastDefaults
     void SetTraditionalMegablastDefaults();
+    /// Sets default options for VecScreen
+    void SetVecScreenDefaults();
     
 protected:
     /// Set the program and service name for remote blast.

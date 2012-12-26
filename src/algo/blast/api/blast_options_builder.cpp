@@ -70,7 +70,7 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
     NStr::ToLower(s);
     
     // a. is there a program for phiblast?
-    // b. others, like vecscreen, disco?
+    // b. others, like disco?
     
     bool found = false;
     
@@ -91,6 +91,10 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
     } else if (p == "blastn") {
         if (s == "megablast") {
             p = "megablast";
+            found = true;
+        }
+        if (s == "vecscreen") {
+            p = "vecscreen";
             found = true;
         }
     } else if (p == "tblastn") {

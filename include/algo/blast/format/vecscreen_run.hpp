@@ -40,12 +40,28 @@ Author: Tom Madden
 #include <util/range.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/api/blast_results.hpp>
 #include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align_format/vectorscreen.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace ncbi::align_format;
 using namespace ncbi::objects;
+
+class NCBI_XBLASTFORMAT_EXPORT CVecScreenVersion : public CVersionInfo {
+    static const int kVecScreenMajorVersion = 2;
+    static const int kVecScreenMinorVersion = 0;
+    static const int kVecScreenPatchVersion = 0;
+public:
+    CVecScreenVersion()
+        : CVersionInfo(kVecScreenMajorVersion,
+                       kVecScreenMinorVersion,
+                       kVecScreenPatchVersion) {}
+};
+
+#define kDefaultVectorDb "UniVec"
 
 /// This class runs vecscreen
 class NCBI_XBLASTFORMAT_EXPORT CVecscreenRun
@@ -66,7 +82,8 @@ public:
      ///@param seq_loc sequence locations to screen.
      ///@param scope CScope used to fetch sequence on seq_loc
      ///@param db Database to screen with (UniVec is default).
-     CVecscreenRun(CRef<CSeq_loc> seq_loc, CRef<CScope> scope, const string & db = string("UniVec"));
+     CVecscreenRun(CRef<CSeq_loc> seq_loc, CRef<CScope> scope, 
+                   const string & db = string(kDefaultVectorDb));
 
      /// Destructor 
      ~CVecscreenRun() {delete m_Vecscreen;}
@@ -76,20 +93,68 @@ public:
 
      /// Fetches seqalign-set already processed by vecscreen.
      CRef<objects::CSeq_align_set> GetSeqalignSet() const;
+     CRef<blast::CSearchResultSet> GetSearchResultSet() const;
      
+     /// The Vecscreen formatter
+     class CFormatter {
+     public:
+
+         /// Controls the output formats supported by command line VecScreen
+         enum EOutputFormat {
+             eShowAlignments = 0,       ///< Show the alignments
+             eShowIntervalsOnly = 1,    ///< Only show the contaminated intervals
+             eEndValue                  ///< Sentinel value, not an actual output format
+         };
+         typedef int TOutputFormat;
+
+         CFormatter(CVecscreenRun& vs, 
+                    CScope& scope,
+                    TOutputFormat fmt = eShowAlignments, 
+                    bool html_output = true)
+             : m_Screener(vs), m_Scope(scope),
+               m_Outfmt(fmt), m_HtmlOutput(html_output) {}
+
+         /// Format the VecScreen results
+         /// @param out stream to write the results to
+         /// @param vs_opts VecScreen options
+         void FormatResults(CNcbiOstream& out, 
+                            CRef<blast::CBlastOptionsHandle> vs_opts);
+
+     private:
+         CVecscreenRun& m_Screener; ///< the vecscreen run instance
+         CScope& m_Scope;           ///< from which we get the sequence data
+         TOutputFormat m_Outfmt;    ///< the requested output format
+         bool m_HtmlOutput;         ///< Whether HTML output is requested or not
+
+         /// Prohibit copy constructor
+         CFormatter(const CFormatter&);
+         /// Prohibit assignment operator
+         CFormatter & operator=(const CFormatter&);
+     };
 
 private:
+     friend class CVecscreenRun::CFormatter;
+
+     /// Runs the actual BLAST search
+     /// @pre m_Queries is not empty
+     /// @post m_RawBlastResults and m_Seqalign_set are not NULL
+     void x_RunBlast();
 
      /// Seq-loc to screen
      CRef<CSeq_loc> m_SeqLoc;
      /// Scope used to fetch query.
      CRef<CScope> m_Scope;
-     /// vecscreen instance for search.
-     CVecscreen* m_Vecscreen;
      /// Database to use (UniVec is default).
      string m_DB;
+     /// vecscreen instance for search.
+     CVecscreen* m_Vecscreen;
+     /// The queries to run VecScreen on
+     CRef<blast::CBlastQueryVector> m_Queries;
      /// Processed Seq-align
      CRef<objects::CSeq_align_set> m_Seqalign_set;
+     /// The raw  BLAST results
+     CRef<blast::CSearchResultSet> m_RawBlastResults;
+
 
      /// Prohibit copy constructor
      CVecscreenRun(const CVecscreenRun&);

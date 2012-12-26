@@ -540,7 +540,7 @@ void CBlastDBCmdApp::Init()
                              CArgDescriptions::eInteger);
 
     arg_desc->SetCurrentGroup("Output configuration options");
-    arg_desc->AddDefaultKey("out", "output_file", "Output file name", 
+    arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name", 
                             CArgDescriptions::eOutputFile, "-");
 
     arg_desc->AddDefaultKey("outfmt", "format",
