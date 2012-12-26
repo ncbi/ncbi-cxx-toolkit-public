@@ -285,8 +285,6 @@ namespace DiscRepNmSpc {
   // CSeqEntry
   class CSeqEntryTestAndRepData : public CTestAndRepData
   {
-  //     friend class CTestAndRepData;
-
      public:
        CSeqEntryTestAndRepData () {};
        virtual ~CSeqEntryTestAndRepData() {};
@@ -301,6 +299,10 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
      protected:
+       string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
+                                                     const int& cur_idx, bool is_subsrc);
+       string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
+       string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
@@ -560,12 +562,8 @@ namespace DiscRepNmSpc {
       void GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name);
       void GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, 
                                      const vector <string>& desc_ls, Str2Ints& qual2src_idx);
-      string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
-                                                     const int& cur_idx, bool is_subsrc);
-      string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
       void GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name,
                                                                   vector <string>& multi_vlus);
-      string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
       void GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name,
                                                                   vector <string>& multi_vlus);
       void GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name,
@@ -789,6 +787,7 @@ namespace DiscRepNmSpc {
 
     protected:
       vector <string> m_submit_text;
+      string GetName_trin() const {return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
       string GetName_iso() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
       string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
@@ -801,6 +800,7 @@ namespace DiscRepNmSpc {
       string GetName_map() const {return string("DISC_MAP_CHROMOSOME_CONFLICT");}
       string GetName_clone() const {return string("DISC_REQUIRED_CLONE");}
 
+      bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
       void AddEukaryoticBioseqsToReport(const CBioseq_set& set);
       bool HasMulSrc(const CBioSource& biosrc);
@@ -815,6 +815,17 @@ namespace DiscRepNmSpc {
 
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
   };
+
+
+  class CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER  : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_trin();}
+  };
+
 
 
   class CSeqEntry_DISC_REQUIRED_CLONE : public CSeqEntry_test_on_biosrc
@@ -1678,6 +1689,17 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+  class CBioseq_DISC_CDS_HAS_NEW_EXCEPTION : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_CDS_HAS_NEW_EXCEPTION () {};
+      
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_CDS_HAS_NEW_EXCEPTION"); }
+  };
+
 
   class CBioseq_DISC_MITOCHONDRION_REQUIRED : public CBioseqTestAndRepData
   {

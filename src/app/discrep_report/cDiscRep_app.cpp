@@ -74,6 +74,7 @@ using namespace DiscRepAutoNmSpc;
 
 static CDiscRepInfo thisInfo;
 static string       strtmp;
+static list <string> strs;
 
 // Initialization
 CRef < CScope >                         CDiscRepInfo :: scope;
@@ -104,6 +105,8 @@ Str2Str                                 CDiscRepInfo :: cds_prod_find;
 vector <string>                         CDiscRepInfo :: s_pseudoweasels;
 vector <string>                         CDiscRepInfo :: suspect_rna_product_names;
 string                                  CDiscRepInfo :: kNonExtendableException;
+vector <string>                         CDiscRepInfo :: new_exceptions;
+Str2Str	                                CDiscRepInfo :: srcqual_keywords;
 
 void CDiscRepApp::Init(void)
 {
@@ -168,6 +171,13 @@ cerr << "222can get\n";
     if (thisInfo.expand_defline_on_set.empty())
       NCBI_THROW(CException, eUnknown, "Missing config parameters.");
 
+    // ini. of srcqual_keywords
+    strs.clear();
+    reg.EnumerateEntries("Srcqual-keywords", &strs);
+    ITERATE (list <string>, it, strs) {
+      thisInfo.srcqual_keywords[*it]= reg.Get("Srcqual-keywords", *it);
+    }
+    
     // ini. of s_pseudoweasels
     strtmp = reg.Get("StringVecIni", "SPseudoWeasels");
     thisInfo.s_pseudoweasels = NStr::Tokenize(strtmp, ",", thisInfo.s_pseudoweasels);
@@ -179,6 +189,10 @@ cerr << "222can get\n";
 
     // ini. of kNonExtendableException
     thisInfo.kNonExtendableException = reg.Get("SingleDataIni", "KNonExtExc");
+
+    // ini. of new_exceptions
+    strtmp = reg.Get("StringVecIni", "NewExceptions");
+    thisInfo.new_exceptions = NStr::Tokenize(strtmp, ",", thisInfo.new_exceptions);
     
     // ini. of weasels
     thisInfo.weasels.reserve(11);
@@ -203,7 +217,6 @@ cerr << "222can get\n";
     thisInfo.strandsymbol.push_back("r");
 
     // ini. of rRNATerms
-    list <string> strs;
     reg.EnumerateEntries("RRna-terms", &strs);
     ITERATE (list <string>, it, strs) {
        strtmp = (*it == "5-8S") ? "5.8S" : *it;

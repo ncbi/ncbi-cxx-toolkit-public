@@ -177,6 +177,28 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: TestOnObj(const CBioseq& bioseq)
+{
+  ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+    if ( (*it)->CanGetExcept_text()) {
+       ITERATE (vector <string>, jt, thisInfo.new_exceptions) {
+          if (NStr::FindNoCase( (*it)->GetExcept_text(), *jt ) != string::npos) {
+            thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+            break;
+          }
+       }
+    }
+  }
+};
+
+
+void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetHasComment(c_item->item_list.size(), "coding region") + "new exceptions";
+};
+
+
 void CBioseq_DISC_MITOCHONDRION_REQUIRED :: TestOnObj(const CBioseq& bioseq)
 {
    bool needs_mitochondrial = false;
@@ -6148,7 +6170,7 @@ void CSeqEntry_test_on_quals :: GetMultiSubSrcVlus(const CBioSource& biosrc, con
 };
 
 
-string CSeqEntry_test_on_quals :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
+string CSeqEntryTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
 {
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
       if ((*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) == type_name)
@@ -6243,7 +6265,7 @@ void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const 
 };
 
 
-string CSeqEntry_test_on_quals :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
+string CSeqEntryTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
 {
   ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
      int type = (*it)->GetSubtype();
@@ -6262,7 +6284,8 @@ string CSeqEntry_test_on_quals :: GetSubSrcValue(const CBioSource& biosrc, const
   return (kEmptyStr);
 };
 
-string CSeqEntry_test_on_quals :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, const int& cur_idx, bool is_subsrc)
+// C: GetSourceQualFromBioSource
+string CSeqEntryTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, const int& cur_idx, bool is_subsrc)
 {
  string ret_str(kEmptyStr);
  // DoesStringMatchConstraint missing
@@ -7305,6 +7328,42 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
       else AddEukaryoticBioseqsToReport(biosrc_seqdesc_seqentry[idx]->GetSet());
     }
   }
+
+  // DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER
+  if (FindTrinomialWithoutQualifier(biosrc))
+      thisInfo.test_item_list[GetName_trin()].push_back(desc);
+};
+
+
+bool CSeqEntry_test_on_biosrc :: FindTrinomialWithoutQualifier(const CBioSource& biosrc)
+{
+  if (!biosrc.IsSetTaxname() || biosrc.GetTaxname().empty() 
+         || NStr::FindNoCase(biosrc.GetTaxname(), " x ") != string::npos) return false;
+  if (HasLineage(biosrc, "Viruses")) return false;
+  string tax_nm = biosrc.GetTaxname();
+  size_t pos;
+  ITERATE (Str2Str, it, thisInfo.srcqual_keywords) {
+     if ( (pos = NStr::FindNoCase(tax_nm, it->second)) != string::npos) {
+        tax_nm 
+           = NStr::TruncateSpaces(tax_nm.substr(pos+ (it->second).size()), NStr::eTrunc_Begin);
+        if (!tax_nm.empty()) {
+           strtmp = GetOrgModValue(biosrc, it->first);
+           if (tax_nm.substr(0, strtmp.size()) == strtmp) return true;
+        } 
+        break;
+     } 
+  } 
+  return false;
+};
+
+
+void CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetOtherComment(c_item->item_list.size(), "trinomial source lacks", 
+                                                              "trinomial sources lack")
+       + "  corresponding qualifier";
+
 };
 
 
@@ -7781,6 +7840,7 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 // new method
+
 
 bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2)
 {
