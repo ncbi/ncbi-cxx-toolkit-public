@@ -302,7 +302,9 @@ namespace DiscRepNmSpc {
        string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
                                                      const int& cur_idx, bool is_subsrc);
        string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
+       bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
        string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
+       bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
@@ -799,6 +801,7 @@ namespace DiscRepNmSpc {
       string GetName_div() const {return string("DIVISION_CODE_CONFLICTS");}
       string GetName_map() const {return string("DISC_MAP_CHROMOSOME_CONFLICT");}
       string GetName_clone() const {return string("DISC_REQUIRED_CLONE");}
+      string GetName_meta() const {return string("DISC_METAGENOMIC");}
 
       bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
@@ -817,7 +820,17 @@ namespace DiscRepNmSpc {
   };
 
 
-  class CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER  : public CSeqEntry_test_on_biosrc
+  class CSeqEntry_DISC_METAGENOMIC : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_METAGENOMIC () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_meta();}
+  };
+
+
+  class CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER : public CSeqEntry_test_on_biosrc
   {
     public:
       virtual ~CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER () {};

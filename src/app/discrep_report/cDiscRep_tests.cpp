@@ -28,7 +28,7 @@
  * File Description:
  *   Tests and report data collection for Cpp Discrepany Report
  *
- * $Log$ 
+ * $Log:$ 
  */
 
 #include <ncbi_pch.hpp>
@@ -6179,6 +6179,16 @@ string CSeqEntryTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const
 };
 
 
+bool CSeqEntryTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype)
+{
+   if (biosrc.IsSetOrgMod()) {
+     ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
+        if ((*it)->GetSubtype() == subtype) return true;
+   }
+   return false;
+};
+
+
 void CSeqEntry_test_on_quals :: GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
 {
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
@@ -6283,6 +6293,17 @@ string CSeqEntryTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const
   }
   return (kEmptyStr);
 };
+
+
+bool CSeqEntryTestAndRepData :: IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype)
+{
+  if (biosrc.CanGetSubtype()) {
+     ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype())
+       if ( (*it)->GetSubtype() == subtype) return true;
+  }
+  return false;
+};
+
 
 // C: GetSourceQualFromBioSource
 string CSeqEntryTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, const int& cur_idx, bool is_subsrc)
@@ -7332,6 +7353,17 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER
   if (FindTrinomialWithoutQualifier(biosrc))
       thisInfo.test_item_list[GetName_trin()].push_back(desc);
+
+  // DISC_METAGENOMIC
+  if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic)) 
+      thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+};
+
+
+void CSeqEntry_DISC_METAGENOMIC :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+      = GetHasComment(c_item->item_list.size(), "biosource") + "metagenomic qualifier";
 };
 
 
