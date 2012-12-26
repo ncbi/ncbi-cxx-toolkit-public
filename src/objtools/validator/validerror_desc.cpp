@@ -801,7 +801,7 @@ void CValidError_desc::ValidateUser
             return;
         }
     }
-    if ( NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
+    if ( oi.IsStr() && NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
         bool has_ref_track_status = false;
         ITERATE(CUser_object::TData, field, usr.GetData()) {
             if ( (*field)->CanGetLabel() ) {
@@ -826,9 +826,9 @@ void CValidError_desc::ValidateUser
             PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
                 "RefGeneTracking object needs to have Status set", *m_Ctx, desc);
         }
-    } else if ( NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
+    } else if ( oi.IsStr() && NStr::EqualCase(oi.GetStr(), "StructuredComment")) {
         ValidateStructuredComment(usr, desc);
-    } else if ( NStr::EqualCase(oi.GetStr(), "DBLink")) {
+    } else if ( oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
         ValidateDblink(usr, desc);
     }
 }
