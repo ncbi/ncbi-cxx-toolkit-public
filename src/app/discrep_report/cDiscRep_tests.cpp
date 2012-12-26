@@ -6980,6 +6980,17 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
      if (HasMissingBacteriaStrain(biosrc))
        thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
   }
+
+  // DISC_METAGENOME_SOURCE
+  if (IsOrgModPresent(biosrc, COrgMod::eSubtype_metagenome_source)) 
+      thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+};
+
+
+void CSeqEntry_DISC_METAGENOME_SOURCE :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+    = GetHasComment(c_item->item_list.size(), "biosource") + "metagenome_source qualifier";
 };
 
 

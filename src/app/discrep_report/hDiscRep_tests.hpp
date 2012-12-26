@@ -626,6 +626,7 @@ namespace DiscRepNmSpc {
       string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
       string GetName_strain() const {return string("DISC_REQUIRED_STRAIN");}
       string GetName_sp_strain() const {return string("DISC_BACTERIA_MISSING_STRAIN");}
+      string GetName_meta() const {return string("DISC_METAGENOME_SOURCE");}
 
       bool HasMissingBacteriaStrain(const CBioSource& biosrc);
       bool IsMissingRequiredStrain(const CBioSource& biosrc);
@@ -638,6 +639,16 @@ namespace DiscRepNmSpc {
 
       bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
                                const COrgMod::ESubtype& check_type, const string& check_head);
+  };
+
+
+  class CSeqEntry_DISC_METAGENOME_SOURCE : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DISC_METAGENOME_SOURCE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_meta();}
   };
 
 

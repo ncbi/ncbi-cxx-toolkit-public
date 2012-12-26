@@ -348,6 +348,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
    tests_on_SeqEntry_feat_desc.push_back(
+                         CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOME_SOURCE));
+   tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIA_MISSING_STRAIN));
    tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_STRAIN));
