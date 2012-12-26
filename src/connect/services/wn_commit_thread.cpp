@@ -65,7 +65,11 @@ CWorkerNodeJobContext* CJobCommitterThread::AllocJobContext()
     if (m_JobContextPool.IsEmpty())
         return new CWorkerNodeJobContext(*m_WorkerNode);
 
-    return m_JobContextPool.Shift();
+    CWorkerNodeJobContext* job_context = m_JobContextPool.Shift();
+
+    job_context->m_Job.Reset();
+
+    return job_context;
 }
 
 void CJobCommitterThread::PutJobContextBackAndCommitJob(
