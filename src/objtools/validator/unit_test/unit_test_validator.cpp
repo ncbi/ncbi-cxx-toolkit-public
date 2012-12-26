@@ -12351,7 +12351,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
     prot_seq->SetSeq().SetInst().SetLength(30);
     AdjustProtFeatForNucProtSet (entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TransLen",
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ProductLength",
                               "Protein product length [30] is more than 120% of the translation length [9]"));
 
     eval = validator.Validate(seh, options);
@@ -12814,7 +12814,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     legal_strings.push_back ("EcoGene");
     legal_strings.push_back ("EMBL");
     legal_strings.push_back ("ENSEMBL");
-    legal_strings.push_back ("ERIC");
     legal_strings.push_back ("ESTLIB");
     legal_strings.push_back ("FANTOM_DB");
     legal_strings.push_back ("FLYBASE");
