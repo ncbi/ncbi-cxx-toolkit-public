@@ -133,29 +133,29 @@ void CRemoteAppLauncher::LoadParams(const string& sec_name, const IRegistry& reg
         }
     }
 
-    m_MaxMonitorRunningTime = 
-        reg.GetInt(sec_name,"max_monitor_running_time",5,0,IRegistry::eReturn);
+    m_MaxMonitorRunningTime = reg.GetInt(sec_name,
+            "max_monitor_running_time", 5, 0, IRegistry::eReturn);
 
-    m_MonitorPeriod = 
-        reg.GetInt(sec_name,"monitor_period",5,0,IRegistry::eReturn);
+    m_MonitorPeriod = reg.GetInt(sec_name,
+            "monitor_period", 5, 0, IRegistry::eReturn);
 
-    m_KillTimeout = 
-        reg.GetInt(sec_name,"kill_timeout",1,0,IRegistry::eReturn);
-    
+    m_KillTimeout = reg.GetInt(sec_name,
+            "kill_timeout", 1, 0, IRegistry::eReturn);
+
     m_ExcludeEnv.clear();
     m_IncludeEnv.clear();
     m_AddedEnv.clear();
+
     NStr::Split(reg.GetString("env_inherit", "exclude", "")," ;,", m_ExcludeEnv);
     NStr::Split(reg.GetString("env_inherit", "include", "")," ;,", m_IncludeEnv);
-    
+
     list<string> added_env;
     reg.EnumerateEntries("env_set", &added_env);
-    
+
     ITERATE(list<string>, it, added_env) {
         const string& s = *it;
          m_AddedEnv[s] = reg.GetString("env_set", s, "");
     }
-
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -293,7 +293,7 @@ public:
         m_Monitor = &monitor;
         m_MonitorPeriod = monitor_perod;
         if (m_MonitorPeriod)
-            m_MonitorWatch.reset(new CStopWatch(CStopWatch::eStart));        
+            m_MonitorWatch.reset(new CStopWatch(CStopWatch::eStart));
     }
 
     virtual EAction OnStart(TProcessHandle pid)
@@ -308,48 +308,63 @@ public:
         return CPipeProcessWatcher_Base::OnStart(pid);
     }
 
-    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid) 
+    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
     {
         if (m_JobContext.GetShutdownLevel() ==
-            CNetScheduleAdmin::eShutdownImmediate) {
+                CNetScheduleAdmin::eShutdownImmediate)
             return CPipe::IProcessWatcher::eStop;
-        }
 
-        CPipe::IProcessWatcher::EAction action = CPipeProcessWatcher_Base::Watch(pid);
+        CPipe::IProcessWatcher::EAction action =
+                CPipeProcessWatcher_Base::Watch(pid);
+
         if (action != CPipe::IProcessWatcher::eContinue)
             return action;
 
-        if (m_KeepAlive.get()
-            && m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod ) {
+        if (m_KeepAlive.get() &&
+                m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod) {
             m_JobContext.JobDelayExpiration(m_KeepAlivePeriod + 10);
             m_KeepAlive->Restart();
         }
-        if (m_Monitor && m_MonitorWatch.get() 
-            && m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
+        if (m_Monitor && m_MonitorWatch.get() &&
+                m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
             CNcbiStrstream out;
             CNcbiStrstream err;
             vector<string> args;
             args.push_back("-pid");
-            args.push_back(NStr::UInt8ToString((Uint8)pid) );
+            args.push_back(NStr::UInt8ToString((Uint8) pid));
             args.push_back("-jid");
             args.push_back(m_JobContext.GetJobKey());
             args.push_back("-jwdir");
-            args.push_back(m_JobWDir );
+            args.push_back(m_JobWDir);
 
-            int ret = m_Monitor->Run(args, out, err);
-            switch(ret) {
+            switch (m_Monitor->Run(args, out, err)) {
             case 0:
-                if (out.pcount() > 0) {
-                    out << '\0';
-                    m_JobContext.PutProgressMessage(out.str(), true);
+                {
+                    bool non_empty_output = out.pcount() > 0;
+                    if (non_empty_output) {
+                        out << NcbiEnds;
+
+                        string progress_message(out.str());
+
+                        m_JobContext.PutProgressMessage(progress_message, true);
+
+                        if (m_JobContext.IsLogRequested()) {
+                            NStr::TruncateSpacesInPlace(progress_message,
+                                NStr::eTrunc_End);
+
+                            LOG_POST(m_JobContext.GetJobKey() << " (monitor) "
+                                    "progress: " << progress_message);
+                        }
+                    }
+                    if (m_JobContext.IsLogRequested() &&
+                            (!non_empty_output || err.pcount() > 0))
+                        x_Log("exited", err);
                 }
-                if (err.pcount() > 0 && m_JobContext.IsLogRequested())
-                    x_Log("Info", err);
                 break;
             case 1:
                 x_Log("job is returned", err);
                 return CPipe::IProcessWatcher::eStop;
-            case 2: 
+            case 2:
                 {
                     x_Log("job failed", err);
                     string errmsg;
@@ -357,7 +372,7 @@ public:
                         out << '\0';
                         errmsg = out.str();
                     } else
-                        errmsg = "Monitor requested the job termination.";
+                        errmsg = "Monitor requested job termination";
                     throw runtime_error(errmsg);
                 }
                 break;
@@ -372,18 +387,14 @@ public:
     }
 
 private:
-    inline void x_Log(const string& what, CNcbiStrstream& sstream) 
+    inline void x_Log(const string& what, CNcbiStrstream& sstream)
     {
-        if( sstream.pcount() > 0 ) {
-            LOG_POST(GetFastLocalTime().AsString() <<
-                    ": Job " << m_JobContext.GetJobKey() <<
-                    " (Monitor): " << what << ": " << sstream.rdbuf());
+        if (sstream.pcount() > 0) {
+            LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what <<
+                    ": " << sstream.rdbuf());
         } else {
-            LOG_POST(GetFastLocalTime().AsString() <<
-                    ": Job " << m_JobContext.GetJobKey() <<
-                    " (Monitor): " << what << ".");
+            LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what << ".");
         }
-
     }
 
     CWorkerNodeJobContext& m_JobContext;

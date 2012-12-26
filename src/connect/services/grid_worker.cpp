@@ -271,8 +271,11 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
 {
     CheckIfCanceled();
     if (!send_immediately &&
-            !m_ProgressMsgThrottler.Approve(CRequestRateControl::eErrCode))
+            !m_ProgressMsgThrottler.Approve(CRequestRateControl::eErrCode)) {
+        LOG_POST(Warning << "Progress message \"" <<
+                msg << "\" has been suppressed.");
         return;
+    }
 
     try {
         CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
