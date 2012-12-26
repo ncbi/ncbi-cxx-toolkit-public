@@ -181,11 +181,11 @@ private:
     void x_DoRun(void);
 
     friend class CNetCacheServer;
-    CPoolOfThreads_ForServer* GetThreadPool(void) { return m_ThreadPool.get(); }
+    CPoolOfThreads_ForServer* GetThreadPool(void) { return m_ThreadPool; }
 
-    auto_ptr<CPoolOfThreads_ForServer> m_ThreadPool;
     SServer_Parameters*         m_Parameters;
     CServer_ConnectionPool*     m_ConnectionPool;
+    CPoolOfThreads_ForServer*   m_ThreadPool;
     string m_ThreadSuffix;
 };
 

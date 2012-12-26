@@ -447,7 +447,8 @@ private:
     friend class CQueueEnumCursor;
     friend class CQueueParamAccessor;
 
-    CJobStatusTracker           m_StatusTracker;    ///< status FSA
+    CNetScheduleServer *        m_Server;
+    CJobStatusTracker           m_StatusTracker;    // status FSA
 
     // Timeline object to control job execution timeout
     CJobTimeLine*               m_RunTimeLine;
@@ -457,12 +458,12 @@ private:
     CRequestExecutor&           m_Executor;
 
     string                      m_QueueName;
-    TQueueKind                  m_Kind;            ///< 0 - static, 1 - dynamic
+    TQueueKind                  m_Kind;            // 0 - static, 1 - dynamic
 
     SQueueDbBlock *             m_QueueDbBlock;
     bool                        m_TruncateAtDetach;
 
-    auto_ptr<CBDB_FileCursor>   m_EventsCursor;    ///< DB cursor for EventsDB
+    auto_ptr<CBDB_FileCursor>   m_EventsCursor;    // DB cursor for EventsDB
 
     // Lock for a queue operations
     mutable CFastMutex          m_OperationLock;

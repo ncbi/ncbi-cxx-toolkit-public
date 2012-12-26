@@ -75,6 +75,7 @@ CQueue::CQueue(CRequestExecutor&     executor,
                CNetScheduleServer *  server,
                CQueueDataBase &      qdb)
   :
+    m_Server(server),
     m_RunTimeLine(NULL),
     m_Executor(executor),
     m_QueueName(queue_name),
@@ -182,7 +183,7 @@ void CQueue::x_Detach(void)
     // definition and test-and-set is executed from synchronized code in
     // CQueueDbBlockArray::Allocate.
 
-    if (m_TruncateAtDetach) {
+    if (m_TruncateAtDetach && !m_Server->ShutdownRequested()) {
         CRef<CStdRequest> request(new CTruncateRequest(m_QueueDbBlock));
         m_Executor.SubmitRequest(request);
     } else {

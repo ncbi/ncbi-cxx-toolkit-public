@@ -2176,7 +2176,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
 void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 {
     if (m_CommandArguments.drain) {
-        if (m_Server->GetShutdownFlag()) {
+        if (m_Server->ShutdownRequested()) {
             x_SetCmdRequestStatus(eStatus_BadRequest);
             x_WriteMessage("ERR:eShuttingDown:The server is in "
                            "shutting down state");
@@ -2475,7 +2475,7 @@ void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
 {
     if (m_CommandArguments.mode == false &&
-            (m_Server->IsDrainShutdown() || m_Server->GetShutdownFlag())) {
+            (m_Server->IsDrainShutdown() || m_Server->ShutdownRequested())) {
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:eShuttingDown:"
                        "Server is in drained shutting down state");

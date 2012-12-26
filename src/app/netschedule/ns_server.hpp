@@ -65,7 +65,6 @@ public:
     void SetQueueDB(CQueueDataBase* qdb);
 
     void SetShutdownFlag(int signum = 0);
-    bool GetShutdownFlag(void) const { return m_Shutdown; }
 
     const bool &  IsLog() const                       { return m_LogFlag; }
     const bool &  IsLogBatchEachJob() const           { return m_LogBatchEachJobFlag; }
@@ -142,7 +141,7 @@ private:
     std::string                                 m_Host;
     unsigned                                    m_Port;
     unsigned                                    m_HostNetAddr;
-    bool                                        m_Shutdown;
+    mutable bool                                m_Shutdown;
     int                                         m_SigNum;  ///< Shutdown signal number
     /// Time to wait for the client (seconds)
     unsigned                                    m_InactivityTimeout;

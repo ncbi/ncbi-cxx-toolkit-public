@@ -581,19 +581,29 @@ CServer_Connection::~CServer_Connection()
 /////////////////////////////////////////////////////////////////////////////
 // CServer implementation
 
-CServer::CServer(void)
+CServer::CServer(void) :
+    m_Parameters(new SServer_Parameters()),
+    m_ConnectionPool(NULL),
+    m_ThreadPool(NULL)
 {
-    // TODO: auto_ptr-based initialization
-    m_Parameters = new SServer_Parameters();
-    m_ConnectionPool = new CServer_ConnectionPool(
-        m_Parameters->max_connections);
+    try {
+        m_ConnectionPool = new CServer_ConnectionPool(
+            m_Parameters->max_connections);
+    } catch (...) {
+        delete m_Parameters;
+        throw;
+    }
 }
 
 
 CServer::~CServer()
 {
-    delete m_Parameters;
+    delete m_ThreadPool;
+    m_ThreadPool = NULL;
     delete m_ConnectionPool;
+    m_ConnectionPool = NULL;
+    delete m_Parameters;
+    m_Parameters = NULL;
 }
 
 
@@ -763,7 +773,8 @@ void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
 
-    m_ThreadPool.reset(new CPoolOfThreads_ForServer(m_Parameters->max_threads, m_ThreadSuffix));
+    m_ThreadPool = new CPoolOfThreads_ForServer(m_Parameters->max_threads,
+                                                m_ThreadSuffix);
     if (TParamServerCatchExceptions::GetDefault()) {
         try {
             x_DoRun();
@@ -794,7 +805,8 @@ void CServer::Run(void)
 
 void CServer::SubmitRequest(const CRef<CStdRequest>& request)
 {
-    m_ThreadPool->AcceptRequest(request);
+    if (m_ThreadPool != NULL)
+        m_ThreadPool->AcceptRequest(request);
 }
 
 
