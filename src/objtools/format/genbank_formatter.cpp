@@ -250,6 +250,16 @@ string s_GetAccessionWithoutPeriod(
     return accn;
 }
 
+static string s_get_anchor_html(const string & sAnchorName, int iGi )
+{
+    CNcbiOstrstream result;
+
+    result << "<a name=\"" << sAnchorName << "_"
+        << iGi << "\"></a>";
+
+    return (string)CNcbiOstrstreamToString(result);
+}
+
 void CGenbankFormatter::EndSection
 (const CEndSectionItem& end_item,
  IFlatTextOStream& orig_text_os)
@@ -270,8 +280,10 @@ void CGenbankFormatter::EndSection
     }
     text_os.AddParagraph(l, NULL);
 
-    if( bHtml ) {
-        CHtmlAnchorItem( *end_item.GetContext(), "slash").Format( *this, text_os );
+    if( bHtml && cfg.IsModeEntrez() ) {
+        text_os.AddLine( 
+            s_get_anchor_html("slash", end_item.GetContext()->GetGI()), 
+            0, IFlatTextOStream::eAddNewline_No );
     }
 
     // New record, so reset
@@ -531,19 +543,11 @@ void CGenbankFormatter::FormatHtmlAnchor(
     const CHtmlAnchorItem& html_anchor, 
     IFlatTextOStream& orig_text_os)
 {
-    if ( html_anchor.Skip() ) {
-        return;
-    }
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, html_anchor, orig_text_os);
 
-    CNcbiOstrstream result;
-
-    result << "<a name=\"" << html_anchor.GetLabelCore() << "_"
-        << html_anchor.GetGI() << "\"></a>";
-
-    text_os.AddLine( (string)CNcbiOstrstreamToString(result), 0, 
-        IFlatTextOStream::eAddNewline_No );
+    text_os.AddLine( s_get_anchor_html(html_anchor.GetLabelCore(), html_anchor.GetGI()),
+        0, IFlatTextOStream::eAddNewline_No );
 }
 
 ///////////////////////////////////////////////////////////////////////////
