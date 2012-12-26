@@ -3058,6 +3058,7 @@ public:
     static TUnicodeSymbol DecodeNext(TUnicodeSymbol chU, char ch);
 
 private:
+    static void x_Validate(const CTempString& str);
     static SIZE_TYPE x_GetValidSymbolCount
     (const CTempString& src, CTempString::const_iterator& err);
 
@@ -3523,13 +3524,13 @@ public:
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
-    template <typename TChar> 
+    template <typename TChar>  
     basic_string<TChar> AsBasicString(const TChar* substitute_on_error = 0)
         const;
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
-    template <typename TChar>
+    template <typename TChar>  
     static  
     basic_string<TChar> AsBasicString(
         const CTempString& src,
@@ -3538,7 +3539,7 @@ public:
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
-    template <typename TChar>
+    template <typename TChar>  
     static basic_string<TChar> AsBasicString(const CTempString& src);
 
     /// Guess the encoding of the C/C++ string
@@ -5884,523 +5885,467 @@ CUtf8::TruncateSpaces(const CTempString& str, NStr::ETrunc side) {
 //
 
 
-inline string CStringUTF8::AsLatin1(const char* substitute_on_error) const
-{
-    return AsSingleByteString(eEncoding_ISO8859_1,substitute_on_error);
-}
-inline wstring CStringUTF8::AsUnicode(const wchar_t* substitute_on_error) const
-{
-    return AsBasicString<wchar_t>(substitute_on_error);
-}
-inline TStringUCS2 CStringUTF8::AsUCS2(const TCharUCS2* substitute_on_error) const
-{
-    return AsBasicString<TCharUCS2>(substitute_on_error);
-}
-template <typename TChar> inline
-basic_string<TChar> CStringUTF8::AsBasicString(const CTempString& src) {
-    return AsBasicString<TChar>(src, 0);
-}
-inline
-CStringUTF8 CStringUTF8::TruncateSpaces(const CTempString& str,
-                                    NStr::ETrunc side)
-{
-    return CStringUTF8(TruncateSpaces_Unsafe(str,side), eEncoding_UTF8);
-}
-
-
 inline
 CStringUTF8::CStringUTF8(const CStringUTF8& src, EValidate validate)
     : string(src)
 {
     if (validate == eValidate) {
-        x_Validate();
+        CUtf8::x_Validate(*this);
     }
 }
 
-#ifdef __NO_EXPORT_STRINGUTF8__
-inline CStringUTF8::CStringUTF8(const CTempString& src) {
-    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
-}
-inline CStringUTF8::CStringUTF8(const char* src ) {
-    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
-}
-inline CStringUTF8::CStringUTF8(const string& src) {
-    x_Append(src, eEncoding_ISO8859_1, eNoValidate);
-}
-#endif
-
-inline
-CStringUTF8::CStringUTF8(
-    const CTempString& src, EEncoding encoding,EValidate validate) {
-    x_Append(src, encoding, validate);
-}
-inline
-CStringUTF8::CStringUTF8(
-    const char* src, EEncoding encoding, EValidate validate) {
-    x_Append(src, encoding, validate);
-}
-inline
-CStringUTF8::CStringUTF8(
-    const string& src, EEncoding encoding, EValidate validate) {
-    x_Append(src, encoding, validate);
-}
-inline CStringUTF8::CStringUTF8(const TStringUnicode& src) {
-    x_Append(src.begin(), src.end());
-}
-inline CStringUTF8::CStringUTF8(const TStringUCS4& src) {
-    x_Append(src.begin(), src.end());
-}
-inline CStringUTF8::CStringUTF8(const TStringUCS2& src) {
-    x_Append(src.begin(), src.end());
-}
-#if defined(HAVE_WSTRING)
-inline CStringUTF8::CStringUTF8(const wstring& src) {
-    x_Append(src.begin(), src.end());
-}
-#endif
-inline CStringUTF8::CStringUTF8(const TUnicodeSymbol* src) {
-    x_Append(src);
-}
-inline CStringUTF8::CStringUTF8(const TCharUCS4* src) {
-    x_Append(src);
-}
-inline CStringUTF8::CStringUTF8(const TCharUCS2* src) {
-    x_Append(src);
-}
-#if defined(HAVE_WSTRING)
-inline CStringUTF8::CStringUTF8(const wchar_t* src) {
-    x_Append(src);
-}
-#endif
-inline
-CStringUTF8::CStringUTF8(
-    ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
-}
-inline
-CStringUTF8::CStringUTF8(
-    ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
-}
-inline
-CStringUTF8::CStringUTF8(
-    ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
-}
-inline
-CStringUTF8::CStringUTF8(
-    ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
-}
 inline CStringUTF8& CStringUTF8::operator= (const CStringUTF8& src) {
     string::operator= (src);
     return *this;
 }
-inline CStringUTF8& CStringUTF8::operator= (const TStringUnicode& src) {
-    erase();
-    x_Append(src.begin(), src.end());
-    return *this;
-}
-inline CStringUTF8& CStringUTF8::operator= (const TStringUCS4& src) {
-    erase();
-    x_Append(src.begin(), src.end());
-    return *this;
-}
-inline CStringUTF8& CStringUTF8::operator= (const TStringUCS2& src) {
-    erase();
-    x_Append(src.begin(), src.end());
-    return *this;
-}
-#if defined(HAVE_WSTRING)
-inline CStringUTF8& CStringUTF8::operator= (const wstring& src) {
-    erase();
-    x_Append(src.begin(), src.end());
-    return *this;
-}
-#endif
-inline CStringUTF8& CStringUTF8::operator= (const TUnicodeSymbol* src) {
-    erase();
-    x_Append(src);
-    return *this;
-}
-inline CStringUTF8& CStringUTF8::operator= (const TCharUCS4* src) {
-    erase();
-    x_Append(src);
-    return *this;
-}
-inline CStringUTF8& CStringUTF8::operator= (const TCharUCS2* src) {
-    erase();
-    x_Append(src);
-    return *this;
-}
-#if defined(HAVE_WSTRING)
-inline CStringUTF8& CStringUTF8::operator= (const wchar_t* src) {
-    erase();
-    x_Append(src);
-    return *this;
-}
-#endif
+
 inline CStringUTF8& CStringUTF8::operator+= (const CStringUTF8& src) {
     string::operator+= (src);
     return *this;
 }
+
+template <typename TChar> inline
+basic_string<TChar> CStringUTF8::AsBasicString(const CTempString& src) {
+    return CUtf8::AsBasicString<TChar>(src,nullptr,CUtf8::eNoValidate);
+}
+
+#ifdef __NO_EXPORT_STRINGUTF8__
+
+inline CStringUTF8::CStringUTF8(const CTempString& src) {
+    assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
+}
+inline CStringUTF8::CStringUTF8(const char* src ) {
+    assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
+}
+inline CStringUTF8::CStringUTF8(const string& src) {
+    assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
+}
+
+inline string CStringUTF8::AsLatin1(const char* substitute_on_error) const
+{
+    return CUtf8::AsSingleByteString(*this,eEncoding_ISO8859_1,substitute_on_error);
+}
+inline wstring CStringUTF8::AsUnicode(const wchar_t* substitute_on_error) const
+{
+    return CUtf8::AsBasicString<wchar_t>(*this,substitute_on_error,CUtf8::eNoValidate);
+}
+inline TStringUCS2 CStringUTF8::AsUCS2(const TCharUCS2* substitute_on_error) const
+{
+    return CUtf8::AsBasicString<TCharUCS2>(*this,substitute_on_error,CUtf8::eNoValidate);
+}
+inline
+CStringUTF8 CStringUTF8::TruncateSpaces(const CTempString& str,
+                                    NStr::ETrunc side)
+{
+    return CUtf8::TruncateSpaces(str,side);
+}
+
+inline
+CStringUTF8::CStringUTF8(
+    const CTempString& src, EEncoding encoding,EValidate validate) {
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
+}
+inline
+CStringUTF8::CStringUTF8(
+    const char* src, EEncoding encoding, EValidate validate) {
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
+}
+inline
+CStringUTF8::CStringUTF8(
+    const string& src, EEncoding encoding, EValidate validate) {
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
+}
+inline CStringUTF8::CStringUTF8(const TStringUnicode& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+inline CStringUTF8::CStringUTF8(const TStringUCS4& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+inline CStringUTF8::CStringUTF8(const TStringUCS2& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8::CStringUTF8(const wstring& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#endif
+inline CStringUTF8::CStringUTF8(const TUnicodeSymbol* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+inline CStringUTF8::CStringUTF8(const TCharUCS4* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+inline CStringUTF8::CStringUTF8(const TCharUCS2* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8::CStringUTF8(const wchar_t* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#endif
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+inline
+CStringUTF8::CStringUTF8(
+    ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+inline CStringUTF8& CStringUTF8::operator= (const TStringUnicode& src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TStringUCS4& src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TStringUCS2& src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::operator= (const wstring& src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+#endif
+inline CStringUTF8& CStringUTF8::operator= (const TUnicodeSymbol* src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TCharUCS4* src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+inline CStringUTF8& CStringUTF8::operator= (const TCharUCS2* src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+#if defined(HAVE_WSTRING)
+inline CStringUTF8& CStringUTF8::operator= (const wchar_t* src) {
+    assign( CUtf8::AsUTF8(src));
+    return *this;
+}
+#endif
 inline CStringUTF8& CStringUTF8::operator+= (const TStringUnicode& src) {
-    x_Append(src.begin(), src.end());
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::operator+= (const TStringUCS4& src) {
-    x_Append(src.begin(), src.end());
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::operator+= (const TStringUCS2& src) {
-    x_Append(src.begin(), src.end());
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::operator+= (const wstring& src) {
-    x_Append(src.begin(), src.end());
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::operator+= (const TUnicodeSymbol* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::operator+= (const TCharUCS4* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::operator+= (const TCharUCS2* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::operator+= (const wchar_t* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8(src));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::Assign(
     const CTempString& src, EEncoding encoding, EValidate validate) {
-    erase();
-    x_Append(src, encoding, validate);
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
     return *this;
 }
 
 inline CStringUTF8& CStringUTF8::Assign(const TStringUnicode& src) {
-    erase();
-    x_Append(src.begin(), src.end());
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Assign(const TStringUCS4& src) {
-    erase();
-    x_Append(src.begin(), src.end());
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Assign(const TStringUCS2& src) {
-    erase();
-    x_Append(src.begin(), src.end());
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::Assign(const wstring& src) {
-    erase();
-    x_Append(src.begin(), src.end());
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::Assign(const TUnicodeSymbol* src) {
-    erase();
-    x_Append(src);
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Assign(const TCharUCS4* src) {
-    erase();
-    x_Append(src);
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Assign(const TCharUCS2* src) {
-    erase();
-    x_Append(src);
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::Assign(const wchar_t* src) {
-    erase();
-    x_Append(src);
+    assign( CUtf8::AsUTF8(src));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::Assign(
     ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
-    erase();
-    x_Append(src,char_count,type);
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Assign(
     ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
-    erase();
-    x_Append(src,char_count,type);
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Assign(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
-    erase();
-    x_Append(src,char_count,type);
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::Assign(
     ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
-    erase();
-    x_Append(src,char_count,type);
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::Assign(char ch, EEncoding encoding) {
-    erase();
-    x_AppendChar( CharToSymbol( ch, encoding ) );
+    assign( CUtf8::AsUTF8( CTempString(&ch,1), encoding, CUtf8::eValidate));
     return *this;
 }
 inline  CStringUTF8& CStringUTF8::Append(
     const CTempString& src, EEncoding encoding, EValidate validate) {
-    x_Append(src, encoding, validate);
+    append( CUtf8::AsUTF8( src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
     return *this;
 }
 inline  CStringUTF8& CStringUTF8::Append(const TStringUnicode& src) {
-    x_Append(src.begin(),src.end());
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 inline  CStringUTF8& CStringUTF8::Append(const TStringUCS4& src) {
-    x_Append(src.begin(),src.end());
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 inline  CStringUTF8& CStringUTF8::Append(const TStringUCS2& src) {
-    x_Append(src.begin(),src.end());
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline  CStringUTF8& CStringUTF8::Append(const wstring& src) {
-    x_Append(src.begin(),src.end());
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::Append(const TUnicodeSymbol* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Append(const TCharUCS4* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Append(const TCharUCS2* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::Append(const wchar_t* src) {
-    x_Append(src);
+    append( CUtf8::AsUTF8( src));
     return *this;
 }
 #endif
 inline  CStringUTF8& CStringUTF8::Append(
     ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
+    append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Append(
     ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
+    append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Append(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
+    append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 #if defined(HAVE_WSTRING)
 inline CStringUTF8& CStringUTF8::Append(
     ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
-    x_Append(src,char_count,type);
+    append( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
     return *this;
 }
 #endif
 inline CStringUTF8& CStringUTF8::Append(char ch, EEncoding encoding) {
-    x_AppendChar( CharToSymbol( ch, encoding ) );
+    append( CUtf8::AsUTF8( CTempString(&ch,1), encoding, CUtf8::eValidate));
     return *this;
 }
 inline CStringUTF8& CStringUTF8::Append(TUnicodeSymbol ch) {
-    x_AppendChar(ch);
+    append( CUtf8::AsUTF8(&ch, 1));
     return *this;
 }
 inline SIZE_TYPE CStringUTF8::GetSymbolCount(void) const {
-    return GetSymbolCount(*this);
+    return CUtf8::GetSymbolCount(*this);
 }
 inline bool CStringUTF8::IsValid(void) const {
-    return MatchEncoding(*this, eEncoding_UTF8);
+    return CUtf8::MatchEncoding(*this, eEncoding_UTF8);
 }
 inline TUnicodeSymbol CStringUTF8::Decode(const char*& src) {
-    return x_Decode(src);
+    return CUtf8::Decode(src);
 }
 #ifndef NCBI_COMPILER_WORKSHOP
 inline TUnicodeSymbol CStringUTF8::Decode(string::const_iterator& src) {
-    return x_Decode(src);
+    return CUtf8::Decode(src);
 }
 #endif
-
-#if defined(__NO_EXPORT_STRINGUTF8__)
-class NCBI_XNCBI_EXPORT CStringUTF8_Helper
-{
-friend class CStringUTF8;
-public:
-    enum EValidate {
-        eNoValidate =0,
-        eValidate   =1
-    };
-    static SIZE_TYPE GetSymbolCount(const CTempString& src);
-    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
-    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
-    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
-    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
-    static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
-    static EEncoding GuessEncoding( const CTempString& src);
-    static bool MatchEncoding( const CTempString& src, EEncoding encoding);
-    static string EncodingToString(EEncoding encoding);
-    static EEncoding StringToEncoding(const CTempString& str);
-    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
-    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
-    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
-    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
-    static bool IsWhiteSpace(TUnicodeSymbol chU);
-    static CStringUTF8& TruncateSpacesInPlace(CStringUTF8& self, NStr::ETrunc side);
-    static CTempString  TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side);
-
-private:
-    static void   x_Validate(const CStringUTF8& self);
-    static void   x_AppendChar(CStringUTF8& self, TUnicodeSymbol ch);
-    static void   x_Append(CStringUTF8& self, const CTempString& src,EEncoding encoding, EValidate validate);
-    static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
-    static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
-    static bool   x_EvalNext(char ch);
-};
 
 inline
 SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString& src)
 {
-    return CStringUTF8_Helper::GetSymbolCount(src);
+    return CUtf8::GetSymbolCount(src);
 }
 inline
 SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 {
-    return CStringUTF8_Helper::GetValidSymbolCount(src, buf_size);
+    return CUtf8::GetValidSymbolCount(CTempString(src, buf_size));
 }
 inline
 SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src)
 {
-    return CStringUTF8_Helper::GetValidSymbolCount(src);
+    return CUtf8::GetValidSymbolCount(src);
 }
 inline
 SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
 {
-    return CStringUTF8_Helper::GetValidBytesCount(src,buf_size);
+    return CUtf8::GetValidBytesCount(CTempString(src,buf_size));
 }
 inline
 SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src)
 {
-    return CStringUTF8_Helper::GetValidBytesCount(src);
+    return CUtf8::GetValidBytesCount(src);
 }
 inline
 string CStringUTF8::AsSingleByteString(EEncoding encoding,
     const char* substitute_on_error) const
 {
-    return CStringUTF8_Helper::AsSingleByteString(*this,encoding,substitute_on_error);
+    return CUtf8::AsSingleByteString(*this,encoding,substitute_on_error);
 }
 inline
 EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
 {
-    return CStringUTF8_Helper::GuessEncoding(src);
+    return CUtf8::GuessEncoding(src);
 }
 inline
 bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
 {
-    return CStringUTF8_Helper::MatchEncoding(src,encoding);
+    return CUtf8::MatchEncoding(src,encoding);
 }
 inline
 string CStringUTF8::EncodingToString(EEncoding encoding)
 {
-    return CStringUTF8_Helper::EncodingToString(encoding);
+    return CUtf8::EncodingToString(encoding);
 }
 inline
 EEncoding CStringUTF8::StringToEncoding(const CTempString& str)
 {
-    return CStringUTF8_Helper::StringToEncoding(str);
+    return CUtf8::StringToEncoding(str);
 }
 
 inline
 TUnicodeSymbol CStringUTF8::CharToSymbol(char ch, EEncoding encoding)
 {
-    return CStringUTF8_Helper::CharToSymbol(ch,encoding);
+    return CUtf8::CharToSymbol(ch,encoding);
 }
 inline
 char CStringUTF8::SymbolToChar(TUnicodeSymbol sym, EEncoding encoding)
 {
-    return CStringUTF8_Helper::SymbolToChar(sym,encoding);
+    return CUtf8::SymbolToChar(sym,encoding);
 }
 inline
 TUnicodeSymbol  CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
 {
-    return CStringUTF8_Helper::DecodeFirst(ch,more);
+    return CUtf8::DecodeFirst(ch,more);
 }
 inline
 TUnicodeSymbol  CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
 {
-    return CStringUTF8_Helper::DecodeNext(chU,ch);
+    return CUtf8::DecodeNext(chU,ch);
 }
 inline
 bool  CStringUTF8::IsWhiteSpace(TUnicodeSymbol chU)
 {
-    return CStringUTF8_Helper::IsWhiteSpace(chU);
+    return CUtf8::IsWhiteSpace(chU);
 }
 inline
 CStringUTF8& CStringUTF8::TruncateSpacesInPlace(NStr::ETrunc side)
 {
-    return CStringUTF8_Helper::TruncateSpacesInPlace(*this,side);
+    return CUtf8::TruncateSpacesInPlace(*this,side);
 }
 inline
 CTempString CStringUTF8::TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side)
 {
-    return CStringUTF8_Helper::TruncateSpaces_Unsafe(str,side);
+    return CUtf8::TruncateSpaces_Unsafe(str,side);
 }
 inline
 void   CStringUTF8::x_Validate(void) const
 {
-    CStringUTF8_Helper::x_Validate(*this);
+    CUtf8::x_Validate(*this);
 }
 inline
 void   CStringUTF8::x_AppendChar(TUnicodeSymbol ch)
 {
-    CStringUTF8_Helper::x_AppendChar(*this, ch);
+    CUtf8::x_AppendChar(*this, ch);
 }
 inline
 void   CStringUTF8::x_Append(const CTempString& src,
                 EEncoding encoding, EValidate validate)
 {
-    CStringUTF8_Helper::x_Append(*this, src, encoding, (CStringUTF8_Helper::EValidate)validate);
+    CUtf8::x_Append(*this, src, encoding, (CUtf8::EValidate)validate);
 }
 inline
 SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol ch)
 {
-    return CStringUTF8_Helper::x_BytesNeeded(ch);
+    return CUtf8::x_BytesNeeded(ch);
 }
 inline
 bool   CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
 {
-    return CStringUTF8_Helper::x_EvalFirst(ch, more);
+    return CUtf8::x_EvalFirst(ch, more);
 }
 inline
 bool   CStringUTF8::x_EvalNext(char ch)
 {
-    return CStringUTF8_Helper::x_EvalNext(ch);
+    return CUtf8::x_EvalNext(ch);
 }
 #endif // __NO_EXPORT_STRINGUTF8__
 
@@ -6408,7 +6353,7 @@ template <typename TChar>
 basic_string<TChar> CStringUTF8::AsBasicString(
     const TChar* substitute_on_error) const
 {
-    return CStringUTF8::AsBasicString<TChar>(*this, substitute_on_error, eNoValidate);
+    return CUtf8::AsBasicString<TChar>(*this, substitute_on_error, CUtf8::eNoValidate);
 }
 template <typename TChar> inline
 basic_string<TChar> CStringUTF8::AsBasicString(
@@ -6420,113 +6365,28 @@ template <> inline
 basic_string<TUnicodeSymbol> CStringUTF8::AsBasicString(
     const CTempString& str, const TUnicodeSymbol* substitute_on_error, EValidate validate)
 {
-    return x_AsBasicString(str,substitute_on_error, validate);
+    return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 template <> inline
 basic_string<TCharUCS4> CStringUTF8::AsBasicString(
     const CTempString& str, const TCharUCS4* substitute_on_error, EValidate validate)
 {
-    return x_AsBasicString(str,substitute_on_error, validate);
+    return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 template <> inline
 basic_string<TCharUCS2> CStringUTF8::AsBasicString(
     const CTempString& str, const TCharUCS2* substitute_on_error, EValidate validate)
 {
-    return x_AsBasicString(str,substitute_on_error, validate);
+    return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 #if defined(HAVE_WSTRING)
 template <> inline
 basic_string<wchar_t> CStringUTF8::AsBasicString(
     const CTempString& str, const wchar_t* substitute_on_error, EValidate validate)
 {
-    return x_AsBasicString(str,substitute_on_error, validate);
+    return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 #endif
-
-template <typename TChar>
-basic_string<TChar> CStringUTF8::x_AsBasicString(
-    const CTempString& str,
-    const TChar* substitute_on_error,
-    EValidate validate)
-{
-    if (validate == eValidate) {
-        if (!MatchEncoding(str, eEncoding_UTF8)) {
-            NCBI_THROW2(CStringException, eBadArgs,
-                "Source string is not in UTF8 format", 0);
-        }
-    }
-    TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
-    basic_string<TChar> result;
-    result.reserve( CStringUTF8::GetSymbolCount(str)+1 );
-    CTempString::const_iterator src = str.begin();
-    CTempString::const_iterator to  = str.end();
-    for (; src != to; ++src) {
-        TUnicodeSymbol ch = Decode(src);
-        if (ch > max_char) {
-            if (substitute_on_error) {
-                result.append(substitute_on_error);
-                continue;
-            } else {
-                NCBI_THROW2(CStringException, eConvert,
-                    "Failed to convert symbol to wide character",
-                    (src - str.begin()));
-            }
-        }
-        result.append(1, (TChar)ch);
-    }
-    return result;
-}
-
-template <typename TIterator>
-void CStringUTF8::x_Append(TIterator from, TIterator to)
-{
-    TIterator srcBuf;
-    SIZE_TYPE needed = 0;
-
-    for (srcBuf = from; srcBuf != to; ++srcBuf) {
-        needed += x_BytesNeeded( *srcBuf );
-    }
-    if ( !needed ) {
-        return;
-    }
-    reserve(max(capacity(),length()+needed+1));
-    for (srcBuf = from; srcBuf != to; ++srcBuf) {
-        x_AppendChar( *srcBuf );
-    }
-}
-
-template <typename TChar>
-void CStringUTF8::x_Append(const TChar* src, SIZE_TYPE to, ECharBufferType type)
-{
-    const TChar* srcBuf;
-    SIZE_TYPE needed = 0;
-    SIZE_TYPE pos=0;
-
-    for (pos=0, srcBuf=src;
-            pos<to && (*srcBuf || type == eCharBuffer); ++pos, ++srcBuf) {
-        needed += x_BytesNeeded( *srcBuf );
-    }
-    if ( !needed ) {
-        return;
-    }
-    reserve(max(capacity(),length()+needed+1));
-    for (pos=0, srcBuf=src;
-            pos<to && (*srcBuf || type == eCharBuffer); ++pos, ++srcBuf) {
-        x_AppendChar( *srcBuf );
-    }
-}
-
-template <typename TIterator>
-inline
-TUnicodeSymbol CStringUTF8::x_Decode(TIterator& src)
-{
-    SIZE_TYPE more=0;
-    TUnicodeSymbol chRes = DecodeFirst(*src,more);
-    while (more--) {
-        chRes = DecodeNext(chRes, *(++src));
-    }
-    return chRes;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //  PCase_Generic::
