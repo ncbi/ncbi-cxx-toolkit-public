@@ -1956,7 +1956,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         oldBlastFormat = NStr::ToLower(oldBlastFormat);
         newDesign = (oldBlastFormat == "on" || oldBlastFormat == "true" || oldBlastFormat == "yes") ? false : true;
     }
-    if((m_AlignOption & eHtml) && !newDesign){  
+    if(m_Ctx && (m_AlignOption & eHtml) && !newDesign){  
         out<<"<script src=\"blastResult.js\"></script>";
     }
     //get sequence
