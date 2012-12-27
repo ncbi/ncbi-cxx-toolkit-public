@@ -3,7 +3,7 @@
 	* all: Job input/output NetCache blobs are prolonged for job liftime.
 	* all worker nodes: New command line option -procinfofile.
 	* all: Client identification is sent to NetSchedule for accountability.
-	* all: Web client tracking in all applications.
+	* all: Web client IP/session tracking in all applications.
 	* grid_cli: Support for real-time job watching.
 	* grid_cli: NetSchedule reconfiguration now produces a list of changes.
 	* grid_cli: New options to submit and retrieve remote_app jobs.
