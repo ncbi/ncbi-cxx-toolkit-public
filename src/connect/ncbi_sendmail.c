@@ -218,7 +218,7 @@ static void x_Sendmail_InitEnv(void)
     unsigned int port;
     double       tmo;
 
-    if (*s_MxHost)
+    if (s_MxPort)
         return;
 
     if (!ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)  ||  !*buf
