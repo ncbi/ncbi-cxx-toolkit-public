@@ -624,9 +624,14 @@ case "$with_projects" in
  * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac
 
-if test -n "$with_projects" -a \! -r "$with_projects"; then
-   test "$with_projects" = yes  &&  with_projects=projects
-   AC_MSG_ERROR([unable to read requested projects file "$with_projects".])
+if test -n "$with_projects"; then
+   case "$with_projects" in
+      /* ) abs_projects=$projects              ;;
+      yes) abs_projects=$srcdir/projects       ;;
+      *  ) abs_projects=$srcdir/$with_projects ;;
+   esac
+   test -r "$abs_projects"  ||  \
+      AC_MSG_ERROR([unable to read requested projects file "$abs_projects".])
 fi
 
 # Check for custom optimization flags before potentially going with defaults.

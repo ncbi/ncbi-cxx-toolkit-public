@@ -3152,10 +3152,15 @@ echo "$as_me: WARNING: default projects file \"projects\" is a dangling link." >
  ;;
 esac
 
-if test -n "$with_projects" -a \! -r "$with_projects"; then
-   test "$with_projects" = yes  &&  with_projects=projects
-   { { echo "$as_me:$LINENO: error: unable to read requested projects file \"$with_projects\"." >&5
-echo "$as_me: error: unable to read requested projects file \"$with_projects\"." >&2;}
+if test -n "$with_projects"; then
+   case "$with_projects" in
+      /* ) abs_projects=$projects              ;;
+      yes) abs_projects=$srcdir/projects       ;;
+      *  ) abs_projects=$srcdir/$with_projects ;;
+   esac
+   test -r "$abs_projects"  ||  \
+      { { echo "$as_me:$LINENO: error: unable to read requested projects file \"$abs_projects\"." >&5
+echo "$as_me: error: unable to read requested projects file \"$abs_projects\"." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
