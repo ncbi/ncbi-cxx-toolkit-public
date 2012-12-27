@@ -298,7 +298,7 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
     // Flush underlying stream (on write)
     if (dir == CCompressionStream::eWrite) {
         if ( sp->m_LastStatus == CP::eStatus_EndOfData  ||
-            (sp->m_State == CSP::eFinalize && !out_avail)) {
+             sp->m_State == CSP::eFinalize) {
             if ( !WriteOutBufToStream(true /*force write*/) ) {
                 return -1;
             }
