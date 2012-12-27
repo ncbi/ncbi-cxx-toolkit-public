@@ -321,23 +321,6 @@ protected:
                                   TConstObjectPtr memberPtr);
     virtual bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
-
-    virtual void WriteChoice(const CChoiceTypeInfo* choiceType,
-                             TConstObjectPtr choicePtr);
-/*
-    // COPY
-    virtual void CopyNamedType(TTypeInfo namedTypeInfo,
-                               TTypeInfo typeInfo,
-                               CObjectStreamCopier& copier);
-    virtual void CopyContainer(const CContainerTypeInfo* containerType,
-                               CObjectStreamCopier& copier);
-    virtual void CopyClassRandom(const CClassTypeInfo* objectType,
-                                 CObjectStreamCopier& copier);
-    virtual void CopyClassSequential(const CClassTypeInfo* objectType,
-                                     CObjectStreamCopier& copier);
-    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
-                            CObjectStreamCopier& copier);
-*/
 #endif
     void WriteContainerContents(const CContainerTypeInfo* containerType,
                                 TConstObjectPtr containerPtr);

@@ -665,9 +665,6 @@ public:
                                   TConstObjectPtr memberPtr);
     MLIOVIR bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
-    // choice
-    MLIOVIR void WriteChoice(const CChoiceTypeInfo* choiceType,
-                             TConstObjectPtr choicePtr);
     // alias
     MLIOVIR void WriteAlias(const CAliasTypeInfo* aliasType,
                             TConstObjectPtr aliasPtr);

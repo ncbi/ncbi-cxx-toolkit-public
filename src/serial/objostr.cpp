@@ -966,24 +966,6 @@ void CObjectOStream::EndChoiceVariant(void)
 {
 }
 
-void CObjectOStream::WriteChoice(const CChoiceTypeInfo* choiceType,
-                                 TConstObjectPtr choicePtr)
-{
-    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-    BeginChoice(choiceType);
-    TMemberIndex index = choiceType->GetIndex(choicePtr);
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
-    BeginChoiceVariant(choiceType, variantInfo->GetId());
-
-    variantInfo->WriteVariant(*this, choicePtr);
-
-    EndChoiceVariant();
-    END_OBJECT_FRAME();
-    EndChoice();
-    END_OBJECT_FRAME();
-}
-
 void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
                                 CObjectStreamCopier& copier)
 {

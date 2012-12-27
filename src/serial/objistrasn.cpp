@@ -1397,45 +1397,6 @@ TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choice
     return index;
 }
 
-#ifdef VIRTUAL_MID_LEVEL_IO
-void CObjectIStreamAsn::ReadChoice(const CChoiceTypeInfo* choiceType,
-                                   TObjectPtr choicePtr)
-{
-    BEGIN_OBJECT_FRAME3(eFrameChoice, choiceType, choicePtr);
-    BeginChoice(choiceType);
-    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
-    TMemberIndex index = BeginChoiceVariant(choiceType);
-
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    SetTopMemberId(variantInfo->GetId());
-
-    variantInfo->ReadVariant(*this, choicePtr);
-
-    EndChoiceVariant();
-    END_OBJECT_FRAME();
-    EndChoice();
-    END_OBJECT_FRAME();
-}
-
-void CObjectIStreamAsn::SkipChoice(const CChoiceTypeInfo* choiceType)
-{
-    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-    BeginChoice(choiceType);
-    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
-    TMemberIndex index = BeginChoiceVariant(choiceType);
-
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    SetTopMemberId(variantInfo->GetId());
-
-    variantInfo->SkipVariant(*this);
-
-    EndChoiceVariant();
-    END_OBJECT_FRAME();
-    EndChoice();
-    END_OBJECT_FRAME();
-}
-#endif
-
 void CObjectIStreamAsn::BeginBytes(ByteBlock& )
 {
     Expect('\'', true);

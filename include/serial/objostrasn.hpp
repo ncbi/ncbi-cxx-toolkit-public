@@ -143,9 +143,6 @@ protected:
     virtual bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
 
-    virtual void WriteChoice(const CChoiceTypeInfo* choiceType,
-                             TConstObjectPtr choicePtr);
-
     // COPY
     virtual void CopyContainer(const CContainerTypeInfo* containerType,
                                CObjectStreamCopier& copier);
@@ -153,8 +150,6 @@ protected:
                                  CObjectStreamCopier& copier);
     virtual void CopyClassSequential(const CClassTypeInfo* objectType,
                                      CObjectStreamCopier& copier);
-//    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
-//                            CObjectStreamCopier& copier);
 #endif
     // low level I/O
     virtual void BeginContainer(const CContainerTypeInfo* containerType);

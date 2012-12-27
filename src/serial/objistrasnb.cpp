@@ -1048,21 +1048,6 @@ void CObjectIStreamAsnBinary::EndChoiceVariant(void)
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
-void CObjectIStreamAsnBinary::ReadChoice(const CChoiceTypeInfo* choiceType,
-                                         TObjectPtr choicePtr)
-{
-    TMemberIndex index = BeginChoiceVariant(choiceType);
-
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
-
-    variantInfo->ReadVariant(*this, choicePtr);
-
-    END_OBJECT_FRAME();
-
-    ExpectEndOfContent();
-    //EndChoiceVariant();
-}
 
 void CObjectIStreamAsnBinary::ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
                                                TObjectPtr choicePtr)
@@ -1087,21 +1072,6 @@ void CObjectIStreamAsnBinary::ReadChoiceSimple(const CChoiceTypeInfo* choiceType
     END_OBJECT_FRAME();
     ExpectEndOfContent();
     END_OBJECT_FRAME();
-}
-
-void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
-{
-    TMemberIndex index = BeginChoiceVariant(choiceType);
-
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
-
-    variantInfo->SkipVariant(*this);
-
-    END_OBJECT_FRAME();
-
-    ExpectEndOfContent();
-    //EndChoiceVariant();
 }
 
 void CObjectIStreamAsnBinary::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)

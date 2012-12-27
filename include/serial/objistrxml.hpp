@@ -182,18 +182,10 @@ protected:
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
-
-
-    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr);
-    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
 #endif
     void ReadContainerContents(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     void SkipContainerContents(const CContainerTypeInfo* containerType);
-    void ReadChoiceContents(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr);
-    void SkipChoiceContents(const CChoiceTypeInfo* choiceType);
 
     // low level I/O
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);

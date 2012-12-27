@@ -930,11 +930,8 @@ public:
     MLIOVIR void SkipClassRandom(const CClassTypeInfo* classType);
 
     // choice
-    MLIOVIR void ReadChoice(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr);
     MLIOVIR void ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
                                   TObjectPtr choicePtr);
-    MLIOVIR void SkipChoice(const CChoiceTypeInfo* choiceType);
     MLIOVIR void SkipChoiceSimple(const CChoiceTypeInfo* choiceType);
 
     // alias

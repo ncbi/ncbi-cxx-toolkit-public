@@ -182,11 +182,8 @@ protected:
     virtual void SkipClassSequential(const CClassTypeInfo* classType);
     virtual void SkipClassRandom(const CClassTypeInfo* classType);
 
-    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr);
     virtual void ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
                                   TObjectPtr choicePtr);
-    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
     virtual void SkipChoiceSimple(const CChoiceTypeInfo* choiceType);
 
 #endif

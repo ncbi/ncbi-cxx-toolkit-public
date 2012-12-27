@@ -1486,25 +1486,6 @@ void CObjectOStreamXml::EndChoiceVariant(void)
     }
 }
 
-#ifdef VIRTUAL_MID_LEVEL_IO
-void CObjectOStreamXml::WriteChoice(const CChoiceTypeInfo* choiceType,
-                                    TConstObjectPtr choicePtr)
-{
-    if ( !choiceType->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-        OpenTag(choiceType);
-
-        WriteChoiceContents(choiceType, choicePtr);
-
-        CloseTag(choiceType);
-        END_OBJECT_FRAME();
-    }
-    else {
-        WriteChoiceContents(choiceType, choicePtr);
-    }
-}
-#endif
-
 void CObjectOStreamXml::WriteChoiceContents(const CChoiceTypeInfo* choiceType,
                                             TConstObjectPtr choicePtr)
 {

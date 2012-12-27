@@ -185,10 +185,6 @@ protected:
                                  TObjectPtr classPtr);
     virtual void SkipClassSequential(const CClassTypeInfo* classType);
     virtual void SkipClassRandom(const CClassTypeInfo* classType);
-
-    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr);
-    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
 #endif
     // low level I/O
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
@@ -218,10 +214,6 @@ private:
     virtual EPointerType ReadPointerType(void);
     virtual TObjectIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
-
-    void SkipObjectData(void);
-    void SkipObjectPointer(void);
-    void SkipBlock(void);
 
     // low level methods
     char GetChar(void);

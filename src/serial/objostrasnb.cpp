@@ -1196,53 +1196,6 @@ void CObjectOStreamAsnBinary::EndChoiceVariant(void)
     WriteEndOfContent();
 }
 
-#ifdef VIRTUAL_MID_LEVEL_IO
-void CObjectOStreamAsnBinary::WriteChoice(const CChoiceTypeInfo* choiceType,
-                                          TConstObjectPtr choicePtr)
-{
-    TMemberIndex index = choiceType->GetIndex(choicePtr);
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
-    WriteTag(eContextSpecific, eConstructed, variantInfo->GetId().GetTag());
-    WriteIndefiniteLength();
-    
-    variantInfo->WriteVariant(*this, choicePtr);
-    
-    WriteEndOfContent();
-    END_OBJECT_FRAME();
-}
-
-/*
-void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
-                                         CObjectStreamCopier& copier)
-{
-    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
-    copier.In().BeginChoice(choiceType);
-    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameChoiceVariant);
-    TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember ) {
-        copier.ThrowError(CObjectIStream::fFormatError,
-                          "choice variant id expected");
-    }
-
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    copier.In().SetTopMemberId(variantInfo->GetId());
-    copier.Out().SetTopMemberId(variantInfo->GetId());
-    WriteTag(eContextSpecific, eConstructed, variantInfo->GetId().GetTag());
-    WriteIndefiniteLength();
-
-    variantInfo->CopyVariant(copier);
-
-    WriteEndOfContent();
-
-    copier.In().EndChoiceVariant();
-    END_OBJECT_2FRAMES_OF(copier);
-    copier.In().EndChoice();
-    END_OBJECT_FRAME_OF(copier.In());
-}
-*/
-#endif
-
 void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)
 {
     WriteSysTag(eOctetString);
