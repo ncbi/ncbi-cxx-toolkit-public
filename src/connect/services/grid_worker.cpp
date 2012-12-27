@@ -277,6 +277,11 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
         return;
     }
 
+    if (m_WorkerNode.m_ProgressLogRequested) {
+        LOG_POST(GetJobKey() << " progress: " <<
+                NStr::TruncateSpaces(msg, NStr::eTrunc_End));
+    }
+
     try {
         CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
         if (!debug_context ||
@@ -1231,6 +1236,8 @@ int CGridWorkerNode::Run()
 
     m_LogRequested = reg.GetBool(kServerSec,
             "log", false, 0, IRegistry::eReturn);
+    m_ProgressLogRequested = reg.GetBool(kServerSec,
+            "log_progress", false, 0, IRegistry::eReturn);
 
     auto_ptr<CWorkerNodeJobContext> job_context(
             m_JobCommitterThread->AllocJobContext());

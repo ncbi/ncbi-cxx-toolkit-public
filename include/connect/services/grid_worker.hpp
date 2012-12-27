@@ -796,6 +796,7 @@ private:
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
     bool m_LogRequested;
+    bool m_ProgressLogRequested;
     size_t m_QueueEmbeddedOutputSize;
 };
 

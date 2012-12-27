@@ -343,18 +343,7 @@ public:
                     bool non_empty_output = out.pcount() > 0;
                     if (non_empty_output) {
                         out << NcbiEnds;
-
-                        string progress_message(out.str());
-
-                        m_JobContext.PutProgressMessage(progress_message, true);
-
-                        if (m_JobContext.IsLogRequested()) {
-                            NStr::TruncateSpacesInPlace(progress_message,
-                                NStr::eTrunc_End);
-
-                            LOG_POST(m_JobContext.GetJobKey() << " (monitor) "
-                                    "progress: " << progress_message);
-                        }
+                        m_JobContext.PutProgressMessage(out.str(), true);
                     }
                     if (m_JobContext.IsLogRequested() &&
                             (!non_empty_output || err.pcount() > 0))
