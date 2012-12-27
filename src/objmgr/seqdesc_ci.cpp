@@ -87,7 +87,7 @@ void CSeqdesc_CI::x_CheckRef(const CBioseq_Handle& handle)
     m_Ref.Reset();
     if (!handle  ||
         !handle.IsSetInst_Repr()  ||
-        !handle.GetInst_Repr() == CSeq_inst::eRepr_ref  ||
+        handle.GetInst_Repr() != CSeq_inst::eRepr_ref  ||
         !handle.IsSetInst_Ext()  ||
         !handle.GetInst_Ext().IsRef()) {
         return;
