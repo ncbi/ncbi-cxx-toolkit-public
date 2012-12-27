@@ -189,7 +189,12 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
                                          new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_ONCALLER_GENE_MISSING));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_ONCALLER_SUPERFLUOUS_GENE));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_GENES));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_GENES));
+   //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_CDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_CDS_OVERLAP));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_FIND_OVERLAPPED_GENES));

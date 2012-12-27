@@ -233,6 +233,7 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
 
     protected:
+      bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
       bool IsBiosrcEukaryotic(const CBioSource& biosrc);
       bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc=true);
@@ -1200,6 +1201,98 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
+  class CBioseq_test_on_missing_genes : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_missing_genes () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq) = 0;
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      vector <int> m_super_idx;
+      vector <string> m_no_genes;
+      unsigned m_super_cnt;
+
+      void CheckGenesForFeatureType(const vector <const CSeq_feat*>& feats, 
+                                        bool makes_gene_not_superfluous = false);
+      bool GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref);
+  };
+
+
+  class CBioseq_missing_genes_regular : public CBioseq_test_on_missing_genes
+  {
+    public:
+      virtual ~CBioseq_missing_genes_regular () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_missing() const {return string("MISSING_GENES"); }
+      string GetName_extra() const {return string("EXTRA_GENES"); } 
+  };
+
+  
+  class CBioseq_MISSING_GENES : public CBioseq_missing_genes_regular
+  {
+    public:
+      virtual ~CBioseq_MISSING_GENES () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_missing_genes_regular::GetName_missing();}
+  };
+
+
+  class CBioseq_EXTRA_GENES : public CBioseq_missing_genes_regular
+  {
+    public:
+      virtual ~CBioseq_EXTRA_GENES () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_missing_genes_regular::GetName_extra();}
+  };
+
+
+  class CBioseq_missing_genes_oncaller : public CBioseq_test_on_missing_genes
+  {
+    public:
+      virtual ~CBioseq_missing_genes_oncaller () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_missing() const {return string("ONCALLER_GENE_MISSING"); }
+      string GetName_extra() const {return string("ONCALLER_SUPERFLUOUS_GENE"); }
+
+      bool IsOkSuperfluousGene (const CSeq_feat* seq_feat);
+  };
+
+
+  class CBioseq_ONCALLER_GENE_MISSING : public CBioseq_missing_genes_oncaller
+  {
+    public:
+     virtual ~CBioseq_ONCALLER_GENE_MISSING () {};
+
+     virtual void GetReport(CRef <CClickableItem>& c_item);
+     virtual string GetName() const {return CBioseq_missing_genes_oncaller::GetName_missing();}
+  };
+
+  
+  class CBioseq_ONCALLER_SUPERFLUOUS_GENE : public CBioseq_missing_genes_oncaller
+  {
+    public:
+     virtual ~CBioseq_ONCALLER_SUPERFLUOUS_GENE () {};
+
+     virtual void GetReport(CRef <CClickableItem>& c_item);
+     virtual string GetName() const {return CBioseq_missing_genes_oncaller::GetName_extra();}
+  };
+
+
   class CBioseq_test_on_bac_partial : public CBioseqTestAndRepData
   {
     public:
@@ -2432,6 +2525,7 @@ namespace DiscRepNmSpc {
 
 
 
+/*
   class CBioseq_EXTRA_MISSING_GENES : public CBioseqTestAndRepData
   {
     public:
@@ -2449,6 +2543,7 @@ namespace DiscRepNmSpc {
       string GetName_extra_nonshift() const {return string("EXTRA_GENES_nonshift"); }
       string GetName_missing() const {return string("MISSING_GENES"); }
   };
+*/
 
 
 

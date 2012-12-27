@@ -144,6 +144,25 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
+bool CTestAndRepData :: CommentHasPhrase(string comment, const string& phrase)
+{
+  unsigned len = phrase.size();
+  size_t pos;
+  while (!comment.empty()) {
+     if (NStr::FindNoCase(comment.substr(0, len), phrase) != string::npos
+           && (comment.size() == len || comment[len] == ';'))
+         return true;
+     else {
+       if ((pos = comment.find(';')) != string::npos) {
+         comment = comment.substr(pos+1);
+         comment = NStr::TruncateSpaces(comment, NStr::eTrunc_Begin);
+       }
+     } 
+  }
+  return false;
+};
+
+
 bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
 {
   if (str.empty()) return false;

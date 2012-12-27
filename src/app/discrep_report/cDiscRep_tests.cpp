@@ -5089,14 +5089,225 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
+// new comb
+void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <const CSeq_feat*>& feats, bool makes_gene_not_superfluous)
+{
+  unsigned i=0, j;
+  ITERATE (vector <const CSeq_feat*>, it, feats) {
+    if ((*it)->GetData().IsGene()) continue;
+    const CGene_ref* xref_gene = (*it)->GetGeneXref();
+    if (xref_gene && xref_gene->IsSuppressed()) {
+         if (m_no_genes[i].empty()) m_no_genes[i] = GetDiscItemText(**it);
+    }
+    else {
+        if (xref_gene) {
+           if (m_super_cnt) {
+             j = 0;
+             ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
+               if (m_super_idx[j] &&
+                     GeneRefMatchForSuperfluousCheck((*jt)->GetData().GetGene(), xref_gene)) {
+                   m_super_cnt --;
+                   m_super_idx[j] = 0;
+               }
+               j++;
+             }
+           }
+        } 
+        else {
+          // GetBest... can't deal with the mix strand now,
+          // so for File1fordiscrep.sqn, it needs to check the EXTRA_GENES
+          // and MISSING_GENES after the bug is fixed.
+          CConstRef < CSeq_feat>
+             gene_olp= GetBestOverlappingFeat( (*it)->GetLocation(),
+                                               CSeqFeatData::e_Gene,
+                                               eOverlap_Contained,
+                                               *thisInfo.scope);
 
+          if (gene_olp.Empty()) {
+             if (m_no_genes[i].empty()) m_no_genes[i] = GetDiscItemText(**it);
+          }
+          else if ( m_super_cnt && makes_gene_not_superfluous) {
+             j=0;
+             ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
+               if (m_super_idx[j] && (*jt == gene_olp.GetPointer())) {
+                    m_super_idx[j] = 0;
+                    m_super_cnt --;
+               }
+               j++;
+             }
+          }
+        }
+    }
+    i++;
+  } 
+};
+
+
+void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
+{
+  unsigned i;
+  if (IsmRNASequenceInGenProdSet(bioseq)) m_super_cnt = 0;
+  else {
+     m_super_cnt = gene_feat.size();
+     m_no_genes.reserve(m_super_cnt);
+     m_super_idx.reserve(m_super_cnt);
+     for (i=0; i< m_super_cnt; i++) m_super_idx[i] = 1;
+  }
+  CheckGenesForFeatureType(cd_feat, true); 
+  CheckGenesForFeatureType(rna_feat, true);
+  CheckGenesForFeatureType(rbs_feat);
+  CheckGenesForFeatureType(exon_feat);
+  CheckGenesForFeatureType(intron_feat);
+
+  ITERATE (vector <string>, it, m_no_genes) {
+     if (!(*it).empty())
+       thisInfo.test_item_list[GetName_missing()].push_back(*it);
+  } 
+
+  //GetPseudoAndNonPseudoGeneList;
+  if (!m_super_cnt) return;
+  i=0;
+  string desc, nm_desc;
+  ITERATE (vector <const CSeq_feat* >, it, gene_feat) {
+     if (m_super_idx[i++]) {
+       desc = GetDiscItemText(**it);
+       thisInfo.test_item_list[GetName_extra()].push_back("extra$" + desc);
+       nm_desc = kEmptyStr;
+       const CSeqFeatData& seq_feat_dt = (*it)->GetData();
+       if ((*it)->CanGetPseudo() && (*it)->GetPseudo()) nm_desc = "pseudo$" + desc;
+       else if ( seq_feat_dt.GetGene().GetPseudo() ) nm_desc = "pseudo$" + desc;
+       else {
+             //GetFrameshiftAndNonFrameshiftGeneList
+             if ((*it)->CanGetComment()) {
+               const string& comment = (*it)->GetComment();
+               if (string::npos != NStr::FindNoCase(comment, "frameshift")
+                    || string::npos!= NStr::FindNoCase(comment, "frame shift"))
+                   nm_desc = "frameshift$" + desc;
+               else nm_desc = "nonshift$" + desc;
+             }
+       }
+       if (!nm_desc.empty()) thisInfo.test_item_list[GetName_extra()].push_back(nm_desc);
+     }
+  }
+};
+
+
+void CBioseq_MISSING_GENES :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+    = GetHasComment(c_item->item_list.size(), "feature") + "no genes.";
+};
+
+
+void CBioseq_EXTRA_GENES :: GetReport(CRef <CClickableItem>& c_item)
+{
+  string desc1, desc2;
+  Str2Strs tp2ls;
+  GetTestItemList(c_item->item_list, tp2ls);
+  c_item->item_list.clear();
+  ITERATE (Str2Strs, it, tp2ls) {
+    if (it->first == "extra") c_item->item_list = it->second;
+    else {
+      if (it->first == "pseudo") {
+         desc1 = "pseudo gene feature";
+         desc2 = "not associated with a CDS or RNA feature.";
+      }
+      else if (it->first == "frameshift") {
+         desc1 = "non-pseudo gene feature";
+         desc2
+         ="not associated with a CDS or RNA feature and have frameshift in the comment.";
+      }
+      else if (it->first == "nonshift") {
+            desc1 = "non-pseudo gene feature";
+            strtmp = (it->second.size() > 1) ? "do" : "does";
+            desc2 = "not associated with a CDS or RNA feature and "
+                              + strtmp + " not have frameshift in the comment.";
+      }
+      AddSubcategories(c_item,  GetName(), it->second, desc1, desc2, e_IsComment, false);
+    }
+  };
+  c_item->description = GetIsComment(c_item->item_list.size(), "gene feature") 
+                        + "not associated with a CDS or RNA feature.";
+};
+
+
+void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
+{
+  if (bioseq.IsAa()) return;
+  m_super_cnt = 0;
+  unsigned i=0;
+  m_no_genes.reserve(gene_feat.size());
+  m_super_idx.reserve(gene_feat.size());
+  if (!IsmRNASequenceInGenProdSet(bioseq)) {
+     ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
+       if ( (*it)->CanGetPseudo() && (*it)->GetPseudo()) m_super_idx[i] = 0;
+       else {
+          m_super_cnt ++;
+          m_super_idx[i] = 1;
+       }
+       i++; 
+     }
+  }
+
+  CheckGenesForFeatureType(cd_feat, true);
+  CheckGenesForFeatureType(mrna_feat, true);
+  CheckGenesForFeatureType(trna_feat, true);
+
+  ITERATE (vector <string>, it, m_no_genes) 
+    if ( !(*it).empty())
+        thisInfo.test_item_list[GetName_missing()].push_back(*it);
+
+  m_no_genes.clear();
+  CheckGenesForFeatureType(all_feat, true);
+  m_no_genes.clear();
+  if (!m_super_cnt) return;
+  i=0;
+  ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
+    if (!m_super_idx[i]) continue;
+    /* remove genes with explanatory comments/descriptions */
+    if (!IsOkSuperfluousGene( *it )) 
+       thisInfo.test_item_list[GetName_extra()].push_back(GetDiscItemText(**it));
+    i++;
+  } 
+};
+
+
+bool CBioseq_missing_genes_oncaller :: IsOkSuperfluousGene (const CSeq_feat* seq_feat)
+{
+  string phrase = "coding region not determined";
+  if (seq_feat->CanGetComment() && CommentHasPhrase(seq_feat->GetComment(), phrase))
+     return true;
+  else if (seq_feat->GetData().GetGene().CanGetDesc()
+             && CommentHasPhrase(seq_feat->GetData().GetGene().GetDesc(), phrase))
+     return true;
+  else return false;
+};
+
+
+void CBioseq_ONCALLER_GENE_MISSING :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+    = GetIsComment(c_item->item_list.size(), "feature") + "no genes.";
+};
+
+
+void CBioseq_ONCALLER_SUPERFLUOUS_GENE :: GetReport(CRef <CClickableItem>& c_item)
+{
+  unsigned cnt = c_item->item_list.size();
+  c_item->description
+    = GetIsComment(cnt, "gene feature") + "not associated with any feature and " 
+          + ((cnt > 1) ? "are" : "is") + " not pseudo.";
+}
+
+// new comb
+
+/*
 void CBioseq_EXTRA_MISSING_GENES :: TestOnObj(const CBioseq& bioseq)
 {
   vector <int> super_idx;
   unsigned super_cnt = gene_feat.size();
   unsigned i;
   for (i=0; i< super_cnt; i++) super_idx.push_back(1);
-  vector <const CSeq_feat*> superfluous_genes;
   set <const CSeq_feat*> features_without_genes;
   ITERATE ( vector < const CSeq_feat* > , it, mix_feat) {
      const CGene_ref* xref_gene = (*it)->GetGeneXref();
@@ -5176,9 +5387,11 @@ void CBioseq_EXTRA_MISSING_GENES :: TestOnObj(const CBioseq& bioseq)
   }
 };  // EXTRA_MISSING_GENES :: TestOnObj
 
+*/
 
 
-bool CBioseq_EXTRA_MISSING_GENES :: GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref)
+//bool CBioseq_EXTRA_MISSING_GENES :: GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref)
+bool CBioseq_test_on_missing_genes :: GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref)
 {
   const string& locus1 = (gene.CanGetLocus()) ? gene.GetLocus() : kEmptyStr;
   const string& locus_tag1 = (gene.CanGetLocus_tag()) ? gene.GetLocus_tag() : kEmptyStr;
@@ -5210,6 +5423,7 @@ bool CBioseq_EXTRA_MISSING_GENES :: GeneRefMatchForSuperfluousCheck (const CGene
 };
 
 
+/*
 void CBioseq_EXTRA_MISSING_GENES :: GetReport(CRef <CClickableItem>& c_item)
 {
     bool has_missing = false;
@@ -5257,6 +5471,7 @@ void CBioseq_EXTRA_MISSING_GENES :: GetReport(CRef <CClickableItem>& c_item)
                           + "not associated with a CDS or RNA feature.";
     if (has_missing && !c_extra->item_list.empty()) thisInfo.disc_report_data.push_back(c_extra);
 }; // EXTRA_MISSING_GENES
+*/
 
 
 
