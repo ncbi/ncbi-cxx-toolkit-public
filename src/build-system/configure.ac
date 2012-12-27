@@ -605,7 +605,8 @@ if test "$with_extra_action" = "no" ; then
 fi
 
 case "$with_projects" in
- "") if test -r projects; then
+ ""|yes)
+     if test -r projects; then
         AC_MSG_NOTICE([using default projects file "projects".])
         with_projects=projects
         AC_SUBST(PROJECTS, "\$(top_srcdir)/projects")
@@ -622,6 +623,11 @@ case "$with_projects" in
  /*) AC_SUBST(PROJECTS, $with_projects) ;;
  * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac
+
+if test -n "$with_projects" -a \! -r "$with_projects"; then
+   test "$with_projects" = yes  &&  with_projects=projects
+   AC_MSG_ERROR([unable to read requested projects file "$with_projects".])
+fi
 
 # Check for custom optimization flags before potentially going with defaults.
 skip_fast_flags=no
@@ -6379,7 +6385,7 @@ else
      sep=", "
    fi
    if test -n "$reason" -a "$with_internal" = "yes"; then
-      if test -z "$with_projects"  -o  "$with_projects" = "no"; then
+      if test -z "$with_projects"; then
          AC_MSG_ERROR([--with-internal:  Cannot build INTERNAL projects: missing $reason])
       else
          AC_MSG_WARN([--with-internal:  Cannot build all INTERNAL projects: missing $reason])
@@ -6982,11 +6988,9 @@ if test "$with_flat_makefile" != "no"; then
    else
       cfm_flags='-remoteptb'
    fi
-   case "$with_projects" in
-      yes     ) cfm_flags="$cfm_flags -p projects" ;;
-      no | '' ) ;;
-      *       ) cfm_flags="$cfm_flags -p $with_projects" ;;
-   esac
+   if test -n "$with_projects"; then
+      cfm_flags="$cfm_flags -p $with_projects"
+   fi
    if test "$with_configure_dialog" = yes; then
       cfm_flags="$cfm_flags -cfg"
    fi
@@ -7029,7 +7033,8 @@ lib)
 esac
 
 if test -n "$with_projects"; then
-    build_proj="To build selected projects:  cd $builddir && make all_p"
+    build_proj="To build selected projects (as listed in \"$with_projects\"):
+  cd $builddir && make all_p"
 fi
 
 cat << EOCONF
