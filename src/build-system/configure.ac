@@ -623,6 +623,13 @@ case "$with_projects" in
  * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac
 
+# Check for custom optimization flags before potentially going with defaults.
+skip_fast_flags=no
+if test -z "${DEF_FAST_FLAGS}${FAST_CXXFLAGS}"; then
+   case " $CFLAGS $CXXFLAGS" in
+      *\ -O* | *\ -xO* ) skip_fast_flags=yes ;;
+   esac
+fi
 
 #### Always define this
 AC_DEFINE(NCBI_CXX_TOOLKIT, 1, [This is the NCBI C++ Toolkit.])
@@ -1431,7 +1438,7 @@ wschars=" $tabchar"
 wsrx="[[$wschars]]"
 
 #### Flags to enable (potentially unsafe) extra optimization.
-if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
+if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
    case "$compiler:$compiler_version" in
       GCC:2* | GCC:344 )
         # GCC 2.9x sometimes experiences internal errors at high optimization;
@@ -1502,8 +1509,6 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         DEF_FAST_FLAGS="-O"
         ;;
    esac
-else
-   DEF_FAST_FLAGS="-O"
 fi
 
 : ${FAST_CFLAGS="$DEF_FAST_FLAGS"}
@@ -2594,6 +2599,7 @@ changequote(, )dnl
       NOPT_CXXFLAGS="$NOPT_CXXFLAGS -O0"
       NOPT_LDFLAGS="$NOPT_LDFLAGS -O0"
    fi
+   set -x
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
@@ -2608,10 +2614,18 @@ changequote(, )dnl
          CXXFLAGS="$CXXFLAGS -O" ; fi
       if echo " $LDFLAGS "  | grep -v "$optrx" >/dev/null ; then
          LDFLAGS="$LDFLAGS -O" ; fi
-      FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
-      FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
-      FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
+      if test "$skip_fast_flags" = yes ; then
+         FAST_CFLAGS="$CFLAGS"
+         FAST_CXXFLAGS="$CXXFLAGS"
+         FAST_LDFLAGS="$LDFLAGS"
+      else
+         FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
+         FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
+         FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
+      fi
    fi
+   set +x
+   sleep 15
 changequote([, ])dnl
 fi
 
