@@ -1,6 +1,5 @@
 2012-12-20 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
-	* all: Cross-site (MAIN<->COLO) access to NetSchedule/NetCache servers.
 	* all: Job input/output NetCache blobs are prolonged for job liftime.
 	* all worker nodes: New command line option -procinfofile.
 	* all: Client identification is sent to NetSchedule for accountability.
