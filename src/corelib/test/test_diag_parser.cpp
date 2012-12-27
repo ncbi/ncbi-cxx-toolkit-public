@@ -229,6 +229,59 @@ int CDiagParserApp::Run(void)
     x_CheckMessage("not a valid message", false);
     x_CheckMessage("", false);
 
+    // Test app state codes
+    x_CheckMessage("03960/000/0000/AB 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", true);
+    x_CheckMessage("03960/000/0000/PB 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", true);
+    x_CheckMessage("15176/003/0006/A 2A763B485350C030 0098/0008 "
+                "2006-10-17T12:59:47.123456 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(111.222) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006/P 2A763B485350C030 0098/0008 "
+                "2006-10-17T12:59:47.123456 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(111.222) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("03960/000/0000/RB 2C2D0F7851AB7E40 0010/0010 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "2C2D0F7851AB7E40_0000SID cgi_sample.cgi "
+                "request-start foo=bar", true);
+    x_CheckMessage("15176/003/0006/R 2A763B485350C030 0098/0008 "
+                "2006-10-17T12:59:47.123456 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(111.222) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("03960/000/0000/RE 2C2D0F7851AB7E40 0010/0010 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "2C2D0F7851AB7E40_0000SID cgi_sample.cgi "
+                "request-stop 200 0.105005566", true);
+   x_CheckMessage("03960/000/0000/AB 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", true);
+    x_CheckMessage("03960/000/0000/AE 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi stop 0 1.077030896", true);
+    x_CheckMessage("03960/000/0000/PE 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi stop 0 1.077030896", true);
+    // Bad app states
+    x_CheckMessage("03960/000/0000/AA 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", false);
+    x_CheckMessage("03960/000/0000/PP 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", false);
+    x_CheckMessage("03960/000/0000/X 2C2D0F7851AB7E40 0005/0005 "
+                "2006-09-27T13:41:56.123456 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", false);
+
     x_CheckMessage();
 
     return 0;

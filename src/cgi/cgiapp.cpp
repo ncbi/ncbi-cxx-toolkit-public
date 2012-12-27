@@ -762,6 +762,7 @@ const CArgs& CCgiApplication::GetArgs(void) const
 class CExtraEntryCollector : public CEntryCollector_Base {
 public:
     CExtraEntryCollector(void) {}
+    virtual ~CExtraEntryCollector(void) {}
     
     virtual void AddEntry(const string& name,
                           const string& value,

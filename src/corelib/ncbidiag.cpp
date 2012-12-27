@@ -1020,14 +1020,14 @@ const char* s_AppStateToStr(EDiagAppState state)
 EDiagAppState s_StrToAppState(const string& state)
 {
     for (int st = (int)eDiagAppState_AppBegin;
-        st < eDiagAppState_RequestEnd; st++) {
+        st <= eDiagAppState_RequestEnd; st++) {
         if (state == s_AppStateStr[st]) {
             return (EDiagAppState)st;
         }
     }
     // Backward compatibility - allow to use 'A' instead of 'P'
     for (int st = (int)eDiagAppState_AppBegin;
-        st < eDiagAppState_AppEnd; st++) {
+        st <= eDiagAppState_AppEnd; st++) {
         if (state == s_LegacyAppStateStr[st - 1]) {
             return (EDiagAppState)st;
         }

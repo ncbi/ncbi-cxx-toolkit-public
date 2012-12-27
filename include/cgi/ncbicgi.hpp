@@ -630,6 +630,7 @@ class CTrackingEnvHolder;
 // Base helper class for building query string from request arguments.
 class CEntryCollector_Base {
 public:
+    virtual ~CEntryCollector_Base(void) {}
     virtual void AddEntry(const string& name,
                           const string& value,
                           bool          is_index = false) = 0;

@@ -1631,6 +1631,7 @@ void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
 class CStringEntryCollector : public CEntryCollector_Base {
 public:
     CStringEntryCollector(void) {}
+    virtual ~CStringEntryCollector(void) {}
     
     virtual void AddEntry(const string& name,
                           const string& value,
