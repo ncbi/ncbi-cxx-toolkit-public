@@ -342,6 +342,7 @@ public:
 
     bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
     ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
+    static const char* GetCommitStatusDescription(ECommitStatus commit_status);
 
     bool IsCanceled() const { return m_JobCommitted == eCanceled; }
 

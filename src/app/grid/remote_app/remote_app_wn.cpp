@@ -160,31 +160,26 @@ public:
         m_Result.SetRetCode(ret); 
         m_Result.Serialize(context.GetOStream());
 
-        string stat;
-
         if (!finished_ok) {
-            if (!context.IsCanceled())
+            if (!context.IsJobCommitted())
                 context.CommitJobWithFailure("Job has been canceled");
-            stat = " was canceled.";
         } else
             if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                    CRemoteAppLauncher::eDoneOnNonZeroExit) {
+                    CRemoteAppLauncher::eDoneOnNonZeroExit)
                 context.CommitJob();
-                stat = " is done.";
-            } else
+            else
                 if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                        CRemoteAppLauncher::eReturnOnNonZeroExit) {
+                        CRemoteAppLauncher::eReturnOnNonZeroExit)
                     context.ReturnJob();
-                    stat = " has been returned.";
-                } else {
+                else
                     context.CommitJobWithFailure(
                         "Exited with return code " + NStr::IntToString(ret));
-                    stat = " failed.";
-                }
 
         if (context.IsLogRequested()) {
             LOG_POST("Job " << context.GetJobKey() <<
-                stat << " ExitCode: " << ret);
+                    " is " << context.GetCommitStatusDescription(
+                            context.GetCommitStatus()) <<
+                    ". Exit code: " << ret);
             if (!m_Result.GetErrBlobIdOrData().empty()) {
                 LOG_POST(context.GetJobKey() << " Err data: " <<
                     m_Result.GetErrBlobIdOrData());

@@ -391,6 +391,23 @@ size_t CWorkerNodeJobContext::GetMaxServerOutputSize()
     return m_WorkerNode.GetServerOutputSize();
 }
 
+const char* CWorkerNodeJobContext::GetCommitStatusDescription(
+        CWorkerNodeJobContext::ECommitStatus commit_status)
+{
+    switch (commit_status) {
+    case eDone:
+        return "done";
+    case eFailure:
+        return "failed";
+    case eReturn:
+        return "returned";
+    case eCanceled:
+        return "canceled";
+    default:
+        return "not committed";
+    }
+}
+
 IWorkerNodeCleanupEventSource* CWorkerNodeJobContext::GetCleanupEventSource()
 {
     return m_CleanupEventSource;
@@ -1317,29 +1334,6 @@ int CGridWorkerNode::Run()
             ERR_POST_X(33, "Could not stop worker threads: " << ex.what());
         }
     }
-    try {
-        GetNSExecutor().ClearNode();
-    }
-    catch (CNetServiceException& ex) {
-        // if server does not understand this new command just ignore the error
-        if (ex.GetErrCode() != CNetServiceException::eCommunicationError
-            || NStr::Find(ex.what(), "Server error:Unknown request") == NPOS) {
-            ERR_POST_X(35, "Could not unregister from NetSchedule services: "
-                       << ex);
-        }
-    }
-    catch (exception& ex) {
-        ERR_POST_X(36, "Could not unregister from NetSchedule services: " <<
-                ex.what());
-    }
-
-    LOG_POST_X(38, Info << "Worker Node has been stopped.");
-
-
-    CRef<CGridCleanupThread> cleanup_thread(
-        new CGridCleanupThread(this, m_Listener.get()));
-
-    cleanup_thread->Run();
 
     LOG_POST_X(55, Info << "Stopping Control and Committer threads...");
     m_JobCommitterThread->Stop();
@@ -1359,6 +1353,29 @@ int CGridWorkerNode::Run()
 
     m_JobCommitterThread->Join();
     control_thread->Join();
+
+    try {
+        GetNSExecutor().ClearNode();
+    }
+    catch (CNetServiceException& ex) {
+        // if server does not understand this new command just ignore the error
+        if (ex.GetErrCode() != CNetServiceException::eCommunicationError
+            || NStr::Find(ex.what(), "Server error:Unknown request") == NPOS) {
+            ERR_POST_X(35, "Could not unregister from NetSchedule services: "
+                       << ex);
+        }
+    }
+    catch (exception& ex) {
+        ERR_POST_X(36, "Could not unregister from NetSchedule services: " <<
+                ex.what());
+    }
+
+    LOG_POST_X(38, Info << "Worker Node has been stopped.");
+
+    CRef<CGridCleanupThread> cleanup_thread(
+        new CGridCleanupThread(this, m_Listener.get()));
+
+    cleanup_thread->Run();
 
     if (cleanup_thread->Wait(thread_pool_timeout)) {
         cleanup_thread->Join();

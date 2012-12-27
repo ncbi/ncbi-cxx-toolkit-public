@@ -255,12 +255,14 @@ public:
                                   out, err, exit_value, 
                                   kEmptyStr, m_Env,
                                   &callback);
-        } catch( exception& ex ) {
+        }
+        catch (exception& ex) {
             err << ex.what();
-        } catch( ... ) {
+        }
+        catch (...) {
             err << "Unknown error";
         }
-        if(ret != CPipe::eDone || exit_value > 2)
+        if (ret != CPipe::eDone || exit_value > 2)
             return 3;
         return exit_value;
     }
@@ -311,8 +313,10 @@ public:
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
     {
         if (m_JobContext.GetShutdownLevel() ==
-                CNetScheduleAdmin::eShutdownImmediate)
+                CNetScheduleAdmin::eShutdownImmediate) {
+            m_JobContext.ReturnJob();
             return CPipe::IProcessWatcher::eStop;
+        }
 
         CPipe::IProcessWatcher::EAction action =
                 CPipeProcessWatcher_Base::Watch(pid);
@@ -347,10 +351,11 @@ public:
                     }
                     if (m_JobContext.IsLogRequested() &&
                             (!non_empty_output || err.pcount() > 0))
-                        x_Log("exited", err);
+                        x_Log("exited with zero return code", err);
                 }
                 break;
             case 1:
+                m_JobContext.ReturnJob();
                 x_Log("job is returned", err);
                 return CPipe::IProcessWatcher::eStop;
             case 2:
@@ -473,7 +478,6 @@ private:
     auto_ptr<CNcbiOstream> m_StreamGuard;
     CNcbiOstream* m_Stream;
     string m_Name;
-
 };
 
 
@@ -555,11 +559,11 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
 
         STimeout kill_tm = {m_KillTimeout, 0};
 
-        return CPipe::ExecWait(GetAppPath(), args, in, 
+        return CPipe::ExecWait(GetAppPath(), args, in,
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
                                exit_value, 
-                               tmp_path, env, &callback, 
+                               tmp_path, env, &callback,
                                &kill_tm) == CPipe::eDone;
     }
 }

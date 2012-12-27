@@ -226,34 +226,30 @@ public:
                                          0,
                                          env.GetEnv());
 
-        string stat;
-
         if (!finished_ok) {
             if (!job_context.IsCanceled())
                 job_context.CommitJobWithFailure("Job has been canceled");
-            stat = " was canceled.";
         } else
             if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                    CRemoteAppLauncher::eDoneOnNonZeroExit) {
+                    CRemoteAppLauncher::eDoneOnNonZeroExit)
                 job_context.CommitJob();
-                stat = " is done.";
-            } else
+            else
                 if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                        CRemoteAppLauncher::eReturnOnNonZeroExit) {
+                        CRemoteAppLauncher::eReturnOnNonZeroExit)
                     job_context.ReturnJob();
-                    stat = " has been returned.";
-                } else {
+                else
                     job_context.CommitJobWithFailure(
                         "Exited with return code " + NStr::IntToString(ret));
-                    stat = " failed.";
-                }
 
         if (job_context.IsLogRequested()) {
             if (err.pcount() > 0 )
                 LOG_POST("STDERR: " << err.rdbuf());
 
-            LOG_POST("Job " << job_context.GetJobKey() << " " <<
-                job_context.GetJobOutput() << stat << " Retcode: " << ret);
+            LOG_POST("Job " << job_context.GetJobKey() <<
+                " is " << job_context.GetCommitStatusDescription(
+                        job_context.GetCommitStatus()) <<
+                ". Exit code: " << ret <<
+                "; output: " << job_context.GetJobOutput());
         }
 
         return ret;
