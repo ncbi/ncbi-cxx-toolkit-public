@@ -15,7 +15,7 @@
 	* all worker nodes: Keep running even if all NS servers are down.
 	* all worker nodes: When idle, terminate immediately upon request.
 	* cgi2rcgi: Shorter job submission timeout to skip unresponsive servers.
-	* cgi2rcgi, ncfetch: enable_mirroring="if_key_mirrored" by default.
+	* grid_cli, ncfetch: enable_mirroring="if_key_mirrored" by default.
 	* grid_cli: stats --ns --jobs-by-status now also work without --queue.
 
 	* all worker nodes: Fixed occasional GET2 errors due to zero timeout.
