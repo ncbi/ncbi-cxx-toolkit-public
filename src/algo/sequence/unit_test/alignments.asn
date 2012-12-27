@@ -13308,3 +13308,105 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+                  type partial,
+                  segs spliced {
+                    product-id general {
+                      db "GNOMON",
+                      tag str "12708781.p"
+                    },
+                    genomic-id gi 395721652,
+                    product-strand plus,
+                    genomic-strand plus,
+                    product-type protein,
+                    exons {
+                      {
+product-start protpos { amin 0, frame 1 },
+product-end protpos { amin 7, frame 2 },
+                        genomic-start 1064250,
+                        genomic-end 1064272,
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+product-start protpos { amin 7, frame 3 },
+product-end protpos { amin 27, frame 1 },
+                        genomic-start 1065029,
+                        genomic-end 1065087,
+                        parts {
+                          match 59
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+product-start protpos { amin 27, frame 2 },
+product-end protpos { amin 63, frame 1 },
+                        genomic-start 1065182,
+                        genomic-end 1065289,
+                        parts {
+                          match 108
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+product-start protpos { amin 63, frame 2 },
+product-end protpos { amin 109, frame 2 },
+                        genomic-start 1065489,
+                        genomic-end 1065627,
+                        parts {
+                          match 139
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+product-start protpos { amin 109, frame 3 },
+product-end protpos { amin 163, frame 3 },
+                        genomic-start 1066194,
+                        genomic-end 1066356,
+                        parts {
+                          match 163
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+product-start protpos { amin 164, frame 1 },
+product-end protpos { amin 223, frame 3 },
+                        genomic-start 1066436,
+                        genomic-end 1066613,
+                        parts {
+                          match 178,
+                          product-ins 2
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        }
+                      }
+                    },
+                    product-length 224,
+                    modifiers {
+                      start-codon-found TRUE,
+                      stop-codon-found TRUE
+                    }
+                  }
+                }

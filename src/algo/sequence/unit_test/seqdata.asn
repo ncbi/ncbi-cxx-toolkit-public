@@ -17120,3 +17120,186 @@ ADPEQKIEKMPSRLSQNTKIRRF"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "MRNA_20121227_14"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 675,
+        seq-data ncbi4na '1844422422422224222488488122418188481141121142248122
+211148282428828422414484822284184221141882421828884122844442441141144211114844
+124148882212828484422121844818214184118184142142828228284114222844144284222411
+888484221181148121844841111488484421114184428882181822444842442822122228822124
+821822421821121141848848228484284444284121442822111214421842414484228884411142
+222144421284844221444882121884422114841821848221822421221142842141121144142184
+841884144222842421444221148821148822284422422141141822121828211141148444428821
+221148821184224184118884114121844844284141142442821882214184428484444881148121
+822221182484422282844121148442444222842128212414442882212848428482222821FF8110
+'H,
+        hist {
+          assembly {
+            {
+              type partial,
+              segs spliced {
+                product-id local str "MRNA_20121227_14",
+                genomic-id gi 395721652,
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 22,
+                    genomic-start 1064250,
+                    genomic-end 1064272,
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 23,
+                    product-end nucpos 81,
+                    genomic-start 1065029,
+                    genomic-end 1065087,
+                    parts {
+                      match 59
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 82,
+                    product-end nucpos 189,
+                    genomic-start 1065182,
+                    genomic-end 1065289,
+                    parts {
+                      match 108
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 190,
+                    product-end nucpos 328,
+                    genomic-start 1065489,
+                    genomic-end 1065627,
+                    parts {
+                      match 139
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 329,
+                    product-end nucpos 491,
+                    genomic-start 1066194,
+                    genomic-end 1066356,
+                    parts {
+                      match 163
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 492,
+                    product-end nucpos 674,
+                    genomic-start 1066436,
+                    genomic-end 1066616,
+                    parts {
+                      match 178,
+                      product-ins 2,
+                      match 3
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    }
+                  }
+                },
+                product-length 675,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                }
+              },
+              product whole general {
+                db "GNOMON",
+                tag str "12708781.p"
+              },
+              location int {
+                from 0,
+                to 674,
+                id local str "MRNA_20121227_14"
+              },
+              ids {
+                local str "cds.12708781"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        general {
+          db "GNOMON",
+          tag str "12708781.p"
+        }
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 224,
+        seq-data iupacaa "MGRRPARCYRYCKNKPYPKSRFCRGVPDAKIRIFDLGRKKAKVDEFPLCGHM
+VSDEYEQLSSEALEAARICANKYMVKSCGKDGFHIRVRLHPFHVIRINKMLSCAGADRLQTGMRGAFGKPQGTVARVH
+IGQVIMSIRTKLQNKEHVIEALRRAKFKFPGRQKIHISKKWGFTKFNADEFEDMVAEKRLIPDGCGVKYIPNRGPLDK
+WRALHSRGLPLCCPLX"
+      }
+    }
+  }
+}

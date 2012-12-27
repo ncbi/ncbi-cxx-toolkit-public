@@ -8428,6 +8428,117 @@ Seq-annot ::= {
           fuzz-from lim lt
         }
       }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 1064250,
+        to 1066616,
+        strand plus,
+        id gi 395721652
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      product whole local str "MRNA_20121227_14",
+      location packed-int {
+        {
+          from 1064250,
+          to 1064272,
+          strand plus,
+          id gi 395721652
+        },
+        {
+
+          from 1065029,
+          to 1065087,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1065182,
+          to 1065289,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1065489,
+          to 1065627,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1066194,
+          to 1066356,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1066436,
+          to 1066616,
+          strand plus,
+          id gi 395721652
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      product whole general {
+        db "GNOMON",
+        tag str "12708781.p"
+      },
+      location packed-int {
+        {
+          from 1064250,
+          to 1064272,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1065029,
+          to 1065087,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1065182,
+          to 1065289,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1065489,
+          to 1065627,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1066194,
+          to 1066356,
+          strand plus,
+          id gi 395721652
+        },
+        {
+          from 1066436,
+          to 1066616,
+          strand plus,
+          id gi 395721652
+        }
+      },
+      except-text "unclassified translation discrepancy",
+      ids {
+        local str "cds.12708781"
+      }
     }
   }
 }
