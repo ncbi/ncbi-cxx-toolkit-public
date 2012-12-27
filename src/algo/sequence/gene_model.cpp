@@ -2795,8 +2795,22 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     if (cds_feat_on_mrna && !(m_flags & fForceTranslateCds)) {
         /// The product we're comparing to is an existing product, not our own
         /// translation; make sure we're comparing to aligned part of product
+        int frame = 0;
+        if (feat.GetData().GetCdregion().IsSetFrame()) {
+            switch (feat.GetData().GetCdregion().GetFrame()) {
+            case CCdregion::eFrame_two :
+                frame = 1;
+                break;
+            case CCdregion::eFrame_three :
+                frame = 2;
+                break;
+            default :
+                break;
+            }
+        }
         CSeq_loc aligned_range(const_cast<CSeq_id &>(align->GetSeq_id(0)),
-                               align->GetSeqStart(0), align->GetSeqStop(0),
+                               align->GetSeqStart(0)+frame,
+                               align->GetSeqStop(0),
                                align->GetSeqStrand(0));
         product_loc = to_prot->Map(aligned_range);
     }
