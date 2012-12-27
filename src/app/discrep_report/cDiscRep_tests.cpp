@@ -6394,6 +6394,13 @@ string CSeqEntryTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const
 };
 
 
+string CSeqEntryTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype)
+{
+  return (GetOrgModValue(biosrc, 
+   (*biosrc.GetOrgname().GetMod().begin())->GetSubtypeName(subtype, COrgMod::eVocabulary_insdc)));
+};
+
+
 bool CSeqEntryTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype)
 {
    if (biosrc.IsSetOrgMod()) {
@@ -7199,6 +7206,34 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   // DISC_METAGENOME_SOURCE
   if (IsOrgModPresent(biosrc, COrgMod::eSubtype_metagenome_source)) 
       thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+
+  // ONCALLER_CHECK_AUTHORITY
+  if (biosrc.IsSetTaxname() && biosrc.GetTaxname().empty()) {
+    if (DoAuthorityAndTaxnameConflict(biosrc))
+      thisInfo.test_item_list[GetName_auth()].push_back(desc);
+  }
+};
+
+
+bool CSeqEntry_test_on_biosrc_orgmod :: DoAuthorityAndTaxnameConflict(const CBioSource& biosrc)
+{
+  string auty_str = GetOrgModValue(biosrc, COrgMod::eSubtype_authority);
+  if (auty_str.empty()) return false;
+  strtmp = biosrc.GetTaxname();
+  size_t pos = strtmp.find(' ');
+  unsigned len;
+  if (pos != string::npos) pos == strtmp.substr(pos).find(' ');
+  if (pos == string::npos) len = strtmp.size();
+  else len = pos;
+  if (auty_str.size() < len || auty_str.substr(0, len) == strtmp) return true;
+  else return false; 
+};
+
+
+void CSeqEntry_ONCALLER_CHECK_AUTHORITY :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description 
+     = GetHasComment(c_item->item_list.size(), "biosource") + "taxname/authority conflict";
 };
 
 

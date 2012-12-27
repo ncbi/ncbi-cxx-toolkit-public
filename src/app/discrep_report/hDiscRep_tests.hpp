@@ -303,6 +303,7 @@ namespace DiscRepNmSpc {
        string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
                                                      const int& cur_idx, bool is_subsrc);
        string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
+       string GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype);
        bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
        string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
        bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
@@ -628,7 +629,9 @@ namespace DiscRepNmSpc {
       string GetName_strain() const {return string("DISC_REQUIRED_STRAIN");}
       string GetName_sp_strain() const {return string("DISC_BACTERIA_MISSING_STRAIN");}
       string GetName_meta() const {return string("DISC_METAGENOME_SOURCE");}
+      string GetName_auth() const {return string("ONCALLER_CHECK_AUTHORITY");}
 
+      bool DoAuthorityAndTaxnameConflict(const CBioSource& biosrc);
       bool HasMissingBacteriaStrain(const CBioSource& biosrc);
       bool IsMissingRequiredStrain(const CBioSource& biosrc);
       bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, 
@@ -640,6 +643,16 @@ namespace DiscRepNmSpc {
 
       bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
                                const COrgMod::ESubtype& check_type, const string& check_head);
+  };
+
+
+  class CSeqEntry_ONCALLER_CHECK_AUTHORITY : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_CHECK_AUTHORITY () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_auth();}
   };
 
 
