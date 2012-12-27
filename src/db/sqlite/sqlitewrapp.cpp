@@ -743,7 +743,7 @@ CSQLITE_Statement::GetColumnName(int col_ind) const
         SQLITE_THROW(CSQLITE_Exception::eUnknown, m_ConnHandle,
                      "Error requesting column name");
     }
-    return CStringUTF8(result, eEncoding_UTF8);
+    return CUtf8::AsUTF8(result, eEncoding_UTF8);
 }
 
 string

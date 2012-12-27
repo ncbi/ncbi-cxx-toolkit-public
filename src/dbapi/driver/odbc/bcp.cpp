@@ -542,7 +542,7 @@ bool CODBC_BCPInCmd::Send(void)
                     len = left_bytes;
                 }
 
-                valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+                valid_len = CUtf8::GetValidBytesCount( CTempString(buff, len));
 
                 CODBCString odbc_str(buff, len);
 

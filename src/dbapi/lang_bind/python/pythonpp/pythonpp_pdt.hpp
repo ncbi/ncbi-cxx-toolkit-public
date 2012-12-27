@@ -718,7 +718,7 @@ public:
     CString& operator= (const string& str)
     {
         if (g_PythonStrDefToUnicode) {
-            CStringUTF8 str_utf8(str, eEncoding_UTF8);
+            CStringUTF8 str_utf8(CUtf8::AsUTF8(str, eEncoding_UTF8));
             basic_string<Py_UNICODE> str_uni(str_utf8.AsBasicString<Py_UNICODE>(NULL));
             Set(PyUnicode_FromUnicode(str_uni.data(), str_uni.size()), eTakeOwnership);
         }
@@ -749,7 +749,7 @@ public:
     string AsStdSring(void) const
     {
         if( PyUnicode_Check(Get()) ) {
-            return CStringUTF8(CStringUTF8::eCharBuffer,
+            return CUtf8::AsUTF8(
                                PyUnicode_AS_UNICODE( Get() ),
                                static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) ) );
         } else {

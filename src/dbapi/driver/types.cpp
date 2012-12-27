@@ -197,7 +197,7 @@ void CWString::x_UTF8ToString(EEncoding str_enc) const
     if (m_StringEncoding == eEncoding_UTF8) {
         m_String = m_UTF8String;
     } else {
-        m_String = m_UTF8String.AsSingleByteString(m_StringEncoding);
+        m_String = CUtf8::AsSingleByteString(m_UTF8String,m_StringEncoding);
     }
 
     m_AvailableValueType |= eString;
@@ -211,10 +211,10 @@ void CWString::x_StringToUTF8(EEncoding str_enc) const
     }
 
     if (m_AvailableValueType & eString) {
-        m_UTF8String.Assign(m_String, m_StringEncoding);
+        m_UTF8String = CUtf8::AsUTF8(m_String, m_StringEncoding);
     } else if (m_AvailableValueType & eChar) {
         if (m_Char) {
-            m_UTF8String.Assign(m_Char, m_StringEncoding);
+            m_UTF8String = CUtf8::AsUTF8(m_Char, m_StringEncoding);
         } else {
             m_UTF8String.erase();
         }
@@ -247,13 +247,13 @@ void CWString::x_MakeString(EEncoding str_enc) const
         x_MakeString(str_enc);
 #ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWString) {
-        m_UTF8String = m_WString;
+        m_UTF8String = CUtf8::AsUTF8(m_WString);
         m_AvailableValueType |= eUTF8String;
         x_UTF8ToString(str_enc);
         x_MakeString(str_enc);
     } else if (m_AvailableValueType & eWChar) {
         if (m_WChar) {
-            m_UTF8String = m_WChar;
+            m_UTF8String = CUtf8::AsUTF8(m_WChar);
             m_AvailableValueType |= eUTF8String;
             x_UTF8ToString(str_enc);
         } else {
@@ -285,7 +285,7 @@ void CWString::x_MakeWString(EEncoding str_enc) const
         }
         m_AvailableValueType |= eWString;
     } else if (m_AvailableValueType & eUTF8String) {
-        m_WString = m_UTF8String.AsUnicode();
+        m_WString = CUtf8::AsBasicString<wchar_t>(m_UTF8String);
         m_AvailableValueType |= eWString;
         x_MakeWString(str_enc);
     } else if (m_AvailableValueType & eString) {
@@ -313,11 +313,11 @@ void CWString::x_MakeUTF8String(EEncoding str_enc) const
         x_StringToUTF8(str_enc);
 #ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWString) {
-        m_UTF8String = m_WString;
+        m_UTF8String = CUtf8::AsUTF8(m_WString);
         m_AvailableValueType |= eUTF8String;
     } else if (m_AvailableValueType & eWChar) {
         if (m_WChar) {
-            m_UTF8String = m_WChar;
+            m_UTF8String = CUtf8::AsUTF8(m_WChar);
         } else {
             m_UTF8String.erase();
         }
@@ -349,7 +349,7 @@ size_t CWString::GetSymbolNum(void) const
         }
 #endif
     } else if (m_AvailableValueType & eUTF8String) {
-        num = m_UTF8String.GetSymbolCount();
+        num = CUtf8::GetSymbolCount(m_UTF8String);
     }
 
     return num;

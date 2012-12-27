@@ -479,7 +479,7 @@ s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
     case eDB_Double:
     case eDB_DateTime:
     case eDB_SmallDateTime:
-        s_ConvertValue(CStringUTF8(from_val), to_var);
+        s_ConvertValue(CUtf8::AsUTF8(from_val), to_var);
         break;
     default:
         s_ConvertionNotSupported("UCS2 string", to_var.GetType());

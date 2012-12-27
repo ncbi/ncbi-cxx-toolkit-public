@@ -696,7 +696,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
         if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
             descr_type == CDB_ITDescriptor::eText) {
 
-            size_t valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+            size_t valid_len = CUtf8::GetValidBytesCount(CTempString(buff, len));
             invalid_len = len - valid_len;
 
             // Encoding is always eEncoding_UTF8 in here.
@@ -1520,8 +1520,8 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         m_DescrType == CDB_ITDescriptor::eText) {
         size_t valid_len = 0;
 
-        valid_len = CStringUTF8::GetValidBytesCount(static_cast<const char*>(chunk_ptr),
-                                                    nof_bytes);
+        valid_len = CUtf8::GetValidBytesCount(
+            CTempString(static_cast<const char*>(chunk_ptr),nof_bytes));
 
         if (valid_len == 0) {
             DATABASE_DRIVER_ERROR( "Invalid encoding of a text string." + GetDbgInfo(), 410055 );

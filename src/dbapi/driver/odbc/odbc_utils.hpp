@@ -113,7 +113,7 @@ public:
 inline
 wstring operator+(const wstring& str1, const string& str2)
 {
-    return str1 + CStringUTF8(str2).AsUnicode();
+    return str1 + CUtf8::AsBasicString<wchar_t>( CUtf8::AsUTF8(str2, eEncoding_ISO8859_1));
 }
 #endif
 
