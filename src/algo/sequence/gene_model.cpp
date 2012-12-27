@@ -1050,36 +1050,41 @@ bool IsContinuous(CSeq_loc& loc)
 void AddLiteral(CSeq_inst& inst, const string& seq, CSeq_inst::EMol mol_class)
 {
     if (inst.IsSetExt()) {
-        CDelta_seq& delta_seq = *inst.SetExt().SetDelta().Set().back();
-        if (delta_seq.IsLiteral() && delta_seq.GetLiteral().IsSetSeq_data()) {
-            string iupacna;
-            switch(delta_seq.GetLiteral().GetSeq_data().Which()) {
-            case CSeq_data::e_Iupacna:
-                iupacna = delta_seq.GetLiteral().GetSeq_data().GetIupacna();
-                break;
-            case CSeq_data::e_Ncbi2na:
-                CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi2na().Get(), CSeqUtil::e_Ncbi2na,
-                                     0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
-                break;
-            case CSeq_data::e_Ncbi4na:
-                CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi4na().Get(), CSeqUtil::e_Ncbi4na,
-                                     0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
-                break;
-            case CSeq_data::e_Ncbi8na:
-                CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi8na().Get(), CSeqUtil::e_Ncbi8na,
-                                     0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
-                break;
-            default:
-                inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
+        if (!inst.SetExt().SetDelta().Set().empty()) {
+            CDelta_seq& delta_seq = *inst.SetExt().SetDelta().Set().back();
+            if (delta_seq.IsLiteral() && delta_seq.GetLiteral().IsSetSeq_data()) {
+                string iupacna;
+                switch(delta_seq.GetLiteral().GetSeq_data().Which()) {
+                case CSeq_data::e_Iupacna:
+                    iupacna = delta_seq.GetLiteral().GetSeq_data().GetIupacna();
+                    break;
+                case CSeq_data::e_Ncbi2na:
+                    CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi2na().Get(), CSeqUtil::e_Ncbi2na,
+                                         0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
+                    break;
+                case CSeq_data::e_Ncbi4na:
+                    CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi4na().Get(), CSeqUtil::e_Ncbi4na,
+                                         0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
+                    break;
+                case CSeq_data::e_Ncbi8na:
+                    CSeqConvert::Convert(delta_seq.GetLiteral().GetSeq_data().GetNcbi8na().Get(), CSeqUtil::e_Ncbi8na,
+                                         0, delta_seq.GetLiteral().GetLength(), iupacna, CSeqUtil::e_Iupacna);
+                    break;
+                case CSeq_data::e_Iupacaa:
+                    delta_seq.SetLiteral().SetSeq_data().SetIupacaa().Set() += seq;
+                    return;
+                default:
+                    inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
+                    return;
+                }
+                iupacna += seq;
+                delta_seq.SetLiteral().SetSeq_data().SetIupacna().Set(iupacna);
+                delta_seq.SetLiteral().SetLength(iupacna.size());
+                CSeqportUtil::Pack(&delta_seq.SetLiteral().SetSeq_data());
                 return;
             }
-            iupacna += seq;
-            delta_seq.SetLiteral().SetSeq_data().SetIupacna().Set(iupacna);
-            delta_seq.SetLiteral().SetLength(iupacna.size());
-            CSeqportUtil::Pack(&delta_seq.SetLiteral().SetSeq_data());
-        } else {
-            inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
         }
+        inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
     } else {
         inst.SetSeq_data().SetIupacna().Set() += seq;
     }
@@ -1382,6 +1387,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     seq_inst.SetMol(CSeq_inst::eMol_aa);
 
         seq_inst.SetRepr(CSeq_inst::eRepr_delta);
+        seq_inst.SetExt().SetDelta();
         CSeqVector seqv(*protloc_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
         CConstRef<CSeqMap> map;
         map.Reset(&seqv.GetSeqMap());
@@ -1406,13 +1412,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         size_t skip_5_prime = 0;
         size_t skip_3_prime = 0;
 
-        CSeqMap_CI next_ci;
-        for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ci = next_ci) {
-            (next_ci = ci).Next();
+        for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ci.Next()) {
             int len = int(ci.GetLength()) - frame;
             frame = len >=0 ? -(len%3) : -len;
             _ASSERT( -3 < frame && frame < 3 );
-            if (len < 3) {
+            len += frame;
+            if (len==0) {
                 if (b==0 &&
                     (ci.IsUnknownLength() || !ci.IsSetData()) &&
                     cds_loc->IsPartialStart(eExtreme_Biological)) {
@@ -1423,31 +1428,32 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                 }
                 continue;
             }
-            e = b + (len+2)/3;
+            e = b + len/3;
             bool stop_codon_included = e > strprot.size();
-            if (frame < 0 && next_ci) {
-               /// frame-shift in middle of protein; omit residue
-               --e;
-            } else if (stop_codon_included) {
+            if (stop_codon_included) {
                 _ASSERT( len%3 != 0 || !protloc_on_mrna->IsPartialStop(eExtreme_Biological) );
                 --e;
                 len = len >= 3 ? len-3 : 0;
-            } else if (frame < 0 && strprot[e-1] == 'X' &&
-                       protloc_on_mrna->IsPartialStop(eExtreme_Biological))
-            {
-               /// Incomplete final codon that's not unembiguously translated
-               --e;
             }
 
             if (ci.IsUnknownLength()) {
-                seq_inst.SetExt().SetDelta().AddLiteral(len + frame);
+                seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-            } else if (!ci.IsSetData()) {
+            } else if (!ci.IsSetData()) { // unaligned mRNA portion
                 if (b==skip_5_prime &&
                     cds_loc->IsPartialStart(eExtreme_Biological)) {
                     skip_5_prime += e-b;
-                } else if (!(stop_codon_included && b==e)) {// do not add zero length gap at the end
-                    seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+                } else if (stop_codon_included && b==e) {
+                    // just stop codon
+                    // do not add zero length gap 
+                } else {
+                    if (strprot[b] != 'X') { // preceding partial codon translated unambiguously - add it
+                        AddLiteral(seq_inst, strprot.substr(b,1), CSeq_inst::eMol_aa);
+                        b += 1;
+                    }
+                    if (b < e) {
+                        seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+                    }
                 }
             } else {
                 if (stop_codon_included && final_code_break) {
@@ -1482,7 +1488,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                     }
 
 
-                    seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
+                    AddLiteral(seq_inst, strprot.substr(b,e-b), CSeq_inst::eMol_aa);
                 }
             }
             b = e;
@@ -1500,7 +1506,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
     seq_inst.SetLength(b-skip_5_prime-skip_3_prime);
 
-    if (seq_inst.SetExt().SetDelta().Set().size() == 1) {
+    if (seq_inst.SetExt().SetDelta().Set().size() == 1 && seq_inst.SetExt().SetDelta().Set().back()->GetLiteral().IsSetSeq_data()) {
         seq_inst.SetRepr(CSeq_inst::eRepr_raw);
         CRef<CSeq_data> dprot(new CSeq_data);
         dprot->Assign(seq_inst.SetExt().SetDelta().Set().back()->GetLiteral().GetSeq_data());
@@ -2676,10 +2682,9 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             code = &feat.GetData().GetCdregion().GetCode();
         }
         bool partial5 = feat.GetLocation().IsPartialStart(eExtreme_Biological);
-        bool partial3 = feat.GetLocation().IsPartialStop(eExtreme_Biological);
         CSeqTranslator::Translate(mrna, xlate,
                                   partial5 ? CSeqTranslator::fIs5PrimePartial
-                                            : CSeqTranslator::fDefault, code);
+                                           : CSeqTranslator::fDefault, code);
         if (!partial5 && xlate.size() && xlate[0] == '-') {
             /// First codon couldn't be translated as initial codon; translate
             /// as mid-sequence codon instead
@@ -2688,11 +2693,6 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             CSeqTranslator::Translate(first_codon, first_aa,
                                       CSeqTranslator::fIs5PrimePartial, code);
             xlate[0] = first_aa[0];
-        }
-        if (partial3 && (seq.size()-frame)%3 && xlate.size() &&
-            xlate[xlate.size()-1] == 'X')
-        {
-            xlate.resize(xlate.size()-1);
         }
     } else {
         CSeqTranslator::Translate(feat, *m_scope, xlate);

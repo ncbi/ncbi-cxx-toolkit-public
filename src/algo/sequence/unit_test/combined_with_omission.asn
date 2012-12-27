@@ -8381,7 +8381,6 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      except TRUE,
       product whole local str "PROT_12_38",
       location packed-int {
         {
@@ -8392,8 +8391,7 @@ Seq-annot ::= {
           fuzz-from lim lt,
           fuzz-to lim gt
         }
-      },
-      except-text "unclassified translation discrepancy"
+      }
     },
     {
       data rna {
