@@ -2599,7 +2599,6 @@ changequote(, )dnl
       NOPT_CXXFLAGS="$NOPT_CXXFLAGS -O0"
       NOPT_LDFLAGS="$NOPT_LDFLAGS -O0"
    fi
-   set -x
    if test "$with_optimization" = "no" ; then
       CFLAGS="$NOPT_CFLAGS"
       CXXFLAGS="$NOPT_CXXFLAGS"
@@ -2624,8 +2623,6 @@ changequote(, )dnl
          FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
       fi
    fi
-   set +x
-   sleep 15
 changequote([, ])dnl
 fi
 
