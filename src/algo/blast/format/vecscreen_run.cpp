@@ -171,10 +171,10 @@ CVecscreenRun::CFormatter::FormatResults(CNcbiOstream& out,
         } else {
             typedef pair<string, string> TLabels;
             vector<TLabels> match_labels;
-            match_labels.push_back(make_pair("Strong", "Strong match"));
-            match_labels.push_back(make_pair("Moderate", "Moderate match"));
-            match_labels.push_back(make_pair("Weak", "Weak match"));
-            match_labels.push_back(make_pair("Suspect", "Suspect origin"));
+            match_labels.push_back(TLabels("Strong", "Strong match"));
+            match_labels.push_back(TLabels("Moderate", "Moderate match"));
+            match_labels.push_back(TLabels("Weak", "Weak match"));
+            match_labels.push_back(TLabels("Suspect", "Suspect origin"));
 
             ITERATE(vector<TLabels>, label, match_labels) {
                 list<SVecscreenSummary>::iterator boundary, itr;
