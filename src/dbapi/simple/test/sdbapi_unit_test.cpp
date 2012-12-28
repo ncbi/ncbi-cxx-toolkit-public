@@ -135,8 +135,8 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
         0xd1, 0x83, 0x00
     };
 
-    const CStringUTF8 utf8_str_ger(str_ger, eEncoding_Windows_1252);
-    const CStringUTF8 utf8_str_rus(reinterpret_cast<const char*>(str_rus_utf8), eEncoding_UTF8);
+    const CStringUTF8 utf8_str_ger(CUtf8::AsUTF8(str_ger, eEncoding_Windows_1252));
+    const CStringUTF8 utf8_str_rus(CUtf8::AsUTF8(reinterpret_cast<const char*>(str_rus_utf8), eEncoding_UTF8));
 
     try {
         // Create table ...
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
             sql  = " SELECT nvc255_field FROM " + table_name;
             sql += " ORDER BY id";
 
-            CStringUTF8 utf8_sql(sql, eEncoding_Windows_1252);
+            CStringUTF8 utf8_sql(CUtf8::AsUTF8(sql, eEncoding_Windows_1252));
             query.SetSql(utf8_sql);
             query.Execute();
 
@@ -190,9 +190,9 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 
             BOOST_CHECK_EQUAL( utf8_str_ger.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_ger), NStr::PrintableString(nvc255_value) );
-            CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
+            CStringUTF8 utf8_ger(CUtf8::AsUTF8(nvc255_value, eEncoding_UTF8));
             string value_ger =
-                utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+                CUtf8::AsSingleByteString(utf8_ger, eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( NStr::PrintableString(str_ger), NStr::PrintableString(value_ger) );
 
             //
@@ -253,16 +253,16 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
         0xd1, 0x83, 0x00
     };
 
-    CStringUTF8 utf8_str_1252_rus(reinterpret_cast<const char*>(str_rus_utf8), eEncoding_UTF8);
-    CStringUTF8 utf8_str_1252_ger(str_ger, eEncoding_Windows_1252);
-    CStringUTF8 utf8_str_utf8(str_utf8, eEncoding_UTF8);
+    CStringUTF8 utf8_str_1252_rus(CUtf8::AsUTF8(reinterpret_cast<const char*>(str_rus_utf8), eEncoding_UTF8));
+    CStringUTF8 utf8_str_1252_ger(CUtf8::AsUTF8(str_ger, eEncoding_Windows_1252));
+    CStringUTF8 utf8_str_utf8(CUtf8::AsUTF8(str_utf8, eEncoding_UTF8));
 
     BOOST_CHECK( str_utf8.size() > 0 );
     BOOST_CHECK_EQUAL( NStr::PrintableString(str_utf8), NStr::PrintableString(utf8_str_utf8) );
 
-    BOOST_CHECK( utf8_str_1252_rus.IsValid() );
-    BOOST_CHECK( utf8_str_1252_ger.IsValid() );
-    BOOST_CHECK( utf8_str_utf8.IsValid() );
+    BOOST_CHECK( CUtf8::MatchEncoding( utf8_str_1252_rus, eEncoding_UTF8) );
+    BOOST_CHECK( CUtf8::MatchEncoding( utf8_str_1252_ger, eEncoding_UTF8) );
+    BOOST_CHECK( CUtf8::MatchEncoding( utf8_str_utf8, eEncoding_UTF8) );
 
     try {
         // Clean table ...
@@ -333,9 +333,9 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
             BOOST_CHECK( nvc255_value.size() > 0);
             BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_1252_ger), NStr::PrintableString(nvc255_value) );
-            CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
+            CStringUTF8 utf8_ger(CUtf8::AsUTF8(nvc255_value, eEncoding_UTF8));
             string value_ger =
-                utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+                CUtf8::AsSingleByteString(utf8_ger, eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( NStr::PrintableString(str_ger), NStr::PrintableString(value_ger) );
 
             query.PurgeResults();
