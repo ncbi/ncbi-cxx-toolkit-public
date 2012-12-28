@@ -122,6 +122,11 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
         NcbiLog_ReqStop(200, 1, 2);
     }}
 
+    /* Message printed between requests */
+    {{
+        NcbiLog_Error("Message printed between requests");
+    }}
+
     /* Request without parameters -- new ID */
     {{
         NcbiLog_SetRequestId(10);

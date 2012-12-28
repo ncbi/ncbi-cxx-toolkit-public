@@ -1924,7 +1924,8 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
             break;
         case eNcbiLog_AppRun:
             if (!sx_DisableChecks) {
-                assert(sx_Info->state == eNcbiLog_AppBegin);
+                assert(sx_Info->state == eNcbiLog_AppBegin ||
+                       s == eNcbiLog_RequestEnd);
             }
             sx_Info->state = state;
             ctx->state = state;
@@ -2350,7 +2351,8 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
-    /* Reset request, client and session id's */
+    /* Reset state, request, client and session id's */
+    s_SetState(ctx, eNcbiLog_AppRun);
     ctx->rid = 0;
     ctx->client[0]  = '\0';
     ctx->session[0] = '\0';
