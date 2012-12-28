@@ -70,6 +70,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
+#include <util/range_coll.hpp>
 
 #include "feature_generator.hpp"
 
@@ -2038,7 +2039,6 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
         this_loc_mapped = loc->Intersect(sub,
                                          CSeq_loc::fSort,
                                          NULL);
-
         if (this_loc_mapped->IsMix()) {
             /// Propagate any internal fuzzy boundaries on the mRNA to the CDS
             set<TSeqPos> mrna_fuzzy_boundaries;
@@ -2791,41 +2791,40 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string actual;
     CRef<CSeq_loc> whole_product(new CSeq_loc);
     whole_product->SetWhole(*cds_id);
-    CRef<CSeq_loc> product_loc = whole_product;
+    CRangeCollection<TSeqPos> product_ranges(TSeqRange::GetWhole());
+    bool out_of_frame = feat.GetData().GetCdregion().IsSetFrame() &&
+        feat.GetData().GetCdregion().GetFrame() != CCdregion::eFrame_one;
     if (cds_feat_on_mrna && !(m_flags & fForceTranslateCds)) {
         /// The product we're comparing to is an existing product, not our own
         /// translation; make sure we're comparing to aligned part of product
-        int frame = 0;
-        if (feat.GetData().GetCdregion().IsSetFrame()) {
-            switch (feat.GetData().GetCdregion().GetFrame()) {
-            case CCdregion::eFrame_two :
-                frame = 1;
-                break;
-            case CCdregion::eFrame_three :
-                frame = 2;
-                break;
-            default :
-                break;
-            }
+        CRef<CSeq_loc> aligned_range = align->CreateRowSeq_loc(0);
+        CRef<CSeq_loc> product_loc = to_prot->Map(*aligned_range);
+        product_ranges.clear();
+        ITERATE (CSeq_loc, loc_it, *product_loc) {
+            product_ranges += loc_it.GetRange();
         }
-        CSeq_loc aligned_range(const_cast<CSeq_id &>(align->GetSeq_id(0)),
-                               align->GetSeqStart(0)+frame,
-                               align->GetSeqStop(0),
-                               align->GetSeqStrand(0));
-        product_loc = to_prot->Map(aligned_range);
+        if (out_of_frame) {
+            /// CDS starts off-frame, so translation starts one residue later
+            product_ranges -= TSeqRange(product_ranges.GetFrom(),
+                                        product_ranges.GetFrom());
+        }
     }
-    if (product_loc->IsNull() || product_loc->IsEmpty()) {
+    if (product_ranges.Empty()) {
         has_gap = true;
     } else {
         CSeqVector vec(*whole_product, *m_scope,
                        CBioseq_Handle::eCoding_Iupac);
-        vec.GetSeqData(0, vec.size(), actual);
-        if (!product_loc->IsWhole() &&
-            product_loc->GetTotalRange().GetLength() < actual.size())
-        {
-            actual = actual.substr(product_loc->GetStart(eExtreme_Positional),
-                                   product_loc->GetTotalRange().GetLength());
+        string whole;
+        vec.GetSeqData(0, vec.size(), whole);
+        ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
+            actual += whole.substr(range_it->GetFrom(), range_it->GetLength());
+        }
+        if (actual != whole) {
             has_gap = true;
+        }
+        if (out_of_frame && !(m_flags & fForceTranslateCds)) {
+            /// CDS starts off-frame, so translation starts one residue later
+            actual.erase(0,1);
         }
     }
 
@@ -2844,18 +2843,19 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it2     = xlate.begin();
     string::const_iterator it2_end = xlate.end();
 
-    TSeqPos start_pos = product_loc->GetStart(eExtreme_Positional);
-    bool single_interval_product = ++feat.GetProduct().begin()
-                                  == feat.GetProduct().end();
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
         if (*it2 == '*' && to_mrna) {
             /// Inte5rnal stop codon; annotate with a code-break instead
             /// of an exception
-            if (!single_interval_product) {
-                NCBI_THROW(CException, eUnknown,
-                           "product is required to be a single interval");
+            TSeqPos pos = it1 - actual.begin();
+            ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
+                if (range_it->GetLength() > pos) {
+                    pos += range_it->GetFrom();
+                    break;
+                } else {
+                    pos -= range_it->GetLength();
+                }
             }
-            TSeqPos pos = it1 - actual.begin() + start_pos;
             CSeq_loc internal_stop_loc(*cds_id, pos, pos);
             CRef<CSeq_loc> mrna_loc = to_mrna->Map(internal_stop_loc);
             CRef<CSeq_loc> mapped = to_genomic->Map(*mrna_loc);
