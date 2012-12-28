@@ -84,6 +84,10 @@ Log 'post $request_token -message "request message"'                            
 Log 'stop_request $request_token -status=200 -input=11 -output=13'                         'stop_request(1)'  "^00123/000/0001/RE $req1 request-stop  200 [0-9]\{1,\}.[0-9]\{3\} 11 13"
 
 
+# --- Posting between requests
+
+Log 'post "" -message "message between requests"' 'post(5)'  "^00123/000/0000/P  $std Error: message between requests"
+
 # --- Request 2
 
 SetOutput cwd
