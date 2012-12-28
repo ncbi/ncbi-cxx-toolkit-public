@@ -142,6 +142,9 @@ private:
     /// Initialization status indicator
     bool m_Initialized;
 
+    /// Indicator if tax db files are missing
+    bool m_MissingDB;
+
     /// Lazy initialization
     void x_Init(CSeqDBLockHold & locked);
 };

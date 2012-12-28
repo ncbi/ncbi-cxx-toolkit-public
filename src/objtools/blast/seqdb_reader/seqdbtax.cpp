@@ -49,7 +49,8 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
       m_Lease        (atlas),
       m_AllTaxidCount(0),
       m_TaxData      (0),
-      m_Initialized   (false)
+      m_Initialized  (false),
+      m_MissingDB    (false)
 {
 }
 
@@ -62,7 +63,6 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
     if (m_Initialized) return;
 
     // It is reasonable for this database to not exist.
-    
     m_IndexFN =
         SeqDB_FindBlastDBPath("taxdb.bti", '-', 0, true, m_Atlas, locked);
 
@@ -75,6 +75,8 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
            m_DataFN.size()  &&
            CFile(m_IndexFN).Exists() &&
            CFile(m_DataFN).Exists())) {
+        m_MissingDB = true;
+        m_Atlas.Unlock(locked);
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Error: Tax database file not found.");
@@ -89,6 +91,8 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
     Uint4 idx_file_len = (Uint4) CFile(m_IndexFN).GetLength();
     
     if (idx_file_len < (data_start + sizeof(CSeqDBTaxId))) {
+        m_MissingDB = true;
+        m_Atlas.Unlock(locked);
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Error: Tax database file not found.");
@@ -105,6 +109,8 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
     const unsigned TAX_DB_MAGIC_NUMBER = 0x8739;
     
     if (TAX_DB_MAGIC_NUMBER != SeqDB_GetStdOrd(magic_num_ptr ++)) {
+        m_MissingDB = true;
+        m_Atlas.Unlock(locked);
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Error: Tax database file has wrong magic number.");
@@ -118,6 +124,7 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
     int taxid_array_size = int((idx_file_len - data_start)/sizeof(CSeqDBTaxId));
     
     if (taxid_array_size != m_AllTaxidCount) {
+        m_MissingDB = true;
         ERR_POST_X(1, "SeqDB: Taxid metadata indicates (" << m_AllTaxidCount
                    << ") entries but file has room for (" << taxid_array_size
                    << ").");
@@ -150,7 +157,17 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
                                 SSeqDBTaxInfo  & info,
                                 CSeqDBLockHold & locked)
 {
-    x_Init(locked);
+    if (m_MissingDB) return false;
+
+    if (! m_Initialized) {
+        try {
+            x_Init(locked);
+        } catch (CSeqDBException &e) {
+            m_MissingDB = true;
+        }
+    }
+
+    if (m_MissingDB) return false;
 
     Int4 low_index  = 0;
     Int4 high_index = m_AllTaxidCount - 1;
