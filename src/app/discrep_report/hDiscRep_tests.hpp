@@ -192,6 +192,7 @@ namespace DiscRepNmSpc {
       string GetDiscItemText(const CSeq_feat& obj);
       string GetDiscItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeqdesc& obj, const CBioseq& bioseq);
+      const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
       string GetDiscItemText(const CPerson_id& obj, const CSeq_entry& seq_entry);
 
       CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
@@ -1868,6 +1869,18 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+
+  class CBioseq_DISC_FEATURE_LIST : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_FEATURE_LIST () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_FEATURE_LIST"); }
+  };
+
 
   class CBioseq_DISC_CDS_HAS_NEW_EXCEPTION : public CBioseqTestAndRepData
   {

@@ -455,7 +455,7 @@ void CCheckingClass :: GoGetRep(vector <CRef <CTestAndRepData> >& test_category)
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
        CRef < CClickableItem > c_item (new CClickableItem);
        if (thisInfo.test_item_list.find((*it)->GetName()) != thisInfo.test_item_list.end()) {
-// cerr <<"outptu " << (*it)->GetName() << endl;
+ //cerr <<"outptu " << (*it)->GetName() << endl;
             c_item->setting_name = (*it)->GetName();
             c_item->item_list = thisInfo.test_item_list[(*it)->GetName()];
             strtmp = (*it)->GetName();
@@ -467,7 +467,7 @@ void CCheckingClass :: GoGetRep(vector <CRef <CTestAndRepData> >& test_category)
             (*it)->GetReport(c_item); 
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") (*it)->GetReport(c_item); 
-// cerr << "done\n";
+ //cerr << "done\n";
    }
 };
 

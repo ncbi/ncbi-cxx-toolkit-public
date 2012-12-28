@@ -811,6 +811,19 @@ void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string* label
 };
 
 
+const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
+{
+   // pay attention to multiple bioseqs when using GetBioseqFromSeqLoc
+   CConstRef <CBioseq>
+       bioseq =
+           GetBioseqFromSeqLoc(prot.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
+   if (bioseq.NotEmpty()) {
+      const CSeq_feat* cds = GetCDSForProduct(*bioseq, thisInfo.scope);
+      if (cds) return cds;
+   }
+   return 0;
+};
+
 
 string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 {
@@ -818,18 +831,8 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 //cerr << "seq_feat_p " << Blob2Str(*seq_feat_p, eSerial_AsnText) << endl;
 
       if ( seq_feat.GetData().IsProt()) {
-        // pay attention to multiple bioseqs
-/*
-        CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetLocation(),  
-                                                      *thisInfo.scope);
-*/
-        CConstRef <CBioseq> 
-          bioseq = 
-             GetBioseqFromSeqLoc(seq_feat.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
-        if (bioseq.NotEmpty()) {
-          const CSeq_feat* cds = GetCDSForProduct(*bioseq, thisInfo.scope);
-          if (cds) seq_feat_p = const_cast<CSeq_feat*>(cds);
-        }
+        const CSeq_feat* cds = GetCDFeatFromProtFeat(seq_feat);
+        if (cds) seq_feat_p = const_cast<CSeq_feat*>(cds);
       }
       string location = SeqLocPrintUseBestID (seq_feat_p->GetLocation());
       location = (location.empty()) ? "Unknown location": location;

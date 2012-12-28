@@ -178,6 +178,32 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_FEATURE_LIST :: TestOnObj(const CBioseq& bioseq)
+{
+   string label;
+   ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+      // CD replaces Prot
+      if ( (*it)->GetData().IsProt() && GetCDFeatFromProtFeat(**it)) continue;  
+      label = (*it)->GetData().GetKey();
+      label = label.empty()? "unknown$" : label + "$";
+      thisInfo.test_item_list[GetName()].push_back(label + GetDiscItemText(**it)); 
+   }
+};
+
+
+void CBioseq_DISC_FEATURE_LIST :: GetReport(CRef <CClickableItem>& c_item)
+{
+  Str2Strs feat2ls;
+  GetTestItemList(c_item->item_list, feat2ls);
+  c_item->item_list.clear();
+  ITERATE (Str2Strs, it, feat2ls) {
+     strtmp = it->first + " feature";
+     AddSubcategories(c_item,GetName(),it->second,strtmp, strtmp + "s", e_OtherComment, false);
+  }
+  c_item->description = "Feature List";
+};
+
+
 void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
