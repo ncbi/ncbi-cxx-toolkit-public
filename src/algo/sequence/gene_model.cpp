@@ -179,11 +179,7 @@ CFeatureGenerator::~CFeatureGenerator()
 
 void CFeatureGenerator::SetFlags(TFeatureGeneratorFlags flags)
 {
-    if ((flags & fGenerateStableLocalIds) != 0) {
-        flags |= fGenerateLocalIds;
-    }
     m_impl->m_flags = flags;
-
 }
 
 CFeatureGenerator::TFeatureGeneratorFlags CFeatureGenerator::GetFlags() const

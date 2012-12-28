@@ -332,8 +332,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     gene_for_combined_aligns.SetOther().SetVersion(15);
 
     CFeatureGenerator generator(scope);
-    int default_flags = (CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
-                       CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
+    int default_flags =
+        (CFeatureGenerator::fDefaults &
+         ~CFeatureGenerator::fGenerateLocalIds) |
+        CFeatureGenerator::fGenerateStableLocalIds |
+        CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
 
     for (int alignment = 0; align_istr  &&  annot_istr; ++alignment) {
 
