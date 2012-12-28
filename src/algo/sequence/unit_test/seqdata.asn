@@ -14078,7 +14078,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -14157,7 +14157,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -14505,7 +14505,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -14691,7 +14691,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -14771,7 +14771,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -14851,7 +14851,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -14968,7 +14968,7 @@ Bioseq-set ::= {
       },
       descr {
         molinfo {
-          biomol ncRNA,
+          biomol transcribed-RNA,
           completeness unknown
         }
       },
@@ -17125,7 +17125,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "MRNA_20121227_14"
+        local str "MRNA_20121228_14"
       },
       descr {
         molinfo {
@@ -17152,7 +17152,7 @@ Bioseq-set ::= {
             {
               type partial,
               segs spliced {
-                product-id local str "MRNA_20121227_14",
+                product-id local str "MRNA_20121228_14",
                 genomic-id gi 395721652,
                 product-strand plus,
                 genomic-strand plus,
@@ -17268,7 +17268,7 @@ Bioseq-set ::= {
               location int {
                 from 0,
                 to 674,
-                id local str "MRNA_20121227_14"
+                id local str "MRNA_20121228_14"
               },
               ids {
                 local str "cds.12708781"

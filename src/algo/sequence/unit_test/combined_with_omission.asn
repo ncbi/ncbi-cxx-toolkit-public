@@ -8444,7 +8444,7 @@ Seq-annot ::= {
         type mRNA
       },
       except TRUE,
-      product whole local str "MRNA_20121227_14",
+      product whole local str "MRNA_20121228_14",
       location packed-int {
         {
           from 1064250,
@@ -8453,7 +8453,6 @@ Seq-annot ::= {
           id gi 395721652
         },
         {
-
           from 1065029,
           to 1065087,
           strand plus,

@@ -1254,7 +1254,8 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
     
     CRef<CSeqdesc> mdes(new CSeqdesc);
     entry->SetSeq().SetDescr().Set().push_back(mdes);
-    mdes->SetMolinfo().SetBiomol(cds_feat_on_mrna.IsNull() ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
+    mdes->SetMolinfo().SetBiomol(cds_feat_on_mrna.IsNull()
+        ? CMolInfo::eBiomol_transcribed_RNA : CMolInfo::eBiomol_mRNA);
 
     CMolInfo::ECompleteness completeness;
     if (!IsContinuous(*loc)) {
