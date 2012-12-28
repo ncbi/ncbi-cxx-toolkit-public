@@ -2860,7 +2860,14 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             CSeq_loc internal_stop_loc(*cds_id, pos, pos);
             CRef<CSeq_loc> mrna_loc = to_mrna->Map(internal_stop_loc);
             CRef<CSeq_loc> mapped = to_genomic->Map(*mrna_loc);
-            if (mapped->IsInt() && mapped->GetTotalRange().GetLength() == 3) {
+            TSeqPos mapped_total_bases = 0;
+            ITERATE (CSeq_loc, loc_it, *mapped) {
+                mapped_total_bases += loc_it.GetRange().GetLength();
+            }
+            if (mapped_total_bases == 3) {
+                if (!mapped->IsInt()) {
+                    mapped->ChangeToPackedInt();
+                }
                 char actual_aa = *it1;
                 if (!(m_flags & fTrustProteinSeq)) {
                     actual_aa = 'X';
