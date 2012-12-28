@@ -3018,8 +3018,8 @@ void CBioseq_DISC_CDS_PRODUCT_FIND :: GetReport(CRef <CClickableItem>& c_item)
    string desc1, desc2;
    vector <string> arr;
    ITERATE (Str2Strs, it, cd2feats) {
-      arr = NStr::Tokenize(it->first, "#", arr);
       arr.clear();
+      arr = NStr::Tokenize(it->first, "#", arr);
       AddSubcategories(c_item, GetName(), it->second, "coding region product " + arr[0] + "s", 
          "coding region products " + arr[0], e_OtherComment, true, arr[1]); 
    } 
