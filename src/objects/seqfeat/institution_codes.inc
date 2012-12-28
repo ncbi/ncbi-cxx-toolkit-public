@@ -3515,7 +3515,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MECN	s	Museo Ecuadoriano de Ciencias Naturales",
 "MEDEL	s	Universidad Nacional de Colombia - Sede de Medellin, Departamento de Biologia",
 "MEFLG	s	Museo Entomologico Francisco Luis Gallego",
-"MEL	s	Royal Botanic Gardens",
+"MEL	s	Royal Botanic Gardens Melbourne",
 "MELG	s	Geology Department, University of Melbourne",
 "MELU	s	University of Melbourne",
 "MEM	s	University of Memphis, Biology Department",
