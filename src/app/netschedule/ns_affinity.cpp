@@ -406,6 +406,26 @@ CNSAffinityRegistry::RemoveWaitClientFromAffinities(unsigned int          client
 }
 
 
+// Registers the client as the one which has the affinity as preferred
+void
+CNSAffinityRegistry::AddClientToAffinity(unsigned int  client_id,
+                                         unsigned int  aff_id)
+{
+    if (client_id == 0 || aff_id == 0)
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map< unsigned int,
+         SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
+    if (found == m_JobsAffinity.end())
+        return;     // Affinity is not known.
+                    // This should never happened basically.
+
+    found->second.m_Clients.set(client_id, true);
+    return;
+}
+
+
 size_t
 CNSAffinityRegistry::x_RemoveClientFromAffinities(unsigned int          client_id,
                                                   const TNSBitVector &  aff_ids,

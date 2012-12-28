@@ -127,6 +127,8 @@ class CNSAffinityRegistry
                                            const TNSBitVector &  aff_ids);
         size_t  RemoveWaitClientFromAffinities(unsigned int          client_id,
                                                const TNSBitVector &  aff_ids);
+        void  AddClientToAffinity(unsigned int  client_id,
+                                  unsigned int  aff_id);
         void  SetWaitClientForAffinities(unsigned int          client_id,
                                          const TNSBitVector &  aff_ids);
 

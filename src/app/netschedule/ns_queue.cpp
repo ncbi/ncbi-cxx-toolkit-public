@@ -775,11 +775,16 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                         m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                                     job_pick.aff_id,
                                                                     0);
+                        m_AffinityRegistry.AddClientToAffinity(client.GetID(),
+                                                               job_pick.aff_id);
                     }
-                    if (outdated_job && job_pick.aff_id != 0)
+                    if (outdated_job && job_pick.aff_id != 0) {
                         m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                                     job_pick.aff_id,
                                                                     0);
+                        m_AffinityRegistry.AddClientToAffinity(client.GetID(),
+                                                               job_pick.aff_id);
+                    }
 
                     if (x_UpdateDB_GetJobNoLock(client, curr,
                                                 job_pick.job_id, *new_job)) {
