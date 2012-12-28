@@ -73,6 +73,7 @@ namespace DiscRepNmSpc {
       static bool   is_AllAnnot_run;  // checked
       static bool   is_BacPartial_run;
       static bool   is_BASES_N_run;
+      static bool   is_BioSet_run;
       static bool   is_BIOSRC_run;
       static bool   is_Biosrc_Orgmod_run;
       static bool   is_BIOSRC1_run;
@@ -271,14 +272,36 @@ namespace DiscRepNmSpc {
   };
 
 
-  class CBioseqSet_DISC_NONWGS_SETS_PRESENT : public CBioseqSetTestAndRepData
+  class CBioseqSet_on_class : public CBioseqSetTestAndRepData
+  {
+    public:
+      virtual ~CBioseqSet_on_class () {};
+
+      virtual void TestOnObj(const CBioseq_set& bioseq_set);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+   
+    protected:
+      string GetName_nonwgs() const {return string("DISC_NONWGS_SETS_PRESENT"); }
+      string GetName_segset() const {return string("DISC_SEGSETS_PRESENT"); }
+  };
+
+  class CBioseqSet_DISC_NONWGS_SETS_PRESENT : public CBioseqSet_on_class
   {
     public:
       virtual ~CBioseqSet_DISC_NONWGS_SETS_PRESENT () {};
 
-      virtual void TestOnObj(const CBioseq_set& bioseq_set);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_NONWGS_SETS_PRESENT");}
+      virtual string GetName() const {return string(CBioseqSet_on_class::GetName_nonwgs()); }
+  };
+
+  class CBioseqSet_DISC_SEGSETS_PRESENT : public CBioseqSet_on_class
+  {
+    public:
+      virtual ~CBioseqSet_DISC_SEGSETS_PRESENT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string(CBioseqSet_on_class::GetName_segset()); }
   };
 
 
@@ -368,7 +391,11 @@ namespace DiscRepNmSpc {
       string GetName_aff() const {return string("DISC_CITSUBAFFIL_CONFLICT"); }
       string GetName_unp() const {return string("DISC_UNPUB_PUB_WITHOUT_TITLE"); }
       string GetName_noaff() const {return string("DISC_MISSING_AFFIL"); }
+      string GetName_cons() const {return string("ONCALLER_CONSORTIUM"); }
 
+      bool AuthorHasConsortium(const CAuthor& author);
+      bool AuthListHasConsortium(const CAuth_list& auth_ls);
+      bool PubHasConsortium(const list <CRef <CPub> >& pubs);
       bool IsMissingAffil(const CAffil& affil);
       E_Status GetPubMLStatus (const CPub& pub);
       E_Status ImpStatus(const CImprint& imp, bool is_pub_sub = false); 
@@ -388,6 +415,16 @@ namespace DiscRepNmSpc {
       bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
       void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
       string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
+  };
+
+
+  class CSeqEntry_ONCALLER_CONSORTIUM :  public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_CONSORTIUM () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_cons();}
   };
 
 
@@ -630,7 +667,9 @@ namespace DiscRepNmSpc {
       string GetName_sp_strain() const {return string("DISC_BACTERIA_MISSING_STRAIN");}
       string GetName_meta() const {return string("DISC_METAGENOME_SOURCE");}
       string GetName_auth() const {return string("ONCALLER_CHECK_AUTHORITY");}
+      string GetName_mcul() const {return string("ONCALLER_MULTIPLE_CULTURE_COLLECTION");}
 
+      bool HasMultipleCultureCollection (const CBioSource& biosrc, string& cul_vlus);
       bool DoAuthorityAndTaxnameConflict(const CBioSource& biosrc);
       bool HasMissingBacteriaStrain(const CBioSource& biosrc);
       bool IsMissingRequiredStrain(const CBioSource& biosrc);
@@ -643,6 +682,16 @@ namespace DiscRepNmSpc {
 
       bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
                                const COrgMod::ESubtype& check_type, const string& check_head);
+  };
+
+
+  class CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION: public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_mcul();}
   };
 
 

@@ -319,6 +319,10 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
    tests_on_SeqEntry_feat_desc.push_back(
+                          CRef <CTestAndRepData>(new CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE));
+   tests_on_SeqEntry_feat_desc.push_back(
+                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CONSORTIUM));
+   tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_CAPS));
    tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COMMENT_PRESENT));
@@ -353,6 +357,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
    tests_on_SeqEntry_feat_desc.push_back(
+                   CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION));
+   tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CHECK_AUTHORITY));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOME_SOURCE));
@@ -372,6 +378,8 @@ void CRepConfDiscrepancy :: ConfigRep()
           CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1)); // not tested
 
 // tests_on_BioseqSet   // redundant because of nested set?
+   tests_on_BioseqSet.push_back(
+                       CRef <CTestAndRepData>(new CBioseqSet_DISC_SEGSETS_PRESENT));
    tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_NONWGS_SETS_PRESENT));
 

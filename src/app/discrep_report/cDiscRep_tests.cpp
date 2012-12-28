@@ -121,6 +121,7 @@ static CDiscTestInfo thisTest;
 bool CDiscTestInfo :: is_AllAnnot_run;
 bool CDiscTestInfo :: is_BacPartial_run;
 bool CDiscTestInfo :: is_BASES_N_run;
+bool CDiscTestInfo :: is_BioSet_run;
 bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC1_run;
 bool CDiscTestInfo :: is_Biosrc_Orgmod_run;
@@ -6233,14 +6234,28 @@ void CBioseq_SUSPECT_PRODUCT_NAMES :: GetReport(CRef <CClickableItem>& c_item)
 
 
 // CBioseq_set
-void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: TestOnObj(const CBioseq_set& bioseq_set)
+// new comb
+void CBioseqSet_on_class :: TestOnObj(const CBioseq_set& bioseq_set)
 {
+   if (thisTest.is_BioSet_run) return;
+
+   string desc = GetDiscItemText(bioseq_set);
    CBioseq_set::EClass e_cls = bioseq_set.GetClass();
    if ( e_cls == CBioseq_set::eClass_eco_set
         || e_cls == CBioseq_set :: eClass_mut_set
         || e_cls == CBioseq_set :: eClass_phy_set
         || e_cls == CBioseq_set :: eClass_pop_set) 
-      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq_set));
+      thisInfo.test_item_list[GetName_nonwgs()].push_back(desc);
+   else if ( e_cls == CBioseq_set :: eClass_segset)
+      thisInfo.test_item_list[GetName_segset()].push_back(desc);
+
+   thisTest.is_BioSet_run = true;
+};
+
+
+void CBioseqSet_DISC_SEGSETS_PRESENT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetIsComment(c_item->item_list.size(), "segset") + "present.";
 };
 
 
@@ -6249,7 +6264,7 @@ void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: GetReport(CRef <CClickableItem>& c_i
    c_item->description 
         = GetIsComment(c_item->item_list.size(), "set") + "of type eco, mut, phy or pop.";
 };
-
+// new comb
 
 
 // CSeqEntryTestAndRepData
@@ -7212,6 +7227,38 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
     if (DoAuthorityAndTaxnameConflict(biosrc))
       thisInfo.test_item_list[GetName_auth()].push_back(desc);
   }
+
+  // ONCALLER_MULTIPLE_CULTURE_COLLECTION
+  string cul_vlus;
+  if (HasMultipleCultureCollection(biosrc, cul_vlus))
+     thisInfo.test_item_list[GetName_mcul()].push_back(desc + " " + cul_vlus);
+};
+
+
+bool CSeqEntry_test_on_biosrc_orgmod :: HasMultipleCultureCollection (const CBioSource& biosrc, string& cul_vlus)
+{
+  bool has_one = false;
+  cul_vlus = kEmptyStr; 
+  strtmp 
+    =COrgMod::ENUM_METHOD_NAME(ESubtype)()->FindName(COrgMod::eSubtype_culture_collection,true)
+      + ": ";
+  ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() ) {  
+    if ( (*it)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
+       if (!has_one) has_one = true;
+       if ( !(*it)->GetSubname().empty() ) {
+         cul_vlus += strtmp + (*it)->GetSubname() + " ";
+       }
+    }
+  }
+  if (has_one) return true;
+  else return false;
+};
+
+
+void CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetHasComment(c_item->item_list.size(), "organism") 
+                       + "multiple culture-collection qualifiers.";
 };
 
 
@@ -8720,6 +8767,48 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
    // DISC_UNPUB_PUB_WITHOUT_TITLE
    if (DoesPubdescContainUnpubPubWithoutTitle(pubs))
       thisInfo.test_item_list[GetName_unp()].push_back(desc);
+
+   // ONCALLER_CONSORTIUM
+   if (PubHasConsortium(pubs)) 
+      thisInfo.test_item_list[GetName_cons()].push_back(desc);
+};
+
+
+bool CSeqEntry_test_on_pub :: AuthorHasConsortium(const CAuthor& author)
+{
+   if (author.GetName().IsConsortium() && !author.GetName().GetConsortium().empty()) 
+     return true;
+   else return false;
+};
+
+
+bool CSeqEntry_test_on_pub :: AuthListHasConsortium(const CAuth_list& auth_ls)
+{
+   if ( auth_ls.GetNames().IsStd()) {
+      ITERATE (list <CRef <CAuthor> >, it, auth_ls.GetNames().GetStd()) {
+         if (AuthorHasConsortium (**it)) return true;
+      }
+   }
+   return false;
+};
+
+
+bool CSeqEntry_test_on_pub :: PubHasConsortium(const list <CRef <CPub> >& pubs)
+{
+  ITERATE (list <CRef <CPub> >, it, pubs) {
+    if ( (*it)->IsSetAuthors() ) 
+       if (AuthListHasConsortium( (*it)->GetAuthors())) return true;
+  }
+  return false;
+};
+ 
+
+void CSeqEntry_ONCALLER_CONSORTIUM :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+    = GetOtherComment(c_item->item_list.size(), "publication/submitter block has", 
+                                         "publications/submitter blocks have") 
+       + " consortium";
 };
 
 
@@ -8771,7 +8860,7 @@ CSeqEntry_test_on_pub::E_Status CSeqEntry_test_on_pub :: ImpStatus(const CImprin
        case CImprint::ePrepub_other: return e_unpublished;
      }
   }
-  else return e_published;
+  return e_published;
 };
 
 
@@ -8975,6 +9064,11 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
                  || IsMissingAffil(auths.GetAffil())) {
            thisInfo.test_item_list[GetName_noaff()].push_back(desc);
       }
+
+     // ONCALLER_CONSORTIUM
+     if ( (contact.CanGetContact() && AuthorHasConsortium(contact.GetContact()))
+           || AuthListHasConsortium(auths))
+        thisInfo.test_item_list[GetName_cons()].push_back(desc);
    }
  
    if (!m_has_cit) 

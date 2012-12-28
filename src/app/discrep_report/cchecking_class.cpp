@@ -220,6 +220,7 @@ bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* se
 
 void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 {
+   thisTest.is_BioSet_run = false;
    GoTests(CRepConfig::tests_on_BioseqSet, bioseq_set); 
 };
 
