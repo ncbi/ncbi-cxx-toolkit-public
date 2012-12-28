@@ -960,8 +960,8 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     const char * s1[] =
         { "gi|129295", "sp|P01013|OVAX_CHICK", 0 };
     const char * s2[] =
-        { "gi|30749669", "pdb|1NPQ|A", "1NPQ", "1npqA",
-          "gi|30749670",  "pdb|1NPQ|B", "1npq", 0 };
+        { "gi|433552084", "pdb|1NPQ|A", "1NPQ", "1npqA",
+          "gi|433552085",  "pdb|1NPQ|B", "1npq", 0 };
     const char * s3[] =
         { "1NPQ", 0 };
     const char * s4[] =
@@ -989,9 +989,9 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
     Uint4 g1[] =
         { 129295, 0 };
     Uint4 g2[] =
-        { 30749669, 30749670, 0 };
+        { 433552084, 433552085, 0 };
     Uint4 g3[] =
-        { 30749669, 30749670, 0 };
+        { 433552084, 433552085, 0 };
     Uint4 g4[] =
         { 157831779, 0 };
     Uint4 g5[] =
