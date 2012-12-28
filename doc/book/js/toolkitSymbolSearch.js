@@ -9,10 +9,10 @@ function SymbolSearch(bookID)
 
   if(sel=='pLXR') { url = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=" + f.__symbol.value + "&d="; } else
   if(sel=='pLib') { url = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lib_search/libsearch.cgi?public=yes&symbol=" + f.__symbol.value; } else
-  if(sel=='pToolkitAll') { url = "http://www.ncbi.nlm.nih.gov/sites/entrez?Db=ToolkitAll&term=" + f.__symbol.value; } else
+  if(sel=='pToolkitAll') { url = "http://www.ncbi.nlm.nih.gov/toolkitall/?term=" + f.__symbol.value; } else
   if(sel=='iLXR') { url = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/ident?i=" + f.__symbol.value + "&d="; } else
   if(sel=='iLib') { url = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lib_search/libsearch.cgi?public=no&symbol=" + f.__symbol.value; } else
-  if(sel=='iToolkitAll') { url = "http://test.ncbi.nlm.nih.gov/sites/entrez?Db=ToolkitAll&term=" + f.__symbol.value; } // else
+  if(sel=='iToolkitAll') { url = "http://test.ncbi.nlm.nih.gov/toolkitall/?term=" + f.__symbol.value; } // else
  // if(sel=='iDoxy') { url = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/doxyhtml/search.php?query=" + f.__symbol.value; } 
 
   window.location = url;
