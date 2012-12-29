@@ -5985,6 +5985,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UCPC	s	Universidad del Cauca",
 "UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia",
 "UCR<USA-CA>	s	University of California, Riverside",
+"UCR<USA-CA>:ENT	s	University of California, Riverside, Entomology Collection",
 "UCS<USA-CT>	s	University of Connecticut",
 "UCS<USA-NY>	s	Union College, Department of Biological Sciences",
 "UCSA	s	University College of Swansea, Botany Department",
