@@ -1951,6 +1951,17 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+  
+  class CBioseq_TEST_EXON_ON_MRNA : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_TEST_EXON_ON_MRNA () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("TEST_EXON_ON_MRNA"); }
+  };
+
 
   class CBioseq_ONCALLER_HIV_RNA_INCONSISTENT : public CBioseqTestAndRepData
   {

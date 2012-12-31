@@ -179,6 +179,21 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_TEST_EXON_ON_MRNA :: TestOnObj(const CBioseq& bioseq)
+{
+   if (!IsMrnaSequence()) return;
+   if (!exon_feat.empty())
+      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
+};
+
+
+void CBioseq_TEST_EXON_ON_MRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+       = GetHasComment(c_item->item_list.size(), "mRNA bioseq") + "exon features";
+};
+
+
 void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
 {
    if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_rna) return;
