@@ -504,7 +504,7 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding,
     CStringUTF8 ustr;
     THTMLDecodeFlags result = 0;
     if (encoding == eEncoding_Unknown) {
-        encoding = CStringUTF8::GuessEncoding(str);
+        encoding = CUtf8::GuessEncoding(str);
         if (encoding == eEncoding_Unknown) {
             NCBI_THROW2(CStringException, eBadArgs,
                 "Unable to guess the source string encoding", 0);
@@ -581,7 +581,7 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding,
                         }
                     }
                     if (parsed) {
-                        ustr.Append(uch);
+                        ustr += CUtf8::AsUTF8(&uch,1);
                         i = ++end_of_entity;
                         continue;
                     }
@@ -593,7 +593,7 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding,
             ustr.append( 1, ch );
         } else {
             result |= fEncoding;
-            ustr.Append(CStringUTF8::CharToSymbol( ch, encoding ));
+            ustr += CUtf8::AsUTF8(CTempString(&ch,1), encoding);
         }
     }
     if (result_flags) {
