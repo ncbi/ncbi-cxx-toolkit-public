@@ -126,6 +126,7 @@ bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC1_run;
 bool CDiscTestInfo :: is_Biosrc_Orgmod_run;
 bool CDiscTestInfo :: is_CdTransl_run;
+bool CDiscTestInfo :: is_Comment_run;
 bool CDiscTestInfo :: is_Defl_run;
 bool CDiscTestInfo :: is_DESC_user_run;
 bool CDiscTestInfo :: is_GP_Set_run;
@@ -178,32 +179,6 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
-void CBioseq_DISC_FEATURE_LIST :: TestOnObj(const CBioseq& bioseq)
-{
-   string label;
-   ITERATE (vector <const CSeq_feat*>, it, all_feat) {
-      // CD replaces Prot
-      if ( (*it)->GetData().IsProt() && GetCDFeatFromProtFeat(**it)) continue;  
-      label = (*it)->GetData().GetKey();
-      label = label.empty()? "unknown$" : label + "$";
-      thisInfo.test_item_list[GetName()].push_back(label + GetDiscItemText(**it)); 
-   }
-};
-
-
-void CBioseq_DISC_FEATURE_LIST :: GetReport(CRef <CClickableItem>& c_item)
-{
-  Str2Strs feat2ls;
-  GetTestItemList(c_item->item_list, feat2ls);
-  c_item->item_list.clear();
-  ITERATE (Str2Strs, it, feat2ls) {
-     strtmp = it->first + " feature";
-     AddSubcategories(c_item,GetName(),it->second,strtmp, strtmp + "s", e_OtherComment, false);
-  }
-  c_item->description = "Feature List";
-};
-
-
 void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
@@ -2049,13 +2024,11 @@ void CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: GetReport(CRef <CClickableItem>& c_ite
   GetTestItemList(c_item->item_list, sus_str2list);
   c_item->item_list.clear();
   ITERATE (Str2Strs, it, sus_str2list) {
-    AddSubcategories(c_item, GetName(), it->second, 
-           "note text conains ","note texts contain ", e_OtherComment, true, it->first);
+    AddSubcategories(c_item, GetName(), it->second, "note text", it->first, e_ContainsComment);
   }
 
   c_item->description 
-    = GetOtherComment(c_item->item_list.size(),"note text contains","note texts contain")
-           + " suspicious phrases";
+    = GetContainsComment(c_item->item_list.size(),"note text") + "suspicious phrases";
 };
 
 
@@ -2312,8 +2285,7 @@ void CBioseq_TEST_LOW_QUALITY_REGION :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_TEST_LOW_QUALITY_REGION :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description 
-    = GetOtherComment(c_item->item_list.size(), "sequence contains", "sequeces contain") 
-       + " low quality region";
+      = GetContainsComment(c_item->item_list.size(), "sequence") + "low quality region";
 };
 
 
@@ -2385,24 +2357,20 @@ void CBioseq_TEST_BAD_GENE_NAME :: GetReport(CRef <CClickableItem>& c_item)
     if (bad_name_genes.size() == 1) {
        c_item->item_list = bad_name_genes.begin()->second;
        c_item->description
-         = GetOtherComment(c_item->item_list.size(), "gene contains ", "genes contain ") 
-            + bad_name_genes.begin()->first;
+         =GetContainsComment(c_item->item_list.size(), "gene") + bad_name_genes.begin()->first;
     }
     else {
       ITERATE (Str2Strs, it, bad_name_genes) {
         CRef <CClickableItem> c_sub (new CClickableItem);
         c_sub->setting_name = c_item->setting_name;
         c_sub->item_list = it->second;
-        c_sub->description 
-          = GetOtherComment(c_sub->item_list.size(),"gene contains ", "genes contain ") 
-               +it->first;
+        c_sub->description = GetContainsComment(c_sub->item_list.size(),"gene") + it->first;
         c_item->subcategories.push_back(c_sub);
         c_item->item_list.insert(c_item->item_list.end(), c_sub->item_list.begin(), 
                                                                       c_sub->item_list.end());
       }
       c_item->description
-        = GetOtherComment(c_item->item_list.size(), "gene contains", "genes contain") 
-          + " suspect phrase or characters";
+        = GetContainsComment(c_item->item_list.size(),"gene") + "suspect phrase or characters";
     }
     if (has_bad_bacterial) thisInfo.disc_report_data.push_back(c_item);
   }
@@ -2864,9 +2832,8 @@ void CBioseq_TEST_UNUSUAL_NT :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_TEST_UNUSUAL_NT :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description 
-     = GetOtherComment(c_item->item_list.size(), "sequence contains", "sequences contain")
-          + " nucleotides that are not ATCG or N.";
+   c_item->description = GetContainsComment(c_item->item_list.size(), "sequence")
+                          + " nucleotides that are not ATCG or N.";
 };
 
 
@@ -3023,10 +2990,8 @@ void CBioseq_DISC_CDS_PRODUCT_FIND :: GetReport(CRef <CClickableItem>& c_item)
       AddSubcategories(c_item, GetName(), it->second, "coding region product " + arr[0] + "s", 
          "coding region products " + arr[0], e_OtherComment, true, arr[1]); 
    } 
-   c_item->description 
-        = GetOtherComment(c_item->item_list.size(), "coding region product contains",
-                                                    "coding region products contain")
-            + " suspect phrase or characters";
+   c_item->description = GetContainsComment(c_item->item_list.size(), "coding region product")
+                          + " suspect phrase or characters";
 };
 
 
@@ -4730,6 +4695,22 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
       thisInfo.test_item_list[GetName_long_no()].push_back(desc);
   }
   else {
+     string label, desc;
+     ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+        desc = GetDiscItemText(**it);
+        // DISC_FEATURE_LIST
+        // CD replaces Prot
+        if ( (*it)->GetData().IsProt() 
+             || (*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_gap) continue; 
+        label = (*it)->GetData().GetKey();
+        label = label.empty()? "unknown$" : label + "$";
+        thisInfo.test_item_list[GetName_ls()].push_back(label + desc);
+
+        // ONCALLER_ORDERED_LOCATION
+        if (LocationHasNullsBetween(*it))
+           thisInfo.test_item_list[GetName_loc()].push_back(desc);
+     }
+   
 
     // JOINED_FEATURES
     if (IsBioseqHasLineage(bioseq, "Eukaryota", false)) return;
@@ -4750,6 +4731,35 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
     }
   }
   thisTest.is_AllAnnot_run = true;
+};
+
+void CBioseq_DISC_FEATURE_LIST :: GetReport(CRef <CClickableItem>& c_item)
+{
+  Str2Strs feat2ls;
+  GetTestItemList(c_item->item_list, feat2ls);
+  c_item->item_list.clear();
+  ITERATE (Str2Strs, it, feat2ls) {
+     strtmp = it->first + " feature";
+     AddSubcategories(c_item,GetName(),it->second,strtmp, strtmp + "s", e_OtherComment, false);
+  }
+  c_item->description = "Feature List";
+};
+
+
+bool CBioseq_test_on_all_annot :: LocationHasNullsBetween(const CSeq_feat* seq_feat)
+{
+  for (CSeq_loc_CI loc_it(seq_feat->GetLocation()); loc_it; ++ loc_it) {
+     if (loc_it.GetEmbeddingSeq_loc().IsNull()) return true;
+ // is it = loc_it.IsEmpty()?
+  }
+  return false;
+};
+
+
+void CBioseq_ONCALLER_ORDERED_LOCATION :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description 
+    = GetHasComment(c_item->item_list.size(), "feature") + "ordered locations";
 };
 
 
@@ -6324,25 +6334,32 @@ bool CSeqEntry_test_on_tax_cflts :: s_StringHasVoucherSN(const string& vou_nm)
 };
 
 
-void CSeqEntry_test_on_tax_cflts :: CollectSpecVoucherTaxnameDiscrepancies(const CBioSource& biosrc, const string& desc)
-{
-   string vou_nm, tax_nm;
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
-     if ( (*it)->GetSubtype() == COrgMod :: eSubtype_specimen_voucher
-              && !s_StringHasVoucherSN( vou_nm = (*it)->GetSubname())) {
-        if (biosrc.IsSetTaxname() && !(tax_nm = biosrc.GetTaxname()).empty())
-            thisInfo.test_item_list[GetName_vou()].push_back(
-                                     vou_nm + "$" + tax_nm + "#" + desc);
-     }
-   }
-};
-
-
-
 void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const string& desc)
 {
-    // DISC_SPECVOUCHER_TAXNAME_MISMATCH
-    CollectSpecVoucherTaxnameDiscrepancies(biosrc, desc);
+   string qual_vlu, tax_nm;
+   tax_nm = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
+   if (tax_nm.empty()) return; 
+   else tax_nm = "$" + tax_nm + "#";
+
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+     switch ( (*it)->GetSubtype() ) {
+
+       // DISC_SPECVOUCHER_TAXNAME_MISMATCH
+       case COrgMod::eSubtype_specimen_voucher: 
+             if (!s_StringHasVoucherSN( qual_vlu = (*it)->GetSubname())) 
+                 thisInfo.test_item_list[GetName_vou()].push_back(qual_vlu + tax_nm + desc);
+             break;
+       // DISC_STRAIN_TAXNAME_MISMATCH
+       case COrgMod::eSubtype_strain:
+             thisInfo.test_item_list[GetName_str()].push_back((*it)->GetSubname()+tax_nm+desc);
+             break;
+       // DISC_CULTURE_TAXNAME_MISMATCH
+       case COrgMod::eSubtype_culture_collection:
+             thisInfo.test_item_list[GetName_cul()].push_back((*it)->GetSubname()+tax_nm+desc);
+             break;
+       default: break;
+     }
+   }
 };
 
 
@@ -7258,6 +7275,19 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   string cul_vlus;
   if (HasMultipleCultureCollection(biosrc, cul_vlus))
      thisInfo.test_item_list[GetName_mcul()].push_back(desc + " " + cul_vlus);
+
+  // DISC_HUMAN_HOST
+  if ( DoesStringContainPhrase(
+                 GetOrgModValue(biosrc, COrgMod::eSubtype_nat_host), "human", false, true))
+     thisInfo.test_item_list[GetName_human()].push_back(desc); 
+};
+
+
+void CSeqEntry_DISC_HUMAN_HOST :: GetReport(CRef <CClickableItem>& c_item)
+{
+   unsigned cnt = c_item->item_list.size();
+   c_item->description
+     = GetHasComment(cnt, "organism") + "'human' host qualifier" + (cnt >1 ? "s" : "");
 };
 
 
@@ -8103,9 +8133,8 @@ void CSeqEntry_ONCALLER_BIOPROJECT_ID :: GetReport(CRef <CClickableItem>& c_item
 {
   RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
 
-  c_item->description = 
-     GetOtherComment(c_item->item_list.size(), "sequence contains", "sequences contain")
-        + " BioProject IDs.";
+  c_item->description 
+        = GetContainsComment(c_item->item_list.size(), "sequence") + "BioProject IDs.";
 };
 
 
@@ -9479,17 +9508,55 @@ void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+// new comb
+void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
+{
+  if (thisTest.is_Comment_run) return;
 
+  unsigned i=0;
+  string desc;
+  ITERATE (vector <const CSeqdesc*>, it, comm_seqdesc) {
+     desc = GetDiscItemText(**it, *(comm_seqdesc_seqentry[i])); 
+     // ONCALLER_COMMENT_PRESENT
+     if (m_all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment()) 
+          m_all_same  = false; 
+     thisInfo.test_item_list[GetName_has()].push_back(desc);
+
+     // DISC_MISMATCHED_COMMENTS
+     strtmp = (*it)->GetComment();
+     strtmp = strtmp.empty() ? "empty$" : strtmp + "$";
+     thisInfo.test_item_list[GetName_mix()].push_back(strtmp + desc);
+  }
+
+  thisTest.is_Comment_run = true;
+};
+
+
+void CSeqEntry_DISC_MISMATCHED_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
+{
+  Str2Strs comm2ls;
+  GetTestItemList(c_item->item_list, comm2ls);
+  c_item->item_list.clear();
+  if (comm2ls.size() > 1) {
+     ITERATE (Str2Strs, it, comm2ls) 
+        AddSubcategories(c_item,GetName(), it->second, "comment", it->first,e_ContainsComment);
+     c_item->description = "Mismatched comments were found";
+  }
+};
+
+
+/*
 void CSeqEntry_ONCALLER_COMMENT_PRESENT :: TestOnObj(const CSeq_entry& seq_entry)
 {
    unsigned i=0;
+   m_all_same = true;
    ITERATE (vector <const CSeqdesc*>, it, comm_seqdesc) {
-     if (all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment()) {
-          all_same  = false; 
-     } 
+     if (m_all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment())
+          m_all_same  = false;
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it, *(comm_seqdesc_seqentry[i++])));
    }
 };
+*/
 
 
 void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_item)
@@ -9497,7 +9564,7 @@ void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_it
     c_item->description = GetOtherComment(c_item->item_list.size(), 
                                           "comment descriptor was found", 
                                           "comment descriptors were found") 
-        + ((c_item->item_list.size() > 1 && all_same)? " (all same)." : " (some different). ");
+      + ((c_item->item_list.size() > 1 && m_all_same)? " (all same)." : " (some different). ");
 };
 
 

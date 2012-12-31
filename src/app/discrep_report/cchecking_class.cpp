@@ -119,20 +119,20 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
 
 void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 {
+  // ini.
+  thisTest.is_BIOSRC_run = false;
+  thisTest.is_BIOSRC1_run = false;
+  thisTest.is_Biosrc_Orgmod_run = false;
+  thisTest.is_Comment_run = false;
+  thisTest.is_Defl_run = false;
+  thisTest.is_DESC_user_run = false;
+  thisTest.is_Pub_run = false;
+  thisTest.is_Quals_run = false;
+  thisTest.is_TaxCflts_run = false;
+
   GoTests(CRepConfig :: tests_on_SubmitBlk, *seq_entry);
 
   if (!CRepConfig::tests_on_SeqEntry_feat_desc.empty()) {
-
-     // ini.  
-     thisTest.is_BIOSRC_run = false;
-     thisTest.is_BIOSRC1_run = false;
-     thisTest.is_Biosrc_Orgmod_run = false;
-     thisTest.is_Defl_run = false;
-     thisTest.is_DESC_user_run = false;
-     thisTest.is_Pub_run = false;
-     thisTest.is_Quals_run = false;
-     thisTest.is_TaxCflts_run = false;
-
      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
 
      CTestAndRepData::pub_feat.clear();
@@ -155,14 +155,18 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
         else NCBI_THROW(CException, eUnknown, "CheckSeqEntry failed");
      }
 
+     CTestAndRepData :: molinfo_seqdesc.clear();
      CTestAndRepData :: pub_seqdesc.clear();
+     CTestAndRepData :: comm_seqdesc.clear();
      CTestAndRepData :: biosrc_seqdesc.clear();
      CTestAndRepData :: biosrc_orgmod_seqdesc.clear();
      CTestAndRepData :: biosrc_subsrc_seqdesc.clear();
      CTestAndRepData :: title_seqdesc.clear();
      CTestAndRepData :: user_seqdesc.clear();
 
+     CTestAndRepData :: molinfo_seqdesc_seqentry.clear();
      CTestAndRepData :: pub_seqdesc_seqentry.clear();
+     CTestAndRepData :: comm_seqdesc_seqentry.clear();
      CTestAndRepData :: biosrc_seqdesc_seqentry.clear();
      CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.clear();
      CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.clear();

@@ -78,6 +78,7 @@ namespace DiscRepNmSpc {
       static bool   is_Biosrc_Orgmod_run;
       static bool   is_BIOSRC1_run;
       static bool   is_CdTransl_run;
+      static bool   is_Comment_run;
       static bool   is_Defl_run; // checked
       static bool   is_DESC_user_run; // checked
       static bool   is_GP_Set_run;
@@ -132,6 +133,7 @@ namespace DiscRepNmSpc {
 
   enum ECommentTp {
      e_IsComment = 0,
+     e_ContainsComment,
      e_HasComment,
      e_DoesComment,
      e_OtherComment
@@ -182,6 +184,7 @@ namespace DiscRepNmSpc {
       string GetIsComment(unsigned cnt, const string& str);
       string GetHasComment(unsigned cnt, const string& str);
       string GetDoesComment(unsigned cnt, const string& str);
+      string GetContainsComment(unsigned cnt, const string& str);
       string GetOtherComment(unsigned cnt, const string& single_str, const string& plural_str);
 
  //  GetDiscrepancyItemTextEx() 
@@ -562,13 +565,37 @@ namespace DiscRepNmSpc {
 
    protected:
       string GetName_vou() const {return string("DISC_SPECVOUCHER_TAXNAME_MISMATCH"); }
+      string GetName_str() const {return string("DISC_STRAIN_TAXNAME_MISMATCH"); }
+      string GetName_cul() const {return string("DISC_CULTURE_TAXNAME_MISMATCH"); }
 
       bool s_StringHasVoucherSN(const string& vou_nm);
-      void CollectSpecVoucherTaxnameDiscrepancies(const CBioSource& biosrc, 
-                                                               const string& desc); 
       void RunTests(const CBioSource& biosrc, const string& desc);
       void GetReport_cflts(CRef <CClickableItem>& c_item, const string& setting_name, 
                                                               const string& qual_nm);
+  };
+
+
+  class CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH : public CSeqEntry_test_on_tax_cflts
+  {
+    public:
+      virtual ~CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH () {};
+
+      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_cul();}
+      virtual void GetReport(CRef <CClickableItem>& c_item) {
+          GetReport_cflts(c_item, GetName(), "culture collection");
+      };
+  };
+
+
+  class CSeqEntry_DISC_STRAIN_TAXNAME_MISMATCH : public CSeqEntry_test_on_tax_cflts
+  {
+    public:
+      virtual ~CSeqEntry_DISC_STRAIN_TAXNAME_MISMATCH () {};
+
+      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_str();}
+      virtual void GetReport(CRef <CClickableItem>& c_item) {
+          GetReport_cflts(c_item, GetName(), "strain");
+      };
   };
 
 
@@ -669,6 +696,7 @@ namespace DiscRepNmSpc {
       string GetName_meta() const {return string("DISC_METAGENOME_SOURCE");}
       string GetName_auth() const {return string("ONCALLER_CHECK_AUTHORITY");}
       string GetName_mcul() const {return string("ONCALLER_MULTIPLE_CULTURE_COLLECTION");}
+      string GetName_human() const {return string("DISC_HUMAN_HOST");}
 
       bool HasMultipleCultureCollection (const CBioSource& biosrc, string& cul_vlus);
       bool DoAuthorityAndTaxnameConflict(const CBioSource& biosrc);
@@ -686,7 +714,17 @@ namespace DiscRepNmSpc {
   };
 
 
-  class CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION: public CSeqEntry_test_on_biosrc_orgmod
+  class CSeqEntry_DISC_HUMAN_HOST: public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_DISC_HUMAN_HOST () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_human();}
+  };
+
+
+  class CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION : public CSeqEntry_test_on_biosrc_orgmod
   {
     public:
       virtual ~CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION () {};
@@ -1157,20 +1195,43 @@ namespace DiscRepNmSpc {
   };
 
 
-
-  class CSeqEntry_ONCALLER_COMMENT_PRESENT : public CSeqEntryTestAndRepData
+// new comb
+  class CSeqEntry_on_comment : public CSeqEntryTestAndRepData
   {
     public:
-      CSeqEntry_ONCALLER_COMMENT_PRESENT () { all_same = true; };
-      virtual ~CSeqEntry_ONCALLER_COMMENT_PRESENT () {};
+      CSeqEntry_on_comment () { m_all_same = true; };
+      virtual ~CSeqEntry_on_comment () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("ONCALLER_COMMENT_PRESENT");}
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
 
     protected:
-      bool all_same;
+      bool m_all_same;
+      string GetName_has() const {return string("ONCALLER_COMMENT_PRESENT");}
+      string GetName_mix() const {return string("DISC_MISMATCHED_COMMENTS");}
   };
+
+
+  class CSeqEntry_ONCALLER_COMMENT_PRESENT : public CSeqEntry_on_comment
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_COMMENT_PRESENT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_on_comment::GetName_has(); }
+  };
+
+  class CSeqEntry_DISC_MISMATCHED_COMMENTS  : public CSeqEntry_on_comment
+  {
+    public:
+      virtual ~CSeqEntry_DISC_MISMATCHED_COMMENTS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_on_comment::GetName_mix(); }
+  };  
+
+// new comb
 
 
 /*
@@ -1837,8 +1898,28 @@ namespace DiscRepNmSpc {
        string GetName_no() const {return string("NO_ANNOTATION");}
        string GetName_long_no() const {return string("DISC_LONG_NO_ANNOTATION");}
        string GetName_joined() const {return string("JOINED_FEATURES");}
+       string GetName_ls() const {return string("DISC_FEATURE_LIST");}
+       string GetName_loc() const {return string("ONCALLER_ORDERED_LOCATION");}
+       bool LocationHasNullsBetween(const CSeq_feat* seq_feat);
   };
 
+  class CBioseq_DISC_FEATURE_LIST : public CBioseq_test_on_all_annot
+  {
+    public:
+      virtual ~CBioseq_DISC_FEATURE_LIST () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_ls();}
+  };
+
+  class CBioseq_ONCALLER_ORDERED_LOCATION : public CBioseq_test_on_all_annot
+  {
+    public:
+      virtual ~CBioseq_ONCALLER_ORDERED_LOCATION () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_loc();}
+  };
 
   class CBioseq_JOINED_FEATURES : public CBioseq_test_on_all_annot
   {
@@ -1869,17 +1950,6 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
-
-
-  class CBioseq_DISC_FEATURE_LIST : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_DISC_FEATURE_LIST () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_FEATURE_LIST"); }
-  };
 
 
   class CBioseq_DISC_CDS_HAS_NEW_EXCEPTION : public CBioseqTestAndRepData

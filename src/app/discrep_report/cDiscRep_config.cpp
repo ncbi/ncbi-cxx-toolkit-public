@@ -146,8 +146,9 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
-   tests_on_Bioseq_CFeat.push_back(
-                    CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
+   tests_on_Bioseq_CFeat.push_back( 
+                           CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
+   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
    tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_CDS_HAS_NEW_EXCEPTION));
    tests_on_Bioseq_CFeat.push_back(
@@ -288,6 +289,10 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_MOLTYPES));
    tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH));
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_STRAIN_TAXNAME_MISMATCH));
+   tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_SPECVOUCHER_TAXNAME_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_HAPLOTYPE_MISMATCH));
@@ -327,6 +332,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_CAPS));
    tests_on_SeqEntry_feat_desc.push_back(
+                       CRef <CTestAndRepData>(new CSeqEntry_DISC_MISMATCHED_COMMENTS));
+   tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COMMENT_PRESENT));
    tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT));
@@ -358,6 +365,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
+   tests_on_SeqEntry_feat_desc.push_back(
+                   CRef <CTestAndRepData>(new CSeqEntry_DISC_HUMAN_HOST));
    tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION));
    tests_on_SeqEntry_feat_desc.push_back(

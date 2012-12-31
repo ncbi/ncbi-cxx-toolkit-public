@@ -854,6 +854,11 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 }; // GetDiscItemText(const CSeqFeat& obj)
 
 
+string CTestAndRepData :: GetContainsComment(unsigned cnt, const string& str)
+{
+   return(NStr::UIntToString(cnt) + " " + str + ( (1==cnt) ? " contains " : "s contain "));
+}
+
 
 string CTestAndRepData :: GetIsComment(unsigned cnt, const string& str)
 {
@@ -915,6 +920,9 @@ void CTestAndRepData :: AddSubcategories(CRef <CClickableItem>& c_item, const st
             break;
        case e_DoesComment:
             c_sub->description = GetDoesComment(cnt, desc1) + desc2; 
+            break;
+       case e_ContainsComment:
+            c_sub->description = GetContainsComment(cnt, desc1) + desc2;
             break;
        case e_OtherComment:
             c_sub->description = GetOtherComment(cnt, desc1, desc2) + desc3;
