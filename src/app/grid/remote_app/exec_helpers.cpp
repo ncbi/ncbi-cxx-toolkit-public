@@ -305,7 +305,7 @@ public:
             return CPipe::IProcessWatcher::eStop;
         }
 
-        LOG_POST("PID: " << NStr::UInt8ToString((Uint8) pid));
+        LOG_POST("Child PID: " << NStr::UInt8ToString((Uint8) pid));
 
         return CPipeProcessWatcher_Base::OnStart(pid);
     }
