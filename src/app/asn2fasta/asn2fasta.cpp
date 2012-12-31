@@ -201,6 +201,8 @@ void CAsn2FastaApp::Init(void)
 
     // output
     {{
+        arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
+
         // name
         arg_desc->AddOptionalKey("o", "OutputFile",
             "Output file name", CArgDescriptions::eOutputFile);
@@ -439,6 +441,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 {
     CFilteringFastaOstream fasta_os( *m_Os, x_GetFilterIncludes(GetArgs()));
     fasta_os.SetFlag(CFastaOstream::fNoExpensiveOps);
+    if( GetArgs()["show-mods"] ) {
+        fasta_os.SetFlag(CFastaOstream::fShowModifiers);
+    }
     if (m_DeflineOnly) {
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
             fasta_os.WriteTitle(*bioseq_it);
