@@ -179,6 +179,33 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
+{
+   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_rna) return;
+   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+     const CBioSource& biosrc = (*it)->GetSource();
+     if ( biosrc.GetGenome() == CBioSource::eGenome_unknown) return;
+     if ( biosrc.IsSetTaxname() || (strtmp = biosrc.GetTaxname()).empty()) return;
+     if (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus")
+             && (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus"))
+             && (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus"))) 
+         return;
+     if ( biosrc.GetGenome() == CBioSource::eGenome_genomic ){
+        ITERATE (vector <const CSeqdesc*>, jt, bioseq_molinfo)
+           if ( (*jt)->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_genomic) return;
+     }
+   }
+
+   thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
+};
+
+void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "HIV RNA bioseq") 
+                            + "inconsistent location/moltype";
+};
+
+
 void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
@@ -7999,7 +8026,7 @@ const CBioseq& CSeqEntry_test_on_user :: Get1stBioseqOfSet(const CBioseq_set& bi
        if ( (*(seq_entrys.begin()))->GetSeq().IsNa() )
            return ((*(seq_entrys.begin()))->GetSeq());
    }
-   else return (Get1stBioseqOfSet((*(seq_entrys.begin()))->GetSet()));
+   return (Get1stBioseqOfSet((*(seq_entrys.begin()))->GetSet()));
 };
 
 

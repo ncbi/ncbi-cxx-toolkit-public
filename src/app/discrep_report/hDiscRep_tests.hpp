@@ -1952,6 +1952,17 @@ namespace DiscRepNmSpc {
 // new comb: CBioseq_
 
 
+  class CBioseq_ONCALLER_HIV_RNA_INCONSISTENT : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_ONCALLER_HIV_RNA_INCONSISTENT () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("ONCALLER_HIV_RNA_INCONSISTENT"); }
+  };
+
+
   class CBioseq_DISC_CDS_HAS_NEW_EXCEPTION : public CBioseqTestAndRepData
   {
     public:

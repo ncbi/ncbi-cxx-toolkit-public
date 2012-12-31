@@ -247,6 +247,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat_CSeqdesc
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                 new CBioseq_ONCALLER_HIV_RNA_INCONSISTENT));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                  new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                    new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
