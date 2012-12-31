@@ -4751,6 +4751,13 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
         // ONCALLER_ORDERED_LOCATION
         if (LocationHasNullsBetween(*it))
            thisInfo.test_item_list[GetName_loc()].push_back(desc);
+
+        // ONCALLER_HAS_STANDARD_NAME
+        if ( !((*it)->CanGetQual()) ) continue;
+        ITERATE (vector <CRef< CGb_qual > >, jt, (*it)->GetQual()) {
+          if ( (*jt)->GetQual() == "standard_name" )
+             thisInfo.test_item_list[GetName_std()].push_back(desc);
+        }
      }
    
 
@@ -4774,6 +4781,14 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
   }
   thisTest.is_AllAnnot_run = true;
 };
+
+
+void CBioseq_ONCALLER_HAS_STANDARD_NAME :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+        = GetHasComment(c_item->item_list.size(), "feature") + "standard_name qualifier";
+};
+
 
 void CBioseq_DISC_FEATURE_LIST :: GetReport(CRef <CClickableItem>& c_item)
 {

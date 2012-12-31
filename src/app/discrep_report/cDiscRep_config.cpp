@@ -147,6 +147,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back( 
+                           CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
+   tests_on_Bioseq_CFeat.push_back( 
                            CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
    tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
    tests_on_Bioseq_CFeat.push_back(

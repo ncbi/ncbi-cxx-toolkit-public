@@ -1900,8 +1900,20 @@ namespace DiscRepNmSpc {
        string GetName_joined() const {return string("JOINED_FEATURES");}
        string GetName_ls() const {return string("DISC_FEATURE_LIST");}
        string GetName_loc() const {return string("ONCALLER_ORDERED_LOCATION");}
+       string GetName_std() const {return string("ONCALLER_HAS_STANDARD_NAME");}
+     
        bool LocationHasNullsBetween(const CSeq_feat* seq_feat);
   };
+
+  class CBioseq_ONCALLER_HAS_STANDARD_NAME : public CBioseq_test_on_all_annot
+  {
+    public:
+      virtual ~CBioseq_ONCALLER_HAS_STANDARD_NAME () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_std();}
+  };
+
 
   class CBioseq_DISC_FEATURE_LIST : public CBioseq_test_on_all_annot
   {
