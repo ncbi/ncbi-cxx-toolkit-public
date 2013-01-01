@@ -245,7 +245,7 @@ int CBlastDemoApplication::Run(void)
 
 void CBlastDemoApplication::Exit(void)
 {
-    SetDiagStream(0);
+    // Do your after-Run() cleanup here
 }
 
 

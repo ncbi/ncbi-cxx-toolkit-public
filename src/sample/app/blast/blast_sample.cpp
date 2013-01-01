@@ -156,7 +156,7 @@ int CBlastSampleApplication::Run(void)
             out << MSerial_AsnText << *alignments[i];
 
     } catch (const CException& e) {
-        cerr << e.what() << endl;
+        ERR_POST(e);
         retval = 1;
     }
 
@@ -170,7 +170,7 @@ int CBlastSampleApplication::Run(void)
 
 void CBlastSampleApplication::Exit(void)
 {
-    SetDiagStream(0);
+    // Do your after-Run() cleanup here
 }
 
 

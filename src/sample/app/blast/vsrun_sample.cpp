@@ -137,7 +137,7 @@ int VSRunSampleApplication::Run(void)
 
 void VSRunSampleApplication::Exit(void)
 {
-    SetDiagStream(0);
+    // Do your after-Run() cleanup here
 }
 
 

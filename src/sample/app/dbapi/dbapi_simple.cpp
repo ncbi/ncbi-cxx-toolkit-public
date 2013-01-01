@@ -246,7 +246,7 @@ void CDbapiSimpleApp::Exit(void)
 
 void CDbapiSimpleApp::ParseArgs(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     m_UserString1 = args["user_string1"].AsString();
     m_UserString2 = args["user_string2"].AsString();

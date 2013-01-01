@@ -256,7 +256,7 @@ int CFeatTreeSampleApp::Run(void)
 
 void CFeatTreeSampleApp::Exit(void)
 {
-    SetDiagStream(0);
+    // Do your after-Run() cleanup here
 }
 
 
