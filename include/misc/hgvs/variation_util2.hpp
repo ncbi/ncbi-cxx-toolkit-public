@@ -105,6 +105,12 @@ public:
     CRef<CVariantPlacement> Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper);
 
 
+    /// Remap variation from product coordinates onto a nucleotide sequence on which this product is annotated.
+    /// e.g. {NM,NR,NP} -> {NG,NT,NW,AC,NC}. Use annotated seq-align, if available; otherwise use spliced rna or cdregion.
+    /// If starting from NP, remap to the parent mRNA first.
+    CRef<CVariantPlacement> RemapToAnnotatedTarget(const CVariation& v, const CSeq_id& target);
+
+
 /// Methods to convert between nucleotide and protein
 
     /// Convert protein-variation (single-AA missense/nonsense) to nuc-variation on the precursor in the parent nuc-prot.

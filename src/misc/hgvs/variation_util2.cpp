@@ -396,6 +396,132 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
 }
 
 
+CRef<CSeq_align> CreateSplicedSeqAlignFromFeat(const CSeq_feat& rna_feat)
+{   
+    CRef<CSeq_align> aln(new CSeq_align);
+    aln->SetType(CSeq_align::eType_other);
+    CSpliced_seg& ss = aln->SetSegs().SetSpliced();
+    ss.SetProduct_id().Assign(sequence::GetId(rna_feat.GetProduct(), NULL));
+    ss.SetGenomic_id().Assign(sequence::GetId(rna_feat.GetLocation(), NULL));
+    ss.SetExons();
+    ss.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    ss.SetProduct_strand(eNa_strand_plus);
+    ss.SetGenomic_strand(sequence::GetStrand(rna_feat.GetLocation()));
+
+    TSignedSeqPos product_pos(0);
+    for(CSeq_loc_CI ci(rna_feat.GetLocation(), CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
+        CRef<CSpliced_exon> se(new CSpliced_exon);
+        se->SetGenomic_start(ci.GetRange().GetFrom());
+        se->SetGenomic_end(ci.GetRange().GetTo());
+        se->SetProduct_start().SetNucpos(product_pos);
+        se->SetProduct_end().SetNucpos(product_pos + ci.GetRange().GetLength() - 1); 
+        product_pos += ci.GetRange().GetLength();
+        ss.SetExons().push_back(se);
+    }   
+
+    return aln;
+}   
+
+
+//todo: 1. what if we don't have the requested version of the product annotated?
+//      2. do we need to support NGs, etc (will need to search all alignments on sequnece, as we can't find NG by product-id)
+//      3. Do we want to return VariantPlacement instead, such that we can communicate auxiliary info?
+CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation& v, const CSeq_id& target)
+{
+    CRef<CVariantPlacement> result(new CVariantPlacement());
+    result->SetLoc().SetNull();
+    result->SetMol(CVariantPlacement::eMol_unknown);
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(target);
+
+    if(v.IsSetPlacements()) {
+        //First see if we already have location on target in one of the placements
+        ITERATE(CVariation::TPlacements, it, v.GetPlacements()) {
+            const CVariantPlacement& p = **it;
+            if(p.GetLoc().GetId() && sequence::IsSameBioseq(target, *p.GetLoc().GetId(), m_scope)) {
+                result->Assign(p);
+                break;
+            }
+        }
+
+        if(result->GetLoc().IsNull()) {
+            //did not find an existing placement for the target; will try to remap
+            ITERATE(CVariation::TPlacements, it, v.GetPlacements()) {
+                const CVariantPlacement& placement = **it;
+                if(!placement.GetLoc().GetId()) {
+                    continue;
+                } else if(placement.GetMol() == CVariantPlacement::eMol_protein) {
+                    CRef<CVariation> precursor = InferNAfromAA(v);
+                    result = RemapToAnnotatedTarget(*precursor, target);
+                } else {
+                    //the annotation is gi-based, so we'll make sure the target is gi-based so we won't need to do conversion for all products while searching.
+                    CSeq_id_Handle product_idh = sequence::GetId(*placement.GetLoc().GetId(), *m_scope, sequence::eGetId_ForceGi);
+                    if(!product_idh) {
+                        continue;
+                    }
+
+                    //note that here we are looking for annotated (packaged) alignment at the
+                    //feature's location only (we could have searched the whole sequence instead, but it is quite slow for NCs)
+                    //If we have the feature but no alignment, it is assumed that the alignment is perfect, and a synthetic seq-align
+                    //is created based on RNA feature.
+                    CRef<CSeq_align> aln;
+                    {{
+                        SAnnotSelector sel;
+                        sel.SetResolveAll();
+                        sel.SetAdaptiveDepth(true);
+                        sel.IncludeFeatType(CSeqFeatData::e_Rna);
+
+                        for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+                            const CMappedFeat& mf = *ci;
+                            if(!mf.IsSetProduct()) {
+                                continue;
+                            }
+                            const CSeq_id& product_id = sequence::GetId(mf.GetProduct(), NULL);
+                            if(!product_id.Equals(*product_idh.GetSeqId())) {
+                                continue;
+                            }
+
+                            for(CAlign_CI ci2(*m_scope, mf.GetLocation(), sel); ci2; ++ci2) {
+                                const CSeq_align& current_aln = *ci2;
+                                if(current_aln.GetSeq_id(0).Equals(*product_idh.GetSeqId())) {
+                                    aln = SerialClone<CSeq_align>(current_aln);
+                                }
+                            } 
+                            if(!aln) {
+                                aln = CreateSplicedSeqAlignFromFeat(mf.GetMappedFeature());
+                            }
+                        }
+                    }}
+                    if(aln) {
+                        CRef<CVariantPlacement> p2(SerialClone<CVariantPlacement>(placement));
+                        ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
+                        ChangeIdsInPlace(*aln, sequence::eGetId_ForceAcc, *m_scope);
+                        result = Remap(*p2, *aln);
+                    }
+                }
+                if(!result->GetLoc().IsNull()) {
+                    break;
+                }
+            }
+        }
+    } else if(v.GetData().IsSet()) { //no placements at this level - try in sub-variations
+        ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
+            const CVariation& v2 = **it;
+            CRef<CVariantPlacement> mapped_placement = RemapToAnnotatedTarget(v2, target);
+            if(!result->GetLoc().IsNull()) { //already have somthing - append
+                result->SetLoc().Add(mapped_placement->GetLoc());
+            } else {
+                result->Assign(*mapped_placement);
+            }
+        }
+    }
+
+    CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(result->GetLoc(), CSeq_loc::fSortAndMerge_All, NULL);
+    result->SetLoc().Assign(*loc);
+    return result;
+}
+
+
+
 template<typename T>
 bool ContainsIupacNaAmbiguities(const T& obj)
 {

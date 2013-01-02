@@ -125,6 +125,12 @@ void CHgvs2variationApplication::Init(void)
             CArgDescriptions::eInteger,
             "0");
 
+
+    arg_desc->AddOptionalKey(
+            "target_id",
+            "seqid",
+            "genomic seq-id to remap to",
+            CArgDescriptions::eString);
     
     arg_desc->AddFlag("reference_seq", "attach reference seq");
     arg_desc->AddFlag("loc_prop", "attach location properties");
@@ -251,6 +257,13 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
     if(args["attach_hgvs"] || args["o_hgvs"]) {
         parser.AttachHgvs(v);
     }
+
+    if(args["target_id"]) {
+        CSeq_id_Handle target_idh = CSeq_id_Handle::GetHandle(args["target_id"].AsString());
+        CRef<CVariantPlacement> placement = variation_util.RemapToAnnotatedTarget(v, *target_idh.GetSeqId());
+        placement->SetComment("Remapped via annotation to " + target_idh.AsString());
+        v.SetPlacements().push_back(placement);
+    }
 }
 
 
@@ -356,7 +369,6 @@ int CHgvs2variationApplication::Run(void)
 
             try {
                 ProcessVariation(*v, args, *scope, aln, *variation_util);
-
                 if(args["o_hgvs"]) {
                     for(CTypeConstIterator<CVariantPlacement> it(Begin(*v)); it; ++ it) {
                         if(it->IsSetHgvs_name()) {
