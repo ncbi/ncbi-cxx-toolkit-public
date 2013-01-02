@@ -240,6 +240,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_GP_Set_run = false;
    thisTest.is_MolInfo_run = false;
    thisTest.is_MRNA_run = false;
+   thisTest.is_NonmRNA_run = false;
    thisTest.is_Prot_run = false;
    thisTest.is_TRRna_run = false;
    thisTest.is_RRna_run = false;

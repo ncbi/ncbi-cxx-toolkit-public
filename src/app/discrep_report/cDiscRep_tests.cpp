@@ -133,6 +133,7 @@ bool CDiscTestInfo :: is_DESC_user_run;
 bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_MolInfo_run;
 bool CDiscTestInfo :: is_MRNA_run;
+bool CDiscTestInfo :: is_NonmRNA_run;
 bool CDiscTestInfo :: is_Prot_run;
 bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
@@ -254,11 +255,33 @@ void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: GetReport(CRef <CClickableItem>& c_it
 };
 
 
-void CBioseq_TEST_EXON_ON_MRNA :: TestOnObj(const CBioseq& bioseq)
+// new comb
+void CBioseq_on_non_mRNA :: TestOnObj(const CBioseq& bioseq)
 {
-   if (!IsMrnaSequence()) return;
-   if (!exon_feat.empty())
-      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
+  if (thisTest.is_NonmRNA_run) return;
+    if (!IsMrnaSequence()) return;
+    // TEST_EXON_ON_MRNA
+    if (!exon_feat.empty()) 
+         thisInfo.test_item_list[GetName_exon()].push_back(GetDiscItemText(bioseq));
+
+    // TEST_BAD_MRNA_QUAL
+    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+      const CBioSource& biosrc = (*it)->GetSource();
+      if ( biosrc.CanGetSubtype()) {
+         if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_germline) 
+               || IsSubSrcPresent(biosrc, CSubSource::eSubtype_rearranged))
+            thisInfo.test_item_list[GetName_qual()].push_back(GetDiscItemText(**it, bioseq));
+      }
+    }
+
+  thisTest.is_NonmRNA_run = true;
+};
+
+
+void CBioseq_TEST_BAD_MRNA_QUAL :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetHasComment(c_item->item_list.size(), "mRNA sequence") 
+                   + "germline or rearranged qualifier";
 };
 
 
@@ -6605,6 +6628,7 @@ void CSeqEntry_test_on_quals :: GetMultiSubSrcVlus(const CBioSource& biosrc, con
 };
 
 
+/*
 string CSeqEntryTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
 {
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
@@ -6629,6 +6653,7 @@ bool CSeqEntryTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMo
    }
    return false;
 };
+*/
 
 
 void CSeqEntry_test_on_quals :: GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
@@ -6717,6 +6742,7 @@ void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const 
 };
 
 
+/*
 string CSeqEntryTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
 {
   ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
@@ -6745,7 +6771,7 @@ bool CSeqEntryTestAndRepData :: IsSubSrcPresent(const CBioSource& biosrc, CSubSo
   }
   return false;
 };
-
+*/
 
 // C: GetSourceQualFromBioSource
 string CSeqEntryTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, const int& cur_idx, bool is_subsrc)

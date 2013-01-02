@@ -85,6 +85,7 @@ namespace DiscRepNmSpc {
       static bool   is_GP_Set_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
+      static bool   is_NonmRNA_run;
       static bool   is_Prot_run;
       static bool   is_Pub_run;
       static bool   is_Quals_run;
@@ -258,6 +259,12 @@ namespace DiscRepNmSpc {
                             bool case_sensitive=true, bool whole_word=true);
       bool DoesStringContainPhrase(const string& str, const vector <string>& phrases, 
                             bool case_sensitive=true, bool whole_word=true);
+
+      string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
+      string GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype);
+      bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
+      string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
+      bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
   };
 
 
@@ -331,11 +338,13 @@ namespace DiscRepNmSpc {
      protected:
        string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
                                                      const int& cur_idx, bool is_subsrc);
+/*
        string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
        string GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype);
        bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
        string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
        bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
+*/
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
@@ -1338,6 +1347,41 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
+  class CBioseq_on_non_mRNA : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_on_non_mRNA () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_exon() const {return string("TEST_EXON_ON_MRNA"); }
+      string GetName_qual() const {return string("TEST_BAD_MRNA_QUAL"); }
+  };
+
+
+  class CBioseq_TEST_EXON_ON_MRNA : public CBioseq_on_non_mRNA
+  {
+    public:
+      virtual ~CBioseq_TEST_EXON_ON_MRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_non_mRNA::GetName_exon();}
+  };
+
+
+  class CBioseq_TEST_BAD_MRNA_QUAL : public CBioseq_on_non_mRNA
+  {
+    public:
+      virtual ~CBioseq_TEST_BAD_MRNA_QUAL () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_non_mRNA::GetName_qual();}
+  };
+
+
   class CBioseq_on_cd_feat :  public CBioseqTestAndRepData
   {
     public:
@@ -2037,17 +2081,6 @@ namespace DiscRepNmSpc {
   };
 
   
-  class CBioseq_TEST_EXON_ON_MRNA : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_TEST_EXON_ON_MRNA () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("TEST_EXON_ON_MRNA"); }
-  };
-
-
   class CBioseq_ONCALLER_HIV_RNA_INCONSISTENT : public CBioseqTestAndRepData
   {
     public:
