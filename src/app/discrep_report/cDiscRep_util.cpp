@@ -144,6 +144,60 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
+string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
+{
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
+      if ((*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) == type_name)
+                return ((*it)->GetSubname());
+   return (kEmptyStr);
+};
+
+
+string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype)
+{
+  return (GetOrgModValue(biosrc,
+   (*biosrc.GetOrgname().GetMod().begin())->GetSubtypeName(subtype, COrgMod::eVocabulary_insdc)));
+};
+
+bool CTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype)
+{
+   if (biosrc.IsSetOrgMod()) {
+     ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
+        if ((*it)->GetSubtype() == subtype) return true;
+   }
+   return false;
+};
+
+string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
+{
+  ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
+     int type = (*it)->GetSubtype();
+     if ( (*it)->GetSubtypeName( type, CSubSource::eVocabulary_insdc) == type_name ) {
+        strtmp = (*it)->GetName();
+        if (strtmp.empty() && (type == CSubSource::eSubtype_germline
+                                 || type == CSubSource::eSubtype_transgenic
+                                 || type == CSubSource::eSubtype_metagenomic
+                                 || type == CSubSource::eSubtype_environmental_sample
+                                 || type == CSubSource::eSubtype_rearranged)) {
+           return ("TRUE");
+        }
+        else return (strtmp);
+     }
+  }
+  return (kEmptyStr);
+};
+
+
+bool CTestAndRepData :: IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype)
+{
+  if (biosrc.CanGetSubtype()) {
+     ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype())
+       if ( (*it)->GetSubtype() == subtype) return true;
+  }
+  return false;
+};
+
+
 bool CTestAndRepData :: CommentHasPhrase(string comment, const string& phrase)
 {
   unsigned len = phrase.size();
