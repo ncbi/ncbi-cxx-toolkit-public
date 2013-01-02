@@ -168,6 +168,7 @@ namespace DiscRepNmSpc{
            static string                             kNonExtendableException;
            static vector <string>                    new_exceptions;
            static Str2Str		             srcqual_keywords;
+           static vector <string>                    kIntergenicSpacerNames;
      };
 
 /*

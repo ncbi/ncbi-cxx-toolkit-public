@@ -235,6 +235,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_AllAnnot_run = false;
    thisTest.is_BacPartial_run = false;
    thisTest.is_BASES_N_run = false;
+   thisTest.is_CDs_run = false;
    thisTest.is_CdTransl_run = false;
    thisTest.is_GP_Set_run = false;
    thisTest.is_MolInfo_run = false;
