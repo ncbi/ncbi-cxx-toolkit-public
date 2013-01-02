@@ -77,6 +77,7 @@ namespace DiscRepNmSpc {
       static bool   is_BIOSRC_run;
       static bool   is_Biosrc_Orgmod_run;
       static bool   is_BIOSRC1_run;
+      static bool   is_CDs_run;
       static bool   is_CdTransl_run;
       static bool   is_Comment_run;
       static bool   is_Defl_run; // checked
@@ -1315,16 +1316,51 @@ namespace DiscRepNmSpc {
                                                              const CSeq_entry& seq_entry);
        CConstRef <CProt_ref> GetProtRefForFeature(const CSeq_feat& seq_feat, 
                                                                         bool look_xref=true);
-       bool IsLocationOrganelle(const CBioSource::EGenome& genome);
+       bool IsLocationOrganelle(int genome);
        bool ProductsMatchForRefSeq(const string& feat_prod, const string& mRNA_prod);
        bool IsMrnaSequence();
        int DistanceToUpstreamGap(const unsigned& pos, const CBioseq& bioseq);
        int DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq);
-
+       bool HasUnculturedNonOrganelleName (const string& tax_nm);
   }; // CBioseqTest:
 
 
 // new comb.
+  class CBioseq_on_cd_feat :  public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_on_cd_feat () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_cdd() const {return string("TEST_CDS_HAS_CDD_XREF"); }
+      string GetName_exc() const {return string("DISC_CDS_HAS_NEW_EXCEPTION"); }
+  };
+
+
+  class CBioseq_TEST_CDS_HAS_CDD_XREF : public CBioseq_on_cd_feat
+  {
+    public:
+      virtual ~CBioseq_TEST_CDS_HAS_CDD_XREF () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_cd_feat::GetName_cdd();}
+  };
+
+
+  class CBioseq_DISC_CDS_HAS_NEW_EXCEPTION : public CBioseq_on_cd_feat
+  {
+    public:
+      virtual ~CBioseq_DISC_CDS_HAS_NEW_EXCEPTION () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_cd_feat::GetName_exc();}
+  };
+
+
   class CBioseq_test_on_missing_genes : public CBioseqTestAndRepData
   {
     public:
@@ -1963,6 +1999,31 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+
+  class CBioseq_TEST_UNWANTED_SPACER : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_TEST_UNWANTED_SPACER () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("TEST_UNWANTED_SPACER"); }
+ 
+    protected:
+      bool HasIntergenicSpacerName (const string& comm);
+  };
+
+
+  class CBioseq_TEST_ORGANELLE_NOT_GENOMIC : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_TEST_ORGANELLE_NOT_GENOMIC () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("TEST_ORGANELLE_NOT_GENOMIC"); }
+  };
+
   
   class CBioseq_TEST_EXON_ON_MRNA : public CBioseqTestAndRepData
   {
@@ -1983,17 +2044,6 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("ONCALLER_HIV_RNA_INCONSISTENT"); }
-  };
-
-
-  class CBioseq_DISC_CDS_HAS_NEW_EXCEPTION : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_DISC_CDS_HAS_NEW_EXCEPTION () {};
-      
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_CDS_HAS_NEW_EXCEPTION"); }
   };
 
 

@@ -152,6 +152,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                            CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
    tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
    tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_TEST_CDS_HAS_CDD_XREF));
+   tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_CDS_HAS_NEW_EXCEPTION));
    tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
@@ -248,6 +250,10 @@ void CRepConfDiscrepancy :: ConfigRep()
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
 
 // tests_on_Bioseq_CFeat_CSeqdesc
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                                     new CBioseq_TEST_UNWANTED_SPACER));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                                     new CBioseq_TEST_ORGANELLE_NOT_GENOMIC));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                      new CBioseq_TEST_EXON_ON_MRNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(

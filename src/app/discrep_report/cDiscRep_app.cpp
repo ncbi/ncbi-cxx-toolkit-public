@@ -107,6 +107,7 @@ vector <string>                         CDiscRepInfo :: suspect_rna_product_name
 string                                  CDiscRepInfo :: kNonExtendableException;
 vector <string>                         CDiscRepInfo :: new_exceptions;
 Str2Str	                                CDiscRepInfo :: srcqual_keywords;
+vector <string>                         CDiscRepInfo :: kIntergenicSpacerNames;
 
 void CDiscRepApp::Init(void)
 {
@@ -193,20 +194,15 @@ cerr << "222can get\n";
     // ini. of new_exceptions
     strtmp = reg.Get("StringVecIni", "NewExceptions");
     thisInfo.new_exceptions = NStr::Tokenize(strtmp, ",", thisInfo.new_exceptions);
+
+    // ini. of kIntergenicSpacerNames
+    strtmp = reg.Get("StringVecIni", "K_IntergenicSpacerNames");
+    thisInfo.kIntergenicSpacerNames 
+                  = NStr::Tokenize(strtmp, ",", thisInfo.kIntergenicSpacerNames);
     
     // ini. of weasels
-    thisInfo.weasels.reserve(11);
-    thisInfo.weasels.push_back("candidate");
-    thisInfo.weasels.push_back("hypothetical");
-    thisInfo.weasels.push_back("novel");
-    thisInfo.weasels.push_back("possible");
-    thisInfo.weasels.push_back("potential");
-    thisInfo.weasels.push_back("predicted"); 
-    thisInfo.weasels.push_back("probable"); 
-    thisInfo.weasels.push_back("putative");
-    thisInfo.weasels.push_back("candidate");  
-    thisInfo.weasels.push_back("uncharacterized");  
-    thisInfo.weasels.push_back("unique");
+    strtmp = reg.Get("StringVecIni", "Weasels");
+    thisInfo.weasels = NStr::Tokenize(strtmp, ",", thisInfo.weasels);
 
     // ini. of strandsymbol
     thisInfo.strandsymbol.reserve(5);
@@ -222,149 +218,40 @@ cerr << "222can get\n";
        strtmp = (*it == "5-8S") ? "5.8S" : *it;
        thisInfo.rRNATerms[strtmp] = NStr::StringToUInt(reg.Get("RRna-terms", *it));
     }
-/*
-    thisInfo.rRNATerms["16S"] = 1000;
-    thisInfo.rRNATerms["18S"] = 1000;
-    thisInfo.rRNATerms["23S"] = 2000;
-    thisInfo.rRNATerms["25s"] = 1000;
-    thisInfo.rRNATerms["26S"] = 1000;
-    thisInfo.rRNATerms["28S"] = 3300;
-    thisInfo.rRNATerms["small"] = 1000;
-    thisInfo.rRNATerms["large"] = 1000;
-    thisInfo.rRNATerms["5.8S"] = 130;
-    thisInfo.rRNATerms["5S"] = 90;
-*/
 
     // ini. of no_multi_qual
-    thisInfo.no_multi_qual.reserve(3);
-    thisInfo.no_multi_qual.push_back("location");
-    thisInfo.no_multi_qual.push_back("taxname");
-    thisInfo.no_multi_qual.push_back("taxid");
+    strtmp = reg.Get("StringVecIni", "No_multi_qual");
+    thisInfo.no_multi_qual = NStr::Tokenize(strtmp, ",", thisInfo.no_multi_qual);
   
     // ini. of bad_gene_names_contained
-    thisInfo.bad_gene_names_contained.reserve(5);
-    thisInfo.bad_gene_names_contained.push_back("putative");
-    thisInfo.bad_gene_names_contained.push_back("fragment");
-    thisInfo.bad_gene_names_contained.push_back("gene");
-    thisInfo.bad_gene_names_contained.push_back("orf");
-    thisInfo.bad_gene_names_contained.push_back("like");
+    strtmp = reg.Get("StringVecIni", "Bad_gene_names_contained");
+    thisInfo.bad_gene_names_contained 
+                    = NStr::Tokenize(strtmp, ",", thisInfo.bad_gene_names_contained);
 
     // ini. of suspicious notes
-    thisInfo.suspicious_notes.reserve(15);
-    thisInfo.suspicious_notes.push_back("characterised");
-    thisInfo.suspicious_notes.push_back("recognised");
-    thisInfo.suspicious_notes.push_back("characterisation");
-    thisInfo.suspicious_notes.push_back("localisation");
-    thisInfo.suspicious_notes.push_back("tumour");
-    thisInfo.suspicious_notes.push_back("uncharacterised");
-    thisInfo.suspicious_notes.push_back("oxydase");
-    thisInfo.suspicious_notes.push_back("colour");
-    thisInfo.suspicious_notes.push_back("localise");
-    thisInfo.suspicious_notes.push_back("faecal");
-    thisInfo.suspicious_notes.push_back("orthologue");
-    thisInfo.suspicious_notes.push_back("paralogue");
-    thisInfo.suspicious_notes.push_back("homolog");
-    thisInfo.suspicious_notes.push_back("homologue");
-    thisInfo.suspicious_notes.push_back("intronless gene");
+    strtmp = reg.Get("StringVecIni", "Suspicious_notes");
+    thisInfo.suspicious_notes = NStr::Tokenize(strtmp, ",", thisInfo.suspicious_notes);
 
     // ini. of spec_words_biosrc;
-    thisInfo.spec_words_biosrc.reserve(4);
-    thisInfo.spec_words_biosrc.push_back("institute");
-    thisInfo.spec_words_biosrc.push_back("institution");
-    thisInfo.spec_words_biosrc.push_back("University");
-    thisInfo.spec_words_biosrc.push_back("College");
+    strtmp = reg.Get("StringVecIni", "Spec_words_biosrc");
+    thisInfo.spec_words_biosrc = NStr::Tokenize(strtmp, ",", thisInfo.spec_words_biosrc);
 
     // ini. of trna_list:
-    thisInfo.trna_list.reserve(28);
-    thisInfo.trna_list.push_back("tRNA-Gap");
-    thisInfo.trna_list.push_back("tRNA-Ala");
-    thisInfo.trna_list.push_back("tRNA-Asx");
-    thisInfo.trna_list.push_back("tRNA-Cys");
-    thisInfo.trna_list.push_back("tRNA-Asp");
-    thisInfo.trna_list.push_back("tRNA-Glu");
-    thisInfo.trna_list.push_back("tRNA-Phe");
-    thisInfo.trna_list.push_back("tRNA-Gly");
-    thisInfo.trna_list.push_back("tRNA-His");
-    thisInfo.trna_list.push_back("tRNA-Ile");
-    thisInfo.trna_list.push_back("tRNA-Xle");
-    thisInfo.trna_list.push_back("tRNA-Lys");
-    thisInfo.trna_list.push_back("tRNA-Leu");
-    thisInfo.trna_list.push_back("tRNA-Met");
-    thisInfo.trna_list.push_back("tRNA-Asn");
-    thisInfo.trna_list.push_back("tRNA-Pyl");
-    thisInfo.trna_list.push_back("tRNA-Pro");
-    thisInfo.trna_list.push_back("tRNA-Gln");
-    thisInfo.trna_list.push_back("tRNA-Arg");
-    thisInfo.trna_list.push_back("tRNA-Ser");
-    thisInfo.trna_list.push_back("tRNA-Thr");
-    thisInfo.trna_list.push_back("tRNA-Sec");
-    thisInfo.trna_list.push_back("tRNA-Val");
-    thisInfo.trna_list.push_back("tRNA-Trp");
-    thisInfo.trna_list.push_back("tRNA-OTHER");
-    thisInfo.trna_list.push_back("tRNA-Tyr");
-    thisInfo.trna_list.push_back("tRNA-Glx");
-    thisInfo.trna_list.push_back("tRNA-TERM");
+    strtmp = reg.Get("StringVecIni", "Trna_list");
+    thisInfo.trna_list = NStr::Tokenize(strtmp, ",", thisInfo.trna_list);
 
     // ini. of rrna_standard_name
     strtmp = reg.Get("StringVecIni", "RrnaStandardName");
     thisInfo.rrna_standard_name = NStr::Tokenize(strtmp, ",", thisInfo.rrna_standard_name);
-/*
-    thisInfo.rrna_standard_name.push_back("5S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("5.8S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("12S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("16S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("18S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("23S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("26S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("28S ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("large subunit ribosomal RNA");
-    thisInfo.rrna_standard_name.push_back("small subunit ribosomal RNA");
-*/
 
     // ini. of short_auth_nms
-    thisInfo.short_auth_nms.reserve(13);
-    thisInfo.short_auth_nms.push_back("de la");
-    thisInfo.short_auth_nms.push_back("del");
-    thisInfo.short_auth_nms.push_back("de");
-    thisInfo.short_auth_nms.push_back("da");
-    thisInfo.short_auth_nms.push_back("du");
-    thisInfo.short_auth_nms.push_back("dos");
-    thisInfo.short_auth_nms.push_back("la");
-    thisInfo.short_auth_nms.push_back("le");
-    thisInfo.short_auth_nms.push_back("van");
-    thisInfo.short_auth_nms.push_back("von");
-    thisInfo.short_auth_nms.push_back("der");
-    thisInfo.short_auth_nms.push_back("den");
-    thisInfo.short_auth_nms.push_back("di");
+    strtmp = reg.Get("StringVecIni", "Short_auth_nms");
+    thisInfo.short_auth_nms = NStr::Tokenize(strtmp, ",", thisInfo.short_auth_nms);
 
     // ini. of descred_aaList
-    thisInfo.desired_aaList["Ala"] = 1;
-    thisInfo.desired_aaList["Asx"] = 0;
-    thisInfo.desired_aaList["Cys"] = 1;
-    thisInfo.desired_aaList["Asp"] = 1;
-    thisInfo.desired_aaList["Glu"] = 1;
-    thisInfo.desired_aaList["Phe"] = 1;
-    thisInfo.desired_aaList["Gly"] = 1;
-    thisInfo.desired_aaList["His"] = 1;
-    thisInfo.desired_aaList["Ile"] = 1;
-    thisInfo.desired_aaList["Xle"] = 0;
-    thisInfo.desired_aaList["Lys"] = 1;
-    thisInfo.desired_aaList["Leu"] = 2;
-    thisInfo.desired_aaList["Met"] = 1;
-    thisInfo.desired_aaList["Asn"] = 1;
-    thisInfo.desired_aaList["Pro"] = 1;
-    thisInfo.desired_aaList["Gln"] = 1;
-    thisInfo.desired_aaList["Arg"] = 1;
-    thisInfo.desired_aaList["Ser"] = 2;
-    thisInfo.desired_aaList["Thr"] = 1;
-    thisInfo.desired_aaList["Val"] = 1;
-    thisInfo.desired_aaList["Trp"] = 1;
-    thisInfo.desired_aaList["Xxx"] = 0;
-    thisInfo.desired_aaList["Tyr"] = 1;
-    thisInfo.desired_aaList["Glx"] = 0;
-    thisInfo.desired_aaList["Sec"] = 0;
-    thisInfo.desired_aaList["Pyl"] = 0;
-    thisInfo.desired_aaList["Ter"] = 0;
+    reg.EnumerateEntries("Descred_aaList", &strs);
+    ITERATE (list <string>, it, strs)
+       thisInfo.desired_aaList[*it] = NStr::StringToUInt(reg.Get("Descred_aaList", *it));
 
     // ini. of tax_db_conn: taxonomy db connection
     thisInfo.tax_db_conn.Init();

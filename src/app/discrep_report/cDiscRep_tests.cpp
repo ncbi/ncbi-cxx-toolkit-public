@@ -125,6 +125,7 @@ bool CDiscTestInfo :: is_BioSet_run;
 bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC1_run;
 bool CDiscTestInfo :: is_Biosrc_Orgmod_run;
+bool CDiscTestInfo :: is_CDs_run;
 bool CDiscTestInfo :: is_CdTransl_run;
 bool CDiscTestInfo :: is_Comment_run;
 bool CDiscTestInfo :: is_Defl_run;
@@ -179,6 +180,77 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_TEST_UNWANTED_SPACER :: TestOnObj(const CBioseq& bioseq)
+{
+   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+     const CBioSource& biosrc = (*it)->GetSource();
+     switch ( biosrc.GetGenome() ) {
+        case CBioSource::eGenome_chloroplast:
+        case CBioSource::eGenome_plastid:
+            return;
+        default: break; 
+     }
+     /* shouldn't be uncultured non-organelle */
+     if (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty() 
+             && HasUnculturedNonOrganelleName(biosrc.GetTaxname())) return;
+   }
+
+   /* look for misc_features */
+   ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) {
+     if ( (*it)->CanGetComment() && !(*it)->GetComment().empty()
+             && HasIntergenicSpacerName( (*it)->GetComment()))
+        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+   }
+};
+
+
+bool CBioseqTestAndRepData :: HasUnculturedNonOrganelleName (const string& tax_nm)
+{
+  if (tax_nm == "uncultured organism" || tax_nm == "uncultured microorganism"
+           || tax_nm == "uncultured bacterium" || tax_nm == "uncultured archaeon")
+    return true;
+  else return false;
+};
+
+
+bool CBioseq_TEST_UNWANTED_SPACER :: HasIntergenicSpacerName (const string& comm)
+{
+  ITERATE (vector <string>, it, thisInfo.kIntergenicSpacerNames) {
+     if (NStr::FindNoCase(comm, *it) != string::npos) return true;
+  }
+  return false;
+};
+
+
+void CBioseq_TEST_UNWANTED_SPACER :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+    = GetIsComment(c_item->item_list.size(),"suspect intergenic spacer note") +"not organelle";
+};
+
+
+void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: TestOnObj(const CBioseq& bioseq)
+{
+   if (bioseq.IsAa()) return;
+   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
+     int biomol = (*it)->GetMolinfo().GetBiomol();
+     if ( ( biomol == CMolInfo::eBiomol_genomic || biomol == CMolInfo::eBiomol_unknown)
+                    && bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna) 
+       return;
+   }
+
+   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+     if (IsLocationOrganelle( (*it)->GetSource().GetGenome() ))
+         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it, bioseq));
+   }
+};
+
+
+void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: GetReport(CRef <CClickableItem>& c_item)
+{
+};
+
+
 void CBioseq_TEST_EXON_ON_MRNA :: TestOnObj(const CBioseq& bioseq)
 {
    if (!IsMrnaSequence()) return;
@@ -221,18 +293,44 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: GetReport(CRef <CClickableItem>& c
 };
 
 
-void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: TestOnObj(const CBioseq& bioseq)
+// new comb
+void CBioseq_on_cd_feat :: TestOnObj(const CBioseq& bisoeq)
 {
+  if (thisTest.is_CDs_run) return;
+
+  string desc;
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+    desc = GetDiscItemText(**it);
+
+    // DISC_CDS_HAS_NEW_EXCEPTION
     if ( (*it)->CanGetExcept_text()) {
        ITERATE (vector <string>, jt, thisInfo.new_exceptions) {
           if (NStr::FindNoCase( (*it)->GetExcept_text(), *jt ) != string::npos) {
-            thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+            thisInfo.test_item_list[GetName()].push_back(desc);
             break;
           }
        }
     }
+
+    // TEST_CDS_HAS_CDD_XREF
+    if ((*it)->CanGetDbxref()) {
+       ITERATE (vector < CRef< CDbtag > >, jt, (*it)->GetDbxref()) {
+         if ( NStr::EqualNocase( (*jt)->GetDb(), "CDD")) {
+            thisInfo.test_item_list[GetName_cdd()].push_back(desc);
+            break;
+         }
+       }
+    }
   }
+ 
+  thisTest.is_CDs_run = true;
+};
+
+
+void CBioseq_TEST_CDS_HAS_CDD_XREF :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "feature") + "CDD Xrefs";
+
 };
 
 
@@ -1534,20 +1632,20 @@ string CBioseqTestAndRepData :: GetQualFromFeature(const CSeq_feat& seq_feat, co
 };
 
 
-bool CBioseqTestAndRepData :: IsLocationOrganelle(const CBioSource::EGenome& genome)
+bool CBioseqTestAndRepData :: IsLocationOrganelle(int genome)
 {
-    if (genome == CBioSource :: eGenome_chloroplast
-      || genome == CBioSource :: eGenome_chromoplast
-      || genome == CBioSource :: eGenome_kinetoplast
-      || genome == CBioSource :: eGenome_mitochondrion
-      || genome == CBioSource :: eGenome_cyanelle
-      || genome == CBioSource :: eGenome_nucleomorph
-      || genome == CBioSource :: eGenome_apicoplast
-      || genome == CBioSource :: eGenome_leucoplast
-      || genome == CBioSource :: eGenome_proplastid
-      || genome == CBioSource :: eGenome_hydrogenosome
-      || genome == CBioSource :: eGenome_plastid
-      || genome == CBioSource :: eGenome_chromatophore) {
+    if (genome == (int)CBioSource :: eGenome_chloroplast
+      || genome == (int)CBioSource :: eGenome_chromoplast
+      || genome == (int)CBioSource :: eGenome_kinetoplast
+      || genome == (int)CBioSource :: eGenome_mitochondrion
+      || genome == (int)CBioSource :: eGenome_cyanelle
+      || genome == (int)CBioSource :: eGenome_nucleomorph
+      || genome == (int)CBioSource :: eGenome_apicoplast
+      || genome == (int)CBioSource :: eGenome_leucoplast
+      || genome == (int)CBioSource :: eGenome_proplastid
+      || genome == (int)CBioSource :: eGenome_hydrogenosome
+      || genome == (int)CBioSource :: eGenome_plastid
+      || genome == (int)CBioSource :: eGenome_chromatophore) {
     return true;
   } 
   else return false;
@@ -1583,7 +1681,7 @@ void CBioseqTestAndRepData :: TestOnMRna(const CBioseq& bioseq)
   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna 
            || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) return;
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-    if (IsLocationOrganelle( (CBioSource::EGenome)(*it)->GetSource().GetGenome())) {
+    if (IsLocationOrganelle((*it)->GetSource().GetGenome())) {
            has_bad_biosrc = true; break;
     }
   }
