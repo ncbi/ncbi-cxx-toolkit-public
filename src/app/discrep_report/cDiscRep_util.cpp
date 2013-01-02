@@ -859,6 +859,11 @@ string CTestAndRepData :: GetContainsComment(unsigned cnt, const string& str)
    return(NStr::UIntToString(cnt) + " " + str + ( (1==cnt) ? " contains " : "s contain "));
 }
 
+string CTestAndRepData :: GetNoun(unsigned cnt, const string& str)
+{
+  return(NStr::UIntToString(cnt) + " " + str + ( (1==cnt) ? "" : "s"));
+}
+
 
 string CTestAndRepData :: GetIsComment(unsigned cnt, const string& str)
 {

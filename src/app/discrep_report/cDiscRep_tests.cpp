@@ -248,6 +248,9 @@ void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: GetReport(CRef <CClickableItem>& c_item)
 {
+   unsigned cnt = c_item->item_list.size();
+   c_item->description 
+         = GetIsComment(cnt, "non-genomic sequence") + GetNoun(cnt, "organelle");
 };
 
 
@@ -522,8 +525,10 @@ void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq
 
 void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description = GetIsComment(c_item->item_list.size(), "mRNA")
-              + "located on eukaryotic sequences that do not have genomic or plasmid sources";
+   unsigned cnt = c_item->item_list.size();
+   c_item->description = GetIsComment(cnt, "mRNA")
+       + "located on eukaryotic sequences that do not have genomic or plasmid " 
+       + GetNoun(cnt, "source");
 };
 
 
@@ -1374,7 +1379,7 @@ void CBioseq_SHORT_PROT_SEQUENCES :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_SHORT_PROT_SEQUENCES :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description 
-            = GetIsComment(c_item->item_list.size(), "protein sequence") + "shorter than 50 aa.";
+       = GetIsComment(c_item->item_list.size(), "protein sequence") + "shorter than 50 aa.";
 };
 
 
@@ -2770,7 +2775,8 @@ void CBioseq_DISC_SHORT_INTRON :: GetReport(CRef <CClickableItem>& c_item)
   }
 
   if (any_no_exception) {
-     c_item->description= GetIsComment(c_item->item_list.size(), "intron") + "shorter than 11 nt.";
+     c_item->description
+         = GetIsComment(c_item->item_list.size(), "intron") + "shorter than 11 nt.";
      if (!with_exception.empty()) {
        CRef <CClickableItem> c_sub (new CClickableItem);
        c_sub->setting_name = GetName();
@@ -4802,8 +4808,9 @@ void CBioseq_DISC_POSSIBLE_LINKER :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description = GetIsComment(c_item->item_list.size(), "partial CDS") 
-                            + "in complete sequences.";
+   unsigned cnt = c_item->item_list.size();
+   c_item->description 
+      = GetIsComment(cnt, "partial CDS") + "in complete " + GetNoun(cnt, "sequence");
 };
 
 
@@ -5479,7 +5486,7 @@ bool CBioseq_missing_genes_oncaller :: IsOkSuperfluousGene (const CSeq_feat* seq
 void CBioseq_ONCALLER_GENE_MISSING :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description
-    = GetIsComment(c_item->item_list.size(), "feature") + "no genes.";
+    = GetHasComment(c_item->item_list.size(), "feature") + "no genes.";
 };
 
 
@@ -7816,15 +7823,15 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
                thisInfo.test_item_list[GetName_iso()].push_back(desc);
 
   // TAX_LOOKUP_MISSING
+  string org_tax, db_tax;
   CRef <CTaxon2_data> lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());
   if (lookup_tax.Empty() || !(lookup_tax->CanGetOrg()))
       thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
   else {
-    string org_tax = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
-    string db_tax =lookup_tax->GetOrg().CanGetTaxname() ?
+    org_tax = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
+    db_tax =lookup_tax->GetOrg().CanGetTaxname() ?
                                   lookup_tax->GetOrg().GetTaxname() : kEmptyStr;
-    if (org_tax != db_tax)
-      thisInfo.test_item_list[GetName_tbad()].push_back(desc);
+    if (org_tax != db_tax) thisInfo.test_item_list[GetName_tbad()].push_back(desc);
     else {
       if (!DoTaxonIdsMatch(biosrc.GetOrg(), lookup_tax->GetOrg()))
           thisInfo.test_item_list[GetName_tbad()].push_back(desc);
@@ -7876,6 +7883,22 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // DISC_METAGENOMIC
   if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic)) 
       thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+
+  // TEST_SP_NOT_UNCULTURED
+  unsigned len;
+  if (!org_tax.empty()) {
+     len = org_tax.size();
+     if (len >= 4 && org_tax.substr(len-4) == " sp."
+           && !NStr::EqualNocase(org_tax.substr(0, 11), "uncultured "))
+        thisInfo.test_item_list[GetName_sp()].push_back(desc);
+  }
+};
+
+
+void CSeqEntry_TEST_SP_NOT_UNCULTURED :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+                     + "taxnames that end with ' sp.' but do not start with 'uncultured'";
 };
 
 
@@ -8049,8 +8072,9 @@ void CSeqEntry_DISC_MISSING_VIRAL_QUALS :: GetReport(CRef <CClickableItem>& c_it
                          "missing suggested qualifier " + it->first);
    } 
    RmvRedundancy(c_item->item_list);
-   c_item->description
-     = GetIsComment(c_item->item_list.size(), "virus organism") + "missing required qualifiers.";
+   unsigned cnt = c_item->item_list.size();
+   c_item->description 
+       = GetIsComment(cnt, "virus organism") + GetNoun(cnt, "missing required qualifier");
 };
 
 

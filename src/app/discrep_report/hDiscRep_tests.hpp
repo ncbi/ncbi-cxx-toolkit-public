@@ -187,6 +187,7 @@ namespace DiscRepNmSpc {
       string GetDoesComment(unsigned cnt, const string& str);
       string GetContainsComment(unsigned cnt, const string& str);
       string GetOtherComment(unsigned cnt, const string& single_str, const string& plural_str);
+      string GetNoun(unsigned cnt, const string& str);
 
  //  GetDiscrepancyItemTextEx() 
       string GetDiscItemText(const CSeq_submit& seq_submit);
@@ -916,6 +917,7 @@ namespace DiscRepNmSpc {
       string GetName_map() const {return string("DISC_MAP_CHROMOSOME_CONFLICT");}
       string GetName_clone() const {return string("DISC_REQUIRED_CLONE");}
       string GetName_meta() const {return string("DISC_METAGENOMIC");}
+      string GetName_sp() const {return string("TEST_SP_NOT_UNCULTURED");}
 
       bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
@@ -931,6 +933,16 @@ namespace DiscRepNmSpc {
       void FindSpecSubmitText();
 
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+  };
+
+
+  class CSeqEntry_TEST_SP_NOT_UNCULTURED : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_TEST_SP_NOT_UNCULTURED () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_sp();}
   };
 
 
