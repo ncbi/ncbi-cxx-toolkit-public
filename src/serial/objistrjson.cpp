@@ -454,12 +454,17 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
 {
     obj.Reset();
     string value;
-    string name = ReadKey();
-    obj.SetName(name);
+    if (!m_RejectedTag.empty()) {
+        obj.SetName( m_RejectedTag);
+        m_RejectedTag.erase();
+    } else if (!StackIsEmpty() && TopFrame().HasMemberId()) {
+        obj.SetName( TopFrame().GetMemberId().GetName());
+    }
+
     if (PeekChar(true) == '{') {
         StartBlock('{');        
         while (NextElement()) {
-            name = ReadKey();
+            string name = ReadKey();
             value = ReadValue();
             if (name[0] != '#') {
                 obj.AddAttribute(name,kEmptyStr,value);
@@ -470,14 +475,58 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
         EndBlock('}');
         return;
     }
-    value = ReadValue();
+    if (PeekChar(true) == '\"') {
+        value = ReadValue();
+    } else {
+        value = x_ReadData();
+    }
     obj.SetValue(value);
+}
+
+void CObjectIStreamJson::SkipAnyContent(void)
+{
+    char to = GetChar(true);
+    if (to == '{') {
+        to = '}';
+    } else if (to == '[') {
+        to = ']';
+    } else if (to == '\"') {
+    } else {
+        to = '\n';
+    }
+    for (char c = m_Input.PeekChar(); ; c = m_Input.PeekChar()) {
+        if (to == '\n') {
+            if (c == ',') {
+                return;
+            }
+        }
+        if (c == to) {
+            m_Input.SkipChar();
+            if (c == '\n') {
+                SkipEndOfLine(c);
+            }
+            return;
+        }
+        if (to != '\"') {
+            if (c == '\"' || c == '{' || c == '[') {
+                SkipAnyContent();
+                continue;
+            }
+        }
+
+        m_Input.SkipChar();
+        if (c == '\n') {
+            SkipEndOfLine(c);
+        }
+    }
 }
 
 void CObjectIStreamJson::SkipAnyContentObject(void)
 {
-    CAnyContentObject obj;
-    ReadAnyContentObject(obj);
+    if (!m_RejectedTag.empty()) {
+        m_RejectedTag.erase();
+    }
+    SkipAnyContent();
 }
 
 void CObjectIStreamJson::ReadBitString(CBitString& obj)
@@ -519,7 +568,11 @@ void CObjectIStreamJson::SkipBitString(void)
 
 void CObjectIStreamJson::SkipByteBlock(void)
 {
-    ThrowError(fNotImplemented, "Not Implemented");
+    CObjectIStream::ByteBlock block(*this);
+    char buf[4096];
+    while ( block.Read(buf, sizeof(buf)) != 0 )
+        ;
+    block.End();
 }
 
 TEnumValueType CObjectIStreamJson::ReadEnum(const CEnumeratedTypeValues& values)

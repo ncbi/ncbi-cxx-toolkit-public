@@ -130,6 +130,7 @@ protected:
     virtual void SkipNull(void);
 
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
+    void SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
     virtual void ReadBitString(CBitString& obj);
