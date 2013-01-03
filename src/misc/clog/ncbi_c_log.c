@@ -1586,7 +1586,7 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params,
  *  The 'params' must be already prepared URL-encoded string.
  *  Return current position in the buffer, or zero on error.
  */
-static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
+static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params, int /*bool*/ add_log_site)
 {
     size_t len;
 
@@ -1598,8 +1598,14 @@ static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params)
         return pos;
     }
     memcpy(dst + pos, params, len);
-    dst[pos+len] = '\0';
-    return pos + len;
+    pos += len;
+    /* Append log_site parameter to the end, if specified */
+    if (add_log_site  &&  sx_Info->logsite  &&  sx_Info->logsite[0]) {
+        dst[pos++] = '&';
+        pos = s_PrintParamsPair(dst, pos, "log_site", sx_Info->logsite);
+    }
+    dst[pos] = '\0';
+    return pos;
 }
 
 
@@ -2308,7 +2314,7 @@ void NcbiLogP_ReqStartStr(const char* params)
     pos = s_ReqStart(ctx);
     VERIFY(pos > 0);
     /* Parameters */
-    n = s_PrintParamsStr(sx_Info->message, pos, params);
+    n = s_PrintParamsStr(sx_Info->message, pos, params, 1 /*log_site*/);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
@@ -2414,7 +2420,7 @@ void NcbiLogP_ExtraStr(const char* params)
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    nu = s_PrintParamsStr(buf, pos, params);
+    nu = s_PrintParamsStr(buf, pos, params, 0);
     VERIFY(nu > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
@@ -2472,7 +2478,7 @@ void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    n = s_PrintParamsStr(buf, pos, params);
+    n = s_PrintParamsStr(buf, pos, params, 0);
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
