@@ -3018,7 +3018,10 @@ bool CValidError_imp::x_IsFarFetchFailure (const CSeq_loc& loc)
             }                        
         }
     } else {
-        rval = true;
+        if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
+            && IsFarLocation(loc)) {
+            rval = true;
+        }
     }
     return rval;
 }

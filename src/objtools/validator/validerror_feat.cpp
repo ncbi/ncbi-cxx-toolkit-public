@@ -5761,7 +5761,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                         " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]", feat);
                 }
             }
-        } else if (report_errors  ||  unclassified_except) {
+        } else if (report_errors /* ||  unclassified_except */ ) {
             if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
                 // suppress if gpipe genomic
             } else {
