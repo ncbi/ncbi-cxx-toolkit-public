@@ -28,8 +28,10 @@
  * File Description:
  *      Command-line utility to log to AppLog (JIRA: CXX-2439).
  * Note:
- *  1) Utility returns tokens for 'start_app' and 'start_request' commands.
- *     That should be used as parameter for any subsequent calls.
+ *  1) Utility returns tokens for 'start_app', 'start_request' and
+ *     'stop_request' commands, that should be used as parameter for any
+ *     subsequent calls. The 'stop_request' command return the same token as 
+ *     'start_app', so you can use any for logging between requests.
  *  2) This utility tries to log locally (to /log) by default. If it can't
  *     do that then it try to call a CGI that does the logging
  *     (on other machine). CGI can be specified in the .ini file.
@@ -46,10 +48,10 @@
 
  /*
  Command lines:
-    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]  // -> token
+    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]  // -> app_token
     ncbi_applog stop_app      <token> [-status STATUS]
     ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-logsite SITE]  // -> request_token
-    ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]
+    ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]  // -> app_token
     ncbi_applog post          <token> [-severity SEV] -message MSG
     ncbi_applog extra         <token> [-param PAIRS]
     ncbi_applog perf          <token> [-status STATUS] -time TIMESPAN [-param PAIRS]
@@ -788,7 +790,7 @@ int CNcbiApplogApp::Run(void)
     } else 
 
     // -----  stop_request  --------------------------------------------------
-    // ncbi_applog stop_request <token> [-status STATUS] [-input N] [-output N]
+    // ncbi_applog stop_request <token> [-status STATUS] [-input N] [-output N] -> token
     
     if (cmd == "stop_request") {
         if (token_par_type != eRequest) {
@@ -800,6 +802,7 @@ int CNcbiApplogApp::Run(void)
         int n_write = args["output"].AsInteger();
         SetInfo();
         NcbiLog_ReqStop(status, (size_t)n_read, (size_t)n_write);
+        token_gen_type = eApp;
     } else 
     
     // -----  post  ----------------------------------------------------------
