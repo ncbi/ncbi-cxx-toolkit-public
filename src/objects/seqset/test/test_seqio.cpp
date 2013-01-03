@@ -53,7 +53,7 @@ USING_SCOPE(objects);
 BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
 {
     typedef CSeq_entry TObject;
-    string name = "seq_entry1";
+    string filename = "seq_entry1";
 
     const int kFmtCount = 5;
     const ESerialDataFormat fmt[kFmtCount] = {
@@ -81,13 +81,13 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
     string src_dir = CDirEntry::MakePath(NCBI_GetTestDataPath(),
                                          "objects/seqset/test");
     string dst_dir = ".";
-    for ( int in_i = 0; in_i < kFmtCount; ++in_i ) {
-        string in_name = CDirEntry::MakePath(src_dir, name, ext[in_i]);
+    int in_i = 0;
+    for ( ; in_i < kFmtCount; ++in_i ) {
+        string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
         LOG_POST("Reading from "<<in_name);
         
         CRef<TObject> obj(new TObject);
-        if ( fmt[in_i] != eSerial_Json ) {
-            // skipping in JSON is not implemented 
+        {
             auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
@@ -106,8 +106,8 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             *in >> *obj;
         }
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
-            string ref_name = CDirEntry::MakePath(src_dir, name, ext[out_i]);
-            string out_name = CDirEntry::MakePath(dst_dir, name, ext[out_i]);
+            string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
+            string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
@@ -154,7 +154,7 @@ public:
 BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
 {
     typedef CSeq_entry TObject;
-    string name = "seq_entry1";
+    string filename = "seq_entry1";
 
     const int kFmtCount = 5;
     const ESerialDataFormat fmt[kFmtCount] = {
@@ -181,13 +181,13 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
     string src_dir = CDirEntry::MakePath(NCBI_GetTestDataPath(),
                                          "objects/seqset/test");
     string dst_dir = ".";
-    for ( int in_i = 0; in_i < kFmtCount; ++in_i ) {
-        string in_name = CDirEntry::MakePath(src_dir, name, ext[in_i]);
+    int in_i = 0;
+    for ( ; in_i < kFmtCount; ++in_i ) {
+        string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
         LOG_POST("Reading from "<<in_name);
         
         CRef<TObject> obj(new TObject);
-        if ( fmt[in_i] != eSerial_Json ) {
-            // skipping in JSON is not implemented 
+        {
             auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
@@ -208,8 +208,8 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             *in >> *obj;
         }
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
-            string ref_name = CDirEntry::MakePath(src_dir, name, ext[out_i]);
-            string out_name = CDirEntry::MakePath(dst_dir, name, ext[out_i]);
+            string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
+            string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
                                                                   fmt[out_i]));
