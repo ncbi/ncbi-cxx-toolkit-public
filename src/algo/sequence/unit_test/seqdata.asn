@@ -17303,3 +17303,7 @@ WRALHSRGLPLCCPLX"
     }
   }
 }
+Bioseq-set ::= {
+  seq-set {
+  }
+}

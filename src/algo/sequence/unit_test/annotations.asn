@@ -9159,3 +9159,197 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "lycat",
+        desc "lysocardiolipin acyltransferase",
+        syn {
+          "lclat1",
+          "wu:fj17g04",
+          "zgc:77380"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 4747,
+        to 13756,
+        strand plus,
+        id gi 312123950,
+        fuzz-from lim lt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 406554
+        },
+        {
+          db "ZFIN",
+          tag str "ZDB-GENE-081211-2"
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "lysocardiolipin acyltransferase"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 26 substitutions and 5 indels and
+ aligns at 93% coverage compared to this genomic sequence",
+      product whole gi 47086102,
+      location packed-int {
+        {
+          from 4747,
+          to 4899,
+          strand plus,
+          id gi 312123950,
+          fuzz-to lim gt
+        },
+        {
+          from 5867,
+          to 5878,
+          strand plus,
+          id gi 312123950,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 8755,
+          to 8953,
+          strand plus,
+          id gi 312123950,
+          fuzz-from lim lt
+        },
+        {
+          from 9121,
+          to 9267,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 10483,
+          to 10599,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 11010,
+          to 11621,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 11943,
+          to 12070,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 12111,
+          to 12403,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 13143,
+          to 13756,
+          strand plus,
+          id gi 312123950
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_213270.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        },
+        code-break {
+          {
+            loc packed-int {
+              {
+                from 9267,
+                to 9267,
+                strand plus,
+                id gi 312123950
+              },
+              {
+                from 10483,
+                to 10484,
+                strand plus,
+                id gi 312123950
+              }
+            },
+            aa ncbieaa 88
+          }
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 4 substitutions and aligns at 86%
+ coverage compared to this genomic sequence",
+      product whole gi 47086103,
+      location packed-int {
+        {
+          from 5867,
+          to 5878,
+          strand plus,
+          id gi 312123950,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 8755,
+          to 8953,
+          strand plus,
+          id gi 312123950,
+          fuzz-from lim lt
+        },
+        {
+          from 9121,
+          to 9267,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 10483,
+          to 10599,
+          strand plus,
+          id gi 312123950
+        },
+        {
+          from 11010,
+          to 11548,
+          strand plus,
+          id gi 312123950
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_998435.1"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "lysocardiolipin acyltransferase 1"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    }
+  }
+}
