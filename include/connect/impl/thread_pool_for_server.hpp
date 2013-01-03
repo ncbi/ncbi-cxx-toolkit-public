@@ -259,11 +259,12 @@ private:
     { return new CThreadInPool_ForServer(this); }
 
     /// Register a thread. It is called by TThread::Main.
-    /// It should detach a thread if not tracking
     ///
     /// @param thread
     ///   A thread to register
-    void Register(TThread& thread);
+    /// @param return
+    ///   Whether registration succeeded.  (KillAllThreads disables it.)
+    bool Register(TThread& thread);
 
     /// Unregister a thread
     ///

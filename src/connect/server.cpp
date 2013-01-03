@@ -216,7 +216,10 @@ CThreadInPool_ForServer::Main(void)
 #endif
     }
 
-    m_Pool->Register(*this);
+    if ( !m_Pool->Register(*this) ) {
+        ERR_POST(Warning << "New worker thread blocked at the last minute.");
+        return NULL;
+    }
     m_Pool->m_ThreadCount.Add(1);
     CAutoUnregGuard guard(this);
 
@@ -330,12 +333,15 @@ CPoolOfThreads_ForServer::KillAllThreads(bool wait)
 }
 
 
-void
+bool
 CPoolOfThreads_ForServer::Register(TThread& thread)
 {
     CMutexGuard guard(m_Mutex);
-    if (!m_KilledAll) {
+    if (m_KilledAll) {
+        return false;
+    } else {
         m_Threads.push_back(CRef<TThread>(&thread));
+        return true;
     }
 }
 
