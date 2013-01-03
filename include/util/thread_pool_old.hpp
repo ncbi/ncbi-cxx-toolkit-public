@@ -626,12 +626,26 @@ public:
 
     virtual ~CStdPoolOfThreads();
 
+    enum EKillFlags {
+        fKill_Wait   = 0x1, ///< Wait for all threads in the pool to finish.
+        fKill_Reopen = 0x2  ///< Allow a fresh batch of worker threads.
+    };
+    typedef int TKillFlags; ///< binary OR of EKillFlags
+
+    /// Causes all threads in the pool to exit cleanly after finishing
+    /// all pending requests, optionally waiting for them to die.
+    ///
+    /// @param flags
+    ///    Governs optional behavior
+    virtual void KillAllThreads(TKillFlags flags);
+
     /// Causes all threads in the pool to exit cleanly after finishing
     /// all pending requests, optionally waiting for them to die.
     ///
     /// @param wait
     ///    If true will wait until all thread in the pool finish their job
-    virtual void KillAllThreads(bool wait);
+    virtual void KillAllThreads(bool wait)
+        { KillAllThreads(wait ? (fKill_Wait | fKill_Reopen) : fKill_Reopen); }
 
     /// Register a thread.
     ///
@@ -968,7 +982,12 @@ void CThreadInPool<TRequest>::x_HandleOneRequest(bool catch_all)
 template <typename TRequest>
 void* CThreadInPool<TRequest>::Main(void)
 {
-    m_Pool->Register(*this);
+    try {
+        m_Pool->Register(*this);
+    } catch (CThreadException&) {
+        ERR_POST(Warning << "New worker thread blocked at the last minute.");
+        return 0;
+    }
     if (m_RunMode == eRunOnce) {
         m_Pool->m_UrgentThreadCount.Add(1);
     } else {

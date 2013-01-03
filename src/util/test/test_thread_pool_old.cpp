@@ -113,7 +113,7 @@ int CThreadPoolTester::Run(void)
         }
     } STD_CATCH_ALL("CThreadPoolTester: status " << (status = 1))
 
-    pool.KillAllThreads(true);
+    pool.KillAllThreads(CStdPoolOfThreads::fKill_Wait);
 
     return status;
 }

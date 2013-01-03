@@ -48,7 +48,7 @@ protected:
 };
 
 
-void CStdPoolOfThreads::KillAllThreads(bool wait)
+void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
 {
     TACValue n, old_max;
     {{
@@ -56,6 +56,17 @@ void CStdPoolOfThreads::KillAllThreads(bool wait)
         old_max = m_MaxThreads;
         m_MaxThreads = 0;  // Forbid spawning new threads
         n = m_ThreadCount.Get(); // Capture for use without mutex
+    }}
+
+    {{
+        size_t n2 = m_Threads.size();
+        if (n != n2) {
+            ERR_POST(Warning << "Registered " << n2 << " threads but expected "
+                     << n);
+            if (n2 > n) {
+                n = n2;
+            }
+        }
     }}
 
     CRef<CStdRequest> poison(new CFatalRequest);
@@ -70,17 +81,17 @@ void CStdPoolOfThreads::KillAllThreads(bool wait)
         }
     }
     NON_CONST_ITERATE(TThreads, it, m_Threads) {
-        if (wait) {
+        if ((flags & fKill_Wait) != 0) {
             (*it)->Join();
         } else {
             (*it)->Detach();
         }
     }
     m_Threads.clear();
-    {{
+    if ((flags & fKill_Reopen) != 0) {
         CMutexGuard guard(m_Mutex);
         m_MaxThreads = old_max;
-    }}
+    }
 }
 
 
@@ -89,6 +100,9 @@ void CStdPoolOfThreads::Register(TThread& thread)
     CMutexGuard guard(m_Mutex);
     if (m_MaxThreads > 0) {
         m_Threads.push_back(CRef<TThread>(&thread));
+    } else {
+        NCBI_THROW(CThreadException, eRunError,
+                   "No more threads allowed in pool.");
     }
 }
 
@@ -108,7 +122,7 @@ void CStdPoolOfThreads::UnRegister(TThread& thread)
 CStdPoolOfThreads::~CStdPoolOfThreads()
 {
     try {
-        KillAllThreads(false);
+        KillAllThreads(0);
     } catch(...) {}    // Just to be sure that we will not throw from the destructor.
 }
 
