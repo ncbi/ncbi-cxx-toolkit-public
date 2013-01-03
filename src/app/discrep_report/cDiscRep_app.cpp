@@ -108,6 +108,8 @@ string                                  CDiscRepInfo :: kNonExtendableException;
 vector <string>                         CDiscRepInfo :: new_exceptions;
 Str2Str	                                CDiscRepInfo :: srcqual_keywords;
 vector <string>                         CDiscRepInfo :: kIntergenicSpacerNames;
+vector <string>                         CDiscRepInfo :: taxnm_env;
+vector <string>                         CDiscRepInfo :: virus_lineage;
 
 void CDiscRepApp::Init(void)
 {
@@ -196,7 +198,7 @@ cerr << "222can get\n";
     thisInfo.new_exceptions = NStr::Tokenize(strtmp, ",", thisInfo.new_exceptions);
 
     // ini. of kIntergenicSpacerNames
-    strtmp = reg.Get("StringVecIni", "K_IntergenicSpacerNames");
+    strtmp = reg.Get("StringVecIni", "KIntergenicSpacerNames");
     thisInfo.kIntergenicSpacerNames 
                   = NStr::Tokenize(strtmp, ",", thisInfo.kIntergenicSpacerNames);
     
@@ -220,11 +222,11 @@ cerr << "222can get\n";
     }
 
     // ini. of no_multi_qual
-    strtmp = reg.Get("StringVecIni", "No_multi_qual");
+    strtmp = reg.Get("StringVecIni", "NoMultiQual");
     thisInfo.no_multi_qual = NStr::Tokenize(strtmp, ",", thisInfo.no_multi_qual);
   
     // ini. of bad_gene_names_contained
-    strtmp = reg.Get("StringVecIni", "Bad_gene_names_contained");
+    strtmp = reg.Get("StringVecIni", "BadGeneNamesContained");
     thisInfo.bad_gene_names_contained 
                     = NStr::Tokenize(strtmp, ",", thisInfo.bad_gene_names_contained);
 
@@ -233,11 +235,11 @@ cerr << "222can get\n";
     thisInfo.suspicious_notes = NStr::Tokenize(strtmp, ",", thisInfo.suspicious_notes);
 
     // ini. of spec_words_biosrc;
-    strtmp = reg.Get("StringVecIni", "Spec_words_biosrc");
+    strtmp = reg.Get("StringVecIni", "SpecWordsBiosrc");
     thisInfo.spec_words_biosrc = NStr::Tokenize(strtmp, ",", thisInfo.spec_words_biosrc);
 
     // ini. of trna_list:
-    strtmp = reg.Get("StringVecIni", "Trna_list");
+    strtmp = reg.Get("StringVecIni", "TrnaList");
     thisInfo.trna_list = NStr::Tokenize(strtmp, ",", thisInfo.trna_list);
 
     // ini. of rrna_standard_name
@@ -245,7 +247,7 @@ cerr << "222can get\n";
     thisInfo.rrna_standard_name = NStr::Tokenize(strtmp, ",", thisInfo.rrna_standard_name);
 
     // ini. of short_auth_nms
-    strtmp = reg.Get("StringVecIni", "Short_auth_nms");
+    strtmp = reg.Get("StringVecIni", "ShortAuthNms");
     thisInfo.short_auth_nms = NStr::Tokenize(strtmp, ",", thisInfo.short_auth_nms);
 
     // ini. of descred_aaList
@@ -266,6 +268,14 @@ cerr << "222can get\n";
       strtmp = ( *it == "related-to") ? "related to" : *it;
       thisInfo.cds_prod_find[strtmp]= reg.Get("Cds-product-find", *it);
     }
+
+    // ini. of taxnm_env
+    strtmp = reg.Get("StringVecIni", "TaxnameEnv");
+    thisInfo.taxnm_env = NStr::Tokenize(strtmp, ",", thisInfo.taxnm_env);
+
+    // ini. of virus_lineage
+    strtmp = reg.Get("StringVecIni", "VirusLineage");
+    thisInfo.virus_lineage = NStr::Tokenize(strtmp, ",", thisInfo.virus_lineage); 
 }
 
 

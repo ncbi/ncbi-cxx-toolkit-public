@@ -146,6 +146,7 @@ static string strtmp;
 // CTestAndRepData
 string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
 {
+   if (!biosrc.IsSetOrgMod()) return kEmptyStr;
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
       if ((*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) == type_name)
                 return ((*it)->GetSubname());
@@ -168,8 +169,17 @@ bool CTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubt
    return false;
 };
 
+
+string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, CSubSource::ESubtype subtype)
+{
+   if (!biosrc.CanGetSubtype()) return kEmptyStr;
+   return (biosrc, 
+      (*biosrc.GetSubtype().begin())->GetSubtypeName( subtype, CSubSource::eVocabulary_insdc));
+};
+
 string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
 {
+  if (!biosrc.CanGetSubtype()) return kEmptyStr;
   ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
      int type = (*it)->GetSubtype();
      if ( (*it)->GetSubtypeName( type, CSubSource::eVocabulary_insdc) == type_name ) {

@@ -232,6 +232,7 @@ void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 {
 // ini.
+   thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;
    thisTest.is_BacPartial_run = false;
    thisTest.is_BASES_N_run = false;
@@ -244,7 +245,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_Prot_run = false;
    thisTest.is_TRRna_run = false;
    thisTest.is_RRna_run = false;
-   thisTest.is_SHORT_run = false;
    thisTest.is_SusPhrase_run = false;
 
    GoTests(CRepConfig::tests_on_Bioseq, bioseq);
