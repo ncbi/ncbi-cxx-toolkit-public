@@ -55,7 +55,9 @@ CSeq_entry_CI::CSeq_entry_CI(const CSeq_entry_Handle& entry,
     : m_Recursive(recursive),
       m_Filter(type_filter)
 {
-    x_Initialize(entry.GetSet());
+    if ( entry.IsSet() ) {
+        x_Initialize(entry.GetSet());
+    }
 }
 
 
@@ -190,7 +192,9 @@ CSeq_entry_I::CSeq_entry_I(const CSeq_entry_EditHandle& entry,
     : m_Recursive(recursive),
       m_Filter(type_filter)
 {
-    x_Initialize(entry.SetSet());
+    if ( entry.IsSet() ) {
+        x_Initialize(entry.SetSet());
+    }
 }
 
 
