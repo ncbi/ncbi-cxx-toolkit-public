@@ -3154,7 +3154,7 @@ esac
 
 if test -n "$with_projects"; then
    case "$with_projects" in
-      /* ) abs_projects=$projects              ;;
+      /* ) abs_projects=$with_projects         ;;
       yes) abs_projects=$srcdir/projects       ;;
       *  ) abs_projects=$srcdir/$with_projects ;;
    esac
