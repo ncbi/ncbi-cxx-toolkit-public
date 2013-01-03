@@ -541,6 +541,9 @@ void CObjectIStreamAsn::SkipAnyContent(void)
         }
         if (c == to) {
             m_Input.SkipChar();
+            if (c == '\n') {
+                SkipEndOfLine(c);
+            }
             return;
         }
         if (c == '\"' || (c == '{' && to != '\"')) {
@@ -548,6 +551,9 @@ void CObjectIStreamAsn::SkipAnyContent(void)
             continue;
         }
         m_Input.SkipChar();
+        if (c == '\n') {
+            SkipEndOfLine(c);
+        }
     }
 }
 
