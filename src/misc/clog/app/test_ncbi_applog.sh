@@ -41,14 +41,14 @@ trap 'rm -f test_ncbi_applog.err test_ncbi_applog.log test_ncbi_applog.perf test
 # --- Start
 
 SetOutput cwd
-token=`$APPLOG start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID`
+token=`$APPLOG start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID -logsite=APP`
 if [ $? -ne 0 -o -z "$token" ] ; then
     Error "start_app"
 fi
 echo "$token" | \
-    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
+    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&logsite=APP&atime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
     || Error "Token have wrong format"
-Log 'start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID' 'start_app' "^00123/000/0000/PB $std start"
+Log 'start_app -pid=123 -appname="test_ncbi_applog" -host=TESTHOST -sid=TESTSID -logsite=APP' 'start_app' "^00123/000/0000/PB $std start"
 
 
 # --- Posting
@@ -71,17 +71,17 @@ Log 'extra "" -param="extra1=1"'                        'extra(2)' "^00123/000/0
 # --- Request 1
 
 SetOutput cwd
-request_token=`$APPLOG start_request '' -sid=request1 -rid=1 -client=1.2.3.4 -param="r11=value1&r12=value2"`
+request_token=`$APPLOG start_request '' -sid=request1 -rid=1 -client=1.2.3.4 -logsite=REQ -param="r11=value1&r12=value2"`
 if [ $? -ne 0 -o -z "$request_token" ] ; then
     Error "start_request(1)"
 fi
 echo "$request_token" | \
-    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&atime=[0-9]\{10,\}\.[0-9]\{1,\}&rid=1&rsid=request1&client=1\.2\.3\.4&rtime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
+    grep "name=test_ncbi_applog&pid=123&guid=$guid&host=TESTHOST&asid=TESTSID&logsite=APP&atime=[0-9]\{10,\}\.[0-9]\{1,\}&rid=1&rsid=request1&client=1\.2\.3\.4&rtime=[0-9]\{10,\}\.[0-9]\{1,\}" >/dev/null 2>&1 \
     || Error "Request 1 token have wrong format"
 
-Log 'start_request "" -sid=request1 -rid=1 -client=1.2.3.4 -param="r11=value1&r12=value2"' 'start_request(1)' "^00123/000/0001/RB $req1 request-start r11=value1&r12=value2"
-Log 'post $request_token -message "request message"'                                       'post(5)'          "^00123/000/0001/R  $req1 Error: request message"
-Log 'stop_request $request_token -status=200 -input=11 -output=13'                         'stop_request(1)'  "^00123/000/0001/RE $req1 request-stop  200 [0-9]\{1,\}.[0-9]\{3\} 11 13"
+Log 'start_request $request_token -sid=request1 -rid=1 -logsite=REQ -client=1.2.3.4 -param="r11=value1&r12=value2"' 'start_request(1)' "^00123/000/0001/RB $req1 request-start r11=value1&r12=value2&log_site=REQ"
+Log 'post          $request_token -message "request message"'       'post(5)'          "^00123/000/0001/R  $req1 Error: request message"
+Log 'stop_request  $request_token -status=200 -input=11 -output=13' 'stop_request(1)'  "^00123/000/0001/RE $req1 request-stop  200 [0-9]\{1,\}.[0-9]\{3\} 11 13"
 
 
 # --- Posting between requests
@@ -95,7 +95,8 @@ request_token=`$APPLOG start_request '' -sid=request2 -rid=2 -client=5.6.7.8 -pa
 if [ $? -ne 0 -o -z "$request_token" ] ; then
     Error "start_request(2)"
 fi
-Log 'stop_request $request_token -status=600 -input=21 -output=23' 'stop_request(2)' "^00123/000/0002/RE $req2 request-stop  600 [0-9]\{1,\}\.[0-9]\{3\} 21 23"
+Log 'start_request $request_token -sid=request2 -rid=2 -client=5.6.7.8 -param="r21=1&r22=2"' 'start_request(2)' "^00123/000/0002/RB $req2 request-start r21=1&r22=2&log_site=APP"
+Log 'stop_request  $request_token -status=600 -input=21 -output=23' 'stop_request(2)' "^00123/000/0002/RE $req2 request-stop  600 [0-9]\{1,\}\.[0-9]\{3\} 21 23"
 
 
 # --- Stop 
