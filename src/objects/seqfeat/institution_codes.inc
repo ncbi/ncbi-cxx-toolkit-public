@@ -31,6 +31,7 @@
  */
 
 static const char* const kInstitutionCollectionCodeList[] = {
+" CCCS	c	Culture Collection of Ciliates and their Symbionts",
 "A	s	Arnold Arboretum, Harvard University",
 "AA	s	Ministry of Science, Academy of Sciences",
 "AAH	s	Arnold Arboretum, Harvard University",
