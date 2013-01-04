@@ -35,6 +35,25 @@
 
 BEGIN_NCBI_SCOPE
 
+class CTimeoutGuard
+{
+public:
+    CTimeoutGuard(I_DriverContext& dc, unsigned int timeout)
+        : m_DriverContext(dc), m_SavedTimeout(dc.GetTimeout())
+        { dc.SetTimeout(timeout); }
+    ~CTimeoutGuard()
+        {
+            try {
+                m_DriverContext.SetTimeout(m_SavedTimeout);
+            } NCBI_CATCH_ALL("CTimeoutGuard")
+        }
+
+private:
+    I_DriverContext& m_DriverContext;
+    unsigned int     m_SavedTimeout;
+};
+
+
 ////////////////////////////////////////////////////////////////////////////////
 static void s_WaitForDelay(IConnection& conn)
 {
@@ -194,12 +213,9 @@ BOOST_AUTO_TEST_CASE(Test_Timeout)
         auto_ptr<IConnection> conn;
         auto_ptr<IStatement> auto_stmt;
 
-        I_DriverContext* dc = GetDS().GetDriverContext();
-        unsigned int timeout = dc->GetTimeout();
-
         // Alter DriverContext ...
         {
-            dc->SetTimeout(2);
+            CTimeoutGuard GUARD(*GetDS().GetDriverContext(), 2);
 
             // Create connection ...
             conn.reset(GetDS().CreateConnection());
@@ -220,8 +236,6 @@ BOOST_AUTO_TEST_CASE(Test_Timeout)
             // Check selecting from a huge table ...
             s_HugeTableSelect(*conn);
         } // Alter DriverContext ...
-
-        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -235,18 +249,14 @@ BOOST_AUTO_TEST_CASE(Test_Timeout2)
         auto_ptr<IConnection> conn;
         auto_ptr<IStatement> auto_stmt;
 
-
-        I_DriverContext* dc = GetDS().GetDriverContext();
-        unsigned int timeout = dc->GetTimeout();
-
         // Alter connection ...
         {
+            CTimeoutGuard GUARD(*GetDS().GetDriverContext(), 2);
+
             conn.reset(GetDS().CreateConnection());
             BOOST_CHECK(conn.get() != NULL);
 
             conn->Connect(GetArgs().GetConnParams());
-
-            conn->SetTimeout(2);
 
             s_WaitForDelay(*conn);
 
@@ -255,8 +265,6 @@ BOOST_AUTO_TEST_CASE(Test_Timeout2)
             s_HugeTableSelect(*conn);
 
         }
-
-        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -269,9 +277,7 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
     try {
         auto_ptr<IConnection> conn;
 
-        I_DriverContext* dc = GetDS().GetDriverContext();
-        unsigned int timeout = dc->GetTimeout();
-        dc->SetTimeout(2);
+        CTimeoutGuard GUARD(*GetDS().GetDriverContext(), 2);
 
         conn.reset(GetDS().CreateConnection());
 
@@ -363,8 +369,6 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
 
             LOG_POST( "Select finished in " << timer.Elapsed() << " sec." );
         }
-
-        dc->SetTimeout(timeout);
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
