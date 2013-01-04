@@ -1492,6 +1492,16 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             b = e;
         }
         _ASSERT( -2 <= frame && frame <= 0 );
+
+        if (frame < 0) { //last codon partial
+            if (b < strprot.size() && strprot[b] != 'X') { // last partial codon translated unambiguously - add it
+                _ASSERT( b == strprot.size()-1 );
+                AddLiteral(seq_inst, strprot.substr(b,1), CSeq_inst::eMol_aa);
+                b += 1;
+                frame = 0;
+            }
+        }
+
         _ASSERT( b <= strprot.size() &&
                  strprot.size() <= b + (frame==0?0:1) );
 

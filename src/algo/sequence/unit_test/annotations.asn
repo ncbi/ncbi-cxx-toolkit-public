@@ -9353,3 +9353,90 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 443565,
+        to 562955,
+        strand plus,
+        id gi 312124926,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      product whole local id 1,
+      location packed-int {
+        {
+          from 443565,
+          to 444058,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 493174,
+          to 493248,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 501115,
+          to 501186,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 562887,
+          to 562955,
+          strand plus,
+          id gi 312124926,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      product whole local id 2,
+      location packed-int {
+        {
+          from 443811,
+          to 444058,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 493174,
+          to 493248,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 501115,
+          to 501186,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 562887,
+          to 562955,
+          strand plus,
+          id gi 312124926,
+          fuzz-to lim gt
+        }
+      }
+    }
+  }
+}

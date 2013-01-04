@@ -373,6 +373,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         {
             generator.SetFlags(default_flags);
             TSeqRange adjust_range;
+            CRef<CSeq_feat> feat;
             ITERATE (CSeq_align::TExt, ext_it, align->GetExt()) {
                 if ((*ext_it)->GetType().IsStr() &&
                     (*ext_it)->GetType().GetStr() == "CFeatureGenerator") {
@@ -385,6 +386,13 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                         adjust_range = TSeqRange(range_vec[0], range_vec[1]);
                         generator.SetAllowedUnaligned(0);
                     }
+                    if ((*ext_it)->HasField("cdregion")) {
+                        string cdregion = (*ext_it)->GetField("cdregion").GetData().GetStr();
+                        CNcbiIstrstream istrs(cdregion.c_str());
+                        CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+                        feat.Reset(new CSeq_feat);
+                        *istr >> *feat;
+                    }
                 }
             }
 
@@ -394,7 +402,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 clean_align = generator.AdjustAlignment(*clean_align, adjust_range);
             }
 
-            generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
+            generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs, 0, feat.GetPointer());
 //            BOOST_CHECK( validator.Validate(*seq_entry, &scope)->FatalSize()==0 );
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(*actual_features.front()->GetLocation().GetId());
             if(id == gene_for_combined_aligns)

@@ -13769,3 +13769,98 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs spliced {
+    product-id local id 1,
+    genomic-id gi 312124926,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+                        product-start nucpos 0,
+                        product-end nucpos 493,
+                        genomic-start 443565,
+                        genomic-end 444058,
+                        parts {
+                          match 494
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+                        product-start nucpos 494,
+                        product-end nucpos 568,
+                        genomic-start 493174,
+                        genomic-end 493248,
+                        parts {
+                          match 75
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+                        product-start nucpos 569,
+                        product-end nucpos 640,
+                        genomic-start 501115,
+                        genomic-end 501186,
+                        parts {
+                          match 72
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        },
+                        donor-after-exon {
+                          bases "GT"
+                        }
+                      },
+                      {
+                        product-start nucpos 641,
+                        product-end nucpos 709,
+                        genomic-start 562887,
+                        genomic-end 562955,
+                        parts {
+                          match 69
+                        },
+                        acceptor-before-exon {
+                          bases "AG"
+                        }
+      }
+    },
+    product-length 710
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "cdregion", 
+          data str "Seq-feat ::= { 
+              data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local id 2,
+                  location int {
+                    from 246,
+                    to 709,
+                    strand plus,
+                    id local id 1,
+                    fuzz-to lim gt
+                  }
+            }"
+        }
+      }
+    }
+  }
+}
