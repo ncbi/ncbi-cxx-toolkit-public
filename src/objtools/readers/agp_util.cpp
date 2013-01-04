@@ -357,7 +357,8 @@ int CAgpRow::FromString(const string& line)
     part_number = s2i( GetPartNumber() );
     if(part_number<=0) {
         m_AgpErr->Msg(CAgpErr::E_MustBePositive, "part_number (column 4)");
-        return CAgpErr::E_MustBePositive;
+        // may return this code later; (try to) parse other columns first
+        // return CAgpErr::E_MustBePositive;
     }
     if(object_beg<=0 || object_end<=0) return CAgpErr::E_MustBePositive;
     if(object_end < object_beg) {
@@ -403,6 +404,7 @@ int CAgpRow::FromString(const string& line)
                     );
                     return CAgpErr::E_ObjRangeNeComp;
                 }
+                if(part_number<=0) return CAgpErr::E_MustBePositive;
                 return 0;  // successfully parsed
             }
             else {

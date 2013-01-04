@@ -78,6 +78,7 @@ public:
   }
 
   bool had_missing_tab;
+  bool bad_part_number;
   CCustomErrorHandler()
   {
     had_missing_tab=false;
@@ -85,8 +86,13 @@ public:
 
   virtual void Msg(int code, const string& details, int appliesTo=fAtThisLine)
   {
-    if( MustRenumber(code) ) return;
-    if( code==W_GapLineMissingCol9 ) had_missing_tab=true;
+    bad_part_number=false;
+    // GCOL-2021: fix zero values in: component number (column 4),
+    if( code==E_MustBePositive && details == "part_number (column 4)") {
+      bad_part_number=true;
+    }
+    else if( MustRenumber(code) ) return;
+    else if( code==W_GapLineMissingCol9 ) had_missing_tab=true;
     CAgpErr::Msg(code, details, appliesTo);
   }
   // copied from CAgpErr - only to get rid of the pointless compiler warning
@@ -166,8 +172,12 @@ protected:
         m_prev_line_skipped=false; // do not skip checks on the next line
         break;
 
-      case CAgpErr::E_ObjRangeNeGap:
-      case CAgpErr::E_ObjRangeNeComp:
+      // case CAgpErr::E_ObjRangeNeGap:
+      // case CAgpErr::E_ObjRangeNeComp:
+      default: if( custom_err.bad_part_number  ||
+        m_error_code==CAgpErr::E_ObjRangeNeGap ||
+        m_error_code==CAgpErr::E_ObjRangeNeComp ) {
+
         // Use m_line_skipped to prevent endless recursion
         if(m_line_skipped) {
           m_line_skipped=false;
@@ -177,10 +187,10 @@ protected:
           break;
         }
         // else: print diags
-
+      }
+      else {
       //case CAgpErr::E_ObjEndLtBeg: -- component/gap-specific columns were not parsed...
       // die (could also: warn, set End=Beg, retry/resume parsing?)
-      default:
         if( CCustomErrorHandler::MustRenumber(m_error_code) ) {
           if( m_error_code==CAgpErr::E_ObjRangeNeGap ||
               m_error_code==CAgpErr::E_ObjRangeNeComp )
@@ -191,6 +201,7 @@ protected:
           renum_current_obj=true;
         }
         else return false; // die
+      }
     }
     return true;
   }
@@ -318,6 +329,7 @@ int ProcessStream(istream &in, ostream& out)
   if(had_extra_tab       ) cerr << "Extra tabs removed.\n";
   if(renum.had_empty_line) cerr << "Empty line(s) removed.\n";
   if(renum.custom_err.had_missing_tab) cerr << "Missing tabs added at the ends of gap lines.\n";
+  //if(renum.custom_err.bad_part_number) cerr << "Invalid part numbers corrected.\n";
   if(no_eol_at_eof       ) cerr << "Line break added at the end of file.\n";
   if(bad_case_gap        ) cerr << "Gap type/linkage converted to lower case.\n";
   if(renum.reordered_ln_ev) cerr << "Linkage evidence terms reordered.\n";
