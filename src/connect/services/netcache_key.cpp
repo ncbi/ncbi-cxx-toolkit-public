@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "util.hpp"
+
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/netcache_api_expt.hpp>
 
@@ -151,21 +153,10 @@ string CNetCacheKey::StripKeyExtensions() const
     return HasExtensions() ? string(m_Key.data(), m_PrimaryKeyLength) : m_Key;
 }
 
-static unsigned CountUnderscores(const string& extension_value)
-{
-    unsigned underscore_count = 1;
-    const char* underscore = strchr(extension_value.c_str(), '_');
-    while (underscore != NULL) {
-        ++underscore_count;
-        underscore = strchr(underscore + 1, '_');
-    }
-    return underscore_count;
-}
-
 static void AppendServiceNameExtension(string& blob_id,
     const string& service_name)
 {
-    blob_id.append(CountUnderscores(service_name), '_');
+    blob_id.append(g_NumberOfUnderscoresPlusOne(service_name), '_');
     blob_id.append("S_");
     blob_id.append(service_name);
 }
