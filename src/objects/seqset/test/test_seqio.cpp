@@ -37,6 +37,7 @@
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/objhook.hpp>
+#include <serial/objcopy.hpp>
 #include <corelib/ncbifile.hpp>
 #include <common/test_data_path.h>
 #include <objects/seqset/Seq_entry.hpp>
@@ -49,6 +50,29 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+class CSysWatch
+{
+public:
+    CSysWatch()
+    {
+        Reset();
+    }
+    void Reset(void)
+    {
+        GetCurrentProcessTimes(&m_User_time, &m_System_time);
+    }
+    double Elapsed(void)
+    {
+        double user, system;
+        GetCurrentProcessTimes(&user, &system);
+        return (user  - m_User_time) + (system - m_System_time);
+    }
+private:
+    double m_User_time;
+    double m_System_time;
+};
+
 
 BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
 {
@@ -82,29 +106,40 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
                                          "objects/seqset/test");
     string dst_dir = ".";
     int in_i = 0;
+    LOG_POST("-------------------------------------------------");
+    LOG_POST("TestAsnSerialization");
     for ( ; in_i < kFmtCount; ++in_i ) {
-        string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
-        LOG_POST("Reading from "<<in_name);
+        string loc_name = CDirEntry::MakePath(dst_dir, filename, ext[in_i]) + "_loc";
+        {
+            string in_name  = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
+            LOG_POST("Reading from "<<in_name);
+            CFile(in_name).Copy(loc_name);
+        }
         
         CRef<TObject> obj(new TObject);
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
+            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
                     ->SetEnforcedStdXml(true);
             }
+            CSysWatch sw;
             in->Skip(obj->GetThisTypeInfo());
+            LOG_POST(sw.Elapsed() << "s:  Skip");
         }
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
+            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
                     ->SetEnforcedStdXml(true);
             }
+            CSysWatch sw;
             *in >> *obj;
+            LOG_POST(sw.Elapsed() << "s:  Read");
         }
+//        LOG_POST("Write into:");
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
             string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
             string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
@@ -115,7 +150,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
                     dynamic_cast<CObjectOStreamXml*>(out.get())
                         ->SetEnforcedStdXml(true);
                 }
+//                CSysWatch sw;
                 *out << *obj;
+//                LOG_POST("\t" << ext[out_i] << "\t" << sw.Elapsed());
             }
             if ( fmt[out_i] == eSerial_AsnBinary ) {
                 BOOST_REQUIRE(CFile(out_name).Compare(ref_name));
@@ -125,6 +162,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             }
             CFile(out_name).Remove();
         }
+        CFile(loc_name).Remove();
     }
 }
 
@@ -182,31 +220,42 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
                                          "objects/seqset/test");
     string dst_dir = ".";
     int in_i = 0;
+    LOG_POST("-------------------------------------------------");
+    LOG_POST("TestAsnSerializationWithHook");
     for ( ; in_i < kFmtCount; ++in_i ) {
-        string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
-        LOG_POST("Reading from "<<in_name);
+        string loc_name = CDirEntry::MakePath(dst_dir, filename, ext[in_i]) + "_loc";
+        {
+            string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
+            LOG_POST("Reading from "<<in_name);
+            CFile(in_name).Copy(loc_name);
+        }
         
         CRef<TObject> obj(new TObject);
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
+            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
                     ->SetEnforcedStdXml(true);
             }
             CObjectHookGuard<CObject_id> g1("str", *new CSkipVariantHook, in.get());
+            CSysWatch sw;
             in->Skip(obj->GetThisTypeInfo());
+            LOG_POST(sw.Elapsed() << "s:  Skip");
         }
         {
-            auto_ptr<CObjectIStream> in(CObjectIStream::Open(in_name,
+            auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
                                                              fmt[in_i]));
             if ( std_xml[in_i] ) {
                 dynamic_cast<CObjectIStreamXml*>(in.get())
                     ->SetEnforcedStdXml(true);
             }
             CObjectHookGuard<CObject_id> g1("str", *new CReadVariantHook, in.get());
+            CSysWatch sw;
             *in >> *obj;
+            LOG_POST(sw.Elapsed() << "s:  Read");
         }
+//        LOG_POST("Write into:");
         for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
             string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
             string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
@@ -217,7 +266,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
                     dynamic_cast<CObjectOStreamXml*>(out.get())
                         ->SetEnforcedStdXml(true);
                 }
+//                CSysWatch sw;
                 *out << *obj;
+//                LOG_POST("\t" << ext[out_i] << "\t" << sw.Elapsed());
             }
             if ( fmt[out_i] == eSerial_AsnBinary ) {
                 BOOST_REQUIRE(CFile(out_name).Compare(ref_name));
@@ -227,5 +278,87 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             }
             CFile(out_name).Remove();
         }
+        CFile(loc_name).Remove();
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
+{
+    typedef CSeq_entry TObject;
+    string filename = "seq_entry1";
+
+    const int kFmtCount = 5;
+    const ESerialDataFormat fmt[kFmtCount] = {
+        eSerial_AsnText,
+        eSerial_AsnBinary,
+        eSerial_Xml,
+        eSerial_Xml,
+        eSerial_Json
+    };
+    const bool std_xml[kFmtCount] = {
+        false,
+        false,
+        false,
+        true,
+        false
+    };
+    const string ext[kFmtCount] = {
+        ".asn",
+        ".asb",
+        ".xml",
+        ".sxml",
+        ".json"
+    };
+    string src_dir = CDirEntry::MakePath(NCBI_GetTestDataPath(),
+                                         "objects/seqset/test");
+    string dst_dir = ".";
+    int in_i = 0;
+    LOG_POST("-------------------------------------------------");
+    LOG_POST("TestAsnSerializationCopy");
+    for ( ; in_i < kFmtCount; ++in_i ) {
+        string loc_name = CDirEntry::MakePath(dst_dir, filename, ext[in_i]) + "_loc";
+        {
+            string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
+            LOG_POST("Reading from "<<in_name);
+            CFile(in_name).Copy(loc_name);
+        }
+        
+        LOG_POST("Copy into:");
+        for ( int out_i = 0; out_i < kFmtCount; ++out_i ) {
+            string ref_name = CDirEntry::MakePath(src_dir, filename, ext[out_i]);
+            string out_name = CDirEntry::MakePath(dst_dir, filename, ext[out_i]);
+
+            {
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open(loc_name,
+                                                                 fmt[in_i]));
+                if ( std_xml[in_i] ) {
+                    dynamic_cast<CObjectIStreamXml*>(in.get())
+                        ->SetEnforcedStdXml(true);
+                }
+
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open(out_name,
+                                                                    fmt[out_i]));
+                if ( std_xml[out_i] ) {
+                    dynamic_cast<CObjectOStreamXml*>(out.get())
+                        ->SetEnforcedStdXml(true);
+                }
+
+                CObjectStreamCopier copier(*in,*out);
+                CSysWatch sw;
+                copier.Copy(TObject::GetTypeInfo());
+                LOG_POST("\t" << ext[out_i] << "\t" << sw.Elapsed());
+            }
+
+
+            if ( fmt[out_i] == eSerial_AsnBinary ) {
+                BOOST_REQUIRE(CFile(out_name).Compare(ref_name));
+            }
+            else {
+                BOOST_REQUIRE(CFile(out_name).CompareTextContents(ref_name, CFile::eIgnoreWs));
+            }
+            CFile(out_name).Remove();
+        }
+        CFile(loc_name).Remove();
     }
 }
