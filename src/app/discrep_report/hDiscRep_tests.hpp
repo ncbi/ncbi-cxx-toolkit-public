@@ -289,6 +289,8 @@ namespace DiscRepNmSpc {
   class CBioseqSet_on_class : public CBioseqSetTestAndRepData
   {
     public:
+      CBioseqSet_on_class () 
+             { m_has_rearranged = m_has_sat_feat = m_has_non_sat_feat = false;};
       virtual ~CBioseqSet_on_class () {};
 
       virtual void TestOnObj(const CBioseq_set& bioseq_set);
@@ -296,8 +298,23 @@ namespace DiscRepNmSpc {
       virtual string GetName() const = 0;
    
     protected:
+      bool m_has_rearranged, m_has_sat_feat, m_has_non_sat_feat;
+
       string GetName_nonwgs() const {return string("DISC_NONWGS_SETS_PRESENT"); }
       string GetName_segset() const {return string("DISC_SEGSETS_PRESENT"); }
+      string GetName_wrap() const {return string("TEST_UNWANTED_SET_WRAPPER"); }
+
+      void FindUnwantedSetWrappers (const CBioseq_set& set);
+      bool IsMicrosatelliteRepeatRegion (const CSeq_feat& seq_feat);
+  };
+
+  class CBioseqSet_TEST_UNWANTED_SET_WRAPPER : public CBioseqSet_on_class
+  {
+    public:
+      virtual ~CBioseqSet_TEST_UNWANTED_SET_WRAPPER () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string(CBioseqSet_on_class::GetName_wrap()); }
   };
 
   class CBioseqSet_DISC_NONWGS_SETS_PRESENT : public CBioseqSet_on_class
@@ -339,13 +356,6 @@ namespace DiscRepNmSpc {
      protected:
        string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
                                                      const int& cur_idx, bool is_subsrc);
-/*
-       string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
-       string GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype);
-       bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
-       string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
-       bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
-*/
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
@@ -710,7 +720,10 @@ namespace DiscRepNmSpc {
       string GetName_mcul() const {return string("ONCALLER_MULTIPLE_CULTURE_COLLECTION");}
       string GetName_human() const {return string("DISC_HUMAN_HOST");}
       string GetName_env() const {return string("TEST_UNNECESSARY_ENVIRONMENTAL");}
+      string GetName_amp() const {
+                           return string("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE");}
 
+      bool AmpPrimersNoEnvSample(const CBioSource& biosrc);
       bool HasUnnecessaryEnvironmental(const CBioSource& biosrc);
       bool HasMultipleCultureCollection (const CBioSource& biosrc, string& cul_vlus);
       bool DoAuthorityAndTaxnameConflict(const CBioSource& biosrc);
@@ -727,6 +740,15 @@ namespace DiscRepNmSpc {
                                const COrgMod::ESubtype& check_type, const string& check_head);
   };
 
+  class CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE 
+                                              : public CSeqEntry_test_on_biosrc_orgmod
+  {
+    public:
+      virtual ~CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_amp();}
+  };
 
   class CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL : public CSeqEntry_test_on_biosrc_orgmod
   {
@@ -736,7 +758,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_env();}
   };
-
 
   class CSeqEntry_DISC_HUMAN_HOST : public CSeqEntry_test_on_biosrc_orgmod
   {
@@ -940,7 +961,10 @@ namespace DiscRepNmSpc {
       string GetName_clone() const {return string("DISC_REQUIRED_CLONE");}
       string GetName_meta() const {return string("DISC_METAGENOMIC");}
       string GetName_sp() const {return string("TEST_SP_NOT_UNCULTURED");}
+      string GetName_prim() const {return string("TEST_MISSING_PRIMER");}
 
+      bool MissingPrimerValue(const CBioSource& biosrc);
+      void IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, bool& has_seq, bool& has_name);
       bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
       void AddEukaryoticBioseqsToReport(const CBioseq_set& set);
@@ -957,6 +981,14 @@ namespace DiscRepNmSpc {
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
   };
 
+  class CSeqEntry_TEST_MISSING_PRIMER : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_TEST_MISSING_PRIMER () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_prim();}
+  };
 
   class CSeqEntry_TEST_SP_NOT_UNCULTURED : public CSeqEntry_test_on_biosrc
   {
@@ -967,7 +999,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_sp();}
   };
 
-
   class CSeqEntry_DISC_METAGENOMIC : public CSeqEntry_test_on_biosrc
   {
     public:
@@ -976,7 +1007,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_meta();}
   };
-
 
   class CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER : public CSeqEntry_test_on_biosrc
   {
@@ -987,8 +1017,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_trin();}
   };
 
-
-
   class CSeqEntry_DISC_REQUIRED_CLONE : public CSeqEntry_test_on_biosrc
   {
     public:
@@ -997,7 +1025,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_clone();}
   };
-
 
   class CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT :  public CSeqEntry_test_on_biosrc
   {
@@ -1008,7 +1035,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_map();}
   };
 
-
   class CSeqEntry_DIVISION_CODE_CONFLICTS :  public CSeqEntry_test_on_biosrc
   {
     public:
@@ -1017,7 +1043,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_div();}
   };
-
 
   class CSeqEntry_MORE_NAMES_COLLECTED_BY : public CSeqEntry_test_on_biosrc
   {
@@ -1028,7 +1053,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_col();}
   };
 
-  
   class CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY : public CSeqEntry_test_on_biosrc
   {
     public:
@@ -1037,7 +1061,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_iden();}
   };
-
 
   class CSeqEntry_DISC_MISSING_VIRAL_QUALS : public CSeqEntry_test_on_biosrc
   {
@@ -1048,7 +1071,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_quals();}
   };
 
-
   class CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH : public CSeqEntry_test_on_biosrc
   {
     public:
@@ -1057,7 +1079,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_flu();}
   };
-
 
   class CSeqEntry_TAX_LOOKUP_MISSING : public CSeqEntry_test_on_biosrc
   {

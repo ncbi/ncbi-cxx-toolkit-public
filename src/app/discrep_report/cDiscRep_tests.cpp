@@ -6465,6 +6465,42 @@ void CBioseq_SUSPECT_PRODUCT_NAMES :: GetReport(CRef <CClickableItem>& c_item)
 
 // CBioseq_set
 // new comb
+bool CBioseqSet_on_class :: IsMicrosatelliteRepeatRegion (const CSeq_feat& seq_feat)
+{
+   if (seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region) return false;
+   if (seq_feat.CanGetQual()) {
+      ITERATE (vector <CRef < CGb_qual > >, it, seq_feat.GetQual()) {
+        if ( NStr::EqualNocase((*it)->GetQual(), "satellite")
+                         && NStr::EqualNocase( (*it)->GetVal(), "microsatellite"))
+           return true;
+      }
+   }
+   return false;
+};
+
+
+void CBioseqSet_on_class :: FindUnwantedSetWrappers (const CBioseq_set& set)
+{
+  ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
+    if ( (*it)->IsSeq() ) {
+       const CBioseq& bioseq = (*it)->GetSeq();
+       CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
+       for (CSeqdesc_CI ci(bioseq_hl, CSeqdesc::e_Source); ci && !m_has_rearranged; ++ci) {
+         m_has_rearranged = IsSubSrcPresent( ci->GetSource(), CSubSource::eSubtype_rearranged);
+       }
+       for (CFeat_CI feat_it(bioseq_hl); feat_it && (!m_has_sat_feat || !m_has_non_sat_feat); 
+                                                                                 ++feat_it) {
+          if (IsMicrosatelliteRepeatRegion(feat_it->GetOriginalFeature())) 
+                  m_has_sat_feat = true;
+          else m_has_non_sat_feat = true; 
+       }
+    } 
+    else if (!m_has_rearranged || !m_has_sat_feat || !m_has_non_sat_feat)
+            FindUnwantedSetWrappers( (*it)->GetSet() );
+  }
+};
+
+
 void CBioseqSet_on_class :: TestOnObj(const CBioseq_set& bioseq_set)
 {
    if (thisTest.is_BioSet_run) return;
@@ -6474,12 +6510,30 @@ void CBioseqSet_on_class :: TestOnObj(const CBioseq_set& bioseq_set)
    if ( e_cls == CBioseq_set::eClass_eco_set
         || e_cls == CBioseq_set :: eClass_mut_set
         || e_cls == CBioseq_set :: eClass_phy_set
-        || e_cls == CBioseq_set :: eClass_pop_set) 
+        || e_cls == CBioseq_set :: eClass_pop_set) {
+
+      // DISC_NONWGS_SETS_PRESENT
       thisInfo.test_item_list[GetName_nonwgs()].push_back(desc);
-   else if ( e_cls == CBioseq_set :: eClass_segset)
-      thisInfo.test_item_list[GetName_segset()].push_back(desc);
+ 
+      // TEST_UNWANTED_SET_WRAPPER
+      FindUnwantedSetWrappers(bioseq_set);
+      if (m_has_rearranged || (m_has_sat_feat && !m_has_non_sat_feat) )
+         thisInfo.test_item_list[GetName_wrap()].push_back(desc);
+   }
+   else {
+      // DISC_SEGSETS_PRESENT
+      if ( e_cls == CBioseq_set :: eClass_segset)
+        thisInfo.test_item_list[GetName_segset()].push_back(desc);
+   }
 
    thisTest.is_BioSet_run = true;
+};
+
+
+void CBioseqSet_TEST_UNWANTED_SET_WRAPPER :: GetReport(CRef <CClickableItem>& c_item)
+{
+   unsigned cnt = c_item->item_list.size();
+   c_item->description = NStr :: UIntToString(cnt) + GetNoun(cnt, "unwanted set wrapper");
 };
 
 
@@ -7424,6 +7478,30 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   // TEST_UNNECESSARY_ENVIRONMENTAL
   if (has_tax && HasUnnecessaryEnvironmental(biosrc))
       thisInfo.test_item_list[GetName_env()].push_back(desc);
+
+  // TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE
+  if (AmpPrimersNoEnvSample(biosrc))
+     thisInfo.test_item_list[GetName_amp()].push_back(desc);
+};
+
+
+bool CSeqEntry_test_on_biosrc_orgmod :: AmpPrimersNoEnvSample(const CBioSource& biosrc)
+{
+   string note("amplified with species-specific primers");
+   if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_environmental_sample)) return false;
+   if (NStr::FindNoCase(GetSubSrcValue(biosrc, CSubSource::eSubtype_other), note)  
+               != string::npos
+        || NStr::FindNoCase(GetOrgModValue(biosrc, COrgMod::eSubtype_other), note)
+                 != string::npos)
+      return true;
+   return false;                     
+};
+
+
+void CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+     + "'amplified with species-specific primers' note but no environmental-sample qualifier.";
 };
 
 
@@ -7879,6 +7957,50 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
            && !NStr::EqualNocase(org_tax.substr(0, 11), "uncultured "))
         thisInfo.test_item_list[GetName_sp()].push_back(desc);
   }
+
+  // TEST_MISSING_PRIMER
+  if (MissingPrimerValue(biosrc)) thisInfo.test_item_list[GetName_prim()].push_back(desc);
+};
+
+
+bool CSeqEntry_test_on_biosrc :: MissingPrimerValue(const CBioSource& biosrc)
+{
+  bool has_fwd, has_rev, seq_f, seq_r, name_f, name_r;
+  list <CRef <CPCRPrimer> >::const_iterator fwd_it, rev_it;
+  if (biosrc.CanGetPcr_primers()) {
+     ITERATE (list <CRef <CPCRReaction> >, it, biosrc.GetPcr_primers().Get()) {
+        has_fwd = (*it)->CanGetForward();
+        has_rev = (*it)->CanGetReverse();
+        if (!has_fwd && !has_rev) continue;
+        if ( has_fwd != has_rev) return true;
+        else {
+           const list <CRef <CPCRPrimer> >& fwd = (*it)->GetForward().Get();
+           const list <CRef <CPCRPrimer> >& rev = (*it)->GetReverse().Get();
+           if (fwd.size() != rev.size() ) return true;
+           for (fwd_it = fwd.begin(), rev_it = rev.begin(); fwd_it != fwd.end(); 
+                                                                     fwd_it++, rev_it++) {
+              IsFwdRevDataPresent(*fwd_it, seq_f, name_f);
+              IsFwdRevDataPresent(*rev_it, seq_r, name_r);
+              if ((seq_f != seq_r) || (name_f != name_r)) return true;
+           }
+        }
+     }
+  }
+  return false;
+};
+
+
+void CSeqEntry_test_on_biosrc :: IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, bool& has_seq, bool& has_name)
+{
+   has_seq = (primer->CanGetSeq() && !primer->GetSeq().Get().empty()) ? true : false;
+   has_name = (primer->CanGetName() && !primer->GetName().Get().empty()) ? true : false;
+};
+
+
+void CSeqEntry_TEST_MISSING_PRIMER :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+      = GetHasComment(c_item->item_list.size(),"biosource") +"primer sets with missing values";
 };
 
 

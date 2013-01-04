@@ -375,6 +375,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER));
    tests_on_SeqEntry_feat_desc.push_back(
+                         CRef <CTestAndRepData>(new CSeqEntry_TEST_MISSING_PRIMER));
+   tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_SP_NOT_UNCULTURED));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOMIC));
@@ -382,6 +384,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
+   tests_on_SeqEntry_feat_desc.push_back(
+         CRef <CTestAndRepData>(new CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE));
    tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL));
    tests_on_SeqEntry_feat_desc.push_back(
@@ -410,6 +414,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 // tests_on_BioseqSet   // redundant because of nested set?
    tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_SEGSETS_PRESENT));
+   tests_on_BioseqSet.push_back(
+                       CRef <CTestAndRepData>(new CBioseqSet_TEST_UNWANTED_SET_WRAPPER));
    tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_NONWGS_SETS_PRESENT));
 
