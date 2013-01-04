@@ -2,22 +2,29 @@
 # $Id$
 #
 
-base="${1:-./testdata}"
-if test ! -d $base; then
+ostype=`echo $OSTYPE`
+if test $ostype = "cygwin"; then
+  bases="./testdata //snowman/toolkit_test_data/objects/datatool"
+else
+  bases="./testdata /net/snowman/vol/projects/toolkit_test_data/objects/datatool"
+fi
+tool="./datatool"
+
+for base in $bases; do
+  if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     echo "Test will be skipped."
     echo " (for autobuild scripts: NCBI_UNITTEST_SKIPPED)"
-    exit 0
-fi
+    continue
+  fi
 
-d="$base/data"
-r="$base/res"
-tool="datatool"
+  d="$base/data"
+  r="$base/res"
 
-for i in "idx" "elink" "note"; do
+  for i in "idx" "elink" "note"; do
     echo "$tool" -m "$base/$i.dtd" -vx "$d/$i.xml" -px out
     cmd=`echo "$tool" -m "$base/$i.dtd" -vx "$d/$i.xml" -px out`
-    time $cmd
+    $CHECK_EXEC $cmd
     if test "$?" != 0; then
         echo "datatool failed!"
         exit 1
@@ -27,6 +34,7 @@ for i in "idx" "elink" "note"; do
         echo "wrong result!"
         exit 1
     fi
-done
+  done
 
-echo "Done!"
+  echo "Done!"
+done

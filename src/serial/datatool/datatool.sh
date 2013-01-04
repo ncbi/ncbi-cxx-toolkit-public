@@ -2,7 +2,14 @@
 # $Id$
 #
 
-bases="./testdata /am/ncbiapdata/test_data/objects"
+ostype=`echo $OSTYPE`
+if test $ostype = "cygwin"; then
+  bases="./testdata //snowman/toolkit_test_data/objects/datatool"
+else
+  bases="./testdata /net/snowman/vol/projects/toolkit_test_data/objects/datatool"
+fi
+tool="./datatool"
+
 
 do_test() {
     eval args=\""$1"\"
@@ -11,7 +18,7 @@ do_test() {
     shift
     echo "$tool" -m "$asn" $args out "$@"
     cmd=`echo "$tool" -m "$asn" $args out "$@"`
-    time $cmd
+    $CHECK_EXEC $cmd
     if test "$?" != 0; then
         echo "datatool failed!"
         exit 1
@@ -31,7 +38,6 @@ for base in $bases; do
     fi
     d="$base/data"
     r="$base/res"
-    tool="datatool"
     asn="$base/all.asn"
 
     for i in "-t Seq-entry -d $d/set.bin" "-v $d/set.ent" "-vx $d/set.xml"; do
