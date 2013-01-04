@@ -2,8 +2,7 @@
 # $Id$
 #
 
-ostype=`echo $OSTYPE`
-if test $ostype = "cygwin"; then
+if test "$OSTYPE" = "cygwin"; then
   bases="./testdata //snowman/toolkit_test_data/objects/datatool"
 else
   bases="./testdata /net/snowman/vol/projects/toolkit_test_data/objects/datatool"
