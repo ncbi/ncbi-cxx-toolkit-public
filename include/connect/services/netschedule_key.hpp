@@ -81,27 +81,14 @@ public:
     string GenerateV1(unsigned id) const;
     void GenerateV1(string* key, unsigned id) const;
 
-    string GenerateV2(unsigned id, const string& queue, int run = -1) const;
-    void GenerateV2(string* key, unsigned id,
-        const string& queue, int run = -1) const;
-
 private:
     string m_V1HostPort;
-    string m_V2Prefix;
 };
 
 inline string CNetScheduleKeyGenerator::GenerateV1(unsigned id) const
 {
     string key;
     GenerateV1(&key, id);
-    return key;
-}
-
-inline string CNetScheduleKeyGenerator::GenerateV2(unsigned id,
-    const string& queue, int run /* = -1 */) const
-{
-    string key;
-    GenerateV2(&key, id, queue, run);
     return key;
 }
 

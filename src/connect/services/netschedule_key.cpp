@@ -43,9 +43,6 @@ BEGIN_NCBI_SCOPE
 #define NS_KEY_V1_PREFIX "JSID_01_"
 #define NS_KEY_V1_PREFIX_LEN (sizeof(NS_KEY_V1_PREFIX) - 1)
 
-#define NS_KEY_V2_PREFIX "nsid|"
-#define NS_KEY_V2_PREFIX_LEN (sizeof(NS_KEY_V2_PREFIX) - 1)
-
 CNetScheduleKey::CNetScheduleKey(const string& key_str)
 {
     if (!ParseJobKey(key_str)) {
@@ -60,11 +57,6 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
     // Parses several notations for job id:
     // version 1:
     //   JSID_01_1_MYHOST_9000
-    // version 2:
-    //   nsid|host/port/[queue]/num[/run] e.g.,
-    //     nsid|192.168.1.1/9101/splign/1
-    //     nsid|192.168.1.1/9101/splign/1/5
-    //     nsid|192.168.1.1/9101//1/5
     // "version 0", or just job number or job number with run number:
     //   num[/run]
 
@@ -94,36 +86,6 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
         // port
         port = (unsigned short) atoi(ch);
         return true;
-    } else if (key_str.compare(0, 5, NS_KEY_V2_PREFIX) == 0) {
-        version = 2;
-        ch += 5;
-        do {
-            // hostname
-            for (;*ch && *ch != '/'; ++ch)
-                host += *ch;
-            if (*ch == 0) break;
-            ++ch;
-            // port
-            port = (unsigned short) atoi(ch);
-            while (*ch && *ch != '/') ++ch;
-            if (*ch == 0) break;
-            ++ch;
-            // queue
-            for (;*ch && *ch != '/'; ++ch)
-                queue += *ch;
-            if (*ch == 0) break;
-            ++ch;
-            // id
-            id = (unsigned) atoi(ch);
-            while (*ch && *ch != '/') ++ch;
-            if (*ch) {
-                // run
-                run = atoi(ch+1);
-            } else {
-                run = -1;
-            }
-            return true;
-        } while (0);
     } else if (isdigit(*ch)) {
         version = 0;
         id = (unsigned) atoi(ch);
@@ -155,13 +117,6 @@ CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
     m_V1HostPort.append(host);
     m_V1HostPort.push_back('_');
     m_V1HostPort.append(port_str);
-
-    m_V2Prefix.reserve(NS_KEY_V2_PREFIX_LEN + m_V1HostPort.size());
-    m_V2Prefix.append(NS_KEY_V2_PREFIX, NS_KEY_V2_PREFIX_LEN);
-    m_V2Prefix.append(host);
-    m_V2Prefix.push_back('/');
-    m_V2Prefix.append(port_str);
-    m_V2Prefix.push_back('/');
 }
 
 void CNetScheduleKeyGenerator::GenerateV1(string* key, unsigned id) const
@@ -172,25 +127,6 @@ void CNetScheduleKeyGenerator::GenerateV1(string* key, unsigned id) const
     key->append(NS_KEY_V1_PREFIX, NS_KEY_V1_PREFIX_LEN);
     key->append(NStr::IntToString(id));
     key->append(m_V1HostPort);
-}
-
-void CNetScheduleKeyGenerator::GenerateV2(string* key, unsigned id,
-    const string& queue, int run /* = -1 */) const
-{
-    key->reserve(m_V2Prefix.size() +
-        queue.size() +
-        1 +
-        MAX_INT_TO_STR_LEN(unsigned) +
-        1 +
-        MAX_INT_TO_STR_LEN(int));
-    key->append(m_V2Prefix);
-    key->append(queue);
-    key->push_back('/');
-    key->append(NStr::IntToString(id));
-    if (run >= 0) {
-        key->push_back('/');
-        key->append(NStr::IntToString(run));
-    }
 }
 
 
