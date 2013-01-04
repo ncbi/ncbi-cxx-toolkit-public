@@ -1397,6 +1397,7 @@ namespace DiscRepNmSpc {
       string GetName_contig() const {return string("SHORT_CONTIG"); }
       string GetName_200seq() const {return string("SHORT_SEQUENCES_200"); }
       string GetName_50seq() const {return string("SHORT_SEQUENCES"); }
+      string GetName_dupg() const {return string("TEST_DUP_GENES_OPPOSITE_STRANDS"); }
 
       void CompareIntronExonList(const string& seq_id_desc, 
                                                   const vector <const CSeq_feat*>& exon_ls, 
@@ -1409,6 +1410,14 @@ namespace DiscRepNmSpc {
                                         vector <unsigned> exist_ls);
   };
 
+  class CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS  : public CBioseq_on_Aa
+  {
+    public:
+      virtual ~CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_Aa::GetName_dupg();}
+  };
 
   class CBioseq_SHORT_PROT_SEQUENCES : public CBioseq_on_Aa
   {

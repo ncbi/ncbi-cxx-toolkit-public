@@ -263,7 +263,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    }
    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
      if (IsLocationOrganelle( (*it)->GetSource().GetGenome() ))
-         thisInfo.test_item_list[GetName_orgl()].push_back(GetDiscItemText(**it, bioseq));
+         thisInfo.test_item_list[GetName_orgl()].push_back(GetDiscItemText(**it,bioseq));
    }
 
    // TEST_UNNECESSARY_VIRUS_GENE
@@ -306,7 +306,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    }
    else {
       ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
-         if ( (*it)->CanGetExcept_text() && (*it)->GetExcept_text() != "trans-splicing") {
+         if ((*it)->CanGetExcept_text() && (*it)->GetExcept_text() != "trans-splicing"){
             GetFeatureList4Gene( *it, exon_feat, m_e_exist);
             GetFeatureList4Gene( *it, intron_feat, m_i_exist);
             if (!exon_feat.empty() && !intron_feat.empty())
@@ -327,18 +327,47 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
        ReportPartialConflictsForFeatureType (cd_feat, (string)"coding region", true);
    ReportPartialConflictsForFeatureType (miscfeat_feat, (string)"misc_feature");
 
-   // SHORT_CONTIG
-   if (len < 200) thisInfo.test_item_list[GetName_contig()].push_back(bioseq_desc);
+   if (!IsmRNASequenceInGenProdSet(bioseq)) {
+      // SHORT_CONTIG
+      if (len < 200) thisInfo.test_item_list[GetName_contig()].push_back(bioseq_desc);
 
-   // SHORT_SEQUENCES
-   if (bioseq_set.Empty() || bioseq_set->GetClass() != CBioseq_set::eClass_parts) {
-       if (len < 200) thisInfo.test_item_list[GetName_200seq()].push_back(bioseq_desc);
-       else if (len < 50) thisInfo.test_item_list[GetName_50seq()].push_back(bioseq_desc);
+      // SHORT_SEQUENCES
+      if (bioseq_set.Empty() || bioseq_set->GetClass() != CBioseq_set::eClass_parts) {
+          if (len < 200) 
+              thisInfo.test_item_list[GetName_200seq()].push_back(bioseq_desc);
+          else if (len < 50) 
+              thisInfo.test_item_list[GetName_50seq()].push_back(bioseq_desc);
+      }
+   }
+
+   // TEST_DUP_GENES_OPPOSITE_STRANDS
+   vector <const CSeq_feat*>::const_iterator jt;
+   bool prev_dup = false;
+   ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
+      jt = it + 1;
+      if (jt != gene_feat.end()) {
+         sequence::ECompare
+           ovp = Compare( (*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
+         if (ovp == sequence::eSame
+                && (*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()){
+            thisInfo.test_item_list[GetName_dupg()].push_back(GetDiscItemText(**jt));
+            if (!prev_dup)
+               thisInfo.test_item_list[GetName_dupg()].push_back(GetDiscItemText(**it));
+            prev_dup = true;
+         }
+         else prev_dup = false;
+      }
    }
 
    thisTest.is_Aa_run = true;
 };
 
+void CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+      = GetOtherComment(c_item->item_list.size(), "gene matches", "genes match")
+         + " other genes in the same location, but on the opposite strand";
+};
 
 void CBioseq_SHORT_CONTIG :: GetReport(CRef <CClickableItem>& c_item)
 {
