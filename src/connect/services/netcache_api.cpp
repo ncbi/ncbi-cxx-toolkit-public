@@ -377,7 +377,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
             SServerAddress* backup = s_GetFallbackServer();
 
             if (backup == NULL) {
-                ERR_POST("Fallback server address is not configured.");
+                LOG_POST(Info << "Fallback server address is not configured.");
                 throw;
             }
 
