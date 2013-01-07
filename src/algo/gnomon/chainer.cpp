@@ -1947,7 +1947,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 
     if(ReadingFrame().NotEmpty() && conf_start.NotEmpty()) {
         TSignedSeqRange extra_cds = (Strand() == ePlus) ? TSignedSeqRange(RealCdsLimits().GetFrom(),conf_start.GetFrom()) : TSignedSeqRange(conf_start.GetTo(),RealCdsLimits().GetTo());
-        if(FShiftedLen(extra_cds, false) < 0.2*RealCdsLen() && Continuous()) {
+        if(FShiftedLen(extra_cds, false) < 0.2*RealCdsLen()) {
             CCDSInfo cds = GetCdsInfo();
             TSignedSeqRange reading_frame = cds.ReadingFrame();
             if(Strand() == ePlus) 
