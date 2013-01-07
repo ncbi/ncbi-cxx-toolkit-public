@@ -152,7 +152,7 @@ CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
     m_V1HostPortQueue.append(queue_name);
 }
 
-void CNetScheduleKeyGenerator::GenerateV1(string* key, unsigned id) const
+void CNetScheduleKeyGenerator::Generate(string* key, unsigned id) const
 {
     key->reserve(NS_KEY_V1_PREFIX_LEN +
         MAX_INT_TO_STR_LEN(unsigned) +

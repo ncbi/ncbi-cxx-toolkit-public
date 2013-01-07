@@ -83,17 +83,17 @@ public:
     CNetScheduleKeyGenerator(const string& host,
             unsigned port, const string& queue_name);
 
-    string GenerateV1(unsigned id) const;
-    void GenerateV1(string* key, unsigned id) const;
+    string Generate(unsigned id) const;
+    void Generate(string* key, unsigned id) const;
 
 private:
     string m_V1HostPortQueue;
 };
 
-inline string CNetScheduleKeyGenerator::GenerateV1(unsigned id) const
+inline string CNetScheduleKeyGenerator::Generate(unsigned id) const
 {
     string key;
-    GenerateV1(&key, id);
+    Generate(&key, id);
     return key;
 }
 

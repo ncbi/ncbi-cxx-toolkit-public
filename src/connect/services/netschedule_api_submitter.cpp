@@ -221,7 +221,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
         //
         CNetScheduleKeyGenerator key_gen(host, port, m_Impl->m_API->m_Queue);
         for (unsigned j = 0; j < batch_size; ++j) {
-            key_gen.GenerateV1(&jobs[batch_start].job_id, first_job_id);
+            key_gen.Generate(&jobs[batch_start].job_id, first_job_id);
             ++first_job_id;
             ++batch_start;
         }
