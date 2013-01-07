@@ -39,7 +39,10 @@ install-toolkit:
 	-$(RMDIR) $(pincludedir)
 	$(INSTALL) -d $(bindir) $(libdir) $(pincludedir)
 	$(INSTALL) $(lbindir)/* $(bindir)
-	$(INSTALL) -m 644 $(llibdir)/* $(libdir)
+	$(INSTALL) -m 644 $(llibdir)/*.* $(libdir)
+	if test -d $(llibdir)/ncbi; then \
+	    cp -pPR $(llibdir)/ncbi $(libdir)/; \
+	fi
 	-rm -f $(libdir)/lib*-static.a
 	cd $(libdir)  && \
 	    for x in *.a; do ln -s "$$x" "`basename \"$$x\" .a`-static.a"; done
