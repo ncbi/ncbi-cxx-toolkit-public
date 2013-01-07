@@ -460,16 +460,21 @@ CNetServerConnection SNetServerImpl::GetConnectionFromPool()
 const char SNetServerImpl::kXSiteFwd[] = "XSITEFWD";
 #endif
 
+inline static bool operator <(const STimeout& t1, const STimeout& t2)
+{
+    return t1.sec == t2.sec ? t1.usec < t2.usec : t1.sec < t2.sec;
+}
+
 CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
     EIO_Status io_st;
-    STimeout internal_timeout = s_InternalConnectTimeout;
     const STimeout& conn_timeout = timeout != NULL ? *timeout :
             m_ServerInPool->m_ServerPool->m_ConnTimeout;
     CAbsTimeout abs_timeout(conn_timeout.sec, conn_timeout.usec * 1000);
-    STimeout remaining_timeout;
+    STimeout internal_timeout = conn_timeout < s_InternalConnectTimeout ?
+            conn_timeout : s_InternalConnectTimeout;
 
     SServerAddress server_address(m_ServerInPool->m_Address);
 
@@ -545,6 +550,8 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
     if (server_address.port != 0) {
 #endif
 
+        STimeout remaining_timeout;
+
         do {
             io_st = conn->m_Socket.Connect(CSocketAPI::ntoa(
                     server_address.host), server_address.port,
@@ -553,9 +560,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
             abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
                                                &remaining_timeout.usec);
 
-            if (s_InternalConnectTimeout.sec == remaining_timeout.sec ?
-                    s_InternalConnectTimeout.usec > remaining_timeout.usec :
-                    s_InternalConnectTimeout.sec > remaining_timeout.sec)
+            if (remaining_timeout < internal_timeout)
                 internal_timeout = remaining_timeout;
 
         } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
