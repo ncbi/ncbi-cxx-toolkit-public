@@ -7,7 +7,11 @@ if test "$OSTYPE" = "cygwin"; then
 else
   bases="./testdata /net/snowman/vol/projects/toolkit_test_data/objects/datatool"
 fi
-tool="./datatool"
+if test -z "$CHECK_EXEC"; then
+  tool="./datatool"
+else
+  tool="datatool"
+fi
 
 for base in $bases; do
   if test ! -d $base; then
