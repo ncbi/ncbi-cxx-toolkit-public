@@ -241,7 +241,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
             jobs.push_back( key.id );
             if (m_KeyGenerator == NULL)
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
-                                                               key.port );
+                                                               key.port,
+                                                               queue );
         }
         else {
             // back door - use manually formed command
@@ -261,7 +262,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
             jobs.push_back( key.id );
             if (m_KeyGenerator == NULL)
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
-                                                               key.port );
+                                                               key.port,
+                                                               queue );
         }
 
 
