@@ -2195,7 +2195,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
             try {
                 const CSeq_loc& part = si.GetEmbeddingSeq_loc();
                 CSeq_loc::TRange range = si.GetRange();
-                CBioseq_Handle bsh_si = BioseqHandleFromLocation(m_Scope, part);
+                CBioseq_Handle bsh_si = BioseqHandleFromLocation(m_Scope, *(si.GetRangeAsSeq_loc()) );
                     
                 if (bsh_si) {
                     CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
