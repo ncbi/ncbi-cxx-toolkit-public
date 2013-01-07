@@ -529,6 +529,7 @@ bool CGff3Writer::x_WriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     try {
         switch( mf.GetFeatSubtype() ) {
             default:
@@ -566,6 +567,7 @@ bool CGff3Writer::x_WriteFeatureTrna(
     if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
+    xTryAssignGeneParent(*pParent, fc, mf);
     vector<string> ids;
     if ( ! pParent->GetAttribute( "ID", ids ) ) {
         pParent->ForceAttributeID( 
@@ -642,17 +644,8 @@ bool CGff3Writer::x_WriteFeatureCds(
     if ( ! pCds->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
-    CMappedFeat mrna = feature::GetBestMrnaForCds( mf, &fc.FeatTree() );
-    TMrnaMap::iterator it = m_MrnaMap.find( mrna );
-    if ( it != m_MrnaMap.end() ) {
-        pCds->AssignParent( *(it->second) );
-    }
-    else {
-        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
-        TGeneMap::iterator it = m_GeneMap.find( gene );
-        if ( it != m_GeneMap.end() ) {
-            pCds->AssignParent( *( it->second ) );
-        }
+    if (!xTryAssignMrnaParent(*pCds, fc, mf)) {
+        xTryAssignGeneParent(*pCds, fc, mf);
     }
 
     const CSeq_loc& PackedInt = *pCds->GetCircularLocation();
@@ -664,7 +657,6 @@ bool CGff3Writer::x_WriteFeatureCds(
     }
     int iTotSize = -iPhase;
     if (bStrandAdjust && iPhase) {
-//        iTotSize = iPhase-3;
         iPhase = 3-iPhase;
     }
     unsigned int seqLength = 0;
@@ -711,11 +703,7 @@ bool CGff3Writer::x_WriteFeatureRna(
     if ( ! pRna->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
-    CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
-    TGeneMap::iterator it = m_GeneMap.find( gene );
-    if ( it != m_GeneMap.end() ) {
-        pRna->AssignParent( *( it->second ) );
-    }
+    xTryAssignGeneParent(*pRna, fc, mf);
     if ( ! x_WriteRecord( pRna ) ) {
         return false;
     }
@@ -761,22 +749,31 @@ bool CGff3Writer::x_WriteFeatureGeneric(
     if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
+
     vector<string> ids;
     if ( ! pParent->GetAttribute("ID", ids) ) {
         pParent->ForceAttributeID( 
             string("id") + NStr::UIntToString(m_uPendingGenericId++));
     }
 
-    //
     //  Even for generic features, there are special case to consider ...
-    //
-    if (mf.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
-        CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
-        TGeneMap::iterator it = m_GeneMap.find( gene );
-        if ( it != m_GeneMap.end() ) {
-            pParent->AssignParent( *( it->second ) );
-        }
+    switch (mf.GetFeatSubtype()) {
+        default:
+            break;
+        case CSeqFeatData::eSubtype_C_region:
+        case CSeqFeatData::eSubtype_D_segment:
+        case CSeqFeatData::eSubtype_J_segment:
+        case CSeqFeatData::eSubtype_V_segment:
+            xTryAssignGeneParent(*pParent, fc, mf);
+            break;
+        case CSeqFeatData::eSubtype_exon:
+            if (!xTryAssignMrnaParent(*pParent, fc, mf)) {
+                xTryAssignGeneParent(*pParent, fc, mf);
+            }
+            break;
     }
+
+    // Finally, actually write out that feature
     TSeqPos seqlength = 0;
     if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
         seqlength = fc.BioseqHandle().GetInst().GetLength();
@@ -827,6 +824,38 @@ void CGff3Writer::x_WriteAlignment(
     m_Os << record.StrStrand() << '\t';
     m_Os << record.StrPhase() << '\t';
     m_Os << record.StrAttributes() << endl;
+}
+
+//  ============================================================================
+bool CGff3Writer::xTryAssignGeneParent(
+    CGff3WriteRecordFeature& feat,
+    CGffFeatureContext& fc,
+    CMappedFeat mf)
+//  ============================================================================
+{
+    CMappedFeat gene = feature::GetBestGeneForFeat(mf, &fc.FeatTree());
+    TGeneMap::iterator it = m_GeneMap.find(gene);
+    if (it != m_GeneMap.end()) {
+        feat.AssignParent(*( it->second));
+        return true;
+    }
+    return false;
+}
+
+//  ============================================================================
+bool CGff3Writer::xTryAssignMrnaParent(
+    CGff3WriteRecordFeature& feat,
+    CGffFeatureContext& fc,
+    CMappedFeat mf)
+//  ============================================================================
+{
+    CMappedFeat mrna = feature::GetBestMrnaForCds(mf, &fc.FeatTree());
+    TMrnaMap::iterator it = m_MrnaMap.find(mrna);
+    if (it != m_MrnaMap.end()) {
+        feat.AssignParent(*(it->second));
+        return true;
+    }
+    return false;
 }
 
 END_NCBI_SCOPE

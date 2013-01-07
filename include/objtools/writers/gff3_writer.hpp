@@ -95,7 +95,15 @@ protected:
         const CSeq_align&,    
         bool=false );                   // invert width 
 
-//    TFlags m_uFlags;
+    virtual bool xTryAssignGeneParent(
+        CGff3WriteRecordFeature&,
+        CGffFeatureContext&,
+        CMappedFeat );
+
+    virtual bool xTryAssignMrnaParent(
+        CGff3WriteRecordFeature&,
+        CGffFeatureContext&,
+        CMappedFeat );
 
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle );
