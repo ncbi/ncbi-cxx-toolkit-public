@@ -332,7 +332,7 @@ public:
 
 
     string MakeKey(unsigned job_id) const
-    { return m_KeyGenerator.GenerateV1(job_id); }
+    { return m_KeyGenerator.Generate(job_id); }
 
     void TouchClientsRegistry(CNSClientId &  client);
     void RegisterSocketWriteError(const CNSClientId &  client);

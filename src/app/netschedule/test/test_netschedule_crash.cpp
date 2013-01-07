@@ -299,7 +299,7 @@ void CTestNetScheduleCrash::GetStatus( CNetScheduleExecutor &        executor,
         unsigned int        job_id = *it;
 
         //status =
-        executor.GetJobStatus(m_KeyGenerator->GenerateV1(job_id));
+        executor.GetJobStatus(m_KeyGenerator->Generate(job_id));
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
         }
