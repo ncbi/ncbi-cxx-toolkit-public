@@ -695,8 +695,19 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
 	    }
     }}
 
+    AttachSeq(*p2);
 
-    //AttachSeq(*p2);
+    if(!p2->IsSetExceptions()) {
+        if(p.IsSetSeq() && p2->IsSetSeq() 
+           && p.GetSeq().GetLength() == p2->GetSeq().GetLength()
+           && p.GetSeq().IsSetSeq_data() && p2->GetSeq().IsSetSeq_data()
+           && p.GetSeq().GetSeq_data().Which() == p2->GetSeq().GetSeq_data().Which()
+           && !p.GetSeq().GetSeq_data().Equals(p2->GetSeq().GetSeq_data())) 
+        {
+            p2->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
+        }
+    }
+
 
     if(p2->GetLoc().GetId()) {
         p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
@@ -738,22 +749,39 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
     if(v.IsSetPlacements()) {
 
         CConstRef<CSeq_literal> asserted_literal;
+        CConstRef<CSeq_literal> variant_literal; //will only fetch for snp/mnp cases, as ref_same_as_variant test is only applicable for these
+
         for(CTypeConstIterator<CVariation_inst> it2(Begin(v)); it2; ++it2) {
             const CVariation_inst& inst = *it2;
-            if(   inst.IsSetObservation()
-               && inst.GetObservation() == CVariation_inst::eObservation_asserted
-               && inst.GetDelta().size() == 1
+            if(   inst.GetDelta().size() == 1
                && inst.GetDelta().front()->IsSetSeq()
                && inst.GetDelta().front()->GetSeq().IsLiteral())
             {
-                asserted_literal = CConstRef<CSeq_literal>(&inst.GetDelta().front()->GetSeq().GetLiteral());
+                CConstRef<CSeq_literal> literal(&inst.GetDelta().front()->GetSeq().GetLiteral());
+                if(!asserted_literal && inst.IsSetObservation() && inst.GetObservation() == CVariation_inst::eObservation_asserted) {
+                    asserted_literal = literal;
+                } else if(!variant_literal //note: finding the very first one; will that work always?
+                          && (!inst.IsSetObservation() || inst.GetObservation() == CVariation_inst::eObservation_variant)
+                          && (!inst.GetDelta().front()->IsSetAction() || inst.GetDelta().front()->GetAction() == CDelta_item::eAction_morph)) 
+                {
+                    variant_literal = literal;
+                }
             }
         }
+
+#if 0
+        if(variant_literal) {
+            LOG_POST("Found variant-literal");
+            NcbiCout << MSerial_AsnText << *variant_literal;
+        } else { 
+            LOG_POST("Did not find variant-literal");
+        }
+#endif
 
         NON_CONST_ITERATE(CVariation::TPlacements, it, v.SetPlacements()) {
             CVariantPlacement& p = **it;
             bool attached = AttachSeq(p, max_len);
-
+            
             if(attached 
                && asserted_literal
                && (p.GetSeq().GetLength() != asserted_literal->GetLength()
@@ -761,10 +789,17 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
                          && p.GetSeq().GetSeq_data().Which() == asserted_literal->GetSeq_data().Which()
                          && !p.GetSeq().GetSeq_data().Equals(asserted_literal->GetSeq_data()))))
             {
-                CRef<CVariationException> exception(new CVariationException);
-                exception->SetCode(CVariationException::eCode_inconsistent_asserted_allele);
-                exception->SetMessage("Asserted sequence is inconsistent with reference");
-                p.SetExceptions().push_back(exception);
+                p.SetExceptions().push_back(CreateException("Asserted sequence is inconsistent with reference", 
+                                                            CVariationException::eCode_inconsistent_asserted_allele));
+                had_exceptions = true;
+            }
+
+            if(attached
+               && variant_literal
+               && variant_literal->Equals(p.GetSeq()))
+            {
+                p.SetExceptions().push_back(CreateException("Reference sequence is the same as variant", 
+                                                            CVariationException::eCode_ref_same_as_variant));
                 had_exceptions = true;
             }
         }

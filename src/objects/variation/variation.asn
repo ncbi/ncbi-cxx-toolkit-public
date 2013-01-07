@@ -42,7 +42,8 @@ VariationException ::= SEQUENCE
         mismatches-in-mapping (8), --the source sequence differs from sequence at mapped loc
         inconsistent-asserted-moltype (9), --asserted mol-type is inconsistent with seq-id (e.g. NM_12345.6:g.)
         bioseq-state (10),
-        ambiguous-sequence (11)  
+        ambiguous-sequence (11),
+        ref-same-as-variant (12) --reference sequence at the location is same as variant sequence in the variation
     } OPTIONAL,
     
     message VisibleString
