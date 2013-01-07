@@ -61,7 +61,12 @@ BEGIN_NCBI_SCOPE
 ///
 struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 {
+    /// Parse NetSchedule key; throw an exception
+    /// if the key cannot be recognized.
     explicit CNetScheduleKey(const string& str_key);
+
+    /// Construct an empty object for use with ParseJobKey().
+    CNetScheduleKey() {}
 
     bool ParseJobKey(const string& key_str);
 
@@ -70,19 +75,19 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
     unsigned short port; ///< TCP/IP port number
     string queue; ///< Queue name, optional
     unsigned id; ///< Job id
-    int run; ///< Job run number, -1 - no run
 };
 
 class NCBI_XCONNECT_EXPORT CNetScheduleKeyGenerator
 {
 public:
-    CNetScheduleKeyGenerator(const string& host, unsigned port);
+    CNetScheduleKeyGenerator(const string& host,
+            unsigned port, const string& queue_name);
 
     string GenerateV1(unsigned id) const;
     void GenerateV1(string* key, unsigned id) const;
 
 private:
-    string m_V1HostPort;
+    string m_V1HostPortQueue;
 };
 
 inline string CNetScheduleKeyGenerator::GenerateV1(unsigned id) const

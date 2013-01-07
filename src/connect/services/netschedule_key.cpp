@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "util.hpp"
+
 #include <connect/services/netschedule_key.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 
@@ -56,49 +58,69 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
 {
     // Parses several notations for job id:
     // version 1:
-    //   JSID_01_1_MYHOST_9000
-    // "version 0", or just job number or job number with run number:
-    //   num[/run]
+    //   JSID_01_JOBNUMBER_IP_PORT_QUEUE
+    // "version 0", or just a job number.
 
     const char* ch = key_str.c_str();
     if (key_str.compare(0, NS_KEY_V1_PREFIX_LEN, NS_KEY_V1_PREFIX) == 0) {
-        // Old (version 1) key
+        // Version 1 key
         version = 1;
-        ch += 8;
+        ch += NS_KEY_V1_PREFIX_LEN;
 
         // id
-        id = (unsigned) atoi(ch);
-        while (*ch && *ch != '_') {
-            ++ch;
-        }
-        if (*ch == 0 || id == 0)
+        if ((id = (unsigned) atoi(ch)) == 0)
             return false;
-        ++ch;
+        do
+            if (*++ch == '\0')
+                return false;
+        while (*ch != '_');
 
         // hostname
-        for (;*ch && *ch != '_'; ++ch) {
-            host += *ch;
+        {
+            const char* host_begin = ++ch;
+            unsigned host_len = 0;
+            for (;;) {
+                if (*ch == '\0')
+                    return false;
+                if (*ch++ != '_')
+                    ++host_len;
+                else
+                    break;
+            }
+            host.assign(host_begin, host_len);
         }
-        if (*ch == 0)
-            return false;
-        ++ch;
 
         // port
-        port = (unsigned short) atoi(ch);
+        if ((port = (unsigned short) atoi(ch)) == 0)
+            return false;
+
+        while (*++ch != '_')
+            switch (*ch) {
+            case '\0':
+                return true;
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                continue;
+            default:
+                return false;
+            }
+
+        // queue
+        int underscores_to_skip = 0;
+        while (*++ch == '_')
+            ++underscores_to_skip;
+        if (*ch == '\0')
+            return false;
+        const char* queue_begin = ch;
+        while (*ch != '_' || --underscores_to_skip >= 0)
+            if (*++ch == '\0')
+                break;
+        queue.assign(queue_begin, ch - queue_begin);
+
         return true;
     } else if (isdigit(*ch)) {
         version = 0;
         id = (unsigned) atoi(ch);
-        while (*ch && *ch != '/') ++ch;
-        if (*ch) {
-            ch += 1;
-            if (!isdigit(*ch))
-                return false;
-            // run
-            run = atoi(ch);
-        } else {
-            run = -1;
-        }
         return true;
     }
 
@@ -108,25 +130,36 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
 #define MAX_INT_TO_STR_LEN(type) (sizeof(type) * 3 / 2)
 
 CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
-    const string& host, unsigned port)
+        const string& host, unsigned port, const string& queue_name)
 {
+    if (queue_name.empty()) {
+        NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
+                "Queue name cannot be empty.");
+    }
+
     string port_str(NStr::IntToString(port));
 
-    m_V1HostPort.reserve(1 + host.size() + 1 + port_str.size());
-    m_V1HostPort.push_back('_');
-    m_V1HostPort.append(host);
-    m_V1HostPort.push_back('_');
-    m_V1HostPort.append(port_str);
+    unsigned queue_prefix_len = g_NumberOfUnderscoresPlusOne(queue_name);
+
+    m_V1HostPortQueue.reserve(1 + host.size() + 1 + port_str.size() +
+            queue_prefix_len + queue_name.size());
+
+    m_V1HostPortQueue.push_back('_');
+    m_V1HostPortQueue.append(host);
+    m_V1HostPortQueue.push_back('_');
+    m_V1HostPortQueue.append(port_str);
+    m_V1HostPortQueue.append(queue_prefix_len, '_');
+    m_V1HostPortQueue.append(queue_name);
 }
 
 void CNetScheduleKeyGenerator::GenerateV1(string* key, unsigned id) const
 {
     key->reserve(NS_KEY_V1_PREFIX_LEN +
         MAX_INT_TO_STR_LEN(unsigned) +
-        m_V1HostPort.size());
+        m_V1HostPortQueue.size());
     key->append(NS_KEY_V1_PREFIX, NS_KEY_V1_PREFIX_LEN);
     key->append(NStr::IntToString(id));
-    key->append(m_V1HostPort);
+    key->append(m_V1HostPortQueue);
 }
 
 
