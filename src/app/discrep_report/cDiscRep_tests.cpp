@@ -6807,16 +6807,20 @@ void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const 
 
 
 // C: GetSourceQualFromBioSource
-string CSeqEntryTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, const int& cur_idx, bool is_subsrc)
+string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, bool is_subsrc)
 {
  string ret_str(kEmptyStr);
  // DoesStringMatchConstraint missing
  if (is_subsrc) ret_str = GetSubSrcValue(biosrc, qual_name);
  else if (qual_name == "location") ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
- else if (qual_name == "taxname") ret_str = biosrc.GetTaxname();
- else if (qual_name == "common_name") ret_str = biosrc.GetCommon();
- else if (qual_name == "lineage") ret_str = biosrc.GetLineage();
- else if (qual_name == "div") ret_str = biosrc.GetDivision();
+ else if (qual_name == "taxname") 
+            ret_str = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
+ else if (qual_name == "common_name") 
+        ret_str = biosrc.IsSetCommon() ? biosrc.GetCommon() : kEmptyStr;
+ else if (qual_name == "lineage") 
+        ret_str = biosrc.IsSetLineage() ? biosrc.GetLineage() : kEmptyStr;
+ else if (qual_name == "div") 
+        ret_str = biosrc.IsSetDivision() ? biosrc.GetDivision() : kEmptyStr;
  else if (qual_name == "dbxref") ret_str = "no ready yet";
  else if (qual_name == "taxid") {
    int tid = biosrc.GetOrg().GetTaxId();
@@ -6897,7 +6901,7 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
                thisInfo.test_item_list[setting_name].push_back(qual_name+ strtmp +desc_ls[i]);
                 //qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(desc_ls[i]);
        }
-       src_qual_vlu= GetSrcQualValue(*src_ls[cur_idx],qual_name,cur_idx,is_subsrc);
+       src_qual_vlu= GetSrcQualValue(*src_ls[cur_idx], qual_name, is_subsrc);
        src_txt = desc_ls[cur_idx];
        thisInfo.test_item_list[setting_name].push_back(
                                           qual_name+"$"+ src_qual_vlu + "#" + src_txt);
@@ -7988,7 +7992,8 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   }
 
   // TEST_MISSING_PRIMER
-  if (MissingPrimerValue(biosrc)) thisInfo.test_item_list[GetName_prim()].push_back(desc);
+  if (MissingPrimerValue(biosrc)) 
+       thisInfo.test_item_list[GetName_prim()].push_back(desc);
 };
 
 
@@ -8129,7 +8134,6 @@ void CSeqEntry_test_on_biosrc :: FindSpecSubmitText()
   }
 
 };
-
 
 void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
 {
@@ -8552,6 +8556,82 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 // new method
+
+
+bool CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: HasSmallSeqset(const CSeq_entry& seq_entry)
+{
+   if (seq_entry.IsSet()) {
+      if (seq_entry.GetSet().GetClass() == CBioseq_set::eClass_small_genome_set)
+          return true;
+      else {
+         ITERATE (list <CRef <CSeq_entry> >, it, seq_entry.GetSet().GetSeq_set()) 
+            if (HasSmallSeqset(**it)) return true;
+      }
+   } 
+
+   return false;
+};
+
+void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (!HasSmallSeqset(seq_entry)) return;
+   string pre_taxname, pre_isolate, pre_strain;
+   pre_taxname = pre_isolate = pre_strain = kEmptyStr;
+   bool all_taxnames_same, all_isolates_same, all_strains_same;
+   all_taxnames_same = all_isolates_same = all_strains_same = true;
+   unsigned i=0;
+   string desc, desc_entry(GetDiscItemText(seq_entry));
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
+      const CBioSource& biosrc = (*it)->GetSource();
+      desc = GetDiscItemText(**it, *biosrc_seqdesc_seqentry[i]);
+      if (HasLineage(biosrc, "Viruses")) {
+         if (!IsSubSrcPresent(biosrc, CSubSource::eSubtype_segment))
+           thisInfo.test_item_list[GetName()].push_back("missing$" + desc);
+      }
+      if (all_taxnames_same) {
+         desc = GetSrcQualValue(biosrc, "taxname");
+         if (pre_taxname.empty() && !desc.empty()) pre_taxname = desc;
+         else if (desc != pre_taxname) all_taxnames_same = false;  
+      }
+      if (all_isolates_same) {
+         desc = GetOrgModValue(biosrc, COrgMod::eSubtype_isolate);
+         if (pre_isolate.empty() && !desc.empty()) pre_isolate = desc;
+         else if (desc != pre_isolate) all_isolates_same = false;
+      }
+      if (all_strains_same) {
+         desc = GetOrgModValue(biosrc, COrgMod::eSubtype_strain);
+         if (pre_strain.empty() && !desc.empty()) pre_strain = desc;
+         else if (desc != pre_strain) all_strains_same = false;
+      }
+   }
+ 
+   if (!all_taxnames_same) strtmp = "taxname$" + desc_entry;
+   if (!all_isolates_same) strtmp = "isolate$" + desc_entry;
+   if (!all_strains_same) strtmp = "strain$" + desc_entry;
+   thisInfo.test_item_list[GetName()].push_back(strtmp);
+};
+
+void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs qual2ls;
+   GetTestItemList(c_item->item_list, qual2ls);
+   c_item->item_list.size();
+   unsigned cnt;
+   ITERATE (Str2Strs, it, qual2ls) {
+     if (it != qual2ls.begin() ) { 
+             c_item = CRef <CClickableItem> (new CClickableItem);
+             c_item->setting_name = GetName();
+             thisInfo.disc_report_data.push_back(c_item);
+     } 
+     c_item->item_list = it->second;
+     if (it->first == "missing") {
+        cnt = it->second.size(); 
+        c_item->description = GetOtherComment(cnt, "biosourc", "biosource")
+          + " should have segment qualifier but " + ( cnt>1? "do not" : "does not"); 
+     }
+     else c_item->description = "Not all biosources have same " + it->first;
+   }
+};
 
 
 bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2)

@@ -302,6 +302,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
    tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM));
+   tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_MOLTYPES));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH));

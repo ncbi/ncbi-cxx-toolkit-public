@@ -200,6 +200,7 @@ namespace DiscRepNmSpc {
       string GetDiscItemText(const CSeqdesc& obj, const CBioseq& bioseq);
       const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
       string GetDiscItemText(const CPerson_id& obj, const CSeq_entry& seq_entry);
+      string GetDiscItemText(const CSeq_entry& seq_entry);
 
       CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
 
@@ -266,6 +267,8 @@ namespace DiscRepNmSpc {
       string GetSubSrcValue(const CBioSource& biosrc, CSubSource::ESubtype subtype);
       string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
       bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
+      string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name,
+                                            bool is_subsrc = false);
   };
 
 
@@ -354,8 +357,10 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
      protected:
+/*
        string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
                                                      const int& cur_idx, bool is_subsrc);
+*/
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
                                                 bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
@@ -1118,9 +1123,22 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_mult();}
   };
-
-  
 // new comb
+
+
+  class CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("TEST_SMALL_GENOME_SET_PROBLEM");}
+
+    protected:
+      bool HasSmallSeqset(const CSeq_entry& seq_entry);
+  };
+
 
   class CSeqEntry_DISC_SUBMITBLOCK_CONFLICT : public CSeqEntryTestAndRepData
   {

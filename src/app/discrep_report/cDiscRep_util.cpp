@@ -539,6 +539,17 @@ string GetKey(CSeqdesc::E_Choice idx)
 */
 
 
+string CTestAndRepData :: GetDiscItemText(const CSeq_entry& seq_entry)
+{
+   string desc;
+   if (seq_entry.IsSeq())
+        desc =  BioseqToBestSeqIdString(seq_entry.GetSeq(), CSeq_id::e_Genbank);
+   else desc = GetDiscItemTextForBioseqSet(seq_entry.GetSet());
+   return (thisInfo.infile + ": " + desc);
+};
+
+
+
 string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
 {
   string desc;

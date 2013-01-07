@@ -263,7 +263,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 
         CTestAndRepData :: all_feat.push_back(&seq_feat);
 
-        if ( !(seq_feat_dt.IsProt()) ) CTestAndRepData::non_prot_feat.push_back(&seq_feat);
+        if (!(seq_feat_dt.IsProt())) CTestAndRepData::non_prot_feat.push_back(&seq_feat);
 
         switch (seq_feat_dt.Which()) {
 
@@ -423,8 +423,10 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      CTestAndRepData::trna_feat.clear();
    }
 
+/*
    if (!CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
          GoTests(CRepConfig::tests_on_Bioseq_NotInGenProdSet, bioseq);
+*/
 
    unsigned prev_len = CRepConfig:: tests_4_once.size();
    if ( bioseq.IsNa() && !CRepConfig::tests_on_Bioseq_na.empty()) {
