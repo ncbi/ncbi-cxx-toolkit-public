@@ -131,56 +131,62 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID1));
    tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID));
    tests_on_Bioseq_aa.push_back(
-                       CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
+                   CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
    tests_on_Bioseq_aa.push_back(
-                       CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX));
+                   CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX));
 
 // tests_on_Bioseq_na
-   tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_DEFLINE_PRESENT));
+   tests_on_Bioseq_na.push_back(
+                     CRef <CTestAndRepData>(new CBioseq_TEST_DEFLINE_PRESENT));
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_N_RUNS));
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_N_RUNS_14));
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_ZERO_BASECOUNT));
-   tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_LOW_QUALITY_REGION));
+   tests_on_Bioseq_na.push_back(
+                     CRef <CTestAndRepData>(new CBioseq_TEST_LOW_QUALITY_REGION));
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_PERCENT_N));
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_10_PERCENTN));
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back( 
-                           CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
+                   CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
    tests_on_Bioseq_CFeat.push_back( 
-                           CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
-   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
+                   CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
+   tests_on_Bioseq_CFeat.push_back( 
+                    CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
    tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TEST_CDS_HAS_CDD_XREF));
    tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_CDS_HAS_NEW_EXCEPTION));
    tests_on_Bioseq_CFeat.push_back(
-                    CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
+             CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
    tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_MISC_FEATURES));
    tests_on_Bioseq_CFeat.push_back(
-                    CRef <CTestAndRepData> (new CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS));
+             CRef <CTestAndRepData> (new CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS));
    tests_on_Bioseq_CFeat.push_back(
-                         CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
+                CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
    tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_ADJACENT_PSEUDOGENES));
    tests_on_Bioseq_CFeat.push_back(
-                         CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_PROTEIN));
+                CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_PROTEIN));
    tests_on_Bioseq_CFeat.push_back(
                       CRef <CTestAndRepData> (new CBioseq_DUP_GENPRODSET_PROTEIN));
    tests_on_Bioseq_CFeat.push_back(
-                      CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID));
+                CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID));
    tests_on_Bioseq_CFeat.push_back(
-                      CRef <CTestAndRepData> (new CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID));
+                CRef <CTestAndRepData> (new CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID));
    tests_on_Bioseq_CFeat.push_back(
-                           CRef <CTestAndRepData> (new CBioseq_DISC_FEAT_OVERLAP_SRCFEAT));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_CDS_TRNA_OVERLAP));
+                      CRef <CTestAndRepData> (new CBioseq_DISC_FEAT_OVERLAP_SRCFEAT));
+   tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_CDS_TRNA_OVERLAP));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_TRANSL_NO_NOTE));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_NOTE_NO_TRANSL));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_TRANSL_TOO_LONG));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_FIND_STRAND_TRNAS));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_FIND_BADLEN_TRNAS));
+   tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_FIND_STRAND_TRNAS));
+   tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_FIND_BADLEN_TRNAS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_COUNT_TRNAS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_FIND_DUP_TRNAS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_COUNT_RRNAS));
@@ -190,13 +196,17 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_CONTAINED_CDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_PSEUDO_MISMATCH));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_EC_NUMBER_NOTE));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_NON_GENE_LOCUS_TAG));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData> (new CBioseq_NON_GENE_LOCUS_TAG));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_JOINED_FEATURES));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>( new CBioseq_SHOW_TRANSL_EXCEPT));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
-                                         new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_ONCALLER_GENE_MISSING));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>( new CBioseq_SHOW_TRANSL_EXCEPT));
+   tests_on_Bioseq_CFeat.push_back(
+          CRef <CTestAndRepData>( new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_ONCALLER_GENE_MISSING));
    tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_ONCALLER_SUPERFLUOUS_GENE));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_GENES));
@@ -204,86 +214,96 @@ void CRepConfDiscrepancy :: ConfigRep()
    //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_CDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_CDS_OVERLAP));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_FIND_OVERLAPPED_GENES));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_GENES));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_FIND_OVERLAPPED_GENES));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_GENES));
    tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_CDS_PRODUCT_FIND));
    tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_NO_PRODUCT));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_INTRON));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_BAD_GENE_STRAND));
    tests_on_Bioseq_CFeat.push_back(
-                   CRef <CTestAndRepData>(new CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA));
+                         CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_INTRON));
+   tests_on_Bioseq_CFeat.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_DISC_BAD_GENE_STRAND));
+   tests_on_Bioseq_CFeat.push_back(
+             CRef <CTestAndRepData>(new CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_RRNA));
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_OVERLAPPING_RRNAS));
    tests_on_Bioseq_CFeat.push_back(
-                  CRef <CTestAndRepData>( new CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME));
+                        CRef <CTestAndRepData>(new CBioseq_TEST_OVERLAPPING_RRNAS));
+   tests_on_Bioseq_CFeat.push_back(
+               CRef <CTestAndRepData>( new CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME));
    tests_on_Bioseq_CFeat.push_back(
                   CRef <CTestAndRepData>( new CBioseq_DISC_SUSPICIOUS_NOTE_TEXT));
    tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData>(new CBioseq_NO_ANNOTATION));
-   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData>(
-                                                         new CBioseq_DISC_LONG_NO_ANNOTATION));
-   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData>(
-                                                         new CBioseq_DISC_PARTIAL_PROBLEMS));
-   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData>(
-                                                         new CBioseq_TEST_UNUSUAL_MISC_RNA));
-   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData>(
-                                                         new CBioseq_GENE_PRODUCT_CONFLICT));
-   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData>(
-                                                         new CBioseq_DISC_CDS_WITHOUT_MRNA));
+   tests_on_Bioseq_CFeat.push_back( 
+              CRef <CTestAndRepData>( new CBioseq_DISC_LONG_NO_ANNOTATION));
+   tests_on_Bioseq_CFeat.push_back( 
+              CRef <CTestAndRepData>( new CBioseq_DISC_PARTIAL_PROBLEMS));
+   tests_on_Bioseq_CFeat.push_back( 
+              CRef <CTestAndRepData>( new CBioseq_TEST_UNUSUAL_MISC_RNA));
+   tests_on_Bioseq_CFeat.push_back( 
+                     CRef <CTestAndRepData>( new CBioseq_GENE_PRODUCT_CONFLICT));
+   tests_on_Bioseq_CFeat.push_back( 
+                     CRef <CTestAndRepData>( new CBioseq_DISC_CDS_WITHOUT_MRNA));
    //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_SUSPECT_PRODUCT_NAMES));
 
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
-                                   CRef <CTestAndRepData>(new CBioseq_DUPLICATE_GENE_LOCUS));
+                          CRef <CTestAndRepData>(new CBioseq_DUPLICATE_GENE_LOCUS));
    tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                                    CRef <CTestAndRepData>(new CBioseq_LOCUS_TAGS));
    tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
-                               CRef <CTestAndRepData>(new CBioseq_FEATURE_LOCATION_CONFLICT));
+                          CRef <CTestAndRepData>(new CBioseq_FEATURE_LOCATION_CONFLICT));
 
 // tests_on_Bioseq_CFeat_CSeqdesc
-   tests_on_Bioseq_NotInGenProdSet.push_back(CRef<CTestAndRepData>(new CBioseq_SHORT_CONTIG));
+   tests_on_Bioseq_NotInGenProdSet.push_back(
+                                 CRef<CTestAndRepData>(new CBioseq_SHORT_CONTIG));
    tests_on_Bioseq_NotInGenProdSet.push_back(
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES));
    tests_on_Bioseq_NotInGenProdSet.push_back(
-                                     CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
+                                CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                      new CBioseq_TEST_UNWANTED_SPACER));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
-                                                     new CBioseq_TEST_UNNECESSARY_VIRUS_GENE));
+                                new CBioseq_TEST_UNNECESSARY_VIRUS_GENE));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                      new CBioseq_TEST_ORGANELLE_NOT_GENOMIC));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                               new CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                                     new CBioseq_TEST_BAD_MRNA_QUAL));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                      new CBioseq_TEST_EXON_ON_MRNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                          CRef <CTestAndRepData>( new CBioseq_ONCALLER_HIV_RNA_INCONSISTENT));
+                     CRef <CTestAndRepData>( new CBioseq_ONCALLER_HIV_RNA_INCONSISTENT));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-          CRef <CTestAndRepData>( new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION));
+    CRef <CTestAndRepData>( new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-           CRef <CTestAndRepData>( new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
+     CRef <CTestAndRepData>( new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                             CRef <CTestAndRepData>( new CBioseq_DISC_MITOCHONDRION_REQUIRED));
+                      CRef <CTestAndRepData>( new CBioseq_DISC_MITOCHONDRION_REQUIRED));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                                   CRef <CTestAndRepData>( new CBioseq_DISC_RETROVIRIDAE_DNA));
+                             CRef <CTestAndRepData>( new CBioseq_DISC_RETROVIRIDAE_DNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                        CRef <CTestAndRepData>( new CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE));
+                  CRef <CTestAndRepData>( new CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                                 CRef <CTestAndRepData>(new CBioseq_DISC_RBS_WITHOUT_GENE));
+                             CRef <CTestAndRepData>(new CBioseq_DISC_RBS_WITHOUT_GENE));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                                CRef <CTestAndRepData>(new CBioseq_DISC_EXON_INTRON_CONFLICT));
+                          CRef <CTestAndRepData>(new CBioseq_DISC_EXON_INTRON_CONFLICT));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                              CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
+                        CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                       CRef <CTestAndRepData>(new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
+                 CRef <CTestAndRepData>(new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                                 CRef <CTestAndRepData> (new CBioseq_TEST_BAD_GENE_NAME));
+                                CRef <CTestAndRepData> (new CBioseq_TEST_BAD_GENE_NAME));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                                  CRef <CTestAndRepData> (new CBioseq_MOLTYPE_NOT_MRNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                                  CRef <CTestAndRepData> (new CBioseq_TECHNIQUE_NOT_TSA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
-                                 CRef <CTestAndRepData> (new CBioseq_SHORT_PROT_SEQUENCES));
+                              CRef <CTestAndRepData> (new CBioseq_SHORT_PROT_SEQUENCES));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                    CRef <CTestAndRepData>(new CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
@@ -295,7 +315,7 @@ void CRepConfDiscrepancy :: ConfigRep()
 // tests_on_SeqEntry
    /* not yet ready to imple. 
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(
-                                                new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
+                                new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
    */
    // asndisc version   
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));

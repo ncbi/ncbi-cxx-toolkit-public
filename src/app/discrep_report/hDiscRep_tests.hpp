@@ -86,7 +86,7 @@ namespace DiscRepNmSpc {
       static bool   is_GP_Set_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
-      static bool   is_NonmRNA_run;
+      static bool   is_mRNA_run;
       static bool   is_Prot_run;
       static bool   is_Pub_run;
       static bool   is_Quals_run;
@@ -1528,10 +1528,10 @@ namespace DiscRepNmSpc {
 
 
 
-  class CBioseq_on_non_mRNA : public CBioseqTestAndRepData
+  class CBioseq_on_mRNA : public CBioseqTestAndRepData
   {
     public:
-      virtual ~CBioseq_on_non_mRNA () {};
+      virtual ~CBioseq_on_mRNA () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
@@ -1540,26 +1540,35 @@ namespace DiscRepNmSpc {
     protected:
       string GetName_exon() const {return string("TEST_EXON_ON_MRNA"); }
       string GetName_qual() const {return string("TEST_BAD_MRNA_QUAL"); }
+      string GetName_str() const {return string("TEST_MRNA_SEQUENCE_MINUS_ST"); }
   };
 
+  class CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST : public CBioseq_on_mRNA
+  {
+    public:
+      virtual ~CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST () {};
 
-  class CBioseq_TEST_EXON_ON_MRNA : public CBioseq_on_non_mRNA
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_mRNA::GetName_str();}
+  };
+
+  class CBioseq_TEST_EXON_ON_MRNA : public CBioseq_on_mRNA
   {
     public:
       virtual ~CBioseq_TEST_EXON_ON_MRNA () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CBioseq_on_non_mRNA::GetName_exon();}
+      virtual string GetName() const {return CBioseq_on_mRNA::GetName_exon();}
   };
 
 
-  class CBioseq_TEST_BAD_MRNA_QUAL : public CBioseq_on_non_mRNA
+  class CBioseq_TEST_BAD_MRNA_QUAL : public CBioseq_on_mRNA
   {
     public:
       virtual ~CBioseq_TEST_BAD_MRNA_QUAL () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CBioseq_on_non_mRNA::GetName_qual();}
+      virtual string GetName() const {return CBioseq_on_mRNA::GetName_qual();}
   };
 
 

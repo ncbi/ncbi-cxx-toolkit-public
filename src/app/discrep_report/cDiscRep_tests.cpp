@@ -133,8 +133,8 @@ bool CDiscTestInfo :: is_Defl_run;
 bool CDiscTestInfo :: is_DESC_user_run;
 bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_MolInfo_run;
-bool CDiscTestInfo :: is_MRNA_run;
-bool CDiscTestInfo :: is_NonmRNA_run;
+bool CDiscTestInfo :: is_MRNA_run;  // need modification, has to be is_mRNACDs_run
+bool CDiscTestInfo :: is_mRNA_run;
 bool CDiscTestInfo :: is_Prot_run;
 bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
@@ -474,25 +474,41 @@ void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: GetReport(CRef <CClickableItem>& c_it
 
 
 // new comb
-void CBioseq_on_non_mRNA :: TestOnObj(const CBioseq& bioseq)
+void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
 {
-  if (thisTest.is_NonmRNA_run) return;
-    if (!IsMrnaSequence()) return;
-    // TEST_EXON_ON_MRNA
-    if (!exon_feat.empty()) 
-         thisInfo.test_item_list[GetName_exon()].push_back(GetDiscItemText(bioseq));
+  if (thisTest.is_mRNA_run) return;
+  if (!IsMrnaSequence()) return;
 
-    // TEST_BAD_MRNA_QUAL
-    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-      const CBioSource& biosrc = (*it)->GetSource();
-      if ( biosrc.CanGetSubtype()) {
-         if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_germline) 
+  string desc(GetDiscItemText(bioseq));
+  // TEST_EXON_ON_MRNA
+  if (!exon_feat.empty()) 
+         thisInfo.test_item_list[GetName_exon()].push_back(desc);
+
+  // TEST_BAD_MRNA_QUAL
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+    const CBioSource& biosrc = (*it)->GetSource();
+    if ( biosrc.CanGetSubtype()) {
+      if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_germline) 
                || IsSubSrcPresent(biosrc, CSubSource::eSubtype_rearranged))
-            thisInfo.test_item_list[GetName_qual()].push_back(GetDiscItemText(**it, bioseq));
-      }
+        thisInfo.test_item_list[GetName_qual()].push_back(GetDiscItemText(**it, bioseq));
     }
+  }
 
-  thisTest.is_NonmRNA_run = true;
+  // TEST_MRNA_SEQUENCE_MINUS_ST
+  ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+     if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_primer_bind
+             && (*it)->GetLocation().GetStrand() == eNa_strand_minus)
+        thisInfo.test_item_list[GetName_str()].push_back(desc);
+  }
+
+  thisTest.is_mRNA_run = true;
+};
+
+void CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+    = GetHasComment(c_item->item_list.size(), "mRNA sequence") 
+       + "features on the complement strand.";
 };
 
 
@@ -1806,22 +1822,20 @@ bool CBioseqTestAndRepData :: ProductsMatchForRefSeq(const string& feat_prod, co
 
 void CBioseqTestAndRepData :: TestOnMRna(const CBioseq& bioseq)
 {
-  bool has_bad_molinfo = false, has_bad_biosrc = false, has_qual_ids = false;
+  bool has_qual_ids = false;
   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna 
            || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) return;
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
     if (IsLocationOrganelle((*it)->GetSource().GetGenome())) {
-           has_bad_biosrc = true; break;
+           return;
     }
   }
-  if (has_bad_biosrc) return;
   
   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
     if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
-         has_bad_molinfo = true; break;
+        return;
     }
   }
-  if (has_bad_molinfo) return;
  
   string feat_prod, mRNA_prod;
   CSeq_feat_Handle cd_hl;
@@ -1847,7 +1861,7 @@ void CBioseqTestAndRepData :: TestOnMRna(const CBioseq& bioseq)
          thisInfo.test_item_list[GetName_no_mrna()].push_back(GetDiscItemText(**it));
       if (!has_qual_ids) {
          if (!(mRNA->GetNamedQual("orig_protein_id").empty()) 
-                                     && !(mRNA->GetNamedQual("orig_transcript_id").empty())) 
+                                && !(mRNA->GetNamedQual("orig_transcript_id").empty())) 
            has_qual_ids = true;
       }
     }     
