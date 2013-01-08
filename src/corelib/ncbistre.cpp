@@ -44,43 +44,10 @@ BEGIN_NCBI_SCOPE
 
 
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-
-CNcbiIfstream::CNcbiIfstream(
-    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
- : IO_PREFIX::ifstream(_T_XCSTRING(_Filename), _Mode, _Prot)
+wstring ncbi_Utf8ToWstring(const char *utf8)
 {
+    return _T_XSTRING(utf8);
 }
-
-void CNcbiIfstream::open(
-    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
-{
-    IO_PREFIX::ifstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
-}
-
-CNcbiOfstream::CNcbiOfstream(
-    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
- : IO_PREFIX::ofstream(_T_XCSTRING(_Filename), _Mode, _Prot)
-{
-}
-
-void CNcbiOfstream::open(
-    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
-{
-    IO_PREFIX::ofstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
-}
-
-CNcbiFstream::CNcbiFstream(
-    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
- : IO_PREFIX::fstream(_T_XCSTRING(_Filename), _Mode, _Prot)
-{
-}
-
-void CNcbiFstream::open(
-    const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
-{
-    IO_PREFIX::fstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
-}
-
 #endif
 
 
