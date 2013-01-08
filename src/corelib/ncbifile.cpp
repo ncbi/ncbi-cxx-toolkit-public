@@ -3223,30 +3223,6 @@ bool CFile::Compare(const string& filename, size_t buf_size) const
 }
 
 
-static inline
-char x_GetChar(CNcbiIfstream& f, CFile::ECompareText mode,
-               char* buf, size_t buf_size, char*& pos, streamsize& sizeleft)
-{
-    char c = '\0';
-    do {
-        if (sizeleft == 0) {
-            f.read(buf, buf_size);
-            sizeleft = f.gcount();
-            pos = buf;
-        }
-        if (sizeleft > 0) {
-            c = *pos;
-            ++pos;
-            --sizeleft;
-        } else {
-            return '\0';
-        }
-    } while ( (mode == CFile::eIgnoreEol && (c == '\n' || c == '\r')) ||
-              (mode == CFile::eIgnoreWs  && isspace((unsigned char)c))
-            );
-    return c;
-}
-
 bool CFile::CompareTextContents(const string& file, ECompareText mode,
                                 size_t buf_size) const
 {
@@ -3256,24 +3232,9 @@ bool CFile::CompareTextContents(const string& file, ECompareText mode,
     if ( !buf_size ) {
         buf_size = kDefaultBufferSize;
     }
-    char* buf1  = new char[buf_size];
-    char* buf2  = new char[buf_size];
-    streamsize size1 = 0, size2 = 0;
-    char *pos1 = 0, *pos2 = 0;
-    bool  equal = true;
-
-    while ( equal ) {
-        char c1 = x_GetChar(f1, mode, buf1, buf_size, pos1, size1);
-        char c2 = x_GetChar(f2, mode, buf2, buf_size, pos2, size2);
-        equal = (c1 == c2);
-        if (!c1 || !c2) {
-            break;
-        }
-    }
-    delete[] buf1;
-    delete[] buf2;
-    return equal  &&  f1.eof()  &&  f2.eof();
+    return NcbiStreamCompareText(f1, f2, (ECompareTextMode)mode, (streamsize)buf_size);
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////////

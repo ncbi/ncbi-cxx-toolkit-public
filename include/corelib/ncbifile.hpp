@@ -1483,9 +1483,12 @@ public:
     ///   TRUE if files content is equal; FALSE otherwise.
     bool Compare(const string& file, size_t buf_size = 0) const;
 
+    /// Mode to compare streams in text form.
     enum ECompareText {
-        eIgnoreEol,   ///< Skip end-of-line ('\r' and '\n')
-        eIgnoreWs     ///< Skip white space (in terms of isspace())
+        /// Skip end-of-line characters ('\r' and '\n')
+        eIgnoreEol = eCompareText_IgnoreEol,
+        ///< Skip white spaces (in terms of isspace(), including end-of-line)
+        eIgnoreWs  = eCompareText_IgnoreWhiteSpace
     };
 
     /// Compare files contents in text form.
@@ -1502,7 +1505,6 @@ public:
     bool CompareTextContents(const string& file, ECompareText mode,
                              size_t buf_size = 0) const;
 };
-
 
 
 /////////////////////////////////////////////////////////////////////////////

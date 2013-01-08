@@ -472,6 +472,59 @@ NCBI_XNCBI_EXPORT
 extern bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is);
 
 
+/// Compare stream contents in binary form.
+///
+/// @param is1
+///   First stream to compare.
+/// @param is2
+///   Second stream to compare.
+/// @return
+///   TRUE if streams content is equal; FALSE otherwise.
+NCBI_XNCBI_EXPORT
+extern bool NcbiStreamCompare(CNcbiIstream& is1, CNcbiIstream& is2);
+
+/// Mode to compare streams in text form.
+enum ECompareTextMode {
+    /// Skip end-of-line characters ('\r' and '\n')
+    eCompareText_IgnoreEol,
+    ///< Skip white spaces (in terms of isspace(), including end-of-line)
+    eCompareText_IgnoreWhiteSpace
+};
+
+/// Compare stream contents in text form.
+///
+/// @param is1
+///   First stream to compare.
+/// @param is2
+///   Second stream to compare.
+/// @param mode
+///   Type of white space characters to ignore.
+/// @param buf_size
+///   Size of buffer to read stream.
+///   Zero value means using default buffer size.
+/// @return
+///   TRUE if streams content is equal; FALSE otherwise.
+NCBI_XNCBI_EXPORT
+extern bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
+                                  ECompareTextMode mode, streamsize buf_size = 0);
+
+/// Compare stream content with string in text form.
+///
+/// @param is
+///   Stream to compare.
+/// @param str
+///   String to compare.
+/// @param mode
+///   Type of white space characters to ignore.
+/// @param buf_size
+///   Size of buffer to read stream.
+///   Zero value means using default buffer size.
+/// @return
+///   TRUE if stream and string content is equal; FALSE otherwise.
+NCBI_XNCBI_EXPORT
+extern bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
+                                  ECompareTextMode mode, streamsize buf_size = 0);
+
 
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
 #if defined(HAVE_NO_CHAR_TRAITS)

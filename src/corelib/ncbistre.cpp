@@ -259,6 +259,79 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 }
 
 
+bool NcbiStreamCompare(CNcbiIstream& is1, CNcbiIstream& is2)
+{
+    while (is1 && is2) {
+        char c1 = is1.get();
+        char c2 = is2.get();
+        if (c1 != c2) {
+            return false;
+        }
+    }
+    return is1.eof() && is2.eof();
+}
+
+
+static inline
+char x_GetChar(CNcbiIstream& is, ECompareTextMode mode,
+               char* buf, streamsize buf_size, char*& pos, streamsize& sizeleft)
+{
+    char c = '\0';
+    do {
+        if (sizeleft == 0) {
+            is.read(buf, buf_size);
+            sizeleft = is.gcount();
+            pos = buf;
+        }
+        if (sizeleft > 0) {
+            c = *pos;
+            ++pos;
+            --sizeleft;
+        } else {
+            return '\0';
+        }
+    } while ( (mode == eCompareText_IgnoreEol && (c == '\n' || c == '\r')) ||
+              (mode == eCompareText_IgnoreWhiteSpace && isspace((unsigned char)c))
+            );
+    return c;
+}
+
+
+bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
+                           ECompareTextMode mode,
+                           streamsize buf_size)
+{
+    if ( !buf_size ) {
+        buf_size = 4*1024;
+    }
+    char* buf1  = new char[buf_size];
+    char* buf2  = new char[buf_size];
+    streamsize size1 = 0, size2 = 0;
+    char *pos1 = 0, *pos2 = 0;
+    bool  equal = true;
+    while ( equal ) {
+        char c1 = x_GetChar(is1, mode, buf1, buf_size, pos1, size1);
+        char c2 = x_GetChar(is2, mode, buf2, buf_size, pos2, size2);
+        equal = (c1 == c2);
+        if (!c1 || !c2) {
+            break;
+        }
+    }
+    delete[] buf1;
+    delete[] buf2;
+    return equal  &&  is1.eof()  &&  is2.eof();
+}
+
+
+bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
+                           ECompareTextMode mode,
+                           streamsize buf_size)
+{
+    CNcbiIstrstream istr(str.data(), str.size());
+    return NcbiStreamCompareText(is, istr, mode, buf_size);
+}
+
+
 CNcbiOstrstreamToString::operator string(void) const
 {
     SIZE_TYPE length = (size_t)m_Out.pcount();
