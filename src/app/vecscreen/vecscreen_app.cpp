@@ -40,15 +40,10 @@ static char const rcsid[] =
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/format/vecscreen_run.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
-#include <algo/blast/blastinput/vecscreen_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include "../blast/blast_app_util.hpp"
-
-//#include <algo/blast/api/local_blast.hpp>
-//#include <algo/blast/format/blast_format.hpp>
-//#include "blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
