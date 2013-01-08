@@ -524,8 +524,13 @@ namespace dtl {
          * initialize
          */
         void init () {
+#ifdef NCBI_COMPILER_WORKSHOP
+            distance(A.begin(), A.end(), M);
+            distance(B.begin(), B.end(), N);
+#else
             M = distance(A.begin(), A.end());
             N = distance(B.begin(), B.end());
+#endif
             if (M < N) {
                 swapped = false;
             } else {
@@ -632,8 +637,13 @@ namespace dtl {
                 sequence B_(B.begin() + (size_t)y_idx - 1, B.end());
                 A        = A_;
                 B        = B_;
+#ifdef NCBI_COMPILER_WORKSHOP
+                distance(A.begin(), A.end(), M);
+                distance(B.begin(), B.end(), N);
+#else
                 M        = distance(A.begin(), A.end());
                 N        = distance(B.begin(), B.end());
+#endif
                 delta    = N - M;
                 offset   = M + 1;
                 delete[] fp;
