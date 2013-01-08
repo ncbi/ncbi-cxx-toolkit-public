@@ -7,5 +7,7 @@ LIB = xdiff xncbi
 LIBS = $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
+CHECK_COPY = testdata
 CHECK_CMD = 
+
 WATCHERS = ivanov

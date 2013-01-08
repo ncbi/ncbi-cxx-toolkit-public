@@ -46,6 +46,7 @@
 ///
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
 
 /** @addtogroup Diff
  *
