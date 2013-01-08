@@ -716,6 +716,7 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
 CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 {
     CGBReaderRequestResult result(this, sih);
+    CLoadLockSeq_ids seq_ids(result, sih);
     CLoadLockBlob_ids blobs(result, sih, 0);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
 
@@ -1207,6 +1208,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
     }
 
     CGBReaderRequestResult result(this, sih);
+    CLoadLockSeq_ids seq_ids(result, sih);
     m_Dispatcher->LoadBlobs(result, sih, mask, sel);
     CLoadLockBlob_ids blobs(result, sih, sel);
     _ASSERT(blobs.IsLoaded());
@@ -1244,6 +1246,7 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
     TNamedAnnotNames names;
 
     CGBReaderRequestResult result(this, sih);
+    CLoadLockSeq_ids seq_ids(result, sih);
     SAnnotSelector sel;
     sel.IncludeNamedAnnotAccession("NA*");
     CLoadLockBlob_ids blobs(result, sih, &sel);
@@ -1276,6 +1279,7 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
     TNamedAnnotNames names;
 
     CGBReaderRequestResult result(this, sih);
+    CLoadLockSeq_ids seq_ids(result, sih);
     SAnnotSelector sel;
     if ( !ExtractZoomLevel(named_acc, 0, 0) ) {
         sel.IncludeNamedAnnotAccession(CombineWithZoomLevel(named_acc, -1));
@@ -1338,6 +1342,7 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
     TBlobContentsMask mask = fBlobHasCore;
     CReadDispatcher::TIds ids;
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
+        CLoadLockSeq_ids seq_ids_lock(result, tse_set->first);
         CLoadLockBlob_ids blob_ids_lock(result, tse_set->first, 0);
         ids.push_back(tse_set->first);
     }

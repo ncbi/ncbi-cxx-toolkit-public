@@ -483,22 +483,40 @@ namespace {
         TLock m_Lock;
     };
 
+    bool s_Blob_idsLoaded(CLoadLockBlob_ids& ids, CLoadLockSeq_ids& seq_ids)
+    {
+        if ( ids.IsLoaded() ) {
+            return true;
+        }
+        // check if seq-id is known as absent
+        if ( seq_ids.IsLoaded() &&
+             (seq_ids->GetState() & CBioseq_Handle::fState_no_data) ) {
+            // mark blob-ids as absent too
+            ids->SetState(seq_ids->GetState());
+            ids.SetLoaded();
+            return true;
+        }
+        return false;
+    }
+
     class CCommandLoadSeq_idBlob_ids : public CReadDispatcherCommand
     {
     public:
         typedef CSeq_id_Handle TKey;
+        typedef CLoadLockSeq_ids TPreLock;
         typedef CLoadLockBlob_ids TLock;
         CCommandLoadSeq_idBlob_ids(CReaderRequestResult& result,
                                    const TKey& key,
                                    const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Selector(sel), m_Lock(result, key, sel)
+              m_Key(key), m_Selector(sel),
+              m_PreLock(result, key), m_Lock(result, key, sel)
             {
             }
 
         bool IsDone(void)
             {
-                return m_Lock.IsLoaded();
+                return s_Blob_idsLoaded(m_Lock, m_PreLock);
             }
         bool Execute(CReader& reader)
             {
@@ -522,6 +540,7 @@ namespace {
     private:
         TKey m_Key;
         const SAnnotSelector* m_Selector;
+        TPreLock m_PreLock;
         TLock m_Lock;
     };
 
@@ -803,20 +822,21 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
+        typedef CLoadLockSeq_ids TSeqIds;
         typedef CLoadLockBlob_ids TIds;
         typedef CReadDispatcher::TContentsMask TMask;
         CCommandLoadSeq_idBlobs(CReaderRequestResult& result,
                                 const TKey& key, TMask mask,
                                 const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Ids(result, key, sel),
+              m_Key(key), m_SeqIds(result, key), m_Ids(result, key, sel),
               m_Mask(mask), m_Selector(sel)
             {
             }
 
         bool IsDone(void)
             {
-                return m_Ids.IsLoaded() &&
+                return s_Blob_idsLoaded(m_Ids, m_SeqIds) &&
                     s_AllBlobsAreLoaded(GetResult(),
                                         m_Ids, m_Mask, m_Selector);
             }
@@ -841,6 +861,7 @@ namespace {
         
     private:
         TKey m_Key;
+        TSeqIds m_SeqIds;
         TIds m_Ids;
         TMask m_Mask;
         const SAnnotSelector* m_Selector;
@@ -1038,8 +1059,9 @@ namespace {
             {
                 CReaderRequestResult& result = GetResult();
                 ITERATE(TIds, id, m_Ids) {
+                    CLoadLockSeq_ids seq_ids(result, *id);
                     CLoadLockBlob_ids blob_ids(result, *id, 0);
-                    if ( !blob_ids.IsLoaded() ) {
+                    if ( !s_Blob_idsLoaded(blob_ids, seq_ids) ) {
                         return false;
                     }
                     ITERATE ( CLoadInfoBlob_ids, it, *blob_ids ) {
@@ -1149,6 +1171,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
                 }
                 else {
                     if ( retry_count >= max_retry_count &&
+                         !command.MayBeSkipped() &&
                          !reader.MayBeSkippedOnErrors() ) {
                         throw;
                     }
@@ -1159,6 +1182,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
             catch ( CException& exc ) {
                 // error in the command
                 if ( retry_count >= max_retry_count &&
+                     !command.MayBeSkipped() &&
                      !reader.MayBeSkippedOnErrors() ) {
                     throw;
                 }
@@ -1168,6 +1192,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
             catch ( exception& exc ) {
                 // error in the command
                 if ( retry_count >= max_retry_count &&
+                     !command.MayBeSkipped() &&
                      !reader.MayBeSkippedOnErrors() ) {
                     throw;
                 }
@@ -1179,7 +1204,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
                 return;
             }
         } while ( retry_count < max_retry_count );
-        if ( !reader.MayBeSkippedOnErrors() ) {
+        if ( !command.MayBeSkipped() &&
+             !reader.MayBeSkippedOnErrors() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed, command.GetErrMsg());
         }
     }
