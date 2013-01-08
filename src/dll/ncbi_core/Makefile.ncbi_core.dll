@@ -8,6 +8,7 @@ HOSTED_LIBS    = xncbi     \
                  sequtil   \
                  creaders  \
                  xregexp   \
+                 xdiff     \
                  xutil     \
                  xthrserv  \
                  xconnserv \
