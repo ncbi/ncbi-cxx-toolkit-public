@@ -213,6 +213,7 @@ public:
 
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor);
     void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
+    void SetBestPlacement(TOrigAligns& orig_aligns);
 
     TContained m_members;
     int m_polya_cap_right_hard_limit;
@@ -264,7 +265,9 @@ TContained SChainMember::CollectContainedForChain()
     }
 
     return contained;
-}        
+}  
+
+#define START_BONUS 600      
 
 void SChainMember::MarkIncludedForChain()
 {
@@ -275,7 +278,8 @@ void SChainMember::MarkIncludedForChain()
         if (mi->m_copy != 0) {
             ITERATE(TContained, j, *mi->m_copy) {
                 SChainMember* mj = *j;
-                mj->m_included = true;
+                if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25)
+                    mj->m_included = true;
             }
         }
     }
@@ -290,7 +294,8 @@ void SChainMember::MarkPostponedForChain()
         if (mi->m_copy != 0) {
             ITERATE(TContained, j, *mi->m_copy) {
                 SChainMember* mj = *j;
-                mj->m_postponed = true;
+                if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25)
+                    mj->m_postponed = true;
             }
         }
     }
@@ -929,7 +934,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
     }
 }
 
-#define START_BONUS 600
+//#define START_BONUS 600
 
 bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, int oep, TContained& contained) {
 
@@ -1332,16 +1337,17 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
         m_gnomon->GetScore(chain);
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
+        chain.ClipToCompleteAlignment(CGeneModel::eCap);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
 
         double ms = GoodCDNAScore(chain);
+
         //        if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
         if(chain.GetCdsInfo().ProtReadingFrame().Empty())
             RemovePoorCds(chain,ms);
         if(chain.Score() != BadScore()) {
             mi.MarkIncludedForChain();   // alignments clipped below might not be in any chain; clipping may produce redundant chains
-            chain.ClipToCompleteAlignment(CGeneModel::eCap);
-            chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-            chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
 
             if(chain.Score() != BadScore()) {
                 m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
@@ -1377,7 +1383,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     LeftRight(pointers);
     RightLeft(pointers);
 
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+            //        const CGeneModel& algn(**it);
+ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
         _ASSERT(mi.m_cds == 0);
@@ -1410,6 +1417,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     TGeneModelList chains;
     NON_CONST_ITERATE(list<CChain>, it, tmp_chains) {
+        it->SetBestPlacement(orig_aligns);
         CGeneModel& chain = *it;
         if(chain.Continuous() && chain.Exons().size() > 1) {
             bool allcdnaintrons = true;
@@ -1786,6 +1794,24 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper)
     m_polya_cap_right_hard_limit = Limits().GetFrom()-1;
 }
 
+void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
+
+    map<Int8,int> exonnum;
+    ITERATE (TContained, it, m_members) {
+        const CGeneModel& align = *(*it)->m_align;
+
+        if(align.GetCdsInfo().ProtReadingFrame().NotEmpty() && (align.Status()&eBestPlacement)) // best placed protein or projected mRNA
+            exonnum[align.ID()] += align.Exons().size();       
+    }
+
+    for(map<Int8,int>::iterator it = exonnum.begin(); it != exonnum.end(); ++it) {
+        if(it->second == (int)orig_aligns[it->first]->Exons().size()) {   // all exons are included in the chain
+            Status() |= eBestPlacement;
+            break;
+        }
+    }
+}
+
 
 void CChain::CalculatedSupportAndWeightFromMembers() {
 
@@ -1809,7 +1835,7 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
         Int8 id = align.ID();
-
+            
         if(sp.insert(id).second) {   // avoid counting parts of splitted aligns
             weight += align.Weight();
             support.push_back(CSupportInfo(id,false));
@@ -2604,7 +2630,7 @@ void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& 
            
             double ms = GoodCDNAScore(algn);
 
-            if (algn.Score() == BadScore() || (algn.Score() < ms && (algn.Type() & CGeneModel::eProt) != 0 && orig->AlignLen() < minscor.m_minprotfrac*orig->TargetLen())) { // all mRNA with confirmed CDS and reasonably aligned proteins with known length will get through with any finite score 
+            if (algn.Score() == BadScore() || (algn.Score() < ms && (algn.Type()&CGeneModel::eProt) && !(algn.Status()&CGeneModel::eBestPlacement) && orig->AlignLen() < minscor.m_minprotfrac*orig->TargetLen())) { // all mRNA with confirmed CDS and best placed or reasonably aligned proteins with known length will get through with any finite score 
                 CNcbiOstrstream ost;
                 if(algn.AlignLen() <= 75)
                     ost << "Short alignment " << algn.AlignLen();
