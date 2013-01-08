@@ -67,7 +67,7 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
         version = 1;
         ch += NS_KEY_V1_PREFIX_LEN;
 
-        // id
+        // Extract the job number field.
         if ((id = (unsigned) atoi(ch)) == 0)
             return false;
         do
@@ -75,25 +75,21 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
                 return false;
         while (*ch != '_');
 
-        // hostname
-        {
-            const char* host_begin = ++ch;
-            unsigned host_len = 0;
-            for (;;) {
-                if (*ch == '\0')
-                    return false;
-                if (*ch++ != '_')
-                    ++host_len;
-                else
-                    break;
-            }
-            host.assign(host_begin, host_len);
-        }
+        // Find the host name field boundaries.
+        const char* token_begin = ++ch;
+        while (*ch != '\0' && *ch++ != '_')
+            /* noop */;
 
-        // port
+        // Extract the server port number.
         if ((port = (unsigned short) atoi(ch)) == 0)
             return false;
 
+        // Everything's OK so far, save the host name/IP.
+        host.assign(token_begin, ch - token_begin - 1);
+        if (host.empty())
+            return false;
+
+        // Skip to the queue name.
         while (*++ch != '_')
             switch (*ch) {
             case '\0':
@@ -105,19 +101,19 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
                 return false;
             }
 
-        // queue
+        // Queue name is specified - extract it.
         int underscores_to_skip = 0;
         while (*++ch == '_')
             ++underscores_to_skip;
         if (*ch == '\0')
             return false;
-        const char* queue_begin = ch;
+        token_begin = ch;
         while (*ch != '_' || --underscores_to_skip >= 0)
             if (*++ch == '\0')
                 break;
-        queue.assign(queue_begin, ch - queue_begin);
+        queue.assign(token_begin, ch - token_begin);
 
-        return true;
+        return underscores_to_skip <= 0;
     } else if (isdigit(*ch)) {
         version = 0;
         id = (unsigned) atoi(ch);
