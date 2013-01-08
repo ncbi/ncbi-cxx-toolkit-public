@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema-test"
+  xmlns:t="schema-test"
+  elementFormDefault="qualified">
+
+
+<!-- all -->
+<xs:complexType name="personinfo">
+  <xs:all>
+    <xs:element name="firstname" type="xs:string"/>
+    <xs:element name="lastname" type="xs:string"/>
+  </xs:all>
+</xs:complexType>
+
+<!-- empty -->
+<xs:element name="description">
+  <xs:complexType>
+      <xs:attribute name="type" type="xs:string" use="optional"/>
+  </xs:complexType>
+</xs:element>
+
+
+<!-- ==================================================================== -->
+<!-- type extension -->
+<xs:complexType name="fullpersoninfo">
+  <xs:complexContent>
+    <xs:extension base="t:personinfo">
+     <xs:attribute name="gender">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="male" />
+            <xs:enumeration value="female" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:element name="comment" type="xs:string"/>
+<xs:element name="from" type="t:personinfo"/>
+
+
+<!-- ==================================================================== -->
+<!-- group -->
+<xs:group name="shipAndBill">
+  <xs:sequence>
+    <xs:element name="ship.To" type="xs:string"/>
+    <xs:element name="bill-To" type="xs:string"/>
+  </xs:sequence>
+</xs:group>
+
+<xs:complexType name="OrderType">
+  <xs:sequence minOccurs="0" maxOccurs="unbounded">
+    <xs:choice>
+      <xs:group   ref="t:shipAndBill"/>
+      <xs:element name="address" type="xs:string"/>
+    </xs:choice>
+    <xs:element ref="t:comment" minOccurs="0"/>
+    <xs:element name="item"  type="xs:string"/>
+  </xs:sequence>
+  <xs:attribute name="orderid" type="xs:integer"/>
+</xs:complexType>
+
+
+<!-- ==================================================================== -->
+<!-- attribute group -->
+<xs:attributeGroup name="ItemDelivery">
+  <xs:attribute name="partNum"  type="xs:string" use="required"/>
+  <xs:attribute name="weightKg" type="xs:decimal"/>
+  <xs:attribute name="label">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+<!-- unusual symbols -->
+        <xs:enumeration value="[BETH'U]"/>
+        <xs:enumeration value="DDBJ/EMBL/GenBank "/>
+        <xs:enumeration value="NCBI:pubchem-substance "/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+</xs:attributeGroup>
+
+
+<!-- ==================================================================== -->
+<!-- defaults -->
+<xs:element name="language" type="xs:string" default="EN"/>
+<xs:element name="defaultElement">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="firstname" type="xs:string" default="John"/>
+      <xs:element name="lastname" type="xs:string" default="Smith"/>
+      <xs:element name="dob" type="xs:int" default="1700"/>
+      <xs:element name="longid" type="xs:long" default="700123456789"/>
+      <xs:element name="fraction" type="xs:double" default="1.123456789"/>
+      <xs:element name="flag" type="xs:boolean" default="true"/>
+      <xs:element name="langlist" type="xs:string"  minOccurs="0" maxOccurs="unbounded"  default="English"/>
+      <xs:element ref="t:language" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="gender" use="optional" default="male">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="male"/>
+          <xs:enumeration value="female"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="gb" type="xs:boolean" default="true"/>
+  </xs:complexType>
+</xs:element>
+
+
+<!-- ==================================================================== -->
+<xs:complexType name="all-test-type">
+  <xs:sequence>
+    <xs:element name="to" type="t:fullpersoninfo"/>
+    <xs:element ref="t:from"/>
+    <xs:element ref="t:description"/>
+    <xs:element ref="t:comment" minOccurs="0"/>
+    <xs:element name="ordertype" type="t:OrderType" minOccurs="0" maxOccurs="unbounded"/>
+    <xs:element ref="t:defaultElement" minOccurs="0"/>
+    <xs:any processContents="lax" namespace="anyns" minOccurs="0"/>
+  </xs:sequence>
+  <xs:attributeGroup ref="t:ItemDelivery"/>
+</xs:complexType>
+
+<xs:element name="note" type="t:all-test-type"/>
+
+
+</xs:schema>

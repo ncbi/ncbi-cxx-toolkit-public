@@ -24,9 +24,14 @@ for base in $bases; do
   d="$base/data"
   r="$base/res"
 
-  for i in "idx" "elink" "note"; do
-    echo "$tool" -m "$base/$i.dtd" -vx "$d/$i.xml" -px out
-    cmd=`echo "$tool" -m "$base/$i.dtd" -vx "$d/$i.xml" -px out`
+  for i in "idx" "elink" "note" "alltest"; do
+    spec=`ls $base/$i.*`    
+    if ! test -e "$spec"; then
+        echo "file not found: $base/$i"
+        continue
+    fi
+    echo "$tool" -m "$spec" -vx "$d/$i.xml" -px out
+    cmd=`echo "$tool" -m "$spec" -vx "$d/$i.xml" -px out`
     $CHECK_EXEC $cmd
     if test "$?" != 0; then
         echo "datatool failed!"
