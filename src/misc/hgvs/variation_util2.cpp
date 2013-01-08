@@ -730,13 +730,19 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
        && (!p.IsSetStart_offset() || p.GetStart_offset() == 0)
        && (!p.IsSetStop_offset() || p.GetStop_offset() == 0))
     {
-        CRef<CSeq_literal> literal = x_GetLiteralAtLoc(p.GetLoc());
-        p.SetSeq(*literal);
+        try {
+            CRef<CSeq_literal> literal = x_GetLiteralAtLoc(p.GetLoc());
+            p.SetSeq(*literal);
 
-        if(ContainsIupacNaAmbiguities(*literal)) {
-            p.SetExceptions().push_back(CreateException("Ambiguous residues in reference", CVariationException::eCode_ambiguous_sequence));
+            if(ContainsIupacNaAmbiguities(*literal)) {
+                p.SetExceptions().push_back(CreateException("Ambiguous residues in reference", CVariationException::eCode_ambiguous_sequence));
+            }
+            ret = true;
+        } catch(CException& e) {
+            //location can be invalid - SNP-5510
+            p.SetExceptions().push_back(CreateException("Cannot fetch sequence at location", CVariationException::eCode_no_mapping));
+            ret = false;
         }
-        ret = true;
     }
     return ret;
 }
