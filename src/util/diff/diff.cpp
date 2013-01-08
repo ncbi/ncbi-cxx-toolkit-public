@@ -545,11 +545,11 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
     {
         // Type of current difference
         dtl::edit_t d_type = it->second.type;
-        CDiffOperation::EType op_type;
+        CDiffOperation::EType op_type = DIFF_EQUAL;
         // Position of the current string in lines[]
-        size_type pos;
+        size_type pos = 0;
         size_type line1 = NPOS, line2 = NPOS;
-        bool is_last_line;
+        bool is_last_line = false;
 
         switch (d_type) {
         case dtl::SES_ADD :
