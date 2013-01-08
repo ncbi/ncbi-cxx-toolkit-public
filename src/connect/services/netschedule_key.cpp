@@ -111,9 +111,11 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
         while (*ch != '_' || --underscores_to_skip >= 0)
             if (*++ch == '\0')
                 break;
+        if (underscores_to_skip > 0)
+            return false;
         queue.assign(token_begin, ch - token_begin);
 
-        return underscores_to_skip <= 0;
+        return true;
     } else if (isdigit(*ch)) {
         version = 0;
         id = (unsigned) atoi(ch);
