@@ -68,6 +68,14 @@ Location: {src,include}/util/compress/zlib
 Authors:  Jean-loup Gailly and Mark Adler
 License:  BSDish [include/util/compress/zlib/zlib.h]
 
+Location: src/util/diff/diff_match_patch
+Authors:  Neil Fraser
+License:  Apache License v2.0 [src/util/diff/diff_match_patch/COPYING]
+
+Location: src/util/diff/dtl
+Authors:  Tatsuhiko Kubo at al. [src/util/diff/dtl/CONTRIBUTORS]
+License:  BSDish [src/util/diff/dtl/COPYING]
+
 Location: {src,include}/util/regexp
 Author:   Philip Hazel
 License:  BSDish [src/util/regexp/doc/LICENCE]
