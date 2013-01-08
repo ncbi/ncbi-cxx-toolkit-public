@@ -55,7 +55,6 @@ BEGIN_NCBI_SCOPE
 // CDiffOperation
 //
 
-inline
 CDiffOperation::CDiffOperation(EType operation, CTempString str)
     : m_Operation(operation),
       m_String(str),
