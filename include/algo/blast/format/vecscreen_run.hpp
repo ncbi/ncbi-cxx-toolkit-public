@@ -96,7 +96,7 @@ public:
      CRef<blast::CSearchResultSet> GetSearchResultSet() const;
      
      /// The Vecscreen formatter
-     class CFormatter {
+     class NCBI_XBLASTFORMAT_EXPORT CFormatter {
      public:
 
          /// Controls the output formats supported by command line VecScreen
