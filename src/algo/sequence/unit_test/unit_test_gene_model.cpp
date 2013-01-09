@@ -1504,6 +1504,49 @@ Seq-align ::= { \
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseConvertLocToAnnotIncompleteCodon)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+string buf = " \
+Seq-loc ::= packed-int { \
+            { \
+              from 632363, \
+              to 633564, \
+              strand plus, \
+              id gi 255926317, \
+              fuzz-to lim gt \
+            } \
+          } \
+";
+    CNcbiIstrstream istrs(buf.c_str());
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    CSeq_loc loc;
+    *istr >> loc;
+
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    CBioseq_set& seqs = seq_entry->SetSet();
+    seqs.SetSeq_set();
+    CSeq_annot annot;
+    annot.SetData().SetFtable();
+    CFeatureGenerator feat_gen(*scope);
+    int flags =
+        CFeatureGenerator::fCreateGene |
+        CFeatureGenerator::fCreateCdregion |
+        CFeatureGenerator::fForceTranslateCds;
+    feat_gen.SetFlags(flags);
+
+
+    feat_gen.ConvertLocToAnnot(loc, annot, seqs);
+
+    int protein_length = seqs.GetSeq_set().front()->GetSeq().GetLength();
+    BOOST_CHECK_EQUAL(protein_length, 401);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 
