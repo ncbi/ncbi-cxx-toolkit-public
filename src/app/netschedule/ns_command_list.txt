@@ -6,14 +6,14 @@ SHUTDOWN
 GETCONF                 # 4.10.0 and up
 VERSION
 RECO
-ACNT
-QLST                    # It is preferably to use STAT QUEUES
-QINF                    # It is preferably to use QINF2
+ACNT                    # Deprecated: Use STAT JOBS instead
+QLST                    # Deprecated: Use STAT QUEUES instead
+QINF                    # Deprecated: Use QINF2 instead
 QINF2                   # 4.14.0 and up
 DROPQ
 QCRE
 QDEL
-STATUS                  # It is preferably to use STATUS2
+STATUS                  # Deprecated: Use STATUS2 instead
 STATUS2                 # 4.10.0 and up
 STAT
 STAT CLIENTS            # 4.10.0 and up
@@ -33,34 +33,47 @@ REFUSESUBMITS           # 4.11.0 and up
 SETQUEUE                # 4.12.0 and up
 QUIT
 MGET
-SST                     # Use SST2 instead
+SST                     # Deprecated: Use SST2 instead
 SST2                    # 4.10.0 and up
 SUBMIT
 LISTEN                  # 4.10.0 and up
 CANCEL
-DROJ                    # Use CANCEL instead
+DROJ                    # Deprecated: Use CANCEL instead
 BSUB
+BTCH
+ENDS
+ENDB
 MPUT
 CLRN
-WST                     # Use WST2 instead
+WST                     # Deprecated: Use WST2 instead
 WST2                    # 4.10.0 and up
 CHAFF                   # 4.10.0 and up
 SETAFF                  # 4.16.4 and up
-GET                     # Use GET2 instead
+GET                     # Deprecated: Use GET2 instead
 GET2                    # 4.10.0 and up
-PUT                     # Use PUT2 instead
+PUT                     # Deprecated: Use PUT2 instead
 PUT2                    # 4.10.0 and up
-RETURN                  # Use RETURN2 instead
+RETURN                  # Deprecated: Use RETURN2 instead
 RETURN2                 # 4.10.0 and up
-WGET                    # Use GET2 instead
+WGET                    # Deprecated: Use GET2 instead
 CWGET                   # 4.10.0 and up
-FPUT
+FPUT                    # Deprecated: Use FPUT2 instead
 FPUT2                   # 4.10.0 and up
-JXCG                    # Use PUT2 + GET2 instead
-JXCG2                   # 4.10.0 only
+JXCG                    # Deprecated: Use PUT2 + GET2 instead
+JXCG2                   # Deprecated: 4.10.0 only
 JDEX
 READ
 CFRM
 FRED
 RDRB
+
+REGC                    # Deprecated
+URGC                    # Deprecated
+INIT                    # Deprecated
+JRTO                    # Deprecated
+FRES                    # Deprecated
+QERY                    # Deprecated
+QSEL                    # Deprecated
+MONI                    # Deprecated
+LOG                     # Deprecated
 
