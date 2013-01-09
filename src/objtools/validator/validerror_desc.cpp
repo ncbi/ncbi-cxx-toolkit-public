@@ -34,7 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiapp.hpp>
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 #include "utilities.hpp"
 
 #include <objects/general/User_object.hpp>

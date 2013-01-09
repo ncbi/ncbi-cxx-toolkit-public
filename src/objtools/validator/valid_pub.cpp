@@ -36,7 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <objmgr/object_manager.hpp>
 
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 #include "utilities.hpp"
 
 #include <serial/iterator.hpp>

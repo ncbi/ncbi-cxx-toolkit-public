@@ -40,7 +40,7 @@
 #include <objtools/validator/validator.hpp>
 #include <util/static_map.hpp>
 
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 
 
 BEGIN_NCBI_SCOPE

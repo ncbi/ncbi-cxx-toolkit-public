@@ -36,7 +36,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 #include "utilities.hpp"
 
 #include <serial/enumvalues.hpp>
@@ -1246,15 +1246,27 @@ static bool s_BiosrcFullLengthIsOk (const CBioSource& src)
 static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
 {
     if (!src.IsSetOrg() || !src.GetOrg().IsSetTaxname()) {
+        printf ("taxname not set!\n");
         return false;
     }
     if (NStr::EqualNocase(src.GetOrg().GetTaxname(), "unidentified phage")) {
+        printf ("is unidentified phage!\n");
         return true;
     }
     if (src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetLineage()
         && NStr::StartsWith(src.GetOrg().GetOrgname().GetLineage(), "Viruses", NStr::eNocase)) {
+        printf ("Starts with viruses!\n");
         return true;
     }
+#if 0
+    if (!src.GetOrg().IsSetOrgname()) {
+      printf ("Orgname not set!\n");
+    } else if (!src.GetOrg().GetOrgname().IsSetLineage()) {
+      printf ("Lineage not set!\n");
+    } else {
+      printf ("Lineage is %s!\n", src.GetOrg().GetOrgname().GetLineage().c_str());
+    }
+#endif
     return false;
 }
 

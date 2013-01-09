@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 
 #include <math.h>
 

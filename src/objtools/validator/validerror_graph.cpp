@@ -36,7 +36,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objmgr/graph_ci.hpp>
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 #include "utilities.hpp"
 
 

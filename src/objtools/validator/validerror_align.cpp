@@ -53,7 +53,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "validatorp.hpp"
+#include <objtools/validator/validatorp.hpp>
 #include "utilities.hpp"
 
 
