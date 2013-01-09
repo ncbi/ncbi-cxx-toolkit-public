@@ -394,6 +394,7 @@ const char* CORE_SendMailEx(const char*          to,
     static const STimeout zero = {0, 0};
     const SSendMailInfo* info;
     SSendMailInfo ainfo;
+    EIO_Status status;
     char buffer[1024];
     SOCK sock = 0;
 
@@ -408,9 +409,11 @@ const char* CORE_SendMailEx(const char*          to,
     }
 
     /* Open connection to sendmail */
-    if (SOCK_Create(info->mx_host, info->mx_port, &info->mx_timeout, &sock)
-        != eIO_Success) {
-        SENDMAIL_RETURN(8, "Cannot connect to sendmail");
+    if ((status = SOCK_Create(info->mx_host, info->mx_port, &info->mx_timeout,
+                              &sock)) != eIO_Success) {
+        sprintf(buffer, "%s:%hu (%s)", info->mx_host, info->mx_port,
+                IO_StatusStr(status));
+        SENDMAIL_RETURN2(8, "Cannot connect to sendmail", buffer);
     }
     SOCK_SetTimeout(sock, eIO_ReadWrite, &info->mx_timeout);
     SOCK_SetTimeout(sock, eIO_Close,     &info->mx_timeout);
@@ -485,9 +488,10 @@ const char* CORE_SendMailEx(const char*          to,
                 !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
                 SENDMAIL_RETURN(19, "Write error in sending Cc");
         }
-    } else if (subject  &&  *subject)
+    } else if (subject  &&  *subject) {
         CORE_LOG_X(2, eLOG_Warning,
                    "[SendMail]  Subject ignored in as-is messages");
+    }
 
     if (!s_SockWrite(sock, "X-Mailer: CORE_SendMail (NCBI "
 #ifdef NCBI_CXX_TOOLKIT
