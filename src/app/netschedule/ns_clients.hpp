@@ -82,6 +82,8 @@ class CNSClientId
         { return m_ClientName; }
         unsigned int GetCapabilities(void) const
         { return m_Capabilities; }
+        void SetCapabilities(unsigned int  capabilities)
+        { m_Capabilities = capabilities; }
         void SetClientName(const string &  client_name);
         void SetClientHost(const string &  client_host)
         { m_ClientHost = client_host; }
@@ -89,6 +91,8 @@ class CNSClientId
         { m_ControlPort = port; }
         void AddCapability(unsigned int  capabilities)
         { m_Capabilities |= capabilities; }
+        void ResetCapabilities(void)
+        { m_Capabilities = 0; }
         void RemoveCapability(unsigned int  capabilities)
         { m_Capabilities &= ~capabilities; }
         void CheckAccess(TNSClientRole  role, const CQueue *  queue);

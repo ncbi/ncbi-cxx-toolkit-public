@@ -212,6 +212,7 @@ private:
     void x_PrintGetJobResponse(const CQueue * q,
                                const CJob &   job,
                                bool           add_security_token);
+    bool x_CanBeWithoutQueue(FProcessor  processor) const;
 
     // Data
     size_t                          m_MsgBufferSize;

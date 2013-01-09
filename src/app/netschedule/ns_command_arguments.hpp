@@ -58,6 +58,7 @@ struct SNSCommandArguments
     string          output;
     string          affinity_token;
     string          job_key;
+    string          queue_from_job_key;
     string          err_msg;
     string          comment;
     string          description;

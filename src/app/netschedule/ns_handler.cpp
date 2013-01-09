@@ -903,12 +903,45 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     // commands which does not require a queue.
     CRef<CQueue>        queue_ref;
     CQueue *            queue_ptr = NULL;
+    unsigned int        orig_client_capabilities;
+    unsigned int        orig_client_id;
+    bool                restore_client = false;
+
     if (extra.role & eNSAC_Queue) {
-        if (m_QueueName.empty())
-            NCBI_THROW(CNetScheduleException, eUnknownQueue,
-                       "Job queue is required");
-        queue_ref.Reset(GetQueue());
-        queue_ptr = queue_ref.GetPointer();
+        if (x_CanBeWithoutQueue(extra.processor) &&
+            !m_CommandArguments.queue_from_job_key.empty()) {
+            // This command must use queue name from the job key
+            queue_ref.Reset(m_Server->OpenQueue(m_CommandArguments.queue_from_job_key));
+            queue_ptr = queue_ref.GetPointer();
+
+            if (m_QueueName != m_CommandArguments.queue_from_job_key) {
+                // Need to check access capabilities
+                restore_client = true;
+                orig_client_capabilities = m_ClientId.GetCapabilities();
+                orig_client_id = m_ClientId.GetID();
+
+                m_ClientId.ResetCapabilities();
+                m_ClientId.AddCapability(eNSAC_Queue);
+
+                try {
+                    if (queue_ptr->IsWorkerAllowed(m_ClientId.GetAddress()))
+                        m_ClientId.AddCapability(eNSAC_Worker);
+                    if (queue_ptr->IsSubmitAllowed(m_ClientId.GetAddress()))
+                        m_ClientId.AddCapability(eNSAC_Submitter);
+                } catch (...) {
+                    m_ClientId.SetCapabilities(orig_client_capabilities);
+                    m_ClientId.SetID(orig_client_id);
+                    throw;
+                }
+            }
+        } else {
+            // Old fasion way - the queue comes from handshake
+            if (m_QueueName.empty())
+                NCBI_THROW(CNetScheduleException, eUnknownQueue,
+                           "Job queue is required");
+            queue_ref.Reset(GetQueue());
+            queue_ptr = queue_ref.GetPointer();
+        }
     }
     else if (extra.processor == &CNetScheduleHandler::x_ProcessStatistics ||
              extra.processor == &CNetScheduleHandler::x_ProcessRefuseSubmits) {
@@ -921,6 +954,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     }
 
     m_ClientId.CheckAccess(extra.role, queue_ptr);
+
 
     // we want status request to be fast, skip version control
     if ((extra.processor != &CNetScheduleHandler::x_ProcessStatus) &&
@@ -939,6 +973,11 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 
     // Execute the command
     (this->*extra.processor)(queue_ptr);
+
+    if (restore_client) {
+        m_ClientId.SetCapabilities(orig_client_capabilities);
+        m_ClientId.SetID(orig_client_id);
+    }
 }
 
 
@@ -2669,6 +2708,29 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                        " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
                        " " + NStr::UIntToString(job.GetMask()));
 }
+
+
+bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
+{
+    return processor == &CNetScheduleHandler::x_ProcessStatus ||                // STATUS/STATUS2
+           processor == &CNetScheduleHandler::x_ProcessDump ||                  // DUMP
+           processor == &CNetScheduleHandler::x_ProcessGetMessage ||            // MGET
+           processor == &CNetScheduleHandler::x_ProcessFastStatusS ||           // SST/SST2
+           processor == &CNetScheduleHandler::x_ProcessListenJob ||             // LISTEN
+           processor == &CNetScheduleHandler::x_ProcessCancel ||                // CANCEL
+           processor == &CNetScheduleHandler::x_ProcessDropJob ||               // DROJ
+           processor == &CNetScheduleHandler::x_ProcessPutMessage ||            // MPUT
+           processor == &CNetScheduleHandler::x_ProcessFastStatusW ||           // WST/WST2
+           processor == &CNetScheduleHandler::x_ProcessPut ||                   // PUT/PUT2
+           processor == &CNetScheduleHandler::x_ProcessReturn ||                // RETURN/RETURN2
+           processor == &CNetScheduleHandler::x_ProcessPutFailure ||            // FPUT/FPUT2
+           processor == &CNetScheduleHandler::x_ProcessJobExchange ||           // JXCG
+           processor == &CNetScheduleHandler::x_ProcessJobDelayExpiration ||    // JDEX
+           processor == &CNetScheduleHandler::x_ProcessConfirm ||               // CFRM
+           processor == &CNetScheduleHandler::x_ProcessReadFailed ||            // FRED
+           processor == &CNetScheduleHandler::x_ProcessReadRollback;            // RDRB
+}
+
 
 
 static const unsigned int   kMaxParserErrMsgLength = 128;

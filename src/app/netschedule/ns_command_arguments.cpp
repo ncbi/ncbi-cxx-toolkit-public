@@ -55,6 +55,7 @@ void SNSCommandArguments::x_Reset()
     output.erase();
     affinity_token.erase();
     job_key.erase();
+    queue_from_job_key.erase();
     err_msg.erase();
     comment.erase();
     description.erase();
@@ -165,8 +166,11 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
         case 'j':
             if (key == "job_key") {
                 job_key = val;
-                if (!val.empty())
-                    job_id = CNetScheduleKey(val).id;
+                if (!val.empty()) {
+                    CNetScheduleKey     parsed_key(val);
+                    job_id = parsed_key.id;
+                    queue_from_job_key = parsed_key.queue;
+                }
                 if (job_id == 0)
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter, "Invalid job key");
