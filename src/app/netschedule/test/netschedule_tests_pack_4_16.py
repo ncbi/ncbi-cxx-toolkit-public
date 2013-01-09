@@ -255,3 +255,126 @@ class Scenario603( TestBase ):
 
         return True
 
+
+
+# NS 4.16.5 tests
+
+class Scenario700( TestBase ):
+    " Scenario 700 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT, check that the queue name is in the key"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'blah', 'a0' )
+        if 'TEST' not in jobID:
+            raise Exception( "Job key does not have queue in it" )
+
+        return True
+
+class Scenario701( TestBase ):
+    " Scenario 701 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT, GET, check that the queue name is in the key"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        receivedJobID, authToken, \
+        attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                          "node1", "session1" )
+
+        if 'TEST' not in receivedJobID:
+            raise Exception( "Job key does not have queue in it" )
+
+        return True
+
+class Scenario702( TestBase ):
+    " Scenario 702 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT, reconnect without queue, SST "
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+
+        ns_client = self.getNetScheduleService( '', 'scenario702' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'SST ' + jobID )
+        if output != "0":
+            raise Exception( "Unexpected job state" )
+
+        # Try to submit a job without the queue
+        try:
+            output = execAny( ns_client, 'SUBMIT blah')
+        except Exception, exc:
+            if 'Job queue is required' in str( exc ):
+                return True
+            raise
+
+        raise Exception( "Exception is expected, received nothing" )
+
+
+
+class Scenario703( TestBase ):
+    " Scenario 703 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return """SUBMIT into first queue, reconnect to second queue,
+                  SST for the first job, SUBMIT to second -> check the key """
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 2 )
+
+        jobID = self.ns.submitJob( 'TEST2', 'blah' )
+        if 'TEST2' not in jobID:
+            raise Exception( "Job key does not have first queue in it" )
+
+        ns_client = self.getNetScheduleService( 'TEST3', 'scenario703' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'SST ' + jobID )
+        if output != "0":
+            raise Exception( "Unexpected job state" )
+
+        # Try to submit a job to another queue
+        jobID2 = execAny( ns_client, 'SUBMIT blah')
+        if 'TEST3' not in jobID2:
+            raise Exception( "Job key does not have second queue in it" )
+
+        return True

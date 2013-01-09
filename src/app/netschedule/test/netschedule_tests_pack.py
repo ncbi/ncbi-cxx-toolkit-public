@@ -629,7 +629,7 @@ class Scenario21( TestBase ):
         # Make modifications in the job id
         jobID = jobID[ : -4 ] + "9999"
 
-        # Sic! In spite of the fact the jobID.oring != jobID.changed we GET
+        # Sic! In spite of the fact the jobID.orig != jobID.changed we GET
         # the same job info!
         # I can check the job status only via a direct connection because
         # the utility [currently] takes the server info from the job key...
