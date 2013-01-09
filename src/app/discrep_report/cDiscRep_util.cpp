@@ -130,6 +130,8 @@ vector <const CSeqdesc*>  CTestAndRepData :: user_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_molinfo;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_title;
+vector <const CSeqdesc*>  CTestAndRepData :: bioseq_user;
+vector <const CSeqdesc*>  CTestAndRepData :: bioseq_genbank;
 
 vector <const CSeq_entry*>  CTestAndRepData :: pub_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: comm_seqdesc_seqentry;

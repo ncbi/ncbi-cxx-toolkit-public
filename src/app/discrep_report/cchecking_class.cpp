@@ -246,6 +246,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_TRRna_run = false;
    thisTest.is_RRna_run = false;
    thisTest.is_SusPhrase_run = false;
+   thisTest.is_TaxDef_run = false;
 
    GoTests(CRepConfig::tests_on_Bioseq, bioseq);
 
@@ -380,11 +381,20 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      if (!CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
         for (CSeqdesc_CI it(bioseq_hl, sel_seqdesc_4_bioseq); it; ++it) {
           switch (it->Which()) {
-            case CSeqdesc ::e_Source: CTestAndRepData::bioseq_biosrc_seqdesc.push_back(&(*it));
+            case CSeqdesc::e_Source: 
+                   CTestAndRepData::bioseq_biosrc_seqdesc.push_back(&(*it));
                    break;
-            case CSeqdesc ::e_Molinfo: CTestAndRepData::bioseq_molinfo.push_back(&(*it));
+            case CSeqdesc::e_Molinfo: 
+                   CTestAndRepData::bioseq_molinfo.push_back(&(*it));
                    break;        
-            case CSeqdesc ::e_Title: CTestAndRepData::bioseq_title.push_back(&(*it));
+            case CSeqdesc::e_Title: 
+                   CTestAndRepData::bioseq_title.push_back(&(*it));
+                   break;
+            case CSeqdesc::e_User:
+                   CTestAndRepData::bioseq_user.push_back(&(*it));
+                   break;
+            case CSeqdesc::e_Genbank:
+                   CTestAndRepData::bioseq_genbank.push_back(&(*it));
                    break;
             default: break;
           }

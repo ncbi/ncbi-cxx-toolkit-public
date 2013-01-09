@@ -88,6 +88,8 @@ namespace DiscRepNmSpc{
                 sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Source);
                 sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Molinfo);
                 sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Title);
+                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_User);
+                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Genbank);
              }; 
 
          void CheckBioseq( CBioseq& bioseq );
