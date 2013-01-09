@@ -1020,7 +1020,8 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
                         server_and_its_queues->server.GetServerAddress());
                 if (load_balanced)
                     NcbiCout << "[server " << server_address << ']' << NcbiEndl;
-                ITERATE(list<string>, queue_name, server_and_its_queues->queues) {
+                ITERATE(list<string>, queue_name,
+                        server_and_its_queues->queues) {
                     NcbiCout << '[' << *queue_name << ']' << NcbiEndl;
                     CNetScheduleAPI(server_address, client_name,
                             *queue_name).GetAdmin().PrintQueueInfo(NcbiCout);

@@ -87,9 +87,12 @@ enum ECharacterClass {
 };
 
 extern NCBI_XCONNECT_EXPORT
+bool g_CheckAlphabet(const string& str, const CTempString& param_name,
+        ECharacterClass char_class, char* bad_char);
+
+extern NCBI_XCONNECT_EXPORT
 void g_VerifyAlphabet(const string& str, const CTempString& param_name,
         ECharacterClass char_class);
-
 
 END_NCBI_SCOPE
 

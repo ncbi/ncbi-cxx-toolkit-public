@@ -202,8 +202,8 @@ string g_NetService_TryResolveHost(const string& ip_or_hostname)
 #define NOT_ALPHA(c) ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z'))
 #define NOT_DIGIT(c) (c < '0' || c > '9')
 
-void g_VerifyAlphabet(const string& str, const CTempString& param_name,
-        ECharacterClass char_class)
+bool g_CheckAlphabet(const string& str, const CTempString& param_name,
+        ECharacterClass char_class, char* bad_char)
 {
     const char* ch = str.data();
     size_t len = str.length();
@@ -249,10 +249,22 @@ void g_VerifyAlphabet(const string& str, const CTempString& param_name,
     }
 
     if (len != 0) {
+        *bad_char = *ch;
+        return false;
+    }
+
+    return true;
+}
+
+void g_VerifyAlphabet(const string& str, const CTempString& param_name,
+        ECharacterClass char_class)
+{
+    char bad_char;
+
+    if (!g_CheckAlphabet(str, param_name, char_class, &bad_char)) {
         NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                "Invalid character #" << unsigned(*ch) <<
-                " in " << param_name << " \"" << NStr::PrintableString(str) <<
-                "\"");
+                "Invalid character #" << unsigned(bad_char) << " in the " <<
+                param_name << " \"" << NStr::PrintableString(str) << "\".");
     }
 }
 

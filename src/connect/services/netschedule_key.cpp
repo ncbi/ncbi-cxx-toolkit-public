@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "util.hpp"
+#include "netschedule_api_impl.hpp"
 
 #include <connect/services/netschedule_key.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
@@ -91,15 +92,8 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
 
         // Skip to the queue name.
         while (*++ch != '_')
-            switch (*ch) {
-            case '\0':
-                return true;
-            case '0': case '1': case '2': case '3': case '4':
-            case '5': case '6': case '7': case '8': case '9':
-                continue;
-            default:
-                return false;
-            }
+            if (*ch < '0' || *ch > '9')
+                return *ch == '\0';
 
         // Queue name is specified - extract it.
         int underscores_to_skip = 0;
@@ -107,10 +101,16 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
             ++underscores_to_skip;
         if (*ch == '\0')
             return false;
+        // At this point, *ch is neither '_' nor '\0'.
         token_begin = ch;
-        while (*ch != '_' || --underscores_to_skip >= 0)
-            if (*++ch == '\0')
-                break;
+        while (*++ch != '\0')
+            if ((*ch < '0' || *ch > '9') && (*ch < 'a' || *ch > 'z') &&
+                    (*ch < 'A' || *ch > 'Z') && *ch != '-') {
+                if (*ch != '_')
+                    return false;
+                else if (--underscores_to_skip < 0)
+                    break;
+            }
         if (underscores_to_skip > 0)
             return false;
         queue.assign(token_begin, ch - token_begin);
@@ -130,10 +130,7 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
 CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
         const string& host, unsigned port, const string& queue_name)
 {
-    if (queue_name.empty()) {
-        NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
-                "Queue name cannot be empty.");
-    }
+    SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
 
     string port_str(NStr::IntToString(port));
 

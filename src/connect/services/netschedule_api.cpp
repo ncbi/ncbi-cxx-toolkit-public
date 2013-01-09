@@ -228,8 +228,13 @@ void CNetScheduleServerListener::OnInit(
                 "Could not get queue name");
         }
         ns_impl->m_Queue = config->GetString(config_section,
-            "queue_name", CConfig::eErr_NoThrow, "noname");
-    }
+            "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
+        if (ns_impl->m_Queue.empty())
+            ns_impl->m_Queue = "noname";
+        else
+            SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
+    } else
+        SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
     if (config == NULL) {
         ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
         ns_impl->m_UseEmbeddedStorage = true;
@@ -619,6 +624,19 @@ void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
     job.progress_msg = NStr::ParseEscapes(
             m_Impl->x_ExecOnce("MGET", job.job_id));
+}
+
+void SNetScheduleAPIImpl::VerifyQueueNameAlphabet(const string& queue_name)
+{
+    if (queue_name.empty()) {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "Queue name cannot be empty.");
+    }
+    if (queue_name[0] == '_') {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "Queue name cannot start with an underscore character.");
+    }
+    g_VerifyAlphabet(queue_name, "queue name", eCC_BASE64URL);
 }
 
 static void s_VerifyClientCredentialString(const string& str,

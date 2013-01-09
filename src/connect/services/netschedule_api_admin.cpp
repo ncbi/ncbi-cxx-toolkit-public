@@ -68,6 +68,8 @@ void CNetScheduleAdmin::ReloadServerConfig()
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
                                     const string& description)
 {
+    SNetScheduleAPIImpl::VerifyQueueNameAlphabet(qname);
+
     string cmd = "QCRE " + qname;
     cmd += ' ';
     cmd += qclass;
@@ -83,9 +85,10 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
-
 void CNetScheduleAdmin::DeleteQueue(const string& qname)
 {
+    SNetScheduleAPIImpl::VerifyQueueNameAlphabet(qname);
+
     string cmd("QDEL " + qname);
     g_AppendClientIPAndSessionID(cmd);
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);

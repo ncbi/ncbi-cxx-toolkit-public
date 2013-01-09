@@ -132,6 +132,8 @@ struct SNetScheduleAPIImpl : public CObject
         g_VerifyAlphabet(affinity, "affinity token", eCC_BASE64_PI);
     }
 
+    static void VerifyQueueNameAlphabet(const string& queue_name);
+
     CNetService m_Service;
 
     static CNetScheduleExceptionMap sm_ExceptionMap;
