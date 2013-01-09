@@ -623,6 +623,7 @@ void CBioseqContext::x_SetId(void)
             size_t len = acc.length();
             m_IsWGSMaster = 
                 ((len == 12  ||  len == 15)  &&  NStr::EndsWith(acc, "000000"))  ||
+                ((len == 14)  &&  NStr::EndsWith(acc, "00000000")) ||
                 ((len == 13 || len == 16 || len == 17)  &&  NStr::EndsWith(acc, "0000000"));
             if ( m_IsWGSMaster ) {
                 m_WGSMasterAccn = acc;
