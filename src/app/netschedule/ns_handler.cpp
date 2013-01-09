@@ -903,8 +903,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     // commands which does not require a queue.
     CRef<CQueue>        queue_ref;
     CQueue *            queue_ptr = NULL;
-    unsigned int        orig_client_capabilities;
-    unsigned int        orig_client_id;
+    unsigned int        orig_client_capabilities = 0;
+    unsigned int        orig_client_id = 0;
     bool                restore_client = false;
 
     if (extra.role & eNSAC_Queue) {
