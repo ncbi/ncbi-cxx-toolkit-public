@@ -375,6 +375,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CONSORTIUM));
    tests_on_SeqEntry_feat_desc.push_back(
+                          CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_NAME));
+   tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_CAPS));
    tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_MISMATCHED_COMMENTS));

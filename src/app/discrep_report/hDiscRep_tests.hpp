@@ -445,14 +445,22 @@ namespace DiscRepNmSpc {
       bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
       bool NameIsBad(const CRef <CAuthor>& auth_nm);
       bool HasBadAuthorName(const CAuth_list& auths);
-//      bool AreBadAuthCapsInPubdesc(const list <CRef <CPub> >& pubs);
-      void CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc);
+      void CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, 
+                                                                       const string& desc);
       bool AuthNoFirstLastNames(const CAuth_list& auths);
       bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
       void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
       string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
   };
 
+  class CSeqEntry_DISC_CHECK_AUTH_NAME :  public CSeqEntry_test_on_pub
+  {
+    public:
+      virtual ~CSeqEntry_DISC_CHECK_AUTH_NAME () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_missing();}
+  };
 
   class CSeqEntry_ONCALLER_CONSORTIUM :  public CSeqEntry_test_on_pub
   {
@@ -462,7 +470,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_cons();}
   };
-
 
   class CSeqEntry_DISC_MISSING_AFFIL : public CSeqEntry_test_on_pub
   {

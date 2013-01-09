@@ -10188,24 +10188,43 @@ bool CSeqEntry_test_on_pub :: HasBadAuthorName(const CAuth_list& auths)
 
 bool CSeqEntry_test_on_pub ::  AuthNoFirstLastNames(const CAuth_list& auths)
 {
+   if (auths.GetNames().IsStd()) {
+      ITERATE (list <CRef <CAuthor> >, it, auths.GetNames().GetStd()) {
+        const CPerson_id& pid = (*it)->GetName();
+        if (!pid.IsName()) return true;
+        const CName_std& name = pid.GetName();
+        if (name.GetLast().empty()) return true;
+        if (!name.CanGetFirst() || name.GetFirst().empty()) return true;
+        if (!name.CanGetInitials() || name.GetInitials().empty()) return true;
+      }
+   }
    return true;
 };
 
 void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc)
 {
   bool isBadCap = false, isMissing = false;
-
+  bool has_pmid = false;
+  ITERATE (list <CRef <CPub> >, it, pubs)
+    if ( (*it)->IsPmid() ) has_pmid = true;
+  
   ITERATE (list <CRef <CPub> >, it, pubs) {
     if ( !(*it)->IsProc() && (*it)->IsSetAuthors() ) {
       if (!isBadCap && (isBadCap = HasBadAuthorName( (*it)->GetAuthors() ) ))
           thisInfo.test_item_list[GetName_cap()].push_back(desc);
-      if (!isMissing && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() )))
+      if (!isMissing && !has_pmid && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() )))
           thisInfo.test_item_list[GetName_missing()].push_back(desc);
       if (isBadCap && isMissing) return; 
     }
   }
 
 }; //CheckBadAuthCapsOrNoFirstLastNamesInPubdesc
+
+void CSeqEntry_DISC_CHECK_AUTH_NAME :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetOtherComment(c_item->item_list.size(), "pub", "pubs") 
+                            + "missing author's first or last name";
+};
 
 
 /*
