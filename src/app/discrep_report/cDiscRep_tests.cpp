@@ -93,6 +93,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_feat_handle.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include <algo/blast/core/ncbi_std.h>
 
@@ -142,6 +143,7 @@ bool CDiscTestInfo :: is_TRRna_run;
 bool CDiscTestInfo :: is_RRna_run;
 bool CDiscTestInfo :: is_SusPhrase_run;
 bool CDiscTestInfo :: is_TaxCflts_run;
+bool CDiscTestInfo :: is_TaxDef_run;
 
 typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
 typedef map <int, vector <string> > Int2Strs;
@@ -181,6 +183,22 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE :: TestOnObj(const CBioseq& bioseq)
+{
+  ITERATE (vector <const CSeq_feat*>, it, mrna_feat) {
+     CConstRef <CSeq_feat> gene = GetGeneForFeature(**it);
+     if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo())
+        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));  
+  }
+};
+
+void CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetHasComment(c_item->item_list.size(), "Pseudogene") + "overlapping mRNAs.";
+};
+
+
 void CBioseq_TEST_UNWANTED_SPACER :: TestOnObj(const CBioseq& bioseq)
 {
    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
@@ -359,8 +377,44 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       }
    }
 
+   // TEST_COUNT_UNVERIFIED
+   if (BioseqHasKeyword (bioseq, "UNVERIFIED"))
+      thisInfo.test_item_list[GetName_unv()].push_back(bioseq_desc);
+
    thisTest.is_Aa_run = true;
 };
+
+void CBioseq_TEST_COUNT_UNVERIFIED :: GetReport(CRef <CClickableItem>& c_item) 
+{
+  c_item->description = GetIsComment(c_item->item_list.size(), "sequence") + "unverified.";
+};
+
+bool CBioseqTestAndRepData :: BioseqHasKeyword(const CBioseq& bioseq, const string& keywd)
+{
+  if (NStr::EqualNocase(keywd, "UNVERIFIED"))
+  {
+    /* special case for unverified */
+    ITERATE (vector <const CSeqdesc*>, it, bioseq_user) {
+       const CUser_object& user_obj = (*it)->GetUser();
+       if (user_obj.GetType().IsStr() 
+             && NStr::EqualNocase(user_obj.GetType().GetStr(), "Unverified"))
+          return true;
+    }
+
+  }
+
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_genbank) {
+     const CGB_block& gb = (*it)->GetGenbank();
+     if (gb.CanGetKeywords()) {
+        ITERATE (list <string>, jt, gb.GetKeywords()) {
+           if (NStr::EqualNocase(*jt, keywd)) return true;
+        }
+     }
+  }
+
+  return false;
+};
+
 
 void CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -1095,6 +1149,65 @@ void CBioseq_CDS_TRNA_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+// new comb
+void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
+{
+   if (thisTest.is_TaxDef_run) return;
+
+   string taxnm(kEmptyStr), title(kEmptyStr), tax_desc;
+   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+      if ((*it)->GetSource().GetOrg().CanGetTaxname()) {
+        taxnm = (*it)->GetSource().GetOrg().GetTaxname();
+        tax_desc = GetDiscItemText(**it, bioseq);
+        break;
+      }
+   }
+
+   string lookfor, desc;
+   bool add = false;
+   if (!taxnm.empty()) {
+      desc = GetDiscItemText(*(bioseq_title[0]), bioseq);
+      if (!bioseq_title.empty()) title = bioseq_title[0]->GetTitle();
+
+      // INCONSISTENT_SOURCE_DEFLINE
+      if (!title.empty()) {
+         if (title.find(taxnm) == string::npos) {
+            thisInfo.test_item_list[GetName_inc()].push_back(taxnm + "$" + tax_desc);
+            thisInfo.test_item_list[GetName_inc()].push_back(taxnm + "$" + desc);
+         }
+      }
+      
+      // TEST_TAXNAME_NOT_IN_DEFLINE
+      if (NStr::EqualNocase(taxnm, "Human immunodeficiency virus 1"))
+             lookfor = "HIV-1";
+      else if (NStr::EqualNocase(taxnm, "Human immunodeficiency virus 2"))
+             lookfor = "HIV-2";
+      else lookfor = taxnm;
+      string pattern("\\b" + CRegexp::Escape(lookfor) + "\\b");
+      CRegexp :: ECompile comp_flag = CRegexp::fCompile_ignore_case;
+      CRegexp rx(pattern, comp_flag);
+      if (rx.IsMatch(title)) {
+          // capitalization must match for all but the first letter */
+          size_t pos = NStr::FindNoCase(title, lookfor);
+          if (title.substr(pos, lookfor.size()) != lookfor.substr(1)) add = true;
+      }
+      else add = true; // missing in defline
+      if (add) thisInfo.test_item_list[GetName_missing()].push_back(desc);
+   }
+
+   thisTest.is_TaxDef_run = true;
+};
+
+
+void CBioseq_TEST_TAXNAME_NOT_IN_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetDoesComment(c_item->item_list.size(), "defline")
+            + "not contain the complete taxname.";
+};
+
+
+
+/*
 void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: TestOnObj(const CBioseq& bioseq)
 {
    string taxnm(kEmptyStr), title(kEmptyStr), tax_desc;
@@ -1115,6 +1228,7 @@ void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: TestOnObj(const CBioseq& bioseq)
       }
    }
 };
+*/
 
 
 void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
@@ -6631,6 +6745,7 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
    tax_nm = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
    if (tax_nm.empty()) return; 
    else tax_nm = "$" + tax_nm + "#";
+   string tax_desc = tax_nm + desc;
 
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
      switch ( (*it)->GetSubtype() ) {
@@ -6638,15 +6753,19 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
        // DISC_SPECVOUCHER_TAXNAME_MISMATCH
        case COrgMod::eSubtype_specimen_voucher: 
              if (!s_StringHasVoucherSN( qual_vlu = (*it)->GetSubname())) 
-                 thisInfo.test_item_list[GetName_vou()].push_back(qual_vlu + tax_nm + desc);
+                 thisInfo.test_item_list[GetName_vou()].push_back(qual_vlu + tax_desc);
              break;
        // DISC_STRAIN_TAXNAME_MISMATCH
        case COrgMod::eSubtype_strain:
-             thisInfo.test_item_list[GetName_str()].push_back((*it)->GetSubname()+tax_nm+desc);
+             thisInfo.test_item_list[GetName_str()].push_back((*it)->GetSubname() + tax_desc);
              break;
        // DISC_CULTURE_TAXNAME_MISMATCH
        case COrgMod::eSubtype_culture_collection:
-             thisInfo.test_item_list[GetName_cul()].push_back((*it)->GetSubname()+tax_nm+desc);
+             thisInfo.test_item_list[GetName_cul()].push_back((*it)->GetSubname() + tax_desc);
+             break;
+       // DISC_BIOMATERIAL_TAXNAME_MISMATCH
+       case COrgMod::eSubtype_bio_material:
+             thisInfo.test_item_list[GetName_biom()].push_back((*it)->GetSubname() + tax_desc);
              break;
        default: break;
      }
@@ -9226,9 +9345,8 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
       } 
    }
 
-   // DISC_CHECK_AUTH_CAPS
-   if (AreBadAuthCapsInPubdesc(pubs))
-         thisInfo.test_item_list[GetName_cap()].push_back(desc);
+   // DISC_CHECK_AUTH_CAPS, DISC_CHECK_AUTH_NAME
+   CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(pubs, desc);
 
    // DISC_UNPUB_PUB_WITHOUT_TITLE
    if (DoesPubdescContainUnpubPubWithoutTitle(pubs))
@@ -10068,21 +10186,26 @@ bool CSeqEntry_test_on_pub :: HasBadAuthorName(const CAuth_list& auths)
  
 }; // HasBadAuthorName 
 
-
-
-//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: AreBadAuthCapsInPubdesc(const CPubdesc& pubdesc)
-bool CSeqEntry_test_on_pub :: AreBadAuthCapsInPubdesc(const list <CRef <CPub> >& pubs)
+bool CSeqEntry_test_on_pub ::  AuthNoFirstLastNames(const CAuth_list& auths)
 {
-  bool isBad = false;
+   return true;
+};
 
-//  ITERATE (list <CRef <CPub> >, it, pubdesc.GetPub().Get()) {
+void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc)
+{
+  bool isBadCap = false, isMissing = false;
+
   ITERATE (list <CRef <CPub> >, it, pubs) {
-    if ( !(*it)->IsProc() && (*it)->IsSetAuthors() )
-      isBad = HasBadAuthorName( (*it)->GetAuthors() );
+    if ( !(*it)->IsProc() && (*it)->IsSetAuthors() ) {
+      if (!isBadCap && (isBadCap = HasBadAuthorName( (*it)->GetAuthors() ) ))
+          thisInfo.test_item_list[GetName_cap()].push_back(desc);
+      if (!isMissing && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() )))
+          thisInfo.test_item_list[GetName_missing()].push_back(desc);
+      if (isBadCap && isMissing) return; 
+    }
   }
-  return isBad;
 
-}; //AreBadAuthCapsInPubdesc
+}; //CheckBadAuthCapsOrNoFirstLastNamesInPubdesc
 
 
 /*

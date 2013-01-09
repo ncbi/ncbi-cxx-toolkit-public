@@ -149,6 +149,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back( 
+                   CRef <CTestAndRepData> (new CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE));
+   tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
    tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
@@ -293,6 +295,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                           CRef <CTestAndRepData>(new CBioseq_DISC_EXON_INTRON_CONFLICT));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+                        CRef <CTestAndRepData>(new CBioseq_TEST_TAXNAME_NOT_IN_DEFLINE));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                         CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                  CRef <CTestAndRepData>(new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
@@ -304,6 +308,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                                  CRef <CTestAndRepData> (new CBioseq_TECHNIQUE_NOT_TSA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                               CRef <CTestAndRepData> (new CBioseq_SHORT_PROT_SEQUENCES));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+                   CRef <CTestAndRepData>(new CBioseq_TEST_COUNT_UNVERIFIED));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                    CRef <CTestAndRepData>(new CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
@@ -325,6 +331,8 @@ void CRepConfDiscrepancy :: ConfigRep()
              CRef <CTestAndRepData>(new CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_MOLTYPES));
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_BIOMATERIAL_TAXNAME_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH));
    tests_on_SeqEntry_feat_desc.push_back( 
