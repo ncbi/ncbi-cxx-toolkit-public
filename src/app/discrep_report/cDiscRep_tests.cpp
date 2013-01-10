@@ -8217,8 +8217,23 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // TEST_MISSING_PRIMER
   if (MissingPrimerValue(biosrc)) 
        thisInfo.test_item_list[GetName_prim()].push_back(desc);
+ 
+  // ONCALLER_COUNTRY_COLON
+  strtmp = GetSubSrcValue(biosrc, CSubSource::eSubtype_country);
+  if (!strtmp.empty()) {
+      vector <string> arr;
+      arr = NStr::Tokenize(strtmp, ":", arr);
+      if (arr.size() > 1) 
+         thisInfo.test_item_list[GetName_cty()].push_back(desc);
+      arr.clear();
+  }
 };
 
+void CSeqEntry_ONCALLER_COUNTRY_COLON :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetHasComment(c_item->item_list.size(), "country source") + "more than 1 colon.";
+};
 
 bool CSeqEntry_test_on_biosrc :: MissingPrimerValue(const CBioSource& biosrc)
 {

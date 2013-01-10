@@ -1002,6 +1002,7 @@ namespace DiscRepNmSpc {
       string GetName_meta() const {return string("DISC_METAGENOMIC");}
       string GetName_sp() const {return string("TEST_SP_NOT_UNCULTURED");}
       string GetName_prim() const {return string("TEST_MISSING_PRIMER");}
+      string GetName_cty() const {return string("ONCALLER_COUNTRY_COLON");}
 
       bool MissingPrimerValue(const CBioSource& biosrc);
       void IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, bool& has_seq, bool& has_name);
@@ -1019,6 +1020,15 @@ namespace DiscRepNmSpc {
       void FindSpecSubmitText();
 
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+  };
+
+  class CSeqEntry_ONCALLER_COUNTRY_COLON : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_COUNTRY_COLON () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_cty();}
   };
 
   class CSeqEntry_TEST_MISSING_PRIMER : public CSeqEntry_test_on_biosrc

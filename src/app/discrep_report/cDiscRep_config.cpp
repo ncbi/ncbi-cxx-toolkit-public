@@ -417,6 +417,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER));
    tests_on_SeqEntry_feat_desc.push_back(
+                         CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COUNTRY_COLON));
+   tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_MISSING_PRIMER));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_SP_NOT_UNCULTURED));
