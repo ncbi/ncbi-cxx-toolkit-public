@@ -271,17 +271,83 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       }       
       return;
    }
+ 
+    bool is_dna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna);
+    bool is_rna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna);
 
+    if (is_dna) {
+
+      // DISC_RETROVIRIDAE_DNA, NON_RETROVIRIDAE_PROVIRAL
+      bool is_retro;
+      string src_desc;
+      ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+         const CBioSource& biosrc = (*it)->GetSource();
+         const int genome = biosrc.GetGenome();
+         src_desc = GetDiscItemText(**it, bioseq);
+         is_retro = HasLineage(biosrc, "Retroviridae");
+         if ( genome != (int)CBioSource :: eGenome_proviral && is_retro)
+            thisInfo.test_item_list[GetName_retro()].push_back(src_desc);
+         else if (genome == CBioSource :: eGenome_proviral && !is_retro)
+            thisInfo.test_item_list[GetName_nonr()].push_back(src_desc);
+      }
+   }
+   else {
+      // EUKARYOTE_SHOULD_HAVE_MRNA
+      bool has_CDs = false, has_mrna = false;
+      if (m_check_eu_mrna) {
+         if (IsBioseqHasLineage(bioseq, "Eukaryota")) {
+            ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+              if (!IsLocationOrganelle((*it)->GetSource().GetGenome())) {
+                 ITERATE (vector <const CSeqdesc*>, jt, bioseq_molinfo) {
+                    if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+                       ITERATE (vector <const CSeq_feat*>, kt, cd_feat) {
+                         if (IsPseudoSeqFeatOrXrefGene(*kt)) continue;
+                         has_CDs = true;
+                         CConstRef <CSeq_feat> mRNA = GetBestMrnaForCds(**kt, *thisInfo.scope, 
+                                                                       fBestFeat_NoExpensive);
+                         if (mRNA.NotEmpty()) { 
+                            thisInfo.test_item_list[GetName_eu_mrna()].push_back("yes");
+                            m_check_eu_mrna = false;
+                            has_mrna = true;
+                            break;
+                         }
+                       }
+                    }
+                    if (has_mrna) break;
+                 }
+              }
+              if (has_mrna) break; 
+            }
+            if (has_CDs && !has_mrna)
+               thisInfo.test_item_list[GetName_eu_mrna()].push_back("no");
+         }
+      }
+
+      if (is_rna) {  // RNA_PROVIRAL
+        ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+           if ( (*it)->GetSource().GetGenome() == CBioSource :: eGenome_proviral ) {
+               thisInfo.test_item_list[GetName_rnapro()].push_back(bioseq_desc);
+               break;
+           }
+        }
+      }
+   }
+       
    // TEST_ORGANELLE_NOT_GENOMIC
+   bool run_test = false;
    ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
      int biomol = (*it)->GetMolinfo().GetBiomol();
      if ( ( biomol == CMolInfo::eBiomol_genomic || biomol == CMolInfo::eBiomol_unknown)
-                    && bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna) 
-       return;
+            && is_dna) {
+          run_test = true;
+          break;
+     }
    }
-   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-     if (IsLocationOrganelle( (*it)->GetSource().GetGenome() ))
-         thisInfo.test_item_list[GetName_orgl()].push_back(GetDiscItemText(**it,bioseq));
+   if (run_test) {  // RNA_PROVIRAL
+     ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+       if (IsLocationOrganelle( (*it)->GetSource().GetGenome() ))
+           thisInfo.test_item_list[GetName_orgl()].push_back(GetDiscItemText(**it,bioseq));
+     }
    }
 
    // TEST_UNNECESSARY_VIRUS_GENE
@@ -382,6 +448,33 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       thisInfo.test_item_list[GetName_unv()].push_back(bioseq_desc);
 
    thisTest.is_Aa_run = true;
+};
+
+void CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+  strtmp = NStr::Join(c_item->item_list, ",");
+  c_item->item_list.clear();
+  if (strtmp.find("yes") == string::npos) 
+     c_item->description = "No mRNA present.";
+};
+
+void CBioseq_RNA_PROVIRAL :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetIsComment(c_item->item_list.size(), "RNA bioseq") + "proviral";
+};
+
+void CBioseq_DISC_RETROVIRIDAE_DNA :: GetReport(CRef <CClickableItem>& c_item)
+{   
+   c_item->description
+     = GetOtherComment(c_item->item_list.size(), "Retroviridae biosource on DNA sequences is",
+                          "Retroviridae biosourceson DNA sequences are") + " not proviral";
+};
+
+void CBioseq_NON_RETROVIRIDAE_PROVIRAL :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = 
+       GetIsComment(c_item->item_list.size(), "non-Retroviridae biosource") + "proviral.";
 };
 
 void CBioseq_TEST_COUNT_UNVERIFIED :: GetReport(CRef <CClickableItem>& c_item) 
@@ -555,7 +648,24 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
         thisInfo.test_item_list[GetName_str()].push_back(desc);
   }
 
+  // MULTIPLE_CDS_ON_MRNA
+  strtmp = "coding region disrupted by sequencing gap";
+  unsigned cnt=0;
+  ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+     if ( (!(*it)->CanGetPseudo() || !(*it)->GetPseudo())
+            && ( !(*it)->CanGetComment() || (*it)->GetComment().find(strtmp) == string::npos)){
+        if (cnt) thisInfo.test_item_list[GetName_mcds()].push_back(desc);
+        else cnt++;
+     }
+  }
+
   thisTest.is_mRNA_run = true;
+};
+
+void CBioseq_MULTIPLE_CDS_ON_MRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetHasComment(c_item->item_list.size(), "mRNA bioseq")
+                           + "multiple CDS features";
 };
 
 void CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST :: GetReport(CRef <CClickableItem>& c_item)
@@ -784,32 +894,12 @@ void CBioseq_test_on_suspect_phrase :: CheckForProdAndComment(const CSeq_feat& s
 };
 
 
-
 void CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
 {
    GetRepOfSuspPhrase(c_item, GetName(), "RNA product_name or comment", 
                                                          "RNA product_names or comments");
 };
 // new comb
-
-
-void CBioseq_DISC_RETROVIRIDAE_DNA :: TestOnObj(const CBioseq& bioseq)
-{
-    if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna) return;
-    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-       if ( (*it)->GetSource().GetGenome() != CBioSource :: eGenome_proviral
-             && HasLineage((*it)->GetSource(), "Retroviridae"))       
-          thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it, bioseq));
-    }
-};
-
-
-void CBioseq_DISC_RETROVIRIDAE_DNA :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->description
-     = GetOtherComment(c_item->item_list.size(), "Retroviridae biosource on DNA sequences is",
-                          "Retroviridae biosourceson DNA sequences are") + " not proviral";
-};
 
 
 void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq)
@@ -8492,6 +8582,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
   }
   else AddBioseqsOfSet2Map(seq_entry.GetSet());
 
+  bioseq2cnt.clear();
   ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
     const CUser_object& user_obj = (*it)->GetUser();
     if ( !(user_obj.GetType().IsStr()) ) { 
@@ -8533,7 +8624,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
       else GroupAllBioseqs(user_seqdesc_seqentry[i]->GetSet(), id);
     }
 
-    // ONCALLER_MISSING_STRUCTURED_COMMENTS
+    // ONCALLER_MISSING_STRUCTURED_COMMENTS, MISSING_STRUCTURED_COMMENT
     if (type_str == "StructuredComment") cnt = 1;
     else cnt = 0;
     if (user_seqdesc_seqentry[i]->IsSeq()) {
@@ -8570,16 +8661,27 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 // MISSING_GENOMEASSEMBLY_COMMENTS
    ITERATE (Str2Int, it, m_bioseq2geno_comm) {
       if (it->second)
-         thisInfo.test_item_list[GetName_comm()].push_back(it->first);
+         thisInfo.test_item_list[GetName_gcomm()].push_back(it->first);
    }
 
-// ONCALLER_MISSING_STRUCTURED_COMMENTS
+// ONCALLER_MISSING_STRUCTURED_COMMENTS, MISSING_STRUCTURED_COMMENT
   ITERATE (Str2Int, it, bioseq2cnt) {
-    thisInfo.test_item_list[GetName_scomm()].push_back(
-                   NStr::IntToString( (it->second > 0)? it->second:0) + "$" + it->first);
+    thisInfo.test_item_list[GetName_oncall_scomm()].push_back(
+                                NStr::IntToString(it->second) + "$" + it->first);
+    if (!it->second)
+      thisInfo.test_item_list[GetName_scomm()].push_back(it->first);
   }
 
   thisTest.is_DESC_user_run = true;
+};
+
+
+void CSeqEntry_MISSING_STRUCTURED_COMMENT :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+
+  c_item->description = GetDoesComment(c_item->item_list.size(), "sequence") 
+                           + "not include structured comments.";
 };
 
 
@@ -8591,7 +8693,6 @@ void CSeqEntry_ONCALLER_BIOPROJECT_ID :: GetReport(CRef <CClickableItem>& c_item
         = GetContainsComment(c_item->item_list.size(), "sequence") + "BioProject IDs.";
 };
 
-
 void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
 {
   RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
@@ -8599,8 +8700,6 @@ void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
   c_item->description
     = GetDoesComment(c_item->item_list.size(), "sequence") + " not include project.";
 };
-
-
 
 void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -8620,8 +8719,6 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
     c_item->description = "Sequences have different numbers of structured comments.";
   }
 };
-
-
 
 void CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
 {

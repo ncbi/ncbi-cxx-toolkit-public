@@ -273,6 +273,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                      new CBioseq_TEST_ORGANELLE_NOT_GENOMIC));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
+                                               new CBioseq_MULTIPLE_CDS_ON_MRNA));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                new CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                                                      new CBioseq_TEST_BAD_MRNA_QUAL));
@@ -286,6 +288,12 @@ void CRepConfDiscrepancy :: ConfigRep()
      CRef <CTestAndRepData>( new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                       CRef <CTestAndRepData>( new CBioseq_DISC_MITOCHONDRION_REQUIRED));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+                             CRef <CTestAndRepData>( new CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+                             CRef <CTestAndRepData>( new CBioseq_RNA_PROVIRAL));
+   tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+                             CRef <CTestAndRepData>( new CBioseq_NON_RETROVIRIDAE_PROVIRAL));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                              CRef <CTestAndRepData>( new CBioseq_DISC_RETROVIRIDAE_DNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
@@ -349,6 +357,8 @@ void CRepConfDiscrepancy :: ConfigRep()
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISSING));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISMATCH));
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_MISSING_STRUCTURED_COMMENT));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back( 

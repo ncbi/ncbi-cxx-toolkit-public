@@ -900,11 +900,14 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
     protected:
-      string GetName_comm() const {return string("MISSING_GENOMEASSEMBLY_COMMENTS");}
+      string GetName_gcomm() const {return string("MISSING_GENOMEASSEMBLY_COMMENTS");}
       string GetName_proj() const {return string("TEST_HAS_PROJECT_ID"); }
-      string GetName_scomm() const {return string("ONCALLER_MISSING_STRUCTURED_COMMENTS"); }
+      string GetName_oncall_scomm() const {
+                        return string("ONCALLER_MISSING_STRUCTURED_COMMENTS"); }
+      string GetName_scomm() const {return string("MISSING_STRUCTURED_COMMENT"); }
       string GetName_mproj() const {return string("MISSING_PROJECT"); }
       string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
+
       void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
       void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 
                                                                         Str2Int& bioseq2cnt);
@@ -912,6 +915,15 @@ namespace DiscRepNmSpc {
       const CBioseq& Get1stBioseqOfSet(const CBioseq_set& bioseq_set);
       void AddBioseqsOfSet2Map(const CBioseq_set& bioseq_set);
       void RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_set);
+  };
+
+  class CSeqEntry_MISSING_STRUCTURED_COMMENT : public CSeqEntry_test_on_user
+  {
+     public:
+      virtual ~CSeqEntry_MISSING_STRUCTURED_COMMENT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_scomm();}
   };
 
   class CSeqEntry_ONCALLER_BIOPROJECT_ID : public CSeqEntry_test_on_user
@@ -930,7 +942,7 @@ namespace DiscRepNmSpc {
       virtual ~CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_comm();}
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_gcomm();}
   };
 
   class CSeqEntry_TEST_HAS_PROJECT_ID : public CSeqEntry_test_on_user
@@ -949,7 +961,7 @@ namespace DiscRepNmSpc {
       virtual ~CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_scomm();}
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_oncall_scomm();}
   };
 
 
@@ -1453,7 +1465,7 @@ namespace DiscRepNmSpc {
   class CBioseq_on_Aa :  public CBioseqTestAndRepData
   {
     public:
-      CBioseq_on_Aa () { m_e_exist.clear(); m_i_exist.clear(); };
+      CBioseq_on_Aa () { m_e_exist.clear(); m_i_exist.clear(); m_check_eu_mrna = true;};
       virtual ~CBioseq_on_Aa () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
@@ -1462,6 +1474,8 @@ namespace DiscRepNmSpc {
 
     protected:
       vector <unsigned> m_e_exist, m_i_exist;
+      bool m_check_eu_mrna;
+
       string GetName_shtprt() const {return string("SHORT_PROT_SEQUENCES"); }
       string GetName_orgl() const {return string("TEST_ORGANELLE_NOT_GENOMIC"); }
       string GetName_vir() const {return string("TEST_UNNECESSARY_VIRUS_GENE"); }
@@ -1473,6 +1487,10 @@ namespace DiscRepNmSpc {
       string GetName_50seq() const {return string("SHORT_SEQUENCES"); }
       string GetName_dupg() const {return string("TEST_DUP_GENES_OPPOSITE_STRANDS"); }
       string GetName_unv() const {return string("TEST_COUNT_UNVERIFIED"); }
+      string GetName_retro() const {return string("DISC_RETROVIRIDAE_DNA"); }
+      string GetName_nonr() const {return string("NON_RETROVIRIDAE_PROVIRAL"); }
+      string GetName_rnapro() const {return string("RNA_PROVIRAL"); }
+      string GetName_eu_mrna() const {return string("EUKARYOTE_SHOULD_HAVE_MRNA"); }
 
       void CompareIntronExonList(const string& seq_id_desc, 
                                                   const vector <const CSeq_feat*>& exon_ls, 
@@ -1483,6 +1501,42 @@ namespace DiscRepNmSpc {
                                                     string label, bool check_for_utrs = false);
       void  GetFeatureList4Gene(const CSeq_feat* gene, const vector <const CSeq_feat*> feats,
                                         vector <unsigned> exist_ls);
+  };
+
+  class CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA : public CBioseq_on_Aa
+  {
+    public:
+      virtual ~CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_Aa::GetName_eu_mrna();}
+  };
+
+  class CBioseq_RNA_PROVIRAL : public CBioseq_on_Aa
+  {
+    public:
+      virtual ~CBioseq_RNA_PROVIRAL () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_Aa::GetName_rnapro();}
+  };
+
+  class CBioseq_DISC_RETROVIRIDAE_DNA : public CBioseq_on_Aa
+  {
+    public:
+      virtual ~CBioseq_DISC_RETROVIRIDAE_DNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_Aa::GetName_retro();}
+  };
+
+  class CBioseq_NON_RETROVIRIDAE_PROVIRAL : public CBioseq_on_Aa
+  {
+    public:
+      virtual ~CBioseq_NON_RETROVIRIDAE_PROVIRAL () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_Aa::GetName_nonr();}
   };
 
   class CBioseq_TEST_COUNT_UNVERIFIED : public CBioseq_on_Aa
@@ -1607,6 +1661,16 @@ namespace DiscRepNmSpc {
       string GetName_exon() const {return string("TEST_EXON_ON_MRNA"); }
       string GetName_qual() const {return string("TEST_BAD_MRNA_QUAL"); }
       string GetName_str() const {return string("TEST_MRNA_SEQUENCE_MINUS_ST"); }
+      string GetName_mcds() const {return string("MULTIPLE_CDS_ON_MRNA"); }
+  };
+
+  class CBioseq_MULTIPLE_CDS_ON_MRNA : public CBioseq_on_mRNA
+  {
+    public:
+      virtual ~CBioseq_MULTIPLE_CDS_ON_MRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_mRNA::GetName_mcds();}
   };
 
   class CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST : public CBioseq_on_mRNA
@@ -2365,17 +2429,6 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_MICROSATELLITE_REPEAT_TYPE"); }
-  };
-
-
-  class CBioseq_DISC_RETROVIRIDAE_DNA : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_DISC_RETROVIRIDAE_DNA () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_RETROVIRIDAE_DNA"); }
   };
 
 
