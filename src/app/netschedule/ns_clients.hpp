@@ -170,6 +170,12 @@ class CNSClient
         { m_WaitPort = port; }
         string GetSession(void) const
         { return m_Session; }
+        time_t GetRegistrationTime(void) const
+        { return m_RegistrationTime; }
+        time_t GetSessionStartTime(void) const
+        { return m_SessionStartTime; }
+        time_t GetSessionResetTime(void) const
+        { return m_SessionResetTime; }
         time_t GetLastAccess(void) const
         { return m_LastAccess; }
         void RegisterSocketWriteError(void)
@@ -236,6 +242,9 @@ class CNSClient
         unsigned short  m_ControlPort;    // Worker node control port
         string          m_ClientHost;     // Client host as given in the
                                           // handshake line.
+        time_t          m_RegistrationTime;
+        time_t          m_SessionStartTime;
+        time_t          m_SessionResetTime;
         time_t          m_LastAccess;     // The last time the client accessed
                                           // netschedule
         string          m_Session;        // Client session id

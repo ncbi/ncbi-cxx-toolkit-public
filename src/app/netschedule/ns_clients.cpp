@@ -270,7 +270,10 @@ CNSClient::CNSClient() :
     m_Type(0),
     m_Addr(0),
     m_ControlPort(0),
-    m_LastAccess(),
+    m_RegistrationTime(0),
+    m_SessionStartTime(0),
+    m_SessionResetTime(0),
+    m_LastAccess(0),
     m_Session(),
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
@@ -295,7 +298,10 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_Addr(client_id.GetAddress()),
     m_ControlPort(client_id.GetControlPort()),
     m_ClientHost(client_id.GetClientHost()),
-    m_LastAccess(time(0)),
+    m_RegistrationTime(0),
+    m_SessionStartTime(0),
+    m_SessionResetTime(0),
+    m_LastAccess(0),
     m_Session(client_id.GetSession()),
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
@@ -314,6 +320,10 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Creating client information object for old style clients");
+    m_RegistrationTime = time(0);
+    m_SessionStartTime = m_RegistrationTime;
+    m_SessionResetTime = 0;
+    m_LastAccess = m_RegistrationTime;
     return;
 }
 
@@ -323,6 +333,7 @@ bool CNSClient::Clear(void)
 {
     m_Cleared = true;
     m_Session = "";
+    m_SessionResetTime = time(0);
 
     m_RunningJobs.clear();
     m_ReadingJobs.clear();
@@ -458,6 +469,8 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     if (m_Session == client_id.GetSession())
         return false;       // It's still the same session, nothing to check
 
+    m_SessionStartTime = time(0);
+
     // Here: new session so check if there are running or reading jobs
     if (m_RunningJobs.any()) {
         running_jobs = m_RunningJobs;
@@ -502,10 +515,42 @@ string CNSClient::Print(const string &               node_name,
     if (m_AffReset) buffer += "TRUE\n";
     else            buffer += "FALSE\n";
 
-    CTime       access_time;
-    access_time.SetTimeT(m_LastAccess);
-    access_time.ToLocalTime();
-    buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
+    if (m_LastAccess == 0) {
+        buffer += "OK:  LAST ACCESS: n/a\n";
+    } else {
+        CTime       access_time;
+        access_time.SetTimeT(m_LastAccess);
+        access_time.ToLocalTime();
+        buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
+    }
+
+    if (m_SessionStartTime == 0) {
+        buffer += "OK:  SESSION START TIME: n/a\n";
+    } else {
+        CTime       session_start_time;
+        session_start_time.SetTimeT(m_SessionStartTime);
+        session_start_time.ToLocalTime();
+        buffer += "OK:  SESSION START TIME: " + session_start_time.AsString() + "\n";
+    }
+
+    if (m_RegistrationTime == 0) {
+        buffer += "OK:  REGISTRATION TIME: n/a\n";
+    } else {
+        CTime       registration_time;
+        registration_time.SetTimeT(m_RegistrationTime);
+        registration_time.ToLocalTime();
+        buffer += "OK:  REGISTRATION TIME: " + registration_time.AsString() + "\n";
+    }
+
+    if (m_SessionResetTime == 0) {
+        buffer += "OK:  SESSION RESET TIME: n/a\n";
+    } else {
+        CTime       session_reset_time;
+        session_reset_time.SetTimeT(m_SessionResetTime);
+        session_reset_time.ToLocalTime();
+        buffer += "OK:  SESSION RESET TIME: " + session_reset_time.AsString() + "\n";
+    }
+
     buffer += "OK:  PEER ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
 
     buffer += "OK:  CLIENT HOST: ";
