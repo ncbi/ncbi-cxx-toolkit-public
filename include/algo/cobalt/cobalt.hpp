@@ -112,6 +112,7 @@ public:
 
     typedef CSparseKmerCounts TKmerCounts;
     typedef TKmerMethods<TKmerCounts> TKMethods;
+    typedef pair<TRange, TRange> TRangePair;
 
 public:
 
@@ -542,6 +543,16 @@ private:
     } SColumn;
 
 
+    /// Strategy for reducing end gap penalties for profile-profile alignment
+    enum EEndGapCostStrategy {
+        /// Reduce penalty only for left end gaps
+        fReduceLeft = 1,   
+        /// Reduce penalty only for right end gaps
+        fReduceRight = 2,  
+        /// Reduce penalty for both end gaps
+        fReduceBoth = fReduceLeft | fReduceRight
+    };
+
 
 private:
     /// Initiate parameters using m_Options
@@ -610,6 +621,12 @@ private:
                                vector<CSequence>& alignment,
                                CNcbiMatrix<CHitList>& pair_info,
                                int iteration);
+    /// Align two profiles with all sequences that belong to the same cluster
+    ///
+    /// A pair-wise constraint alignment between the most similar sequences is
+    /// used for aligning the profiles. Sequence positions that match in the
+    /// pair-wise alignment will also match in the profile alignment. Ranges
+    /// between the matching positions are aligned with CPSSMAligner.
     void x_AlignProfileProfileUsingHit(vector<CTree::STreeLeaf>& node_list1,
                                        vector<CTree::STreeLeaf>& node_list2,
                                        vector<CSequence>& alignment,
@@ -621,13 +638,11 @@ private:
                            vector<CTree::STreeLeaf>& node_list2,
                            CNcbiMatrix<CHitList>& pair_info,
                            int iteration);
-    void x_FindInClusterConstraints(auto_ptr<CHit>& hit,
-                                    vector<CSequence>& alignment,
-                                    vector<CTree::STreeLeaf>& node_list1,
-                                    vector<CTree::STreeLeaf>& node_list2,
-                                    CNcbiMatrix<CHitList>& pair_info,
-                                    vector< pair<int, int> >& gaps1,
-                                    vector< pair<int, int> >& gaps2) const;
+    void x_FindInClusterConstraints(vector<CSequence>& alignment,
+                                  vector<CTree::STreeLeaf>& node_list1,
+                                  vector<CTree::STreeLeaf>& node_list2,
+                                  CNcbiMatrix<CHitList>& pair_info,
+                                  vector<TRangePair>& match_ranges) const;
     double x_GetScoreOneCol(vector<CSequence>& align, 
                             int col);
     double x_GetScore(vector<CSequence>& align);
@@ -651,9 +666,9 @@ private:
                                 vector<CTree::STreeLeaf>& node_list2,
                                 vector<CSequence>& alignment,
                                 vector<size_t>& constraints,
-                                TRange range1, TRange range2,
+                                const TRange& range1, const TRange& range2,
                                 int full_prof_len1, int full_prof_len2,
-                                bool left_margin,
+                                EEndGapCostStrategy strat,
                                 CNWAligner::TTranscript& t);
 
 

@@ -204,6 +204,131 @@ x_NormalizeResidueFrequencies(double **freq_data,
     }
 }
 
+/// Find a profile position for a input sequence position
+static int
+s_SeqToProfilePosition(int seq_pos, CSequence& seq)
+{
+    int i = 0;
+    int s = -1;
+    for (;i < seq.GetLength() && s < seq_pos;i++) {
+        if (seq.GetLetter(i) != CSequence::kGapChar) {
+            s++;
+        }
+    }
+    if (i >= seq.GetLength()) {
+        return -1;
+    }
+
+    return i - 1;
+}
+
+/// A pair of integers, defined to privide increment and less-then operators
+class CIntPair : public pair<int, int>
+{
+public:
+
+    CIntPair(int f, int s) : pair<int, int>(f, s) {}
+
+    /// Increment both elements
+    CIntPair& operator++(void)
+    {
+        first++;
+        second++;
+        return *this;
+    }
+
+    /// Increment both elements
+    CIntPair operator++(int)
+    {
+        CIntPair result(this->first, this->second);
+        ++(*this);
+        return result;
+    }
+
+    /// True if each element of this is smaller than the corresponding element
+    /// of p
+    bool operator<(const CIntPair& p) const
+    { return first < p.first && second < p.second;}
+};
+
+
+/// Translate ungapped alignment range for pair-wise sequence alignment in
+/// input sequence coordinates into ungapped matching ranges on profiles.
+/// If at least one of the sequences in the profile has gaps withing the
+/// input matching range, there will be a series of the resulting profile
+/// ranges.
+static void
+x_GetProfileMatchRanges(const TRange& seq_range1, const TRange seq_range2,
+                        CSequence& seq1, CSequence& seq2,
+                        vector<CMultiAligner::TRangePair>& prof_ranges)
+{
+    // positions in sequence (seq1, seq2)
+    CIntPair s(seq_range1.GetFrom(), seq_range2.GetFrom());
+    // positions in profile
+    CIntPair p(0, 0);
+    // profile lengths
+    CIntPair len(seq1.GetLength(), seq2.GetLength());
+    // ends of the sequence ranges
+    CIntPair end_seq(seq_range1.GetTo(), seq_range2.GetTo());
+    // input sequences in profiles (sequences with gaps)
+    pair<CSequence&, CSequence&> seq(seq1, seq2);
+
+    CMultiAligner::TRangePair r;
+    
+    // find profile positions for begining of the sequence ranges
+    p.first = s_SeqToProfilePosition(s.first, seq.first);
+    p.second = s_SeqToProfilePosition(s.second, seq.second);
+    _ASSERT(p.first >= 0 && p.second >= 0);
+    if (p.first < 0 || p.second < 0) {
+        return;
+    }
+
+    // start a pair of profile ranges
+    r.first.SetFrom(p.first);
+    r.second.SetFrom(p.second);
+    
+    ++p;
+    ++s;
+    while (p < len && s < end_seq) {
+
+        // while we are within input sequences ranges and profile sequences
+        // do  not have gaps
+        while (p < len && s < end_seq
+               && seq.first.GetLetter(p.first) != CSequence::kGapChar
+               && seq.second.GetLetter(p.second) != CSequence::kGapChar) {
+            ++p;
+            ++s;
+        }
+        if ((p.first >= len.first && s.first < end_seq.first)
+            || (p.second >= len.second && s.second < end_seq.second)) {
+            return;
+        }
+        // either a gap was encountered or the a sequence range has ended,
+        // close the profile ranges
+        r.first.SetTo(p.first - 1);
+        r.second.SetTo(p.second - 1);
+        _ASSERT(r.first.GetLength() == r.second.GetLength());
+        prof_ranges.push_back(r);
+
+        // skip all profile postitions where at least one sequence has a gap
+        while (p.first < len.first
+               && seq.first.GetLetter(p.first) == CSequence::kGapChar) {
+
+            p.first++;
+        }
+
+        while (p.second < len.second
+               && seq.second.GetLetter(p.second) == CSequence::kGapChar) {
+
+            p.second++;
+        }
+
+        // start a new pair of profile ranges
+        r.first.SetFrom(p.first);
+        r.second.SetFrom(p.second);
+    }
+}
+
 /// Convert a sequence range to reflect gaps added to the
 /// underlying sequence
 /// @param range [in][out]
@@ -237,59 +362,6 @@ x_ExpandRange(TRange& range,
     for (i++; i < len; i++) {
         if (seq.GetLetter(i) != CSequence::kGapChar)
             offset++;
-        if (offset == range.GetTo()) {
-            range.SetTo(i);
-            break;
-        }
-    }
-    _ASSERT(i < len);
-}
-
-
-/// Convert a sequence range to reflect gaps added to the
-/// underlying sequence and record gap locations
-/// @param range [in][out]
-/// @param seq The sequence [in]
-/// @param gaps Locations of gaps within the range, pair: (location: gaps 
-/// after n-th letter, number of gaps) [out]
-///
-static void 
-x_ExpandRange(TRange& range, CSequence& seq, vector< pair<int, int> >& gaps)
-{
-    int len = seq.GetLength();
-    int i, offset;
-
-    // convert range.From
-
-    offset = -1;
-    for (i = 0; i < len; i++) {
-        if (seq.GetLetter(i) != CSequence::kGapChar)
-            offset++;
-        if (offset == range.GetFrom()) {
-            range.SetFrom(i);
-            break;
-        }
-    }
-
-    // convert range.To and record gaps
-
-    if (offset == range.GetTo()) {
-        range.SetTo(i);
-        return;
-    }
-    for (i++; i < len; i++) {
-        if (seq.GetLetter(i) != CSequence::kGapChar) {
-            offset++;
-        }
-        else if (offset < range.GetTo()) {
-            pair<int, int> g(offset, 0);
-            while (i < len && seq.GetLetter(i) == CSequence::kGapChar) {
-                i++;
-                g.second++;
-            }
-            i--;
-            gaps.push_back(g);
-        }
         if (offset == range.GetTo()) {
             range.SetTo(i);
             break;
@@ -620,22 +692,20 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
 
 
 /// Find constraint to use for profile to profile alignment in clusters
-/// @param hit_constr Hit representing constraint [out]
+///
+/// Finds in-cluster constraint (blastp hit) between two most similar sequences
+/// from each profile.
 /// @param alignment Current multiple alignment of sequences [in]
 /// @param node_list1 List of sequences in first collection [in]
 /// @param node_list2 List of sequences in second collection [in]
 /// @param pair_info List of pairwise constraints (between sequences) [in]
-/// @param gaps1 Positions of gaps palced in sequence representing profile 1
-/// prior to this alignment [out]
-/// @param gaps2 Positions of gaps palced in sequence representing profile 2
-/// prior to this alignment [out]
-void CMultiAligner::x_FindInClusterConstraints(auto_ptr<CHit>& hit_constr,
-                                     vector<CSequence>& alignment,
-                                     vector<CTree::STreeLeaf>& node_list1,
-                                     vector<CTree::STreeLeaf>& node_list2,
-                                     CNcbiMatrix<CHitList>& pair_info,
-                                     vector< pair<int, int> >& gaps1,
-                                     vector< pair<int, int> >& gaps2) const
+/// @param match_ranges A list of pairs of ungapped blastp alignment ranges
+/// on the profiles [out]
+void CMultiAligner::x_FindInClusterConstraints(vector<CSequence>& alignment,
+                                       vector<CTree::STreeLeaf>& node_list1,
+                                       vector<CTree::STreeLeaf>& node_list2,
+                                       CNcbiMatrix<CHitList>& pair_info,
+                                       vector<TRangePair>& match_ranges) const
 {
     // Find the pair of most similar sequences, each from another subtree
     const CClusterer::TDistMatrix& dmat = m_Clusterer.GetDistMatrix();
@@ -667,41 +737,47 @@ void CMultiAligner::x_FindInClusterConstraints(auto_ptr<CHit>& hit_constr,
         }
     }
 
-    // Convert hit ranges to current alignment
-    CHit* new_hit = new CHit(hit->m_SeqIndex1, hit->m_SeqIndex2,
-                             hit->m_SeqRange1, hit->m_SeqRange2,
-                             hit->m_Score, hit->GetEditScript());
+    // get matching renges for pair-wise sequence alignent
+    // these are in sequence coordinates
+    vector<TOffsetPair> seq_match_regions(
+                                   hit->GetEditScript().ListMatchRegions(
+                                     TOffsetPair(hit->m_SeqRange1.GetFrom(),
+                                                 hit->m_SeqRange2.GetFrom())));
 
-    if (seq1 != hit->m_SeqIndex1) {
-        swap(new_hit->m_SeqIndex1, new_hit->m_SeqIndex2);
-        swap(new_hit->m_SeqRange1, new_hit->m_SeqRange2);
-        new_hit->GetEditScript().ReverseEditScript();
+    // Translate the match ranges into profile coordinates. Gaps within
+    // the sequence in the profile break up the matching ranges, hence
+    // translating a pair of ranges on the sequences results in a series of
+    // pairs of ranges on the profiles.
+    _ASSERT(seq_match_regions.size() >= 2);
+    for (size_t i=0;i < seq_match_regions.size();i+=2) {
+        _ASSERT(i < seq_match_regions.size() - 1);
+        _ASSERT(seq_match_regions[i + 1].first - seq_match_regions[i].first
+          == seq_match_regions[i + 1].second - seq_match_regions[i].second);
+
+        // extract sequence ranges
+        TRange seq_range1(seq_match_regions[i].first,
+                          seq_match_regions[i + 1].first);
+        TRange seq_range2(seq_match_regions[i].second,
+                          seq_match_regions[i + 1].second);
+
+        // translate matching sequence ranges into matching profile ranges
+        x_GetProfileMatchRanges(seq_range1, seq_range2,
+                                alignment[hit->m_SeqIndex1],
+                                alignment[hit->m_SeqIndex2],
+                                match_ranges);
     }
 
-    gaps1.clear();
-    gaps2.clear();
-
-    // the first entry in gaps lists denotes begining of hit range disregarding
-    // gaps in the sequecne - this is for reference to indicate position of
-    // gaps that are in the sequences prior to the alignment
-    gaps1.push_back(pair<int, int>(new_hit->m_SeqRange1.GetFrom(), 0));
-    gaps2.push_back(pair<int, int>(new_hit->m_SeqRange2.GetFrom(), 0));
-
-    x_ExpandRange(new_hit->m_SeqRange1, alignment[new_hit->m_SeqIndex1], gaps1);
-    x_ExpandRange(new_hit->m_SeqRange2, alignment[new_hit->m_SeqIndex2], gaps2);
-
-    hit_constr.reset(new_hit);
-    
     //--------------------------------------
     if (m_Options->GetVerbose()) {
         printf("possible constraints (offsets wrt input profiles):\n");
-        printf("query %3d %4d - %4d query %3d %4d - %4d score %d %c\n",
-               new_hit->m_SeqIndex1, 
-               new_hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
-               new_hit->m_SeqIndex2, 
-               new_hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-               new_hit->m_Score,
-               new_hit->HasSubHits() ? 'd' : 'f');
+        printf("query %3d %4d - %4d query %3d %4d - %4d score %d\n",
+               hit->m_SeqIndex1, 
+               match_ranges.front().first.GetFrom(),
+               match_ranges.back().first.GetTo(),
+               hit->m_SeqIndex2, 
+               match_ranges.front().second.GetFrom(),
+               match_ranges.back().second.GetTo(),
+               hit->m_Score);
     }
     //--------------------------------------
 }
@@ -894,9 +970,9 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
                                      vector<CTree::STreeLeaf>& node_list2,
                                      vector<CSequence>& alignment,
                                      vector<size_t>& constraints,
-                                     TRange range1, TRange range2,
+                                     const TRange& range1, const TRange& range2,
                                      int full_prof_len1, int full_prof_len2,
-                                     bool left_margin,
+                                     CMultiAligner::EEndGapCostStrategy strat,
                                      CNWAligner::TTranscript& t)
 {
         double **freq1_data;
@@ -953,11 +1029,12 @@ void CMultiAligner::x_ComputeProfileRangeAlignment(
          if (full_prof_len1 > 1.2 * full_prof_len2 ||
              full_prof_len2 > 1.2 * full_prof_len1) {
 
-            if (left_margin) {
+            if (strat & fReduceLeft) {
                 m_Aligner.SetStartWs(m_Options->GetEndGapExtendPenalty()
                                      * kScale / 2);
             }
-            else {
+
+            if (strat & fReduceRight) {
                 m_Aligner.SetEndWs(m_Options->GetEndGapExtendPenalty()
                                    * kScale / 2);
             }
@@ -987,10 +1064,10 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
                                         CNcbiMatrix<CHitList>& pair_info,
                                         int iteration)
 {
-    // CPSSMAligner will be used to align parts of the sequences outside
-    // of the hit if their lengths are larger than kMinMargin. Otherwise gaps
-    // will be placed in positions corresponding to letter in the other profile.
-    const int kMinMargin = 0;
+    // If there is a blastp alignment between the most similar sequences,
+    // then the matching positions from sequence alignment will be also
+    // matching in the profile alignment. The ranges outsize of the matching
+    // ranges from blastp alignment are aligned with CPSSMAligner.
     
     //---------------------------
     if (m_Options->GetVerbose()) {
@@ -1000,14 +1077,14 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
     }
     //---------------------------
 
-    // Find pair-wise constraints
-    auto_ptr<CHit> hit;
-    vector< pair<int, int> > gaps1, gaps2;
-    x_FindInClusterConstraints(hit, alignment, node_list1, node_list2,
-                               pair_info, gaps1, gaps2);
+    // Find pair-wise constraints and ranges of matching positions from the
+    // constraint alignment translated into profile coordinates
+    vector<TRangePair> match_ranges;
+    x_FindInClusterConstraints(alignment, node_list1, node_list2,
+                               pair_info, match_ranges);
 
     // Perform standard profile-profile alignment if no constraints are found
-    if (!hit.get()) {
+    if (match_ranges.empty()) {
         x_AlignProfileProfile(node_list1, node_list2, alignment, pair_info,
                               iteration);
         string message = "No significant alignments were found for cluster"
@@ -1026,176 +1103,127 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
         return;
     }
 
-    // Align sequences using edit script from that constraint
-    // retrieve the traceback information from the local hit
-    CNWAligner::TTranscript transcr;
-    vector<TOffsetPair> match_regions(
-                                   hit->GetEditScript().ListMatchRegions(
-                                     TOffsetPair(hit->m_SeqRange1.GetFrom(),
-                                                 hit->m_SeqRange2.GetFrom())));
-
-    _ASSERT(match_regions.size() >= 2);
-    _ASSERT(match_regions[1].first - match_regions[0].first
-            == match_regions[1].second - match_regions[0].second);
-
-    vector< pair<int, int> >::iterator gaps1_it = gaps1.begin();
-    vector< pair<int, int> >::iterator gaps2_it = gaps2.begin();
-
-    // Retrieve letter positions for begining of the hit range
-    // it is stored in the first elements of the gaps lists
-    _ASSERT(gaps1_it->first >= 0 && gaps1_it->second == 0);
-    _ASSERT(gaps2_it->first >= 0 && gaps2_it->second == 0);
-    int letters1 = gaps1_it->first - 1;
-    int letters2 = gaps2_it->first - 1;
-    gaps1_it++;
-    gaps2_it++;
-
-    // for the first matching region
-    for (int j=match_regions[0].first;j < match_regions[1].first;j++) {
-
-        // put matching transcript elements
-        transcr.push_back(CNWAligner::eTS_Match);
-        letters1++;
-        letters2++;
-
-        // if gaps exist in one sequence, puth them in the other
-        if (gaps1_it != gaps1.end() && letters1 == gaps1_it->first) {
-            _ASSERT(gaps1_it->second > 0);
-            for (int k=0;k < gaps1_it->second;k++) {
-                transcr.push_back(CNWAligner::eTS_Delete);
-            }
-            gaps1_it++;
-        }
-        if (gaps2_it != gaps2.end() && letters2 == gaps2_it->first) {
-            _ASSERT(gaps2_it->second > 0);
-            for (int k=0;k < gaps2_it->second;k++) {
-                transcr.push_back(CNWAligner::eTS_Insert);
-            }
-            gaps2_it++;
-        }
-    }
-
-    // for the remaining matching regions
-    for (size_t i=2;i < match_regions.size();i+=2) {
-        TOffsetPair& start_pair = match_regions[i];
-        TOffsetPair& stop_pair = match_regions[i+1];
-        TOffsetPair& last_stop_pair = match_regions[i-1];
-
-        _ASSERT(stop_pair.first - start_pair.first
-                == stop_pair.second - start_pair.second);
-
-        // check for deletions between matching regions
-        for (int j=last_stop_pair.first;j < start_pair.first;j++) {
-
-            transcr.push_back(CNWAligner::eTS_Delete);
-            letters1++;
-
-            if (gaps1_it != gaps1.end() && letters1 == gaps1_it->first) {
-                for (int k=0;k < gaps1_it->second;k++) {
-                    transcr.push_back(CNWAligner::eTS_Delete);
-                }
-                gaps1_it++;
-            }
-        }
-
-        // check for insertions between matching regions
-        for (int j=last_stop_pair.second;j < start_pair.second;j++) {
-
-            transcr.push_back(CNWAligner::eTS_Insert);
-            letters2++;
-
-            if (gaps2_it != gaps2.end() && letters2 == gaps2_it->first) {
-                for (int k=0;k < gaps2_it->second;k++) {
-                    transcr.push_back(CNWAligner::eTS_Insert);
-                }
-                gaps2_it++;
-            }
-        }
-
-        // for matching region
-        for (int j=start_pair.first;j < stop_pair.first;j++) {
-
-            transcr.push_back(CNWAligner::eTS_Match);
-            letters1++;
-            letters2++;
-
-            if (gaps1_it != gaps1.end() && letters1 == gaps1_it->first) {
-                for (int k=0;k < gaps1_it->second;k++) {
-                    transcr.push_back(CNWAligner::eTS_Delete);
-                }
-                gaps1_it++;
-            }
-            if (gaps2_it != gaps2.end() && letters2 == gaps2_it->first) {
-                for (int k=0;k < gaps2_it->second;k++) {
-                    transcr.push_back(CNWAligner::eTS_Insert);
-                }
-                gaps2_it++;
-            }
-        }
-    }    
-    _ASSERT(gaps1_it == gaps1.end() && gaps2_it == gaps2.end());
-
     //-------------------------------
     if (m_Options->GetVerbose()) {
-        printf("constraints: ");
-        printf("(seq1 %d seq2 %d)->(seq1 %d seq2 %d)", 
-               hit->m_SeqRange1.GetFrom(), hit->m_SeqRange2.GetFrom(),
-               hit->m_SeqRange1.GetTo(), hit->m_SeqRange2.GetTo());
+        ITERATE (vector<TRangePair>, rit, match_ranges) {
+            printf("in-cluster constraints: "
+                   "(seq1 %d seq2 %d)->(seq1 %d seq2 %d)\n",
+                   rit->first.GetFrom(), rit->second.GetFrom(),
+                   rit->first.GetTo(), rit->second.GetTo());
+        }
         printf("\n");
     }
     //-------------------------------
-        
-    // Align sequence margins parts outside of the hit
 
-    int seq1_length = alignment[hit->m_SeqIndex1].GetLength();
-    int seq2_length = alignment[hit->m_SeqIndex2].GetLength();
+    // Align profiles using the hit information
 
-    // Left margin
-    // if margin length exceeds threshold than align profiles for than margin
-    // otherwise make margins insertions and deletions
-    if (hit->m_SeqRange1.GetFrom() > kMinMargin 
-        && hit->m_SeqRange2.GetFrom() > kMinMargin) {
+    // transcript will hold information on profile alignment
+    CNWAligner::TTranscript transcr;
 
-        TRange seq1_range(0, hit->m_SeqRange1.GetFrom() - 1);
-        TRange seq2_range(0, hit->m_SeqRange2.GetFrom() - 1);
+    // input profile lengths
+    int prof1_length = alignment[node_list1.front().query_idx].GetLength();
+    int prof2_length = alignment[node_list2.front().query_idx].GetLength();
+
+    // Take care of the left margin: parts of the profiles not included in the
+    // constraint;
+    // if both profiles have non-zero left margin length, compute alignment
+    if (match_ranges.front().first.GetFrom() > 0 
+        && match_ranges.front().second.GetFrom() > 0) {
+
+        TRange range1(0, match_ranges.front().first.GetFrom() - 1);
+        TRange range2(0, match_ranges.front().second.GetFrom() - 1);
         vector<size_t> constr;
         CNWAligner::TTranscript t;
         x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
-                                       constr, seq1_range, seq2_range,
-                                       seq1_length, seq2_length, true, t);
-        
-        transcr.swap(t);
-        transcr.reserve(transcr.size() + t.size());
-        ITERATE(CNWAligner::TTranscript, it, t) {
-            transcr.push_back(*it);
-        }
+                                       constr, range1, range2,
+                                       prof1_length, prof2_length, fReduceLeft,
+                                       transcr);
     }
     else {
-        // Put gaps
-        int len1 = hit->m_SeqRange1.GetFrom();
-        int len2 = hit->m_SeqRange2.GetFrom();
+        // otherwise put approriate gaps in the transcript
+        int len1 = match_ranges.front().first.GetFrom();
+        int len2 = match_ranges.front().second.GetFrom();
 
         for (int i=0; i < len1;i++) {
-            transcr.insert(transcr.begin(), CNWAligner::eTS_Delete);
+            transcr.push_back(CNWAligner::eTS_Delete);
         }
         for (int i=0; i < len2;i++) {
-            transcr.insert(transcr.begin(), CNWAligner::eTS_Insert);
+            transcr.push_back(CNWAligner::eTS_Insert);
         }
     }
 
-    // Right margin
-    // if margin length exceeds threshold than align profiles for than margin
-    // otherwise make margins insertions and deletions
-    if (seq1_length - hit->m_SeqRange1.GetTo() - 1 > kMinMargin
-        && seq2_length - hit->m_SeqRange2.GetTo() - 1 > kMinMargin) {
 
-        TRange seq1_range(hit->m_SeqRange1.GetTo() + 1, seq1_length - 1);
-        TRange seq2_range(hit->m_SeqRange2.GetTo() + 1, seq2_length - 1);
+    // iterate over the matching ranges from the constraint pair-wise alignment
+    vector<TRangePair>::const_iterator it(match_ranges.begin());
+    
+    // process the first matching range: put matching positions in transcript
+    for (int i=0;i < it->first.GetLength();i++) {
+        transcr.push_back(CNWAligner::eTS_Match);
+    }
+
+    vector<TRangePair>::const_iterator prev_it(it);
+    ++it;
+
+    // for each following matching range
+    for (; it != match_ranges.end(); ++it, ++prev_it) {
+        _ASSERT(it->first.GetLength() == it->second.GetLength());
+
+        // get space between current and previous matching range
+        TRange space1(prev_it->first.GetToOpen(), it->first.GetFrom() - 1);
+        TRange space2(prev_it->second.GetToOpen(), it->second.GetFrom() - 1);
+
+        // if the space is empty in the first profile, put insertions into
+        // the transcript
+        if (space1.Empty()) {
+            for (int i=0;i < space2.GetLength();i++) {
+                transcr.push_back(CNWAligner::eTS_Insert);
+            }
+        }
+        // if the space is empty in the second profile, put deletions into
+        // the transcript
+        else if (space2.Empty()) {
+            for (int i=0;i < space1.GetLength();i++) {
+                transcr.push_back(CNWAligner::eTS_Delete);
+            }
+        }
+        // otherwise compute alignment for these spaces
+        else if (space1.NotEmpty() && space2.NotEmpty()) {
+            vector<size_t> constr;
+            CNWAligner::TTranscript tr;
+            x_ComputeProfileRangeAlignment(node_list1, node_list2,
+                                   alignment, constr,
+                                   space1, space2,
+                                   prof1_length,
+                                   prof2_length,
+                                   fReduceBoth, tr);
+
+            ITERATE (CNWAligner::TTranscript, t, tr) {
+                transcr.push_back(*t);
+            }
+        }
+
+        // process matching range: add matching positions to the transcript
+        for (int i=0;i < it->first.GetLength();i++) {
+            transcr.push_back(CNWAligner::eTS_Match);
+        }
+    }
+
+    // take care of the right margin: profile ranges outside of the constraint
+    // at the right end of the profiles
+    if (prof1_length - match_ranges.back().first.GetTo() - 1 > 0
+        && prof2_length - match_ranges.back().second.GetTo() - 1 > 0) {
+
+        TRange seq1_range(match_ranges.back().first.GetTo() + 1,
+                          prof1_length - 1);
+        TRange seq2_range(match_ranges.back().second.GetTo() + 1,
+                          prof2_length - 1);
+
         vector<size_t> constr;
         CNWAligner::TTranscript t;
         x_ComputeProfileRangeAlignment(node_list1, node_list2, alignment,
                                        constr, seq1_range, seq2_range,
-                                       seq1_length, seq2_length, false, t);
+                                       prof1_length, prof2_length,
+                                       fReduceRight, t);
 
         ITERATE(CNWAligner::TTranscript, it, t) {
             transcr.push_back(*it);
@@ -1204,8 +1232,8 @@ void CMultiAligner::x_AlignProfileProfileUsingHit(
     else {
 
         // Put gaps
-        int len1 = seq1_length - hit->m_SeqRange1.GetTo() - 1;
-        int len2 = seq2_length - hit->m_SeqRange2.GetTo() - 1;
+        int len1 = prof1_length - match_ranges.back().first.GetTo() - 1;
+        int len2 = prof2_length - match_ranges.back().second.GetTo() - 1;
 
         for (int i=0; i < len1;i++) {
             transcr.push_back(CNWAligner::eTS_Delete);
