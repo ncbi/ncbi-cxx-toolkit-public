@@ -1800,7 +1800,7 @@ void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
 
-        if(align.GetCdsInfo().ProtReadingFrame().NotEmpty() && (align.Status()&eBestPlacement)) // best placed protein or projected mRNA
+        if(align.GetCdsInfo().ProtReadingFrame().NotEmpty() && (align.Status()&eBestPlacement) && ((*it)->m_copy == 0 || (*it)->m_cds_info->HasStart())) // best placed protein or projected mRNA
             exonnum[align.ID()] += align.Exons().size();       
     }
 
