@@ -270,14 +270,12 @@ x_GetProfileMatchRanges(const TRange& seq_range1, const TRange seq_range2,
     CIntPair len(seq1.GetLength(), seq2.GetLength());
     // ends of the sequence ranges
     CIntPair end_seq(seq_range1.GetTo(), seq_range2.GetTo());
-    // input sequences in profiles (sequences with gaps)
-    pair<CSequence&, CSequence&> seq(seq1, seq2);
 
     CMultiAligner::TRangePair r;
     
     // find profile positions for begining of the sequence ranges
-    p.first = s_SeqToProfilePosition(s.first, seq.first);
-    p.second = s_SeqToProfilePosition(s.second, seq.second);
+    p.first = s_SeqToProfilePosition(s.first, seq1);
+    p.second = s_SeqToProfilePosition(s.second, seq2);
     _ASSERT(p.first >= 0 && p.second >= 0);
     if (p.first < 0 || p.second < 0) {
         return;
@@ -294,8 +292,8 @@ x_GetProfileMatchRanges(const TRange& seq_range1, const TRange seq_range2,
         // while we are within input sequences ranges and profile sequences
         // do  not have gaps
         while (p < len && s < end_seq
-               && seq.first.GetLetter(p.first) != CSequence::kGapChar
-               && seq.second.GetLetter(p.second) != CSequence::kGapChar) {
+               && seq1.GetLetter(p.first) != CSequence::kGapChar
+               && seq2.GetLetter(p.second) != CSequence::kGapChar) {
             ++p;
             ++s;
         }
@@ -312,13 +310,13 @@ x_GetProfileMatchRanges(const TRange& seq_range1, const TRange seq_range2,
 
         // skip all profile postitions where at least one sequence has a gap
         while (p.first < len.first
-               && seq.first.GetLetter(p.first) == CSequence::kGapChar) {
+               && seq1.GetLetter(p.first) == CSequence::kGapChar) {
 
             p.first++;
         }
 
         while (p.second < len.second
-               && seq.second.GetLetter(p.second) == CSequence::kGapChar) {
+               && seq2.GetLetter(p.second) == CSequence::kGapChar) {
 
             p.second++;
         }
