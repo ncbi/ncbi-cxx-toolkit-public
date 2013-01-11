@@ -1182,6 +1182,7 @@ public:
     enum EModeStringFormat {
         eModeFormat_Octal,                       ///< Octal format ("664")
         eModeFormat_Symbolic,                    ///< Shell symbolic format ("u=rwx,g=rwx,o=rx")
+        eModeFormat_List,                        ///< Shell list 'ls -l' like format ("rwxrwxrwx")
         eModeFormat_Default = eModeFormat_Octal  ///< Default mode
     };
 
@@ -1195,7 +1196,7 @@ public:
                                TSpecialModeBits  special,
                                EModeStringFormat format = eModeFormat_Default);
 
-    /// Convert string (in one of predefined formats) to permission mode(s).
+    /// Convert string (in one of predefined formats, detects automatically) to permission mode(s).
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
     /// @sa 
@@ -1413,7 +1414,7 @@ private:
 
 private:
     /// Convert permission mode to symbolic string representation.
-    static string x_ModeToSymbolicString(EWho who, TMode mode, bool special_bit);
+    static string x_ModeToSymbolicString(EWho who, TMode mode, bool special_bit, char filler);
 };
 
 

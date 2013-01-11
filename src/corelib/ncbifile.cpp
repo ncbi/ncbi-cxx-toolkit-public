@@ -1159,22 +1159,32 @@ void CDirEntry::ModeFromModeT(mode_t mode,
 
 
 // Convert permission mode to "rw[xsStT]" string.
-string CDirEntry::x_ModeToSymbolicString(CDirEntry::EWho who, CDirEntry::TMode mode, bool special_bit)
+string CDirEntry::x_ModeToSymbolicString(CDirEntry::EWho who, CDirEntry::TMode mode, bool special_bit, char filler)
 {
     string out;
     out.reserve(3);
-    if (mode & CDirEntry::fRead)
-        out += "r";
-    if (mode & CDirEntry::fWrite)
-        out += "w";
+
+    char c;
+    c = (mode & CDirEntry::fRead  ? 'r' : filler);
+    if (c) {
+        out += c;
+    }
+    c = (mode & CDirEntry::fWrite ? 'w' : filler);
+    if (c) {
+        out += c;
+    }
+    c = filler;
     if ( special_bit ) {
         if (who == CDirEntry::eOther) {
-            out += (mode & CDirEntry::fExecute) ? "t" : "T";
+            c = (mode & CDirEntry::fExecute) ? 't' : 'T';
         } else {
-            out += (mode & CDirEntry::fExecute) ? "s" : "S";
+            c = (mode & CDirEntry::fExecute) ? 's' : 'S';
         }
     } else if (mode & CDirEntry::fExecute) {
-        out += "x";
+        c = 'x';
+    }
+    if (c) {
+        out += c;
     }
     return out;
 }
@@ -1204,9 +1214,17 @@ string CDirEntry::ModeToString(TMode user_mode, TMode group_mode,
     case eModeFormat_Symbolic:
         {
             out.reserve(17);
-            out =   "u=" + x_ModeToSymbolicString(eUser,  user_mode,  (special & fSetUID) > 0);
-            out += ",g=" + x_ModeToSymbolicString(eGroup, group_mode, (special & fSetGID) > 0);
-            out += ",o=" + x_ModeToSymbolicString(eOther, other_mode, (special & fSticky) > 0);
+            out =   "u=" + x_ModeToSymbolicString(eUser,  user_mode,  (special & fSetUID) > 0, '\0');
+            out += ",g=" + x_ModeToSymbolicString(eGroup, group_mode, (special & fSetGID) > 0, '\0');
+            out += ",o=" + x_ModeToSymbolicString(eOther, other_mode, (special & fSticky) > 0, '\0');
+        }
+        break;
+    case eModeFormat_List:
+        {
+            out.reserve(9);
+            out =  x_ModeToSymbolicString(eUser,  user_mode,  (special & fSetUID) > 0, '-');
+            out += x_ModeToSymbolicString(eGroup, group_mode, (special & fSetGID) > 0, '-');
+            out += x_ModeToSymbolicString(eOther, other_mode, (special & fSticky) > 0, '-');
         }
         break;
     default:
@@ -1249,16 +1267,6 @@ bool CDirEntry::StringToMode(const CTempString& mode,
         }
 
     } else {
-    // eModeFormat_Symbolic
-        list<string> parts;
-        NStr::Split(mode, ",", parts);
-        if ( parts.empty() ) {
-            CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
-            return false;
-        }
-        bool have_user  = false;
-        bool have_group = false;
-        bool have_other = false;
 
         if (user_mode) 
             *user_mode = 0;
@@ -1269,96 +1277,176 @@ bool CDirEntry::StringToMode(const CTempString& mode,
         if (special)
             *special = 0;
 
-        ITERATE(list<string>, it, parts) {
-            string accessor, perm;
-            if ( !NStr::SplitInTwo(*it, "=", accessor, perm) ) {
+        // eModeFormat_List:
+        if (mode.find('=') == NPOS  &&  mode.length() == 9) {
+            for (int i = 0; i < 3; i++) {
+                TMode m = 0;
+                bool is_special = false;
+
+                switch (mode[i*3]) {
+                    case 'r':
+                        m |= fRead;
+                        break;
+                    case '-':
+                        break;
+                    default:
+                        CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                        return false;
+                }
+                switch (mode[i*3 + 1]) {
+                    case 'w':
+                        m |= fWrite;
+                        break;
+                    case '-':
+                        break;
+                    default:
+                        CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                        return false;
+                }
+                switch (mode[i*3 + 2]) {
+                    case 'S':
+                    case 'T':
+                        is_special = true;
+                        break;
+                    case 's':
+                    case 't':
+                        is_special = true;
+                        // fall through
+                    case 'x':
+                        m |= fExecute;
+                        break;
+                    case '-':
+                        break;
+                    default:
+                        CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                        return false;
+                }
+                switch (i) {
+                    case 0: // user
+                        if (user_mode) 
+                            *user_mode = m;
+                        if (is_special  &&  special)
+                            *special |= fSetUID;
+                        break;
+                    case 1: // group
+                        if (group_mode)
+                            *group_mode = m;
+                        if (is_special  &&  special)
+                            *special |= fSetGID;
+                        break;
+                    case 2: // other
+                        if (other_mode)
+                            *other_mode = m;
+                        if (is_special  &&  special)
+                            *special |= fSticky;
+                        break;
+                }
+            }
+
+        // eModeFormat_Symbolic
+        } else {
+            list<string> parts;
+            NStr::Split(mode, ",", parts);
+            if ( parts.empty() ) {
                 CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
                 return false;
             }
-            TMode tmode = 0;
-            bool is_special = false;
-            // Permission mode(s) (rwx)
-            ITERATE(string, s, perm) {
-                switch(char(*s)) {
-                case 'r':
-                    tmode |= fRead;
-                    break;
-                case 'w':
-                    tmode |= fWrite;
-                    break;
-                case 'S':
-                case 'T':
-                    is_special = true;
-                    break;
-                case 's':
-                case 't':
-                    is_special = true;
-                    // fall through
-                case 'x':
-                    tmode |= fExecute;
-                    break;
-                default:
+            bool have_user  = false;
+            bool have_group = false;
+            bool have_other = false;
+
+            ITERATE(list<string>, it, parts) {
+                string accessor, perm;
+                if ( !NStr::SplitInTwo(*it, "=", accessor, perm) ) {
                     CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
                     return false;
                 }
-            }
-            // Permission group category (ugoa)
-            ITERATE(string, s, accessor) {
-                switch(char(*s)) {
-                case 'u':
-                    if (have_user) {
+                TMode m = 0;
+                bool is_special = false;
+                // Permission mode(s) (rwx)
+                ITERATE(string, s, perm) {
+                    switch(char(*s)) {
+                    case 'r':
+                        m |= fRead;
+                        break;
+                    case 'w':
+                        m |= fWrite;
+                        break;
+                    case 'S':
+                    case 'T':
+                        is_special = true;
+                        break;
+                    case 's':
+                    case 't':
+                        is_special = true;
+                        // fall through
+                    case 'x':
+                        m |= fExecute;
+                        break;
+                    default:
+                       CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                       return false;
+                    }
+                }
+                // Permission group category (ugoa)
+                ITERATE(string, s, accessor) {
+                    switch(char(*s)) {
+                    case 'u':
+                        if (have_user) {
+                            CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                            return false;
+                        }
+                        if (user_mode)
+                            *user_mode = m;
+                        if (is_special  &&  special)
+                            *special |= fSetUID;
+                        have_user = true;
+                        break;
+                    case 'g':
+                        if (have_group) {
+                            CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                            return false;
+                        }
+                        if (group_mode)
+                            *group_mode = m;
+                        if (is_special  &&  special)
+                            *special |= fSetGID;
+                        have_group = true;
+                        break;
+                    case 'o':
+                        if (have_other) {
+                            CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                            return false;
+                        }
+                        if (other_mode)
+                            *other_mode = m;
+                        if (is_special  &&  special)
+                            *special |= fSticky;
+                        have_other = true;
+                        break;
+                    case 'a':
+                        if (is_special || have_user || have_group || have_other) {
+                            CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
+                            return false;
+                        }
+                        have_user  = true;
+                        have_group = true;
+                        have_other = true;
+                        if (user_mode)
+                            *user_mode = m;
+                        if (group_mode)
+                            *group_mode = m;
+                        if (other_mode)
+                            *other_mode = m;
+                        break;
+                    default:
                         CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
                         return false;
                     }
-                    if (user_mode)
-                        *user_mode = tmode;
-                    if (is_special  &&  special)
-                        *special |= fSetUID;
-                    have_user = true;
-                    break;
-                case 'g':
-                    if (have_group) {
-                        CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
-                        return false;
-                    }
-                    if (group_mode)
-                        *group_mode = tmode;
-                    if (is_special  &&  special)
-                        *special |= fSetGID;
-                    have_group = true;
-                    break;
-                case 'o':
-                    if (have_other) {
-                        CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
-                        return false;
-                    }
-                    if (other_mode)
-                        *other_mode = tmode;
-                    if (is_special  &&  special)
-                        *special |= fSticky;
-                    have_other = true;
-                    break;
-                case 'a':
-                    if (is_special || have_user || have_group || have_other) {
-                        CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
-                        return false;
-                    }
-                    have_user  = true;
-                    have_group = true;
-                    have_other = true;
-                    if (user_mode)
-                        *user_mode = tmode;
-                    if (group_mode)
-                        *group_mode = tmode;
-                    if (other_mode)
-                        *other_mode = tmode;
-                    break;
-                default:
-                    CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
-                    return false;
                 }
             }
         }
+
     }
     return true;
 }

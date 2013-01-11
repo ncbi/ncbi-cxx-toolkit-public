@@ -425,69 +425,80 @@ static void s_TEST_MatchesMask(void)
 
 struct SStrToModeTest
 {
-    const char* str;                     // string to convert
-    const char* str_default;             // string in default format (octal)
-    CDirEntry::EModeStringFormat fmt;    // 'str' format 
     CDirEntry::TSpecialModeBits special; // special bits
     CDirEntry::TMode user;               // user permissions
     CDirEntry::TMode group;              // group permissions
     CDirEntry::TMode other;              // other permissions
+    const char* str_list;                // eModeFormat_List (check string is the same)
+    const char* str_octal;               // eModeFormat_Octal
+    const char* str_octal_check;         // eModeFormat_Octal check string
+    const char* str_symbolic;            // eModeFormat_Symbolic
+    const char* str_symbolic_check;      // eModeFormat_Symbolic check string
 };
 
 static const SStrToModeTest s_StrToMode[] = {
-    { "775",              "775",  CDirEntry::eModeFormat_Octal,    0, 7,7,5 },
-    { "642",              "642",  CDirEntry::eModeFormat_Octal,    0, 6,4,2 },
-    { "042",              "042",  CDirEntry::eModeFormat_Octal,    0, 0,4,2 },
-    { "42",               "042",  CDirEntry::eModeFormat_Octal,    0, 0,4,2 },
-    { "1",                "001",  CDirEntry::eModeFormat_Octal,    0, 0,0,1 },
-    { "1775",            "1775",  CDirEntry::eModeFormat_Octal,    1, 7,7,5 },
-    { "4775",            "4775",  CDirEntry::eModeFormat_Octal,    4, 7,7,5 },
-    { "7775",            "7775",  CDirEntry::eModeFormat_Octal,    7, 7,7,5 },
-    { "u=rws",           "4700",  CDirEntry::eModeFormat_Symbolic, 4, 7,0,0 },
-    { "u=rwS",           "4600",  CDirEntry::eModeFormat_Symbolic, 4, 6,0,0 },
-    { "g=rws",           "2070",  CDirEntry::eModeFormat_Symbolic, 2, 0,7,0 },
-    { "g=rwS",           "2060",  CDirEntry::eModeFormat_Symbolic, 2, 0,6,0 },
-    { "o=rt",            "1005",  CDirEntry::eModeFormat_Symbolic, 1, 0,0,5 },
-    { "o=rT",            "1004",  CDirEntry::eModeFormat_Symbolic, 1, 0,0,4 },
-    { "u=rwx",            "700",  CDirEntry::eModeFormat_Symbolic, 0, 7,0,0 },
-    { "g=wx",             "030",  CDirEntry::eModeFormat_Symbolic, 0, 0,3,0 },
-    { "u=rwx,o=x",        "701",  CDirEntry::eModeFormat_Symbolic, 0, 7,0,1 },
-    { "a=rwx",            "777",  CDirEntry::eModeFormat_Symbolic, 0, 7,7,7 },
-    { "go=rw",            "066",  CDirEntry::eModeFormat_Symbolic, 0, 0,6,6 },
-    { "u=rwx,g=rx,o=r",   "754",  CDirEntry::eModeFormat_Symbolic, 0, 7,5,4 },
-    { "u=rwx,g=,o=rx",    "705",  CDirEntry::eModeFormat_Symbolic, 0, 7,0,5 },
-    { "u=rw,go=r",        "644",  CDirEntry::eModeFormat_Symbolic, 0, 6,4,4 },
-    { "u=rws,g=rS,o=t",  "7741",  CDirEntry::eModeFormat_Symbolic, 7, 7,4,1 },
-    { NULL, NULL, CDirEntry::eModeFormat_Default, 0, 0, 0 }
+    // mode    list           octal  octal_c   symbolic             symbolic check
+    { 0,0,0,1, "--------x",     "1",   "001",  "o=x",               "u=,g=,o=x"         },
+    { 0,0,3,0, "----wx---",    "30",   "030",  "g=wx",              "u=,g=wx,o="        },
+    { 0,0,6,6, "---rw-rw-",    "66",   "066",  "go=rw",             "u=,g=rw,o=rw"      },
+    { 0,0,4,2, "---r---w-",    "42",   "042",  "g=r,o=w",           "u=,g=r,o=w"        },
+    { 0,6,4,2, "rw-r---w-",  "0642",   "642",  "u=rw,g=r,o=w",      "u=rw,g=r,o=w"      },
+    { 0,6,4,4, "rw-r--r--",   "644",   "644",  "u=rw,go=r",         "u=rw,g=r,o=r"      },
+    { 0,7,7,7, "rwxrwxrwx",   "777",   "777",  "u=rwx,g=rwx,o=rwx", "u=rwx,g=rwx,o=rwx" },
+    { 0,7,7,5, "rwxrwxr-x",   "775",   "775",  "ug=rwx,o=rx",       "u=rwx,g=rwx,o=rx"  },
+    { 0,7,0,0, "rwx------",   "700",   "700",  "u=rwx",             "u=rwx,g=,o="       },
+    { 0,7,0,1, "rwx-----x",   "701",   "701",  "u=rwx,o=x",         "u=rwx,g=,o=x"      },
+    { 0,7,0,5, "rwx---r-x",   "705",   "705",  "u=rwx,o=rx",        "u=rwx,g=,o=rx"     },
+    { 0,7,5,4, "rwxr-xr--",   "754",   "754",  "u=rwx,g=rx,o=r",    "u=rwx,g=rx,o=r"    },
+    { 1,7,7,5, "rwxrwxr-t",  "1775",  "1775",  "ug=rwx,o=rt",       "u=rwx,g=rwx,o=rt"  },
+    { 4,7,7,5, "rwsrwxr-x",  "4775",  "4775",  "u=rws,g=rwx,o=rx",  "u=rws,g=rwx,o=rx"  },
+    { 7,7,7,5, "rwsrwsr-t",  "7775",  "7775",  "ug=rws,o=rt",       "u=rws,g=rws,o=rt"  },
+    { 4,7,0,0, "rws------",  "4700",  "4700",  "u=rws",             "u=rws,g=,o="       },
+    { 4,6,0,0, "rwS------",  "4600",  "4600",  "u=rwS",             "u=rwS,g=,o="       },
+    { 2,0,7,0, "---rws---",  "2070",  "2070",  "g=rws",             "u=,g=rws,o="       },
+    { 2,0,6,0, "---rwS---",  "2060",  "2060",  "g=rwS",             "u=,g=rwS,o="       },
+    { 1,0,0,5, "------r-t",  "1005",  "1005",  "o=rt",              "u=,g=,o=rt"        },
+    { 1,0,0,4, "------r-T",  "1004",  "1004",  "o=rT",              "u=,g=,o=rT"        },
+    { 7,7,4,1, "rwsr-S--t",  "7741",  "7741",  "u=rws,g=rS,o=t",    "u=rws,g=rS,o=t"    },
+    { 0, 0, 0, NULL, NULL, NULL, NULL, NULL  }
 };
 
 static void s_TEST_StrToMode(void)
 {
-    for (int i = 0; s_StrToMode[i].str; ++i) {
+    for (int i = 0; s_StrToMode[i].str_list; ++i) {
         SStrToModeTest test = s_StrToMode[i];
-        CDirEntry::TMode u1, g1, o1, s1;
-        CDirEntry::TMode u2, g2, o2, s2;
-        string s;
-
-        assert(CDirEntry::StringToMode(test.str, &u1, &g1, &o1, &s1));
-        assert(test.user    == u1);
-        assert(test.group   == g1);
-        assert(test.other   == o1);
-        assert(test.special == s1);
-        s = CDirEntry::ModeToString(u1, g1, o1, s1);
-        assert(s == test.str_default);
-        if (test.fmt == CDirEntry::eModeFormat_Octal) {
-            s = CDirEntry::ModeToString(u1, g1, o1, s1, CDirEntry::eModeFormat_Symbolic);
-            assert(CDirEntry::StringToMode(s, &u2, &g2, &o2, &s2));
-        } else {
-            s = CDirEntry::ModeToString(u1, g1, o1, s1, CDirEntry::eModeFormat_Octal);
-            assert(CDirEntry::StringToMode(s, &u2, &g2, &o2, &s2));
-
-        }
-        assert(test.user    == u2);
-        assert(test.group   == g2);
-        assert(test.other   == o2);
-        assert(test.special == s2);
+        CDirEntry::TMode u, g, o, s;
+        string str;
+        // Octal (default)
+        {{
+            assert(CDirEntry::StringToMode(test.str_octal, &u, &g, &o, &s));
+            assert(test.user    == u);
+            assert(test.group   == g);
+            assert(test.other   == o);
+            assert(test.special == s);
+            str = CDirEntry::ModeToString(u, g, o, s /*, CDirEntry::eModeFormat_Octal*/);
+            assert(str == test.str_octal_check);
+        }}
+        // List
+        {{
+            assert(CDirEntry::StringToMode(test.str_octal, &u, &g, &o, &s));
+            assert(test.user    == u);
+            assert(test.group   == g);
+            assert(test.other   == o);
+            assert(test.special == s);
+            str = CDirEntry::ModeToString(u, g, o, s, CDirEntry::eModeFormat_List);
+            assert(str == test.str_list);
+        }}
+        // Symbolic
+        {{
+            assert(CDirEntry::StringToMode(test.str_symbolic, &u, &g, &o, &s));
+            assert(test.user    == u);
+            assert(test.group   == g);
+            assert(test.other   == o);
+            assert(test.special == s);
+            str = CDirEntry::ModeToString(u, g, o, s, CDirEntry::eModeFormat_Symbolic);
+            assert(str == test.str_symbolic_check);
+        }}
     }
 }
 
