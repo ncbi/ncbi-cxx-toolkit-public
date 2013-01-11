@@ -959,7 +959,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     // we want status request to be fast, skip version control
     if ((extra.processor != &CNetScheduleHandler::x_ProcessStatus) &&
         (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusS) &&
-        (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusW))
+        (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusW) &&
+        (extra.processor != &CNetScheduleHandler::x_ProcessVersion))
         if (!m_ClientId.CheckVersion(queue_ptr)) {
             x_SetCmdRequestStatus(eStatus_BadRequest);
             if (x_WriteMessage("ERR:eInvalidClientOrVersion:") == eIO_Success)
@@ -2250,13 +2251,15 @@ void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
 
 void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 {
-    x_WriteMessage("OK:server_version=" NETSCHEDULED_VERSION
-                   "&storage_version=" NETSCHEDULED_STORAGE_VERSION
-                   "&protocol_version=" NETSCHEDULED_PROTOCOL_VERSION
-                   "&build_date=" + NStr::URLEncode(NETSCHEDULED_BUILD_DATE) +
-                   "&ns_node=" + m_Server->GetNodeID() +
-                   "&ns_session=" + m_Server->GetSessionID() +
-                   "&pid=" + NStr::NumericToString(CDiagContext::GetPID()));
+    static string  reply =
+                    "OK:server_version=" NETSCHEDULED_VERSION
+                    "&storage_version=" NETSCHEDULED_STORAGE_VERSION
+                    "&protocol_version=" NETSCHEDULED_PROTOCOL_VERSION
+                    "&build_date=" + NStr::URLEncode(NETSCHEDULED_BUILD_DATE) +
+                    "&ns_node=" + m_Server->GetNodeID() +
+                    "&ns_session=" + m_Server->GetSessionID() +
+                    "&pid=" + NStr::NumericToString(CDiagContext::GetPID());
+    x_WriteMessage(reply);
     x_PrintCmdRequestStop();
 }
 
