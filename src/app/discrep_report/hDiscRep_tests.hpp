@@ -224,24 +224,28 @@ namespace DiscRepNmSpc {
       void RmvChar (string& in_out_str, string rm_chars);
 
       static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat, prot_feat;
-      static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat, rbs_feat;
-      static vector <const CSeq_feat*> biosrc_subsrc_feat, repeat_region_feat, D_loop_feat;
-      static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
-      static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat,org_orgmod_feat;
+      static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat;
+      static vector <const CSeq_feat*> rbs_feat, biosrc_subsrc_feat, repeat_region_feat;
+      static vector <const CSeq_feat*> D_loop_feat, rna_not_mrna_feat, intron_feat;
+      static vector <const CSeq_feat*> all_feat, non_prot_feat, rrna_feat, miscfeat_feat;
+      static vector <const CSeq_feat*> otherRna_feat,org_orgmod_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
       static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
-      static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
-      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc, org_orgmod_seqdesc;
+      static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc;
+      static vector <const CSeqdesc*>  title_seqdesc, biosrc_orgmod_seqdesc;
+      static vector <const CSeqdesc*>  user_seqdesc, org_orgmod_seqdesc;
       static vector <const CSeqdesc*>  molinfo_seqdesc, biosrc_subsrc_seqdesc;
-      static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo, bioseq_title;
-      static vector <const CSeqdesc*>  bioseq_user, bioseq_genbank;
+      static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo;
+      static vector <const CSeqdesc*>  bioseq_title, bioseq_user, bioseq_genbank;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
-      static vector <const CSeq_entry*> biosrc_orgmod_seqdesc_seqentry, user_seqdesc_seqentry;
+      static vector <const CSeq_entry*> biosrc_orgmod_seqdesc_seqentry;
+      static vector <const CSeq_entry*> user_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_subsrc_seqdesc_seqentry;
-      static vector <const CSeq_entry*> molinfo_seqdesc_seqentry, org_orgmod_seqdesc_seqentry;
+      static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
+      static vector <const CSeq_entry*> org_orgmod_seqdesc_seqentry;
 
     protected:
       bool CommentHasPhrase(string comment, const string& phrase);
@@ -263,15 +267,23 @@ namespace DiscRepNmSpc {
       bool DoesStringContainPhrase(const string& str, const vector <string>& phrases, 
                             bool case_sensitive=true, bool whole_word=true);
 
-      string GetOrgModValue(const COrg_ref& org, COrgMod::ESubtype subtype);
-      string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
-      string GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype);
+      string Get1OrgModValue(const CBioSource& biosrc, const string& type_name);
+      void GetOrgModValues(const COrg_ref& org, COrgMod::ESubtype subtype, 
+                                                              vector <string>& strs);
+      void GetOrgModValues(const CBioSource& biosrc, const string& type_name, 
+                                                              vector <string>& strs);
+      void GetOrgModValues(const CBioSource& biosrc, COrgMod::ESubtype subtype,
+                                                              vector <string>& strs);
       bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
-      string GetSubSrcValue(const CBioSource& biosrc, CSubSource::ESubtype subtype);
-      string GetSubSrcValue(const CBioSource& biosrc, const string& type_name);
+      string Get1SubSrcValue(const CBioSource& biosrc, const string& type_name);
+      void GetSubSrcValues(const CBioSource& biosrc, CSubSource::ESubtype subtype,
+                                                              vector <string>& strs);
+      void GetSubSrcValues(const CBioSource& biosrc, const string& type_name,
+                                                              vector <string>& strs);
       bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
       string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name,
                                             bool is_subsrc = false);
+      bool AllVecElesSame(const vector <string> arr);
   };
 
 

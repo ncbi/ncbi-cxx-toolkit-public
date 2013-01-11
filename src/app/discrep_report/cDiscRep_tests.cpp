@@ -7035,8 +7035,9 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
 {
  string ret_str(kEmptyStr);
  // DoesStringMatchConstraint missing
- if (is_subsrc) ret_str = GetSubSrcValue(biosrc, qual_name);
- else if (qual_name == "location") ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
+ if (is_subsrc) ret_str = Get1SubSrcValue(biosrc, qual_name);
+ else if (qual_name == "location") 
+            ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
  else if (qual_name == "taxname") 
             ret_str = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
  else if (qual_name == "common_name") 
@@ -7094,7 +7095,7 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
      if ( !ret_str.empty() ) break;
    }
  }
- else ret_str = GetOrgModValue(biosrc, qual_name);
+ else ret_str = Get1OrgModValue(biosrc, qual_name);
  
  return (ret_str);
 };
@@ -7728,9 +7729,15 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
      thisInfo.test_item_list[GetName_mcul()].push_back(desc + " " + cul_vlus);
 
   // DISC_HUMAN_HOST
-  if ( DoesStringContainPhrase(
-                 GetOrgModValue(biosrc, COrgMod::eSubtype_nat_host), "human", false, true))
-     thisInfo.test_item_list[GetName_human()].push_back(desc); 
+  vector <string> arr;
+  GetOrgModValues(biosrc, COrgMod::eSubtype_nat_host, arr);
+  ITERATE (vector <string>, it, arr) {
+    if ( DoesStringContainPhrase(*it, "human", false, true) ) {
+         thisInfo.test_item_list[GetName_human()].push_back(desc); 
+         break;
+    }
+  }
+  arr.clear();
 
   // TEST_UNNECESSARY_ENVIRONMENTAL
   if (has_tax && HasUnnecessaryEnvironmental(biosrc))
@@ -7745,12 +7752,13 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
 bool CSeqEntry_test_on_biosrc_orgmod :: AmpPrimersNoEnvSample(const CBioSource& biosrc)
 {
    string note("amplified with species-specific primers");
+   vector <string> arr;
    if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_environmental_sample)) return false;
-   if (NStr::FindNoCase(GetSubSrcValue(biosrc, CSubSource::eSubtype_other), note)  
-               != string::npos
-        || NStr::FindNoCase(GetOrgModValue(biosrc, COrgMod::eSubtype_other), note)
-                 != string::npos)
-      return true;
+   GetSubSrcValues(biosrc, CSubSource::eSubtype_other, arr);
+   GetOrgModValues(biosrc, COrgMod::eSubtype_other, arr);
+   ITERATE (vector <string>, it, arr)
+      if (NStr::FindNoCase(*it, note) != string::npos) return true;
+
    return false;                     
 };
 
@@ -7768,17 +7776,22 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasUnnecessaryEnvironmental(const CBioSo
 
    if (!biosrc.CanGetSubtype()) return false;
    found = IsSubSrcPresent(biosrc, CSubSource::eSubtype_environmental_sample);
-   if (NStr::FindNoCase( GetSubSrcValue(biosrc, CSubSource::eSubtype_other),
-                                "amplified with species-specific primers") != string::npos)
-        has_note = true;
+   vector <string> arr;
+   GetSubSrcValues(biosrc, CSubSource::eSubtype_other, arr);
+   ITERATE (vector <string>, it, arr)
+     if (NStr::FindNoCase(*it, "amplified with species-specific primers")!=string::npos){
+          has_note = true; break;
+     }
    has_metagenomic = IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic);
 
    if (!found || has_note) return false;
    strtmp = biosrc.GetTaxname();
    ITERATE (vector <string>, it, thisInfo.taxnm_env) 
        if (NStr::FindNoCase(strtmp, *it) != string::npos) return false;
-   if ( NStr::FindNoCase( GetSubSrcValue(biosrc, CSubSource::eSubtype_other),
-                                "amplified with species-specific primers") != string::npos)
+   arr.clear();
+   GetOrgModValues(biosrc, COrgMod::eSubtype_other, arr);
+   ITERATE (vector <string>, it, arr)
+     if ( NStr::FindNoCase(*it, "amplified with species-specific primers")!=string::npos)
              return false;
    return true;
 };
@@ -7828,16 +7841,20 @@ void CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION :: GetReport(CRef <CClickabl
 
 bool CSeqEntry_test_on_biosrc_orgmod :: DoAuthorityAndTaxnameConflict(const CBioSource& biosrc)
 {
-  string auty_str = GetOrgModValue(biosrc, COrgMod::eSubtype_authority);
-  if (auty_str.empty()) return false;
+  vector <string> auty_strs;
+  GetOrgModValues(biosrc, COrgMod::eSubtype_authority, auty_strs);
+  if (auty_strs.empty()) return false;
+
   strtmp = biosrc.GetTaxname();
   size_t pos = strtmp.find(' ');
   unsigned len;
   if (pos != string::npos) pos == strtmp.substr(pos).find(' ');
   if (pos == string::npos) len = strtmp.size();
   else len = pos;
-  if (auty_str.size() < len || auty_str.substr(0, len) == strtmp) return true;
-  else return false; 
+  ITERATE (vector <string>, it, auty_strs) {
+    if ( (*it).size() < len || (*it).substr(0, len) == strtmp) return true;
+  }
+  return false; 
 };
 
 
@@ -8217,14 +8234,18 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
        thisInfo.test_item_list[GetName_prim()].push_back(desc);
  
   // ONCALLER_COUNTRY_COLON
-  strtmp = GetSubSrcValue(biosrc, CSubSource::eSubtype_country);
-  if (!strtmp.empty()) {
-      vector <string> arr;
-      arr = NStr::Tokenize(strtmp, ":", arr);
-      if (arr.size() > 1) 
-         thisInfo.test_item_list[GetName_cty()].push_back(desc);
-      arr.clear();
+  vector <string> src_strs, arr;
+  GetSubSrcValues(biosrc, CSubSource::eSubtype_country, src_strs);
+  if (!src_strs.empty()) {
+      ITERATE (vector <string>, it, src_strs) {
+        arr.clear();
+        arr = NStr::Tokenize(*it, ":", arr);
+        if (arr.size() > 1) {
+            thisInfo.test_item_list[GetName_cty()].push_back(desc); break;
+        }
+      }
   }
+  arr.clear();
 };
 
 void CSeqEntry_ONCALLER_COUNTRY_COLON :: GetReport(CRef <CClickableItem>& c_item)
@@ -8300,8 +8321,10 @@ bool CSeqEntry_test_on_biosrc :: FindTrinomialWithoutQualifier(const CBioSource&
         tax_nm 
            = NStr::TruncateSpaces(tax_nm.substr(pos+ (it->second).size()), NStr::eTrunc_Begin);
         if (!tax_nm.empty()) {
-           strtmp = GetOrgModValue(biosrc, it->first);
-           if (tax_nm.substr(0, strtmp.size()) == strtmp) return true;
+           vector <string> arr;
+           GetOrgModValues(biosrc, it->first, arr);
+           ITERATE (vector <string>, jt, arr)
+             if (tax_nm.substr(0, (*jt).size()) == (*jt)) return true;
         } 
         break;
      } 
@@ -8803,15 +8826,19 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const COrg_ref& org)
 {
-   strtmp = GetOrgModValue(org, COrgMod::eSubtype_other);
+   vector <string> arr;
+   GetOrgModValues(org, COrgMod::eSubtype_other, arr);
    unsigned len;
-   if (!strtmp.empty()) {
-      ITERATE (vector <string>, it, thisInfo.strain_tax) {
-        len = (*it).size();
-        if (NStr::EqualNocase(strtmp.substr(0, len), *it)) {
-           strtmp = NStr::TruncateSpaces(strtmp.substr(len));
-           if (strtmp != org.GetTaxname()) return true;
-           break;
+   string tax_nm = org.GetTaxname();
+   if (!arr.empty()) {
+      ITERATE (vector <string>, iit, arr) {   
+        ITERATE (vector <string>, it, thisInfo.strain_tax) {
+          len = (*it).size();
+          if (NStr::EqualNocase((*iit).substr(0, len), *it)) {
+             strtmp = NStr::TruncateSpaces( (*iit).substr(len) );
+             if (strtmp != tax_nm) return true;
+             break;
+          }
         }
       }
    }
@@ -8887,6 +8914,7 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_
    all_taxnames_same = all_isolates_same = all_strains_same = true;
    unsigned i=0;
    string desc, desc_entry(GetDiscItemText(seq_entry));
+   vector <string> arr;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       const CBioSource& biosrc = (*it)->GetSource();
       desc = GetDiscItemText(**it, *biosrc_seqdesc_seqentry[i]);
@@ -8900,14 +8928,22 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_
          else if (desc != pre_taxname) all_taxnames_same = false;  
       }
       if (all_isolates_same) {
-         desc = GetOrgModValue(biosrc, COrgMod::eSubtype_isolate);
-         if (pre_isolate.empty() && !desc.empty()) pre_isolate = desc;
-         else if (desc != pre_isolate) all_isolates_same = false;
+         arr.clear();
+         GetOrgModValues(biosrc, COrgMod::eSubtype_isolate, arr);
+         all_isolates_same = AllVecElesSame(arr);
+         if (all_isolates_same) {
+           if (pre_isolate.empty() && !arr[0].empty()) pre_isolate = arr[0];
+           else if (arr[0] != pre_isolate) all_isolates_same = false;
+         }
       }
       if (all_strains_same) {
-         desc = GetOrgModValue(biosrc, COrgMod::eSubtype_strain);
-         if (pre_strain.empty() && !desc.empty()) pre_strain = desc;
-         else if (desc != pre_strain) all_strains_same = false;
+         arr.clear();
+         GetOrgModValues(biosrc, COrgMod::eSubtype_strain, arr);
+         all_strains_same = AllVecElesSame(arr);
+         if (all_strains_same) {
+            if (pre_strain.empty() && !arr[0].empty()) pre_strain = arr[0];
+            else if (arr[0] != pre_strain) all_strains_same = false;
+         }
       }
    }
  

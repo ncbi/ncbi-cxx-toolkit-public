@@ -149,18 +149,35 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
-string CTestAndRepData :: GetOrgModValue(const COrg_ref& org, COrgMod::ESubtype subtype)
+bool CTestAndRepData :: AllVecElesSame(const vector <string> arr)
 {
-   if (!org.IsSetOrgMod()) return kEmptyStr;
-   ITERATE (list <CRef <COrgMod> >, it, org.GetOrgname().GetMod() )
-      if ((*it)->GetSubtype() == subtype) return ((*it)->GetSubname());
-   return (kEmptyStr);
+    if (arr.size() > 1)
+        ITERATE (vector <string>, it, arr) if ( arr[0] != *it ) return false;
+
+    return true;
 };
 
-string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
+string CTestAndRepData :: Get1OrgModValue(const CBioSource& biosrc, const string& type_name)
 {
-   return (GetOrgModValue(biosrc.GetOrg(), 
-         (COrgMod::ESubtype)COrgMod::GetSubtypeValue(type_name, COrgMod::eVocabulary_insdc)));
+   vector <string> strs;
+   GetOrgModValues(biosrc, type_name, strs);
+   if (strs.empty()) return kEmptyStr;
+   else return strs[0];
+};
+
+
+void CTestAndRepData :: GetOrgModValues(const COrg_ref& org, COrgMod::ESubtype subtype, vector <string>& strs)
+{
+   if (!org.IsSetOrgMod()) return;
+   ITERATE (list <CRef <COrgMod> >, it, org.GetOrgname().GetMod() )
+      if ((*it)->GetSubtype() == subtype) strs.push_back((*it)->GetSubname());
+};
+
+void CTestAndRepData :: GetOrgModValues(const CBioSource& biosrc, const string& type_name, vector <string>& strs)
+{
+   GetOrgModValues(biosrc.GetOrg(), 
+    (COrgMod::ESubtype)COrgMod::GetSubtypeValue(type_name, COrgMod::eVocabulary_insdc),
+     strs);
 /*
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
       if ((*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) == type_name)
@@ -170,9 +187,9 @@ string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string&
 };
 
 
-string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype)
+void CTestAndRepData :: GetOrgModValues(const CBioSource& biosrc, COrgMod::ESubtype subtype, vector <string>& strs)
 {
-  return (GetOrgModValue(biosrc.GetOrg(), subtype));
+    GetOrgModValues(biosrc.GetOrg(), subtype, strs);
 };
 
 bool CTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype)
@@ -184,16 +201,25 @@ bool CTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubt
    return false;
 };
 
-
-string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, CSubSource::ESubtype subtype)
+string CTestAndRepData :: Get1SubSrcValue(const CBioSource& biosrc, const string& type_name)
 {
-   if (!biosrc.CanGetSubtype()) return kEmptyStr;
-   return (biosrc, CSubSource::GetSubtypeName(subtype, CSubSource::eVocabulary_insdc));
+   vector <string> strs;
+   GetSubSrcValues(biosrc, type_name, strs);
+   if (strs.empty()) return kEmptyStr;
+   else return strs[0];
 };
 
-string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)
+void CTestAndRepData :: GetSubSrcValues(const CBioSource& biosrc, CSubSource::ESubtype subtype, vector <string>& strs)
 {
-  if (!biosrc.CanGetSubtype()) return kEmptyStr;
+   if (!biosrc.CanGetSubtype()) return;
+   GetSubSrcValues (biosrc, 
+       CSubSource::GetSubtypeName(subtype, CSubSource::eVocabulary_insdc),
+       strs);
+};
+
+void CTestAndRepData :: GetSubSrcValues(const CBioSource& biosrc, const string& type_name, vector <string>& strs)
+{
+  if (!biosrc.CanGetSubtype()) return;
   ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
      int type = (*it)->GetSubtype();
      if ( (*it)->GetSubtypeName( type, CSubSource::eVocabulary_insdc) == type_name ) {
@@ -203,12 +229,11 @@ string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string&
                                  || type == CSubSource::eSubtype_metagenomic
                                  || type == CSubSource::eSubtype_environmental_sample
                                  || type == CSubSource::eSubtype_rearranged)) {
-           return ("TRUE");
+           strs.push_back("TRUE");
         }
-        else return (strtmp);
+        else strs.push_back(strtmp);
      }
   }
-  return (kEmptyStr);
 };
 
 
