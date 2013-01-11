@@ -1966,6 +1966,28 @@ void CQueueDataBase::PurgeWNodes(void)
 }
 
 
+void CQueueDataBase::PurgeBlacklistedJobs(void)
+{
+    static time_t       last_time = 0;
+    time_t              current_time = time(0);
+
+    // Run this check once in ten seconds
+    if (current_time - last_time < 10)
+        return;
+
+    last_time = current_time;
+
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->PurgeBlacklistedJobs();
+        if (x_CheckStopPurge())
+            break;
+    }
+}
+
+
 // Safely provides a queue at the given index
 CRef<CQueue>  CQueueDataBase::x_GetQueueAt(unsigned int  index)
 {

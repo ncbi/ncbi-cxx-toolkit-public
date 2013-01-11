@@ -315,6 +315,7 @@ public:
     unsigned int  PurgeAffinities(void);
     unsigned int  PurgeGroups(void);
     void          PurgeWNodes(time_t  current_time);
+    void          PurgeBlacklistedJobs(void);
 
     CBDB_FileCursor& GetEventsCursor();
 

@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 // Forward declaration
 class CQueue;
 class CNSAffinityRegistry;
+class CJobStatusTracker;
 
 
 // The CClientId serves two types of clients:
@@ -233,6 +234,8 @@ class CNSClient
         { return m_WaitAffinities.any(); }
         unsigned int  GetPeerAddress(void) const
         { return m_Addr; }
+
+        void  CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
 
     private:
         bool            m_Cleared;        // Set to true when CLRN is received

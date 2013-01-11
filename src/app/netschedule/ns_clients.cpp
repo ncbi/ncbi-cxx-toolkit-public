@@ -40,6 +40,7 @@
 #include "ns_queue.hpp"
 #include "queue_vc.hpp"
 #include "ns_affinity.hpp"
+#include "job_status.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -712,6 +713,28 @@ bool  CNSClient::ClearPreferredAffinities(void)
         return true;
     }
     return false;
+}
+
+
+void  CNSClient::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
+{
+    // Checks if jobs should be removed from a worker node blacklist
+    if (m_BlacklistLimits.size() == 0)
+        return;
+
+    vector<unsigned int>    to_be_removed;
+
+    for (map<unsigned int, time_t>::const_iterator k = m_BlacklistLimits.begin();
+         k != m_BlacklistLimits.end(); ++k) {
+        if (tracker.GetStatus(k->first) == CNetScheduleAPI::eJobNotFound)
+            to_be_removed.push_back(k->first);
+    }
+
+    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
+         j != to_be_removed.end(); ++j) {
+        m_BlacklistedJobs.set_bit(*j, false);
+        m_BlacklistLimits.erase(m_BlacklistLimits.find(*j));
+    }
 }
 
 

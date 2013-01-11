@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 
 class CQueue;
 class CNSAffinityRegistry;
+class CJobStatusTracker;
 
 
 // The CNSClientsRegistry serves all the queue clients.
@@ -126,6 +127,7 @@ class CNSClientsRegistry
         void SetBlacklistTimeout(time_t  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);
+        void CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients

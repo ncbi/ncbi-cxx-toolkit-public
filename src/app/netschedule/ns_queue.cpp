@@ -2790,6 +2790,12 @@ void  CQueue::PurgeWNodes(time_t  current_time)
 }
 
 
+void CQueue::PurgeBlacklistedJobs(void)
+{
+    m_ClientsRegistry.CheckBlacklistedJobsExisted(m_StatusTracker);
+}
+
+
 void CQueue::x_DeleteJobEvents(unsigned int  job_id)
 {
     try {

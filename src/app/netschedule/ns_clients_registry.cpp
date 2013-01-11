@@ -113,6 +113,17 @@ void CNSClientsRegistry::RegisterSocketWriteError(const CNSClientId &  client)
 }
 
 
+void
+CNSClientsRegistry::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
+{
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  k = m_Clients.begin();
+
+    for ( ; k != m_Clients.end(); ++k)
+        k->second.CheckBlacklistedJobsExisted(tracker);
+}
+
+
 // Updates the submitter job.
 // No need to check session id, it's done in Touch()
 void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,

@@ -146,6 +146,7 @@ public:
     void PurgeAffinities(void);
     void PurgeGroups(void);
     void PurgeWNodes(void);
+    void PurgeBlacklistedJobs(void);
 
     // Notify all listeners
     void NotifyListeners(void);
