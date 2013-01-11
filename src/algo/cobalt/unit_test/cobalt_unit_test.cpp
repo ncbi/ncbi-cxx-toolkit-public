@@ -1005,7 +1005,25 @@ BOOST_AUTO_TEST_CASE(TestTwoSequences)
     s_TestResults(*m_Aligner);
 }
 
+// Test for computing a large alignment for results of BLAST search, good
+// for testing alignments with large query clusters
+BOOST_AUTO_TEST_CASE(TestLargeAlignment)
+{
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*objmgr));
 
+    vector< CRef<CSeq_loc> > sequences;
+    BOOST_REQUIRE_EQUAL(ReadFastaQueries("data/large.fa", sequences, scope,
+                                         false), 0);
+
+    m_Options->SetUseQueryClusters(true);
+    CMultiAligner aligner(m_Options);
+    aligner.SetQueries(sequences, scope);
+
+    CMultiAligner::TStatus status = aligner.Run();
+    BOOST_CHECK(status == CMultiAligner::eSuccess);
+    s_TestResults(aligner);
+}
 
 void s_TestAlignmentFromMSAs(CRef<CSeq_align> result, CRef<CSeq_align> in_first,
                               CRef<CSeq_align> in_second)
