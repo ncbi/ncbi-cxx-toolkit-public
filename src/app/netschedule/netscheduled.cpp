@@ -144,8 +144,7 @@ void CNetScheduleDApp::Init(void)
 
     arg_desc->AddOptionalKey(kPidFileArgName, "File_Name",
                              "File to save NetSchedule process PID",
-                             CArgDescriptions::eOutputFile,
-                             CArgDescriptions::fPreOpen);
+                             CArgDescriptions::eOutputFile);
     arg_desc->AddFlag(kReinitArgName, "Recreate the storage directory.");
     arg_desc->AddFlag(kNodaemonArgName,
                       "Turn off daemonization of NetSchedule at the start.");
@@ -169,10 +168,28 @@ int CNetScheduleDApp::Run(void)
 
     // Check that the pidfile argument is really a file
     if (args[kPidFileArgName]) {
-        if (args[kPidFileArgName].AsString() == "-")
+        string      pid_file = args[kPidFileArgName].AsString();
+        if (pid_file == "-")
             NCBI_THROW(CNetScheduleException, eInvalidParameter,
                        "PID file cannot be standard output and only "
                        "file name is accepted.");
+        // Test writeability
+        if (access(pid_file.c_str(), F_OK) == 0) {
+            // File exists
+            if (access(pid_file.c_str(), W_OK) != 0)
+                NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                           "PID file is not writable.");
+        } else {
+            // File does not exist
+            FILE *  f = fopen(pid_file.c_str(), "w");
+            if (f == NULL)
+                NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                           "PID file is not writable.");
+            fclose(f);
+            // The startup may fail before the pid file should be created,
+            // so leave the fs in the state as before the test
+            remove(pid_file.c_str());
+        }
     }
 
     // [bdb] section
@@ -265,8 +282,15 @@ int CNetScheduleDApp::Run(void)
 
     // Save the process PID if PID is given
     if (args[kPidFileArgName]) {
-        args[kPidFileArgName].AsOutputFile() << CDiagContext::GetPID();
-        args[kPidFileArgName].CloseFile();
+        // Writability was tested at the beginning
+        string  pid_file = args[kPidFileArgName].AsString();
+        FILE *  f = fopen(pid_file.c_str(), "w");
+        if (f == NULL)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error opening pid file.");
+
+        fprintf(f, "%ld", CDiagContext::GetPID());
+        fclose(f);
     }
 
     qdb->RunExecutionWatcherThread(min_run_timeout);
