@@ -500,7 +500,7 @@ BlastHSPWriter*
 s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info)
 {
    BlastHSPWriter * writer = NULL;
-   BlastHSPBestHitData * data = NULL;
+   BlastHSPBestHitData data;
    BlastHSPBestHitParams * bh_param = params;
 
    /* best hit algo needs query_info */
@@ -519,9 +519,9 @@ s_BlastHSPBestHitNew(void* params, BlastQueryInfo* query_info)
 
    /* allocate for data structure */
    writer->data = malloc(sizeof(BlastHSPBestHitData));
-   data = writer->data;
-   data->params = params;
-   data->query_info = query_info;
+   data.params = params;
+   data.query_info = query_info;
+   memcpy(writer->data, &data, sizeof(data));
     
    return writer;
 }
@@ -576,7 +576,7 @@ BlastHSPPipe*
 s_BlastHSPBestHitPipeNew(void* params, BlastQueryInfo* query_info)
 {
    BlastHSPPipe * pipe = NULL;
-   BlastHSPBestHitData * data = NULL;
+   BlastHSPBestHitData data;
 
    /* best hit algo needs query_info */
    if (! query_info) return NULL;
@@ -590,9 +590,9 @@ s_BlastHSPBestHitPipeNew(void* params, BlastQueryInfo* query_info)
 
    /* allocate for data structure */
    pipe->data = malloc(sizeof(BlastHSPBestHitData));
-   data = pipe->data;
-   data->params = params;
-   data->query_info = query_info;
+   data.params = params;
+   data.query_info = query_info;
+   memcpy(pipe->data, &data, sizeof(data));
    pipe->next = NULL;
     
    return pipe;
