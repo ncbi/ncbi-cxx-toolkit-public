@@ -274,7 +274,7 @@ inline const CNcbiDiag& CNcbiDiag::operator<< (FIosManip manip) const
 
 
 inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
-    m_CompileInfo.SetLine(line);
+    m_CompileInfo.SetLine((int)line);
     return *this;
 }
 
