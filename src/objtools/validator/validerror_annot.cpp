@@ -42,6 +42,8 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 
+#include <objmgr/bioseq_ci.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
@@ -143,6 +145,24 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
     }
 }
 
+static bool x_IsEmblOrDdbjOnSet (const CSeq_id& id, CBioseq_set_Handle set)
+{
+    for (CBioseq_CI b_ci (set); b_ci; ++b_ci) {
+        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(b_ci->GetCompleteBioseq())) {
+            switch ( (*id_it)->Which() ) {
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                return true;
+            default:
+                break;
+            }
+        }
+    }
+    return false;
+}
+
 
 void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const CBioseq_set& set)
 {
@@ -156,6 +176,9 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
             if ((*feat_it)->IsSetLocation()) {
                 for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
+
+                    if (x_IsEmblOrDdbjOnSet(loc_it.GetSeq_id(), bssh)) return;
+
                     if (!IsBioseqWithIdInSet(loc_it.GetSeq_id(), bssh)) {
                         if (m_Imp.IsSmallGenomeSet()) {
                             m_Imp.IncrementSmallGenomeSetMisplacedCount();
