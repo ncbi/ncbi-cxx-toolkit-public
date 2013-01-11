@@ -64,46 +64,44 @@ bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
 void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h)
 {
    for (CSeqdesc_CI seqdesc_it(seq_entry_h, sel_seqdesc, 1); seqdesc_it; ++seqdesc_it) {
-         if (seqdesc_it->IsMolinfo()) {
+         const CSeq_entry* entry_pt = seq_entry_h.GetCompleteObject().GetPointer();
+         if (seqdesc_it->IsOrg()) {
+               if (seqdesc_it->GetOrg().IsSetOrgMod()) {
+                  CTestAndRepData :: org_orgmod_seqdesc.push_back( &(*seqdesc_it) );
+                  CTestAndRepData :: org_orgmod_seqdesc_seqentry.push_back(entry_pt);
+               }
+         }
+         else if (seqdesc_it->IsMolinfo()) {
                CTestAndRepData :: molinfo_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: molinfo_seqdesc_seqentry.push_back(
-                                                 seq_entry_h.GetCompleteObject().GetPointer());
+               CTestAndRepData :: molinfo_seqdesc_seqentry.push_back(entry_pt);
          }
          else if ( seqdesc_it->IsPub() ) {
                CTestAndRepData :: pub_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: pub_seqdesc_seqentry.push_back(
-                                                 seq_entry_h.GetCompleteObject().GetPointer());
+               CTestAndRepData :: pub_seqdesc_seqentry.push_back(entry_pt);
          }
          else if ( seqdesc_it->IsComment() ) {
                CTestAndRepData :: comm_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: comm_seqdesc_seqentry.push_back(
-                                                seq_entry_h.GetCompleteObject().GetPointer());
+               CTestAndRepData :: comm_seqdesc_seqentry.push_back(entry_pt);
          }
          else if ( seqdesc_it->IsSource() ) {
                CTestAndRepData :: biosrc_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: biosrc_seqdesc_seqentry.push_back(
-                                                seq_entry_h.GetCompleteObject().GetPointer());
-//               if ( CanGetOrgMod(seqdesc_it->GetSource()) ) {
+               CTestAndRepData :: biosrc_seqdesc_seqentry.push_back(entry_pt);
                if ( seqdesc_it->GetSource().IsSetOrgMod() ) {
                   CTestAndRepData :: biosrc_orgmod_seqdesc.push_back( &(*seqdesc_it) );
-                  CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.push_back(
-                                                seq_entry_h.GetCompleteObject().GetPointer());
+                  CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.push_back(entry_pt);
                }
                if ( seqdesc_it->GetSource().CanGetSubtype()) {
                   CTestAndRepData :: biosrc_subsrc_seqdesc.push_back( &(*seqdesc_it) );
-                  CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.push_back(
-                                                seq_entry_h.GetCompleteObject().GetPointer());
+                  CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.push_back(entry_pt);
                }
          }
          else if ( seqdesc_it->IsTitle() && seq_entry_h.IsSet()) {  // why IsSet()?
                CTestAndRepData :: title_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: title_seqdesc_seqentry.push_back(
-                                                 seq_entry_h.GetCompleteObject().GetPointer());
+               CTestAndRepData :: title_seqdesc_seqentry.push_back(entry_pt);
          }
          else if ( seqdesc_it->IsUser()) {
                CTestAndRepData :: user_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: user_seqdesc_seqentry.push_back(
-                                                seq_entry_h.GetCompleteObject().GetPointer());
+               CTestAndRepData :: user_seqdesc_seqentry.push_back(entry_pt);
          }
    }
    if (seq_entry_h.IsSet()) {
@@ -139,20 +137,27 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      CTestAndRepData::biosrc_feat.clear();
      CTestAndRepData::biosrc_orgmod_feat.clear();
      CTestAndRepData::biosrc_subsrc_feat.clear();
+     CTestAndRepData::org_orgmod_feat.clear();
 
      for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
         const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
         const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
-        if (seq_feat_dt.IsPub()) CTestAndRepData::pub_feat.push_back(&seq_feat);
-        else if (seq_feat_dt.IsBiosrc()) {
-            CTestAndRepData::biosrc_feat.push_back(&seq_feat);
-//            if ( CanGetOrgMod(seq_feat_dt.GetBiosrc()) ) 
-            if ( seq_feat_dt.GetBiosrc().IsSetOrgMod() ) 
-                CTestAndRepData::biosrc_orgmod_feat.push_back(&seq_feat);
-            if (seq_feat_dt.GetBiosrc().CanGetSubtype())
-                CTestAndRepData::biosrc_subsrc_feat.push_back(&seq_feat);
+        switch (seq_feat_dt.Which()) {
+           case CSeqFeatData::e_Org:
+                  if (seq_feat_dt.GetOrg().IsSetOrgMod()) 
+                     CTestAndRepData::org_orgmod_feat.push_back(&seq_feat); 
+                  break;
+           case CSeqFeatData::e_Pub: 
+                  CTestAndRepData::pub_feat.push_back(&seq_feat); break;
+           case CSeqFeatData::e_Biosrc:
+                  CTestAndRepData::biosrc_feat.push_back(&seq_feat);
+                  if ( seq_feat_dt.GetBiosrc().IsSetOrgMod() ) 
+                          CTestAndRepData::biosrc_orgmod_feat.push_back(&seq_feat);
+                  if (seq_feat_dt.GetBiosrc().CanGetSubtype())
+                           CTestAndRepData::biosrc_subsrc_feat.push_back(&seq_feat);
+                  break;
+           default: break;
         }
-        else NCBI_THROW(CException, eUnknown, "CheckSeqEntry failed");
      }
 
      CTestAndRepData :: molinfo_seqdesc.clear();
@@ -163,6 +168,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      CTestAndRepData :: biosrc_subsrc_seqdesc.clear();
      CTestAndRepData :: title_seqdesc.clear();
      CTestAndRepData :: user_seqdesc.clear();
+     CTestAndRepData :: org_orgmod_seqdesc.clear();
 
      CTestAndRepData :: molinfo_seqdesc_seqentry.clear();
      CTestAndRepData :: pub_seqdesc_seqentry.clear();
@@ -172,6 +178,8 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.clear();
      CTestAndRepData :: title_seqdesc_seqentry.clear();
      CTestAndRepData :: user_seqdesc_seqentry.clear();
+     CTestAndRepData :: org_orgmod_seqdesc_seqentry.clear();
+
      CollectSeqdescFromSeqEntry(seq_entry_h);
 
      GoTests(CRepConfig :: tests_on_SeqEntry_feat_desc, *seq_entry);
@@ -267,7 +275,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
         if (!(seq_feat_dt.IsProt())) CTestAndRepData::non_prot_feat.push_back(&seq_feat);
 
         switch (seq_feat_dt.Which()) {
-
           case CSeqFeatData::e_Biosrc:
                CTestAndRepData::bioseq_biosrc_feat.push_back(&seq_feat); break;
           case CSeqFeatData::e_Gene:
@@ -506,8 +513,8 @@ void CCheckingClass :: CollectRepData()
   GoGetRep(CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc);
 
 // clean
-  CTestAndRepData::pub_feat.clear();
-  CTestAndRepData::biosrc_feat.clear();
+  CTestAndRepData :: pub_feat.clear();
+  CTestAndRepData :: biosrc_feat.clear();
   CTestAndRepData :: pub_seqdesc.clear();
   CTestAndRepData :: biosrc_seqdesc.clear();
   CTestAndRepData :: title_seqdesc.clear();

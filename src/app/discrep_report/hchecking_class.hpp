@@ -83,6 +83,7 @@ namespace DiscRepNmSpc{
                 sel_seqdesc.push_back(CSeqdesc::e_Source);
                 sel_seqdesc.push_back(CSeqdesc::e_Title);
                 sel_seqdesc.push_back(CSeqdesc::e_User);
+                sel_seqdesc.push_back(CSeqdesc::e_Org);
 
                 sel_seqdesc_4_bioseq.reserve(10);
                 sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Source);
