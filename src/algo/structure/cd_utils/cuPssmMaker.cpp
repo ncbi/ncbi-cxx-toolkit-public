@@ -505,9 +505,8 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 	seqDescTitle += commaSpace;
 	seqDescTitle += m_cd->GetName();
 
-    //  If this is a consensus sequence, prepend the title to any comment.
-    //  Do this here in case there are no comments.
-    if (m_useConsensus && cdTitle.length() > 0) {
+    //  Prepend the title to any comment.  Do this here in case there are no comments.
+    if (cdTitle.length() > 0) {
         seqDescTitle += commaSpace + cdTitle + periodSpaceSpace;
     }
 
@@ -518,7 +517,7 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 	{
 		if ((*lit)->IsComment())
 		{
-            if (!m_useConsensus || cdTitle.length() == 0) {
+            if (cdTitle.length() == 0) {
                 seqDescTitle += commaSpace;
             }
 			seqDescTitle += (*lit)->GetComment();
