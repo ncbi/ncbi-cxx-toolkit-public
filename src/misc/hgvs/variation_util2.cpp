@@ -653,7 +653,8 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     }
 
 
-#if 0
+#if 1
+    //SNP-5148
     if(mapped_loc->IsNull() && p.GetLoc().GetId() && !p.GetLoc().IsEmpty()) {
         //If mapped to nothing, expand the loc and try again. The purpose is to know the seq-id of the 
         //neighborhood that we couldn't map to, so we can produce and Empty seq-loc that contains
@@ -662,13 +663,17 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
         loc1->SetInt().SetFrom() = loc1->GetInt().GetFrom() < 500 ? 0 : loc1->SetInt().GetFrom() - 500;
         loc1->SetInt().SetTo() += 500;
         CRef<CSeq_loc> tmp_mapped_loc = mapper.Map(*loc1);
+
         if(tmp_mapped_loc->GetId()) {
             mapped_loc->SetEmpty().Assign(*tmp_mapped_loc->GetId());
-
-            NcbiCerr << MSerial_AsnText << p << MSerial_AsnText << *mapped_loc << "\n\n";
         }
+ 
+   }
+    if(p2->GetLoc().IsEmpty()) {
+        p2->SetExceptions().push_back(CreateException("No mapping", CVariationException::eCode_no_mapping));
     }
 #endif
+
 
     p2->SetLoc(*mapped_loc);
     p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
