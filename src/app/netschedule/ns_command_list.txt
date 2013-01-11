@@ -1,5 +1,5 @@
 #
-# The file holds the list of NetSchedule server commands
+# The complete list of NetSchedule server commands
 #
 
 SHUTDOWN
