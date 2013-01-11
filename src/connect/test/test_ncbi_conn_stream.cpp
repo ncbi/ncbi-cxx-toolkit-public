@@ -243,6 +243,8 @@ int main(int argc, const char* argv[])
 
 
     LOG_POST("Test 2 of 9: FTP download");
+    if (rand() & 1)
+        flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
@@ -273,9 +275,9 @@ int main(int argc, const char* argv[])
     if (!size)
         ERR_POST(Fatal << "No file downloaded");
     if (n  &&  n != size + 1024)
-        ERR_POST(Fatal << "File size mismatch");
+        ERR_POST(Fatal << "File size mismatch: 1024+" << size << "<>" << n);
 
-    LOG_POST("Test 2 passed: 1024+" << size <<
+    LOG_POST("Test 2 passed: 1024+" << size << '=' << n <<
              " byte(s) downloaded via FTP\n");
 
 
@@ -292,6 +294,8 @@ int main(int argc, const char* argv[])
         ftpfile += start.AsString("YMDhms");
         ftpfile += ".tmp";
         // to use advanced xfer modes if available
+        if (rand() & 1)
+            flag |= fFTP_UncorkUpload;
         if (rand() & 1)
             flag |= fFTP_UseFeatures;
         if (rand() & 1)
