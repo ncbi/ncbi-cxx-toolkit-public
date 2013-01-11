@@ -227,12 +227,12 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat, rbs_feat;
       static vector <const CSeq_feat*> biosrc_subsrc_feat, repeat_region_feat, D_loop_feat;
       static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
-      static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat;
+      static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat,org_orgmod_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
       static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
-      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc;
+      static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, user_seqdesc, org_orgmod_seqdesc;
       static vector <const CSeqdesc*>  molinfo_seqdesc, biosrc_subsrc_seqdesc;
       static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo, bioseq_title;
       static vector <const CSeqdesc*>  bioseq_user, bioseq_genbank;
@@ -241,7 +241,7 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_orgmod_seqdesc_seqentry, user_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_subsrc_seqdesc_seqentry;
-      static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
+      static vector <const CSeq_entry*> molinfo_seqdesc_seqentry, org_orgmod_seqdesc_seqentry;
 
     protected:
       bool CommentHasPhrase(string comment, const string& phrase);
@@ -263,6 +263,7 @@ namespace DiscRepNmSpc {
       bool DoesStringContainPhrase(const string& str, const vector <string>& phrases, 
                             bool case_sensitive=true, bool whole_word=true);
 
+      string GetOrgModValue(const COrg_ref& org, COrgMod::ESubtype subtype);
       string GetOrgModValue(const CBioSource& biosrc, const string& type_name);
       string GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype);
       bool IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype);
@@ -1170,6 +1171,19 @@ namespace DiscRepNmSpc {
   };
 // new comb
 
+
+  class CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("ONCALLER_STRAIN_TAXNAME_CONFLICT");}
+
+    protected:
+      bool StrainConflictsTaxname(const COrg_ref& org);
+  };
 
   class CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM : public CSeqEntryTestAndRepData
   {

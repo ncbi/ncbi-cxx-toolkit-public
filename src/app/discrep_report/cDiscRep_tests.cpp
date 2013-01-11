@@ -4026,6 +4026,7 @@ void CSeqEntryTestAndRepData :: TestOnBiosrc(const CSeq_entry& seq_entry)
 };
 
 
+// change parent name to CSeqEntry_on_biosrc ::
 bool CSeqEntryTestAndRepData :: HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& biosrc)
 {
   if (biosrc.CanGetSubtype()) {
@@ -8112,12 +8113,9 @@ bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosr
    if (biosrc.IsSetTaxname()
          && NStr::FindNoCase(biosrc.GetTaxname(), "uncultured") != string::npos)
       needs_clone = true;
-   ITERATE (list < CRef <CSubSource> >, it, biosrc.GetSubtype()) {
-      if ((*it)->GetSubtype() == CSubSource :: eSubtype_environmental_sample
-            || (*it)->GetSubtype() == CSubSource :: eSubtype_clone) {
-         has_clone = true; break;
-      }
-   }
+   if (IsSubSrcPresent(biosrc, CSubSource :: eSubtype_environmental_sample)
+                     || IsSubSrcPresent(biosrc, CSubSource :: eSubtype_clone))
+         has_clone = true;
    if (needs_clone && !has_clone) {  // look for gel band isolate
      if (biosrc.IsSetOrgMod()) {
        ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
@@ -8802,6 +8800,69 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 // new method
 
+
+bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const COrg_ref& org)
+{
+   strtmp = GetOrgModValue(org, COrgMod::eSubtype_other);
+   unsigned len;
+   if (!strtmp.empty()) {
+      ITERATE (vector <string>, it, thisInfo.strain_tax) {
+        len = (*it).size();
+        if (NStr::EqualNocase(strtmp.substr(0, len), *it)) {
+           strtmp = NStr::TruncateSpaces(strtmp.substr(len));
+           if (strtmp != org.GetTaxname()) return true;
+           break;
+        }
+      }
+   }
+
+   return false;
+};
+
+
+void CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   bool has_tax;
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
+     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
+     has_tax = (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()) ? true : false;
+     if (has_tax && StrainConflictsTaxname(biosrc.GetOrg()))
+        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+   }
+
+   ITERATE (vector <const CSeq_feat*>, it, org_orgmod_feat) {
+      const COrg_ref& org = (*it)->GetData().GetOrg();
+      has_tax = (org.IsSetTaxname() && !org.GetTaxname().empty()) ? true : false;
+      if (has_tax && StrainConflictsTaxname(org))
+        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+   }
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
+     const CBioSource& biosrc = (*it)->GetSource();
+     has_tax = (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()) ? true : false;
+     if ( has_tax && StrainConflictsTaxname(biosrc.GetOrg()))
+         thisInfo.test_item_list[GetName()].push_back(
+                             GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i])));
+     i++;
+   };
+   
+   i=0;
+   ITERATE (vector <const CSeqdesc*>, it, org_orgmod_seqdesc) {
+     const COrg_ref& org = (*it)->GetOrg();
+     has_tax = (org.IsSetTaxname() && !org.GetTaxname().empty()) ? true : false;
+     if (StrainConflictsTaxname( org ))
+         thisInfo.test_item_list[GetName()].push_back(
+                             GetDiscItemText(**it, *(org_orgmod_seqdesc_seqentry[i])));
+     i++;
+   }
+};
+
+void CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "sequence") 
+                           + "conflicts between type strain and organism name.";
+};
 
 bool CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: HasSmallSeqset(const CSeq_entry& seq_entry)
 {

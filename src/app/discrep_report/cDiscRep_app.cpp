@@ -110,6 +110,7 @@ Str2Str	                                CDiscRepInfo :: srcqual_keywords;
 vector <string>                         CDiscRepInfo :: kIntergenicSpacerNames;
 vector <string>                         CDiscRepInfo :: taxnm_env;
 vector <string>                         CDiscRepInfo :: virus_lineage;
+vector <string>                         CDiscRepInfo :: strain_tax;
 
 void CDiscRepApp::Init(void)
 {
@@ -276,6 +277,10 @@ cerr << "222can get\n";
     // ini. of virus_lineage
     strtmp = reg.Get("StringVecIni", "VirusLineage");
     thisInfo.virus_lineage = NStr::Tokenize(strtmp, ",", thisInfo.virus_lineage); 
+
+    // ini. of strain_tax
+    strtmp = reg.Get("StringVecIni", "StrainsConflictTax");
+    thisInfo.strain_tax = NStr::Tokenize(strtmp, ",", thisInfo.strain_tax);
 }
 
 

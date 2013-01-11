@@ -118,6 +118,7 @@ vector <const CSeq_feat*> CTestAndRepData :: trna_feat;
 vector <const CSeq_feat*> CTestAndRepData :: bioseq_biosrc_feat;
 vector <const CSeq_feat*> CTestAndRepData :: repeat_region_feat;
 vector <const CSeq_feat*> CTestAndRepData :: D_loop_feat;
+vector <const CSeq_feat*> CTestAndRepData :: org_orgmod_feat;
 
 vector <const CSeqdesc*>  CTestAndRepData :: pub_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;
@@ -125,6 +126,7 @@ vector <const CSeqdesc*>  CTestAndRepData :: biosrc_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: biosrc_orgmod_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: biosrc_subsrc_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: molinfo_seqdesc;
+vector <const CSeqdesc*>  CTestAndRepData :: org_orgmod_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: title_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: user_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc_seqdesc;
@@ -141,25 +143,36 @@ vector <const CSeq_entry*>  CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: title_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: user_seqdesc_seqentry;
 vector <const CSeq_entry*>  CTestAndRepData :: molinfo_seqdesc_seqentry;
+vector <const CSeq_entry*>  CTestAndRepData :: org_orgmod_seqdesc_seqentry;
 
 static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
+string CTestAndRepData :: GetOrgModValue(const COrg_ref& org, COrgMod::ESubtype subtype)
+{
+   if (!org.IsSetOrgMod()) return kEmptyStr;
+   ITERATE (list <CRef <COrgMod> >, it, org.GetOrgname().GetMod() )
+      if ((*it)->GetSubtype() == subtype) return ((*it)->GetSubname());
+   return (kEmptyStr);
+};
+
 string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, const string& type_name)
 {
-   if (!biosrc.IsSetOrgMod()) return kEmptyStr;
+   return (GetOrgModValue(biosrc.GetOrg(), 
+         (COrgMod::ESubtype)COrgMod::GetSubtypeValue(type_name, COrgMod::eVocabulary_insdc)));
+/*
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
       if ((*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) == type_name)
                 return ((*it)->GetSubname());
    return (kEmptyStr);
+*/
 };
 
 
 string CTestAndRepData :: GetOrgModValue(const CBioSource& biosrc, COrgMod::ESubtype subtype)
 {
-  return (GetOrgModValue(biosrc,
-   (*biosrc.GetOrgname().GetMod().begin())->GetSubtypeName(subtype, COrgMod::eVocabulary_insdc)));
+  return (GetOrgModValue(biosrc.GetOrg(), subtype));
 };
 
 bool CTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubtype subtype)
@@ -175,8 +188,7 @@ bool CTestAndRepData :: IsOrgModPresent(const CBioSource& biosrc, COrgMod::ESubt
 string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, CSubSource::ESubtype subtype)
 {
    if (!biosrc.CanGetSubtype()) return kEmptyStr;
-   return (biosrc, 
-      (*biosrc.GetSubtype().begin())->GetSubtypeName( subtype, CSubSource::eVocabulary_insdc));
+   return (biosrc, CSubSource::GetSubtypeName(subtype, CSubSource::eVocabulary_insdc));
 };
 
 string CTestAndRepData :: GetSubSrcValue(const CBioSource& biosrc, const string& type_name)

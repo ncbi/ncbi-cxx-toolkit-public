@@ -171,6 +171,7 @@ namespace DiscRepNmSpc{
            static vector <string>                    kIntergenicSpacerNames;
            static vector <string>                    taxnm_env;
            static vector <string>                    virus_lineage;
+           static vector <string>                    strain_tax;
      };
 
 /*
