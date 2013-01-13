@@ -1038,9 +1038,9 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
     typedef vector< pair<string, int> > TStringIntVector;
     TStringIntVector accession_lengths;
     accession_lengths.push_back(make_pair(string("P01012.2"), 386));
-    accession_lengths.push_back(make_pair(string("1OVA-A"), 385));
+    accession_lengths.push_back(make_pair(string("1OVA-A"), 386));
     // Fails in entrez, we implemented regex for this in CBlastInputReader
-    accession_lengths.push_back(make_pair(string("pdb|1OVA-A"), 385));
+    accession_lengths.push_back(make_pair(string("pdb|1OVA-A"), 386));
     // Note the double bar..
     accession_lengths.push_back(make_pair(string("prf||0705172A"), 385));
     // Fails in entrez, we implemented regex for this in CBlastInputReader
@@ -1074,10 +1074,15 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
 
     for (size_t i = 0; i < kNumQueries; i++) {
 
-        //cout << "Accession: '" << accession_lengths[i].first << "'" << endl;
+        const string& accession = accession_lengths[i].first;
+        CNcbiOstrstream oss;
         blast::SSeqLoc& ssl = query_vector[i];
-        BOOST_REQUIRE_EQUAL((TSeqPos)accession_lengths[i].second - 1, 
-                    ssl.seqloc->GetInt().GetTo());
+        oss << "Accession " << accession << " difference in lengths: " 
+            << ((TSeqPos)accession_lengths[i].second - 1) << " vs. "
+            << ssl.seqloc->GetInt().GetTo(), accession;
+        string msg = CNcbiOstrstreamToString(oss);
+        BOOST_REQUIRE_MESSAGE(((TSeqPos)accession_lengths[i].second - 1) == 
+                    ssl.seqloc->GetInt().GetTo(), msg);
         BOOST_REQUIRE_EQUAL((int)eNa_strand_unknown, (int)ssl.seqloc->GetStrand());
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
         BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
