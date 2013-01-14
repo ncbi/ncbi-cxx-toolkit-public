@@ -8248,21 +8248,43 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   }
   arr.clear();
  
-/*
   // ONCALLER_DUPLICATE_PRIMER_SET
-  if (biosrc.CanGetPcr_primer()) {
-     const list <CRef <CPCRReaction> > pcr_ls = biosrc.GetPcr_primer().Get();
-     ITERATE (list <CRef <CPCRReaction> >, it, pcr_ls) {
-       if (it+1 != pcr_ls.end()) {
-          if (SamePCRReaction(**it, **(it+1)))
-              thisInfo.test_item_list[GetName_pcr()].push_back(desc);
-       }
+  if (biosrc.CanGetPcr_primers()) {
+     const list <CRef <CPCRReaction> > pcr_ls = biosrc.GetPcr_primers().Get();
+     list <CRef <CPCRReaction> > :: const_iterator it, jt;
+     it = jt = pcr_ls.begin();
+     for (jt; jt != pcr_ls.end(); jt++) {
+        if ( (it != jt) && SamePCRReaction(**it, **jt))
+           thisInfo.test_item_list[GetName_pcr()].push_back(desc);
      }
   }
-*/
 };
 
-/*
+void CSeqEntry_test_on_biosrc :: IniMap(const list <CRef <CPCRPrimer> >& ls, Str2Int& map)
+{
+   string pcr_str;
+   ITERATE (list <CRef <CPCRPrimer> >, it, ls) {
+     pcr_str = (*it)->CanGetSeq() ? (*it)->GetSeq() : kEmptyStr;
+     pcr_str = NStr::ToUpper(pcr_str) + "$";
+     strtmp = (*it)->CanGetName() ? (*it)->GetName() : kEmptyStr;
+     pcr_str += NStr::ToUpper(strtmp);
+     if (map.find(pcr_str) == map.end()) map[pcr_str] = 1;
+     else map[pcr_str] ++;
+   }
+};
+
+bool CSeqEntry_test_on_biosrc :: SamePrimerList(const list <CRef <CPCRPrimer> >& ls1,
+const list <CRef <CPCRPrimer> >& ls2)
+{
+   if ( (ls1.size() != ls2.size()) || ls1.empty()) return false;
+   Str2Int map1, map2;
+   IniMap(ls1, map1);
+   IniMap(ls2, map1);
+   if (map1.size() != map2.size()) return false;
+   if (map1 == map2) return true;
+   else return false;
+};
+
 bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2)
 {
   bool has_fwd1 = pcr1.CanGetForward()? true : false;
@@ -8273,13 +8295,19 @@ bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const
   if ((has_fwd1 != has_fwd2) || (has_rev1 != has_rev2) || (!has_fwd1 && !has_rev1)) 
             return false;
   if (has_fwd1) { 
-    const list <CRef <CPCRPrimer> >& fwd1 = pcr1.GetForward().Get();
-    const list <CRef <CPCRPrimer> >& fwd2 = pcr2.GetForward().Get();
-    if (fwd1.size() != fwd2.size() || fwd1.empty()) return false;
-   #### 
+    if (SamePrimerList(pcr1.GetForward().Get(), pcr2.GetForward().Get()))
+        return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
   }
+  else if (has_rev1)
+       return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+  else return false;
 };
-*/
+
+void CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetHasComment(c_item->item_list.size(), "BioSource") + "duplicate primer pairs.";
+};
 
 void CSeqEntry_ONCALLER_COUNTRY_COLON :: GetReport(CRef <CClickableItem>& c_item)
 {

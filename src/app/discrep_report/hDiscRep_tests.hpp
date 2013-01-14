@@ -1046,8 +1046,10 @@ namespace DiscRepNmSpc {
 
     protected:
       vector <string> m_submit_text;
-      string GetName_trin() const {return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
-      string GetName_iso() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
+      string GetName_trin() const {
+                      return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
+      string GetName_iso() const {
+                        return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
       string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
       string GetName_tbad () const {return string("TAX_LOOKUP_MISMATCH"); }
@@ -1062,9 +1064,15 @@ namespace DiscRepNmSpc {
       string GetName_sp() const {return string("TEST_SP_NOT_UNCULTURED");}
       string GetName_prim() const {return string("TEST_MISSING_PRIMER");}
       string GetName_cty() const {return string("ONCALLER_COUNTRY_COLON");}
+      string GetName_pcr() const {return string("ONCALLER_DUPLICATE_PRIMER_SET");}
 
+      void IniMap(const list <CRef <CPCRPrimer> >& ls, Str2Int& map);
+      bool SamePrimerList(const list <CRef <CPCRPrimer> >& ls1, 
+                                               const list <CRef <CPCRPrimer> >& ls2);
+      bool SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2);
       bool MissingPrimerValue(const CBioSource& biosrc);
-      void IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, bool& has_seq, bool& has_name);
+      void IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, 
+                                                  bool& has_seq, bool& has_name);
       bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
       void AddEukaryoticBioseqsToReport(const CBioseq_set& set);
@@ -1072,13 +1080,23 @@ namespace DiscRepNmSpc {
       bool IsBacterialIsolate(const CBioSource& biosrc);
       bool DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& biosrc);
-      void AddMissingViralQualsDiscrepancies(const CBioSource& biosrc, const string& desc);
+      void AddMissingViralQualsDiscrepancies(const CBioSource& biosrc, 
+                                                            const string& desc);
       bool HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, 
                                                          bool check_mul_nm_only = false);
       void GetSubmitText(const CAuth_list& authors);
       void FindSpecSubmitText();
 
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+  };
+
+  class CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_pcr();}
   };
 
   class CSeqEntry_ONCALLER_COUNTRY_COLON : public CSeqEntry_test_on_biosrc

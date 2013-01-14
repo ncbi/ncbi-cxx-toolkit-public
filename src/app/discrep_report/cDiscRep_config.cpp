@@ -423,7 +423,9 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_TEST_HAS_PROJECT_ID));
    tests_on_SeqEntry_feat_desc.push_back(
-                   CRef <CTestAndRepData>(new CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER));
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER));
+   tests_on_SeqEntry_feat_desc.push_back(
+                    CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COUNTRY_COLON));
    tests_on_SeqEntry_feat_desc.push_back(
@@ -433,23 +435,23 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOMIC));
    tests_on_SeqEntry_feat_desc.push_back(
-                         CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
+                    CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
-   tests_on_SeqEntry_feat_desc.push_back(
-         CRef <CTestAndRepData>(new CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE));
+   tests_on_SeqEntry_feat_desc.push_back( CRef <CTestAndRepData>(
+                         new CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE));
    tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL));
    tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DISC_HUMAN_HOST));
    tests_on_SeqEntry_feat_desc.push_back(
-                   CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION));
+             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CHECK_AUTHORITY));
    tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOME_SOURCE));
    tests_on_SeqEntry_feat_desc.push_back(
-                         CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIA_MISSING_STRAIN));
+                     CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIA_MISSING_STRAIN));
    tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_STRAIN));
    tests_on_SeqEntry_feat_desc.push_back(
