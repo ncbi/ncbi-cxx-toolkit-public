@@ -289,7 +289,7 @@ int CNetScheduleDApp::Run(void)
             NCBI_THROW(CNetScheduleException, eInternalError,
                        "Error opening pid file.");
 
-        fprintf(f, "%ld", CDiagContext::GetPID());
+        fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
         fclose(f);
     }
 
