@@ -1393,7 +1393,7 @@ class Scenario137( TestBase ):
 
         self.ns.shutdown()
         self.ns.resetPID()
-        time.sleep( 5 )
+        time.sleep( 10 )
         if self.ns.isRunning():
             raise Exception( "Cannot shutdown netschedule" )
 
