@@ -920,19 +920,13 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
                 orig_client_capabilities = m_ClientId.GetCapabilities();
                 orig_client_id = m_ClientId.GetID();
 
-                m_ClientId.ResetCapabilities();
+                m_ClientId.RemoveCapability(eNSAC_Worker | eNSAC_Submitter);
                 m_ClientId.AddCapability(eNSAC_Queue);
 
-                try {
-                    if (queue_ptr->IsWorkerAllowed(m_ClientId.GetAddress()))
-                        m_ClientId.AddCapability(eNSAC_Worker);
-                    if (queue_ptr->IsSubmitAllowed(m_ClientId.GetAddress()))
-                        m_ClientId.AddCapability(eNSAC_Submitter);
-                } catch (...) {
-                    m_ClientId.SetCapabilities(orig_client_capabilities);
-                    m_ClientId.SetID(orig_client_id);
-                    throw;
-                }
+                if (queue_ptr->IsWorkerAllowed(m_ClientId.GetAddress()))
+                    m_ClientId.AddCapability(eNSAC_Worker);
+                if (queue_ptr->IsSubmitAllowed(m_ClientId.GetAddress()))
+                    m_ClientId.AddCapability(eNSAC_Submitter);
             }
         } else {
             // Old fasion way - the queue comes from handshake
@@ -2332,10 +2326,13 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
 
     // Here: connecting to another queue
 
-    CRef<CQueue>    queue;
+    CRef<CQueue>    queue_ref;
+    CQueue *        queue_ptr = NULL;
 
+    // First, deal with the given queue - try to resolve it
     try {
-        queue = m_Server->OpenQueue(m_CommandArguments.qname);
+        queue_ref.Reset(m_Server->OpenQueue(m_CommandArguments.qname));
+        queue_ptr = queue_ref.GetPointer();
     }
     catch (...) {
         x_SetCmdRequestStatus(eStatus_BadRequest);
@@ -2344,14 +2341,28 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
         return;
     }
 
-    m_QueueRef.Reset(queue);
-    m_QueueName = m_CommandArguments.qname;
-
+    // Second, update the client with its capabilities for the new queue
+    m_ClientId.RemoveCapability(eNSAC_Worker | eNSAC_Submitter);
     m_ClientId.AddCapability(eNSAC_Queue);
-    if (queue->IsWorkerAllowed(m_ClientId.GetAddress()))
+
+    if (queue_ptr->IsWorkerAllowed(m_ClientId.GetAddress()))
         m_ClientId.AddCapability(eNSAC_Worker);
-    if (queue->IsSubmitAllowed(m_ClientId.GetAddress()))
+    if (queue_ptr->IsSubmitAllowed(m_ClientId.GetAddress()))
         m_ClientId.AddCapability(eNSAC_Submitter);
+
+    // Note:
+    // The  m_ClientId.CheckAccess(...) call will take place when a command
+    // for the changed queue is executed.
+
+
+    // The client has appeared for the queue
+    queue_ptr->TouchClientsRegistry(m_ClientId);
+
+
+    // Final step - update the current queue reference
+
+    m_QueueRef.Reset(queue_ref);
+    m_QueueName = m_CommandArguments.qname;
 
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
