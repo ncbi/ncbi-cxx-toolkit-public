@@ -312,6 +312,9 @@ fi
 # Valgrind configuration
 VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
 VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
+if valgrind --ncbi --help >/dev/null 2>&1; then                                
+    VALGRIND_CMD="--ncbi \$VALGRIND_CMD" # --ncbi must be the first option!
+fi                                                                             
 
 # Export some global vars
 top_srcdir="\$root_dir"
