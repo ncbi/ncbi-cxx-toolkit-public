@@ -281,43 +281,33 @@ bool CAltSplice::IsAlternative(const CGeneModel& a) const
             return true;
     }
 
-    /*
-    int la = 0;
-    int lg = 0;
-    int lc = 0;
-    for(unsigned int j = 0; j < front().Exons().size(); ++j) {
-        lg += front().Exons()[j].Limits().GetLength();
-    }
-    for(unsigned int i = 0; i < a.Exons().size(); ++i) {
-        la += a.Exons()[i].Limits().GetLength();
-        for(unsigned int j = 0; j < front().Exons().size(); ++j) {
-            lc += (a.Exons()[i].Limits() & front().Exons()[j].Limits()).GetLength();
-        }
-    }
-        
-    if(lc > 0.5*min(la,lg))        // has common mrna
-        return true;
-    */
-
-    if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) {    
-        TIVec acds_map;
-        acds_map.reserve(a.RealCdsLen());
+    if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) { 
+        CAlignMap amap(a.Exons(), a.FrameShifts(), a.Strand(), a.GetCdsInfo().Cds());
+        TIVec acds_map(amap.FShiftedLen(a.GetCdsInfo().Cds()),0);
         for(unsigned int j = 0; j < a.Exons().size(); ++j) {
-            for(TSignedSeqPos k = max(a.Exons()[j].GetFrom(),a.ReadingFrame().GetFrom()); k <= min(a.Exons()[j].GetTo(),a.ReadingFrame().GetTo()); ++k)
-                acds_map.push_back(k);
+            for(TSignedSeqPos k = max(a.Exons()[j].GetFrom(),a.GetCdsInfo().Cds().GetFrom()); k <= min(a.Exons()[j].GetTo(),a.GetCdsInfo().Cds().GetTo()); ++k) {
+                TSignedSeqPos p =  amap.MapOrigToEdited(k);
+                _ASSERT(p < (int)acds_map.size());
+                if(p >= 0)
+                    acds_map[p] = k;
+            }
         }
     
         ITERATE(CAltSplice, it, *this) {
-            TIVec cds_map;
-            cds_map.reserve((*it)->RealCdsLen());
+            CAlignMap gmap((*it)->Exons(), (*it)->FrameShifts(), (*it)->Strand(), (*it)->GetCdsInfo().Cds());
+            TIVec cds_map(gmap.FShiftedLen((*it)->GetCdsInfo().Cds()),0);
             for(unsigned int j = 0; j < (*it)->Exons().size(); ++j) {
-                for(TSignedSeqPos k = max((*it)->Exons()[j].GetFrom(),(*it)->ReadingFrame().GetFrom()); k <= min((*it)->Exons()[j].GetTo(),(*it)->ReadingFrame().GetTo()); ++k)
-                    cds_map.push_back(k);
+                for(TSignedSeqPos k = max((*it)->Exons()[j].GetFrom(),(*it)->GetCdsInfo().Cds().GetFrom()); k <= min((*it)->Exons()[j].GetTo(),(*it)->GetCdsInfo().Cds().GetTo()); ++k) {
+                    TSignedSeqPos p =  gmap.MapOrigToEdited(k);
+                    _ASSERT(p < (int)cds_map.size());
+                    if(p >= 0)
+                        cds_map[p] = k;
+                }
             }
         
             for(unsigned int i = 0; i < acds_map.size(); ) {
                 unsigned int j = 0;
-                for( ; j < cds_map.size() && acds_map[i] != cds_map[j]; ++j);
+                for( ; j < cds_map.size() && (acds_map[i] != cds_map[j] || i%3 != j%3); ++j);
                 if(j == cds_map.size()) {
                     ++i;
                     continue;
@@ -338,6 +328,12 @@ bool CAltSplice::IsAlternative(const CGeneModel& a) const
 bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tolerance)
 {
     if(a.Strand() != b.Strand() || !a.ReadingFrame().IntersectingWith(b.ReadingFrame())) return false;
+
+    if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().NotEmpty() && a.Exons().size() == 1 && b.Exons().size()==1) {         // both coding; reading frames intersecting
+        int common_point = (a.ReadingFrame() & b.ReadingFrame()).GetFrom();
+        if(a.FShiftedLen(a.ReadingFrame().GetFrom(),common_point,false)%3 != b.FShiftedLen(b.ReadingFrame().GetFrom(),common_point,false)%3)  // different frames
+            return false;
+    }
 
     TSignedSeqRange intersection = a.Limits() & b.Limits();
     TSignedSeqPos mutual_min = intersection.GetFrom();
@@ -531,37 +527,24 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
 {
     TSignedSeqRange gene_lim_with_margins( gene.Limits().GetFrom() - minIntergenic, gene.Limits().GetTo() + minIntergenic );
     TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front()->CompleteCds()) ? gene.RealCdsLimits() : gene.front()->MaxCdsLimits();
-    TSignedSeqRange gene_cds_with_margins;
-    if(gene_cds.NotEmpty())
-        gene_cds_with_margins = TSignedSeqRange( gene_cds.GetFrom() - minIntergenic, gene_cds.GetTo() + minIntergenic );
     bool gene_good_enough_to_be_annotation = allow_partialalts || gene.front()->GoodEnoughToBeAnnotation(); 
+    TSignedSeqRange gene_lim_for_nested = gene_cds.Empty() ? gene.Limits() : gene_cds;
 
     TSignedSeqRange algn_lim = algn.Limits();
-    TSignedSeqRange algn_lim_with_margins(algn_lim.GetFrom() - minIntergenic, algn_lim.GetTo() + minIntergenic );
+    //    TSignedSeqRange algn_lim_with_margins(algn_lim.GetFrom() - minIntergenic, algn_lim.GetTo() + minIntergenic );
     TSignedSeqRange algn_cds = algn.CompleteCds() ? algn.RealCdsLimits() : algn.MaxCdsLimits();
-    TSignedSeqRange algn_cds_with_margins;
-    if(algn_cds.NotEmpty())
-        algn_cds_with_margins = TSignedSeqRange( algn_cds.GetFrom() - minIntergenic, algn_cds.GetTo() + minIntergenic );
     bool algn_good_enough_to_be_annotation = allow_partialalts || algn.GoodEnoughToBeAnnotation();
+    TSignedSeqRange algn_lim_for_nested = algn_cds.Empty() ? algn_lim : algn_cds;
+
+    TSignedSeqRange gene_cds_with_margins = gene_cds;
+    if(gene_cds.NotEmpty() && (!gene_good_enough_to_be_annotation || !algn_good_enough_to_be_annotation))
+        gene_cds_with_margins = TSignedSeqRange( gene_cds.GetFrom() - minIntergenic, gene_cds.GetTo() + minIntergenic );
+
 
     if(!gene_lim_with_margins.IntersectingWith(algn_lim))             // distance > MinIntergenic
         return eOtherGene;
-    else if(gene_good_enough_to_be_annotation && CModelCompare::RangeNestedInIntron(gene_lim_with_margins, algn))    // gene is nested in align's intron
+    else if(gene_good_enough_to_be_annotation && CModelCompare::RangeNestedInIntron(gene_lim_for_nested, algn))    // gene is nested in align's intron
         return eExternal;
-    
-    bool nested = true;
-    ITERATE(CAltSplice, it, gene) {
-        if(algn_lim_with_margins.IntersectingWith((*it)->Limits()) && !CModelCompare::RangeNestedInIntron(algn_lim_with_margins, **it)) {
-            nested = false;
-            break;
-        }
-    }
-    if(nested) {               // algn is nested in gene's intron
-        if(algn_good_enough_to_be_annotation)
-            return eNested;
-        else
-            return eNotCompatible;
-    }
 
     if(gene.IsAlternative(algn)) {   // has common splice or common CDS
         if (gene.IsAllowedAlternative(algn, composite) &&
@@ -574,6 +557,21 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
         else 
             return eNotCompatible;
     }
+    
+    bool nested = true;
+    ITERATE(CAltSplice, it, gene) {
+        if(algn_lim.IntersectingWith((*it)->Limits()) && !CModelCompare::RangeNestedInIntron(algn_lim_for_nested, **it)) {
+            nested = false;
+            break;
+        }
+    }
+    if(nested) {               // algn is nested in gene's intron
+        if(algn_good_enough_to_be_annotation)
+            return eNested;
+        else
+            return eNotCompatible;
+    }
+
 
     if(!algn_cds.Empty() && !gene_cds.Empty()) {                          // both coding
         if (!gene_cds_with_margins.IntersectingWith(algn_cds)) {          // distance > MinIntergenic 
@@ -585,10 +583,17 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
         }
     }
     
-    if(gene_good_enough_to_be_annotation && algn_good_enough_to_be_annotation && 
-       gene.front()->Strand() != algn.Strand() && allow_opposite_strand && algn.Exons().size() > 1 && gene.front()->Exons().size() > 1 &&
-       (gene_cds.Empty() || gene.front()->CompleteCds()) && (algn_cds.Empty() || algn.CompleteCds())) 
-        return eOtherGene;
+    if(gene_good_enough_to_be_annotation && algn_good_enough_to_be_annotation) {
+        if(gene.front()->Strand() != algn.Strand() && allow_opposite_strand && 
+           ((algn.Status()&CGeneModel::eBestPlacement) || (algn.Exons().size() > 1 && gene.front()->Exons().size() > 1)))
+            return eOtherGene; 
+        else if(algn.Status() & CGeneModel::eBestPlacement && (algn.Exons().size() == 1 || (algn.Status()&CGeneModel::ecDNAIntrons))) {
+#ifdef _DEBUG 
+            const_cast<CGeneModel&>(algn).AddComment("Best placement overlap");
+#endif    
+            return eOtherGene;
+        }
+    }
     
     return eNotCompatible;
 }
@@ -596,6 +601,12 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
 void CGeneSelector::FindGeneSeeds(const TGeneModelList& cls, list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet) {
     ITERATE(TGeneModelList, it, cls) {
         const CGeneModel& algn(*it);
+
+        if(algn.Score() == BadScore()) {             // postpone noncoding models
+            not_placed_yet.push_back(&algn);
+            continue;
+        }
+
         list<CAltSplice*> possibly_nested;
 
         bool good_model = true;
