@@ -1866,7 +1866,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
         exon->SetProduct_start().SetNucpos(prod_start);
         exon->SetProduct_end().SetNucpos(prod_end - 1);
         if (prod_strand != eNa_strand_unknown) {
-            exon->SetGenomic_strand(prod_strand);
+            exon->SetProduct_strand(prod_strand);
         }
     }
     // Scores should be copied from the original exon.
