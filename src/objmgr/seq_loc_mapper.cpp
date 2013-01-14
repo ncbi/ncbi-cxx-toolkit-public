@@ -768,12 +768,12 @@ void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
                 const CGC_Replicon::TSequence& seq = (*it)->GetSequence();
                 if ( seq.IsSingle() ) {
                     x_InitGCSequence(seq.GetSingle(),
-                        direction, selector, NULL);
+                        direction, selector, NULL, null);
                 }
                 else {
                     ITERATE(CGC_Replicon::TSequence::TSet, it, seq.GetSet()) {
                         x_InitGCSequence(**it,
-                            direction, selector, NULL);
+                            direction, selector, NULL, null);
                     }
                 }
             }
@@ -781,7 +781,7 @@ void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
         if ( unit.IsSetOther_sequences() ) {
             ITERATE(CGC_Sequence::TSequences, seq, unit.GetOther_sequences()) {
                 ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
-                    x_InitGCSequence(**tseq, direction, selector, NULL);
+                    x_InitGCSequence(**tseq, direction, selector, NULL, null);
                 }
             }
         }
@@ -802,10 +802,14 @@ void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
 void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                                        ESeqMapDirection    direction,
                                        SSeqMapSelector     selector,
-                                       const CGC_Sequence* parent_seq)
+                                       const CGC_Sequence* parent_seq,
+                                       CRef<CSeq_id>       override_id)
 {
-    CRef<CSeq_id> id(new CSeq_id);
-    id->Assign(gc_seq.GetSeq_id());
+    CRef<CSeq_id> id(override_id);
+    if ( !id ) {
+        id.Reset(new CSeq_id);
+        id->Assign(gc_seq.GetSeq_id());
+    }
 
     // Special case - structure contains just one (whole) sequence and
     // the same sequence is mentioned in the synonyms. Must skip this
@@ -879,7 +883,8 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 *gc_seq.GetSequences().front()->GetSeqs().front(),
                 direction,
                 selector,
-                parent_seq);
+                parent_seq,
+                id);
             return;
         }
     }
@@ -907,7 +912,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                     (*seq)->GetState() == CGC_TaggedSequences::eState_placed) {
                     parent = &gc_seq;
                 }
-                x_InitGCSequence(**tseq, direction, selector, parent);
+                x_InitGCSequence(**tseq, direction, selector, parent, null);
             }
         }
     }

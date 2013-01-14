@@ -272,7 +272,8 @@ private:
     void x_InitGCSequence(const CGC_Sequence& gc_seq,
                           ESeqMapDirection    direction,
                           SSeqMapSelector     selector,
-                          const CGC_Sequence* parent_seq);
+                          const CGC_Sequence* parent_seq,
+                          CRef<CSeq_id>       override_id);
 
     // Creates and adds to the scope a virtual bioseq. If delta is not null,
     // the bioseq uses it for the instance. Otherwise a virtual bioseq without
