@@ -2141,7 +2141,9 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
     if(no_clip_lim.GetFrom() <= 0 &&  no_clip_lim.GetTo() >= mrna_len-1)   //nothing to clip
         return;
 
+    map<int,double> intron_coverage;   // in transcript space
     vector<double> coverage(mrna_len);
+    vector<double> longseq_coverage(mrna_len);
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
         TSignedSeqRange overlap = Limits()&align.Limits();
@@ -2150,9 +2152,20 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
 
         TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
 
-        if(align.Type() != CGeneModel::eSR) {
-            no_clip_lim.SetFrom(min(no_clip_lim.GetFrom(),overlap_on_mrna.GetFrom()));
-            no_clip_lim.SetTo(max(no_clip_lim.GetTo(),overlap_on_mrna.GetTo()));
+        if(align.Type() == CGeneModel::eSR) {
+            for(int i = 1; i < (int)align.Exons().size(); ++i) {
+                int intron = 0;   // donor in transcript space
+                if(Strand() == ePlus && Include(Limits(),align.Exons()[i-1].Limits().GetTo())) {
+                    intron = amap.MapRangeOrigToEdited(Limits()&align.Exons()[i-1].Limits()).GetTo();
+                } else if(Include(Limits(),align.Exons()[i].Limits().GetFrom())){
+                    intron = amap.MapRangeOrigToEdited(Limits()&align.Exons()[i].Limits()).GetTo();
+                }
+                if(intron > 0)
+                    intron_coverage[intron] += align.Weight();
+            }
+        } else {
+            for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
+                longseq_coverage[i] += align.Weight();
         }
 
         for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
@@ -2166,6 +2179,26 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
     for (int i = cds_lim.GetFrom(); i <= cds_lim.GetTo(); ++i)
         cds_coverage += coverage[i];
     cds_coverage /= cds_lim.GetLength();
+
+    double cds_inron_coverage = 0;
+    int cds_introns = 0;
+    for(int i = 1; i < (int)Exons().size(); ++i) {
+        if(Exons()[i-1].m_ssplice && Exons()[i].m_fsplice) {
+            int intron;   // donor in transcript space
+            if(Strand() == ePlus) 
+                intron = amap.MapRangeOrigToEdited(Exons()[i-1].Limits(), true).GetTo();
+            else
+                intron = amap.MapRangeOrigToEdited(Exons()[i].Limits(), true).GetTo();
+            if(Include(cds_lim, intron)) {
+                ++cds_introns;
+                cds_inron_coverage += intron_coverage[intron];
+            }
+        }
+    }
+    if(cds_introns > 0) 
+        cds_inron_coverage /= cds_introns;
+    else
+        cds_inron_coverage = 0.5*cds_coverage;
 
     // 5' UTR
     if(no_clip_lim.GetFrom() > 0) {
@@ -2181,9 +2214,12 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
 
         int len = right_limit-left_limit+1;
 
-        while(left_limit > 0 && window_wlen/SCAN_WINDOW > max(cds_coverage,wlen/len)*utr_clip_threshold) {
-
-            //            cerr << amap.MapEditedToOrig(left_limit) << ' ' << coverage[left_limit] << ' ' << window_wlen/SCAN_WINDOW << ' ' << max(cds_coverage,wlen/len) << endl;
+        while(left_limit > 0 && (longseq_coverage[left_limit] > 0 || 
+                                 (window_wlen/SCAN_WINDOW > max(cds_coverage,wlen/len)*utr_clip_threshold &&
+                                  (intron_coverage.find(left_limit-1) == intron_coverage.end() || intron_coverage[left_limit-1] > cds_inron_coverage*utr_clip_threshold)
+                                  )
+                                 )
+              ) {
 
             ++len;
             --left_limit;
@@ -2220,7 +2256,12 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
 
         int len = right_limit-left_limit+1;
             
-        while(right_limit < mrna_len-1 && window_wlen/SCAN_WINDOW > wlen/len*utr_clip_threshold) {
+        while(right_limit < mrna_len-1 && (longseq_coverage[right_limit] > 0 || 
+                                           (window_wlen/SCAN_WINDOW > wlen/len*utr_clip_threshold &&
+                                            (intron_coverage.find(right_limit) == intron_coverage.end() || intron_coverage[right_limit] > cds_inron_coverage*utr_clip_threshold)
+                                            )
+                                           )
+              ) {
             ++len;
             ++right_limit;
             wlen += coverage[right_limit];
