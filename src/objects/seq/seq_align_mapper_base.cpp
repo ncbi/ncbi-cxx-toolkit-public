@@ -960,6 +960,7 @@ void CSeq_align_Mapper_Base::x_ConvertAlign(size_t* row)
 void CSeq_align_Mapper_Base::x_ConvertRow(size_t row)
 {
     CSeq_id_Handle dst_id;
+    ENa_strand dst_strand = eNa_strand_unknown;
     // Iterate all segments.
     TSegments::iterator seg_it = m_Segs.begin();
     for ( ; seg_it != m_Segs.end(); ) {
@@ -2315,6 +2316,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     // one which is different. Also stop if number or rows per segment
     // changes. Collect all seq-ids.
     vector<CSeq_id_Handle> ids;
+    TStrands strands(num_rows, eNa_strand_unknown);
     ids.resize(num_rows);
     for (size_t r = 0; r < num_rows; r++) {
         CSeq_id_Handle last_id;
@@ -2328,8 +2330,22 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                 last_seg = seg_idx - 1;
                 break;
             }
-            // Check ids.
             const SAlignment_Segment::SAlignment_Row& row = seg_it->m_Rows[r];
+            // Check strands for non-gaps
+            if (row.GetSegStart() != -1) {
+                if (strands[r] == eNa_strand_unknown) {
+                    if ( row.m_IsSetStrand ) {
+                        strands[r] = row.m_Strand;
+                    }
+                }
+                else {
+                    if ( !SameOrientation(strands[r], row.m_Strand) ) {
+                        last_seg = seg_idx - 1;
+                        break;
+                    }
+                }
+            }
+            // Check ids.
             if (last_id  &&  last_id != row.m_Id) {
                 last_seg = seg_idx - 1;
                 break;
@@ -2357,7 +2373,6 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     }
 
     // Detect strands for all rows, they will be used for gaps.
-    TStrands strands;
     x_FillKnownStrands(strands);
     // Count number of non-gap segments in each row.
     // If a row has only gaps, the whole sub-alignment should be
@@ -2475,6 +2490,39 @@ bool CSeq_align_Mapper_Base::x_HaveMixedSeqTypes(void) const
 }
 
 
+    // Check if each row contains only one strand.
+bool CSeq_align_Mapper_Base::x_HaveMixedStrand(void) const
+{
+    if ( m_Segs.empty() ) {
+        return false;
+    }
+    vector<ENa_strand> strands(m_Segs.front().m_Rows.size(), eNa_strand_unknown);
+    ITERATE(TSegments, seg, m_Segs) {
+        for (size_t r = 0; r < seg->m_Rows.size(); ++r) {
+            if (r >= strands.size()) {
+                strands.resize(r, eNa_strand_unknown);
+            }
+            const SAlignment_Segment::SAlignment_Row& row = seg->m_Rows[r];
+            // Skip gaps - they may have wrong strands.
+            if (row.GetSegStart() == -1) {
+                continue;
+            }
+            if (strands[r] == eNa_strand_unknown) {
+                if ( row.m_IsSetStrand ) {
+                    strands[r] = row.m_Strand;
+                }
+            }
+            else {
+                if ( !SameOrientation(strands[r], row.m_Strand) ) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 // Get mapped alignment. In most cases the mapper tries to
 // preserve the original alignment type and copy as much
 // information as possible (scores, bounds etc.).
@@ -2543,6 +2591,9 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         // sub-mappers which return mapped exons rather than whole alignments),
         // here we should always use std-seg.
         x_GetDstStd(dst);
+    }
+    else if ( x_HaveMixedStrand() ) {
+        x_ConvToDstDisc(dst);
     }
     else {
         // Get the proper mapped alignment. Some types still may need

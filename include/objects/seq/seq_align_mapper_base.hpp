@@ -280,6 +280,8 @@ private:
 
     // Check if both nucs and prots are present in the segments.
     bool x_HaveMixedSeqTypes(void) const;
+    // Check if each row contains only one strand.
+    bool x_HaveMixedStrand(void) const;
 
     CSeq_loc_Mapper_Base&        m_LocMapper;
     // Original alignment
