@@ -92,6 +92,7 @@ namespace DiscRepNmSpc {
       static bool   is_Quals_run;
       static bool   is_TRRna_run;
       static bool   is_RRna_run;
+      static bool   is_Subsrc_run;
       static bool   is_SusPhrase_run;
       static bool   is_TaxCflts_run;
       static bool   is_TaxDef_run;
@@ -411,6 +412,51 @@ namespace DiscRepNmSpc {
 
 
 //  new comb!!
+  class CSeqEntry_on_biosrc_subsrc :  public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_on_biosrc_subsrc () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+    protected:
+      string GetName_col() const {return string("ONCALLER_MORE_NAMES_COLLECTED_BY"); }
+      string GetName_itax() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
+      string GetName_ctax() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
+
+      bool Has3Names(const vector <string> arr);
+      void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+  class CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED : public CSeqEntry_on_biosrc_subsrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_ctax();}
+  };
+
+  class CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED : public CSeqEntry_on_biosrc_subsrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_itax();}
+  };
+
+  class CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY : public CSeqEntry_on_biosrc_subsrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_on_biosrc_subsrc::GetName_col();}
+  };
+
   class CSeqEntry_test_on_pub : public CSeqEntryTestAndRepData
   {
     public:
@@ -420,7 +466,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
       virtual string GetName() const =0;
 
-   protected:
+    protected:
       enum E_Status {
         e_any = 0,
         e_published,

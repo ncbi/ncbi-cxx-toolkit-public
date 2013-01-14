@@ -126,6 +126,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   thisTest.is_DESC_user_run = false;
   thisTest.is_Pub_run = false;
   thisTest.is_Quals_run = false;
+  thisTest.is_Subsrc_run = false;
   thisTest.is_TaxCflts_run = false;
 
   GoTests(CRepConfig :: tests_on_SubmitBlk, *seq_entry);

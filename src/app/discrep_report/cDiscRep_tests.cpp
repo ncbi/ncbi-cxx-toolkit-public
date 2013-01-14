@@ -141,6 +141,7 @@ bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
 bool CDiscTestInfo :: is_TRRna_run;
 bool CDiscTestInfo :: is_RRna_run;
+bool CDiscTestInfo :: is_Subsrc_run;
 bool CDiscTestInfo :: is_SusPhrase_run;
 bool CDiscTestInfo :: is_TaxCflts_run;
 bool CDiscTestInfo :: is_TaxDef_run;
@@ -8246,7 +8247,39 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
       }
   }
   arr.clear();
+ 
+/*
+  // ONCALLER_DUPLICATE_PRIMER_SET
+  if (biosrc.CanGetPcr_primer()) {
+     const list <CRef <CPCRReaction> > pcr_ls = biosrc.GetPcr_primer().Get();
+     ITERATE (list <CRef <CPCRReaction> >, it, pcr_ls) {
+       if (it+1 != pcr_ls.end()) {
+          if (SamePCRReaction(**it, **(it+1)))
+              thisInfo.test_item_list[GetName_pcr()].push_back(desc);
+       }
+     }
+  }
+*/
 };
+
+/*
+bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2)
+{
+  bool has_fwd1 = pcr1.CanGetForward()? true : false;
+  bool has_rev1 = pcr1.CanGetReverse()? true : false;
+  bool has_fwd2 = pcr1.CanGetForward()? true : false;
+  bool has_rev2 = pcr1.CanGetReverse()? true : false;
+
+  if ((has_fwd1 != has_fwd2) || (has_rev1 != has_rev2) || (!has_fwd1 && !has_rev1)) 
+            return false;
+  if (has_fwd1) { 
+    const list <CRef <CPCRPrimer> >& fwd1 = pcr1.GetForward().Get();
+    const list <CRef <CPCRPrimer> >& fwd2 = pcr2.GetForward().Get();
+    if (fwd1.size() != fwd2.size() || fwd1.empty()) return false;
+   #### 
+  }
+};
+*/
 
 void CSeqEntry_ONCALLER_COUNTRY_COLON :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -9281,6 +9314,83 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
 };
 
 
+
+// new comb 
+void CSeqEntry_on_biosrc_subsrc :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   if (thisTest.is_Subsrc_run) return;
+
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_subsrc_feat) {
+      RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
+   }
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_subsrc_seqdesc) {
+     desc = GetDiscItemText(**it, *(biosrc_subsrc_seqdesc_seqentry[i]));
+     i++;
+   }
+   
+   thisTest.is_Subsrc_run = true;
+};
+
+bool CSeqEntry_on_biosrc_subsrc :: Has3Names(const vector <string> arr)
+{
+   vector <string> names_arr;
+   unsigned cnt=0;
+   ITERATE (vector <string>, it, arr) {
+      names_arr = NStr::Tokenize(*it, ",; ", names_arr, NStr::eMergeDelims);
+      ITERATE (vector <string>, jt, names_arr)
+         if ( (*it) == "and") cnt++;
+      if ((int)(names_arr.size() - cnt) > 2) return true;
+   }
+   return false;
+};
+
+void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const string& desc)
+{
+   vector <string> arr, names_arr;
+   // ONCALLER_MORE_NAMES_COLLECTED_BY
+   GetSubSrcValues(biosrc, CSubSource::eSubtype_collected_by, arr);
+   if (Has3Names(arr)) thisInfo.test_item_list[GetName_col()].push_back(desc);
+
+   string tax_nm;
+   if (biosrc.IsSetTaxname() && !(tax_nm = biosrc.GetTaxname()).empty()) {
+
+      // ONCALLER_SUSPECTED_ORG_IDENTIFIED
+      if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_identified_by)
+            && (tax_nm == "Homo sapiens" || tax_nm.find("uncultured") != string::npos))
+         thisInfo.test_item_list[GetName_itax()].push_back(desc);
+
+      // ONCALLER_SUSPECTED_ORG_COLLECTED
+      if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_collected_by)
+             && tax_nm == "Homo sapiens")
+          thisInfo.test_item_list[GetName_ctax()].push_back(desc);
+   }
+   
+};
+
+void CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED ::  GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
+                         + "collected-by and suspect organism";
+};
+
+void CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
+                         + "identified-by and suspect organism";
+};
+
+void CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+                       + "3 or more names in collected-by.";
+};
+
+// new comb
+
+
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end()) 
@@ -9296,7 +9406,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
                  && !(hap_tp = (*it)->GetName()).empty()) {
                if (biosrc_subsrc_seqdesc_seqentry[i]->IsSet()) {
                   ExtractNonAaBioseqsOfSet(tax_nm +"#" + hap_tp, 
-                                             biosrc_subsrc_seqdesc_seqentry[i]->GetSet());
+                                            biosrc_subsrc_seqdesc_seqentry[i]->GetSet());
                }
                break;
            }
@@ -9318,8 +9428,8 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableIte
       pos = it->first.find("#");
       tax_nm = it->first.substr(0, pos);
       hap_tp = it->first.substr(pos+1);
-      strtmp 
-         = "organism " + tax_nm + " haplotype " + hap_tp + " but the sequences do not match " 
+      strtmp = "organism " + tax_nm + " haplotype " + hap_tp 
+          + " but the sequences do not match " 
           + (Ndiff ? "(allowing N to match any)." : "(strict match).");
       AddSubcategories(c_item, GetName(), it->second, "sequence", strtmp, e_HasComment);
    }
