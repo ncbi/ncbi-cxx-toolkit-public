@@ -293,7 +293,9 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
             }
         }
     } while (sp->m_LastStatus == CP::eStatus_Repeat  ||
-            (out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow));
+            (out_avail  &&  (sp->m_LastStatus == CP::eStatus_Success || 
+                             sp->m_LastStatus == CP::eStatus_Overflow))
+            );
 
     // Flush underlying stream (on write)
     if (dir == CCompressionStream::eWrite) {
