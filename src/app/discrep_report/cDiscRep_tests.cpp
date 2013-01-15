@@ -10297,7 +10297,7 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     else AddBioseqsOfSet(seq_entry.GetSet());
     m_bioseqs.sort();
 
-    unsigned i=0; 
+    unsigned i=0, end, cnt; 
     string desc, title;
     ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {
        if ((title = (*it)->GetTitle()).empty()) continue; 
@@ -10317,6 +10317,17 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
        }
        else RmvBioseqsOfSet(title_seqdesc_seqentry[i]->GetSet());
 
+       // DISC_TITLE_ENDS_WITH_SEQUENCE
+       end = title.size()-1;
+       strtmp = title[end];
+       while (end && (cnt < 19)
+                 && (strtmp == "A" || strtmp == "C" || strtmp == "T" || strtmp == "G")){
+           end--;
+           cnt ++;
+           strtmp = title[end];
+       }
+       if (cnt >= 19) thisInfo.test_item_list[GetName_seqch()].push_back(desc);
+ 
        i++;
     }
 
@@ -10327,13 +10338,18 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     thisTest.is_Defl_run = true;
 };
 
+void CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description
+     = GetOtherComment(c_item->item_list.size(), "defline appears", "deflines appear")
+       + " to end with sequence characters";
+};
 
 void CSeqEntry_DISC_MISSING_DEFLINES :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description 
         = GetHasComment(c_item->item_list.size(), "bioseq") + "no definition line";
 };
-
 
 void CSeqEntry_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
 {

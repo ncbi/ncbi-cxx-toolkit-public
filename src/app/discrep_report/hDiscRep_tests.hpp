@@ -627,19 +627,28 @@ namespace DiscRepNmSpc {
       string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
       string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
       string GetName_notlt() const {return string("DISC_MISSING_DEFLINES"); }
+      string GetName_seqch() const {return string("DISC_TITLE_ENDS_WITH_SEQUENCE"); }
 
       void AddBioseqsOfSet(const CBioseq_set& set);
       void RmvBioseqsOfSet(const CBioseq_set& set);
   };
 
+  class CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE : public CSeqEntry_test_on_defline
+  {
+    public:
+      virtual ~CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE () {};
 
-  class CSeqEntry_DISC_MISSING_DEFLINES  : public CSeqEntry_test_on_defline
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_seqch();}
+  };
+
+  class CSeqEntry_DISC_MISSING_DEFLINES : public CSeqEntry_test_on_defline
   {
     public:
       virtual ~CSeqEntry_DISC_MISSING_DEFLINES () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_defline::GetName_notlt();}
+      virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_notlt();}
   };
 
   
