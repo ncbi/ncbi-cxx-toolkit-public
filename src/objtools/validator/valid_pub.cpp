@@ -373,7 +373,7 @@ void CValidError_imp::ValidatePubArticle
                                      "In-press is not expected to have page numbers", obj, ctx);
                         }
                     }
-                    if ( (! imp.IsSetDate()) || imp.GetDate().IsStr() && NStr::Equal (imp.GetDate().GetStr(), "?")) {
+                    if ( (! imp.IsSetDate()) || (imp.GetDate().IsStr() && NStr::Equal (imp.GetDate().GetStr(), "?"))) {
                         PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
                                     "In-press is missing the date", obj, ctx);
                     }
