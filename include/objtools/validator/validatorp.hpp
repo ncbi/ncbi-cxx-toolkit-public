@@ -311,7 +311,7 @@ private:
 // It calls upon the various validation classes to perform validation of
 // each part.
 // The class holds all the data for the validation process. 
-class CValidError_imp
+class NCBI_VALIDATOR_EXPORT CValidError_imp
 {
 public:
     // Interface to be used by the CValidError class
