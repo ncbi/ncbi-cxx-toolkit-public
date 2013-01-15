@@ -985,7 +985,7 @@ private:
 
 // =============================  Validate SeqDesc  ============================
 
-class CValidError_desc : private CValidError_base
+class NCBI_VALIDATOR_EXPORT CValidError_desc : private CValidError_base
 {
 public:
     CValidError_desc(CValidError_imp& imp);
