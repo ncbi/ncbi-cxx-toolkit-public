@@ -1039,6 +1039,20 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                             }
                         }
                     }
+                    if (! found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
+                        CBioseq_Handle part = m_Scope->GetBioseqHandle(seq);
+                        if (part) {
+                            CSeq_entry_Handle parent = part.GetParentEntry();
+                            if (parent && parent.IsSeq()) {
+                                parent = parent.GetParentEntry();
+                                if (parent && parent.IsSet()
+                                    && parent.GetSet().GetClass() == CBioseq_set::eClass_parts) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     if (! found) {
                         if (m_Imp.IsSmallGenomeSet()) {
                             m_Imp.IncrementSmallGenomeSetMisplacedCount();

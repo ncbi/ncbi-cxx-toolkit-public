@@ -176,10 +176,10 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
             if ((*feat_it)->IsSetLocation()) {
                 for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
+                    const CSeq_id& id = loc_it.GetSeq_id();
+                    if (x_IsEmblOrDdbjOnSet(id, bssh)) return;
 
-                    if (x_IsEmblOrDdbjOnSet(loc_it.GetSeq_id(), bssh)) return;
-
-                    if (!IsBioseqWithIdInSet(loc_it.GetSeq_id(), bssh)) {
+                    if (!IsBioseqWithIdInSet(id, bssh)) {
                         if (m_Imp.IsSmallGenomeSet()) {
                             m_Imp.IncrementSmallGenomeSetMisplacedCount();
                         } else {

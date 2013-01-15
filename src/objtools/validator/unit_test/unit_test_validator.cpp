@@ -10797,16 +10797,22 @@ BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
 
     STANDARD_SETUP
 
+    /*
     expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "FeaturePackagingProblem",
                                                  "There is 1 mispackaged feature in this record."));
+    */
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "LocOnSegmentedBioseq",
                                                  "Feature location on segmented bioseq, not on parts"));
+    /*
     expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "FeaturePackagingProblem",
                                                  "There are 2 mispackaged features in this record."));
+    */
+    expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "FeaturePackagingProblem",
+                                                 "There is 1 mispackaged feature in this record."));
     scope.RemoveTopLevelSeqEntry(seh);
     misc_feat = AddMiscFeature(parts_set);
     misc_feat->SetLocation().SetInt().SetId().SetLocal().SetStr("master");
