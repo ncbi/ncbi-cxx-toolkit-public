@@ -88,6 +88,7 @@ namespace DiscRepNmSpc {
       static bool   is_MRNA_run;
       static bool   is_mRNA_run;
       static bool   is_Prot_run;
+      static bool   is_ProtFeat_run;
       static bool   is_Pub_run;
       static bool   is_Quals_run;
       static bool   is_TRRna_run;
@@ -425,9 +426,19 @@ namespace DiscRepNmSpc {
       string GetName_col() const {return string("ONCALLER_MORE_NAMES_COLLECTED_BY"); }
       string GetName_itax() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
       string GetName_ctax() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
+      string GetName_end() const {return string("END_COLON_IN_COUNTRY"); }
 
       bool Has3Names(const vector <string> arr);
       void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+  class CSeqEntry_END_COLON_IN_COUNTRY : public CSeqEntry_on_biosrc_subsrc
+  {
+    public:
+      virtual ~CSeqEntry_END_COLON_IN_COUNTRY () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_end();}
   };
 
   class CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED : public CSeqEntry_on_biosrc_subsrc
@@ -2059,10 +2070,10 @@ namespace DiscRepNmSpc {
                            return CBioseq_test_on_suspect_phrase::GetName_rna_comm(); }
   };
 
-  class CBioseq_test_on_prod : public CBioseqTestAndRepData
+  class CBioseq_test_on_protfeat : public CBioseqTestAndRepData
   {
     public:
-      virtual ~CBioseq_test_on_prod () {};
+      virtual ~CBioseq_test_on_protfeat () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
@@ -2071,30 +2082,39 @@ namespace DiscRepNmSpc {
     protected:
       string GetName_cds() const {return string("DISC_CDS_PRODUCT_FIND");}
       string GetName_ec() const {return string("EC_NUMBER_ON_UNKNOWN_PROTEIN"); }
+      string GetName_pnm() const {return string("DISC_PROTEIN_NAMES"); }
 
       bool EndsWithPattern(const string& pattern, const list <string>& strs);
       bool ContainsPseudo(const string& pattern, const list <string>& strs);
       bool ContainsWholeWord(const string& pattern, const list <string>& strs);
   };
 
+  class CBioseq_DISC_PROTEIN_NAMES : public CBioseq_test_on_protfeat
+  {
+    public:
+      virtual ~CBioseq_DISC_PROTEIN_NAMES () {};
 
-  class CBioseq_DISC_CDS_PRODUCT_FIND : public CBioseq_test_on_prod
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_pnm(); }
+  };
+
+  class CBioseq_DISC_CDS_PRODUCT_FIND : public CBioseq_test_on_protfeat
   {
     public:
       virtual ~CBioseq_DISC_CDS_PRODUCT_FIND () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CBioseq_test_on_prod::GetName_cds(); }
+      virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_cds(); }
   };
 
 
-  class CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN : public CBioseq_test_on_prod
+  class CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN : public CBioseq_test_on_protfeat
   {
     public:
       virtual ~CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CBioseq_test_on_prod::GetName_ec(); }
+      virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_ec(); }
   };
 
 

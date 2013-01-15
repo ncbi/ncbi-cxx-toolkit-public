@@ -252,6 +252,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_MRNA_run = false;
    thisTest.is_mRNA_run = false;
    thisTest.is_Prot_run = false;
+   thisTest.is_ProtFeat_run = false;
    thisTest.is_TRRna_run = false;
    thisTest.is_RRna_run = false;
    thisTest.is_SusPhrase_run = false;

@@ -221,6 +221,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_GENES));
    tests_on_Bioseq_CFeat.push_back(
+                   CRef <CTestAndRepData>( new CBioseq_DISC_PROTEIN_NAMES));
+   tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_CDS_PRODUCT_FIND));
    tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN));
@@ -335,6 +337,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_END_COLON_IN_COUNTRY));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED));
    tests_on_SeqEntry_feat_desc.push_back( 

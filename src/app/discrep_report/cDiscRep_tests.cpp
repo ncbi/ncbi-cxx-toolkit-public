@@ -137,6 +137,7 @@ bool CDiscTestInfo :: is_MolInfo_run;
 bool CDiscTestInfo :: is_MRNA_run;  // need modification, has to be is_mRNACDs_run
 bool CDiscTestInfo :: is_mRNA_run;
 bool CDiscTestInfo :: is_Prot_run;
+bool CDiscTestInfo :: is_ProtFeat_run;
 bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
 bool CDiscTestInfo :: is_TRRna_run;
@@ -2491,7 +2492,8 @@ void CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: TestOnObj(const CBioseq& bioseq)
   }
   
   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
-    if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) continue; // FEATDEF_PROT
+    if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) continue; 
+    // FEATDEF_PROT
     if ( (*it)->GetData().GetProt().CanGetDesc() 
                     && HasSuspiciousStr((*it)->GetData().GetProt().GetDesc(), sus_str))
           thisInfo.test_item_list[GetName()].push_back(sus_str + "$" + GetDiscItemText(**it));
@@ -3321,7 +3323,7 @@ void CBioseq_RNA_NO_PRODUCT :: GetReport(CRef <CClickableItem>& c_item)
 
 
 // new comb
-bool CBioseq_test_on_prod :: EndsWithPattern(const string& pattern, const list <string>& strs)
+bool CBioseq_test_on_protfeat :: EndsWithPattern(const string& pattern, const list <string>& strs)
 {
   unsigned len_patt = pattern.size(), len_str;
   ITERATE (list <string>, it, strs) {
@@ -3332,7 +3334,7 @@ bool CBioseq_test_on_prod :: EndsWithPattern(const string& pattern, const list <
 };
 
 
-bool CBioseq_test_on_prod :: ContainsPseudo(const string& pattern, const list <string>& strs)
+bool CBioseq_test_on_protfeat :: ContainsPseudo(const string& pattern, const list <string>& strs)
 {
   bool right_pseudo;
   size_t pos;
@@ -3354,7 +3356,7 @@ bool CBioseq_test_on_prod :: ContainsPseudo(const string& pattern, const list <s
 };
 
 
-bool CBioseq_test_on_prod :: ContainsWholeWord(const string& pattern, const list <string>& strs)
+bool CBioseq_test_on_protfeat :: ContainsWholeWord(const string& pattern, const list <string>& strs)
 {
    ITERATE (list <string>, it, strs) 
       if (DoesStringContainPhrase(*it, pattern, false, true)) return true;
@@ -3362,8 +3364,10 @@ bool CBioseq_test_on_prod :: ContainsWholeWord(const string& pattern, const list
 };
 
 
-void CBioseq_test_on_prod :: TestOnObj(const CBioseq& bioseq) 
+void CBioseq_test_on_protfeat :: TestOnObj(const CBioseq& bioseq) 
 {
+   if (thisTest.is_ProtFeat_run) return;
+
    string desc, head_desc, func;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CProt_ref& prot = (*it)->GetData().GetProt();
@@ -3384,24 +3388,61 @@ void CBioseq_test_on_prod :: TestOnObj(const CBioseq& bioseq)
              cds =GetCDSForProduct( GetBioseqFromSeqLoc((*it)->GetLocation(),*thisInfo.scope));
           if (cds) desc = GetDiscItemText(*cds);
      }
-     ITERATE (Str2Str, it, thisInfo.cds_prod_find) {
-       func = it->second;
+     ITERATE (Str2Str, jt, thisInfo.cds_prod_find) {
+       func = jt->second;
        head_desc = kEmptyStr;
        if (func == "EndsWithPattern") {
-         if (EndsWithPattern(it->first, names)) head_desc = "end# with " + it->first;
+         if (EndsWithPattern(jt->first, names)) head_desc = "end# with " + jt->first;
        }
        else if (func == "ContainsPseudo") {
-         if (ContainsPseudo(it->first, names)) head_desc = "contain# '" + it->first + "'";
+         if (ContainsPseudo(jt->first,names)) head_desc = "contain# '" + jt->first + "'";
        }
        else if (func == "ContainsWholeWord") {
-         if ( ContainsWholeWord(it->first, names) ) head_desc = "contain# '" + it->first + "'";
+         if ( ContainsWholeWord(jt->first, names) ) 
+                  head_desc = "contain# '" + jt->first + "'";
        }
        if (!head_desc.empty())
          thisInfo.test_item_list[GetName_cds()].push_back(head_desc + "$" + desc);
      }
+
+     // DISC_PROTEIN_NAMES
+     if ( (*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) { // FEATDEF_PROT
+        if ( prot.CanGetName() && !prot.GetName().empty()) {
+           thisInfo.test_item_list[GetName_pnm()].push_back(
+               *(prot.GetName().begin()) + "$" + desc);
+        }
+     }
    }
+
+   thisTest.is_ProtFeat_run = true;
 };
 
+void CBioseq_DISC_PROTEIN_NAMES :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs pnm2feats;
+   GetTestItemList(c_item->item_list, pnm2feats);
+   unsigned min_num = c_item->item_list.size(), cnt=0;
+   min_num = min_num > 100 ? 100 : min_num;
+   c_item->item_list.clear();
+   
+   ITERATE (Str2Strs, it, pnm2feats) {
+     if (it->second.size() < min_num) continue;  // erase?
+     cnt++;
+   } 
+   ITERATE (Str2Strs, it, pnm2feats) {
+     if (it->second.size() < min_num) continue;
+     if (cnt >1 ) {
+        AddSubcategories(c_item, GetName(), it->second, 
+                      "protein", "name '" + it->first + "'.", e_HasComment, false);
+     }
+     else {
+         c_item->item_list = it->second;
+         c_item->description 
+            = GetHasComment(it->second.size(), "protein") + "name '" + it->first + "'.";
+     }
+   }
+   if (cnt > 1) c_item->description = "Many proteins have the same name";
+};
 
 void CBioseq_DISC_CDS_PRODUCT_FIND :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -4520,8 +4561,10 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
    bool has_pid;
    string desc(GetDiscItemText(bioseq));
 
+   // COUNT_PROTEINS
    thisInfo.test_item_list[GetName_cnt()].push_back(desc); 
 
+   // INCONSISTENT_PROTEIN_ID_PREFIX1, MISSING_PROTEIN_ID1
    ITERATE (list <CRef <CSeq_id> >, it, bioseq.GetId()) {
      if ((*it)->IsGeneral()) {
        const CDbtag& dbtag = (*it)->GetGeneral();
@@ -4529,7 +4572,7 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
           has_pid = true;
           strtmp = dbtag.GetDb();
           if (!strtmp.empty())
-                thisInfo.test_item_list[GetName_prefix()].push_back(dbtag.GetDb() + "$" + desc);
+             thisInfo.test_item_list[GetName_prefix()].push_back(dbtag.GetDb()+"$"+desc);
           break;
        }
        else has_pid = false;
@@ -9377,7 +9420,7 @@ bool CSeqEntry_on_biosrc_subsrc :: Has3Names(const vector <string> arr)
 
 void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const string& desc)
 {
-   vector <string> arr, names_arr;
+   vector <string> arr;
    // ONCALLER_MORE_NAMES_COLLECTED_BY
    GetSubSrcValues(biosrc, CSubSource::eSubtype_collected_by, arr);
    if (Has3Names(arr)) thisInfo.test_item_list[GetName_col()].push_back(desc);
@@ -9396,9 +9439,28 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
           thisInfo.test_item_list[GetName_ctax()].push_back(desc);
    }
    
+   // END_COLON_IN_COUNTRY
+   arr.clear();
+   GetSubSrcValues(biosrc, CSubSource::eSubtype_country, arr);
+   size_t pos;
+   ITERATE (vector <string>, it, arr) {
+     if ( ((pos = (*it).find_last_of(":")) != string::npos)
+             && pos == (*it).size()-1)
+        thisInfo.test_item_list[GetName_end()].push_back(desc);
+   }
 };
 
-void CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED ::  GetReport(CRef <CClickableItem>& c_item)
+void CSeqEntry_END_COLON_IN_COUNTRY :: GetReport(CRef <CClickableItem>& c_item)
+{
+   
+   c_item->description 
+      = GetOtherComment(c_item->item_list.size(), "country source ends", 
+                                                       "country sources end")
+        + " with a colon.";
+};
+
+
+void CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
                          + "collected-by and suspect organism";
