@@ -1128,7 +1128,7 @@ void CDeflineGenerator::x_SetTitleFromGPipe (void)
         joiner.Add(" map ").Add(m_Map);
     }
     if (! m_Plasmid.empty()) {
-        joiner.Add(" plasmid ").Add(m_Plasmid);
+        joiner.Add(pls_pfx).Add(m_Plasmid);
     }
     if (m_MICompleteness ==  NCBI_COMPLETENESS(complete)) {
         joiner.Add(", complete sequence");
