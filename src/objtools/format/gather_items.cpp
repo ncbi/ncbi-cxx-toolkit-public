@@ -52,6 +52,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seqblock/GB_block.hpp>
@@ -1265,25 +1266,6 @@ CConstRef<CUser_object> CFlatGatherer::x_PrepareAnnotDescStrucComment(CBioseqCon
             if( firstGenAnnotSCAD ) {
                 return firstGenAnnotSCAD;
             }
-
-            // then try the remote user-object
-            for (CSeqdesc_CI it(far_bsh, CSeqdesc::e_User); it; ++it) {
-                const CUser_object & descr_user = (*it).GetUser();
-                if( descr_user.IsSetType() && descr_user.GetType().IsStr() && 
-                    NStr::EqualNocase(descr_user.GetType().GetStr(), "StructuredComment") ) 
-                {
-                    CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
-                    if( ! prefix_field || ! prefix_field->IsSetData() || 
-                        ! prefix_field->GetData().IsStr() || 
-                        prefix_field->GetData().GetStr() != "##Genome-Annotation-Data-START##" )
-                    {
-                        continue;
-                    }
-
-                    // we found our first match
-                    return CConstRef<CUser_object>( &descr_user );
-                }
-            }
         }
     }
 
@@ -1292,37 +1274,56 @@ CConstRef<CUser_object> CFlatGatherer::x_PrepareAnnotDescStrucComment(CBioseqCon
 
 CConstRef<CUser_object> CFlatGatherer::x_GetAnnotDescStrucCommentFromBioseqHandle( CBioseq_Handle bsh ) const
 {
-    CAnnot_CI annot_ci( bsh );
-    for( ; annot_ci; ++annot_ci ) {
-        if( ! annot_ci->Seq_annot_CanGetDesc() ) {
-            continue;
-        }
+    CSeq_entry_Handle curr_entry_h = bsh.GetParentEntry();
 
-        const CAnnot_descr & annot_descr = annot_ci->Seq_annot_GetDesc();
-        if( ! annot_descr.IsSet() ) {
-            continue;
-        }
+    for( ; curr_entry_h ; curr_entry_h = curr_entry_h.GetParentEntry() ) { // climbs up tree
 
-        const CAnnot_descr::Tdata & descrs = annot_descr.Get();
-        ITERATE( CAnnot_descr::Tdata, descr_iter, descrs  ) {
-            if( ! (*descr_iter)->IsUser() ) {
+        // look on the annots
+        CSeq_annot_CI annot_ci( curr_entry_h, CSeq_annot_CI::eSearch_entry ); 
+        for( ; annot_ci; ++annot_ci ) {
+            if( ! annot_ci->Seq_annot_CanGetDesc() ) {
                 continue;
             }
 
-            const CUser_object & descr_user = (*descr_iter)->GetUser();
-            if( descr_user.IsSetType() && descr_user.GetType().IsStr() && 
-                NStr::EqualNocase(descr_user.GetType().GetStr(), "StructuredComment") ) 
-            {
-                CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
-                if( ! prefix_field || ! prefix_field->IsSetData() || 
-                    ! prefix_field->GetData().IsStr() || 
-                    prefix_field->GetData().GetStr() != "##Genome-Annotation-Data-START##" )
-                {
+            const CAnnot_descr & annot_descr = annot_ci->Seq_annot_GetDesc();
+            if( ! annot_descr.IsSet() ) {
+                continue;
+            }
+
+            const CAnnot_descr::Tdata & descrs = annot_descr.Get();
+            ITERATE( CAnnot_descr::Tdata, descr_iter, descrs  ) {
+                if( ! (*descr_iter)->IsUser() ) {
                     continue;
                 }
 
-                // we found our first match
-                return CConstRef<CUser_object>( &descr_user );
+                const CUser_object & descr_user = (*descr_iter)->GetUser();
+                if( STRING_FIELD_CHOICE_MATCH(descr_user, Type, Str, "StructuredComment") )
+                {
+                    CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
+
+                    // note: case sensitive
+                    if( prefix_field && 
+                        FIELD_CHOICE_EQUALS(*prefix_field, Data, Str, "##Genome-Annotation-Data-START##") )
+                    {
+                        // we found our first match
+                        return CConstRef<CUser_object>( &descr_user );
+                    }
+                }
+            }
+        }
+
+        // not found in annots, so try the Seqdescs
+        for (CSeqdesc_CI it(curr_entry_h, CSeqdesc::e_User, 1); it; ++it) {
+            const CUser_object & descr_user = (*it).GetUser();
+            if( STRING_FIELD_CHOICE_MATCH(descr_user, Type, Str, "StructuredComment") ) 
+            {
+                CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
+                if( prefix_field && 
+                    FIELD_CHOICE_EQUALS(*prefix_field, Data, Str, "##Genome-Annotation-Data-START##") )
+                {
+                    // we found our first match
+                    return CConstRef<CUser_object>( &descr_user );
+                }
             }
         }
     }
