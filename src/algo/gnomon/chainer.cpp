@@ -214,6 +214,7 @@ public:
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor);
     void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
     void SetBestPlacement(TOrigAligns& orig_aligns);
+    void SetConsistentCoverage();
 
     TContained m_members;
     int m_polya_cap_right_hard_limit;
@@ -1418,6 +1419,7 @@ ITERATE(vector<SChainMember*>, i, pointers) {
     TGeneModelList chains;
     NON_CONST_ITERATE(list<CChain>, it, tmp_chains) {
         it->SetBestPlacement(orig_aligns);
+        it->SetConsistentCoverage();
         CGeneModel& chain = *it;
         if(chain.Continuous() && chain.Exons().size() > 1) {
             bool allcdnaintrons = true;
@@ -2109,7 +2111,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
 }
 
 #define SCAN_WINDOW 50
-#define MIN_UTR 20
+#define MIN_UTR 0
 #define MIN_UTR_EXON 15
 
 void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
@@ -2150,10 +2152,8 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
         if(overlap.Empty())   // some could be cut by polya clip
             continue;
 
-        TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
-
-        if(align.Type() == CGeneModel::eSR) {
-            for(int i = 1; i < (int)align.Exons().size(); ++i) {
+        for(int i = 1; i < (int)align.Exons().size(); ++i) {
+            if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
                 int intron = 0;   // donor in transcript space
                 if(Strand() == ePlus && Include(Limits(),align.Exons()[i-1].Limits().GetTo())) {
                     intron = amap.MapRangeOrigToEdited(Limits()&align.Exons()[i-1].Limits()).GetTo();
@@ -2161,15 +2161,22 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
                     intron = amap.MapRangeOrigToEdited(Limits()&align.Exons()[i].Limits()).GetTo();
                 }
                 if(intron > 0)
-                    intron_coverage[intron] += align.Weight();
+                    intron_coverage[intron] += (align.Type() == CGeneModel::eSR) ? align.Weight() : 0;
             }
-        } else {
+        }
+        
+
+        TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
+
+        if(align.Type() == CGeneModel::emRNA || align.Type() == CGeneModel::eEST) {   //OK to clip protein in UTR
             for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
                 longseq_coverage[i] += align.Weight();
         }
 
-        for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
-            coverage[i] += align.Weight();
+        if(align.Type() == CGeneModel::eSR) {
+            for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
+                coverage[i] += align.Weight();
+        }
     }
 
     if(no_clip_lim.GetTo()-no_clip_lim.GetFrom() < SCAN_WINDOW)      // too short
@@ -2281,6 +2288,56 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
         }
     }
 
+}
+
+void CChain::SetConsistentCoverage()
+{
+    CAlignMap amap = GetAlignMap();
+    int mrna_len = amap.FShiftedLen(Limits());
+    map<TSignedSeqRange,double> intron_coverage;
+    vector<double> coverage(mrna_len);
+    ITERATE (TContained, it, m_members) {
+        const CGeneModel& align = *(*it)->m_align;
+        TSignedSeqRange overlap = Limits()&align.Limits();
+        if(align.Type() != CGeneModel::eSR || overlap.Empty())   // some could be cut by polya clip
+            continue;
+
+        TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
+        for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
+            coverage[i] += align.Weight();
+        
+        for(int i = 1; i < (int)align.Exons().size(); ++i) {
+            TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
+            if(Include(Limits(),intron))
+                intron_coverage[intron] += align.Weight();
+        }
+    }
+
+    double minintroncount = numeric_limits<double>::max();
+    double maxintroncount = 0;
+    for(map<TSignedSeqRange,double>::iterator it = intron_coverage.begin(); it != intron_coverage.end(); ++it) {
+        minintroncount = min(minintroncount,it->second);
+        maxintroncount = max(maxintroncount,it->second);
+    }
+    if(minintroncount < 0.1*maxintroncount)
+        return;
+
+    vector<int> dips(mrna_len,0);
+    double maxsofar = 0;
+    for(int i = 0; i < mrna_len; ++i) {
+        if(coverage[i] < 0.1*maxsofar)
+            dips[i] = 1;
+        maxsofar = max(maxsofar,coverage[i]);
+    }
+    maxsofar = 0;
+    for(int i = mrna_len-1; i >= 0; --i) {
+        if(coverage[i] < 0.1*maxsofar && dips[i] > 0)
+            return;
+        maxsofar = max(maxsofar,coverage[i]);
+    }
+
+    if(intron_coverage.size() > 1)
+        Status() |= eConsistentCoverage;
 }
 
 pair<bool,bool> ProteinPartialness(map<string, pair<bool,bool> >& prot_complet, const CAlignModel& align, CScope& scope)

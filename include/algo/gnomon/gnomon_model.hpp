@@ -318,7 +318,8 @@ public:
         ePolyA = 128,
         eCap = 256,
         eBestPlacement = 512,
-        eUnknownOrientation = 1024 
+        eUnknownOrientation = 1024,
+        eConsistentCoverage = 2048
     };
 
     CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :
