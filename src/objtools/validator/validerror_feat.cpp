@@ -6846,7 +6846,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                                 while (nf && !found) {
                                     string label;
                                     nf->GetData().GetGene().GetLabel(&label);
-                                    if (NStr::Equal(label, gene_xref->GetLocus())) {
+                                    if (gene_xref->IsSetLocus() && NStr::Equal(label, gene_xref->GetLocus())) {
                                         found = true;
                                     } else {
                                         ++nf;
