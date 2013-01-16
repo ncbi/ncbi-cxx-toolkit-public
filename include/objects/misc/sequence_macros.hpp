@@ -1015,6 +1015,13 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
     ((Var).IsSet##Fld() && NStr::EqualNocase((Var).Get##Fld(), (Str)) && \
         (Var).Get##Fld() != (Str) )
 
+/// STRING_FIELD_CHOICE_MATCH base macro
+
+#define STRING_FIELD_CHOICE_MATCH( Var, Fld, Chs, Value) \
+    ( (Var).IsSet##Fld() && (Var).Get##Fld().Is##Chs() && \
+      NStr::EqualNocase((Var).Get##Fld().Get##Chs(), (Value)) )
+
+
 /// GET_STRING_FLD_OR_BLANK base macro
 
 #define GET_STRING_FLD_OR_BLANK(Var, Fld) \
