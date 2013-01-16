@@ -554,8 +554,8 @@
 4.3.2.n	Lyases acting on amides, amidines, etc
 4.3.3.-	Amine-lyases
 4.3.3.n	Amine-lyases
-4.3.99.-	Other carbon-oxygen lyases
-4.3.99.n	Other carbon-oxygen lyases
+4.3.99.-	Other carbon-nitrogen lyases
+4.3.99.n	Other carbon-nitrogen lyases
 4.4.-.-	Carbon-sulfur lyases
 4.4.n.n	Carbon-sulfur lyases
 4.4.1.-	Carbon-sulfur lyases
@@ -568,6 +568,10 @@
 4.6.n.n	Phosphorus-oxygen lyases
 4.6.1.-	Phosphorus-oxygen lyases
 4.6.1.n	Phosphorus-oxygen lyases
+4.7.-.-	Carbon-phosphorus lyases
+4.7.n.n	Carbon-phosphorus lyases
+4.7.1.-	Carbon-phosphorus lyases
+4.7.1.n	Carbon-phosphorus lyases
 4.99.-.-	Other lyases
 4.99.n.n	Other lyases
 4.99.1.-	Sole sub-subclass for lyases that do not belong in the other subclasses
