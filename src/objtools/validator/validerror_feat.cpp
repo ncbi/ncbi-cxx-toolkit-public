@@ -6355,15 +6355,6 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
         tmp_cds->SetData().SetCdregion().SetCode().Assign(cdregion.GetCode());
     }
 
-    string transl_prot = "";
-    try {
-        CSeqTranslator::Translate(*tmp_cds, *m_Scope, transl_prot,
-                                  false,   // include stop codons
-                                  false,  // do not remove trailing X/B/Z
-                                  &alt_start);
-    } catch (CException&) {
-    }
-
     // now, will use tmp_cds to translate individual code breaks;
     tmp_cds->SetData().SetCdregion().ResetFrame();
 
@@ -6380,6 +6371,9 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
         size_t codon_length = GetLength((*cbr)->GetLoc(), m_Scope);
         TSeqPos from = LocationOffset(loc, (*cbr)->GetLoc(), 
             eOffset_FromStart, m_Scope);
+        
+        TSeqPos from_end = LocationOffset(loc, (*cbr)->GetLoc(), 
+            eOffset_FromEnd, m_Scope);
         
         TSeqPos to = from + codon_length - 1;
         
@@ -6449,6 +6443,8 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
             if (!not_set) {
                 string except_char = "";
                 except_char += ex;
+
+               //At the beginning of the CDS
                 if (prot_pos == 0 && ex != 'M') {
                     if ((! feat.IsSetPartial()) || (! feat.GetPartial())) {
                         string msg = "Suspicious transl_except ";
@@ -6459,8 +6455,10 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                  feat);
                     }
                 }
-                if (prot_pos < transl_prot.length()) {
-                    if (len - from < 2 && NStr::Equal (except_char, "*")) {
+
+               // Anywhere in CDS, where exception has no effect
+                if (from_end > 0) {
+                    if (from_end < 2 && NStr::Equal (except_char, "*")) {
                         // this is a necessary terminal transl_except
                     } else if (NStr::EqualNocase (cb_trans, except_char)) {
                         string msg = "Unnecessary transl_except ";
@@ -6471,7 +6469,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                  msg,
                                  feat);
                     }
-                } else if (prot_pos == transl_prot.length()) {
+                } else if (from_end <= 0) {
                     if (!NStr::Equal (except_char, "*")) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
                                  "Unexpected transl_except " + except_char
