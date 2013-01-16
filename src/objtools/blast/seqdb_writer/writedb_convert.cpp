@@ -592,4 +592,26 @@ void WriteDB_Ncbi2naToBinary(const CSeq_inst & si,
     seq[last_byte] |= remainder;
 }
 
+void WriteDB_IupacnaToBinary(const CSeq_inst & si, string & seq, string & amb)
+{
+    const string & v = si.GetSeq_data().GetIupacna().Get();
+
+    _ASSERT(si.GetLength() == v.size());
+
+    string tmp;
+    // convert to string.
+    CSeqConvert::Convert(v,
+                         CSeqUtil::e_Iupacna,
+                         0,
+                         (int) v.size(),
+                         tmp,
+                         CSeqUtil::e_Ncbi4na);
+
+    WriteDB_Ncbi4naToBinary(tmp.c_str(),
+                            (int) tmp.size(),
+                            (int) si.GetLength(),
+                            seq,
+                            amb);
+}
+
 END_NCBI_SCOPE

@@ -44,7 +44,7 @@ static char const rcsid[] =
 
 #include <serial/iterator.hpp>
 #include <objmgr/util/create_defline.hpp>
-#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/blastdb/Blast_db_mask_info.hpp>
@@ -314,19 +314,45 @@ void CMakeBlastDBApp::x_AddFasta(CNcbiIstream & data)
     m_DB->AddFasta(data);
 }
 
-static int s_GetTaxId(const CBioseq_Handle& handle)
+static int s_GetTaxId(const CBioseq & bio)
 {
-    CSeqdesc_CI desc_s(handle, CSeqdesc::e_Source);
-    if (desc_s) {
-    		return desc_s->GetSource().GetOrg().GetTaxId();
+	CSeq_entry * p_ptr = bio.GetParentEntry();
+	while (p_ptr != NULL)
+	{
+		if(p_ptr->IsSetDescr())
+		{
+			ITERATE(CSeq_descr::Tdata, it, p_ptr->GetDescr().Get()) {
+				 const CSeqdesc& desc = **it;
+				 if(desc.IsSource()) {
+					 return desc.GetSource().GetOrg().GetTaxId();
+				 }
+
+				 if(desc.IsOrg()) {
+	 				 return desc.GetOrg().GetTaxId();
+				 }
+			}
+		}
+
+		p_ptr = p_ptr->GetParentEntry();
+	}
+	return 0;
+}
+
+static bool s_GenerateTitle(const CBioseq & bio)
+{
+    if (! bio.CanGetDescr()) {
+        return true;
     }
 
-    CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
-    if (desc) {
-    	return desc->GetOrg().GetTaxId();
+    ITERATE(list< CRef< CSeqdesc > >, iter, bio.GetDescr().Get()) {
+        const CSeqdesc & desc = **iter;
+
+        if (desc.IsTitle()) {
+        	return false;
+        }
     }
 
-    return 0;
+    return true;
 }
 
 class CSeqEntrySource : public IBioseqSource {
@@ -337,7 +363,7 @@ public:
     CSeqEntrySource(CNcbiIstream & is, TFormat fmt)
         :m_objmgr(CObjectManager::GetInstance()),
          m_scope(new CScope(*m_objmgr)),
-         m_entry(new CSeq_entry)   
+         m_entry(new CSeq_entry)
     {
         char ch=is.peek();
 
@@ -360,7 +386,11 @@ public:
         }
 
         m_bio = Begin(*m_entry);
-        m_scope->AddTopLevelSeqEntry(*m_entry);
+        for (CTypeIterator<CBioseq> it = Begin(*m_entry); it; ++it)
+        {
+       		m_scope->AddBioseq(*it);
+        }
+        m_entry->Parentize();
     }
     
     virtual CConstRef<CBioseq> GetNext()
@@ -368,7 +398,7 @@ public:
         CConstRef<CBioseq> rv;
         
        if (m_bio ) {
-            if (! m_bio ->CanGetDescr()) {
+            if (s_GenerateTitle(*m_bio)) {
                  sequence::CDeflineGenerator gen;
                  const string & title = gen.GenerateDefline(*m_bio , *m_scope);
                  CRef<CSeqdesc> des(new CSeqdesc);
@@ -378,11 +408,10 @@ public:
             }
 
             if(0 == m_bio->GetTaxId()) {
-            	CBioseq_Handle bio_handle = m_scope->GetBioseqHandle(*m_bio);
-            	int tax_id = s_GetTaxId(bio_handle);
-            	if(0 != tax_id) {
+            	int taxid = s_GetTaxId(*m_bio);
+            	if(0 != taxid) {
             		CRef<CSeqdesc> des(new CSeqdesc);
-            		des->SetOrg().SetTaxId(tax_id);
+            		des->SetOrg().SetTaxId(taxid);
             		m_bio->SetDescr().Set().push_back(des);
             	}
             }

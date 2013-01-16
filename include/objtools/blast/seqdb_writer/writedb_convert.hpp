@@ -125,6 +125,18 @@ void WriteDB_Ncbi4naToBinary(const char * ncbi4na,
                              string     & seq,
                              string     & amb);
 
+/// Build blast db nucleotide format from Iupacna Seq-inst.
+///
+/// The data is compressed to ncbi2na, the length remainder is coded
+/// into the last byte, and ambiguous region data is produced.
+///
+/// @param si Seq-inst containing data in Iupacna format. [in]
+/// @param seq Sequence in blast db disk format. [out]
+/// @param amb Ambiguities in blast db disk format. [out]
+void WriteDB_IupacnaToBinary(const CSeq_inst & si,
+							 string & seq,
+							 string & amb);
+
 /// Append a value to a string as a 4 byte big-endian integer.
 /// @param x Value to append.
 /// @param outp String to modify.

@@ -292,14 +292,12 @@ void CBuildDatabase::x_DupLocal()
 
 static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
 {
-    if ((! bs->CanGetInst()) || bs->GetInst().CanGetSeq_data()) {
+    if ((! bs->CanGetInst()) || bs->GetInst().CanGetSeq_data() ||
+    	 ! bs->GetInst().CanGetExt() || ! bs->GetInst().GetExt().IsDelta()) {
         return bs;
     }
     
-    if (bs->CanGetInst() &&
-        bs->GetInst().CanGetExt() &&
-        bs->GetInst().GetExt().IsDelta() &&
-        bs->GetInst().CanGetMol() &&
+    if (bs->GetInst().CanGetMol() &&
         !CSeq_inst::IsNa(bs->GetInst().GetMol())) {
         CConstRef<CSeq_id> id = FindBestChoice(bs->GetId(), CSeq_id::BestRank);
         CNcbiOstrstream oss;

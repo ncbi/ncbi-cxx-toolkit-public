@@ -633,6 +633,29 @@ x_SetDeflinesFromBinary(const string                   & bin_hdr,
     deflines.Reset(&* bdls);
 }
 
+
+static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBlast_def_line_set> & deflines)
+{
+	if(deflines.Empty())
+		return false;
+
+	const CSeq_id * bioseq_id = bioseq->GetNonLocalId();
+
+	if(bioseq_id == NULL)
+		return true;
+
+	// Bioseq has non-local id, make sure at least one id is non-local from CFastaReader
+	// defline
+    ITERATE(list< CRef<CBlast_def_line> >, iter, deflines->Get()) {
+        CRef<CSeq_id> id = FindBestChoice((**iter).GetSeqid(), &CSeq_id::BestRank);
+        if (id.NotEmpty()  &&  !id->IsLocal()) {
+                return true;
+        }
+    }
+    return false;
+
+}
+
 void
 CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  CConstRef<CBlast_def_line_set> & deflines,
@@ -677,6 +700,10 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                      parse_ids);
         }
         
+        if(!s_UseFastaReaderDeflines(bioseq, deflines)) {
+        	deflines.Reset();
+        }
+
         if (bin_hdr.empty() && deflines.Empty()) {
             x_BuildDeflinesFromBioseq(*bioseq,
                                       deflines,
@@ -864,6 +891,10 @@ void CWriteDB_Impl::x_CookSequence()
             WriteDB_Ncbi4naToBinary(si, m_Sequence, m_Ambig);
             break;
             
+        case CSeq_data::e_Iupacna:
+             WriteDB_IupacnaToBinary(si, m_Sequence, m_Ambig);
+             break;
+
         default:
             msg = "Need to write conversion for data type [";
             msg += NStr::IntToString((int) sd.Which());
