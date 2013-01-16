@@ -40,6 +40,7 @@
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/seq_table_info.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -1287,6 +1288,18 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
+        break;
+    }
+    case CSeq_annot::C_Data::e_Seq_table:
+    {
+        CRef<CSeq_loc> mapped_loc;
+        const CSeq_annot_Info& annot = obj.GetSeq_annot_Info();
+        const CSeqTableInfo& table = annot.GetTableInfo();
+        CConstRef<CSeq_loc> loc = table.GetTableLocation();
+        if ( loc ) {
+            Convert(*loc, &mapped_loc);
+            map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        }
         break;
     }
     default:

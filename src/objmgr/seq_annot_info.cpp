@@ -983,12 +983,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
         size_t keys_begin = m_ObjectIndex.GetKeys().size();
         index.m_AnnotObject_Info = &info;
         index.m_AnnotLocationIndex = 0;
-        CConstRef<CSeq_loc> loc;
-        try {
-            loc = m_Table_Info->GetColumn("Seq-table location").GetSeq_loc(0);
-        }
-        catch ( exception& /*ignored*/ ) {
-        }
+        CConstRef<CSeq_loc> loc = m_Table_Info->GetTableLocation();
         if ( !loc ) {
             return;
         }

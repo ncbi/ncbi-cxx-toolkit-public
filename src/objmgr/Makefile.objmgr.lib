@@ -13,7 +13,7 @@ SRC = seq_table_setters seq_table_info seq_annot_info table_field \
       data_source priority \
       prefetch_impl prefetch_manager prefetch_manager_impl prefetch_actions \
       scope heap_scope scope_impl scope_info tse_handle \
-      seq_map seq_map_ci seq_entry_ci seq_annot_ci \
+      seq_map seq_map_ci seq_entry_ci seq_annot_ci seq_table_ci \
       seq_entry_handle bioseq_set_handle bioseq_handle seq_annot_handle \
       align_ci data_loader handle_range objmgr_exception \
       handle_range_map object_manager seq_vector seq_vector_ci seqdesc_ci \

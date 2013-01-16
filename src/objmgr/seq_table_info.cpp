@@ -940,6 +940,17 @@ CSeqTableInfo::~CSeqTableInfo()
 }
 
 
+CConstRef<CSeq_loc> CSeqTableInfo::GetTableLocation(void) const
+{
+    try {
+        return GetColumn("Seq-table location").GetSeq_loc(0);
+    }
+    catch ( exception& /*ignored*/ ) {
+        return null;
+    }
+}
+
+
 void CSeqTableInfo::UpdateSeq_feat(size_t row,
                                    CRef<CSeq_feat>& seq_feat,
                                    CRef<CSeq_point>& seq_pnt,

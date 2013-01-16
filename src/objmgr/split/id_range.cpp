@@ -384,12 +384,7 @@ void CSeqsRange::Add(const CSeq_table& table, const CBlobSplitterImpl& impl)
         Add(info->GetProduct(), table, impl);
     }
     else {
-        CConstRef<CSeq_loc> loc;
-        try {
-            loc = info->GetColumn("Seq-table location").GetSeq_loc(0);
-        }
-        catch ( CException& /*ignored*/ ) {
-        }
+        CConstRef<CSeq_loc> loc = info->GetTableLocation();
         if ( loc ) {
             Add(*loc, impl);
         }

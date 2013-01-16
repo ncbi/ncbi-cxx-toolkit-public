@@ -242,6 +242,8 @@ public:
                         CRef<CSeq_point>& seq_pnt,
                         CRef<CSeq_interval>& seq_int) const;
 
+    CConstRef<CSeq_loc> GetTableLocation(void) const;
+
     const CSeqTableLocColumns& GetLocation(void) const {
         return m_Location;
     }
