@@ -66,7 +66,7 @@ public:
         }
     bool Optional(void) const
         {
-            return m_Optional || m_Default;
+            return m_NoPrefix ? m_Optional : (m_Optional || m_Default);
         }
     bool NoPrefix(void) const
         {

@@ -78,8 +78,10 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
             PrintASNNewLine(out,indent) <<
                 "<xs:element name=\"" << userType << "\""
                 << " type=\"" << par->GetMemberName() << userType << "_Type\"";
-            if (GetDataMember() && GetDataMember()->Optional()) {
-                out << " minOccurs=\"0\"";
+            if (GetDataMember()) {
+                if (GetDataMember()->Optional()) {
+                    out << " minOccurs=\"0\"";
+                }
                 if (GetDataMember()->GetDefault()) {
                     out << " default=\"" << GetDataMember()->GetDefault()->GetXmlString() << "\"";
                 }
@@ -90,8 +92,10 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
 
         PrintASNNewLine(out,indent) <<
             "<xs:element ref=\"" << userType << "\"";
-        if (GetDataMember() && GetDataMember()->Optional()) {
-            out << " minOccurs=\"0\"";
+        if (GetDataMember()) {
+            if (GetDataMember()->Optional()) {
+                out << " minOccurs=\"0\"";
+            }
             if (GetDataMember()->GetDefault()) {
                 out << " default=\"" << GetDataMember()->GetDefault()->GetXmlString() << "\"";
             }

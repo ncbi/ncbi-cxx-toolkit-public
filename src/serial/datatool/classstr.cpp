@@ -454,11 +454,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     if (i->defaultValue.empty()) {
                         code.ClassPublic() << "optional";
                     } else {
-                        code.ClassPublic() << "mandatory with default "
+                        code.ClassPublic() << "optional with default "
                                            << i->defaultValue;
                     }
                 } else {
-                    code.ClassPublic() << "mandatory";
+                    if (i->defaultValue.empty()) {
+                        code.ClassPublic() << "mandatory";
+                    } else {
+                        code.ClassPublic() << "mandatory with default "
+                                           << i->defaultValue;
+                    }
                 }
 // comment: typedef
                 if (!isNull) {
@@ -571,7 +576,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
             }
             
-            // generate Reset... method
+// generate Reset... method
             string destructionCode = i->type->GetDestructionCode(i->valueName);
             string assignValue = x_IsUniSeq(i) ? kEmptyStr : i->defaultValue;
             string resetCode;
@@ -652,6 +657,28 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             code.Methods(inl) <<
                 "}\n"
                 "\n";
+
+// generate SetDefault... method, for elements with defaults
+            if (!i->defaultValue.empty() && i->type->GetKind() != eKindContainer) {\
+                if (CClassCode::GetDoxygenComments()) {
+                    setters <<
+                        "\n"
+                        "    /// Assign default value to "<<i->cName<<" data member.\n";
+                }
+                setters <<
+                    "    void SetDefault"<<i->cName<<"(void);\n";
+                code.MethodStart(inl) <<
+                    "void "<<methodPrefix<<"SetDefault"<<i->cName<<"(void)\n"
+                    "{\n"
+                    "    Reset"<<i->cName<<"();\n";
+                if ( i->haveFlag && i->noPrefix) {
+                    code.Methods(inl) <<
+                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
+                }
+                code.Methods(inl) <<
+                    "}\n"
+                    "\n";
+            }
 
             string cType = i->type->GetCType(code.GetNamespace());
 #if 0
@@ -1362,18 +1389,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( defref )
                     methods << ')';
                 methods << ')';
-                if ( i->haveFlag )
-                    methods <<
-                        "->SetSetFlag(MEMBER_PTR("SET_PREFIX"[0]))";
             }
-            else if ( i->optional ) {
+            if ( i->optional ) {
                 methods << "->SetOptional()";
-                if (i->haveFlag) {
-                    methods <<
-                        "->SetSetFlag(MEMBER_PTR("SET_PREFIX"[0]))";
-                }
             }
-            else if (i->haveFlag) {
+            if (i->haveFlag) {
                 methods <<
                     "->SetSetFlag(MEMBER_PTR("SET_PREFIX"[0]))";
             }

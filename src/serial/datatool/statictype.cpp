@@ -472,11 +472,19 @@ bool CStringDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CStringDataType::CreateDefault(const CDataValue& value) const
 {
+#if 0
     if (m_Type == eStringTypeUTF8) {
         return new (CStringUTF8*)(new CStringUTF8( CUtf8::AsUTF8(
             dynamic_cast<const CStringDataValue&>(value).GetValue(), eEncoding_UTF8)));
     }
     return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+#else
+    if (m_Type == eStringTypeUTF8) {
+        return (new CStringUTF8( CUtf8::AsUTF8(
+            dynamic_cast<const CStringDataValue&>(value).GetValue(), eEncoding_UTF8)));
+    }
+    return (new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+#endif
 }
 
 string CStringDataType::GetDefaultString(const CDataValue& value) const
@@ -864,7 +872,11 @@ void CAnyContentDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only)
 
 TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
 {
+#if 0
     return new (string*)(new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+#else
+    return (new string(dynamic_cast<const CStringDataValue&>(value).GetValue()));
+#endif
 }
 
 AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
