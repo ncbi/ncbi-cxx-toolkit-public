@@ -7526,6 +7526,60 @@ Seq-annot ::= {
           }
         }
       }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "miRNA",
+          product "mir-2279-RA"
+        }
+      },
+      comment "mir-2279-RA; Dmel\mir-2279-RA; CR42911-RA; Dmel\CR42911-RA",
+      location packed-int {
+        {
+          from 1322895,
+          to 1322914,
+          strand minus,
+          id other {
+            accession "NW_001848856",
+            version 1
+          }
+        }
+      },
+      dbxref {
+        {
+          db "miRBase",
+          tag str "MIMAT0011784"
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "miRNA",
+          product "mir-2279-RB"
+        }
+      },
+      comment "mir-2279-RB; Dmel\mir-2279-RB; CR42911-RB; Dmel\CR42911-RB",
+      location packed-int {
+        {
+          from 1322859,
+          to 1322878,
+          strand minus,
+          id other {
+            accession "NW_001848856",
+            version 1
+          }
+        }
+      },
+      dbxref {
+        {
+          db "miRBase",
+          tag str "MIMAT0011785"
+        }
+      }
     }
   }
 }
