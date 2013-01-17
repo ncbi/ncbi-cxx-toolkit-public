@@ -2329,6 +2329,9 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
 
 void CChain::SetConsistentCoverage()
 {
+    if(!(Type()&CGeneModel::eSR))
+        return;
+
     CAlignMap amap = GetAlignMap();
     int mrna_len = amap.FShiftedLen(Limits());
     map<TSignedSeqRange,double> intron_coverage;
@@ -2336,17 +2339,19 @@ void CChain::SetConsistentCoverage()
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
         TSignedSeqRange overlap = Limits()&align.Limits();
-        if(align.Type() != CGeneModel::eSR || overlap.Empty())   // some could be cut by polya clip
+        if(overlap.Empty())   // some could be cut by polya clip
             continue;
 
-        TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
-        for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
-            coverage[i] += align.Weight();
+        if(align.Type() == CGeneModel::eSR) {
+            TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
+            for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
+                coverage[i] += align.Weight();
+        }
         
         for(int i = 1; i < (int)align.Exons().size(); ++i) {
             TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
             if(Include(Limits(),intron))
-                intron_coverage[intron] += align.Weight();
+                intron_coverage[intron] += (align.Type() == CGeneModel::eSR) ? align.Weight() : 0;
         }
     }
 
