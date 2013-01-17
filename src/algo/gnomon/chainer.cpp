@@ -1240,6 +1240,40 @@ string GetLinkedIdsForMember(const SChainMember& mi) {
     return note;
 }
 
+void MarkUnwantedLowSupportIntrons(TOrigAligns& orig_aligns, vector<SChainMember*>& pointers, const SMinScor& minscor) {
+
+    map<TSignedSeqRange,int> mrna_count;
+    map<TSignedSeqRange,int> est_count;
+    map<TSignedSeqRange,int> rnaseq_count;
+
+    ITERATE(TOrigAligns, it, orig_aligns) {
+        const CAlignModel& align = *it->second;
+        for(int i = 1; i < (int)align.Exons().size(); ++i) {
+            if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
+                TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
+                if(align.Type() == CGeneModel::emRNA)
+                    mrna_count[intron] += align.Weight();
+                else if(align.Type() == CGeneModel::eEST)
+                    est_count[intron] += align.Weight();
+                else if(align.Type() == CGeneModel::eSR)
+                    rnaseq_count[intron] += align.Weight();
+            }
+        }
+    }
+
+    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
+        SChainMember& mi = **i;
+        CGeneModel& align = *mi.m_align;
+        for(int i = 1; i < (int)align.Exons().size(); ++i) {
+            if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
+                TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
+                if(mrna_count[intron] < minscor.m_minsupport_mrna && mrna_count[intron]+est_count[intron] < minscor.m_minsupport && rnaseq_count[intron] < minscor.m_minsupport_rnaseq)
+                    mi.m_marked_for_deletion = true;
+            }
+        }
+    }
+}
+
 TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 {
     if(clust.empty()) return TGeneModelList();
@@ -1381,11 +1415,13 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
 
+    MarkUnwantedLowSupportIntrons(orig_aligns,pointers,minscor);
+    pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsMarkedForDeletion),pointers.end());  // low support introns removed
+
     LeftRight(pointers);
     RightLeft(pointers);
 
-            //        const CGeneModel& algn(**it);
-ITERATE(vector<SChainMember*>, i, pointers) {
+    ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
         _ASSERT(mi.m_cds == 0);
@@ -1411,7 +1447,8 @@ ITERATE(vector<SChainMember*>, i, pointers) {
         chain.AddComment("Link2  "+GetLinkedIdsForMember(mi));
 #endif    
 
-        tmp_chains.push_back(chain);
+        if(chain.Continuous() && chain.Exons().size() > 1)
+            tmp_chains.push_back(chain);
     }
 
     CombineCompatibleChains(tmp_chains);
@@ -3395,6 +3432,15 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey("oep", "oep",
                             "Minimal overlap length for chaining alignments which don't have introns in the ovrlapping regions",
                             CArgDescriptions::eInteger, "100");
+    arg_desc->AddDefaultKey("minsupport", "minsupport",
+                            "Minimal number of mRNA/EST for valid noncoding models",
+                            CArgDescriptions::eInteger, "3");
+    arg_desc->AddDefaultKey("minsupport_mrna", "minsupport_mrna",
+                            "Minimal number of mRNA for valid noncoding models",
+                            CArgDescriptions::eInteger, "1");
+    arg_desc->AddDefaultKey("minsupport_rnaseq", "minsupport_rnaseq",
+                            "Minimal number of RNA-Seq for valid noncoding models",
+                            CArgDescriptions::eInteger, "5");
 
     arg_desc->SetCurrentGroup("Heuristic parameters for score evaluation");
     arg_desc->AddDefaultKey("i5p", "i5p",
@@ -3470,6 +3516,9 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     minscor.m_prot_cds_len = args["protcdslen"].AsInteger();
     minscor.m_cds_len = args["longenoughcds"].AsInteger();
     minscor.m_utr_clip_threshold = args["utrclipthreshold"].AsDouble();
+    minscor.m_minsupport = args["minsupport"].AsInteger();
+    minscor.m_minsupport_mrna = args["minsupport_mrna"].AsInteger();
+    minscor.m_minsupport_rnaseq = args["minsupport_rnaseq"].AsInteger();
 
     chainer->SetMinInframeFrac(args["mininframefrac"].AsDouble());
     

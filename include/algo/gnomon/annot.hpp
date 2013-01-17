@@ -59,7 +59,6 @@ public:
 
     void FilterOutSingleExonEST(TGeneModelList& chains);
     void FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns);
-    void FilterOutLowSupportModels(TGeneModelList& cls, int minsupport, int minCDS, bool allow_partialgenes, TGeneModelList& bad_aligns);
     void FilterOutTandemOverlap(TGeneModelList&cls, double fraction, TGeneModelList& bad_aligns);
     void FilterOutPartialModels(TGeneModelList&cls, TGeneModelList& bad_aligns);
 };
@@ -113,9 +112,6 @@ public:
 public:
     int mincontig;
     int tolerance;
-
-    int minCdsLen;
-    int minsupport;
 
 private:
     void RemoveShortHolesAndRescore(TGeneModelList chains);

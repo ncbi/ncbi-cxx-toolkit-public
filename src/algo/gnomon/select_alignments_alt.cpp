@@ -482,21 +482,6 @@ void CModelFilters::FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tol
     }
 }
 
-void  CModelFilters::FilterOutLowSupportModels(TGeneModelList& cls, int minsupport, int minCDS, bool allow_partialgenes, TGeneModelList& bad_aligns)
-{
-    for(TGeneModelList::iterator jt_loop = cls.begin(); jt_loop != cls.end();) {
-        TGeneModelList::iterator jt = jt_loop++;
-        const CGeneModel& aj(*jt);
-        if (aj.TrustedmRNA().empty() && aj.TrustedProt().empty() && (int)aj.Support().size() < minsupport && (aj.ReadingFrame().Empty() || aj.RealCdsLen() < minCDS || (allow_partialgenes && !aj.CompleteCds()))) {
-            jt->Status() |= CGeneModel::eSkipped;
-            jt->AddComment("Low support chain");
-            bad_aligns.push_back(*jt);
-            cls.erase(jt);
-        }
-    }
-}
-
-
 
 bool CModelCompare::BadOverlapTest(const CGeneModel& a, const CGeneModel& b) {     // returns true for bad overlap
     if((!a.TrustedmRNA().empty() || !a.TrustedProt().empty()) && (!b.TrustedmRNA().empty() || !b.TrustedProt().empty()))
@@ -670,6 +655,7 @@ void CGeneSelector::FindAltsForGeneSeeds(list<CAltSplice>& alts, list<const CGen
             }
             included_in.front()->Insert(algn);
             not_placed_yet.erase(it);
+            //        } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty() || (algn.Status()&CGeneModel::eConsistentCoverage)) {   // connects seeds but trusted
         } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()) {   // connects seeds but trusted
             bool cds_overlap = true;
             ITERATE(list<list<CAltSplice>::iterator>, k, included_in) {
@@ -678,6 +664,7 @@ void CGeneSelector::FindAltsForGeneSeeds(list<CAltSplice>& alts, list<const CGen
                     break;
                 }
             }
+            //            if(cds_overlap || (algn.Status()&CGeneModel::eConsistentCoverage)) {
             if(cds_overlap) {
                 ITERATE(list<CAltSplice*>, itl, possibly_nested) {
                     (*itl)->Nested() = true;

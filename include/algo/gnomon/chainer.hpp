@@ -54,6 +54,9 @@ struct SMinScor {
     int m_prot_cds_len;
     int m_cds_len;
     double m_utr_clip_threshold;
+    int m_minsupport;
+    int m_minsupport_mrna;
+    int m_minsupport_rnaseq;
 };
 
 

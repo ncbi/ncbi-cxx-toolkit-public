@@ -629,8 +629,6 @@ void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& arg
     annot->mincontig = args["mincont"].AsInteger();
     annot->tolerance = args["tolerance"].AsInteger();
 
-    annot->minCdsLen = args["minlen"].AsInteger();
-    annot->minsupport = args["minsupport"].AsInteger();
     if (!args["norep"])
         annot->EnableSeqMasking();
 }
