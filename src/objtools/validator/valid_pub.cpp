@@ -516,13 +516,14 @@ void CValidError_imp::x_ValidatePages
 
     int p1 = 0, p2 = 0;
     bool start_good = false, stop_good = false;
-    size_t num_digits = 0;
+    size_t num_digits = 0, num_chars = 0;
 
     if (start.c_str()[0] == '-') {
-        num_digits++;
+        num_chars++;
     }
-    while (isdigit (start.c_str()[num_digits])) {
+    while (isdigit (start.c_str()[num_chars])) {
         num_digits++;
+        num_chars++;
     }
     if (num_digits == 0) {
         if (!isalpha(start.c_str()[0])) {
@@ -530,20 +531,24 @@ void CValidError_imp::x_ValidatePages
         }
     } else {
         start_good = true;
-        p1 = NStr::StringToInt (start.substr(0, num_digits));
+        p1 = NStr::StringToInt (start.substr(0, num_digits), NStr::fConvErr_NoThrow);
 
         num_digits = 0;
+        num_chars = 0;
         if (stop.c_str()[0] == '-') {
-            num_digits++;
+            num_chars++;
         }
-        while (isdigit (stop.c_str()[num_digits])) {
+        while (isdigit (stop.c_str()[num_chars])) {
           num_digits++;
+          num_chars++;
         }
         if (num_digits == 0) {
-            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering stop looks strange", obj, ctx);
+            if (!isalpha(stop.c_str()[0])) {
+                PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering stop looks strange", obj, ctx);
+            }
         } else {
             stop_good = true;
-            p2 = NStr::StringToInt (stop.substr(0, num_digits));
+            p2 = NStr::StringToInt (stop.substr(0, num_digits), NStr::fConvErr_NoThrow);
         }
 
         if ((start_good && p1 == 0) || (stop_good && p2 == 0)) {
