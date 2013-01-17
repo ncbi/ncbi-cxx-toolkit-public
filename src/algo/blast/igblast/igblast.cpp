@@ -222,13 +222,13 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
         int penalty = m_Options->GetOptions().GetMismatchPenalty();
         opts.SetMatchReward(1);
         opts.SetMismatchPenalty(penalty);
-        opts.SetWordSize(7);
+        opts.SetWordSize(9);
         if (penalty == -1) {
             opts.SetGapOpeningCost(4);
             opts.SetGapExtensionCost(1);
         }
     }
-    opts_hndl->SetEvalueThreshold(1000.0);
+    opts_hndl->SetEvalueThreshold(20.0);
     opts_hndl->SetFilterString("F");
     opts_hndl->SetHitlistSize(5+ m_IgOptions->m_NumAlign[0]);
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
