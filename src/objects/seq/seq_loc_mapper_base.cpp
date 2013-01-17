@@ -2206,6 +2206,9 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
                     dst_start = dst_stop;
                     break;
                 }
+                // Proceed to the next range.
+                dst_start = rg_start;
+                dst_stop = rg_stop;
             }
             // Add any remaining range.
             if (dst_start < dst_stop) {

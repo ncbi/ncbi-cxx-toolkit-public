@@ -960,7 +960,6 @@ void CSeq_align_Mapper_Base::x_ConvertAlign(size_t* row)
 void CSeq_align_Mapper_Base::x_ConvertRow(size_t row)
 {
     CSeq_id_Handle dst_id;
-    ENa_strand dst_strand = eNa_strand_unknown;
     // Iterate all segments.
     TSegments::iterator seg_it = m_Segs.begin();
     for ( ; seg_it != m_Segs.end(); ) {
@@ -1728,7 +1727,6 @@ x_GetDstExon(CSpliced_seg&              spliced,
         }
         else {
             // Genomic sequence is present.
-            int gend = gen_row.GetSegStart() + seg->m_Len;
             // Check parts intersection if the last part's coordinates
             // are known.
             if (gen_start >= 0  &&  gen_end > 0) {
@@ -1743,13 +1741,6 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     // add genomic insertion.
                     gins_len = gstart - gen_end;
                 }
-            }
-            // Update last part's start and end.
-            if (gen_start < 0) {
-                gen_start = gstart;
-            }
-            if (gen_end < gend) {
-                gen_end = gend;
             }
         }
 
@@ -1789,6 +1780,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     }
                 }
             }
+
             // Save the last part's product coordinates.
             // The collected prod_start may be less than the current pstart
             // if product and genomic strands are reverse (product parts
@@ -1798,6 +1790,18 @@ x_GetDstExon(CSpliced_seg&              spliced,
             }
             if (prod_end < pend) {
                 prod_end = pend;
+            }
+        }
+
+        // Now when we know exon is not split, it's safe to update exon extremes.
+        if (gstart >= 0) {
+            // Update last part's start and end.
+            int gend = gstart + seg->m_Len;
+            if (gen_start < 0) {
+                gen_start = gstart;
+            }
+            if (gen_end < gend) {
+                gen_end = gend;
             }
         }
 
@@ -2322,6 +2326,8 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
         CSeq_id_Handle last_id;
         TSegments::const_iterator seg_it = start_seg_it;
         int seg_idx = start_seg;
+        int left = -1;
+        int right = -1;
         for ( ; seg_idx <= last_seg  &&  seg_it != m_Segs.end();
             seg_idx++, seg_it++) {
             // Check number of rows.
@@ -2331,8 +2337,20 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                 break;
             }
             const SAlignment_Segment::SAlignment_Row& row = seg_it->m_Rows[r];
-            // Check strands for non-gaps
-            if (row.GetSegStart() != -1) {
+            // Check ids.
+            if (last_id  &&  last_id != row.m_Id) {
+                last_seg = seg_idx - 1;
+                break;
+            }
+            if ( !last_id ) {
+                last_id = row.m_Id;
+                ids[r] = row.m_Id;
+            }
+            // Check strands and overlaps for non-gaps
+            int seg_start = row.GetSegStart();
+            int seg_stop = seg_start == -1 ? -1 : seg_start + seg_it->m_Len;
+            if (seg_start != -1) {
+                // Check strands
                 if (strands[r] == eNa_strand_unknown) {
                     if ( row.m_IsSetStrand ) {
                         strands[r] = row.m_Strand;
@@ -2344,15 +2362,27 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
                         break;
                     }
                 }
-            }
-            // Check ids.
-            if (last_id  &&  last_id != row.m_Id) {
-                last_seg = seg_idx - 1;
-                break;
-            }
-            if ( !last_id ) {
-                last_id = row.m_Id;
-                ids[r] = row.m_Id;
+                // Check overlaps
+                if (left == -1) {
+                    left = seg_start;
+                    right = seg_stop;
+                }
+                else {
+                    if (row.m_IsSetStrand  &&  IsReverse(row.m_Strand)) {
+                        if (seg_stop > left) {
+                            last_seg = seg_idx - 1;
+                            break;
+                        }
+                        left = seg_start;
+                    }
+                    else {
+                        if (seg_start < right) {
+                            last_seg = seg_idx - 1;
+                            break;
+                        }
+                        right = seg_stop;
+                    }
+                }
             }
         }
     }
@@ -2567,6 +2597,8 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         }
     }
 
+    CSeq_align::TSegs::E_Choice orig_choice = m_OrigAlign->GetSegs().Which();
+
     CRef<CSeq_align> dst(new CSeq_align);
     // Copy some information from the original alignment.
     dst->SetType(m_OrigAlign->GetType());
@@ -2592,13 +2624,21 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         // here we should always use std-seg.
         x_GetDstStd(dst);
     }
-    else if ( x_HaveMixedStrand() ) {
+    /*
+    // Commented out as it looks to be wrong approach - it discards scores and
+    // changes seq-align type.
+
+    // Even with mixed strand, do not convert std-segs - they can hold mixed
+    // strands without any problems.
+    else if (x_HaveMixedStrand()  &&  orig_choice != CSeq_align::TSegs::e_Std) {
         x_ConvToDstDisc(dst);
     }
+
+    */
     else {
         // Get the proper mapped alignment. Some types still may need
         // to be converted to disc-seg.
-        switch ( m_OrigAlign->GetSegs().Which() ) {
+        switch ( orig_choice ) {
         case CSeq_align::C_Segs::e_Dendiag:
             {
                 x_GetDstDendiag(dst);
