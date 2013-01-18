@@ -45,6 +45,14 @@ void CCompartApplication::Init(void)
 
     CCompartOptions::SetupArgDescriptions(arg_desc.get());
 
+    arg_desc->AddDefaultKey("ifmt", "InputFormat",
+                            "Format for input",
+                            CArgDescriptions::eString,
+                            "");
+    arg_desc->SetConstraint("ifmt",
+                            &(*new CArgAllow_Strings,
+                              "tabular", "seq-align", "seq-align-set", "seq-annot"));
+
     arg_desc->AddFlag("hits",
                       "print hits");
     // Setup arg.descriptions for this application
@@ -104,8 +112,9 @@ int CCompartApplication::Run(void)
     // Get arguments
     CArgs args = GetArgs();
 
-    bool hits = args["hits"];
     CCompartOptions compart_options(args);
+    string ifmt = args["ifmt"].AsString();
+    bool hits = args["hits"];
     
     int last_id = 0;
 
@@ -114,7 +123,7 @@ int CCompartApplication::Run(void)
     CSplign::THitRefs one_query_subj_pair_hitrefs;
 
     while(getline(cin, buf)) {
-        CSplign::THitRef hit (new CSplign::THit (buf.c_str(),PdbBadRank));
+        CSplign::THitRef hit (new CSplign::THit (buf.c_str(), PdbBadRank));
         if (hit->GetQueryStrand() == false) {
             NCBI_THROW(CException, eUnknown, "Reverse strand on protein sequence: "+buf);
         }
