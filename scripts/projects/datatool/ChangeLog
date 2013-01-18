@@ -104,3 +104,7 @@ Corrected initialization of UTF8 strings.
 December 18, 2012
 version 2.8.0
 Changed code generation to use custom type info description for CStringUTF8 data.
+
+January 18, 2013
+version 2.9.0
+Changed code generation to allow mandatory sequence members with default values.
