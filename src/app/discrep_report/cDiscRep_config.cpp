@@ -338,6 +338,10 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
    tests_on_SeqEntry_feat_desc.push_back( 
+            CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
+   tests_on_SeqEntry_feat_desc.push_back( 
+             CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_DBLINK));
+   tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_END_COLON_IN_COUNTRY));
    tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED));
@@ -424,6 +428,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                           CRef <CTestAndRepData>(new CSeqEntry_INCONSISTENT_BIOSOURCE));
    tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_BIOPROJECT_ID));
+   tests_on_SeqEntry_feat_desc.push_back(
+            CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back(

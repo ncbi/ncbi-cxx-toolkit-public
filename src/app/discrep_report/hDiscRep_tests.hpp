@@ -84,6 +84,7 @@ namespace DiscRepNmSpc {
       static bool   is_Defl_run; // checked
       static bool   is_DESC_user_run; // checked
       static bool   is_GP_Set_run;
+      static bool   is_IncnstUser_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;
       static bool   is_mRNA_run;
@@ -374,14 +375,13 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
      protected:
-/*
-       string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, 
-                                                     const int& cur_idx, bool is_subsrc);
-*/
-       void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
-                                                bool be_na = true, bool be_aa = true);
+       void GetIncnstTestReport (CRef <CClickableItem>& c_item, 
+               const string& setting_name, const string& title, const string& item_type);
+
+       void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, 
+                    const string& setting_name, bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
-                              const string& setting_name, bool be_na = true, bool be_aa=true);
+                        const string& setting_name, bool be_na = true, bool be_aa=true);
 
        void TestOnBiosrc(const CSeq_entry& seq_entry);
        string GetName_multi() const {return string("ONCALLER_MULTISRC"); }
@@ -413,6 +413,68 @@ namespace DiscRepNmSpc {
 
 
 //  new comb!!
+  class CSeqEntry_on_incnst_user : public CSeqEntryTestAndRepData
+  {
+    public:
+      CSeqEntry_on_incnst_user () { m_prefix_set.clear(); 
+                                     m_seq_has_dblink.clear();
+                                     m_seq2prefix.clear();
+                                     m_seq_no_dblink.clear();
+                                  };
+      virtual ~CSeqEntry_on_incnst_user () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+
+    protected:
+      set <string> m_prefix_set, m_seq_has_dblink, m_seq_no_dblink;
+      Str2Str m_seq2prefix;
+
+      string GetName_comm() const {
+                      return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS");}
+      string GetName_db() const {
+                      return string("DISC_INCONSISTENT_DBLINK");}
+ 
+      bool SetHasStrCommFields(const CBioseq_set& set_pt, const string& prefix);
+      void AddStrCommFieldValues(const CUser_object& user_obj, const string& prefix,  
+                                                                    const string& desc);
+      void AddStrCommFieldEmptyValues(const CUser_object& user_obj, const string& prefix,
+                                                                  const string& desc);
+
+      bool SetHasDbLinkFields(const CBioseq_set& set_pt);
+      void AddDbLinkFieldValues(const CUser_object& user_obj, const string& desc);
+      void AddDbLinkFieldEmptyValues(const CUser_object& user_obj, const string& desc);
+  
+      void CollectSeqMissingKeys(const CBioseq& bioseq);
+      void FindSeqsMissingKeys(const CBioseq_set& bioseq_set);
+  };
+
+  class CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS : public CSeqEntry_on_incnst_user
+  {
+    public:
+      virtual ~CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS () {};
+
+      virtual string GetName() const { return CSeqEntry_on_incnst_user::GetName_comm();}
+      virtual void GetReport(CRef <CClickableItem>& c_item)
+      {
+          GetIncnstTestReport(c_item,GetName(), "Structured Comment Report",
+                                                               "structured comment");
+      };
+  };
+
+  class CSeqEntry_DISC_INCONSISTENT_DBLINK  : public CSeqEntry_on_incnst_user
+  {
+    public:
+      virtual ~CSeqEntry_DISC_INCONSISTENT_DBLINK () {};
+
+      virtual string GetName() const { return CSeqEntry_on_incnst_user::GetName_db();}
+      virtual void GetReport(CRef <CClickableItem>& c_item)
+      {
+          GetIncnstTestReport(c_item,GetName(), "DBLink Report", "dblink");
+      };
+  };
+
   class CSeqEntry_on_biosrc_subsrc :  public CSeqEntryTestAndRepData
   {
     public:
@@ -986,6 +1048,8 @@ namespace DiscRepNmSpc {
       string GetName_scomm() const {return string("MISSING_STRUCTURED_COMMENT"); }
       string GetName_mproj() const {return string("MISSING_PROJECT"); }
       string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
+      string GetName_iscomm() const {
+                            return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS"); }
 
       void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
       void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 

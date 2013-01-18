@@ -124,6 +124,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   thisTest.is_Comment_run = false;
   thisTest.is_Defl_run = false;
   thisTest.is_DESC_user_run = false;
+  thisTest.is_IncnstUser_run = false;
   thisTest.is_Pub_run = false;
   thisTest.is_Quals_run = false;
   thisTest.is_Subsrc_run = false;
