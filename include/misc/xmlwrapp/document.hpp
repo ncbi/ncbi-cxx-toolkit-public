@@ -843,5 +843,8 @@ private:
     friend void ::xslt_ext_element_cb(void*, void*, void*, void*);
 }; // end xml::document class
 
+// This makes newest Intel compilers happy
+std::ostream& operator<< (std::ostream &stream, const document &doc);
+
 } // end xml namespace
 #endif
