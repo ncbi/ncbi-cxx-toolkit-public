@@ -543,9 +543,7 @@ void CValidError_imp::x_ValidatePages
           num_chars++;
         }
         if (num_digits == 0) {
-            if (!isalpha(stop.c_str()[0])) {
-                PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering stop looks strange", obj, ctx);
-            }
+            PostObjErr(sev, eErr_GENERIC_BadPageNumbering, "Page numbering stop looks strange", obj, ctx);
         } else {
             stop_good = true;
             p2 = NStr::StringToInt (stop.substr(0, num_digits), NStr::fConvErr_NoThrow);
