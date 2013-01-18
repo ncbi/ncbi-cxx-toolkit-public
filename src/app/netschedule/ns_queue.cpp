@@ -1845,14 +1845,16 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                        "Error fetching job: " + DecorateJobId(job_id));
 
         // Check that authorization token matches
-        CJob::EAuthTokenCompareResult   token_compare_result =
-                                            job.CompareAuthToken(auth_token);
-        if (token_compare_result == CJob::eInvalidTokenFormat)
-            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
-                       "Invalid authorization token format");
-        if (token_compare_result == CJob::eNoMatch)
-            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
-                       "Authorization token does not match");
+        if (is_ns_rollback == false) {
+            CJob::EAuthTokenCompareResult   token_compare_result =
+                                                job.CompareAuthToken(auth_token);
+            if (token_compare_result == CJob::eInvalidTokenFormat)
+                NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                           "Invalid authorization token format");
+            if (token_compare_result == CJob::eNoMatch)
+                NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                           "Authorization token does not match");
+        }
 
         // Sanity check of the current job state
         if (job.GetStatus() != CNetScheduleAPI::eReading)
