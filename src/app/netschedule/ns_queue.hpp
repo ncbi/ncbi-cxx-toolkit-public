@@ -66,6 +66,7 @@
 BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
+class CNSRollbackInterface;
 
 
 class CQueue;
@@ -153,16 +154,18 @@ public:
     }
 
     // Submit job, return numeric job id
-    unsigned int  Submit(const CNSClientId &  client,
-                         CJob &               job,
-                         const string &       aff_token,
-                         const string &       group);
+    unsigned int  Submit(const CNSClientId &        client,
+                         CJob &                     job,
+                         const string &             aff_token,
+                         const string &             group,
+                         CNSRollbackInterface * &   rollback_action);
 
     /// Submit job batch
     /// @return ID of the first job, second is first_id+1 etc.
     unsigned SubmitBatch(const CNSClientId &             client,
                          vector< pair<CJob, string> > &  batch,
-                         const string &                  group);
+                         const string &                  group,
+                         CNSRollbackInterface * &        rollback_action);
 
     TJobStatus  PutResult(const CNSClientId &  client,
                           time_t               curr,
@@ -171,17 +174,18 @@ public:
                           int                  ret_code,
                           const string *       output);
 
-    bool GetJobOrWait(const CNSClientId &     client,
-                      unsigned short          port, // Port the client
-                                                    // will wait on
-                      unsigned int            timeout,
-                      time_t                  curr,
-                      const list<string> *    aff_list,
-                      bool                    wnode_affinity,
-                      bool                    any_affinity,
-                      bool                    exclusive_new_affinity,
-                      bool                    new_format,
-                      CJob *                  new_job);
+    bool GetJobOrWait(const CNSClientId &       client,
+                      unsigned short            port, // Port the client
+                                                      // will wait on
+                      unsigned int              timeout,
+                      time_t                    curr,
+                      const list<string> *      aff_list,
+                      bool                      wnode_affinity,
+                      bool                      any_affinity,
+                      bool                      exclusive_new_affinity,
+                      bool                      new_format,
+                      CJob *                    new_job,
+                      CNSRollbackInterface * &  rollback_action);
 
     void CancelWaitGet(const CNSClientId &  client);
 
@@ -211,19 +215,21 @@ public:
     TJobStatus  ReturnJob(const CNSClientId &     client,
                           unsigned int            job_id,
                           const string &          auth_token,
-                          string &                warning);
+                          string &                warning,
+                          bool                    is_ns_rollback = false);
 
     TJobStatus  ReadAndTouchJob(unsigned int  job_id,
                                 CJob &        job,
                                 time_t *      lifetime);
 
-    /// Remove all jobs
+    // Remove all jobs
     void Truncate(void);
 
-    /// Cancel job execution (job stays in special Canceled state)
-    /// Returns the previous job status
+    // Cancel job execution (job stays in special Canceled state)
+    // Returns the previous job status
     TJobStatus  Cancel(const CNSClientId &  client,
-                       unsigned int         job_id);
+                       unsigned int         job_id,
+                       bool                 is_ns_rollback = false);
 
     void CancelAllJobs(const CNSClientId &  client);
     void CancelGroup(const CNSClientId &  client,
@@ -233,42 +239,44 @@ public:
 
     bool IsEmpty() const;
 
-    /// get next job id (counter increment)
+    // get next job id (counter increment)
     unsigned int GetNextId();
-    /// Returns first id for the batch
+    // Returns first id for the batch
     unsigned int GetNextJobIdForBatch(unsigned count);
 
     // Read-Confirm stage
-    /// Request done jobs for reading with timeout
-    void GetJobForReading(const CNSClientId &   client,
-                          unsigned int          read_timeout,
-                          const string &        group,
-                          CJob *                job);
-    /// Confirm reading of these jobs
+    // Request done jobs for reading with timeout
+    void GetJobForReading(const CNSClientId &       client,
+                          unsigned int              read_timeout,
+                          const string &            group,
+                          CJob *                    job,
+                          CNSRollbackInterface * &  rollback_action);
+    // Confirm reading of these jobs
     TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
                                   unsigned int    job_id,
                                   const string &  auth_token);
-    /// Fail (negative acknowledge) reading of these jobs
+    // Fail (negative acknowledge) reading of these jobs
     TJobStatus  FailReadingJob(const CNSClientId &   client,
                                unsigned int          job_id,
                                const string &        auth_token);
-    /// Return jobs to unread state without reservation
+    // Return jobs to unread state without reservation
     TJobStatus  ReturnReadingJob(const CNSClientId &   client,
                                  unsigned int          job_id,
-                                 const string &        auth_token);
+                                 const string &        auth_token,
+                                 bool                  is_ns_rollback = false);
 
-    /// Erase job from all structures, request delayed db deletion
+    // Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
 
     // Optimize bitvectors
     void OptimizeMem();
 
-    /// Prepares affinity list of affinities accompanied by number
-    /// of jobs belonging to them, e.g.
-    /// "a1=500&a2=600a3=200"
-    ///
-    /// @return
-    ///     affinity preference string
+    // Prepares affinity list of affinities accompanied by number
+    // of jobs belonging to them, e.g.
+    // "a1=500&a2=600a3=200"
+    //
+    // @return
+    //     affinity preference string
     string GetAffinityList();
 
     TJobStatus FailJob(const CNSClientId &    client,
@@ -290,8 +298,8 @@ public:
     string PrintAffinitiesList(bool verbose) const;
     string PrintGroupsList(bool verbose) const;
 
-    /// Check execution timeout. Now checks reading timeout as well.
-    /// All jobs failed to execute, go back to pending
+    // Check execution timeout. Now checks reading timeout as well.
+    // All jobs failed to execute, go back to pending
     void CheckExecutionTimeout(bool logging);
 
     // Checks up to given # of jobs at the given status for expiration and
@@ -363,7 +371,8 @@ private:
     TJobStatus  x_ChangeReadingStatus(const CNSClientId &  client,
                                       unsigned int         job_id,
                                       const string &       auth_token,
-                                      TJobStatus           target_status);
+                                      TJobStatus           target_status,
+                                      bool                 is_ns_rollback = false);
 
     struct x_SJobPick
     {

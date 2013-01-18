@@ -49,6 +49,9 @@ static size_t   s_StatusToIndex[CNetScheduleAPI::eLastStatus];
 static CAtomicCounter_WithAutoInit  s_TransitionsTotal[g_ValidJobStatusesSize]
                                                       [g_ValidJobStatusesSize];
 static CAtomicCounter_WithAutoInit  s_SubmitCounterTotal;
+static CAtomicCounter_WithAutoInit  s_NSSubmitRollbackCounterTotal;
+static CAtomicCounter_WithAutoInit  s_NSGetRollbackCounterTotal;
+static CAtomicCounter_WithAutoInit  s_NSReadRollbackCounterTotal;
 static CAtomicCounter_WithAutoInit  s_DBDeleteCounterTotal;
 static CAtomicCounter_WithAutoInit  s_PickedAsOutdatedTotal;
 
@@ -232,6 +235,9 @@ CStatisticsCounters::CStatisticsCounters()
 void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 {
     extra.Print("submits", m_SubmitCounter.Get())
+         .Print("ns_submit_rollbacks", m_NSSubmitRollbackCounter.Get())
+         .Print("ns_get_rollbacks", m_NSGetRollbackCounter.Get())
+         .Print("ns_read_rollbacks", m_NSReadRollbackCounter.Get())
          .Print("picked_as_outdated", m_PickedAsOutdated.Get())
          .Print("dbdeletions", m_DBDeleteCounter.Get());
 
@@ -282,6 +288,12 @@ string CStatisticsCounters::PrintTransitions(void) const
 {
     string result = "OK:submits: " +
                     NStr::IntToString(m_SubmitCounter.Get()) + "\n"
+                    "OK:ns_submit_rollbacks: " +
+                    NStr::IntToString(m_NSSubmitRollbackCounter.Get()) + "\n"
+                    "OK:ns_get_rollbacks: " +
+                    NStr::IntToString(m_NSGetRollbackCounter.Get()) + "\n"
+                    "OK:ns_read_rollbacks: " +
+                    NStr::IntToString(m_NSReadRollbackCounter.Get()) + "\n"
                     "OK:picked_as_outdated: " +
                     NStr::IntToString(m_PickedAsOutdated.Get()) + "\n"
                     "OK:dbdeletions: " +
@@ -455,6 +467,27 @@ void CStatisticsCounters::CountSubmit(size_t  count)
 }
 
 
+void CStatisticsCounters::CountNSSubmitRollback(size_t  count)
+{
+    m_NSSubmitRollbackCounter.Add(count);
+    s_NSSubmitRollbackCounterTotal.Add(count);
+}
+
+
+void CStatisticsCounters::CountNSGetRollback(size_t  count)
+{
+    m_NSGetRollbackCounter.Add(count);
+    s_NSGetRollbackCounterTotal.Add(count);
+}
+
+
+void CStatisticsCounters::CountNSReadRollback(size_t  count)
+{
+    m_NSReadRollbackCounter.Add(count);
+    s_NSReadRollbackCounterTotal.Add(count);
+}
+
+
 void CStatisticsCounters::CountOutdatedPick(void)
 {
     m_PickedAsOutdated.Add(1);
@@ -469,6 +502,7 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
     // Prints the total counters
     extra.Print("counters", "total")
          .Print("submits", s_SubmitCounterTotal.Get())
+         .Print("ns_submit_rollbacks", s_NSSubmitRollbackCounterTotal.Get())
          .Print("picked_as_outdated", s_PickedAsOutdatedTotal.Get())
          .Print("dbdeletions", s_DBDeleteCounterTotal.Get())
          .Print("affinities", affinities);

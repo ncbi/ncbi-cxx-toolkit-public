@@ -61,13 +61,16 @@ static string   s_EventAsString[] = {
     "Cancel",           // eCancel
     "Timeout",          // eTimeout
     "ReadTimeout",      // eReadTimeout
-    "SessionChanged"    // eSessionChanged
+    "SessionChanged",   // eSessionChanged
+    "NSSubmitRollback", // eNSSubmitRollback
+    "NSGetRollback",    // eNSGetRollback
+    "NSReadRollback"    // eNSReadRollback
 };
 
 
 string CJobEvent::EventToString(EJobEvent  event)
 {
-    if (event < eSubmit || event > eSessionChanged)
+    if (event < eSubmit || event > eNSReadRollback)
         return "UNKNOWN";
 
     return s_EventAsString[ event ];

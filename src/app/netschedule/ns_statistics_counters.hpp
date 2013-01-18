@@ -70,6 +70,9 @@ public:
                          ETransitionPathOption        path_option = eNone);
     void CountDBDeletion(size_t  count);
     void CountSubmit(size_t  count);
+    void CountNSSubmitRollback(size_t  count);
+    void CountNSGetRollback(size_t  count);
+    void CountNSReadRollback(size_t  count);
     void CountOutdatedPick(void);
 
     static void  PrintTotal(size_t  affinities);
@@ -82,6 +85,9 @@ private:
     CAtomicCounter_WithAutoInit     m_Transitions[g_ValidJobStatusesSize]
                                                  [g_ValidJobStatusesSize];
     CAtomicCounter_WithAutoInit     m_SubmitCounter;
+    CAtomicCounter_WithAutoInit     m_NSSubmitRollbackCounter;
+    CAtomicCounter_WithAutoInit     m_NSGetRollbackCounter;
+    CAtomicCounter_WithAutoInit     m_NSReadRollbackCounter;
     CAtomicCounter_WithAutoInit     m_DBDeleteCounter;
 
     // There are some special counters:

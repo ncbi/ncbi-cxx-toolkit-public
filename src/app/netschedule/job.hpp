@@ -71,24 +71,34 @@ class CJobEvent
 public:
     // Events which can trigger state change
     enum EJobEvent {
-        eUnknown = -1,  // Used for initialisation
+        eUnknown = -1,      // Used for initialisation
 
-        eSubmit = 0,    // SUBMIT
-        eBatchSubmit,   // Batch submit
-        eRequest,       // GET, WGET, JXCG
-        eDone,          // PUT, JXCG
-        eReturn,        // RETURN
-        eFail,          // FPUT
-        eRead,          // READ
-        eReadFail,      // FRED
-        eReadDone,      // CFRM
-        eReadRollback,  // RDRB
-        eClear,         // CLRN
+        eSubmit = 0,        // SUBMIT
+        eBatchSubmit,       // Batch submit
+        eRequest,           // GET, WGET, JXCG
+        eDone,              // PUT, JXCG
+        eReturn,            // RETURN
+        eFail,              // FPUT
+        eRead,              // READ
+        eReadFail,          // FRED
+        eReadDone,          // CFRM
+        eReadRollback,      // RDRB
+        eClear,             // CLRN
 
-        eCancel,        // CANCEL
-        eTimeout,       // exec timeout
-        eReadTimeout,   // read timeout
-        eSessionChanged // client has changed session
+        eCancel,            // CANCEL
+        eTimeout,           // exec timeout
+        eReadTimeout,       // read timeout
+        eSessionChanged,    // client has changed session
+
+        eNSSubmitRollback,  // NS cancelled the job because
+                            // of a network error when the job
+                            // ID is sent to the client
+        eNSGetRollback,     // NS returns the job because
+                            // of a network error when the job
+                            // ID is sent to the client
+        eNSReadRollback     // NS rolls back reading because
+                            // of a network error when the job
+                            // ID is sent to the client
     };
 
     // Converts event code into its string representation

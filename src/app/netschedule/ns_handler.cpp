@@ -34,6 +34,7 @@
 #include "ns_handler.hpp"
 #include "ns_server.hpp"
 #include "ns_server_misc.hpp"
+#include "ns_rollback.hpp"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -440,12 +441,14 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
       m_WithinBatchSubmit(false),
       m_SingleCmdParser(sm_CommandMap),
       m_BatchHeaderParser(sm_BatchHeaderMap),
-      m_BatchEndParser(sm_BatchEndMap)
+      m_BatchEndParser(sm_BatchEndMap),
+      m_RollbackAction(NULL)
 {}
 
 
 CNetScheduleHandler::~CNetScheduleHandler()
 {
+    x_ClearRollbackAction();
     delete [] m_MsgBuffer;
 }
 
@@ -696,36 +699,42 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
     // Write to the socket as a single transaction
     size_t     written;
     EIO_Status result = GetSocket().Write(m_MsgBuffer, required_size, &written);
-    if (result != eIO_Success) {
-        string msg = "Error writing message to the client. "
-                     "Peer: " +  GetSocket().GetPeerAddress() + ". "
-                     "Socket write return code: " + NStr::NumericToString((int)result) + ". "
-                     "Written bytes: " + NStr::NumericToString(written) + ". "
-                     "Message begins with: ";
-        if (msg_size > 32)
-            msg += string(m_MsgBuffer, 32) + " (TRUNCATED)";
-        else
-            msg += m_MsgBuffer;
-        ERR_POST(msg);
+    if (result == eIO_Success)
+        return result;
 
-        if (m_ConnContext.NotNull()) {
-            if (m_ConnContext->GetRequestStatus() == eStatus_OK)
-                m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
-            if (m_CmdContext.NotNull()) {
-                if (m_CmdContext->GetRequestStatus() == eStatus_OK)
-                    m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
-            }
+    // There was an error of writing into a socket, so rollback the action if
+    // necessary and close the connection
+
+    string     report =
+        "Error writing message to the client. "
+        "Peer: " +  GetSocket().GetPeerAddress() + ". "
+        "Socket write return code: " + NStr::NumericToString((int)result) + ". "
+        "Written bytes: " + NStr::NumericToString(written) + ". "
+        "Message begins with: ";
+    if (msg_size > 32)
+        report += string(m_MsgBuffer, 32) + " (TRUNCATED)";
+    else
+        report += m_MsgBuffer;
+    ERR_POST(report);
+
+    if (m_ConnContext.NotNull()) {
+        if (m_ConnContext->GetRequestStatus() == eStatus_OK)
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+        if (m_CmdContext.NotNull()) {
+            if (m_CmdContext->GetRequestStatus() == eStatus_OK)
+                m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
         }
-
-        try {
-            if (!m_QueueName.empty()) {
-                CRef<CQueue>    ref = GetQueue();
-                ref->RegisterSocketWriteError(m_ClientId);
-            }
-        } catch (...) {}
-
-        m_Server->CloseConnection(&GetSocket());
     }
+
+    try {
+        if (!m_QueueName.empty()) {
+            CRef<CQueue>    ref = GetQueue();
+            ref->RegisterSocketWriteError(m_ClientId);
+            x_ExecuteRollbackAction(ref.GetPointer());
+        }
+    } catch (...) {}
+
+    m_Server->CloseConnection(&GetSocket());
     return result;
 }
 
@@ -1177,9 +1186,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 
         // we have our batch now
         CStopWatch  sw(CStopWatch::eStart);
+        x_ClearRollbackAction();
         unsigned    job_id = GetQueue()->SubmitBatch(m_ClientId,
                                                      m_BatchJobs,
-                                                     m_BatchGroup);
+                                                     m_BatchGroup,
+                                                     m_RollbackAction);
         double      db_elapsed = sw.Elapsed();
 
         if (m_ConnContext.NotNull())
@@ -1193,7 +1204,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         x_WriteMessage("OK:" + NStr::UIntToString(job_id) + " " +
                        m_Server->GetHost().c_str() + " " +
                        NStr::UIntToString(unsigned(m_Server->GetPort())));
-
+        x_ClearRollbackAction();
     }
     catch (const CNetScheduleException &  ex) {
         m_WithinBatchSubmit = false;
@@ -1359,9 +1370,12 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
     CJob        job(m_CommandArguments);
 
     try {
+        x_ClearRollbackAction();
         x_WriteMessage("OK:" + q->MakeKey(q->Submit(m_ClientId, job,
                                           m_CommandArguments.affinity_token,
-                                          m_CommandArguments.group)));
+                                          m_CommandArguments.group,
+                                          m_RollbackAction)));
+        x_ClearRollbackAction();
         m_Server->DecrementCurrentSubmitsCounter();
     } catch (...) {
         m_Server->DecrementCurrentSubmitsCounter();
@@ -1560,6 +1574,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
+    x_ClearRollbackAction();
     if (q->GetJobOrWait(m_ClientId,
                         m_CommandArguments.port,
                         m_CommandArguments.timeout,
@@ -1568,13 +1583,16 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                         m_CommandArguments.any_affinity,
                         m_CommandArguments.exclusive_new_aff,
                         cmdv2,
-                        &job) == false) {
+                        &job,
+                        m_RollbackAction) == false) {
         // Preferred affinities were reset for the client, so no job
         // and bad request
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:ePrefAffExpired:");
-    } else
+    } else {
         x_PrintGetJobResponse(q, job, cmdv2);
+        x_ClearRollbackAction();
+    }
 
     x_PrintCmdRequestStop();
 }
@@ -1691,6 +1709,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
+    x_ClearRollbackAction();
     if (q->GetJobOrWait(m_ClientId,
                         m_CommandArguments.port,
                         m_CommandArguments.timeout,
@@ -1699,13 +1718,16 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         m_CommandArguments.any_affinity,
                         false,
                         false,
-                        &job) == false) {
+                        &job,
+                        m_RollbackAction) == false) {
         // Preferred affinities were reset for the client, so no job
         // and bad request
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:ePrefAffExpired:");
-    } else
+    } else {
         x_PrintGetJobResponse(q, job, false);
+        x_ClearRollbackAction();
+    }
 
     x_PrintCmdRequestStop();
 }
@@ -2402,9 +2424,11 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 
     CJob            job;
 
+    x_ClearRollbackAction();
     q->GetJobForReading(m_ClientId, m_CommandArguments.timeout,
                                     m_CommandArguments.group,
-                                    &job);
+                                    &job,
+                                    m_RollbackAction);
 
     unsigned int    job_id = job.GetId();
     string          job_key;
@@ -2415,6 +2439,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
                        "&auth_token=" + job.GetAuthToken() +
                        "&status=" +
                        CNetScheduleAPI::StatusToString(job.GetStatus()));
+        x_ClearRollbackAction();
     }
     else
         x_WriteMessage("OK:");
@@ -2745,6 +2770,23 @@ bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
            processor == &CNetScheduleHandler::x_ProcessReadRollback;            // RDRB
 }
 
+
+void CNetScheduleHandler::x_ClearRollbackAction(void)
+{
+    if (m_RollbackAction != NULL) {
+        delete m_RollbackAction;
+        m_RollbackAction = NULL;
+    }
+}
+
+
+void CNetScheduleHandler::x_ExecuteRollbackAction(CQueue * q)
+{
+    if (m_RollbackAction == NULL)
+        return;
+    m_RollbackAction->Rollback(q);
+    x_ClearRollbackAction();
+}
 
 
 static const unsigned int   kMaxParserErrMsgLength = 128;

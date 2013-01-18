@@ -53,6 +53,7 @@ BEGIN_NCBI_SCOPE
 // Forward declarations
 class CNetScheduleServer;
 class CNSRequestContextFactory;
+class CNSRollbackInterface;
 
 //
 const size_t    kInitialMessageBufferSize = 16 * 1024;
@@ -214,6 +215,9 @@ private:
                                bool           add_security_token);
     bool x_CanBeWithoutQueue(FProcessor  processor) const;
 
+    void x_ClearRollbackAction(void);
+    void x_ExecuteRollbackAction(CQueue * q);
+
     // Data
     size_t                          m_MsgBufferSize;
     char *                          m_MsgBuffer;
@@ -257,6 +261,9 @@ private:
     CRef<CRequestContext>           m_ConnContext;
     // Diagnostics context for the currently executed command
     CRef<CRequestContext>           m_CmdContext;
+
+    // Rollback support
+    CNSRollbackInterface *          m_RollbackAction;
 
 }; // CNetScheduleHandler
 

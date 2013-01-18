@@ -36,6 +36,7 @@
 #include "ns_util.hpp"
 #include "ns_server.hpp"
 #include "ns_precise_time.hpp"
+#include "ns_rollback.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -387,10 +388,11 @@ void CQueue::x_LogSubmit(const CJob &       job,
 }
 
 
-unsigned int  CQueue::Submit(const CNSClientId &  client,
-                             CJob &               job,
-                             const string &       aff_token,
-                             const string &       group)
+unsigned int  CQueue::Submit(const CNSClientId &        client,
+                             CJob &                     job,
+                             const string &             aff_token,
+                             const string &             group,
+                             CNSRollbackInterface * &   rollback_action)
 {
     // the only config parameter used here is the max input size so there is no
     // need to have a safe parameters accessor.
@@ -468,13 +470,16 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
 
     m_StatisticsCounters.CountSubmit(1);
     x_LogSubmit(job, aff_token, group);
+
+    rollback_action = new CNSSubmitRollback(client, job_id);
     return job_id;
 }
 
 
 unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                                   vector< pair<CJob, string> > &  batch,
-                                  const string &                  group)
+                                  const string &                  group,
+                                  CNSRollbackInterface * &        rollback_action)
 {
     unsigned int    batch_size = batch.size();
     unsigned int    job_id = GetNextJobIdForBatch(batch_size);
@@ -561,6 +566,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
         for (size_t  k = 0; k < batch_size; ++k)
             x_LogSubmit(batch[k].first, batch[k].second, group);
 
+    rollback_action = new CNSBatchSubmitRollback(client, job_id, batch_size);
     return job_id;
 }
 
@@ -666,17 +672,18 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
 }
 
 
-bool  CQueue::GetJobOrWait(const CNSClientId &     client,
-                           unsigned short          port, // Port the client
-                                                         // will wait on
-                           unsigned int            timeout, // If timeout != 0 => WGET
-                           time_t                  curr,
-                           const list<string> *    aff_list,
-                           bool                    wnode_affinity,
-                           bool                    any_affinity,
-                           bool                    exclusive_new_affinity,
-                           bool                    new_format,
-                           CJob *                  new_job)
+bool  CQueue::GetJobOrWait(const CNSClientId &       client,
+                           unsigned short            port, // Port the client
+                                                           // will wait on
+                           unsigned int              timeout, // If timeout != 0 => WGET
+                           time_t                    curr,
+                           const list<string> *      aff_list,
+                           bool                      wnode_affinity,
+                           bool                      any_affinity,
+                           bool                      exclusive_new_affinity,
+                           bool                      new_format,
+                           CJob *                    new_job,
+                           CNSRollbackInterface * &  rollback_action)
 {
     // We need exactly 1 parameter - m_RunTimeout, so we can access it without
     // CQueueParamAccessor
@@ -816,6 +823,7 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                         if (!m_StatusTracker.AnyPending())
                             m_NotificationsList.ClearExactNotifications();
 
+                        rollback_action = new CNSGetJobRollback(client, job_pick.job_id);
                         return true;
                     }
 
@@ -1210,7 +1218,8 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
 TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                               unsigned int            job_id,
                               const string &          auth_token,
-                              string &                warning)
+                              string &                warning,
+                              bool                    is_ns_rollback)
 {
     CJob                job;
     time_t              current_time = time(0);
@@ -1261,7 +1270,10 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
         event = &job.AppendEvent();
         event->SetNodeAddr(client.GetAddress());
         event->SetStatus(CNetScheduleAPI::ePending);
-        event->SetEvent(CJobEvent::eReturn);
+        if (is_ns_rollback)
+            event->SetEvent(CJobEvent::eNSGetRollback);
+        else
+            event->SetEvent(CJobEvent::eReturn);
         event->SetTimestamp(current_time);
         event->SetClientNode(client.GetNode());
         event->SetClientSession(client.GetSession());
@@ -1277,11 +1289,15 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
     }}
 
     m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
-    m_StatisticsCounters.CountTransition(old_status,
-                                         CNetScheduleAPI::ePending);
+    if (is_ns_rollback)
+        m_StatisticsCounters.CountNSGetRollback(1);
+    else
+        m_StatisticsCounters.CountTransition(old_status,
+                                             CNetScheduleAPI::ePending);
     TimeLineRemove(job_id);
     m_ClientsRegistry.ClearExecuting(job_id);
-    m_ClientsRegistry.AddToBlacklist(client, job_id);
+    if (is_ns_rollback == false)
+        m_ClientsRegistry.AddToBlacklist(client, job_id);
     m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
                                                               m_RunTimeout,
                                                               m_PendingTimeout,
@@ -1390,7 +1406,8 @@ void CQueue::Truncate(void)
 
 
 TJobStatus  CQueue::Cancel(const CNSClientId &  client,
-                           unsigned int         job_id)
+                           unsigned int         job_id,
+                           bool                 is_ns_rollback)
 {
     TJobStatus          old_status;
     CJob                job;
@@ -1403,9 +1420,12 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
         if (old_status == CNetScheduleAPI::eJobNotFound)
             return CNetScheduleAPI::eJobNotFound;
         if (old_status == CNetScheduleAPI::eCanceled) {
-            m_StatisticsCounters.CountTransition(
-                                        CNetScheduleAPI::eCanceled,
-                                        CNetScheduleAPI::eCanceled);
+            if (is_ns_rollback)
+                m_StatisticsCounters.CountNSSubmitRollback(1);
+            else
+                m_StatisticsCounters.CountTransition(
+                                            CNetScheduleAPI::eCanceled,
+                                            CNetScheduleAPI::eCanceled);
             return CNetScheduleAPI::eCanceled;
         }
 
@@ -1418,7 +1438,10 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 
             event->SetNodeAddr(client.GetAddress());
             event->SetStatus(CNetScheduleAPI::eCanceled);
-            event->SetEvent(CJobEvent::eCancel);
+            if (is_ns_rollback)
+                event->SetEvent(CJobEvent::eNSSubmitRollback);
+            else
+                event->SetEvent(CJobEvent::eCancel);
             event->SetTimestamp(current_time);
             event->SetClientNode(client.GetNode());
             event->SetClientSession(client.GetSession());
@@ -1431,8 +1454,11 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
         }}
 
         m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eCanceled);
-        m_StatisticsCounters.CountTransition(old_status,
-                                             CNetScheduleAPI::eCanceled);
+        if (is_ns_rollback)
+            m_StatisticsCounters.CountNSSubmitRollback(1);
+        else
+            m_StatisticsCounters.CountTransition(old_status,
+                                                 CNetScheduleAPI::eCanceled);
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
@@ -1668,10 +1694,11 @@ unsigned int  CQueue::x_ReadStartFromCounter(void)
 }
 
 
-void CQueue::GetJobForReading(const CNSClientId &   client,
-                              unsigned int          read_timeout,
-                              const string &        group,
-                              CJob *                job)
+void CQueue::GetJobForReading(const CNSClientId &       client,
+                              unsigned int              read_timeout,
+                              const string &            group,
+                              CJob *                    job,
+                              CNSRollbackInterface * &  rollback_action)
 {
     time_t                                  curr(time(0));
     vector<CNetScheduleAPI::EJobStatus>     from_state;
@@ -1744,6 +1771,8 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
                                                 MakeKey(job->GetId()),
                                                 job->GetStatus(),
                                                 job->GetLastEventIndex());
+
+        rollback_action = new CNSReadJobRollback(client, job_id);
     }}
 
     return;
@@ -1778,12 +1807,14 @@ TJobStatus  CQueue::FailReadingJob(const CNSClientId &  client,
 
 TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
                                      unsigned int         job_id,
-                                     const string &       auth_token)
+                                     const string &       auth_token,
+                                     bool                 is_ns_rollback)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id,
                                                 auth_token,
-                                                CNetScheduleAPI::eDone);
+                                                CNetScheduleAPI::eDone,
+                                                is_ns_rollback);
     m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
     return old_status;
 }
@@ -1792,7 +1823,8 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
 TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                           unsigned int         job_id,
                                           const string &       auth_token,
-                                          TJobStatus           target_status)
+                                          TJobStatus           target_status,
+                                          bool                 is_ns_rollback)
 {
     time_t                                      current_time = time(0);
     CJob                                        job;
@@ -1840,7 +1872,10 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 
         switch (target_status) {
             case CNetScheduleAPI::eDone:
-                event.SetEvent(CJobEvent::eReadRollback);
+                if (is_ns_rollback)
+                    event.SetEvent(CJobEvent::eNSReadRollback);
+                else
+                    event.SetEvent(CJobEvent::eReadRollback);
                 job.SetReadCount(job.GetReadCount() - 1);
                 break;
             case CNetScheduleAPI::eReadFailed:
@@ -1875,9 +1910,12 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                                               m_RunTimeout,
                                                               m_PendingTimeout,
                                                               0));
-    m_StatisticsCounters.CountTransition(CNetScheduleAPI::eReading,
-                                         new_status,
-                                         path_option);
+    if (is_ns_rollback)
+        m_StatisticsCounters.CountNSReadRollback(1);
+    else
+        m_StatisticsCounters.CountTransition(CNetScheduleAPI::eReading,
+                                             new_status,
+                                             path_option);
     if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
         m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
                                             job.GetListenerNotifPort(),
