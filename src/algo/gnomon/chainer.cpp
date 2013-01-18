@@ -1986,7 +1986,7 @@ void CChain::SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& pr
 
 void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns)
 {
-    if(HasStart())
+    if(ReadingFrame().Empty() || ConfirmedStart())
         return;
 
     TSignedSeqRange conf_start;
@@ -2010,7 +2010,61 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
         }
     }
 
-    if(ReadingFrame().NotEmpty() && conf_start.NotEmpty()) {
+    if(conf_start.Empty()) {
+        CAlignMap amap = GetAlignMap();
+        ITERATE(TOrigAligns, it, orig_aligns) {
+            const CAlignModel& align = *it->second;
+            if(align.Strand() != Strand() || !align.ConfirmedStart() || (align.TrustedProt().empty() && align.TrustedmRNA().empty()))
+                continue;
+            
+            TSignedSeqRange start = align.GetCdsInfo().Start();
+
+            int a = amap.MapOrigToEdited(start.GetFrom());
+            int b = amap.MapOrigToEdited(start.GetTo());
+            if(a < 0 || b < 0 || abs(a-b) != 2)
+                continue;
+            
+            if(!Include(GetCdsInfo().Cds(),start) || amap.FShiftedLen(GetCdsInfo().Cds().GetFrom(),start.GetFrom())%3 != 1) 
+                continue;
+
+            list<TSignedSeqRange> align_introns;
+            for(int i = 1; i < (int)align.Exons().size(); ++i) {
+                TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
+                if(Include(start,intron))
+                    align_introns.push_back(intron);
+            }
+
+            list<TSignedSeqRange> introns;
+            bool hole = false;
+            int len = start.GetLength();
+            for(int i = 1; i < (int)Exons().size(); ++i) {
+                TSignedSeqRange intron(Exons()[i-1].Limits().GetTo(),Exons()[i].Limits().GetFrom());
+                if(Include(start,intron)) {
+                    introns.push_back(intron);
+                    len -= intron.GetLength()+2;
+                    if(!Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice)
+                        hole = true;
+                }
+            }
+
+            if(len !=3 || hole || align_introns != introns)
+                continue;
+
+            if(Strand() == ePlus) {
+                if(conf_start.Empty() || start.GetFrom() < conf_start.GetFrom()) {
+                    conf_start = start;
+                    rf = align.ReadingFrame().GetFrom();
+                }
+            } else {
+                if(conf_start.Empty() || start.GetTo() > conf_start.GetTo()) {
+                    conf_start = start;
+                    rf = align.ReadingFrame().GetTo();
+                }
+            }            
+        }
+    }    
+
+    if(conf_start.NotEmpty()) {
         TSignedSeqRange extra_cds = (Strand() == ePlus) ? TSignedSeqRange(RealCdsLimits().GetFrom(),conf_start.GetFrom()) : TSignedSeqRange(conf_start.GetTo(),RealCdsLimits().GetTo());
         if(FShiftedLen(extra_cds, false) < 0.2*RealCdsLen()) {
             CCDSInfo cds = GetCdsInfo();
