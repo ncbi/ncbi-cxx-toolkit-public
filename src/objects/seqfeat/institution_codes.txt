@@ -6381,6 +6381,7 @@ VDB	s	Vanderbilt University, Department of Biological Sciences
 VEN	s	Fundacion Instituto Botanico de Venezuela Dr. Tobias Lasser
 VENDA	s	Thohoyandou Botanical Gardens, Department of Agriculture, Land & Environment
 VER	s	Herbario, Museo Civico di Storia Naturale, Verona
+VETMED	s	University of Veterinary Medicine
 VF	s	Universidad de Valencia, Departamento de Biologia Vegetal, Botanica
 VFWD	s	Vermont Fish and Wildlife Department
 VGZ	s	Voronezh State Biosphere Reserve, Research Department
