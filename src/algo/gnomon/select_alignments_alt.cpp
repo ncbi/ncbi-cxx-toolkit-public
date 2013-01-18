@@ -461,6 +461,11 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
     }
 }
 
+bool DescendingModelOrderP(const CGeneModel* a, const CGeneModel* b) 
+{
+    return DescendingModelOrder(*a, *b);
+}
+
 void CModelFilters::FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns)
 {
     cls.sort(DescendingModelOrder);
@@ -528,33 +533,37 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
 
     if(!gene_lim_with_margins.IntersectingWith(algn_lim))             // distance > MinIntergenic
         return eOtherGene;
-    else if(gene_good_enough_to_be_annotation && CModelCompare::RangeNestedInIntron(gene_lim_for_nested, algn))    // gene is nested in align's intron
-        return eExternal;
-
+    
     if(gene.IsAlternative(algn)) {   // has common splice or common CDS
         if (gene.IsAllowedAlternative(algn, composite) &&
             ( !algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()    // trusted gene
               //              || (algn.AlignLen() > altfrac/100*gene.front().AlignLen() && (algn.ReadingFrame().Empty() || algn.Score() > altfrac/100*gene.front().Score())) // long enough and noncoding or good score
               || (algn.AlignLen() > altfrac/100*gene.front()->AlignLen() && (algn.ReadingFrame().Empty() || algn.RealCdsLen() > altfrac/100*gene.front()->RealCdsLen())) // long enough and noncoding or long enough cds
             )
-         && gene_good_enough_to_be_annotation && algn_good_enough_to_be_annotation)       // complete or allowpartials
+            //         && gene_good_enough_to_be_annotation && algn_good_enough_to_be_annotation)       // complete or allowpartials
+         && algn_good_enough_to_be_annotation)       // complete or allowpartials; gene completeness will be evaluated after exit
             return eAlternative;
         else 
             return eNotCompatible;
     }
     
-    bool nested = true;
-    ITERATE(CAltSplice, it, gene) {
-        if(algn_lim.IntersectingWith((*it)->Limits()) && !CModelCompare::RangeNestedInIntron(algn_lim_for_nested, **it)) {
-            nested = false;
-            break;
+    if(gene_good_enough_to_be_annotation && CModelCompare::RangeNestedInIntron(gene_lim_for_nested, algn))    // gene is nested in align's intron
+        return eExternal;
+    
+    if(Include(gene.Limits(),algn_lim_for_nested)) {
+        bool nested = true;
+        ITERATE(CAltSplice, it, gene) {
+            if(algn_lim.IntersectingWith((*it)->Limits()) && !CModelCompare::RangeNestedInIntron(algn_lim_for_nested, **it)) {
+                nested = false;
+                break;
+            }
         }
-    }
-    if(nested) {               // algn is nested in gene's intron
-        if(algn_good_enough_to_be_annotation)
-            return eNested;
-        else
-            return eNotCompatible;
+        if(nested) {               // algn is nested in gene's intron    
+            if(algn_good_enough_to_be_annotation)
+                return eNested;
+            else
+                return eNotCompatible;
+        }
     }
 
 
@@ -583,14 +592,16 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
     return eNotCompatible;
 }
 
-void CGeneSelector::FindGeneSeeds(const TGeneModelList& cls, list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet) {
-    ITERATE(TGeneModelList, it, cls) {
-        const CGeneModel& algn(*it);
+void CGeneSelector::FindGeneSeeds(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet) {
 
-        if(algn.Score() == BadScore()) {             // postpone noncoding models
-            not_placed_yet.push_back(&algn);
+    not_placed_yet.sort(DescendingModelOrderP);
+
+    for(list<const CGeneModel*>::iterator itloop = not_placed_yet.begin(); itloop != not_placed_yet.end(); ) {
+        list<const CGeneModel*>::iterator it = itloop++;
+        const CGeneModel& algn(**it);
+
+        if(algn.Score() == BadScore())             // postpone noncoding models
             continue;
-        }
 
         list<CAltSplice*> possibly_nested;
 
@@ -615,13 +626,15 @@ void CGeneSelector::FindGeneSeeds(const TGeneModelList& cls, list<CAltSplice>& a
             }
             alts.push_back(CAltSplice());
             alts.back().Insert(algn);
-        } else {
-            not_placed_yet.push_back(&algn);
+            not_placed_yet.erase(it);
         }
     }
 }
 
 void CGeneSelector::FindAltsForGeneSeeds(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet) {
+
+    not_placed_yet.sort(DescendingModelOrderP);
+
     for(list<const CGeneModel*>::iterator itloop = not_placed_yet.begin(); itloop != not_placed_yet.end(); ) {
         list<const CGeneModel*>::iterator it = itloop++;
         const CGeneModel& algn(**it);
@@ -647,54 +660,58 @@ void CGeneSelector::FindAltsForGeneSeeds(list<CAltSplice>& alts, list<const CGen
             }
         }
 
-        if(!good_model ||included_in.empty()) {
-            continue;
-        } else if(included_in.size() == 1) {    // alternative to only one seed
-            ITERATE(list<CAltSplice*>, itl, possibly_nested) {
-                (*itl)->Nested() = true;
-            }
-            included_in.front()->Insert(algn);
-            not_placed_yet.erase(it);
-            //        } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty() || (algn.Status()&CGeneModel::eConsistentCoverage)) {   // connects seeds but trusted
-        } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()) {   // connects seeds but trusted
-            bool cds_overlap = true;
-            ITERATE(list<list<CAltSplice>::iterator>, k, included_in) {
-                if(!algn.RealCdsLimits().IntersectingWith((*k)->Limits())) {
-                    cds_overlap = false;
-                    break;
-                }
-            }
-            //            if(cds_overlap || (algn.Status()&CGeneModel::eConsistentCoverage)) {
-            if(cds_overlap) {
+        if(good_model && !included_in.empty() && (allow_partialalts || included_in.front()->front()->GoodEnoughToBeAnnotation())) {
+            if(included_in.size() == 1) {    // alternative to only one seed
                 ITERATE(list<CAltSplice*>, itl, possibly_nested) {
                     (*itl)->Nested() = true;
                 }
                 included_in.front()->Insert(algn);
+                not_placed_yet.erase(it);
+            } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty() || (algn.Status()&CGeneModel::eConsistentCoverage)) {   // connects seeds but trusted  
+                bool cds_overlap = true;
                 ITERATE(list<list<CAltSplice>::iterator>, k, included_in) {
-                    if(k != included_in.begin()) {
-                        ITERATE(CAltSplice, l, **k) {
-                            if(itloop == not_placed_yet.end() || !DescendingModelOrder(**itloop, **l)) {  // next is not better
-                                if(CheckCompatibility(*included_in.front(), **l) == eAlternative) {  // check that the thresholds are met
-                                    included_in.front()->Insert(**l);
-                                } else {
-                                    not_placed_yet.push_back(*l); // position doesn't matter - will go to 'bad' models
-                                }
-                            } else {
-                                list<const CGeneModel*>::iterator idest = itloop;
-                                for( ;idest != not_placed_yet.end() && DescendingModelOrder(**idest, **l); ++idest);
-                                not_placed_yet.insert(idest, *l);
-                            }
-                        }
-                        alts.erase(*k);
+                    if(!algn.RealCdsLimits().IntersectingWith((*k)->Limits())) {
+                        cds_overlap = false;
+                        break;
                     }
                 }
-                not_placed_yet.erase(it);
+                if(cds_overlap || (algn.Status()&CGeneModel::eConsistentCoverage)) {
+                    ITERATE(list<CAltSplice*>, itl, possibly_nested) {
+                        (*itl)->Nested() = true;
+                    }
+#ifdef _DEBUG 
+                    const_cast<CGeneModel&>(algn).AddComment("Gene overlap override");
+#endif    
+                    included_in.front()->Insert(algn);
+                    ITERATE(list<list<CAltSplice>::iterator>, k, included_in) {
+                        if(k != included_in.begin()) {
+                            ITERATE(CAltSplice, l, **k) {
+                                if(itloop == not_placed_yet.end() || !DescendingModelOrder(**itloop, **l)) {  // next is not better 
+                                    if(CheckCompatibility(*included_in.front(), **l) == eAlternative) {  // check that the thresholds are met   
+                                        included_in.front()->Insert(**l);
+                                    } else {
+                                        not_placed_yet.push_back(*l); // position doesn't matter - will go to 'bad' models  
+                                    }
+                                } else {
+                                    list<const CGeneModel*>::iterator idest = itloop;
+                                    for( ;idest != not_placed_yet.end() && DescendingModelOrder(**idest, **l); ++idest);
+                                    not_placed_yet.insert(idest, *l);
+                                }
+                            }
+                            alts.erase(*k);
+                        }
+                    }
+                    not_placed_yet.erase(it);
+                }
             }
         }
     }
 }
 
 void CGeneSelector::PlaceAllYouCan(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet, TGeneModelList& rejected) {
+
+    not_placed_yet.sort(DescendingModelOrderP);
+
     ITERATE(list<const CGeneModel*>, it, not_placed_yet) {
         const CGeneModel& algn(**it);
         bool nested = false;
@@ -714,7 +731,13 @@ void CGeneSelector::PlaceAllYouCan(list<CAltSplice>& alts, list<const CGeneModel
                 good_model = false;
                 break;
             case eAlternative:
-                if(included_in == alts.end()) {
+                if(!allow_partialalts && !itl->front()->GoodEnoughToBeAnnotation()) {
+                    rejected.push_back(algn);
+                    rejected.back().Status() |= CGeneModel::eSkipped;
+                    ost << "    Trumped by another model " << itl->front()->ID();
+                    rejected.back().AddComment(CNcbiOstrstreamToString(ost));
+                    good_model = false;
+                } else if(included_in == alts.end()) {
                     included_in = itl;
                 } else {  // tries to connect two different genes
                     good_model = false;
@@ -749,170 +772,17 @@ void CGeneSelector::PlaceAllYouCan(list<CAltSplice>& alts, list<const CGeneModel
     }
 }
 
-void CGeneSelector::FindGenesPass1(const TGeneModelList& cls, list<CAltSplice>& alts,
-                                   list<const CGeneModel*>& possibly_alternative, TGeneModelList& rejected)
-{
-    ITERATE(TGeneModelList, it, cls) {
-        const CGeneModel& algn(*it);
-        bool nested = false;
-        list<CAltSplice>::iterator included_in(alts.end());
-        list<CAltSplice*> possibly_nested;
-
-        bool good_model = true;
-        for(list<CAltSplice>::iterator itl = alts.begin(); good_model && itl != alts.end(); ++itl) {
-            ECompat cmp = CheckCompatibility(*itl, algn);
-            CNcbiOstrstream ost;
-            switch(cmp) {
-            case eNotCompatible:
-                rejected.push_back(algn);
-                rejected.back().Status() |= CGeneModel::eSkipped;
-                ost << "Trumped by another model pass1 " << itl->front()->ID();
-                rejected.back().AddComment(CNcbiOstrstreamToString(ost));
-                good_model = false;
-                break;
-            case eAlternative:
-                included_in = itl;
-                break;
-            case eNested:
-                nested = true;
-                break;
-            case eExternal:
-                possibly_nested.push_back(&(*itl));
-                break;
-            case eOtherGene:
-                break;
-            }
-        }
-
-        if(good_model) {
-            if(included_in != alts.end()) {
-                possibly_alternative.push_back(&algn);
-            } else {
-                ITERATE(list<CAltSplice*>, itl, possibly_nested) {
-                    (*itl)->Nested() = true;
-                }
-                alts.push_back(CAltSplice());
-                alts.back().Insert(algn);
-                alts.back().Nested() = nested;
-            }
-        }
-    }
-}
-
-void CGeneSelector::FindGenesPass2(const list<const CGeneModel*>& possibly_alternative, list<CAltSplice>& alts,
-                                   TGeneModelList& bad_aligns)
-{
-    ITERATE(list<const CGeneModel*>, it, possibly_alternative) {
-        const CGeneModel& algn(**it);
-        list<CAltSplice>::iterator included_in(alts.end());
-        list<CAltSplice*> possibly_nested;
-
-        bool good_model = true;
-        for(list<CAltSplice>::iterator itl = alts.begin(); good_model && itl != alts.end(); ++itl) {
-            ECompat cmp = CheckCompatibility(*itl, algn);
-            CNcbiOstrstream ost;
-            switch(cmp) {
-            case eNotCompatible:
-                bad_aligns.push_back(algn);
-                bad_aligns.back().Status() |= CGeneModel::eSkipped;
-                ost << "Trumped by another model pass2 " << itl->front()->ID();
-                bad_aligns.back().AddComment(CNcbiOstrstreamToString(ost));
-                good_model = false;
-                break;
-            case eAlternative:
-                if(included_in == alts.end()) {
-                    included_in = itl;
-                } else if(Include(included_in->Limits(),itl->Limits()) || Include(itl->Limits(),included_in->Limits())) {   // connects nested to external
-                    itl->Nested() = (Include(included_in->Limits(),itl->Limits()) && included_in->Nested()) || (Include(itl->Limits(),included_in->Limits()) && itl->Nested());
-                    ITERATE(CAltSplice, i, *included_in) {
-                        itl->Insert(**i);
-                    }                        
-                    possibly_nested.remove(&(*included_in));
-                    alts.erase(included_in);
-                    included_in = itl;
-                } else {
-                    bad_aligns.push_back(algn);
-                    bad_aligns.back().Status() |= CGeneModel::eSkipped;
-                    ost << "Connects two genes " << itl->front()->ID() << " " << included_in->front()->ID();
-                    bad_aligns.back().AddComment(CNcbiOstrstreamToString(ost));
-                    good_model = false;            // tries to connect two different genes
-                }
-                break;
-            case eNested:
-                break;
-            case eExternal:
-                possibly_nested.push_back(&(*itl));
-                break;
-            case eOtherGene:
-                break;
-            }
-        }
-
-        if(good_model) {
-            _ASSERT(included_in != alts.end());
-            ITERATE(list<CAltSplice*>, itl, possibly_nested) {
-                (*itl)->Nested() = true;
-            }
-            if(included_in != alts.end()) {
-                //                _ASSERT(algn.Score() <= included_in->back().Score()); // chains should be sorted by score desc
-                included_in->Insert(algn);
-            }
-        }
-    }
-}
-
-void CGeneSelector::FindGenesPass3(const TGeneModelList& rejected, list<CAltSplice>& alts,
-                                   TGeneModelList& bad_aligns)
-{
-    ITERATE(TGeneModelList, it, rejected) {
-        const CGeneModel& algn(*it);
-        list<CAltSplice>::iterator included_in(alts.end());
-        list<CAltSplice*> possibly_nested;
-
-        bool good_model = true;
-        for(list<CAltSplice>::iterator itl = alts.begin(); good_model && itl != alts.end(); ++itl) {
-            ECompat cmp = CheckCompatibility(*itl, algn);
-            switch(cmp) {
-            case eOtherGene:
-                break;
-            default:
-                good_model = false;
-                break;
-            }
-        }
-
-        if(good_model) {
-            alts.push_back(CAltSplice());
-            alts.back().Insert(algn);
-            alts.back().Nested() = false;
-        } else {
-            bad_aligns.push_back(algn);
-        }
-    }
-}
 
 void CGeneSelector::FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSplice>& alts, TGeneModelList& bad_aligns)
 {
     list<const CGeneModel*> not_placed_yet;
+    ITERATE(TGeneModelList, it, cls) 
+        not_placed_yet.push_back(&(*it));
 
-    cls.sort(DescendingModelOrder);
-    FindGeneSeeds(cls, alts, not_placed_yet);
+    FindGeneSeeds(alts, not_placed_yet);
     FindAltsForGeneSeeds(alts, not_placed_yet);
     PlaceAllYouCan(alts, not_placed_yet, bad_aligns);
 
-    /*
-    list<const CGeneModel*> possibly_alternative;
-    TGeneModelList rejected;
-    TGeneModelList rejected;
-
-    cls.sort(DescendingModelOrder);
-    FindGenesPass1(cls, alts,
-                   possibly_alternative, rejected);
-    FindGenesPass2(possibly_alternative, alts,
-                   bad_aligns);
-    FindGenesPass3(rejected, alts,
-                   bad_aligns);
-    */
 }
 
 bool CModelCompare::HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel& b) {
