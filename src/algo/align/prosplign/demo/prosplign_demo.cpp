@@ -67,7 +67,6 @@ void CProSplignApp::Init(void)
                      "genomic region stop",
                      CArgDescriptions::eInteger);
     
-    arg_desc->AddFlag("full", "do not remove bad pieces");
     arg_desc->AddFlag("t", "produce alignment text");
 
     // Program description
@@ -75,6 +74,10 @@ void CProSplignApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, false);
  
+    arg_desc->AddFlag("no_introns", "alignment without introns");
+    CProSplignScoring::SetupArgDescriptions(arg_desc.get());
+    CProSplignOutputOptions::SetupArgDescriptions(arg_desc.get());
+
     // Pass argument descriptions to the application
     //
     
@@ -105,12 +108,10 @@ prosplign_demo -protein NP_002346.1 -genomic NT_009714.16 -start 1851937 -stop 1
     CSeq_id genomic(args["genomic"].AsString());
     CSeq_loc seqloc(genomic, args["start"].AsInteger(), args["stop"].AsInteger(),eNa_strand_unknown);
 
-    CProSplign prosplign;
+    CProSplign prosplign(CProSplignScoring(args),args["no_introns"]);
+    CProSplignOutputOptions output_options(args);
     CRef<CSeq_align> alignment = prosplign.FindAlignment(scope, protein, seqloc,
-                                                         CProSplignOutputOptions(args["full"]?
-                                                                                 CProSplignOutputOptions::ePassThrough:
-                                                                                 CProSplignOutputOptions::eWithHoles
-                                                                                 )
+                                                         output_options
                                                          );
 
     if (args["t"]) {
