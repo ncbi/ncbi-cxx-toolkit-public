@@ -186,6 +186,57 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+static const CEnumeratedTypeValues* molinfo_tech = CMolInfo::GetTypeInfo_enum_ETech();
+void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: TestOnObj(const CBioseq& bioseq)
+{
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
+    strtmp =  
+       molinfo_tech->FindName((CMolInfo::ETech)(*it)->GetMolinfo().GetTech(), false)+"$";
+    thisInfo.test_item_list[GetName()].push_back(strtmp + GetDiscItemText(bioseq));
+  }
+};
+
+void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& c_item)
+{
+  Str2Strs tech2seqs;
+  GetTestItemList(c_item->item_list, tech2seqs);
+  c_item->item_list.clear();
+  bool has_missing = false;
+  if (tech2seqs.find("unknown") != tech2seqs.end()) {
+    has_missing = true;
+    AddSubcategories(c_item, GetName(), tech2seqs["unknown"], "Molinfo", 
+                                                      "missing field technique");
+  }
+  unsigned cnt = tech2seqs.size();
+  if (cnt == 1) {
+     if (has_missing) strtmp = "(all missing)";
+     else {
+        Str2Strs::iterator it = tech2seqs.begin();
+        AddSubcategories(c_item, GetName(), it->second, "All Molinfo",
+              "field technique value '" + it->first, e_HasComment);
+        strtmp = "(all present, all same)";
+     }
+  }
+  else if (cnt == 2 && has_missing) {
+      strtmp = "(some missing, all same)";
+      ITERATE (Str2Strs, it, tech2seqs) {
+         if (it->first != "unknowns")
+             AddSubcategories(c_item, GetName(), it->second, "Molinfo", 
+               "field technique value '" + it->first, e_HasComment);
+      }
+  }
+  else {
+    strtmp = "(all present, inconsistent)";
+    ITERATE (Str2Strs, it, tech2seqs) {
+       AddSubcategories(c_item, GetName(), it->second, "Molinfo",
+               "field technique value '" + it->first, e_HasComment); 
+    }
+  }
+
+  c_item->description = "Molinfo Technique Report " + strtmp;
+};
+
+
 void CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeq_feat*>, it, mrna_feat) {

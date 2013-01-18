@@ -2568,6 +2568,17 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+
+  class CBioseq_DISC_INCONSISTENT_MOLINFO_TECH : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_INCONSISTENT_MOLINFO_TECH () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_INCONSISTENT_MOLINFO_TECH"); }
+  };
+
   class CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE : public CBioseqTestAndRepData
   {
     public:
@@ -2575,7 +2586,8 @@ namespace DiscRepNmSpc {
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("TEST_MRNA_OVERLAPPING_PSEUDO_GENE"); }
+      virtual string GetName() const {
+                         return string("TEST_MRNA_OVERLAPPING_PSEUDO_GENE"); }
   };
 
   class CBioseq_TEST_UNWANTED_SPACER : public CBioseqTestAndRepData

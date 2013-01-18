@@ -263,6 +263,8 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat_CSeqdesc
    tests_on_Bioseq_NotInGenProdSet.push_back(
+                     CRef<CTestAndRepData>(new CBioseq_DISC_INCONSISTENT_MOLINFO_TECH));
+   tests_on_Bioseq_NotInGenProdSet.push_back(
                                  CRef<CTestAndRepData>(new CBioseq_SHORT_CONTIG));
    tests_on_Bioseq_NotInGenProdSet.push_back(
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES));
