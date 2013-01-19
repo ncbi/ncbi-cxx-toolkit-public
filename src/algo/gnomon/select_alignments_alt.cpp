@@ -371,7 +371,7 @@ bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tol
     return true;
 }
 
-bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
+static bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
 {
     if (!a.Support().empty() && b.Support().empty())
         return true;
@@ -461,7 +461,9 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
     }
 }
 
-bool DescendingModelOrderP(const CGeneModel* a, const CGeneModel* b) 
+typedef const CGeneModel* TConstGeneModelPtr;
+static bool DescendingModelOrderP(const TConstGeneModelPtr& a,
+                                  const TConstGeneModelPtr& b) 
 {
     return DescendingModelOrder(*a, *b);
 }
