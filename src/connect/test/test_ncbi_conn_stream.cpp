@@ -501,7 +501,7 @@ int main(int argc, const char* argv[])
     j = 0;
     buflen = 0;
     for (i = 0, l = 0; i < kBufferSize; i += j, l++) {
-        k = rand()%15 + 1;
+        k = rand() % 15 + 1;
 
         if (i + k > kBufferSize + 1)
             k = kBufferSize + 1 - i;
@@ -543,7 +543,7 @@ int main(int argc, const char* argv[])
     LOG_POST("Test 7 of 9: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
-        buf1[i] = (char)(255/*rand()%256*/);
+        buf1[i] = (char)(255/*rand() % 256*/);
 
     ios.write(buf1, kBufferSize);
 
