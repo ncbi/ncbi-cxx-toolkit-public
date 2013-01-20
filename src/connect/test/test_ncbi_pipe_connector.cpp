@@ -111,9 +111,9 @@ static void s_WriteLine(FILE* fs, string str)
     const char* data = str.c_str();
     do { 
         ssize_t cnt = ::write(fileno(fs), data + written, size - written);
-        if (!cnt)
+        if (cnt <= 0)
             break;
-        written += size;
+        written += cnt;
     } while (written < size);
     if (written == size) {
         static const char eol[] = { '\n' };
