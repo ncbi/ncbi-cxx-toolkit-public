@@ -106,6 +106,7 @@ public:
 public:
     int mincontig;
     int tolerance;
+    int minCdsLen;
 
 private:
     void RemoveShortHolesAndRescore(TGeneModelList chains);

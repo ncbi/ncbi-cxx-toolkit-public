@@ -455,33 +455,12 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
 
         aligns.sort(s_AlignSeqOrder);
 
-        TGeneModelList::const_iterator il = aligns.begin();
-
-    /*
-    TSignedSeqPos left = 0;
-    ITERATE(TGeneModelList, ir, aligns) {
-        if ((ir->Type() & CGeneModel::eWall)!=0) {
-            TGeneModelList::const_iterator curwall = ir;
-            TGeneModelList::const_iterator next = ir;
-            Predict(seq, left, WalledCdsLimits(*ir).GetFrom(), il, ++next, models, window, margin,
-                    (left!=0 || wall), true, left!=0, true, mpp, nonconsensp, bad_aligns);
-
-            for( ; next != aligns.end() && WalledCdsLimits(*next).GetFrom() <= WalledCdsLimits(*curwall).GetTo(); ++next) {
-                _ASSERT((next->Type() & CGeneModel::eNested)!=0 || next->Strand() != curwall->Strand());
-                ir = next;
-                if(WalledCdsLimits(*next).GetTo() > WalledCdsLimits(*curwall).GetTo()) {
-                    cout << "Overlapping genes: " << WalledCdsLimits(*curwall).GetFrom() << ' ' << WalledCdsLimits(*next).GetTo() << endl;
-                    curwall = next;
-                }
-            }
-
-            il = curwall;
-            left = WalledCdsLimits(*curwall).GetTo();
+        TGeneModelList models_tmp;
+        Predict(left, right, aligns.begin(), aligns.end(), models_tmp,(left!=0 || wall), wall, left!=0, false, bad_aligns);
+        ITERATE(TGeneModelList, it, models_tmp) {
+            if(!it->Support().empty() || it->RealCdsLen() >= minCdsLen)
+                models.push_back(*it);
         }
-    }
-    */
-
-        Predict(left, right, il, aligns.end(), models,(left!=0 || wall), wall, left!=0, false, bad_aligns);
     }
 
     NON_CONST_ITERATE(TGeneModelList, it, models) {
@@ -609,8 +588,7 @@ void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->SetCurrentGroup("Prediction tuning");
     arg_desc->AddFlag("singlest","Allow single exon EST chains as evidence");
     arg_desc->AddDefaultKey("tolerance","tolerance","if models exon boundary differ only this much only one model will survive",CArgDescriptions::eInteger,"5");
-    arg_desc->AddDefaultKey("minsupport","minsupport","Minimal number of support lines for short CDS or noncoding models",CArgDescriptions::eInteger,"5");
-    arg_desc->AddDefaultKey("minlen","minlen","Minimal CDS length to be excluded from the above rule.",CArgDescriptions::eInteger,"300");
+    arg_desc->AddDefaultKey("minlen","minlen","Minimal CDS length for pure ab initio models",CArgDescriptions::eInteger,"100");
 }
 
 void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& args)
@@ -628,6 +606,8 @@ void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& arg
 
     annot->mincontig = args["mincont"].AsInteger();
     annot->tolerance = args["tolerance"].AsInteger();
+
+    annot->minCdsLen = args["minlen"].AsInteger();
 
     if (!args["norep"])
         annot->EnableSeqMasking();

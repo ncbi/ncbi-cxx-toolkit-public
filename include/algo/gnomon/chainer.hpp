@@ -57,6 +57,7 @@ struct SMinScor {
     int m_minsupport;
     int m_minsupport_mrna;
     int m_minsupport_rnaseq;
+    int m_minlen;
 };
 
 

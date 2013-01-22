@@ -55,6 +55,8 @@ BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
 
 struct SChainMember;
+typedef vector<SChainMember*> TContained;
+
 class CChain;
 typedef map<Int8,CAlignModel*> TOrigAligns;
 struct SFShiftsCluster;
@@ -86,6 +88,8 @@ private:
     void Duplicate5pendsAndShortCDSes(CChainMembers& pointers, TGeneModelList& clust);
     void ScoreCdnas(CChainMembers& pointers);
     void DuplicateUTRs(CChainMembers& pointers);
+    bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, TContained& contained);
+    void LRIinit(SChainMember& mi);
     void LeftRight(vector<SChainMember*>& pointers);
     void RightLeft(vector<SChainMember*>& pointers);
     double GoodCDNAScore(const CGeneModel& algn);
@@ -110,6 +114,10 @@ private:
     int minpolya;
 
     TOrigAligns orig_aligns;
+
+    map<TSignedSeqRange,int> mrna_count;
+    map<TSignedSeqRange,int> est_count;
+    map<TSignedSeqRange,int> rnaseq_count;
 
     friend class CChainer;
 };
@@ -152,8 +160,6 @@ enum {
     eLeftUTR,
     eRightUTR
 };
-
-typedef vector<SChainMember*> TContained;
 
 struct SChainMember
 {
@@ -935,9 +941,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
     }
 }
 
-//#define START_BONUS 600
-
-bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, int oep, TContained& contained) {
+bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, TContained& contained) {
 
     const CGeneModel& ai = *mi.m_align;
     const CGeneModel& aj = *mj.m_align;
@@ -984,7 +988,7 @@ bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, c
     case 1:              // no introns in intersection
         if(mi.m_type == eCDS && mj.m_type == eCDS)  // no intersecting limit for coding 
             break;
-        if ((ai.Limits() & aj.Limits()).GetLength() < oep) 
+        if ((ai.Limits() & aj.Limits()).GetLength() < intersect_limit) 
             return false;
         break;
     default:             // one or more introns in intersection 
@@ -1024,19 +1028,30 @@ bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, c
     return true;
 }
 
-void LRIinit(SChainMember& mi) {
+#define NON_CDNA_INTRON_PENALTY 0.1
+
+void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
     const CCDSInfo& ai_cds_info = *mi.m_cds_info;
     TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
 
     mi.m_num = mi.m_contained_weight;
 
+    const CGeneModel& ai = *mi.m_align;
     mi.m_cds = mi.m_align_map->FShiftedLen(ai_rf,false);
     if(ai_cds_info.HasStart()) {
         mi.m_cds += START_BONUS;
-        _ASSERT((mi.m_align->Strand() == ePlus && ai_cds_info.Start().GetFrom() == ai_cds_info.MaxCdsLimits().GetFrom()) || 
-                (mi.m_align->Strand() == eMinus && ai_cds_info.Start().GetTo() == ai_cds_info.MaxCdsLimits().GetTo()));
+        _ASSERT((ai.Strand() == ePlus && ai_cds_info.Start().GetFrom() == ai_cds_info.MaxCdsLimits().GetFrom()) || 
+                (ai.Strand() == eMinus && ai_cds_info.Start().GetTo() == ai_cds_info.MaxCdsLimits().GetTo()));
     }
-
+    for(int i = 1; i < (int)ai.Exons().size(); ++i) {
+        if(ai.Exons()[i-1].m_ssplice && ai.Exons()[i].m_fsplice) {
+            TSignedSeqRange intron(ai.Exons()[i-1].Limits().GetTo(),ai.Exons()[i].Limits().GetFrom());
+            if(Include(ai_rf,intron) && mrna_count[intron]+est_count[intron]+rnaseq_count[intron] == 0) {
+                mi.m_cds -= NON_CDNA_INTRON_PENALTY*((ai_rf & ai.Exons()[i-1].Limits()).GetLength()+(ai_rf & ai.Exons()[i].Limits()).GetLength());
+            }
+        }
+    }
+    
     mi.m_left_member = 0;
     mi.m_left_num = mi.m_num;
     mi.m_left_cds =  mi.m_cds;
@@ -1067,7 +1082,7 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
 
             int delta_cds;
             double delta_num;
-            if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, intersect_limit, micontained)) {
+            if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, micontained)) {
                 int newcds = mj.m_left_cds+delta_cds;
                 double newnum = mj.m_left_num+delta_num;
                 if (newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
@@ -1240,14 +1255,39 @@ string GetLinkedIdsForMember(const SChainMember& mi) {
     return note;
 }
 
-void MarkUnwantedLowSupportIntrons(TOrigAligns& orig_aligns, vector<SChainMember*>& pointers, const SMinScor& minscor) {
+bool LongCdsOrGoodSupport(const CGeneModel& chain, const SMinScor& minscor, 
+                                   map<TSignedSeqRange,int>& mrna_count, map<TSignedSeqRange,int>& est_count, map<TSignedSeqRange,int>& rnaseq_count) {
+    if((chain.Type()&CGeneModel::eProt) || (chain.ReadingFrame().NotEmpty() && chain.RealCdsLen() >= minscor.m_minlen))
+        return true;
 
-    map<TSignedSeqRange,int> mrna_count;
-    map<TSignedSeqRange,int> est_count;
-    map<TSignedSeqRange,int> rnaseq_count;
+    if(chain.ReadingFrame().NotEmpty() && chain.Exons().size() == 1)
+        return false;
 
-    ITERATE(TOrigAligns, it, orig_aligns) {
-        const CAlignModel& align = *it->second;
+    bool good = true;
+    for(int i = 1; i < (int)chain.Exons().size() && good; ++i) {
+        if(chain.Exons()[i-1].m_ssplice && chain.Exons()[i].m_fsplice) {
+            TSignedSeqRange intron(chain.Exons()[i-1].Limits().GetTo(),chain.Exons()[i].Limits().GetFrom());
+            if(mrna_count[intron] < minscor.m_minsupport_mrna && mrna_count[intron]+est_count[intron] < minscor.m_minsupport && rnaseq_count[intron] < minscor.m_minsupport_rnaseq)
+                good = false;
+        }
+    }
+    
+    return good;
+}
+
+void MarkUnwantedLowSupportIntrons(vector<SChainMember*>& pointers, const SMinScor& minscor, 
+                                   map<TSignedSeqRange,int>& mrna_count, map<TSignedSeqRange,int>& est_count, map<TSignedSeqRange,int>& rnaseq_count) {
+
+    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) 
+        (*i)->m_marked_for_deletion = !LongCdsOrGoodSupport(*(*i)->m_align, minscor, mrna_count, est_count, rnaseq_count); 
+}
+
+TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
+{
+    if(clust.empty()) return TGeneModelList();
+
+    ITERATE (TGeneModelList, it, clust) {
+        const CGeneModel& align = *it;
         for(int i = 1; i < (int)align.Exons().size(); ++i) {
             if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
                 TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
@@ -1257,33 +1297,6 @@ void MarkUnwantedLowSupportIntrons(TOrigAligns& orig_aligns, vector<SChainMember
                     est_count[intron] += align.Weight();
                 else if(align.Type() == CGeneModel::eSR)
                     rnaseq_count[intron] += align.Weight();
-            }
-        }
-    }
-
-    NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
-        SChainMember& mi = **i;
-        CGeneModel& align = *mi.m_align;
-        for(int i = 1; i < (int)align.Exons().size(); ++i) {
-            if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
-                TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
-                if(mrna_count[intron] < minscor.m_minsupport_mrna && mrna_count[intron]+est_count[intron] < minscor.m_minsupport && rnaseq_count[intron] < minscor.m_minsupport_rnaseq)
-                    mi.m_marked_for_deletion = true;
-            }
-        }
-    }
-}
-
-TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
-{
-    if(clust.empty()) return TGeneModelList();
-
-    set<TSignedSeqRange> cdnaintrons;
-    ITERATE (TGeneModelList, it, clust) {
-        const CGeneModel& align = *it;
-        for(int i = 1; i < (int)align.Exons().size(); ++i) {
-            if((align.Type()&CGeneModel::eProt) == 0 && align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice) {
-                cdnaintrons.insert(TSignedSeqRange(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom()));
             }
         }
     }
@@ -1328,8 +1341,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         if(chain.Score() == BadScore())
             continue;
 
+        int cdslen = chain.FShiftedLen(chain.GetCdsInfo().Cds(),true);
         if(chain.GetCdsInfo().ProtReadingFrame().Empty() && 
-           chain.Score() < 2*minscor.m_min && chain.FShiftedLen(chain.GetCdsInfo().Cds(),true) <  2*minscor.m_cds_len)
+           (cdslen < minscor.m_minlen || (chain.Score() < 2*minscor.m_min && cdslen <  2*minscor.m_cds_len)))
             continue;
 
         TSignedSeqRange n_rf = chain.ReadingFrame();
@@ -1369,10 +1383,11 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         if(mi.m_included || mi.m_postponed) continue;
 
         CChain chain(mi);
+        mi.MarkPostponedForChain();
 
         m_gnomon->GetScore(chain);
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
-        chain.ClipToCompleteAlignment(CGeneModel::eCap);
+        chain.ClipToCompleteAlignment(CGeneModel::eCap);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
 
@@ -1381,16 +1396,14 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         //        if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
         if(chain.GetCdsInfo().ProtReadingFrame().Empty())
             RemovePoorCds(chain,ms);
-        if(chain.Score() != BadScore()) {
-            mi.MarkIncludedForChain();   // alignments clipped below might not be in any chain; clipping may produce redundant chains
+        if(chain.Score() != BadScore() && LongCdsOrGoodSupport(chain, minscor, mrna_count, est_count, rnaseq_count)) {
+            mi.MarkIncludedForChain();
 
-            if(chain.Score() != BadScore()) {
-                m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
-                chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
-                chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
-                chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
-                chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
-            }
+            m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
+            chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
+            chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
+            chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
+            chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
 
             chain.RemoveFshiftsFromUTRs();
             chain.RestoreTrimmedEnds(trim);
@@ -1406,8 +1419,6 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             tmp_chains.push_back(chain);
 
             _ASSERT( chain.FShiftedLen(chain.GetCdsInfo().Start()+chain.ReadingFrame()+chain.GetCdsInfo().Stop(), false)%3==0 );
-        } else {
-            mi.MarkPostponedForChain();
         }
     }
 
@@ -1415,7 +1426,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
 
-    MarkUnwantedLowSupportIntrons(orig_aligns,pointers,minscor);
+    MarkUnwantedLowSupportIntrons(pointers, minscor, mrna_count, est_count, rnaseq_count);
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsMarkedForDeletion),pointers.end());  // low support introns removed
 
     LeftRight(pointers);
@@ -1461,7 +1472,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         if(chain.Continuous() && chain.Exons().size() > 1) {
             bool allcdnaintrons = true;
             for(int i = 1; i < (int)chain.Exons().size() && allcdnaintrons; ++i) {
-                allcdnaintrons = (cdnaintrons.find(TSignedSeqRange(chain.Exons()[i-1].GetTo(),chain.Exons()[i].GetFrom())) != cdnaintrons.end());
+                TSignedSeqRange intron(TSignedSeqRange(chain.Exons()[i-1].GetTo(),chain.Exons()[i].GetFrom()));
+                allcdnaintrons = (mrna_count[intron]+est_count[intron]+rnaseq_count[intron] > 0);
             }
             if(allcdnaintrons)
                 chain.Status() |= CGeneModel::ecDNAIntrons;
@@ -1657,7 +1669,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(list<CChain>& chains
                 } else {
                     int delta_cds;
                     double delta_num;
-                    if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, intersect_limit, micontained)) {      // i and j connected continuosly
+                    if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, micontained)) {      // i and j connected continuosly
                         int newcds = mj.m_left_cds+delta_cds;
                         double newnum = mj.m_left_num+delta_num;
                         if (mi.m_left_member == 0 || newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
@@ -2069,6 +2081,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
         if(FShiftedLen(extra_cds, false) < 0.2*RealCdsLen()) {
             CCDSInfo cds = GetCdsInfo();
             TSignedSeqRange reading_frame = cds.ReadingFrame();
+            bool protreadingframe = cds.ProtReadingFrame().NotEmpty();
             if(Strand() == ePlus) 
                 reading_frame.SetFrom(rf);
             else
@@ -2079,7 +2092,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
                 if(Include(reading_frame, *s))
                     cds.AddPStop(*s);
             }
-            cds.SetReadingFrame(reading_frame,true);
+            cds.SetReadingFrame(reading_frame,protreadingframe);
             cds.SetStart(conf_start,true);
             SetCdsInfo(cds);          
             TInDels fs;
@@ -3500,6 +3513,9 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey("minsupport_rnaseq", "minsupport_rnaseq",
                             "Minimal number of RNA-Seq for valid noncoding models",
                             CArgDescriptions::eInteger, "5");
+    arg_desc->AddDefaultKey("minlen", "minlen",
+                            "Chains with thorter CDS should be supported by protein or satisfy noncoding intron reguirements",
+                            CArgDescriptions::eInteger, "100");
 
     arg_desc->SetCurrentGroup("Heuristic parameters for score evaluation");
     arg_desc->AddDefaultKey("i5p", "i5p",
@@ -3578,6 +3594,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     minscor.m_minsupport = args["minsupport"].AsInteger();
     minscor.m_minsupport_mrna = args["minsupport_mrna"].AsInteger();
     minscor.m_minsupport_rnaseq = args["minsupport_rnaseq"].AsInteger();
+    minscor.m_minlen = args["minlen"].AsInteger();
 
     chainer->SetMinInframeFrac(args["mininframefrac"].AsDouble());
     
