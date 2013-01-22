@@ -5,7 +5,7 @@
 APP = test_fasta_round_trip
 SRC = test_fasta_round_trip
 
-LIB = xobjread xobjutil creaders $(SOBJMGR_LIBS)
+LIB = $(OBJREAD_LIBS) xobjutil $(SOBJMGR_LIBS)
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
