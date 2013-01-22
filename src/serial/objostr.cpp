@@ -272,8 +272,8 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_WriteNamedIntegersByValue(false),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_FastWriteDouble(TFastWriteDouble::GetDefault()),
-      m_VerifyData(x_GetVerifyDataDefault()),
-      m_WriteAsDefault(false)
+      m_WriteAsDefault(false),
+      m_VerifyData(x_GetVerifyDataDefault())
 {
 }
 
