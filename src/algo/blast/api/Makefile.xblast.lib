@@ -78,7 +78,7 @@ SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
 LIB = xblast
 
-DLL_LIB = xalgodustmask xobjutil $(OBJMGR_LIBS)
+DLL_LIB = xalgodustmask xobjutil $(SOBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
