@@ -1028,7 +1028,6 @@ bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, c
     return true;
 }
 
-#define NON_CDNA_INTRON_PENALTY 0.1
 
 void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
     const CCDSInfo& ai_cds_info = *mi.m_cds_info;
@@ -1042,14 +1041,6 @@ void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
         mi.m_cds += START_BONUS;
         _ASSERT((ai.Strand() == ePlus && ai_cds_info.Start().GetFrom() == ai_cds_info.MaxCdsLimits().GetFrom()) || 
                 (ai.Strand() == eMinus && ai_cds_info.Start().GetTo() == ai_cds_info.MaxCdsLimits().GetTo()));
-    }
-    for(int i = 1; i < (int)ai.Exons().size(); ++i) {
-        if(ai.Exons()[i-1].m_ssplice && ai.Exons()[i].m_fsplice) {
-            TSignedSeqRange intron(ai.Exons()[i-1].Limits().GetTo(),ai.Exons()[i].Limits().GetFrom());
-            if(Include(ai_rf,intron) && mrna_count[intron]+est_count[intron]+rnaseq_count[intron] == 0) {
-                mi.m_cds -= NON_CDNA_INTRON_PENALTY*((ai_rf & ai.Exons()[i-1].Limits()).GetLength()+(ai_rf & ai.Exons()[i].Limits()).GetLength());
-            }
-        }
     }
     
     mi.m_left_member = 0;
