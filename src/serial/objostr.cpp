@@ -272,7 +272,8 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_WriteNamedIntegersByValue(false),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_FastWriteDouble(TFastWriteDouble::GetDefault()),
-      m_VerifyData(x_GetVerifyDataDefault())
+      m_VerifyData(x_GetVerifyDataDefault()),
+      m_WriteAsDefault(false)
 {
 }
 
@@ -530,6 +531,13 @@ void CObjectOStream::WriteClassMember(const CConstObjectInfo::CMemberIterator& m
     WriteClassMember(memberInfo->GetId(),
                      memberInfo->GetTypeInfo(),
                      memberInfo->GetMemberPtr(classPtr));
+}
+
+void CObjectOStream::WriteClassMemberDefault(const CMemberId& memberId,
+                                         TTypeInfo memberType,
+                                         TConstObjectPtr memberPtr)
+{
+    WriteClassMember(memberId,memberType,memberPtr);
 }
 
 void CObjectOStream::WriteChoiceVariant(const CConstObjectInfoCV& object)

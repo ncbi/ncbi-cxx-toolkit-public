@@ -512,8 +512,17 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
     }
 }
 
+void CObjectOStreamXml::x_WriteAsDefault(void) {
+    OpenTagEndBack();
+    SelfCloseTagEnd();
+}
+
 void CObjectOStreamXml::WriteBool(bool data)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     if ( !x_IsStdXml() ) {
         OpenTagEndBack();
         if ( data )
@@ -536,26 +545,46 @@ void CObjectOStreamXml::WriteChar(char data)
 
 void CObjectOStreamXml::WriteInt4(Int4 data)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     m_Output.PutInt4(data);
 }
 
 void CObjectOStreamXml::WriteUint4(Uint4 data)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     m_Output.PutUint4(data);
 }
 
 void CObjectOStreamXml::WriteInt8(Int8 data)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     m_Output.PutInt8(data);
 }
 
 void CObjectOStreamXml::WriteUint8(Uint8 data)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     m_Output.PutUint8(data);
 }
 
 void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
     }
@@ -814,6 +843,10 @@ void CObjectOStreamXml::WriteCString(const char* str)
 
 void CObjectOStreamXml::WriteString(const string& str, EStringType type)
 {
+    if (m_WriteAsDefault) {
+        x_WriteAsDefault();
+        return;
+    }
     for ( const char* src = str.c_str(); *src; ++src ) {
         WriteEncodedChar(src,type);
     }
@@ -831,7 +864,10 @@ void CObjectOStreamXml::CopyString(CObjectIStream& in,
 {
     string str;
     in.ReadString(str, type);
+    SetWriteAsDefault(in.WasMemberDefaultUsed());
+    in.SetMemberDefaultUsed(false);
     WriteString(str, type);
+    SetWriteAsDefault(false);
 }
 
 void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
@@ -1175,7 +1211,9 @@ void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
         const CClassTypeInfo* classType =
             dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
         if (classType) {
-            CheckStdXml(classType);
+            if (!classType->Implicit()) {
+                CheckStdXml(classType);
+            }
             isclass = true;
         }
         bool needNs = x_ProcessTypeNamespace(namedTypeInfo);
@@ -1419,6 +1457,19 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
     END_OBJECT_FRAME();
 
     return true;
+}
+
+void CObjectOStreamXml::WriteClassMemberDefault(
+    const CMemberId& memberId, TTypeInfo, TConstObjectPtr)
+{
+    if (m_Attlist) {
+        return;
+    }
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+    OpenStackTag(0);
+    x_WriteAsDefault();
+    CloseStackTag(0);
+    END_OBJECT_FRAME();
 }
 #endif
 

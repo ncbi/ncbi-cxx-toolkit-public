@@ -982,15 +982,6 @@ public:
     void EndDelayBuffer(CDelayBuffer& buffer,
                         const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
-    void SetMemberDefault( TConstObjectPtr def)
-    {
-        m_MemberDefault = def;
-    }
-    TConstObjectPtr GetMemberDefault( void) const
-    {
-        return m_MemberDefault;
-    }
-
     TObjectPtr GetParentObjectPtr(TTypeInfo type,
                                   size_t max_depth = 1,
                                   size_t min_depth = 1) const;
@@ -1034,7 +1025,6 @@ private:
     static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
     static ESerialSkipUnknown x_GetSkipUnknownVariantsDefault(void);
 
-
     ESerialVerifyData   m_VerifyData;
     ESerialSkipUnknown m_SkipUnknown;
     ESerialSkipUnknown m_SkipUnknownVariants;
@@ -1055,8 +1045,28 @@ private:
     vector<TTypeInfo> m_ReqMonitorType;
     
     TConstObjectPtr m_MemberDefault;
+    bool m_MemberDefaultUsed;
+
+    void SetMemberDefault( TConstObjectPtr def)
+    {
+        m_MemberDefault = def;
+        m_MemberDefaultUsed = false;
+    }
 
 public:
+    TConstObjectPtr GetMemberDefault( void) const
+    {
+        return m_MemberDefault;
+    }
+    void SetMemberDefaultUsed(bool used)
+    {
+        m_MemberDefaultUsed = used;
+    }
+    bool WasMemberDefaultUsed(void) const
+    {
+        return m_MemberDefaultUsed;
+    }
+
     // read hooks
     CLocalHookSet<CReadObjectHook> m_ObjectHookKey;
     CLocalHookSet<CReadClassMemberHook> m_ClassMemberHookKey;
@@ -1066,6 +1076,7 @@ public:
     CLocalHookSet<CSkipChoiceVariantHook> m_ChoiceVariantSkipHookKey;
 
     friend class CObjectStreamCopier;
+    friend class CMemberInfoFunctions;
 };
 
 inline

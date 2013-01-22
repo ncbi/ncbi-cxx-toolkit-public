@@ -423,7 +423,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
       m_Fail(fNotOpen),
       m_Flags(fFlagNone),
       m_MonitorType(0),
-      m_MemberDefault(0)
+      m_MemberDefault(0), m_MemberDefaultUsed(false)
 {
 }
 

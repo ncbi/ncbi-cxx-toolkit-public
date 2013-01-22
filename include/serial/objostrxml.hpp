@@ -321,6 +321,9 @@ protected:
                                   TConstObjectPtr memberPtr);
     virtual bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
+    virtual void WriteClassMemberDefault(const CMemberId& memberId,
+                                         TTypeInfo memberType,
+                                         TConstObjectPtr memberPtr);
 #endif
     void WriteContainerContents(const CContainerTypeInfo* containerType,
                                 TConstObjectPtr containerPtr);
@@ -400,6 +403,7 @@ private:
     void x_EndTypeNamespace(void);
     bool x_BeginNamespace(const string& ns_name, const string& ns_prefix);
     void x_EndNamespace(const string& ns_name);
+    void x_WriteAsDefault(void);
 
     enum ETagAction {
         eTagOpen,

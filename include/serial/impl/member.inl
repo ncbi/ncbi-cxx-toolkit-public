@@ -41,7 +41,13 @@ const CClassTypeInfoBase* CMemberInfo::GetClassType(void) const
 inline
 bool CMemberInfo::Optional(void) const
 {
-    return m_Optional;
+//    return m_Optional;
+// this is to provide backward compatibility:
+//for ASN objects, having default means being optional
+//for XML objects, these two properties are unrelated
+// after a while, when generated code (ie, datatool) is truly in sync with serial library,
+// this can be reversed to simple check above
+    return GetId().HaveNoPrefix() ? m_Optional : (m_Optional || m_Default);
 }
 
 inline

@@ -665,6 +665,9 @@ public:
                                   TConstObjectPtr memberPtr);
     MLIOVIR bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
+    MLIOVIR void WriteClassMemberDefault(const CMemberId& memberId,
+                                         TTypeInfo memberType,
+                                         TConstObjectPtr memberPtr);
     // alias
     MLIOVIR void WriteAlias(const CAliasTypeInfo* aliasType,
                             TConstObjectPtr aliasPtr);
@@ -761,6 +764,7 @@ protected:
     bool  m_WriteNamedIntegersByValue;
     EDelayBufferParsing  m_ParseDelayBuffers;
     bool  m_FastWriteDouble;
+    bool  m_WriteAsDefault;
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
@@ -779,6 +783,9 @@ private:
     CStreamPathHook<CVariantInfo*,CWriteChoiceVariantHook*> m_PathWriteVariantHooks;
 
 public:
+    void  SetWriteAsDefault( bool asdef) {
+        m_WriteAsDefault = asdef;
+    }
     // hook support
     CLocalHookSet<CWriteObjectHook> m_ObjectHookKey;
     CLocalHookSet<CWriteClassMemberHook> m_ClassMemberHookKey;

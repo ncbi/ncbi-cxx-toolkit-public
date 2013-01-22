@@ -271,6 +271,9 @@ private:
     bool x_IsStdXml(void) {return m_StdXml || (GetFlags()&fFlagEnforcedStdXml);}
     void x_EndTypeNamespace(void);
 
+    template<typename Type>
+    Type x_UseMemberDefault(void);
+
     enum ETagState {
         eTagOutside,
         eTagInsideOpening,

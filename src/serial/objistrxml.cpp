@@ -112,6 +112,13 @@ void CObjectIStreamXml::SetEnforcedStdXml(bool set)
     }
 }
 
+template<typename Type> inline
+Type CObjectIStreamXml::x_UseMemberDefault(void)
+{
+    SetMemberDefaultUsed(true);
+    return CTypeConverter<Type>::Get(GetMemberDefault());
+}
+
 static inline
 bool IsBaseChar(char c)
 {
@@ -328,8 +335,10 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 bool CObjectIStreamXml::UseDefaultData(void)
 {
     return !m_Attlist &&
-        (EndOpeningTagSelfClosed() ||
-            (m_Input.PeekChar(0) == '<' && m_Input.PeekChar(1) == '/')) &&
+        (   SelfClosedTag() ||
+            EndOpeningTagSelfClosed() ||
+            (m_Input.PeekChar(0) == '<' && m_Input.PeekChar(1) == '/')
+        ) &&
         GetMemberDefault();
 }
 
@@ -835,8 +844,8 @@ bool CObjectIStreamXml::ReadBool(void)
     if (m_Attlist || checktag) {
         ReadAttributeValue(sValue);
     } else {
-        if (UseDefaultData()) {
-            return CTypeConverter<bool>::Get(GetMemberDefault());
+        if (GetMemberDefault() && UseDefaultData()) {
+            return x_UseMemberDefault<bool>();
         }
         ReadTagData(sValue);
     }
@@ -860,6 +869,9 @@ bool CObjectIStreamXml::ReadBool(void)
 
 char CObjectIStreamXml::ReadChar(void)
 {
+    if (GetMemberDefault() && UseDefaultData()) {
+        return x_UseMemberDefault<char>();
+    }
     BeginData();
     int c = ReadEscapedChar('<');
     if ( c < 0 || m_Input.PeekChar() != '<' )
@@ -869,8 +881,8 @@ char CObjectIStreamXml::ReadChar(void)
 
 Int4 CObjectIStreamXml::ReadInt4(void)
 {
-    if (UseDefaultData()) {
-        return CTypeConverter<Int4>::Get(GetMemberDefault());
+    if (GetMemberDefault() && UseDefaultData()) {
+        return x_UseMemberDefault<Int4>();
     }
     BeginData();
     return m_Input.GetInt4();
@@ -878,8 +890,8 @@ Int4 CObjectIStreamXml::ReadInt4(void)
 
 Uint4 CObjectIStreamXml::ReadUint4(void)
 {
-    if (UseDefaultData()) {
-        return CTypeConverter<Uint4>::Get(GetMemberDefault());
+    if (GetMemberDefault() && UseDefaultData()) {
+        return x_UseMemberDefault<Uint4>();
     }
     BeginData();
     return m_Input.GetUint4();
@@ -887,8 +899,8 @@ Uint4 CObjectIStreamXml::ReadUint4(void)
 
 Int8 CObjectIStreamXml::ReadInt8(void)
 {
-    if (UseDefaultData()) {
-        return CTypeConverter<Int8>::Get(GetMemberDefault());
+    if (GetMemberDefault() && UseDefaultData()) {
+        return x_UseMemberDefault<Int8>();
     }
     BeginData();
     return m_Input.GetInt8();
@@ -896,8 +908,8 @@ Int8 CObjectIStreamXml::ReadInt8(void)
 
 Uint8 CObjectIStreamXml::ReadUint8(void)
 {
-    if (UseDefaultData()) {
-        return CTypeConverter<Uint8>::Get(GetMemberDefault());
+    if (GetMemberDefault() && UseDefaultData()) {
+        return x_UseMemberDefault<Uint8>();
     }
     BeginData();
     return m_Input.GetUint8();
@@ -905,8 +917,8 @@ Uint8 CObjectIStreamXml::ReadUint8(void)
 
 double CObjectIStreamXml::ReadDouble(void)
 {
-    if (UseDefaultData()) {
-        return CTypeConverter<double>::Get(GetMemberDefault());
+    if (GetMemberDefault() && UseDefaultData()) {
+        return x_UseMemberDefault<double>();
     }
     string s;
     ReadTagData(s);
@@ -1105,9 +1117,9 @@ void CObjectIStreamXml::SkipBitString(void)
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
-    if (UseDefaultData()) {
+    if (GetMemberDefault() && UseDefaultData()) {
         EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
-        CStringUTF8 u( CUtf8::AsUTF8(CTypeConverter<string>::Get(GetMemberDefault()),enc_in));
+        CStringUTF8 u( CUtf8::AsUTF8(x_UseMemberDefault<string>(),enc_in));
         if (type == eStringTypeUTF8 || m_StringEncoding == eEncoding_Unknown) {
             str = u;
         } else {
@@ -1277,6 +1289,9 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 
 CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
 {
+    if (GetMemberDefault() && UseDefaultData()) {
+        return eThisPointer;
+    }
     if ( !HasAttlist() && InsideOpeningTag() && EndOpeningTagSelfClosed() ) {
         // self closed tag
         return eNullPointer;
@@ -1817,7 +1832,9 @@ void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
         const CClassTypeInfo* classType =
             dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
         if (classType) {
-            CheckStdXml(classType);
+            if (!classType->Implicit()) {
+                CheckStdXml(classType);
+            }
             isclass = true;
         }
         OpenTag(namedTypeInfo);
@@ -2458,6 +2475,10 @@ void CObjectIStreamXml::SkipChar(void)
 
 void CObjectIStreamXml::SkipSNumber(void)
 {
+    if (GetMemberDefault() && UseDefaultData()) {
+        SetMemberDefaultUsed(true);
+        return;
+    }
     BeginData();
     size_t i;
     char c = SkipWSAndComments();
@@ -2484,6 +2505,10 @@ void CObjectIStreamXml::SkipSNumber(void)
 
 void CObjectIStreamXml::SkipUNumber(void)
 {
+    if (GetMemberDefault() && UseDefaultData()) {
+        SetMemberDefaultUsed(true);
+        return;
+    }
     BeginData();
     size_t i;
     char c = SkipWSAndComments();
@@ -2514,6 +2539,10 @@ void CObjectIStreamXml::SkipFNumber(void)
 
 void CObjectIStreamXml::SkipString(EStringType type)
 {
+    if (GetMemberDefault() && UseDefaultData()) {
+        SetMemberDefaultUsed(true);
+        return;
+    }
     BeginData();
     EEncoding enc = m_Encoding;
     if (type == eStringTypeUTF8) {

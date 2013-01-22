@@ -76,6 +76,9 @@ public:
     static void ReadWithSetFlagMember(CObjectIStream& in,
                                         const CMemberInfo* memberInfo,
                                         TObjectPtr classPtr);
+    static void ReadWithDefaultMemberX(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo,
+                                        TObjectPtr classPtr);
     static void ReadLongMember(CObjectIStream& in,
                                  const CMemberInfo* memberInfo,
                                  TObjectPtr classPtr);
@@ -103,6 +106,9 @@ public:
     static void WriteWithDefaultMember(CObjectOStream& out,
                                          const CMemberInfo* memberInfo,
                                          TConstObjectPtr classPtr);
+    static void WriteWithDefaultMemberX(CObjectOStream& out,
+                                         const CMemberInfo* memberInfo,
+                                         TConstObjectPtr classPtr);
     static void WriteWithSetFlagMember(CObjectOStream& out,
                                          const CMemberInfo* memberInfo,
                                          TConstObjectPtr classPtr);
@@ -114,6 +120,8 @@ public:
                                   TConstObjectPtr classPtr);
     static void SkipSimpleMember(CObjectIStream& in,
                                  const CMemberInfo* memberInfo);
+    static void SkipWithDefaultMemberX(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo);
     static void SkipMissingSimpleMember(CObjectIStream& in,
                                         const CMemberInfo* memberInfo);
     static void SkipMissingOptionalMember(CObjectIStream& in,
@@ -123,6 +131,8 @@ public:
     static void SkipMissingHookedMember(CObjectIStream& in,
                                         const CMemberInfo* memberInfo);
     static void CopySimpleMember(CObjectStreamCopier& copier,
+                                 const CMemberInfo* memberInfo);
+    static void CopyWithDefaultMemberX(CObjectStreamCopier& copier,
                                  const CMemberInfo* memberInfo);
     static void CopyHookedMember(CObjectStreamCopier& copier,
                                  const CMemberInfo* memberInfo);
@@ -151,6 +161,8 @@ public:
                                 const CMemberInfo* memberInfo);
     static void SkipMissingParentClass(CObjectIStream& in,
                                        const CMemberInfo* memberInfo);
+private:
+    static TConstObjectPtr x_GetMemberDefault(const CMemberInfo* memberInfo);
 };
 
 typedef CMemberInfoFunctions TFunc;
@@ -321,6 +333,7 @@ CMemberInfo* CMemberInfo::SetOptional(void)
 CMemberInfo* CMemberInfo::SetNoPrefix(void)
 {
     GetId().SetNoPrefix();
+    UpdateFunctions();
     return this;
 }
 
@@ -356,7 +369,6 @@ CMemberInfo* CMemberInfo::SetNsQualified(bool qualified)
 
 CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 {
-    m_Optional = true;
     m_Default = def;
     UpdateFunctions();
     return this;
@@ -432,11 +444,19 @@ void CMemberInfo::UpdateFunctions(void)
         getFunc = &TFunc::GetWithSetFlagMember;
         readFuncs.m_Main = &TFunc::ReadWithSetFlagMember;
         writeFunc = &TFunc::WriteWithSetFlagMember;
+        if ( GetDefault() && GetId().HaveNoPrefix()) {
+            readFuncs.m_Main = &TFunc::ReadWithDefaultMemberX;
+            writeFunc = &TFunc::WriteWithDefaultMemberX;
+        }
     }
 
     // copymain/skipmain
     copyFuncs.m_Main = &TFunc::CopySimpleMember;
     skipFuncs.m_Main = &TFunc::SkipSimpleMember;
+    if ( GetDefault() && GetId().HaveNoPrefix()) {
+        copyFuncs.m_Main = &TFunc::CopyWithDefaultMemberX;
+        skipFuncs.m_Main = &TFunc::SkipWithDefaultMemberX;
+    }
 
     // readmissing/copymissing/skipmissing
     if ( Optional() ) {
@@ -704,13 +724,79 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
     memberInfo->UpdateSetFlagYes(classPtr);
-    ETypeFamily family = memberInfo->GetTypeInfo()->GetTypeFamily();
-    in.SetMemberDefault(
-        (family == eTypeFamilyPrimitive || family == eTypeFamilyContainer) ?
-            memberInfo->GetDefault() : 0);
     try {
         in.ReadObject(memberInfo->GetItemPtr(classPtr),
                       memberInfo->GetTypeInfo());
+    }
+    catch (CSerialException& e) {
+        if (e.GetErrCode() == CSerialException::eMissingValue) {
+            if ( memberInfo->Optional() && memberInfo->HaveSetFlag() ) {
+                in.SetFailFlags(CObjectIStream::fNoError);
+                if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
+                    memberInfo->GetTypeInfo()->SetDefault(
+                        memberInfo->GetItemPtr(classPtr));
+                }
+            } else {
+                NCBI_RETHROW(e, CSerialException, eFormatError,
+                    "missing value " + memberInfo->GetId().GetName());
+            }
+        } else {
+            NCBI_RETHROW_SAME(e,
+                "error while reading " + memberInfo->GetId().GetName());
+        }
+    }
+}
+
+TConstObjectPtr CMemberInfoFunctions::x_GetMemberDefault(
+    const CMemberInfo* memberInfo)
+{
+    ETypeFamily family = memberInfo->GetTypeInfo()->GetTypeFamily();
+    TConstObjectPtr defptr = memberInfo->GetDefault();
+    if (family == eTypeFamilyPrimitive || family == eTypeFamilyContainer) {
+        //noop
+    }
+    else if (family == eTypeFamilyPointer) {
+        bool resolved = false;
+        const CPointerTypeInfo* p = CTypeConverter<CPointerTypeInfo>::SafeCast(memberInfo->GetTypeInfo());
+        family = p->GetPointedType()->GetTypeFamily();
+        if (family == eTypeFamilyPrimitive || family == eTypeFamilyContainer) {
+            resolved = true;
+        }
+        else if (family == eTypeFamilyClass) {
+            const CClassTypeInfo* classType =
+                CTypeConverter<CClassTypeInfo>::SafeCast(p->GetPointedType());
+            if (classType->Implicit()) {
+                const CMemberInfo* mi = classType->GetMemberInfo(CItemsInfo::FirstIndex());
+                if (mi->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
+                    defptr = mi->GetItemPtr(p->GetObjectPointer(defptr));
+                    resolved = true;
+                }
+            }
+        }
+        if (!resolved) {
+            defptr = NULL;
+        }
+    } else {
+        defptr = NULL;
+    }
+    return defptr;
+}
+
+void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
+                                                  const CMemberInfo* memberInfo,
+                                                  TObjectPtr classPtr)
+{
+    _ASSERT(!memberInfo->CanBeDelayed());
+    _ASSERT(memberInfo->HaveSetFlag());
+    memberInfo->UpdateSetFlagYes(classPtr);
+    in.SetMemberDefault(x_GetMemberDefault(memberInfo));
+    try {
+        in.ReadObject(memberInfo->GetItemPtr(classPtr),
+                      memberInfo->GetTypeInfo());
+        if (in.WasMemberDefaultUsed()) {
+            memberInfo->UpdateSetFlagNo(classPtr);
+            memberInfo->UpdateSetFlagMaybe(classPtr);
+        }
         in.SetMemberDefault(0);
     }
     catch (CSerialException& e) {
@@ -849,6 +935,35 @@ void CMemberInfoFunctions::WriteWithDefaultMember(CObjectOStream& out,
     out.WriteClassMember(memberInfo->GetId(), memberType, memberPtr);
 }
 
+void CMemberInfoFunctions::WriteWithDefaultMemberX(
+    CObjectOStream& out, const CMemberInfo* memberInfo,
+                         TConstObjectPtr classPtr)
+{
+    _ASSERT(!memberInfo->CanBeDelayed());
+    _ASSERT(memberInfo->GetDefault());
+    TTypeInfo memberType = memberInfo->GetTypeInfo();
+    TConstObjectPtr memberPtr = memberInfo->GetItemPtr(classPtr);
+    CMemberInfo::ESetFlag flag = memberInfo->GetSetFlag(classPtr);
+    if (flag == CMemberInfo::eSetNo) {
+        if (memberInfo->Optional()) {
+            return;
+        }
+        ESerialVerifyData verify = out.GetVerifyData();
+        if (verify == eSerialVerifyData_Yes) {
+            out.ThrowError(CObjectOStream::fUnassigned,
+                           memberInfo->GetId().GetName());
+        }
+        return;
+    } else if (flag == CMemberInfo::eSetMaybe &&
+               memberType->GetTypeFamily() != eTypeFamilyContainer) {
+        if ( memberType->Equals(memberPtr, memberInfo->GetDefault()) ) {
+            out.WriteClassMemberDefault(memberInfo->GetId(), memberType, memberPtr);
+            return;
+        }
+    }
+    out.WriteClassMember(memberInfo->GetId(), memberType, memberPtr);
+}
+
 void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
                                                   const CMemberInfo* memberInfo,
                                                   TConstObjectPtr classPtr)
@@ -957,6 +1072,14 @@ void CMemberInfoFunctions::CopySimpleMember(CObjectStreamCopier& copier,
     copier.CopyObject(memberInfo->GetTypeInfo());
 }
 
+void CMemberInfoFunctions::CopyWithDefaultMemberX(CObjectStreamCopier& copier,
+                                            const CMemberInfo* memberInfo)
+{
+    copier.In().SetMemberDefault(x_GetMemberDefault(memberInfo));
+    copier.CopyObject(memberInfo->GetTypeInfo());
+    copier.In().SetMemberDefault(0);
+}
+
 void CMemberInfoFunctions::CopyMissingSimpleMember(CObjectStreamCopier& copier,
                                                    const CMemberInfo* memberInfo)
 {
@@ -974,6 +1097,14 @@ void CMemberInfoFunctions::SkipSimpleMember(CObjectIStream& in,
                                             const CMemberInfo* memberInfo)
 {
     in.SkipObject(memberInfo->GetTypeInfo());
+}
+
+void CMemberInfoFunctions::SkipWithDefaultMemberX(CObjectIStream& in,
+                                            const CMemberInfo* memberInfo)
+{
+    in.SetMemberDefault(x_GetMemberDefault(memberInfo));
+    in.SkipObject(memberInfo->GetTypeInfo());
+    in.SetMemberDefault(0);
 }
 
 void CMemberInfoFunctions::SkipMissingSimpleMember(CObjectIStream& in,
