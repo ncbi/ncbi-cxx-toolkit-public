@@ -82,10 +82,12 @@ typedef enum {
 
 
 typedef enum {
-    eRetry_None,              /* 0   */
-    eRetry_Redirect,          /* 1   */
-    eRetry_Authenticate,      /* 2   */
-    eRetry_ProxyAuthenticate  /* 2|1 */
+    eRetry_None = 0,              /* 0   */
+    eRetry_Unused = 1,            /* yet */
+    eRetry_Redirect = 2,          /* 2   */
+    eRetry_Redirect303 = 3,       /* 2|1 */
+    eRetry_Authenticate = 4,      /* 4   */
+    eRetry_ProxyAuthenticate = 5  /* 4|1 */
 } ERetry;
 
 typedef struct {
@@ -230,6 +232,8 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
     EIO_Status status;
     const char* msg;
 
+    assert(!retry  ||  !retry->data  ||  *retry->data);
+
     assert(!uuu->sock  &&  uuu->can_connect != eCC_None);
 
     if (!retry  ||  !retry->mode  ||  uuu->minor_fault > 5) {
@@ -242,23 +246,29 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         msg = extract != eEM_Drop  &&  uuu->major_fault > 1
             ? "[HTTP%s%s]  Too many failed attempts (%d), giving up" : "";
     } else if (retry  &&  retry->mode) {
-        char* url  = ConnNetInfo_URL(uuu->net_info);
+        char*  url = ConnNetInfo_URL(uuu->net_info);
+        int secure = 0/*false(yet)*/;
         int   fail = 0;
         switch (retry->mode) {
         case eRetry_Redirect:
+        case eRetry_Redirect303:
             if (uuu->net_info->req_method == eReqMethod_Connect)
                 fail = 2;
-            else if (retry->data  &&  *retry->data  &&  *retry->data != '?') {
+            else if (retry->data  &&  *retry->data != '?') {
                 if (uuu->net_info->req_method == eReqMethod_Get
+                    ||  retry->mode == eRetry_Redirect303
                     ||  (uuu->flags & fHTTP_InsecureRedirect)
-                    ||  !uuu->w_len) {
-                    int secure = uuu->net_info->scheme == eURL_Https ? 1 : 0;
+                    ||  !BUF_Size(uuu->w_buf)) {
+                    if (uuu->net_info->scheme == eURL_Https)
+                        secure = 1/*true*/;
                     uuu->net_info->args[0] = '\0'/*arguments not inherited*/;
                     fail = !ConnNetInfo_ParseURL(uuu->net_info, retry->data);
-                    if (!fail  &&  secure
-                        &&  uuu->net_info->scheme != eURL_Https
-                        &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
-                        fail = -1;
+                    if (!fail) {
+                        if (secure  &&  uuu->net_info->scheme != eURL_Https
+                            &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
+                            fail = -1;
+                        } else if (retry->mode == eRetry_Redirect303)
+                            uuu->net_info->req_method = eReqMethod_Get;
                     }
                 } else
                     fail = -1;
@@ -266,20 +276,25 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                 fail = 1;
             if (fail) {
                 CORE_LOGF_X(2, eLOG_Error,
-                            ("[HTTP%s%s]  %s redirect to %s%s%s",
+                            ("[HTTP%s%s]  %s %s%s to %s%s%s",
                              url  &&  *url ? "; " : "",
                              url           ? url  : "",
                              fail < 0 ? "Prohibited" :
                              fail > 1 ? "Spurious tunnel" : "Cannot",
+                             retry->mode == eRetry_Redirect303
+                             ? "submission" : "redirect",
+                             fail < 0  &&  secure ? " insecure" : "",
                              retry->data ? "\""        : "<",
                              retry->data ? retry->data : "NULL",
                              retry->data ? "\""        : ">"));
                 status = fail > 1 ? eIO_NotSupported : eIO_Closed;
             } else {
                 CORE_LOGF_X(17, eLOG_Trace,
-                            ("[HTTP%s%s]  Redirecting to \"%s\"",
+                            ("[HTTP%s%s]  %s \"%s\"",
                              url  &&  *url ? "; " : "",
                              url           ? url  : "",
+                             retry->mode == eRetry_Redirect303
+                             ? "Finishing submission with" : "Redirecting to",
                              retry->data));
                 status = eIO_Success;
             }
@@ -592,7 +607,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 }
 
 
-/* Unconditionally drop the connection; timeout may specify time allowance */
+/* Unconditionally drop the connection w/o any wait */
 static void s_DropConnection(SHttpConnector* uuu)
 {
     /*"READ" mode*/
@@ -649,7 +664,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                 /* 10/07/03: While this call here is perfectly legal, it could
                  * cause connection severed by a buggy CISCO load-balancer. */
                 /* 10/28/03: CISCO's beta patch for their LB shows that the
-                 * problem has been fixed; no more 2'30" drops in connections
+                 * problem has been fixed;  no more 2'30" drops in connections
                  * that shut down for write.  We still leave this commented
                  * out to allow unpatched clients to work seamlessly... */ 
                 /*SOCK_Shutdown(uuu->sock, eIO_Write);*/
@@ -819,13 +834,15 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     uuu->read_state = eRS_ReadBody;
     BUF_Erase(uuu->http);
 
-    /* HTTP status must come on the first line of the response */
+    /* HTTP status must come in the first line of the response */
     if (sscanf(str, "HTTP/%*d.%*d %d ", &http_code) != 1  ||  !http_code)
         http_code = -1;
     uuu->http_code = http_code;
     if (http_code < 200  ||  299 < http_code) {
         if (http_code == 301  ||  http_code == 302  ||  http_code == 307)
             retry->mode = eRetry_Redirect;
+        else if (http_code == 303)
+            retry->mode = eRetry_Redirect303;
         else if (http_code == 401)
             retry->mode = eRetry_Authenticate;
         else if (http_code == 407)
@@ -845,9 +862,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         else if (uuu->flags & fHTTP_KeepHeader)
             header_header = "HTTP header (error)";
         else if (retry->mode == eRetry_Redirect)
-            header_header = "HTTP header (moved)";
-        else if (retry->mode)
+            header_header = "HTTP header (redirect)";
+        else if (retry->mode == eRetry_Redirect303)
+            header_header = "HTTP header (see other)";
+        else if (retry->mode & eRetry_ProxyAuthenticate)
             header_header = "HTTP header (authentication)";
+        else if (retry->mode)
+            assert(0);
         else if (!uuu->net_info->max_try)
             header_header = "HTTP header (unrecoverable error)";
         else
@@ -910,16 +931,20 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         ? uuu->parse_header(str, uuu->user_data, http_code)
         : eHTTP_HeaderSuccess;
 
-    if (!header_parse) {
+    if (!header_parse/*== eHTTP_HeaderError*/) {
         retry->mode = eRetry_None;
         if (!http_code  &&  uuu->error_header
             &&  uuu->net_info->debug_printout == eDebugPrintout_Some) {
             CORE_DATA_X(19, eLOG_Note, str, size, "HTTP header (parse error)");
         }
-    } else if (retry->mode == eRetry_Redirect) {
+    } else if (header_parse == eHTTP_HeaderComplete) {
+        http_code = 0/*fake success*/;
+        retry->mode = eRetry_None;
+    } else if (retry->mode & eRetry_Redirect) {
         /* parsing "Location" pointer */
         static const char kLocationTag[] = "\nLocation: ";
         char* s;
+        assert(http_code);
         for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
             if (strncasecmp(s, kLocationTag, sizeof(kLocationTag) - 1) == 0) {
                 char* location = s + sizeof(kLocationTag) - 1;
@@ -933,7 +958,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     if (!isspace((unsigned char) s[-1]))
                         break;
                 } while (--s > location);
-                if (s != location) {
+                if (s != location  &&  n) {
                     n = (size_t)(s - location);
                     memmove(str, location, n);
                     str[n] = '\0';
@@ -942,11 +967,11 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 break;
             }
         }
-    } else if (retry->mode) {
+    } else if (retry->mode & eRetry_Authenticate) {
         /* parsing "Authenticate"/"Proxy-Authenticate" tags */
         static const char kAuthenticateTag[] = "-Authenticate: ";
         char* s;
-        assert(retry->mode & eRetry_Authenticate);
+        assert(http_code);
         for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
             if (strncasecmp(s + (retry->mode == eRetry_Authenticate ? 4 : 6),
                             kAuthenticateTag, sizeof(kAuthenticateTag)-1)==0){
@@ -980,7 +1005,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 }
             }
         }
-    } else if (!http_code) {
+    }
+    if (!http_code) {
         /* parsing "Content-Length" of non-error responses only */
         static const char kContentLengthTag[] = "\nContent-Length: ";
         const char* s;
@@ -1016,7 +1042,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             return eIO_Success;
         http_code = -1;
     }
-    assert(http_code);
+    /*NB: http_code != 0*/
 
     if (uuu->net_info->debug_printout
         ||  header_parse == eHTTP_HeaderContinue) {
@@ -1038,12 +1064,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         if (header_parse == eHTTP_HeaderContinue) {
             assert(err/*status != eIO_Closed*/);
             CORE_LOGF_X(20, eLOG_Warning,
-                        ("[HTTP%s%s]  HTTP error body incomplete (%s)",
+                        ("[HTTP%s%s]  Server error message incomplete (%s)",
                          url  &&  *url ? "; " : "",
                          url           ? url  : "", err));
         } else if (!size) {
             CORE_LOGF_X(12, err ? eLOG_Warning : eLOG_Trace,
-                        ("[HTTP%s%s]  No HTTP body received with server error"
+                        ("[HTTP%s%s]  No error message received from server"
                          "%s%s%s",
                          url  &&  *url ? "; " : "",
                          url           ? url  : "",
@@ -1053,7 +1079,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             n = BUF_Read(uuu->http, str, size);
             if (n != size) {
                 CORE_LOGF_X(13, eLOG_Error,
-                            ("[HTTP%s%s]  Cannot read server error body"
+                            ("[HTTP%s%s]  Cannot read server error message"
                              " from buffer (%lu out of %lu)",
                              url  &&  *url ? "; " : "",
                              url           ? url  : "",
@@ -1061,7 +1087,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             }
             if (n) {
                 CORE_DATAF_X(14, eLOG_Note, str, n,
-                             ("[HTTP%s%s] Server error body%s%s%s",
+                             ("[HTTP%s%s]  Server error message%s%s%s",
                               url  &&  *url ? "; " : "",
                               url           ? url  : "",
                               err           ? " (" : "",
@@ -1070,7 +1096,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             free(str);
         } else {
             CORE_LOGF_X(15, eLOG_Error,
-                        ("[HTTP%s%s]  Cannot allocate server error body,"
+                        ("[HTTP%s%s]  Cannot allocate server error message,"
                          " %lu byte%s",
                          url  &&  *url ? "; " : "",
                          url           ? url  : "",

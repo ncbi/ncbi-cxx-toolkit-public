@@ -171,20 +171,26 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *                           user code to read (if HTTP connector cannot post-
  *                           process the request such as for redirects,
  *                           authorization etc);  otherwise, this code has the
- *                           same effect as eHTTP_ParseSuccess.
- * - FHTTP_Adjust() is invoked every time before starting a new "HTTP
+ *                           same effect as eHTTP_ParseSuccess;
+ *   + eHTTP_HeaderComplete: flag this request as processed completely, and
+ *                           do not do any post-processing (such as redirects,
+ *                           authorization etc), yet make the response body (if
+ *                           any, and regardless of whether there was a server
+ *                           error or not) available for reading.
+ * - FHTTP_Adjust() gets invoked every time before starting a new "HTTP
  *   micro-session" making a hit when a previous hit has failed; it is passed
  *   "net_info" stored in the connector, and the number of previously
  *   unsuccessful consecutive attempts since the connection was opened; a zero
  *   (false) return value ends the retries.
- * - FHTTP_Cleanup() is called when the connector is about to be destroyed;
+ * - FHTTP_Cleanup() gets called when the connector is about to be destroyed;
  *   "user_data" is guaranteed not to be referenced anymore (so it is a good
  *   place to clean up "user_data" if necessary).
  */
 typedef enum {
     eHTTP_HeaderError    = 0,  /**< Parse failed, treat as a server error */
     eHTTP_HeaderSuccess  = 1,  /**< Parse succeeded, retain server status */
-    eHTTP_HeaderContinue = 2   /**< Parse succeeded, continue with body   */
+    eHTTP_HeaderContinue = 2,  /**< Parse succeeded, continue with body   */
+    eHTTP_HeaderComplete = 3   /**< Parse succeeded, no more processing   */
 } EHTTP_HeaderParse;
 typedef EHTTP_HeaderParse (*FHTTP_ParseHeader)
 (const char*         http_header,   /**< HTTP header to parse                */
