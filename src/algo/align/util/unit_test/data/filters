@@ -114,3 +114,11 @@ start_codon = 1
 1 2 4 5 10
 stop_codon = 1
 1 2 4 5 9 10
+5prime_exon_len < 500
+2 4 7 8 9
+3prime_exon_len < 500
+4 7 8 10
+5prime_exon_pct_identity > 98
+2 3 4
+3prime_exon_pct_identity > 98
+2 3 4 9 10

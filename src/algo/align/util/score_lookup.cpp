@@ -38,8 +38,10 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Score_set.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_seg_modifier.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
@@ -1429,6 +1431,84 @@ private:
 };
 
 
+class CScore_EdgeExonInfo : public CScoreLookup::IScore
+{
+public:
+    enum EEdge {e5Prime, e3Prime};
+
+    enum EInfoType {ePercentIdentity, eLength};
+
+    CScore_EdgeExonInfo(EEdge edge, EInfoType type)
+    : m_Edge(edge), m_InfoType(type)
+    {}
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << (m_InfoType == eLength ? "Length" : "Identity percentage")
+             << " of the " << (m_Edge == e5Prime ? "5'" : "3'")
+             << " exon.  Note that this score has "
+            "meaning only for Spliced-seg alignments, as would be generated "
+            "by Splign or ProSplign.";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return m_InfoType == eLength; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        if (!align.GetSegs().IsSpliced()) {
+            NCBI_THROW(CSeqalignException, eUnsupported,
+                       "CScore_EdgeExonInfo: "
+                       "valid only for spliced-seg alignments");
+        }
+        const CSpliced_seg::TExons &exons =
+            align.GetSegs().GetSpliced().GetExons();
+        CConstRef<CSpliced_exon> exon = m_Edge == e5Prime ? exons.front()
+                                                          : exons.back();
+        if (m_InfoType == eLength) {
+            return exon->GetGenomic_end() - exon->GetGenomic_start() + 1;
+        } else {
+            if (exon->IsSetScores()) {
+                ITERATE (CScore_set::Tdata, score_it, exon->GetScores().Get()) {
+                    if ((*score_it)->CanGetId() && (*score_it)->GetId().IsStr()
+                        && (*score_it)->GetId().GetStr() == "idty")
+                    {
+                        return (*score_it)->GetValue().GetReal() * 100;
+                    }
+                }
+            }
+            /// Exon percent identity not stored; calculate it
+            TSeqRange product_span;
+            if (exon->GetProduct_start().IsNucpos()) {
+                product_span.Set(exon->GetProduct_start().GetNucpos(),
+                                 exon->GetProduct_end().GetNucpos()-1);
+            } else if (exon->GetProduct_start().IsProtpos()) {
+                TSeqPos start_frame =
+                    exon->GetProduct_start().GetProtpos().GetFrame();
+                if(start_frame > 0)
+                    --start_frame;
+                TSeqPos end_frame =
+                    exon->GetProduct_end().GetProtpos().GetFrame();
+                if(end_frame > 0)
+                    --end_frame;
+                product_span.Set(
+                    exon->GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
+                    exon->GetProduct_end().GetProtpos().GetAmin()*3 + end_frame);
+            } else {
+                NCBI_THROW(CException, eUnknown,
+                           "Spliced-exon is neither nuc nor prot");
+            }
+            return CScoreBuilder().GetPercentIdentity(*scope, align,
+                                                      product_span);
+        }
+    }
+
+private:
+    EEdge m_Edge;
+    EInfoType m_InfoType;
+};
+
 void CScoreLookup::x_Init()
 {
     m_Scores.insert
@@ -1627,6 +1707,34 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("stop_codon",
           CIRef<IScore>(new CScore_StartStopCodon(false))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("5prime_exon_len",
+          CIRef<IScore>(new CScore_EdgeExonInfo(
+                            CScore_EdgeExonInfo::e5Prime,
+                            CScore_EdgeExonInfo::eLength))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("3prime_exon_len",
+          CIRef<IScore>(new CScore_EdgeExonInfo(
+                            CScore_EdgeExonInfo::e3Prime,
+                            CScore_EdgeExonInfo::eLength))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("5prime_exon_pct_identity",
+          CIRef<IScore>(new CScore_EdgeExonInfo(
+                            CScore_EdgeExonInfo::e5Prime,
+                            CScore_EdgeExonInfo::ePercentIdentity))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("3prime_exon_pct_identity",
+          CIRef<IScore>(new CScore_EdgeExonInfo(
+                            CScore_EdgeExonInfo::e3Prime,
+                            CScore_EdgeExonInfo::ePercentIdentity))));
 }
 
 
