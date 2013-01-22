@@ -1054,6 +1054,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CML	s	Universidad Nacional de Tucuman, Coleccion de Mamiferos Lillo (Argentina)",
 "CML<BRA>	c	Colecao Micologica de Lavras",
 "CMM	s	Bradford Art Galleries and Museums, Natural Sciences Department",
+"CMM<BRA>	c	Culture Collection of Phytopathogenic Fungi  (Colecao de Culturas de Fungos Fitopatogenicos Prof. Maria Menezes)",
 "CMMC	c	China Marine Microbe Collection",
 "CMMED<USA-HI>	c	Center for Marine Microbial Ecology & Diversity Collection",
 "CMMEX	s	Universidad Autonoma de Baja California",
