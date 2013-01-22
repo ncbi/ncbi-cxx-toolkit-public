@@ -181,7 +181,7 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
     unsigned j = num - 1721119;
     unsigned year;
     unsigned day;
-    unsigned month;
+    int      month;
 
     year = (((j<<2) - 1) / 146097);
     j = (j<<2) - 1 - 146097 * year;
