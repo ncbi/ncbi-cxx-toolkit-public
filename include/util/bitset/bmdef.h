@@ -5,6 +5,7 @@
 // Set all required preprocessor defines
 
 
+#include <climits>
 
 // macro to define/undefine unaligned memory access (x86, PowerPC)
 //
