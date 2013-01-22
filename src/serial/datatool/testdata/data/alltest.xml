@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
-<!DOCTYPE note PUBLIC "-//NCBI//alltest/EN" "alltest.dtd">
-<note partNum="partnum" weightKg="1.23" label="[BETH'U]">
+<note
+    xmlns="schema-test"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema-instance"
+    xs:schemaLocation="http://www.ncbi.nlm.nih.gov alltest.xsd"
+    partNum="partnum" weightKg="1.23" label="[BETH'U]">
   <to gender="female">
     <firstname>April</firstname>
     <lastname>May</lastname>
@@ -28,4 +31,18 @@
     <comment>order 2 comment 2</comment>
     <item>order 2 item 2</item>
   </ordertype>
+  <defaultElement>
+    <firstname/>
+    <lastname/>
+    <dob/>
+    <longid/>
+    <fraction/>
+    <flag/>
+    <langlist>English</langlist>
+    <langlist/>
+    <language>EN</language>
+    <language/>
+    <language>DE</language>
+    <language/>
+  </defaultElement>
 </note>

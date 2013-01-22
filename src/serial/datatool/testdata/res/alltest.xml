@@ -28,4 +28,18 @@
     <comment>order 2 comment 2</comment>
     <item>order 2 item 2</item>
   </ordertype>
+  <defaultElement>
+    <firstname/>
+    <lastname/>
+    <dob/>
+    <longid/>
+    <fraction/>
+    <flag/>
+    <langlist>English</langlist>
+    <langlist/>
+    <language>EN</language>
+    <language/>
+    <language>DE</language>
+    <language/>
+  </defaultElement>
 </note>
