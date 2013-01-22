@@ -1448,7 +1448,7 @@ public:
              << " of the " << (m_Edge == e5Prime ? "5'" : "3'")
              << " exon.  Note that this score has "
             "meaning only for Spliced-seg alignments, as would be generated "
-            "by Splign or ProSplign.";
+            "by Splign or ProSplign, and only if it has at least one intron.";
     }
 
     virtual EComplexity GetComplexity() const { return eEasy; };
@@ -1457,10 +1457,12 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        if (!align.GetSegs().IsSpliced()) {
+        if (!align.GetSegs().IsSpliced() ||
+            align.GetSegs().GetSpliced().GetExons().size() == 1)
+        {
             NCBI_THROW(CSeqalignException, eUnsupported,
-                       "CScore_EdgeExonInfo: "
-                       "valid only for spliced-seg alignments");
+              "CScore_EdgeExonInfo: "
+              "valid only for spliced-seg alignments with at least one intron");
         }
         const CSpliced_seg::TExons &exons =
             align.GetSegs().GetSpliced().GetExons();
