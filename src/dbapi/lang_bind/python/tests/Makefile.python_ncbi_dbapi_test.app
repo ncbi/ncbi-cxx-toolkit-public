@@ -7,7 +7,7 @@ REQUIRES = PYTHON Boost.Test.Included
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PYTHON_INCLUDE) $(BOOST_INCLUDE)
 
-LIB  = dbapi_driver$(STATIC) xutil xncbi test_boost
+LIB  = dbapi_driver$(STATIC) xconnect xutil xncbi test_boost
 LIBS = $(PYTHON_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = unix DLL_BUILD in-house-resources
