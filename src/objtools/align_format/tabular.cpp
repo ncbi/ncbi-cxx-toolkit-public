@@ -1446,7 +1446,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                         annot->m_DomainInfo_S[6], annot->m_DomainInfo_S[7]+1);
     AddIgDomain("FWR3", annot->m_DomainInfo[8], annot->m_DomainInfo[9]+1,
                         annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
-    AddIgDomain("CDR3 (V region only)", annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
+    AddIgDomain("CDR3 (V segment only)", annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
 };
 
 void CIgBlastTabularInfo::Print(void)
@@ -1699,7 +1699,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
             m_ChainType == "VB")  m_Ostream << "V-D junction, D region, D-J junction, ";
         else m_Ostream << "V-J junction, ";
         m_Ostream << "J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either joining gene segment) are indicated in parentheses (i.e., (TACT)) but"
-                  << " are not included under V, D, or J gene itself" << endl;
+                  << " are not included under the V, D, or J gene itself" << endl;
     }
 
     x_PrintPartialQuery(max(b0, a1 - 5), a1, isHtml); m_Ostream << m_FieldDelimiter;
@@ -1716,9 +1716,9 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         m_Ostream << "</tr>\n</table></pre>";
 
         m_Ostream << "*: Overlapping nucleotides may exist"
-                  << " at V-D-J junction (i.e, nucleotides that could be assigned to either joining gene segment).\n"
-                  << " Such bases are indicated inside a parenthesis (i.e., (TACAT))"
-                  << " but are not included under V, D or J gene itself.\n";
+                  << " at V-D-J junction (i.e, nucleotides that could be assigned \nto either joining gene segment). "
+                  << " Such bases are indicated inside a parenthesis (i.e., (TACAT))\n"
+                  << " but are not included under the V, D or J gene itself.\n";
     }
     m_Ostream << endl << endl;
 };
