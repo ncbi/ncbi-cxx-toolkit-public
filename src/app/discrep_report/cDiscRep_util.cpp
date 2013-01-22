@@ -119,6 +119,7 @@ vector <const CSeq_feat*> CTestAndRepData :: bioseq_biosrc_feat;
 vector <const CSeq_feat*> CTestAndRepData :: repeat_region_feat;
 vector <const CSeq_feat*> CTestAndRepData :: D_loop_feat;
 vector <const CSeq_feat*> CTestAndRepData :: org_orgmod_feat;
+vector <const CSeq_feat*> CTestAndRepData :: gap_feat;
 
 vector <const CSeqdesc*>  CTestAndRepData :: pub_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;

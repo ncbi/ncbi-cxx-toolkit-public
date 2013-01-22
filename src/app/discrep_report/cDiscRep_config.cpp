@@ -149,7 +149,9 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back( 
-                   CRef <CTestAndRepData> (new CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE));
+                CRef <CTestAndRepData> (new CBioseq_DISC_GAPS));
+   tests_on_Bioseq_CFeat.push_back( 
+                CRef <CTestAndRepData> (new CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE));
    tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
    tests_on_Bioseq_CFeat.push_back( 

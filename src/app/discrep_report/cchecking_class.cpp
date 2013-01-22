@@ -310,11 +310,14 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
           case CSeqFeatData::e_Imp:
                 subtp = seq_feat_dt.GetSubtype();
                 switch (subtp) {
-                  case CSeqFeatData::eSubtype_RBS :
+                  case CSeqFeatData::eSubtype_gap:
+                       CTestAndRepData::gap_feat.push_back(&seq_feat);
+                       break;
+                  case CSeqFeatData::eSubtype_RBS:
                        CTestAndRepData::rbs_feat.push_back(&seq_feat);
                        CTestAndRepData::mix_feat.push_back(&seq_feat);
                        break;
-                  case CSeqFeatData::eSubtype_intron :
+                  case CSeqFeatData::eSubtype_intron:
                        CTestAndRepData::intron_feat.push_back(&seq_feat);
                        CTestAndRepData::mix_feat.push_back(&seq_feat);
                        break;
@@ -322,17 +325,17 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                        CTestAndRepData::exon_feat.push_back(&seq_feat);
                        CTestAndRepData::mix_feat.push_back(&seq_feat);
                        break;
-                  case CSeqFeatData :: eSubtype_misc_feature:
+                  case CSeqFeatData::eSubtype_misc_feature:
                        CTestAndRepData :: miscfeat_feat.push_back(&seq_feat);
                        break;
-                  case CSeqFeatData :: eSubtype_3UTR:
-                       CTestAndRepData :: utr3_feat.push_back(&seq_feat);
+                  case CSeqFeatData::eSubtype_3UTR:
+                       CTestAndRepData::utr3_feat.push_back(&seq_feat);
                        break;
-                  case CSeqFeatData :: eSubtype_5UTR:
-                       CTestAndRepData :: utr5_feat.push_back(&seq_feat);
+                  case CSeqFeatData::eSubtype_5UTR:
+                       CTestAndRepData::utr5_feat.push_back(&seq_feat);
                        break;
-                  case CSeqFeatData :: eSubtype_promoter:
-                       CTestAndRepData :: promoter_feat.push_back(&seq_feat);
+                  case CSeqFeatData::eSubtype_promoter:
+                       CTestAndRepData::promoter_feat.push_back(&seq_feat);
                        break;
                   default: break;
               }
@@ -441,6 +444,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      CTestAndRepData::promoter_feat.clear();
      CTestAndRepData::mrna_feat.clear();
      CTestAndRepData::trna_feat.clear();
+     CTestAndRepData::gap_feat.clear();
    }
 
 /*

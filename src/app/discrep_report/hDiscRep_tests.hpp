@@ -231,7 +231,7 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_feat*> rbs_feat, biosrc_subsrc_feat, repeat_region_feat;
       static vector <const CSeq_feat*> D_loop_feat, rna_not_mrna_feat, intron_feat;
       static vector <const CSeq_feat*> all_feat, non_prot_feat, rrna_feat, miscfeat_feat;
-      static vector <const CSeq_feat*> otherRna_feat,org_orgmod_feat;
+      static vector <const CSeq_feat*> otherRna_feat, org_orgmod_feat, gap_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
       static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
@@ -2568,6 +2568,16 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+
+  class CBioseq_DISC_GAPS : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_GAPS () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_GAPS"); }
+  };
 
   class CBioseq_DISC_INCONSISTENT_MOLINFO_TECH : public CBioseqTestAndRepData
   {

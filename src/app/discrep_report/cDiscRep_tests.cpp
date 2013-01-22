@@ -186,6 +186,32 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_DISC_GAPS :: TestOnObj(const CBioseq& bioseq)
+{
+   string desc(GetDiscItemText(bioseq));
+   if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+      const CSeq_inst& inst = bioseq.GetInst();
+      if (inst.CanGetExt() && inst.GetExt().IsDelta()) {
+        ITERATE (list <CRef <CDelta_seq> >, it, inst.GetExt().GetDelta().Get()) {
+          if ( (*it)->IsLiteral() 
+                 && (!(*it)->GetLiteral().CanGetSeq_data() 
+                            || (*it)->GetLiteral().GetSeq_data().IsGap())) {
+             thisInfo.test_item_list[GetName()].push_back(desc);
+             return;
+          } 
+        }
+      }
+   }
+
+   if (!gap_feat.empty()) thisInfo.test_item_list[GetName()].push_back(desc);
+};
+
+void CBioseq_DISC_GAPS :: GetReport (CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+         = GetContainsComment(c_item->item_list.size(), "sequence") + "gaps";
+};
+
 static const CEnumeratedTypeValues* molinfo_tech = CMolInfo::GetTypeInfo_enum_ETech();
 void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: TestOnObj(const CBioseq& bioseq)
 {
@@ -8902,10 +8928,17 @@ void CSeqEntry_on_incnst_user :: AddDbLinkFieldValues(const CUser_object& user_o
                  || field_str == "ProbeDB" || field_str == "Sequence Read Archive"
                  || field_str == "BioProject") {
           strtmp = "DBLink$" + field_str + "#";
-          if ( (*uit)->GetData().IsStr())    // check with Colleen
-              strtmp += (*uit)->GetData().GetStr() + "@" + desc;
-          else strtmp += ("missing@" + desc);
-          thisInfo.test_item_list[GetName_db()].push_back(strtmp);
+          if ( (*uit)->GetData().IsStrs()) {
+              ITERATE (vector <string>, sit, (*uit)->GetData().GetStrs()) 
+                 thisInfo.test_item_list[GetName_db()].push_back(strtmp+(*sit)+"@"+desc);
+          }
+          else if ( (*uit)->GetData().IsInts()) {
+              ITERATE (vector <int>, iit, (*uit)->GetData().GetInts())
+                thisInfo.test_item_list[GetName_db()].push_back(
+                   strtmp + NStr::IntToString(*iit) + "@" + desc);
+          }
+          else 
+             thisInfo.test_item_list[GetName_db()].push_back(strtmp + "missing@" + desc);
        }
     }
 };
