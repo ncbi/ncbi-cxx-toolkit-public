@@ -8,8 +8,8 @@
 
 APP = speedtest
 SRC = speedtest
-LIB = prosplign xalgoalignutil xqueryparse xalnmgr xcleanup xregexp xobjutil \
-      submit tables $(OBJMGR_LIBS:%=%$(STATIC)) $(PCRE_LIB)
+LIB = prosplign xalgoalignutil xcleanup submit $(BLAST_LIBS) \
+      xqueryparse xregexp $(PCRE_LIB) $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
