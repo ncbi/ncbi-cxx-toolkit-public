@@ -244,7 +244,7 @@ void CSplitCacheApp::Init(void)
     arg_desc->AddDefaultKey
         ("chunk_size", "ChunkSize",
          "approximate size of chunks to create (in KB)",
-         CArgDescriptions::eInteger,
+         CArgDescriptions::eDouble,
          NStr::IntToString(SSplitterParams::kDefaultChunkSize/1024));
 
     // split parameters
@@ -540,7 +540,7 @@ void CSplitCacheApp::Process(void)
     m_SplitterParams.m_JoinSmallChunks = args["join_small_chunks"];
     m_SplitterParams.m_SplitNonFeatureSeqTables =
         args["non_feature_seq_tables"].AsInteger();
-    m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
+    m_SplitterParams.SetChunkSize(int(args["chunk_size"].AsDouble()*1024+.5));
     m_SplitterParams.m_MinChunkCount = args["min_chunk_count"].AsInteger();
 
     if ( args["gi"] ) {
