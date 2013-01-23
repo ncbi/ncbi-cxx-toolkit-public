@@ -401,7 +401,7 @@ static TScoreNamePair sc_ScoreNames[] = {
     TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual")
 };
 
-static string sc_ScoreHelpText[] = {
+static const char* const sc_ScoreHelpText[] = {
     "Blast score",
     "Blast score",
     "Blast-style bit score",
