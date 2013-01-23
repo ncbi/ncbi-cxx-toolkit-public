@@ -554,6 +554,7 @@ void CObject::operator delete[](void* ptr)
 #endif
 
 // initialization in debug mode
+inline
 void CObject::InitCounter(void)
 {
 #if USE_TLS_PTR
