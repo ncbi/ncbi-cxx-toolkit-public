@@ -338,7 +338,7 @@ void CFeature_table_reader::x_InitImplementation()
 }
 
 
-typedef SStaticPair<const char *, const CSeqFeatData::ESubtype> TFeatKey;
+typedef SStaticPair<const char *, CSeqFeatData::ESubtype> TFeatKey;
 
 static const TFeatKey feat_key_to_subtype [] = {
     {  "-10_signal",         CSeqFeatData::eSubtype_10_signal           },
@@ -435,11 +435,11 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "virion",             CSeqFeatData::eSubtype_virion              }
 };
 
-typedef CStaticPairArrayMap <const char*, const CSeqFeatData::ESubtype, PCase_CStr> TFeatMap;
+typedef CStaticPairArrayMap <const char*, CSeqFeatData::ESubtype, PCase_CStr> TFeatMap;
 DEFINE_STATIC_ARRAY_MAP(TFeatMap, sm_FeatKeys, feat_key_to_subtype);
 
 
-typedef SStaticPair<const char *, const CFeature_table_reader_imp::EQual> TQualKey;
+typedef SStaticPair<const char *, CFeature_table_reader_imp::EQual> TQualKey;
 
 static const TQualKey qual_key_to_subtype [] = {
     {  "EC_number",            CFeature_table_reader_imp::eQual_EC_number             },
@@ -537,11 +537,11 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "weight",               CFeature_table_reader_imp::eQual_weight                }
 };
 
-typedef CStaticPairArrayMap <const char*, const CFeature_table_reader_imp::EQual, PCase_CStr> TQualMap;
+typedef CStaticPairArrayMap <const char*, CFeature_table_reader_imp::EQual, PCase_CStr> TQualMap;
 DEFINE_STATIC_ARRAY_MAP(TQualMap, sm_QualKeys, qual_key_to_subtype);
 
 
-typedef SStaticPair<const char *, const CFeature_table_reader_imp::EOrgRef> TOrgRefKey;
+typedef SStaticPair<const char *, CFeature_table_reader_imp::EOrgRef> TOrgRefKey;
 
 static const TOrgRefKey orgref_key_to_subtype [] = {
     {  "div",        CFeature_table_reader_imp::eOrgRef_div        },
@@ -552,11 +552,11 @@ static const TOrgRefKey orgref_key_to_subtype [] = {
     {  "organism",   CFeature_table_reader_imp::eOrgRef_organism   }
 };
 
-typedef CStaticPairArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PCase_CStr> TOrgRefMap;
+typedef CStaticPairArrayMap <const char*, CFeature_table_reader_imp::EOrgRef, PCase_CStr> TOrgRefMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgRefMap, sm_OrgRefKeys, orgref_key_to_subtype);
 
 
-typedef SStaticPair<const char *, const CBioSource::EGenome> TGenomeKey;
+typedef SStaticPair<const char *, CBioSource::EGenome> TGenomeKey;
 
 static const TGenomeKey genome_key_to_subtype [] = {
     {  "apicoplast",                CBioSource::eGenome_apicoplast        },
@@ -591,11 +591,11 @@ static const TGenomeKey genome_key_to_subtype [] = {
     {  "virion",                    CBioSource::eGenome_virion            }
 };
 
-typedef CStaticPairArrayMap <const char*, const CBioSource::EGenome, PCase_CStr> TGenomeMap;
+typedef CStaticPairArrayMap <const char*, CBioSource::EGenome, PCase_CStr> TGenomeMap;
 DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 
 
-typedef SStaticPair<const char *, const CSubSource::ESubtype> TSubSrcKey;
+typedef SStaticPair<const char *, CSubSource::ESubtype> TSubSrcKey;
 
 static const TSubSrcKey subsrc_key_to_subtype [] = {
     {  "altitude",             CSubSource::eSubtype_altitude               },
@@ -638,11 +638,11 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
     {  "transposon",           CSubSource::eSubtype_transposon_name        }
 };
 
-typedef CStaticPairArrayMap <const char*, const CSubSource::ESubtype, PCase_CStr> TSubSrcMap;
+typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PCase_CStr> TSubSrcMap;
 DEFINE_STATIC_ARRAY_MAP(TSubSrcMap, sm_SubSrcKeys, subsrc_key_to_subtype);
 
 
-typedef SStaticPair<const char *, const COrgMod::ESubtype> TOrgModKey;
+typedef SStaticPair<const char *, COrgMod::ESubtype> TOrgModKey;
 
 static const TOrgModKey orgmod_key_to_subtype [] = {
     {  "acronym",            COrgMod::eSubtype_acronym             },
@@ -688,11 +688,11 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
     {  "variety",            COrgMod::eSubtype_variety             }
 };
 
-typedef CStaticPairArrayMap <const char*, const COrgMod::ESubtype, PCase_CStr> TOrgModMap;
+typedef CStaticPairArrayMap <const char*, COrgMod::ESubtype, PCase_CStr> TOrgModMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sm_OrgModKeys, orgmod_key_to_subtype);
 
 
-typedef SStaticPair<const char *, const int> TTrnaKey;
+typedef SStaticPair<const char *, int> TTrnaKey;
 
 static const TTrnaKey trna_key_to_subtype [] = {
     {  "Ala",            'A'  },
@@ -755,7 +755,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "fMet",           'M'  }
 };
 
-typedef CStaticPairArrayMap <const char*, const int, PCase_CStr> TTrnaMap;
+typedef CStaticPairArrayMap <const char*, int, PCase_CStr> TTrnaMap;
 DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
 
