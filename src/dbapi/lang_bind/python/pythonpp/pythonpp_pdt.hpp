@@ -718,8 +718,7 @@ public:
     CString& operator= (const string& str)
     {
         if (g_PythonStrDefToUnicode) {
-            CStringUTF8 str_utf8(CUtf8::AsUTF8(str, eEncoding_UTF8));
-            basic_string<Py_UNICODE> str_uni(str_utf8.AsBasicString<Py_UNICODE>(NULL));
+            basic_string<Py_UNICODE> str_uni(CUtf8::AsBasicString<Py_UNICODE>(str));
             Set(PyUnicode_FromUnicode(str_uni.data(), str_uni.size()), eTakeOwnership);
         }
         else {
