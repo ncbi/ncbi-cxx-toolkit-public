@@ -3812,7 +3812,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     return eAction_Nothing;
 }
 
-typedef SStaticPair<const char *, const int> TTrnaKey;
+typedef SStaticPair<const char *, int> TTrnaKey;
 
 static const TTrnaKey trna_key_to_subtype [] = {
     {  "Ala",            'A'  },
@@ -3875,7 +3875,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
     {  "Xxx",            'X'  }
 };
 
-typedef CStaticPairArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
+typedef CStaticPairArrayMap <const char*, int, PNocase_CStr> TTrnaMap;
 DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
 // This maps in the opposite direction of sm_TrnaKeys
