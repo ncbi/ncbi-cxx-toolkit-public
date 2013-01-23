@@ -184,14 +184,14 @@ int CSampleBasicApplication::Run(void)
 
     } else {
         lg << "ko:        not provided" << endl;
-        bool is_thrown = false;
+        string message;
         try {
             (void) args["ko"].AsString();
         } catch (CArgException& e) {
-            NCBI_REPORT_EXCEPTION("CArgException is thrown:",e);
-            is_thrown = true;
+            NCBI_REPORT_EXCEPTION("CArgException is thrown: ", e);
+            message = e.what();
         }
-        _ASSERT(is_thrown);
+        _ASSERT( !message.empty() );
     }
 
     if ( args["f1"] ) {
