@@ -503,7 +503,6 @@ void CLDS_GBReleaseReadHook::ReadClassMember(CObjectIStream& in,
         // iterate over the sequence of entries
         CRef<CSeq_entry> se(new CSeq_entry);
         for ( CIStreamContainerIterator it(in, member); it; ++it ) {
-            CNcbiStreampos pos = in.GetStreamPos();
             it >> *se;
             ++entry_count;
             m_LObj.SaveObject(&m_Objects, &m_Objects.GetObjectsVector()[0]);
