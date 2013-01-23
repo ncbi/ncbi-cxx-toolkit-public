@@ -118,6 +118,7 @@ private:
     map<TSignedSeqRange,int> mrna_count;
     map<TSignedSeqRange,int> est_count;
     map<TSignedSeqRange,int> rnaseq_count;
+    bool has_rnaseq;
 
     friend class CChainer;
 };
@@ -285,7 +286,9 @@ void SChainMember::MarkIncludedForChain()
         if (mi->m_copy != 0) {
             ITERATE(TContained, j, *mi->m_copy) {
                 SChainMember* mj = *j;
-                if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25)
+                if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25 || 
+                   mi->m_cds_info->ReadingFrame().GetFrom() == mj->m_cds_info->ReadingFrame().GetFrom() ||   // same copy or supressed start
+                   mi->m_cds_info->ReadingFrame().GetTo() == mj->m_cds_info->ReadingFrame().GetTo())         // same copy or supressed start
                     mj->m_included = true;
             }
         }
@@ -301,7 +304,9 @@ void SChainMember::MarkPostponedForChain()
         if (mi->m_copy != 0) {
             ITERATE(TContained, j, *mi->m_copy) {
                 SChainMember* mj = *j;
-                if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25)
+                if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25 || 
+                   mi->m_cds_info->ReadingFrame().GetFrom() == mj->m_cds_info->ReadingFrame().GetFrom() ||   // same copy or supressed start
+                   mi->m_cds_info->ReadingFrame().GetTo() == mj->m_cds_info->ReadingFrame().GetTo())         // same copy or supressed start
                     mj->m_postponed = true;
             }
         }
@@ -941,6 +946,8 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
     }
 }
 
+#define NON_CDNA_INTRON_PENALTY 20
+
 bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, TContained& contained) {
 
     const CGeneModel& ai = *mi.m_align;
@@ -1015,7 +1022,18 @@ bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, c
             return false;
 
         if(ai_cds_info.HasStart() && aj_cds_info.HasStart())
-            cds_overlap += START_BONUS; 
+            cds_overlap += START_BONUS;
+
+        if(has_rnaseq) {
+            for(int i = 1; i < (int)ai.Exons().size(); ++i) {
+                if(ai.Exons()[i-1].m_ssplice && ai.Exons()[i].m_fsplice) {
+                    TSignedSeqRange intron(ai.Exons()[i-1].Limits().GetTo(),ai.Exons()[i].Limits().GetFrom());
+                    if(Include(ai_rf,intron) && Include(aj_rf,intron) && mrna_count[intron]+est_count[intron]+rnaseq_count[intron] == 0) {
+                        cds_overlap -= NON_CDNA_INTRON_PENALTY;
+                    }
+                }
+            }
+        }
     }
 
     delta_cds = mi.m_cds-cds_overlap;
@@ -1041,6 +1059,17 @@ void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
         mi.m_cds += START_BONUS;
         _ASSERT((ai.Strand() == ePlus && ai_cds_info.Start().GetFrom() == ai_cds_info.MaxCdsLimits().GetFrom()) || 
                 (ai.Strand() == eMinus && ai_cds_info.Start().GetTo() == ai_cds_info.MaxCdsLimits().GetTo()));
+    }
+
+    if(has_rnaseq) {
+        for(int i = 1; i < (int)ai.Exons().size(); ++i) {
+            if(ai.Exons()[i-1].m_ssplice && ai.Exons()[i].m_fsplice) {
+                TSignedSeqRange intron(ai.Exons()[i-1].Limits().GetTo(),ai.Exons()[i].Limits().GetFrom());
+                if(Include(ai_rf,intron) && mrna_count[intron]+est_count[intron]+rnaseq_count[intron] == 0) {
+                    mi.m_cds -= NON_CDNA_INTRON_PENALTY;
+                }
+            }
+        }
     }
     
     mi.m_left_member = 0;
@@ -1186,6 +1215,17 @@ void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
 
                 if(ai_cds_info.HasStart() && aj_cds_info.HasStart())
                     cds_overlap += START_BONUS; 
+
+                if(has_rnaseq) {
+                    for(int i = 1; i < (int)ai.Exons().size(); ++i) {
+                        if(ai.Exons()[i-1].m_ssplice && ai.Exons()[i].m_fsplice) {
+                            TSignedSeqRange intron(ai.Exons()[i-1].Limits().GetTo(),ai.Exons()[i].Limits().GetFrom());
+                            if(Include(ai_rf,intron) && Include(aj_rf,intron) && mrna_count[intron]+est_count[intron]+rnaseq_count[intron] == 0) {
+                                cds_overlap -= NON_CDNA_INTRON_PENALTY;
+                            }
+                        }
+                    }
+                }
             }
 
 
@@ -1291,6 +1331,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             }
         }
     }
+    has_rnaseq = !rnaseq_count.empty();
 
     CChainMembers allpointers(clust);
     DuplicateNotOriented(allpointers, clust);
