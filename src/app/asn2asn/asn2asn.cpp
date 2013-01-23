@@ -279,6 +279,8 @@ public:
 
     CReadInSkipObjectHook() : object() {}
 
+    int m_Dummy;
+
     void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type)
         {
             _ASSERT(type.GetTypeInfo()->GetSize() == sizeof(object));
@@ -336,6 +338,7 @@ public:
                         tech = molinfo.GetTech();
                 }
             }
+            m_Dummy += subtype+biomol+complete+tech;
         }
 
 private:
