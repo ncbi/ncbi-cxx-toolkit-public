@@ -3567,13 +3567,14 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
         if ( 0 ) {
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
-                Uint8 v;
+                int v;
                 try {
-                    v = NStr::StringToUInt8(s);
+                    v = (int)NStr::StringToUInt8(s);
                 }
                 catch ( exception& ) {
-                    v = Uint8(-1);
+                    v = -1;
                 }
+                if ( v != ssr[t] ) Abort();
             }
             time = sw.Elapsed();
             LOG_POST("StringToInt8("<<ss[t]<<") time: " << time);
