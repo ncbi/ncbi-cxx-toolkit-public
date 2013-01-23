@@ -1260,16 +1260,16 @@ static bool s_BiosrcFullLengthIsOk (const CBioSource& src)
 static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
 {
     if (!src.IsSetOrg() || !src.GetOrg().IsSetTaxname()) {
-        printf ("taxname not set!\n");
+        //printf ("taxname not set!\n");
         return false;
     }
     if (NStr::EqualNocase(src.GetOrg().GetTaxname(), "unidentified phage")) {
-        printf ("is unidentified phage!\n");
+        //printf ("is unidentified phage!\n");
         return true;
     }
     if (src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetLineage()
         && NStr::StartsWith(src.GetOrg().GetOrgname().GetLineage(), "Viruses", NStr::eNocase)) {
-        printf ("Starts with viruses!\n");
+        //printf ("Starts with viruses!\n");
         return true;
     }
 #if 0
