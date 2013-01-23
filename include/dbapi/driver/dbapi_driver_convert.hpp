@@ -871,7 +871,9 @@ public:
     static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
     {
         if (rs->Fetch()) {
-             value = CMakeObject<CP, TValue, CDB_Result>::Make(*rs);
+            value = CMakeObject<CP, TValue, CDB_Result>::Make(*rs);
+        } else {
+            NCBI_REPORT_CONSTANT_CONVERSION_ERROR("valueless result");
         }
     }
 };
