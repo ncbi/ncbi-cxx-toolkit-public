@@ -494,7 +494,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                 cmd->SetParam("@gi", &giIn);
                 cmd->Send();
                 
-                bool not_found = false;
+                //bool not_found = false;
                 while ( cmd->HasMoreResults() ) {
                     AutoPtr<CDB_Result> dbr(cmd->Result());
                     if ( !dbr.get() ) {
@@ -508,7 +508,9 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                         int status = v.Value();
                         if ( status == 100 ) {
                             // gi does not exist
-                            not_found = true;
+                            // but there no way to report it except by
+                            // trying to load all Seq-ids later
+                            //not_found = true;
                         }
                     }
                     else if ( dbr->ResultType() == eDB_RowResult &&
