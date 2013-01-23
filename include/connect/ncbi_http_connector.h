@@ -156,10 +156,10 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 
 /** The extended version HTTP_CreateConnectorEx() is able to change the URL of
  * the server "on-the-fly":
- * - FHTTP_ParseHeader() is called every time a new HTTP response header is
+ * - FHTTP_ParseHeader() gets called every time a new HTTP response header is
  *   received from the server, and only if fHTTP_KeepHeader is NOT set.
  *   Return code from the parser adjusts the existing server error condition
- *   (if any) as the following
+ *   (if any) as the following:
  *   + eHTTP_HeaderError:    unconditionally flag server error;
  *   + eHTTP_HeaderSuccess:  header parse successful, retain existing condition
  *                           (note that in case of an already existing server
@@ -172,15 +172,15 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *                           process the request such as for redirects,
  *                           authorization etc);  otherwise, this code has the
  *                           same effect as eHTTP_ParseSuccess;
- *   + eHTTP_HeaderComplete: flag this request as processed completely, and
- *                           do not do any post-processing (such as redirects,
+ *   + eHTTP_HeaderComplete: flag this request as processed completely, and do
+ *                           not do any post-processing (such as redirects,
  *                           authorization etc), yet make the response body (if
  *                           any, and regardless of whether there was a server
  *                           error or not) available for reading.
  * - FHTTP_Adjust() gets invoked every time before starting a new "HTTP
- *   micro-session" making a hit when a previous hit has failed; it is passed
- *   "net_info" stored in the connector, and the number of previously
- *   unsuccessful consecutive attempts since the connection was opened; a zero
+ *   micro-session" making a hit when a previous hit has failed;  it is passed
+ *   "net_info" as stored within the connector, and the number of previously
+ *   unsuccessful consecutive attempts since the connection was opened;  a zero
  *   (false) return value ends the retries.
  * - FHTTP_Cleanup() gets called when the connector is about to be destroyed;
  *   "user_data" is guaranteed not to be referenced anymore (so it is a good
@@ -195,7 +195,7 @@ typedef enum {
 typedef EHTTP_HeaderParse (*FHTTP_ParseHeader)
 (const char*         http_header,   /**< HTTP header to parse                */
  void*               user_data,     /**< supplemental user data              */
- int                 server_error   /**< != 0 if HTTP error                  */
+ int                 server_error   /**< != 0 if HTTP error (NOT 2xx code)   */
  );
 
 typedef int/*bool*/ (*FHTTP_Adjust)
@@ -221,15 +221,15 @@ typedef void        (*FHTTP_Cleanup)
  * "Content-Length:" tag provided automatically and reflecting the total
  * pending data size), and GET request method will result in the absence of any
  * data.  An explicit value for the request method will cause the specified
- * request to be used regardless of pending data, and flagging an error if any
- * data will have to be sent with GET (per the standard).
+ * request to be used regardless of pending data, and will flag an error if any
+ * data will have to be sent with a GET (per the standard).
  *
  * In order to workaround some HTTP communication features, this code does:
  *  1. Accumulate all output data in an internal memory buffer until the
  *     first CONN_Read() (including peek) or CONN_Wait(on read) is attempted
  *     (also see fHTTP_Flushable flag below).
  *  2. On the first CONN_Read() or CONN_Wait(on read), compose and send the
- *        whole HTTP request as:
+ *     whole HTTP request as:
  *        @verbatim
  *        {POST|GET} <net_info->path>?<net_info->args> HTTP/1.0\r\n
  *        <user_header\r\n>

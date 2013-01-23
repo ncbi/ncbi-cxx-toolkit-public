@@ -30,7 +30,7 @@
  *
  * File Description:
  *   Auxiliary API to:
- *    1.Retrieve connection related info from the registry:
+ *     1.Retrieve connection related info from the registry:
  *       ConnNetInfo_GetValue()
  *       ConnNetInfo_Boolean()
  *       SConnNetInfo
@@ -56,21 +56,21 @@
  *       #define REG_CONN_***
  *       #define DEF_CONN_***
  *
- *    2.Make a connection via an URL:
+ *     2.Make a connection via an URL:
  *       URL_Connect[Ex]()
  *       
- *    3.Perform URL encoding/decoding of data:
+ *     3.Perform URL encoding/decoding of data:
  *       URL_Encode()
  *       URL_Decode[Ex]()
  *
- *    5.Compose or parse NCBI-specific Content-Type's:
+ *     4.Compose or parse NCBI-specific Content-Type's:
  *       EMIME_Type
  *       EMIME_SubType
  *       EMIME_Encoding
  *       MIME_ComposeContentType()
  *       MIME_ParseContentType()
  *
- *    6.Search for a token in the input stream (either CONN, SOCK, or BUF):
+ *     5.Search for a token in an input stream (either CONN, SOCK, or BUF):
  *       CONN_StripToPattern()
  *       SOCK_StripToPattern()
  *       BUF_StripToPattern()
@@ -82,11 +82,11 @@
 
 
 /* Well-known port values */
-#define CONN_PORT_FTP             21
-#define CONN_PORT_SSH             22
-#define CONN_PORT_SMTP            25
-#define CONN_PORT_HTTP            80
-#define CONN_PORT_HTTPS           443
+#define CONN_PORT_FTP    21
+#define CONN_PORT_SSH    22
+#define CONN_PORT_SMTP   25
+#define CONN_PORT_HTTP   80
+#define CONN_PORT_HTTPS  443
 
 
 /** @addtogroup UtilityFunc
