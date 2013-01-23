@@ -108,7 +108,7 @@ int CBioSource::GetGenCode(void) const
     }
 }
 
-typedef SStaticPair<const char *, const CBioSource::EGenome> TGenomeKey;
+typedef SStaticPair<const char *, CBioSource::EGenome> TGenomeKey;
 
 static const TGenomeKey genome_key_to_subtype [] = {
     {  "apicoplast",                CBioSource::eGenome_apicoplast        },
@@ -142,7 +142,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
 };
 
 
-typedef CStaticPairArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
+typedef CStaticPairArrayMap <const char*, CBioSource::EGenome, PNocase_CStr> TGenomeMap;
 DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 
 CBioSource::EGenome CBioSource::GetGenomeByOrganelle (string organelle, NStr::ECase use_case, bool starts_with)
