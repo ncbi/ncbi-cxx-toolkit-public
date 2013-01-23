@@ -182,7 +182,7 @@ SeqTable-single-data ::= CHOICE {
 
 
 SeqTable-sparse-index ::= CHOICE {
-    -- indexed of rows with values
+    -- indexes of rows with values
     indexes SEQUENCE OF INTEGER,
 
     -- bitset of rows with values
