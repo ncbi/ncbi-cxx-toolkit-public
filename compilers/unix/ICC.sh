@@ -34,7 +34,8 @@ case "$1" in
   8.0         ) search=$intel_root/compiler80/bin                ;;
   [1-9].*.*   ) search=$intel_root/cc*/$1/bin                    ;;
   9* | 10*    ) search=$intel_root/cc*/$1.*/bin                  ;;
-  [1-9][0-9]* ) search=$intel_root/Compiler/$1*/*/bin/intel$bits ;;
+  11*         ) search=$intel_root/Compiler/$1*/*/bin/i*$bits    ;;
+  [1-9][0-9]* ) search=$intel_root/Compiler/$1/bin               ;;
   *           ) search=                                          ;;
 esac
 
@@ -43,7 +44,10 @@ if [ -n "$search" ]; then
     base_CC=$CC
     base_CXX=$CXX
     for dir in $search; do
-        if test -x $dir/$base_CC; then
+        if test -x $dir/ncbi-wrappers/$base_CC; then
+            CC=$dir/ncbi-wrappers/$base_CC
+            CXX=$dir/ncbi-wrappers/$base_CXX
+        elif test -x $dir/$base_CC; then
             CC=$dir/$base_CC
             CXX=$dir/$base_CXX
         fi
