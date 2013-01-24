@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Macro to check bits
-#define F_ISSET(flags, mask) ((flags & (mask)) == (mask))
+#define F_ISSET(mask) (((flags) & (mask)) == (mask))
 
 // Local defines to simplicity a reading the code
 #define DIFF_DELETE CDiffOperation::eDelete
@@ -80,10 +80,10 @@ CDiffList::size_type CDiffList::GetEditDistance(void) const
     ITERATE(CDiffList::TList, it, diffs) {
         switch (it->GetOperation()) {
             case DIFF_INSERT:
-                len_insert += it->GetStr().length();
+                len_insert += it->GetString().length();
                 break;
             case DIFF_DELETE:
-                len_delete += it->GetStr().length();
+                len_delete += it->GetString().length();
                 break;
             case DIFF_EQUAL:
                 // A deletion and an insertion is one substitution.
@@ -98,7 +98,7 @@ CDiffList::size_type CDiffList::GetEditDistance(void) const
 }
 
 
-const CTempString& CDiffList::GetLongestCommonSubstring(void) const
+CTempString CDiffList::GetLongestCommonSubstring(void) const
 {
     const CDiffList::TList& diffs = GetList();
     if (diffs.empty()) {
@@ -108,20 +108,17 @@ const CTempString& CDiffList::GetLongestCommonSubstring(void) const
     size_type max_len = 0;
     ITERATE(CDiffList::TList, it, diffs) {
         if (it->IsEqual()) {
-            size_type len = it->GetStr().length();
+            size_type len = it->GetString().length();
             if (len > max_len) {
                 max_len = len;
                 max_pos = it;
             }
         }
     }
-    if (!max_len) {
-        CTempString();
+    if (!max_len  ||  max_pos == diffs.end()) {
+        return CTempString();
     }
-    if (max_pos == diffs.end()) {
-        return m_kEmptyStr;
-    }
-    return max_pos->GetStr();
+    return max_pos->GetString();
 }
 
 
@@ -129,7 +126,7 @@ void CDiffList::CleanupAndMerge(void)
 {
     // Check on incorrect usage
     ITERATE(TList, it, m_List) {
-        if (it->GetStr().length() != it->GetLength()) {
+        if (it->GetString().length() != it->GetLength()) {
             // Possible the line-based diff with fRemoveEOL flag was used,
             // It is impossible to cleanup and merge equalities in this mode.
             NCBI_THROW(CDiffException, eBadFlags,
@@ -164,15 +161,15 @@ void CDiffList::CalculateOffsets(void)
     NON_CONST_ITERATE(CDiffList::TList, it, diffs) {
         switch (it->GetOperation()) {
             case DIFF_INSERT:
-                it->SetOffset(CDiffOperation::TPos(NPOS, off_second));
+                it->SetOffset(CDiffOperation::SPos(NPOS, off_second));
                 off_second += it->GetLength();
                 break;
             case DIFF_DELETE:
-                it->SetOffset(CDiffOperation::TPos(off_first, NPOS));
+                it->SetOffset(CDiffOperation::SPos(off_first, NPOS));
                 off_first += it->GetLength();
                 break;
             case DIFF_EQUAL:
-                it->SetOffset(CDiffOperation::TPos(off_first, off_second));
+                it->SetOffset(CDiffOperation::SPos(off_first, off_second));
                 off_first += it->GetLength();
                 off_second += it->GetLength();
                 break;
@@ -194,14 +191,14 @@ void CDiffList::x_CleanupAndMerge_Equities(void)
     CDiffList::TList::iterator equal_diff = m_List.end();
 
     while (this_diff != m_List.end()) {
-        const CTempString& current = this_diff->GetStr();
+        const CTempString& current = this_diff->GetString();
         switch (this_diff->GetOperation()) {
 
             case DIFF_INSERT:
                 // Merge insertions
                 if (count_insert) {
-                    const CTempString& s = ins_diff->GetStr();
-                    ins_diff->SetStr(CTempString(s.data(), s.length() + current.length()));
+                    CTempString s = ins_diff->GetString();
+                    ins_diff->SetString(CTempString(s.data(), s.length() + current.length()));
                     this_diff = m_List.erase(this_diff);
                 } else {
                     ins_diff = this_diff++;
@@ -212,8 +209,8 @@ void CDiffList::x_CleanupAndMerge_Equities(void)
             case DIFF_DELETE:
                 // Merge deletions
                 if (count_delete) {
-                    const CTempString& s = del_diff->GetStr();
-                    del_diff->SetStr(CTempString(s.data(), s.length() + current.length()));
+                    CTempString s = del_diff->GetString();
+                    del_diff->SetString(CTempString(s.data(), s.length() + current.length()));
                     this_diff = m_List.erase(this_diff);
                 } else {
                     del_diff = this_diff++;
@@ -227,8 +224,8 @@ void CDiffList::x_CleanupAndMerge_Equities(void)
                     // Have both INSERT and DELETE?
                     if (count_delete != 0  &&  count_insert != 0) {
                         // Factor out common prefix
-                        CTempString ins_str = ins_diff->GetStr();
-                        CTempString del_str = del_diff->GetStr();
+                        CTempString ins_str = ins_diff->GetString();
+                        CTempString del_str = del_diff->GetString();
                         size_type common_prefix_len = NStr::CommonPrefixSize(ins_str, del_str);
                         if (common_prefix_len) {
                             // Append common prefix to the previous equal part
@@ -236,8 +233,8 @@ void CDiffList::x_CleanupAndMerge_Equities(void)
                                 // If no EQUAL node before, insert common prefix before any INSERT or DELETE
                                 Prepend(DIFF_EQUAL, ins_str.substr(0, common_prefix_len));
                             } else {
-                                const CTempString& s = equal_diff->GetStr();
-                                equal_diff->SetStr(CTempString(s.data(), s.length() + common_prefix_len));
+                                CTempString s = equal_diff->GetString();
+                                equal_diff->SetString(CTempString(s.data(), s.length() + common_prefix_len));
                             }
                             ins_str = ins_str.substr(common_prefix_len);
                             del_str = del_str.substr(common_prefix_len);
@@ -248,16 +245,17 @@ void CDiffList::x_CleanupAndMerge_Equities(void)
                         if (common_suffix_len) {
                             // Append suffix to the current node
                             CTempString common_suffix = ins_str.substr(ins_str.length() - common_suffix_len);
-                            this_diff->SetStr(CTempString(common_suffix.data(),
-                                                            common_suffix.length() + current.length()));
+                            this_diff->SetString(
+                                CTempString(common_suffix.data(),
+                                            common_suffix.length() + current.length()));
                             // Cut off suffix from INSERT and DELETE strings
                             ins_str = ins_str.substr(0, ins_str.length() - common_suffix_len);
                             del_str = del_str.substr(0, del_str.length() - common_suffix_len);
                         }
                         // Update nodes
                         if (common_prefix_len || common_suffix_len) {
-                            ins_diff->SetStr(ins_str);
-                            del_diff->SetStr(del_str);
+                            ins_diff->SetString(ins_str);
+                            del_diff->SetString(del_str);
                         }
                     }
                     // Save pointer to the first equal part to merge
@@ -270,8 +268,8 @@ void CDiffList::x_CleanupAndMerge_Equities(void)
                         equal_diff = this_diff++;
                     } else {
                         // Merge current equality with previous
-                        const CTempString& s = equal_diff->GetStr();
-                        equal_diff->SetStr(CTempString(s.data(), s.length() + current.length()));
+                        CTempString s = equal_diff->GetString();
+                        equal_diff->SetString(CTempString(s.data(), s.length() + current.length()));
                         this_diff = m_List.erase(this_diff);
                     }
                 }
@@ -306,9 +304,9 @@ bool CDiffList::x_CleanupAndMerge_SingleEdits(void)
         {
             _VERIFY(this_diff->GetOperation() != DIFF_EQUAL);
 
-            const CTempString& prev_str = prev_diff->GetStr();
-            const CTempString& this_str = this_diff->GetStr();
-            const CTempString& next_str = next_diff->GetStr();
+            CTempString prev_str = prev_diff->GetString();
+            CTempString this_str = this_diff->GetString();
+            CTempString next_str = next_diff->GetString();
 
             // NOTE:
             // CTempString data should be contiguous and be a part of
@@ -322,11 +320,12 @@ bool CDiffList::x_CleanupAndMerge_SingleEdits(void)
                 // Case: A<CB>C --> AC<BC>
                 // Shift the edit over the next equality.
                 // 1) A -> AC
-                prev_diff->SetStr(CTempString(this_str.data() - prev_str.length(),
-                                              prev_str.length() + next_str.length()));
+                prev_diff->SetString(
+                    CTempString(this_str.data() - prev_str.length(),
+                                prev_str.length() + next_str.length()));
                 // 2) CB -> BC
-                this_diff->SetStr(CTempString(this_str.data() + next_str.length(),
-                                              this_str.length()));
+                this_diff->SetString(
+                    CTempString(this_str.data() + next_str.length(), this_str.length()));
                 // 3) Delete next_diff and move to next element
                 next_diff = m_List.erase(next_diff);
                 if (next_diff == m_List.end()) {
@@ -338,10 +337,12 @@ bool CDiffList::x_CleanupAndMerge_SingleEdits(void)
                 // Case: A<BA>C --> <AB>AC
                 // Shift the edit over the previous equality (starting from the back).
                 // 1) C -> AC
-                next_diff->SetStr(CTempString(this_str.data() + this_str.length() - prev_str.length(),
-                                              prev_str.length() + next_str.length()));
+                next_diff->SetString(
+                    CTempString(this_str.data() + this_str.length() - prev_str.length(),
+                                prev_str.length() + next_str.length()));
                 // 2) BA -> AB
-                this_diff->SetStr(CTempString(this_str.data() - prev_str.length(), this_str.length()));
+                this_diff->SetString(
+                    CTempString(this_str.data() - prev_str.length(), this_str.length()));
                 // 3) Delete prev_diff
                 m_List.erase(prev_diff);
                 changes = true;
@@ -360,8 +361,12 @@ bool CDiffList::x_CleanupAndMerge_SingleEdits(void)
 //  CDiff
 //
 
-CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TFlags flags)
+CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TBlockFlags flags)
 {
+    // Check on unsupported flags
+    if ( flags & ~(fNoCleanup + fCalculateOffsets) ) {
+        NCBI_THROW(CDiffException, eBadFlags, "Usage of unsupported flags for Diff()");
+    }
     x_Reset();
 
     // Set deadline time if timeout is specified
@@ -408,12 +413,12 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TFlags flags)
     }
 
     // Post-process diff list
-    if (flags & fCleanup) {
+    if ( !F_ISSET(fNoCleanup) ) {
         if ( !x_IsTimeoutExpired() ) {
             m_Diffs.CleanupAndMerge();
         }
     }
-    if (flags & fCalculateOffsets) {
+    if ( F_ISSET(fCalculateOffsets) ) {
         // Do not check timeout here, it is fast and
         // can be executed even in this case
         m_Diffs.CalculateOffsets();
@@ -432,10 +437,14 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TFlags flags)
 // hashed strings in the text except last one.
 typedef hash_map<string, CDiffList::size_type > TStringToLineNumMap;
 
-CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
+CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TLineFlags flags)
 {
+    // Check on unsupported flags
+    if ( flags & ~(fCleanup + fCalculateLineOffsets + fIgnoreEOL + fRemoveEOL) ) {
+        NCBI_THROW(CDiffException, eBadFlags, "Usage of unsupported flags for DiffLines()");
+    }
     // Check incompatible flags
-    if ( F_ISSET(flags, (fCleanup + fRemoveEOL)) ) {
+    if ( F_ISSET(fCleanup + fRemoveEOL) ) {
         NCBI_THROW(CDiffException, eBadFlags, "Usage of incompatible flags fCleanup and fRemoveEOL");
     }
     x_Reset();
@@ -464,7 +473,7 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
     for (size_type i = 0; i < lines.size(); i++) {
         string s = lines[i];
         size_type len = s.length();
-        if ((flags & fIgnoreEOL)  &&  len  && s[len-1] == '\r') {
+        if (F_ISSET(fIgnoreEOL)  &&  len  && s[len-1] == '\r') {
             // Remove trailing 'r' if present
             s.resize(len-1);
         }
@@ -485,7 +494,7 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
         TStringToLineNumMap::const_iterator it;
         string s = lines[i];
         size_type len = s.length();
-        if ((flags & fIgnoreEOL)  &&  len  && s[len-1] == '\r') {
+        if (F_ISSET(fIgnoreEOL)  &&  len  && s[len-1] == '\r') {
             // Remove trailing 'r' if present
             s.resize(len-1);
         }
@@ -502,7 +511,7 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
         TStringToLineNumMap::const_iterator it;
         string s = lines[pos];
         size_type len = s.length();
-        if ((flags & fIgnoreEOL)  &&  len  && s[len-1] == '\r') {
+        if (F_ISSET(fIgnoreEOL)  &&  len  && s[len-1] == '\r') {
             // Remove trailing 'r' if present
             s.resize(len-1);
         }
@@ -586,7 +595,7 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
         if (!is_last_line) {
             real_len++;
         }
-        if (flags & fRemoveEOL) {
+        if ( F_ISSET(fRemoveEOL) ) {
             if (s[len-1] == '\r') {
                 len--;
             }
@@ -603,7 +612,7 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
 
         CDiffOperation op(op_type, str);
         op.SetLength(real_len);
-        op.SetLine(CDiffOperation::TPos(line1, line2));
+        op.SetLine(CDiffOperation::SPos(line1, line2));
 
         switch (d_type) {
         case dtl::SES_ADD :
@@ -639,12 +648,12 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TFlags flags)
     _VERIFY(pos2 == lines.size());
 
     // Post-process diff list
-    if (flags & fCleanup) {
+    if ( F_ISSET(fCleanup) ) {
         if ( !x_IsTimeoutExpired() ) {
             m_Diffs.CleanupAndMerge();
         }
     }
-    if (flags & fCalculateOffsets) {
+    if ( F_ISSET(fCalculateLineOffsets) ) {
         // Do not check timeout here, it is fast and
         // can be executed even in this case
         m_Diffs.CalculateOffsets();
@@ -710,7 +719,7 @@ CNcbiOstream& s_PrintUnifiedHunk(CNcbiOstream& out,
                 op = " ";
                 break;
         }
-        out << op << it->GetStr() << eol;
+        out << op << it->GetString() << eol;
         it++;
     }
     return out;

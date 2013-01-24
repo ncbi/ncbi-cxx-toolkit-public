@@ -91,7 +91,7 @@ void s_PrintDiff(const CDiffList& diff)
         }
         cout << op << " ("
              << n1 << "," << n2 << ")"
-             << ": " << "'" << it->GetStr() << "'" << endl;
+             << ": " << "'" << it->GetString() << "'" << endl;
     }
 }
 
@@ -289,7 +289,7 @@ void s_Diff(void)
         string s1 = "Good dog Amigo";
         string s2 = "Bad dog Buzz";
         CDiff diff_api;
-        CDiffList& diffs = diff_api.Diff(s1, s2, CDiff::fCleanup | CDiff::fCalculateOffsets);
+        CDiffList& diffs = diff_api.Diff(s1, s2, CDiff::fCalculateOffsets);
         assert(diffs.GetList().size() == 5);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(*it == CDiffOperation(DIFF_DELETE, "Goo"   ));
@@ -319,7 +319,7 @@ void s_Diff(void)
         string s1 = "mouse";
         string s2 = "sofas";
         CDiff diff_api;
-        CDiffList& diffs = diff_api.Diff(s1, s2);
+        CDiffList& diffs = diff_api.Diff(s1, s2, CDiff::fNoCleanup);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 7);
         assert(*it == CDiffOperation(DIFF_DELETE, "m" )); it++;
