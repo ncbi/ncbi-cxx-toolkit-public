@@ -1,3 +1,4 @@
-ASN_DEP = seq seqset
+# $Id$
+
 LIB = biotree
 SRC = biotree__ biotree___
