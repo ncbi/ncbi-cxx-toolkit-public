@@ -61,7 +61,6 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp> 
 #include <objects/blastdb/defline_extra.hpp>
-#include <objects/taxon1/taxon1.hpp>
 
 #include <objtools/blast/services/blast_services.hpp>   // for CBlastServices
 #include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB

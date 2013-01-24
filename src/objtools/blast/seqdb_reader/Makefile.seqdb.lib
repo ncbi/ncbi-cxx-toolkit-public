@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seqsplit blastdb
+ASN_DEP = blastdb
 
 SRC = seqdb \
 seqdbbitset \

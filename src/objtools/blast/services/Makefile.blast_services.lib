@@ -2,7 +2,7 @@
 
 WATCHERS = madden camacho maning
 
-ASN_DEP = seq seqset blastdb xnetblast
+ASN_DEP = xnetblast
 
 SRC = blast_services
 

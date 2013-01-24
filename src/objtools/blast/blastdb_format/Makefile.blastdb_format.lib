@@ -2,7 +2,7 @@
 
 WATCHERS = maning camacho
 
-ASN_DEP = xnetblast blastdb
+ASN_DEP = blastdb seqset
 
 ###  BASIC PROJECT SETTINGS
 LIB = blastdb_format
