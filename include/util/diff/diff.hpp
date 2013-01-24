@@ -291,11 +291,6 @@ public:
     /// Type definition.
     typedef CDiffOperation::size_type size_type;
 
-    /// Constructor
-    CDiffBase(void)
-        : m_Timeout(CTimeout::eInfinite), m_Deadline(NULL)
-    { }
-
     /// Set timeout.
     ///
     /// Despite the large number of optimizations used in Diff(), it can take
@@ -308,10 +303,11 @@ public:
     /// Check if timeout is expired.
     bool IsTimeoutExpired() const;
 
-    typedef unsigned int TFlags;
-    /// Abstract Diff() method, to prevent direct usage of this class.
-    /// Should be redefined in the inherited classes.
-    virtual CDiffList& Diff(CTempString s1, CTempString s2, TFlags flags = 0) = 0;
+private:
+    /// Constructor
+    CDiffBase(void)
+        : m_Timeout(CTimeout::eInfinite), m_Deadline(NULL)
+    { }
 
 protected:
     /// Reset internal state and prepare to next Diff()
@@ -321,6 +317,9 @@ protected:
     CDiffList     m_Diffs;     ///< The list of differences from the last diff
     CTimeout      m_Timeout;   ///< Relative timeout for processing.
     CAbsTimeout*  m_Deadline;  ///< Absolute timeout for processing (NULL if not set).
+
+    friend class CDiff;
+    friend class CDiffText;
 };
 
 
