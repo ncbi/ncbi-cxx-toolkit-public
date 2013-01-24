@@ -1047,6 +1047,9 @@ case "$host_os:$compiler" in
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
+   case "$compiler_version" in
+      1[[1-9]]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
+   esac
    ;;
 
  irix*:GCC )
@@ -1499,14 +1502,18 @@ if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
            solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast $ARCH_CFLAGS" ;;
         esac
         ;;
+      ICC:[[1-8]]?? )
+        DEF_FAST_FLAGS="-O2"
+        ;;
+      ICC:9?? )
+        DEF_FAST_FLAGS="-O3 -axP -ip" # optimized for Core or P4 w/SSE3 (max)
+        ;;
+      ICC:10?? )
+        DEF_FAST_FLAGS="-O3 -axT -ip" # Core 2 w/SSSE3; axS would cover SSE 4.1
+        ;;
       ICC:* )
-        if test "$with_mt" = "yes" -a "$compiler_version" -lt 800; then
-           DEF_FAST_FLAGS="-O3 -ip"
-        elif test "$compiler_version" -ge 800 -a "$compiler_version" -lt 900; then
-           DEF_FAST_FLAGS="-O2"
-        else
-           DEF_FAST_FLAGS="-O3 -axW -ip"
-        fi
+        # Core 2; ICC 11 goes up to SSE4.2 (i7), ICC 12 up to CORE-AVX-I
+        DEF_FAST_FLAGS="-O3 -axSSSE3 -ip"
         ;;
       MIPSpro* )
         # -Ofast would be preferable, but runs into resource limits when
@@ -1660,8 +1667,8 @@ case "$compiler:$compiler_version:$with_bin_release" in
     LINK="$LINK -Kc++"
     ;;
   ICC:1???:* )
-    APP_LDFLAGS="-i-static $APP_LDFLAGS"
-    DLL_LDFLAGS="-i-static -nodefaultlibs $DLL_LDFLAGS"
+    APP_LDFLAGS="-static-intel $APP_LDFLAGS"
+    DLL_LDFLAGS="-static-intel -nodefaultlibs $DLL_LDFLAGS"
     # Redundant for apps, but necessary for plugins to be adequately
     # self-contained, at least on 32-bit Linux.
     LIBS="$LIBS -lstdc++"
