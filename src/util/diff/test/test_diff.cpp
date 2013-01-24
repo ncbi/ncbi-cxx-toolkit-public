@@ -282,14 +282,14 @@ void s_CleanupAndMerge_Cleanup(void)
     }}
 }
 
-// CDiff::Diff
+// CDiff
 void s_Diff(void)
 {
     {{
         string s1 = "Good dog Amigo";
         string s2 = "Bad dog Buzz";
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.Diff(s1, s2, CDiff::fCalculateOffsets);
+        CDiff d;
+        CDiffList& diffs = d.Diff(s1, s2, CDiff::fCalculateOffsets);
         assert(diffs.GetList().size() == 5);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(*it == CDiffOperation(DIFF_DELETE, "Goo"   ));
@@ -318,8 +318,8 @@ void s_Diff(void)
     {{
         string s1 = "mouse";
         string s2 = "sofas";
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.Diff(s1, s2, CDiff::fNoCleanup);
+        CDiff d;
+        CDiffList& diffs = d.Diff(s1, s2, CDiff::fNoCleanup);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 7);
         assert(*it == CDiffOperation(DIFF_DELETE, "m" )); it++;
@@ -335,14 +335,14 @@ void s_Diff(void)
 }
 
 
-// CDiff::DiffLines
-void s_Diff_Lines(void)
+// CDiffText
+void s_DiffText(void)
 {
     string s1 = "123\n123\n123\n";
     string s2 = "abcd\n123\r\nef\n";
     {{
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.DiffLines(s1, s2);
+        CDiffText d;
+        CDiffList& diffs = d.Diff(s1, s2);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 7);
         assert(*it == CDiffOperation(DIFF_DELETE, "123\n"  )); it++;
@@ -354,8 +354,8 @@ void s_Diff_Lines(void)
         assert(*it == CDiffOperation(DIFF_EQUAL,  ""       )); it++;
     }}
     {{
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.DiffLines(s1, s2, CDiff::fRemoveEOL);
+        CDiffText d;
+        CDiffList& diffs = d.Diff(s1, s2, CDiffText::fRemoveEOL);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 7);
         assert(*it == CDiffOperation(DIFF_DELETE, "123" )); it++;
@@ -367,8 +367,8 @@ void s_Diff_Lines(void)
         assert(*it == CDiffOperation(DIFF_EQUAL,  ""    )); it++;
     }}
     {{
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.DiffLines(s1, s2, CDiff::fIgnoreEOL);
+        CDiffText d;
+        CDiffList& diffs = d.Diff(s1, s2, CDiffText::fIgnoreEOL);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 6);
         assert(*it == CDiffOperation(DIFF_INSERT, "abcd\n")); it++;
@@ -379,8 +379,8 @@ void s_Diff_Lines(void)
         assert(*it == CDiffOperation(DIFF_EQUAL,  ""      )); it++;
     }}
     {{
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.DiffLines(s1, s2, CDiff::fIgnoreEOL|CDiff::fRemoveEOL);
+        CDiffText d;
+        CDiffList& diffs = d.Diff(s1, s2, CDiffText::fIgnoreEOL|CDiffText::fRemoveEOL);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 6);
         assert(*it == CDiffOperation(DIFF_INSERT, "abcd")); it++;
@@ -394,8 +394,8 @@ void s_Diff_Lines(void)
         string s1 = "123\nAAA\nBBB\n123\n";
         string s2 = "CCC\n123\nDDD\n";
 
-        CDiff diff_api;
-        CDiffList& diffs = diff_api.DiffLines(s1, s2, CDiff::fRemoveEOL);
+        CDiffText d;
+        CDiffList& diffs = d.Diff(s1, s2, CDiffText::fRemoveEOL);
         CDiffList::TList::const_iterator it = diffs.GetList().begin();
         assert(diffs.GetList().size() == 7);
 
@@ -432,7 +432,7 @@ void s_Diff_Lines(void)
 
 
 // Run a single test for unified format
-bool s_Diff_Unified_File(const string& test_name, unsigned num_common_lines)
+bool s_DiffText_Unified_File(const string& test_name, unsigned num_common_lines)
 {
     const string kTestDirName = "testdata";
     const size_t kBufSize = 16*1024;
@@ -457,22 +457,22 @@ bool s_Diff_Unified_File(const string& test_name, unsigned num_common_lines)
     string dst(dst_buf, fdst.gcount());
     assert(!src.empty() && !dst.empty());
 
-    CDiff diff_api;
+    CDiffText diff;
     CNcbiOstrstream ostr;
-    diff_api.PrintUnifiedDiff(ostr, src, dst, num_common_lines);
+    diff.PrintUnifiedDiff(ostr, src, dst, num_common_lines);
     string s = CNcbiOstrstreamToString(ostr);
     assert(!s.empty());
     return NcbiStreamCompareText(fdiff, s, eCompareText_IgnoreEol);
 }
 
 
-// CDiff::PrintUnifiedDiff
-void s_Diff_Unified(void)
+// CDiffText::PrintUnifiedDiff
+void s_DiffText_Unified(void)
 {
-    assert ( s_Diff_Unified_File("test_1", 0) );
-    assert ( s_Diff_Unified_File("test_1", 1) );
-    assert ( s_Diff_Unified_File("test_1", 3) );
-    assert ( s_Diff_Unified_File("test_1", 9) );
+    assert ( s_DiffText_Unified_File("test_1", 0) );
+    assert ( s_DiffText_Unified_File("test_1", 1) );
+    assert ( s_DiffText_Unified_File("test_1", 3) );
+    assert ( s_DiffText_Unified_File("test_1", 9) );
     return;
 }
 
@@ -485,8 +485,8 @@ int CTestApplication::Run(void)
     s_CleanupAndMerge_MergeEquities();
     s_CleanupAndMerge_Cleanup();
     s_Diff();
-    s_Diff_Lines();
-    s_Diff_Unified();
+    s_DiffText();
+    s_DiffText_Unified();
     return 0;
 }
 

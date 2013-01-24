@@ -361,13 +361,9 @@ bool CDiffList::x_CleanupAndMerge_SingleEdits(void)
 //  CDiff
 //
 
-CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TBlockFlags flags)
+CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TFlags flags)
 {
-    // Check on unsupported flags
-    if ( flags & ~(fNoCleanup + fCalculateOffsets) ) {
-        NCBI_THROW(CDiffException, eBadFlags, "Usage of unsupported flags for Diff()");
-    }
-    x_Reset();
+    Reset();
 
     // Set deadline time if timeout is specified
     auto_ptr<CAbsTimeout> real_timeout;
@@ -414,7 +410,7 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TBlockFlags flags)
 
     // Post-process diff list
     if ( !F_ISSET(fNoCleanup) ) {
-        if ( !x_IsTimeoutExpired() ) {
+        if ( !IsTimeoutExpired() ) {
             m_Diffs.CleanupAndMerge();
         }
     }
@@ -430,6 +426,336 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TBlockFlags flags)
 }
 
 
+/// Do the two texts share a substring which is at least half the length
+/// of the longer text? This speedup can produce non-minimal diffs.
+/// @param s1
+///   First string.
+/// @param s2
+///   Second string.
+/// @param hm
+///   Five element array, containing the prefix of 's1', the suffix of 's1',
+///   the prefix of 's2', the suffix of 's2' and the common middle. 
+/// @return
+///   FALSE if there was no match.
+/// @sa Diff
+/// @private
+bool CDiff::x_DiffHalfMatch(CTempString s1, CTempString s2, TDiffHalfMatchList& hm) const
+{
+    if ( m_Timeout.IsInfinite() ) {
+        // Don't risk returning a non-optimal diff if we have unlimited time.
+        return false;
+    }
+
+    const CTempString long_str  = s1.length() > s2.length() ? s1 : s2;
+    const CTempString short_str = s1.length() > s2.length() ? s2 : s1;
+    if (long_str.length() < 4 || short_str.length() * 2 < long_str.length()) {
+        return false;  // Pointless
+    }
+
+    // Reserve 5 elements
+    TDiffHalfMatchList hm1(5), hm2(5);
+
+    // First check if the second quarter is the seed for a half-match.
+    bool hm1_res = x_DiffHalfMatchI(long_str, short_str, (long_str.length() + 3) / 4, hm1);
+    // Check again based on the third quarter.
+    bool hm2_res = x_DiffHalfMatchI(long_str, short_str, (long_str.length() + 1) / 2, hm2);
+    if (!hm1_res && !hm2_res) {
+        return false;
+    } else if (!hm1_res) {
+        hm = hm2;
+    } else if (!hm2_res) {
+        hm = hm1;
+    } else {
+        // Both matched.  Select the longest.
+        hm = hm1[4].length() > hm2[4].length() ? hm1 : hm2;
+    }
+    // A half-match was found, sort out the return data.
+    if (s1.length() > s2.length()) {
+        // return hm;
+    } else {
+        TDiffHalfMatchList tmp(5);
+        tmp[0] = hm[2];
+        tmp[1] = hm[3];
+        tmp[2] = hm[0];
+        tmp[3] = hm[1];
+        tmp[4] = hm[4];
+        hm.swap(tmp);
+    }
+    return true;
+}
+
+
+/// Does a substring of short string exist within long string such that
+/// the substring is at least half the length of long string?
+///
+/// @param long_str
+///   Longer string.
+/// @param short_str
+///   Shorter string.
+/// @param i
+///   Start index of quarter length substring within long string.
+/// @param hm
+///   Five element Array, containing the prefix of 'long_str', the suffix
+///   of 'long_str', the prefix of 'short_str', the suffix of 'short_str'
+///   and the common middle.
+/// @return
+///   FALSE if there was no match.
+/// @sa Diff, x_DiffHalfMatch
+/// @private
+bool CDiff::x_DiffHalfMatchI(CTempString long_str, CTempString short_str,
+                             size_type i, TDiffHalfMatchList& hm) const
+{
+    // Start with a 1/4 length substring at position i as a seed.
+    const CTempString seed = long_str.substr(i, long_str.length() / 4);
+    size_type j = NPOS;
+    CTempString best_common;
+    CTempString best_longtext_a, best_longtext_b;
+    CTempString best_shorttext_a, best_shorttext_b;
+
+    while ((j = short_str.find(seed, j + 1)) != NPOS) {
+        const size_type prefix_len = 
+            NStr::CommonPrefixSize(long_str.substr(i), short_str.substr(j));
+        const size_type suffix_len = 
+            NStr::CommonSuffixSize(long_str.substr(0, i), short_str.substr(0, j));
+        if (best_common.length() < suffix_len + prefix_len) {
+            best_common      = short_str.substr(j - suffix_len, suffix_len + prefix_len);
+            best_longtext_a  = long_str.substr(0, i - suffix_len);
+            best_longtext_b  = long_str.substr(i + prefix_len);
+            best_shorttext_a = short_str.substr(0, j - suffix_len);
+            best_shorttext_b = short_str.substr(j + prefix_len);
+        }
+    }
+    if (best_common.length() * 2 >= long_str.length()) {
+        hm[0] = best_longtext_a;
+        hm[1] = best_longtext_b;
+        hm[2] = best_shorttext_a;
+        hm[3] = best_shorttext_b;
+        hm[4] = best_common;
+        return true;
+    }
+    return false;
+}
+
+
+/// Find the 'middle snake' of a diff, split the problem in two
+/// and return the recursively constructed diff.
+/// See Myers 1986 paper: An O(ND) Difference Algorithm and Its Variations.
+/// @param s1 
+///   Old string to be diffed.
+/// @param s2
+///   New string to be diffed.
+/// @param diffs
+///   Resulting list of the diff operations.
+/// @sa Diff
+/// @private
+void CDiff::x_DiffBisect(CTempString s1, CTempString s2, CDiffList& diffs) const
+{
+    // Cache the text lengths to prevent multiple calls.
+    const int s1_len = (int)s1.length();
+    const int s2_len = (int)s2.length();
+    const int max_d = (s1_len + s2_len + 1) / 2;
+    const int v_offset = max_d;
+    const int v_length = 2 * max_d;
+    int *v1 = new int[v_length];
+    int *v2 = new int[v_length];
+    for (int x = 0; x < v_length; x++) {
+        v1[x] = -1;
+        v2[x] = -1;
+    }
+    v1[v_offset + 1] = 0;
+    v2[v_offset + 1] = 0;
+    const int delta = s1_len - s2_len;
+    // If the total number of characters is odd, then the front path will
+    // collide with the reverse path.
+    const bool front = (delta % 2 != 0);
+    // Offsets for start and end of k loop.
+    // Prevents mapping of space beyond the grid.
+    int k1start = 0;
+    int k1end = 0;
+    int k2start = 0;
+    int k2end = 0;
+
+    for (int d = 0; d < max_d; d++)
+    {
+        if ( IsTimeoutExpired() ) {
+            break;
+        }
+        // Walk the front path one step.
+        for (int k1 = -d + k1start; k1 <= d - k1end; k1 += 2) {
+            const int k1_offset = v_offset + k1;
+            int x1;
+            if (k1 == -d || (k1 != d && v1[k1_offset - 1] < v1[k1_offset + 1])) {
+                x1 = v1[k1_offset + 1];
+            } else {
+                x1 = v1[k1_offset - 1] + 1;
+            }
+            int y1 = x1 - k1;
+            while (x1 < s1_len && y1 < s2_len && s1[x1] == s2[y1]) {
+                x1++;
+                y1++;
+            }
+            v1[k1_offset] = x1;
+            if (x1 > s1_len) {
+                // Ran off the right of the graph.
+                k1end += 2;
+            } else if (y1 > s2_len) {
+                // Ran off the bottom of the graph.
+                k1start += 2;
+            } else if (front) {
+                int k2_offset = v_offset + delta - k1;
+                if (k2_offset >= 0 && k2_offset < v_length && v2[k2_offset] != -1) {
+                    // Mirror x2 onto top-left coordinate system.
+                    int x2 = s1_len - v2[k2_offset];
+                    if (x1 >= x2) {
+                        // Overlap detected.
+                        delete [] v1;
+                        delete [] v2;
+                        x_DiffBisectSplit(s1, s2, x1, y1, diffs);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Walk the reverse path one step.
+        for (int k2 = -d + k2start; k2 <= d - k2end; k2 += 2) {
+            const int k2_offset = v_offset + k2;
+            int x2;
+            if (k2 == -d || (k2 != d && v2[k2_offset - 1] < v2[k2_offset + 1])) {
+                x2 = v2[k2_offset + 1];
+            } else {
+                x2 = v2[k2_offset - 1] + 1;
+            }
+            int y2 = x2 - k2;
+            while (x2 < s1_len && y2 < s2_len &&
+                    s1[s1_len - x2 - 1] == s2[s2_len - y2 - 1]) {
+                x2++;
+                y2++;
+            }
+            v2[k2_offset] = x2;
+            if (x2 > s1_len) {
+                // Ran off the left of the graph.
+                k2end += 2;
+            } else if (y2 > s2_len) {
+                // Ran off the top of the graph.
+                k2start += 2;
+            } else if (!front) {
+                int k1_offset = v_offset + delta - k2;
+                if (k1_offset >= 0 && k1_offset < v_length && v1[k1_offset] != -1) {
+                    int x1 = v1[k1_offset];
+                    int y1 = v_offset + x1 - k1_offset;
+                    // Mirror x2 onto top-left coordinate system.
+                    x2 = s1_len - x2;
+                    if (x1 >= x2) {
+                        // Overlap detected.
+                        delete [] v1;
+                        delete [] v2;
+                        x_DiffBisectSplit(s1, s2, x1, y1, diffs);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    delete [] v1;
+    delete [] v2;
+    // Diff took too long and hit the deadline or
+    // number of diffs equals number of characters, no commonality at all.
+    diffs.Append(DIFF_DELETE, s1);
+    diffs.Append(DIFF_INSERT, s2);
+}
+
+
+/// Given the location of the 'middle snake', split the diff in two parts
+/// and recurse.
+/// @param s1 
+///   Old string to be diffed.
+/// @param s2
+///   New string to be diffed.
+/// @param x
+///   Index of split point in 's1'.
+/// @param y
+///   Index of split point in 's2'.
+/// @param diffs
+///   Resulting list of the diff operations.
+/// @sa Diff, x_DiffBisect
+/// @private
+void CDiff::x_DiffBisectSplit(CTempString s1, CTempString s2, int x, int y, CDiffList& diffs) const
+{
+    CTempString s1a = s1.substr(0, x);
+    CTempString s2a = s2.substr(0, y);
+    CTempString s1b = s1.substr(x);
+    CTempString s2b = s2.substr(y);
+    // Compute both diffs serially.
+    x_Diff(s1a, s2a, diffs);
+    x_Diff(s1b, s2b, diffs);
+}
+
+
+/// Find the differences between two texts.
+/// Assumes that the texts do not have any common prefix or suffix.
+/// @param s1 
+///   Old string to be diffed.
+/// @param s2
+///   New string to be diffed.
+/// @param diffs
+///   Resulting list of the diff operations.
+/// @sa Diff
+/// @private
+void CDiff::x_Diff(CTempString s1, CTempString s2, CDiffList& diffs) const
+{
+    if (s1.empty()) {
+        // Just add some text (speedup)
+        diffs.Append(DIFF_INSERT, s2);
+        return;
+    }
+    if (s2.empty()) {
+        // Just delete some text (speedup)
+        diffs.Append(DIFF_DELETE, s1);
+        return;
+    }
+    {
+        // Shorter text is inside the longer text (speedup).
+        const CTempString long_str  = s1.length() > s2.length() ? s1 : s2;
+        const CTempString short_str = s1.length() > s2.length() ? s2 : s1;
+        const size_type i = long_str.find(short_str);
+        if ( i != NPOS) {
+            const CDiffOperation::EType op = (s1.length() > s2.length()) ? DIFF_DELETE : DIFF_INSERT;
+            diffs.Append(op, long_str.substr(0, i));
+            diffs.Append(DIFF_EQUAL, short_str);
+            diffs.Append(op, long_str.substr(i + short_str.length()));
+            return;
+        }
+        if (short_str.length() == 1) {
+            // Single character string.
+            // After the previous speedup, the character can't be an equality.
+            diffs.Append(DIFF_DELETE, s1);
+            diffs.Append(DIFF_INSERT, s2);
+            return;
+        }
+    }
+
+    // Check to see if the problem can be split in two
+    TDiffHalfMatchList hm(5);
+    if ( x_DiffHalfMatch(s1, s2, hm) ) {
+        // A half-match was found. Send both pairs off for separate processing
+        CDiffList diffs_a, diffs_b;
+        x_Diff(hm[0], hm[2], diffs_a);
+        x_Diff(hm[1], hm[3], diffs_b);
+        // Merge the results
+        diffs.m_List = diffs_a.m_List;
+        diffs.Append(DIFF_EQUAL, hm[4]);
+        // difs += diffs_b
+        diffs.m_List.insert(diffs.m_List.end(), diffs_b.m_List.begin(), diffs_b.m_List.end());
+        return;
+    }
+
+    // Perform a real diff
+    x_DiffBisect(s1, s2, diffs);
+    return;
+}
+
+
 // Hash map to convert strings to line numbers.
 // We use std::string here instead of CTempString because 
 // to have full compatibility with 'patch' utility we need 
@@ -437,17 +763,13 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TBlockFlags flags)
 // hashed strings in the text except last one.
 typedef hash_map<string, CDiffList::size_type > TStringToLineNumMap;
 
-CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TLineFlags flags)
+CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
 {
-    // Check on unsupported flags
-    if ( flags & ~(fCleanup + fCalculateLineOffsets + fIgnoreEOL + fRemoveEOL) ) {
-        NCBI_THROW(CDiffException, eBadFlags, "Usage of unsupported flags for DiffLines()");
-    }
     // Check incompatible flags
     if ( F_ISSET(fCleanup + fRemoveEOL) ) {
         NCBI_THROW(CDiffException, eBadFlags, "Usage of incompatible flags fCleanup and fRemoveEOL");
     }
-    x_Reset();
+    Reset();
 
     // Set deadline time if timeout is specified
     auto_ptr<CAbsTimeout> real_timeout;
@@ -649,11 +971,11 @@ CDiffList& CDiff::DiffLines(CTempString s1, CTempString s2, TLineFlags flags)
 
     // Post-process diff list
     if ( F_ISSET(fCleanup) ) {
-        if ( !x_IsTimeoutExpired() ) {
+        if ( !IsTimeoutExpired() ) {
             m_Diffs.CleanupAndMerge();
         }
     }
-    if ( F_ISSET(fCalculateLineOffsets) ) {
+    if ( F_ISSET(fCalculateOffsets) ) {
         // Do not check timeout here, it is fast and
         // can be executed even in this case
         m_Diffs.CalculateOffsets();
@@ -726,14 +1048,14 @@ CNcbiOstream& s_PrintUnifiedHunk(CNcbiOstream& out,
 }
 
 
-CNcbiOstream& CDiff::PrintUnifiedDiff(CNcbiOstream& out,
-                                      CTempString text1, CTempString text2,
-                                      unsigned int num_common_lines)
+CNcbiOstream& CDiffText::PrintUnifiedDiff(CNcbiOstream& out,
+                                          CTempString text1, CTempString text2,
+                                          unsigned int num_common_lines)
 {
     if (!out.good()) {
         return out;
     }
-    const CDiffList::TList& diffs = DiffLines(text1, text2, fRemoveEOL).GetList();
+    const CDiffList::TList& diffs = Diff(text1, text2, fRemoveEOL).GetList();
     if (diffs.empty()) {
         return out;
     }
@@ -833,336 +1155,6 @@ CNcbiOstream& CDiff::PrintUnifiedDiff(CNcbiOstream& out,
         s_PrintUnifiedHunk(out, hunk_start, diffs.end(), hunk_s1, hunk_s2);
     }
     return out;
-}
-
-
-/// Do the two texts share a substring which is at least half the length
-/// of the longer text? This speedup can produce non-minimal diffs.
-/// @param s1
-///   First string.
-/// @param s2
-///   Second string.
-/// @param hm
-///   Five element array, containing the prefix of 's1', the suffix of 's1',
-///   the prefix of 's2', the suffix of 's2' and the common middle. 
-/// @return
-///   FALSE if there was no match.
-/// @sa Diff
-/// @private
-bool CDiff::x_DiffHalfMatch(CTempString s1, CTempString s2, TDiffHalfMatchList& hm) const
-{
-    if ( m_Timeout.IsInfinite() ) {
-        // Don't risk returning a non-optimal diff if we have unlimited time.
-        return false;
-    }
-
-    const CTempString long_str  = s1.length() > s2.length() ? s1 : s2;
-    const CTempString short_str = s1.length() > s2.length() ? s2 : s1;
-    if (long_str.length() < 4 || short_str.length() * 2 < long_str.length()) {
-        return false;  // Pointless
-    }
-
-    // Reserve 5 elements
-    TDiffHalfMatchList hm1(5), hm2(5);
-
-    // First check if the second quarter is the seed for a half-match.
-    bool hm1_res = x_DiffHalfMatchI(long_str, short_str, (long_str.length() + 3) / 4, hm1);
-    // Check again based on the third quarter.
-    bool hm2_res = x_DiffHalfMatchI(long_str, short_str, (long_str.length() + 1) / 2, hm2);
-    if (!hm1_res && !hm2_res) {
-        return false;
-    } else if (!hm1_res) {
-        hm = hm2;
-    } else if (!hm2_res) {
-        hm = hm1;
-    } else {
-        // Both matched.  Select the longest.
-        hm = hm1[4].length() > hm2[4].length() ? hm1 : hm2;
-    }
-    // A half-match was found, sort out the return data.
-    if (s1.length() > s2.length()) {
-        // return hm;
-    } else {
-        TDiffHalfMatchList tmp(5);
-        tmp[0] = hm[2];
-        tmp[1] = hm[3];
-        tmp[2] = hm[0];
-        tmp[3] = hm[1];
-        tmp[4] = hm[4];
-        hm.swap(tmp);
-    }
-    return true;
-}
-
-
-/// Does a substring of short string exist within long string such that
-/// the substring is at least half the length of long string?
-///
-/// @param long_str
-///   Longer string.
-/// @param short_str
-///   Shorter string.
-/// @param i
-///   Start index of quarter length substring within long string.
-/// @param hm
-///   Five element Array, containing the prefix of 'long_str', the suffix
-///   of 'long_str', the prefix of 'short_str', the suffix of 'short_str'
-///   and the common middle.
-/// @return
-///   FALSE if there was no match.
-/// @sa Diff, x_DiffHalfMatch
-/// @private
-bool CDiff::x_DiffHalfMatchI(CTempString long_str, CTempString short_str,
-                             size_type i, TDiffHalfMatchList& hm) const
-{
-    // Start with a 1/4 length substring at position i as a seed.
-    const CTempString seed = long_str.substr(i, long_str.length() / 4);
-    size_type j = NPOS;
-    CTempString best_common;
-    CTempString best_longtext_a, best_longtext_b;
-    CTempString best_shorttext_a, best_shorttext_b;
-
-    while ((j = short_str.find(seed, j + 1)) != NPOS) {
-        const size_type prefix_len = 
-            NStr::CommonPrefixSize(long_str.substr(i), short_str.substr(j));
-        const size_type suffix_len = 
-            NStr::CommonSuffixSize(long_str.substr(0, i), short_str.substr(0, j));
-        if (best_common.length() < suffix_len + prefix_len) {
-            best_common      = short_str.substr(j - suffix_len, suffix_len + prefix_len);
-            best_longtext_a  = long_str.substr(0, i - suffix_len);
-            best_longtext_b  = long_str.substr(i + prefix_len);
-            best_shorttext_a = short_str.substr(0, j - suffix_len);
-            best_shorttext_b = short_str.substr(j + prefix_len);
-        }
-    }
-    if (best_common.length() * 2 >= long_str.length()) {
-        hm[0] = best_longtext_a;
-        hm[1] = best_longtext_b;
-        hm[2] = best_shorttext_a;
-        hm[3] = best_shorttext_b;
-        hm[4] = best_common;
-        return true;
-    }
-    return false;
-}
-
-
-/// Find the 'middle snake' of a diff, split the problem in two
-/// and return the recursively constructed diff.
-/// See Myers 1986 paper: An O(ND) Difference Algorithm and Its Variations.
-/// @param s1 
-///   Old string to be diffed.
-/// @param s2
-///   New string to be diffed.
-/// @param diffs
-///   Resulting list of the diff operations.
-/// @sa Diff
-/// @private
-void CDiff::x_DiffBisect(CTempString s1, CTempString s2, CDiffList& diffs) const
-{
-    // Cache the text lengths to prevent multiple calls.
-    const int s1_len = (int)s1.length();
-    const int s2_len = (int)s2.length();
-    const int max_d = (s1_len + s2_len + 1) / 2;
-    const int v_offset = max_d;
-    const int v_length = 2 * max_d;
-    int *v1 = new int[v_length];
-    int *v2 = new int[v_length];
-    for (int x = 0; x < v_length; x++) {
-        v1[x] = -1;
-        v2[x] = -1;
-    }
-    v1[v_offset + 1] = 0;
-    v2[v_offset + 1] = 0;
-    const int delta = s1_len - s2_len;
-    // If the total number of characters is odd, then the front path will
-    // collide with the reverse path.
-    const bool front = (delta % 2 != 0);
-    // Offsets for start and end of k loop.
-    // Prevents mapping of space beyond the grid.
-    int k1start = 0;
-    int k1end = 0;
-    int k2start = 0;
-    int k2end = 0;
-
-    for (int d = 0; d < max_d; d++)
-    {
-        if ( x_IsTimeoutExpired() ) {
-            break;
-        }
-        // Walk the front path one step.
-        for (int k1 = -d + k1start; k1 <= d - k1end; k1 += 2) {
-            const int k1_offset = v_offset + k1;
-            int x1;
-            if (k1 == -d || (k1 != d && v1[k1_offset - 1] < v1[k1_offset + 1])) {
-                x1 = v1[k1_offset + 1];
-            } else {
-                x1 = v1[k1_offset - 1] + 1;
-            }
-            int y1 = x1 - k1;
-            while (x1 < s1_len && y1 < s2_len && s1[x1] == s2[y1]) {
-                x1++;
-                y1++;
-            }
-            v1[k1_offset] = x1;
-            if (x1 > s1_len) {
-                // Ran off the right of the graph.
-                k1end += 2;
-            } else if (y1 > s2_len) {
-                // Ran off the bottom of the graph.
-                k1start += 2;
-            } else if (front) {
-                int k2_offset = v_offset + delta - k1;
-                if (k2_offset >= 0 && k2_offset < v_length && v2[k2_offset] != -1) {
-                    // Mirror x2 onto top-left coordinate system.
-                    int x2 = s1_len - v2[k2_offset];
-                    if (x1 >= x2) {
-                        // Overlap detected.
-                        delete [] v1;
-                        delete [] v2;
-                        x_DiffBisectSplit(s1, s2, x1, y1, diffs);
-                        return;
-                    }
-                }
-            }
-        }
-
-        // Walk the reverse path one step.
-        for (int k2 = -d + k2start; k2 <= d - k2end; k2 += 2) {
-            const int k2_offset = v_offset + k2;
-            int x2;
-            if (k2 == -d || (k2 != d && v2[k2_offset - 1] < v2[k2_offset + 1])) {
-                x2 = v2[k2_offset + 1];
-            } else {
-                x2 = v2[k2_offset - 1] + 1;
-            }
-            int y2 = x2 - k2;
-            while (x2 < s1_len && y2 < s2_len &&
-                    s1[s1_len - x2 - 1] == s2[s2_len - y2 - 1]) {
-                x2++;
-                y2++;
-            }
-            v2[k2_offset] = x2;
-            if (x2 > s1_len) {
-                // Ran off the left of the graph.
-                k2end += 2;
-            } else if (y2 > s2_len) {
-                // Ran off the top of the graph.
-                k2start += 2;
-            } else if (!front) {
-                int k1_offset = v_offset + delta - k2;
-                if (k1_offset >= 0 && k1_offset < v_length && v1[k1_offset] != -1) {
-                    int x1 = v1[k1_offset];
-                    int y1 = v_offset + x1 - k1_offset;
-                    // Mirror x2 onto top-left coordinate system.
-                    x2 = s1_len - x2;
-                    if (x1 >= x2) {
-                        // Overlap detected.
-                        delete [] v1;
-                        delete [] v2;
-                        x_DiffBisectSplit(s1, s2, x1, y1, diffs);
-                        return;
-                    }
-                }
-            }
-        }
-    }
-    delete [] v1;
-    delete [] v2;
-    // Diff took too long and hit the deadline or
-    // number of diffs equals number of characters, no commonality at all.
-    diffs.Append(DIFF_DELETE, s1);
-    diffs.Append(DIFF_INSERT, s2);
-}
-
-
-/// Given the location of the 'middle snake', split the diff in two parts
-/// and recurse.
-/// @param s1 
-///   Old string to be diffed.
-/// @param s2
-///   New string to be diffed.
-/// @param x
-///   Index of split point in 's1'.
-/// @param y
-///   Index of split point in 's2'.
-/// @param diffs
-///   Resulting list of the diff operations.
-/// @sa Diff, x_DiffBisect
-/// @private
-void CDiff::x_DiffBisectSplit(CTempString s1, CTempString s2, int x, int y, CDiffList& diffs) const
-{
-    CTempString s1a = s1.substr(0, x);
-    CTempString s2a = s2.substr(0, y);
-    CTempString s1b = s1.substr(x);
-    CTempString s2b = s2.substr(y);
-    // Compute both diffs serially.
-    x_Diff(s1a, s2a, diffs);
-    x_Diff(s1b, s2b, diffs);
-}
-
-
-/// Find the differences between two texts.
-/// Assumes that the texts do not have any common prefix or suffix.
-/// @param s1 
-///   Old string to be diffed.
-/// @param s2
-///   New string to be diffed.
-/// @param diffs
-///   Resulting list of the diff operations.
-/// @sa Diff
-/// @private
-void CDiff::x_Diff(CTempString s1, CTempString s2, CDiffList& diffs) const
-{
-    if (s1.empty()) {
-        // Just add some text (speedup)
-        diffs.Append(DIFF_INSERT, s2);
-        return;
-    }
-    if (s2.empty()) {
-        // Just delete some text (speedup)
-        diffs.Append(DIFF_DELETE, s1);
-        return;
-    }
-    {
-        // Shorter text is inside the longer text (speedup).
-        const CTempString long_str  = s1.length() > s2.length() ? s1 : s2;
-        const CTempString short_str = s1.length() > s2.length() ? s2 : s1;
-        const size_type i = long_str.find(short_str);
-        if ( i != NPOS) {
-            const CDiffOperation::EType op = (s1.length() > s2.length()) ? DIFF_DELETE : DIFF_INSERT;
-            diffs.Append(op, long_str.substr(0, i));
-            diffs.Append(DIFF_EQUAL, short_str);
-            diffs.Append(op, long_str.substr(i + short_str.length()));
-            return;
-        }
-        if (short_str.length() == 1) {
-            // Single character string.
-            // After the previous speedup, the character can't be an equality.
-            diffs.Append(DIFF_DELETE, s1);
-            diffs.Append(DIFF_INSERT, s2);
-            return;
-        }
-    }
-
-    // Check to see if the problem can be split in two
-    TDiffHalfMatchList hm(5);
-    if ( x_DiffHalfMatch(s1, s2, hm) ) {
-        // A half-match was found. Send both pairs off for separate processing
-        CDiffList diffs_a, diffs_b;
-        x_Diff(hm[0], hm[2], diffs_a);
-        x_Diff(hm[1], hm[3], diffs_b);
-        // Merge the results
-        diffs.m_List = diffs_a.m_List;
-        diffs.Append(DIFF_EQUAL, hm[4]);
-        // difs += diffs_b
-        diffs.m_List.insert(diffs.m_List.end(), diffs_b.m_List.begin(), diffs_b.m_List.end());
-        return;
-    }
-
-    // Perform a real diff
-    x_DiffBisect(s1, s2, diffs);
-    return;
 }
 
 
