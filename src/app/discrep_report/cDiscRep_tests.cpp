@@ -109,6 +109,7 @@ using namespace objects;
 using namespace sequence;
 using namespace DiscRepNmSpc;
 using namespace feature;
+using namespace validator;
 
 vector <bool>   CRuleProperties :: srch_func_empty;
 vector <bool>   CRuleProperties :: except_empty;
@@ -9065,9 +9066,13 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 {
   if (thisTest.is_DESC_user_run) return;
 
+  CValidError errors;
+  CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
+  CValidError_desc validator(imp);
+
   unsigned i=0, cnt;
   int id;
-  string bioseq_desc, type_str;
+  string bioseq_desc, type_str, user_desc;
   Str2Int bioseq2cnt;
 
   if (seq_entry.IsSeq()) {
@@ -9086,6 +9091,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     if ( !(user_obj.GetType().IsStr()) ) { 
          i++; continue;
     }
+    user_desc = GetDiscItemText(**it, *(user_seqdesc_seqentry[i]));
 
     entry_is_seq = false;
     if (user_seqdesc_seqentry[i]->IsSeq()) {
@@ -9159,6 +9165,10 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
        }
     }
 
+    // ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
+    if (validator.ValidateStructuredComment(user_obj, **it))
+       thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
+
     i++;
   }
 
@@ -9177,6 +9187,12 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
   }
 
   thisTest.is_DESC_user_run = true;
+};
+
+void CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetIsComment(c_item->item_list.size(), "structured comment")
+                       + "invalid but would be valid with a different prefix.";
 };
 
 void CSeqEntry_MISSING_STRUCTURED_COMMENT :: GetReport(CRef <CClickableItem>& c_item)

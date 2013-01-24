@@ -435,6 +435,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry_feat_desc.push_back(
             CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back(
+       CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX));
+   tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_TEST_HAS_PROJECT_ID));

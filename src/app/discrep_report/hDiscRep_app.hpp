@@ -61,6 +61,8 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/validator/validatorp.hpp>
+
 
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -69,6 +71,7 @@
 
 using namespace ncbi;
 using namespace objects;
+using namespace validator;
 
 BEGIN_NCBI_SCOPE
 
@@ -172,6 +175,7 @@ namespace DiscRepNmSpc{
            static vector <string>                    taxnm_env;
            static vector <string>                    virus_lineage;
            static vector <string>                    strain_tax;
+           static CRef <CComment_set>                comment_rules;
      };
 
 /*

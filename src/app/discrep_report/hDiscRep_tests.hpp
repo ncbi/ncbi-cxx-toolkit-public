@@ -1050,6 +1050,8 @@ namespace DiscRepNmSpc {
       string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
       string GetName_iscomm() const {
                             return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS"); }
+      string GetName_prefix() const {
+                       return string("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX"); }
 
       void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
       void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 
@@ -1058,6 +1060,15 @@ namespace DiscRepNmSpc {
       const CBioseq& Get1stBioseqOfSet(const CBioseq_set& bioseq_set);
       void AddBioseqsOfSet2Map(const CBioseq_set& bioseq_set);
       void RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_set);
+  };
+
+  class CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX:public CSeqEntry_test_on_user
+  {
+     public:
+      virtual ~CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_prefix();}
   };
 
   class CSeqEntry_MISSING_STRUCTURED_COMMENT : public CSeqEntry_test_on_user

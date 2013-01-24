@@ -67,8 +67,6 @@
 
 USING_NCBI_SCOPE;
 
-using namespace ncbi;
-using namespace objects;
 using namespace DiscRepNmSpc;
 using namespace DiscRepAutoNmSpc;
 
@@ -111,6 +109,7 @@ vector <string>                         CDiscRepInfo :: kIntergenicSpacerNames;
 vector <string>                         CDiscRepInfo :: taxnm_env;
 vector <string>                         CDiscRepInfo :: virus_lineage;
 vector <string>                         CDiscRepInfo :: strain_tax;
+CRef <CComment_set>                     CDiscRepInfo :: comment_rules;
 
 void CDiscRepApp::Init(void)
 {
@@ -297,6 +296,11 @@ void CDiscRepApp :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     // Create a new scope ("attached" to our OM).
     thisInfo.scope.Reset( new CScope(*object_manager) );
     thisInfo.scope->AddTopLevelSeqEntry(*seq_entry);
+
+    // read validrules.prt for ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
+    CValidError errors;
+    CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
+    thisInfo.comment_rules = imp.GetStructuredCommentRules();
 
     CCheckingClass myChecker;
     myChecker.CheckSeqEntry(seq_entry);
