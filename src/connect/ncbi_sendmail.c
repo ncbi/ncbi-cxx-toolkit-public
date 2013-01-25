@@ -186,22 +186,35 @@ static void s_MakeFrom(char* buf, size_t size, const char* user)
 {
     size_t len;
 
-    if (user  &&  *user)
+    if (user  &&  *user) {
+        const char* at = strchr(user, '@');
+        if (at) {
+            len = (size_t)(at - user);
+            if (len < size) {
+                size_t tmp = len + strlen(at);
+                if (tmp < size)
+                    len = tmp;
+            } else
+                len = size - 1;
+            strncpy0(buf, user, len);
+            return;
+        }
         strncpy0(buf, user, size - 1);
-    else if (!CORE_GetUsername(buf, size)  ||  !*buf)
+    } else if (!CORE_GetUsername(buf, size)  ||  !*buf)
         strncpy0(buf, "anonymous", size - 1);
     len = strlen(buf);
     size -= len;
-    if (size-- > 1) {
+    if (size-- > 2) {
         buf += len;
         *buf++ = '@';
         if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
             &&  SOCK_gethostname(buf, size) != 0) {
             const char* host = getenv("HOSTNAME");
-            if (!host  &&  !(host = getenv("HOST")))
+            if ((!host  &&  !(host = getenv("HOST")))
+                ||  (len = strlen(host)) >= size) {
                 *--buf = '\0';
-            else
-                strncpy0(buf, host, size - 1);
+            } else
+                strcpy(buf, host);
         }
     }
 }

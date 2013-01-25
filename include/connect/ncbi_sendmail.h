@@ -75,8 +75,8 @@ typedef struct {
     const char*      mx_host;       /**< Host to contact an MTA at           */
     short            mx_port;       /**< Port to contact an MTA at           */
     STimeout         mx_timeout;    /**< Timeout for all network transactions*/
-    TSendMailOptions mx_options;    /**< From the above                      */
-    unsigned int     magic_cookie;  /**< Filled in by SendMailInfo_Init      */
+    TSendMailOptions mx_options;    /**< See ESendMailOption                 */
+    unsigned int     magic_cookie;  /**< RO, filled in by SendMailInfo_Init  */
 } SSendMailInfo;
 
 
@@ -99,10 +99,12 @@ typedef struct {
  * @note This call is the only valid way to properly init SSendMailInfo.
  * @param info
  *  A pointer to the structure to initialize
+ * @param user
+ *  Return address "user@host" or just "user" (then @host will be auto-added)
  * @return
  *  Return value equals the argument passed in.
  * @sa
- *  CORE_SendMailEx
+ *  CORE_SendMailEx, CORE_GetUsername
  */
 extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
 (SSendMailInfo*       info,
@@ -118,9 +120,9 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
  * '\n', must be '\0'-terminated).  Communicaiton parameters for connection
  * with sendmail are set using default values as described in
  * SendMailInfo_InitEx().
- * @note  Use of this call in out-of-house applications is discouraged as
- *        it is likely to fail since MTA communication parameters set
- *        to their defaults (which are NCBI-specific) may not be suitable.
+ * @note  Use of this call in out-of-house applications is discouraged as it is
+ *        likely to fail because MTA communication parameters (set to their
+ *        defaults, which are NCBI-specific) may not be suitable.
  * @param to
  *  Recipient list
  * @param subject
@@ -171,7 +173,7 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * @param body
  *  The message body
  * @param info
- *  Communication parameters
+ *  Communicational and additional protocol parameters
  * @return
  *  0 on success;  otherwise, a descriptive error message.
  * @sa
