@@ -110,7 +110,9 @@ private:
     
     void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessWiggleRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessBed(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessBedRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGtf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessVcf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessNewick(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -208,6 +210,7 @@ void CMultiReaderApp::Init(void)
             "newick", "tree", "tre",
             "vcf",
             "aln", "align",
+            "hgvs",
             "guess") );
 
     arg_desc->AddDefaultKey(
@@ -324,6 +327,11 @@ void CMultiReaderApp::Init(void)
         "generate graph object",
         true );
 
+    arg_desc->AddFlag(
+        "raw",
+        "iteratively return raw track data",
+        true );
+
     //
     //  gff reader specific arguments:
     //
@@ -387,10 +395,20 @@ CMultiReaderApp::Run(void)
             xProcessDefault(args, istr, ostr);   
             break;
         case CFormatGuess::eWiggle:
-            xProcessWiggle(args, istr, ostr);
+            if (m_iFlags & CReaderBase::fAsRaw) {
+                xProcessWiggleRaw(args, istr, ostr);
+            }
+            else {
+                xProcessWiggle(args, istr, ostr);
+            }
             break;
         case CFormatGuess::eBed:
-            xProcessBed(args, istr, ostr);
+            if (m_iFlags & CReaderBase::fAsRaw) {
+                xProcessBedRaw(args, istr, ostr);
+            }
+            else {
+                xProcessBed(args, istr, ostr);
+            }
             break;
         case CFormatGuess::eGtf:
         case CFormatGuess::eGtf_POISENED:
@@ -458,6 +476,21 @@ void CMultiReaderApp::xProcessWiggle(
 }
 
 //  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessWiggleRaw(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CWiggleReader reader(m_iFlags);
+    CStreamLineReader lr(istr);
+    CRawWiggleTrack raw;
+    while (reader.ReadTrackData(lr, raw)) {
+        raw.Dump(cerr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessBed(
     const CArgs& args,
     CNcbiIstream& istr,
@@ -472,6 +505,21 @@ void CMultiReaderApp::xProcessBed(
         xWriteObject(*pAnnot, ostr);
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessBedRaw(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CBedReader reader(m_iFlags);
+    CStreamLineReader lr(istr);
+    CRawBedTrack raw;
+    while (reader.ReadTrackData(lr, raw)) {
+        raw.Dump(cerr);
     }
 }
 
@@ -672,6 +720,10 @@ void CMultiReaderApp::xSetFormat(
         format == "aln") {
         m_uFormat = CFormatGuess::eAlignment;
     }
+    if (NStr::StartsWith(strProgramName, "hgvs") || 
+        format == "hgvs") {
+        m_uFormat = CFormatGuess::eHgvs;
+    }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
     }
@@ -701,6 +753,10 @@ void CMultiReaderApp::xSetFlags(
         if ( args["as-graph"] ) {
             m_iFlags |= CWiggleReader::fAsGraph;
         }
+
+        if ( args["raw"] ) {
+            m_iFlags |= CReaderBase::fAsRaw;
+        }
         break;
     
     case CFormatGuess::eBed:
@@ -709,6 +765,9 @@ void CMultiReaderApp::xSetFlags(
         }
         if ( args["numeric-ids-as-local"] ) {
             m_iFlags |= CBedReader::fNumericIdsAsLocal;
+        }
+        if ( args["raw"] ) {
+            m_iFlags |= CReaderBase::fAsRaw;
         }
         break;
        
