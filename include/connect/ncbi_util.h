@@ -400,10 +400,10 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
 /** Select which username is the most preferable to obtain from the system. */
 typedef enum {
-    eNCBI_UsernameCurrent,  /**< process UID */
-    eNCBI_UsernameLogin,    /**< login UID */
-    eNCBI_UsernameReal      /**< real UID */
-} ENCBI_Username;
+    eCORE_UsernameCurrent = 1,  /**< process UID */
+    eCORE_UsernameLogin = 0,    /**< login UID */
+    eCORE_UsernameReal = 2      /**< real UID */
+} ECORE_Username;
 
 
 /** Obtain and store in the buffer provided, the best (as possible) user name
@@ -421,15 +421,24 @@ typedef enum {
  * @note
  *  For some OSes the username selector may not effect any differences,
  *  and for some OS releases, it may cause different results.
+ * @sa
+ *  CORE_GetUsername, ECORE_Username
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsernameEx
 (char*          buf,
  size_t         bufsize,
- ENCBI_Username username
+ ECORE_Username username
  );
 
 
-#define CORE_GetUsername(b, s)  CORE_GetUsernameEx(b, s, eNCBI_UsernameLogin)
+/** Equivalent to CORE_GetUsernameEx(buf, bufsize, eNCBI_UsernameLogin)
+ * @sa
+ *  CORE_GetUsernameEx, ECORE_Username
+ */
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
+(char*  buf,
+ size_t bufisze
+ );
 
 
 /** Obtain virtual memory page size.

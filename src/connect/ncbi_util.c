@@ -673,7 +673,7 @@ static char* x_Savestr(const char* str, char* buf, size_t bufsize)
 
 /*ARGSUSED*/
 extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
-                                      ENCBI_Username username)
+                                      ECORE_Username username)
 {
 #if defined(NCBI_OS_UNIX)
     struct passwd* pwd;
@@ -738,10 +738,10 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
      * here only as a fallback.
      */
     switch (username) {
-    case eNCBI_UsernameCurrent:
+    case eCORE_UsernameCurrent:
         uid = geteuid();
         break;
-    case eNCBI_UsernameLogin:
+    case eCORE_UsernameLogin:
         if (isatty(STDIN_FILENO)  &&  fstat(STDIN_FILENO, &st) == 0) {
             uid = st.st_uid;
             break;
@@ -767,7 +767,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         }
 #  endif /*NCBI_OS_SOLARIS || !HAVE_GETLOGIN_R*/
         /*FALLTHRU*/
-    case eNCBI_UsernameReal:
+    case eCORE_UsernameReal:
         uid = getuid();
         break;
     default:
@@ -817,6 +817,13 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         login = "";
     return x_Savestr(login, buf, bufsize);
 }
+
+
+extern const char* CORE_GetUsername(char* buf, size_t bufsize)
+{
+    return CORE_GetUsernameEx(buf, bufsize, eCORE_UsernameLogin);
+}
+
 
 
 /****************************************************************************
