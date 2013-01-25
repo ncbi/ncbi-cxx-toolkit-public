@@ -440,6 +440,15 @@ public:
     bool GetNodeProperty( int tax_id, const string& prop_name,
                           string& prop_val );
 
+    //---------------------------------------------------
+    // This function returns the list of "type materials" for the node with taxid given.
+    // The list consists of names with class type material found at the species
+    // or subspecies ancestor of the node. 
+    // Returns: true  when success and last parameter is filled with type material list,
+    //          false when call failed
+    ///
+    bool GetTypeMaterial( int tax_id, TNameList& type_material_list_out );
+
 private:
     friend class COrgRefCache;
 
@@ -525,8 +534,7 @@ public:
 };
 
 //-------------------------------------------------
-// This interface class represents an iterator to traverse the
-// partial taxonomy tree build by CTaxon1 object.
+// This interface class represents an iterator to // partial taxonomy tree build by CTaxon1 object.
 class NCBI_TAXON1_EXPORT ITreeIterator : public CObject {
 public:
     //-------------------------------------------------

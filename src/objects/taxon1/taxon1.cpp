@@ -2077,5 +2077,79 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
     return true;
 }
 
+//---------------------------------------------------
+// This function returns the list of "type materials" for the node with taxid given.
+// The list consists of names with class type material found at the species
+// or subspecies ancestor of the node. 
+// Returns: true  when success and last parameter is filled with type material list,
+//          false when call failed
+///
+bool
+CTaxon1::GetTypeMaterial( int tax_id, TNameList& type_material_list_out )
+{
+    CTaxon1Node* pNode = 0;
+    type_material_list_out.clear();
+    SetLastError(NULL);
+    if( m_plCache->LookupAndAdd( tax_id, &pNode )
+        && pNode ) {
+	list< CRef< CTaxon1_name > > lNames;
+
+        int species_rank(m_plCache->GetSpeciesRank());
+        int subspecies_rank(m_plCache->GetSubspeciesRank());
+        while( !pNode->IsRoot() ) {
+	    int rank( pNode->GetRank() );
+	    if( rank == subspecies_rank ) {
+		bool a,b;
+		string blast_name;
+		CConstRef< COrg_ref > subsporg( GetOrgRef( pNode->GetTaxId(), a, b, blast_name ) );
+		if( subsporg->IsSetOrgname() && subsporg->GetOrgname().IsSetName() ) {
+		    const COrgName::C_Name& on( subsporg->GetOrgname().GetName() );
+		    if( on.IsBinomial() && on.GetBinomial().IsSetSpecies()
+			&& on.GetBinomial().IsSetSubspecies()
+			&& (NStr::EqualNocase( on.GetBinomial().GetSpecies(), on.GetBinomial().GetSubspecies() )
+			    || NStr::EqualNocase( "ssp. "+on.GetBinomial().GetSpecies(), on.GetBinomial().GetSubspecies() )
+			    || NStr::EqualNocase( "subsp. "+on.GetBinomial().GetSpecies(), on.GetBinomial().GetSubspecies() )) ) {
+			// nominal subspecies
+			pNode = pNode->GetParent();
+			continue;
+		    }
+		}
+		if( !GetAllNamesEx( pNode->GetTaxId(), lNames ) ) {
+		    return false;
+		}
+		break;
+	    } else if( rank == species_rank ) {
+		if( !GetAllNamesEx( pNode->GetTaxId(), lNames ) ) {
+		    return false;
+		}
+		break;
+	    } else if( (rank > 0) && (rank < species_rank)) {
+		SetLastError( "No species or subspecies found in lineage" );
+		ERR_POST_X( 19, GetLastError() );
+		return false;
+	    }
+	    pNode = pNode->GetParent();
+        }
+	// Filter out excessive name classes, leave type material only
+	short tm_cde = GetNameClassId( "type material" );
+	if ( tm_cde < 0 ) {
+	    SetLastError( "Name class for type material not found" );
+	    ERR_POST_X( 19, GetLastError() );
+	    return false;
+	}
+	// copy only type material
+	ITERATE( list< CRef< CTaxon1_name > >, i, lNames ) {
+	    if( (*i)->GetCde() == tm_cde ) {
+		type_material_list_out.push_back( (*i)->GetOname() );
+	    }
+	}
+        return true;
+    } else {
+	SetLastError( "No organisms found for tax id" );
+	ERR_POST_X( 18, GetLastError() );
+	return false;
+    }
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE
