@@ -850,7 +850,13 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     //length of extension is one less than the length of the sequence that replaces first or last AA
                 }
 
-                inst_str += x_SeqLiteralToStr(*literal, is_prot);
+                string variant_str = x_SeqLiteralToStr(*literal, is_prot);
+                if(inst_str == variant_str + ">") {
+                    //instead of "G>G" etc want to report "="
+                    inst_str = "=";
+                } else {
+                    inst_str += variant_str;
+                }
             } else if(delta.GetSeq().IsLoc()) {
                 string delta_loc_str;
                 //the repeat-unit in microsattelite is always literal sequence:
