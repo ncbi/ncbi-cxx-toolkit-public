@@ -336,15 +336,31 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
 
 string CEnumDataType::GetDefaultString(const CDataValue& value) const
 {
+    CTypeStrings::EKind kind = GetFullCType()->GetKind();
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
+    if (kind == CTypeStrings::eKindEnum) {
+        if ( id ) {
+            return GetEnumCInfo().valuePrefix + Identifier(id->GetValue(), false);
+        }
+        else {
+            const CIntDataValue* intValue =
+                dynamic_cast<const CIntDataValue*>(&value);
+            return NStr::Int8ToString(intValue->GetValue());
+        }
+    }
+    string val;
     if ( id ) {
-        return GetEnumCInfo().valuePrefix + Identifier(id->GetValue(), false);
+        val = id->GetValue();
     }
     else {
         const CIntDataValue* intValue =
             dynamic_cast<const CIntDataValue*>(&value);
-        return NStr::Int8ToString(intValue->GetValue());
+        val = NStr::Int8ToString(intValue->GetValue());
     }
+    if (kind == CTypeStrings::eKindString) {
+        return string("\"") + val + "\"";
+    }
+    return val;
 }
 
 string CEnumDataType::GetXmlValueName(const string& value) const
