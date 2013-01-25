@@ -211,7 +211,7 @@ private:
         		gap_open(0), gap_extend(0),scale_factor(0), curr_seq_offset(0),
         		query_options(NULL), lookup_options(NULL), lookup(NULL)
         { };
-    };
+    }s;
 
     enum CheckInputScoremat_RV
     {
@@ -241,6 +241,7 @@ private:
     void x_WrapUpDelta(CTmpFile & tmp_obsr_file, CTmpFile & tmp_freq_file);
     vector<string> x_CreateDeltaList(void);
     void x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size);
+    bool x_IsUpdateFreqRatios(const CPssm & p);
 
     // Data
     CNcbiOstream * m_LogFile;
@@ -270,6 +271,8 @@ private:
 	list<Int4> m_ObsrOffsets;
 	Int4 m_CurrFreqOffset;
 	Int4 m_CurrObsrOffset;
+
+	bool m_UpdateFreqRatios;
 };
 
 CMakeProfileDBApp::CMakeProfileDBApp(void)
@@ -278,7 +281,8 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
                   m_OutDbType(kEmptyStr), m_CreateIndexFile(false),m_GapOpenPenalty(0),
                   m_GapExtPenalty(0), m_PssmScaleFactor(0),m_Matrix(kEmptyStr),  m_op_mode(op_invalid),
                   m_binary_scoremat(false), m_Taxids(new CTaxIdSet()), m_Done(false),
-                  m_ObsrvThreshold(0), m_ExcludeInvalid(false), m_CurrFreqOffset(0), m_CurrObsrOffset(0)
+                  m_ObsrvThreshold(0), m_ExcludeInvalid(false), m_CurrFreqOffset(0), m_CurrObsrOffset(0),
+                  m_UpdateFreqRatios(true)
 {
 	CRef<CVersion> version(new CVersion());
 	version->SetVersionInfo(new CBlastVersion());
@@ -326,6 +330,7 @@ CMakeProfileDBApp::~CMakeProfileDBApp()
 
 		 	if(m_OutputDb.NotEmpty())
 		 	{
+		 		m_OutputDb->Close();
 		 		vector<string> tmp_files;
 		 		m_OutputDb->ListFiles(tmp_files);
 		 		for(vector<string>::iterator itr = tmp_files.begin();
@@ -564,7 +569,13 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
-		if(!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios())
+		// First time around
+		if(NULL == m_RpsDbInfo.lookup)
+		{
+			m_UpdateFreqRatios = x_IsUpdateFreqRatios(pssm);
+		}
+
+		if(m_UpdateFreqRatios && (!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios()))
 		{
 			string err = filename + " contains no frequence ratios for building database";
 			NCBI_THROW(CInputException, eInvalidInput,  err);
@@ -605,6 +616,17 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 	}
 
 	return sm;
+}
+
+bool CMakeProfileDBApp::x_IsUpdateFreqRatios(const CPssm & p)
+{
+	if(op_cobalt == m_op_mode)
+		return true;
+
+	if(!p.IsSetIntermediateData()|| !p.GetIntermediateData().IsSetFreqRatios())
+		return false;
+
+	return true;
 }
 
 void CMakeProfileDBApp::x_InitOutputDb(void)
@@ -895,6 +917,9 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
  }
 void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size)
  {
+	if (!m_UpdateFreqRatios)
+		return;
+
 	 const CPssm & pssm = pssm_p.GetPssm();
 	 // Update .freq file
 	 Int4 i = 0;
@@ -1176,6 +1201,11 @@ void CMakeProfileDBApp::x_RPS_DbClose(void)
     {
     	m_RpsDbInfo.blocks_file.flush();
     	m_RpsDbInfo.blocks_file.close();
+    }
+    else if(!m_UpdateFreqRatios)
+    {
+    	string freq_str = m_OutDbName + ".freq";
+	 	CFile(freq_str).Remove();
     }
 
 }
