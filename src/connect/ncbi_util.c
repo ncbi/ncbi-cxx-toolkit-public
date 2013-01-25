@@ -670,7 +670,10 @@ static char* x_Savestr(const char* str, char* buf, size_t bufsize)
     return 0;
 }
 
-extern const char* CORE_GetUsername(char* buf, size_t bufsize)
+
+/*ARGSUSED*/
+extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
+                                      ENCBI_Username username)
 {
 #if defined(NCBI_OS_UNIX)
     struct passwd* pwd;
@@ -734,7 +737,15 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
      * can cause a false (stale) name to be returned.  So we use getlogin()
      * here only as a fallback.
      */
-    if (!isatty(STDIN_FILENO)  ||  fstat(STDIN_FILENO, &st) < 0) {
+    switch (username) {
+    case eNCBI_UsernameCurrent:
+        uid = geteuid();
+        break;
+    case eNCBI_UsernameLogin:
+        if (isatty(STDIN_FILENO)  &&  fstat(STDIN_FILENO, &st) == 0) {
+            uid = st.st_uid;
+            break;
+        }
 #  if defined(NCBI_OS_SOLARIS)  ||  !defined(HAVE_GETLOGIN_R)
         /* NB:  getlogin() is MT-safe on Solaris, yet getlogin_r() comes in two
          * flavors that differ only in return type, so to make things simpler,
@@ -755,9 +766,15 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
             return x_Savestr(temp, buf, bufsize);
         }
 #  endif /*NCBI_OS_SOLARIS || !HAVE_GETLOGIN_R*/
+        /*FALLTHRU*/
+    case eNCBI_UsernameReal:
         uid = getuid();
-    } else
-        uid = st.st_uid;
+        break;
+    default:
+        assert(0);
+        uid = (uid_t)(-1);
+        break;
+    }
 
 #  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
     /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
@@ -802,13 +819,12 @@ extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 }
 
 
-
 /****************************************************************************
  * CORE_GetVMPageSize:  Get page size granularity
  * See also at corelib's ncbi_system.cpp::GetVirtualMemoryPageSize().
  */
 
-size_t CORE_GetVMPageSize(void)
+extern size_t CORE_GetVMPageSize(void)
 {
     static size_t ps = 0;
 
