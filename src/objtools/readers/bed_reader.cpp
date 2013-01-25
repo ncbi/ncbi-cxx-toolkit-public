@@ -289,19 +289,8 @@ bool CBedReader::xParseFeature(
 
     //  parse
     NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
-    if (fields.size() < 3) {
-        CObjReaderLineException err(
-            eDiag_Error,
-            0,
-            "Bad data line: Insuffixient column count." );
-        throw( err );
-    }
+    xCleanColumnValues(fields);
 
-    // better 'chr 8' fixup
-    if( NStr::EqualNocase(fields[0], "chr") ) {
-        fields[1] = fields[0] + fields[1];
-        fields.erase( fields.begin() );
-    }
     if (fields.size() != m_columncount) {
         if ( 0 == m_columncount ) {
             m_columncount = fields.size();
@@ -429,11 +418,7 @@ void CBedReader::x_SetFeatureLocation(
 
     //already established: We got at least three columns
     try {
-		string cleaned_from;
-		NStr::Replace(fields[1], ",", "", cleaned_from);
-        // BED 0-based 1st-point-in to ASN 0-based 1st-point-in
-        //  no conversion necessary
-        from = NStr::StringToInt(cleaned_from);
+        from = NStr::StringToInt(fields[1]) - 1;
     }
     catch ( ... ) {
         CObjReaderLineException err( 
@@ -443,11 +428,7 @@ void CBedReader::x_SetFeatureLocation(
         throw( err );
     }
     try {
-    	string cleaned_to;
-		NStr::Replace(fields[2], ",", "", cleaned_to);
-        // BED 0-based 1st-point-out to ASN 0-based last-point-in
-        //  need substract 1
-        to = NStr::StringToInt(cleaned_to) - 1;
+        to = NStr::StringToInt(fields[2]) - 1;
     }
     catch ( ... ) {
         CObjReaderLineException err( 
@@ -484,6 +465,7 @@ void CBedReader::x_SetFeatureLocation(
     location->SetId(*id);
     feature->SetLocation(*location);
 }
+
 //  ----------------------------------------------------------------------------
 void CBedReader::x_SetTrackData(
     CRef<CSeq_annot>& annot,
@@ -528,6 +510,214 @@ CBedReader::xProcessError(
     err.SetLineNumber(m_uLineNumber);
     m_ErrorsPrivate.PutError(err);
     ProcessError(err, pContainer);
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xGetLine(
+    ILineReader& lr,
+    string& line)
+//  ----------------------------------------------------------------------------
+{
+    while (!lr.AtEOF()) {
+        line = *++lr;
+        if (!xCommentLine(line)) {
+            return true;
+        }
+    }
+	return false;
+}
+
+//  ----------------------------------------------------------------------------
+inline bool CBedReader::xCommentLine(
+    const string& line) const
+//  ----------------------------------------------------------------------------
+{
+    char c = line.data()[0];
+    return c == '#' || c == '\0';
+}
+
+//  ----------------------------------------------------------------------------
+bool 
+CBedReader::ReadTrackData(
+    ILineReader& lr,
+    CRawBedTrack& rawdata,
+    IErrorContainer* pErrorContainer)
+//  ----------------------------------------------------------------------------
+{
+    string line;
+    while (xGetLine(lr, line)) {
+        if (line == "browser"  ||  NStr::StartsWith(line, "browser ")) {
+            continue;
+        }
+        if (line == "track"  ||  NStr::StartsWith(line, "track ")) {
+            continue;
+        }
+        //data line
+        lr.UngetLine();
+        return xReadBedDataRaw(lr, rawdata, pErrorContainer);
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::xReadBedRecordRaw(
+    const string& line,
+    CRawBedRecord& record,
+    IErrorContainer* pErrorContainer)
+//  ----------------------------------------------------------------------------
+{
+    //Note to self:
+    //Return "false" if this looks legal but isn't a record.
+    //Throw if it is "recognized" as plain junk
+    //
+    if (line == "browser"  || NStr::StartsWith(line, "browser ")) {
+        return false;
+    }
+    if (line == "track"  || NStr::StartsWith(line, "track ")) {
+        return false;
+    }
+
+    vector<string> columns;
+	string linecopy = line;
+	NStr::TruncateSpacesInPlace(linecopy);
+
+    //  parse
+    NStr::Tokenize( linecopy, " \t", columns, NStr::eMergeDelims );
+    xCleanColumnValues(columns);
+
+    if (columns.size() != m_columncount) {
+        if ( 0 == m_columncount ) {
+            m_columncount = columns.size();
+        }
+        else {
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Bad data line: Inconsistent column count." );
+            throw( err );
+        }
+    }
+
+    //assign columns to record:
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(columns[0]);
+
+    unsigned int start;
+    try {
+        start = NStr::StringToInt(columns[1]);
+    }
+    catch (...) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
+        throw( err );
+    }
+
+    unsigned int stop;
+    try {
+        stop = NStr::StringToInt(columns[2]);
+    }
+    catch (...) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
+        throw( err );
+    }
+
+    int score(-1);
+    if (m_columncount >= 5) {
+        try {
+            score = NStr::StringToInt(columns[4]);
+        }
+        catch (...) {
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "Bad data line: Invalid \"Score\" (column 5) value." );
+            throw( err );
+        }
+    }
+    ENa_strand strand = eNa_strand_plus;
+    if (m_columncount >= 6) {
+        if (columns[5] == "-") {
+            strand = eNa_strand_minus;
+        }
+    }
+    record.SetInterval(*id, start, stop, strand);
+    if (score >= 0) {
+        record.SetScore(score);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::xReadBedDataRaw(
+    ILineReader& lr,
+    CRawBedTrack& rawdata,
+    IErrorContainer* pErrorContainer)
+//  ----------------------------------------------------------------------------
+{
+    rawdata.Reset();
+
+    string line;
+    while (xGetLine(lr, line)) {
+        CRawBedRecord record;
+        if (!xReadBedRecordRaw(line, record, pErrorContainer)) {
+            lr.UngetLine();
+            break;
+        }
+        rawdata.AddRecord(record);
+    }
+
+    return rawdata.HasData();
+}
+
+//  ----------------------------------------------------------------------------
+void
+CBedReader::xCleanColumnValues(
+   vector<string>& columns)
+//  ----------------------------------------------------------------------------
+{
+    string fixup;
+
+    if (NStr::EqualNocase(columns[0], "chr")  &&  columns.size() > 1) {
+        columns[1] = columns[0] + columns[1];
+        columns.erase(columns.begin());
+    }
+    if (columns.size() < 3) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Insuffixient column count." );
+        throw( err );
+    }
+
+    try {
+        NStr::Replace(columns[1], ",", "", fixup);
+        columns[1] = fixup;
+    }
+    catch (...) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
+        throw( err );
+    }
+
+    try {
+        NStr::Replace(columns[2], ",", "", fixup);
+        columns[2] = fixup;
+    }
+    catch (...) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
+        throw( err );
+    }
 }
 
 END_objects_SCOPE

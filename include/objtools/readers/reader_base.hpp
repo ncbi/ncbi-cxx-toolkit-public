@@ -65,6 +65,8 @@ public:
         fAllIdsAsLocal      = 1<1,
 
         fNextInLine = 1<2,
+
+        fAsRaw = 1<<3,
     };
     enum ObjectType {
         OT_UNKNOWN,
@@ -166,7 +168,7 @@ public:
     ReadSeqEntry(
         ILineReader& lr,
         IErrorContainer* pErrors=0 );
-                
+       
 protected:
     virtual void x_AssignTrackData(
         CRef<CSeq_annot>& );

@@ -168,6 +168,89 @@ CWiggleReader::ReadSeqAnnots(
 }
 
 //  ----------------------------------------------------------------------------
+bool 
+CWiggleReader::ReadTrackData(
+    ILineReader& lr,
+    CRawWiggleTrack& rawdata,
+    IErrorContainer* pErrorContainer)
+//  ----------------------------------------------------------------------------
+{
+    while (xGetLine(lr)) {
+        CTempString word = xGetWord(pErrorContainer);
+        if (word == "browser") {
+            continue;
+        }
+        if (word == "track") {
+            continue;
+        }
+        if (word == "fixedStep") {
+            return xReadFixedStepDataRaw(lr, rawdata, pErrorContainer);
+        }
+        if (word == "variableStep") {
+            return xReadVariableStepDataRaw(lr, rawdata, pErrorContainer);
+        }
+        //data line
+        continue;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CWiggleReader::xReadFixedStepDataRaw(
+    ILineReader& lr,
+    CRawWiggleTrack& rawdata,
+    IErrorContainer* pErrorContainer)
+//  ----------------------------------------------------------------------------
+{
+    rawdata.Reset();
+
+    SFixedStepInfo fixedStepInfo;
+    xGetFixedStepInfo(fixedStepInfo, pErrorContainer);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(fixedStepInfo.mChrom);
+    unsigned int pos(fixedStepInfo.mStart);
+    while (xGetLine(lr)) {
+        double value(0);
+        if (!xTryGetDouble(value, pErrorContainer)) {
+            lr.UngetLine();
+            break;
+        }
+        rawdata.AddRecord(
+            CRawWiggleRecord(*id, pos, fixedStepInfo.mSpan, value));
+        pos += fixedStepInfo.mStep;
+    }
+    return rawdata.HasData();
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CWiggleReader::xReadVariableStepDataRaw(
+    ILineReader& lr,
+    CRawWiggleTrack& rawdata,
+    IErrorContainer* pErrorContainer)
+//  ----------------------------------------------------------------------------
+{
+    rawdata.Reset();
+
+    SVarStepInfo varStepInfo;
+    xGetVarStepInfo(varStepInfo, pErrorContainer);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(varStepInfo.mChrom);
+    while (xGetLine(lr)) {
+        unsigned int pos(0);
+        if (!xTryGetPos(pos, pErrorContainer)) {
+            lr.UngetLine();
+            break;
+        }
+        xSkipWS();
+        double value(0);
+        xGetDouble(value, pErrorContainer);
+        rawdata.AddRecord(
+            CRawWiggleRecord(*id, pos, varStepInfo.mSpan, value));
+    }
+    return rawdata.HasData();
+}
+
+//  ----------------------------------------------------------------------------
 void
 CWiggleReader::xProcessError(
     CObjReaderLineException& err,
@@ -178,9 +261,9 @@ CWiggleReader::xProcessError(
     ProcessError(err, pContainer);
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 double CWiggleReader::xEstimateSize(size_t rows, bool fixed_span) const
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     double ret = 0;
     ret += rows*4;
@@ -193,9 +276,9 @@ double CWiggleReader::xEstimateSize(size_t rows, bool fixed_span) const
     return ret;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xPreprocessValues(SWiggleStat& stat)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     bool sorted = true;
     size_t size = m_Values.size();
@@ -270,17 +353,17 @@ void CWiggleReader::xPreprocessValues(SWiggleStat& stat)
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_id> CWiggleReader::xMakeChromId()
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_id> id = CReadUtil::AsSeqId(m_ChromId);
     return id;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xSetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( m_Values.empty() ) {
         loc.SetEmpty(chrom_id);
@@ -293,9 +376,9 @@ void CWiggleReader::xSetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id)
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_table> CWiggleReader::xMakeTable(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_table> table(new CSeq_table);
 
@@ -412,9 +495,9 @@ CRef<CSeq_table> CWiggleReader::xMakeTable(void)
     return table;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_graph> CWiggleReader::xMakeGraph(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_graph> graph(new CSeq_graph);
 
@@ -466,9 +549,9 @@ CRef<CSeq_graph> CWiggleReader::xMakeGraph(void)
     return graph;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot> CWiggleReader::xMakeAnnot(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
     if ( !m_TrackDescription.empty() ) {
@@ -496,35 +579,35 @@ CRef<CSeq_annot> CWiggleReader::xMakeAnnot(void)
     return annot;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot> CWiggleReader::xMakeTableAnnot(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot = xMakeAnnot();
     annot->SetData().SetSeq_table(*xMakeTable());
     return annot;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot> CWiggleReader::xMakeGraphAnnot(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot = xMakeAnnot();
     annot->SetData().SetGraph().push_back(xMakeGraph());
     return annot;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xResetChromValues(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     m_ChromId.clear();
     m_Values.clear();
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 bool CWiggleReader::xSkipWS(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.data();
     size_t skip = 0;
@@ -538,18 +621,18 @@ bool CWiggleReader::xSkipWS(void)
     return !m_CurLine.empty();
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 inline bool CWiggleReader::xCommentLine(void) const
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     char c = m_CurLine.data()[0];
     return c == '#' || c == '\0';
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CTempString CWiggleReader::xGetWord(
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.data();
     size_t skip = 0;
@@ -570,10 +653,10 @@ CTempString CWiggleReader::xGetWord(
     return CTempString(ptr, skip);
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CTempString CWiggleReader::xGetParamName(
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.data();
     size_t skip = 0;
@@ -595,10 +678,10 @@ CTempString CWiggleReader::xGetParamName(
     return CTempString();
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CTempString CWiggleReader::xGetParamValue(
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.data();
     size_t len = m_CurLine.size();
@@ -620,11 +703,11 @@ CTempString CWiggleReader::xGetParamValue(
     return xGetWord(pErrorContainer);
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xGetPos(
     TSeqPos& v,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     TSeqPos ret = 0;
     const char* ptr = m_CurLine.data();
@@ -648,9 +731,9 @@ void CWiggleReader::xGetPos(
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 bool CWiggleReader::xTryGetDoubleSimple(double& v)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     double ret = 0;
     const char* ptr = m_CurLine.data();
@@ -712,11 +795,11 @@ bool CWiggleReader::xTryGetDoubleSimple(double& v)
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 bool CWiggleReader::xTryGetDouble(
     double& v,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( xTryGetDoubleSimple(v) ) {
         return true;
@@ -738,11 +821,11 @@ bool CWiggleReader::xTryGetDouble(
     return true;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 inline bool CWiggleReader::xTryGetPos(
     TSeqPos& v,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     char c = m_CurLine.data()[0];
     if ( c < '0' || c > '9' ) {
@@ -752,11 +835,11 @@ inline bool CWiggleReader::xTryGetPos(
     return true;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 inline void CWiggleReader::xGetDouble(
     double& v,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( !xTryGetDouble(v, pErrorContainer) ) {
         CObjReaderLineException err(
@@ -767,10 +850,10 @@ inline void CWiggleReader::xGetDouble(
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 bool CWiggleReader::xGetLine(
     ILineReader& lr)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     while (!lr.AtEOF()) {
         m_CurLine = *++lr;
@@ -781,9 +864,9 @@ bool CWiggleReader::xGetLine(
 	return false;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot> CWiggleReader::xGetAnnot()
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( m_ChromId.empty() ) {
         return CRef<CSeq_annot>();
@@ -799,9 +882,9 @@ CRef<CSeq_annot> CWiggleReader::xGetAnnot()
     return pAnnot;
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xDumpChromValues(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( m_ChromId.empty() ) {
         return;
@@ -822,9 +905,9 @@ void CWiggleReader::xDumpChromValues(void)
     xResetChromValues();
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xSetChrom(CTempString chrom)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     if ( chrom != m_ChromId ) {
         xDumpChromValues();
@@ -832,16 +915,16 @@ void CWiggleReader::xSetChrom(CTempString chrom)
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xReadBrowser(void)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xReadTrack(
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     m_TrackName = "User Track";
     m_TrackDescription.clear();
@@ -952,12 +1035,12 @@ void CWiggleReader::xGetFixedStepInfo(
     }
 }
 
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 void CWiggleReader::xReadFixedStepData(
     const SFixedStepInfo& fixedStepInfo,
     ILineReader& lr,
     IErrorContainer* pErrorContainer)
-//  =========================================================================
+//  ----------------------------------------------------------------------------
 {
     xSetChrom(fixedStepInfo.mChrom);
     SValueInfo value;

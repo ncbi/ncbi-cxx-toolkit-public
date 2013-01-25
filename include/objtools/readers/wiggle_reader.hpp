@@ -35,6 +35,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -143,6 +146,88 @@ struct SWiggleStat {
 };
 
 //  ----------------------------------------------------------------------------
+class CRawWiggleRecord
+//  ----------------------------------------------------------------------------
+{
+public:
+    CRawWiggleRecord(
+        CSeq_id& id,
+        unsigned int start,
+        unsigned int span,
+        double value) 
+    {
+        m_pInterval.Reset(new CSeq_interval());
+        m_pInterval->SetId(id);
+        m_pInterval->SetFrom(start-1);
+        m_pInterval->SetTo(start+span-1);
+        m_value = value;
+    };
+    
+    ~CRawWiggleRecord() {};
+
+    void Dump(
+        CNcbiOstream& ostr) const
+    {
+        ostr << "  [CRawWiggleRecord ";
+        ostr << "id=\"" << m_pInterval->GetId().AsFastaString() << "\" ";
+        ostr << "start=" << m_pInterval->GetFrom() << " ";
+        ostr << "stop=" << m_pInterval->GetTo() << " ";
+        ostr << "value=" << m_value << "]" << endl;
+    }
+
+public:
+    CRef<CSeq_interval> m_pInterval;
+    double m_value;
+};
+
+//  ----------------------------------------------------------------------------
+class CRawWiggleTrack
+//  ----------------------------------------------------------------------------
+{
+public:
+    CRawWiggleTrack() {};
+    ~CRawWiggleTrack() {};
+
+public:
+    void Reset()
+    {
+        m_pId.Reset();
+        m_Records.clear();
+    }
+
+    void Dump(
+        CNcbiOstream& ostr) const
+    {
+        ostr << "[CRawWiggleTrack" << endl;
+        for (vector<CRawWiggleRecord>::const_iterator it = m_Records.begin();
+                it != m_Records.end(); ++it) {
+            it->Dump(ostr);
+        }
+        ostr << "]" << std::endl;
+    }
+
+    void AddRecord(
+        CRawWiggleRecord record)
+    {
+        m_Records.push_back(record);
+    }
+
+    const vector<CRawWiggleRecord>& Records() const
+    {
+        return m_Records;
+    }
+
+    bool HasData() const
+    {
+        return (!m_Records.empty());
+    }
+
+public:
+    CRef<CSeq_id> m_pId;
+    vector<CRawWiggleRecord> m_Records;
+};
+
+//  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CWiggleReader
 //  ----------------------------------------------------------------------------
     : public CReaderBase
@@ -166,7 +251,8 @@ public:
         fJoinSame = 1<<0,
         fAsByte = 1<<1,
         fAsGraph = 1<<2,
-        fDumpStats = 1<<3
+        fDumpStats = 1<<3,
+        fAsRaw = 1<<4,
     };
     typedef int TFlags;
 
@@ -191,7 +277,13 @@ public:
     ReadObject(
         ILineReader&,
         IErrorContainer* =0 );
-                
+         
+    virtual bool 
+    ReadTrackData(
+        ILineReader&,
+        CRawWiggleTrack&,
+        IErrorContainer* =0 );
+
     //
     //  helpers:
     //
@@ -219,6 +311,12 @@ protected:
         ILineReader&,
         IErrorContainer*);
     
+    bool
+    xReadFixedStepDataRaw(
+        ILineReader&,
+        CRawWiggleTrack&,
+        IErrorContainer*);
+
     void
     xGetVarStepInfo(
         SVarStepInfo&,
@@ -228,6 +326,12 @@ protected:
     xReadVariableStepData(
         const SVarStepInfo&,
         ILineReader&,
+        IErrorContainer*);
+
+    bool
+    xReadVariableStepDataRaw(
+        ILineReader&,
+        CRawWiggleTrack&,
         IErrorContainer*);
 
     void 

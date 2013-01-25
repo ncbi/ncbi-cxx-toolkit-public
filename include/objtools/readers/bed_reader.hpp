@@ -37,11 +37,108 @@
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/error_container.hpp>
 #include <objects/seq/Seq_annot.hpp>
-
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
+
+//  ----------------------------------------------------------------------------
+class CRawBedRecord
+//  ----------------------------------------------------------------------------
+{
+public:
+    CRawBedRecord(): m_score(-1) {};
+
+    void SetInterval(
+        CSeq_id& id,
+        unsigned int start,
+        unsigned int stop,
+        ENa_strand strand)
+    {
+        m_pInterval.Reset(new CSeq_interval());
+        m_pInterval->SetId(id);
+        m_pInterval->SetFrom(start-1);
+        m_pInterval->SetTo(stop-2);
+        m_pInterval->SetStrand(strand);
+    };
+
+    void SetScore(
+        unsigned int score)
+    {
+        m_score = score;
+    };
+
+    ~CRawBedRecord() {};
+
+    void Dump(
+        CNcbiOstream& ostr) const
+    {
+        ostr << "  [CRawBedRecord" << endl;
+        ostr << "id=\"" << m_pInterval->GetId().AsFastaString() << "\" ";
+        ostr << "start=" << m_pInterval->GetFrom() << " ";
+        ostr << "stop=" << m_pInterval->GetTo() << " ";
+        ostr << "strand=" << 
+            (m_pInterval->GetStrand() == eNa_strand_minus ? "-" : "+") << " ";
+        if (m_score >= 0) {
+            ostr << "score=" << m_score << " ";
+        }
+        ostr << "]" << endl;
+    }
+
+public:
+    CRef<CSeq_interval> m_pInterval;
+    int m_score;
+};
+
+//  ----------------------------------------------------------------------------
+class CRawBedTrack
+//  ----------------------------------------------------------------------------
+{
+public:
+    CRawBedTrack() {};
+    ~CRawBedTrack() {};
+
+public:
+    void Reset() 
+    {
+        m_Records.clear();
+    };
+
+    void Dump(
+        CNcbiOstream& ostr) const
+    {
+        ostr << "[CRawBedTrack" << endl;
+        for (vector<CRawBedRecord>::const_iterator it = m_Records.begin();
+                it != m_Records.end(); ++it) {
+            it->Dump(ostr);
+        }
+        ostr << "]" << std::endl;
+    }
+
+    void AddRecord(
+        CRawBedRecord& record)
+    {
+        m_Records.push_back(record);
+    }
+
+    const vector<CRawBedRecord>& Records() const
+    {
+        return m_Records;
+    }
+
+    bool HasData() const
+    {
+        return (!m_Records.empty());
+    }
+
+public:
+    CRef<CSeq_id> m_pId;
+    vector<CRawBedRecord> m_Records;
+};
+
 
 //  ----------------------------------------------------------------------------
 /// CReaderBase implementation that reads BED data files, either a single object
@@ -124,6 +221,12 @@ public:
         ILineReader& lr,
         IErrorContainer* pErrors=0 );
                         
+    virtual bool 
+    ReadTrackData(
+        ILineReader&,
+        CRawBedTrack&,
+        IErrorContainer* =0 );
+
 protected:
     virtual bool xParseTrackLine(
         const string&,
@@ -160,6 +263,29 @@ protected:
         CObjReaderLineException&,
         IErrorContainer* );
 
+    bool
+    xReadBedDataRaw(
+        ILineReader&,
+        CRawBedTrack&,
+        IErrorContainer*);
+
+    bool
+    xReadBedRecordRaw(
+        const string&,
+        CRawBedRecord&,
+        IErrorContainer*);
+
+    bool 
+    xGetLine(
+        ILineReader&,
+        string&);
+
+    bool 
+    xCommentLine(
+        const string&) const;
+
+    static void xCleanColumnValues(
+        vector<string>&);
     //
     //  data:
     //
