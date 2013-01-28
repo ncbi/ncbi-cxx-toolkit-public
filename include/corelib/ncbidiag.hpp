@@ -688,61 +688,80 @@ enum EDiagSevChange {
 /// @sa
 ///   SDiagMessage::Compose()
 enum EDiagPostFlag {
-    eDPF_File               = 0x1, ///< Set by default #if _DEBUG; else not set
-    eDPF_LongFilename       = 0x2, ///< Set by default #if _DEBUG; else not set
-    eDPF_Line               = 0x4, ///< Set by default #if _DEBUG; else not set
-    eDPF_Prefix             = 0x8, ///< Set by default (always)
-    eDPF_Severity           = 0x10,  ///< Set by default (always)
-    eDPF_ErrorID            = 0x20,  ///< Module, error code and subcode
-    eDPF_DateTime           = 0x80,  ///< Include date and time
-    eDPF_ErrCodeMessage     = 0x100, ///< Set by default (always)
-    eDPF_ErrCodeExplanation = 0x200, ///< Set by default (always)
-    eDPF_ErrCodeUseSeverity = 0x400, ///< Set by default (always)
-    eDPF_Location           = 0x800, ///< Include class and function
-                                     ///< if any, not set by default
-    eDPF_PID                = 0x1000,  ///< Process ID
-    eDPF_TID                = 0x2000,  ///< Thread ID
-    eDPF_SerialNo           = 0x4000,  ///< Serial # of the post, process-wide
-    eDPF_SerialNo_Thread    = 0x8000,  ///< Serial # of the post, in the thread
-    eDPF_RequestId          = 0x10000, ///< fcgi iteration number or request ID
-    eDPF_Iteration          = 0x10000, ///< @deprecated
-    eDPF_UID                = 0x20000, ///< UID of the log
+    eDPF_File               = 1 << 0,  ///< Set by default #if _DEBUG; else not set
+    eDPF_LongFilename       = 1 << 1,  ///< Set by default #if _DEBUG; else not set
+    eDPF_Line               = 1 << 2,  ///< Set by default #if _DEBUG; else not set
+    eDPF_Prefix             = 1 << 3,  ///< Set by default (always)
+    eDPF_Severity           = 1 << 4,  ///< Set by default (always)
+    eDPF_ErrorID            = 1 << 5,  ///< Module, error code and subcode
+
+    eDPF_DateTime           = 1 << 7,  ///< Include date and time
+    eDPF_ErrCodeMessage     = 1 << 8,  ///< Set by default (always)
+    eDPF_ErrCodeExplanation = 1 << 9,  ///< Set by default (always)
+    eDPF_ErrCodeUseSeverity = 1 << 10, ///< Set by default (always)
+    eDPF_Location           = 1 << 11, ///< Include class and function
+                                       ///< if any, not set by default
+    eDPF_PID                = 1 << 12, ///< Process ID
+    eDPF_TID                = 1 << 13, ///< Thread ID
+    eDPF_SerialNo           = 1 << 14, ///< Serial # of the post, process-wide
+    eDPF_SerialNo_Thread    = 1 << 15, ///< Serial # of the post, in the thread
+    eDPF_RequestId          = 1 << 16, ///< fcgi iteration number or request ID
+    eDPF_Iteration          = eDPF_RequestId, ///< @deprecated
+    eDPF_UID                = 1 << 17, ///< UID of the log
 
     eDPF_ErrCode            = eDPF_ErrorID,  ///< @deprecated
     eDPF_ErrSubCode         = eDPF_ErrorID,  ///< @deprecated
+
     /// All flags (except for the "unusual" ones!)
-    eDPF_All                = 0xFFFFF,
+    eDPF_All                = 0x7FFFF,
 
     /// Default flags to use when tracing.
 #if defined(NCBI_THREADS)
-    eDPF_Trace              = 0xF81F,
+    eDPF_Trace              = eDPF_File |
+                              eDPF_LongFilename |
+                              eDPF_Line |
+                              eDPF_Prefix |
+                              eDPF_Severity |
+                              eDPF_Location |
+                              eDPF_PID |
+                              eDPF_TID |
+                              eDPF_SerialNo |
+                              eDPF_SerialNo_Thread,
 #else
-    eDPF_Trace              = 0x581F,
+    eDPF_Trace              = eDPF_File |
+                              eDPF_LongFilename |
+                              eDPF_Line |
+                              eDPF_Prefix |
+                              eDPF_Severity |
+                              eDPF_Location |
+                              eDPF_PID |
+                              eDPF_SerialNo,
 #endif
 
     /// Print the posted message only; without severity, location, prefix, etc.
-    eDPF_Log                = 0x0,
+    eDPF_Log                = 0,
 
     // "Unusual" flags -- not included in "eDPF_All"
-    eDPF_PreMergeLines      = 0x100000, ///< Remove EOLs before calling handler
-    eDPF_MergeLines         = 0x200000, ///< Ask diag.handlers to remove EOLs
-    eDPF_OmitInfoSev        = 0x400000, ///< No sev. indication if eDiag_Info
-    eDPF_OmitSeparator      = 0x800000, ///< No '---' separator before message
+    eDPF_ErrCodeMsgInFront  = 1 << 19, ///< Put ErrCode text in front of the message
+    eDPF_PreMergeLines      = 1 << 20, ///< Remove EOLs before calling handler
+    eDPF_MergeLines         = 1 << 21, ///< Ask diag.handlers to remove EOLs
+    eDPF_OmitInfoSev        = 1 << 22, ///< No sev. indication if eDiag_Info
+    eDPF_OmitSeparator      = 1 << 23, ///< No '---' separator before message
 
-    eDPF_AppLog             = 0x1000000, ///< Post message to application log
-    eDPF_IsMessage          = 0x2000000, ///< Print "Message" severity name.
+    eDPF_AppLog             = 1 << 24, ///< Post message to application log
+    eDPF_IsMessage          = 1 << 25, ///< Print "Message" severity name.
 
     /// Hint for the current handler to make message output as atomic as
     /// possible (e.g. for stream and file handlers).
-    eDPF_AtomicWrite        = 0x4000000,
+    eDPF_AtomicWrite        = 1 << 26,
 
     /// Send the message to 'console' regardless of it's severity.
     /// To be set by 'Console' manipulator only.
-    eDPF_IsConsole          = 0x8000000,
+    eDPF_IsConsole          = 1 << 27,
 
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
-    eDPF_Default            = 0x10000000,
+    eDPF_Default            = 1 << 28,
 
     /// Important bits which should be taken from the globally set flags
     /// even if a user attempts to override (or forgets to set) them
@@ -755,7 +774,7 @@ enum EDiagPostFlag {
 
     /// Use flags provided by user as-is, do not allow CNcbiDiag to replace
     /// "important" flags by the globally set ones.
-    eDPF_UseExactUserFlags  = 0x20000000
+    eDPF_UseExactUserFlags  = 1 << 29
 };
 
 typedef int TDiagPostFlags;  ///< Binary OR of "EDiagPostFlag"

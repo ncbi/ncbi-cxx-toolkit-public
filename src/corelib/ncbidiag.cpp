@@ -4204,7 +4204,14 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
         ostr.put('\0');
         src = ostr.str();
         ostr.rdbuf()->freeze(false);
-        NStr::Replace(NStr::Replace(src,"\r",""),"\n","", dest);
+        if (src.find_first_of("\r\n") != NPOS) {
+            list<string> lines;
+            NStr::Split(src, "\r\n", lines);
+            dest = NStr::Join(lines, " ");
+        }
+        else {
+            dest = src;
+        }
         os << dest;
         if ((flags & fNoEndl) == 0) {
             os << NcbiEndl;
@@ -4379,6 +4386,7 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
          (m_Function  &&  *m_Function))
         && IsSetDiagPostFlag(eDPF_Location, m_Flags);
 
+    bool need_separator = false;
     if (print_location) {
         // Module:: Module::Class Module::Class::Function()
         // ::Class ::Class::Function()
@@ -4407,7 +4415,20 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
         if( need_double_colon )
             os << "::";
 
-        os << " - ";
+        os << " ";
+        need_separator = true;
+    }
+
+    bool err_text_prefix = (IsSetDiagPostFlag(eDPF_ErrCodeMsgInFront));
+    if (err_text_prefix  &&  have_description  &&
+        IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
+        !description.m_Message.empty()) {
+        os << "{" << description.m_Message << "} ";
+        need_separator = true;
+    }
+
+    if (need_separator) {
+        os << "- ";
     }
 
     // [<prefix1>::<prefix2>::.....]
@@ -4420,9 +4441,10 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
 
     // <err_code_message> and <err_code_explanation>
     if (have_description) {
-        if (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
+        if (!err_text_prefix  &&
+            IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
             !description.m_Message.empty())
-            os << NcbiEndl << description.m_Message << ' ';
+            os << NcbiEndl << description.m_Message;
         if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
             !description.m_Explanation.empty())
             os << NcbiEndl << description.m_Explanation;
