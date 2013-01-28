@@ -126,6 +126,8 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////
+class CChainerArgUtil;
+
 class NCBI_XALGOGNOMON_EXPORT CChainer : public CGnomonAnnotator_Base {
 public:
     CChainer();
@@ -164,6 +166,8 @@ private:
 
     class CChainerImpl;
     auto_ptr<CChainerImpl> m_data;
+
+    friend class CChainerArgUtil;
 };
 
 struct MarkupCappedEst : public TransformFunction {

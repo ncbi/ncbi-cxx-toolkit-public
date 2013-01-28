@@ -544,25 +544,6 @@ void RemoveTrailingNs::transform_model(CGeneModel& m)
         }
 }
 
-void CGeneSelectorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
-{
-    arg_desc->AddDefaultKey("intergenic","intergenic","Minimum intergenic distance",CArgDescriptions::eInteger,"20");
-    arg_desc->AddDefaultKey("altfrac","altfrac","The CDS length of the principal model in the gene is multiplied by this fraction. Alt variants with the CDS length above "
-                            "this are included in gene",CArgDescriptions::eDouble,"80.0");
-    arg_desc->AddDefaultKey("composite","composite","Maximal composite number in alts",CArgDescriptions::eInteger,"1");
-    arg_desc->AddFlag("opposite","Allow overlap of complete multiexon genes with opposite strands");
-    arg_desc->AddFlag("partialalts","Allows partial alternative variants. In combination with -nognomon will allow partial genes");
-}
-
-void CGeneSelectorArgUtil::ReadArgs(CGeneSelector* selector, const CArgs& args)
-{
-    selector->minIntergenic = args["intergenic"].AsInteger();
-    selector->altfrac = args["altfrac"].AsDouble();
-    selector->composite = args["composite"].AsInteger();
-    selector->allow_opposite_strand = args["opposite"];
-    selector->allow_partialalts = args["partialalts"];
-}
-
 void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
     arg_desc->AddFlag("nognomon","Skips ab initio prediction and ab initio extension of partial chains.");

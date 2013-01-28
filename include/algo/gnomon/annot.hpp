@@ -51,46 +51,15 @@ class CArgs;
 
 BEGIN_SCOPE(gnomon)
 
-class CAltSplice;
-
-class NCBI_XALGOGNOMON_EXPORT CModelFilters {
-public:
-    CModelFilters();
-
-    void FilterOutSingleExonEST(TGeneModelList& chains);
-    void FilterOutSimilarsWithLowerScore(TGeneModelList& cls, int tolerance, TGeneModelList& bad_aligns);
-    void FilterOutTandemOverlap(TGeneModelList&cls, double fraction, TGeneModelList& bad_aligns);
-    void FilterOutPartialModels(TGeneModelList&cls, TGeneModelList& bad_aligns);
-};
 
 class NCBI_XALGOGNOMON_EXPORT CGeneSelector {
 public:
     CGeneSelector();
-    bool IsPartialAltsAllowed() const { return allow_partialalts; }
 
     TGeneModelList SelectGenes(TGeneModelList& chains, TGeneModelList& bad_aligns);
-    void ReselectGenes(TGeneModelList& models, TGeneModelList& bad_aligns);
     void RenumGenes(TGeneModelList& models, int& gennum, int geninc);
 
 private:
-
-    void FindGeneSeeds(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet); 
-    void FindAltsForGeneSeeds(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet);
-    void PlaceAllYouCan(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet, TGeneModelList& rejected);
-
-    enum ECompat { eNotCompatible, eAlternative, eNested, eExternal, eOtherGene };
-    ECompat CheckCompatibility(const CAltSplice& gene, const CGeneModel& algn);
-
-    void FindAllCompatibleGenes(TGeneModelList& cls, list<CAltSplice>& alts,
-                                TGeneModelList& bad_aligns);
-
-    int minIntergenic;
-    double altfrac;
-    int composite;
-    bool allow_opposite_strand;
-    bool allow_partialalts;
-
-    friend class CGeneSelectorArgUtil;
 };
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotator : public CGnomonAnnotator_Base {
@@ -151,12 +120,6 @@ public:
     static bool BadOverlapTest(const CGeneModel& a, const CGeneModel& b);
     static bool RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn);
     static bool HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel& b);
-};
-
-class NCBI_XALGOGNOMON_EXPORT CGeneSelectorArgUtil {
-public:
-    static void SetupArgDescriptions(CArgDescriptions* arg_desc);
-    static void ReadArgs(CGeneSelector* annot, const CArgs& args);
 };
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonAnnotatorArgUtil {
