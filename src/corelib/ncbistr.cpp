@@ -5073,13 +5073,13 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 
 CStringUTF8::CStringUTF8(const CTempString& src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
-}
+} // NCBI_FAKE_WARNING
 CStringUTF8::CStringUTF8(const char* src ) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
-}
+} // NCBI_FAKE_WARNING
 CStringUTF8::CStringUTF8(const string& src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
-}
+} // NCBI_FAKE_WARNING
 
 string CStringUTF8::AsLatin1(const char* substitute_on_error) const
 {
