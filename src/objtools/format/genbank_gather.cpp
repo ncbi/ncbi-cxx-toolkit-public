@@ -114,6 +114,16 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         FuncName(); \
     }
 
+    // if there's a callback, let it know we've entered another bioseq
+    if( cfg.GetGenbankBlockCallback() ) {
+        CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip eBioseqSkip =
+            cfg.GetGenbankBlockCallback()->notify_bioseq( ctx );
+        if( eBioseqSkip == CFlatFileConfig::CGenbankBlockCallback::eBioseqSkip_Yes ) {
+            return;
+        }
+    }
+
+    // gather needed blocks
     GATHER_BLOCK(Head, CStartSectionItem);
     GATHER_ANCHOR(Locus, "locus");
     GATHER_BLOCK(Locus, CLocusItem);

@@ -60,6 +60,14 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip
+CFlatFileConfig::CGenbankBlockCallback::notify_bioseq( 
+    const CBioseqContext& ctx )
+{
+    // default is to do nothing; feel free to override it
+    return eBioseqSkip_No;
+}
+
 CFlatFileConfig::CGenbankBlockCallback::EAction 
 CFlatFileConfig::CGenbankBlockCallback::notify( 
     string & block_text,

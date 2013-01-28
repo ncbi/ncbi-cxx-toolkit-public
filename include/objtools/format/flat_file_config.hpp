@@ -220,7 +220,14 @@ public:
             eAction_HaltFlatfileGeneration
         };
 
+        enum EBioseqSkip {
+            eBioseqSkip_No,
+            eBioseqSkip_Yes
+        };
+
         virtual ~CGenbankBlockCallback(void) { }
+
+        virtual EBioseqSkip notify_bioseq( const CBioseqContext& ctx );
 
         // please note that these notify functions let you change the block_text
         virtual EAction notify( string & block_text,

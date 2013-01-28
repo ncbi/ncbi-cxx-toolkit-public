@@ -863,6 +863,12 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
                 x_PrintAverageStats();
             }
 
+        virtual EBioseqSkip notify_bioseq( const CBioseqContext & ctx )
+        {
+            cerr << "notify_bioseq called." << endl;
+            return eBioseqSkip_No;
+        }
+
         // this macro is the lesser evil compared to the messiness that
         // you would see here otherwise. (plus it's less error-prone)
 #define SIMPLE_CALLBACK_NOTIFY(TItemClass) \
