@@ -70,6 +70,12 @@ void CThreadPoolTester::Init(void)
     arg_desc->AddDefaultKey("queue_size", "N",
                             "how many jobs to allow in the queue",
                             CArgDescriptions::eInteger, "2");
+    arg_desc->AddDefaultKey("thread_pool_timeout", "N",
+                            "WaitForRoom() timeout argument (in ms)",
+                            CArgDescriptions::eInteger, "30");
+    arg_desc->AddDefaultKey("max_processing_time", "N",
+                            "maximum request processing time in ms",
+                            CArgDescriptions::eInteger, "5");
 
     SetupArgDescriptions(arg_desc.release());
 
@@ -79,21 +85,26 @@ void CThreadPoolTester::Init(void)
 class CTestRequest : public CStdRequest
 {
 public:
-    CTestRequest(int i) { m_Serial = i; }
+    CTestRequest(int serial, int max_processing_time) :
+        m_Serial(serial),
+        m_MaxProcessingTime(max_processing_time)
+    {
+    }
 
 protected:
     void Process(void);
 
 private:
     int m_Serial;
+    int m_MaxProcessingTime;
 };
 
 void CTestRequest::Process(void)
 {
-    int duration = s_RNG.GetRand(0, 5);
-    LOG_POST("Request " << m_Serial << ": " << duration);
-    SleepSec(duration);
-    LOG_POST("Request " << m_Serial << " complete");
+    int duration = s_RNG.GetRand(0, m_MaxProcessingTime);
+    //LOG_POST("Request " << m_Serial << ": " << duration);
+    SleepMilliSec(duration);
+    //LOG_POST("Request " << m_Serial << " complete");
 }
 
 int CThreadPoolTester::Run(void)
@@ -105,11 +116,25 @@ int CThreadPoolTester::Run(void)
                            args["queue_size"].AsInteger());
     pool.Spawn(args["init_threads"].AsInteger());
 
+    unsigned wait_timeout_ms =
+            (unsigned) args["thread_pool_timeout"].AsInteger();
+    unsigned wait_timeout_s = wait_timeout_ms / 1000;
+    unsigned wait_timeout_ns = (wait_timeout_ms % 1000) * 1000 * 1000;
+
+    int max_processing_time = args["max_processing_time"].AsInteger();
+
     try {
         for (int i = 0;  i < args["requests"].AsInteger();  ++i) {
-            pool.WaitForRoom();
-            LOG_POST("Request " << (i + 1) << " to be queued");
-            pool.AcceptRequest(CRef<CStdRequest>(new CTestRequest(i + 1)));
+            try {
+                pool.WaitForRoom(wait_timeout_s, wait_timeout_ns);
+            }
+            catch (CBlockingQueueException&) {
+                continue;
+            }
+
+            //LOG_POST("Request " << (i + 1) << " to be queued");
+            pool.AcceptRequest(CRef<CStdRequest>(new CTestRequest(i + 1,
+                    max_processing_time)));
         }
     } STD_CATCH_ALL("CThreadPoolTester: status " << (status = 1))
 
