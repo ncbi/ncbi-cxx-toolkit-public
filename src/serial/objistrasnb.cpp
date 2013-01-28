@@ -59,8 +59,9 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary)
 {
+    FixNonPrint(how);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
@@ -72,8 +73,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary)
 {
+    FixNonPrint(how);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
@@ -87,8 +89,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  bool deleteIn,
                                                  EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary)
 {
+    FixNonPrint(how);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
@@ -102,8 +105,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  EOwnership deleteIn,
                                                  EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary)
 {
+    FixNonPrint(how);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
@@ -116,8 +120,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
                                                  EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary)
 {
+    FixNonPrint(how);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
@@ -131,8 +136,9 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(const char* buffer,
                                                  size_t size,
                                                  EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary)
 {
+    FixNonPrint(how);
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
@@ -713,7 +719,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
     if ( length > BUFFER_SIZE || length > pack_string.GetLengthLimit() ) {
         pack_string.Skipped();
         ReadStringValue(length, s,
-                        type == eStringTypeVisible? m_FixMethod: eFNP_Allow);
+                        type == eStringTypeVisible? x_FixCharsMethod(): eFNP_Allow);
     }
     else {
         ReadBytes(buffer, length);
@@ -725,7 +731,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
         }
         else {
             if ( type == eStringTypeVisible &&
-                 FixVisibleChars(buffer, length, m_FixMethod) ) {
+                 FixVisibleChars(buffer, length, x_FixCharsMethod()) ) {
                 // do not remember fixed strings
                 pack_string.Pack(s, buffer, length);
                 return;
@@ -739,7 +745,7 @@ void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 {
     ExpectStringTag(type);
     ReadStringValue(ReadLength(), s,
-                    type == eStringTypeVisible? m_FixMethod: eFNP_Allow);
+                    type == eStringTypeVisible? x_FixCharsMethod(): eFNP_Allow);
 }
 
 
@@ -778,7 +784,7 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     char* s = static_cast<char*>(malloc(length + 1));
     ReadBytes(s, length);
     s[length] = 0;
-    FixVisibleChars(s, length, m_FixMethod);
+    FixVisibleChars(s, length, x_FixCharsMethod());
     EndOfTag();
     return s;
 }

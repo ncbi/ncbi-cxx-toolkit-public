@@ -174,7 +174,7 @@ enum EFixNonPrint {
     eFNP_Throw,            ///< replace with '#', throw an exception
     eFNP_Abort,            ///< replace with '#', post an error of severity FATAL
 
-    eFNP_Default = eFNP_ReplaceAndWarn
+    eFNP_Default
 };
 
 /// String type

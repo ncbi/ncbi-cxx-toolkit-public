@@ -67,9 +67,10 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnBinary, out), m_FixMethod(how),
+    : CObjectOStream(eSerial_AsnBinary, out),
       m_CStyleBigInt(false)
 {
+    FixNonPrint(how);
 #if CHECK_OUTSTREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
@@ -80,9 +81,10 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut,
                                                  EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnBinary, out, deleteOut), m_FixMethod(how),
+    : CObjectOStream(eSerial_AsnBinary, out, deleteOut),
       m_CStyleBigInt(false)
 {
+    FixNonPrint(how);
 #if CHECK_OUTSTREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
@@ -718,7 +720,7 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
     size_t length = str.size();
     WriteStringTag(type);
     WriteLength(length);
-    if ( type == eStringTypeVisible && m_FixMethod != eFNP_Allow ) {
+    if ( type == eStringTypeVisible && x_FixCharsMethod() != eFNP_Allow ) {
         size_t done = 0;
         for ( size_t i = 0; i < length; ++i ) {
             char c = str[i];
@@ -726,7 +728,7 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
                 if ( i > done ) {
                     WriteBytes(str.data() + done, i - done);
                 }
-                FixVisibleChar(c, m_FixMethod, this, str);
+                FixVisibleChar(c, x_FixCharsMethod(), this, str);
                 WriteByte(c);
                 done = i + 1;
             }
@@ -761,7 +763,7 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
             // Check the string for non-printable characters
             for (size_t i = 0; i < c; i++) {
                 if ( !GoodVisibleChar(buffer[i]) ) {
-                    FixVisibleChar(buffer[i], m_FixMethod, this, string(buffer,c));
+                    FixVisibleChar(buffer[i], x_FixCharsMethod(), this, string(buffer,c));
                 }
             }
         }
@@ -775,7 +777,7 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
                                          EStringType type)
 {
     // do we need to check symbols while copying?
-    // m_FixMethod != eFNP_Allow, type == eStringTypeVisible
+    // x_FixCharsMethod() != eFNP_Allow, type == eStringTypeVisible
     const bool checkVisible = false;
     WriteStringTag(type);
     if ( in.GetDataFormat() == eSerial_AsnBinary ) {
@@ -792,7 +794,7 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
             // Check the string for non-printable characters
             NON_CONST_ITERATE(string, i, str) {
                 if ( !GoodVisibleChar(*i) ) {
-                    FixVisibleChar(*i, m_FixMethod, this, str);
+                    FixVisibleChar(*i, x_FixCharsMethod(), this, str);
                 }
             }
         }
@@ -829,7 +831,7 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
         size_t length = strlen(str);
         WriteSysTag(eVisibleString);
         WriteLength(length);
-        if ( m_FixMethod != eFNP_Allow ) {
+        if ( x_FixCharsMethod() != eFNP_Allow ) {
             size_t done = 0;
             for ( size_t i = 0; i < length; ++i ) {
                 char c = str[i];
@@ -837,7 +839,7 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
                     if ( i > done ) {
                         WriteBytes(str + done, i - done);
                     }
-                    FixVisibleChar(c, m_FixMethod, this, string(str,length));
+                    FixVisibleChar(c, x_FixCharsMethod(), this, string(str,length));
                     WriteByte(c);
                     done = i + 1;
                 }
@@ -1223,7 +1225,7 @@ void CObjectOStreamAsnBinary::BeginChars(const CharBlock& block)
 void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
                                          const char* str, size_t length)
 {
-    if ( m_FixMethod != eFNP_Allow ) {
+    if ( x_FixCharsMethod() != eFNP_Allow ) {
         size_t done = 0;
         for ( size_t i = 0; i < length; ++i ) {
             char c = str[i];
@@ -1231,7 +1233,7 @@ void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
                 if ( i > done ) {
                     WriteBytes(str + done, i - done);
                 }
-                FixVisibleChar(c, m_FixMethod, this, string(str,length));
+                FixVisibleChar(c, x_FixCharsMethod(), this, string(str,length));
                 WriteByte(c);
                 done = i + 1;
             }

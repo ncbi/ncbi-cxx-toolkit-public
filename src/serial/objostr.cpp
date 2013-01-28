@@ -261,6 +261,26 @@ ESerialVerifyData CObjectOStream::x_GetVerifyDataDefault(void)
     return eSerialVerifyData_Yes;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// FixWrongChars setup
+
+NCBI_PARAM_ENUM_ARRAY(EFixNonPrint, SERIAL, WRONG_CHARS_WRITE)
+{
+    {"ALLOW",              eFNP_Allow},
+    {"REPLACE",            eFNP_Replace},
+    {"REPLACE_AND_WARN",   eFNP_ReplaceAndWarn},
+    {"THROW",              eFNP_Throw},
+    {"ABORT",              eFNP_Abort}
+};
+NCBI_PARAM_ENUM_DECL(EFixNonPrint, SERIAL, WRONG_CHARS_WRITE);
+NCBI_PARAM_ENUM_DEF(EFixNonPrint, SERIAL, WRONG_CHARS_WRITE, eFNP_ReplaceAndWarn);
+typedef NCBI_PARAM_TYPE(SERIAL, WRONG_CHARS_WRITE) TSerialFixChars;
+
+EFixNonPrint CObjectOStream::x_GetFixCharsMethodDefault(void) const
+{
+    return TSerialFixChars::GetDefault();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -273,6 +293,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_FastWriteDouble(TFastWriteDouble::GetDefault()),
       m_WriteAsDefault(false),
+      m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
 {
 }

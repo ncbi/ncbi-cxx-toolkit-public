@@ -138,13 +138,6 @@ public:
     virtual void ReadBitString(CBitString& obj);
     virtual void SkipBitString(void);
 
-    EFixNonPrint FixNonPrint(EFixNonPrint how)
-        {
-            EFixNonPrint tmp = m_FixMethod;
-            m_FixMethod = how;
-            return tmp;
-        }
-
 protected:
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -226,8 +219,6 @@ private:
     virtual void SkipPointer(TTypeInfo declaredType);
 
     bool SkipRealValue(void);
-
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
 #if CHECK_INSTREAM_STATE
     enum ETagState {

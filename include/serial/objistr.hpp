@@ -352,9 +352,11 @@ public:
     /// Update skip unknown variants option to non-default value
     ESerialSkipUnknown UpdateSkipUnknownVariants(void);
 
-    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
     {
-        return how;
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how == eFNP_Default ? x_GetFixCharsMethodDefault() : how;
+        return tmp;
     }
 
 //---------------------------------------------------------------------------
@@ -1003,6 +1005,10 @@ protected:
     const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
     virtual void x_SetPathHooks(bool set);
     bool x_HavePathHooks() const;
+    EFixNonPrint x_GetFixCharsMethodDefault(void) const;
+    EFixNonPrint x_FixCharsMethod(void) const {
+        return m_FixMethod;
+    }
 
     CIStreamBuffer m_Input;
     bool m_DiscardCurrObject;
@@ -1025,6 +1031,7 @@ private:
     static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
     static ESerialSkipUnknown x_GetSkipUnknownVariantsDefault(void);
 
+    EFixNonPrint m_FixMethod; // method of fixing wrong (eg, non-printable) chars
     ESerialVerifyData   m_VerifyData;
     ESerialSkipUnknown m_SkipUnknown;
     ESerialSkipUnknown m_SkipUnknownVariants;

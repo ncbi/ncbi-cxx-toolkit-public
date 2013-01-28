@@ -277,6 +277,26 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// FixWrongChars setup
+
+NCBI_PARAM_ENUM_ARRAY(EFixNonPrint, SERIAL, WRONG_CHARS_READ)
+{
+    {"ALLOW",              eFNP_Allow},
+    {"REPLACE",            eFNP_Replace},
+    {"REPLACE_AND_WARN",   eFNP_ReplaceAndWarn},
+    {"THROW",              eFNP_Throw},
+    {"ABORT",              eFNP_Abort}
+};
+NCBI_PARAM_ENUM_DECL(EFixNonPrint, SERIAL, WRONG_CHARS_READ);
+NCBI_PARAM_ENUM_DEF(EFixNonPrint, SERIAL, WRONG_CHARS_READ, eFNP_ReplaceAndWarn);
+typedef NCBI_PARAM_TYPE(SERIAL, WRONG_CHARS_READ) TSerialFixChars;
+
+EFixNonPrint CObjectIStream::x_GetFixCharsMethodDefault(void) const
+{
+    return TSerialFixChars::GetDefault();
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // skip unknown members setup
 
 // same as ESerialSkipUnknown
@@ -417,6 +437,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
     : m_DiscardCurrObject(false),
       m_DataFormat(format),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
+      m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault()),
       m_SkipUnknown(eSerialSkipUnknown_Default),
       m_SkipUnknownVariants(eSerialSkipUnknown_Default),
@@ -1790,7 +1811,7 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
         }
         message += "Bad char [0x" +
                    NStr::NumericToString((unsigned char)c,0,16)+
-                   "] in VisibleString";
+                   "] in string";
         if (io != NULL) {
             message += " at " + io->GetPosition();
         }

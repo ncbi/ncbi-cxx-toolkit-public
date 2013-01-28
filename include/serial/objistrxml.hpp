@@ -273,6 +273,8 @@ private:
 
     template<typename Type>
     Type x_UseMemberDefault(void);
+    int x_VerifyChar(int);
+    int x_ReadEncodedChar(char endingChar, EStringType type, bool* encoded);
 
     enum ETagState {
         eTagOutside,

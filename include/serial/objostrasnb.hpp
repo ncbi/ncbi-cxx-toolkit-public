@@ -101,12 +101,6 @@ public:
                       TLongTag tag_value);
     void WriteClassTag(TTypeInfo typeInfo);
     void WriteLongLength(size_t length);
-    EFixNonPrint FixNonPrint(EFixNonPrint how)
-        {
-            EFixNonPrint tmp = m_FixMethod;
-            m_FixMethod = how;
-            return tmp;
-        }
 
     // use ASNTOOL-compatible formatting when writing Int8 and Uint8 types
     void SetCStyleBigInt(bool set=true)
@@ -237,7 +231,6 @@ private:
     void EndTag(void);
     void SetTagLength(size_t length);
 #endif
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
     bool m_CStyleBigInt;
 };
 

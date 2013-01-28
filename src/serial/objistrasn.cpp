@@ -54,38 +54,43 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsn(void)
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText)
 {
+    FixNonPrint(how);
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText)
 {
+    FixNonPrint(how);
     Open(in);
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      bool deleteIn,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText)
 {
+    FixNonPrint(how);
     Open(in, deleteIn ? eTakeOwnership : eNoOwnership);
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      EOwnership deleteIn,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText)
 {
+    FixNonPrint(how);
     Open(in, deleteIn);
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(const char* buffer,
                                      size_t size,
                                      EFixNonPrint how)
-    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText)
 {
+    FixNonPrint(how);
     OpenFromBuffer(buffer, size);
 }
 
@@ -939,7 +944,7 @@ void CObjectIStreamAsn::ReadStringValue(string& s, EFixNonPrint fix_method)
 
 void CObjectIStreamAsn::ReadString(string& s, EStringType type)
 {
-    ReadStringValue(s, type == eStringTypeUTF8? eFNP_Allow: m_FixMethod);
+    ReadStringValue(s, type == eStringTypeUTF8? eFNP_Allow: x_FixCharsMethod());
 }
 
 void CObjectIStreamAsn::SkipBool(void)
@@ -1070,7 +1075,7 @@ void CObjectIStreamAsn::SkipString(EStringType type)
             default:
                 if (type == eStringTypeVisible) {
                     if ( !GoodVisibleChar(c) ) {
-                        FixVisibleChar(c, m_FixMethod, this, kEmptyStr);
+                        FixVisibleChar(c, x_FixCharsMethod(), this, kEmptyStr);
                     }
                 }
                 // ok: skip char
@@ -1490,7 +1495,7 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                 else {
                     // end of string
                     // Check the string for non-printable characters
-                    EFixNonPrint fix_method = m_FixMethod;
+                    EFixNonPrint fix_method = x_FixCharsMethod();
                     if ( fix_method != eFNP_Allow ) {
                         for (size_t i = 0;  i < count;  i++) {
                             if ( !GoodVisibleChar(dst[i]) ) {

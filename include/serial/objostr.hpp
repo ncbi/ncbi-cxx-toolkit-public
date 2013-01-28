@@ -200,9 +200,11 @@ public:
     ///   Data verification parameter
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
-    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
     {
-        return how;
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how == eFNP_Default ? x_GetFixCharsMethodDefault() : how;
+        return tmp;
     }
 
 //---------------------------------------------------------------------------
@@ -751,6 +753,10 @@ protected:
     void RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
     void x_SetPathHooks(bool set);
+    EFixNonPrint x_GetFixCharsMethodDefault(void) const;
+    EFixNonPrint x_FixCharsMethod(void) const {
+        return m_FixMethod;
+    }
     // Write current separator to the stream
     virtual void WriteSeparator(void);
 
@@ -777,6 +783,7 @@ private:
                                                 bool deleteOut);
     static ESerialVerifyData x_GetVerifyDataDefault(void);
 
+    EFixNonPrint m_FixMethod; // method of fixing wrong (eg, non-printable) chars
     ESerialVerifyData   m_VerifyData;
     CStreamObjectPathHook<CWriteObjectHook*>                m_PathWriteObjectHooks;
     CStreamPathHook<CMemberInfo*, CWriteClassMemberHook*>   m_PathWriteMemberHooks;

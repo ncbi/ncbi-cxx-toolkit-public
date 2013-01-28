@@ -63,8 +63,9 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnText, out), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnText, out)
 {
+    FixNonPrint(how);
     m_Output.SetBackLimit(80);
     SetSeparator("\n");
     SetAutoSeparator(true);
@@ -73,8 +74,9 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      bool deleteOut,
                                      EFixNonPrint how)
-    : CObjectOStream(eSerial_AsnText, out, deleteOut), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnText, out, deleteOut)
 {
+    FixNonPrint(how);
     m_Output.SetBackLimit(80);
     SetSeparator("\n");
     SetAutoSeparator(true);
@@ -338,9 +340,9 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     m_Output.PutChar('"');
     while ( length > 0 ) {
         char c = *ptr++;
-        if ( m_FixMethod != eFNP_Allow ) {
+        if ( x_FixCharsMethod() != eFNP_Allow ) {
             if ( !GoodVisibleChar(c) ) {
-                FixVisibleChar(c, m_FixMethod, this, string(ptr,length));
+                FixVisibleChar(c, x_FixCharsMethod(), this, string(ptr,length));
             }
         }
         --length;
@@ -364,12 +366,12 @@ void CObjectOStreamAsn::WriteCString(const char* str)
 
 void CObjectOStreamAsn::WriteString(const string& str, EStringType type)
 {
-    EFixNonPrint fix = m_FixMethod;
+    EFixNonPrint fix = x_FixCharsMethod();
     if (type == eStringTypeUTF8) {
-        m_FixMethod = eFNP_Allow;
+        FixNonPrint( eFNP_Allow );
     }
     WriteString(str.data(), str.size());
-    m_FixMethod = fix;
+    FixNonPrint( fix );
 }
 
 void CObjectOStreamAsn::WriteStringStore(const string& str)
@@ -787,7 +789,7 @@ void CObjectOStreamAsn::WriteChars(const CharBlock& ,
     while ( length > 0 ) {
         char c = *chars++;
         if ( !GoodVisibleChar(c) ) {
-            FixVisibleChar(c, m_FixMethod, this, string(chars,length));
+            FixVisibleChar(c, x_FixCharsMethod(), this, string(chars,length));
         }
         --length;
         m_Output.WrapAt(78, true);

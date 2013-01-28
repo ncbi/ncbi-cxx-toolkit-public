@@ -725,7 +725,29 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar, bool* encoded)
     return c & 0xFF;
 }
 
+/*
+In XML 1.1, almost all chars are allowed:
+http://www.w3.org/TR/xml11/#NT-Char
+BUT, we declare this as xml 1.0:
+    CObjectOStreamXml::WriteFileHeader
+Once so, some chars are not allowed
+http://www.w3.org/TR/xml/#charsets
+    
+*/
+inline bool BAD_CHAR(int x) {
+    return (x < 0x20 && x > 0x0 && x != 0x9 && x != 0xA && x != 0xD);
+}
+inline int CObjectIStreamXml::x_VerifyChar(int x) {
+    return BAD_CHAR(x) ?
+        ReplaceVisibleChar(x, x_FixCharsMethod(), this, kEmptyStr) : x;
+}
+inline
 int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool* encoded)
+{
+    return x_VerifyChar(x_ReadEncodedChar(endingChar,type,encoded));
+}
+
+int CObjectIStreamXml::x_ReadEncodedChar(char endingChar, EStringType type, bool* encoded)
 {
     EEncoding enc_out( type == eStringTypeUTF8 ? eEncoding_UTF8 : m_StringEncoding);
     EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);

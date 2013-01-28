@@ -134,13 +134,6 @@ public:
     virtual void ReadBitString(CBitString& obj);
     virtual void SkipBitString(void);
 
-    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
-        {
-            EFixNonPrint tmp = m_FixMethod;
-            m_FixMethod = how;
-            return tmp;
-        }
-
 protected:
     TObjectIndex ReadIndex(void);
 
@@ -263,7 +256,6 @@ private:
                                 const CTempString& id);
 
     bool m_BlockStart;
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
 

@@ -493,21 +493,38 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
     }
 }
 
+/*
+In XML 1.1, almost all chars are allowed:
+http://www.w3.org/TR/xml11/#NT-Char
+BUT, we declare this as xml 1.0:
+    CObjectOStreamXml::WriteFileHeader
+Once so, some chars are not allowed
+http://www.w3.org/TR/xml/#charsets
+    
+*/
+inline bool BAD_CHAR(char x) {
+    return (x < 0x20 && x > 0x0 && x != 0x9 && x != 0xA && x != 0xD);
+}
+inline char CObjectOStreamXml::x_VerifyChar(char x) {
+    return BAD_CHAR(x) ?
+        ReplaceVisibleChar(x, x_FixCharsMethod(), this, kEmptyStr) : x;
+}
+
 void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
 {
     EEncoding enc_in( type == eStringTypeUTF8 ? eEncoding_UTF8 : m_StringEncoding);
     EEncoding enc_out(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
 
     if (enc_in == enc_out || enc_in == eEncoding_Unknown || (*src & 0x80) == 0) {
-        WriteEscapedChar(*src);
+        WriteEscapedChar(x_VerifyChar(*src));
     } else if (enc_out != eEncoding_UTF8) {
         TUnicodeSymbol chU = (enc_in == eEncoding_UTF8) ?
             CUtf8::Decode(src) : CUtf8::CharToSymbol( *src, enc_in);
-        WriteEscapedChar( CUtf8::SymbolToChar( chU, enc_out) );
+        WriteEscapedChar( x_VerifyChar( CUtf8::SymbolToChar( chU, enc_out)) );
     } else {
         CStringUTF8 tmp( CUtf8::AsUTF8( CTempString(src,1),enc_in));
         for ( string::const_iterator t = tmp.begin(); t != tmp.end(); ++t ) {
-            WriteEscapedChar(*t);
+            WriteEscapedChar(x_VerifyChar(*t));
         }
     }
 }

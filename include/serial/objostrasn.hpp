@@ -91,12 +91,6 @@ public:
                            TEnumValueType value);
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in);
-    virtual EFixNonPrint FixNonPrint(EFixNonPrint how)
-        {
-            EFixNonPrint tmp = m_FixMethod;
-            m_FixMethod = how;
-            return tmp;
-        }
 
 protected:
     void WriteEnum(const CEnumeratedTypeValues& values,
@@ -188,7 +182,6 @@ private:
     void EndBlock(void);
 
     bool m_BlockStart;
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
 
