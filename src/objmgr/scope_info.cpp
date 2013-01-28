@@ -1060,11 +1060,12 @@ bool CTSE_ScopeInfo::ContainsBioseq(const CSeq_id_Handle& id) const
 }
 
 
-bool CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
+CSeq_id_Handle
+CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
 {
     if ( CanBeUnloaded() ) {
         if ( ContainsBioseq(id) ) {
-            return true;
+            return id;
         }
         if ( id.HaveMatchingHandles() ) {
             CSeq_id_Handle::TMatches ids;
@@ -1072,12 +1073,12 @@ bool CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
             ITERATE ( CSeq_id_Handle::TMatches, it, ids ) {
                 if ( *it != id ) {
                     if ( ContainsBioseq(*it) ) {
-                        return true;
+                        return *it;
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
     else {
         return m_TSE_Lock->ContainsMatchingBioseq(id);

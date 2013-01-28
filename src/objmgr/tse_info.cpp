@@ -680,10 +680,11 @@ bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 }
 
 
-bool CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
+CSeq_id_Handle
+CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
 {
     if ( ContainsBioseq(id) ) {
-        return true;
+        return id;
     }
     else if ( id.HaveMatchingHandles() ) {
         CSeq_id_Handle::TMatches ids;
@@ -691,12 +692,12 @@ bool CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
         ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
             if ( *match_it != id ) {
                 if ( ContainsBioseq(*match_it) ) {
-                    return true;
+                    return *match_it;
                 }
             }
         }
     }
-    return false;
+    return null;
 }
 
 

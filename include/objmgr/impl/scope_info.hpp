@@ -315,7 +315,8 @@ public:
     bool LockedMoreThanOnce(void) const;
 
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
-    bool ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
+    // returns matching Seq-id handle
+    CSeq_id_Handle ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
 
     bool x_SameTSE(const CTSE_Info& tse) const;
 

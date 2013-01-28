@@ -326,7 +326,8 @@ public:
     CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& id) const;
 
     // find bioseq with matching id
-    bool ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
+    // returns matching Seq-id handle
+    CSeq_id_Handle ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
     CConstRef<CBioseq_Info> FindMatchingBioseq(const CSeq_id_Handle& id) const;
     SSeqMatch_TSE GetSeqMatch(const CSeq_id_Handle& id) const;
 

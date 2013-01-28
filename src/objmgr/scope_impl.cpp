@@ -1704,8 +1704,8 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     if ( !info || !info->HasBioseq() ||
          &info->x_GetTSE_ScopeInfo() != &tse_info ) {
         info.Reset();
-        if ( tse_info.ContainsMatchingBioseq(id) ) {
-            match = tse_info.Resolve(id);
+        if ( CSeq_id_Handle match_id = tse_info.ContainsMatchingBioseq(id) ) {
+            match = tse_info.Resolve(match_id);
             if ( match ) {
                 info = tse_info.GetBioseqInfo(match);
                 _ASSERT(info && info->HasBioseq());
