@@ -71,6 +71,7 @@ CChecksum::CChecksum(EMethod method)
         m_Checksum.m_CRC32 = 0;
         break;
     case eCRC32ZIP:
+    case eCRC32INSD:
         s_InitTableCRC32ZIP();
         m_Checksum.m_CRC32 = ~0;
         break;
@@ -93,6 +94,7 @@ CChecksum::CChecksum(const CChecksum& cks)
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32ZIP:
+    case eCRC32INSD:
     case eAdler32:
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
         break;
@@ -135,6 +137,7 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32ZIP:
+    case eCRC32INSD:
     case eAdler32:
         m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
         break;
@@ -163,6 +166,7 @@ void CChecksum::Reset(EMethod method)
         m_Checksum.m_CRC32 = 0;
         break;
     case eCRC32ZIP:
+    case eCRC32INSD:
         m_Checksum.m_CRC32 = ~0;
         break;
     case eMD5:
@@ -184,6 +188,8 @@ Uint4 CChecksum::GetChecksum(void) const
         return m_Checksum.m_CRC32;
     case eCRC32ZIP:
         return ~m_Checksum.m_CRC32;
+    case eCRC32INSD:
+        return m_Checksum.m_CRC32;
     case eAdler32:
         return m_Checksum.m_CRC32;
     default:
@@ -228,6 +234,7 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32ZIP:
+    case eCRC32INSD:
         return out << "CRC32: " << hex << setprecision(8)
                    << GetChecksum();
     case eMD5:
@@ -248,6 +255,7 @@ void CChecksum::x_Update(const char* str, size_t count)
         m_Checksum.m_CRC32 = s_UpdateCRC32(m_Checksum.m_CRC32, str, count);
         break;
     case eCRC32ZIP:
+    case eCRC32INSD:
         m_Checksum.m_CRC32 = s_UpdateCRC32ZIP(m_Checksum.m_CRC32, str, count);
         break;
     case eAdler32:

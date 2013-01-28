@@ -63,8 +63,9 @@ public:
     enum EMethod {
         eNone,             ///< No checksum in file
         eCRC32,            ///< 32-bit Cyclic Redundancy Check
-        eMD5,              ///< Message Digest version 5
         eCRC32ZIP,         ///< Exact zip CRC32, slightly differs from eCRC32
+        eCRC32INSD,        ///< Inverted CRC32ZIP
+        eMD5,              ///< Message Digest version 5
         eAdler32,          ///< A bit faster than CRC32ZIP, not recommended
                            ///< for small data sizes.
         eDefault = eCRC32
