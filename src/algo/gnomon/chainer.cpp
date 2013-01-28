@@ -504,9 +504,8 @@ static bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
     }
 }
 
-typedef const CGeneModel* TConstGeneModelPtr;
-static bool DescendingModelOrderP(const TConstGeneModelPtr& a,
-                                  const TConstGeneModelPtr& b) 
+typedef CChain* TChainPtr;
+static bool DescendingModelOrderP(const TChainPtr& a, const TChainPtr& b)
 {
     return DescendingModelOrder(*a, *b);
 }
