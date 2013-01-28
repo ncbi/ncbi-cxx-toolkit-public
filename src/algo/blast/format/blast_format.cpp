@@ -772,7 +772,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     }
 
     // Used with tabular output to print number of searches formatted at end.
-    m_QueriesFormatted++;
+    if( itr_num == numeric_limits<unsigned int>::max() || itr_num == 1)
+    	m_QueriesFormatted++;
 
     if (m_FormatType == CFormattingArgs::eAsnText 
       || m_FormatType == CFormattingArgs::eAsnBinary 
