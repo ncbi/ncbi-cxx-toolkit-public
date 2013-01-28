@@ -137,7 +137,7 @@ void CNetCacheControl::Init()
     arg_desc->AddOptionalKey("blobinfo", "key",
         "Retrieve meta information on the blob", CArgDescriptions::eString);
 
-    arg_desc->PrintUsageIfNoArgs();
+    arg_desc->PrintUsageIfNoArgs(); // NCBI_FAKE_WARNING
 
     SetupArgDescriptions(arg_desc.release());
 }
