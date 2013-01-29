@@ -495,24 +495,20 @@ protected:
 
     typedef CAtomicCounter::TValue TACValue;
 
-    enum {
-        kDeltaOffset = 1 << 24 // Base delta value to avoid going negative.
-    };
-
     /// The maximum number of threads the pool can hold
     volatile TACValue        m_MaxThreads;
     /// The maximum number of urgent threads running simultaneously
     volatile TACValue        m_MaxUrgentThreads;
-    TACValue                 m_Threshold; ///< for delta
+    int                      m_Threshold; ///< for delta
     /// The current number of threads in the pool
     CAtomicCounter           m_ThreadCount;
     /// The current number of urgent threads running now
     CAtomicCounter           m_UrgentThreadCount;
     /// The difference between the number of unfinished requests and
-    /// the total number of threads in the pool, plus an offset.
-    CAtomicCounter           m_Delta;     
-    /// The guard for m_MaxThreads and m_MaxUrgentThreads
-    CMutex                   m_Mutex;
+    /// the total number of threads in the pool.
+    volatile int             m_Delta;
+    /// The guard for m_MaxThreads, m_MaxUrgentThreads, and m_Delta.
+    mutable CMutex           m_Mutex;
     /// The request queue
     TQueue                   m_Queue;
     bool                     m_QueuingForbidden;
@@ -948,13 +944,17 @@ template <typename TRequest>
 void CThreadInPool<TRequest>::x_HandleOneRequest(bool catch_all)
 {
     TItemHandle handle;
-    m_Pool->m_Delta.Add(-1);
+    {{
+        CMutexGuard guard(m_Pool->m_Mutex);
+        --m_Pool->m_Delta;
+    }}
     try {
         handle.Reset(m_Pool->m_Queue.GetHandle());
     } catch (CBlockingQueueException& e) {
         // work around "impossible" timeouts
         NCBI_REPORT_EXCEPTION_XX(Util_Thread, 1, "Unexpected timeout", e);
-        m_Pool->m_Delta.Add(1);
+        CMutexGuard guard(m_Pool->m_Mutex);
+        ++m_Pool->m_Delta;
         return;
     }
     if (catch_all) {
@@ -1034,14 +1034,12 @@ CPoolOfThreads<TRequest>::CPoolOfThreads(unsigned int max_threads,
                                          unsigned int spawn_threshold, 
                                          unsigned int max_urgent_threads)
     : m_MaxThreads(max_threads), m_MaxUrgentThreads(max_urgent_threads),
-      m_Threshold(spawn_threshold + kDeltaOffset), 
+      m_Threshold(spawn_threshold), m_Delta(0),
       m_Queue(queue_size > 0 ? queue_size : max_threads),
       m_QueuingForbidden(queue_size == 0)
 {
-    _ASSERT(max_threads + max_urgent_threads < kDeltaOffset);
     m_ThreadCount.Set(0);
     m_UrgentThreadCount.Set(0);
-    m_Delta.Set(kDeltaOffset);
 }
 
 
@@ -1091,9 +1089,11 @@ template <typename TRequest>
 inline
 bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
 {
+    CMutexGuard guard(m_Mutex);
+
     if (m_Queue.IsFull()) {
         return false; // temporary blockage
-    } else if (m_Delta.Get() < kDeltaOffset) {
+    } else if (m_Delta < 0) {
         return true;
     } else if (m_ThreadCount.Get() < m_MaxThreads) {
         return true;
@@ -1101,12 +1101,12 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
         return true;
     } else {
         try {
-            // This should be redundant with the delta < 0 case, but
-            // I've gotten reports that suggest otherwise. :-/
             m_Queue.WaitForHunger(0);
+            // This should be redundant with the m_Delta < 0 case, now that
+            // m_Mutex guards it.
             ERR_POST_XX(Util_Thread, 5,
                         "Possible thread pool bug.  delta: "
-                          << (long)m_Delta.Get() - kDeltaOffset
+                          << const_cast<int&>(m_Delta)
                           << "; hunger: " << m_Queue.GetHunger());
             return true;
         } catch (...) {
@@ -1151,7 +1151,7 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
                        "attempt to insert into a full queue");
         }
         handle = m_Queue.Put(req, priority, timeout_sec, timeout_nsec);
-        if (m_Delta.Add(1) >= m_Threshold
+        if (++m_Delta >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads) {
             // Add another thread to the pool because they're all busy.
             new_thread = true;
