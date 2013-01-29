@@ -32,7 +32,7 @@ Linux64-Centos    : plain : GCC.sh           --without-debug --without-mt --with
 
 Linux64-Ubuntu    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+FreeBSD32  : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-pcre
 
 #SunOSx86   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-dll
 SunOSx86    : plain : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
