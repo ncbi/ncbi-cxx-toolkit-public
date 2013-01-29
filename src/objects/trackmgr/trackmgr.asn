@@ -11,19 +11,23 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
         TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
         TMgr-DatasetItem, TMgr-DisplayTrackChoice,
-        TMgr-MessageLevel, TMgr-Message;
+        TMgr-TrackAttrValueRequest, TMgr-AttrRequest, TMgr-ValueRequest,
+        TMgr-TrackAttrValueReply, TMgr-AttrReply, TMgr-TrackAttributes,
+        TMgr-AttrValueReply, TMgr-MessageLevel, TMgr-Message;
 
 ---
 --- Top-level request/reply
 ---
 TMgr-Request ::= CHOICE {
     display-tracks TMgr-DisplayTrackRequest,
-    switch-display-tracks TMgr-SwitchTrackContextRequest
+    switch-display-tracks TMgr-SwitchTrackContextRequest,
+    track-attr-values TMgr-TrackAttrValueRequest
 }
 
 TMgr-Reply ::= CHOICE {
     display-tracks TMgr-DisplayTrackReply,
-    switch-display-tracks TMgr-SwitchTrackContextReply
+    switch-display-tracks TMgr-SwitchTrackContextReply,
+    track-attr-values TMgr-TrackAttrValueReply
 }
 
 TMgr-GenomeContext ::= CHOICE {
@@ -64,6 +68,46 @@ TMgr-SwitchTrackContextReply ::= SEQUENCE {
     display-tracks SEQUENCE OF TMgr-DisplayTrackChoice OPTIONAL
 }
 
+TMgr-TrackAttrValueRequest ::= SEQUENCE {
+    track-type-list NULL OPTIONAL,          -- request all track type names
+    attr-list TMgr-AttrRequest OPTIONAL,    -- request attributes associated
+                                            -- with all or some track types
+    value-list TMgr-ValueRequest OPTIONAL   -- request values associated with
+                                            -- attribute list
+}
+
+TMgr-AttrRequest ::= CHOICE {
+    all-attrs NULL,                         -- request all attributes
+    track-type-list SET OF VisibleString    -- request attributes associated
+                                            -- with track types in list
+}
+
+TMgr-ValueRequest ::= SET OF VisibleString  -- list of attributes to return
+                                            -- values for
+
+TMgr-TrackAttrValueReply ::= SEQUENCE {
+    track-type-list SET OF VisibleString OPTIONAL,   -- list of track types
+    attr-list TMgr-AttrReply OPTIONAL,
+    value-list SET OF TMgr-AttrValueReply OPTIONAL
+}
+
+TMgr-AttrReply ::= CHOICE {
+    all-attrs SET OF VisibleString,             -- list of attributes
+    track-attr-list SET OF TMgr-TrackAttributes
+}
+
+TMgr-TrackAttributes ::= SEQUENCE {
+    track-name VisibleString,                   -- track type name
+    attributes SET OF VisibleString             -- list of attributes
+                                                -- associated with track type
+                                                -- name
+}
+
+TMgr-AttrValueReply ::= SEQUENCE {
+    attr-name VisibleString,
+    value-list SET OF VisibleString
+}
+
 TMgr-SwitchTrackExceptionCode ::= INTEGER {
     track-not-found (0), -- corresponding track not found in new genome context
     other (255)
@@ -84,32 +128,32 @@ TMgr-AssemblySpec ::= CHOICE {
 
 TMgr-AttrSpec ::= SEQUENCE {
     key VisibleString,
-    value UTF8String
+    value VisibleString
 }
 
 TMgr-Assembly ::= SEQUENCE {
     accession VisibleString,
-    name UTF8String,
-    short-name UTF8String OPTIONAL,
-    description UTF8String OPTIONAL,
+    name VisibleString,
+    short-name VisibleString OPTIONAL,
+    description VisibleString OPTIONAL,
     is-complete BOOLEAN OPTIONAL
 }
 
 TMgr-Attribute ::= SEQUENCE {
     key VisibleString,
-    value UTF8String
+    value VisibleString
 }
 
 TMgr-DisplayTrack ::= SEQUENCE {
     dtrack-id INTEGER,
-    name UTF8String,
+    name VisibleString,
     attrs SEQUENCE OF TMgr-Attribute OPTIONAL,
     data SEQUENCE OF TMgr-DatasetItem
     -- display settings
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
-    name UTF8String,
+    name VisibleString,
     attrs SEQUENCE OF TMgr-Attribute OPTIONAL
 }
 
