@@ -720,6 +720,11 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                                             const CSeq_loc& target,
                                             int             frame)
 {
+    if (source.IsEmpty()  ||  target.IsEmpty()) {
+        // Ignore mapping from or to an empty location.
+        return;
+    }
+
     // There are several passes - we need to find out sequence types
     // and lengths before creating the mappings.
 
@@ -1340,7 +1345,6 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CStd_seg& sseg, size_t to_row)
     }
 
     const CSeq_loc& dst_loc = *sseg.GetLoc()[to_row];
-
     for (size_t row = 0; row < dim; ++row ) {
         if (row == to_row) {
             continue;
