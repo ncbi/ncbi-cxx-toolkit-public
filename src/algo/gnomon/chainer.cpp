@@ -1006,8 +1006,9 @@ void SChainMember::MarkIncludedForChain()
             ITERATE(TContained, j, *mi->m_copy) {
                 SChainMember* mj = *j;
                 if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25 || 
-                   mi->m_cds_info->ReadingFrame().GetFrom() == mj->m_cds_info->ReadingFrame().GetFrom() ||   // same copy or supressed start
-                   mi->m_cds_info->ReadingFrame().GetTo() == mj->m_cds_info->ReadingFrame().GetTo())         // same copy or supressed start
+                   (mi->m_align->Strand() == mj->m_align->Strand() &&
+                    (mi->m_cds_info->ReadingFrame().GetFrom() == mj->m_cds_info->ReadingFrame().GetFrom() ||   // same copy or supressed start
+                     mi->m_cds_info->ReadingFrame().GetTo() == mj->m_cds_info->ReadingFrame().GetTo())))       // same copy or supressed start
                     mj->m_included = true;
             }
         }
@@ -1024,8 +1025,9 @@ void SChainMember::MarkPostponedForChain()
             ITERATE(TContained, j, *mi->m_copy) {
                 SChainMember* mj = *j;
                 if(mj->m_type != eCDS || mj->m_cds < START_BONUS+25 || 
-                   mi->m_cds_info->ReadingFrame().GetFrom() == mj->m_cds_info->ReadingFrame().GetFrom() ||   // same copy or supressed start
-                   mi->m_cds_info->ReadingFrame().GetTo() == mj->m_cds_info->ReadingFrame().GetTo())         // same copy or supressed start
+                   (mi->m_align->Strand() == mj->m_align->Strand() &&
+                    (mi->m_cds_info->ReadingFrame().GetFrom() == mj->m_cds_info->ReadingFrame().GetFrom() ||   // same copy or supressed start
+                     mi->m_cds_info->ReadingFrame().GetTo() == mj->m_cds_info->ReadingFrame().GetTo())))       // same copy or supressed start
                     mj->m_postponed = true;
             }
         }
