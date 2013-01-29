@@ -1141,7 +1141,11 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
             }
         }
         feature_clauses += ending;
-        feature_clauses += ".";
+        if (NStr::IsBlank(feature_clauses)) {
+            feature_clauses = ".";
+        } else {
+            feature_clauses += ".";
+        }
     } else if (m_FeatureListType == eCompleteSequence) {
         feature_clauses = ", complete sequence";
     } else if (m_FeatureListType == eCompleteGenome) {

@@ -146,6 +146,11 @@ int CAutoDefDemo::Run(void)
     autodef.AddSources (seh);
 
     CRef<CAutoDefModifierCombo> mod_combo (new CAutoDefModifierCombo ());
+    mod_combo.Reset(autodef.GetEmptyCombo());
+    if (!mod_combo->AreFeatureClausesUnique()) {
+        mod_combo.Reset(autodef.FindBestModifierCombo());
+    }
+    mod_combo->SetUseModifierLabels(true);
     CBioseq_CI seq_iter(seh);
     for ( ; seq_iter; ++seq_iter ) {
        CBioseq_Handle bh (*seq_iter);

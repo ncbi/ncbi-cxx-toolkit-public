@@ -50,7 +50,7 @@ BEGIN_SCOPE(objects)
 CAutoDefSourceDescription::CAutoDefSourceDescription(const CBioSource& bs, string feature_clauses) : m_BS(bs)
 {
     // consider feature clauses when looking for uniqueness
-    m_DescStrings.push_back (feature_clauses);
+    m_FeatureClauses = feature_clauses;
 
     if (bs.CanGetOrg() && bs.GetOrg().CanGetTaxname()) {
         m_DescStrings.push_back (bs.GetOrg().GetTaxname());
@@ -77,6 +77,8 @@ CAutoDefSourceDescription::CAutoDefSourceDescription(CAutoDefSourceDescription *
     ITERATE (TModifierVector, it, other->GetModifiers()) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo(*it));
     }
+    // copy feature clauses
+    m_FeatureClauses = other->m_FeatureClauses;
 }
 
 

@@ -143,12 +143,13 @@ public:
     const TModifierVector& GetModifiers() const { return m_Modifiers; }
     typedef list<string> TDescString;
     const TDescString& GetStrings() const { return m_DescStrings; }
+    const string& GetFeatureClauses() const { return m_FeatureClauses; }
 
 private:
     const CBioSource& m_BS;
     TModifierVector m_Modifiers;
     TDescString m_DescStrings;
-
+    string m_FeatureClauses;
 };
 
 

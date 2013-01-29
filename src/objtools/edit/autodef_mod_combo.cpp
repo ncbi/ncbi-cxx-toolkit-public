@@ -349,7 +349,6 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
 }
 
 
-
 bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st)
 {
     bool         used = false;
@@ -359,15 +358,14 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
         if ((*subSrcI)->GetSubtype() == st) {
             source_description += x_GetSubSourceLabel (st);
 
-            source_description += " ";
             string val = (*subSrcI)->GetName();
             // truncate value at first semicolon
-			if (!m_KeepAfterSemicolon) {
-				string::size_type pos = NStr::Find(val, ";");
-				if (pos != NCBI_NS_STD::string::npos) {
-					val = val.substr(0, pos);
-				}
-			}
+			      if (!m_KeepAfterSemicolon) {
+				        string::size_type pos = NStr::Find(val, ";");
+				        if (pos != NCBI_NS_STD::string::npos) {
+					          val = val.substr(0, pos);
+				        }
+			      }
                     
             // if country and not keeping text after colon, truncate after colon
             if (st == CSubSource::eSubtype_country
@@ -376,8 +374,12 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
                 if (pos != NCBI_NS_STD::string::npos) {
                     val = val.substr(0, pos);
                 }
+            } else if (st == CSubSource::eSubtype_plasmid_name && NStr::EqualNocase(val, "unnamed")) {
+                val = "";
             }
-            source_description += val;
+            if (!NStr::IsBlank(val)) {
+                source_description += " " + val;
+            }
             used = true;
         }
     }
@@ -498,6 +500,24 @@ bool CAutoDefModifierCombo::GetDefaultExcludeSp ()
 }
 
 
+unsigned int CAutoDefModifierCombo::x_AddRequiredSubSourceModifiers (string& description, const CBioSource& bsrc)
+{
+    unsigned int num_added = 0;
+
+    if (x_AddSubsourceString (description, bsrc, CSubSource::eSubtype_endogenous_virus_name)) {
+        num_added++;
+    }
+    if (x_AddSubsourceString (description, bsrc, CSubSource::eSubtype_plasmid_name)) {
+        num_added++;
+    }
+    if (x_AddSubsourceString (description, bsrc, CSubSource::eSubtype_transgenic)) {
+        num_added++;
+    }
+              
+    return num_added;            
+}
+
+
 string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc) 
 {
     unsigned int k;
@@ -535,6 +555,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
         }
     }
     
+    mods_used += x_AddRequiredSubSourceModifiers(source_description, bsrc);
     mods_used += x_AddHIVModifiers (source_description, bsrc);
 
     if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
@@ -715,6 +736,38 @@ vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAnyPresent()
         }
     }
     return expanded;
+}
+
+
+bool CAutoDefModifierCombo::AreFeatureClausesUnique()
+{
+    vector<string> clauses;
+
+    ITERATE (TGroupListVector, g, m_GroupList) {
+        CAutoDefSourceGroup::TSourceDescriptionVector src_list = (*g)->GetSrcList();
+        CAutoDefSourceGroup::TSourceDescriptionVector::iterator s = src_list.begin();
+        while (s != src_list.end()) {
+            clauses.push_back((*s)->GetFeatureClauses());
+            s++;
+        }
+    }
+    if (clauses.size() < 2) {
+        return true;
+    }
+    sort (clauses.begin(), clauses.end());
+    bool unique = true;
+    vector<string>::iterator sit = clauses.begin();
+    string prev = *sit;
+    sit++;
+    while (sit != clauses.end() && unique) {
+        if (NStr::Equal(prev, *sit)) {
+            unique = false;
+        } else {
+            prev = *sit;
+        }
+        sit++;
+    }
+    return unique;
 }
 
 

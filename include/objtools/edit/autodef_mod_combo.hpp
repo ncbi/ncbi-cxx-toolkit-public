@@ -101,8 +101,8 @@ public:
     bool GetExcludeAffOrgs ();
     void SetKeepParen(bool keep);
     bool GetKeepParen();
-	void SetKeepAfterSemicolon(bool keep);
-	bool GetKeepAfterSemicolon();
+	  void SetKeepAfterSemicolon(bool keep);
+	  bool GetKeepAfterSemicolon();
     void SetHIVCloneIsolateRule(unsigned int rule_num);
     unsigned int GetHIVCloneIsolateRule();
 
@@ -133,6 +133,7 @@ public:
     bool RemoveQual (bool IsOrgMod, int subtype);
 
     vector<CAutoDefModifierCombo *> ExpandByAnyPresent();
+    bool AreFeatureClausesUnique();
 
 private:
     TSubSourceTypeVector m_SubSources;
@@ -160,6 +161,7 @@ private:
     bool x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st);
     bool x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st);
     unsigned int x_AddHIVModifiers (string &source_description, const CBioSource& bsrc);
+    unsigned int x_AddRequiredSubSourceModifiers (string& description, const CBioSource& bsrc);
 
 };
 
