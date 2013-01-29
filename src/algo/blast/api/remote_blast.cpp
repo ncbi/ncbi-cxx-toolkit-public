@@ -1416,13 +1416,7 @@ void CRemoteBlast::x_InitDiskCache(void)
 			m_use_disk_cache = true;
 			LOG_POST(Info << "CRemoteBlast: DISK CACHE IS ON" );
 		}
-		else{
-			LOG_POST(Info << "CRemoteBlast: DISK CACHE IS OFF; KEY: "<<l_disk_cache_flag );
-		}
     }
-	else{
-			LOG_POST(Info << "CRemoteBlast: DISK CACHE IS OFF; NO ENVIRONMENT SETTINGS FOUND");
-	}
 }
 
 CRemoteBlast::~CRemoteBlast()
