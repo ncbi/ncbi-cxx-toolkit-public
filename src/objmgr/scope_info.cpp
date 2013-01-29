@@ -556,7 +556,9 @@ SSeqMatch_Scope CDataSource_ScopeInfo::x_GetSeqMatch(const CSeq_id_Handle& idh)
                 continue;
             if ( ret && ret.m_Seq_id.IsBetter(*it) ) // worse hit
                 continue;
-            ret = x_FindBestTSE(*it);
+            if ( SSeqMatch_Scope match = x_FindBestTSE(*it) ) {
+                ret = match;
+            }
         }
     }
     return ret;
