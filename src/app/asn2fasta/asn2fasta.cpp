@@ -336,6 +336,7 @@ int CAsn2FastaApp::Run(void)
                             "Unable to construct Seq-entry object" );
                     }
                     HandleSeqEntry(seh);
+                    m_Scope->RemoveTopLevelSeqEntry(seh);
                     streampos = is->GetStreamPos();
                 }
             }
