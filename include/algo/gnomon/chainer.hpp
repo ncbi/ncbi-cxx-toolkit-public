@@ -141,6 +141,7 @@ public:
     map<string, pair<bool,bool> >& SetProtComplet();
     map<string,TSignedSeqRange>& SetMrnaCDS();
     void SetGenomicRange(const TAlignModelList& alignments);
+    void SetNumbering(int idnext, int idinc);
     void SetOnlyBestFs(bool onlybestfs);
 
     TransformFunction* TrimAlignment();
