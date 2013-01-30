@@ -227,7 +227,9 @@ public:
 
         virtual ~CGenbankBlockCallback(void) { }
 
-        virtual EBioseqSkip notify_bioseq( const CBioseqContext& ctx );
+        // It is intentional that CBioseqContext is non-const here, 
+        // but const in the other notify functions.
+        virtual EBioseqSkip notify_bioseq( CBioseqContext& ctx );
 
         // please note that these notify functions let you change the block_text
         virtual EAction notify( string & block_text,
