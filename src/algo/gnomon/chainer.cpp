@@ -4024,10 +4024,17 @@ TransformFunction* CChainer::DoNotBelieveShortPolyATail()
     return new gnomon::DoNotBelieveShortPolyATail(m_data->minpolya);
 }
 
+void CChainer::SetNumbering(int idnext, int idinc)
+{
+    m_data->m_idnext = idnext;
+    m_data->m_idinc = idinc;
+}
+
 void CChainer::SetGenomicRange(const TAlignModelList& alignments)
 {
     m_data->SetGenomicRange(alignments);
 }
+
 
 void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
 {
