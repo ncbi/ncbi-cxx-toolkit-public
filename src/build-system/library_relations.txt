@@ -4808,9 +4808,6 @@ spcgi needs xncbi
 spcgi needs xser
 spcgi needs xthrserv
 spcgi needs xutil
-spellsrvbase needs connect
-spellsrvbase needs txservbase
-spellsrvbase needs xconnect
 spellsrvbase needs xncbi
 splitdbasn_g needs connect
 splitdbasn_g needs creaders
@@ -5070,6 +5067,12 @@ txserv needs xcompress
 txserv needs xconnect
 txserv needs xncbi
 txserv needs xutil
+txserv14 needs connect
+txserv14 needs txxmldoc
+txserv14 needs xcompress
+txserv14 needs xconnect
+txserv14 needs xncbi
+txserv14 needs xutil
 txservbase needs connect
 txservbase needs xconnect
 txservbase needs xncbi
