@@ -280,6 +280,7 @@ int CAsn2FastaApp::Run(void)
                     catch (...) {
                         cerr << "Resolution error: Sequence dropped." << endl;
                     }
+                    m_Scope->RemoveTopLevelSeqEntry(seh);
                     seh = ObtainSeqEntryFromSeqEntry(*is);
                 }
                 return 0;
@@ -441,7 +442,10 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
     CFilteringFastaOstream fasta_os( *m_Os, x_GetFilterIncludes(GetArgs()));
-    fasta_os.SetFlag(CFastaOstream::fNoExpensiveOps);
+    fasta_os.SetAllFlags(
+        CFastaOstream::fNoDupCheck |
+        CFastaOstream::fKeepGTSigns |
+        CFastaOstream::fNoExpensiveOps);
     if( GetArgs()["show-mods"] ) {
         fasta_os.SetFlag(CFastaOstream::fShowModifiers);
     }
