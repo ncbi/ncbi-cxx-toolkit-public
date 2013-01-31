@@ -333,10 +333,9 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 
 // tests_on_SeqEntry
-   /* not yet ready to imple. 
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(
                                 new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
-   */
+
    // asndisc version   
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 

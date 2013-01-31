@@ -73,6 +73,7 @@ using namespace DiscRepAutoNmSpc;
 static CDiscRepInfo thisInfo;
 static string       strtmp;
 static list <string> strs;
+static vector <string> arr;
 
 // Initialization
 CRef < CScope >                         CDiscRepInfo :: scope;
@@ -89,6 +90,7 @@ vector <string>                         CDiscRepInfo :: strandsymbol;
 bool                                    CDiscRepInfo :: exclude_dirsub;
 string                                  CDiscRepInfo :: report;
 Str2UInt                                CDiscRepInfo :: rRNATerms;
+Str2UInt                                CDiscRepInfo :: rRNATerms_partial;
 vector <string>                         CDiscRepInfo :: bad_gene_names_contained;
 vector <string>                         CDiscRepInfo :: no_multi_qual;
 vector <string>                         CDiscRepInfo :: short_auth_nms;
@@ -110,6 +112,8 @@ vector <string>                         CDiscRepInfo :: taxnm_env;
 vector <string>                         CDiscRepInfo :: virus_lineage;
 vector <string>                         CDiscRepInfo :: strain_tax;
 CRef <CComment_set>                     CDiscRepInfo :: comment_rules;
+Str2UInt                                CDiscRepInfo :: spell_data;
+Str2Str                                 CDiscRepInfo :: fix_data;
 
 void CDiscRepApp::Init(void)
 {
@@ -215,10 +219,14 @@ cerr << "222can get\n";
     thisInfo.strandsymbol.push_back("r");
 
     // ini. of rRNATerms
+    strs.clear();
     reg.EnumerateEntries("RRna-terms", &strs);
     ITERATE (list <string>, it, strs) {
+       arr.clear();
+       arr = NStr::Tokenize(reg.Get("RRna-terms", *it), ",", arr);
        strtmp = (*it == "5-8S") ? "5.8S" : *it;
-       thisInfo.rRNATerms[strtmp] = NStr::StringToUInt(reg.Get("RRna-terms", *it));
+       thisInfo.rRNATerms[strtmp] = NStr::StringToUInt(arr[0]);
+       thisInfo.rRNATerms_partial[strtmp] = NStr::StringToUInt(arr[1]);
     }
 
     // ini. of no_multi_qual
@@ -244,16 +252,16 @@ cerr << "222can get\n";
 
     // ini. of rrna_standard_name
     strtmp = reg.Get("StringVecIni", "RrnaStandardName");
-    thisInfo.rrna_standard_name = NStr::Tokenize(strtmp, ",", thisInfo.rrna_standard_name);
+    thisInfo.rrna_standard_name = NStr::Tokenize(strtmp,",",thisInfo.rrna_standard_name);
 
     // ini. of short_auth_nms
     strtmp = reg.Get("StringVecIni", "ShortAuthNms");
     thisInfo.short_auth_nms = NStr::Tokenize(strtmp, ",", thisInfo.short_auth_nms);
 
-    // ini. of descred_aaList
+    // ini. of desired_aaList
     reg.EnumerateEntries("Descred_aaList", &strs);
     ITERATE (list <string>, it, strs)
-       thisInfo.desired_aaList[*it] = NStr::StringToUInt(reg.Get("Descred_aaList", *it));
+       thisInfo.desired_aaList[*it] = NStr::StringToUInt(reg.Get("Desired_aaList", *it));
 
     // ini. of tax_db_conn: taxonomy db connection
     thisInfo.tax_db_conn.Init();
@@ -280,7 +288,19 @@ cerr << "222can get\n";
     // ini. of strain_tax
     strtmp = reg.Get("StringVecIni", "StrainsConflictTax");
     thisInfo.strain_tax = NStr::Tokenize(strtmp, ",", thisInfo.strain_tax);
+
+    // ini. of spell_data for flat file text check
+    strs.clear();
+    reg.EnumerateEntries("SpellFixData", &strs);
+    ITERATE (list <string>, it, strs) {
+      arr.clear();
+      arr = NStr::Tokenize(reg.Get("SpellFixData-spell", *it), ",", arr);
+      strtmp = ( *it == "nuclear-shutting") ? "nuclear shutting" : *it;
+      thisInfo.fix_data[strtmp] = arr[0].empty()? "no" : "yes";
+      thisInfo.spell_data[strtmp]= NStr::StringToUInt(arr[1]);
+    }
 }
+
 
 
 

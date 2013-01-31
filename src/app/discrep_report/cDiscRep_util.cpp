@@ -266,26 +266,35 @@ bool CTestAndRepData :: CommentHasPhrase(string comment, const string& phrase)
   return false;
 };
 
+string CTestAndRepData :: FindReplaceString(const string& src, const string& search_str, const string& replacement_str, bool case_sensitive, bool whole_word)
+{
+    CRegexpUtil rxu(src);
+    string pattern (CRegexp::Escape(search_str));
+    // word boundaries: whitespace & punctuation
+    // pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
+    pattern = 
+          whole_word ? ("(?<![[:^alnum:]])" + pattern + "(?<![[:^alnum:]])") : pattern;
+          // include underscores
+
+    CRegexp::ECompile comp_flag = case_sensitive? 
+                               CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
+    rxu.Replace(pattern, replacement_str, comp_flag);
+    return (rxu.GetResult());
+};
 
 bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
 {
   if (str.empty()) return false;
-
-  if (case_sensitive) {
-    if ( str.find(phrase) == string::npos) return false;
-  }
-  else if ( NStr::FindNoCase(str, phrase) == string::npos) return false;
-
-  if (whole_word) {
-     string pattern("\\b" + CRegexp::Escape(phrase) + "\\b");
-     CRegexp :: ECompile 
-      comp_flag = case_sensitive ? 
+  string pattern(CRegexp::Escape(phrase));
+//  pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
+  // include underscores
+  pattern = 
+          whole_word ? ("(?<![[:^alnum:]])" + pattern + "(?<![[:^alnum:]])") : pattern;
+  CRegexp::ECompile comp_flag = case_sensitive ?
                             CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
-     CRegexp rx(pattern, comp_flag);
-     if (rx.IsMatch(str)) return true;
-     else return false;
-  }
-  else return true;
+  CRegexp rx(pattern, comp_flag);
+  if (rx.IsMatch(str)) return true;
+  else return false;
 };
 
 
@@ -828,7 +837,7 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
       if (!(seq_id.IsGenbank()) ) {
          CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(seq_id);
          const CSeq_id& new_seq_id = 
-                       BioseqToBestSeqId(*(bioseq_hl.GetCompleteBioseq()), CSeq_id::e_Genbank); 
+                BioseqToBestSeqId(*(bioseq_hl.GetCompleteBioseq()), CSeq_id::e_Genbank);
          location = new_seq_id.AsFastaString();
       }
       else location = seq_id.AsFastaString();

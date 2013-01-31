@@ -52,6 +52,8 @@
 #include <objects/seqfeat/Trna_ext.hpp>      
 #include <objects/pub/Pub.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objtools/format/flat_file_config.hpp>
+#include <objtools/format/flat_file_generator.hpp>
 
 #include "hDiscRep_app.hpp"
 
@@ -99,7 +101,6 @@ namespace DiscRepNmSpc {
       static bool   is_TaxCflts_run;
       static bool   is_TaxDef_run;
   };
-
 
   template < typename T >
   struct SCompareCRefs
@@ -164,13 +165,13 @@ namespace DiscRepNmSpc {
 
           //CRef <CSearchFuncMatcher> factory()  { return 0; };
 
-          virtual void MarchFunc(const string& sch_str, const CString_constraint& str_cst) {};
+          virtual void MarchFunc(const string& sch_str, 
+                                               const CString_constraint& str_cst) {};
           virtual void MarchFunc(const string& sch_str, const string& rule_str) {};
       };
 
       static vector <CRef < CSearchFuncMatcher > > srch_func_tp;
   };
-
 
   class CTestAndRepData : public CObject
   {
@@ -195,14 +196,14 @@ namespace DiscRepNmSpc {
       string GetNoun(unsigned cnt, const string& str);
 
  //  GetDiscrepancyItemTextEx() 
+      const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
+      string GetDiscItemText(const CSeq_feat& obj);
       string GetDiscItemText(const CSeq_submit& seq_submit);
       string GetDiscItemText(const CBioseq& obj);
       string GetDiscItemTextForBioseqSet(const CBioseq_set& obj);
       string GetDiscItemText(const CBioseq_set& obj);
-      string GetDiscItemText(const CSeq_feat& obj);
       string GetDiscItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeqdesc& obj, const CBioseq& bioseq);
-      const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
       string GetDiscItemText(const CPerson_id& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeq_entry& seq_entry);
 
@@ -250,6 +251,11 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
       static vector <const CSeq_entry*> org_orgmod_seqdesc_seqentry;
 
+      static string FindReplaceString(const string& src, const string& search_str,
+          const string& replacement_str, bool case_sensitive=true, bool whole_word=true);
+
+      static bool DoesStringContainPhrase(const string& str, const string& phrase, 
+                            bool case_sensitive=true, bool whole_word=true);
     protected:
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
@@ -265,8 +271,6 @@ namespace DiscRepNmSpc {
                                                                    const string& delim = "$");
       void RmvRedundancy(vector <string>& item_list); //all CSeqEntry_Feat_desc tests need this
       CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
-      bool DoesStringContainPhrase(const string& str, const string& phrase, 
-                            bool case_sensitive=true, bool whole_word=true);
       bool DoesStringContainPhrase(const string& str, const vector <string>& phrases, 
                             bool case_sensitive=true, bool whole_word=true);
 
@@ -398,19 +402,6 @@ namespace DiscRepNmSpc {
         e_dup,
         e_all_dif
   };
-
-/* not yet ready to imple.
-  class CSeqEntry_DISC_FLATFILE_FIND_ONCALLER : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DISC_FLATFILE_FIND_ONCALLER () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("DISC_FLATFILE_FIND_ONCALLER");}
-  };
-*/
-
 
 //  new comb!!
   class CSeqEntry_on_incnst_user : public CSeqEntryTestAndRepData
@@ -1343,6 +1334,65 @@ namespace DiscRepNmSpc {
 // new comb
 
 
+  class CFlatfileTextFind: public CFlatFileConfig::CGenbankBlockCallback, CTestAndRepData
+  {
+    public:
+       CFlatfileTextFind ( const string& setting_name) {
+              m_seqdesc_sel.push_back(CSeqdesc::e_Source);
+              m_seqdesc_sel.push_back(CSeqdesc::e_Molinfo);
+              m_seqdesc_sel.push_back(CSeqdesc::e_Title);
+              m_seqdesc_sel.push_back(CSeqdesc::e_Genbank);
+              m_seqdesc_sel.push_back(CSeqdesc::e_Pub);
+              m_setting_name = setting_name;
+       }
+       virtual ~CFlatfileTextFind () { };
+    
+       virtual EBioseqSkip notify_bioseq( const CBioseqContext& ctx );
+
+       virtual EAction notify (string& block_text, const CBioseqContext& ctx,
+                                              const CSourceItem& source_item);
+       virtual EAction notify (string& block_text, const CBioseqContext& ctx,
+                                              const CFeatureItem& feature_item);
+       virtual EAction unified_notify( string & block_text, 
+                                 const CBioseqContext& ctx, const IFlatItem & flat_item, 
+                                 CFlatFileConfig::FGenbankBlocks which_block);
+       string m_block_text;
+
+      virtual void TestOnObj(const CBioseq_set& bioseq_set) { };
+      virtual void TestOnObj(const CSeq_entry& seq_entry) { };
+      virtual void TestOnObj(const CBioseq& bioseq) { };
+      virtual void TestOnObj(const CSeq_feat& seq_feat) { };
+
+      virtual void GetReport(CRef <CClickableItem>& c_item) { };
+
+      virtual string GetName() const {return kEmptyStr ;}
+
+    protected:
+       string m_taxname, m_bioseq_desc, m_setting_name; 
+       string m_src_desc, m_mol_desc, m_tlt_desc, m_pub_desc, m_gbk_desc;
+       vector <CSeqdesc::E_Choice> m_seqdesc_sel;
+  };
+
+  class CSeqEntry_DISC_FLATFILE_FIND_ONCALLER : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_DISC_FLATFILE_FIND_ONCALLER () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_FLATFILE_FIND_ONCALLER");}
+    
+    protected:
+      Str2Strs m_fixable2ls; 
+      bool m_citem1;
+
+      void AddCItemToReport(const string& ls_type, const string& setting_name, 
+                                                      CRef <CClickableItem>& c_item);
+      string GetName_nofix() const {
+                         return string("DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE");}
+      string GetName_fix() const {return string("DISC_FLATFILE_FIND_ONCALLER_FIXABLE");}
+  };
+
   class CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT : public CSeqEntryTestAndRepData
   {
     public:
@@ -1350,7 +1400,7 @@ namespace DiscRepNmSpc {
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("ONCALLER_STRAIN_TAXNAME_CONFLICT");}
+      virtual string GetName() const {return string("ONCALLER_STRAIN_TAXNAME_CONFLICT");}
 
     protected:
       bool StrainConflictsTaxname(const COrg_ref& org);

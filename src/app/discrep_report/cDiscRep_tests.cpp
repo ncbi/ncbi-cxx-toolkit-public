@@ -33,6 +33,8 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/enumvalues.hpp>
+#include <objtools/format/items/source_item.hpp>
+#include <objtools/format/items/feature_item.hpp>
 #include <objects/submit/Contact_info.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
@@ -1867,11 +1869,14 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
         thisInfo.test_item_list[GetName_its()].push_back(desc);
 
      // DISC_SHORT_RRNA
-     if ((*it)->CanGetPartial() && (*it)->GetPartial()) continue;
+     if ((*it)->CanGetPartial() && (*it)->GetPartial()) continue;  // ??? with ITERATE
      len = sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope);
      rrna_name = GetRNAProductString(**it);
      ITERATE (Str2UInt, jt, thisInfo.rRNATerms) {
-        if (NStr::FindNoCase(rrna_name, jt->first) != string::npos && len < jt->second) {
+        if (NStr::FindNoCase(rrna_name, jt->first) != string::npos 
+                  && len < jt->second
+                  && (!thisInfo.rRNATerms_partial[jt->first] 
+                       || !((*it)->CanGetPartial() && (*it)->GetPartial()))  ) {
              thisInfo.test_item_list[GetName_short()].push_back(desc);
              break;
         }
@@ -6923,26 +6928,6 @@ void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: GetReport(CRef <CClickableItem>& c_i
 
 
 // CSeqEntryTestAndRepData
-/* not yet ready to imple.
-void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_entry)
-{
-  CFlatFileGenerator file_gen(CFlatFileConfig::eFormat_GenBank,
-                              CFlatFileConfig::eMode_GBench,
-                              CFlagFileConfig::eStyle_Normal,
-                              CFlagFileConfig::fShowContigFeatures,
-                              CFlagFileConfig::fViewAll);
-  CNcbiOstream os;
-  CSeq_entry_Handle seq_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
-  file_gen.Generate(
-};
-
-
-void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c_Item)
-{
-};
-*/
-
-
 // new method
 bool CSeqEntry_test_on_tax_cflts :: s_StringHasVoucherSN(const string& vou_nm)
 {
@@ -9305,6 +9290,155 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 // new method
 
+
+CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bioseq(const CBioseqContext& ctx )
+{
+   m_taxname = ctx.GetTaxname();
+// wait for new build:   CConstRef <CBioseq> m_bioseq_ref = ctx.GetHandle().GetCompleteObject();
+   m_bioseq_desc = "!!!"; //GetDiscItemText(*m_bioseq_ref);
+
+   m_src_desc = m_mol_desc = m_tlt_desc = m_pub_desc = m_gbk_desc = kEmptyStr;
+/*
+   for (CSeqdesc_CI it(ctx.GetHandle(), m_seqdesc_sel); it; ++it) {
+     switch (it->Which()) {
+        case CSeqdesc::e_Source:
+            m_src_desc = GetDiscItemText(it->GetSource(), *m_bioseq_ref);
+            break;
+        case CSeqdesc::e_Molinfo:
+            m_mol_desc = GetDiscItemText(it->GetMolinfo(), *m_bioseq_ref);
+            break;
+        case CSeqdesc::e_Title:
+            m_tlt_desc = GetDiscItemText(it->GetTitle(), *m_bioseq_ref);
+            break;
+        case CSeqdesc::e_Pub:
+            m_pub_desc = GetDiscItemText(it->GetPub(), *m_bioseq_ref);
+            break;
+        case CSeqdesc::e_Genbank:
+            m_gbk_desc = GetDiscItemText(it->GetGenbank(), *m_bioseq_ref);
+            break;
+        default: break;
+     }
+
+   }
+
+*/
+   return (eBioseqSkip_No); 
+};
+
+CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
+{
+  block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
+  return unified_notify(block_text, ctx, source_item, 
+                                          CFlatFileConfig::fGenbankBlocks_Source);
+};
+
+CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
+{
+   size_t pos = block_text.find("/translation=\"");
+   string trans_str;
+   if (pos != string::npos) {
+     strtmp = block_text.substr(pos); 
+     block_text = block_text.substr(0, pos-1);
+     pos = strtmp.substr(14).find("\"");
+     if (pos != string::npos) {
+       if (pos < strtmp.size() - 1) block_text += strtmp.substr(pos+1);
+     }
+   }
+   return unified_notify(block_text, ctx, feature_item, 
+                                            CFlatFileConfig::fGenbankBlocks_FeatAndGap);
+};
+
+
+CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
+{
+  block_text =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
+  ITERATE (Str2UInt, it, thisInfo.spell_data) {
+     if (CTestAndRepData 
+           :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)) {
+       switch (which_block) {
+         case CFlatFileConfig::fGenbankBlocks_Locus: strtmp = m_mol_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Defline: strtmp = m_tlt_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Keywords: strtmp = m_gbk_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Reference: strtmp = m_pub_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Source: strtmp = m_src_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
+            {
+              const CFeatureItemBase& feat_item 
+                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
+              strtmp = GetDiscItemText(
+                                             feat_item.GetFeat().GetOriginalFeature());
+            }
+            break;
+         case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
+            {
+              const CFeatureItemBase& feat_item 
+                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
+              strtmp = GetDiscItemText(
+                                             feat_item.GetFeat().GetOriginalFeature());
+            }
+            break;
+         default: strtmp = m_bioseq_desc;
+       };
+       thisInfo.test_item_list[m_setting_name].push_back(
+            thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
+     }
+  } 
+
+  return eAction_Skip;  // flat file gen. won't print out blocks
+};
+
+void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   CFlatfileTextFind flatfile_find(GetName());
+   unsigned blocks = CFlatFileConfig::fGenbankBlocks_All 
+                             & ~CFlatFileConfig::fGenbankBlocks_Sequence;
+   CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank,
+                       CFlatFileConfig::eMode_GBench,
+                       CFlatFileConfig::eStyle_Normal,
+                       CFlatFileConfig::fShowContigFeatures,
+                       CFlatFileConfig::fViewAll,
+                       CFlatFileConfig::fGffGTFCompat,
+                       (CFlatFileConfig::FGenbankBlocks)blocks,
+                       &flatfile_find);
+   CFlatFileGenerator gen(cfg);
+   CSeq_entry_Handle entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
+   gen.Generate( entry_hl, cout);
+   
+cerr << "block_text " << flatfile_find.m_block_text << endl;
+};
+
+void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_type, const string& setting_name, CRef <CClickableItem>& c_item)
+{
+   Str2Strs wrds2ls;
+   ITERATE (Str2Strs, it, m_fixable2ls) {
+     if (it->first == ls_type) {
+        wrds2ls.clear();
+        GetTestItemList(it->second, wrds2ls);
+        ITERATE (Str2Strs, jt, wrds2ls) {
+           if (m_citem1) m_citem1 = false;
+           else {
+              c_item.Reset(new CClickableItem);
+              c_item->setting_name = setting_name;
+              thisInfo.disc_report_data.push_back(c_item);
+           }
+           c_item->item_list = jt->second;
+           c_item->description
+                   = GetContainsComment(c_item->item_list.size(), "object") + jt->first;
+        }
+     }
+   }
+   
+};
+
+void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c_item)
+{
+   m_fixable2ls.clear();
+   GetTestItemList(c_item->item_list, m_fixable2ls); 
+   c_item->item_list.clear();
+   m_citem1 = true;
+   AddCItemToReport("no", GetName_nofix(), c_item);
+   AddCItemToReport("yes", GetName_fix(), c_item); 
+};
 
 bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const COrg_ref& org)
 {

@@ -155,6 +155,7 @@ namespace DiscRepNmSpc{
            static string                             report;
 
            static Str2UInt                           rRNATerms;
+           static Str2UInt                           rRNATerms_partial;
            static vector <string>                    bad_gene_names_contained;
            static vector <string>                    no_multi_qual;
            static vector <string>                    rrna_standard_name; 
@@ -176,6 +177,8 @@ namespace DiscRepNmSpc{
            static vector <string>                    virus_lineage;
            static vector <string>                    strain_tax;
            static CRef <CComment_set>                comment_rules;
+           static Str2UInt                           spell_data;
+           static Str2Str                            fix_data;
      };
 
 /*
