@@ -849,7 +849,16 @@ bool CGff3Writer::xTryAssignMrnaParent(
     CMappedFeat mf)
 //  ============================================================================
 {
-    CMappedFeat mrna = feature::GetBestMrnaForCds(mf, &fc.FeatTree());
+    CMappedFeat mrna;
+    switch (mf.GetFeatSubtype()) {
+        default:
+            mrna = feature::GetBestParentForFeat(
+                mf, CSeqFeatData::eSubtype_mRNA, &fc.FeatTree());
+            break;
+        case CSeqFeatData::eSubtype_cdregion:
+            mrna = feature::GetBestMrnaForCds(mf, &fc.FeatTree());
+            break;
+    }
     TMrnaMap::iterator it = m_MrnaMap.find(mrna);
     if (it != m_MrnaMap.end()) {
         feat.AssignParent(*(it->second));
