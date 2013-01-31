@@ -152,6 +152,29 @@ public:
     /// Recompute the correct partial states for all features in this annotation
     void RecomputePartialFlags(objects::CSeq_annot& annot);
 
+
+
+
+    /// Project RNA, preserving discontinuities in the CDS.
+    ///
+    /// Postcondition: Output is a mix of packed-ints, where each sub-loc in the mix
+    /// is an exon, and each subloc in the exon packed-int is an exon chunk. The chunks may
+    /// have gaps between them or overlap as to preserve the translation frame of the CDS.
+    ///
+    /// The discontinuities (gaps and overlaps of chunks) that are outside of the CDS are collapsed.
+    ///
+    /// Singleton container locs (comprised of single element) are canonicalized:
+    ///   unbroken exons are represented as a single interval
+    ///   single-exon locs are represented as a single packed-int (or int, as per above)
+    static CRef<objects::CSeq_loc> s_ProjectRNA(const objects::CSeq_align& spliced_aln, 
+                                                CConstRef<objects::CSeq_loc> product_cds_loc = CConstRef<objects::CSeq_loc>(NULL),
+                                                size_t unaligned_ends_partialness_thr = kDefaultAllowedUnaligned);
+    /// Similar to s_ProjectRNA(...)
+    /// Postcondition: seq-vector of the returned loc is of exact same length and has no indels 
+    ///                relative to the seq-vector of the product_cds_loc truncated to the alignment boundaries.
+    static CRef<objects::CSeq_loc> s_ProjectCDS(const objects::CSeq_align& spliced_aln, 
+                                                const objects::CSeq_loc& product_cds_loc);
+
 private:
     struct SImplementation;
     auto_ptr<SImplementation> m_impl;
