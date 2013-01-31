@@ -1707,8 +1707,8 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                            alnRoInfo->maxIdLen-alnRoInfo->seqidArray[row].size()+
                                            k_IdStartMargin);
                 //not to display start and stop number for empty row
-                if (j > 0 && end == prev_stop[row] 
-                    || j == 0 && start == 1 && end == 1) {
+                if ((j > 0 && end == prev_stop[row]) 
+                    || (j == 0 && start == 1 && end == 1)) {
                     startLen = 0;
                 } else {
                     out << start;
