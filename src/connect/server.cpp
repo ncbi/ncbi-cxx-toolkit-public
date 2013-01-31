@@ -171,9 +171,19 @@ CThreadInPool_ForServer::CAutoUnregGuard::~CAutoUnregGuard(void)
     m_Thread->x_UnregisterThread();
 }
 
+void
+CThreadInPool_ForServer::CountSelf(void)
+{
+    _ASSERT( !m_Counted );
+    m_Pool->m_ThreadCount.Add(1);
+    m_Counted = true;
+}
+
 CThreadInPool_ForServer::~CThreadInPool_ForServer(void)
 {
-    m_Pool->m_ThreadCount.Add(-1);
+    if (m_Counted) {
+        m_Pool->m_ThreadCount.Add(-1);
+    }
 }
 
 void
@@ -220,7 +230,6 @@ CThreadInPool_ForServer::Main(void)
         ERR_POST(Warning << "New worker thread blocked at the last minute.");
         return NULL;
     }
-    m_Pool->m_ThreadCount.Add(1);
     CAutoUnregGuard guard(this);
 
     bool catch_all = TParamThreadPoolCatchExceptions::GetDefault();
@@ -286,7 +295,9 @@ CPoolOfThreads_ForServer::Spawn(unsigned int num_threads)
 {
     for (unsigned int i = 0; i < num_threads; i++)
     {
-        NewThread()->Run();
+        CRef<TThread> thr(NewThread());
+        thr->CountSelf();
+        thr->Run();
     }
 }
 

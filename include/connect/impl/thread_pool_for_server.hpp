@@ -170,8 +170,9 @@ public:
     /// @param mode
     ///   A running mode of this thread
     CThreadInPool_ForServer(TPool* pool) 
-        : m_Pool(pool)
+        : m_Pool(pool), m_Counted(false)
     {}
+    void CountSelf(void);
 
 protected:
     /// Destructor
@@ -210,6 +211,7 @@ private:
 
 
     TPool*   m_Pool;     ///< The pool that holds this thread
+    bool     m_Counted;
 };
 
 

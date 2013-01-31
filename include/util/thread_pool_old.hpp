@@ -323,7 +323,9 @@ public:
     /// @param mode
     ///   A running mode of this thread
     CThreadInPool(TPool* pool, ERunMode mode = eNormal) 
-        : m_Pool(pool), m_RunMode(mode) {}
+        : m_Pool(pool), m_RunMode(mode), m_Counter(NULL) {}
+
+    void CountSelf(CAtomicCounter* counter);
 
 protected:
     /// Destructor
@@ -370,9 +372,9 @@ private:
     friend class CAutoUnregGuard;
 
 
-    TPool*   m_Pool;     ///< The pool that holds this thread
-    ERunMode m_RunMode;  ///< How long to keep running
-
+    TPool*          m_Pool;     ///< The pool that holds this thread
+    ERunMode        m_RunMode;  ///< How long to keep running
+    CAtomicCounter* m_Counter;
 };
 
 
@@ -521,6 +523,7 @@ private:
                                 unsigned int timeout_sec = 0,
                                 unsigned int timeout_nsec = 0);
 
+    void x_RunNewThread(ERunMode mode, CAtomicCounter* counter);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -913,12 +916,18 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
 //
 
 template <typename TRequest>
+void CThreadInPool<TRequest>::CountSelf(CAtomicCounter* counter)
+{
+    _ASSERT(m_Counter == NULL);
+    counter->Add(1);
+    m_Counter = counter;
+}
+
+template <typename TRequest>
 CThreadInPool<TRequest>::~CThreadInPool()
 {
-    if (m_RunMode == eRunOnce) {
-        m_Pool->m_UrgentThreadCount.Add(-1);
-    } else {
-        m_Pool->m_ThreadCount.Add(-1);
+    if (m_Counter != NULL) {
+        m_Counter->Add(-1);
     }
 }
 
@@ -988,11 +997,6 @@ void* CThreadInPool<TRequest>::Main(void)
         ERR_POST(Warning << "New worker thread blocked at the last minute.");
         return 0;
     }
-    if (m_RunMode == eRunOnce) {
-        m_Pool->m_UrgentThreadCount.Add(1);
-    } else {
-        m_Pool->m_ThreadCount.Add(1);
-    }
     CAutoUnregGuard guard(this);
 
     Init();
@@ -1059,7 +1063,7 @@ void CPoolOfThreads<TRequest>::Spawn(unsigned int num_threads)
 {
     for (unsigned int i = 0; i < num_threads; i++)
     {
-        NewThread(TThread::eNormal)->Run();
+        x_RunNewThread(TThread::eNormal, &m_ThreadCount);
     }
 }
 
@@ -1162,21 +1166,30 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
         }
     }}
 
-    if (urgent || new_thread) {
-        ERunMode mode = urgent && !new_thread ? 
-                             TThread::eRunOnce :
-                             TThread::eNormal;
-        try {
-            NewThread(mode)->Run();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST_XX(Util_Thread, 13,
-                        Critical << "Ignoring error while starting new thread: "
-                        << ex);
-        }
+    if (new_thread) {
+        x_RunNewThread(TThread::eNormal, &m_ThreadCount);
+    } else if (urgent) {
+        x_RunNewThread(TThread::eRunOnce, &m_UrgentThreadCount);
     }
 
     return handle;
+}
+
+template <typename TRequest>
+inline
+void CPoolOfThreads<TRequest>::x_RunNewThread(ERunMode mode,
+                                              CAtomicCounter* counter)
+{
+    try {
+        CRef<TThread> thr(NewThread(mode));
+        thr->CountSelf(counter);
+        thr->Run();
+    }
+    catch (CThreadException& ex) {
+        ERR_POST_XX(Util_Thread, 13,
+                    Critical << "Ignoring error while starting new thread: "
+                    << ex);
+    }
 }
 
 template <typename TRequest>
