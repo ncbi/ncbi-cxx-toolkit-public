@@ -226,11 +226,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "group",             eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-    { "DROJ",          { &CNetScheduleHandler::x_ProcessDropJob,
-                         eNSCR_Submitter },
-        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
-          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "LISTEN",        { &CNetScheduleHandler::x_ProcessListenJob,
                          eNSCR_Submitter },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -391,16 +386,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNSCR_Worker } },
     { "JRTO",          { &CNetScheduleHandler::x_CmdNotImplemented,
                          eNSCR_Worker } },
-    { "FRES",          { &CNetScheduleHandler::x_CmdNotImplemented,
-                         eNSCR_Submitter } },
-    { "QERY",          { &CNetScheduleHandler::x_CmdNotImplemented,
-                         eNSCR_Queue } },
-    { "QSEL",          { &CNetScheduleHandler::x_CmdNotImplemented,
-                         eNSCR_Queue } },
-    { "MONI",          { &CNetScheduleHandler::x_CmdNotImplemented,
-                         eNSCR_Queue } },
-    { "LOG",           { &CNetScheduleHandler::x_CmdNotImplemented,
-                         eNSCR_Any } },
 
     { NULL },
 };
@@ -1670,9 +1655,8 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 {
-    // The JXCG2 is not supported anymore, so this handler is called for
-    // an old (obsolete) JXCG command only.
-    //
+    // The JXCG command is used only by old clients. All new client should use
+    // PUT2 + GET2 sequence.
     // The old clients must have any_affinity set to true
     // depending on the explicit affinity - to conform the old behavior
     m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
@@ -1918,12 +1902,6 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
     // Here: the new timeout has been applied
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
-}
-
-
-void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
-{
-    x_ProcessCancel(q);
 }
 
 
@@ -2757,7 +2735,6 @@ bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
            processor == &CNetScheduleHandler::x_ProcessFastStatusS ||           // SST/SST2
            processor == &CNetScheduleHandler::x_ProcessListenJob ||             // LISTEN
            processor == &CNetScheduleHandler::x_ProcessCancel ||                // CANCEL
-           processor == &CNetScheduleHandler::x_ProcessDropJob ||               // DROJ
            processor == &CNetScheduleHandler::x_ProcessPutMessage ||            // MPUT
            processor == &CNetScheduleHandler::x_ProcessFastStatusW ||           // WST/WST2
            processor == &CNetScheduleHandler::x_ProcessPut ||                   // PUT/PUT2
