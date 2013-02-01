@@ -951,12 +951,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         return;
     }
 
-    
-    if (m_IsHTML){
-        m_Outfile << "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/align.css\" media=\"screen\" />"
-                  << "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/alignIE.css\" media=\"screen\" />"
-                  << "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/print.css\" media=\"print\" />";
-    }
+
     const bool kIsTabularOutput = false;
 
     // other output types will need a bioseq handle

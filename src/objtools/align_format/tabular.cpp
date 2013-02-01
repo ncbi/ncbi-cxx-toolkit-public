@@ -1527,8 +1527,8 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
                       << "of a V gene and has been converted to the plus strand. "
                       << "The sequence positions refer to the converted sequence.\n\n";
         }
-        m_Ostream << "<br><br><br>V(D)J rearrangement summary for query sequence:\n";
-        m_Ostream << "<pre><table border=1>\n";
+        m_Ostream << "<br>V(D)J rearrangement summary for query sequence:\n";
+        m_Ostream << "<table border=1>\n";
         m_Ostream << "<tr><td>Top V gene match</td>";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") {  
@@ -1559,7 +1559,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
         } 
         m_Ostream << "</td><td>" << (m_OtherInfo[4]!="N/A" ? m_OtherInfo[4] : "");
         m_Ostream << "</td><td>" << ((m_IsMinusStrand) ? '-' : '+') 
-                  << "</td></tr></table></pre>\n";
+                  << "</td></tr></table>\n";
         x_PrintIgGenes(true, "");
     }
 
@@ -1571,8 +1571,8 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
     }
     if (!length) return;
 
-    m_Ostream << "<br><br><br>Alignment summary between query and top germline V gene hit:\n";
-    m_Ostream << "<pre><table border=1>";
+    m_Ostream << "<br>Alignment summary between query and top germline V gene hit:\n";
+    m_Ostream << "<table border=1>";
     m_Ostream << "<tr><td> </td><td> from </td><td> to </td><td> length </td>"
               << "<td> matches </td><td> mismatches </td><td> gaps </td>"
               << "<td> identity(%) </td></tr>\n";
@@ -1588,13 +1588,13 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
             num_gap += m_IgDomains[i]->num_gap;
         }
     }
-    m_Ostream << "<tr><td> Total </td><td> </td><td> </td><td>" << length 
-              << "</td><td>" << num_match 
-              << "</td><td>" << num_mismatch
-              << "</td><td>" << num_gap
-              << "</td><td>" << std::setprecision(3) << num_match*100.0/length
-              << "</td></tr>";
-    m_Ostream << "</table></pre>\n";
+    m_Ostream << "<tr><td> Total </td><td> </td><td> </td><td> " << length 
+              << " </td><td> " << num_match 
+              << " </td><td> " << num_mismatch
+              << " </td><td> " << num_gap
+              << " </td><td> " << std::setprecision(3) << num_match*100.0/length
+              << " </td></tr>";
+    m_Ostream << "</table>\n";
 };
 
 void CIgBlastTabularInfo::x_ResetIgFields()
@@ -1682,7 +1682,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
 
     if (isHtml) {
         m_Ostream << "<br>V(D)J junction details based on top germline gene matches:\n";
-        m_Ostream << "<pre><table border=1>\n";
+        m_Ostream << "<table border=1>\n";
         m_Ostream << "<tr><td>V region end</td>";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") {
@@ -1713,7 +1713,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
     x_PrintPartialQuery(a4, min(b5, a4 + 5), isHtml); m_Ostream << m_FieldDelimiter;
 
     if (isHtml) {
-        m_Ostream << "</tr>\n</table></pre>";
+        m_Ostream << "</tr>\n</table>";
 
         m_Ostream << "*: Overlapping nucleotides may exist"
                   << " at V-D-J junction (i.e, nucleotides that could be assigned \nto either joining gene segment). "
