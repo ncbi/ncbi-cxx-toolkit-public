@@ -568,7 +568,6 @@ void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
     arg_desc->SetCurrentGroup("Prediction tuning");
     arg_desc->AddFlag("singlest","Allow single exon EST chains as evidence");
-    arg_desc->AddDefaultKey("tolerance","tolerance","if models exon boundary differ only this much only one model will survive",CArgDescriptions::eInteger,"5");
     arg_desc->AddDefaultKey("minlen","minlen","Minimal CDS length for pure ab initio models",CArgDescriptions::eInteger,"100");
 }
 
@@ -586,7 +585,6 @@ void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& arg
     annot->do_gnomon = !args["nognomon"];
 
     annot->mincontig = args["mincont"].AsInteger();
-    annot->tolerance = args["tolerance"].AsInteger();
 
     annot->minCdsLen = args["minlen"].AsInteger();
 
