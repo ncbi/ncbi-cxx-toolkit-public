@@ -6837,7 +6837,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZMUB:HERP	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Herptile collection",
 "ZMUB:ICHT	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Fish Collections",
 "ZMUB:MAMM	s	Museum of Zoology at the University of Bergen, Vertebrate collections, Mammal collection",
-"ZMUC	s	Zoological Museum, University of Copenhagen",
+"ZMUC	sb	Zoological Museum, University of Copenhagen",
 "ZMUD	s	University of Dhaka, Zoology Museum",
 "ZMUH<DEU>	s	Zoologisches Institut und Zoologisches Museum, Universitat Hamburg",
 "ZMUH<VNM>	s	Zoological Museum, University of Hanoi",
