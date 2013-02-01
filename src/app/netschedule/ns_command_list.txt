@@ -24,7 +24,6 @@ STAT GROUPS             # 4.10.0 and up
 STAT QCLASSES           # 4.14.0 and up
 STAT QUEUES             # 4.14.0 and up
 DUMP
-QPRT                    # Use DUMP with parameters instead
 AFLS
 GETP                    # It's better to use STAT QUEUES
 GETC                    # It's better to use STAT QUEUES
@@ -38,7 +37,6 @@ SST2                    # 4.10.0 and up
 SUBMIT
 LISTEN                  # 4.10.0 and up
 CANCEL
-DROJ                    # Deprecated: Use CANCEL instead
 BSUB
 BTCH
 ENDS
@@ -60,7 +58,6 @@ CWGET                   # 4.10.0 and up
 FPUT                    # Deprecated: Use FPUT2 instead
 FPUT2                   # 4.10.0 and up
 JXCG                    # Deprecated: Use PUT2 + GET2 instead
-JXCG2                   # Deprecated: 4.10.0 only
 JDEX
 READ
 CFRM
@@ -71,9 +68,4 @@ REGC                    # Deprecated
 URGC                    # Deprecated
 INIT                    # Deprecated
 JRTO                    # Deprecated
-FRES                    # Deprecated
-QERY                    # Deprecated
-QSEL                    # Deprecated
-MONI                    # Deprecated
-LOG                     # Deprecated
 
