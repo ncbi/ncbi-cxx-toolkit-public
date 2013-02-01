@@ -295,6 +295,8 @@ protected:
 
     vector<string>::size_type m_columncount;
     bool m_usescore;
+    unsigned int m_CurBatchSize;
+    const unsigned int m_MaxBatchSize;
 };
 
 END_SCOPE(objects)

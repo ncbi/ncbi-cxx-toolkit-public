@@ -102,7 +102,9 @@ CBedReader::CBedReader(
     CReaderBase(flags),
     m_currentId(""),
     m_columncount(0),
-    m_usescore(false)
+    m_usescore(false),
+    m_CurBatchSize(0),
+    m_MaxBatchSize(10000)
 {
 }
 
@@ -544,8 +546,15 @@ CBedReader::ReadTrackData(
     IErrorContainer* pErrorContainer)
 //  ----------------------------------------------------------------------------
 {
+    if (m_CurBatchSize == m_MaxBatchSize) {
+        m_CurBatchSize = 0;
+        //cerr << "Resuming track ..." << endl;
+        return xReadBedDataRaw(lr, rawdata, pErrorContainer);
+    }
+
     string line;
     while (xGetLine(lr, line)) {
+        m_CurBatchSize = 0;
         if (line == "browser"  ||  NStr::StartsWith(line, "browser ")) {
             continue;
         }
@@ -627,9 +636,9 @@ CBedReader::xReadBedRecordRaw(
     }
 
     int score(-1);
-    if (m_columncount >= 5) {
+    if (m_columncount >= 7  &&  columns[6] != ".") {
         try {
-            score = NStr::StringToInt(columns[4]);
+            score = NStr::StringToInt(columns[6]);
         }
         catch (...) {
             CObjReaderLineException err(
@@ -661,7 +670,6 @@ CBedReader::xReadBedDataRaw(
 //  ----------------------------------------------------------------------------
 {
     rawdata.Reset();
-
     string line;
     while (xGetLine(lr, line)) {
         CRawBedRecord record;
@@ -670,6 +678,11 @@ CBedReader::xReadBedDataRaw(
             break;
         }
         rawdata.AddRecord(record);
+        ++m_CurBatchSize;
+        if (m_CurBatchSize == m_MaxBatchSize) {
+            //cerr << "Breaking track ..." << endl;
+            return rawdata.HasData();
+        }
     }
 
     return rawdata.HasData();
