@@ -327,6 +327,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     // mol[ecule]
     bool bMolSetViaMolMod = false;
     if ((mod = FindMod("molecule", "mol")) != NULL) {
+        // TODO: should we check if mol was already set and is a conflicting value?
         if (NStr::EqualNocase(mod->value, "dna")) {
             seq.SetInst().SetMol( CSeq_inst::eMol_dna );
             bMolSetViaMolMod = true;
