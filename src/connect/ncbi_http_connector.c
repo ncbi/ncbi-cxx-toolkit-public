@@ -868,7 +868,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         else if (retry->mode & eRetry_ProxyAuthenticate)
             header_header = "HTTP header (authentication)";
         else if (retry->mode)
-            assert(0);
+            assert((header_header = 0));
         else if (!uuu->net_info->max_try)
             header_header = "HTTP header (unrecoverable error)";
         else
