@@ -2887,7 +2887,7 @@ BOOST_AUTO_TEST_CASE(s_VersionInfo)
 #pragma warning( push )
 #pragma warning( disable : 4996 )
 #endif
-#if defined(NCBI_COMPILER_GCC)
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 420
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
@@ -3351,7 +3351,7 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
 #if defined(NCBI_COMPILER_MSVC)
 #pragma warning( pop )
 #endif
-#if defined(NCBI_COMPILER_GCC)
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 420
 #pragma GCC diagnostic warning "-Wdeprecated-declarations"
 #endif
 
