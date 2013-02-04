@@ -65,6 +65,24 @@
  *   independent qualifier list that nonetheless needs to stay in sync,
  * - (additional subitems to be added as I become aware of them).
  *
+ * FEATURE REPRESENTATION:
+ *   Although GenBank allows numerous kinds of features, certain types
+ *   (Gene, Coding Region, Protein, and RNA) directly model the central
+ *   dogma of molecular biology, and are designed to be used in making
+ *   connections between records and in discovering new information by
+ *   computation. Other features are stored as Import features, where
+ *   the feature key is taken directly from the GenBank name. There are
+ *   a few cases where the names can be confusing, and in each case the
+ *   structured feature is normally used instead of the Import feature:
+ *
+ * - CDS uses eSubtype_cdregion instead of eSubtype_Imp_CDS.
+ * - processed proteins use the "_aa" versions:
+ *     eSubtype_mat_peptide_aa instead of eSubtype_mat_peptide.
+ *     eSubtype_sig_peptide_aa instead of eSubtype_sig_peptide.
+ *     eSubtype_transit_peptide_aa instead of eSubtype_transit_peptide.
+ * - misc_RNA uses eSubtype_otherRNA instead of eSubtype_misc_RNA.
+ * - precursor_RNA uses eSubtype_preRNA instead of eSubtype_precursor_RNA.
+ *
  */
 
 #ifndef OBJECTS_SEQFEAT_SEQFEATDATA_HPP
@@ -113,17 +131,17 @@ public:
         eSubtype_cdregion           = 3,
         eSubtype_prot               = 4,
         eSubtype_preprotein         = 5,
-        eSubtype_mat_peptide_aa     = 6,
-        eSubtype_sig_peptide_aa     = 7,
-        eSubtype_transit_peptide_aa = 8,
-        eSubtype_preRNA             = 9,
+        eSubtype_mat_peptide_aa     = 6,  // Prot-ref mat_peptide
+        eSubtype_sig_peptide_aa     = 7,  // Prot-ref sig_peptide
+        eSubtype_transit_peptide_aa = 8,  // Prot-ref transit_peptide
+        eSubtype_preRNA             = 9,  // RNA-ref precursor_RNA
         eSubtype_mRNA               = 10,
         eSubtype_tRNA               = 11,
         eSubtype_rRNA               = 12,
         eSubtype_snRNA              = 13,
         eSubtype_scRNA              = 14,
         eSubtype_snoRNA             = 15,
-        eSubtype_otherRNA           = 16,
+        eSubtype_otherRNA           = 16, // RNA-ref misc_RNA
         eSubtype_pub                = 17,
         eSubtype_seq                = 18,
         eSubtype_imp                = 19,
@@ -131,7 +149,7 @@ public:
         eSubtype_attenuator         = 21,
         eSubtype_C_region           = 22,
         eSubtype_CAAT_signal        = 23,
-        eSubtype_Imp_CDS            = 24,
+        eSubtype_Imp_CDS            = 24, // use eSubtype_cdregion for CDS
         eSubtype_conflict           = 25,
         eSubtype_D_loop             = 26,
         eSubtype_D_segment          = 27,
@@ -143,12 +161,12 @@ public:
         eSubtype_intron             = 33,
         eSubtype_J_segment          = 34,
         eSubtype_LTR                = 35,
-        eSubtype_mat_peptide        = 36,
+        eSubtype_mat_peptide        = 36, // use eSubtype_mat_peptide_aa
         eSubtype_misc_binding       = 37,
         eSubtype_misc_difference    = 38,
         eSubtype_misc_feature       = 39,
         eSubtype_misc_recomb        = 40,
-        eSubtype_misc_RNA           = 41,
+        eSubtype_misc_RNA           = 41, // use eSubtype_otherRNA for misc_RNA
         eSubtype_misc_signal        = 42,
         eSubtype_misc_structure     = 43,
         eSubtype_modified_base      = 44,
@@ -157,7 +175,7 @@ public:
         eSubtype_old_sequence       = 47,
         eSubtype_polyA_signal       = 48,
         eSubtype_polyA_site         = 49,
-        eSubtype_precursor_RNA      = 50,
+        eSubtype_precursor_RNA      = 50, // use eSubtype_preRNA for precursor_RNA
         eSubtype_prim_transcript    = 51,
         eSubtype_primer_bind        = 52,
         eSubtype_promoter           = 53,
@@ -168,13 +186,13 @@ public:
         eSubtype_rep_origin         = 58,
         eSubtype_S_region           = 59,
         eSubtype_satellite          = 60,
-        eSubtype_sig_peptide        = 61,
+        eSubtype_sig_peptide        = 61, // use eSubtype_sig_peptide_aa
         eSubtype_source             = 62,
         eSubtype_stem_loop          = 63,
         eSubtype_STS                = 64,
         eSubtype_TATA_signal        = 65,
         eSubtype_terminator         = 66,
-        eSubtype_transit_peptide    = 67,
+        eSubtype_transit_peptide    = 67, // use eSubtype_transit_peptide_aa
         eSubtype_unsure             = 68,
         eSubtype_V_region           = 69,
         eSubtype_V_segment          = 70,
