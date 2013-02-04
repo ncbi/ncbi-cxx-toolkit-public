@@ -789,12 +789,12 @@ CTestTranscript_PolyA::RunTest(const CSerialObject& obj,
 
 void TestStrongKozakUorfs(const CBioseq_Handle bsh, CSeq_test_result& result)
 {
-    TSeqPos cds_start(-1);
+    TSeqPos cds_start(kInvalidSeqPos);
     for(CFeat_CI ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion)); ci; ++ci) {
         cds_start = ci->GetLocation().GetStart(eExtreme_Positional);
         break;
     } 
-    if(cds_start == static_cast<TSeqPos>(-1)) {
+    if(cds_start == kInvalidSeqPos) {
         return;
     }
 

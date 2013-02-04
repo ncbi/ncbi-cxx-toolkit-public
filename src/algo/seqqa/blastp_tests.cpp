@@ -40,6 +40,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -164,7 +165,7 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
                                       top_match_id.AsFastaString());
     result->SetOutput_data()
             .AddField("title_top_match",
-                      sequence::GetTitle(hand, sequence::fGetTitle_Organism));
+                      sequence::CDeflineGenerator().GenerateDefline(hand)); //replaces: sequence::GetTitle(hand, sequence::fGetTitle_Organism));
     return ref;
 }
 
