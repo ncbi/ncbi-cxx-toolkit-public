@@ -4349,7 +4349,6 @@ static void TestOneCDS (CRef<CSeq_feat> feat, CScope * scope, int expected_frame
     CRef<CCode_break> cbr = cds.GetCode_break().front();
     CSeq_loc& cbr_loc = cbr->SetLoc();
     int frame = 0;
-    int cbr_stop_adjust = 2;
     if (cbr_loc.GetStrand() == eNa_strand_minus) {
       cbr_loc.SetInt().SetTo(feat->GetLocation().GetStart(eExtreme_Biological) - 3);
       cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);

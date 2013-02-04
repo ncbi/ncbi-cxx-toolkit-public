@@ -1569,27 +1569,6 @@ void CValidError_feat::ValidateCdregion (
 }
 
 
-static bool s_FrameMatch (const CCdregion& cds, int frame)
-{
-    bool rval = false;
-
-    if (!cds.IsSetFrame() || cds.GetFrame() == CCdregion::eFrame_not_set || cds.GetFrame() == CCdregion::eFrame_one) {
-        if (frame == 0 || frame == 1) {
-            rval = true;
-        }
-    } else if (cds.GetFrame() == CCdregion::eFrame_two) {
-        if (frame == 2) {
-            rval = true;
-        }
-    } else if (cds.GetFrame() == CCdregion::eFrame_three) {
-        if (frame == 3) {
-            rval = true;
-        }
-    }
-    return rval;
-}
-
-
 void CValidError_feat::x_ValidateCdregionCodebreak
 (const CCdregion& cds,
  const CSeq_feat& feat)
@@ -1610,7 +1589,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
             } else {
                 int frame = 0;
                 CRef<CSeq_loc> p_loc = SourceToProduct(feat, cbr_loc, fS2P_AllowTer, m_Scope, &frame);
-                if (!p_loc || p_loc->IsNull() || frame != 1 /* !s_FrameMatch (cds, frame) */ ) {
+                if (!p_loc || p_loc->IsNull() || frame != 1 ) {
                     PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                         "Code-break location not in coding region - may be frame problem", feat);
                 }

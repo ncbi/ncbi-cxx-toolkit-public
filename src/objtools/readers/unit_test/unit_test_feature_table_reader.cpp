@@ -141,7 +141,6 @@ static void CheckExpectedQuals (CConstRef<CSeq_feat> feat, vector<string> expect
         }
     }
     size_t pos = 0;
-    bool expected = false;
     ITERATE (vector<string>, it, expected_quals) {
         if (!found[pos]) {
             BOOST_CHECK_EQUAL("Missing Qualifier", *it);
@@ -458,7 +457,6 @@ BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
                 BOOST_REQUIRE (!NStr::IsBlank(rna.GetExt().GetName()));
             }
         } else if ((*feat)->GetData().IsCdregion()) {
-            const CCdregion& cdr = (*feat)->GetData().GetCdregion();
             BOOST_REQUIRE ((*feat)->IsSetXref());
             BOOST_REQUIRE ((*feat)->GetXref().front()->IsSetData());
             BOOST_REQUIRE ((*feat)->GetXref().front()->GetData().IsProt());
