@@ -234,3 +234,7 @@ Corrected to make sure LIB projects never modify DLL ones.
 December 18, 2012
 version 3.8.4
 Corrected to recognize both user requests - NCBI-Unicode and NCBI_Unicode.
+
+February 04, 2013
+version 3.8.5
+Corrected MSVC2010 file filter comparison.
