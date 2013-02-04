@@ -139,6 +139,7 @@ bool PromoteIfDifferent(const string& present_path,
         string str_present, str_new;
         bool eol_present=false, eol_new = false;
         for (;;) {
+            eol_present=false;
             for (;;) {
                 if (!NcbiGetlineEOL(ifs_present, str_present) ) {
                     break;
@@ -149,6 +150,7 @@ bool PromoteIfDifferent(const string& present_path,
                     break;
                 }
             }
+            eol_new = false;
             for (;;) {
                 if (!NcbiGetlineEOL(ifs_new, str_new) ) {
                     break;
@@ -159,7 +161,7 @@ bool PromoteIfDifferent(const string& present_path,
                     break;
                 }
             }
-            if (eol_present && eol_new) {
+            if (!eol_present && !eol_new) {
                 ifs_new.close();
                 CDirEntry(candidate_path).Remove();
                 return false;
