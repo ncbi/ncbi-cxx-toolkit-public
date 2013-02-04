@@ -1208,7 +1208,7 @@ const string strLinkBaseUSPTO(
     "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=" );
 
 const string strDocLink(
-    "http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml" );
+    "http://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/" );
 
 bool ConvertQuotesNotInHTMLTags( string &str )
 {   

@@ -1001,7 +1001,7 @@ string CCommentItem::GetStringForModelEvidance
     }
 
     const char *documentation_str = ( bHtml ? 
-        "<a href=\"http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml\">Documentation</a>" : 
+        "<a href=\"http://www.ncbi.nlm.nih.gov/genome/annotation_euk/process/\">Documentation</a>" : 
         "Documentation" );
 
     text << ".~Also see:~"
