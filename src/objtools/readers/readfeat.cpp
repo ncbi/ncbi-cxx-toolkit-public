@@ -120,11 +120,13 @@ public:
         eQual_db_xref,
         eQual_direction,
         eQual_EC_number,
+        eQual_estimated_length,
         eQual_evidence,
         eQual_exception,
         eQual_experiment,
         eQual_frequency,
         eQual_function,
+        eQual_gap_type,
         eQual_gen_map,
         eQual_gene,
         eQual_gene_desc,
@@ -136,12 +138,14 @@ public:
         eQual_inference,
         eQual_insertion_seq,
         eQual_label,
+        eQual_linkage_evidence,
         eQual_loccnt,
         eQual_locus_tag,
         eQual_macronuclear,
         eQual_map,
         eQual_MEDLINE,
         eQual_method,
+        eQual_mobile_element_type,
         eQual_mod_base,
         eQual_muid,
         eQual_ncRNA_class,
@@ -160,6 +164,7 @@ public:
         eQual_prot_note,
         eQual_protein_id,
         eQual_pseudo,
+        eQual_pseudogene,
         eQual_PubMed,
         eQual_rad_map,
         eQual_region_name,
@@ -381,7 +386,9 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "V_segment",          CSeqFeatData::eSubtype_V_segment           },
     {  "VariationRef",       CSeqFeatData::eSubtype_variation_ref       },
     {  "Xref",               CSeqFeatData::eSubtype_seq                 },
+    {  "assembly_gap",       CSeqFeatData::eSubtype_assembly_gap        },
     {  "attenuator",         CSeqFeatData::eSubtype_attenuator          },
+    {  "centromere",         CSeqFeatData::eSubtype_centromere          },
     {  "conflict",           CSeqFeatData::eSubtype_conflict            },
     {  "enhancer",           CSeqFeatData::eSubtype_enhancer            },
     {  "exon",               CSeqFeatData::eSubtype_exon                },
@@ -399,6 +406,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "misc_recomb",        CSeqFeatData::eSubtype_misc_recomb         },
     {  "misc_signal",        CSeqFeatData::eSubtype_misc_signal         },
     {  "misc_structure",     CSeqFeatData::eSubtype_misc_structure      },
+    {  "mobile_element",     CSeqFeatData::eSubtype_mobile_element      },
     {  "modified_base",      CSeqFeatData::eSubtype_modified_base       },
     {  "ncRNA",              CSeqFeatData::eSubtype_ncRNA               },
     {  "old_sequence",       CSeqFeatData::eSubtype_old_sequence        },
@@ -426,6 +434,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "source",             CSeqFeatData::eSubtype_biosrc              },
     {  "stem_loop",          CSeqFeatData::eSubtype_stem_loop           },
     {  "tRNA",               CSeqFeatData::eSubtype_tRNA                },
+    {  "telomere",           CSeqFeatData::eSubtype_telomere            },
     {  "terminator",         CSeqFeatData::eSubtype_terminator          },
     {  "tmRNA",              CSeqFeatData::eSubtype_tmRNA               },
     {  "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa  },
@@ -464,11 +473,13 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "cyt_map",              CFeature_table_reader_imp::eQual_cyt_map               },
     {  "db_xref",              CFeature_table_reader_imp::eQual_db_xref               },
     {  "direction",            CFeature_table_reader_imp::eQual_direction             },
+    {  "estimated_length",     CFeature_table_reader_imp::eQual_estimated_length      },
     {  "evidence",             CFeature_table_reader_imp::eQual_evidence              },
     {  "exception",            CFeature_table_reader_imp::eQual_exception             },
     {  "experiment",           CFeature_table_reader_imp::eQual_experiment            },
     {  "frequency",            CFeature_table_reader_imp::eQual_frequency             },
     {  "function",             CFeature_table_reader_imp::eQual_function              },
+    {  "gap_type",             CFeature_table_reader_imp::eQual_gap_type              },
     {  "gen_map",              CFeature_table_reader_imp::eQual_gen_map               },
     {  "gene",                 CFeature_table_reader_imp::eQual_gene                  },
     {  "gene_desc",            CFeature_table_reader_imp::eQual_gene_desc             },
@@ -481,11 +492,13 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "inference",            CFeature_table_reader_imp::eQual_inference             },
     {  "insertion_seq",        CFeature_table_reader_imp::eQual_insertion_seq         },
     {  "label",                CFeature_table_reader_imp::eQual_label                 },
+    {  "linkage_evidence",     CFeature_table_reader_imp::eQual_linkage_evidence      },
     {  "loccnt",               CFeature_table_reader_imp::eQual_loccnt                },
     {  "locus_tag",            CFeature_table_reader_imp::eQual_locus_tag             },
     {  "macronuclear",         CFeature_table_reader_imp::eQual_macronuclear          },
     {  "map",                  CFeature_table_reader_imp::eQual_map                   },
     {  "method",               CFeature_table_reader_imp::eQual_method                },
+    {  "mobile_element_type",  CFeature_table_reader_imp::eQual_mobile_element_type   },
     {  "mod_base",             CFeature_table_reader_imp::eQual_mod_base              },
     {  "ncRNA_class",          CFeature_table_reader_imp::eQual_ncRNA_class           },
     {  "nomenclature",         CFeature_table_reader_imp::eQual_nomenclature          },
@@ -501,6 +514,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "prot_note",            CFeature_table_reader_imp::eQual_prot_note             },
     {  "protein_id",           CFeature_table_reader_imp::eQual_protein_id            },
     {  "pseudo",               CFeature_table_reader_imp::eQual_pseudo                },
+    {  "pseudogene",           CFeature_table_reader_imp::eQual_pseudogene            },
     {  "rad_map",              CFeature_table_reader_imp::eQual_rad_map               },
     {  "replace",              CFeature_table_reader_imp::eQual_replace               },
     {  "ribosomal_slippage",   CFeature_table_reader_imp::eQual_ribosomal_slippage    },
@@ -2016,12 +2030,14 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_cons_splice:
                 case eQual_direction:
                 case eQual_EC_number:
+                case eQual_estimated_length:
                 case eQual_experiment:
                 case eQual_frequency:
                 case eQual_function:
-                
+                case eQual_gap_type:
                 case eQual_insertion_seq:
                 case eQual_label:
+                case eQual_linkage_evidence:
                 case eQual_map:
                 case eQual_ncRNA_class:
                 case eQual_number:
@@ -2032,6 +2048,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_phenotype:
                 case eQual_product:
                 case eQual_protein_id:
+                case eQual_pseudogene:
                 case eQual_satellite:
                 case eQual_rpt_family:
                 case eQual_rpt_type:
@@ -2046,6 +2063,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_cyt_map:
                 case eQual_gen_map:
                 case eQual_rad_map:
+                case eQual_mobile_element_type:
 
                     {
                         x_AddGBQualToFeature (sfp, qual, val);
