@@ -1,0 +1,361 @@
+-- =================================
+-- ! Mapping spliced-seg alignment !
+-- =================================
+
+-- Mapping spliced-seg product, nuc to nuc: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Mapping spliced-seg product, nuc to nuc: destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+
+-- Mapping spliced-seg product, nuc to nuc: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 50
+        },
+        ext {
+          {
+            type str "exon-info",
+            data {
+              {
+                label str "Whatever",
+                data int 123
+              }
+            }
+          }
+        }
+      }
+    },
+    product-length 100
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
+    }
+  }
+}
+-- Mapping spliced-seg product, nuc to nuc: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 110,
+        product-end nucpos 199,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          genomic-ins 10,
+          match 40,
+          mismatch 50
+        },
+        ext {
+          {
+            type str "exon-info",
+            data {
+              {
+                label str "Whatever",
+                data int 123
+              }
+            }
+          }
+        }
+      }
+    },
+    product-length 100
+  },
+  ext {
+    {
+      type str "info",
+      data {
+        {
+          label str "Whatever",
+          data int 456
+        }
+      }
+    }
+  }
+}
+
+-- Mapping spliced-seg product, nuc to prot: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Mapping spliced-seg product, nuc to prot: destination
+Seq-loc ::= int {
+  from 110,
+  to 139,
+  id gi 6
+}
+
+-- Mapping spliced-seg product, nuc to prot: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 50
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Mapping spliced-seg product, nuc to prot: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 110,
+          frame 1
+        },
+        product-end protpos {
+          amin 139,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          genomic-ins 10,
+          match 40,
+          mismatch 50
+        }
+      }
+    },
+    product-length 100
+  }
+}
+
+
+-- Mapping spliced-seg product, nuc to prot, reversed strand: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  strand minus,
+  id gi 4
+}
+-- Mapping spliced-seg product, nuc to prot, reversed strand: destination
+Seq-loc ::= int {
+  from 110,
+  to 139,
+  id gi 6
+}
+
+-- Mapping spliced-seg product, nuc to prot, reversed strand: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand minus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 50
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Mapping spliced-seg product, nuc to prot, reversed strand: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 110,
+          frame 1
+        },
+        product-end protpos {
+          amin 139,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 50,
+          mismatch 40,
+          genomic-ins 10
+        }
+      }
+    },
+    product-length 100
+  }
+}
+
+
+-- Mapping spliced-seg through multiple ranges: source
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 4
+  },
+  int {
+    from 50,
+    to 59,
+    id gi 4
+  },
+  int {
+    from 70,
+    to 79,
+    id gi 4
+  }
+}
+-- Mapping spliced-seg through multiple ranges: destination
+Seq-loc ::= mix {
+  int {
+    from 100,
+    to 109,
+    id gi 5
+  },
+  int {
+    from 200,
+    to 214,
+    id gi 5
+  },
+  int {
+    from 300,
+    to 314,
+    id gi 5
+  }
+}
+
+-- Mapping spliced-seg through multiple ranges: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 99,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 52,
+          mismatch 48
+        }
+      }
+    },
+    product-length 100
+  }
+}
+-- Mapping spliced-seg through multiple ranges: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 100,
+        product-end nucpos 314,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          genomic-ins 10,
+          match 10,
+          genomic-ins 10,
+          product-ins 90,
+          match 10,
+          genomic-ins 10,
+          match 2,
+          mismatch 3,
+          product-ins 85,
+          mismatch 5,
+          genomic-ins 10,
+          mismatch 10,
+          genomic-ins 20
+        }
+      }
+    },
+    product-length 100
+  }
+}

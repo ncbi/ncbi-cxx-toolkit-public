@@ -1,0 +1,598 @@
+-- ==================
+-- ! Mapping scores !
+-- ==================
+
+-- Mapping scores: source
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 4
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 4
+  }
+}
+-- Mapping scores: destination
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 5
+  },
+  int {
+    from 30,
+    to 39,
+    id gi 5
+  }
+}
+
+-- Dense-diag - scores are preserved: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 4,
+        gi 3
+      },
+      starts {
+        10,
+        110
+      },
+      len 10,
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 4,
+        gi 3
+      },
+      starts {
+        30,
+        130
+      },
+      len 10,
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+-- Dense-diag - scores are preserved: expected
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      starts {
+        10,
+        110
+      },
+      len 10,
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      starts {
+        30,
+        130
+      },
+      len 10,
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Dense-seg, scores are preserved: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+-- Dense-seg, scores are preserved: expected
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+
+-- Dense-seg - scores are dropped (global and one segment): original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    lens {
+      15,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+-- Dense-seg - scores are dropped (global and one segment): expected
+Seq-align ::= {
+  type partial,
+  segs denseg {
+    dim 2,
+    numseg 3,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      -1,
+      120,
+      30,
+      130
+    },
+    lens {
+      10,
+      5,
+      10
+    }
+  }
+}
+
+-- Std-seg, scores are preserved: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 10,
+          to 19,
+          id gi 4
+        },
+        int {
+          from 110,
+          to 119,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 4
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+-- Std-seg, scores are preserved: expected
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 10,
+          to 19,
+          id gi 5
+        },
+        int {
+          from 110,
+          to 119,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 5
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Std-seg - scores are dropped (global and one segment): original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 10,
+          to 24,
+          id gi 4
+        },
+        int {
+          from 110,
+          to 124,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 4
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+-- Std-seg - scores are dropped (global and one segment): expected
+Seq-align ::= {
+  type partial,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 10,
+          to 19,
+          id gi 5
+        },
+        int {
+          from 110,
+          to 119,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        empty gi 5,
+        int {
+          from 120,
+          to 124,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 5
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Packed-seg, scores are preserved: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+-- Packed-seg, scores are preserved: expected
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+
+-- Packed-seg - scores are dropped (global and one segment): original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      15,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+-- Packed-seg - scores are dropped (global and one segment): expected
+Seq-align ::= {
+  type partial,
+  segs packed {
+    dim 2,
+    numseg 3,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      10,
+      110,
+      4294967295,
+      120,
+      30,
+      130
+    },
+    present '010100010101'H,
+    lens {
+      10,
+      5,
+      10
+    }
+  }
+}

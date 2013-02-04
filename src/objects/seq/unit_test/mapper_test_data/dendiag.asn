@@ -1,0 +1,134 @@
+-- ================================
+-- ! Mapping dense-diag alignment !
+-- ================================
+
+-- Mapping dense-diag alignment: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Mapping dense-diag alignment: destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+
+-- Single segment: original
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 4
+      },
+      starts {
+        915,
+        15
+      },
+      len 70
+    }
+  }
+}
+-- Single segment: expected
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 5
+      },
+      starts {
+        915,
+        115
+      },
+      len 70
+    }
+  }
+}
+
+-- Unsupported mapped alignment - gaps in dense-diag: original
+-- Exception expected
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 4
+      },
+      starts {
+        905,
+        5
+      },
+      len 110
+    }
+  }
+}
+
+
+-- Mapping dense-diag alignment, reverse: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Mapping dense-diag alignment, reverse: destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Single segment, reversed strand: original
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 4
+      },
+      starts {
+        915,
+        15
+      },
+      len 70
+    }
+  }
+}
+-- Single segment, reversed strand: expected
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 5
+      },
+      starts {
+        915,
+        125
+      },
+      len 70,
+      strands {
+        unknown,
+        minus
+      }
+    }
+  }
+}

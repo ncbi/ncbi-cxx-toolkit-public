@@ -1,0 +1,34 @@
+-- ============================================
+-- ! Test mapping with sequence info provider !
+-- ============================================
+
+-- Test mapping with sequence info provider: source
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  id gi 4
+}
+-- Test mapping with sequence info provider: destination
+Seq-loc ::= whole gi 5
+
+-- Test mapping whole, nuc to prot: original
+Seq-loc ::= whole gi 4
+-- Test mapping whole, nuc to prot: expected
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 5
+}
+
+-- Test mapping interval, nuc to prot: original
+Seq-loc ::= int {
+  from 30,
+  to 59,
+  id gi 4
+}
+-- Test mapping interval, nuc to prot: expected
+Seq-loc ::= int {
+  from 10,
+  to 19,
+  id gi 5
+}

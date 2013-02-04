@@ -1,0 +1,285 @@
+-- ==================
+-- ! Mapping graphs !
+-- ==================
+
+-- Mapping graphs: source
+Seq-loc ::= int {
+  from 10,
+  to 19,
+  id gi 4
+}
+-- Mapping graphs: destination
+Seq-loc ::= int {
+  from 110,
+  to 119,
+  id gi 5
+}
+
+-- Mapping whole graph: original
+Seq-graph ::= {
+  loc int {
+    from 8,
+    to 28,
+    id gi 4
+  },
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    }
+  }
+}
+-- Mapping whole graph: expected
+Seq-graph ::= {
+  loc int {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  comp 1,
+  numval 10,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    }
+  }
+}
+
+-- Partial - skip a range in the middle: original
+Seq-graph ::= {
+  loc packed-int {
+    {
+      from 5,
+      to 14,
+      id gi 4
+    },
+    {
+      from 105,
+      to 114,
+      id gi 999
+    },
+    {
+      from 15,
+      to 24,
+      id gi 4
+    }
+  },
+  numval 30,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+    }
+  }
+}
+-- Partial - skip a range in the middle: expected
+Seq-graph ::= {
+  loc packed-int {
+    {
+      from 110,
+      to 114,
+      id gi 5,
+      fuzz-from lim lt,
+      fuzz-to lim tr
+    },
+    {
+      from 115,
+      to 119,
+      id gi 5,
+      fuzz-from lim tl,
+      fuzz-to lim gt
+    }
+  },
+  comp 1,
+  numval 10,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      5, 6, 7, 8, 9, 20, 21, 22, 23, 24
+    }
+  }
+}
+
+-- Mapping a graph on minus strand: original
+Seq-graph ::= {
+  loc int {
+    from 8,
+    to 28,
+    strand minus,
+    id gi 4
+  },
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    }
+  }
+}
+-- Mapping a graph on minus strand: expected
+Seq-graph ::= {
+  loc int {
+    from 110,
+    to 119,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  comp 1,
+  numval 10,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+    }
+  }
+}
+
+
+-- Graph mapping, nuc to prot: source
+Seq-loc ::= int {
+  from 10,
+  to 39,
+  id gi 4
+}
+-- Graph mapping, nuc to prot: destination
+Seq-loc ::= int {
+  from 110,
+  to 119,
+  id gi 6
+}
+
+-- Simple graph, using comp=3 to allow mapping: original
+Seq-graph ::= {
+  loc int {
+    from 7,
+    to 27,
+    id gi 4
+  },
+  comp 3,
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    }
+  }
+}
+-- Simple graph, using comp=3 to allow mapping: expected
+Seq-graph ::= {
+  loc int {
+    from 110,
+    to 115,
+    id gi 6,
+    fuzz-from lim lt
+  },
+  comp 1,
+  numval 6,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      1, 2, 3, 4, 5, 6
+    }
+  }
+}
+
+-- Unsupported: different original and mapped location lengths: original
+-- Exception expected
+Seq-graph ::= {
+  loc int {
+    from 8,
+    to 28,
+    id gi 4
+  },
+  numval 20,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    }
+  }
+}
+
+-- Unsupported: unknown destination sequence type: original
+-- Exception expected
+Seq-graph ::= {
+  loc packed-int {
+    {
+      from 5,
+      to 14,
+      id gi 4
+    },
+    {
+      from 105,
+      to 114,
+      id gi 999
+    },
+    {
+      from 15,
+      to 24,
+      id gi 4
+    }
+  },
+  numval 30,
+  graph int {
+    max 100,
+    min 0,
+    axis 0,
+    values {
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+    }
+  }
+}

@@ -1,0 +1,1148 @@
+-- ===============================
+-- ! Merging of mapped intervals !
+-- ===============================
+
+-- Merging of mapped intervals: source
+Seq-loc ::= int {
+  from 0,
+  to 999,
+  id gi 4
+}
+-- Merging of mapped intervals: destination on plus
+Seq-loc ::= int {
+  from 0,
+  to 999,
+  id gi 5
+}
+-- Merging of mapped intervals: destination on minus
+Seq-loc ::= int {
+  from 0,
+  to 999,
+  strand minus,
+  id gi 5
+}
+
+-- Merging of mapped intervals: original on plus
+Seq-loc ::= mix {
+  int {
+    from 10,
+    to 19,
+    id gi 4
+  },
+  int {
+    from 20,
+    to 29,
+    id gi 4
+  },
+  int {
+    from 31,
+    to 39,
+    id gi 4
+  },
+  int {
+    from 45,
+    to 49,
+    id gi 4
+  },
+  int {
+    from 49,
+    to 59,
+    id gi 4
+  },
+  int {
+    from 55,
+    to 69,
+    id gi 4
+  },
+  int {
+    from 80,
+    to 89,
+    id gi 4
+  },
+  int {
+    from 82,
+    to 88,
+    id gi 4
+  },
+  int {
+    from 100,
+    to 107,
+    id gi 4
+  },
+  int {
+    from 105,
+    to 109,
+    id gi 4
+  },
+  int {
+    from 125,
+    to 129,
+    id gi 4
+  },
+  int {
+    from 120,
+    to 127,
+    id gi 4
+  }
+}
+
+-- No merging: expected
+Seq-loc ::= packed-int {
+  {
+    from 10,
+    to 19,
+    id gi 5
+  },
+  {
+    from 20,
+    to 29,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    id gi 5
+  },
+  {
+    from 45,
+    to 49,
+    id gi 5
+  },
+  {
+    from 49,
+    to 59,
+    id gi 5
+  },
+  {
+    from 55,
+    to 69,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    id gi 5
+  },
+  {
+    from 82,
+    to 88,
+    id gi 5
+  },
+  {
+    from 100,
+    to 107,
+    id gi 5
+  },
+  {
+    from 105,
+    to 109,
+    id gi 5
+  },
+  {
+    from 125,
+    to 129,
+    id gi 5
+  },
+  {
+    from 120,
+    to 127,
+    id gi 5
+  }
+}
+
+-- No merging, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 980,
+    to 989,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 970,
+    to 979,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 950,
+    to 954,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 940,
+    to 950,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 944,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 911,
+    to 917,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 892,
+    to 899,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 894,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 870,
+    to 874,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 872,
+    to 879,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Merge abutting: expected
+Seq-loc ::= packed-int {
+  {
+    from 10,
+    to 29,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    id gi 5
+  },
+  {
+    from 45,
+    to 49,
+    id gi 5
+  },
+  {
+    from 49,
+    to 59,
+    id gi 5
+  },
+  {
+    from 55,
+    to 69,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    id gi 5
+  },
+  {
+    from 82,
+    to 88,
+    id gi 5
+  },
+  {
+    from 100,
+    to 107,
+    id gi 5
+  },
+  {
+    from 105,
+    to 109,
+    id gi 5
+  },
+  {
+    from 125,
+    to 129,
+    id gi 5
+  },
+  {
+    from 120,
+    to 127,
+    id gi 5
+  }
+}
+
+-- Merge abutting, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 970,
+    to 989,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 950,
+    to 954,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 940,
+    to 950,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 944,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 911,
+    to 917,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 892,
+    to 899,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 894,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 870,
+    to 874,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 872,
+    to 879,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Merge contained: expected
+Seq-loc ::= packed-int {
+  {
+    from 10,
+    to 19,
+    id gi 5
+  },
+  {
+    from 20,
+    to 29,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    id gi 5
+  },
+  {
+    from 45,
+    to 49,
+    id gi 5
+  },
+  {
+    from 49,
+    to 59,
+    id gi 5
+  },
+  {
+    from 55,
+    to 69,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    id gi 5
+  },
+  {
+    from 100,
+    to 107,
+    id gi 5
+  },
+  {
+    from 105,
+    to 109,
+    id gi 5
+  },
+  {
+    from 120,
+    to 127,
+    id gi 5
+  },
+  {
+    from 125,
+    to 129,
+    id gi 5
+  }
+}
+
+-- Merge contained, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 980,
+    to 989,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 970,
+    to 979,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 950,
+    to 954,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 940,
+    to 950,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 944,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 892,
+    to 899,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 894,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 872,
+    to 879,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 870,
+    to 874,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Merge all: expected
+Seq-loc ::= packed-int {
+  {
+    from 10,
+    to 29,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    id gi 5
+  },
+  {
+    from 45,
+    to 69,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    id gi 5
+  },
+  {
+    from 100,
+    to 109,
+    id gi 5
+  },
+  {
+    from 120,
+    to 129,
+    id gi 5
+  }
+}
+
+-- Merge all, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 970,
+    to 989,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 954,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 899,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 870,
+    to 879,
+    strand minus,
+    id gi 5
+  }
+}
+
+
+-- Merging of mapped intervals: original on plus: original on minus strand
+Seq-loc ::= mix {
+  int {
+    from 120,
+    to 127,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 125,
+    to 129,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 105,
+    to 109,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 100,
+    to 107,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 82,
+    to 88,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 80,
+    to 89,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 55,
+    to 69,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 49,
+    to 59,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 45,
+    to 49,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 31,
+    to 39,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 20,
+    to 29,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 10,
+    to 19,
+    strand minus,
+    id gi 4
+  }
+}
+
+-- Minus strand original, no merging: expected
+Seq-loc ::= packed-int {
+  {
+    from 120,
+    to 127,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 125,
+    to 129,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 105,
+    to 109,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 100,
+    to 107,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 82,
+    to 88,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 55,
+    to 69,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 49,
+    to 59,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 45,
+    to 49,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 20,
+    to 29,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 10,
+    to 19,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, no merging, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 872,
+    to 879,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 870,
+    to 874,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 894,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 892,
+    to 899,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 911,
+    to 917,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 944,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 940,
+    to 950,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 950,
+    to 954,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 970,
+    to 979,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 980,
+    to 989,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, merge abutting: expected
+Seq-loc ::= packed-int {
+  {
+    from 120,
+    to 127,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 125,
+    to 129,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 105,
+    to 109,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 100,
+    to 107,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 82,
+    to 88,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 55,
+    to 69,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 49,
+    to 59,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 45,
+    to 49,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 10,
+    to 29,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, merge abutting, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 872,
+    to 879,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 870,
+    to 874,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 894,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 892,
+    to 899,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 911,
+    to 917,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 944,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 940,
+    to 950,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 950,
+    to 954,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 970,
+    to 989,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, merge contained: expected
+Seq-loc ::= packed-int {
+  {
+    from 125,
+    to 129,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 120,
+    to 127,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 105,
+    to 109,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 100,
+    to 107,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 55,
+    to 69,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 49,
+    to 59,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 45,
+    to 49,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 20,
+    to 29,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 10,
+    to 19,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, merge contained, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 870,
+    to 874,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 872,
+    to 879,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 894,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 892,
+    to 899,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 944,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 940,
+    to 950,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 950,
+    to 954,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 970,
+    to 979,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 980,
+    to 989,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, merge all: expected
+Seq-loc ::= packed-int {
+  {
+    from 120,
+    to 129,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 100,
+    to 109,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 80,
+    to 89,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 45,
+    to 69,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 31,
+    to 39,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 10,
+    to 29,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Minus strand original, merge all, reverse strand mapping: expected
+Seq-loc ::= packed-int {
+  {
+    from 870,
+    to 879,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 890,
+    to 899,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 910,
+    to 919,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 930,
+    to 954,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 960,
+    to 968,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 970,
+    to 989,
+    strand plus,
+    id gi 5
+  }
+}

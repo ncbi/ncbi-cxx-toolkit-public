@@ -1,0 +1,781 @@
+-- ==============================
+-- ! Mapping through alignments !
+-- ==============================
+
+-- Mapping through dense-diag: mapping
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 4
+      },
+      starts {
+        110,
+        10
+      },
+      len 20
+    },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 4
+      },
+      starts {
+        150,
+        40
+      },
+      len 50
+    }
+  }
+}
+
+-- [Mapping through dense-diag] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through dense-diag] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through dense-diag] Interval, complete: original
+Seq-loc ::= int {
+  from 20,
+  to 29,
+  id gi 4
+}
+-- [Mapping through dense-diag] Interval, complete: expected
+Seq-loc ::= int {
+  from 120,
+  to 129,
+  id gi 5
+}
+
+-- [Mapping through dense-diag] Interval, split: original
+Seq-loc ::= int {
+  from 20,
+  to 89,
+  id gi 4
+}
+-- [Mapping through dense-diag] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 120,
+    to 129,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- Mapping through dense-seg (with some gaps): mapping
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 4,
+    ids {
+      gi 5,
+      gi 4
+    },
+    starts {
+      110,
+      10,
+      -1,
+      20,
+      25,
+      -1,
+      130,
+      30 
+    },
+    lens {
+      10,
+      5,
+      5,
+      30
+    }
+  }
+}
+
+-- [Mapping through dense-seg (with some gaps)] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through dense-seg (with some gaps)] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through dense-seg (with some gaps)] Interval, complete: original
+Seq-loc ::= int {
+  from 30,
+  to 49,
+  id gi 4
+}
+-- [Mapping through dense-seg (with some gaps)] Interval, complete: expected
+Seq-loc ::= int {
+  from 130,
+  to 149,
+  id gi 5
+}
+
+-- [Mapping through dense-seg (with some gaps)] Interval, split: original
+Seq-loc ::= int {
+  from 15,
+  to 89,
+  id gi 4
+}
+-- [Mapping through dense-seg (with some gaps)] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Mapping through packed-seg (with some gaps): mapping
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs packed {
+    dim 2,
+    numseg 4,
+    ids {
+      gi 5,
+      gi 4
+    },
+    starts {
+      110, 10, 0, 20, 125, 0, 130, 30 
+    },
+    present '0101000101000101'H,
+    lens {
+      10,
+      5,
+      5,
+      30
+    }
+  }
+}
+
+-- [Mapping through packed-seg (with some gaps)] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through packed-seg (with some gaps)] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through packed-seg (with some gaps)] Interval, complete: original
+Seq-loc ::= int {
+  from 30,
+  to 49,
+  id gi 4
+}
+-- [Mapping through packed-seg (with some gaps)] Interval, complete: expected
+Seq-loc ::= int {
+  from 130,
+  to 149,
+  id gi 5
+}
+
+-- [Mapping through packed-seg (with some gaps)] Interval, split: original
+Seq-loc ::= int {
+  from 15,
+  to 89,
+  id gi 4
+}
+-- [Mapping through packed-seg (with some gaps)] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 159,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Mapping through std-seg: mapping
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 4
+      },
+      loc {
+        packed-int {
+          {
+            from 110,
+            to 129,
+            id gi 5
+          },
+          {
+            from 150,
+            to 189,
+            id gi 5
+          }
+        },
+        packed-int {
+          {
+            from 10,
+            to 29,
+            id gi 4
+          },
+          {
+            from 40,
+            to 79,
+            id gi 4
+          }
+        }
+      }
+    }
+  }
+}
+
+-- [Mapping through std-seg] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through std-seg] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through std-seg] Interval, complete: original
+Seq-loc ::= int {
+  from 50,
+  to 69,
+  id gi 4
+}
+-- [Mapping through std-seg] Interval, complete: expected
+Seq-loc ::= int {
+  from 160,
+  to 179,
+  id gi 5
+}
+
+-- [Mapping through std-seg] Interval, split: original
+Seq-loc ::= int {
+  from 15,
+  to 89,
+  id gi 4
+}
+-- [Mapping through std-seg] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 129,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- Mapping through disc: mapping
+Seq-align ::=  {
+  type disc,
+  segs disc {
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 2,
+        ids {
+          gi 5,
+          gi 4
+        },
+        starts {
+          110,
+          10,
+          130,
+          40
+        },
+        lens {
+          10,
+          50
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 6,
+          gi 4
+        },
+        starts {
+          290,
+          90
+        },
+        lens {
+            30
+        }
+      }
+    }
+  }
+}
+
+-- [Mapping through disc] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through disc] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 179,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 290,
+    to 319,
+    id gi 6,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through disc] Interval, complete: original
+Seq-loc ::= int {
+  from 50,
+  to 79,
+  id gi 4
+}
+-- [Mapping through disc] Interval, complete: expected
+Seq-loc ::= int {
+  from 140,
+  to 169,
+  id gi 5
+}
+
+-- [Mapping through disc] Interval, split: original
+Seq-loc ::= int {
+  from 15,
+  to 149,
+  id gi 4
+}
+-- [Mapping through disc] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 130,
+    to 179,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 290,
+    to 319,
+    id gi 6,
+    fuzz-to lim gt
+  }
+}
+
+-- Mapping through spliced-seg: mapping
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 100,
+        product-end nucpos 299,
+        genomic-start 0,
+        genomic-end 199,
+        parts {
+          match 30,
+          mismatch 20,
+          match 25,
+          genomic-ins 10,
+          match 15,
+          product-ins 10,
+          match 100
+        }
+      },
+      {
+        product-start nucpos 300,
+        product-end nucpos 349,
+        genomic-start 200,
+        genomic-end 249,
+        parts {
+          match 20,
+          mismatch 30
+        }
+      }
+    },
+    product-length 200
+  }
+}
+
+-- [Mapping through spliced-seg] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through spliced-seg] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 100,
+    to 174,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 175,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 299,
+    id gi 5
+  },
+  {
+    from 300,
+    to 349,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through spliced-seg] Interval, complete: original
+Seq-loc ::= int {
+  from 5,
+  to 70,
+  id gi 4
+}
+-- [Mapping through spliced-seg] Interval, complete: expected
+Seq-loc ::= int {
+  from 105,
+  to 170,
+  id gi 5
+}
+
+-- [Mapping through spliced-seg] Interval, split: original
+Seq-loc ::= int {
+  from 5,
+  to 270,
+  id gi 4
+}
+-- [Mapping through spliced-seg] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 105,
+    to 174,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 175,
+    to 189,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 299,
+    id gi 5
+  },
+  {
+    from 300,
+    to 349,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- Mapping through spliced-seg, reversed strand: mapping
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 399,
+        genomic-start 0,
+        genomic-end 199,
+        genomic-strand minus,
+        parts {
+          match 30,
+          mismatch 20,
+          match 25,
+          genomic-ins 10,
+          match 15,
+          product-ins 10,
+          match 100
+        }
+      },
+      {
+        product-start nucpos 100,
+        product-end nucpos 149,
+        genomic-start 200,
+        genomic-end 249,
+        genomic-strand minus,
+        parts {
+          match 20,
+          mismatch 30
+        }
+      }
+    },
+    product-length 200
+  }
+}
+
+-- [Mapping through spliced-seg, reversed strand] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through spliced-seg, reversed strand] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 300,
+    to 399,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 275,
+    to 289,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 274,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 100,
+    to 149,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- [Mapping through spliced-seg, reversed strand] Interval, complete: original
+Seq-loc ::= int {
+  from 5,
+  to 70,
+  id gi 4
+}
+-- [Mapping through spliced-seg, reversed strand] Interval, complete: expected
+Seq-loc ::= int {
+  from 329,
+  to 394,
+  strand minus,
+  id gi 5
+}
+
+-- [Mapping through spliced-seg, reversed strand] Interval, split: original
+Seq-loc ::= int {
+  from 5,
+  to 270,
+  id gi 4
+}
+-- [Mapping through spliced-seg, reversed strand] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 300,
+    to 394,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 275,
+    to 289,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 200,
+    to 274,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 100,
+    to 149,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- Mapping through sparse-seg: mapping
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs sparse {
+    rows {
+      {
+        first-id gi 5,
+        second-id gi 4,
+        numseg 2,
+        first-starts { 110, 150 },
+        second-starts { 10, 40 },
+        lens { 20, 50 }
+      }
+    }
+  }
+}
+
+-- [Mapping through sparse-seg] Whole sequence: original
+Seq-loc ::= whole gi 4
+-- [Mapping through sparse-seg] Whole sequence: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}
+
+-- [Mapping through sparse-seg] Interval, complete: original
+Seq-loc ::= int {
+  from 45,
+  to 75,
+  id gi 4
+}
+-- [Mapping through sparse-seg] Interval, complete: expected
+Seq-loc ::= int {
+  from 155,
+  to 185,
+  id gi 5
+}
+
+-- [Mapping through sparse-seg] Interval, split: original
+Seq-loc ::= int {
+  from 5,
+  to 120,
+  id gi 4
+}
+-- [Mapping through sparse-seg] Interval, split: expected
+Seq-loc ::= packed-int {
+  {
+    from 110,
+    to 129,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  },
+  {
+    from 150,
+    to 199,
+    id gi 5,
+    fuzz-from lim lt,
+    fuzz-to lim gt
+  }
+}

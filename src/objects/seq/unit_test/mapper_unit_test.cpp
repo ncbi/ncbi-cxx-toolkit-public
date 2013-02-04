@@ -227,8 +227,9 @@ void TestMappingSeq_graph_Exception(CSeq_loc_Mapper_Base& mapper,
 }
 
 
-void TestMapping_Simple(CNcbiIstream& in)
+void TestMapping_Simple()
 {
+    CNcbiIfstream in("mapper_test_data/simple.asn");
     cout << "Basic mapping and truncaction test" << endl;
 
     CSeq_loc src, dst_plus, dst_minus;
@@ -319,27 +320,31 @@ void TestMapping_Simple(CNcbiIstream& in)
 }
 
 
-void TestMapping_Order(CNcbiIstream& in)
+void TestMapping_Order()
 {
-    cout << "Order of mapped intervals" << endl;
+    CNcbiIfstream in("mapper_test_data/order.asn");
+    cout << "Order of mapped intervals, direct" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Mapping plus to plus strand" << endl;
     TestMappingSeq_loc(*mapper, in);
     cout << "  Mapping minus to minus strand" << endl;
     TestMappingSeq_loc(*mapper, in);
 
+    cout << "Order of mapped intervals, plus to minus" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Mapping plus to minus strand (src on plus)" << endl;
     TestMappingSeq_loc(*mapper, in);
     cout << "  Mapping minus to plus strand (src on plus)" << endl;
     TestMappingSeq_loc(*mapper, in);
 
+    cout << "Order of mapped intervals, minus to plus" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Mapping plus to minus strand (src on minus)" << endl;
     TestMappingSeq_loc(*mapper, in);
     cout << "  Mapping minus to plus strand (src on minus)" << endl;
     TestMappingSeq_loc(*mapper, in);
 
+    cout << "Mapping through a mix, direct" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Mapping through a mix, plus to plus strand" << endl;
     TestMappingSeq_loc(*mapper, in);
@@ -354,6 +359,7 @@ void TestMapping_Order(CNcbiIstream& in)
     TestMappingSeq_loc(*mapper, in);
     mapper->SetMergeNone();
 
+    cout << "Mapping through a mix, plus to minus" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Mapping through a mix, plus to minus strand (src on plus)" << endl;
     TestMappingSeq_loc(*mapper, in);
@@ -368,6 +374,7 @@ void TestMapping_Order(CNcbiIstream& in)
     TestMappingSeq_loc(*mapper, in);
     mapper->SetMergeNone();
 
+    cout << "Mapping through a mix, minus to plus" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Mapping through a mix, plus to minus strand (src on minus)" << endl;
     TestMappingSeq_loc(*mapper, in);
@@ -384,8 +391,9 @@ void TestMapping_Order(CNcbiIstream& in)
 }
 
 
-void TestMapping_Merging(CNcbiIstream& in)
+void TestMapping_Merging()
 {
+    CNcbiIfstream in("mapper_test_data/merging.asn");
     cout << "Merging of mapped intervals" << endl;
     CSeq_loc src, dst_plus, dst_minus;
     in >> MSerial_AsnText >> src;
@@ -424,35 +432,36 @@ void TestMapping_Merging(CNcbiIstream& in)
 
     in >> MSerial_AsnText >> orig;
 
-    cout << "  Minus strand source, no merging" << endl;
+    cout << "  Minus strand original, no merging" << endl;
     mapper_plus.SetMergeNone();
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Minus strand source, no merging, reverse strand mapping" << endl;
+    cout << "  Minus strand original, no merging, reverse strand mapping" << endl;
     mapper_minus.SetMergeNone();
     TestMappingSeq_loc(mapper_minus, orig, in);
-    cout << "  Minus strand source, merge abutting" << endl;
+    cout << "  Minus strand original, merge abutting" << endl;
     mapper_plus.SetMergeAbutting();
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Minus strand source, merge abutting, reverse strand mapping" << endl;
+    cout << "  Minus strand original, merge abutting, reverse strand mapping" << endl;
     mapper_minus.SetMergeAbutting();
     TestMappingSeq_loc(mapper_minus, orig, in);
-    cout << "  Minus strand source, merge contained" << endl;
+    cout << "  Minus strand original, merge contained" << endl;
     mapper_plus.SetMergeContained();
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Minus strand source, merge contained, reverse strand mapping" << endl;
+    cout << "  Minus strand original, merge contained, reverse strand mapping" << endl;
     mapper_minus.SetMergeContained();
     TestMappingSeq_loc(mapper_minus, orig, in);
-    cout << "  Minus strand source, merge all" << endl;
+    cout << "  Minus strand original, merge all" << endl;
     mapper_plus.SetMergeAll();
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Minus strand source, merge all, reverse strand mapping" << endl;
+    cout << "  Minus strand original, merge all, reverse strand mapping" << endl;
     mapper_minus.SetMergeAll();
     TestMappingSeq_loc(mapper_minus, orig, in);
 }
 
 
-void TestMapping_ProtToNuc(CNcbiIstream& in)
+void TestMapping_ProtToNuc()
 {
+    CNcbiIfstream in("mapper_test_data/prot2nuc.asn");
     // Incomplete, needs to be updated
     cout << "Mapping from protein to nucleotide" << endl;
     CSeq_loc src, dst_plus, dst_minus;
@@ -482,8 +491,9 @@ void TestMapping_ProtToNuc(CNcbiIstream& in)
 }
 
 
-void TestMapping_NucToProt(CNcbiIstream& in)
+void TestMapping_NucToProt()
 {
+    CNcbiIfstream in("mapper_test_data/nuc2prot.asn");
     // Incomplete, needs to be updated
     cout << "Mapping from nucleotide to protein" << endl;
     CSeq_loc src_plus, src_minus, dst;
@@ -517,8 +527,9 @@ void TestMapping_NucToProt(CNcbiIstream& in)
 }
 
 
-void TestMapping_ThroughMix(CNcbiIstream& in)
+void TestMapping_ThroughMix()
 {
+    CNcbiIfstream in("mapper_test_data/through_mix.asn");
     cout << "Mapping through mix" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     mapper->SetMergeAbutting();
@@ -538,8 +549,9 @@ void TestMapping_ThroughMix(CNcbiIstream& in)
 }
 
 
-void TestMapping_Dendiag(CNcbiIstream& in)
+void TestMapping_Dendiag()
 {
+    CNcbiIfstream in("mapper_test_data/dendiag.asn");
     cout << "Mapping dense-diag alignment" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Single segment" << endl;
@@ -547,14 +559,16 @@ void TestMapping_Dendiag(CNcbiIstream& in)
     cout << "  Unsupported mapped alignment - gaps in dense-diag" << endl;
     TestMappingSeq_align_Exception(*mapper, in);
 
+    cout << "Mapping dense-diag alignment, reverse" << endl;
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Single segment, reversed strand" << endl;
     TestMappingSeq_align(*mapper, in);
 }
 
 
-void TestMapping_Denseg(CNcbiIstream& in)
+void TestMapping_Denseg()
 {
+    CNcbiIfstream in("mapper_test_data/denseg.asn");
     cout << "Mapping dense-seg alignments" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Nuc to prot, converted to std-seg (mixed types)" << endl;
@@ -569,8 +583,9 @@ void TestMapping_Denseg(CNcbiIstream& in)
 }
 
 
-void TestMapping_Spliced(CNcbiIstream& in)
+void TestMapping_Spliced()
 {
+    CNcbiIfstream in("mapper_test_data/spliced.asn");
     cout << "Mapping spliced-seg alignments" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Mapping spliced-seg product, nuc to nuc" << endl;
@@ -590,8 +605,9 @@ void TestMapping_Spliced(CNcbiIstream& in)
 }
 
 
-void TestMapping_Scores(CNcbiIstream& in)
+void TestMapping_Scores()
 {
+    CNcbiIfstream in("mapper_test_data/scores.asn");
     cout << "Mapping scores" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Dense-diag - scores are preserved" << endl;
@@ -611,8 +627,9 @@ void TestMapping_Scores(CNcbiIstream& in)
 }
 
 
-void TestMapping_Graph(CNcbiIstream& in)
+void TestMapping_Graph()
 {
+    CNcbiIfstream in("mapper_test_data/graph.asn");
     cout << "Mapping graphs" << endl;
     auto_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Mapping whole graph" << endl;
@@ -634,8 +651,9 @@ void TestMapping_Graph(CNcbiIstream& in)
 }
 
 
-void TestMapping_AlignmentsToParts(CNcbiIstream& in)
+void TestMapping_AlignmentsToParts()
 {
+    CNcbiIfstream in("mapper_test_data/aln2delta.asn");
     cout << "Test mapping alignments to bioseq segments" << endl;
     CSeq_align orig;
 
@@ -676,8 +694,9 @@ void TestMapping_AlignmentsToParts(CNcbiIstream& in)
 }
 
 
-void TestMapping_ThroughAlignments(CNcbiIstream& in)
+void TestMapping_ThroughAlignments()
 {
+    CNcbiIfstream in("mapper_test_data/through_aln.asn");
     cout << "Test mapping through alignments" << endl;
     CSeq_align aln;
 
@@ -746,8 +765,9 @@ private:
 };
 
 
-void TestMapper_Sequence_Info(CNcbiIstream& in)
+void TestMapper_Sequence_Info()
 {
+    CNcbiIfstream in("mapper_test_data/seqinfo.asn");
     cout << "Test mapping with sequence info provider" << endl;
     CRef<CTestMapperSeqInfo> info(new CTestMapperSeqInfo);
     info->AddSeq(4, CSeq_loc_Mapper_Base::eSeq_nuc, 300);
@@ -767,8 +787,9 @@ void TestMapper_Sequence_Info(CNcbiIstream& in)
 }
 
 
-void TestMapper_Fuzz(CNcbiIstream& in)
+void TestMapper_Fuzz()
 {
+    CNcbiIfstream in("mapper_test_data/fuzz.asn");
     cout << "Mapping fuzzes" << endl;
 
     CSeq_loc src, dst_plus, dst_minus;
@@ -788,124 +809,125 @@ void TestMapper_Fuzz(CNcbiIstream& in)
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: lim gt" << endl;
+    cout << "  Fuzz-from lim gt" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: lim gt, reversed strand" << endl;
+    cout << "  Fuzz-from lim gt, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: lim tl" << endl;
+    cout << "  Fuzz-from lim tl" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: lim tl, reversed strand" << endl;
+    cout << "  Fuzz-from lim tl, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: lim tr" << endl;
+    cout << "  Fuzz-from lim tr" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: lim tr, reversed strand" << endl;
+    cout << "  Fuzz-from lim tr, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: alt #1" << endl;
+    cout << "  Fuzz-from alt #1" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: alt #1, reversed strand" << endl;
+    cout << "  Fuzz-from alt #1, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: alt #2" << endl;
+    cout << "  Fuzz-from alt #2" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: alt #2, reversed strand" << endl;
+    cout << "  Fuzz-from alt #2, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: range #1" << endl;
+    cout << "  Fuzz-from range #1" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: range #1, reversed strand" << endl;
+    cout << "  Fuzz-from range #1, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: range #2" << endl;
+    cout << "  Fuzz-from range #2" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: range #2, reversed strand" << endl;
+    cout << "  Fuzz-from range #2, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: range #3" << endl;
+    cout << "  Fuzz-from range #3" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: range #3, reversed strand" << endl;
+    cout << "  Fuzz-from range #3, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-from: range #4" << endl;
+    cout << "  Fuzz-from range #4" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-from: range #4, reversed strand" << endl;
+    cout << "  Fuzz-from range #4, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     // Fuzz-to
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: lim lt" << endl;
+    cout << "  Fuzz-to lim lt" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: lim lt, reversed strand" << endl;
+    cout << "  Fuzz-to lim lt, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: lim gt" << endl;
+    cout << "  Fuzz-to lim gt" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: lim gt, reversed strand" << endl;
+    cout << "  Fuzz-to lim gt, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: lim tl" << endl;
+    cout << "  Fuzz-to lim tl" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: lim tl, reversed strand" << endl;
+    cout << "  Fuzz-to lim tl, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: lim tr" << endl;
+    cout << "  Fuzz-to lim tr" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: lim tr, reversed strand" << endl;
+    cout << "  Fuzz-to lim tr, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: alt #1" << endl;
+    cout << "  Fuzz-to alt #1" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: alt #1, reversed strand" << endl;
+    cout << "  Fuzz-to alt #1, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: alt #2" << endl;
+    cout << "  Fuzz-to alt #2" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: alt #2, reversed strand" << endl;
+    cout << "  Fuzz-to alt #2, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: range #1" << endl;
+    cout << "  Fuzz-to range #1" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: range #1, reversed strand" << endl;
+    cout << "  Fuzz-to range #1, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: range #2" << endl;
+    cout << "  Fuzz-to range #2" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: range #2, reversed strand" << endl;
+    cout << "  Fuzz-to range #2, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: range #3" << endl;
+    cout << "  Fuzz-to range #3" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: range #3, reversed strand" << endl;
+    cout << "  Fuzz-to range #3, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 
     in >> MSerial_AsnText >> orig;
-    cout << "  Fuzz-to: range #4" << endl;
+    cout << "  Fuzz-to range #4" << endl;
     TestMappingSeq_loc(mapper_plus, orig, in);
-    cout << "  Fuzz-to: range #4, reversed strand" << endl;
+    cout << "  Fuzz-to range #4, reversed strand" << endl;
     TestMappingSeq_loc(mapper_minus, orig, in);
 }
 
 
-void TestMapper_ExonPartsOrder(CNcbiIstream& in)
+void TestMapper_ExonPartsOrder()
 {
+    CNcbiIfstream in("mapper_test_data/exonparts.asn");
     cout << "Testing sort order of mapped exons" << endl;
 
     CSeq_loc src, dst_plus, dst_minus;
@@ -955,8 +977,9 @@ void TestMapper_ExonPartsOrder(CNcbiIstream& in)
 }
 
 
-void TestMapper_TruncatedMix(CNcbiIstream& in)
+void TestMapper_TruncatedMix()
 {
+    CNcbiIfstream in("mapper_test_data/truncatedmix.asn");
     cout << "Testing truncation of mix parts" << endl;
 
     CSeq_loc src, dst_plus, dst_minus;
@@ -1020,22 +1043,21 @@ void TestMapper_TruncatedMix(CNcbiIstream& in)
 
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
-    CNcbiIfstream in("mapper_unit_test.asn");
-    TestMapping_Simple(in);
-    TestMapping_Order(in);
-    TestMapping_Merging(in);
-    TestMapping_ProtToNuc(in);
-    TestMapping_NucToProt(in);
-    TestMapping_ThroughMix(in);
-    TestMapping_Dendiag(in);
-    TestMapping_Denseg(in);
-    TestMapping_Spliced(in);
-    TestMapping_Scores(in);
-    TestMapping_Graph(in);
-    TestMapping_AlignmentsToParts(in);
-    TestMapping_ThroughAlignments(in);
-    TestMapper_Sequence_Info(in);
-    TestMapper_Fuzz(in);
-    TestMapper_ExonPartsOrder(in);
-    TestMapper_TruncatedMix(in);
+    TestMapping_Simple();
+    TestMapping_Order();
+    TestMapping_Merging();
+    TestMapping_ProtToNuc();
+    TestMapping_NucToProt();
+    TestMapping_ThroughMix();
+    TestMapping_Dendiag();
+    TestMapping_Denseg();
+    TestMapping_Spliced();
+    TestMapping_Scores();
+    TestMapping_Graph();
+    TestMapping_AlignmentsToParts();
+    TestMapping_ThroughAlignments();
+    TestMapper_Sequence_Info();
+    TestMapper_Fuzz();
+    TestMapper_ExonPartsOrder();
+    TestMapper_TruncatedMix();
 }

@@ -1,0 +1,218 @@
+-- ===============================
+-- ! Mapping dense-seg alignment !
+-- ===============================
+
+-- Mapping dense-seg alignments: source
+Seq-loc ::= int {
+  from 30,
+  to 89,
+  id gi 4
+}
+-- Mapping dense-seg alignments: destination
+Seq-loc ::= int {
+  from 110,
+  to 129,
+  id gi 6
+}
+
+-- Nuc to prot, converted to std-seg (mixed types): original
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 3,
+      gi 4
+    },
+    starts {
+      915,
+      15
+    },
+    lens {
+      90
+    }
+  }
+}
+-- Nuc to prot, converted to std-seg (mixed types): expected
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 6
+      },
+      loc {
+        int {
+          from 915,
+          to 929,
+          id gi 3
+        },
+        empty gi 6
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 6
+      },
+      loc {
+        int {
+          from 930,
+          to 989,
+          id gi 3
+        },
+        int {
+          from 110,
+          to 129,
+          id gi 6
+        }
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 3,
+        gi 6
+      },
+      loc {
+        int {
+          from 990,
+          to 1004,
+          id gi 3
+        },
+        empty gi 6
+      }
+    }
+  }
+}
+
+-- Unsupported alignment - dense-seg with mixed types: original
+-- Exception expected
+Seq-align ::= {
+  type diags,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 1,
+    ids {
+      gi 3,
+      gi 6
+    },
+    starts {
+      915,
+      15
+    },
+    lens {
+      50
+    }
+  }
+}
+
+
+-- Setting correct strands in gaps: source
+Seq-loc ::= int {
+  from 10,
+  to 99,
+  id gi 4
+}
+-- Setting correct strands in gaps: destination
+Seq-loc ::= int {
+  from 110,
+  to 199,
+  id gi 5
+}
+
+-- Setting correct strands in gaps: original
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      gi 3,
+      gi 4
+    },
+    starts {
+      111,
+      10,
+      222,
+      -1,
+      333,
+      30,
+      444,
+      -1,
+      555,
+      50
+    },
+    lens {
+      10,
+      1,
+      10,
+      1,
+      10
+    },
+    strands {
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus
+    }
+  }
+}
+-- Setting correct strands in gaps: expected
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      gi 3,
+      gi 5
+    },
+    starts {
+      111,
+      110,
+      222,
+      -1,
+      333,
+      130,
+      444,
+      -1,
+      555,
+      150
+    },
+    lens {
+      10,
+      1,
+      10,
+      1,
+      10
+    },
+    strands {
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus,
+      plus,
+      minus
+    }
+  }
+}

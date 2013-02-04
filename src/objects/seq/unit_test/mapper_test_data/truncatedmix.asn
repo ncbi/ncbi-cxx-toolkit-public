@@ -1,0 +1,413 @@
+-- ===================================
+-- ! Testing truncation of mix parts !
+-- ===================================
+
+-- Testing truncation of mix parts: source
+Seq-loc ::= int {
+  from 11,
+  to 97,
+  id gi 4
+}
+-- Testing truncation of mix parts: destination on plus
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  id gi 5
+}
+-- Testing truncation of mix parts: destination on minus
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Plus, unmapped ranges on the left: original
+Seq-loc ::= mix {
+  int {
+    from 1,
+    to 7,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    id gi 4
+  }
+}
+-- Plus, direct, unmapped ranges on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-from lim tl
+  },
+  {
+    from 183,
+    to 189,
+    id gi 5
+  }
+}
+-- Plus, reversed, unmapped ranges on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 197,
+    strand minus,
+    id gi 5,
+    fuzz-to lim tr
+  },
+  {
+    from 123,
+    to 129,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Plus, unmapped ranges on the right: original
+Seq-loc ::= mix {
+  int {
+    from 13,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    id gi 4
+  },
+  int {
+    from 103,
+    to 105,
+    id gi 4
+  }
+}
+-- Plus, direct, unmapped ranges on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5
+  },
+  {
+    from 183,
+    to 189,
+    id gi 5,
+    fuzz-to lim tr
+  }
+}
+-- Plus, reversed, unmapped ranges on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 197,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 123,
+    to 129,
+    strand minus,
+    id gi 5,
+    fuzz-from lim tl
+  }
+}
+
+-- Plus, range truncated on the left: original
+Seq-loc ::= mix {
+  int {
+    from 9,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    id gi 4
+  }
+}
+-- Plus, direct, range truncated on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 113,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 183,
+    to 189,
+    id gi 5
+  }
+}
+-- Plus, reversed, range truncated on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 199,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 123,
+    to 129,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Plus, range truncated on the right: original
+Seq-loc ::= mix {
+  int {
+    from 13,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 99,
+    id gi 4
+  }
+}
+-- Plus, direct, range truncated on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5
+  },
+  {
+    from 183,
+    to 199,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+-- Plus, reversed, range truncated on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 197,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 113,
+    to 129,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- Minus, unmapped ranges on the left: original
+Seq-loc ::= mix {
+  int {
+    from 81,
+    to 87,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 1,
+    to 7,
+    strand minus,
+    id gi 4
+  }
+}
+-- Minus, direct, unmapped ranges on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 189,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 115,
+    to 119,
+    strand minus,
+    id gi 5,
+    fuzz-from lim tl
+  }
+}
+-- Minus, reversed, unmapped ranges on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 123,
+    to 129,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 193,
+    to 197,
+    strand plus,
+    id gi 5,
+    fuzz-to lim tr
+  }
+}
+
+-- Minus, unmapped ranges on the right: original
+Seq-loc ::= mix {
+  int {
+    from 103,
+    to 105,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    strand minus,
+    id gi 4
+  }
+}
+-- Minus, direct, unmapped ranges on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 189,
+    strand minus,
+    id gi 5,
+    fuzz-to lim tr
+  },
+  {
+    from 115,
+    to 119,
+    strand minus,
+    id gi 5
+  }
+}
+-- Minus, reversed, unmapped ranges on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 123,
+    to 129,
+    strand plus,
+    id gi 5,
+    fuzz-from lim tl
+  },
+  {
+    from 193,
+    to 197,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Minus, range truncated on the left: original
+Seq-loc ::= mix {
+  int {
+    from 81,
+    to 87,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 9,
+    to 17,
+    strand minus,
+    id gi 4
+  }
+}
+-- Minus, direct, range truncated on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 189,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 113,
+    to 119,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+-- Minus, reversed, range truncated on the left: expected
+Seq-loc ::= packed-int {
+  {
+    from 123,
+    to 129,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 193,
+    to 199,
+    strand plus,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- Minus, range truncated on the right: original
+Seq-loc ::= mix {
+  int {
+    from 81,
+    to 99,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    strand minus,
+    id gi 4
+  }
+}
+-- Minus, direct, range truncated on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 199,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 115,
+    to 119,
+    strand minus,
+    id gi 5
+  }
+}
+-- Minus, reversed, range truncated on the right: expected
+Seq-loc ::= packed-int {
+  {
+    from 113,
+    to 129,
+    strand plus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 193,
+    to 197,
+    strand plus,
+    id gi 5
+  }
+}
