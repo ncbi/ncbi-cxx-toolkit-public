@@ -706,8 +706,7 @@ int CCompareSeqRegions::s_GetGeneId(const CSeq_feat& feat)
                 
                 if(tokens.size() == 4 && (tokens[3] == "m" || tokens[3] == "p")) {
                     int num1 = NStr::StringToInt(tokens[1]);
-                    int num2 = NStr::StringToInt(tokens[2]); //make sure this one is a number too
-                    num2 = 0;
+                    (void) NStr::StringToInt(tokens[2]); //make sure this one is a number too
                     return num1;
                 }
             } catch (...) {}

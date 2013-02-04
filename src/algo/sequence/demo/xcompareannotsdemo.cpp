@@ -48,6 +48,8 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/create_defline.hpp>
+
 #include <objects/seqset/gb_release_file.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -140,12 +142,10 @@ public:
         CGappedRange r;
         int pos = 0;
         int best_ending_pos = ranges.size() - 1;
-        double best_identity = 0;
 
         r = CGappedRange();
         pos = ranges.size() - 1;
         int best_beginning_pos = 0;
-        best_identity = 0;
 
 
         r = CGappedRange();
@@ -513,7 +513,7 @@ void AddDefaultSentinelFeats(CScope& scope, const CSeq_loc& loc)
 {
     const CSeq_id& id = sequence::GetId(loc, &scope);
     CBioseq_Handle h = scope.GetBioseqHandle(id);
-    string title = sequence::GetTitle(h);
+    string title = sequence::CDeflineGenerator().GenerateDefline(h);
 
     bool add_gene = false;
     bool add_rna = false;
