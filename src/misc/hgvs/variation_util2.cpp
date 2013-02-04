@@ -2306,7 +2306,7 @@ void CVariationUtil::FindLocationProperties(const CSeq_align& transcript_aln,
 
             //remove indels from the mapped cds loc
             cds_loc = sequence::Seq_loc_Merge(*cds_loc, CSeq_loc::fMerge_SingleRange, NULL);
-            cds_loc = rna_loc->Intersect(*cds_loc, NULL, NULL);
+            cds_loc = rna_loc->Intersect(*cds_loc, 0, NULL);
             break;
         }
     }}        
