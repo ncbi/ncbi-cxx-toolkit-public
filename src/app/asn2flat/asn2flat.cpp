@@ -863,7 +863,7 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
                 x_PrintAverageStats();
             }
 
-        virtual EBioseqSkip notify_bioseq( const CBioseqContext & ctx )
+        virtual EBioseqSkip notify_bioseq( CBioseqContext & ctx )
         {
             cerr << "notify_bioseq called." << endl;
             return eBioseqSkip_No;
