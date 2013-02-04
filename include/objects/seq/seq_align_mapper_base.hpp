@@ -263,12 +263,7 @@ private:
     void x_PushExonPart(CRef<CSpliced_exon_chunk>&    last_part,
                         CSpliced_exon_chunk::E_Choice part_type,
                         int                           part_len,
-                        bool                          reverse,
                         CSpliced_exon&                exon) const;
-
-    // Sort segments. Used to order exon parts taking into account possible
-    // insertions and strands.
-    void x_SortSegs(void) const;
 
     // Some mapping results can not be represented by the original alignment
     // type (e.g. when a row contains multiple ids). In this case the result

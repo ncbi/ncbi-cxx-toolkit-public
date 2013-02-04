@@ -745,7 +745,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                 continue;
             }
 
-            SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2, gen_strand);
+            SAlignment_Segment& alnseg = x_PushSeg(seg_len, 2);
             alnseg.m_PartType = part.Which();
 
             int part_gen_start;
@@ -1548,7 +1548,6 @@ void CSeq_align_Mapper_Base::x_PushExonPart(
     CRef<CSpliced_exon_chunk>&    last_part,
     CSpliced_exon_chunk::E_Choice part_type,
     int                           part_len,
-    bool                          reverse,
     CSpliced_exon&                exon) const
 {
     if (last_part  &&  last_part->Which() == part_type) {
@@ -1561,13 +1560,8 @@ void CSeq_align_Mapper_Base::x_PushExonPart(
         // Add a new part.
         last_part.Reset(new CSpliced_exon_chunk);
         SetPartLength(*last_part, part_type, part_len);
-        // Parts order depend on the genomic strand.
-        if ( !reverse ) {
-            exon.SetParts().push_back(last_part);
-        }
-        else {
-            exon.SetParts().push_front(last_part);
-        }
+        // Parts order does not depend on strands - preserve the original one.
+        exon.SetParts().push_back(last_part);
     }
 }
 
@@ -1629,6 +1623,8 @@ x_GetDstExon(CSpliced_seg&              spliced,
 
         int gstart = gen_row.GetSegStart();
         int pstart = prod_row.GetSegStart();
+        int gend = gstart + seg->m_Len;
+        int pend = pstart + seg->m_Len;
         if (gstart >= 0) {
             // Not a genetic gap. Check the id.
             if (gen_id) {
@@ -1713,78 +1709,89 @@ x_GetDstExon(CSpliced_seg&              spliced,
 
         int gins_len = 0;
         int pins_len = 0;
-        if (gstart < 0) {
-            if (pstart < 0) {
-                // Both gen and prod are missing - start new exon.
+
+        if (pstart < 0) {
+            // Gap on product
+            if (gstart < 0) {
+                // Both get and prod are missing - start new exon.
                 ex_partial = true;
                 seg++;
                 break;
             }
-            else {
-                // Only genomic sequence is missing.
-                ptype = CSpliced_exon_chunk::e_Product_ins;
-            }
-        }
-        else {
-            // Genomic sequence is present.
-            // Check parts intersection if the last part's coordinates
-            // are known.
-            if (gen_start >= 0  &&  gen_end > 0) {
-                // Compare new part's start to the last part's end.
-                if (gstart < gen_end) {
-                    // Parts can not intersect. Split the exon.
-                    ex_partial = true;
-                    break;
-                }
-                else if (gstart > gen_end) {
-                    // New part does not abut the last one,
-                    // add genomic insertion.
-                    gins_len = gstart - gen_end;
-                }
-            }
-        }
-
-        if (pstart < 0) {
-            // Product is missing - add genomic insertion.
-            _ASSERT(gstart >= 0); // Already checked above
+            // Genomic is present.
             ptype = CSpliced_exon_chunk::e_Genomic_ins;
         }
         else {
-            // Product is present. Make sure the coordinates are consistent.
-            int pend = prod_row.GetSegStart() + seg->m_Len;
-            // Check the intersection with the last part's product.
+            // Product is present.
+            // Check parts order and intersection if the last part's coordinates
+            // are known.
             if (prod_start >= 0  &&  prod_end > 0) {
-                // Product and genomic directions are not independent, take
-                // strands into account.
-                if ( prod_reverse == gen_reverse ) {
+                if (!prod_reverse) {
+                    // Plus strand.
                     if (pstart < prod_end) {
-                        // The parts intersect. Split the exon.
+                        // Intersection or bad order.
                         ex_partial = true;
                         break;
                     }
-                    else if (pstart > prod_end) {
-                        // There's a gap between parts, add product insertion.
+                    if (pstart > prod_end) {
+                        // Parts are not abutting, add insertion.
                         pins_len = pstart - prod_end;
                     }
                 }
                 else {
-                    // Product is reversed compared to genomic sequence.
+                    // Minus strand.
                     if (pend > prod_start) {
-                        // The parts intersect. Split the exon.
+                        // Intersection or bad order.
                         ex_partial = true;
                         break;
                     }
-                    else if (pend < prod_start) {
-                        // There's a gap between parts, add product insertion.
+                    if (pend < prod_start) {
+                        // Add insertion.
                         pins_len = prod_start - pend;
                     }
                 }
             }
+        }
 
-            // Save the last part's product coordinates.
-            // The collected prod_start may be less than the current pstart
-            // if product and genomic strands are reverse (product parts
-            // go from right to left).
+        if (gstart < 0) {
+            // Missing genomic sequence. Add product insertion.
+            _ASSERT(pstart >= 0);
+            ptype = CSpliced_exon_chunk::e_Product_ins;
+        }
+        else {
+            // Genomic sequence is present.
+            // Check parts order and intersection if the last part's coordinates
+            // are known.
+            if (gen_start >= 0  &&  gen_end > 0) {
+                if (!gen_reverse) {
+                    // Plus strand.
+                    if (gstart < gen_end) {
+                        // Intersection or bad order.
+                        ex_partial = true;
+                        break;
+                    }
+                    if (gstart > gen_end) {
+                        // Parts are not abutting, add insertion.
+                        gins_len = gstart - gen_end;
+                    }
+                }
+                else {
+                    // Minus strand.
+                    if (gend > gen_start) {
+                        // Intersection or bad order.
+                        ex_partial = true;
+                        break;
+                    }
+                    if (gend < gen_start) {
+                        // Add insertion.
+                        gins_len = gen_start - gend;
+                    }
+                }
+            }
+        }
+
+        // Now when we know exon is not split, it's safe to update exon extremes.
+        if (pstart >= 0) {
             if (prod_start < 0  ||  prod_start > pstart) {
                 prod_start = pstart;
             }
@@ -1792,12 +1799,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 prod_end = pend;
             }
         }
-
-        // Now when we know exon is not split, it's safe to update exon extremes.
         if (gstart >= 0) {
             // Update last part's start and end.
-            int gend = gstart + seg->m_Len;
-            if (gen_start < 0) {
+            if (gen_start < 0  ||  gen_start > gstart) {
                 gen_start = gstart;
             }
             if (gen_end < gend) {
@@ -1808,14 +1812,14 @@ x_GetDstExon(CSpliced_seg&              spliced,
         // Add genomic or product insertions if any.
         if (gins_len > 0) {
             x_PushExonPart(last_part, CSpliced_exon_chunk::e_Genomic_ins,
-                gins_len, gen_reverse, *exon);
+                gins_len, *exon);
         }
         if (pins_len > 0) {
             x_PushExonPart(last_part, CSpliced_exon_chunk::e_Product_ins,
-                pins_len, gen_reverse, *exon);
+                pins_len, *exon);
         }
         // Add the mapped part.
-        x_PushExonPart(last_part, ptype, seg->m_Len, gen_reverse, *exon);
+        x_PushExonPart(last_part, ptype, seg->m_Len, *exon);
 
         // Remember if there are any non-gap parts.
         if (ptype != CSpliced_exon_chunk::e_Genomic_ins  &&
@@ -1891,160 +1895,6 @@ x_GetDstExon(CSpliced_seg&              spliced,
 }
 
 
-// Helper class for sorting exon parts.
-// Sorts parts by genetic start only. All parts with genetic gaps
-// go first, so that the second pass is required to put them in
-// the right places by product coords.
-class SegByFirstRow_Less
-{
-public:
-    SegByFirstRow_Less(bool rev_prod) : m_RevProd(rev_prod) {}
-
-    bool operator()(const SAlignment_Segment& seg1,
-                    const SAlignment_Segment& seg2) const
-    {
-        // Used only for spliced segs, all segments must have two rows
-        const SAlignment_Segment::SAlignment_Row& r1 =
-            seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
-        const SAlignment_Segment::SAlignment_Row& r2 =
-            seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
-        // Check if it's a genomic insertion.
-        if (r1.m_Start != kInvalidSeqPos  &&  r2.m_Start != kInvalidSeqPos) {
-            // If not, sort by id, then by genomic start. This is how
-            // exons should be sorted.
-            if (r1.m_Id != r2.m_Id) {
-                return r1.m_Id < r2.m_Id;
-            }
-        }
-        // Make kInvalidSeqPos the least value
-        if (r2.m_Start == kInvalidSeqPos) {
-            if (r1.m_Start == kInvalidSeqPos) {
-                TSeqPos pstart1 =
-                    seg1.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
-                TSeqPos pstart2 =
-                    seg2.m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
-                // Sort genomic gaps by product pos, ignore product gaps.
-                return m_RevProd ? (pstart2 < pstart1) : (pstart1 < pstart2);
-            }
-            return false;
-        }
-        if (r1.m_Start == kInvalidSeqPos) return true;
-        return r1.m_Start < r2.m_Start;
-    }
-
-private:
-    bool m_RevProd; // Is product reversed compared to genomic?
-};
-
-
-// Sort segments of an exon (exon parts).
-void CSeq_align_Mapper_Base::x_SortSegs(void) const
-{
-    // Check the strands firts.
-    bool gen_reverse = false;
-    bool prod_reverse = false;
-    bool found_gen_strand = false;
-    bool found_prod_strand = false;
-    ITERATE(TSegments, seg, m_Segs) {
-        const SAlignment_Segment::SAlignment_Row& r =
-            seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
-        // Ingore strand in gaps - it's unmapped
-        if (r.m_Start != kInvalidSeqPos  &&  r.m_IsSetStrand) {
-            // Check if all parts have the same strand.
-            bool gen_row_rev = IsReverse(r.m_Strand);
-            if ( !found_gen_strand ) {
-                gen_reverse = gen_row_rev;
-                found_gen_strand = true;
-            }
-            else if (gen_reverse != gen_row_rev) {
-                // If parts have different strands, ignore the strands.
-                gen_reverse = false;
-            }
-        }
-        const SAlignment_Segment::SAlignment_Row& pr =
-            seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod];
-        // Ingore strand in gaps - it's unmapped
-        if (pr.m_Start != kInvalidSeqPos  &&  pr.m_IsSetStrand) {
-            // Check if all parts have the same strand.
-            bool prod_row_rev = IsReverse(pr.m_Strand);
-            if ( !found_prod_strand ) {
-                prod_reverse = prod_row_rev;
-                found_prod_strand = true;
-            }
-            else if (prod_reverse != prod_row_rev) {
-                // If parts have different strands, ignore the strands.
-                prod_reverse = false;
-            }
-        }
-    }
-#if defined(NCBI_COMPILER_WORKSHOP)
-    // Workshop' STL implementation can not sort lists using functors.
-    // This will probably not be fixed in the future due to binaries
-    // compatibility. The only way to sort is to use a temporary vector.
-    typedef vector<SAlignment_Segment> TSegmentsVector;
-    TSegmentsVector tmp;
-    tmp.reserve(m_Segs.size());
-    ITERATE(TSegments, it, m_Segs) {
-        tmp.push_back(*it);
-    }
-    sort(tmp.begin(), tmp.end(), SegByFirstRow_Less(prod_reverse != gen_reverse));
-    m_Segs.clear();
-    ITERATE(TSegmentsVector, it, tmp) {
-        m_Segs.push_back(*it);
-    }
-#else
-    // Sort exon parts. Try to sort each id by genomic starts.
-    // If there's a gap on genomic sequence, try to sort by product start,
-    // but reverse the order if genomic and product strands are different.
-    m_Segs.sort(SegByFirstRow_Less(prod_reverse != gen_reverse));
-#endif
-    // Now all parts with non-gap genomic coords are sorted, all genomic gaps
-    // go before non-gaps and are sorted by product coords.
-    // Find first segment with non-gap in genomic coords.
-    TSegments::iterator first_non_gap = m_Segs.begin();
-    while (first_non_gap != m_Segs.end()  &&
-        first_non_gap->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen].m_Start == kInvalidSeqPos) {
-        ++first_non_gap;
-    }
-    if (first_non_gap != m_Segs.begin()) {
-        TSegments segs2;
-        // Move genomic gaps sorted by product coords to a new list
-        segs2.splice(segs2.end(), m_Segs, m_Segs.begin(), first_non_gap);
-        // Now merge the two lists sorting by product coord.
-        TSegments::iterator it1 = m_Segs.begin();
-        // Store last segment with non-gap in product. We will try to
-        // put non-gaps before gaps, although this should not be
-        // important. (?)
-        TSegments::iterator ins_it = it1;
-        while (!segs2.empty()) {
-            if (it1 == m_Segs.end()) {
-                // The last segment has been checked - all the remaining
-                // gen-gapped ranges go before the trailing prod-gapped
-                // segments.
-                m_Segs.splice(ins_it, segs2, segs2.begin(), segs2.end());
-                break;
-            }
-            TSeqPos pp1 = it1->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
-            TSeqPos pp2 = segs2.front().m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Prod].m_Start;
-            // Skip prod-gapped segments
-            if (pp1 == kInvalidSeqPos) {
-                it1++;
-                continue;
-            }
-            // Check if any gen-gapped ranges may be inserted before the current
-            // position.
-            if ((gen_reverse == prod_reverse  &&  pp1 > pp2)  ||
-                (gen_reverse != prod_reverse  &&  pp1 < pp2)) {
-                m_Segs.splice(ins_it, segs2, segs2.begin());
-                continue; // Check the next gen-gapped segment
-            }
-            it1++;
-            ins_it = it1;
-        }
-    }
-}
-
-
 // Create spliced-seg.
 void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
 {
@@ -2062,9 +1912,6 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     bool partial = false;
 
     ITERATE(TSubAligns, it, m_SubAligns) {
-        // First, sort segments by the first row (genetic) starts.
-        // See comments to x_SortSegs.
-        (*it)->x_SortSegs();
         TSegments::const_iterator seg = (*it)->m_Segs.begin();
         // Convert the current sub-mapper to an exon.
         // In some cases the exon can be split (e.g. if a gap is found in
