@@ -108,6 +108,11 @@ bool CGff3SourceRecord::x_AssignBiosrcAttributes(
     if (CWriteUtil::GetGenomeString(bs, value)) {
         SetAttribute("genome", value);
     }
+    //Chromosome name
+    string chromName = bs.GetRepliconName();
+    if (!chromName.empty()) {
+        SetAttribute("Name", chromName);
+    }
     if ( bs.IsSetOrg() ) {
         const COrg_ref& org = bs.GetOrg();
         if ( org.IsSetDb() ) {
