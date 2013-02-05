@@ -2177,8 +2177,7 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
         return;
     }
 
-    auto_ptr<sequence::CDeflineGenerator> gen(new sequence::CDeflineGenerator());
-    string title = gen->GenerateDefline(bsh);
+    string title = sequence::CDeflineGenerator().GenerateDefline(bsh);
 
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
     CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
