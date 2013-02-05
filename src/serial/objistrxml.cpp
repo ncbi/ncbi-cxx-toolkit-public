@@ -1854,9 +1854,7 @@ void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
         const CClassTypeInfo* classType =
             dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
         if (classType) {
-            if (!classType->Implicit()) {
-                CheckStdXml(classType);
-            }
+            CheckStdXml(classType);
             isclass = true;
         }
         OpenTag(namedTypeInfo);
