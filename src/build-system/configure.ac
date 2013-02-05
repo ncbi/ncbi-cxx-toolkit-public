@@ -4518,7 +4518,7 @@ if test "$with_boost" != "no"; then
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
    test -d "$BOOST_PATH"  ||  BOOST_LIBPATH_=/usr/lib
-   boost_path_digits=`basename $BOOST_PATH | sed -e 's/.0$//' | tr -cd 0123456789`
+   boost_path_digits=`basename $BOOST_PATH | sed -e 's/-ncbi[[0-9]]*$//; s/.0$//' | tr -cd 0123456789`
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
       if test $boost_path_digits != "$boost_version_digits"; then
@@ -4527,6 +4527,7 @@ if test "$with_boost" != "no"; then
          AS_UNSET(ncbi_cv_lib_boost_version)
          AS_UNSET(ncbi_cv_lib_boost_regex)
          AS_UNSET(ncbi_cv_lib_boost_spirit)
+         AS_UNSET(ncbi_cv_lib_boost_system)
          AS_UNSET(ncbi_cv_lib_boost_test)
          AS_UNSET(ncbi_cv_lib_boost_thread)
       fi
@@ -4568,7 +4569,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          fi
          with_boost=no
          ;;
-      1_3[[5-9]] | 1_3[[5-9]]_* | 1_4[[0-5]] | 1_4[[0-5]]_* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_4* | 1_5[[0-2]] | 1_5[[0-2]]_* ) ;;
       '' ) with_boost=no ;;
       * )
          AC_MSG_WARN(
@@ -4669,6 +4670,24 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
               [[boost::spirit::parse("123", boost::spirit::int_p);]])],
           [ncbi_cv_lib_boost_spirit=yes], [ncbi_cv_lib_boost_spirit=no])])
 
+   BOOST_SYSTEM_LIBS=-lboost_system${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_system${BOOST_TAG}-static.a"; then
+       BOOST_SYSTEM_STATIC_LIBS=-lboost_system${BOOST_TAG}-static
+   else
+       BOOST_SYSTEM_STATIC_LIBS=$BOOST_SYSTEM_LIBS
+   fi
+
+   AC_CACHE_CHECK([for Boost.System in $BOOST_PATH], ncbi_cv_lib_boost_system,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_SYSTEM_LIBS $RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/system/error_code.hpp>]],
+              [[const char * s = boost::system::system_category().name();]])],
+          [ncbi_cv_lib_boost_system=yes],
+	  [ncbi_cv_lib_boost_system=no
+	   BOOST_SYSTEM_LIBS=
+	   BOOST_SYSTEM_STATIC_LIBS=])])
+
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
        BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
@@ -4730,9 +4749,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
         ''                 ) ncbi_cv_lib_boost_test=no            ;;
       esac])
 
-   BOOST_THREAD_LIBS=-lboost_thread${BOOST_TAG}
+   BOOST_THREAD_LIBS="-lboost_thread${BOOST_TAG} $BOOST_SYSTEM_LIBS"
    if test -f "$BOOST_LIBPATH_/libboost_thread${BOOST_TAG}-static.a"; then
-       BOOST_THREAD_STATIC_LIBS=-lboost_thread${BOOST_TAG}-static
+       BOOST_THREAD_STATIC_LIBS="-lboost_thread${BOOST_TAG}-static $BOOST_SYSTEM_STATIC_LIBS"
    else
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
@@ -4767,6 +4786,13 @@ if test "$ncbi_cv_lib_boost_spirit" != "no"; then
    AC_DEFINE(HAVE_BOOST_SPIRIT, 1,
              [Define to 1 if the `Boost.Spirit' headers are available.])
    NCBI_PACKAGE(Boost.Spirit)
+fi
+
+if test "$ncbi_cv_lib_boost_system" != "no"; then
+   dnl AC_DEFINE(HAVE_BOOST_SYSTEM, 1,
+   dnl           [Define to 1 if the `Boost.System' library is available.])
+   NCBI_PACKAGE(Boost.System)
+# BOOST_SYSTEM(_STATIC)_LIBS already conditionally cleared above
 fi
 
 if test "$ncbi_cv_lib_boost_test" != "no"; then
@@ -6766,6 +6792,8 @@ AC_SUBST(BOOST_LIBPATH)
 AC_SUBST(BOOST_TAG)
 AC_SUBST(BOOST_REGEX_LIBS)
 AC_SUBST(BOOST_REGEX_STATIC_LIBS)
+AC_SUBST(BOOST_SYSTEM_LIBS)
+AC_SUBST(BOOST_SYSTEM_STATIC_LIBS)
 AC_SUBST(BOOST_TEST_PEM_LIBS)
 AC_SUBST(BOOST_TEST_PEM_STATIC_LIBS)
 AC_SUBST(BOOST_TEST_TEM_LIBS)
