@@ -1879,9 +1879,9 @@ TSeconds CTime::TimeZoneOffset(void) const
     const CTime tg(GetGmtTime());
 
     TSeconds dSecs  = tl.Second() - tg.Second();
-    int      dMins  = tl.Minute() - tg.Minute();
-    int      dHours = tl.Hour()   - tg.Hour();
-    int      dDays  = tl.DiffWholeDays(tg);
+    TSeconds dMins  = tl.Minute() - tg.Minute();
+    TSeconds dHours = tl.Hour()   - tg.Hour();
+    TSeconds dDays  = tl.DiffWholeDays(tg);
     return ((dDays * 24 + dHours) * 60 + dMins) * 60 + dSecs;
 }
 
@@ -1957,9 +1957,9 @@ TSeconds CTime::DiffSecond(const CTime& from) const
         p2 = &from;
     }
     TSeconds dSecs  = p1->Second() - p2->Second();
-    int      dMins  = p1->Minute() - p2->Minute();
-    int      dHours = p1->Hour()   - p2->Hour();
-    int      dDays  = p1->DiffWholeDays(*p2);
+    TSeconds dMins  = p1->Minute() - p2->Minute();
+    TSeconds dHours = p1->Hour()   - p2->Hour();
+    TSeconds dDays  = p1->DiffWholeDays(*p2);
     return ((dDays * 24 + dHours) * 60 + dMins) * 60 + dSecs;
 }
 
