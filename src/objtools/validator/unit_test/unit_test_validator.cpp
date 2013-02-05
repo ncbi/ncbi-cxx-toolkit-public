@@ -9870,11 +9870,10 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         CheckErrors (*eval, expected_errors);
         CLEAR_ERRORS
 
-        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Error, "MissingPubInfo",
-                                  "Journal volume and pages missing"));
-        if (NStr::StartsWith(*id_it, "NC_")) {
-            expected_errors[0]->SetSeverity(eDiag_Warning);
-        }
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingVolume",
+                                  "Journal volume missing"));
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPages",
+                                  "Journal pages missing"));
         CRef<CCit_jour::TTitle::C_E> iso_jta(new CCit_jour::TTitle::C_E());   
         iso_jta->SetIso_jta("abbr");
         pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(iso_jta);
@@ -9882,15 +9881,23 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetArticle().SetFrom().SetJournal().SetImp().ResetPages();
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPages",
+                                  "Journal pages missing"));
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
-        expected_errors[0]->SetErrMsg("Journal pages missing");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingVolume",
+                                  "Journal volume missing"));
         pub->SetArticle().SetFrom().SetJournal().SetImp().ResetVolume();
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetPages("14-32");
         expected_errors[0]->SetErrMsg("Journal volume missing");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
+        CLEAR_ERRORS
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPubInfo", 
+                                  "Publication date missing"));
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetVolume("vol 1");
         pub->SetArticle().SetFrom().SetJournal().SetImp().ResetDate();
         expected_errors[0]->SetErrMsg("Publication date missing");

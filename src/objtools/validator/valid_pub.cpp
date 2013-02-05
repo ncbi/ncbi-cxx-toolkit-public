@@ -392,22 +392,23 @@ void CValidError_imp::ValidatePubArticle
                 bool no_pages = !imp.IsSetPages()  ||
                                 NStr::IsBlank(imp.GetPages());
 
-                EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
-                if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_epublish) {
-                    sev = eDiag_Warning;
-                }
-
-                if ( no_vol  &&  no_pages ) {
-                    PostObjErr(sev, eErr_GENERIC_MissingPubInfo, 
-                        "Journal volume and pages missing", obj, ctx);
-                } else if ( no_vol ) {
-                    if (!is_electronic_journal) {
-                        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+                if ( no_vol ) {
+                    if (is_electronic_journal) {
+                        PostObjErr(eDiag_Info, eErr_GENERIC_MissingVolumeEpub,
+                            "Electronic journal volume missing", obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Warning, eErr_GENERIC_MissingVolume,
                             "Journal volume missing", obj, ctx);
                     }
-                } else if ( no_pages ) {
-                    PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
-                        "Journal pages missing", obj, ctx);
+                }
+                if ( no_pages ) {
+                    if (is_electronic_journal) {
+                        PostObjErr(eDiag_Info, eErr_GENERIC_MissingPagesEpub,
+                            "Electronic journal pages missing", obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPages,
+                            "Journal pages missing", obj, ctx);
+                    }
                 }
                 
                 if ( !no_pages ) {
