@@ -25505,8 +25505,8 @@ else
 sed 's/^/| /' conftest.$ac_ext >&5
 
 ncbi_cv_lib_boost_system=no
-	   BOOST_SYSTEM_LIBS=
-	   BOOST_SYSTEM_STATIC_LIBS=
+           BOOST_SYSTEM_LIBS=
+           BOOST_SYSTEM_STATIC_LIBS=
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext

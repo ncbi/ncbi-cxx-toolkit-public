@@ -4684,9 +4684,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           [AC_LANG_PROGRAM([[#include <boost/system/error_code.hpp>]],
               [[const char * s = boost::system::system_category().name();]])],
           [ncbi_cv_lib_boost_system=yes],
-	  [ncbi_cv_lib_boost_system=no
-	   BOOST_SYSTEM_LIBS=
-	   BOOST_SYSTEM_STATIC_LIBS=])])
+          [ncbi_cv_lib_boost_system=no
+           BOOST_SYSTEM_LIBS=
+           BOOST_SYSTEM_STATIC_LIBS=])])
 
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
