@@ -687,6 +687,18 @@ data." } },
    { eErr_GENERIC_MissingISOJTA,
    { "MissingISOJTA",
 "The publication journal is missing an ISO journal title abbreviation." } },
+   { eErr_GENERIC_MissingVolume,
+   { "MissingVolume",
+"The publication volume is missing." } },
+   { eErr_GENERIC_MissingVolumeEpub,
+   { "MissingVolumeEpub",
+"The electronic publication volume is missing." } },
+   { eErr_GENERIC_MissingPages,
+   { "MissingPages",
+"The publication pages are missing." } },
+   { eErr_GENERIC_MissingPagesEpub,
+   { "MissingPagesEpub",
+"The electronic publication pages are missing." } },
 
 /* SEQ_PKG */
 

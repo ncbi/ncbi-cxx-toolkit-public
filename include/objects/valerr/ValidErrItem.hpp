@@ -258,6 +258,10 @@ enum EErrType {
     eErr_GENERIC_UnexpectedPubStatusComment,
     eErr_GENERIC_PastReleaseDate,
     eErr_GENERIC_MissingISOJTA,
+    eErr_GENERIC_MissingVolume,
+    eErr_GENERIC_MissingVolumeEpub,
+    eErr_GENERIC_MissingPages,
+    eErr_GENERIC_MissingPagesEpub,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,
