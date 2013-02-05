@@ -290,12 +290,12 @@ public:
             const CSeq_descr& descr = object;
             string title;
             string genome;
-            int subtype;
+            int subtype = 0;
             string taxname;
             string taxid;
-            int biomol;
-            int complete;
-            int tech;
+            int biomol = 0;
+            int complete = 0;
+            int tech = 0;
 
             NcbiCout << "Skipped object: " <<
                 type.GetTypeInfo()->GetName() << ": " <<
