@@ -82,7 +82,6 @@ Int4 CBatchSizeMixer::GetBatchSize(Int4 hits)
          m_BatchSize = k_MaxBatchSize;
          m_Ratio = -1.0;
      }
-cout << "batch size: " << m_BatchSize << endl;
      return m_BatchSize;
 }
 
