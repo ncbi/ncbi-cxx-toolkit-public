@@ -150,7 +150,7 @@ public:
                 /*
                 m_out->WriteTitle( bioseq, 0, true );
                 */
-                string title = GetTitle (hnd, m_flags);
+                string title = GetTitle (hnd, m_flags);  /* NCBI_FAKE_WARNING */
                 *m_out << ">";
                 x_TitleSeqIdWrite (bioseq);
                 *m_out << " ";
