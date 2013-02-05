@@ -197,7 +197,20 @@ CLocalBlast::Run()
     CRef<CSearchResultSet> retval = m_TbackSearch->Run();
     retval->SetFilteredQueryRegions(m_PrelimSearch->GetFilteredQueryRegions());
     m_Messages = m_TbackSearch->GetSearchMessages();
+
     return retval;
+}
+
+Int4 CLocalBlast::GetNumExtensions()
+{
+    Int4 retv = 0;
+    if (m_InternalData) {
+        BlastDiagnostics * diag = m_InternalData->m_Diagnostics->GetPointer();
+        if (diag && diag->ungapped_stat) {
+             retv = diag->ungapped_stat->good_init_extends;
+        }
+    }
+    return retv;
 }
 
 END_SCOPE(blast)

@@ -322,6 +322,9 @@ public:
     ///                  
     TSeqPos GetBatchSize() const { return m_BatchSize; }
 
+    /// Set the target size of a batch of sequences
+    void SetBatchSize(TSeqPos batch_size) { m_BatchSize = batch_size; }
+    
     /// Determine if we have reached the end of the BLAST input
     bool End() { return m_Source->End(); }
 

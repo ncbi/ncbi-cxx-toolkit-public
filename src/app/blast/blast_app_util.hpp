@@ -50,6 +50,29 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Class to mix batch size for BLAST runs
+class CBatchSizeMixer 
+{
+private:
+    const double k_MixIn;        // mixing factor between batches
+    const Int4 k_TargetHits;     // the target hits per batch
+    double m_Ratio;              // the hits to batch size ratio
+    Int4 m_BatchSize;            // the batch size for next run
+    const Int4 k_MaxBatchSize;   // the maximum allowable batch size
+
+public:
+    CBatchSizeMixer(Int4 target, Int4 max_batch_size)
+          : k_MixIn       (0.3),
+            k_TargetHits  (target),
+            m_Ratio       (-1.0),
+            m_BatchSize   (10000),  // a "safe" sample size to start with
+            k_MaxBatchSize(max_batch_size) { }
+
+    // Return the next batch_size
+    Int4 GetBatchSize(Int4 hits = -1); 
+};
+
+
 /** 
  * @brief Initializes a CRemoteBlast instance for usage by command line BLAST
  * binaries

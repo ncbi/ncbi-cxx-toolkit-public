@@ -47,6 +47,12 @@ class CBlastFilterTest;
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+/// Returns the optimal chunk size for a given task
+/// @param program BLAST task [in]
+NCBI_XBLAST_EXPORT
+size_t
+SplitQuery_GetChunkSize(EProgram program);
+
 /// Class to perform a BLAST search on local BLAST databases
 /// Note that PHI-BLAST can be run using this class also, one only need to
 /// configure it as a regular blastp or blastn search and set the pattern in
@@ -99,6 +105,10 @@ public:
   
     /// Retrieve any error/warning messages that occurred during the search
     TSearchMessages GetSearchMessages() const;
+
+    /// Retrieve the number of extensions performed during the search
+    Int4 GetNumExtensions();
+
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;

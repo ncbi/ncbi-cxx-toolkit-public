@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include "split_query.hpp"
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/local_blast.hpp>
 
 #include <objtools/simple/simple_om.hpp>
 #include <objmgr/util/sequence.hpp>

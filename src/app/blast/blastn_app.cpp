@@ -158,6 +158,12 @@ int CBlastnApp::Run(void)
         
         formatter.PrintProlog();
         
+        CBatchSizeMixer mixer(2000000,   // targeted at 2M hits per batch
+                              SplitQuery_GetChunkSize(opt.GetProgram())-1000);
+        if (!m_CmdLineArgs->ExecuteRemotely()) {
+            input.SetBatchSize(mixer.GetBatchSize());
+        }
+
         /*** Process the input ***/
         for (; !input.End(); formatter.ResetScopeHistory()) {
 
@@ -178,6 +184,7 @@ int CBlastnApp::Run(void)
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
+                input.SetBatchSize(mixer.GetBatchSize(lcl_blast.GetNumExtensions()));
             }
 
             if (fmt_args->ArchiveFormatRequested(args)) {

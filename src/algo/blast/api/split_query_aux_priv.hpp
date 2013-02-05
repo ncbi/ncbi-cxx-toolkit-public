@@ -69,12 +69,6 @@ NCBI_XBLAST_EXPORT
 size_t 
 SplitQuery_GetOverlapChunkSize(EBlastProgramType program);
 
-/// Returns the optimal chunk size for a given task
-/// @param program BLAST task [in]
-NCBI_XBLAST_EXPORT
-size_t
-SplitQuery_GetChunkSize(EProgram program);
-
 /// Calculate the number of chunks that a query will be split into
 /// based upon query length, chunk_size and program.
 /// @param program BLAST program type [in]
