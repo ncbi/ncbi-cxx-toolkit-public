@@ -127,6 +127,30 @@ protected:
     **/
     void report_error (const char *  error);
 
+    /**
+     * Evaluate XPath expression.
+     *
+     * @note It can be called only within execute(...) member.
+     *
+     * @param xpath_expression
+     *  XPath expression to evaluate
+     * @param node
+     *  Node for which the expression is evaluated
+     * @author Sergey Satskiy, NCBI
+    **/
+    xpath_object evaluate (const char *       xpath_expression,
+                           const xml::node &  node);
+
+    /**
+     * Evaluate XPath expression for the current node.
+     *
+     * @note It can be called only within execute(...) member.
+     * @param xpath_expression
+     *  XPath expression to evaluate
+     * @author Sergey Satskiy, NCBI
+    **/
+    xpath_object evaluate (const char *  xpath_expression);
+
 private:
     impl::extension_element_impl *      pimpl_;
     friend void ::xslt_ext_element_cb(void *, void *, void *, void *);

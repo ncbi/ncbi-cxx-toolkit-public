@@ -34,6 +34,7 @@
 **/
 
 
+#include <string>
 
 #include <libxslt/xsltutils.h>
 
@@ -42,6 +43,40 @@
 #include <misc/xmlwrapp/xslt_exception.hpp>
 
 #include "extension_element_impl.hpp"
+
+
+static xmlXPathObjectPtr
+evaluate_xpath_expression (xsltTransformContextPtr  ctxt,
+                           const char *             xpath_expression,
+                           xmlNodePtr               node)
+{
+    int         old_context_size = ctxt->xpathCtxt->contextSize;
+    int         old_proximity_position = ctxt->xpathCtxt->proximityPosition;
+    int         old_ns_nr = ctxt->xpathCtxt->nsNr;
+    xmlNsPtr *  old_namespaces = ctxt->xpathCtxt->namespaces;
+    xmlNodePtr  old_node = ctxt->xpathCtxt->node;
+
+    ctxt->xpathCtxt->node = node == NULL ? ctxt->node : node;
+    if (node != NULL)
+        ctxt->xpathCtxt->contextSize = ctxt->xpathCtxt->proximityPosition;
+
+    xmlXPathObjectPtr result_obj = xmlXPathEvalExpression(
+                            reinterpret_cast<const xmlChar*>(xpath_expression),
+                            ctxt->xpathCtxt);
+
+    ctxt->xpathCtxt->node = old_node;
+    ctxt->xpathCtxt->contextSize = old_context_size;
+    ctxt->xpathCtxt->proximityPosition = old_proximity_position;
+    ctxt->xpathCtxt->nsNr = old_ns_nr;
+    ctxt->xpathCtxt->namespaces = old_namespaces;
+
+    if (result_obj == NULL)
+        throw xslt::exception("XPath expression evaluation failed. "
+                              "Expression: " +
+                              std::string(xpath_expression));
+
+    return result_obj;
+}
 
 
 namespace xslt {
@@ -91,6 +126,27 @@ namespace xslt {
 
         xsltTransformError(pimpl_->xslt_ctxt, pimpl_->xslt_ctxt->style,
                            pimpl_->instruction_node, error);
+    }
+
+    xpath_object extension_element::evaluate (const char *  xpath_expression,
+                                              const xml::node &  node)
+    {
+        if (pimpl_->xslt_ctxt == NULL)
+            throw xslt::exception("Evaluating XPath expression "
+                                  "out of XSLT context.");
+        return xpath_object(evaluate_xpath_expression(
+                             pimpl_->xslt_ctxt,
+                             xpath_expression,
+                             static_cast<xmlNodePtr>(node.get_node_data())));
+    }
+
+    xpath_object extension_element::evaluate (const char *  xpath_expression)
+    {
+        if (pimpl_->xslt_ctxt == NULL)
+            throw xslt::exception("Evaluating XPath expression "
+                                  "out of XSLT context.");
+        return xpath_object(evaluate_xpath_expression(pimpl_->xslt_ctxt,
+                                                      xpath_expression, NULL));
     }
 
 } // xslt namespace

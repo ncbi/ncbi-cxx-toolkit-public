@@ -62,6 +62,7 @@ namespace impl
 }
 
 class extension_function;
+class extension_element;
 
 
 /**
@@ -242,6 +243,7 @@ public:
 
 private:
     friend class extension_function;
+    friend class extension_element;
     void *  get_object (void) const;
     xpath_object (void *);
     friend void ::xslt_ext_func_cb(void *, int);

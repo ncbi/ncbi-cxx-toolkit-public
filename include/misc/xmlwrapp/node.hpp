@@ -71,6 +71,7 @@ extern "C" { void xslt_ext_element_cb(void*, void*, void*, void*); }
 
 namespace xslt {
 class xpath_object;
+class extension_element;
 }
 
 namespace xml {
@@ -1236,6 +1237,7 @@ private:
     friend class xslt::xpath_object;
     friend struct impl::doc_impl;
     friend struct impl::node_cmp;
+    friend class xslt::extension_element;
 
     friend struct impl::node_private_data *  impl::attach_node_private_data(void *);
 
