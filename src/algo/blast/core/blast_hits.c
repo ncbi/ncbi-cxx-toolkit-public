@@ -3514,5 +3514,8 @@ Blast_HSPResultsFromHSPStreamWithLimitEx(BlastHSPStream* hsp_stream,
                                                             hit_param);
 
     rm_hsps = s_TrimResultsByTotalHSPLimitEx(retval, max_num_hsps,removed_hsps);
+    if (removed_hsps) {
+        *removed_hsps = rm_hsps;
+    }
     return retval;
 }
