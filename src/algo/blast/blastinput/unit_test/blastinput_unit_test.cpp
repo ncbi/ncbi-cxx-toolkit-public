@@ -1079,7 +1079,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
         blast::SSeqLoc& ssl = query_vector[i];
         oss << "Accession " << accession << " difference in lengths: " 
             << ((TSeqPos)accession_lengths[i].second - 1) << " vs. "
-            << ssl.seqloc->GetInt().GetTo(), accession;
+            << ssl.seqloc->GetInt().GetTo();
         string msg = CNcbiOstrstreamToString(oss);
         BOOST_REQUIRE_MESSAGE(((TSeqPos)accession_lengths[i].second - 1) == 
                     ssl.seqloc->GetInt().GetTo(), msg);
