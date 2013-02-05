@@ -194,9 +194,18 @@ CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
 {
     CClassTypeInfo* info = CClassInfoHelper<AnyType>::CreateClassInfo(m_UserTypeName.c_str());
     info->SetImplicit();
-    CMemberInfo* mem = info->AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
-    if (GetDataMember() && GetDataMember()->NoPrefix()) {
-        mem->SetNoPrefix();
+    CMemberInfo* memInfo = info->AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
+    const CDataMember *mem = GetDataMember();
+    if (!mem && GetParentType()) {
+        mem = GetParentType()->GetDataMember();
+    }
+    if (mem) {
+        if (mem->Optional()) {
+            memInfo->SetOptional();
+        }
+        if (mem->NoPrefix()) {
+            memInfo->SetNoPrefix();
+        }
     }
     if ( GetParentType() == 0 ) {
         // global
