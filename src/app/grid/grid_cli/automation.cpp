@@ -587,7 +587,11 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, true));
     else if (method == "reconf")
         reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI, true));
-    else if (method == "job_info") {
+    else if (method == "parse_key") {
+        CJobInfoToJSON job_key_to_json;
+        job_key_to_json.ProcessJobMeta(CNetScheduleKey(arg_array.NextString()));
+        reply.PushNode(job_key_to_json.GetRootNode());
+    } else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
         string job_key(arg_array.NextString());
         ProcessJobInfo(m_NetScheduleAPI, job_key,
