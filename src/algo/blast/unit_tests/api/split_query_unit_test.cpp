@@ -41,6 +41,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include "split_query.hpp"
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <algo/blast/api/local_blast.hpp>
 #include <util/random_gen.hpp>
 #include <objtools/simple/simple_om.hpp>
 
