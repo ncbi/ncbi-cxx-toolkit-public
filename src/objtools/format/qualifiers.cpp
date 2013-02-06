@@ -1442,11 +1442,12 @@ void CFlatModelEvQVal::Format
  IFlatQVal::TFlags flags) const
 {
     size_t num_mrna = 0, num_prot = 0, num_est = 0;
+    size_t rnaseq_base_coverage = 0, rnaseq_biosamples_introns_full = 0;
     const string* method = 0;
 
     ITERATE (CUser_object::TData, it, m_Value->GetData()) {
         const CUser_field& field = **it;
-        if (!field.IsSetLabel()  &&  field.GetLabel().IsStr()) {
+        if (! field.IsSetLabel()  || !  field.GetLabel().IsStr()) {
             continue;
         }
         const string& label = field.GetLabel().GetStr();
@@ -1475,6 +1476,14 @@ void CFlatModelEvQVal::Format
             num_est  = s_CountAccessions(field);
         } else if (label == "Protein") {
             num_prot = s_CountAccessions(field);
+        } else if (label == "rnaseq_base_coverage" ) {
+            if ( field.CanGetData() && field.GetData().IsInt() ) {
+                rnaseq_base_coverage = field.GetData().GetInt();
+            }
+        } else if (label == "rnaseq_biosamples_introns_full" ) {
+            if ( field.CanGetData() && field.GetData().IsInt() ) {
+                rnaseq_biosamples_introns_full = field.GetData().GetInt();
+            }
         }
     }
 
@@ -1485,29 +1494,53 @@ void CFlatModelEvQVal::Format
     }
     text << ".";
 
-    if (num_mrna > 0  ||  num_est > 0  ||  num_prot > 0) {
+    if (num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 || rnaseq_base_coverage > 0 ) {
         text << " Supporting evidence includes similarity to:";
     }
-    string prefix = " ";
-    if (num_mrna > 0) {
-        text << prefix << num_mrna << " mRNA";
-        if (num_mrna > 1) {
-            text << 's';
+    string section_prefix = " ";
+    // The countable section
+    if( num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 )
+    {
+        text << section_prefix;
+        string prefix = "";
+        if (num_mrna > 0) {
+            text << prefix << num_mrna << " mRNA";
+            if (num_mrna > 1) {
+                text << 's';
+            }
+            prefix = ", ";
         }
-        prefix = ", ";
+        if (num_est > 0) {
+            text << prefix << num_est << " EST";
+            if (num_est > 1) {
+                text << 's';
+            }
+            prefix = ", ";
+        }
+        if (num_prot > 0) {
+            text << prefix << num_prot << " Protein";
+            if (num_prot > 1) {
+                text << 's';
+            }
+        }
+        section_prefix = ", and ";
     }
-    if (num_est > 0) {
-        text << prefix << num_est << " EST";
-        if (num_est > 1) {
-            text << 's';
+    // The RNASeq section
+    if( rnaseq_base_coverage > 0 )
+    {
+        text << section_prefix;
+
+        text << rnaseq_base_coverage << "% coverage by RNAseq alignments";
+        if( rnaseq_biosamples_introns_full > 0 ) {
+            text << ", including " << rnaseq_biosamples_introns_full;
+            text << " sample";
+            if( rnaseq_biosamples_introns_full > 1 ) {
+                text << 's';
+            }
+            text << " with support for all introns";
         }
-        prefix = ", ";
-    }
-    if (num_prot > 0) {
-        text << prefix << num_prot << " Protein";
-        if (num_prot > 1) {
-            text << 's';
-        }
+
+        section_prefix = ", and ";
     }
 
     x_AddFQ(q, name, CNcbiOstrstreamToString(text));
