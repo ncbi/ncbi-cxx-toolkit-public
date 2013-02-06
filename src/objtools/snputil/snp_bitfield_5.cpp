@@ -128,7 +128,6 @@ bool CSnpBitfield5::IsTrue( CSnpBitfield::EFunctionClass prop ) const
     bool ret = false;
 
     // looking for a specific function class
-    unsigned char byte3 = m_listBytes[3];
     unsigned char byte4 = m_listBytes[4];
 
     // the 'Has reference' bit may be set.  So turn it off for test.
