@@ -1226,6 +1226,31 @@ CRef<CVariation> CHgvsParser::x_duplication(TIterator const& i, const CContext& 
 }
 
 
+CRef<CVariation> CHgvsParser::x_no_change(TIterator const& i, const CContext& context)
+{
+    HGVS_ASSERT_RULE(i, eID_no_change);
+    TIterator it = i->children.begin();
+    CRef<CVariation> vr(new CVariation);
+    CVariation_inst& var_inst = vr->SetData().SetInstance();
+
+    SetFirstPlacement(*vr).Assign(context.GetPlacement());
+
+    if(it->value.id() == SGrammar::eID_raw_seq) {
+        CRef<CSeq_literal> seq_from = x_raw_seq(it, context);
+        SetFirstPlacement(*vr).SetSeq(*seq_from);
+        ++it;
+    }
+
+    var_inst.SetType(CVariation_inst::eType_identity);
+
+    TDelta delta(new TDelta::TObjectType);
+    delta->SetSeq().SetThis();
+    var_inst.SetDelta().push_back(delta);
+
+    return vr;
+}
+
+
 CRef<CVariation> CHgvsParser::x_nuc_subst(TIterator const& i, const CContext& context)
 {
     HGVS_ASSERT_RULE(i, eID_nuc_subst);
@@ -1511,23 +1536,6 @@ CRef<CVariation> CHgvsParser::x_prot_missense(TIterator const& i, const CContext
 }
 
 
-CRef<CVariation> CHgvsParser::x_identity(const CContext& context)
-{
-    CRef<CVariation> vr(new CVariation);
-    CVariation_inst& var_inst = vr->SetData().SetInstance();
-    var_inst.SetType(CVariation_inst::eType_identity);
-
-
-    SetFirstPlacement(*vr).Assign(context.GetPlacement());
-
-
-    TDelta delta(new TDelta::TObjectType);
-    delta->SetSeq().SetThis();
-    var_inst.SetDelta().push_back(delta);
-
-    return vr;
-}
-
 CRef<CVariation>  CHgvsParser::x_string_content(TIterator const& i, const CContext& context)
 {
     CRef<CVariation> vr(new CVariation);
@@ -1551,14 +1559,13 @@ CRef<CVariation> CHgvsParser::x_mut_inst(TIterator const& i, const CContext& con
         if(s == "?") {
             vr->SetData().SetUnknown();
             SetFirstPlacement(*vr).Assign(context.GetPlacement());
-        } else if(s == "=") {
-            vr = x_identity(context);
         } else {
             vr = x_string_content(it, context);
         }
     } else {
         vr =
-            it->value.id() == SGrammar::eID_delins        ? x_delins(it, context)
+            it->value.id() == SGrammar::eID_no_change     ? x_no_change(it, context)
+          : it->value.id() == SGrammar::eID_delins        ? x_delins(it, context)
           : it->value.id() == SGrammar::eID_deletion      ? x_deletion(it, context)
           : it->value.id() == SGrammar::eID_insertion     ? x_insertion(it, context, true)
           : it->value.id() == SGrammar::eID_duplication   ? x_duplication(it, context)
@@ -1627,6 +1634,8 @@ CRef<CVariation> CHgvsParser::x_expr2(TIterator const& i, const CContext& contex
         vr = x_expr3(it, local_context);
     } else if(it->value.id() == SGrammar::eID_prot_ext) {
         vr = x_prot_ext(it, context);
+    } else if(it->value.id() == SGrammar::eID_no_change) {
+        vr = x_no_change(it, context);
     } else if(it->value.id() == i->value.id()) {
         vr.Reset(new CVariation);
         SetFirstPlacement(*vr).Assign(context.GetPlacement());
@@ -1647,8 +1656,6 @@ CRef<CVariation> CHgvsParser::x_expr2(TIterator const& i, const CContext& contex
             if(s == "0?") {
                 SetComputational(*vr);
             }
-        } else if(s == "=") {
-            vr = x_identity(context);
         } else {
             HGVS_THROW(eGrammatic, "Unexpected expr terminal: " + s);
         }

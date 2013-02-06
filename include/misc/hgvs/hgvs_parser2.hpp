@@ -382,7 +382,8 @@ protected:
             eID_prot_pos,
             eID_prot_fs,
             eID_prot_missense,
-            eID_prot_ext
+            eID_prot_ext,
+            eID_no_change
         };
 
 
@@ -437,6 +438,7 @@ protected:
                 s_rule_names[eID_prot_fs]           = "prot_fs";
                 s_rule_names[eID_prot_missense]     = "prot_missense";
                 s_rule_names[eID_prot_ext]          = "prot_ext";
+                s_rule_names[eID_no_change]         = "no_change";
             }
             return s_rule_names;
         }
@@ -491,6 +493,7 @@ protected:
             rule<ScannerT, parser_context<>, parser_tag<eID_prot_missense> >    prot_missense;
             rule<ScannerT, parser_context<>, parser_tag<eID_prot_ext> >         prot_ext;
             rule<ScannerT, parser_context<>, parser_tag<eID_prot_fs> >          prot_fs;
+            rule<ScannerT, parser_context<>, parser_tag<eID_no_change> >        no_change;
 
             definition(SGrammar const&)
             {
@@ -659,6 +662,8 @@ protected:
                                                 //  e.g. p.Glu5Valins2fsX3 - 2 in ins2 indicates sequence of length two, NOT the sequence at position 2.
                                                 //  Hence, the local-locs above must be specified via range-types only.
 
+                no_change      = !raw_seq >> ch_p('=');
+
                 nuc_subst       = (!raw_seq) >> ch_p('>') >> raw_seq_or_len;
                     //According to the spec, substitution is exactly one base to the left and to the right of ">" (otherwise a delins)
                     //In reality, the submitters don't follow the spec and express delins as substitution,
@@ -714,7 +719,7 @@ protected:
                                            ] >> seq_loc;
 
                 mut_inst        = ch_p('?') //can exist within +mut_inst, e.g. p.Met1?extMet-5
-                                | ch_p('=')
+                                | no_change
                                 | delins    //delins must precede del
                                 | deletion
                                 | insertion
@@ -729,7 +734,7 @@ protected:
                                 | leaf_node_d[ch_p(':') >> +(alnum_p)] //catch-all
                                 ;
 
-                    //Note: '?' and '=' can exist both within a location context
+                    //Note: '?' and no_change can exist both within a location context
                     //(i.e. expr3) or within a sequence context (i.e. expr2)
                     //additionally, prot_ext may exist as expr2 (outside of location context) as well.
 
@@ -769,7 +774,7 @@ protected:
                                 | prot_ext    //note: can also exist within location context (mut_inst)
                                 | ch_p('0')   //note: HGVS-special; follows "location>>expr3" such that if location contains padding zeros, they are not consumed by this rule.
                                 | ch_p('?')   //note: follows "location>>expr3" such that variation at unknown pos is not partially-matched as unknown variation
-                                | ch_p('=');
+                                | no_change;
                 list2a          = list_p(discard_node_d[ch_p('[')] >> list2b >> discard_node_d[ch_p(']')], chset<>(";+"));
                 list2b          = list_p(expr2, list_delimiter);
 
@@ -841,12 +846,12 @@ private:
     static CRef<CSeq_literal> x_raw_seq        (TIterator const& i, const CContext& context);
     static TDelta            x_seq_ref         (TIterator const& i, const CContext& context);
     static CRef<CSeq_literal> x_raw_seq_or_len (TIterator const& i, const CContext& context);
-    static CRef<CVariation>  x_identity        (const CContext& context);
     static CRef<CVariation>  x_delins          (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_deletion        (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_insertion       (TIterator const& i, const CContext& context, bool check_loc);
     static CRef<CVariation>  x_duplication     (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_nuc_subst       (TIterator const& i, const CContext& context);
+    static CRef<CVariation>  x_no_change       (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_nuc_inv         (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_ssr             (TIterator const& i, const CContext& context);
     static CRef<CVariation>  x_conversion      (TIterator const& i, const CContext& context);

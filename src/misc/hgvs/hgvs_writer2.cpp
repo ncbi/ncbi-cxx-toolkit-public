@@ -745,17 +745,25 @@ string CHgvsParser::x_AsHgvsInstExpression(
         }
     }}
 
+    static const size_t s_max_literal_length = 16;
+
     string asserted_seq_str =
-           !asserted_seq                   ? ""
-         : asserted_seq->GetLength() < 16  ? x_SeqLiteralToStr(*asserted_seq, is_prot)
-         :                                   NStr::NumericToString(asserted_seq->GetLength());
+           !asserted_seq                                     ? ""
+         : asserted_seq->GetLength() < s_max_literal_length  ? x_SeqLiteralToStr(*asserted_seq, is_prot)
+         :                                                     NStr::NumericToString(asserted_seq->GetLength());
 
 
     bool append_delta = false;
     if(inst.GetType() == CVariation_inst::eType_identity
        || inst.GetType() == CVariation_inst::eType_prot_silent)
     {
-        inst_str = "=";
+        //Prepend the asserted sequence, but only if its lengh is under threshold.
+        //If it is too long, it can't be used, as it will be represented by a number, and
+        //the preceding context also ends with a number (location): e.g
+        //  NC_000001:g.100000A=        - correct
+        //  NC_000001:g.100000_100123=  - correct
+        //  NC_000001:g.100000_100123124= - wrong, can't use literal's length "124"
+        inst_str = (asserted_seq && asserted_seq->GetLength() < s_max_literal_length ? asserted_seq_str : "") + "=";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
         inst_str = "inv" + asserted_seq_str;
     } else if(inst.GetType() == CVariation_inst::eType_snv) {
@@ -852,8 +860,8 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
                 string variant_str = x_SeqLiteralToStr(*literal, is_prot);
                 if(inst_str == variant_str + ">") {
-                    //instead of "G>G" etc want to report "="
-                    inst_str = "=";
+                    //instead of "G>G" etc want to report "G="
+                    inst_str[inst_str.size() - 1] = '='; //overwrite '>' with '='
                 } else {
                     inst_str += variant_str;
                 }
