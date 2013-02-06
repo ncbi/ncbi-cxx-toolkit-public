@@ -1441,7 +1441,7 @@ void CFlatModelEvQVal::Format
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
-    size_t num_mrna = 0, num_prot = 0, num_est = 0;
+    size_t num_mrna = 0, num_prot = 0, num_est = 0, num_long_sra = 0;
     size_t rnaseq_base_coverage = 0, rnaseq_biosamples_introns_full = 0;
     const string* method = 0;
 
@@ -1468,6 +1468,8 @@ void CFlatModelEvQVal::Format
                     num_est  = (*i)->GetData().GetInt();
                 } else if (label == "Protein") {
                     num_prot = (*i)->GetData().GetInt();
+                } else if (label == "long SRA read") {
+                    num_long_sra = (*i)->GetData().GetInt();
                 }
             }
         } else if (label == "mRNA") {
@@ -1476,6 +1478,8 @@ void CFlatModelEvQVal::Format
             num_est  = s_CountAccessions(field);
         } else if (label == "Protein") {
             num_prot = s_CountAccessions(field);
+        } else if (label == "long SRA read") {
+            num_long_sra = s_CountAccessions(field);
         } else if (label == "rnaseq_base_coverage" ) {
             if ( field.CanGetData() && field.GetData().IsInt() ) {
                 rnaseq_base_coverage = field.GetData().GetInt();
@@ -1494,12 +1498,14 @@ void CFlatModelEvQVal::Format
     }
     text << ".";
 
-    if (num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 || rnaseq_base_coverage > 0 ) {
+    if (num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 || num_long_sra > 0 ||
+        rnaseq_base_coverage > 0 ) 
+    {
         text << " Supporting evidence includes similarity to:";
     }
     string section_prefix = " ";
     // The countable section
-    if( num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 )
+    if( num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 || num_long_sra > 0 )
     {
         text << section_prefix;
         string prefix = "";
@@ -1522,6 +1528,14 @@ void CFlatModelEvQVal::Format
             if (num_prot > 1) {
                 text << 's';
             }
+            prefix = ", ";
+        }
+        if (num_long_sra > 0) {
+            text << prefix << num_long_sra << " long SRA read";
+            if (num_long_sra > 1) {
+                text << 's';
+            }
+            prefix = ", ";
         }
         section_prefix = ", and ";
     }
