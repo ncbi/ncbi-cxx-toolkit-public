@@ -740,18 +740,49 @@ public:
 class CError : public pythonpp::CUserError<CError>
 {
 public:
-    CError(void);
-    CError(const string& msg);
+    CError(void)
+        { }
+    CError(const CDB_Exception& e)
+        { x_Init(e, GetPyException()); }
+    CError(const string& msg, long db_errno = 0,
+           const string& db_msg = kEmptyStr)
+        { x_Init(msg, db_errno, db_msg, GetPyException()); }
 
 protected:
     CError(const string& msg, PyObject* err_type);
-};
 
-class CInterfaceError : public pythonpp::CUserError<CInterfaceError, CError>
-{
-public:
-    CInterfaceError(const string& msg);
-};
+    void x_Init(const CDB_Exception& e, PyObject* err_type);
+    void x_Init(const string& msg, long db_errno, const string& db_msg,
+                PyObject* err_type);
+ };
+
+ #define PYTHON_DBAPI_ERROR_CLASS(Name, Base) \
+ class Name : public pythonpp::CUserError<Name, Base> \
+ { \
+ public: \
+     Name() \
+         { } \
+     Name(const CDB_Exception& e) \
+         { x_Init(e, GetPyException()); } \
+     Name(const string& msg, long db_errno = 0, \
+          const string& db_msg = kEmptyStr) \
+         { x_Init(msg, db_errno, db_msg, GetPyException()); } \
+     static void Rethrow(const CDB_Exception& e) \
+         { throw Name(e); } \
+ protected: \
+    Name(const string& msg, PyObject* err_type) \
+        : pythonpp::CUserError<Name, Base>(msg, err_type) \
+        { } \
+}
+
+PYTHON_DBAPI_ERROR_CLASS(CInterfaceError,    CError);
+PYTHON_DBAPI_ERROR_CLASS(CDatabaseError,     CError);
+PYTHON_DBAPI_ERROR_CLASS(CDataError,         CDatabaseError);
+PYTHON_DBAPI_ERROR_CLASS(COperationalError,  CDatabaseError);
+PYTHON_DBAPI_ERROR_CLASS(CIntegrityError,    CDatabaseError);
+PYTHON_DBAPI_ERROR_CLASS(CInternalError,     CDatabaseError);
+PYTHON_DBAPI_ERROR_CLASS(CProgrammingError,  CDatabaseError);
+PYTHON_DBAPI_ERROR_CLASS(CNotSupportedError, CDatabaseError);
 
 /* Old implementation of CDatabaseError ...
 class CDatabaseError : public pythonpp::CUserError<CDatabaseError, CError>
@@ -820,55 +851,6 @@ private:
     long m_db_errno;
 };
 */
-
-class CDatabaseError : public pythonpp::CUserError<CDatabaseError, CError>
-{
-public:
-    CDatabaseError(const CDB_Exception& e);
-    CDatabaseError(const string& msg, long db_errno = 0, const string& db_msg = kEmptyStr);
-
-protected:
-    CDatabaseError(const string& msg, PyObject* err_type);
-
-protected:
-    void SetPythonExeption(const string& msg, long db_errno = 0, const string& db_msg = kEmptyStr);
-};
-
-class CInternalError : public pythonpp::CUserError<CInternalError, CDatabaseError>
-{
-public:
-    CInternalError(const string& msg);
-};
-
-class COperationalError : public pythonpp::CUserError<COperationalError, CDatabaseError>
-{
-public:
-    COperationalError(const string& msg);
-};
-
-class CProgrammingError : public pythonpp::CUserError<CProgrammingError, CDatabaseError>
-{
-public:
-    CProgrammingError(const string& msg);
-};
-
-class CIntegrityError : public pythonpp::CUserError<CIntegrityError, CDatabaseError>
-{
-public:
-    CIntegrityError(const string& msg);
-};
-
-class CDataError : public pythonpp::CUserError<CDataError, CDatabaseError>
-{
-public:
-    CDataError(const string& msg);
-};
-
-class CNotSupportedError : public pythonpp::CUserError<CNotSupportedError, CDatabaseError>
-{
-public:
-    CNotSupportedError(const string& msg);
-};
 
 //////////////////////////////////////////////////////////////////////////////
 inline
