@@ -254,6 +254,11 @@ void CNetService::AllowXSiteConnections()
     m_Impl->AllowXSiteConnections();
 }
 
+bool CNetService::IsUsingXSiteProxy()
+{
+    return m_Impl->m_AllowXSiteConnections;
+}
+
 void SNetServiceImpl::AllowXSiteConnections()
 {
     m_AllowXSiteConnections = true;

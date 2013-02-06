@@ -122,6 +122,7 @@ class NCBI_XCONNECT_EXPORT CNetService
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections();
+    bool IsUsingXSiteProxy();
 #endif
 };
 

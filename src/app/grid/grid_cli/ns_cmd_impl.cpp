@@ -555,6 +555,10 @@ CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
     CJsonNode result(CJsonNode::NewObjectNode());
     CJsonNode target_map(result);
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    bool use_xsite_proxy = ns_api.GetService().IsUsingXSiteProxy();
+#endif
+
     string client_name(ns_api.GetService().GetServerPool().GetClientName());
 
     CNetScheduleAdmin::TQueueList qlist;
@@ -573,8 +577,13 @@ CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
             ITERATE(list<string>, each_queue_name,
                     server_and_its_queues->queues) {
                 CJsonNode queue_info_node(CJsonNode::NewObjectNode());
-                s_GetQueueInfo(CNetScheduleAPI(server_address, client_name,
-                            *each_queue_name), queue_info_node);
+                CNetScheduleAPI tmp_ns(server_address,
+                        client_name, *each_queue_name);
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+                if (use_xsite_proxy)
+                    tmp_ns.GetService().AllowXSiteConnections();
+#endif
+                s_GetQueueInfo(tmp_ns, queue_info_node);
                 target_map.SetNode(*each_queue_name, queue_info_node);
             }
         }
