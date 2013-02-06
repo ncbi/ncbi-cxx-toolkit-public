@@ -1,6 +1,6 @@
 
 RMBLAST Release Notes 
-   ( NCBI 2.2.27+ )
+   ( NCBI 2.2.28+ )
 
  Overview
  ========
@@ -54,7 +54,7 @@ RMBLAST Release Notes
    Download the binary distribution appropriate for your computer
    platform and extract the contents:
 
-   % tar zxvf ncbi-blast-2.2.27+-x64-linux.tar.gz
+   % tar zxvf ncbi-blast-2.2.28+-x64-linux.tar.gz
   
    
  Source Distribution:
@@ -65,8 +65,8 @@ RMBLAST Release Notes
    install the programs in /usr/local/rmblast/bin, /usr/local/rmblast/lib
    and so on:
   
-    % tar zxvf rmblast-1.0-ncbi-blast-2.2.27+.tar.gz
-    % cd rmblast-1.0-ncbi-blast-2.2.27+-src/c++/
+    % tar zxvf rmblast-1.0-ncbi-blast-2.2.28+.tar.gz
+    % cd rmblast-1.0-ncbi-blast-2.2.28+-src/c++/
     % ./configure --with-mt --prefix=/usr/local/rmblast --without-debug
 
    Build the programs:
