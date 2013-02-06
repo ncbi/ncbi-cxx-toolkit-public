@@ -1917,14 +1917,14 @@ SImplementation::x_ConstructRnaName(const CBioseq_Handle& handle)
 {
     string name;
     if (handle) {
-        name = sequence::GetTitle(handle);
+        name = sequence::CDeflineGenerator().GenerateDefline(handle);
         try {
             const COrg_ref &org = sequence::GetOrg_ref(handle);
             if (org.IsSetTaxname() && NStr::StartsWith(name, org.GetTaxname())) {
                 name.erase(0, org.GetTaxname().size());
             }
         }
-        catch (CException& e) {
+        catch (CException&) {
         }
         NStr::ReplaceInPlace(name, ", nuclear gene encoding mitochondrial protein",
                                    "");
