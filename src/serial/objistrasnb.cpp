@@ -1303,7 +1303,8 @@ void CObjectIStreamAsnBinary::GetTagPattern(vector<int>& pattern, size_t max_len
         else {
             byte = PeekAnyTagFirstByte();
             ++counter;
-            if (counter%2 != 0 && (byte & CAsnBinaryDefs::eContextSpecific) == 0) {
+            if ((counter%2 != 0 && (byte & CAsnBinaryDefs::eContextSpecific) == 0) ||
+                (prevbyte & CAsnBinaryDefs::eContextSpecific) != 0) {
                 memtag = prevbyte;
                 ++counter;
             }
