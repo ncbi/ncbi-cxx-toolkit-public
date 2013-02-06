@@ -151,6 +151,7 @@ CIgBlast::Run()
 
     /*** search internal V for domain annotation */
     {
+        opts_hndl->SetHitlistSize(20);  // use a larger number to ensure annotation
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         results[3] = blast.Run();
         s_SortResultsByEvalue(results[3]);
