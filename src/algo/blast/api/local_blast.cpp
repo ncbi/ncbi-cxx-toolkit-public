@@ -53,6 +53,58 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+size_t
+SplitQuery_GetChunkSize(EProgram program)
+{
+    size_t retval = 0;
+
+    // used for experimentation purposes
+    char* chunk_sz_str = getenv("CHUNK_SIZE");
+    if (chunk_sz_str && !NStr::IsBlank(chunk_sz_str)) {
+        retval = NStr::StringToInt(chunk_sz_str);
+        _TRACE("DEBUG: Using query chunk size " << retval);
+    } else {
+
+        switch (program) {
+        case eBlastn:
+            retval = 1000000;
+            break;
+        case eMegablast:
+        case eDiscMegablast:
+            retval = 5000000;
+            break;
+        case eTblastn:
+            retval = 20000;
+            break;
+        // if the query will be translated, round the chunk size up to the next
+        // multiple of 3, that way, when the nucleotide sequence(s) get(s)
+        // split, context N%6 in one chunk will have the same frame as context
+        // N%6 in the next chunk
+        case eBlastx:
+        case eTblastx:
+            // N.B.: the splitting is done on the nucleotide query sequences,
+            // then each of these chunks is translated
+            retval = 10002;
+            break;
+        case eBlastp:
+        default:
+            retval = 10000;
+            break;
+        }
+
+        _TRACE("Using query chunk size " << retval);
+    }
+
+    const EBlastProgramType prog_type(EProgramToEBlastProgramType(program));
+    if (Blast_QueryIsTranslated(prog_type) && !Blast_SubjectIsPssm(prog_type) &&
+        (retval % CODON_LENGTH) != 0) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Split query chunk size must be divisible by 3");
+    }
+
+    return retval;
+}
+
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
                          CRef<CBlastOptionsHandle> opts_handle,
                          const CSearchDatabase& dbinfo)
