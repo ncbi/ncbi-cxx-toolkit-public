@@ -152,10 +152,16 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
 
     CRequestContextSwitcher request_state_guard(job_context->m_RequestContext);
 
+    bool recycle_job_context = false;
+
     try {
         job_context->x_SendJobResults();
-        job_context->x_PrintRequestStop();
-        return true;
+        recycle_job_context = true;
+    }
+    catch (CNetScheduleException& e) {
+        ERR_POST_X(65, "Could not commit " <<
+                job_context->m_Job.job_id << ": " << e.what());
+        recycle_job_context = true;
     }
     catch (exception& e) {
         unsigned commit_interval = m_WorkerNode->GetCommitJobInterval();
@@ -168,13 +174,19 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
                 job_context->GetTimeout()) {
             ERR_POST_X(64, "Could not commit " <<
                     job_context->m_Job.job_id << ": " << e.what());
-            return true;
+            recycle_job_context = true;
         }
-        ERR_POST_X(63, "Error while committing " <<
-                job_context->m_Job.job_id << ": " << e.what() <<
-                "; will retry in " << commit_interval << " seconds.");
-        return false;
+        if (!recycle_job_context) {
+            ERR_POST_X(63, "Error while committing " <<
+                    job_context->m_Job.job_id << ": " << e.what() <<
+                    "; will retry in " << commit_interval << " seconds.");
+        }
     }
+
+    if (recycle_job_context)
+        job_context->x_PrintRequestStop();
+
+    return recycle_job_context;
 }
 
 /// @internal
