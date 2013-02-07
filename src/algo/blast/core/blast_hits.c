@@ -3217,23 +3217,6 @@ Int2 Blast_HSPResultsApplyMasklevel(BlastHSPResults *results,
    return 0;
 }
 
-/** callback used to sort a list of encapsulated HSP
- *  structures in order of increasing e-value, using
- *  the raw score as a tiebreaker
- */
-static int s_SortHspWrapEvalue(const void *x, const void *y)
-{
-    SHspWrap *wrap1 = (SHspWrap *)x;
-    SHspWrap *wrap2 = (SHspWrap *)y;
-    if (wrap1->hsp->evalue < wrap2->hsp->evalue)
-        return -1;
-    if (wrap1->hsp->evalue > wrap2->hsp->evalue)
-        return 1;
-
-    return (wrap2->hsp->score - wrap1->hsp->score);
-}
-
-
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
         BlastHSPList* hsp_list, Int4 hitlist_size)
 {
