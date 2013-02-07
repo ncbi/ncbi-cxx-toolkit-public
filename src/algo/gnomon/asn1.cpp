@@ -523,6 +523,8 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
         vector<string> mrnas;
         vector<string> ests;
         vector<string> short_reads;
+        vector<string> long_sras;
+        vector<string> others;
         vector<string> unknown;
 
         CSupportInfoSet support;
@@ -553,15 +555,20 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                 proteins.push_back(accession);
             else if (type&CGeneModel::emRNA)
                 mrnas.push_back(accession);
-            else if (type&CGeneModel::eEST)
-                ests.push_back(accession);
-            else if (type&CGeneModel::eSR)
+            else if (type&CGeneModel::eEST) {
+                if(NStr::StartsWith(accession, "gi|"))
+                    ests.push_back(accession);
+                else if(NStr::StartsWith(accession, "gnl|SRA"))
+                    long_sras.push_back(accession);
+                else
+                    others.push_back(accession);
+            } else if (type&CGeneModel::eSR)
                 short_reads.push_back(accession);
             else
                 unknown.push_back(accession);
         }
 
-        if (proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty()) {
+        if (proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty() && long_sras.empty() && others.empty()) {
             if ((model.Type()&CGeneModel::eChain)) {
                 support.clear();
                 support.insert(CSupportInfo(model.ID()));
@@ -581,10 +588,12 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                         CollectUserField(support_field, "mRNAs", mrnas);
                         CollectUserField(support_field, "ESTs", ests);
                         CollectUserField(support_field, "RNASeq", short_reads);
+                        CollectUserField(support_field, "longSRA", long_sras);
+                        CollectUserField(support_field, "other", others);
                     }
                 }
             }
-            if (!(proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty())) {
+            if (!(proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty() && long_sras.empty() && others.empty())) {
                 cores = collected_cores;
                 unknown.clear();
             }
@@ -623,6 +632,18 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             support_field->AddField("RNASeq",short_reads);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(short_reads.size());
+        }
+        if (!long_sras.empty()) {
+            sort(long_sras.begin(),long_sras.end());
+            support_field->AddField("longSRA",long_sras);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(long_sras.size());
+        }
+        if (!others.empty()) {
+            sort(others.begin(),others.end());
+            support_field->AddField("other",others);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(others.size());
         }
         if (!unknown.empty()) {
             support_field->AddField("unknown",unknown);
