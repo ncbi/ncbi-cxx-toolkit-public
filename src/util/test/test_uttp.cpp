@@ -62,7 +62,11 @@ private:
 
     bool TestReaderChunkPart();
     bool TestReaderInput(const char* buffer, size_t buffer_size);
-    bool TestReader(size_t buffer_size);
+    bool TestReader(size_t buffer_size)
+#if defined(__llvm__)  &&  !defined(__clang__)
+        __attribute__((noinline))
+#endif
+        ;
 
     bool TestWriterOutput();
     bool TestWriter(size_t buffer_size);
