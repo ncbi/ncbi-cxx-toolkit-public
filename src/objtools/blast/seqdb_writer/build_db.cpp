@@ -1281,17 +1281,23 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
 
 bool CBuildDatabase::EndBuild(bool erase)
 {
-    bool success = false;
-    bool can_not_close = false;
-    
     try {
         m_OutputDb->Close();
+        return x_EndBuild(erase, NULL);
+    } catch (const CException& e) {
+        return x_EndBuild(true, erase ? NULL : &e);
+    } catch (exception& e) {
+        NCBI_EXCEPTION_VAR(ex, CException, eUnknown, e.what());
+        return x_EndBuild(true, erase ? NULL : &ex);
     } catch (...) {
-        if (!erase) {
-            erase = true;    
-            can_not_close = true;
-        }
+        NCBI_EXCEPTION_VAR(ex, CException, eUnknown, "Non-standard exception");
+        return x_EndBuild(true, erase ? NULL : &ex);
     }
+}
+
+bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
+{
+    bool success = false;
 
     vector<string> vols;
     vector<string> files;
@@ -1324,9 +1330,9 @@ bool CBuildDatabase::EndBuild(bool erase)
     
     m_LogFile << endl;
 
-    if (can_not_close) {
-        NCBI_THROW(CWriteDBException, eArgErr,
-                   "Can not close files.");
+    if (close_exception) {
+        NCBI_RETHROW(*close_exception, CWriteDBException, eArgErr,
+                     "Can not close files.");
     }
     
     return success;

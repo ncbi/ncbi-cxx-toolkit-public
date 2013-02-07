@@ -526,6 +526,8 @@ private:
     /// @param id The returned Seq-id if one is found. [out]
     /// @return true if the resolution was successful.
     bool x_ResolveFromSource(const string & acc, CRef<objects::CSeq_id> & id);
+
+    bool x_EndBuild(bool erase, const CException * close_exception);
     
     /// True for a protein database, false for nucleotide.
     bool m_IsProtein;
