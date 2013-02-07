@@ -227,7 +227,9 @@ int CDeltaBlastApp::Run(void)
            	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         size_t query_batch_size = m_CmdLineArgs->GetQueryBatchSize();
-        if (m_CmdLineArgs->GetNumberOfPsiBlastIterations() > 1) {
+        if (m_CmdLineArgs->GetNumberOfPsiBlastIterations() > 1
+            || m_CmdLineArgs->ExecuteRemotely()) {
+
             query_batch_size = 1;
         }
         CBlastInput input(&fasta, query_batch_size);
