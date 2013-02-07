@@ -476,12 +476,12 @@ void CWorkerNodeJobContext::x_RunJob()
     if (s_ReqEventsDisabled == CGridWorkerNode::eEnableStartStop)
         GetDiagContext().PrintRequestStart().Print("jid", m_Job.job_id);
 
+    GetWorkerNode().x_NotifyJobWatchers(*this,
+            IWorkerNodeJobWatcher::eJobStarted);
+
+    m_RequestContext->SetAppState(eDiagAppState_Request);
+
     try {
-        GetWorkerNode().x_NotifyJobWatcher(*this,
-                IWorkerNodeJobWatcher::eJobStarted);
-
-        m_RequestContext->SetAppState(eDiagAppState_Request);
-
         SetJobRetCode(m_WorkerNode.GetJobProcessor()->Do(*this));
     }
     catch (CGridWorkerNodeException& ex) {
@@ -516,7 +516,6 @@ void CWorkerNodeJobContext::x_RunJob()
     }
     catch (exception& e) {
         ERR_POST_X(18, "job" << GetJobKey() << " failed: " << e.what());
-        // NOTE: the original code used to ReturnJob() instead.
         if (!IsJobCommitted())
             CommitJobWithFailure(e.what());
     }
@@ -525,6 +524,49 @@ void CWorkerNodeJobContext::x_RunJob()
         CloseStreams();
     }
     NCBI_CATCH_ALL_X(61, "Could not close IO streams");
+
+    switch (GetCommitStatus()) {
+    case eDone:
+        m_WorkerNode.x_NotifyJobWatchers(*this,
+                IWorkerNodeJobWatcher::eJobSucceeded);
+
+        if (m_WorkerNode.IsExclusiveMode() && IsJobExclusive())
+            m_WorkerNode.LeaveExclusiveMode();
+        break;
+
+    case eNotCommitted:
+        if (TWorkerNode_AllowImplicitJobReturn::GetDefault() ||
+                GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
+            ReturnJob();
+            m_WorkerNode.x_NotifyJobWatchers(*this,
+                    IWorkerNodeJobWatcher::eJobReturned);
+            break;
+        }
+
+        CommitJobWithFailure("Job was not explicitly committed");
+        /* FALL THROUGH */
+
+    case eFailure:
+        m_WorkerNode.x_NotifyJobWatchers(*this,
+                IWorkerNodeJobWatcher::eJobFailed);
+        break;
+
+    case eReturn:
+        m_WorkerNode.x_NotifyJobWatchers(*this,
+                IWorkerNodeJobWatcher::eJobReturned);
+        break;
+
+    default: // eCanceled - will be processed in x_SendJobResults().
+        break;
+    }
+
+    GetWorkerNode().x_NotifyJobWatchers(*this,
+            IWorkerNodeJobWatcher::eJobStopped);
+
+    if (!CGridGlobals::GetInstance().IsShuttingDown())
+        static_cast<CWorkerNodeJobCleanup*>(
+                GetCleanupEventSource())->CallEventHandlers();
+
     m_WorkerNode.m_JobCommitterThread->PutJobContextBackAndCommitJob(this);
 }
 
@@ -538,24 +580,9 @@ void CWorkerNodeJobContext::x_SendJobResults()
             if (!debug_context || debug_context->GetDebugMode() !=
                     CGridDebugContext::eGDC_Execute) {
                 m_NetScheduleExecutor.PutResult(m_Job);
-
-                if (m_WorkerNode.IsExclusiveMode() && IsJobExclusive())
-                    m_WorkerNode.LeaveExclusiveMode();
             }
-            m_WorkerNode.x_NotifyJobWatcher(*this,
-                    IWorkerNodeJobWatcher::eJobSucceed);
         }
         break;
-
-    case eNotCommitted:
-        if (TWorkerNode_AllowImplicitJobReturn::GetDefault() ||
-                GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
-            m_WorkerNode.x_ReturnJob(m_Job);
-            break;
-        }
-
-        m_Job.error_msg = "Job was not explicitly committed";
-        /* FALL THROUGH */
 
     case eFailure:
         {
@@ -564,9 +591,6 @@ void CWorkerNodeJobContext::x_SendJobResults()
             if (!debug_context || debug_context->GetDebugMode() !=
                     CGridDebugContext::eGDC_Execute)
                 m_NetScheduleExecutor.PutFailure(m_Job);
-
-            m_WorkerNode.x_NotifyJobWatcher(*this,
-                    IWorkerNodeJobWatcher::eJobFailed);
         }
         break;
 
@@ -574,52 +598,14 @@ void CWorkerNodeJobContext::x_SendJobResults()
         m_WorkerNode.x_ReturnJob(m_Job);
         break;
 
-    case eCanceled:
+    default: // Always eCanceled; eNotCommitted is overridden in x_RunJob().
         ERR_POST("Job " << GetJobKey() << " has been canceled");
     }
-
-    if (!CGridGlobals::GetInstance().IsShuttingDown())
-        static_cast<CWorkerNodeJobCleanup*>(
-                GetCleanupEventSource())->CallEventHandlers();
-
-    GetWorkerNode().x_NotifyJobWatcher(*this,
-            IWorkerNodeJobWatcher::eJobStopped);
 }
 
 void CWorkerNodeRequest::Process()
 {
     m_JobContext->x_RunJob();
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CWorkerNodeJobWatchers
-/// @internal
-
-class CWorkerNodeJobWatchers : public IWorkerNodeJobWatcher
-{
-public:
-    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event);
-
-    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, EOwnership owner)
-    {
-        if (m_Watchers.find(&job_watcher) == m_Watchers.end())
-            m_Watchers[&job_watcher] = owner == eTakeOwnership ?
-                    AutoPtr<IWorkerNodeJobWatcher>(&job_watcher) :
-                    AutoPtr<IWorkerNodeJobWatcher>();
-    }
-
-private:
-    typedef map<IWorkerNodeJobWatcher*, AutoPtr<IWorkerNodeJobWatcher> > TCont;
-    TCont m_Watchers;
-};
-
-void CWorkerNodeJobWatchers::Notify(const CWorkerNodeJobContext& job,
-        IWorkerNodeJobWatcher::EEvent event)
-{
-    NON_CONST_ITERATE(TCont, it, m_Watchers) {
-        const_cast<IWorkerNodeJobWatcher*>(it->first)->Notify(job, event);
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1110,7 +1096,7 @@ int CGridWorkerNode::Run()
     }
 #endif
 
-    AttachJobWatcher(CGridGlobals::GetInstance().GetJobWatcher());
+    AddJobWatcher(CGridGlobals::GetInstance().GetJobWatcher());
 
     m_JobCommitterThread = new CJobCommitterThread(this);
 
@@ -1212,7 +1198,7 @@ int CGridWorkerNode::Run()
         m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *this,
                 task ? idle_run_delay : auto_shutdown, auto_shutdown));
         m_IdleThread->Run();
-        AttachJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
+        AddJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
     }
 
     m_JobCommitterThread->Run();
@@ -1394,12 +1380,13 @@ void CGridWorkerNode::RequestShutdown()
 }
 
 
-void CGridWorkerNode::AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
+void CGridWorkerNode::AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                                            EOwnership owner)
 {
-    if (!m_JobWatchers.get())
-        m_JobWatchers.reset(new CWorkerNodeJobWatchers);
-    m_JobWatchers->AttachJobWatcher(job_watcher, owner);
+    if (m_Watchers.find(&job_watcher) == m_Watchers.end())
+        m_Watchers[&job_watcher] = owner == eTakeOwnership ?
+                AutoPtr<IWorkerNodeJobWatcher>(&job_watcher) :
+                AutoPtr<IWorkerNodeJobWatcher>();
 };
 
 void CGridWorkerNode::SetListener(IGridWorkerNodeApp_Listener* listener)
@@ -1408,12 +1395,15 @@ void CGridWorkerNode::SetListener(IGridWorkerNodeApp_Listener* listener)
 }
 
 
-void CGridWorkerNode::x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
+void CGridWorkerNode::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
     IWorkerNodeJobWatcher::EEvent event)
 {
-    if (m_JobWatchers.get() != NULL) {
-        CFastMutexGuard guard(m_JobWatcherMutex);
-        m_JobWatchers->Notify(job, event);
+    CFastMutexGuard guard(m_JobWatcherMutex);
+    NON_CONST_ITERATE(TJobWatchers, it, m_Watchers) {
+        try {
+            const_cast<IWorkerNodeJobWatcher*>(it->first)->Notify(job, event);
+        }
+        NCBI_CATCH_ALL_X(66, "Error while notifying a job watcher");
     }
 }
 

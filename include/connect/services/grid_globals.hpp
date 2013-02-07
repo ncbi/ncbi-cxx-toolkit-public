@@ -71,7 +71,7 @@ public:
 
 private:
     unsigned int m_JobsStarted;
-    unsigned int m_JobsSucceed;
+    unsigned int m_JobsSucceeded;
     unsigned int m_JobsFailed;
     unsigned int m_JobsReturned;
     unsigned int m_JobsCanceled;

@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 //     CWorkerNodeStatictics
 /// @internal
 CWNJobWatcher::CWNJobWatcher()
-    : m_JobsStarted(0), m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
+    : m_JobsStarted(0), m_JobsSucceeded(0), m_JobsFailed(0), m_JobsReturned(0),
       m_JobsCanceled(0), m_JobsLost(0),
       m_MaxJobsAllowed(0), m_MaxFailuresAllowed(0),
       m_InfiniteLoopTime(0)
@@ -98,8 +98,8 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
                 RequestShutdown(CNetScheduleAdmin::eShutdownImmediate);
         }
         break;
-    case eJobSucceed:
-        ++m_JobsSucceed;
+    case eJobSucceeded:
+        ++m_JobsSucceeded;
         break;
     case eJobReturned:
         ++m_JobsReturned;
@@ -142,7 +142,7 @@ void CWNJobWatcher::Print(CNcbiOstream& os) const
 {
     os << "Started: " <<
                     CGridGlobals::GetInstance().GetStartTime().AsString() <<
-            "\nJobs Succeeded: " << m_JobsSucceed <<
+            "\nJobs Succeeded: " << m_JobsSucceeded <<
             "\nJobs Failed: " << m_JobsFailed  <<
             "\nJobs Returned: " << m_JobsReturned <<
             "\nJobs Canceled: " << m_JobsCanceled <<

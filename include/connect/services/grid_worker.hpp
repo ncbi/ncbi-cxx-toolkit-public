@@ -584,7 +584,7 @@ public:
         eJobStarted,
         eJobStopped,
         eJobFailed,
-        eJobSucceed,
+        eJobSucceeded,
         eJobReturned,
         eJobCanceled,
         eJobLost
@@ -629,7 +629,7 @@ public:
 
     void ForceSingleThread() { m_SingleThreadForced = true; }
 
-    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher,
+    void AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                           EOwnership owner = eNoOwnership);
 
     void SetListener(IGridWorkerNodeApp_Listener* listener);
@@ -710,7 +710,6 @@ private:
     unsigned int                 m_MaxThreads;
     unsigned int                 m_NSTimeout;
     mutable CFastMutex           m_JobProcessorMutex;
-    CFastMutex                   m_JobWatcherMutex;
     unsigned                     m_CommitJobInterval;
     unsigned                     m_CheckStatusPeriod;
     CSemaphore                   m_ExclusiveJobSemaphore;
@@ -720,13 +719,18 @@ private:
     time_t                       m_StartupTime;
     unsigned                     m_QueueTimeout;
 
+    typedef map<IWorkerNodeJobWatcher*,
+            AutoPtr<IWorkerNodeJobWatcher> > TJobWatchers;
+    CFastMutex m_JobWatcherMutex;
+    TJobWatchers m_Watchers;
+
     CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
 
     IWorkerNodeJob* GetJobProcessor();
 
     friend class CWorkerNodeJobContext;
 
-    void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
+    void x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
                             IWorkerNodeJobWatcher::EEvent event);
 
     set<SServerAddress> m_Masters;
