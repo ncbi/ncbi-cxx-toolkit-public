@@ -1986,6 +1986,20 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     if (single_prod_str  &&  prod_strand != eNa_strand_unknown) {
         spliced.SetProduct_strand(prod_strand);
     }
+    // Update bounds if defined in the original alignment.
+    if (single_prod_id  &&  single_gen_id  &&  m_OrigAlign->IsSetBounds()) {
+        CSeq_align::TBounds& bounds = dst->SetBounds();
+        bounds.clear();
+        ITERATE(CSeq_align::TBounds, it, m_OrigAlign->GetBounds()) {
+            CRef<CSeq_loc> mapped_it = m_LocMapper.Map(**it);
+            _ASSERT(mapped_it);
+            if ( mapped_it->IsNull() ) {
+                // Could not map the location
+                mapped_it->Assign(**it);
+            }
+            bounds.push_back(mapped_it);
+        }
+    }
 
     // Reset local values where possible if the global ones are set.
     // Fill ids in gaps.
