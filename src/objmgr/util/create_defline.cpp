@@ -588,24 +588,31 @@ void CDeflineGenerator::x_SetBioSrc (
 
     if (m_has_clone) return;
 
-    FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, Biosrc) {
-        const CSeq_feat& feat = feat_it->GetOriginalFeature();
-        if (! feat.IsSetData ()) continue;
-        const CSeqFeatData& sfdata = feat.GetData ();
-        const CBioSource& source = sfdata.GetBiosrc();
 
-        // process SubSource
-        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, source) {
-            const CSubSource& sbs = **sbs_itr;
-            if (! sbs.IsSetName()) continue;
-            SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
-                case NCBI_SUBSOURCE(clone):
-                    m_has_clone = true;
-                    break;
-                default:
-                    break;
+    try {
+        CFeat_CI feat_it(bsh, SAnnotSelector(CSeqFeatData::e_Biosrc));
+        while (feat_it) {
+            const CSeq_feat& feat = feat_it->GetOriginalFeature();
+            if (! feat.IsSetData ()) continue;
+            const CSeqFeatData& sfdata = feat.GetData ();
+            const CBioSource& source = sfdata.GetBiosrc();
+
+            // process SubSource
+            FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, source) {
+                const CSubSource& sbs = **sbs_itr;
+                if (! sbs.IsSetName()) continue;
+                SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
+                    case NCBI_SUBSOURCE(clone):
+                        m_has_clone = true;
+                        break;
+                    default:
+                        break;
+                }
             }
+            ++feat_it;
         }
+    } catch ( const exception& e ) {
+        ERR_POST(Error << "Unable to iterate source features while constructing default definition line");
     }
 }
 

@@ -1611,7 +1611,7 @@ bool CValidError_imp::Validate
             bioseq_validator.ValidateBioseq(seq);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating bioseq. EXCEPTION: ") +
+                string("Exception while validating bioseq. EXCEPTION: ") +
                 e.what(), seq);
             return true;
         }
@@ -1622,7 +1622,7 @@ bool CValidError_imp::Validate
             bioseqset_validator.ValidateBioseqSet(set);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating bioseq set. EXCEPTION: ") +
+                string("Exception while validating bioseq set. EXCEPTION: ") +
                 e.what(), set);
             return true;
         }

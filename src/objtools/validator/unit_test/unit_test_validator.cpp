@@ -48,7 +48,7 @@
 //
 //#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
-#define BAD_VALIDATOR
+//#define BAD_VALIDATOR
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -116,8 +116,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 using namespace validator;
-
-#define BAD_VALIDATOR
 
 
 CExpectedError::CExpectedError(string accession, EDiagSev severity, string err_code, string err_msg) 
@@ -9126,13 +9124,17 @@ return;
 
     CLEAR_ERRORS
 
-    // unrecognized prefix, should be no errors
+    // unrecognized prefix
     CRef<CUser_field> prefix_field(new CUser_field());
     prefix_field->SetLabel().SetStr("StructuredCommentPrefix");
     prefix_field->SetData().SetStr("Unknown prefix");
     desc->SetUser().SetData().push_back(prefix_field);
     eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadStrucCommInvalidFieldValue",
+                                    "Unknown prefix is not a valid value for StructuredCommentPrefix"));
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     // should complain about missing required fields
     prefix_field->SetData().SetStr("##Genome-Assembly-Data-START##");
@@ -9220,9 +9222,12 @@ return;
     field->SetData().SetStr("Sanger");
     desc->SetUser().SetData().push_back(field);
 
-    //no error because Sequencing Technology is Sanger
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
+                                  "Required field Assembly Method is missing when Sequencing Technology has value 'Sanger'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     field->SetData().SetStr("something else");
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",

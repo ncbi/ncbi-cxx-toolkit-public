@@ -598,15 +598,19 @@ bool CValidError_desc::ValidateStructuredComment
             } catch (CException ) {
                 // no rule for this prefix, no error
             }
-        }            
-        const CUser_field& suffix = usr.GetField("StructuredCommentSuffix");
-        if (!suffix.IsSetData() || !suffix.GetData().IsStr()) {
-            return true;
-        }
-        const string& sfx = suffix.GetData().GetStr();
-        if (! s_PrefixOrSuffixInList (sfx, "##", "-END##")) {
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
-                    sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);   
+        }   
+        try {
+            const CUser_field& suffix = usr.GetField("StructuredCommentSuffix");
+            if (!suffix.IsSetData() || !suffix.GetData().IsStr()) {
+                return true;
+            }
+            const string& sfx = suffix.GetData().GetStr();
+            if (! s_PrefixOrSuffixInList (sfx, "##", "-END##")) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+                        sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);   
+            }
+        } catch (CException ) {
+            // we don't care about missing suffixes
         }
     } catch (CException ) {
         // no prefix, in which case no rules

@@ -182,7 +182,7 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
         }
     } catch ( const exception& e ) {
         m_Imp.PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-            string("Exeption while validating bioseq. EXCEPTION: ") +
+            string("Exception while validating bioseq. EXCEPTION: ") +
             e.what(), seq);
     }
     m_CurrentHandle.Reset();
@@ -987,7 +987,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     } catch ( const exception& e ) {
         if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
             PostErr(eDiag_Error, eErr_INTERNAL_Exception,
-                string("Exeption while validating BioseqContext. EXCEPTION: ") +
+                string("Exception while validating BioseqContext. EXCEPTION: ") +
                 e.what(), seq);
         }
     }
