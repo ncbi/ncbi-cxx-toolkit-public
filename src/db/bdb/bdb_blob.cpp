@@ -477,13 +477,6 @@ EBDB_ErrCode CBDB_LobFile::InsertUpdate(unsigned int lob_id,
     return x_Put(lob_id, data, size, true);
 }
 
-// v 4.3.xx introduced new error code DB_BUFFER_SMALL
-#if DB_VERSION_MAJOR >= 4
-    #if DB_VERSION_MINOR >= 3
-        #define BDB_CHECK_BUFFER_SMALL
-    #endif
-#endif
-
 EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
                                  void**       buf,
                                  size_t       buf_size,
@@ -541,15 +534,10 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
             return eBDB_Ok;  // to be retrieved later using GetData()
     }
 
-# ifdef BDB_CHECK_BUFFER_SMALL
     if ((ret == DB_BUFFER_SMALL) && (m_DBT_Data->data == 0)) {
     } else {
         BDB_CHECK(ret, FileName().c_str());
     }
-# else
-    BDB_CHECK(ret, FileName().c_str());
-# endif
-
 
     if ( buf )
         *buf = m_DBT_Data->data;

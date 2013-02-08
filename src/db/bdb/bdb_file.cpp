@@ -822,17 +822,6 @@ void CBDB_RawFile::Sync()
 }
 
 
-// check BDB version 4.3 changed DB->stat signature
-
-#ifndef BDB_USE_NEW_STAT
-#if DB_VERSION_MAJOR >= 4
-    #if DB_VERSION_MINOR >= 3
-        #define BDB_USE_NEW_STAT
-    #endif
-#endif
-#endif
-
-
 unsigned CBDB_RawFile::CountRecs(bool bFast)
 {
     Uint4 flags = 0;
@@ -840,13 +829,9 @@ unsigned CBDB_RawFile::CountRecs(bool bFast)
         flags = DB_FAST_STAT;
     }
     DB_BTREE_STAT* stp;
-#ifdef BDB_USE_NEW_STAT
     CBDB_Transaction* trans = GetBDBTransaction();
     DB_TXN* txn = trans ? trans->GetTxn() : 0;
     int ret = m_DB->stat(m_DB, txn, &stp, flags);
-#else
-    int ret = m_DB->stat(m_DB, &stp, flags);
-#endif
 
     BDB_CHECK(ret, FileName().c_str());
     u_int32_t rc = stp->bt_ndata;
@@ -859,13 +844,9 @@ unsigned CBDB_RawFile::CountRecs(bool bFast)
 void CBDB_RawFile::PrintStat(CNcbiOstream & out)
 {
     DB_BTREE_STAT* stp = 0;
-#ifdef BDB_USE_NEW_STAT
     CBDB_Transaction* trans = GetBDBTransaction();
     DB_TXN* txn = trans ? trans->GetTxn() : 0;
     int ret = m_DB->stat(m_DB, txn, &stp, 0);
-#else
-    int ret = m_DB->stat(m_DB, &stp, 0);
-#endif
 
     BDB_CHECK(ret, FileName().c_str());
 
@@ -879,9 +860,7 @@ void CBDB_RawFile::PrintStat(CNcbiOstream & out)
         << "bt_leaf_pg    : " << stp->bt_leaf_pg    << NcbiEndl
         << "bt_dup_pg     : " << stp->bt_dup_pg     << NcbiEndl
         << "bt_over_pg    : " << stp->bt_over_pg    << NcbiEndl
-#ifdef BDB_USE_NEW_STAT
         << "bt_empty_pg   : " << stp->bt_empty_pg   << NcbiEndl
-#endif
         << "bt_free       : " << stp->bt_free       << NcbiEndl
         << "bt_int_pgfree : " << stp->bt_int_pgfree << NcbiEndl
         << "bt_leaf_pgfree: " << stp->bt_leaf_pgfree<< NcbiEndl
@@ -1415,13 +1394,6 @@ void CBDB_File::Verify(const char* filename,
     m_DB->verify(m_DB, filename, database, backup, backup ? DB_SALVAGE: 0);
 }
 
-// v 4.3.xx introduced new error code DB_BUFFER_SMALL
-#if DB_VERSION_MAJOR >= 4
-    #if DB_VERSION_MINOR >= 3
-        #define BDB_CHECK_BUFFER_SMALL
-    #endif
-#endif
-
 
 EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 {
@@ -1437,16 +1409,10 @@ EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 
     // Disable error reporting for custom m_DBT_data management
 
-# ifdef BDB_CHECK_BUFFER_SMALL
     if ((ret == ENOMEM || ret == DB_BUFFER_SMALL)
            && m_DataBufDisabled && m_DBT_Data->data == 0) {
         ret = 0;
     }
-# else
-    if (ret == ENOMEM && m_DataBufDisabled && m_DBT_Data->data == 0) {
-        ret = 0;
-    }
-# endif
     BDB_CHECK(ret, FileName().c_str());
 
     x_EndRead();
