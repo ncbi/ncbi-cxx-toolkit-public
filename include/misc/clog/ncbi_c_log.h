@@ -421,7 +421,13 @@ extern void NcbiLog_Destroy_Thread(void);
  *  @return
  *    The diagnostic destination that was really set.
  *    It is not always possible to set up an destination for logging messages
- *    that specified in parameters.
+ *    that specified in parameters and fallback can be used.
+ *    See ENcbiLog_Destination description for details.
+ * @note
+ *    By default, if SetDestination() is not called or set to eNcbiLog_Default,
+ *    and environment variable $NCBI_CONFIG__LOG__FILE is defined and not empty,
+ *    its value will be used as base name for logfiles.
+ *    It can have special value "-" to redirect all output to STDERR.
  *  @sa
  *    ENcbiLog_Destination, NcbiLog_Init
  */

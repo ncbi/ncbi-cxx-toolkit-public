@@ -1180,20 +1180,19 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
 
 
 /** (Re)Initialize logging file streams.
+ *  The path passed in parameter should have directory and base name for logging files.
  */
-static int /*bool*/ s_SetLogFiles(const char* dir) 
+static int /*bool*/ s_SetLogFiles(const char* path_with_base_name) 
 {
     char path[FILENAME_MAX + 1];
-    size_t n, nlen;
+    size_t n;
 
-    assert(dir);
-    n = strlen(dir);
-    nlen = strlen(sx_Info->app_base_name);
-
-    /* Check max possible file name (dir/basename.trace) */
-    assert((n + 1 + nlen + 6) < sizeof(path));
-    s_ConcatPathEx(dir, n,  sx_Info->app_base_name, nlen, path, FILENAME_MAX + 1);
-    n += (nlen + 1);
+    assert(path_with_base_name);
+    /* Check max possible file name (path.trace) */
+    n = strlen(path_with_base_name);
+    assert(n);
+    assert((n + 6) < sizeof(path));
+    memcpy(path, path_with_base_name, n);
 
     /* Trace */
     strcpy(path + n, ".trace");
@@ -1233,12 +1232,33 @@ static int /*bool*/ s_SetLogFiles(const char* dir)
 }
 
 
+/** (Re)Initialize logging file streams.
+ *  Use application base name and specified directory as path for logging files.
+ */
+static int /*bool*/ s_SetLogFilesDir(const char* dir) 
+{
+    char path[FILENAME_MAX + 1];
+    size_t n, nlen;
+
+    assert(dir);
+    n = strlen(dir);
+    assert(n);
+    nlen = strlen(sx_Info->app_base_name);
+    assert(nlen);
+
+    /* Check max possible file name (dir/basename.trace) */
+    assert((n + 1 + nlen + 6) < sizeof(path));
+    s_ConcatPathEx(dir, n,  sx_Info->app_base_name, nlen, path, FILENAME_MAX + 1);
+    n += (nlen + 1);
+    return s_SetLogFiles(path);
+}
+
+
 /** (Re)Initialize destination.
  */
-static void s_InitDestination() 
+static void s_InitDestination(const char* logfile_path) 
 {
     time_t now;
-
     assert(sx_Info->destination != eNcbiLog_Disable);
     if (sx_Info->file_log == stdin  ||  sx_Info->file_log == stdout) {
         /* We already have destination set to stdout/stderr -- don't need to reopen it */
@@ -1251,10 +1271,22 @@ static void s_InitDestination()
     }
     sx_Info->last_reopen_time = now;
 
+    /* Try to open files */
+
+    if (sx_Info->destination == eNcbiLog_Default  &&  logfile_path) {
+        /* special case to redirect all logging to specified files */
+        s_CloseLogFiles(1);
+        if (s_SetLogFiles(logfile_path)) {
+            sx_Info->reuse_file_names = 1;
+            return;
+        }
+        TROUBLE;
+        return;
+    }
+
     /* Close */
     s_CloseLogFiles(0);
 
-    /* Try to open files */
     if (sx_Info->destination == eNcbiLog_Default  ||
         sx_Info->destination == eNcbiLog_Stdlog   ||
         sx_Info->destination == eNcbiLog_Cwd) {
@@ -1283,7 +1315,7 @@ static void s_InitDestination()
 
         /* Try default log location */
         {{
-            char path[FILENAME_MAX + 1];
+            char xdir[FILENAME_MAX + 1];
             const char* dir;
 
             /* /log */
@@ -1291,7 +1323,7 @@ static void s_InitDestination()
                 /* toolkitrc file */
                 dir = s_GetToolkitRCLogLocation();
                 if (dir) {
-                    if (s_SetLogFiles(dir)) {
+                    if (s_SetLogFilesDir(dir)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
@@ -1299,26 +1331,26 @@ static void s_InitDestination()
                 /* server port */
                 if (sx_Info->server_port) {
                     int n;
-                    n = sprintf(path, "%s%d", kBaseLogDir, sx_Info->server_port);
+                    n = sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
                     VERIFY(n > 0);
-                    if (s_SetLogFiles(path)) {
+                    if (s_SetLogFilesDir(xdir)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
                 }
 
                 /* /log/srv */ 
-                dir = s_ConcatPath(kBaseLogDir, "srv", path, FILENAME_MAX + 1);
+                dir = s_ConcatPath(kBaseLogDir, "srv", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFiles(dir)) {
+                    if (s_SetLogFilesDir(dir)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
                 }
                 /* /log/fallback */
-                dir = s_ConcatPath(kBaseLogDir, "fallback", path, FILENAME_MAX + 1);
+                dir = s_ConcatPath(kBaseLogDir, "fallback", xdir, FILENAME_MAX + 1);
                 if (dir) {
-                    if (s_SetLogFiles(dir)) {
+                    if (s_SetLogFilesDir(dir)) {
                         sx_Info->reuse_file_names = 1;
                         return;
                     }
@@ -1332,7 +1364,7 @@ static void s_InitDestination()
                 #elif defined(NCBI_OS_MSWIN)
                     cwd = _getcwd(NULL, 0);
                 #endif
-                if (cwd  &&  s_SetLogFiles(cwd)) {
+                if (cwd  &&  s_SetLogFilesDir(cwd)) {
                     free(cwd);
                     sx_Info->reuse_file_names = 1;
                     return;
@@ -1404,7 +1436,7 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     if (sx_Info->destination == eNcbiLog_Disable) {
         return;
     }
-    s_InitDestination();
+    s_InitDestination(NULL);
 
     switch (diag) {
         case eDiag_Trace:
@@ -1972,17 +2004,30 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
 
 ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 {
+    char* logfile = NULL;
     MT_LOCK_API;
-    if (ds != sx_Info->destination) {
-        /* Close current destination */
-        s_CloseLogFiles(1 /*force cleanup*/);
-        /* Set new destination */
-        sx_Info->destination = ds;
-        if (sx_Info->destination != eNcbiLog_Disable) {
-            /* and force to initialize it */
-            sx_Info->last_reopen_time = 0;
-            s_InitDestination();
+    /* Close current destination */
+    s_CloseLogFiles(1 /*force cleanup*/);
+    /* Set new destination */
+    sx_Info->destination = ds;
+    if (sx_Info->destination != eNcbiLog_Disable) {
+        /* and force to initialize it */
+        sx_Info->last_reopen_time = 0;
+        if (sx_Info->destination == eNcbiLog_Default) {
+            /* Special case to redirect default logging output */
+            logfile = getenv("NCBI_CONFIG__LOG__FILE");
+            if (logfile) {
+                if (!*logfile ) {
+                    logfile = NULL;
+                } else {
+                    if (strcmp(logfile, "-") == 0) {
+                        sx_Info->destination = eNcbiLog_Stderr;
+                        logfile = NULL;
+                    }
+                }
+            }
         }
+        s_InitDestination(logfile);
     }
     ds = sx_Info->destination;
     MT_UNLOCK;
@@ -1992,18 +2037,35 @@ ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 
 ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port)
 {
+    char* logfile = NULL;
     MT_LOCK_API;
+    /* Special case to redirect default logging output */
+    if (ds == eNcbiLog_Default) {
+        logfile = getenv("NCBI_CONFIG__LOG__FILE");
+        if (logfile) {
+            if (!*logfile ) {
+                logfile = NULL;
+            } else {
+                if (strcmp(logfile, "-") == 0) {
+                    ds = eNcbiLog_Stderr;
+                    logfile = NULL;
+                }
+            }
+        }
+    }
     /* Set new destination */
     sx_Info->destination = ds;
     sx_Info->server_port = port;
     if (sx_Info->destination != eNcbiLog_Disable) {
         /* and force to initialize it */
         sx_Info->last_reopen_time = 0;
-        s_InitDestination();
+        s_InitDestination(logfile);
     }
     ds = sx_Info->destination;
     MT_UNLOCK;
     return ds;
+
+
 }
 
 

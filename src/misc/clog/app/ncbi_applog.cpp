@@ -55,6 +55,8 @@
     ncbi_applog post          <token> [-severity SEV] -message MSG
     ncbi_applog extra         <token> [-param PAIRS]
     ncbi_applog perf          <token> [-status STATUS] -time TIMESPAN [-param PAIRS]
+    ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite] [-pid] [-rid]
+                                      [-sid] [-srvport] [-app_start_time] [-req_start_time]
 
  Environment/registry settings:
      1) Logging CGI (used if /log is not accessible on current machine)
@@ -64,12 +66,16 @@
             Environment variable:
                 NCBI_CONFIG__NCBIAPPLOG_CGI
      2) Output destination ("default" if not specified) (see C Logging API for details)
-        If this parameter is used and not "default", CGI redirecting will be disabled.
+        If this parameter is specified and not "default", CGI redirecting will be disabled.
             Registry file:
                 [NCBI]
                 NcbiApplogDestination = default|cwd|stdlog|stdout|stderr
             Environment variable:
                 NCBI_CONFIG__NCBIAPPLOG_DESTINATION
+     3) If environment variable $NCBI_CONFIG__LOG__FILE, CGI-redirecting will be disabled
+        and all logging will be done local, to the provided in this variable base name for
+        logging files or to STDERR for special value "-".
+        This environment variable have a higher priority than output destination in (2).
  */
 
 
@@ -151,6 +157,8 @@ public:
     string GenerateToken(ETokenType type) const;
     /// Parse m_Token and fill logging information in m_Info.
     ETokenType ParseToken();
+    /// Print requested token information to stdout.
+    int PrintTokenInformation(ETokenType type);
     /// Set C Logging API information from m_Info.
     void SetInfo();
     /// Update information in the m_Info from C Logging API.
@@ -341,6 +349,27 @@ void CNcbiApplogApp::Init(void)
             ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("perf", arg.release());
+    }}
+
+    // parse_token
+    {{
+        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        arg->SetUsageContext(kEmptyStr, "Parse token information and print requested field to stdout.\n" \
+                                        "If more than one flag specified, each field will be printed on separate line.", false, kUsageWidth);
+        arg->AddOpening
+            ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
+        arg->AddFlag("appname", "Name of the application.");
+        arg->AddFlag("client",  "Client IP address.");
+        arg->AddFlag("guid",    "Globally unique process ID.");
+        arg->AddFlag("host",    "Name of the host where the application runs.");
+        arg->AddFlag("logsite", "Value for logsite parameter.");
+        arg->AddFlag("pid",     "Process ID of the application.");
+        arg->AddFlag("rid",     "Request ID.");
+        arg->AddFlag("sid",     "Session ID (application-wide or request, depending on the type of token).");
+        arg->AddFlag("srvport", "Server port.");
+        arg->AddFlag("app_start_time", "Application start time (time_t value).");
+        arg->AddFlag("req_start_time", "Request start time (for request-type tokens only, time_t value).");
+        cmd->AddCommand("parse_token", arg.release());
     }}
 
     SetupArgDescriptions(cmd.release());
@@ -567,6 +596,47 @@ ETokenType CNcbiApplogApp::ParseToken()
 }
 
 
+int CNcbiApplogApp::PrintTokenInformation(ETokenType type)
+{
+    CNcbiArguments raw_args = GetArguments();
+    // If more than one flag specified, each field will be printed on separate line.
+    bool need_eol = (raw_args.Size() > 4);
+
+    for (size_t i = 3; i < raw_args.Size(); ++i) {
+        string arg = raw_args[i];
+        if (arg == "-appname") {
+            cout << m_Info.appname;
+        } else if (arg == "-client") {
+            cout << m_Info.client;
+        } else if (arg == "-guid") {
+            cout <<NStr::UInt8ToString((Uint8)m_Info.guid, 0, 16);
+        } else if (arg == "-host") {
+            cout << m_Info.host;
+        } else if (arg == "-logsite") {
+            cout << m_Info.logsite;
+        } else if (arg == "-pid") {
+            cout << m_Info.pid;
+        } else if (arg == "-rid") {
+            if (m_Info.rid) cout << m_Info.rid;
+        } else if (arg == "-sid") {
+            cout << (type == eRequest ? m_Info.sid_req : m_Info.sid_app);
+        } else if (arg == "-srvport") {
+            if (m_Info.server_port) cout << m_Info.server_port;
+        } else if (arg == "-app_start_time") {
+            cout << m_Info.app_start_time.sec;
+        } else if (arg == "-req_start_time") {
+            if (m_Info.req_start_time.sec) cout << m_Info.req_start_time.sec;
+        } else {
+            _TROUBLE;
+        }
+        if (need_eol) {
+            cout << endl;
+        }
+    }
+    return 0;
+}
+
+
 void CNcbiApplogApp::SetInfo()
 {
     TNcbiLog_Info*   g_info = NcbiLogP_GetInfoPtr();
@@ -666,9 +736,13 @@ int CNcbiApplogApp::Run(void)
                 throw "Syntax error: Please specify token argument in the command line or via $NCBI_APPLOG_TOKEN";
         }
         token_par_type = ParseToken();
+        if (cmd == "parse_token") {
+            return PrintTokenInformation(token_par_type);
+        }
         // Preset assumed state for the C Logging API
         m_Info.state = (token_par_type == eApp ? eNcbiLog_AppRun : eNcbiLog_Request);
     }
+
     // Get mode
     string mode = args["mode"].AsString();
     if (mode == "redirect") {
@@ -682,42 +756,55 @@ int CNcbiApplogApp::Run(void)
     NcbiLogP_DisableChecks(1);
     is_api_init = true;
 
-    // Get an output destination (from registry file, env.variable or default value)
-    string dst_str = NCBI_PARAM_TYPE(NCBI, NcbiApplogDestination)::GetDefault();
-    if (dst_str.empty()  ||  dst_str == "default") {
-        // Try to set default output destination
+    // Set destination
+
+    string logfile = GetEnvironment().Get("NCBI_CONFIG__LOG__FILE");
+    if (!logfile.empty()) {
+        // Special case: redirect all output to specified file.
+        // This will be done automatically in the C Logging API,
+        // so we should just set default logging here.
         ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
-        if (cur_dst != eNcbiLog_Default) {
-            // The /log is not writable, use external CGI for logging
-            is_api_init = false;
-            NcbiLog_Destroy();
-            // Recursive redirection is not allowed
-            if (mode == "cgi") {
-                throw "/log is not writable for CGI logger";
-            }
-            return Redirect();
+        if (cur_dst != eNcbiLog_Default  &&  cur_dst != eNcbiLog_Stderr) {
+            throw "Failed to set output destination from $NCBI_CONFIG__LOG__FILE";
         }
     } else {
-        ENcbiLog_Destination dst;
-        NStr::ToLower(dst_str);
-        if (dst_str == "stdlog") {
-            dst = eNcbiLog_Stdlog;
-        } else 
-        if (dst_str == "cwd") {
-            dst = eNcbiLog_Cwd;
-        } else 
-        if (dst_str == "stdout") {
-            dst = eNcbiLog_Stdout;
-        } else 
-        if (dst_str == "stderr") {
-            dst = eNcbiLog_Stderr;
+        // Get an output destination (from registry file, env.variable or default value)
+        string dst_str = NCBI_PARAM_TYPE(NCBI, NcbiApplogDestination)::GetDefault();
+        if (dst_str.empty()  ||  dst_str == "default") {
+            // Try to set default output destination
+            ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
+            if (cur_dst != eNcbiLog_Default) {
+                // The /log is not writable, use external CGI for logging
+                is_api_init = false;
+                NcbiLog_Destroy();
+                // Recursive redirection is not allowed
+                if (mode == "cgi") {
+                    throw "/log is not writable for CGI logger";
+                }
+                return Redirect();
+            }
         } else {
-            throw "Syntax error: NcbiApplogDestination parameter have incorrect value " + dst_str;
-        }
-        // Try to set output destination
-        ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(dst, m_Info.server_port);
-        if (cur_dst != dst) {
-            throw "Failed to set output destination to " + dst_str;
+            ENcbiLog_Destination dst;
+            NStr::ToLower(dst_str);
+            if (dst_str == "stdlog") {
+                dst = eNcbiLog_Stdlog;
+            } else 
+            if (dst_str == "cwd") {
+                dst = eNcbiLog_Cwd;
+            } else 
+            if (dst_str == "stdout") {
+                dst = eNcbiLog_Stdout;
+            } else 
+            if (dst_str == "stderr") {
+                dst = eNcbiLog_Stderr;
+            } else {
+                throw "Syntax error: NcbiApplogDestination parameter have incorrect value " + dst_str;
+            }
+            // Try to set output destination
+            ENcbiLog_Destination cur_dst = NcbiLogP_SetDestination(dst, m_Info.server_port);
+            if (cur_dst != dst) {
+                throw "Failed to set output destination to " + dst_str;
+            }
         }
     }
 
@@ -888,5 +975,5 @@ int CNcbiApplogApp::Run(void)
 int main(int argc, const char* argv[]) 
 {
     CNcbiApplogApp app;
-    return app.AppMain(argc, argv, 0, eDS_ToStdout);
+    return app.AppMain(argc, argv, 0, eDS_User);
 }
