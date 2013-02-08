@@ -64,8 +64,8 @@ shift
 ## Build directory (optional)
 if test -n "$1" ; then
   case "$1" in
-   -* )  BUILD_ROOT="" ;;
-   *  )  BUILD_ROOT="--with-build-root=$1" ; shift ;;
+   -* | *=* )  BUILD_ROOT="" ;;
+   *        )  BUILD_ROOT="--with-build-root=$1" ; shift ;;
   esac
 fi
 

@@ -84,7 +84,7 @@ esac
 if test -n "$1" ; then
   case "$1" in
    -h )  Usage 0 ;;
-   -* )  BUILD_ROOT="" ;;
+   -* | *=* )  BUILD_ROOT="" ;;
    32 | 64 )
          cat <<EOF
 ERROR: $0 does not accept "$1" as a positional argument,

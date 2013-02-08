@@ -53,7 +53,7 @@ fi
 if test -n "$1" ; then
   case "$1" in
    -h  )  Usage 0 ;;
-   -*  )  ;;
+   -* | *=* )  ;;
    32 | 64 )
           [ $1 = 32 ] && out=out
           cat <<EOF
