@@ -698,8 +698,10 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
         "Message begins with: ";
     if (msg_size > 32)
         report += string(m_MsgBuffer, 32) + " (TRUNCATED)";
-    else
+    else {
+        m_MsgBuffer[required_size-1] = '\0';
         report += m_MsgBuffer;
+    }
     ERR_POST(report);
 
     if (m_ConnContext.NotNull()) {
