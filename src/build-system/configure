@@ -6895,16 +6895,34 @@ if test -n "${with_build_root}" ; then
    build_root=${with_build_root}
 fi
 
+signature_compiler=$compiler
+signature_compiler_version=$compiler_version
+if test "$compiler" = "GCC"; then
+   llvm_version=`$CXX -v 2>&1 | $EGREP 'clang|LLVM'`
+   case "$llvm_version" in
+      *clang* )
+         # Take the LLVM version from both "clang version X.Y (...)" and
+         # "$Vendor (LLVM|clang) version ... (...) (based on LLVM X.Y)"
+         sed='s/.* \([1-9][0-9.]*\).*/\1/; s/\.//; s/^..$/&0/'
+         signature_compiler=Clang
+         signature_compiler_version=`echo $llvm_version | sed -e "$sed"`
+         ;;
+      *LLVM* )
+         signature_compiler=LLVMGCC
+         ;;
+   esac
+fi
+
 ### Possibly add the version to the build directory name, but preseve
 ### the original default when reconfiguring.
 if test -z "${with_version}" -a -n "${ac_cv_header_stdc}"; then
    with_version=${ncbi_cv_with_version:-no}
 fi
 if test -z "${build_root}" ; then
-   build_root="${srcdir}/${compiler}"
-   case "$compiler:$with_version" in
+   build_root="${srcdir}/${signature_compiler}"
+   case "$signature_compiler:$with_version" in
       *[0-9]:* | *:no) ;;
-      *) build_root=${build_root}${compiler_version} ;;
+      *) build_root=${build_root}${signature_compiler_version} ;;
    esac
    ncbi_cv_with_version=${with_version:-yes}
 else
@@ -8022,7 +8040,7 @@ esac
 #### Overall configuration mode summary
 signature_hostname=`(hostname || uname -n) 2>/dev/null \
     | sed 's/\..*//; s/-/_/g; 1q'`
-signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
+signature="${signature_compiler}_${signature_compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
 
 cat >>confdefs.h <<_ACEOF
 #define NCBI_SIGNATURE "$signature"
