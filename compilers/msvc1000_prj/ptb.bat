@@ -34,6 +34,7 @@ REM (open a solution and build or rebuild CONFIGURE project)
 REM
 REM ===========================================================================
 
+setlocal
 set DEFPTB_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\ptb
 set IDE=1000
 set PTB_EXTRA=
@@ -180,7 +181,12 @@ if not exist "%PTB_INI%" (
   echo ERROR: "%PTB_INI%" not found
   exit /b 1
 )
-if "%PTB_PROJECT%"=="" set PTB_PROJECT=%PTB_PROJECT_REQ%
+set PTB_PROJECT_LST=
+if "%PTB_PROJECT%"=="" (
+  set PTB_PROJECT_LST=%PTB_PROJECT_REQ%
+) else (
+  set PTB_PROJECT_LST=%PTB_PROJECT%
+)
 
 
 REM -------------------------------------------------------------------------
@@ -224,11 +230,11 @@ if errorlevel 1 exit /b 1
 echo ******************************************************************************
 echo Running -CONFIGURE- please wait
 echo ******************************************************************************
-echo "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+echo "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT_LST% "%SLN_PATH%"
 if "%USE_GUI_CFG%"=="YES" (
-  java -jar %PTBGUI% "%PTB_EXE%" -i %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+  java -jar %PTBGUI% "%PTB_EXE%" -i %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT_LST% "%SLN_PATH%"
 ) else (
-  "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT% "%SLN_PATH%"
+  "%PTB_EXE%" %PTB_FLAGS% %PTB_EXTRA% %PTB_SAVED_CFG% -logfile "%SLN_PATH%_configuration_log.txt" -conffile "%PTB_INI%" "%TREE_ROOT%" %PTB_PROJECT_LST% "%SLN_PATH%"
 )
 if errorlevel 1 (set PTB_RESULT=1) else (set PTB_RESULT=0)
 
