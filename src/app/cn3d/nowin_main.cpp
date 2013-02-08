@@ -217,7 +217,7 @@ int Cn3DNoWin::Run(void)
 
         // else network fetch
         else {
-            CNcbi_mime_asn1 *mime = LoadStructureViaCache(args["d"].AsString(), model);
+            CNcbi_mime_asn1 *mime = LoadStructureViaCache(args["d"].AsString(), model, 0);
             if (!mime || !LoadDataOnly(&sset, &renderer, NULL, mime, favorite))
                 ERRORTHROW("Failed to load from network with id " << args["d"].AsString());
         }
