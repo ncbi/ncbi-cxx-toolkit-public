@@ -51,6 +51,18 @@ set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
 set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
 set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
 
+REM --- get solution dir ---
+call :XSLNPATH %SLN_PATH%
+goto DONE
+:XSLNPATH
+set SLN_DIR=%~dp1
+goto :eof
+:DONE
+REM --- call pre-configure script if it exists ---
+if exist "%SLN_DIR%configure_prebuild.bat" (
+  call "%SLN_DIR%configure_prebuild.bat"
+)
+
 call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
 
@@ -132,7 +144,6 @@ REM PTB will read PTB_PROJECT from the saved settings
 REM -------------------------------------------------------------------------
 REM Identify PTB_EXE
 
-echo PREBUILT_PTB_EXE=%PREBUILT_PTB_EXE%
 if "%PREBUILT_PTB_EXE%"=="bootstrap" (
   set DEF_PTB=%PTB_PATH%\project_tree_builder.exe
 ) else if not "%PREBUILT_PTB_EXE%"=="" (

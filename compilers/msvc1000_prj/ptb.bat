@@ -51,8 +51,19 @@ set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
 set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
 set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
 
-call "%BUILD_TREE_ROOT%\msvcvars.bat"
+REM --- get solution dir ---
+call :XSLNPATH %SLN_PATH%
+goto DONE
+:XSLNPATH
+set SLN_DIR=%~dp1
+goto :eof
+:DONE
+REM --- call pre-configure script if it exists ---
+if exist "%SLN_DIR%configure_prebuild.bat" (
+  call "%SLN_DIR%configure_prebuild.bat"
+)
 
+call "%BUILD_TREE_ROOT%\msvcvars.bat"
 
 REM -------------------------------------------------------------------------
 REM get PTB version: from DEFPTB_VERSION_FILE  or from PREBUILT_PTB_EXE
