@@ -473,12 +473,14 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     m_SessionStartTime = time(0);
 
     // Here: new session so check if there are running or reading jobs
-    if (m_RunningJobs.any()) {
+    unsigned int    running_count = m_RunningJobs.count();
+    if (running_count > 0) {
         running_jobs = m_RunningJobs;
         m_RunningJobs.clear();
     }
 
-    if (m_ReadingJobs.any()) {
+    unsigned int    reading_count = m_ReadingJobs.count();
+    if (reading_count > 0) {
         reading_jobs = m_ReadingJobs;
         m_ReadingJobs.clear();
     }
@@ -486,10 +488,21 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     // Update the session identifier
     m_Session = client_id.GetSession();
 
-    m_WaitAffinities.clear();
+    unsigned int    wait_aff_count = m_WaitAffinities.count();
+    if (wait_aff_count > 0)
+        m_WaitAffinities.clear();
 
     // There is no need to do anything neither with the blacklisted jobs
     // nor submitted jobs
+
+    unsigned int    pref_aff_count = m_Affinities.count();
+
+    ERR_POST(Warning << "Client '" << client_id.GetNode()
+                     << "' changed its session and was reset (running jobs: "
+                     << running_count << ", reading jobs: "
+                     << reading_count << ", preferred affinities: "
+                     << pref_aff_count << ", wait affinities: "
+                     << wait_aff_count << ")");
 
     if (m_Affinities.any()) {
         m_Affinities.clear();
