@@ -56,6 +56,7 @@
 #include <algo/blast/api/deltablast_options.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
+#include <algo/blast/api/blast_rps_options.hpp>
 
 // SeqAlign comparison includes
 #include "seqalign_cmp.hpp"
@@ -196,8 +197,15 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
+
+    // create rpsblast options hanlde and set composition based statistics
+    CRef<CBlastRPSOptionsHandle> rps_opts(new CBlastRPSOptionsHandle);
+    rps_opts->SetCompositionBasedStats(true);
+    rps_opts->SetEvalueThreshold(m_OptHandle->GetDomainInclusionThreshold());
+    rps_opts->SetFilterString("F");
+
     CDeltaBlast deltablast(query_factory, dbadapter, domain_dbadapter,
-                           m_OptHandle);
+                           m_OptHandle, rps_opts);
 
     CSearchResultSet results(*deltablast.Run());
 

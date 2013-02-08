@@ -68,6 +68,21 @@ CDeltaBlast::CDeltaBlast(CRef<IQueryFactory> query_factory,
 }
 
 
+CDeltaBlast::CDeltaBlast(CRef<IQueryFactory> query_factory,
+                         CRef<CLocalDbAdapter> blastdb,
+                         CRef<CLocalDbAdapter> domain_db,
+                         CConstRef<CDeltaBlastOptionsHandle> options,
+                         CRef<CBlastRPSOptionsHandle> rps_options)
+    : m_Queries(query_factory),
+      m_Subject(blastdb),
+      m_DomainDb(domain_db),
+      m_Options(options),
+      m_RpsOptions(rps_options)
+{
+    x_Validate();
+}
+
+
 CRef<CSearchResultSet> CDeltaBlast::Run(void)
 {
     CPSIBlastOptions opts;
@@ -171,12 +186,19 @@ CRef<CPssmWithParameters> CDeltaBlast::GetPssm(int index)
 
 CRef<CSearchResultSet> CDeltaBlast::x_FindDomainHits(void)
 {
-    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
+    CRef<CBlastOptionsHandle> opts;
 
-    opts->SetEvalueThreshold(m_Options->GetDomainInclusionThreshold());
-    opts->SetOptions().SetCompositionBasedStats
-                            (m_Options->GetCompositionBasedStats());
-    opts->SetFilterString("F");
+    // if the m_RpsOptions is set, then use it here
+    if (m_RpsOptions.NotEmpty()) {
+        opts.Reset(dynamic_cast<CBlastOptionsHandle*>(
+                                    m_RpsOptions.GetNonNullPointer()));
+    }
+    else {
+        // otherwise create new options handle
+        opts = CBlastOptionsFactory::Create(eRPSBlast);
+        opts->SetEvalueThreshold(m_Options->GetDomainInclusionThreshold());
+        opts->SetFilterString("F");
+    }
 
     CLocalBlast blaster(m_Queries, opts, m_DomainDb);
     return blaster.Run();

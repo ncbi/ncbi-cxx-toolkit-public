@@ -40,6 +40,7 @@
 #include <algo/blast/api/deltablast_options.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/blast_results.hpp>
+#include <algo/blast/api/blast_rps_options.hpp>
 
 
 /** @addtogroup AlgoBlast
@@ -74,6 +75,24 @@ public:
                 CRef<CLocalDbAdapter> blastdb,
                 CRef<CLocalDbAdapter> domaindb,
                 CConstRef<CDeltaBlastOptionsHandle> options);
+
+    /// Constructor to compare a single sequence against a database of protein
+    /// sequences, and use RPS-BLAST to search CDD
+    /// @param query_factory 
+    ///     Protein query sequence to search [in]
+    /// @param blastdb
+    ///     Adapter to the BLAST database to search [in]
+    /// @param domaindb
+    ///     Adapter to the BLAST conserved domain database for making Pssm [in]
+    /// @param options
+    ///     DELTA-BLAST options [in]
+    /// @param rps_options
+    ///     RPSBLAST options to be used in CDD search [in]
+    CDeltaBlast(CRef<IQueryFactory> query_factory,
+                CRef<CLocalDbAdapter> blastdb,
+                CRef<CLocalDbAdapter> domaindb,
+                CConstRef<CDeltaBlastOptionsHandle> options,
+                CRef<CBlastRPSOptionsHandle> rps_options);
 
     /// Destructor
     ~CDeltaBlast() {}
@@ -120,6 +139,9 @@ private:
 
     /// Delta Blast options
     CConstRef<CDeltaBlastOptionsHandle> m_Options;
+
+    /// RPS Blast options
+    CRef<CBlastRPSOptionsHandle> m_RpsOptions;
 
     /// PSSMs computed for each query
     vector< CRef<CPssmWithParameters> > m_Pssm;
