@@ -408,6 +408,12 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     WriteProjectConfigurations( ofs, proj_guid);
     ofs << '\t' << "EndGlobalSection" << endl;
 
+    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+	    ofs << '\t' << "GlobalSection(SolutionProperties) = preSolution" << endl;
+		ofs << '\t' << '\t' << "HideSolutionNode = FALSE" << endl;
+	    ofs << '\t' << "EndGlobalSection" << endl;
+    }
+
     //End of global section
     ofs << "EndGlobal" << endl;
 }

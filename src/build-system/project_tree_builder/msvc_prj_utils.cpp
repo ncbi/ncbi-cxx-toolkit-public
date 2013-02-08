@@ -508,6 +508,11 @@ bool SConfigInfo::operator== (const SConfigInfo& cfg) const
         m_rtType == cfg.m_rtType;
 }
 
+bool s_Config_less(const SConfigInfo& x, const SConfigInfo& y)
+{
+    return NStr::CompareNocase(x.GetConfigFullName(), y.GetConfigFullName()) < 0;
+}
+
 void LoadConfigInfoByNames(const CNcbiRegistry& registry, 
                            const list<string>&  config_names, 
                            list<SConfigInfo>*   configs)
@@ -534,6 +539,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
             configs->push_back(config);
         }
     }
+    configs->sort(s_Config_less);
 }
 
 

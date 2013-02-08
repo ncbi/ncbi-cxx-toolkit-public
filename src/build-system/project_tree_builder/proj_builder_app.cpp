@@ -2017,7 +2017,9 @@ void CProjBulderApp::ParseArguments(void)
         }
         m_AddUnicode = GetSite().IsProvided("Ncbi_Unicode", false) ||
                        GetSite().IsProvided("Ncbi-Unicode", false);
-        if (m_AddUnicode) {
+        if (m_AddUnicode && !(
+            GetSite().IsProvided("Ncbi_Unicode", false) &&
+            GetSite().IsProvided("Ncbi-Unicode", false))) {
             //workaround to handle both
             string add;
             if (GetSite().IsProvided("Ncbi_Unicode", false)) {
