@@ -165,7 +165,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         product_min_pos = 0;
         if (spliced_seg.IsSetPoly_a()) {
             product_max_pos = spliced_seg.GetPoly_a()-1;
-        } if (spliced_seg.IsSetProduct_length()) {
+        } else if (spliced_seg.IsSetProduct_length()) {
             product_max_pos = spliced_seg.GetProduct_length()-1;
             if (is_protein)
                 product_max_pos *= 3+2;
