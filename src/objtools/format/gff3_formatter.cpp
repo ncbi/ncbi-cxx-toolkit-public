@@ -386,7 +386,7 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
                                         bool first,
                                         bool width_inverted)
 {
-    const CFlatFileConfig& config = aln.GetContext()->Config();
+    //const CFlatFileConfig& config = aln.GetContext()->Config();
 
     switch (sa.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
