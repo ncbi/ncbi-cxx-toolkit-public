@@ -1137,10 +1137,7 @@ static const TDBErrCodePair kSybaseErrCodes[] =
 DEFINE_STATIC_ARRAY_MAP(TDBErrCodeMap, sc_ClientErrCodes, kClientErrCodes);
 DEFINE_STATIC_ARRAY_MAP(TDBErrCodeMap, sc_SybaseErrCodes, kSybaseErrCodes);
 
-static
-void s_ThrowDatabaseError(const CException& e) NCBI_NORETURN;
-
-static
+static NCBI_NORETURN
 void s_ThrowDatabaseError(const CException& e)
 {
     const CDB_Exception* dbe = dynamic_cast<const CDB_Exception*>(&e);
