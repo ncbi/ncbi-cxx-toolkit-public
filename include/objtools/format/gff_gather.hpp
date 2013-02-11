@@ -60,7 +60,8 @@ protected:
         const CMappedFeat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
-        CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped ) const
+        CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped,
+        CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() ) const
     {
         return new CFeatureItemGff( feat, ctx, loc, mapped );
     };
