@@ -1183,10 +1183,16 @@ case "$host_os:$compiler" in
 
       if test "$with_ncbi_public" = yes; then
          TARGET='-mmacosx-version-min=10.5'
-         if test "$with_64:${with_universal-no}" != "yes:no" \
-           -a -d /Developer/SDKs/MacOSX10.5.sdk; then
-             TARGET="-isysroot /Developer/SDKs/MacOSX10.5.sdk $TARGET"
+         sdks='/Developer/SDKs/MacOSX10.6.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk'
+         if test "$with_64:${with_universal-no}" != "yes:no"; then
+            sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
          fi
+         for sdk in $sdks; do
+            if test -d "$sdk"; then 
+               TARGET="-isysroot $sdk $TARGET"
+               break
+            fi
+         done
          CC="$CC $TARGET"
          CXX="$CXX $TARGET"
       fi
