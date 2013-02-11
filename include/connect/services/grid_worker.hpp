@@ -599,7 +599,6 @@ public:
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event) = 0;
 };
 
-class CWorkerNodeJobWatchers;
 class CWorkerNodeIdleThread;
 class CJobCommitterThread;
 class IGridWorkerNodeApp_Listener;
@@ -705,7 +704,6 @@ public:
 
 private:
     auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
-    auto_ptr<CWorkerNodeJobWatchers>     m_JobWatchers;
 
     CNetCacheAPI m_NetCacheAPI;
     CNetScheduleAPI m_NetScheduleAPI;
