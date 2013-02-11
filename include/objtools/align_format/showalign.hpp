@@ -265,6 +265,8 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         string alnTitlesTmpl;    ///< Template for displaying multiple defline titles
         string alnSeqInfoTmpl;  ///< Template for displaying sequnce link in defline
         string alignInfoTmpl;   ///< Template for displaying singe align params - BLAST_ALIGN_PARAMS_NUC,BLAST_ALIGN_PARAMS_PROT
+        string alignInfoFrameTmpl;   ///< Template for displaying frame data ALIGN_PARAMS_FRAME, part of BLAST_ALIGN_PARAMS
+        string alignInfoMethodTmpl;   ///< Template for displaying frame data ALIGN_PARAMS_METHOD, part of BLAST_ALIGN_PARAMS
         string alignFeatureTmpl; ///< Template for displaying  align features -ALN_FEATURES 
         string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK         
         string alignRowTmpl;    ///<Template for displayin actual pairwise alignment - BLAST_ALIGN_ROWS
@@ -703,8 +705,8 @@ protected:
     CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(int giToUse,string accession,int linkout,
         int taxid,const list<CRef<objects::CSeq_id> >& ids);
 
-    string x_GetUrl(int giToUse,string accession,int linkout,int taxid,const list<CRef<objects::CSeq_id> >& ids);
-    string x_GetUrl(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid,const list<CRef<objects::CSeq_id> >& ids,int lnkDispPrarms = 0);
+    string x_GetUrl(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid);
+    string x_InitAlignLinks(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid,const list<CRef<objects::CSeq_id> >& ids,int lnkDispPrarms = 0);
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list

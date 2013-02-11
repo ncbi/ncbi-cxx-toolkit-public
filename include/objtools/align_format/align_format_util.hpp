@@ -362,7 +362,7 @@ public:
         bool useTemplates;      ///< bool indicating that templates should be used when contsructing links
         bool advancedView;      ///< bool indicating that advanced view design option should be used when contsructing links
         string seqUrl;          ///< sequence URL created
-        
+        string defline;         ///< sequence defline
         
         
         /// Constructor        
