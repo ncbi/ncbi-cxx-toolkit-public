@@ -63,6 +63,14 @@ IWorkerNodeCleanupEventSource*
     return grid_app->GetWorkerNode()->GetCleanupEventSource();
 }
 
+CNetScheduleAPI CDefaultWorkerNodeInitContext::GetNetScheduleAPI() const
+{
+    const CGridWorkerApp* grid_app =
+        dynamic_cast<const CGridWorkerApp*>(&m_App);
+
+    return grid_app->GetWorkerNode()->GetNetScheduleAPI();
+}
+
 CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
 {
     const CGridWorkerApp* grid_app =

@@ -130,6 +130,10 @@ public:
     ///
     virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const = 0;
 
+    /// Get the shared NetScheduleAPI object used by the worker node framework.
+    ///
+    virtual CNetScheduleAPI GetNetScheduleAPI() const = 0;
+
     /// Get the shared NetCacheAPI object used by the worker node framework.
     ///
     virtual CNetCacheAPI GetNetCacheAPI() const = 0;

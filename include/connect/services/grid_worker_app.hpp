@@ -70,6 +70,8 @@ public:
 
     virtual IWorkerNodeCleanupEventSource* GetCleanupEventSource() const;
 
+    virtual CNetScheduleAPI GetNetScheduleAPI() const;
+
     virtual CNetCacheAPI GetNetCacheAPI() const;
 
 private:
