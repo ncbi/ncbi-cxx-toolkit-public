@@ -487,6 +487,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMiscFeature(
         x_AssignAttributeExonNumber( mapped_feat )  &&
         x_AssignAttributePseudo( mapped_feat )  &&
         x_AssignAttributeDbXref( mapped_feat )  &&
+        x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeNote( mapped_feat )  &&
         x_AssignAttributeOldLocusTag( mapped_feat )  &&
         x_AssignAttributeIsOrdered( mapped_feat )  &&
