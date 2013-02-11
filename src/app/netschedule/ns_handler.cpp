@@ -2297,9 +2297,29 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
     bool                cmdv2(m_CommandArguments.cmd == "QINF2");
     SQueueParameters    params = m_Server->QueueInfo(m_CommandArguments.qname);
 
-    if (cmdv2)
+    if (cmdv2) {
+        CRef<CQueue>        queue_ref;
+        CQueue *            queue_ptr;
+        size_t              jobs_per_state[g_ValidJobStatusesSize];
+        string              jobs_part;
+        size_t              total = 0;
+
+        queue_ref.Reset(m_Server->OpenQueue(m_CommandArguments.qname));
+        queue_ptr = queue_ref.GetPointer();
+        queue_ptr->GetJobsPerState("", "", jobs_per_state);
+
+        for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+            jobs_part += "&" +
+                CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
+                "=" + NStr::SizetToString(jobs_per_state[index]);
+            total += jobs_per_state[index];
+        }
+        jobs_part += "&Total=" + NStr::SizetToString(total);
+
         // Include queue classes and use URL encoding
-        x_WriteMessage("OK:" + params.GetPrintableParameters(true, true));
+        x_WriteMessage("OK:" + params.GetPrintableParameters(true, true) +
+                       jobs_part);
+    }
     else
         x_WriteMessage("OK:" + NStr::IntToString(params.kind) + "\t" +
                        params.qclass + "\t\"" +

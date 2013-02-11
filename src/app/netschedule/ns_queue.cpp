@@ -3266,42 +3266,48 @@ string CQueue::PrintTransitionCounters(void) const
 }
 
 
+void CQueue::GetJobsPerState(const string &  group_token,
+                             const string &  aff_token,
+                             size_t *        jobs) const
+{
+    TNSBitVector        group_jobs;
+    TNSBitVector        aff_jobs;
+    CFastMutexGuard     guard(m_OperationLock);
+
+    if (!group_token.empty())
+        group_jobs = m_GroupRegistry.GetJobs(group_token);
+    if (!aff_token.empty()) {
+        unsigned int  aff_id = m_AffinityRegistry.GetIDByToken(aff_token);
+        if (aff_id == 0)
+            NCBI_THROW(CNetScheduleException, eAffinityNotFound,
+                       "Unknown affinity token \"" + aff_token + "\"");
+
+        aff_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
+    }
+
+    for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+        TNSBitVector  candidates =
+                        m_StatusTracker.GetJobs(g_ValidJobStatuses[index]);
+
+        if (!group_token.empty())
+            candidates &= group_jobs;
+        if (!aff_token.empty())
+            candidates &= aff_jobs;
+
+        jobs[index] = candidates.count();
+    }
+}
+
+
 string CQueue::PrintJobsStat(const string &  group_token,
                              const string &  aff_token) const
 {
-    size_t              jobs_per_state[g_ValidJobStatusesSize];
-    TNSBitVector        group_jobs;
-    TNSBitVector        aff_jobs;
-
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-
-        if (!group_token.empty())
-            group_jobs = m_GroupRegistry.GetJobs(group_token);
-        if (!aff_token.empty()) {
-            unsigned int  aff_id = m_AffinityRegistry.GetIDByToken(aff_token);
-            if (aff_id == 0)
-                NCBI_THROW(CNetScheduleException, eAffinityNotFound,
-                           "Unknown affinity token \"" + aff_token + "\"");
-
-            aff_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
-        }
-
-        for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
-            TNSBitVector  candidates =
-                            m_StatusTracker.GetJobs(g_ValidJobStatuses[index]);
-
-            if (!group_token.empty())
-                candidates &= group_jobs;
-            if (!aff_token.empty())
-                candidates &= aff_jobs;
-
-            jobs_per_state[index] = candidates.count();
-        }
-    }}
-
     size_t              total = 0;
     string              result;
+    size_t              jobs_per_state[g_ValidJobStatusesSize];
+
+    GetJobsPerState(group_token, aff_token, jobs_per_state);
+
     for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
         result += "OK:" + CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
                   ": " + NStr::SizetToString(jobs_per_state[index]) + "\n";

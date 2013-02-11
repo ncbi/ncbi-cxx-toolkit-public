@@ -350,6 +350,9 @@ public:
     string PrintTransitionCounters(void) const;
     string PrintJobsStat(const string &  group_token,
                          const string &  aff_token) const;
+    void GetJobsPerState(const string &  group_token,
+                         const string &  aff_token,
+                         size_t *        jobs) const;
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
