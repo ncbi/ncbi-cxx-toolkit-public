@@ -1,3 +1,25 @@
+Release 4.16.5 based on SC-11 (2013-02-11)
+
+Improvements and bug fixes
+    * NetSchedule: log the fact that a client session was reset
+      (JIRA: CXX-3828)
+    * NetSchedule: incorrect applog message length (JIRA: CXX-3827)
+    * NetSchedule: QINF2 to provide jobs per status as well
+      (JIRA: CXX-3824)
+    * NetSchedule: remove obsolete commands (JIRA: CXX-3791)
+    * NetSchedule: pidfile must not be updated till the successfull start of
+      the server (JIRA: CXX-3729)
+    * NetSchedule: The SETQUEUE command does not register client and does not
+      check restrictions (JIRA: CXX-3727)
+    * NetSchedule: more info about clients (registration time, last session
+      start time) (JIRA: CXX-3720)
+    * NetSchedule: blacklisted jobs cleanup (JIRA: CXX-3698)
+    * NetSchedule: non-rollbacked changes in the data structures in case of
+      disconnected client (JIRA: CXX-3300)
+    * Modify Job Id to include queue identification to facilitate issue
+      investigation. (JIRA: CXX-117)
+
+
 Release 4.16.4 based on SC-11 (2012-12-28)
 
 Improvements and bug fixes
