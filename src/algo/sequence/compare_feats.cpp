@@ -112,7 +112,7 @@ public:
         score2 = k * score2 + (1.0 - k) * c2->GetComparison()->GetSymmetricalOverlap();
 
         if(score1 < score2) return true;
-        if(score2 > score1) return false;
+        if(score2 < score1) return false;
 
         //same subtype is better than different subtypes (I bet we NEVER get to this point)
         bool c1_sameSubtype = c1->IsSameSubtype();
