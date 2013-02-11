@@ -114,7 +114,8 @@ bool CGtfRecord::MakeChildRecord(
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributes(
-    CMappedFeat mapped_feature )
+    CMappedFeat mapped_feature,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     if ( ! x_AssignAttributesFromAsnCore( mapped_feature ) ) {

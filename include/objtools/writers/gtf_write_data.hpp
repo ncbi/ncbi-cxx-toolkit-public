@@ -74,7 +74,8 @@ public:
 
 protected:
     virtual bool x_AssignAttributes(
-        CMappedFeat );
+        CMappedFeat,
+        unsigned int =0 );
     virtual bool x_AssignAttributesFromAsnCore(
         CMappedFeat );
     virtual bool x_AssignAttributesFromAsnExtended(
