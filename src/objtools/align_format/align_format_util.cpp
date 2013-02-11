@@ -2892,6 +2892,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
         url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid); 
         if(!seqUrlInfo->useTemplates) {
 			url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
+            temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
         }	           
@@ -2908,6 +2909,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
                 }
                 else {                        
                     url_link = CAlignFormatUtil::MapTemplate(kTraceUrl,"val",actual_id);                        
+                    temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",seqUrlInfo->defline):temp_class_info;
                     url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
                     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);                        
                 }                   
@@ -2922,6 +2924,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
             url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", NStr::URLEncode(id_string));  
             url_link = CAlignFormatUtil::MapTemplate(url_link,"db_name", NStr::URLEncode(seqUrlInfo->database)); 
             url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid", seqUrlInfo->taxid);
+            temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",seqUrlInfo->defline):temp_class_info;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
             url_link = CAlignFormatUtil::MapTemplate(url_link,"title", id_string);
             url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
@@ -2974,7 +2977,13 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
                                            seqUrlInfo->queryNumber,
                                            seqUrlInfo->isAlignLink);
         if (url_with_parameters != NcbiEmptyString) {
-            if (!seqUrlInfo->useTemplates)url_link += (seqUrlInfo->addCssInfo) ? ("<a " + title + kClassInfo + " " + "href=\"") : "<a " + title + "href=\"";
+            if (!seqUrlInfo->useTemplates) {
+                string deflineInfo;
+                if(seqUrlInfo->addCssInfo) {
+                    deflineInfo = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(kClassInfo,"defline",seqUrlInfo->defline):kClassInfo;
+                }
+                url_link += "<a " + title + deflineInfo + "href=\"";                       
+            }
             url_link += url_with_parameters;
             if (!seqUrlInfo->useTemplates) url_link += "\">";
         }		

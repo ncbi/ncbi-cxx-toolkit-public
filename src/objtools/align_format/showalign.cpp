@@ -249,43 +249,31 @@ string CDisplaySeqalign::x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_ve
 
 
     string alignParams = alignInfo;//Some already filled in x_DisplayAlignInfo
-    //out<<" Identities = "<<match<<"/"<<(aln_stop+1)<<" ("<<identity<<"%"<<")";
-    //string alignParams = " Identities = " + NStr::IntToString(match);
+    
     
     alignParams = CAlignFormatUtil::MapTemplate(alignParams, "aln_match",NStr::IntToString(aln_vec_info->match) + "/"+ NStr::IntToString(aln_stop+1));
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_ident",aln_vec_info->identity);
     
-    if(aln_is_prot){
-        //out<<", Positives = "<<(positive + match)<<"/"<<(aln_stop+1)
-        //   <<" ("<<(((positive + match)*100)/(aln_stop+1))<<"%"<<")";
+    if(aln_is_prot){        
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_pos",NStr::IntToString(aln_vec_info->positive + aln_vec_info->match) + "/" + NStr::IntToString(aln_stop+1));
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_pos_prc",NStr::IntToString(((aln_vec_info->positive + aln_vec_info->match)*100)/(aln_stop+1)));
     }
-    else {//!!!!Check this!!!!
-        //out<<" Strand="<<(master_strand==1 ? "Plus" : "Minus")
-        //<<"/"<<(slave_strand==1? "Plus" : "Minus")<<"\n";
+    else {
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_strand",(master_strand==1 ? "Plus" : "Minus")+ (string)"/"+ (slave_strand==1? "Plus" : "Minus"));
     }
-    //out<<", Gaps = "<<gap<<"/"<<(aln_stop+1)
-   //    <<" ("<<((gap*100)/(aln_stop+1))<<"%"<<")"<<"\n";
+    
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_gaps",NStr::IntToString(aln_vec_info->gap) + "/" + NStr::IntToString(aln_stop+1));
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_gaps_prc",NStr::IntToString((aln_vec_info->gap*100)/(aln_stop+1)));
-    
-    if(master_frame != 0 && slave_frame != 0) {
-        //out <<" Frame = " << ((master_frame > 0) ? "+" : "") 
-        //    << master_frame <<"/"<<((slave_frame > 0) ? "+" : "") 
-        //    << slave_frame<<"\n";
+
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_params_frame",(master_frame != 0 || slave_frame != 0) ? m_AlignTemplates->alignInfoFrameTmpl: "");
+    if(master_frame != 0 && slave_frame != 0) {    
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame",((master_frame > 0) ? "+" : "") + NStr::IntToString(master_frame) 
                                                                               + (string)"/"+((slave_frame > 0) ? "+" : "") + NStr::IntToString(slave_frame));
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame_show","shown");        
-    } else if (master_frame != 0){
-        //out <<" Frame = " << ((master_frame > 0) ? "+" : "") 
-        //    << master_frame << "\n";
+    } else if (master_frame != 0){        
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame",((master_frame > 0) ? "+" : "") + NStr::IntToString(master_frame));
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame_show","shown");        
-    }  else if (slave_frame != 0){
-        //out <<" Frame = " << ((slave_frame > 0) ? "+" : "") 
-        //    << slave_frame <<"\n";
+    }  else if (slave_frame != 0){        
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame",((slave_frame > 0) ? "+" : "") + NStr::IntToString(slave_frame)) ;
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame_show","shown");        
     }
@@ -1066,10 +1054,14 @@ void CDisplaySeqalign::x_PrintFeatures(TSAlnFeatureInfoList& feature,
     
 }
 
-string CDisplaySeqalign::x_GetUrl(int giToUse,string accession,int linkout,int taxid,const list<CRef<CSeq_id> >& ids)
+string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid)
 {
     string urlLink = NcbiEmptyString;
+    const list<CRef<CSeq_id> >& ids = bsp_handle.GetBioseqCore()->GetId();    
     CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,accession,linkout,taxid,ids);     
+    if(m_AlignOption & eShowInfoOnMouseOverSeqid) {
+        seqUrlInfo->defline = sequence::CDeflineGenerator().GenerateDefline(bsp_handle);
+    }
     urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids);
     delete seqUrlInfo;
     return urlLink;
@@ -1101,7 +1093,7 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(int giToUse,string
     return seqUrlInfo;
 }
 
-string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,
+string CDisplaySeqalign::x_InitAlignLinks(const CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,
                                   int taxid,const list<CRef<CSeq_id> >& ids,int lnkDispParams)
 {
     string urlLink = NcbiEmptyString;
@@ -1673,7 +1665,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                             : 0;
                         
                         m_cur_align = row;
-                        urlLink = x_GetUrl(gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+                        urlLink = x_GetUrl(m_AV->GetBioseqHandle(row),gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row]);
                         out << urlLink;            
                     }        
                 }
@@ -2260,7 +2252,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                     linksDisplayOption += eDisplayDownloadLink;
                 }
             }                
-            alnDispParams->id_url =  x_GetUrl(bsp_handle,gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids,linksDisplayOption);            
+            alnDispParams->id_url =  x_InitAlignLinks(bsp_handle,gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids,linksDisplayOption);            
 		}
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
@@ -2301,7 +2293,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
 	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
 	if(m_AlignOption&eHtml){           	            
         int linksDisplayOption = (m_AlignTemplates != NULL) ? eDisplayResourcesLinks : 0;            
-        alnDispParams->id_url =  x_GetUrl(bsp_handle,alnDispParams->gi,alnDispParams->label,0,0,bsp_handle.GetBioseqCore()->GetId(),linksDisplayOption);                        
+        alnDispParams->id_url =  x_InitAlignLinks(bsp_handle,alnDispParams->gi,alnDispParams->label,0,0,bsp_handle.GetBioseqCore()->GetId(),linksDisplayOption);                        
 	}			
 	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);			
 	return alnDispParams;
@@ -3567,21 +3559,14 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
     if (m_SeqalignSetRef->Get().front()->CanGetType() && 
            m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
     {
-        //out<<" NW Score = "<< aln_vec_info->score; ///??? Add NW score               
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_score",aln_vec_info->score);
     }
     else
     {
-        //out<<" Score = "<<bit_score_buf<<" ";        
-        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_score",bit_score_buf);
-        //out<<"bits ("<<aln_vec_info->score<<"),"<<"  ";
-        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_score_bits",aln_vec_info->score);
-            
-        //out<<"Expect";
-        //out << " = " << evalue_buf;
+        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_score",bit_score_buf);        
+        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_score_bits",aln_vec_info->score);        
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_eval",evalue_buf);
-        if (aln_vec_info->sum_n > 0) {
-            //out << "(" << aln_vec_info->sum_n << ")";///???SumN - get rid - check with Tom
+        if (aln_vec_info->sum_n > 0) {            
             alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_sumN",aln_vec_info->sum_n);
             alignParams = CAlignFormatUtil::MapTemplate(alignParams,"sumNshow","shown");
         }
@@ -3589,14 +3574,13 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
             alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_sumN","");
             alignParams = CAlignFormatUtil::MapTemplate(alignParams,"sumNshow","");
         }
-                
-        if (aln_vec_info->comp_adj_method == 1){
-            //out << ", Method: Composition-based stats.";
+
+        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_params_method",(aln_vec_info->comp_adj_method == 1 || aln_vec_info->comp_adj_method == 2) ? m_AlignTemplates->alignInfoMethodTmpl: "");        
+        if (aln_vec_info->comp_adj_method == 1){            
             alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_meth","Composition-based stats.");
             alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_meth_hide","");//???? is that the same for all aligns??? 
         }
-        else if (aln_vec_info->comp_adj_method == 2){
-           //out << ", Method: Compositional matrix adjust.";
+        else if (aln_vec_info->comp_adj_method == 2){           
            alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_meth","Compositional matrix adjust.");
            alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_meth_hide","");//???? is that the same for all aligns??? 
         }
