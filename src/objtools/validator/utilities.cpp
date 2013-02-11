@@ -625,7 +625,7 @@ EAccessionFormatError ValidateAccessionString (string accession, bool require_ve
                 || second_letter == 'T' || second_letter == 'P'
                 || second_letter == 'G' || second_letter == 'R'
                 || second_letter == 'S' || second_letter == 'W'
-                || second_letter == 'W' || second_letter == 'Z') {
+                || second_letter == 'Z') {
                 return rval;
             }
         }

@@ -1114,7 +1114,7 @@ void CValidError_align::x_ValidateSegmentGap
         size_t len = 0;
         string label = "Unknown";
         ITERATE ( CStd_seg::TLoc, loc, (*stdseg)->GetLoc() ) {
-            if ( !(*loc)->IsEmpty()  ||  !(*loc)->IsEmpty() ) {
+            if ( !(*loc)->IsEmpty()  &&  !(*loc)->IsNull() ) {
                 gap = false;
                 break;
             } else if (len == 0) {
