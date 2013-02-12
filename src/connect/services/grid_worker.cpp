@@ -1113,8 +1113,10 @@ int CGridWorkerNode::Run()
         control_thread->Prepare();
     }
     catch (CServer_Exception& e) {
-        fclose(procinfo_file);
-        unlink(procinfo_file_name.c_str());
+        if (procinfo_file != NULL) {
+            fclose(procinfo_file);
+            unlink(procinfo_file_name.c_str());
+        }
         if (e.GetErrCode() != CServer_Exception::eCouldntListen)
             throw;
         NCBI_THROW_FMT(CGridWorkerNodeException, ePortBusy,
