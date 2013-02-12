@@ -499,7 +499,7 @@ RunTest()
                 case "\$tool_lo" in
                 regular  ) ;;
                 valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" 
-                           NCBI_CHECK_TIMEOUT_MULT=10
+                           NCBI_CHECK_TIMEOUT_MULT=15
                            NCBI_RUN_UNDER_VALGRIND="yes"
                            export NCBI_RUN_UNDER_VALGRIND
                            ;;
