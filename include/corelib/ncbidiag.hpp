@@ -1669,6 +1669,11 @@ private:
 
     mutable SDiagMessageData* m_Data;
     mutable EFormatFlag       m_Format;
+
+    // Flag indicating if bad symbols in extra argument names are allowed.
+    // The flag can be set only by CDiagContext_Extra.
+    friend class CDiagContext_Extra;
+    bool m_AllowBadExtraNames;
 };
 
 /// Insert message in output stream.
@@ -1863,6 +1868,13 @@ public:
     /// Set extra message type.
     CDiagContext_Extra& SetType(const string& type);
 
+    /// Allow bad symbols in argument names. URL-encode names the same way
+    /// as values. The method must be called before printing any arguments
+    /// or it will have no effect.
+    /// NOTE: Avoid using this method if possible. Argument names with
+    /// encoded symbols may be incompatible with some logging tools.
+    CDiagContext_Extra& AllowBadSymbolsInArgNames(void);
+
 private:
     void x_Release(void);
     bool x_CanPrint(void);
@@ -1888,6 +1900,7 @@ private:
     int                      m_PerfStatus;
     double                   m_PerfTime;
     bool                     m_Flushed;
+    bool                     m_AllowBadNames;
 };
 
 

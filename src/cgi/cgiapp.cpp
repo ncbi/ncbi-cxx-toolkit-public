@@ -791,7 +791,9 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 CExtraEntryCollector collector;
                 req.GetCGIEntries(collector);
-                GetDiagContext().PrintRequestStart().Print(collector.GetArgs());
+                GetDiagContext().PrintRequestStart()
+                    .AllowBadSymbolsInArgNames()
+                    .Print(collector.GetArgs());
                 m_RequestStartPrinted = true;
             }
 

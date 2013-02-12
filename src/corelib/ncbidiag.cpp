@@ -1821,7 +1821,8 @@ CDiagContext_Extra::CDiagContext_Extra(SDiagMessage::EEventType event_type)
       m_Typed(false),
       m_PerfStatus(0),
       m_PerfTime(0),
-      m_Flushed(false)
+      m_Flushed(false),
+      m_AllowBadNames(false)
 {
 }
 
@@ -1835,7 +1836,8 @@ CDiagContext_Extra::CDiagContext_Extra(int         status,
       m_Typed(false),
       m_PerfStatus(status),
       m_PerfTime(timespan),
-      m_Flushed(false)
+      m_Flushed(false),
+      m_AllowBadNames(false)
 {
     if (args.empty()) return;
     m_Args = new TExtraArgs;
@@ -1850,9 +1852,19 @@ CDiagContext_Extra::CDiagContext_Extra(const CDiagContext_Extra& args)
       m_Typed(args.m_Typed),
       m_PerfStatus(args.m_PerfStatus),
       m_PerfTime(args.m_PerfTime),
-      m_Flushed(args.m_Flushed)
+      m_Flushed(args.m_Flushed),
+      m_AllowBadNames(args.m_AllowBadNames)
 {
     (*m_Counter)++;
+}
+
+
+CDiagContext_Extra& CDiagContext_Extra::AllowBadSymbolsInArgNames(void)
+{
+    if (!m_Args  ||  m_Args->empty()) {
+        m_AllowBadNames = true;
+    }
+    return *this;
 }
 
 
@@ -1924,6 +1936,7 @@ void CDiagContext_Extra::Flush(void)
         mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
     }
     mess.m_TypedExtra = m_Typed;
+    mess.m_AllowBadExtraNames = m_AllowBadNames;
 
     GetDiagBuffer().DiagHandler(mess);
     if ( ostr.get() ) {
@@ -1962,6 +1975,7 @@ CDiagContext_Extra::operator=(const CDiagContext_Extra& args)
         m_PerfStatus = args.m_PerfStatus;
         m_PerfTime = args.m_PerfTime;
         m_Flushed = args.m_Flushed;
+        m_AllowBadNames = args.m_AllowBadNames;
         (*m_Counter)++;
     }
     return *this;
@@ -3342,7 +3356,8 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
       m_TypedExtra(false),
       m_NoTee(false),
       m_Data(0),
-      m_Format(eFormat_Auto)
+      m_Format(eFormat_Auto),
+      m_AllowBadExtraNames(false)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
@@ -3404,7 +3419,8 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
       m_TypedExtra(false),
       m_NoTee(false),
       m_Data(0),
-      m_Format(eFormat_Auto)
+      m_Format(eFormat_Auto),
+      m_AllowBadExtraNames(false)
 {
     bool res = ParseMessage(message);
     if ( result ) {
@@ -3444,7 +3460,8 @@ SDiagMessage::SDiagMessage(const SDiagMessage& message)
       m_TypedExtra(false),
       m_NoTee(false),
       m_Data(0),
-      m_Format(eFormat_Auto)
+      m_Format(eFormat_Auto),
+      m_AllowBadExtraNames(false)
 {
     *this = message;
 }
@@ -3454,6 +3471,7 @@ SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
 {
     if (&message != this) {
         m_Format = message.m_Format;
+        m_AllowBadExtraNames = message.m_AllowBadExtraNames;
         if ( message.m_Data ) {
             m_Data = new SDiagMessageData(*message.m_Data);
             m_Data->m_Host = message.m_Data->m_Host;
@@ -4195,8 +4213,6 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
                                   TDiagWriteFlags flags) const
 {
-    // GetDiagContext().PushMessage(*this);
-
     if (IsSetDiagPostFlag(eDPF_MergeLines, m_Flags)) {
         CNcbiOstrstream ostr;
         string src, dest;
@@ -4272,13 +4288,18 @@ string SDiagMessage::x_GetModule(void) const
 class CExtraEncoder : public IStringEncoder
 {
 public:
+    CExtraEncoder(bool allow_bad_names = false) : m_AllowBadNames(allow_bad_names) {}
+
     virtual string Encode(const CTempString& src, EStringType stype) const;
+
+private:
+    bool m_AllowBadNames;
 };
 
 
 string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
 {
-    if (stype == eName) {
+    if (stype == eName  &&  !m_AllowBadNames) {
         // Just check the source string, it may contain only valid chars
         ITERATE(CTempString, c, src) {
             const char* enc = s_ExtraEncodeChars[(unsigned char)(*c)];
@@ -4289,7 +4310,7 @@ string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
         }
         return src;
     }
-    // Encode value
+    // Encode value (or name if m_AllowBadNames is set).
     string dst;
     ITERATE(CTempString, c, src) {
         dst += s_ExtraEncodeChars[(unsigned char)(*c)];
@@ -4301,7 +4322,7 @@ string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
 string SDiagMessage::FormatExtraMessage(void) const
 {
     return CStringPairs<TExtraArgs>::Merge(m_ExtraArgs,
-        "&", "=", new CExtraEncoder);
+        "&", "=", new CExtraEncoder(m_AllowBadExtraNames));
 }
 
 
