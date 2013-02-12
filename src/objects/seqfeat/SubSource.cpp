@@ -1153,6 +1153,7 @@ const string CCountries::sm_Countries[] = {
     "Liberia",
     "Libya",
     "Liechtenstein",
+    "Line Islands",
     "Lithuania",
     "Luxembourg",
     "Macau",
