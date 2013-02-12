@@ -2619,9 +2619,18 @@ ios::openmode s_GetLogOpenMode(void)
 }
 
 
-bool OpenLogFileFromConfig(CNcbiRegistry& config, string* new_name)
+bool OpenLogFileFromConfig(CNcbiRegistry* config, string* new_name)
 {
-    string logname = config.GetString("LOG", "File", kEmptyStr);
+    string logname;
+    if ( !config ) {
+        char* env_logname = NcbiSys_getenv("NCBI_CONFIG__LOG__FILE");
+        if (env_logname) {
+            logname = env_logname;
+        }
+    }
+    else {
+        logname = config->GetString("LOG", "File", kEmptyStr);
+    }
     // In eDS_User mode do not use config unless IgnoreEnvArg
     // is set to true.
     if ( !logname.empty() ) {
@@ -2685,7 +2694,23 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     bool name_changed = true; // By default consider it's a new name
     bool to_applog = false;
     bool try_root_log_first = false;
-    if ( config ) {
+
+    // If env.var 'NCBI_CONFIG__LOG__FILE' is set, use it and ignore all other
+    // locations.
+    const char* env_ignore = NcbiSys_getenv("NCBI_CONFIG__LOG__IgnoreEnvArg");
+    bool env_ignore_bool = false;
+    if (env_ignore) {
+        try {
+            env_ignore_bool = NStr::StringToBool(env_ignore);
+        }
+        catch (CStringException& ex) {
+        }
+    }
+    if (ds != eDS_User  &&  !env_ignore_bool) {
+        log_switched = OpenLogFileFromConfig(NULL, NULL);
+    }
+
+    if ( !log_switched  &&  config ) {
         try_root_log_first = config->GetBool("LOG", "TryRootLogFirst", false)
             &&  (ds == eDS_ToStdlog  ||  ds == eDS_Default);
         bool force_config = config->GetBool("LOG", "IgnoreEnvArg", false);
@@ -2693,7 +2718,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             try_root_log_first = false;
         }
         if (force_config  ||  (ds != eDS_User  &&  !try_root_log_first)) {
-            log_switched = OpenLogFileFromConfig(*config, NULL);
+            log_switched = OpenLogFileFromConfig(config, NULL);
         }
     }
 
@@ -2785,7 +2810,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                             break;
                         }
                         if (try_root_log_first &&
-                            OpenLogFileFromConfig(*config, &log_name)) {
+                            OpenLogFileFromConfig(config, &log_name)) {
                             log_switched = true;
                             name_changed = log_name != old_log_name;
                             break;
