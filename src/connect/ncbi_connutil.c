@@ -971,9 +971,10 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
 static int/*bool*/ x_IsSufficientAddress(const char* addr)
 {
     const char* c;
-    return (SOCK_isip(addr)  ||
-            ((c = strchr(addr, '.'))  != 0  &&  c[1]  &&
-             (c = strchr(c + 2, '.')) != 0  &&  c[1]));
+    return !strchr(addr, ' ')
+        &&  (SOCK_isip(addr)
+             ||  ((c = strchr(addr,  '.')) != 0  &&  c[1]  &&
+                  (c = strchr(c + 2, '.')) != 0  &&  c[1]));
 }
 
 
@@ -989,18 +990,25 @@ static const char* x_ClientAddress(const char* client_host,
     strncpy0(addr, client_host, sizeof(addr) - 1);
     if (UTIL_NcbiLocalHostName(addr)  &&  (s = strdup(addr)) != 0)
         client_host = s;
-    if (x_IsSufficientAddress(client_host)                          ||
+
+    if (x_IsSufficientAddress(client_host)       ||
         !(ip = *client_host  &&  !local_host
           ? SOCK_gethostbyname(client_host)
-          : SOCK_GetLocalHostAddress(eDefault))                     ||
-        SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
+          : SOCK_GetLocalHostAddress(eDefault))  ||
+        SOCK_ntoa(ip, addr, sizeof(addr)) != 0   ||
         !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
-        return client_host;
+        return client_host/*least we can do :-/*/;
     }
+
     sprintf(s, "%s(%s)", client_host, addr);
-    if (c != client_host)
+    if (client_host != c)
         free((void*) client_host);
-    return s;
+    client_host = s;
+    for (;  *s;  ++s) {
+        if (*s == ' ')
+            *s  = '+';
+    }
+    return client_host;
 }
 
 
