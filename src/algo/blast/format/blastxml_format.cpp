@@ -538,17 +538,17 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CSeq_loc& seqloc, CScope* scope, 
                        const CBlastFormattingMatrix* matrix, 
                        const ncbi::TMaskedQueryRegions* mask_info,
-                       int index, CStatistics& stat, bool is_ungapped,
+                       int index, int iteration, CStatistics& stat, bool is_ungapped,
                        int master_gentice_code, int slave_genetic_code,
                        const vector<string>& messages,
-		       CNcbiOstream *out_stream)
+		       CNcbiOstream *out_stream) 
 {
     bool incremental_output = (bool) out_stream;
     list<CRef<CIteration> >& iterations = bxmlout.SetIterations();
 
     CRef<CIteration> one_query_iter(new CIteration());
     
-    one_query_iter->SetIter_num(index + 1);
+    one_query_iter->SetIter_num(iteration);
     
     string query_def = NcbiEmptyString;
 
@@ -576,7 +576,7 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
        one_query_iter->SetMessage(messages[index]);
     // have serialized CIteration split and output first portion before hits
     string serial_xml_start, serial_xml_end;
-    if( incremental_output ) {
+    if( incremental_output) {
     //bool add_dtd_reference = false, add_xml_version = false;	
         s_SerializeAndSplitBy( *one_query_iter, "</Iteration_query-len>",
                                serial_xml_start, serial_xml_end); 
@@ -680,7 +680,7 @@ s_GetBlastPublication(EProgram program)
 ///             retrieved [in]
 /// @param out_stream Output  stream for incremental output, ignore if NULL [out]
 void 
-BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CNcbiOstream *out_stream)
+BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CNcbiOstream *out_stream, SBlastXMLIncremental* incremental_struct)
 {
     bool incremental_output = (bool)out_stream;
     string program_name = data->GetBlastProgramName();
@@ -726,13 +726,14 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
     s_BlastXMLGetStatistics(stat_vec, data);
     //serialized data before and after BlastOutput_param
     string serial_xml_start, serial_xml_end;
-    if( incremental_output ) {
+    if( incremental_output && incremental_struct->m_IterationNum == 0) {
 	bool add_dtd_reference = true, add_xml_version = true;
 	s_SerializeAndSplitBy( bxmlout, "</BlastOutput_param>", 
 		serial_xml_start, serial_xml_end,
 		add_dtd_reference, add_xml_version );
 	// incremental_output	
         *out_stream << serial_xml_start << "\n<BlastOutput_iterations>" ; 
+        incremental_struct->m_SerialXmlEnd = "\n</BlastOutput_iterations>" + serial_xml_end;
     }
 
     for (unsigned int index = 0; index < data->GetNumQueries(); ++index) {
@@ -743,15 +744,17 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
                 "Unable to retrieve query " + NStr::IntToString(index);
             NCBI_THROW(CException, eUnknown, message);
         }
+        if (incremental_struct)
+        	incremental_struct->m_IterationNum++; 
         s_BlastXMLAddIteration(bxmlout, data->GetAlignment(index), *seqloc, 
                                data->GetScope(index), matrix.get(), 
-                               data->GetMaskLocations(index), index, 
+                               data->GetMaskLocations(index), 
+                               index, incremental_struct->m_IterationNum, 
                                *stat_vec[index], !data->GetGappedMode(),
                                data->GetMasterGeneticCode(),  data->GetSlaveGeneticCode(),
                                data->GetMessages(),
 			       out_stream);
     }
-    if(incremental_output) *out_stream <<  "\n</BlastOutput_iterations>" << serial_xml_end << endl;
 }
 
 /// serialize givem object and split data by provided XML tag for futher manual integrationa
@@ -775,6 +778,7 @@ static bool s_SerializeAndSplitBy(const CSerialObject &object,
 	xml_one_iter_os->SetEncoding(eEncoding_Ascii);
 	xml_one_iter_os->SetVerifyData( eSerialVerifyData_No );
 	xml_one_iter_os->SetReferenceDTD(add_reference_dtd);
+	xml_one_iter_os->SetDefaultDTDFilePrefix("http://www.ncbi.nlm.nih.gov/dtd/");
 	if( add_xml_version )
 	    xml_one_iter_os->Write(&object, typeInfo );
 	else 

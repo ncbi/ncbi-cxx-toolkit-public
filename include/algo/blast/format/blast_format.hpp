@@ -298,11 +298,17 @@ private:
     /// Flag indicating a non-Blast DB source of subject sequences.
     bool m_IsNonBlastDB;
 
+    /// Structure for incremental XML BLAST output.
+    CRef<SBlastXMLIncremental> m_BlastXMLIncremental;
+
     /// Used by Igblast formatting.
     CConstRef<blast::CIgBlastOptions> m_IgOptions;
 
     /// Information about DELTA-BLAST domain database
     vector<CBlastFormatUtil::SDbInfo> m_DomainDbInfo;
+
+    /// BLAST options
+    CConstRef<blast::CBlastOptions> m_Options;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

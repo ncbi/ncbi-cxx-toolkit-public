@@ -192,6 +192,19 @@ public:
     CBlastFormattingMatrix(int** data, unsigned int nrows, unsigned int ncols); 
 };
 
+/// Structure to hold data for incremental XML formatting.
+struct SBlastXMLIncremental : public CObject
+{
+    /// Default ctor()
+    SBlastXMLIncremental();
+
+    /// ctor sets to true, set to false for first chunk.
+    int m_IterationNum;
+
+    /// tag to be printed at end.
+    string m_SerialXmlEnd;
+};
+
 END_NCBI_SCOPE
 
 /* @} */

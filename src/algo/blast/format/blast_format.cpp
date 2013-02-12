@@ -53,6 +53,8 @@ Author: Jason Papadopoulos
 #include <algo/blast/format/build_archive.hpp>
 #include <serial/objostrxml.hpp>
 
+#include <corelib/ncbistre.hpp>
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -97,7 +99,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_Megablast(is_megablast),
           m_IndexedMegablast(is_indexed), 
           m_CustomOutputFormatSpec(custom_output_format),
-          m_IgOptions(ig_opts)
+          m_IgOptions(ig_opts),
+          m_Options(&options)
 {
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
@@ -109,6 +112,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     }
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
+        m_BlastXMLIncremental.Reset(new SBlastXMLIncremental());
     }
     if (use_sum_statistics && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
@@ -176,7 +180,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_Megablast(opts.GetProgram() == eMegablast ||
                       opts.GetProgram() == eDiscMegablast),
           m_IndexedMegablast(opts.GetMBIndexLoaded()), 
-          m_CustomOutputFormatSpec(custom_output_format)
+          m_CustomOutputFormatSpec(custom_output_format),
+          m_Options(&opts)
 {
     m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
     vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
@@ -189,6 +194,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
 
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
+        m_BlastXMLIncremental.Reset(new SBlastXMLIncremental());
     }
 
     if (opts.GetSumStatisticsMode() && m_IsUngappedSearch) {
@@ -539,6 +545,16 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
                 break;
             }
         }
+        CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries, 
+                                               m_AccumulatedResults,
+                                               *m_Options, m_DbName, m_DbIsAA,
+                                               m_QueryGenCode, m_DbGenCode,
+                                               m_IsRemoteSearch);
+        objects::CBlastOutput xml_output;
+        BlastXML_FormatReport(xml_output, &report_data, &m_Outfile, 
+           m_BlastXMLIncremental.GetPointer());
+        m_AccumulatedResults.clear();
+        m_AccumulatedQueries->clear();
         return;
     }
 }
@@ -772,8 +788,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     }
 
     // Used with tabular output to print number of searches formatted at end.
-    if( itr_num == numeric_limits<unsigned int>::max() || itr_num == 1)
-    	m_QueriesFormatted++;
+    m_QueriesFormatted++;
 
     if (m_FormatType == CFormattingArgs::eAsnText 
       || m_FormatType == CFormattingArgs::eAsnBinary 
@@ -1365,22 +1380,10 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
     } else if (m_FormatType >= CFormattingArgs::eTabular) 
         return;  // No footer for these.
 
-    // XML can only be printed once (i.e.: not in batches), so we print it as
-    // the epilog of the report
+    // Most of XML is printed as it's finished.
+    // the epilog closes the report.
     if (m_FormatType == CFormattingArgs::eXml) {
-        CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries, 
-                                               m_AccumulatedResults,
-                                               options, m_DbName, m_DbIsAA,
-                                               m_QueryGenCode, m_DbGenCode,
-                                               m_IsRemoteSearch);
-        objects::CBlastOutput xml_output;
-        BlastXML_FormatReport(xml_output, &report_data);
-
-	CObjectOStreamXml l_xml_stream( m_Outfile, false );
-	l_xml_stream.SetDefaultDTDFilePrefix("http://www.ncbi.nlm.nih.gov/dtd/");
-	l_xml_stream.WriteFileHeader(ObjectType( xml_output ));
-        l_xml_stream.WriteObject( ObjectInfo( xml_output ));
-
+        m_Outfile << m_BlastXMLIncremental->m_SerialXmlEnd << endl; 
         m_AccumulatedResults.clear();
         m_AccumulatedQueries->clear();
         return;

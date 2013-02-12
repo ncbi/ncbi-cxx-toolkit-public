@@ -127,7 +127,8 @@ public:
 NCBI_XBLASTFORMAT_EXPORT
 void BlastXML_FormatReport(objects::CBlastOutput& bxmlout, 
                            const IBlastXMLReportData* data,
-			   CNcbiOstream *out_stream = NULL);
+			   CNcbiOstream *out_stream = NULL,
+                           SBlastXMLIncremental* incremental_struct = NULL);
 
 /* @} */
 

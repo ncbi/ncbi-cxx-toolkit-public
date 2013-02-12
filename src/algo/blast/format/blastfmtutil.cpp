@@ -588,4 +588,9 @@ void CBlastFormatUtil::InsertSubjectScores (CSeq_align_set & org_align_set,
     }
 }
 
+SBlastXMLIncremental::SBlastXMLIncremental()
+: m_IterationNum(0)
+{
+      m_SerialXmlEnd = "";
+}
 END_NCBI_SCOPE
