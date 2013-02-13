@@ -86,6 +86,8 @@ public:
          int compAttrFlags = eGCClient_AttributeFlags_none);
 
 
+    string ValidateChrType(string chrType, string chrLoc);
+
 private:
     // Prohibit copy constructor and assignment operator
     CGenomicCollectionsService(const CGenomicCollectionsService& value);
