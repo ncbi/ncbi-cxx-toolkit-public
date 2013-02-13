@@ -485,11 +485,13 @@ void CArg_Ios::x_Open(CArgValue::TFileFlags /*flags*/) const
     }
 }
 
-void CArg_Ios::x_CreatePath(TFileFlags flags) const
+bool CArg_Ios::x_CreatePath(TFileFlags flags) const
 {
+    CDirEntry entry( AsString() );
     if (flags & CArgDescriptions::fCreatePath) {
-        CDir( CDirEntry( AsString() ).GetDir() ).CreatePath();;
+        CDir( entry.GetDir() ).CreatePath();;
     }
+    return ((flags & CArgDescriptions::fNoCreate)==0 || entry.Exists());
 }
 
 CNcbiIstream&  CArg_Ios::AsInputFile(  TFileFlags flags) const
@@ -647,8 +649,9 @@ void CArg_OutputFile::x_Open(CArgValue::TFileFlags flags) const
             fstrm = new CNcbiOfstream;
         }
         if (fstrm) {
-            x_CreatePath(m_CurrentFlags);
-            fstrm->open(AsString().c_str(),IOS_BASE::out | mode);
+            if (x_CreatePath(m_CurrentFlags)) {
+                fstrm->open(AsString().c_str(),IOS_BASE::out | mode);
+            }
             if ( !fstrm->is_open() ) {
                 delete fstrm;
                 fstrm = NULL;
@@ -704,8 +707,9 @@ void CArg_IOFile::x_Open(CArgValue::TFileFlags flags) const
             fstrm = new CNcbiFstream;
         }
         if (fstrm) {
-            x_CreatePath(m_CurrentFlags);
-            fstrm->open(AsString().c_str(),IOS_BASE::in | IOS_BASE::out | mode);
+            if (x_CreatePath(m_CurrentFlags)) {
+                fstrm->open(AsString().c_str(),IOS_BASE::in | IOS_BASE::out | mode);
+            }
             if ( !fstrm->is_open() ) {
                 delete fstrm;
                 fstrm = NULL;
@@ -910,6 +914,12 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (flags & CArgDescriptions::fAppend) {
             out << "<" << "append" << "/>";
         }
+        if (flags & CArgDescriptions::fTruncate) {
+            out << "<" << "truncate" << "/>";
+        }
+        if (flags & CArgDescriptions::fNoCreate) {
+            out << "<" << "noCreate" << "/>";
+        }
         if (flags & CArgDescriptions::fAllowMultiple) {
             out << "<" << "allowMultiple" << "/>";
         }
@@ -965,7 +975,7 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
         return;
     case CArgDescriptions::eInputFile:
         if((flags &
-            (CArgDescriptions::fAllowMultiple | CArgDescriptions::fAppend)) == 0)
+            (CArgDescriptions::fAllowMultiple | CArgDescriptions::fAppend | CArgDescriptions::fTruncate)) == 0)
             return;
         break;
     case CArgDescriptions::k_EType_Size:

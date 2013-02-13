@@ -211,7 +211,7 @@ public:
 
 protected:
     virtual void x_Open(TFileFlags flags) const;
-    void x_CreatePath(TFileFlags flags) const;
+    bool x_CreatePath(TFileFlags flags) const;
 
     TFileFlags             m_DescriptionFlags;
     mutable TFileFlags     m_CurrentFlags;

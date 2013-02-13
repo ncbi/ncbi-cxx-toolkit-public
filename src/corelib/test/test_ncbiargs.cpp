@@ -284,7 +284,17 @@ static void s_InitTest5(CArgDescriptions& arg_desc)
 
     arg_desc.AddKey("of",
                     "outputFile", "This is an output file argument",
-                    CArgDescriptions::eOutputFile, CArgDescriptions::fAppend);
+                    CArgDescriptions::eOutputFile,
+                        CArgDescriptions::fPreOpen |
+                        CArgDescriptions::fAppend);
+
+    arg_desc.AddKey("iof",
+                    "ioFile", "This is an I/O file argument",
+                    CArgDescriptions::eIOFile,
+                        CArgDescriptions::fPreOpen |
+                        CArgDescriptions::fAppend |
+                        CArgDescriptions::fCreatePath |
+                        CArgDescriptions::fNoCreate);
 }
 
 static void s_RunTest5(const CArgs& args, ostream& /*os*/)
@@ -300,6 +310,7 @@ static void s_RunTest5(const CArgs& args, ostream& /*os*/)
         args["if"].AsInputFile () >> tmp;
         args["of"].AsOutputFile() << tmp << endl;
     }
+    CNcbiIostream& io = args["iof"].AsIOFile();
 }
 
 

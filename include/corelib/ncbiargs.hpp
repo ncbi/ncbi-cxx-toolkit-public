@@ -234,9 +234,11 @@ public:
 
     enum EFileFlags {
         fBinary   = (1 <<  1),  ///< Open file in binary mode.
-        fText     = (1 << 11),  ///< Open file in text mode.
+        fText     =  0,         ///< Open file in text mode.
         fAppend   = (1 <<  2),  ///< Open file in append mode.
-        fTruncate = (1 << 12)   ///< Open file in truncate mode.
+        fTruncate = (1 << 12),  ///< Open file in truncate mode.
+        fNoCreate = (1 << 11),  ///< Open existing file, never create it
+        fCreatePath = (1 << 8)  ///< If needed, create directory where the file is located
     };
     typedef unsigned int TFileFlags;   ///< Bitwise OR of "EFileFlags"
 
@@ -521,17 +523,21 @@ public:
     enum EFlags {
         // File related flags:
 
-        /// Open file right away for eInputFile, eOutputFile
+        /// Open file right away; for eInputFile, eOutputFile, eIOFile
         fPreOpen = (1 << 0),
-        /// Open as binary file for eInputFile, eOutputFile
+        /// Open as binary file; for eInputFile, eOutputFile, eIOFile
         fBinary  = (1 << 1), 
-        /// Append to end-of-file for eOutputFile only
-        fAppend  = (1 << 2),
+        /// Append to end-of-file; for eOutputFile or eIOFile 
+        fAppend    = (1 << 2),
+        /// Delete contents of an existing file; for eOutputFile or eIOFile 
+        fTruncate  = (1 << 12),
+        /// If the file does not exist, do not create it; for eOutputFile or eIOFile 
+        fNoCreate = (1 << 11),
         /// If needed, create directory where the file is located
         fCreatePath = (1 << 8),
 
         /// Mask for all file-related flags
-        fFileFlags = fPreOpen | fBinary | fAppend | fCreatePath,
+        fFileFlags = fPreOpen | fBinary | fAppend | fTruncate | fNoCreate | fCreatePath,
         // multiple keys flag:
 
         /// Repeated key arguments are legal (use with AddKey)

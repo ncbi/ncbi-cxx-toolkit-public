@@ -193,6 +193,8 @@
           <xs:element name="preOpen" minOccurs="0"/>
           <xs:element name="binary" minOccurs="0"/>
           <xs:element name="append" minOccurs="0"/>
+          <xs:element name="truncate" minOccurs="0"/>
+          <xs:element name="noCreate" minOccurs="0"/>
           <xs:element name="allowMultiple" minOccurs="0"/>
           <xs:element name="ignoreInvalidValue" minOccurs="0"/>
           <xs:element name="warnOnInvalidValue" minOccurs="0"/>
