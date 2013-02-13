@@ -731,10 +731,19 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
 {
     p.ResetSeq();
     bool ret = false;
-    if(sequence::GetLength(p.GetLoc(), m_scope) <= max_len
-       && (!p.IsSetStart_offset() || p.GetStart_offset() == 0)
-       && (!p.IsSetStop_offset() || p.GetStop_offset() == 0))
+    TSeqPos length = s_GetLength(p, m_scope);
+
+    p.SetSeq().SetLength(length);
+
+    if(   (p.IsSetStart_offset() && p.GetStart_offset() != 0)
+       || (p.IsSetStop_offset()  && p.GetStop_offset()  != 0))
     {
+        p.SetExceptions().push_back(CreateException("Can't get sequence for an offset-based location"));
+        ret = false;
+    } else if(length > max_len) {
+        p.SetExceptions().push_back(CreateException("Sequence is longer than the cutoff threshold"));
+        ret = false;
+    } else {
         try {
             CRef<CSeq_literal> literal = x_GetLiteralAtLoc(p.GetLoc());
             p.SetSeq(*literal);
