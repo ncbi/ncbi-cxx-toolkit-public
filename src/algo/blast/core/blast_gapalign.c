@@ -3130,6 +3130,56 @@ BlastGetOffsetsForGappedAlignment (const Uint1* query, const Uint1* subject,
     return FALSE;
 }
 
+void 
+BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
+   BlastHSP* hsp)
+{
+    /* We will stop when the identity count reaches to this number */
+    const Int4 HSP_MAX_IDENT_RUN = 20; 
+    const Uint1 *q, *s;
+    Int4 index, max_offset, score, max_score, q_start, s_start, q_len;
+    Boolean match, prev_match;
+    Int4 offset = MIN(hsp->subject.gapped_start - hsp->subject.offset,
+                      hsp->query.gapped_start - hsp->query.offset);
+    q_start = hsp->query.gapped_start - offset;
+    s_start = hsp->subject.gapped_start - offset;
+    q_len = MIN(hsp->subject.end - s_start, hsp->query.end - q_start);
+    q = query + q_start;
+    s = subject + s_start;
+    max_score = 0;
+    max_offset = q_start;
+    score = 0;
+    prev_match = FALSE; 
+    for (index = q_start; index < q_start + q_len; index++) {
+        match = (*q++ == *s++);
+        if (match != prev_match) {
+            prev_match = match;
+            if (match) {
+                score = 1;
+            } else if (score > max_score) {
+                max_score = score;
+                max_offset = index - score/2;
+            }
+        } else if (match) {
+            ++score;
+            if (score > HSP_MAX_IDENT_RUN) {
+                max_offset = index - HSP_MAX_IDENT_RUN/2;
+                hsp->query.gapped_start = max_offset;
+                hsp->subject.gapped_start = max_offset + s_start - q_start;
+                return;
+            } 
+        }
+    }
+    if (match && score > max_score) {
+        max_score = score;
+        max_offset = index - score/2;
+    }
+    if (max_score > 0) {
+        hsp->query.gapped_start = max_offset;
+        hsp->subject.gapped_start = max_offset + s_start - q_start;
+    }
+}
+
 Int4 
 BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 

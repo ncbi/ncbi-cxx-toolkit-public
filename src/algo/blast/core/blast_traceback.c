@@ -439,14 +439,14 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
             if(kIsOutOfFrame) {
                /* Code below should be investigated for possible
                   optimization for OOF */
-               s_start = hsp->subject.gapped_start;
-               q_start = hsp->query.gapped_start;
                gap_align->subject_start = 0;
                gap_align->query_start = 0;
-            } else {
-               q_start = hsp->query.gapped_start;
-               s_start = hsp->subject.gapped_start;
-            }
+            } else if (program_number == eBlastTypeBlastn) {
+               /* Find the optimal starting offset */
+               BlastGetStartForGappedAlignmentNucl(query, subject, hsp);
+            } 
+            q_start = hsp->query.gapped_start;
+            s_start = hsp->subject.gapped_start;
          }
          
          adjusted_s_length = subject_length;

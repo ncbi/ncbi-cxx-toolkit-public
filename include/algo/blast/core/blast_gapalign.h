@@ -235,6 +235,18 @@ BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
    Uint4 s_start, Uint4 s_length);
 
+/** Function to look for the longest identity match run (up to size HSP_MAX_IDENT_RUN)
+ * in an HSP and return the middle of this.  Used by the gapped-alignment
+ * functions to start the gapped alignments.
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param hsp On return, the gapped_start will be filled. [in][out]
+*/
+NCBI_XBLAST_EXPORT
+void 
+BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
+   BlastHSP* hsp);
+
 /** Function to look for the highest scoring window (of size HSP_MAX_WINDOW)
  * in an HSP and return the middle of this.  Used by the gapped-alignment
  * functions to start the gapped alignments.
