@@ -2623,7 +2623,7 @@ bool OpenLogFileFromConfig(CNcbiRegistry* config, string* new_name)
 {
     string logname;
     if ( !config ) {
-        char* env_logname = NcbiSys_getenv("NCBI_CONFIG__LOG__FILE");
+        char* env_logname = NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__FILE"));
         if (env_logname) {
             logname = env_logname;
         }
@@ -2697,7 +2697,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 
     // If env.var 'NCBI_CONFIG__LOG__FILE' is set, use it and ignore all other
     // locations.
-    const char* env_ignore = NcbiSys_getenv("NCBI_CONFIG__LOG__IgnoreEnvArg");
+    const char* env_ignore = NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__IgnoreEnvArg"));
     bool env_ignore_bool = false;
     if (env_ignore) {
         try {
