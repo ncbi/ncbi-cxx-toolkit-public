@@ -44,6 +44,7 @@
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
+#include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
 #include <sstream>
 
 // generated classes
@@ -142,6 +143,33 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
     
     try {
         return AskGet_assembly(req, &reply);
+    } catch (CException& ex) {
+        if(reply.Which() == CGCClientResponse::e_Srvr_error) {
+            ERR_POST(Error << " at Server side (will be propagated) ...\n" 
+                            << reply.GetSrvr_error().GetError_id() << ": "
+                            << reply.GetSrvr_error().GetDescription());
+            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
+        }
+        throw;
+    }
+}
+
+string CGenomicCollectionsService::ValidateChrType(string chrType, string chrLoc)
+{
+    CGCClient_ValidateChrTypeLocRequest req;
+    CGCClientResponse reply;
+    
+    req.SetType(chrType);
+    req.SetLocation(chrLoc);
+    
+#ifdef _DEBUG
+    ostringstream ostrstrm;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
+    LOG_POST(Info << ostrstrm.str());
+#endif
+    
+    try {
+        return AskGet_chrtype_valid(req, &reply);
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
             ERR_POST(Error << " at Server side (will be propagated) ...\n" 

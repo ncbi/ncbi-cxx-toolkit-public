@@ -16,12 +16,14 @@ IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
 
 
 GCClientRequest ::= CHOICE {
-    get-assembly GCClient-GetAssemblyRequest
+    get-assembly GCClient-GetAssemblyRequest,
+    get-chrtype-valid  GCClient-ValidateChrTypeLocRequest
 }
 
 
 GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
+    get-chrtype-valid  VisibleString,
     
     --  errors encountered at the server side.
     srvr-error GCClient-Error
@@ -70,6 +72,22 @@ GCClient-GetAssemblyRequest ::= SEQUENCE {
     scaf-flags GCClient-AttributeFlags DEFAULT none,
     
     component-flags GCClient-AttributeFlags DEFAULT none
+}
+
+GCClient-ValidateChrTypeLocRequest ::= SEQUENCE {
+    
+    -- Validate the Type Location in the request
+    
+    type  VisibleString,
+    
+    location VisibleString
+}
+
+GCClient-ValidateChrTypeLocResponse ::= SEQUENCE {
+    
+    -- Result of the Type Location validate request
+    
+    result  VisibleString
 }
 
 
