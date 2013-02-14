@@ -226,13 +226,13 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
       4  w49  component lines with the same component_id found on different scaffolds
       2  w58  assuming AGP version X
 
-NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+NOTE: 36 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
 
 Objects                :   9
 - with single component:   2
 
-Scaffolds              :  19
+Scaffolds              :  20
 - with single component:   5
 ***no components, gaps only: 2
 
@@ -242,15 +242,15 @@ Components                   : 113 (W:99, F:10, D:2, O:1, P:1)
   orientation ? (formerly 0) :   1
   orientation na             :   1
 
-Gaps                   : 100 (N)
+Gaps                   : 101 (N)
 - do not break scaffold:  89
   clone   , linkage yes:   1
   fragment, linkage yes:  87
   repeat  , linkage yes:   1
-- break it, linkage no :  11
+- break it, linkage no :  12
 	clone          :   1
 	repeat         :   1
-	contig         :   8
+	contig         :   9
 	telomere       :   1
 
 Object names:  7
