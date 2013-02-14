@@ -65,6 +65,7 @@ esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
+    *MAC       ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
     SunOSx86   ) : ${FASTCGI_PATH=$NCBI/fcgi-2.1}         ;;
     SunOSSparc ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0-ncbi1} ;;
 esac
