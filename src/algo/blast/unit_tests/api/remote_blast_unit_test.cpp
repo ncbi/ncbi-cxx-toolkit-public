@@ -601,7 +601,7 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("A7CZ5K5N016");
+    const string rid("HU0G064A013"); 
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
     
@@ -639,7 +639,7 @@ BOOST_AUTO_TEST_CASE(RetrieveInvalidRID) {
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("A844TTAM014");
+    const string rid("HTXY8N45013"); 
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
 
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithSIGXCPU) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("A84J535H016");
+    const string rid("HTSZX47V013"); 
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
 
