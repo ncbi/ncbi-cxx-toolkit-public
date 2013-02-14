@@ -43,6 +43,8 @@ static char const rcsid[] =
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <numeric>      // for std::accumulate
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -202,6 +204,15 @@ void CSeqFormatter::Write(CBlastDBSeqId& id)
     m_Out << x_Replacer(data2write) << endl;
 }
 
+static string s_GetTitle(CConstRef<CBioseq> bioseq)
+{
+    ITERATE(CSeq_descr::Tdata, desc, bioseq->GetDescr().Get()) {
+        if ((*desc)->Which() == CSeqdesc::e_Title) {
+            return (*desc)->GetTitle();
+        }
+    }
+}
+
 static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
 {
     static const string kTarget(" >gi|");
@@ -227,15 +238,13 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
              continue;
          }
          // TODO: remove gnl|BL_ORD_ID
-         list<CRef<CSeq_id> > & id_list = bioseq->SetId();
-         list<CRef<CSeq_id> >::iterator it = id_list.begin();
-         while (it != id_list.end()) {
-            if ((*it)->IsGeneral() &&
-                (*it)->GetGeneral().GetDb() == "BL_ORD_ID") {
-                id_list.erase(it);
-                break;
-            }
-            ++it;
+         CRef<CSeq_id> id(*(bioseq->GetId().begin()));
+         if (id->IsGeneral() &&
+             id->GetGeneral().GetDb() == "BL_ORD_ID") {
+             m_Out << ">" << s_GetTitle(bioseq) << endl;
+             CScope scope(*CObjectManager::GetInstance());
+             fasta.WriteSequence(scope.AddBioseq(*bioseq));
+             continue;
          }
          if (config.m_UseCtrlA) {
              s_ReplaceCtrlAsInTitle(bioseq);
