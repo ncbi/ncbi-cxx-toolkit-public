@@ -125,8 +125,7 @@ public:
         return (denom == 0) ? 0.0 : (static_cast<double>(m_len_seqloc_overlap) / denom);  
     }
     
-    /// Relative overlap is defined as ratio of the length of the overlap to the
-    /// length of the first feature
+    /// Relative overlap is defined as ratio of the length of the overlap to the length of the shorter feature
     double GetRelativeOverlap() const
     {
         if(!m_cachedOverlapValues) {
