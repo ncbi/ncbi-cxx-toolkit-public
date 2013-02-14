@@ -178,6 +178,10 @@ string CAgpErr::FormatMessage(const string& msg, const string& details)
         // Substitute "X" with the real value (e.g. a column name or value)
         return msg.substr(0, pos) + details + msg.substr(pos+1);
     }
+    else if(details.size()>2 && details[0]=='X' && details[1]==' ' && msg=="no valid AGP lines"){
+      // Allow totally custom fatal error messages (such as bad text encoding)
+      return details.substr(2);
+    }
     else{
         return msg + details;
     }
@@ -965,6 +969,15 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
     while( NcbiGetline(is, m_line, "\r\n") ) {
         m_line_num++;
 
+        if(m_at_beg && m_line.size()>=2) {
+          if( ((Uint1)(m_line[0])==(Uint1)0xFF && (Uint1)(m_line[1])==(Uint1)0xFE) ||
+              ((Uint1)(m_line[0])==(Uint1)0xFE && (Uint1)(m_line[1])==(Uint1)0xFF)
+          ) {
+            m_AgpErr->Msg(m_error_code=CAgpErr::E_NoValidLines, "X UTF-16 not supported, text needs to be in ASCII encoding.", CAgpErr::fAtNone);
+            return CAgpErr::E_NoValidLines;
+          }
+        }
+
         // processes pragma comments on the line, if any
         x_CheckPragmaComment();
 
@@ -1211,7 +1224,9 @@ void CAgpErrEx::PrintLineXml(CNcbiOstream& ostr,
     if(filename.size()) attr+=" filename=\"" + NStr::XmlEncode(filename) + "\"";
     if(two_lines_involved) attr+=" two_lines=\"true\"";
 
-    ostr << " <line " << attr << ">" << NStr::XmlEncode(content) << "</line>\n";
+    string xml_content = NStr::XmlEncode(content);
+    if( xml_content.find("&#x0;")!=NPOS ) NStr::ReplaceInPlace(xml_content, "&#x0;", "?");
+    ostr << " <line " << attr << ">" << xml_content << "</line>\n";
 
 }
 
