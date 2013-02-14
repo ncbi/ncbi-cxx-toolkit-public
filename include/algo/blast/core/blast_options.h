@@ -127,7 +127,7 @@ extern "C" {
 #define BLAST_GAP_TRIGGER_PROT 22.0 /**< default bit score that will trigger
                                          a gapped extension for all protein-
                                          based searches */
-#define BLAST_GAP_TRIGGER_NUCL 25.0  /**< default bit score that will trigger
+#define BLAST_GAP_TRIGGER_NUCL 27.0  /**< default bit score that will trigger
                                          a gapped extension for blastn */
 
 /** default dropoff for the final gapped extension with traceback */
