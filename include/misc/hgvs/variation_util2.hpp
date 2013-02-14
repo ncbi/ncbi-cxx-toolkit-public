@@ -237,18 +237,16 @@ public:
         eSO_3_prime_UTR_variant     =1624,
         eSO_coding_sequence_variant =1580,
         eSO_nc_transcript_variant   =1619,
+        eSO_initiator_codon_variant =1582,
+        eSO_terminator_codon_variant=1590,
 
-        //note: there are not eSO_(start|stop)_codon_variant terms, so
-        //the location-specific rather than variant-specific terms are used instead:
-        eSO_start_codon             =318,
-        eSO_stop_codon              =319,
-
-        //variant-specific terms
-        eSO_synonymous_codon        =1588,
-        eSO_non_synonymous_codon    =1583, //missense
-        eSO_stop_gained             =1587, //nonsense
-        eSO_stop_lost               =1578,
-        eSO_frameshift_variant      =1589
+        //variation-specific terms
+        eSO_synonymous_variant      =1819,
+        eSO_missense_variant        =1583,
+        eSO_inframe_indel           =1820,
+        eSO_frameshift_variant      =1589,
+        eSO_stop_gained             =1587,
+        eSO_stop_lost               =1578
     };
     typedef vector<ESOTerm> TSOTerms;
     void AsSOTerms(const CVariantProperties& p, TSOTerms& terms);

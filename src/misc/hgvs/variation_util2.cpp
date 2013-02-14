@@ -725,8 +725,6 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     return p2;
 }
 
-
-
 bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
 {
     p.ResetSeq();
@@ -737,7 +735,7 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
 
     if(   (p.IsSetStart_offset() && p.GetStart_offset() != 0)
        || (p.IsSetStop_offset()  && p.GetStop_offset()  != 0))
-    {
+    {    
         p.SetExceptions().push_back(CreateException("Can't get sequence for an offset-based location"));
         ret = false;
     } else if(length > max_len) {
@@ -750,18 +748,16 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
 
             if(ContainsIupacNaAmbiguities(*literal)) {
                 p.SetExceptions().push_back(CreateException("Ambiguous residues in reference", CVariationException::eCode_ambiguous_sequence));
-            }
+            }    
             ret = true;
-        } catch(CException& e) {
+        } catch(CException& e) { 
             //location can be invalid - SNP-5510
             p.SetExceptions().push_back(CreateException("Cannot fetch sequence at location", CVariationException::eCode_no_mapping));
             ret = false;
-        }
-    }
-    return ret;
+        }    
+    }    
+    return ret; 
 }
-
-
 
 bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
 {
@@ -1600,6 +1596,46 @@ CVariantProperties::TEffect CalcEffectForProt(const string& prot_ref_str, const 
     return effect;
 }
 
+CVariationUtil::TSOTerms CalcSOTermsForProt(long nuc_delta_len,
+                                            const string& prot_ref_str,
+                                            const string& prot_variant_str)
+{
+    CVariationUtil::TSOTerms terms;
+
+    bool stop_gain = false;
+    bool stop_loss = false;
+    for(size_t i = 0; i < max(prot_ref_str.size(), prot_variant_str.size()); i++) {
+        char r = i >= prot_ref_str.size() ? '-' : prot_ref_str[i];
+        char v = i >= prot_variant_str.size() ? '-' : prot_variant_str[i];
+
+        if(r == '*' && v != '*') {
+            stop_loss = true;
+        }
+
+        if(r != '*' && v == '*') {
+            stop_gain = true;
+        }
+    }
+    if(stop_gain) {
+        terms.push_back(CVariationUtil::eSO_stop_gained);
+    }
+    if(stop_loss) {
+        terms.push_back(CVariationUtil::eSO_stop_lost);
+    }
+
+    if(nuc_delta_len == 0) {
+        if(!stop_gain && !stop_loss) {
+            terms.push_back(prot_ref_str == prot_variant_str ? CVariationUtil::eSO_synonymous_variant 
+                                                             : CVariationUtil::eSO_missense_variant);
+        }
+    } else if(nuc_delta_len % 3 == 0) {
+        terms.push_back(CVariationUtil::eSO_inframe_indel);
+    } else {
+        terms.push_back(CVariationUtil::eSO_frameshift_variant);
+    }
+
+    return terms;
+}
 
 
 void CVariationUtil::FlipStrand(CVariantPlacement& vp) const
@@ -1836,7 +1872,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     const CDelta_item& nuc_delta = *v->GetData().GetInstance().GetDelta().front();
 
     //detect frameshift before we start extending codon locs, etc.
-    int frameshift_phase = ((long)sequence::GetLength(p->GetLoc(), NULL) - (long)nuc_delta.GetSeq().GetLiteral().GetLength()) % 3;
+    long nuc_delta_len = nuc_delta.GetSeq().GetLiteral().GetLength() - sequence::GetLength(p->GetLoc(), NULL);
+    
+    int frameshift_phase = nuc_delta_len % 3;
     if(frameshift_phase < 0) {
         frameshift_phase += 3;
     }
@@ -1890,7 +1928,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
      * codon may become part of the variation (e.g. 1-base deletion in a codon
      * results in first base of the downstream codon becoming part of modified one)
      * If, on the other hand, the downstream codon does not participate, there's
-     * only two bases if it, so it won't get translated.
+     * only two bases if it, so it won't get translated (will explicitly truncate)
      */
     SFlankLocs flocs = CreateFlankLocs(*codons_loc, 2);
     CRef<CSeq_loc> extended_codons_loc = sequence::Seq_loc_Add(*codons_loc, *flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
@@ -1906,8 +1944,12 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
     }
 
+
     string prot_ref_str = Translate(p->GetSeq().GetSeq_data());
     string prot_delta_str = Translate(extended_variant_codons_literal.GetSeq_data());
+
+    
+
 
     //Constructing protein-variation
 
@@ -1938,14 +1980,22 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     AttachSeq(*codons_p);
     prot_v->SetPlacements().push_back(codons_p);
 
-   
-    if(frameshift_phase == 0 && prot_ref_str.size() == prot_delta_str.size()) { 
-        //VAR-267 - calculate missense/synonymous/stop-gain/loss for non-frameshifting and non-length-changing cases only
-        CVariantProperties::TEffect prop = CalcEffectForProt(prot_ref_str, prot_delta_str);
-        if(prop != 0) {
-            prot_v->SetVariant_prop().SetEffect(prop);
+  
+    //calculate properties 
+    {{
+        if(frameshift_phase == 0 && prot_ref_str.size() == prot_delta_str.size()) { 
+            //VAR-267 - calculate missense/synonymous/stop-gain/loss for non-frameshifting and non-length-changing cases only
+            CVariantProperties::TEffect prop = CalcEffectForProt(prot_ref_str, prot_delta_str);
+            if(prop != 0) {
+                prot_v->SetVariant_prop().SetEffect(prop);
+            }
         }
-    }
+
+        TSOTerms so_terms = CalcSOTermsForProt(nuc_delta_len,
+                                               prot_ref_str,
+                                               prot_delta_str);
+        copy(so_terms.begin(), so_terms.end(), back_inserter(prot_v->SetSo_terms()));
+    }}
 
 
     prot_v->SetData().SetInstance().SetType(CalcInstTypeForAA(prot_ref_str, prot_delta_str));
@@ -2025,18 +2075,19 @@ void CVariationUtil::AsSOTerms(const CVariantProperties& p, TSOTerms& terms)
         terms.push_back(eSO_nc_transcript_variant);
     }
     if(p.GetGene_location() & CVariantProperties::eGene_location_in_start_codon) {
-        terms.push_back(eSO_start_codon);
+        terms.push_back(eSO_initiator_codon_variant);
     }
     if(p.GetGene_location() & CVariantProperties::eGene_location_in_stop_codon) {
-        terms.push_back(eSO_stop_codon);
+        terms.push_back(eSO_terminator_codon_variant);
     }
 
     if(p.GetEffect() & CVariantProperties::eEffect_frameshift) {
         terms.push_back(eSO_frameshift_variant);
     }
     if(p.GetEffect() & CVariantProperties::eEffect_missense) {
-        terms.push_back(eSO_non_synonymous_codon);
+        terms.push_back(eSO_missense_variant);
     }
+
     if(p.GetEffect() & CVariantProperties::eEffect_nonsense || p.GetEffect() & CVariantProperties::eEffect_stop_gain) {
         terms.push_back(eSO_stop_gained);
     }
@@ -2044,30 +2095,33 @@ void CVariationUtil::AsSOTerms(const CVariantProperties& p, TSOTerms& terms)
         terms.push_back(eSO_stop_lost);
     }
     if(p.GetEffect() & CVariantProperties::eEffect_synonymous) {
-        terms.push_back(eSO_synonymous_codon);
+        terms.push_back(eSO_synonymous_variant);
     }
 }
 
 string CVariationUtil::AsString(ESOTerm term)
 {
-    if     (term == eSO_intergenic_variant)      { return "intergenic_variant";      }
-    else if(term == eSO_2KB_upstream_variant)    { return "2KB_upstream_variant";    }
-    else if(term == eSO_500B_downstream_variant) { return "500B_downstream_variant"; }
-    else if(term == eSO_splice_donor_variant)    { return "splice_donor_variant";    }
-    else if(term == eSO_splice_acceptor_variant) { return "splice_acceptor_varian";  }
-    else if(term == eSO_intron_variant)          { return "intron_variant";          }
-    else if(term == eSO_5_prime_UTR_variant)     { return "5_prime_UTR_variant";     }
-    else if(term == eSO_3_prime_UTR_variant)     { return "3_prime_UTR_variant";     }
-    else if(term == eSO_coding_sequence_variant) { return "coding_sequence_variant"; }
-    else if(term == eSO_nc_transcript_variant)   { return "nc_transcript_variant";   }
-    else if(term == eSO_synonymous_codon)        { return "synonymous_codon";        }
-    else if(term == eSO_non_synonymous_codon)    { return "non_synonymous_codon";    }
-    else if(term == eSO_stop_gained)             { return "stop_gained";             }
-    else if(term == eSO_stop_lost)               { return "stop_lost";               }
-    else if(term == eSO_frameshift_variant)      { return "frameshift_variant";      }
-    else if(term == eSO_start_codon)             { return "start_codon";             }
-    else if(term == eSO_stop_codon)              { return "stop_codon";              }
-    else                                         { return "other_variant";           }
+    return 
+      term == eSO_intergenic_variant      ?  "intergenic_variant"    
+    : term == eSO_2KB_upstream_variant    ?  "2KB_upstream_variant"    
+    : term == eSO_500B_downstream_variant ?  "500B_downstream_variant"
+    : term == eSO_splice_donor_variant    ?  "splice_donor_variant"    
+    : term == eSO_splice_acceptor_variant ?  "splice_acceptor_varian"
+    : term == eSO_intron_variant          ?  "intron_variant"    
+    : term == eSO_5_prime_UTR_variant     ?  "5_prime_UTR_variant"    
+    : term == eSO_3_prime_UTR_variant     ?  "3_prime_UTR_variant"    
+    : term == eSO_coding_sequence_variant ?  "coding_sequence_variant"
+    : term == eSO_nc_transcript_variant   ?  "nc_transcript_variant"
+    : term == eSO_initiator_codon_variant ?  "initiator_codon_variant"
+    : term == eSO_terminator_codon_variant?  "terminator_codon_variant"
+
+    : term == eSO_synonymous_variant      ?  "synonymous_variant"    
+    : term == eSO_missense_variant        ?  "missense_variant"    
+    : term == eSO_frameshift_variant      ?  "frameshift_variant"    
+    : term == eSO_inframe_indel           ?  "inframe_indel"
+    : term == eSO_stop_gained             ?  "stop_gained"    
+    : term == eSO_stop_lost               ?  "stop_lost"    
+    :                                        "other_variant";
 };
 
 
@@ -2373,8 +2427,8 @@ void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
 
         {{
             TLocsPair p = CVariantPropertiesIndex::s_GetStartAndStopCodonsLocs(*cds_loc);
-            props_map.Add(eSO_start_codon, *p.first);
-            props_map.Add(eSO_stop_codon, *p.second);
+            props_map.Add(eSO_initiator_codon_variant, *p.first);
+            props_map.Add(eSO_terminator_codon_variant, *p.second);
         }}
 
         if(rna_loc) {
