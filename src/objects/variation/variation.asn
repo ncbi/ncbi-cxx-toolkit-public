@@ -20,7 +20,7 @@ IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
         Population-data, Phenotype, Variation-inst, VariantProperties FROM NCBI-Variation
         Seq-loc FROM NCBI-Seqloc
         SubSource FROM NCBI-BioSource
-        Seq-literal FROM NCBI-Sequence
+        Seq-literal, Bioseq FROM NCBI-Sequence
         Pub-set FROM NCBI-Pub;
 
  
@@ -43,7 +43,10 @@ VariationException ::= SEQUENCE
         inconsistent-asserted-moltype (9), --asserted mol-type is inconsistent with seq-id (e.g. NM_12345.6:g.)
         bioseq-state (10),
         ambiguous-sequence (11),
-        ref-same-as-variant (12) --reference sequence at the location is same as variant sequence in the variation
+        ref-same-as-variant (12), --reference sequence at the location is same as variant sequence in the variation
+        seqfetch-too-long (13), --can't fetch sequence because location is longer than specified threshold
+        seqfetch-intronic (14), --can't fetch sequence for an intronic (anchor+offset)-based location
+        seqfetch-invalid (15)   --can't fetch sequence because location is invalid (e.g. extends past the end)
     } OPTIONAL,
     
     message VisibleString
@@ -238,7 +241,9 @@ Variation ::= SEQUENCE
 
         -- variant is a complex and undescribed change at the location
         -- This type of variant is known to occur in dbVar submissions
-        complex NULL
+        complex NULL,
+
+        seq Bioseq -- Sequnece as it exists post-alteration
     },
 
     consequence SET OF CHOICE {
