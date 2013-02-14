@@ -126,3 +126,15 @@ not 3prime_exon_len >= 500
 2 4
 3prime_exon_pct_identity > 98
 2 4 9 10
+query_strand = subject_strand
+0 1 2 3 6 7 8 9
+query_strand = +
+0 1 2 7 8 9
+query_strand = -
+3 6
+query_strand = ?
+4 5 10
+subject_strand = +
+0 1 2 5 7 8 9 10
+subject_strand = -
+3 4 6

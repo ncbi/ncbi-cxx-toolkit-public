@@ -631,7 +631,7 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                               const CSeq_align& align)
 {
     ///
-    /// screen for simple sequence match first
+    /// screen for simple sequence and strand match first
     ///
     if (l_node.GetValue().GetType() == CQueryParseNode::eString) {
         string s = l_node.GetValue().GetStrValue();
@@ -718,6 +718,63 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                     return false;
                 }
                 return (syns->ContainsSynonym(other_idh) == !is_not);
+            }
+        } else if (NStr::EqualNocase(s, "query_strand")  ||
+                   NStr::EqualNocase(s, "subject_strand")) {
+            string val = r_node.GetValue().GetStrValue();
+            ENa_strand strand;
+            if (NStr::EqualNocase(val, "query_strand")) {
+                if (!m_IsDryRun) {
+                    strand = align.GetSeqStrand(0);
+                }
+            } else if (NStr::EqualNocase(val, "subject_strand")) {
+                if (!m_IsDryRun) {
+                    strand = align.GetSeqStrand(1);
+                }
+            } else if (val.size() != 1) {
+                NCBI_THROW(CException, eUnknown,
+                           "Valid strand values are '+', '-', 'b' and '?'");
+                
+            } else {
+                switch (val[0]) {
+                case '+':
+                    strand = eNa_strand_plus;
+                    break;
+
+                case '-':
+                    strand = eNa_strand_minus;
+                    break;
+
+                case 'b':
+                    strand = eNa_strand_both;
+                    break;
+
+                case '?':
+                    strand = eNa_strand_unknown;
+                    break;
+
+                default:
+                    NCBI_THROW(CException, eUnknown,
+                               "Valid strand values are '+', '-, 'b'' and '?'");
+                }
+            }
+
+            if (m_IsDryRun) {
+                return false;
+            } else {
+                ENa_strand other_strand;
+                if (NStr::EqualNocase(s, "query_strand")) {
+                    other_strand = align.GetSeqStrand(0);
+                } else {
+                    other_strand = align.GetSeqStrand(1);
+                }
+    
+                if (type == CQueryParseNode::eEQ) {
+                    return other_strand == strand ? !is_not : is_not;
+                } else {
+                    NCBI_THROW(CException, eUnknown,
+                               "unhandled parse node in expression");
+                }
             }
         }
     }
