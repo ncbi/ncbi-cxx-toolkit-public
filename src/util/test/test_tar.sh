@@ -272,9 +272,10 @@ if [ "`uname`" = "Linux" ]; then
       dd of=$test_base.1/newdir/huge-file bs=1 count="`expr 1 + $$ % 10000`" seek=4G if=/dev/urandom    ||  exit 1
       real="`ls -l $test_base.1/newdir/huge-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
       $test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse         ||  exit 1
-      size="`$test_tar -t -v -f $test_base.tar huge-file 2>&1 | grep huge-file | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
+      size="`$test_tar -t -v -f $test_base.tar huge-file 2>&1 | tee $test_base.log | grep huge-file | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
 
       if [ "$size" != "$real" ]; then
+        cat $test_base.log
         echo "--- Entry size mismatch: $size is expected to be $real"
         exit 1
       fi
