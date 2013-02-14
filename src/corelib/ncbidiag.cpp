@@ -2623,9 +2623,10 @@ bool OpenLogFileFromConfig(CNcbiRegistry* config, string* new_name)
 {
     string logname;
     if ( !config ) {
-        char* env_logname = NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__FILE"));
+        const TXChar* env_logname =
+            NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__FILE"));
         if (env_logname) {
-            logname = env_logname;
+            logname = _T_STDSTRING(env_logname);
         }
     }
     else {
@@ -2697,13 +2698,14 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 
     // If env.var 'NCBI_CONFIG__LOG__FILE' is set, use it and ignore all other
     // locations.
-    const char* env_ignore = NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__IgnoreEnvArg"));
+    const TXChar* env_ignore =
+        NcbiSys_getenv(_TX("NCBI_CONFIG__LOG__IgnoreEnvArg"));
     bool env_ignore_bool = false;
     if (env_ignore) {
         try {
-            env_ignore_bool = NStr::StringToBool(env_ignore);
+            env_ignore_bool = NStr::StringToBool(_T_STDSTRING(env_ignore));
         }
-        catch (CStringException& ex) {
+        catch (CStringException) {
         }
     }
     if (ds != eDS_User  &&  !env_ignore_bool) {
