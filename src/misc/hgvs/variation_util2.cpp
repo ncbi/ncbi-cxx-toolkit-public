@@ -736,10 +736,10 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
     if(   (p.IsSetStart_offset() && p.GetStart_offset() != 0)
        || (p.IsSetStop_offset()  && p.GetStop_offset()  != 0))
     {    
-        p.SetExceptions().push_back(CreateException("Can't get sequence for an offset-based location"));
+        p.SetExceptions().push_back(CreateException("Can't get sequence for an offset-based location", CVariationException::eCode_seqfetch_intronic));
         ret = false;
     } else if(length > max_len) {
-        p.SetExceptions().push_back(CreateException("Sequence is longer than the cutoff threshold"));
+        p.SetExceptions().push_back(CreateException("Sequence is longer than the cutoff threshold", CVariationException::eCode_seqfetch_too_long));
         ret = false;
     } else {
         try {
@@ -752,7 +752,7 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
             ret = true;
         } catch(CException& e) { 
             //location can be invalid - SNP-5510
-            p.SetExceptions().push_back(CreateException("Cannot fetch sequence at location", CVariationException::eCode_no_mapping));
+            p.SetExceptions().push_back(CreateException("Cannot fetch sequence at location", CVariationException::eCode_seqfetch_invalid));
             ret = false;
         }    
     }    
