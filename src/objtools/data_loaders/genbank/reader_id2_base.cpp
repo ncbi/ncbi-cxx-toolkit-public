@@ -1350,6 +1350,9 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                                "CId2ReaderBase: bad reply serial number: "<<
                                x_ConnDescription(conn));
             }
+            if ( reply->IsSetEnd_of_reply() && remaining_count == 1 ) {
+                conn.Release();
+            }
             try {
                 x_ProcessReply(result, loaded_sets[num], *reply);
             }
