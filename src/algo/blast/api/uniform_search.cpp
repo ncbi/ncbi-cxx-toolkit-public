@@ -150,18 +150,23 @@ CSearchDatabase::GetNegativeGiListLimitation() const
     return retval;
 }
 
+static bool s_IsNumericId(const string &id)
+{
+    return (id[0] >='0' && id[0]<='9');
+}
+
 void 
 CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm,
                                        ESubjectMaskingType mask_type)
 {
-    m_FilteringAlgorithmId = NStr::StringToInt(filt_algorithm);
     m_MaskType = mask_type;
-    if (m_FilteringAlgorithmId < 0) {
-        // This is a string id, must translate to numeric id first
+    if (s_IsNumericId(filt_algorithm)) {
+        m_FilteringAlgorithmId = NStr::StringToInt(filt_algorithm);
+        x_ValidateMaskingAlgorithm();
+    } else {
         m_FilteringAlgorithmString = filt_algorithm;
         m_NeedsFilteringTranslation = true;
     }
-    x_ValidateMaskingAlgorithm();
 }
 
 void 
