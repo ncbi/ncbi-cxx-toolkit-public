@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/feature.hpp>
+
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -135,6 +137,10 @@ public:
         CMappedFeat mf,
         const string& key,
         string& value);
+
+    static CMappedFeat FindBestGeneParent(
+        CMappedFeat,
+        feature::CFeatTree&);
 };
 
 END_objects_SCOPE

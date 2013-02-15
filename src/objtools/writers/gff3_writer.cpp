@@ -49,6 +49,7 @@
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/annot_ci.hpp>
@@ -833,13 +834,16 @@ bool CGff3Writer::xTryAssignGeneParent(
     CMappedFeat mf)
 //  ============================================================================
 {
-    CMappedFeat gene = feature::GetBestGeneForFeat(mf, &fc.FeatTree());
-    TGeneMap::iterator it = m_GeneMap.find(gene);
-    if (it != m_GeneMap.end()) {
-        feat.AssignParent(*( it->second));
-        return true;
+    CMappedFeat gene = CWriteUtil::FindBestGeneParent(mf, fc.FeatTree());
+    if (!gene) {
+        return false;
     }
-    return false;
+    TGeneMap::iterator it = m_GeneMap.find(gene);
+    if (it == m_GeneMap.end()) {
+        return false;
+    }
+    feat.AssignParent(*( it->second));
+    return true;
 }
 
 //  ============================================================================

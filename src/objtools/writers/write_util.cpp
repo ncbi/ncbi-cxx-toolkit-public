@@ -701,5 +701,49 @@ bool CWriteUtil::GetQualifier(
     }
     return false;
 }
-    
+ 
+//  ----------------------------------------------------------------------------
+CMappedFeat CWriteUtil::FindBestGeneParent(
+    CMappedFeat mf,
+    feature::CFeatTree& ftree)
+//  ----------------------------------------------------------------------------
+{
+    static CMappedFeat mfLastIn, mfLastOut;
+    if (mf == mfLastIn) {
+        return mfLastOut;
+    }
+    mfLastIn = mf;
+
+    //CMappedFeat gene;
+    if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        mfLastOut = feature::GetBestGeneForMrna(mf, &ftree);
+        if (!mfLastOut) {
+            mfLastOut = feature::GetBestGeneForMrna(mf, &ftree, 0,
+                feature::CFeatTree::eBestGene_AllowOverlapped);
+        }
+    }
+    else {
+        mfLastOut = feature::GetBestGeneForFeat(mf, &ftree);
+        if (!mfLastOut) {
+            mfLastOut = feature::GetBestGeneForFeat(mf, &ftree, 0,
+                feature::CFeatTree::eBestGene_AllowOverlapped);
+        }
+    }
+    if (!mfLastOut) {
+        CSeq_loc loc;
+        loc.Add(mf.GetLocation());
+        loc.SetStrand(objects::eNa_strand_unknown);
+        CConstRef<CSeq_feat> pOverlap = sequence::GetBestOverlappingFeat(
+            loc,
+            CSeqFeatData::eSubtype_gene,
+            sequence::eOverlap_Interval,
+            mf.GetScope());
+        CFeat_CI ci(mf.GetScope(), loc);
+        if (ci) {
+            mfLastOut = *ci;
+        }
+    }
+    return mfLastOut;
+}
+
 END_NCBI_SCOPE

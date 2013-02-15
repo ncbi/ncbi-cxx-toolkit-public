@@ -160,7 +160,10 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
 
     list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(), 
         it_floor=sublocs.end();
+    //fl new circular coordinate handling starts here >>>
     for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+        //fix intervals broken in two for crossing the origin to extend
+        //  into virtual space instead
         CSeq_interval& subint = **it;
         if (subint.IsSetFrom()  &&  subint.GetFrom() == 0) {
             it_floor = it;
@@ -172,6 +175,19 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
             break;
         } 
     }
+    //unsigned int lowest = sublocs.front()->GetFrom();
+    //for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+        //CSeq_interval& subint = **it;
+        //shift entire intervals into virtual space as necessary to maintain
+        //  proper ordering
+        //if (subint.IsSetFrom()  &&  subint.GetFrom() < lowest) {
+        //    subint.SetFrom(subint.GetFrom() + len);
+        //}
+        //if (subint.IsSetTo()  &&  subint.GetTo() < lowest) {
+        //    subint.SetTo(subint.GetFrom() + len);
+        //}
+    //}
+    //fl new circular coordinate handling ends here <<<
     if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
         (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
         sublocs.erase(it_floor);
@@ -519,7 +535,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGene(
     }
 
     if ( strGene.empty() ) {
-        CMappedFeat gene = feature::GetBestGeneForFeat(mf, &m_fc.FeatTree());
+        //CMappedFeat gene = feature::GetBestGeneForFeat(mf, &m_fc.FeatTree());
+        CMappedFeat gene = CWriteUtil::FindBestGeneParent(mf, m_fc.FeatTree());
         if (gene.IsSetData()  &&  gene.GetData().IsGene()) {
             CWriteUtil::GetGeneRefGene(gene.GetData().GetGene(), strGene);
         }
