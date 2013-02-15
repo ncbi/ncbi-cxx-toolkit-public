@@ -1,0 +1,12 @@
+#
+# Filename: Manifest
+#
+# $Id
+#
+# Author:  Alexey Rafanovich
+#
+# Purpose: This file defines all the supported configurations of the grid-python
+#          package.  It is used by the prepare_release system.
+#
+
+POSTTAG: clone_trunk_scripts.sh $LOCAL $VERSION
