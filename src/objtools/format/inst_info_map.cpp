@@ -47,7 +47,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
 {
     // the map that maps name to lots of information
 
-    static const string s_atcc_base("http://www.atcc.org/SearchCatalogs/linkin?id=");
+    static const string s_atcc_base("http://www.atcc.org/Products/All/");
     static const string s_bcrc_base("http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=");
     static const string s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
     static const string s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
@@ -79,13 +79,14 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_ypmmam_pfx("LE=mam&ID=");
     static const string s_ypmorn_pfx("LE=orn&ID=");
 
+    static const string s_atcc_sfx(".aspx");
     static const string s_bcrc_sfx("&type_id=6&keyword=;;");
 
     static const string s_uscr_pfx("_");
     
     typedef pair<const string, TVoucherInfoRef> TVoucherInfoElem;
     static const TVoucherInfoElem sc_voucher_info_map[] = {
-        TVoucherInfoElem("ATCC",             TVoucherInfoRef(new SVoucherInfo(&s_atcc_base, false, NULL,          NULL,        "American Type Culture Collection") ) ),
+        TVoucherInfoElem("ATCC",             TVoucherInfoRef(new SVoucherInfo(&s_atcc_base, false, NULL,          &s_atcc_sfx, "American Type Culture Collection") ) ),
         TVoucherInfoElem("BCRC",             TVoucherInfoRef(new SVoucherInfo(&s_bcrc_base, false, NULL,          &s_bcrc_sfx, "Bioresource Collection and Research Center") ) ),
         TVoucherInfoElem("CBS",              TVoucherInfoRef(new SVoucherInfo(&s_cbs_base,  false, NULL,          NULL,        "Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection") ) ),
         TVoucherInfoElem("CCAP",             TVoucherInfoRef(new SVoucherInfo(&s_ccap_base, false, NULL,          NULL,        "Culture Collection of Algae and Protozoa") ) ),

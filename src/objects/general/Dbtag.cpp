@@ -530,7 +530,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_AFTOL, "http://aftol1.biology.duke.edu/pub/displayTaxonInfo?aftol_id=" },
     { CDbtag::eDbtagType_APHIDBASE, "http://webapps1.genouest.org/grs-1.0/grs?reportID=chado_genome_report&objectID=" },
     { CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID=" },
-    { CDbtag::eDbtagType_ATCC, "http://www.atcc.org/SearchCatalogs/linkin?id=" },
+    { CDbtag::eDbtagType_ATCC, "http://www.atcc.org/Products/All/" },
     { CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q=" },
     { CDbtag::eDbtagType_AntWeb, "http://www.antweb.org/specimen.do?name=" },
     { CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key=" },
@@ -835,6 +835,10 @@ string CDbtag::GetUrl(const string & genus,
 
         case eDbtagType_IRD:
             tag += "&decorator=influenza";
+            break;
+
+        case eDbtagType_ATCC:
+            tag += ".aspx";
             break;
 
         case eDbtagType_ViPR:
