@@ -268,7 +268,7 @@ s_FillDbInfoLocally(const string& dbname,
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    EBlast_filter_program filtering_algorithm;
+    string filtering_algorithm;
     seqdb->GetMaskAlgorithmDetails(dbfilt_algorithm,
                                    filtering_algorithm, 
                                    info.filt_algorithm_name, 
