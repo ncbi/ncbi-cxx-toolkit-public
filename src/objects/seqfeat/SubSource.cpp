@@ -146,7 +146,7 @@ bool CSubSource::NeedsNoText(const TSubtype& subtype)
 }
 
 
-const string sm_LegalMonths [] = {
+static const char* const sm_LegalMonths [] = {
   "Jan",
   "Feb",
   "Mar",
@@ -162,7 +162,7 @@ const string sm_LegalMonths [] = {
 };
 
 
-const int sm_daysPerMonth [] = {
+static const int sm_daysPerMonth [] = {
   31,
   28,
   31,
@@ -1007,8 +1007,8 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 // =============================================================================
 
 
-// legal country names
-const string CCountries::sm_Countries[] = {
+// legal country names, must be in alphabetical order (case sensitive)
+static const char* const s_Countries[] = {
     "Afghanistan",
     "Albania",
     "Algeria",
@@ -1111,8 +1111,8 @@ const string CCountries::sm_Countries[] = {
     "Guam",
     "Guatemala",
     "Guernsey",
-    "Guinea-Bissau",
     "Guinea",
+    "Guinea-Bissau",
     "Guyana",
     "Haiti",
     "Heard Island and McDonald Islands",
@@ -1267,12 +1267,12 @@ const string CCountries::sm_Countries[] = {
     "Turkmenistan",
     "Turks and Caicos Islands",
     "Tuvalu",
+    "USA",
     "Uganda",
     "Ukraine",
     "United Arab Emirates",
     "United Kingdom",
     "Uruguay",
-    "USA",
     "Uzbekistan",
     "Vanuatu",
     "Venezuela",
@@ -1286,20 +1286,24 @@ const string CCountries::sm_Countries[] = {
     "Zambia",
     "Zimbabwe"
 };
+typedef CStaticArraySet<const char*, PCase_CStr> TCStrSet;
+static const TCStrSet s_CountriesSet(s_Countries, sizeof(s_Countries), __FILE__, __LINE__);
 
-const string CCountries::sm_Former_Countries[] = {
+// former legal country names, must be in alphabetical order (case sensitive)
+static const char* const s_Former_Countries[] = {
     "Belgian Congo",
     "British Guiana",
     "Burma",
     "Czechoslovakia",
-    "Netherlands Antilles",
     "Korea",
+    "Netherlands Antilles",
     "Serbia and Montenegro",
     "Siam",
     "USSR",
     "Yugoslavia",
     "Zaire"
 };
+static const TCStrSet s_Former_CountriesSet(s_Former_Countries, sizeof(s_Former_Countries), __FILE__, __LINE__);
 
 bool CCountries::IsValid(const string& country)
 {
@@ -1311,10 +1315,7 @@ bool CCountries::IsValid(const string& country)
     }
 
     // try current countries
-    const string *begin = sm_Countries;
-    const string *end = &(sm_Countries[sizeof(sm_Countries) / sizeof(string)]);
-
-    return find(begin, end, name) != end;
+    return s_CountriesSet.find(name.c_str()) != s_CountriesSet.end();
 }
 
 
@@ -1329,12 +1330,14 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
 
     is_miscapitalized = false;
     // try current countries
-    size_t num_countries = sizeof(sm_Countries) / sizeof(string);
-    for (size_t i = 0; i < num_countries; i++) {
-        if (NStr::EqualNocase (name, sm_Countries[i])) {
-            if (!NStr::EqualCase(name, sm_Countries[i])) {
-                is_miscapitalized = true;
-            }
+    // fast check for properly capitalized
+    if ( s_CountriesSet.find(name.c_str()) != s_CountriesSet.end() ) {
+        return true;
+    }
+    // slow check for miscapitalized
+    ITERATE ( TCStrSet, it, s_CountriesSet ) {
+        if ( NStr::EqualNocase(name, *it) ) {
+            is_miscapitalized = true;
             return true;
         }
     }
@@ -1352,10 +1355,7 @@ bool CCountries::WasValid(const string& country)
     }
 
     // try formerly-valid countries
-    const string *begin = sm_Former_Countries;
-    const string *end = &(sm_Former_Countries[sizeof(sm_Former_Countries) / sizeof(string)]);
-
-    return find(begin, end, name) != end;
+    return s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end();
 }
 
 
@@ -1370,12 +1370,14 @@ bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
 
     is_miscapitalized = false;
     // try formerly-valid countries
-    size_t num_countries = sizeof(sm_Former_Countries) / sizeof(string);
-    for (size_t i = 0; i < num_countries; i++) {
-        if (NStr::EqualNocase (name, sm_Former_Countries[i])) {
-            if (!NStr::EqualCase(name, sm_Former_Countries[i])) {
-                is_miscapitalized = true;
-            }
+    // fast check for properly capitalized
+    if ( s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end() ) {
+        return true;
+    }
+    // slow check for miscapitalized
+    ITERATE ( TCStrSet, it, s_Former_CountriesSet ) {
+        if ( NStr::EqualNocase(name, *it) ) {
+            is_miscapitalized = true;
             return true;
         }
     }

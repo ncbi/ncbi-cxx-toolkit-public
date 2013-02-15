@@ -51,6 +51,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
 #include <serial/iterator.hpp>
+#include <util/static_set.hpp>
 
 // generated includes
 #include <objects/seqalign/Seq_align.hpp>
@@ -380,25 +381,25 @@ const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
 }
 
 
-typedef pair<CSeq_align::EScoreType, string> TScoreNamePair;
-static TScoreNamePair sc_ScoreNames[] = {
-    TScoreNamePair(CSeq_align::eScore_Score,           "score"),
-    TScoreNamePair(CSeq_align::eScore_Blast,           "score"),
-    TScoreNamePair(CSeq_align::eScore_BitScore,        "bit_score"),
-    TScoreNamePair(CSeq_align::eScore_EValue,          "e_value"),
-    TScoreNamePair(CSeq_align::eScore_AlignLength,     "align_length"),
-    TScoreNamePair(CSeq_align::eScore_IdentityCount,   "num_ident"),
-    TScoreNamePair(CSeq_align::eScore_PositiveCount,   "num_positives"),
-    TScoreNamePair(CSeq_align::eScore_NegativeCount,   "num_negatives"),
-    TScoreNamePair(CSeq_align::eScore_MismatchCount,   "num_mismatch"),
-    TScoreNamePair(CSeq_align::eScore_GapCount,        "gap_count"),
-    TScoreNamePair(CSeq_align::eScore_PercentIdentity_Gapped, "pct_identity_gap"),
-    TScoreNamePair(CSeq_align::eScore_PercentIdentity_Ungapped, "pct_identity_ungap"),
-    TScoreNamePair(CSeq_align::eScore_PercentIdentity_GapOpeningOnly, "pct_identity_gapopen_only"),
-    TScoreNamePair(CSeq_align::eScore_PercentCoverage, "pct_coverage"),
-    TScoreNamePair(CSeq_align::eScore_SumEValue,       "sum_e"),
-    TScoreNamePair(CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method"),
-    TScoreNamePair(CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual")
+typedef SStaticPair<CSeq_align::EScoreType, const char*> TScoreNamePair;
+static const TScoreNamePair sc_ScoreNames[] = {
+    { CSeq_align::eScore_Score,           "score" },
+    { CSeq_align::eScore_Blast,           "score" },
+    { CSeq_align::eScore_BitScore,        "bit_score" },
+    { CSeq_align::eScore_EValue,          "e_value" },
+    { CSeq_align::eScore_AlignLength,     "align_length" },
+    { CSeq_align::eScore_IdentityCount,   "num_ident" },
+    { CSeq_align::eScore_PositiveCount,   "num_positives" },
+    { CSeq_align::eScore_NegativeCount,   "num_negatives" },
+    { CSeq_align::eScore_MismatchCount,   "num_mismatch" },
+    { CSeq_align::eScore_GapCount,        "gap_count" },
+    { CSeq_align::eScore_PercentIdentity_Gapped, "pct_identity_gap" },
+    { CSeq_align::eScore_PercentIdentity_Ungapped, "pct_identity_ungap" },
+    { CSeq_align::eScore_PercentIdentity_GapOpeningOnly, "pct_identity_gapopen_only" },
+    { CSeq_align::eScore_PercentCoverage, "pct_coverage" },
+    { CSeq_align::eScore_SumEValue,       "sum_e" },
+    { CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method" },
+    { CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual" }
 };
 
 static const char* const sc_ScoreHelpText[] = {
@@ -421,7 +422,7 @@ static const char* const sc_ScoreHelpText[] = {
     "Percent coverage (0.0-100.0) of high quality region"
 };
 
-static bool sc_IsInteger[] = {
+static const bool sc_IsInteger[] = {
     true,   // eScore_Score
     true,   // eScore_Blast
     false,  // eScore_BitScore
@@ -441,21 +442,25 @@ static bool sc_IsInteger[] = {
     false,  // eScore_HighQualityPercentCoverage
 };
 
-CSeq_align::TScoreNameMap CSeq_align::m_ScoreNameMap;
 
 const CSeq_align::TScoreNameMap &CSeq_align::ScoreNameMap()
 {
-    if (m_ScoreNameMap.empty()) {
-        /// initialize map
-        for(unsigned score = eScore_Blast;
-            score <= eScore_HighQualityPercentCoverage; ++score)
-        {
-            m_ScoreNameMap[sc_ScoreNames[score].second] =
-                sc_ScoreNames[score].first;
+    DEFINE_STATIC_FAST_MUTEX(s_ScoreNameMap_mutex);
+    CFastMutexGuard guard(s_ScoreNameMap_mutex);
+    {
+        static TScoreNameMap m_ScoreNameMap;
+        if (m_ScoreNameMap.empty()) {
+            /// initialize map
+            for(unsigned score = eScore_Blast;
+                score <= eScore_HighQualityPercentCoverage; ++score)
+                {
+                    m_ScoreNameMap[sc_ScoreNames[score].second] =
+                        sc_ScoreNames[score].first;
+                }
         }
-    }
 
-    return m_ScoreNameMap;
+        return m_ScoreNameMap;
+    }
 }
 
 string CSeq_align::HelpText(EScoreType score)

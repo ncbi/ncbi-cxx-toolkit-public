@@ -348,7 +348,6 @@ protected:
     CRef<CScore>      x_SetNamedScore(const string& name);
 
 private:
-    static TScoreNameMap m_ScoreNameMap;
 
     /// Prohibit copy constructor and assignment operator
     CSeq_align(const CSeq_align& value);

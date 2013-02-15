@@ -65,7 +65,7 @@ void COrg_ref::GetLabel(string* label) const
     }
 }
     
-static const string s_taxonName( "taxon" );
+static const char* const s_taxonName = "taxon" ;
 
 int
 COrg_ref::GetTaxId() const
@@ -95,8 +95,7 @@ COrg_ref::SetTaxId( int tax_id )
     for(TDb::iterator i = lDbTags.begin();
 	i != lDbTags.end();
 	++i) {
-	if( i->GetPointer()
-	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
+	if( *i && i->GetObject().GetDb() == s_taxonName ) {
 	    CObject_id& id = i->GetObject().SetTag();
 	    if( id.IsId() )
 		old_id = id.GetId();
