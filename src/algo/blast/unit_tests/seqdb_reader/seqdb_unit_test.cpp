@@ -3718,18 +3718,21 @@ BOOST_AUTO_TEST_CASE(MaskDataColumn)
     BOOST_REQUIRE_EQUAL((int)(eBlast_filter_program_seg), algos[0]);
     BOOST_REQUIRE_EQUAL((int)(eBlast_filter_program_repeat), algos[1]);
     
-    objects::EBlast_filter_program filtering_algo;
-    string algo_opts, algo_name;
+    string filtering_algo, algo_opts, algo_name;
     
     db.GetMaskAlgorithmDetails(algos.front(), 
                                filtering_algo, algo_name, algo_opts);
-    BOOST_REQUIRE_EQUAL(filtering_algo, objects::eBlast_filter_program_seg);
+    Int4 algo_id(-1);
+    NStr::StringToNumeric(filtering_algo, &algo_id, 0, 10);
+    
+    BOOST_REQUIRE_EQUAL(algo_id, objects::eBlast_filter_program_seg);
     //BOOST_REQUIRE_EQUAL(algo_opts, string("-use-defaults"));
     BOOST_REQUIRE_EQUAL(algo_opts, kEmptyStr);
     
     db.GetMaskAlgorithmDetails(algos.back(), 
                                filtering_algo, algo_name, algo_opts);
-    BOOST_REQUIRE_EQUAL(filtering_algo, objects::eBlast_filter_program_repeat);
+    NStr::StringToNumeric(filtering_algo, &algo_id, 0, 10);
+    BOOST_REQUIRE_EQUAL(algo_id, objects::eBlast_filter_program_repeat);
     BOOST_REQUIRE_EQUAL(algo_opts, string("-species Desmodus_rotundus"));
     
     const int kCount = 10;
