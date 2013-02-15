@@ -690,6 +690,10 @@ bool  CQueue::GetJobOrWait(const CNSClientId &       client,
 
     size_t      dead_locks = 0;                 // dead lock counter
 
+    // This is a worker node command, so mark the node type as a worker
+    // node
+    m_ClientsRegistry.AppendType(client, CNSClient::eWorkerNode);
+
     for (;;) {
         try {
             TNSBitVector        aff_ids;

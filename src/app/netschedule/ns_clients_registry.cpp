@@ -114,6 +114,21 @@ void CNSClientsRegistry::RegisterSocketWriteError(const CNSClientId &  client)
 
 
 void
+CNSClientsRegistry::AppendType(const CNSClientId &  client,
+                               unsigned int         type_to_append)
+{
+    // Check if it is an old-style client
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  cl = m_Clients.find(client.GetNode());
+    if (cl != m_Clients.end())
+        cl->second.AppendType(type_to_append);
+}
+
+
+void
 CNSClientsRegistry::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
 {
     CMutexGuard                         guard(m_Lock);

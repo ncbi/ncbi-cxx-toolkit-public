@@ -206,6 +206,8 @@ class CNSClient
         { m_ID = id; }
         unsigned int GetType(void) const
         { return m_Type; }
+        void AppendType(unsigned int  type_to_append)
+        { m_Type |= type_to_append; }
         TNSBitVector  GetPreferredAffinities(void) const
         { return m_Affinities; }
         void  AddPreferredAffinities(const TNSBitVector &  aff);

@@ -127,6 +127,8 @@ class CNSClientsRegistry
         void SetBlacklistTimeout(time_t  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);
+        void AppendType(const CNSClientId &  client,
+                        unsigned int         type_to_append);
         void CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
 
     private:
