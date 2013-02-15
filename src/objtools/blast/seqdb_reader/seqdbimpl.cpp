@@ -1901,6 +1901,9 @@ bool s_Contains(const C & c, const K & k)
     return c.find(k) != c.end();
 }
 
+static bool s_IsNumericId(const string &id) {
+    return (id[0] >='0' && id[0] <='9');
+}
 
 static const string* s_CheckUniqueValues(const map<string, string> & m)
 {
@@ -1909,7 +1912,12 @@ static const string* s_CheckUniqueValues(const map<string, string> & m)
     set<string> seen;
     
     ITERATE(TStringMap, iter, m) {
-        const string & v = iter->second;
+        string v = iter->second;
+        vector<string> items;
+        NStr::Tokenize(v, ":", items);
+        if (!s_IsNumericId(items[0])) {
+            v = items[0];    
+        }
         
         if (s_Contains(seen, v)) {
             return & iter->second;
@@ -1937,15 +1945,21 @@ void CSeqDB_IdRemapper::GetIdList(vector<int> & algorithms)
 
 void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
 {
-    bool found_desc = s_Contains(m_DescToId, desc);
+    string real_desc = desc;
+    vector<string> items;
+    NStr::Tokenize(desc, ":", items);
+    if (!s_IsNumericId(items[0])) {
+        real_desc = items[0];
+    }
+    bool found_desc = s_Contains(m_DescToId, real_desc);
     bool found_id   = s_Contains(m_IdToDesc, id);
     
     int real_id = id;
     
     if (found_desc) {
-        if ((! found_id) || (m_DescToId[desc] != id)) {
+        if ((! found_id) || (m_DescToId[real_desc] != id)) {
             // This description is mapped to a different ID.
-            real_id = m_DescToId[desc];
+            real_id = m_DescToId[real_desc];
         }
     } else {
         // New description.
@@ -1965,7 +1979,7 @@ void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
         // Add the new description.
         
         m_IdToDesc[real_id] = desc;
-        m_DescToId[desc] = real_id;
+        m_DescToId[real_desc] = real_id;
     }
     
     m_RealIdToVolumeId[vol_id][real_id] = id;
@@ -2010,6 +2024,16 @@ int CSeqDB_IdRemapper::RealToVol(int vol_idx, int algo_id)
     return trans[algo_id];
 }
 
+int CSeqDB_IdRemapper::GetAlgoId(const string & id) 
+{
+    if (! s_Contains(m_DescToId, id)) {
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Cannot find string algorithm id in algorithm map.");
+    }
+
+    return m_DescToId[id];
+}
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
@@ -2031,14 +2055,21 @@ void CSeqDBImpl::GetAvailableMaskAlgorithms(vector<int> & algorithms)
     m_AlgorithmIds.GetIdList(algorithms);
 }
 
-int CSeqDBImpl::GetMaskAlgorithmId(const string & algo) const
+int CSeqDBImpl::GetMaskAlgorithmId(const string & algo)
 {
     if (m_UseGiMask) {
         return m_GiMask->GetAlgorithmId(algo);
     }
 
-    NCBI_THROW(CSeqDBException, eArgErr,
-        "String algorithm ID is not supported for volumn masks.");
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (m_AlgorithmIds.Empty()) {
+        x_BuildMaskAlgorithmList(locked);
+    }
+
+    return m_AlgorithmIds.GetAlgoId(algo);
 }
 
 string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
@@ -2058,22 +2089,27 @@ string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
            << setw(20) << left << "Algorithm name"
            << setw(40) << left << "Algorithm options" << endl;
     ITERATE(vector<int>, algo_id, algorithms) {
-        objects::EBlast_filter_program algo;
-        string algo_opts, algo_name;
+        string algo, algo_opts, algo_name;
         GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
         if (algo_opts.empty()) {
             algo_opts.assign("default options used");
         }
-        retval << "    " << setw(10) << left << (*algo_id) 
+        if (s_IsNumericId(algo)) {
+            retval << setw(14) << left << (*algo_id) 
                << setw(20) << left << algo_name
                << setw(40) << left << algo_opts << endl;
+        } else {
+            retval << setw(14) << left << algo
+               << setw(20) << left << algo_name
+               << setw(40) << left << algo_opts << endl;
+        }
     }
     return CNcbiOstrstreamToString(retval);
 }
 
 static
 void s_GetDetails(const string          & desc, 
-                  EBlast_filter_program & program, 
+                  string                & program, 
                   string                & program_name, 
                   string                & algo_opts)
 {
@@ -2083,20 +2119,33 @@ void s_GetDetails(const string          & desc,
     }
     _ASSERT(enum_type_vals);
     
-    size_t p = desc.find(':');
+    vector<string> items;
+    NStr::Tokenize(desc, ":", items);
     
-    if (p == string::npos) {
-        NCBI_THROW(CSeqDBException, eArgErr,
+    
+    if (s_IsNumericId(items[0])) {
+        if (items.size() <=1) {
+            NCBI_THROW(CSeqDBException, eArgErr,
                    "Error in stored mask algorithm description data.");
+        }
+        EBlast_filter_program 
+           pid = (EBlast_filter_program) NStr::StringToInt(items[0]);
+        program.assign(items[0]);
+        program_name.assign(enum_type_vals->FindName(pid, false));
+        algo_opts.assign(items[1]);
+    } else {
+        if (items.size() <=2) {
+            NCBI_THROW(CSeqDBException, eArgErr,
+                   "Error in stored mask algorithm description data.");
+        }
+        program.assign(items[0]);
+        program_name.assign(items[1]);
+        algo_opts.assign(items[2]);
     }
-    
-    program = (EBlast_filter_program) NStr::StringToInt(string(desc, 0, p));
-    program_name.assign(enum_type_vals->FindName(program, false));
-    algo_opts.assign(desc, p + 1, desc.size() - (p + 1));
 }
 
 void CSeqDBImpl::GetMaskAlgorithmDetails(int                 algorithm_id,
-                         EBlast_filter_program & program,
+                         string            & program,
                          string            & program_name,
                          string            & algo_opts)
 {

@@ -148,6 +148,9 @@ public:
     /// Translate a real algorithm ID to a volume algorithm ID.
     int RealToVol(int vol_idx, int algo_id);
     
+    /// Translate a string algorithm ID to a numeric algorithm ID
+    int GetAlgoId(const string & id);
+    
 private:
     /// Next unassigned synthetic ID.
     int m_NextId;
@@ -996,7 +999,7 @@ public:
     void GetAvailableMaskAlgorithms(vector<int> & algorithms);
 
     /// Get the numeric ID for a algorithm name
-    int GetMaskAlgorithmId(const string &algo_name) const;
+    int GetMaskAlgorithmId(const string &algo_name);
 
     /// Returns a formatted string with the list of available masking
     /// algorithms in this database for display purposes (i.e.: help)
@@ -1018,7 +1021,7 @@ public:
     /// @param program_name string representation of program argument [out]
     /// @param algo_opts Describes options passed to `program'. [out]
     void GetMaskAlgorithmDetails(int                 algorithm_id,
-                                 EBlast_filter_program & program,
+                                 string            & program,
                                  string            & program_name,
                                  string            & algo_opts);
     

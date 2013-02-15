@@ -1121,7 +1121,7 @@ vector<int> CSeqDB::ValidateMaskAlgorithms(const vector<int>& algorithm_ids)
 }
 
 void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,
-                                     objects::EBlast_filter_program & program,
+                                     string            & program,
                                      string            & program_name,
                                      string            & algo_opts)
 {

@@ -1268,7 +1268,7 @@ public:
     /// @param program_name string representation of program [out]
     /// @param algo_opts Describes options passed to `program'. [out]
     void GetMaskAlgorithmDetails(int                 algorithm_id,
-                                 objects::EBlast_filter_program & program,
+                                 string            & program,
                                  string            & program_name,
                                  string            & algo_opts);
     
