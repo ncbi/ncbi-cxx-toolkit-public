@@ -400,7 +400,7 @@ void CClippedScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
                         ClipDenseg = ClipAlign->GetSegs().GetDenseg().ExtractSlice(0, 
                                         Intersect.GetFrom(), Intersect.GetTo() );
                         ClipDenseg->SetIds().front()->Assign(*ClipId);
-                        ClipDenseg->OffsetRow(0, -ClipLoc.GetInt().GetFrom());
+                        ClipDenseg->OffsetRow(0, -(int)ClipLoc.GetInt().GetFrom());
                         ClipAlign->SetSegs().SetDenseg().Assign(*ClipDenseg);
                         ClipAlign->SetScore().clear();
                     } catch(CException& e) {
@@ -431,7 +431,7 @@ void CClippedScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
                     try {
                         // Sometimes the clipped region ends up being entirely gap, on the subject side.
                         AlignLen = ClipAlign->GetSeqRange(1).GetLength();
-                    } catch(CException& e) {
+                    } catch(CException& ) {
                         //cerr << "Expansion exception: " << e.ReportAll() << endl;
                         //cerr << MSerial_AsnText << *ClipAlign << endl;
                     }

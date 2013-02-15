@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(AR_Test_Constructors)
         TAlignRange r(1000, 1, 100000, false);
         AR_Test_Identical(r, 1000, 100999, 1, 100000, false);
 
-        TAlignRange r2 = r;
+        //TAlignRange r2 = r;
         //AR_Test_Identical(r2, 1000, 100999, 1, 100000, false);
     }
 }

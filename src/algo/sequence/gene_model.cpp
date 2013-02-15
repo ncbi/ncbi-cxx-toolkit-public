@@ -1713,7 +1713,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
             /// Didn't find locus in bioseq's gene feature; try to use bioseq's title instead
             string title;
             if (handle) {
-                title = sequence::GetTitle(handle);
+                title = sequence::CDeflineGenerator().GenerateDefline(handle);
             }
             if ( !title.empty() ) {
                 gene_feat->SetData().SetGene().SetLocus(title);
@@ -2419,7 +2419,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     }
 
     bool has_length_mismatch = false;
-    bool has_polya_tail = false;
+    //bool has_polya_tail = false;
     bool has_incomplete_polya_tail = false;
     bool partial_unaligned_section = false;
     CRangeCollection<TSeqPos> mismatch_locs;
@@ -2505,7 +2505,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
 
         TSeqPos max_align_len = 0;
         if (al->GetSegs().GetSpliced().IsSetPoly_a()) {
-            has_polya_tail = true;
+            //has_polya_tail = true;
             max_align_len = al->GetSegs().GetSpliced().GetPoly_a();
         } else if (al->GetSegs().GetSpliced().IsSetProduct_length()) {
             max_align_len = al->GetSegs().GetSpliced().GetProduct_length();
@@ -2522,9 +2522,11 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         }
 
         /// also note the poly-A
+        /**
         if (al->GetSegs().GetSpliced().IsSetPoly_a()) {
             has_polya_tail = true;
         }
+        **/
     }
 
     if ( insert_locs.empty() && delete_locs.empty() && !partial_unaligned_section)
@@ -2561,7 +2563,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         }
 
         if (tail_len  &&  count_a >= tail_len * 0.8) {
-            has_polya_tail = true;
+            //has_polya_tail = true;
             if (count_a < tail_len * 0.95) {
                 has_incomplete_polya_tail = true;
             }

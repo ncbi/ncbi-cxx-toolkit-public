@@ -1115,8 +1115,10 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
 {
     // for protein sequences, use sequence::GetTitle
     if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        sequence::TGetTitleFlags flags = sequence::fGetTitle_Reconstruct | sequence::fGetTitle_Organism | sequence::fGetTitle_AllProteins;
-        return sequence::GetTitle(bh, flags);
+        return sequence::CDeflineGenerator()
+            .GenerateDefline(bh,
+                             sequence::CDeflineGenerator::fIgnoreExisting |
+                             sequence::CDeflineGenerator::fAllProteinNames);
     }
     string org_desc = "Unknown organism";
     unsigned int genome_val = CBioSource::eGenome_unknown;

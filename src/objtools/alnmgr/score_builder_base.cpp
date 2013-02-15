@@ -228,24 +228,12 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
                          /// NOTE:
                          /// we increment identities/mismatches by 3 here,
                          /// counting identities in nucleotide space!!
-                         bool is_match = false;
                          if (residue == prod[prod_pos / 3]  &&
                              residue != 'X'  &&  residue != '-') {
                              *identities += 3;
-                             is_match = true;
                          } else {
                              *mismatches += 3;
                          }
-
-                         /**
-                         LOG_POST(Error << "  codon = "
-                                  << codon[0] << '-'
-                                  << codon[1] << '-'
-                                  << codon[2]
-                                  << "  residue = " << residue
-                                  << "  actual = " << prod[prod_pos / 3]
-                                  << (is_match ? " (match)" : ""));
-                                  **/
                      }
                  }
              }

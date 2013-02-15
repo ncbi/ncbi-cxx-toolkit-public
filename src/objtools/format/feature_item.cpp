@@ -2409,12 +2409,10 @@ void CFeatureItem::x_AddQualsRegion(
         return;
     }
 
-    bool added_raw = false;
     if ( ctx.IsProt()  &&
          data.GetSubtype() == CSeqFeatData::eSubtype_region ) 
     {
         x_AddQual(eFQ_region_name, new CFlatStringQVal(region));
-        added_raw = true;
     } else {
         x_AddQual(eFQ_region, new CFlatStringQVal("Region: " + region));
     }
@@ -3064,6 +3062,7 @@ void CFeatureItem::x_AddQualsProt(
             }
         }
 
+        /**
         CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_partial;
         {{
              CConstRef<CMolInfo> molinfo
@@ -3072,6 +3071,7 @@ void CFeatureItem::x_AddQualsProt(
                  comp = molinfo->GetCompleteness();
              }
          }}
+         **/
 
         if ( !(loc->IsPartialStart(eExtreme_Biological) || loc->IsPartialStop(eExtreme_Biological)) ) {
 

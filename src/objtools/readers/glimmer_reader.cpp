@@ -201,9 +201,9 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
             }
 
             /// token 5: score
-            double score = 0;
+            //double score = 0;
             try {
-                score = NStr::StringToDouble(*it++);
+                /*score =*/ NStr::StringToDouble(*it++);
             }
             catch (CException&) {
                 CNcbiOstrstream ostr;

@@ -236,7 +236,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     ///
     size_t count = 0;
     size_t count_invalid = 0;
-    bool all_pairwise = true;
     ITERATE (TConstAligns, iter, aligns_in) {
 
         try {
@@ -246,11 +245,6 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
             ///
             /// validation is optional!
             aln->Validate(true);
-
-            if (aln->GetSegs().IsDenseg()  &&
-                aln->GetSegs().GetDenseg().GetDim() != 2) {
-                all_pairwise = false;
-            }
 
             aln_container.insert(*aln);
         }
