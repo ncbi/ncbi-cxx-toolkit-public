@@ -90,6 +90,9 @@ Variation ::= {
                   }
                 }
               }
+            },
+            so-terms {
+              1820
             }
           }
         }
