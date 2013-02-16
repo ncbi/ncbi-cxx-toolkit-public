@@ -48,7 +48,7 @@
  *       CORE_GetNcbiSid()
  *       CORE_GetAppName()
  *       CORE_GetPlatform()
- *       CORE_GetUsername()
+ *       CORE_GetUsername[Ex]()
  *       CORE_GetVMPageSize()
  *
  * 3. Checksumming support:
@@ -400,9 +400,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 
 /** Select which username is the most preferable to obtain from the system. */
 typedef enum {
-    eCORE_UsernameCurrent = 1,  /**< process UID */
-    eCORE_UsernameLogin = 0,    /**< login UID */
-    eCORE_UsernameReal = 2      /**< real UID */
+    eCORE_UsernameCurrent,  /**< process UID */
+    eCORE_UsernameLogin,    /**< login UID */
+    eCORE_UsernameReal      /**< real UID */
 } ECORE_Username;
 
 
@@ -437,7 +437,7 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsernameEx
  */
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsername
 (char*  buf,
- size_t bufisze
+ size_t bufsize
  );
 
 
