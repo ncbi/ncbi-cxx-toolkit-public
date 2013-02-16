@@ -99,6 +99,69 @@ int main(int argc, const char* argv[])
         SOCK_SetDataLoggingAPI(eOn);
     }
 
+    strcpy(val, "@");
+    SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("@ - <%s>", info.from));
+
+    strcpy(info.from, "user1");
+    SendMailInfo_InitEx(&info, info.from, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("user1 - <%s>", info.from));
+
+    strcpy(val, "@host2.net");
+    SendMailInfo_InitEx(&info, val, eCORE_UsernameLogin);
+    CORE_LOGF(eLOG_Note, ("@host2.net - <%s>", info.from));
+
+    strcpy(val, "user3@host3.net");
+    SendMailInfo_InitEx(&info, val, eCORE_UsernameReal);
+    CORE_LOGF(eLOG_Note, ("user3@host3.net - <%s>", info.from));
+
+    strcpy(info.from, "user4@host4.net");
+    SendMailInfo_InitEx(&info, info.from, eCORE_UsernameReal);
+    CORE_LOGF(eLOG_Note, ("user4@host4.net - <%s>", info.from));
+
+    SendMailInfo_InitEx(&info, 0, eCORE_UsernameReal);
+    CORE_LOGF(eLOG_Note, ("NULL - <%s>", info.from));
+
+    if ((huge_body = malloc(TEST_HUGE_BODY_SIZE)) != 0) {
+
+        strcpy(huge_body, "user5@");
+        for (i = 0;  i < TEST_HUGE_BODY_SIZE - 6;  i++)
+            huge_body[i + 6] = "abcdefghijklmnopqrstuvwxyz."[rand() % 27];
+        huge_body[TEST_HUGE_BODY_SIZE - 1] = '\0';
+        SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameCurrent);
+        CORE_LOGF(eLOG_Note, ("HUGE user5@host - <%s>", info.from));
+
+        SendMailInfo_InitEx(&info, huge_body + 5, eCORE_UsernameLogin);
+        CORE_LOGF(eLOG_Note, ("HUGE @host - <%s>", info.from));
+
+        huge_body[4] = '6';
+        huge_body[5] = '_';
+        for (i = 6;  i < sizeof(info.from) + 1;  i++) {
+            if (huge_body[i] == '.')
+                huge_body[i]  = '_';
+        }
+        huge_body[sizeof(info.from) + 1] = '@';
+        SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameReal);
+        CORE_LOGF(eLOG_Note, ("HUGE user6 - <%s>", info.from));
+
+        huge_body[4] = '7';
+        huge_body[sizeof(info.from) - 10]  = '@';
+        SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameReal);
+        CORE_LOGF(eLOG_Note, ("LONG user7 - <%s>", info.from));
+
+        memcpy(huge_body + sizeof(info.from) - 10, "user8", 5);
+        huge_body[sizeof(info.from) << 1] = '\0';
+        SendMailInfo_InitEx(&info, huge_body + sizeof(info.from) - 10,
+                            eCORE_UsernameReal);
+        CORE_LOGF(eLOG_Note, ("LONG user8 - <%s>", info.from));
+
+        SendMailInfo_InitEx(&info, huge_body + sizeof(info.from) + 1,
+                            eCORE_UsernameReal);
+        CORE_LOGF(eLOG_Note, ("LONG @host - <%s>", info.from));
+
+        free(huge_body);
+    }
+
     if (argc > 1) {
         CORE_LOG(eLOG_Note, "Special test requested");
         if ((fp = fopen(argv[1], "rb")) != 0          &&

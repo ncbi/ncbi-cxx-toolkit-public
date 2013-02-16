@@ -40,15 +40,15 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Sendmail
 
-#define MX_MAGIC_COOKIE 0xBA8ADEDA
-#define MX_CRLF         "\r\n"
+#define MX_MAGIC_COOKIE  0xBA8ADEDA
+#define MX_CRLF          "\r\n"
 
-#define SMTP_READERR    -1      /* Read error from socket               */
-#define SMTP_READTMO    -2      /* Read timed out                       */
-#define SMTP_RESPERR    -3      /* Cannot read response prefix          */
-#define SMTP_NOCODE     -4      /* No response code detected (letters?) */
-#define SMTP_BADCODE    -5      /* Response code doesn't match in lines */
-#define SMTP_BADRESP    -6      /* Malformed response                   */
+#define SMTP_READERR     -1      /* Read error from socket               */
+#define SMTP_READTMO     -2      /* Read timed out                       */
+#define SMTP_RESPERR     -3      /* Cannot read response prefix          */
+#define SMTP_NOCODE      -4      /* No response code detected (letters?) */
+#define SMTP_BADCODE     -5      /* Response code doesn't match in lines */
+#define SMTP_BADRESP     -6      /* Malformed response                   */
 
 
 /* Read SMTP response from the socket.
@@ -182,41 +182,76 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf, size_t len)
 }
 
 
-static void s_MakeFrom(char* buf, size_t size, const char* user)
+static void s_MakeFrom(char* buf, size_t size, const char* from,
+                       ECORE_Username user)
 {
+    char x_buf[sizeof(((SSendMailInfo*) 0)->from)];
+    const char* at;
     size_t len;
 
-    if (user  &&  *user) {
-        const char* at = strchr(user, '@');
-        if (at) {
-            len = (size_t)(at - user);
-            if (len < size) {
-                size_t tmp = len + strlen(at);
-                if (tmp < size)
-                    len = tmp;
-            } else
-                len = size - 1;
-            strncpy0(buf, user, len);
+    if (from  &&  *from) {
+        if (!(at = strchr(from, '@'))) {
+            /* no "@", verbatim copy */
+            if (buf != from)
+                strncpy0(buf, from, size - 1);
             return;
         }
-        strncpy0(buf, user, size - 1);
-    } else if (!CORE_GetUsername(buf, size)  ||  !*buf)
-        strncpy0(buf, "anonymous", size - 1);
-    len = strlen(buf);
-    size -= len;
-    if (size-- > 2) {
-        buf += len;
-        *buf++ = '@';
-        if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
-            &&  SOCK_gethostname(buf, size) != 0) {
-            const char* host = getenv("HOSTNAME");
-            if ((!host  &&  !(host = getenv("HOST")))
-                ||  (len = strlen(host)) >= size) {
-                *--buf = '\0';
+        if (at != from) {
+            /* "user@[host]" */
+            if (buf != from) {
+                len = (size_t)(at - from);
+                if (at[1]) {
+                    /* "user@host" */
+                    if (len < size) {
+                        size_t tmp = len + strlen(at);
+                        if (tmp < size)
+                            len = tmp;
+                    } else
+                        len = size - 1;
+                } /* else "user@" */
+                strncpy0(buf, from, len);
+            }
+            if (at[1])
+                return;  /* "user@host", all done */
+            /* at[0] && !at[1]*/
+        } else if (at[1]) {
+            /* "@host", save host if it fits the temp buffer */
+            if ((len = strlen(at)) < sizeof(x_buf)) {
+                memcpy(x_buf, at, len + 1);
+                at = x_buf;
             } else
-                strcpy(buf, host);
+                at = "";
+            *buf = '\0';
+            /*!at[0] ||  at[1]*/
+        } else {
+            /* "@" */
+            *buf = '\0';
+            return;
         }
+    } else
+        at = 0;
+    if ((!at  ||  !at[0]  ||  at[1])
+        &&  (!CORE_GetUsernameEx(buf, size, user)  ||  !*buf)) {
+        strncpy0(buf, "anonymous", size - 1);
     }
+    len   = strlen(buf);
+    size -= len;
+    buf  += len;
+    if (!at  ||  (at[0]/*=='@'*/  &&  !at[1])) {
+        if (size-- > 2) {
+            *buf++ = '@';
+            if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
+                &&  SOCK_gethostname(buf, size) != 0) {
+                const char* host = getenv("HOSTNAME");
+                if ((!host  &&  !(host = getenv("HOST")))
+                    ||  (len = strlen(host)) >= size) {
+                    *--buf = '\0';
+                } else
+                    strcpy(buf, host);
+            }
+        }
+    } else if ((len = strlen(at)) < size)
+        memcpy(buf, at, len + 1);
 }
 
 
@@ -260,14 +295,15 @@ static void x_Sendmail_InitEnv(void)
 }
 
 
-SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
-                                   const char*    user)
+extern SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
+                                          const char*    from,
+                                          ECORE_Username user)
 {
     if (info) {
         x_Sendmail_InitEnv();
         info->cc              = 0;
         info->bcc             = 0;
-        s_MakeFrom(info->from, sizeof(info->from), user);
+        s_MakeFrom(info->from, sizeof(info->from), from, user);
         info->header          = 0;
         info->body_size       = 0;
         info->mx_host         = s_MxHost;
@@ -399,10 +435,10 @@ static size_t s_FromSize(const SSendMailInfo* info)
     s_SockReadResponse(sock, code, altcode, buffer, sizeof(buffer))
 
 
-const char* CORE_SendMailEx(const char*          to,
-                            const char*          subject,
-                            const char*          body,
-                            const SSendMailInfo* uinfo)
+extern const char* CORE_SendMailEx(const char*          to,
+                                   const char*          subject,
+                                   const char*          body,
+                                   const SSendMailInfo* uinfo)
 {
     static const STimeout zero = {0, 0};
     const SSendMailInfo* info;

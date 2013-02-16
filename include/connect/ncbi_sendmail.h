@@ -34,7 +34,7 @@
  *
  */
 
-#include <connect/ncbi_types.h>
+#include <connect/ncbi_util.h>
 
 
 /** @addtogroup Sendmail
@@ -99,19 +99,33 @@ typedef struct {
  * @note This call is the only valid way to properly init SSendMailInfo.
  * @param info
  *  A pointer to the structure to initialize
+ * @param from
+ *  Return address pattern to use in "info->from" as the following:
+ *  * "user@host" or "user" is copied verbatim;
+ *  * "user@" is appended with the local host name;
+ *  * "@host" is prepended with the user name according to the "user" argument;
+ *  * "@" is replaced with an empty string (no-return message);
+ *  * "" or NULL cause to generate both the user and the host parts.
  * @param user
- *  Return address "user@host" or just "user" (then @host will be auto-added)
+ *  Which username to use when auto-generating (otherwise ignored)
  * @return
- *  Return value equals the argument passed in.
+ *  Return value equals the argument "info" passed in.
+ * @note It is allowed to pre-fill "info->host" (of the "info" being inited)
+ *       with one of the above patterns, and pass it as the "from" parameter.
+ * @note Unlike the username part of the return address, the hostname part is
+ *       never truncated but dropped altogether if it does not fit.
+ * @note If the username is unobtainable, then it is be replaced with the word
+ *       "anonymous".
  * @sa
- *  CORE_SendMailEx, CORE_GetUsername
+ *  CORE_SendMailEx, CORE_GetUsernameEx
  */
 extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
-(SSendMailInfo*       info,
- const char*          user
+(SSendMailInfo* info,
+ const char*    from,
+ ECORE_Username user
  );
 
-#define SendMailInfo_Init(info)  SendMailInfo_InitEx(info, 0)
+#define SendMailInfo_Init(i)  SendMailInfo_InitEx(i, 0, eCORE_UsernameLogin)
 
 
 /** Send a simple message to recipient(s) defined in 'to', and having:
