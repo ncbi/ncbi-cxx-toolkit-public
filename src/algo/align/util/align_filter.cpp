@@ -722,7 +722,7 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
         } else if (NStr::EqualNocase(s, "query_strand")  ||
                    NStr::EqualNocase(s, "subject_strand")) {
             string val = r_node.GetValue().GetStrValue();
-            ENa_strand strand;
+            ENa_strand strand = eNa_strand_unknown;
             if (NStr::EqualNocase(val, "query_strand")) {
                 if (!m_IsDryRun) {
                     strand = align.GetSeqStrand(0);
