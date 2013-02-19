@@ -294,9 +294,14 @@ public:
     
     void Release(void);
     void Restart(void);
+
+    bool IsAllocated(void) const {
+        return m_Result != 0;
+    }
     
     operator TConn(void) const
         {
+            _ASSERT(IsAllocated());
             return m_Conn;
         }
     

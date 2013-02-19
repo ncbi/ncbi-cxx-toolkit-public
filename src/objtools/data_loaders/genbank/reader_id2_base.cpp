@@ -1351,6 +1351,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                                x_ConnDescription(conn));
             }
             if ( reply->IsSetEnd_of_reply() && remaining_count == 1 ) {
+                x_EndOfPacket(conn);
                 conn.Release();
             }
             try {
@@ -1368,7 +1369,9 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
             }
         }
         reply.Reset();
-        x_EndOfPacket(conn);
+        if ( conn.IsAllocated() ) {
+            x_EndOfPacket(conn);
+        }
     }
     catch ( exception& /*rethrown*/ ) {
         if ( GetDebugLevel() >= eTraceError ) {
