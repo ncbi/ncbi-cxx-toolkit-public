@@ -1596,7 +1596,7 @@ CVariantProperties::TEffect CalcEffectForProt(const string& prot_ref_str, const 
     return effect;
 }
 
-CVariationUtil::TSOTerms CalcSOTermsForProt(long nuc_delta_len,
+CVariationUtil::TSOTerms CalcSOTermsForProt(TSignedSeqPos nuc_delta_len,
                                             const string& prot_ref_str,
                                             const string& prot_variant_str)
 {
@@ -1871,9 +1871,11 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     const CDelta_item& nuc_delta = *v->GetData().GetInstance().GetDelta().front();
 
-    //detect frameshift before we start extending codon locs, etc.
-    long nuc_delta_len = nuc_delta.GetSeq().GetLiteral().GetLength() - sequence::GetLength(p->GetLoc(), NULL);
-    
+    //note: using type long instead of TSignedSeqPos is a bug on 64-bit systems: the result of the subtraction
+    //that's expected to be negative would be a BIG_NUMBER that is cast to type long without the wrap-around
+    //into negatives.
+    TSignedSeqPos nuc_delta_len = nuc_delta.GetSeq().GetLiteral().GetLength() - sequence::GetLength(p->GetLoc(), NULL);
+
     int frameshift_phase = nuc_delta_len % 3;
     if(frameshift_phase < 0) {
         frameshift_phase += 3;
