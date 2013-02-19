@@ -4242,20 +4242,17 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
 {
     if (IsSetDiagPostFlag(eDPF_MergeLines, m_Flags)) {
         CNcbiOstrstream ostr;
-        string src, dest;
+        string str;
         x_Write(ostr, fNoEndl);
         ostr.put('\0');
-        src = ostr.str();
+        str = ostr.str();
         ostr.rdbuf()->freeze(false);
-        if (src.find_first_of("\r\n") != NPOS) {
+        if (str.find_first_of("\r\n") != NPOS) {
             list<string> lines;
-            NStr::Split(src, "\r\n", lines);
-            dest = NStr::Join(lines, " ");
+            NStr::Split(str, "\r\n", lines);
+            str = NStr::Join(lines, " ");
         }
-        else {
-            dest = src;
-        }
-        os << dest;
+        os << str;
         if ((flags & fNoEndl) == 0) {
             os << NcbiEndl;
         }
@@ -5004,6 +5001,22 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
 
     CNcbiOstrstream str_os;
     mess.x_OldWrite(str_os);
+    if (IsSetDiagPostFlag(eDPF_PreMergeLines, mess.m_Flags)) {
+        str_os.put('\0');
+        string str = str_os.str();
+        str_os.rdbuf()->freeze(false);
+        if (str.find_first_of("\r\n") != NPOS) {
+            list<string> lines;
+            NStr::Split(str, "\r\n", lines);
+            str = NStr::Join(lines, " ");
+        }
+        // Re-use the stream for the merged message.
+        str_os.seekp(0);
+        str_os << str;
+        if ((mess.m_Flags & SDiagMessage::fNoEndl) == 0) {
+            str_os << endl;
+        }
+    }
     CDiagLock lock(CDiagLock::ePost);
     cerr.write(str_os.str(), str_os.pcount());
     str_os.rdbuf()->freeze(false);
