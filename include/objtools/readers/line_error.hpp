@@ -65,6 +65,7 @@ public:
         eProblem_BadScoreValue,
         eProblem_MissingContext,
         eProblem_BadTrackLine,
+        eProblem_InternalPartialsInFeatLocation,
 
         eProblem_GeneralParsingError
     };
@@ -164,6 +165,8 @@ public:
             return "Value ignored due to missing context";
         case eProblem_BadTrackLine:
             return "Bad track line: Expected \"track key1=value1 key2=value2 ...\"";
+        case eProblem_InternalPartialsInFeatLocation:
+            return "Feature's location has internal partials";
         default:
             return "Unknown problem";
         }

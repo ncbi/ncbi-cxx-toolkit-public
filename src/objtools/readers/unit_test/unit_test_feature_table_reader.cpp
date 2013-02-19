@@ -525,31 +525,31 @@ static const char * sc_Table6 = "\
 \t\t\tdb_xref\tHGNC:13596\n\
 \t\t\tdb_xref\tMIM:609098\n\
 <4920\t5023\tmRNA\n\
-<6465\t6514\n\
-<9194\t9286\n\
+6465\t6514\n\
+9194\t9286\n\
 \t\t\tproduct\tF-box protein 25\n\
 \t\t\ttranscript_id\tNM_183421.1\n\
 \t\t\texception\tunclassified transcription discrepancy\n\
 \t\t\tdb_xref\tGeneID:26260\n\
 \t\t\tdb_xref\tMIM:609098\n\
 <4920\t5023\tmRNA\n\
-<6465\t6514\n\
-<9194\t9286\n\
+6465\t6514\n\
+9194\t9286\n\
 \t\t\tproduct\tF-box protein 25\n\
 \t\t\ttranscript_id\tNM_183420.1\n\
 \t\t\texception\tunclassified transcription discrepancy\n\
 \t\t\tdb_xref\tGeneID:26260\n\
 \t\t\tdb_xref\tMIM:609098\n\
 <4920\t5023\tmRNA\n\
-<9194\t9286\n\
+9194\t9286\n\
 \t\t\tproduct\tF-box protein 25\n\
 \t\t\ttranscript_id\tNM_012173.3\n\
 \t\t\texception\tunclassified transcription discrepancy\n\
 \t\t\tdb_xref\tGeneID:26260\n\
 \t\t\tdb_xref\tMIM:609098\n\
 <4920\t5023\tCDS\n\
-<6465\t6514\n\
-<9194\t9286\n\
+6465\t6514\n\
+9194\t9286\n\
 \t\t\tproduct\tF-box only protein 25 isoform 1\n\
 \t\t\tproduct\tF-box protein Fbx25\n\
 \t\t\tproduct\tF-box only protein 25\n\
@@ -561,8 +561,8 @@ static const char * sc_Table6 = "\
 \t\t\tdb_xref\tCCDS:CCDS5953.1\n\
 \t\t\tdb_xref\tGeneID:26260\n\
 <4920\t5023\tCDS\n\
-<6465\t6514\n\
-<9194\t9286\n\
+6465\t6514\n\
+9194\t9286\n\
 \t\t\tproduct\tF-box only protein 25 isoform 2\n\
 \t\t\tproduct\tF-box protein Fbx25\n\
 \t\t\tproduct\tF-box only protein 25\n\

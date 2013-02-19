@@ -255,9 +255,10 @@ private:
                                   string& featP, string& qualP, string& valP, Int4 offset,
                                   IErrorContainer *container, int line_num, const string &seq_id );
 
-    bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
-                                 const string& seqid, Int4 start, Int4 stop,
-                                 bool partial5, bool partial3, bool ispoint, bool isminus);
+    bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
+                                 Int4 start, Int4 stop,
+                                 bool partial5, bool partial3, bool ispoint, bool isminus,
+                                 IErrorContainer *container, int line_num, const string& seqid);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
         const string &feat_name,
@@ -2140,67 +2141,72 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
 }
 
 
-bool CFeature_table_reader_imp::x_AddIntervalToFeature (
+bool CFeature_table_reader_imp::x_AddIntervalToFeature(
+    CTempString strFeatureName,
     CRef<CSeq_feat> sfp,
     CSeq_loc_mix& mix,
-    const string& seqid,
     Int4 start,
     Int4 stop,
     bool partial5,
     bool partial3,
     bool ispoint,
-    bool isminus
+    bool isminus,
+    IErrorContainer *container, 
+    int line_num, 
+    const string& seqid
 )
 
 {
     CSeq_interval::TStrand strand = eNa_strand_plus;
 
     if (start > stop) {
-        Int4 flip = start;
-        start = stop;
-        stop = flip;
+        swap(start, stop);
         strand = eNa_strand_minus;
     }
     if (isminus) {
         strand = eNa_strand_minus;
     }
 
-    if (ispoint) {
-        // between two bases
-        CRef<CSeq_loc> loc(new CSeq_loc);
-        CSeq_point& point = loc->SetPnt ();
-        point.SetPoint (start);
-        point.SetStrand (strand);
-        point.SetRightOf (true);
-        CSeq_id seq_id (seqid);
-        point.SetId().Assign (seq_id);
-        mix.Set().push_back(loc);
-    } else if (start == stop) {
-        // just a point
-        CRef<CSeq_loc> loc(new CSeq_loc);
-        CSeq_point& point = loc->SetPnt ();
-        point.SetPoint (start);
-        point.SetStrand (strand);
-        CSeq_id seq_id (seqid);
-        point.SetId().Assign (seq_id);
-        mix.Set().push_back (loc);
+    // construct loc, which will be added to the mix
+    CRef<CSeq_id> seq_id ( new CSeq_id(seqid) );
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if (ispoint || start == stop ) {
+        // a point of some kind
+        CRef<CSeq_point> pPoint( new CSeq_point(*seq_id, start, strand) );
+        if( ispoint ) {
+            // between two bases
+            pPoint->SetRightOf (true);
+        } else {
+            // just a point. do nothing
+        }
+        loc->SetPnt( *pPoint );
     } else {
         // interval
-        CRef<CSeq_loc> loc(new CSeq_loc);
-        CSeq_interval& ival = loc->SetInt ();
-        ival.SetFrom (start);
-        ival.SetTo (stop);
-        ival.SetStrand (strand);
+        CRef<CSeq_interval> pIval( new CSeq_interval(*seq_id, start, stop, strand) );
         if (partial5) {
-            ival.SetPartialStart (true, eExtreme_Biological);
+            pIval->SetPartialStart (true, eExtreme_Biological);
         }
         if (partial3) {
-            ival.SetPartialStop (true, eExtreme_Biological);
+            pIval->SetPartialStop (true, eExtreme_Biological);
         }
-        CSeq_id seq_id (seqid);
-        ival.SetId().Assign (seq_id);
-        mix.Set().push_back (loc);
+        loc->SetInt(*pIval);
     }
+
+    // check for internal partials
+    CSeq_loc_mix::Tdata & mix_set = mix.Set();
+    if( ! mix_set.empty() ) {
+        const CSeq_loc & last_loc = *mix_set.back();
+        if( last_loc.IsPartialStop(eExtreme_Biological) ||
+            loc->IsPartialStart(eExtreme_Biological) ) 
+        {
+            // internal partials
+            x_ProcessMsg(container, ILineError::eProblem_InternalPartialsInFeatLocation,
+                eDiag_Warning, seqid, line_num, strFeatureName );
+        }
+    }
+
+    mix_set.push_back(loc);
+
 
     if (partial5 || partial3) {
         sfp->SetPartial (true);
@@ -2459,8 +2465,9 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         }
 
                         // and add first interval
-                        x_AddIntervalToFeature (sfp, location->SetMix(), 
-                                                real_seqid, start, stop, partial5, partial3, ispoint, isminus);
+                        x_AddIntervalToFeature (feat, sfp, location->SetMix(), 
+                            start, stop, partial5, partial3, ispoint, isminus, 
+                            container, reader.GetLineNumber(), real_seqid );
 
                         ignore_until_next_feature_key = false;
 
@@ -2482,8 +2489,9 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     // process start - stop multiple interval line
 
                     if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
-                        x_AddIntervalToFeature (sfp, sfp->SetLocation().SetMix(), 
-                                                real_seqid, start, stop, partial5, partial3, ispoint, isminus);
+                        x_AddIntervalToFeature (feat, sfp, sfp->SetLocation().SetMix(), 
+                                                start, stop, partial5, partial3, ispoint, isminus, 
+                                                container, reader.GetLineNumber(), real_seqid);
                     } else {
                         if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                             x_ProcessMsg(container, ILineError::eProblem_NoFeatureProvidedOnIntervals,
