@@ -27,4 +27,5 @@ CHECK_CMD = unit_test_feature_table_reader
 # CXXFLAGS = $(FAST_CXXFLAGS)
 # LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh
+
