@@ -228,7 +228,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
 
     int month_val = 0;
     if (!NStr::IsBlank(month)) {
-        for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
+        for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
             if (NStr::Equal(month, sm_LegalMonths[i])) {
                 dpm = sm_daysPerMonth [i];
                 month_val = i + 1;
@@ -375,7 +375,7 @@ string CSubSource::FixDateFormat (string orig_date, bool month_first, bool& mont
                 // already have month, error
                 return "";
             }
-            for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
+            for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
                 if (NStr::StartsWith(one_token, sm_LegalMonths[i], NStr::eNocase)) {
                     month = sm_LegalMonths[i];
                     found = true;
