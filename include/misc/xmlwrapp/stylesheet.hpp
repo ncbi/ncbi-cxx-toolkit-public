@@ -179,6 +179,7 @@ public:
      * @param treat How to treat XSLT result
      * @return True if the transformation was successful and the results placed in result.
      * @return False if there was an error, result is not modified.
+     * @deprecated use apply(const xml::document&, result_treat_type)
      * @author Peter Jones
     **/
     //####################################################################
@@ -194,9 +195,11 @@ public:
      * @param doc The XML document to transform.
      * @param result The result tree after applying this stylesheet.
      * @param with_params Override xsl:param elements using the given key/value map
+     * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
      * @param treat How to treat XSLT result
      * @return True if the transformation was successful and the results placed in result.
      * @return False if there was an error, result is not modified.
+     * @deprecated use apply(const xml::document&, const param_type&, result_treat_type)
      * @author Peter Jones
     **/
     //####################################################################
@@ -228,10 +231,11 @@ public:
      *
      * @param doc The XML document to transform.
      * @param with_params Override xsl:param elements using the given key/value map
+     * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
      * @param treat How to treat XSLT result
      * @return The result tree.
      * @author Denis Vakatov
-    **/
+     **/
     //####################################################################
     xml::document_proxy apply (const xml::document &doc,
                                const param_type &with_params,
