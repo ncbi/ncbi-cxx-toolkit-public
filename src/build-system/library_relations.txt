@@ -2117,7 +2117,9 @@ gpxlib needs xmlwrapp
 gpxlib needs xncbi
 gpxlib needs xser
 gpxlib needs xutil
+grid_wrapper needs connect
 grid_wrapper needs gpipe_resource_req
+grid_wrapper needs xconnect
 grid_wrapper needs xncbi
 gui_config needs biblio
 gui_config needs biotree
