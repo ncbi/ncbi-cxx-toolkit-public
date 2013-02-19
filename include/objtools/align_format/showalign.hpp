@@ -524,6 +524,7 @@ protected:
     
 	//Info used to display defline information
     struct SAlnDispParams: public CObject {
+        CAlignFormatUtil::SSeqURLInfo * seqUrlInfo;
         int gi;                         ///< gi used in defline
         CRef<objects::CSeq_id> seqID;    ///< seqID used in defline
         string label;                   ///< sequence label
@@ -706,7 +707,7 @@ protected:
         int taxid,const list<CRef<objects::CSeq_id> >& ids);
 
     string x_GetUrl(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid);
-    string x_InitAlignLinks(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid,const list<CRef<objects::CSeq_id> >& ids,int lnkDispPrarms = 0);
+    void x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo,const list< CRef<objects::CBlast_def_line > > &bdl_list,CRef<objects::CSeq_id>  &seqID,int lnkDispPrarms);
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
