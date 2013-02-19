@@ -52,6 +52,7 @@ public:
     const list<string>& HeaderFiles   (void) const;
     const list<string>& InlineFiles   (void) const;
     const list<string>& ResourceFiles (void) const;
+    const map<string, list<string> > GetExtraFiles(void) const;
 
 private:
     // Prohibited to:
@@ -63,6 +64,7 @@ private:
     void CollectHeaders(void);
     void CollectInlines(void);
     void CollectResources(void);
+    void CollectExtra(void);
 
 private:
     const CMsvcPrjProjectContext* m_Context;
@@ -73,6 +75,7 @@ private:
     list<string> m_HeaderFiles;
     list<string> m_InlineFiles;
     list<string> m_ResourceFiles;
+    map<string, list<string> > m_ExtraFiles;
 };
 
 

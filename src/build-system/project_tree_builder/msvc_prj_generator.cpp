@@ -788,6 +788,21 @@ void __SET_RC_ELEMENT(
     }
     container->SetResourceCompile().SetResourceCompile().push_back(e);
 }
+
+template<typename Container>
+void __SET_NONE_ELEMENT(
+    Container& container, const string& name, const string& value,
+    const string& condition = kEmptyStr)
+{
+    CRef<msbuild::CNone::C_E> e(new msbuild::CNone::C_E);
+    e->SetAnyContent().SetName(name);
+    e->SetAnyContent().SetValue(value);
+    if (!condition.empty()) {
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+    }
+    container->SetNone().SetNone().push_back(e);
+}
+
 template<typename Container>
 void __SET_CUSTOMBUILD_ELEMENT(
     Container& container, const string& name, const string& value,
@@ -1246,6 +1261,32 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             }
         }
     }
+    // extra files
+    if (!collector.GetExtraFiles().empty()) {
+        const map<string, list<string> >& extra(collector.GetExtraFiles());
+        for (map<string, list<string> >::const_iterator g = extra.begin(); g != extra.end(); ++g) {
+            const list<string>& lst(g->second);
+            CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+            project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
+            ITERATE( list<string>, f, lst) {
+                const string& rel_source_file = *f;
+                CRef<msbuild::CItemGroup::C_E> p(new msbuild::CItemGroup::C_E);
+                t->SetItemGroup().SetItemGroup().push_back(p);
+                p->SetNone().SetAttlist().SetInclude(rel_source_file);
+
+                ITERATE(list<SConfigInfo>, c , all_cfgs) {
+                    string cfg_condition("'$(Configuration)|$(Platform)'=='");
+                    cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+                    {
+                        __SET_NONE_ELEMENT(p, "ExcludedFromBuild", "true", cfg_condition);
+
+                    }
+                }
+            }
+        }
+    }
+
+
     // references
     if (prj.m_ProjType == CProjKey::eApp || prj.m_ProjType == CProjKey::eDll) {
 
@@ -1522,6 +1563,19 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
             string rel_source_file =
                 CDirEntry::CreateRelativePath(project_context.ProjectDir(), build_info.m_SourceFile);
             filter.AddFile(rel_source_file);
+        }
+    }
+    if (!collector.GetExtraFiles().empty()) {
+        const map<string, list<string> >& extra(collector.GetExtraFiles());
+        for (map<string, list<string> >::const_iterator g = extra.begin(); g != extra.end(); ++g) {
+            const list<string>& lst(g->second);
+            string tag_name("None");
+            string filter_name(g->first);
+            CMsbuildFileFilter filter( filters, filter_list, "",
+                tag_name, filter_name, project_dir, collector, prj);
+            ITERATE(list<string>, f, lst) {
+                filter.AddFile(*f);
+            }
         }
     }
 

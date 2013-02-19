@@ -66,6 +66,7 @@ CMsvcPrjFilesCollector::CMsvcPrjFilesCollector
     CollectHeaders();
     CollectInlines();
     CollectResources();
+    CollectExtra();
 }
 
 
@@ -97,6 +98,11 @@ const list<string>& CMsvcPrjFilesCollector::InlineFiles(void) const
 const list<string>& CMsvcPrjFilesCollector::ResourceFiles(void) const
 {
     return m_ResourceFiles;
+}
+
+const map<string, list<string> > CMsvcPrjFilesCollector::GetExtraFiles(void) const
+{
+    return m_ExtraFiles;
 }
 
 struct PSourcesExclude
@@ -386,6 +392,33 @@ CMsvcPrjFilesCollector::CollectResources(void)
     }
     m_ResourceFiles.sort(s_FileName_less);
     m_ResourceFiles.unique();
+}
+
+void 
+CMsvcPrjFilesCollector::CollectExtra(void)
+{
+    m_ExtraFiles.clear();
+
+    const map<string, list<string> >& extra = m_Project->m_ExtraFiles;
+    for (map<string, list<string> >::const_iterator g = extra.begin(); g != extra.end(); ++g) {
+        const list<string>& lst(g->second);
+        ITERATE( list<string>, f, lst) {
+            m_ExtraFiles[g->first].push_back(
+                CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
+                    CDirEntry::NormalizePath(CDirEntry::ConcatPath(m_Project->m_SourcesBaseDir, *f))));
+        }
+    }
+    
+    map<string, list<string> > files;
+    m_Context->GetMsvcProjectMakefile().GetExtraFiles(&files);
+    for (map<string, list<string> >::const_iterator g = files.begin(); g != files.end(); ++g) {
+        const list<string>& lst(g->second);
+        ITERATE( list<string>, f, lst) {
+            m_ExtraFiles[g->first].push_back(
+                CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
+                    CDirEntry::NormalizePath(CDirEntry::ConcatPath(m_Project->m_SourcesBaseDir, *f))));
+        }
+    }
 }
 
 

@@ -208,6 +208,7 @@ void CProjItem::SetFrom(const CProjItem& item)
 
     m_Includes = item.m_Includes;
     m_Inlines  = item.m_Inlines;
+    m_ExtraFiles = item.m_ExtraFiles;
     m_ProjTags = item.m_ProjTags;
     m_CustomBuild = item.m_CustomBuild;
     

@@ -65,6 +65,11 @@ public:
     {
         return m_IsEmpty;
     }
+    void EnumerateSections(list<string>* sections) const
+    {
+        if (!m_IsEmpty) {m_Registry->EnumerateSections(sections);}
+    }
+
     void EnumerateEntries(const string& section,
                           list<string>* entries) const
     {

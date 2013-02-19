@@ -109,6 +109,8 @@ public:
     virtual void GetResourceFiles (const SConfigInfo& config, 
                                   list<string>*      files)      const = 0;
 
+    virtual void GetExtraFiles    (map<string, list<string> >*  files) const = 0;
+
 };
 
 
@@ -252,6 +254,8 @@ public:
     virtual void GetResourceFiles        (const SConfigInfo& config, 
                                           list<string>*      files) const;
 
+    virtual void GetExtraFiles           (map<string, list<string> >*  files) const;
+
     void GetCustomScriptInfo             (SCustomScriptInfo& info) const;
 
 
@@ -352,6 +356,9 @@ public:
 
     virtual void GetResourceFiles        (const SConfigInfo& config, 
                                           list<string>*      files) const;
+
+    virtual void GetExtraFiles           (map<string, list<string> >*  files) const;
+
 
     void GetCustomScriptInfo             (SCustomScriptInfo& info) const;
 

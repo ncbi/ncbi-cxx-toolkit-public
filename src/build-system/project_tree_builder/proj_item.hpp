@@ -139,6 +139,7 @@ public:
 
     list<string> m_Includes;
     list<string> m_Inlines;
+    map<string, list<string> > m_ExtraFiles;
     list<string> m_ProjTags;
     list<SCustomBuildInfo> m_CustomBuild;
     

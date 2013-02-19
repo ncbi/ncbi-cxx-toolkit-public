@@ -140,7 +140,7 @@ static void s_InitalizeDllProj(const string&                  dll_id,
 
 
 static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
-    const CProjItem& lib, CProjItem* dll)
+    const CProjItem& lib, CProjItem& dll)
 {
     // If this library is available as a third-party,
     // then we'll require it
@@ -148,13 +148,13 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
                                                    == CMsvcSite::e3PartyLib ) {
         CMsvcSite::SLibChoice choice = 
             GetApp().GetSite().GetLibChoiceForLib(lib.m_ID);
-        dll->m_Requires.push_back(choice.m_3PartyLib);
-        dll->m_Requires.sort();
-        dll->m_Requires.unique();
+        dll.m_Requires.push_back(choice.m_3PartyLib);
+        dll.m_Requires.sort();
+        dll.m_Requires.unique();
         return;
     }
     if (!lib.m_External) {
-        dll->m_External = false;
+        dll.m_External = false;
     }
 
     CMsvcPrjProjectContext lib_context(lib);
@@ -174,7 +174,7 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         // With .ext 
         GetApp().GetDllFilesDistr().RegisterSource
             (abs_path,
-             CProjKey(CProjKey::eDll, dll->m_ID),
+             CProjKey(CProjKey::eDll, dll.m_ID),
              CProjKey(CProjKey::eLib, lib.m_ID) );
 
         string dir;
@@ -183,17 +183,17 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         string abs_source_path = dir + base;
 
         string new_rel_path = 
-            CDirEntry::CreateRelativePath(dll->m_SourcesBaseDir, 
+            CDirEntry::CreateRelativePath(dll.m_SourcesBaseDir, 
                                           abs_source_path);
-        dll->m_Sources.push_back(new_rel_path);
+        dll.m_Sources.push_back(new_rel_path);
     }
-    dll->m_Sources.sort();
-    dll->m_Sources.unique();
+    dll.m_Sources.sort();
+    dll.m_Sources.unique();
 
     copy(lib_context.IncludeDirsAbs().begin(), 
-         lib_context.IncludeDirsAbs().end(), back_inserter(dll->m_Includes));
+         lib_context.IncludeDirsAbs().end(), back_inserter(dll.m_Includes));
     copy(lib_context.InlineDirsAbs().begin(), 
-         lib_context.InlineDirsAbs().end(), back_inserter(dll->m_Inlines));
+         lib_context.InlineDirsAbs().end(), back_inserter(dll.m_Inlines));
 
     // Header files - also register them
     ITERATE(list<string>, p, collector.HeaderFiles()) {
@@ -203,7 +203,7 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         abs_path = CDirEntry::NormalizePath(abs_path);
         GetApp().GetDllFilesDistr().RegisterHeader
             (abs_path,
-             CProjKey(CProjKey::eDll, dll->m_ID),
+             CProjKey(CProjKey::eDll, dll.m_ID),
              CProjKey(CProjKey::eLib, lib.m_ID) );
     }
     // Inline files - also register them
@@ -214,9 +214,32 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         abs_path = CDirEntry::NormalizePath(abs_path);
         GetApp().GetDllFilesDistr().RegisterInline
             (abs_path,
-             CProjKey(CProjKey::eDll, dll->m_ID),
+             CProjKey(CProjKey::eDll, dll.m_ID),
              CProjKey(CProjKey::eLib, lib.m_ID) );
     }
+
+    if (!collector.GetExtraFiles().empty()) {
+        const map<string, list<string> >& extra(collector.GetExtraFiles());
+        for (map<string, list<string> >::const_iterator g = extra.begin(); g != extra.end(); ++g) {
+            const list<string>& lst(g->second);
+
+            ITERATE(list<string>, f, lst) {
+                string abs_path = CDirEntry::NormalizePath(
+                    CDirEntry::ConcatPath(lib_context.ProjectDir(), *f));
+
+                GetApp().GetDllFilesDistr().RegisterExtraFile
+                    (abs_path,
+                     CProjKey(CProjKey::eDll, dll.m_ID),
+                     CProjKey(CProjKey::eLib, lib.m_ID) );
+
+                string new_rel_path = 
+                    CDirEntry::CreateRelativePath(dll.m_SourcesBaseDir,  abs_path);
+                (dll.m_ExtraFiles[g->first]).push_back(new_rel_path);
+            }
+        }
+    }
+    copy(lib_context.GetCustomBuildInfo().begin(), 
+         lib_context.GetCustomBuildInfo().end(), back_inserter(dll.m_CustomBuild));
 
     // Depends
     ITERATE(list<CProjKey>, p, lib.m_Depends) {
@@ -226,57 +249,57 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         CProjectItemsTree::TProjects::const_iterator i = tree_src.m_Projects.find(depend_id);
         if (i != tree_src.m_Projects.end()) {
             if (i->second.m_DllHost.empty()) {
-                dll->m_Depends.push_back(depend_id);
+                dll.m_Depends.push_back(depend_id);
             } else {
-                dll->m_Depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
+                dll.m_Depends.push_back(CProjKey(CProjKey::eDll, i->second.m_DllHost));
             }
         } else {
             string host = GetDllHost(tree_src,depend_id.Id());
             if (!host.empty()) {
-                dll->m_Depends.push_back(CProjKey(CProjKey::eDll, host));
+                dll.m_Depends.push_back(CProjKey(CProjKey::eDll, host));
             }
         }
     }
-    dll->m_Depends.sort();
-    dll->m_Depends.unique();
+    dll.m_Depends.sort();
+    dll.m_Depends.unique();
 
 
     // m_Requires
     copy(lib.m_Requires.begin(), 
-         lib.m_Requires.end(), back_inserter(dll->m_Requires));
-    dll->m_Requires.sort();
-    dll->m_Requires.unique();
+         lib.m_Requires.end(), back_inserter(dll.m_Requires));
+    dll.m_Requires.sort();
+    dll.m_Requires.unique();
 
     // Libs 3-Party
     copy(lib.m_Libs3Party.begin(), 
-         lib.m_Libs3Party.end(), back_inserter(dll->m_Libs3Party));
-    dll->m_Libs3Party.sort();
-    dll->m_Libs3Party.unique();
+         lib.m_Libs3Party.end(), back_inserter(dll.m_Libs3Party));
+    dll.m_Libs3Party.sort();
+    dll.m_Libs3Party.unique();
 
     // m_IncludeDirs
     copy(lib.m_IncludeDirs.begin(), 
-         lib.m_IncludeDirs.end(), back_inserter(dll->m_IncludeDirs));
-    dll->m_IncludeDirs.sort();
-    dll->m_IncludeDirs.unique();
+         lib.m_IncludeDirs.end(), back_inserter(dll.m_IncludeDirs));
+    dll.m_IncludeDirs.sort();
+    dll.m_IncludeDirs.unique();
 
     // m_DatatoolSources
     copy(lib.m_DatatoolSources.begin(), 
-         lib.m_DatatoolSources.end(), back_inserter(dll->m_DatatoolSources));
-    dll->m_DatatoolSources.sort();
-    dll->m_DatatoolSources.unique();
+         lib.m_DatatoolSources.end(), back_inserter(dll.m_DatatoolSources));
+    dll.m_DatatoolSources.sort();
+    dll.m_DatatoolSources.unique();
 
     // m_Defines
     copy(lib.m_Defines.begin(), 
-         lib.m_Defines.end(), back_inserter(dll->m_Defines));
-    dll->m_Defines.sort();
-    dll->m_Defines.unique();
+         lib.m_Defines.end(), back_inserter(dll.m_Defines));
+    dll.m_Defines.sort();
+    dll.m_Defines.unique();
 
     // watchers
     if (!lib.m_Watchers.empty()) {
-        if (!dll->m_Watchers.empty()) {
-            dll->m_Watchers += " ";
+        if (!dll.m_Watchers.empty()) {
+            dll.m_Watchers += " ";
         }
-        dll->m_Watchers += lib.m_Watchers;
+        dll.m_Watchers += lib.m_Watchers;
     }
     {{
         string makefile_name = 
@@ -290,26 +313,26 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         if (p != makefile.m_Contents.end()) {
             SAppProjectT::CreateNcbiCToolkitLibs(makefile, &ncbi_clibs);
 
-            dll->m_Libs3Party.push_back("NCBI_C_LIBS");
-            dll->m_Libs3Party.sort();
-            dll->m_Libs3Party.unique();
+            dll.m_Libs3Party.push_back("NCBI_C_LIBS");
+            dll.m_Libs3Party.sort();
+            dll.m_Libs3Party.unique();
 
             copy(ncbi_clibs.begin(),
                  ncbi_clibs.end(),
-                 back_inserter(dll->m_NcbiCLibs));
-            dll->m_NcbiCLibs.sort();
-            dll->m_NcbiCLibs.unique();
+                 back_inserter(dll.m_NcbiCLibs));
+            dll.m_NcbiCLibs.sort();
+            dll.m_NcbiCLibs.unique();
 
         }
     }}
 
     // m_NcbiCLibs
     copy(lib.m_NcbiCLibs.begin(), 
-         lib.m_NcbiCLibs.end(), back_inserter(dll->m_NcbiCLibs));
-    dll->m_NcbiCLibs.sort();
-    dll->m_NcbiCLibs.unique();
+         lib.m_NcbiCLibs.end(), back_inserter(dll.m_NcbiCLibs));
+    dll.m_NcbiCLibs.sort();
+    dll.m_NcbiCLibs.unique();
 
-    dll->m_MakeType = max(lib.m_MakeType, dll->m_MakeType);
+    dll.m_MakeType = max(lib.m_MakeType, dll.m_MakeType);
 }
 
 void AnalyzeDllData(CProjectItemsTree& tree)
@@ -403,7 +426,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                 k = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib, lib_id));
                 if (k != GetApp().GetWholeTree().m_Projects.end()) {
                     const CProjItem& lib = k->second;
-                    s_AddProjItemToDll(tree_src, lib, &dll);
+                    s_AddProjItemToDll(tree_src, lib, dll);
                     is_empty = false;
                 } else if (GetApp().GetSite().GetChoiceForLib(lib_id) 
                                                    == CMsvcSite::e3PartyLib ) {
@@ -418,7 +441,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                 continue;
             }
             const CProjItem& lib = k->second;
-            s_AddProjItemToDll(tree_src, lib, &dll);
+            s_AddProjItemToDll(tree_src, lib, dll);
             is_empty = false;
         }
         if ( !is_empty ) {

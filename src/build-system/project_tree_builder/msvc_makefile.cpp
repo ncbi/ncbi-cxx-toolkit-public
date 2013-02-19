@@ -489,6 +489,9 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
 
     string source_files_str = 
         m_MakeFile.GetString("CustomBuild", "SourceFiles");
+    if (source_files_str.empty()) {
+        return;
+    }
     
     list<string> source_files;
     NStr::Split(source_files_str, LIST_SEPARATOR, source_files);
@@ -537,6 +540,49 @@ void CMsvcProjectMakefile::GetResourceFiles(const SConfigInfo& config,
     NStr::Split(files_string, LIST_SEPARATOR, *files);
 }
 
+void CMsvcProjectMakefile::GetExtraFiles(map<string, list<string> >*  files_map) const
+{
+    string prefix("ExtraFileGroup.");
+    list<string> sections;
+    m_MakeFile.EnumerateSections(&sections);
+    ITERATE(list<string>, s, sections) {
+        if (NStr::StartsWith(*s,prefix)) {
+            string section(*s);
+            string group_name = NStr::Replace(s->substr(prefix.size()),"_"," ");
+            string files_string = m_MakeFile.Get(section, "Files");
+            list<string> raw_files, files;
+            NStr::Split(files_string, LIST_SEPARATOR, raw_files);
+            string fname;
+            bool started = false;
+            ITERATE(list<string>, f, raw_files) {
+                string part(*f);
+                if (part[0] == '\"' && !started) {
+                    fname = part.substr(1);
+                    started = true;
+                    continue;
+                }
+                else if (part[part.size()-1] == '\"') {
+                    fname += ' ';
+                    fname += part.substr(0,part.size()-1);
+                }
+                else if (started) {
+                    fname += ' ';
+                    fname += part;
+                    continue;
+                }
+                else {
+                    fname = part;
+                }
+                files.push_back(fname);
+                fname.clear();
+                started = false;
+            }
+            if (!group_name.empty() && !files.empty()) {
+                (*files_map)[group_name] = files;
+            }
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 CMsvcProjectRuleMakefile::CMsvcProjectRuleMakefile(const string& file_path, bool compound)
@@ -720,6 +766,10 @@ IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetInlinesInInclude)
 IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetInlinesInSrc)
 IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetResourceFiles)
 
+void CMsvcCombinedProjectMakefile::GetExtraFiles(map<string, list<string> >*  files) const
+{
+   m_ProjectMakefile->GetExtraFiles(files);                                   \
+ }
 
 void CMsvcCombinedProjectMakefile::GetCustomBuildInfo
                                            (list<SCustomBuildInfo>* info) const

@@ -215,6 +215,15 @@ struct SCustomBuildInfo
         m_Outputs.erase();
         m_AdditionalDependencies.erase();
     }
+    SCustomBuildInfo(void) {
+    }
+    SCustomBuildInfo( const SCustomBuildInfo& other) {
+        m_SourceFile = other.m_SourceFile;
+        m_CommandLine = other.m_CommandLine;
+        m_Description = other.m_Description;
+        m_Outputs = other.m_Outputs;
+        m_AdditionalDependencies = other.m_AdditionalDependencies;
+    }
 };
 
 struct SCustomScriptInfo
@@ -568,7 +577,9 @@ public:
     void RegisterInline  (const string&   inl_file_path, 
                           const CProjKey& dll_project_id,
                           const CProjKey& lib_project_id);
-
+    void RegisterExtraFile(const string&   inl_file_path, 
+                          const CProjKey& dll_project_id,
+                          const CProjKey& lib_project_id);
     
     // Retrive original lib_id for .cpp .c file
     CProjKey GetSourceLib(const string&   src_file_path, 
@@ -579,6 +590,8 @@ public:
     // Retrive original lib_id for .inl file
     CProjKey GetInlineLib(const string&   inl_file_path, 
                           const CProjKey& dll_project_id) const;
+    CProjKey GetExtraFileLib(const string&   ex_file_path, 
+                             const CProjKey& dll_project_id) const;
     CProjKey GetFileLib(const string&   file_path, 
                           const CProjKey& dll_project_id) const;
 private:
@@ -588,6 +601,7 @@ private:
     TDistrMap m_SourcesMap;
     TDistrMap m_HeadersMap;
     TDistrMap m_InlinesMap;
+    TDistrMap m_ExtraFileMap;
 
     //prohibited to
     CDllSrcFilesDistr(const CDllSrcFilesDistr&);

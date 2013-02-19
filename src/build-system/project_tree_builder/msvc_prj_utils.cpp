@@ -1498,6 +1498,13 @@ void CDllSrcFilesDistr::RegisterInline(const string&   inl_file_path,
     m_InlinesMap[ TDllSrcKey(inl_file_path,dll_project_id) ] = lib_project_id;
 }
 
+void CDllSrcFilesDistr::RegisterExtraFile(const string&   ex_file_path, 
+                                          const CProjKey& dll_project_id,
+                                          const CProjKey& lib_project_id)
+{
+    m_ExtraFileMap[ TDllSrcKey(ex_file_path,dll_project_id) ] = lib_project_id;
+}
+
 CProjKey CDllSrcFilesDistr::GetSourceLib(const string&   src_file_path, 
                                          const CProjKey& dll_project_id) const
 {
@@ -1535,6 +1542,18 @@ CProjKey CDllSrcFilesDistr::GetInlineLib(const string&   inl_file_path,
     return CProjKey();
 }
 
+CProjKey CDllSrcFilesDistr::GetExtraFileLib(const string&   ex_file_path, 
+                                            const CProjKey& dll_project_id) const
+{
+    TDllSrcKey key(ex_file_path, dll_project_id);
+    TDistrMap::const_iterator p = m_ExtraFileMap.find(key);
+    if (p != m_ExtraFileMap.end()) {
+        const CProjKey& lib_id = p->second;
+        return lib_id;
+    }
+    return CProjKey();
+}
+
 CProjKey CDllSrcFilesDistr::GetFileLib(const string&   file_path, 
                           const CProjKey& dll_project_id) const
 {
@@ -1552,6 +1571,10 @@ CProjKey CDllSrcFilesDistr::GetFileLib(const string&   file_path,
         return test;
     }
     test = GetInlineLib(file_path, dll_project_id);
+    if (test != empty) {
+        return test;
+    }
+    test = GetExtraFileLib(file_path, dll_project_id);
     if (test != empty) {
         return test;
     }
