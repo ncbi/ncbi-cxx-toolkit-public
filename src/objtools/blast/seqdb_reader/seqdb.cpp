@@ -1129,8 +1129,13 @@ void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,
     m_Impl->GetMaskAlgorithmDetails(algorithm_id, sid, program_name,
                                     algo_opts);
     Int4 id(-1);
-    NStr::StringToNumeric(sid, &id, 0, 10);
-    program = (objects::EBlast_filter_program)id;
+    if (NStr::StringToNumeric(sid, &id, NStr::fConvErr_NoThrow, 10)) {
+        program = (objects::EBlast_filter_program)id;
+        return;
+    };
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "This method does not support String algo ID.");
 }
 
 void CSeqDB::GetMaskAlgorithmDetails(int                 algorithm_id,

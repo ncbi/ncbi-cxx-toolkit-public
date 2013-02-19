@@ -1902,7 +1902,8 @@ bool s_Contains(const C & c, const K & k)
 }
 
 static bool s_IsNumericId(const string &id) {
-    return (id[0] >='0' && id[0] <='9');
+    Int4 nid(-1);
+    return NStr::StringToNumeric(id, &nid, NStr::fConvErr_NoThrow, 10);
 }
 
 static const string* s_CheckUniqueValues(const map<string, string> & m)
