@@ -1089,24 +1089,19 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(int giToUse,string
                                              flip,                                             
                                              taxid,
                                              (m_AlignOption & eShowInfoOnMouseOverSeqid) ? true : false);
-                                             
+    seqUrlInfo->resourcesUrl = (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "RESOURCE_URL") : "";    
+    seqUrlInfo->advancedView = seqUrlInfo->useTemplates = m_AlignTemplates != NULL;                                                                   
     return seqUrlInfo;
 }
 
-string CDisplaySeqalign::x_InitAlignLinks(const CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,
-                                  int taxid,const list<CRef<CSeq_id> >& ids,int lnkDispParams)
+void CDisplaySeqalign::x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo,                                          
+                                          const list< CRef< CBlast_def_line > > &bdl_list,
+                                          CRef<objects::CSeq_id>  &seqID,                                          
+                                          int lnkDispParams)
 {
-    string urlLink = NcbiEmptyString;
-    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,accession,linkout,taxid,ids);     
-    seqUrlInfo->segs = (lnkDispParams & eDisplayDownloadLink) ?  x_GetSegs(1) : "";
-	seqUrlInfo->resourcesUrl = (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "RESOURCE_URL") : "";    
-    seqUrlInfo->advancedView = seqUrlInfo->useTemplates = m_AlignTemplates != NULL;
-    
-    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids);
-
     if(lnkDispParams & eDisplayResourcesLinks) {
-        int customLinkTypes = (lnkDispParams & eDisplayDownloadLink) ?  CAlignFormatUtil::eDownLoadSeq : CAlignFormatUtil::eLinkTypeDefault;        
-        CRef<objects::CSeq_id>  seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
+        seqUrlInfo->segs = (lnkDispParams & eDisplayDownloadLink) ?  x_GetSegs(1) : "";
+        int customLinkTypes = (lnkDispParams & eDisplayDownloadLink) ?  CAlignFormatUtil::eDownLoadSeq : CAlignFormatUtil::eLinkTypeDefault;                
         m_CustomLinksList = CAlignFormatUtil::GetCustomLinksList(seqUrlInfo,
                                *seqID,
                                m_Scope,                                             
@@ -1121,14 +1116,12 @@ string CDisplaySeqalign::x_InitAlignLinks(const CBioseq_Handle& bsp_handle,int g
         m_AlignedRegionsUrl =  CAlignFormatUtil::GetAlignedRegionsURL(seqUrlInfo,*seqID, m_Scope);
                                           
 
-        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                    
-            const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);            
-            const list< CRef< CBlast_def_line > > &bdl_list = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
+        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                                
             m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
                                            m_Rid, 
                                            m_CddRid, 
                                            m_EntrezTerm, 
-                                           bsp_handle.GetBioseqCore()->IsNa(),
+                                           seqUrlInfo->isDbNa,
                                            false,
                                            true,                                           
                                            m_cur_align,
@@ -1140,10 +1133,9 @@ string CDisplaySeqalign::x_InitAlignLinks(const CBioseq_Handle& bsp_handle,int g
                                            m_PreComputedResID,
                                            m_LinkoutDB, m_MapViewerBuildName);
         }        
-    }                 
-    delete seqUrlInfo;
-    return urlLink;
+    }                     
 }			
+
 
 void
 CDisplaySeqalign::SetSubjectMasks(const TSeqLocInfoVector& masks)
@@ -2243,16 +2235,8 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
                 ? m_LinkoutDB->GetLinkout(gi,m_MapViewerBuildName)
                 : 0;
                 
-            int linksDisplayOption = 0;
-
-            //Get custom links only for the first gi
-            if(gi_in_use_this_gi == firstGi && m_AlignTemplates != NULL){
-                linksDisplayOption += eDisplayResourcesLinks;
-                if(seqLength > k_GetSubseqThreshhold) {
-                    linksDisplayOption += eDisplayDownloadLink;
-                }
-            }                
-            alnDispParams->id_url =  x_InitAlignLinks(bsp_handle,gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids,linksDisplayOption);            
+            alnDispParams->seqUrlInfo = x_InitSeqUrl(gi_in_use_this_gi,alnDispParams->label,linkout,taxid,ids);    
+            alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);
 		}
 		
 		if(m_AlignOption&eLinkout && m_AlignTemplates == NULL){                    
@@ -2292,8 +2276,9 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
 	alnDispParams->seqID = FindBestChoice(bsp_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
 	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
 	if(m_AlignOption&eHtml){           	            
-        int linksDisplayOption = (m_AlignTemplates != NULL) ? eDisplayResourcesLinks : 0;            
-        alnDispParams->id_url =  x_InitAlignLinks(bsp_handle,alnDispParams->gi,alnDispParams->label,0,0,bsp_handle.GetBioseqCore()->GetId(),linksDisplayOption);                        
+        const list<CRef<CSeq_id> >& ids = bsp_handle.GetBioseqCore()->GetId();
+        alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,0,ids);    
+        alnDispParams->id_url = CAlignFormatUtil::GetIDUrl(alnDispParams->seqUrlInfo,&ids);        
 	}			
 	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);			
 	return alnDispParams;
@@ -3757,6 +3742,9 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
 		    m_CurrAlnID_Lbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;			
             m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
+            if(m_AlignTemplates != NULL) {
+                x_InitAlignLinks(alnDispParams->seqUrlInfo,bdl,alnDispParams->seqID,eDisplayResourcesLinks);
+            }
 			delete alnDispParams;
 			firstDefline = alnDefLine;
             m_NumBlastDefLines++;
@@ -3795,9 +3783,15 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                             }
                         }						
                     }                    
-                    if(numBdl == 1) { // first defline
-                        firstDefline = alnDefLine;
-                    }                    
+                    if( (isFirst && firstGi == 0) || (alnDispParams->gi == firstGi) ) {                    
+                        //Get custom links only for the first gi                        
+                         int linksDisplayOption = eDisplayResourcesLinks;
+                         if(seqLength > k_GetSubseqThreshhold) {
+                            linksDisplayOption += eDisplayDownloadLink;
+                         }                                                                 
+                         x_InitAlignLinks(alnDispParams->seqUrlInfo,bdl,alnDispParams->seqID,linksDisplayOption);
+                         firstDefline = alnDefLine;
+                    }
                     else {                        
                         deflines += alnDefLine;	//this contains all deflines except the first one
                     }                    
