@@ -72,12 +72,12 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_kuit_pfx("KU_Tissue/detail.jsp?record=");
     static const string s_psu_pfx("PSU:Mamm:");
 
-    static const string s_ypment_pfx("LE=ent&ID=");
-    static const string s_ypmher_pfx("LE=her&ID=");
-    static const string s_ypmich_pfx("LE=ich&ID=");
-    static const string s_ypmiz_pfx("LE=iz&ID=");
-    static const string s_ypmmam_pfx("LE=mam&ID=");
-    static const string s_ypmorn_pfx("LE=orn&ID=");
+    static const string s_ypment_pfx("LE=ent&SU=0&ID=");
+    static const string s_ypmher_pfx("LE=her&SU=0&ID=");
+    static const string s_ypmich_pfx("LE=ich&SU=0&ID=");
+    static const string s_ypmiz_pfx("LE=iz&SU=0&ID=");
+    static const string s_ypmmam_pfx("LE=mam&SU=0&ID=");
+    static const string s_ypmorn_pfx("LE=orn&SU=0&ID=");
 
     static const string s_atcc_sfx(".aspx");
     static const string s_bcrc_sfx("&type_id=6&keyword=;;");
