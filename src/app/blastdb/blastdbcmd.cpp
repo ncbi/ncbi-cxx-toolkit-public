@@ -497,7 +497,8 @@ void CBlastDBCmdApp::Init()
                      CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("entry_batch", "input_file", 
-                 "Input file for batch processing (Format: one entry per line)",
+                 "Input file for batch processing (Format: one entry per line, seq id \n"
+		 "followed by optional space-delimited specifier(s) [range|strand|mask_algo_id]",
                  CArgDescriptions::eInputFile);
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "entry");
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "range");
