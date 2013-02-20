@@ -383,67 +383,13 @@ protected:
             eID_prot_fs,
             eID_prot_missense,
             eID_prot_ext,
-            eID_no_change
-        };
+            eID_no_change,
 
+            eNodeIds_SIZE
+        }; //note: any changes here must be accompanied to corresponding changes in s_rule_names in the cpp
 
-        typedef std::map<parser_id, std::string> TRuleNames;
-        static TRuleNames s_rule_names;
-        static TRuleNames& s_GetRuleNames()
-        {
-            if(s_rule_names.size() == 0) {
-                s_rule_names[eID_NONE]              = "NONE";
-                s_rule_names[eID_root]              = "root";
-                s_rule_names[eID_list_delimiter]    = "list_delimiter";
-                s_rule_names[eID_list1a]            = "list1a";
-                s_rule_names[eID_list2a]            = "list2a";
-                s_rule_names[eID_list3a]            = "list3a";
-                s_rule_names[eID_list1b]            = "list1b";
-                s_rule_names[eID_list2b]            = "list2b";
-                s_rule_names[eID_list3b]            = "list3b";
-                s_rule_names[eID_expr1]             = "expr1";
-                s_rule_names[eID_expr2]             = "expr2";
-                s_rule_names[eID_expr3]             = "expr3";
-                s_rule_names[eID_translocation]     = "translocation";
-                s_rule_names[eID_header]            = "header";
-                s_rule_names[eID_location]          = "location";
-                s_rule_names[eID_mol]               = "mol";
-                s_rule_names[eID_seq_id]            = "seq_id";
-                s_rule_names[eID_mut_list]          = "mut_list";
-                s_rule_names[eID_mut_ref]           = "mut_ref";
-                s_rule_names[eID_nuc_range]         = "nuc_range";
-                s_rule_names[eID_prot_range]        = "prot_range";
-                s_rule_names[eID_mut_inst]          = "mut_inst";
-                s_rule_names[eID_int_fuzz]          = "int_fuzz";
-                s_rule_names[eID_abs_pos]           = "abs_pos";
-                s_rule_names[eID_general_pos]       = "general_pos";
-                s_rule_names[eID_fuzzy_pos]         = "fuzzy_pos";
-                s_rule_names[eID_pos_spec]          = "pos_spec";
-                s_rule_names[eID_raw_seq]           = "raw_seq";
-                s_rule_names[eID_raw_seq_or_len]    = "raw_seq_or_len";
-                s_rule_names[eID_aminoacid1]        = "aminoacid1";
-                s_rule_names[eID_aminoacid2]        = "aminoacid2";
-                s_rule_names[eID_aminoacid3]        = "aminoacid3";
-                s_rule_names[eID_nuc_subst]         = "nuc_subst";
-                s_rule_names[eID_deletion]          = "deletion";
-                s_rule_names[eID_insertion]         = "insertion";
-                s_rule_names[eID_delins]            = "delins";
-                s_rule_names[eID_duplication]       = "duplication";
-                s_rule_names[eID_nuc_inv]           = "nuc_inv";
-                s_rule_names[eID_ssr]               = "ssr";
-                s_rule_names[eID_conversion]        = "conversion";
-                s_rule_names[eID_seq_loc]           = "seq_loc";
-                s_rule_names[eID_seq_ref]           = "seq_ref";
-                s_rule_names[eID_prot_pos]          = "prot_pos";
-                s_rule_names[eID_prot_fs]           = "prot_fs";
-                s_rule_names[eID_prot_missense]     = "prot_missense";
-                s_rule_names[eID_prot_ext]          = "prot_ext";
-                s_rule_names[eID_no_change]         = "no_change";
-            }
-            return s_rule_names;
-        }
-
-        static const string& s_GetRuleName(parser_id id);
+        static const char* s_rule_names[SGrammar::eNodeIds_SIZE];
+        static const string s_GetRuleName(parser_id id);
 
         template <typename ScannerT>
         struct definition
@@ -821,7 +767,7 @@ protected:
             return s_is_list_a(id) || s_is_list_b(id);
         }
     };
-    static SGrammar s_grammar;
+    static CSafeStaticPtr<SGrammar> s_grammar;
 
 private:
     typedef tree_match<char const*> TParseTreeMatch;

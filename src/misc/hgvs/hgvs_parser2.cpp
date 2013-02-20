@@ -84,8 +84,62 @@ namespace variation {
     {HGVS_THROW(eGrammatic, "Unexpected rule " + CHgvsParser::SGrammar::s_GetRuleName(i->value.id()) ); }
 
 
-CHgvsParser::SGrammar::TRuleNames CHgvsParser::SGrammar::s_rule_names;
-CHgvsParser::SGrammar CHgvsParser::s_grammar;
+CSafeStaticPtr<CHgvsParser::SGrammar> CHgvsParser::s_grammar;
+
+const char* CHgvsParser::SGrammar::s_rule_names[CHgvsParser::SGrammar::eNodeIds_SIZE] = 
+{
+    "NONE",
+    "root",
+    "list_delimiter",
+    "list1a",
+    "list2a",
+    "list3a",
+    "list1b",
+    "list2b",
+    "list3b",
+    "expr1",
+    "expr2",
+    "expr3",
+    "translocation",
+    "header",
+    "seq_id",
+    "mut_list",
+    "mut_ref",
+    "mol",
+    "int_fuzz",
+    "abs_pos",
+    "general_pos",
+    "fuzzy_pos",
+    "pos_spec",
+    "location",
+    "nuc_range",
+    "prot_range",
+    "mut_inst",
+    "raw_seq",
+    "raw_seq_or_len",
+    "aminoacid1",
+    "aminoacid2",
+    "aminoacid3",
+    "nuc_subst",
+    "deletion",
+    "insertion",
+    "delins",
+    "duplication",
+    "nuc_inv",
+    "ssr",
+    "conversion",
+    "seq_loc",
+    "seq_ref",
+    "prot_pos",
+    "prot_fs",
+    "prot_missense",
+    "prot_ext",
+    "no_change"
+};
+
+
+
+
 
 CVariantPlacement& SetFirstPlacement(CVariation& v)
 {
@@ -334,13 +388,12 @@ void CHgvsParser::CContext::SetId(const CSeq_id& id, CVariantPlacement::TMol mol
 }
 
 
-const string& CHgvsParser::SGrammar::s_GetRuleName(parser_id id)
+const string CHgvsParser::SGrammar::s_GetRuleName(parser_id id)
 {
-    TRuleNames::const_iterator it = s_GetRuleNames().find(id);
-    if(it == s_GetRuleNames().end()) {
+    if(id.to_long() >= CHgvsParser::SGrammar::eNodeIds_SIZE) {
         HGVS_THROW(eLogic, "Rule name not hardcoded");
     } else {
-        return it->second;
+        return s_rule_names[id.to_long()];
     }
 }
 
@@ -1833,7 +1886,7 @@ void CHgvsParser::sx_AppendMoltypeExceptions(CVariation& v, CScope& scope)
 CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 {
     string hgvs2 = NStr::TruncateSpaces(hgvs);
-    tree_parse_info<> info = pt_parse(hgvs2.c_str(), s_grammar, +space_p);
+    tree_parse_info<> info = pt_parse(hgvs2.c_str(), *s_grammar, +space_p);
     CRef<CVariation> vr;
 
     if(!info.full) {
