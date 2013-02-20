@@ -523,7 +523,7 @@ void CObjectIStreamAsn::ReadAnyContentObject(CAnyContentObject& obj)
 {
     string value;
     ReadAnyContent(value);
-    obj.SetValue(value);
+    obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
 }
 
 void CObjectIStreamAsn::SkipAnyContent(void)

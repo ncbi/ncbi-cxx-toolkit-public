@@ -339,7 +339,7 @@ const string& CSerialObject::GetNamespacePrefix(void) const
 
 
 CSerialAttribInfoItem::CSerialAttribInfoItem(
-    const string& name, const string& ns_name, const string& value)
+    const string& name, const string& ns_name, const CStringUTF8& value)
     : m_Name(name), m_NsName(ns_name), m_Value(value)
 {
 }
@@ -359,7 +359,7 @@ const string& CSerialAttribInfoItem::GetNamespaceName(void) const
 {
     return m_NsName;
 }
-const string& CSerialAttribInfoItem::GetValue(void) const
+const CStringUTF8& CSerialAttribInfoItem::GetValue(void) const
 {
     return m_Value;
 }
@@ -425,11 +425,11 @@ const string& CAnyContentObject::GetName(void) const
 {
     return m_Name;
 }
-void CAnyContentObject::SetValue(const string& value)
+void CAnyContentObject::SetValue(const CStringUTF8& value)
 {
     x_Decode(value);
 }
-const string& CAnyContentObject::GetValue(void) const
+const CStringUTF8& CAnyContentObject::GetValue(void) const
 {
     return m_Value;
 }
@@ -449,12 +449,12 @@ const string& CAnyContentObject::GetNamespacePrefix(void) const
 {
     return m_NsPrefix;
 }
-void CAnyContentObject::x_Decode(const string& value)
+void CAnyContentObject::x_Decode(const CStringUTF8& value)
 {
     m_Value = value;
 }
 void CAnyContentObject::AddAttribute(
-    const string& name, const string& ns_name, const string& value)
+    const string& name, const string& ns_name, const CStringUTF8& value)
 {
 // TODO: check if an attrib with this name+ns_name already exists
     m_Attlist.push_back( CSerialAttribInfoItem( name,ns_name,value));

@@ -200,7 +200,7 @@ class NCBI_XSERIAL_EXPORT CSerialAttribInfoItem
 {
 public:
     CSerialAttribInfoItem(const string& name,
-                          const string& ns_name, const string& value);
+                          const string& ns_name, const CStringUTF8& value);
     CSerialAttribInfoItem(const CSerialAttribInfoItem& other);
     virtual ~CSerialAttribInfoItem(void);
 
@@ -209,11 +209,11 @@ public:
     /// Get namespace name of the information item
     const string& GetNamespaceName(void) const;
     /// Get normalized value of the information item
-    const string& GetValue(void) const;
+    const CStringUTF8& GetValue(void) const;
 private:
     string m_Name;
     string m_NsName;
-    string m_Value;
+    CStringUTF8 m_Value;
 };
 
 /// Serializable object that stores any combination of parsable data
@@ -240,9 +240,9 @@ public:
     /// Get local name
     const string& GetName(void) const;
     /// Set normalized value
-    void SetValue(const string& value);
+    void SetValue(const CStringUTF8& value);
     /// Get normalized value
-    const string& GetValue(void) const;
+    const CStringUTF8& GetValue(void) const;
 
     /// Set namespace name
     void SetNamespaceName(const string& ns_name);
@@ -255,15 +255,15 @@ public:
 
     /// Add attribute
     void AddAttribute(const string& name,
-                      const string& ns_name, const string& value);
+                      const string& ns_name, const CStringUTF8& value);
     /// Get object attributes
     const vector<CSerialAttribInfoItem>& GetAttributes(void) const;
 
 private:
     void x_Copy(const CAnyContentObject& other);
-    void x_Decode(const string& value);
+    void x_Decode(const CStringUTF8& value);
     string m_Name;
-    string m_Value;
+    CStringUTF8 m_Value;
     string m_NsName;
     string m_NsPrefix;
     vector<CSerialAttribInfoItem> m_Attlist;

@@ -1036,7 +1036,7 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
             m_NsPrefixToName[ns_prefix] = value;
             m_NsNameToPrefix[value] = ns_prefix;
         } else {
-            obj.AddAttribute( attribName, m_NsPrefixToName[m_CurrNsPrefix],value);
+            obj.AddAttribute( attribName, m_NsPrefixToName[m_CurrNsPrefix],CUtf8::AsUTF8(value,eEncoding_UTF8));
         }
     }
     obj.SetNamespacePrefix(ns_prefix);
@@ -1045,7 +1045,7 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
     if (ReadAnyContent(ns_prefix,value) && !tagName.empty()) {
         CloseTag(tagName);
     }
-    obj.SetValue(value);
+    obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     END_OBJECT_FRAME();
 }
 

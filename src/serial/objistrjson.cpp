@@ -467,9 +467,9 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
             string name = ReadKey();
             value = ReadValue(eStringTypeUTF8);
             if (name[0] != '#') {
-                obj.AddAttribute(name,kEmptyStr,value);
+                obj.AddAttribute(name,kEmptyStr,CUtf8::AsUTF8(value,eEncoding_UTF8));
             } else {
-                obj.SetValue(value);
+                obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
             }
         }
         EndBlock('}');
@@ -480,7 +480,7 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
     } else {
         value = x_ReadData();
     }
-    obj.SetValue(value);
+    obj.SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
 }
 
 void CObjectIStreamJson::SkipAnyContent(void)
