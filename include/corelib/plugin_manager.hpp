@@ -1226,7 +1226,7 @@ CPluginManager<TClass>::CPluginManager(void)
       m_StdDllPath(CDllResolver::fDefaultDllPath)
 {
     const IRegistry* registry(NULL);
-    static const string section_name("PLUGIN_MANAGER_SUBST");
+    static const char* section_name("PLUGIN_MANAGER_SUBST");
 
     // Retrieve a driver name substitution map.
     // Get current registry ...
