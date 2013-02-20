@@ -729,9 +729,9 @@ void __SET_PROPGROUP_ELEMENT(
 {
     CRef<msbuild::CPropertyGroup::C_E> e(new msbuild::CPropertyGroup::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     if (!condition.empty()) {
-       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, CUtf8::AsUTF8(condition,eEncoding_UTF8));
     }
     container->SetPropertyGroup().SetPropertyGroup().push_back(e);
 }
@@ -743,9 +743,9 @@ void __SET_CLCOMPILE_ELEMENT(
 {
     CRef<msbuild::CClCompile::C_E> e(new msbuild::CClCompile::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     if (!condition.empty()) {
-       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, CUtf8::AsUTF8(condition,eEncoding_UTF8));
     }
     container->SetClCompile().SetClCompile().push_back(e);
 }
@@ -759,7 +759,7 @@ void __SET_LIB_ELEMENT(
 {
     CRef<msbuild::CLib::C_E> e(new msbuild::CLib::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     container->SetLib().Set().push_back(e);
 }
 
@@ -769,7 +769,7 @@ void __SET_LINK_ELEMENT(
 {
     CRef<msbuild::CLink::C_E> e(new msbuild::CLink::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     container->SetLink().SetLink().push_back(e);
 }
 #define __SET_LINK(container, name) \
@@ -782,9 +782,9 @@ void __SET_RC_ELEMENT(
 {
     CRef<msbuild::CResourceCompile::C_E> e(new msbuild::CResourceCompile::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     if (!condition.empty()) {
-       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, CUtf8::AsUTF8(condition,eEncoding_UTF8));
     }
     container->SetResourceCompile().SetResourceCompile().push_back(e);
 }
@@ -796,9 +796,9 @@ void __SET_NONE_ELEMENT(
 {
     CRef<msbuild::CNone::C_E> e(new msbuild::CNone::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     if (!condition.empty()) {
-       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, CUtf8::AsUTF8(condition,eEncoding_UTF8));
     }
     container->SetNone().SetNone().push_back(e);
 }
@@ -810,9 +810,9 @@ void __SET_CUSTOMBUILD_ELEMENT(
 {
     CRef<msbuild::CCustomBuild::C_E> e(new msbuild::CCustomBuild::C_E);
     e->SetAnyContent().SetName(name);
-    e->SetAnyContent().SetValue(value);
+    e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
     if (!condition.empty()) {
-       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, condition);
+       e->SetAnyContent().AddAttribute("Condition", kEmptyStr, CUtf8::AsUTF8(condition,eEncoding_UTF8));
     }
     container->SetCustomBuild().SetCustomBuild().push_back(e);
 }
@@ -1476,8 +1476,8 @@ void CMsbuildFileFilter::AddFile(const string& file_name)
     CRef<msbuild::CItemGroup::C_E> file_id(new msbuild::CItemGroup::C_E);
     filter_files->SetItemGroup().SetItemGroup().push_back(file_id);
     file_id->SetAnyContent().SetName(m_tag_name);
-    file_id->SetAnyContent().AddAttribute("Include",kEmptyStr,file_name);
-    file_id->SetAnyContent().SetValue("<Filter>" + filter_name + "</Filter>");
+    file_id->SetAnyContent().AddAttribute("Include",kEmptyStr,CUtf8::AsUTF8(file_name,eEncoding_UTF8));
+    file_id->SetAnyContent().SetValue(CUtf8::AsUTF8("<Filter>" + filter_name + "</Filter>",eEncoding_UTF8));
 }
 
 void CMsvcProjectGenerator::GenerateMsbuildFilters(
