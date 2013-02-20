@@ -23,10 +23,10 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Maxim Didenko, Dmitry Kazimirov
+ * Authors:  Anatoliy Kuznetsov, Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:
- *   Implementation of net cache client.
+ *   Implementation of the NetCache client API.
  *
  */
 
@@ -96,7 +96,7 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
             eAuthenticationError, "Client name is too short or empty");
     }
 
-    static const string default_temp_dir = ".";
+    const string default_temp_dir(".");
 
     if (config != NULL) {
         string temp_dir = config->GetString(config_section,

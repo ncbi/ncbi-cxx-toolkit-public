@@ -93,16 +93,7 @@ class NCBI_XCONNECT_EXPORT CRemoteAppRequest
 {
 public:
     explicit CRemoteAppRequest(CNetCacheAPI::TInstance storage,
-            size_t max_inline_size = kMaxBlobInlineSize) :
-        m_NetCacheAPI(storage),
-        m_AppRunTimeout(0),
-        m_StdIn(storage, m_InBlobIdOrData, m_StdInDataSize),
-        m_StdInDataSize(0),
-        m_StorageType(eBlobStorage),
-        m_ExlusiveMode(false),
-        m_MaxInlineSize(max_inline_size)
-    {
-    }
+            size_t max_inline_size = kMaxBlobInlineSize);
 
     ~CRemoteAppRequest();
 
@@ -168,9 +159,6 @@ public:
 
     void Reset();
 
-    static void SetTempDir(const string& path);
-    static const string& GetTempDir();
-
 protected:
     typedef map<string, EStdOutErrStorageType> TFiles;
 
@@ -182,12 +170,12 @@ protected:
 
 private:
     static CAtomicCounter sm_DirCounter;
-    static string sm_TmpDirPath;
 
     CNetCacheAPI m_NetCacheAPI;
     string m_CmdLine;
     unsigned int m_AppRunTimeout;
 
+    string m_TmpDirPath;
     string m_TmpDirName;
     TFiles m_Files;
 

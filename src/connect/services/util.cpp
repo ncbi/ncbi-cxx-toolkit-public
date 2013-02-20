@@ -146,9 +146,9 @@ bool CCmdLineArgList::GetNextArg(string& arg)
     return true;
 }
 
-const string& CCmdLineArgList::GetDelimiterString()
+const string CCmdLineArgList::GetDelimiterString()
 {
-    static const string delimiters(" \t\n\r,;");
+    const char delimiters[] = " \t\n\r,;";
 
     return delimiters;
 }

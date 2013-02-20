@@ -113,7 +113,7 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
         m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         string name;
         int tmp = (int)eBlobStorage;
-        static string msg;
+        string msg;
         try {
             if (m_IStream->good())
                 *m_IStream >> tmp;
@@ -163,7 +163,6 @@ void CBlobStreamHelper::Reset()
 //
 
 CAtomicCounter CRemoteAppRequest::sm_DirCounter;
-string CRemoteAppRequest::sm_TmpDirPath;
 
 const string kLocalFSSign = "LFS";
 
@@ -310,32 +309,11 @@ void CRemoteAppRequest::Reset()
     m_ExlusiveMode = false;
 }
 
-/*static*/
-void CRemoteAppRequest::SetTempDir(const string& path)
-{
-    if (CDirEntry::IsAbsolutePath(path))
-        sm_TmpDirPath = path;
-    else {
-        string tmp = CDir::GetCwd()
-            + CDirEntry::GetPathSeparator()
-            + path;
-        sm_TmpDirPath = CDirEntry::NormalizePath(tmp);
-    }
-}
-/*static*/
-const string& CRemoteAppRequest::GetTempDir()
-{
-    if(sm_TmpDirPath.empty())
-        SetTempDir(".");
-    return sm_TmpDirPath;
-}
-
 void CRemoteAppRequest::x_CreateWDir()
 {
-    if( !m_TmpDirName.empty() )
+    if (!m_TmpDirName.empty())
         return;
-    m_TmpDirName = GetTempDir() + CDirEntry::GetPathSeparator() +
-        NStr::ULongToString(sm_DirCounter.Add(1));
+    m_TmpDirName = m_TmpDirPath + NStr::ULongToString(sm_DirCounter.Add(1));
     CDir wdir(m_TmpDirName);
     if (wdir.Exists())
         wdir.Remove();
@@ -355,6 +333,19 @@ void CRemoteAppRequest::x_RemoveWDir()
 
 //////////////////////////////////////////////////////////////////////////////
 //
+
+CRemoteAppRequest::CRemoteAppRequest(
+        CNetCacheAPI::TInstance storage, size_t max_inline_size) :
+    m_NetCacheAPI(storage),
+    m_AppRunTimeout(0),
+    m_TmpDirPath(CDir::GetCwd() + CDirEntry::GetPathSeparator()),
+    m_StdIn(storage, m_InBlobIdOrData, m_StdInDataSize),
+    m_StdInDataSize(0),
+    m_StorageType(eBlobStorage),
+    m_ExlusiveMode(false),
+    m_MaxInlineSize(max_inline_size)
+{
+}
 
 CRemoteAppResult::~CRemoteAppResult()
 {

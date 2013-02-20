@@ -148,7 +148,7 @@ public:
 
 private:
     CGridGlobals();
-    static auto_ptr<CGridGlobals> sm_Instance;
+    static CGridGlobals* sm_Instance;
 
     CAtomicCounter_WithAutoInit m_JobsStarted;
     bool m_ReuseJobObject;

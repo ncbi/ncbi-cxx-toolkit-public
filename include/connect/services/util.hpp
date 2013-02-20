@@ -53,7 +53,7 @@ class NCBI_XCONNECT_EXPORT CCmdLineArgList
 
     bool GetNextArg(string& arg);
 
-    static const string& GetDelimiterString();
+    static const string GetDelimiterString();
 };
 
 

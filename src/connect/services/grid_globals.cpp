@@ -211,7 +211,7 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode& worker)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
+CGridGlobals* CGridGlobals::sm_Instance = NULL;
 
 CGridGlobals::CGridGlobals() :
     m_ReuseJobObject(false),
@@ -230,8 +230,8 @@ CGridGlobals::~CGridGlobals()
 /* static */
 CGridGlobals& CGridGlobals::GetInstance()
 {
-    if ( !sm_Instance.get() )
-        sm_Instance.reset(new CGridGlobals);
+    if (sm_Instance == NULL)
+        sm_Instance = new CGridGlobals;
     return *sm_Instance;
 }
 
