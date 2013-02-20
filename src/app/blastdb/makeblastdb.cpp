@@ -244,8 +244,22 @@ void CMakeBlastDBApp::Init()
                              "windowmasker)",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("mask_id", "mask_algo_ids",
+                             "Comma-separated list of strings to uniquely "
+                             "identify the masking algorithm",
+                             CArgDescriptions::eString);
+    
+    arg_desc->AddOptionalKey("mask_desc", "mask_algo_descriptions",
+                             "Comma-separated list of free form strings to "
+                             "describe the masking algorithm details",
+                             CArgDescriptions::eString);
+
+    arg_desc->SetDependency("mask_id", CArgDescriptions::eRequires, "mask_data");
+    arg_desc->SetDependency("mask_desc", CArgDescriptions::eRequires, "mask_id");
+
     arg_desc->AddFlag("gi_mask",
                       "Create GI indexed masking data.", true);
+    arg_desc->SetDependency("gi_mask", CArgDescriptions::eExcludes, "mask_id");
     arg_desc->SetDependency("gi_mask", CArgDescriptions::eRequires, "parse_seqids");
 
     arg_desc->AddOptionalKey("gi_mask_name", "gi_based_mask_names",
@@ -711,42 +725,63 @@ void CMakeBlastDBApp::x_ProcessMaskData()
 {
     const CArgs & args = GetArgs();
     
-    const CArgValue & files = args["mask_data"];
+    const CArgValue & files    = args["mask_data"];
+    const CArgValue & ids      = args["mask_id"];
+    const CArgValue & descs    = args["mask_desc"];
+    const CArgValue & gi_names = args["gi_mask_name"];
     
-    if (! files.HasValue()) {
-        return;
-    }
-    
-    vector<string> mask_list;
+    vector<string> file_list;
+    vector<string> id_list;
+    vector<string> desc_list;
+    vector<string> gi_mask_names;
 
-    NStr::Tokenize(NStr::TruncateSpaces(files.AsString()), ",", mask_list,
+    if (! files.HasValue()) return;
+    NStr::Tokenize(NStr::TruncateSpaces(files.AsString()), ",", file_list,
                    NStr::eNoMergeDelims);
-
-    if (! mask_list.size()) {
+    if (! file_list.size()) {
         NCBI_THROW(CInvalidDataException, eInvalidInput, 
                 "mask_data option found, but no files were specified.");
     }
     
-    vector<string> gi_mask_names;
-    const CArgValue & gi_names = args["gi_mask_name"];
+    if (ids.HasValue()) {
+        NStr::Tokenize(NStr::TruncateSpaces(ids.AsString()), ",", id_list,
+                   NStr::eNoMergeDelims);
+        if (file_list.size() != id_list.size()) {
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
+                "the size of mask_id does not match that of mask_data.");
+        }
+    }
+
+    if (descs.HasValue()) {
+        NStr::Tokenize(NStr::TruncateSpaces(descs.AsString()), ",", desc_list,
+                   NStr::eNoMergeDelims);
+        if (file_list.size() != desc_list.size()) {
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
+                "the size of mask_desc does not match that of mask_data.");
+        }
+    } else {
+        // description is optional
+        vector<string> default_desc(id_list.size(), "");
+        desc_list.swap(default_desc);
+    }
+
     if (gi_names.HasValue()) {
         NStr::Tokenize(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names,
                    NStr::eNoMergeDelims);
-        if (mask_list.size() != gi_mask_names.size()) {
+        if (file_list.size() != gi_mask_names.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput, 
-                "gi_mask list does not correspond to mask_data list.");
+                "the size of gi_mask_name does not match that of mask_data.");
         }
-        // TODO optionally we need check to make sure the names are unique...
     } 
     
-    for (unsigned int i = 0; i < mask_list.size(); ++i) {
-        if ( !CFile(mask_list[i]).Exists() ) {
-            ERR_POST(Error << "Ignoring mask file '" << mask_list[i] 
+    for (unsigned int i = 0; i < file_list.size(); ++i) {
+        if ( !CFile(file_list[i]).Exists() ) {
+            ERR_POST(Error << "Ignoring mask file '" << file_list[i] 
                            << "' as it does not exist.");
             continue;
         }
 
-        CNcbiIfstream mask_file(mask_list[i].c_str(), ios::binary);
+        CNcbiIfstream mask_file(file_list[i].c_str(), ios::binary);
         CFormatGuess::EFormat mask_file_format = CFormatGuess::eUnknown;
         {{
              CFormatGuess fg(mask_file);
@@ -761,7 +796,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
             CRef<CBlast_db_mask_info> first_obj;
         
             try {
-                s_ReadObject(mask_file, mask_file_format, first_obj, "mask data in '" + mask_list[i] + "'");
+                s_ReadObject(mask_file, mask_file_format, first_obj, "mask data in '" + file_list[i] + "'");
             }
             catch (CEofException&) {
                 // must be end of file
@@ -769,13 +804,16 @@ void CMakeBlastDBApp::x_ProcessMaskData()
             }
         
             if (algo_id < 0) {
-                *m_LogFile << "Mask file: " << mask_list[i] << endl;
-                EBlast_filter_program prog_id = 
-                    static_cast<EBlast_filter_program>(first_obj->GetAlgo_program());
+                *m_LogFile << "Mask file: " << file_list[i] << endl;
                 string opts = first_obj->GetAlgo_options();
-                string name = gi_mask_names.size() ? gi_mask_names[i] : mask_list[i];
-
-                algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts, name);
+                if (id_list.size())  {
+                    algo_id = m_DB->RegisterMaskingAlgorithm(id_list[i], desc_list[i], opts);
+                } else {
+                    EBlast_filter_program prog_id = 
+                        static_cast<EBlast_filter_program>(first_obj->GetAlgo_program());
+                    string name = gi_mask_names.size() ? gi_mask_names[i] : file_list[i];
+                    algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts, name);
+                }
             }
         
             CRef<CBlast_mask_list> masks(& first_obj->SetMasks());
