@@ -747,9 +747,7 @@ void CAlignFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
     bool is_first_aln = true;
     unsigned int num_align = 0;
     ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
-        if(num_align >= number) {
-            break;
-        }
+
         if ((*iter)->GetSegs().IsDisc()) {
             ++num_align;
         } else {
@@ -757,6 +755,11 @@ void CAlignFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
             if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))){
                 ++num_align;
             }
+
+            if(num_align > number) {
+                 break;
+            }
+
             is_first_aln = false;
             previous_id = subid;
         }
