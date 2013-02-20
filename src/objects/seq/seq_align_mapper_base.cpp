@@ -1574,16 +1574,21 @@ x_GetDstExon(CSpliced_seg&              spliced,
              CSeq_id_Handle&            prod_id,
              ENa_strand&                gen_strand,
              ENa_strand&                prod_strand,
-             bool&                      partial,
+             bool&                      last_exon_partial,
              const CSeq_id_Handle&      last_gen_id,
              const CSeq_id_Handle&      last_prod_id) const
 {
+    bool partial_left = false;
+    bool partial_right = false;
     CRef<CSpliced_exon> exon(new CSpliced_exon);
-    if (seg != m_Segs.begin()) {
+    if (seg != m_Segs.begin()  &&  last_exon_partial) {
         // This is not the first segment, exon was split for some reason.
-        // Mark the alignment as partial.
-        partial = true;
+        // Mark it partial.
+        exon->SetPartial(true);
+        partial_left = true;
     }
+
+    last_exon_partial = false;
     int gen_start = -1;
     int prod_start = -1;
     int gen_end = 0;
@@ -1593,11 +1598,12 @@ x_GetDstExon(CSpliced_seg&              spliced,
     bool gstrand_set = false;
     bool pstrand_set = false;
     bool aln_protein = false;
+
     if ( spliced.IsSetProduct_type() ) {
         aln_protein =
             spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
     }
-    bool ex_partial = false; // is this exon partial?
+
     CRef<CSpliced_exon_chunk> last_part; // last exon part added
     int group_idx = -1;
     bool have_non_gaps = false; // are there any non-gap parts at all?
@@ -1605,7 +1611,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
     for ( ; seg != m_Segs.end(); ++seg) {
         if (group_idx != -1  &&  seg->m_GroupIdx != group_idx) {
             // New group found - start a new exon.
-            ex_partial = true;
+            partial_right = true;
             break;
         }
         // Remember the last segment's group.
@@ -1714,7 +1720,9 @@ x_GetDstExon(CSpliced_seg&              spliced,
             // Gap on product
             if (gstart < 0) {
                 // Both get and prod are missing - start new exon.
-                ex_partial = true;
+                last_exon_partial = true;
+                exon->SetPartial(true);
+                partial_right = true;
                 seg++;
                 break;
             }
@@ -1730,7 +1738,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     // Plus strand.
                     if (pstart < prod_end) {
                         // Intersection or bad order.
-                        ex_partial = true;
+                        partial_right = true;
                         break;
                     }
                     if (pstart > prod_end) {
@@ -1742,7 +1750,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     // Minus strand.
                     if (pend > prod_start) {
                         // Intersection or bad order.
-                        ex_partial = true;
+                        partial_right = true;
                         break;
                     }
                     if (pend < prod_start) {
@@ -1767,7 +1775,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     // Plus strand.
                     if (gstart < gen_end) {
                         // Intersection or bad order.
-                        ex_partial = true;
+                        partial_right = true;
                         break;
                     }
                     if (gstart > gen_end) {
@@ -1779,7 +1787,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                     // Minus strand.
                     if (gend > gen_start) {
                         // Intersection or bad order.
-                        ex_partial = true;
+                        partial_right = true;
                         break;
                     }
                     if (gend < gen_start) {
@@ -1827,28 +1835,49 @@ x_GetDstExon(CSpliced_seg&              spliced,
             have_non_gaps = true;
         }
     }
+
     // The whole alignment becomes partial if any its exon is partial.
-    partial |= ex_partial;
     if (!have_non_gaps  ||  exon->GetParts().empty()) {
         // No parts were inserted (or only gaps were found) - truncated exon.
         // Discard it completely.
-        partial = true;
+        last_exon_partial = true;
+        if (!spliced.GetExons().empty()) {
+            // Mark previous exon partial
+            CSpliced_exon& last_exon = *spliced.SetExons().back();
+            last_exon.SetPartial(true);
+            if (last_exon.IsSetGenomic_strand()  &&
+                IsReverse(last_exon.GetGenomic_strand())) {
+                // Minus strand - reset acceptor of the last exon
+                last_exon.ResetAcceptor_before_exon();
+            }
+            else {
+                last_exon.ResetDonor_after_exon();
+            }
+        }
         return;
     }
-    if ( ex_partial ) {
-        exon->SetPartial(true);
-    }
-    else {
-        // If the exon is not partial, copy some data from the original one.
-        if ( m_OrigExon->IsSetAcceptor_before_exon() ) {
+
+    if ( IsReverse(gen_strand) ) {
+        if ( !partial_right  &&  m_OrigExon->IsSetAcceptor_before_exon() ) {
             exon->SetAcceptor_before_exon().Assign(
                 m_OrigExon->GetAcceptor_before_exon());
         }
-        if ( m_OrigExon->IsSetDonor_after_exon() ) {
+        if ( !partial_left  &&  m_OrigExon->IsSetDonor_after_exon() ) {
             exon->SetDonor_after_exon().Assign(
                 m_OrigExon->GetDonor_after_exon());
         }
     }
+    else {
+        if ( !partial_left  &&  m_OrigExon->IsSetAcceptor_before_exon() ) {
+            exon->SetAcceptor_before_exon().Assign(
+                m_OrigExon->GetAcceptor_before_exon());
+        }
+        if ( !partial_right  &&  m_OrigExon->IsSetDonor_after_exon() ) {
+            exon->SetDonor_after_exon().Assign(
+                m_OrigExon->GetDonor_after_exon());
+        }
+    }
+
     // If some id was not found in this exon, use the last known one.
     if (!gen_id  &&  last_gen_id) {
         gen_id = last_gen_id;
@@ -1910,6 +1939,7 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
     bool single_prod_id = true;
     bool single_prod_str = true;
     bool partial = false;
+    bool last_exon_partial = false;
 
     ITERATE(TSubAligns, it, m_SubAligns) {
         TSegments::const_iterator seg = (*it)->m_Segs.begin();
@@ -1924,8 +1954,9 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
             ENa_strand ex_gen_strand = eNa_strand_unknown;
             ENa_strand ex_prod_strand = eNa_strand_unknown;
             (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
-                ex_gen_strand, ex_prod_strand, partial,
+                ex_gen_strand, ex_prod_strand, last_exon_partial,
                 last_gen_id, last_prod_id);
+            partial = partial || last_exon_partial;
             // Check if all exons have the same ids in genomic and product
             // rows.
             if (ex_gen_id) {

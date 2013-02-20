@@ -255,7 +255,7 @@ private:
                       CSeq_id_Handle&            prod_id,
                       ENa_strand&                gen_strand,
                       ENa_strand&                prod_strand,
-                      bool&                      partial,
+                      bool&                      last_exon_partial,
                       const CSeq_id_Handle&      last_gen_id,
                       const CSeq_id_Handle&      last_prod_id) const;
     // Adds new part to the exon. If last part had the same type, it is
