@@ -132,7 +132,8 @@ CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
 int
 CBlastpAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eBlastp, m_IsUngapped);
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(eBlastp, m_IsUngapped, is_remote);
 }
 
 END_SCOPE(blast)

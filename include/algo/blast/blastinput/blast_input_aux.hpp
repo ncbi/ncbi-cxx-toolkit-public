@@ -243,10 +243,11 @@ ParseSequenceRangeOpenEnd(const string& range_str, const char* error_prefix = NU
 /** Retrieve the appropriate batch size for the specified task 
  * @param program BLAST task [in]
  * @param is_ungapped true if ungapped BLAST search is requested [in]
+ * @param remote true if remote BLAST search is requested [in]
  */
 NCBI_BLASTINPUT_EXPORT
 int
-GetQueryBatchSize(EProgram program, bool is_ungapped = false);
+GetQueryBatchSize(EProgram program, bool is_ungapped = false, bool remote = false);
 
 /** Read sequence input for BLAST 
  * @param in input stream from which to read [in]

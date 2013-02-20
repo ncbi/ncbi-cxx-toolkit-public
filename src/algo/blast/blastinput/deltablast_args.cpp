@@ -133,7 +133,8 @@ CDeltaBlastAppArgs::CDeltaBlastAppArgs()
 int
 CDeltaBlastAppArgs::GetQueryBatchSize(void) const
 {
-    return blast::GetQueryBatchSize(eDeltaBlast, m_IsUngapped);
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(eDeltaBlast, m_IsUngapped, is_remote);
 }
 
 CRef<CBlastOptionsHandle>

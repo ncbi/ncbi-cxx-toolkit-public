@@ -159,7 +159,8 @@ CTblastnAppArgs::SetInputPssm(CRef<objects::CPssmWithParameters> pssm)
 int
 CTblastnAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(eTblastn, m_IsUngapped);
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(eTblastn, m_IsUngapped, is_remote);
 }
 
 END_SCOPE(blast)

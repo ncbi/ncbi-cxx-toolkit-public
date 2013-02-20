@@ -161,7 +161,8 @@ CPsiBlastAppArgs::SetNumberOfIterations(unsigned int num_iters)
 int 
 CPsiBlastAppArgs::GetQueryBatchSize() const
 {
-    return blast::GetQueryBatchSize(ePSIBlast, m_IsUngapped);
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(ePSIBlast, m_IsUngapped, is_remote);
 }
 
 bool

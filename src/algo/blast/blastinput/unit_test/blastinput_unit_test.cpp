@@ -2603,6 +2603,11 @@ BOOST_AUTO_TEST_CASE(ParseSequenceRange_1BasedRange) {
     BOOST_REQUIRE_EQUAL(10U, r.GetToOpen());
 }
 
+BOOST_AUTO_TEST_CASE(CheckQueryBatchSize) {
+    BOOST_REQUIRE_EQUAL(100000, GetQueryBatchSize(eBlastn));
+    BOOST_REQUIRE_EQUAL(10000, GetQueryBatchSize(eBlastn, false, true));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

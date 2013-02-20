@@ -63,7 +63,7 @@ CAutoOutputFileReset::GetStream()
 }
 
 int
-GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
+GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */, bool is_remote /* = false */)
 {
     int retval = 0;
 
@@ -82,6 +82,12 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
         retval = NStr::StringToInt(batch_sz_str);
         _TRACE("DEBUG: Using query batch size " << retval);
         return retval;
+    }
+
+    if (is_remote)
+    {
+       retval = 10000;
+       return retval;
     }
 
     switch (program) {
