@@ -939,9 +939,9 @@ BOOST_AUTO_TEST_CASE(Tblastn2Seqs_PlusStrandOnly) {
     BOOST_CHECK_EQUAL((size_t)1, alignment->Size());
     ITERATE(CSeq_align_set::Tdata, aln, alignment->Get()) {
         // check the query's strand (protein)
-        BOOST_CHECK_EQUAL(eNa_strand_unknown, (*aln)->GetSeqStrand(0)); 
+        BOOST_CHECK_EQUAL(static_cast<int>(eNa_strand_unknown), static_cast<int>((*aln)->GetSeqStrand(0))); 
         // check the subject's strand (nucleotide)
-        BOOST_CHECK_EQUAL(eNa_strand_plus, (*aln)->GetSeqStrand(1));
+        BOOST_CHECK_EQUAL(static_cast<int>(eNa_strand_plus), static_cast<int>((*aln)->GetSeqStrand(1)));
     }
 }
 
