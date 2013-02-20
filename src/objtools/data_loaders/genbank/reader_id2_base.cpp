@@ -1937,30 +1937,14 @@ void CId2ReaderBase::x_ProcessGetBlob(
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
     const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
     TBlobId blob_id = GetBlobId(src_blob_id);
-    CLoadLockBlob blob(result, blob_id);
+
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
         SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
-    }
-    if ( blob.IsLoaded() ) {
-        if ( blob->x_NeedsDelayedMainChunk() ) {
-            chunk_id = CProcessor::kDelayedMain_ChunkId;
-        }
-        else {
-            m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
-            ERR_POST_X(4, Info << "CId2ReaderBase: ID2-Reply-Get-Blob: "
-                          "blob already loaded: "<<blob_id);
-            return;
-        }
-    }
-
-    if ( blob->HasSeq_entry() ) {
-        ERR_POST_X(5, "CId2ReaderBase: ID2-Reply-Get-Blob: "
-                      "Seq-entry already loaded: "<<blob_id);
-        return;
     }
 
     TBlobState blob_state = x_GetBlobState(main_reply);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
+        CLoadLockBlob blob(result, blob_id);
         blob.SetBlobState(blob_state);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
         _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
@@ -1986,13 +1970,10 @@ void CId2ReaderBase::x_ProcessGetBlob(
         }
         ERR_POST_X(6, "CId2ReaderBase: ID2-Reply-Get-Blob: "
                    "no data in reply: "<<blob_id);
+        CLoadLockBlob blob(result, blob_id);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
         _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
         return;
-    }
-
-    if ( blob_state ) {
-        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
     }
 
     if ( reply.GetSplit_version() != 0 ) {
@@ -2001,6 +1982,30 @@ void CId2ReaderBase::x_ProcessGetBlob(
         loaded_set.m_Skeletons[blob_id] = &data;
         return;
     }
+
+    CLoadLockBlob blob(result, blob_id);
+    if ( blob.IsLoaded() ) {
+        if ( blob->x_NeedsDelayedMainChunk() ) {
+            chunk_id = CProcessor::kDelayedMain_ChunkId;
+        }
+        else {
+            m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
+            ERR_POST_X(4, Info << "CId2ReaderBase: ID2-Reply-Get-Blob: "
+                          "blob already loaded: "<<blob_id);
+            return;
+        }
+    }
+
+    if ( blob->HasSeq_entry() ) {
+        ERR_POST_X(5, "CId2ReaderBase: ID2-Reply-Get-Blob: "
+                      "Seq-entry already loaded: "<<blob_id);
+        return;
+    }
+
+    if ( blob_state ) {
+        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+    }
+
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
         m_Dispatcher->GetProcessor(CProcessor::eType_Seq_entry_SNP)
             .ProcessBlobFromID2Data(result, blob_id, chunk_id, data);
@@ -2023,10 +2028,16 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
     const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
     TBlobId blob_id = GetBlobId(src_blob_id);
-    CLoadLockBlob blob(result, blob_id);
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
         SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
     }
+    if ( !reply.IsSetData() ) {
+        ERR_POST_X(11, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
+                       "no data in reply: "<<blob_id);
+        return;
+    }
+
+    CLoadLockBlob blob(result, blob_id);
     if ( !blob ) {
         ERR_POST_X(9, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
                       "no blob: " << blob_id);
@@ -2037,24 +2048,14 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
             chunk_id = CProcessor::kDelayedMain_ChunkId;
         }
         else {
+            m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
             ERR_POST_X(10, Info<<"CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
                        "blob already loaded: " << blob_id);
             return;
         }
     }
-    if ( !reply.IsSetData() ) {
-        ERR_POST_X(11, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
-                       "no data in reply: "<<blob_id);
-        return;
-    }
 
     TBlobState blob_state = x_GetBlobState(main_reply);
-    if ( blob_state & CBioseq_Handle::fState_no_data ) {
-        blob.SetBlobState(blob_state);
-        SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
-        return;
-    }
     {{
         SId2LoadedSet::TBlobStates::iterator iter =
             loaded_set.m_BlobStates.find(blob_id);
@@ -2062,6 +2063,12 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
             blob_state |= iter->second;
         }
     }}
+    if ( blob_state & CBioseq_Handle::fState_no_data ) {
+        blob.SetBlobState(blob_state);
+        SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
+        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
+        return;
+    }
 
     CConstRef<CID2_Reply_Data> skel;
     {{
