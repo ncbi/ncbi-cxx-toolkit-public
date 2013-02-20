@@ -26,107 +26,286 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbiapp.hpp>
-
-
-// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
+#include <boost/test/output_test_stream.hpp>
 
+#include <serial/iterator.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+
+#include <objtools/readers/fasta.hpp>
+
+#include <objtools/seqmasks_io/mask_reader.hpp>
+#include <objtools/seqmasks_io/mask_writer.hpp>
+#include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
+#include <objtools/seqmasks_io/mask_writer_fasta.hpp>
+#include <objtools/seqmasks_io/mask_writer_int.hpp>
+#include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
+struct seqmasks_io_fixture {
 
-NCBITEST_AUTO_INIT()
-{
-    // Your application initialization code here (optional)
-    //cout << "Initialization function executed" << endl;
-}
-
-
-NCBITEST_INIT_CMDLINE(arg_desc)
-{
-    // Describe command line parameters that we are going to use
-    arg_desc->AddFlag
-        ("enable_TestTimeout",
-         "Run TestTimeout test, which is artificially disabled by default in"
-         "order to avoid unwanted failure during the daily automated builds.");
-}
-
-
-
-NCBITEST_AUTO_FINI()
-{
-    // Your application finalization code here (optional)
-    //cout << "Finalization function executed" << endl;
-}
-
-BOOST_AUTO_TEST_CASE(TestSimpleTools)
-{
-    auto_ptr<CMaskWriter> writer(new CMaskWriterFasta);
-
-
-
-    int    i  = 1;
-    double d  = 0.123;
-    string s1 = "qwerty";
-    string s2 = "qwerty";
-
-    // If this check fails, test will continue its execution
-    BOOST_CHECK_EQUAL(i,  1);
-    // If this check fails, test will stop its execution at this point
-    BOOST_REQUIRE_EQUAL(d,  0.123);
-    // If something during checking can throw an exception and you don't want
-    // it to do that you can use different macros:
-    NCBITEST_CHECK_EQUAL(s1, s2);
-    // ... or
-    NCBITEST_CHECK(s1 == s2);
-    // ... or
-    NCBITEST_CHECK_MESSAGE(s1 == s2, "Object s1 not equal object s2");
-
-    // Never use it this way, because it will not compile on WorkShop:
-    //    BOOST_CHECK_EQUAL(s1, "qwerty");
-    // Instead, use it this way:
-    BOOST_CHECK(s1 == "qwerty");
-    // ...or this way:
-    BOOST_CHECK_EQUAL(s1, string("qwerty"));
-}
-
-BOOST_AUTO_TEST_CASE(TestSimpleTools2)
-{
-    BOOST_REQUIRE(true);
-}
-
-static void s_ThrowSomeException(void)
-{
-    NCBI_THROW(CException, eUnknown, "Some exception message");
-}
-
-BOOST_AUTO_TEST_CASE(TestWithException)
-{
-    BOOST_CHECK_THROW( s_ThrowSomeException(), CException );
-}
-
-
-static void s_FuncWithoutException(void)
-{
-    cout << "Here is some dummy message" << endl;
-}
-
-BOOST_AUTO_TEST_CASE(TestWithoutException)
-{
-    BOOST_CHECK_NO_THROW( s_FuncWithoutException() );
-}
-
-BOOST_AUTO_TEST_CASE_TIMEOUT(TestTimeout, 2);
-BOOST_AUTO_TEST_CASE(TestTimeout)
-{
-    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    if ( args["enable_TestTimeout"] ) {
-        // This test will always fail due to timeout
-        SleepSec(4);
+    seqmasks_io_fixture() {
+        x_LoadMaskedBioseqGi555();
     }
-    else {
-        cout << "To run TestTimeout pass flag '-enable_TestTimeout'" << endl;
+
+    CBioseq_Handle m_BioseqHandle;
+    CMaskWriter::TMaskList m_Masks;
+
+    size_t GetExpectedNumberOfMasks() const { return 1U; }
+    TSeqPos GetMaskStart() const { return 78U; }
+    TSeqPos GetMaskStop() const { return 89U; }
+
+private:
+    void x_ConvertMasks(CRef<CSeq_loc> mask) {
+        for (CTypeConstIterator<CSeq_interval> itr(ConstBegin(*mask)); itr;
+             ++itr) {
+            CMaskWriter::TMaskedInterval m(itr->GetStart(eExtreme_Positional),
+                                           itr->GetStop(eExtreme_Positional));
+            m_Masks.push_back(m);
+        }
     }
+
+    void x_LoadMaskedBioseqGi555() {
+    const char* kDataFile = "data/nt.555.mfsa";
+        CNcbiIfstream in(kDataFile);
+        _ASSERT(in);
+
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        scope->AddDefaults();
+
+        const CFastaReader::TFlags kFlags = CFastaReader::fAssumeNuc | 
+            CFastaReader::fAllSeqIds | CFastaReader::fUniqueIDs;
+        CFastaReader fsa_reader(in, kFlags);
+        CRef<CSeq_loc> mask = fsa_reader.SaveMask();
+        CRef<CSeq_entry> se = fsa_reader.ReadOneSeq();
+        _ASSERT(se->IsSeq());
+        scope->AddTopLevelSeqEntry(*se);
+        const CSeq_id& id1 = *se->GetSeq().GetFirstId();
+        const CSeq_id& best_id = fsa_reader.GetBestID();
+        _ASSERT(id1.Match(best_id));
+        m_BioseqHandle = scope->GetBioseqHandle(best_id);
+        _ASSERT(m_BioseqHandle);
+
+        x_ConvertMasks(mask);
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE(seqmasks_io_tests, seqmasks_io_fixture)
+
+BOOST_AUTO_TEST_CASE(WriteFastaParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_fasta.out");
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterFasta(out));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
 }
+
+BOOST_AUTO_TEST_CASE(WriteFastaNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_fasta.out");
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterFasta(out));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+#if 0
+BOOST_AUTO_TEST_CASE(WriteAcclistParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_acclist.out");
+    const bool kParseSeqids(true);
+    //auto_ptr<CMaskWriter> writer(new CMaskWriterFasta(out));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteAcclistNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_acclist.out");
+    const bool kParseSeqids(false);
+    //auto_ptr<CMaskWriter> writer(new CMaskWriterFasta(out));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+#endif
+
+BOOST_AUTO_TEST_CASE(WriteIntervalParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_interval.out");
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterInt(out));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteIntervalNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_interval.out");
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterInt(out));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+static const int kAlgoId(2);
+static const string kAlgoOptions("window=64; level=20; linker=1");
+
+BOOST_AUTO_TEST_CASE(WriteMaskInfoAsn1TextParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_maskinfo_asn1_text.out");
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterBlastDbMaskInfo(out,
+                                                                "maskinfo_asn1_text",
+                                                                kAlgoId,
+                                                                eBlast_filter_program_dust,
+                                                                kAlgoOptions));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteMaskInfoAsn1TextNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_maskinfo_asn1_text.out");
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterBlastDbMaskInfo(out,
+                                                                "maskinfo_asn1_text",
+                                                                kAlgoId,
+                                                                eBlast_filter_program_dust,
+                                                                kAlgoOptions));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteMaskInfoAsn1BinaryParseSeqids)
+{
+    const bool kMatchOrSave(true);
+    const bool kTextOrBin(false);
+    boost::test_tools::output_test_stream
+        out("data/sample_parse_seqids_maskinfo_asn1_bin.out",
+            kMatchOrSave, kTextOrBin);
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterBlastDbMaskInfo(out,
+                                                                "maskinfo_asn1_bin",
+                                                                kAlgoId,
+                                                                eBlast_filter_program_dust,
+                                                                kAlgoOptions));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteMaskInfoAsn1BinaryNoParseSeqids)
+{
+    const bool kMatchOrSave(true);
+    const bool kTextOrBin(false);
+    boost::test_tools::output_test_stream out("data/sample_maskinfo_asn1_bin.out", 
+            kMatchOrSave, kTextOrBin);
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterBlastDbMaskInfo(out,
+                                                                "maskinfo_asn1_bin",
+                                                                kAlgoId,
+                                                                eBlast_filter_program_dust,
+                                                                kAlgoOptions));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteMaskInfoXmlParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_maskinfo_xml.out");
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterBlastDbMaskInfo(out,
+                                                                "maskinfo_xml",
+                                                                kAlgoId,
+                                                                eBlast_filter_program_dust,
+                                                                kAlgoOptions));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteMaskInfoXmlNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_maskinfo_xml.out");
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterBlastDbMaskInfo(out,
+                                                                "maskinfo_xml",
+                                                                kAlgoId,
+                                                                eBlast_filter_program_dust,
+                                                                kAlgoOptions));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1TextParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_seqloc_asn1_text.out");
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_asn1_text"));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1TextNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_seqloc_asn1_text.out");
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_asn1_text"));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+    BOOST_REQUIRE_EQUAL(GetExpectedNumberOfMasks(), m_Masks.size());
+    BOOST_CHECK_EQUAL(GetMaskStart(), m_Masks[0].first);
+    BOOST_CHECK_EQUAL(GetMaskStop(), m_Masks[0].second);
+}
+
+BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1BinaryParseSeqids)
+{
+    const bool kMatchOrSave(true);
+    const bool kTextOrBin(false);
+    boost::test_tools::output_test_stream
+        out("data/sample_parse_seqids_seqloc_asn1_bin.out", kMatchOrSave,
+            kTextOrBin);
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_asn1_bin"));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteSeqLocAsn1BinaryNoParseSeqids)
+{   
+    const bool kMatchOrSave(true);
+    const bool kTextOrBin(false);
+    boost::test_tools::output_test_stream
+        out("data/sample_seqloc_asn1_bin.out", kMatchOrSave, kTextOrBin);
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_asn1_bin"));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteSeqLocXmlParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_parse_seqids_seqloc_xml.out");
+    const bool kParseSeqids(true);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_xml"));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+BOOST_AUTO_TEST_CASE(WriteSeqLocXmlNoParseSeqids)
+{
+    boost::test_tools::output_test_stream out("data/sample_seqloc_xml.out");
+    const bool kParseSeqids(false);
+    auto_ptr<CMaskWriter> writer(new CMaskWriterSeqLoc(out, "seqloc_xml"));
+    writer->Print(m_BioseqHandle, m_Masks, kParseSeqids);
+    BOOST_CHECK(out.match_pattern());
+}
+
+
+BOOST_AUTO_TEST_SUITE_END()

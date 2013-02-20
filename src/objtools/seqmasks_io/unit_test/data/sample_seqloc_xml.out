@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE Seq-loc PUBLIC "-//NCBI//NCBI Seqloc/EN" "NCBI_Seqloc.dtd">
+<Seq-loc>
+  <Seq-loc_int>
+    <Seq-interval>
+      <Seq-interval_from>78</Seq-interval_from>
+      <Seq-interval_to>89</Seq-interval_to>
+      <Seq-interval_id>
+        <Seq-id>
+          <Seq-id_local>
+            <Object-id>
+              <Object-id_id>1</Object-id_id>
+            </Object-id>
+          </Seq-id_local>
+        </Seq-id>
+      </Seq-interval_id>
+    </Seq-interval>
+  </Seq-loc_int>
+</Seq-loc>

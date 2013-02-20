@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE Blast-db-mask-info PUBLIC "-//NCBI//NCBI BlastDL/EN" "NCBI_BlastDL.dtd">
+<Blast-db-mask-info>
+  <Blast-db-mask-info_algo-id>2</Blast-db-mask-info_algo-id>
+  <Blast-db-mask-info_algo-program>
+    <Blast-filter-program value="dust">10</Blast-filter-program>
+  </Blast-db-mask-info_algo-program>
+  <Blast-db-mask-info_algo-options>window=64; level=20; linker=1</Blast-db-mask-info_algo-options>
+  <Blast-db-mask-info_masks>
+    <Blast-mask-list>
+      <Blast-mask-list_masks>
+        <Seq-loc>
+          <Seq-loc_int>
+            <Seq-interval>
+              <Seq-interval_from>78</Seq-interval_from>
+              <Seq-interval_to>89</Seq-interval_to>
+              <Seq-interval_id>
+                <Seq-id>
+                  <Seq-id_local>
+                    <Object-id>
+                      <Object-id_id>1</Object-id_id>
+                    </Object-id>
+                  </Seq-id_local>
+                </Seq-id>
+              </Seq-interval_id>
+            </Seq-interval>
+          </Seq-loc_int>
+        </Seq-loc>
+      </Blast-mask-list_masks>
+      <Blast-mask-list_more value="false"/>
+    </Blast-mask-list>
+  </Blast-db-mask-info_masks>
+</Blast-db-mask-info>
