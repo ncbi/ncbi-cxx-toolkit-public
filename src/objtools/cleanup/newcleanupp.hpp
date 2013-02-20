@@ -193,6 +193,10 @@ public:
         CSeq_annot& sa
     );
 
+    void ExtendedCleanupSeqEntryHandle (
+        CSeq_entry_Handle& seh
+    );
+
 private:
 
     // many more methods and variables ...

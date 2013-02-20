@@ -9602,5 +9602,25 @@ void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
     // TODO: implement more of ExtendedCleanup
 }
 
+void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
+        CSeq_entry_Handle& seh )
+{
+    // clean a copy, and then update via the edit handle
+
+    CRef<CSeq_entry> new_seq_entry( new CSeq_entry );
+    new_seq_entry->Assign( *seh.GetCompleteSeq_entry() );
+
+    CSeq_entry_EditHandle edit_handle( seh );
+
+    ExtendedCleanupSeqEntry( *new_seq_entry );
+
+    edit_handle.SelectNone();
+    if( new_seq_entry->IsSeq() ) {
+        edit_handle.SelectSeq( new_seq_entry->SetSeq() );
+    } else if( new_seq_entry->IsSet() ) {
+        edit_handle.SelectSet( new_seq_entry->SetSet() );
+    }
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

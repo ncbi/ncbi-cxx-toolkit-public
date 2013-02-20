@@ -99,6 +99,9 @@ public:
     /// Cleanup a Seq-Annot.
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_annot& sa,  Uint4 options = 0);
 
+    // Handle versions
+    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);
