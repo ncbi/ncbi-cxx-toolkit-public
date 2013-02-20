@@ -78,6 +78,21 @@ CMaskInfoRegistry::x_FindNextValidIdWithinRange(int start, int stop)
     NCBI_THROW(CWriteDBException, eArgErr, msg);
 }
 
+int 
+CMaskInfoRegistry::Add(const string& id)
+{
+    if (find(m_RegisteredAlgos.begin(), m_RegisteredAlgos.end(), id) 
+            != m_RegisteredAlgos.end()) {
+        NCBI_THROW(CWriteDBException, eArgErr, "Duplicate masking algorithm found.");
+    }
+
+    m_RegisteredAlgos.push_back(id);
+
+    int algo_id = x_AssignId(eBlast_filter_program_other, eBlast_filter_program_max);
+    m_UsedIds.insert(algo_id);
+    return algo_id;
+}
+
 int
 CMaskInfoRegistry::Add(EBlast_filter_program program, 
                        const string& options /* = string() */)

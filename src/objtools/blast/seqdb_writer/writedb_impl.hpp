@@ -269,6 +269,27 @@ public:
                              const string           & options,
                              const string           & name = "");
     
+    /// Register a type of filtering data found in this database.
+    ///
+    /// The BlastDb format supports storage of masking data (lists of
+    /// masked ranges) for each database sequence, as well as an
+    /// indication of the source (or sources) of this masking data (e.g.:
+    /// masking algorithm used to create them).
+    /// This method stores a description of one of these masking data
+    /// sources in this database, including which basic algorithm was
+    /// used, as well as the options passed to that algorithm.  Each
+    /// description is associated with a numeric `algorithm id' (return value
+    /// of this method), which identifies that data source when adding data
+    /// with SetMaskData.
+    ///
+    /// @return algorithm ID for the filtering data.
+    /// @param id A string to identify this masking data. [in]
+    /// @param description Details about the masking data. [in]
+    /// @param options Algorithm options provided to the program. [in]
+    int RegisterMaskAlgorithm(const string          & id,
+                             const string           & description,
+                             const string           & options);
+    
     /// Set filtering data for a sequence.
     /// 
     /// This method specifies filtered regions for the sequence.  Each

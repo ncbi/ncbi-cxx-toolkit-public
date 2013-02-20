@@ -1418,6 +1418,19 @@ CBuildDatabase::RegisterMaskingAlgorithm(EBlast_filter_program program,
 #endif
 }
 
+int
+CBuildDatabase::RegisterMaskingAlgorithm(const string        & program, 
+                                         const string        & description,
+                                         const string        & options)
+{
+#if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
+     (!defined(NCBI_COMPILER_MIPSPRO)) )
+    return m_OutputDb->RegisterMaskAlgorithm(program, description, options);
+#else
+    return 0;
+#endif
+}
+
 void CBuildDatabase::SetMaskDataSource(IMaskDataSource & ranges)
 {
     m_MaskData.Reset(& ranges);

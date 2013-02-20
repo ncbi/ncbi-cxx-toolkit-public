@@ -151,6 +151,14 @@ RegisterMaskAlgorithm(EBlast_filter_program   program,
     return m_Impl->RegisterMaskAlgorithm(program, options, name);
 }
 
+int CWriteDB::
+RegisterMaskAlgorithm(const string & id,
+                      const string & description,
+                      const string & options)
+{
+    return m_Impl->RegisterMaskAlgorithm(id, description, options);
+}
+
 void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges,
                            const vector<int>         & gis)
 {

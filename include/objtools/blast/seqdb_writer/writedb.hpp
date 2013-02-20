@@ -249,6 +249,16 @@ public:
                               const string & options = string(),
                               const string & name = string());
     
+    /// Register a type of filtering data found in this database.
+    ///
+    /// @return algorithm ID for the filtering data.
+    /// @param id A string to identify the masking data. [in]
+    /// @param description Details about the masking data. [in]
+    /// @param options Algorithm options provided to the program. [in]
+    int RegisterMaskAlgorithm(const string & id,
+                              const string & description = string(),
+                              const string & options = string());
+
     /// Set filtering data for a sequence.
     /// 
     /// This method specifies filtered regions for this sequence.  A

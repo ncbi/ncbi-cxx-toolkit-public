@@ -55,6 +55,8 @@ public:
     /// @throw CWriteDBException on error
     int Add(EBlast_filter_program program, const string& options = string());
 
+    int Add(const string& id);
+
     /// Verify whether the provided algorithm ID has been registered with this
     /// object
     /// @param algo_id algorithm ID to validate [in]

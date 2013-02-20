@@ -1286,6 +1286,21 @@ RegisterMaskAlgorithm(EBlast_filter_program   program,
     return algorithm_id;
 }
 
+int CWriteDB_Impl::
+RegisterMaskAlgorithm(const string &id,
+                      const string &description,
+                      const string &options)
+{
+    int algorithm_id = m_MaskAlgoRegistry.Add(id);
+
+    string key = NStr::IntToString(algorithm_id);
+    string value = id + ":" + description + ":" + options;
+
+    m_ColumnMetas[x_GetMaskDataColumnId()][key] = value;
+
+    return algorithm_id;
+}
+
 int CWriteDB_Impl::FindColumn(const string & title) const
 {
     for(int i = 0; i < (int) m_ColumnTitles.size(); i++) {

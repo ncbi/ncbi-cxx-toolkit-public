@@ -392,6 +392,24 @@ public:
                              const string        & options,
                              const string        & name = "");
     
+    /// Define a masking algorithm.
+    ///
+    /// The returned integer ID will be defined as corresponding to the
+    /// provided program enumeration (e.g. DUST, SEG, etc) and options
+    /// string, for subject masking.  Each program enumeration (such
+    /// as DUST) may be used several times with different options
+    /// strings, however, the combination of program and options
+    /// should be unique for each algorithm ID.  The options string is
+    /// a free-form string (at least from this class's point of view).
+    ///
+    /// @param program A string to identify the filtering algorithm [in]
+    /// @param description A free-form string describing the data [in]
+    /// @param options A free-form string describing the options used [in]
+    int
+    RegisterMaskingAlgorithm(const string        & program,
+                             const string        & description,
+                             const string        & options);
+    
     /// Specify an object mapping Seq-id to subject masking data.
     ///
     /// Masking data is provided to CBuildDatabase by implementing an
