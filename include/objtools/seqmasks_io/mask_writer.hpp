@@ -107,6 +107,15 @@ protected:
     /**
      **\brief Output of the sequence id.
      **
+     **\param bsh the bioseq handle
+     **\param parsed_id bioseq id was parsed by CMaskReader.
+     **
+     **/
+    virtual void PrintId( objects::CBioseq_Handle& bsh, bool parsed_id );
+
+    /**
+     **\brief Convert the sequence id to a string
+     **
      ** By default prints id in fasta format but implementations
      ** can redefine it as necessary and use from within Print()
      ** method.
@@ -115,7 +124,7 @@ protected:
      **\param parsed_id bioseq id was parsed by CMaskReader.
      **
      **/
-    virtual void PrintId( objects::CBioseq_Handle& bsh, bool parsed_id );
+    virtual string IdToString(objects::CBioseq_Handle& bsh, bool parsed_id);
 
     /**
      **\brief the standard C++ ostream object 

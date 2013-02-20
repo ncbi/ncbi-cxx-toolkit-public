@@ -23,10 +23,10 @@
  *
  * ===========================================================================
  *
- * Author:  Aleksandr Morgulis
+ * Author:  Christiam Camacho
  *
  * File Description:
- *   CMaskWriter class member and method definitions.
+ *   CMaskWriterTabular class member and method definitions.
  *
  */
 
@@ -35,39 +35,22 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
+#include <objtools/seqmasks_io/mask_writer_tab.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/util/create_defline.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-
-#include <objtools/seqmasks_io/mask_writer.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool parsed_id )
+void CMaskWriterTabular::Print( objects::CBioseq_Handle& bsh,
+                               const TMaskList & mask,
+                               bool parsed_id )
 {
-    os << IdToString(bsh, parsed_id);
-}
-
-string CMaskWriter::IdToString( objects::CBioseq_Handle& bsh, bool parsed_id )
-{ 
-    CNcbiOstrstream oss;
-    oss << ">";
-
-    if( parsed_id ) {
-        oss << CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(), 
-                                       CSeq_id::eFormat_FastA) + " ";
+    const string id = IdToString(bsh, parsed_id);
+    ITERATE(TMaskList, i, mask) {
+        os << id << "\t" << i->first << "\t" << i->second << "\n";
     }
-
-    oss << sequence::CDeflineGenerator().GenerateDefline(bsh);
-    return CNcbiOstrstreamToString(oss);
 }
+
 
 END_NCBI_SCOPE

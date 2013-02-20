@@ -53,6 +53,7 @@ void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
                               bool parsed_id )
 {
     PrintId( bsh, parsed_id );
+    os << endl;
     CSeqVector data = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     /// FIXME: this can be implemented as a call to CFastaOstream, which

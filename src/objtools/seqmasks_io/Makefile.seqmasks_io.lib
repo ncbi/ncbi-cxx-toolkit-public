@@ -7,6 +7,7 @@ mask_fasta_reader \
 mask_writer \
 mask_writer_fasta \
 mask_writer_int \
+mask_writer_tab \
 mask_writer_seqloc \
 mask_writer_blastdb_maskinfo
 

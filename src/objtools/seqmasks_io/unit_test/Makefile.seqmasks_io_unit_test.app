@@ -19,7 +19,7 @@ REQUIRES = Boost.Test.Included
 
 # Comment out if you do not want it to run automatically as part of
 # "make check".
-CHECK_CMD = $(APP)
+CHECK_CMD = seqmasks_io_unit_test
 CHECK_COPY = data
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST

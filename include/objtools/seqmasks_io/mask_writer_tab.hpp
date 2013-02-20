@@ -23,51 +23,64 @@
  *
  * ===========================================================================
  *
- * Author:  Aleksandr Morgulis
+ * Author:  Christiam Camacho
  *
  * File Description:
- *   CMaskWriter class member and method definitions.
+ *   Header file for CMaskWriterTabular class.
  *
  */
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
-#include <ncbi_pch.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
-
-#include <objmgr/bioseq_ci.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/util/create_defline.hpp>
-#include <objmgr/seqdesc_ci.hpp>
+#ifndef CMASK_WRITER_ACCLIST_H
+#define CMASK_WRITER_ACCLIST_H
 
 #include <objtools/seqmasks_io/mask_writer.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
-//-------------------------------------------------------------------------
-void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool parsed_id )
+/**
+ **\brief Output filter to print masked sequences as sets of
+ **       intervals one per line.
+ **
+ ** Masking data for each new sequence in the file starts with
+ ** a fasta style id and is followed by a range indicating the
+ ** masked sequence starting at position 'start' and ending
+ ** at position 'end', each field is separated by a tab character
+ ** (i.e.: [id]\t[start]\t[end])
+ **
+ **/
+class NCBI_XOBJREAD_EXPORT CMaskWriterTabular : public CMaskWriter
 {
-    os << IdToString(bsh, parsed_id);
-}
+public:
 
-string CMaskWriter::IdToString( objects::CBioseq_Handle& bsh, bool parsed_id )
-{ 
-    CNcbiOstrstream oss;
-    oss << ">";
+    /**
+     **\brief Object constructor.
+     **
+     **\param arg_os output stream used to initialize the
+     **              base class instance
+     **
+     **/
+    CMaskWriterTabular( CNcbiOstream & arg_os ) 
+        : CMaskWriter( arg_os ) {}
 
-    if( parsed_id ) {
-        oss << CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(), 
-                                       CSeq_id::eFormat_FastA) + " ";
-    }
+    /**
+     **\brief Object destructor.
+     **
+     **/
+    virtual ~CMaskWriterTabular() {}
 
-    oss << sequence::CDeflineGenerator().GenerateDefline(bsh);
-    return CNcbiOstrstreamToString(oss);
-}
+    /**
+     **\brief Send the masking data to the output stream.
+     **
+     **\param bsh the bioseq handle
+     **\param mask the resulting list of masked intervals
+     **\param parsed_id bioseq id was parsed by CMaskReader.
+     **
+     **/
+    virtual void Print( objects::CBioseq_Handle& bsh,
+                        const TMaskList & mask,
+                        bool parsed_id = false );
+};
 
 END_NCBI_SCOPE
+
+#endif
