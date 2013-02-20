@@ -196,9 +196,8 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
 
 #define BOOST_TIMEOUT(M)                                        \
     do {                                                        \
-        static string s(M);                                     \
         throw boost::execution_exception(                       \
-                boost::execution_exception::timeout_error, s    \
+                boost::execution_exception::timeout_error, M    \
                 NCBI_BOOST_LOCATION());                         \
     } while (0)                                                 \
 /**/
