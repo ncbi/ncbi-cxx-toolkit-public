@@ -2465,7 +2465,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         }
 
                         // and add first interval
-                        x_AddIntervalToFeature (feat, sfp, location->SetMix(), 
+                        x_AddIntervalToFeature (curr_feat_name, sfp, location->SetMix(), 
                             start, stop, partial5, partial3, ispoint, isminus, 
                             container, reader.GetLineNumber(), real_seqid );
 
@@ -2489,7 +2489,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     // process start - stop multiple interval line
 
                     if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
-                        x_AddIntervalToFeature (feat, sfp, sfp->SetLocation().SetMix(), 
+                        x_AddIntervalToFeature (curr_feat_name, sfp, sfp->SetLocation().SetMix(), 
                                                 start, stop, partial5, partial3, ispoint, isminus, 
                                                 container, reader.GetLineNumber(), real_seqid);
                     } else {
