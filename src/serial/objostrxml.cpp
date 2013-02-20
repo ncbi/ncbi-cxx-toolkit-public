@@ -715,7 +715,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 }
                 m_Output.PutString(it->GetName());
                 m_Output.PutString("=\"");
-                WriteString(it->GetValue());
+                WriteString(it->GetValue(),eStringTypeUTF8);
                 m_Output.PutChar('\"');
                 x_EndNamespace(ns);
             }
@@ -758,7 +758,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
             }
         }
         if (*is != '>' && *is != '<' && *is != attr_close) {
-            WriteEncodedChar(is);
+            WriteEncodedChar(is,eStringTypeUTF8);
         } else {
             m_Output.PutChar(*is);
         }

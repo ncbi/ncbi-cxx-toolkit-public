@@ -812,7 +812,7 @@ void CObjectIStreamXml::ReadAttributeValue(string& value, bool skipClosing)
         ThrowError(fFormatError, "attribute value must start with ' or \"");
     m_Input.SkipChar();
     for ( ;; ) {
-        int c = ReadEncodedChar(startChar);
+        int c = ReadEncodedChar(startChar,eStringTypeUTF8);
         if ( c < 0 )
             break;
         value += char(c);
@@ -1006,7 +1006,7 @@ bool CObjectIStreamXml::ReadAnyContent(const string& ns_prefix, string& value)
             }
         }
         string data;
-        ReadTagData(data);
+        ReadTagData(data,eStringTypeUTF8);
         value += data;
     }
     return true;

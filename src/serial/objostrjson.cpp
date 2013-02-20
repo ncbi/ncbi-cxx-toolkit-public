@@ -271,7 +271,7 @@ void CObjectOStreamJson::WriteAnyContentObject(const CAnyContentObject& obj)
     WriteKey(obj_name);
     const vector<CSerialAttribInfoItem>& attlist = obj.GetAttributes();
     if (attlist.empty()) {
-        WriteValue(obj.GetValue());
+        WriteValue(obj.GetValue(),eStringTypeUTF8);
         return;
     }
     StartBlock();
@@ -279,10 +279,10 @@ void CObjectOStreamJson::WriteAnyContentObject(const CAnyContentObject& obj)
     for ( it = attlist.begin(); it != attlist.end(); ++it) {
         NextElement();
         WriteKey(it->GetName());
-        WriteValue(it->GetValue());
+        WriteValue(it->GetValue(),eStringTypeUTF8);
     }
     m_SkippedMemberId = obj_name;
-    WriteValue(obj.GetValue());
+    WriteValue(obj.GetValue(),eStringTypeUTF8);
     EndBlock();
 }
 

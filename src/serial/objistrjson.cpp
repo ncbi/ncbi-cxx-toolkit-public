@@ -465,7 +465,7 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
         StartBlock('{');        
         while (NextElement()) {
             string name = ReadKey();
-            value = ReadValue();
+            value = ReadValue(eStringTypeUTF8);
             if (name[0] != '#') {
                 obj.AddAttribute(name,kEmptyStr,value);
             } else {
@@ -476,7 +476,7 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
         return;
     }
     if (PeekChar(true) == '\"') {
-        value = ReadValue();
+        value = ReadValue(eStringTypeUTF8);
     } else {
         value = x_ReadData();
     }
