@@ -391,6 +391,18 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
         s_ResolveIntronicOffsets(*p3);
     }
 
+    AttachSeq(*p3);
+    if(!p3->IsSetExceptions()) {
+        if(p.IsSetSeq() && p3->IsSetSeq() 
+           && p.GetSeq().GetLength() == p3->GetSeq().GetLength()
+           && p.GetSeq().IsSetSeq_data() && p3->GetSeq().IsSetSeq_data()
+           && p.GetSeq().GetSeq_data().Which() == p3->GetSeq().GetSeq_data().Which()
+           && !p.GetSeq().GetSeq_data().Equals(p3->GetSeq().GetSeq_data())) 
+        {    
+            p3->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
+        }    
+    } 
+
     CheckPlacement(*p3);
     return p3;
 }
@@ -699,20 +711,6 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
 	        p2->SetExceptions().push_back(exception);
 	    }
     }}
-
-    AttachSeq(*p2);
-
-    if(!p2->IsSetExceptions()) {
-        if(p.IsSetSeq() && p2->IsSetSeq() 
-           && p.GetSeq().GetLength() == p2->GetSeq().GetLength()
-           && p.GetSeq().IsSetSeq_data() && p2->GetSeq().IsSetSeq_data()
-           && p.GetSeq().GetSeq_data().Which() == p2->GetSeq().GetSeq_data().Which()
-           && !p.GetSeq().GetSeq_data().Equals(p2->GetSeq().GetSeq_data())) 
-        {
-            p2->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
-        }
-    }
-
 
     if(p2->GetLoc().GetId()) {
         p2->SetMol(GetMolType(sequence::GetId(p2->GetLoc(), NULL)));
