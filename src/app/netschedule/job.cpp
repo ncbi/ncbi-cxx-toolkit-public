@@ -316,7 +316,7 @@ void CJob::Delete()
 }
 
 
-CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
+CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
 {
     SJobDB &        job_db      = queue->m_QueueDbBlock->job_db;
     SJobInfoDB &    job_info_db = queue->m_QueueDbBlock->job_info_db;
@@ -426,7 +426,7 @@ CJob::EJobFetchResult  CJob::Fetch(CQueue *  queue, unsigned  id)
         }
         return eJF_NotFound;
     }
-    return Fetch(queue);
+    return x_Fetch(queue);
 }
 
 

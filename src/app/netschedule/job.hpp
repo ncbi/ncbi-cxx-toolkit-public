@@ -365,9 +365,6 @@ public:
     // Mark job for deletion
     void Delete();
 
-    // Fetch/flush
-    // Fetch current object
-    EJobFetchResult Fetch(CQueue* queue);
     // Fetch object by its numeric id
     EJobFetchResult Fetch(CQueue* queue, unsigned id);
 
@@ -383,6 +380,9 @@ public:
     string Print(const CQueue &               queue,
                  const CNSAffinityRegistry &  aff_registry,
                  const CNSGroupsRegistry &    group_registry) const;
+
+private:
+    EJobFetchResult x_Fetch(CQueue* queue);
 
 private:
     // Service flags
