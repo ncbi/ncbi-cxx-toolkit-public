@@ -750,6 +750,14 @@ void CMakeBlastDBApp::x_ProcessMaskData()
             NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "the size of mask_id does not match that of mask_data.");
         }
+        // make sure this is not a numeric id
+        for (unsigned int i = 0; i < id_list.size(); ++i) {
+            Int4 nid(-1);
+            if (NStr::StringToNumeric(id_list[i], &nid, NStr::fConvErr_NoThrow, 10)) {
+                NCBI_THROW(CInvalidDataException, eInvalidInput,
+                   "mask_id can not be numeric.");
+            }
+        }
     }
 
     if (descs.HasValue()) {
