@@ -709,8 +709,8 @@ string CHgvsParser::x_AsHgvsInstExpression(
     {{
         //Priority for using asserted-sequence:
         //use from placement (instantiate if necessary); otherwise use explicit packaged asserted-observation
-        //seq-literal passed from above.
-        if(placement && placement->IsSetSeq()) {
+        //seq-literal passed from above. Will only use it if have seq-data (SNP-5605){
+        if(placement && placement->IsSetSeq() && placement->GetSeq().IsSetSeq_data()) {
             asserted_seq.Reset(&placement->GetSeq());
         } else {
 #if 0
