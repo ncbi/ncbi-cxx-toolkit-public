@@ -64,6 +64,7 @@
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
 #include <objtools/seqmasks_io/mask_bdb_reader.hpp>
 #include <objtools/seqmasks_io/mask_writer_int.hpp>
+#include <objtools/seqmasks_io/mask_writer_tab.hpp>
 #include <objtools/seqmasks_io/mask_writer_fasta.hpp>
 #include <objtools/seqmasks_io/mask_writer_seqloc.hpp>
 #include <objtools/seqmasks_io/mask_writer_blastdb_maskinfo.hpp>
@@ -126,6 +127,9 @@ CDustMaskApplication::x_GetWriter()
     if (format == "interval") {
         CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterInt(output);
+    } else if (format == "acclist") {
+        CNcbiOstream& output = args[kOutput].AsOutputFile();
+        retval = new CMaskWriterTabular(output);
     } else if (format == "fasta") {
         CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterFasta(output);
@@ -141,7 +145,7 @@ CDustMaskApplication::x_GetWriter()
             new CMaskWriterBlastDbMaskInfo(output, format, 2,
                                eBlast_filter_program_dust,
                                BuildAlgorithmParametersString(args));
-    } else if (NStr::StartsWith(format, "maskinfo_asn1")) {
+    } else if (NStr::StartsWith(format, "maskinfo_")) {
         CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = 
             new CMaskWriterBlastDbMaskInfo(output, format, 2,
