@@ -139,7 +139,7 @@ public:
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies the options to be applied when creating the pipe.
-    /// @current_dir
+    /// @param current_dir
     ///   Current directory for the new process if specified.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
@@ -175,7 +175,7 @@ public:
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies options to be applied when creating the pipe.
-    /// @current_dir
+    /// @param current_dir
     ///   Current directory for the new process.
     ///   The string must be the absolute path.  On MS Windows it should
     ///   also contain drive letter. If this parameter is empty, the new
@@ -250,7 +250,7 @@ public:
 
     /// Set standard output handle to read data from.
     ///
-    /// @from_handle
+    /// @param from_handle
     ///   Handle which used to read data (eStdOut/eStdErr).
     /// @return
     ///   Return eIO_Success if new handler is eStdOut or eStdErr.
@@ -439,7 +439,7 @@ public:
     ///   Stream where the child process's stderr will be written to
     /// @param exit_code
     ///   The child process's exit_code
-    /// @current_dir
+    /// @param current_dir
     ///   Current directory for the new process.
     ///   The string must be an absolute path. On MS Windows it should
     ///   also contain drive letter. If this parameter is empty, the new
@@ -449,7 +449,7 @@ public:
     ///   instead of current environment. Last value in an array must be NULL.
     /// @param watcher
     ///   Call back object to monitor the child process execution status
-    /// @kill_timeout
+    /// @param kill_timeout
     ///   Wait time  between first "soft" and second "hard"
     ///   attempts to terminate the process. 
     ///   Note, that on UNIX in case of zero or very small timeout
