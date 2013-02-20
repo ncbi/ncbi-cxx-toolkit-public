@@ -371,18 +371,18 @@ NCBI_XBLAST_EXPORT
 unsigned int BLAST_GetNumberOfContexts(EBlastProgramType program);
 
 /** Free SBlastTargetTranslation
- * @target_t object to be freed [in]
+ * @param target_t object to be freed [in]
  */
 NCBI_XBLAST_EXPORT
 SBlastTargetTranslation*
 BlastTargetTranslationFree(SBlastTargetTranslation* target_t);
 
 /** Sets up structure for target translation.
- * @subject_blk Target sequence information [in]
- * @gen_code_string Genetic code translation information [in]
- * @program_number BLAST program [in]
- * @is_ooframe Out-of-frame translation if true [in]
- * @target Structure being set up. [out]
+ * @param subject_blk Target sequence information [in]
+ * @param gen_code_string Genetic code translation information [in]
+ * @param program_number BLAST program [in]
+ * @param is_ooframe Out-of-frame translation if true [in]
+ * @param target Structure being set up. [out]
  */
 NCBI_XBLAST_EXPORT
 Int2 

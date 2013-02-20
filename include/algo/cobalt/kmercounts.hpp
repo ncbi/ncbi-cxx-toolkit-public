@@ -283,7 +283,7 @@ public:
     unsigned int GetNumCounts(void) const {return m_NumCounts;}
 
     /// Get k-mer length
-    /// @retuen K-mer length
+    /// @return K-mer length
     ///
     static unsigned int GetKmerLength(void) 
     {return CBinaryKmerCounts::sm_KmerLength;}

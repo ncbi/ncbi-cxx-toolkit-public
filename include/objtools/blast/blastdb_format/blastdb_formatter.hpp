@@ -51,7 +51,7 @@ public:
     /// Extracts the BLAST database information for the requested BLAST DB
     /// according to the output format specification requested in the
     /// constructor
-    /// @para db_init_info object defining the BLAST DB initialization
+    /// @param db_init_info object defining the BLAST DB initialization
     /// information [in]
     string Write(const SSeqDBInitInfo& db_init_info);
 

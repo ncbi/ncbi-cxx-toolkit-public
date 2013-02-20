@@ -188,7 +188,7 @@ extern bool SetMemoryLimitHard(size_t max_size,
 /// @param max_cpu_time
 ///   The maximal amount of seconds of CPU time can be consumed by the process.
 ///   The 0 value lifts off the CPU time restrictions if allowed to do so.
-/// @terminate_delay_time
+/// @param terminate_delay_time
 ///   The time in seconds that the process will have to terminate itself after
 ///   receiving a signal about exceeding CPU usage limit. After that it can
 ///   be killed by OS.
@@ -250,12 +250,12 @@ extern unsigned int GetCpuCount(void);
 /// as possible, and use it to calculate execution time.
 /// For example, you can use CStopWatch class.
 ///
-/// @user_time
+/// @param user_time
 ///   Pointer to a value that receives the amount of time in seconds that
 ///   the current process has executed in user mode. The time that each
 ///   of the threads of the process has executed in user mode is determined,
 ///   and then all of those times are summed together to obtain this value.
-/// @system_time
+/// @param system_time
 ///   Pointer to a value that receives the amount of time in second that
 ///   the current process has executed in kernel mode. The time that each
 ///   of the threads of the process has executed in user mode is determined,

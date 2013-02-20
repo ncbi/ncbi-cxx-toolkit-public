@@ -564,9 +564,9 @@ extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
  *  Block of data (NULL causes NULL to return regardless of "size" or "buf")
  * @param size
  *  Size of block (0 causes strlen(data) to be used)
- * @buf
+ * @param buf
  *  Buffer to store the result (NULL always causes NULL to return)
- * @full
+ * @param full
  *  Whether to print full octal representation of non-printable characters
  * @return next position in the buffer past the last stored character.
  * @sa

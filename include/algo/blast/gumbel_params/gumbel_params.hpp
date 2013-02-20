@@ -92,7 +92,7 @@ public:
     Int4 GetGapOpening(void) const {return m_GapOpening;}
 
     /// Set gap extention penalty
-    /// @paran g_exten Gap extension penalty [in]
+    /// @param g_exten Gap extension penalty [in]
     ///
     void SetGapExtension(Int4 g_exten) {m_GapExtension = g_exten;}
 

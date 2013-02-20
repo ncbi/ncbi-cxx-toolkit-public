@@ -2469,7 +2469,7 @@ inline int gap_calc_level(int len, const T* glevel_len)
     Difference between GAP block capacity on this level and actual GAP length.
     
     @param buf - GAP buffer pointer
-    @parma glevel_len - GAP lengths table
+    @param glevel_len - GAP lengths table
     
     @return Number of free GAP elements
     @ingroup gapfunc

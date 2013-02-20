@@ -448,7 +448,7 @@ public:
 
 
     /// Set maximum allowed distance between sequences in a cluster
-    /// @parsm dist Maximum allowed distance in cluster [in]
+    /// @param dist Maximum allowed distance in cluster [in]
     ///
     void SetMaxInClusterDist(double dist)
     {m_MaxInClusterDist = dist; m_Mode = fNonStandard;}

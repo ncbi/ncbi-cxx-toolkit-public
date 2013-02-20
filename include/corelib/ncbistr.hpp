@@ -3201,7 +3201,7 @@ public:
     ///   as end of string, or as part of the data
     /// @param src
     ///   Source character buffer
-    /// @char_count
+    /// @param char_count
     ///   Number of TChars in the buffer
     /// @deprecated  Use utility class CUtf8 instead
     NCBI_DEPRECATED_CTOR( CStringUTF8(ECharBufferType type,
@@ -3313,7 +3313,7 @@ public:
     ///   as end of string, or as part of the data
     /// @param src
     ///   Source character buffer
-    /// @char_count
+    /// @param char_count
     ///   Number of TChars in the buffer
     /// @deprecated  Use utility class CUtf8 instead
     NCBI_DEPRECATED CStringUTF8& Assign(ECharBufferType type,
@@ -3380,7 +3380,7 @@ public:
     ///   as end of string, or as part of the data
     /// @param src
     ///   Source character buffer
-    /// @char_count
+    /// @param char_count
     ///   Number of TChars in the buffer
     /// @deprecated  Use utility class CUtf8 instead
     NCBI_DEPRECATED CStringUTF8& Append(ECharBufferType type,

@@ -145,7 +145,7 @@ public:
     /// be actually killed.  Process termination can take some time, and the
     /// process may remain "alive" even after the "hard" termination attempt.
     ///
-    /// @timeout
+    /// @param timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process. 
     ///   If timeout is zero then use an unsafe process termination: just
@@ -166,7 +166,7 @@ public:
     /// This method tries to terminate all processes in the group to which
     /// process, specified in the constructor, belongs.
     ///
-    /// @timeout
+    /// @param timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
     ///   If timeout is zero then use an unsafe process termination: just
@@ -190,11 +190,11 @@ public:
     /// Terminate a group of processes with specified ID.
     ///
     /// Note: Implemented on UNIX only, on Windows returns FALSE.
-    /// @pgid
+    /// @param pgid
     ///   Process group ID to terminate.
     ///   if "pgid" parameter is zero, terminate the process group of
     ///   the current process
-    /// @timeout
+    /// @param timeout
     ///   Wait time in milliseconds between first "soft" and second "hard"
     ///   attempts to terminate the process group. 
     ///   If timeout is zero then use an unsafe process termination: just

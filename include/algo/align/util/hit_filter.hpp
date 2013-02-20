@@ -222,7 +222,7 @@ public:
     /// @param margin
     ///    Speed/memory trade-off (0 will use max memory; >0 will slow down a bit but 
     //     reduce memory requirements)
-    /// @retain_overlap
+    /// @param retain_overlap
     ///    Minimum length of overlaps to keep (0 = no overlaps)
 
     enum EUnique_type {

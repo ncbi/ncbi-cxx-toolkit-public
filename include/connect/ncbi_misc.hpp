@@ -67,7 +67,7 @@ public:
     ///   for weighted rate calculations (current:remainig ratio),
     ///   must be within the interval (0, 1) (excluding both ends);
     ///   a value close to one (e.g. 0.9) makes recent marks more significant
-    /// @precision
+    /// @param precision
     ///   fraction of minspan to consider sufficient to add next mark,
     ///   must be within the interval (0, 1] (excluding 0 but including 1)
     CRateMonitor(double minspan = 0.5, double maxspan   = 10.0,

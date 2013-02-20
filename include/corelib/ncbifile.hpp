@@ -1143,7 +1143,7 @@ public:
     ///   the user might exploit the short time interval between checking
     ///   and opening the file to manipulate it. Always is better to try to
     ///   open a file with necessary permissions and check result.
-    /// @access_mode
+    /// @param access_mode
     ///   Checked access mode (any combination of fRead/fWrite/fExecute).
     /// @return
     ///   TRUE if specified permissions granted, FALSE otherwise

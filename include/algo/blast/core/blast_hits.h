@@ -408,9 +408,9 @@ Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, Int4 start_shift);
 
 
 /** Returns a buffer with a protein translated from nucleotide.
- * @target_t SBlastTargetTranslation* with information about translation [in]
- * @hsp The hit to work on [in]
- * @translated_length length of the protein sequence [in]
+ * @param target_t SBlastTargetTranslation* with information about translation [in]
+ * @param hsp The hit to work on [in]
+ * @param translated_length length of the protein sequence [in]
 */
 NCBI_XBLAST_EXPORT
 const Uint1*

@@ -162,7 +162,7 @@ public:
 
     /// Approve a request.
     ///
-    /// @action
+    /// @param action
     ///   Throttle action used by this function call. If passed argument
     ///   equal to eDefault that use throttle action was set in 
     ///   the constructor.

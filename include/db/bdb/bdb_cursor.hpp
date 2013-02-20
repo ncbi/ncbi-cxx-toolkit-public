@@ -142,7 +142,7 @@ public:
 
     /// Init multi-row fetch
     ///
-    /// @buffer_size
+    /// @param buffer_size
     ///    Size of fetch buffer
     ///    (at least one page size, multiple of 1024 bytes in size)
     ///

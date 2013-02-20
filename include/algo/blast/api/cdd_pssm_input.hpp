@@ -110,7 +110,7 @@ public:
     /// @param seqaligns List of pair-wise alignments of query to CDs.
     /// PSSM will be computed based on those alignments [in]
     /// @param opts CD-related PSSM engine options [in]
-    /// @dbname Name of CDD database used for searching matches to query. The
+    /// @param dbname Name of CDD database used for searching matches to query. The
     /// alignments in seqaligns come from searching this database [in]
     /// @param matrix_name Name of the scoring system [in]
     /// @param gap_existence Gap opening cost, if zero default from
@@ -212,7 +212,7 @@ protected:
             : m_QueryRange(q), m_SubjectRange(s) {}
 
         /// Copy constructor. MSA data is not copied.
-        /// @apram seg Hit segment [in]
+        /// @param seg Hit segment [in]
         CHitSegment(const CHitSegment& seg)
             : m_QueryRange(seg.m_QueryRange),
               m_SubjectRange(seg.m_SubjectRange)
