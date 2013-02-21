@@ -236,7 +236,7 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
 
         // if divergence is finite and smaller than cutoff save divergence
         // and mark sequence as included
-        if (isfinite(dist) && dist <= m_MaxDivergence) {
+        if (isfinite(dist) && dist < m_MaxDivergence) {
             links.push_back(SLink(query_idx, i, dist));
             bitvector.set(i);
         }
@@ -278,7 +278,7 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
             _ASSERT(!isfinite(dist) || dist >= 0.0);
 
             // if divergence is finite and smaller than cutoff save divergence
-            if (isfinite(dist) && dist <= m_MaxDivergence) {
+            if (isfinite(dist) && dist < m_MaxDivergence) {
                 links.push_back(SLink(it2->index2, it1->index2, dist));
             }
             else {
