@@ -21,6 +21,7 @@ REQUIRES = Boost.Test.Included
 # "make check".
 CHECK_CMD = seqmasks_io_unit_test
 CHECK_COPY = data
+WATCHERS = morgulis camacho
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
 # CFLAGS   = $(FAST_CFLAGS)

@@ -11,4 +11,3 @@ APP_PROJ = seqmasks_io_unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-WATCHERS = morgulis camacho
