@@ -972,6 +972,10 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             members_genes.push_back(TMemeberGeneVec::value_type(&m,&gene));
         }
     }
+
+    if(members_genes.empty())
+        return;
+
     sort(members_genes.begin(),members_genes.end(),AlignIdOrder());
 
     typedef map<CGene*,list<SChainMember*> > TGeneToMembers;
