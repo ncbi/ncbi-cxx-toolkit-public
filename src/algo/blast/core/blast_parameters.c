@@ -347,7 +347,7 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       }
 
       /* char* use_gap_trigger = getenv("USE_GAP_TRIGGER"); */
-      if (!gapped_calculation) {
+      if (!gapped_calculation || sbp->matrix_only_scoring) {
          double cutoff_e = s_GetCutoffEvalue(program_number);
          Int4 query_length = query_info->contexts[context].query_length;
 
