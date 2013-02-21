@@ -57,12 +57,10 @@ void CApp::Init(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  Application object and MAIN
+//  MAIN
 //
-
-static CApp theApp;
 
 int main(int argc, const char* argv[])
 {
-    return theApp.AppMain(argc, argv, 0, eDS_Default);
+    return CApp().AppMain(argc, argv, 0, eDS_Default);
 }
