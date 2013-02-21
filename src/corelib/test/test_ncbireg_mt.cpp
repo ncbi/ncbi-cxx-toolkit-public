@@ -31,9 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
+
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
+#include <fstream>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -320,6 +323,48 @@ bool CTestRegApp::TestApp_Init(void)
         string e = "TESTENV" + NStr::IntToString(i) + "=value";
         putenv(strdup(e.c_str()));
     }
+
+    // Test sectionless entries
+    {{
+        ofstream f_out("reg.ini", ios::binary);
+        CNcbiRegistry test_registry1(IRegistry::fSectionlessEntries | CNcbiRegistry::fPersistent);
+
+        test_registry1.Set("", "entry1", "text1", IRegistry::fSectionlessEntries| CNcbiRegistry::fPersistent);
+        test_registry1.Set("", "entry2", "text2", IRegistry::fSectionlessEntries| CNcbiRegistry::fPersistent);
+
+        test_registry1.Set("Section1", "entry11", "text11", IRegistry::fSectionlessEntries| CNcbiRegistry::fPersistent);
+        test_registry1.Set("Section1", "entry12", "text12", IRegistry::fSectionlessEntries| CNcbiRegistry::fPersistent);
+
+        test_registry1.Write(f_out, IRegistry::fSectionlessEntries);
+        f_out.close();
+
+        ifstream f("reg.ini", ios::binary);
+        CNcbiRegistry test_registry(f, IRegistry::fSectionlessEntries);
+        list <string> sections;
+        list <string> entries;
+
+        assert(test_registry.Get("", "entry1", IRegistry::fSectionlessEntries) == "text1");
+        assert(test_registry.Get("", "entry2", IRegistry::fSectionlessEntries) == "text2");
+
+        assert(test_registry.Get("Section1", "entry11", IRegistry::fSectionlessEntries) == "text11");
+        assert(test_registry.Get("Section1", "entry12", IRegistry::fSectionlessEntries) == "text12");
+
+        test_registry.EnumerateSections(&sections, IRegistry::fSectionlessEntries);
+
+        assert(find(sections.begin(), sections.end(), kEmptyStr) != sections.end());
+        assert(find(sections.begin(), sections.end(), "Section1") != sections.end());
+
+        test_registry.EnumerateEntries(kEmptyStr, &entries, IRegistry::fSectionlessEntries);
+        assert(find(entries.begin(), entries.end(), "entry1") != entries.end());
+        assert(find(entries.begin(), entries.end(),"entry2") != entries.end());
+
+        test_registry.EnumerateEntries("Section1", &entries, IRegistry::fSectionlessEntries);
+        assert(find(entries.begin(), entries.end(), "entry11") != entries.end());
+        assert(find(entries.begin(), entries.end(),"entry12") != entries.end());
+
+        CFile("reg.ini").Remove();
+    }}
+
     return true;
 }
 

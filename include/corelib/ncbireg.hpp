@@ -98,7 +98,9 @@ public:
         fEntryCase      = 0x2000,///< Create with case-sensitive entry names
         fCoreLayers     = fTransient | fPersistent | fJustCore,
         fAllLayers      = fTransient | fPersistent | fNotJustCore,
-        fCaseFlags      = fSectionCase | fEntryCase
+        fCaseFlags      = fSectionCase | fEntryCase,
+        fSectionlessEntries = 0x4000,   ///< Allow empty section names (for test_res framework)
+        fSections = 0x8000              ///< Indicates that we want sections from x_Enumerate
     };
     typedef int TFlags;  ///< Binary OR of "EFlags"
 
@@ -249,8 +251,9 @@ public:
     /// Enumerate parameter names for a specified section.
     ///
     /// Write all parameter names for specified "section" to the "entries"
-    /// list in order.  Previous contents of the list are erased.  Enumerates
-    /// sections rather than entries if section is empty.
+    /// list in order.  Previous contents of the list are erased.  
+    /// @deprecated Enumerates sections rather than entries if section is
+    /// @deprecated empty and fSectionlessEntries is not set.
     /// @param flags
     ///   To control search.
     void EnumerateEntries(const string& section,
