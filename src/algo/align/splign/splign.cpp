@@ -73,9 +73,6 @@ USING_SCOPE(objects);
 
 namespace {
 
-    // the library's version object
-    CRef<CVersion> kVersion (new CVersion(CVersionInfo(1, 39, 8)));
-
     // define cut-off strategy at the terminii:
     
     // (1) - pre-processing
@@ -125,7 +122,8 @@ CSplign::~CSplign()
 
 CRef<CVersion> CSplign::s_GetVersion(void)
 {
-    return kVersion;
+    CRef<CVersion> version (new CVersion(CVersionInfo(1, 39, 8)));
+    return version;
 }
 
 
