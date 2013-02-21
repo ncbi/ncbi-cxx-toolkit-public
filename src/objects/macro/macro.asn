@@ -653,7 +653,8 @@ Publication-field ::=  ENUMERATED {
     affil-phone (18) ,
     affil-zipcode (19),
     authors-initials (20),
-    pmid (21)
+    pmid (21),
+    pub-class (22)
     }
   
 -- structured comment fields --
