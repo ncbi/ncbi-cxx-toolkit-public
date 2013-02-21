@@ -105,6 +105,7 @@ private:
 class NCBI_XCONNECT_EXPORT CGridGlobals
 {
 public:
+    CGridGlobals();
     ~CGridGlobals();
 
     static CGridGlobals& GetInstance();
@@ -147,9 +148,6 @@ public:
     void KillNode();
 
 private:
-    CGridGlobals();
-    static CGridGlobals* sm_Instance;
-
     CAtomicCounter_WithAutoInit m_JobsStarted;
     bool m_ReuseJobObject;
 

@@ -113,7 +113,6 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
         m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
         string name;
         int tmp = (int)eBlobStorage;
-        string msg;
         try {
             if (m_IStream->good())
                 *m_IStream >> tmp;
@@ -121,7 +120,8 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
                 ReadStrWithLen(*m_IStream, name);
         } catch (...) {
             if (!m_IStream->eof()) {
-                msg = "Job output does not match remote_app output format";
+                string msg =
+                        "Job output does not match remote_app output format";
                 ERR_POST_X(1, msg);
                 m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
             }
@@ -136,7 +136,8 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
                 m_IStream.reset(fstr.release());
                 m_IStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             } else {
-                msg = "Can not open " + name + " of input";
+                string msg = "Can not open " + name;
+                msg += " for reading";
                 ERR_POST_X(2, msg);
                 m_IStream.reset(new CNcbiIstrstream(msg.c_str()));
             }

@@ -39,6 +39,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
@@ -211,8 +212,6 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode& worker)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-CGridGlobals* CGridGlobals::sm_Instance = NULL;
-
 CGridGlobals::CGridGlobals() :
     m_ReuseJobObject(false),
     m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
@@ -230,9 +229,9 @@ CGridGlobals::~CGridGlobals()
 /* static */
 CGridGlobals& CGridGlobals::GetInstance()
 {
-    if (sm_Instance == NULL)
-        sm_Instance = new CGridGlobals;
-    return *sm_Instance;
+    static CSafeStaticPtr<CGridGlobals> global_instance;
+
+    return global_instance.Get();
 }
 
 
