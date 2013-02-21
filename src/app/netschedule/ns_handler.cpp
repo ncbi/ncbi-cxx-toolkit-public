@@ -693,7 +693,7 @@ EIO_Status CNetScheduleHandler::x_WriteMessage(CTempString msg)
     string     report =
         "Error writing message to the client. "
         "Peer: " +  GetSocket().GetPeerAddress() + ". "
-        "Socket write return code: " + NStr::NumericToString((int)result) + ". "
+        "Socket write error status: " + IO_StatusStr(result) + ". "
         "Written bytes: " + NStr::NumericToString(written) + ". "
         "Message begins with: ";
     if (msg_size > 32)
