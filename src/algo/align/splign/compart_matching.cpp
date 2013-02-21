@@ -66,10 +66,9 @@ namespace {
     const string kFileExt_Masked          (".rep");
 
     // extension to indicate ID and coordinate remapping table
-    const string kFileExt_Remap           (".idc");
-    
-    const string kFileExt_Offsets         (".ofs");
-    const string kFileExt_Positions       (".pos");
+    const char *kFileExt_Remap = ".idc";    
+    const char *kFileExt_Offsets = ".ofs";
+    const char *kFileExt_Positions = ".pos";
 
     const Uint8  kUI8_LoWord              (0xFFFFFFFF);
     const Uint8  kUI8_LoByte              (kUI8_LoWord >> 24);
