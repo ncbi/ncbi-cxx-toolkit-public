@@ -2373,7 +2373,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IAM<JPN>	c	IAM Culture Collection, Center for Cellular and Molecular Research",
 "IAN	s	Embrapa Amazonia Oriental",
 "IAPG	s	Institute of Animal Physiology and Genetics, Academy of Sciences of the Czech Republic",
-"IARI	s	Indian Agricultural Research Institute",
+"IARI	sb	Indian Agricultural Research Institute",
 "IASI	s	Universitatea Agronomica, Disciplina de Botanica",
 "IAV	sb	Institut Agronomique et Veterinaire Hassan II, Departement d'Ecologie Vegetale",
 "IAVH	s	Instituto de Ivestigacion de los Recursos Biologicos Alexander von Humboldt",
