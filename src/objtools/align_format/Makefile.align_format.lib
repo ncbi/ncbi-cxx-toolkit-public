@@ -1,7 +1,9 @@
 # $Id$
 
 ASN_DEP = blastdb xnetblast
-DLL_LIB = seqdb gene_info
+DLL_LIB = blast_services gene_info seqdb $(OBJREAD_LIBS) xalnmgr xobjutil \
+          blastdb xnetblastcli xnetblast scoremat xhtml xcgi tables \
+          $(OBJMGR_LIBS)
 
 ###  BASIC PROJECT SETTINGS
 LIB = align_format
