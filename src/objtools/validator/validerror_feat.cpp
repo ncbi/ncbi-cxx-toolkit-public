@@ -1515,7 +1515,10 @@ void CValidError_feat::ValidateCdregion (
             if ( cdregion.CanGetCode() ) {
                 cdsgencode = cdregion.GetCode().GetId();
             }
-            if ( biopgencode != cdsgencode ) {
+            if ( biopgencode != cdsgencode 
+                 && (!feat.IsSetExcept()
+                     || !feat.IsSetExcept_text() 
+                     || NStr::Find(feat.GetExcept_text(), "genetic code exception") == string::npos)) {
                 int genome = 0;
                 
                 if ( src.CanGetGenome() ) {
@@ -5338,6 +5341,7 @@ static const string s_LegalExceptionStrings[] = {
     "heterogeneous population sequenced",
     "low-quality sequence region",
     "unextendable partial coding region",
+    "genetic code exception",
 };
 
 

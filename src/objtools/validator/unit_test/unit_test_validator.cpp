@@ -12586,6 +12586,13 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_GenCodeMismatch)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // ignore gencode mismatch for specified exception text
+    cds->SetExcept(true);
+    cds->SetExcept_text("genetic code exception");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
