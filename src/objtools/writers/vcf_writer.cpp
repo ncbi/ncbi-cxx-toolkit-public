@@ -142,8 +142,10 @@ bool CVcfWriter::x_WriteInit(
     if ( !pVcfMetaInfo  ||  !pVcfMetaInfo->HasField("genotype-headers") ) {
         return true;
     }
-    m_GenotypeHeaders = 
+    m_GenotypeHeaders.clear();
+    const CUser_field::C_Data::TStrs& strs =
         pVcfMetaInfo->GetField("genotype-headers").GetData().GetStrs();
+    copy(strs.begin(), strs.end(), back_inserter(m_GenotypeHeaders));
     return true;
 }
 
@@ -157,9 +159,9 @@ bool CVcfWriter::x_WriteMeta(
         return x_WriteMetaCreateNew( annot );
     }
     const CAnnotdesc::TUser& meta = *pVcfMetaInfo;
-    const vector<string>& directives = 
+    const CUser_field::C_Data::TStrs& directives = 
         meta.GetFieldRef("meta-information")->GetData().GetStrs();
-    for (vector<string>::const_iterator cit = directives.begin();
+    for (CUser_field::C_Data::TStrs::const_iterator cit = directives.begin();
             cit != directives.end(); ++cit ) {
         m_Os << "##" << *cit << endl;
     }
@@ -672,7 +674,7 @@ bool CVcfWriter::x_WriteFeatureGenotypeData(
 
     feature::CFeatTree ftree = context.FeatTree();
     CConstRef<CUser_field> pFormat = mf.GetExt().GetFieldRef("format");
-    const vector<string>& labels = pFormat->GetData().GetStrs();
+    const CUser_field_Base::C_Data::TStrs& labels = pFormat->GetData().GetStrs();
     m_Os << "\t" << NStr::Join(labels, ":");
 
     CConstRef<CUser_field> pGenotypeData = mf.GetExt().GetFieldRef("genotype-data");
