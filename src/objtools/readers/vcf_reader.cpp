@@ -1041,19 +1041,7 @@ CVcfReader::x_ProcessFormat(
 
     for ( CVcfData::GTDATA::const_iterator cit = data.m_GenotypeData.begin();
             cit != data.m_GenotypeData.end(); ++cit) {
-
-        CRef<CUser_field> pCol( new CUser_field );
-        pCol->SetLabel().SetStr(cit->first);
-
-        //for ( map<string,string>::const_iterator cc = cit->second.begin();
-        //        cc != cit->second.end(); ++cc) {
-        //    CRef<CUser_field> value( new CUser_field );
-        //    value->SetLabel().SetStr(cc->first);
-        //    value->SetData().SetStr(cc->second);
-        //    col->SetData().SetFields().push_back(value);
-        //}
-        pCol->SetData().SetStrs() = cit->second;
-        pGenotypeData->SetData().SetFields().push_back(pCol);
+        pGenotypeData->AddField(cit->first,cit->second);
     }
     ext.SetData().push_back(pGenotypeData);
     return true;
