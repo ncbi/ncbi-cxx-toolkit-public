@@ -737,15 +737,14 @@ bool CValidError_desc::ValidateDblink
         return false;
     }
 
-    vector< string > strs;
     FOR_EACH_USERFIELD_ON_USEROBJECT(ufd_it, usr) {
         const CUser_field& fld = **ufd_it;
         if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
             const string &label_str = GET_FIELD(fld.GetLabel(), Str);
             if (NStr::EqualNocase(label_str, "BioSample")) {
                 if (fld.IsSetData() && fld.GetData().IsStrs()) {
-                    strs = fld.GetData().GetStrs();
-                    FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
+                    const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
+                    ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadBioSampleFormat (str) && x_IsBadAltBioSampleFormat (str)) {
                             PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
@@ -755,8 +754,8 @@ bool CValidError_desc::ValidateDblink
                 }
             } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
                 if (fld.IsSetData() && fld.GetData().IsStrs()) {
-                    strs = fld.GetData().GetStrs();
-                    FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
+                    const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
+                    ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadSRAFormat (str)) {
                             PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
@@ -766,8 +765,8 @@ bool CValidError_desc::ValidateDblink
                 }
             } else if (NStr::EqualNocase(label_str, "BioProject")) {
                 if (fld.IsSetData() && fld.GetData().IsStrs()) {
-                    strs = fld.GetData().GetStrs();
-                    FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
+                    const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
+                    ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                         const string& str = *st_itr;
                         if (x_IsBadBioProjectFormat (str)) {
                             PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
