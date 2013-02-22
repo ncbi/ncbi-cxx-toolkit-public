@@ -292,7 +292,7 @@ static void s_InitTest5(CArgDescriptions& arg_desc)
                     "ioFile", "This is an I/O file argument",
                     CArgDescriptions::eIOFile,
                         CArgDescriptions::fPreOpen |
-                        CArgDescriptions::fAppend |
+                        CArgDescriptions::fTruncate |
                         CArgDescriptions::fCreatePath |
                         CArgDescriptions::fNoCreate);
 }
@@ -311,6 +311,10 @@ static void s_RunTest5(const CArgs& args, ostream& /*os*/)
         args["of"].AsOutputFile() << tmp << endl;
     }
     CNcbiIostream& io = args["iof"].AsIOFile();
+    string t("abc");
+    io << t;
+    io.seekg(0);
+    io >> t;
 }
 
 
