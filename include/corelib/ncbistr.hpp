@@ -2274,6 +2274,8 @@ public:
     static string Join(const list<string>& arr,      const CTempString& delim);
     static string Join(const list<CTempString>& arr, const CTempString& delim);
     static string Join(const vector<string>& arr,    const CTempString& delim);
+    static string Join(const vector<CStringUTF8>& arr,
+                       const CTempString& delim);
     static string Join(const vector<CTempString>& arr,
                        const CTempString& delim);
 
