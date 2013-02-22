@@ -62,11 +62,12 @@ typedef unsigned       EBReadState;  /* packed EReadState */
 
 
 /* Whether the connector is allowed to connect
+ * NB:  In order to be able to connect, fCC_Once must be set.
  */
 enum ECanConnect {
-    eCC_None,      /* 0 */
-    eCC_Once,      /* 1 */
-    eCC_Unlimited  /* 2 */
+    fCC_None,      /* 0   */
+    fCC_Once,      /* 1   */
+    fCC_Unlimited  /* 0|2 */
 };
 typedef unsigned       EBCanConnect;  /* packed ECanConnect */
 
@@ -74,10 +75,10 @@ typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
 
 
 typedef enum {
-    eEM_Drop,
-    eEM_Wait,
-    eEM_Read,
-    eEM_Flush
+    eEM_Drop,  /* 0   */
+    eEM_Wait,  /* 1   */
+    eEM_Read,  /* 2   */
+    eEM_Flush  /* 1|2 */
 } EExtractMode;
 
 
@@ -97,10 +98,11 @@ typedef struct {
 
 
 /* All internal data necessary to perform the (re)connect and I/O
- * READ MODE:   sock != NULL  or  !(can_connect & eCC_Once)
- * WRITE MODE:  otherwise (accumulate data in buffer)
  *
- * The following states are defined in READ MODE when sock != NULL:
+ * WRITE:  sock == NULL  AND  (can_connect & fCC_Once)  [store data in w_buf]
+ * READ:   otherwise                         [read from either sock or r_buf]
+ *
+ * The following states are defined in READ mode when sock != NULL:
  * --------------+--------------------------------------------------
  *  WriteRequest | HTTP request body is being written
  *   ReadHeader  | HTTP response header is being read
@@ -234,7 +236,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
 
     assert(!retry  ||  !retry->data  ||  *retry->data);
 
-    assert(!uuu->sock  &&  uuu->can_connect != eCC_None);
+    assert(!uuu->sock  &&  uuu->can_connect != fCC_None);
 
     if (!retry  ||  !retry->mode  ||  uuu->minor_fault > 5) {
         uuu->minor_fault = 0;
@@ -348,7 +350,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         if (url)
             free(url);
         if (status != eIO_Success)
-            uuu->can_connect = eCC_None;
+            uuu->can_connect = fCC_None;
         return status;
     } else if (!uuu->adjust
                ||  !uuu->adjust(uuu->net_info,
@@ -369,7 +371,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         if (url)
             free(url);
     }
-    uuu->can_connect = eCC_None;
+    uuu->can_connect = fCC_None;
     return eIO_Closed;
 }
 
@@ -433,9 +435,9 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
     assert(!uuu->sock);
     uuu->http_code = 0;
-    if (!(uuu->can_connect & eCC_Once)) {
+    if (!(uuu->can_connect & fCC_Once)) {
         if (extract == eEM_Read  &&  uuu->net_info->max_try
-            &&  uuu->can_connect == eCC_None) {
+            &&  uuu->can_connect == fCC_None) {
             char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(5, eLOG_Error,
                         ("[HTTP%s%s]  Connector is no longer usable",
@@ -1286,6 +1288,8 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
 {
     EIO_Status status = eIO_Success;
 
+    assert(!(extract & eEM_Wait));  /* i.e. here either drop or read, only */
+
     BUF_Erase(uuu->http);
     if (extract == eEM_Drop)
         BUF_Erase(uuu->r_buf);
@@ -1303,7 +1307,7 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
 
     if (uuu->sock) /* s_PreRead() might have dropped the connection already */
         s_DropConnection(uuu);
-    uuu->can_connect &= ~eCC_Once;
+    uuu->can_connect &= ~fCC_Once;
     return status;
 }
 
@@ -1329,7 +1333,7 @@ static void s_OpenHttpConnector(SHttpConnector* uuu,
 
     /* reset the auto-reconnect/re-try/auth features */
     uuu->can_connect     = (uuu->flags & fHTTP_AutoReconnect
-                            ? eCC_Unlimited | eCC_Once : eCC_Once);
+                            ? fCC_Unlimited | fCC_Once : fCC_Once);
     uuu->major_fault     = 0;
     uuu->minor_fault     = 0;
     uuu->auth_done       = 0;
@@ -1424,7 +1428,7 @@ static EIO_Status s_VT_Wait
     case eIO_Read:
         if (BUF_Size(uuu->r_buf))
             return eIO_Success;
-        if (uuu->can_connect == eCC_None)
+        if (uuu->can_connect == fCC_None)
             return eIO_Closed;
         status = s_PreRead(uuu, timeout, eEM_Wait);
         if (BUF_Size(uuu->r_buf))
@@ -1435,8 +1439,8 @@ static EIO_Status s_VT_Wait
         return SOCK_Wait(uuu->sock, eIO_Read, timeout);
     case eIO_Write:
         /* Return 'Closed' if no more writes are allowed (and now - reading) */
-        return uuu->can_connect == eCC_None
-            ||  (uuu->sock  &&  uuu->can_connect == eCC_Once)
+        return uuu->can_connect == fCC_None
+            ||  (uuu->sock  &&  uuu->can_connect == fCC_Once)
             ? eIO_Closed : eIO_Success;
     default:
         assert(0);
@@ -1464,9 +1468,9 @@ static EIO_Status s_VT_Write
         if (status != eIO_Success)
             return status;
     }
-    if (uuu->can_connect == eCC_None)
+    if (uuu->can_connect == fCC_None)
         return eIO_Closed; /* no more connects permitted */
-    uuu->can_connect |= eCC_Once;
+    uuu->can_connect |= fCC_Once;
 
     /* accumulate all output in the memory buffer */
     if (size  &&  (uuu->flags & fHTTP_UrlEncodeOutput)) {
@@ -1517,7 +1521,7 @@ static EIO_Status s_VT_Flush
         
         return eIO_Success;
     }
-    if (uuu->can_connect == eCC_None)
+    if (uuu->can_connect == fCC_None)
         return eIO_Closed;
     status = s_PreRead(uuu, timeout, eEM_Flush);
     return BUF_Size(uuu->r_buf) ? eIO_Success : status;
@@ -1533,11 +1537,11 @@ static EIO_Status s_VT_Read
 {
     SHttpConnector*  uuu = (SHttpConnector*) connector->handle;
     EExtractMode extract = BUF_Size(uuu->r_buf) ? eEM_Flush : eEM_Read;
-    EIO_Status    status = uuu->can_connect & eCC_Once
+    EIO_Status    status = uuu->can_connect & fCC_Once
         ? s_PreRead(uuu, timeout, extract) : eIO_Closed;
     size_t        x_read = BUF_Read(uuu->r_buf, buf, size);
 
-    if (x_read < size  &&  status == eIO_Success) {
+    if (x_read < size  &&  extract == eEM_Read  &&  status == eIO_Success) {
         status   = s_Read(uuu, (char*) buf + x_read, size - x_read, n_read);
         *n_read += x_read;
     } else
@@ -1552,7 +1556,7 @@ static EIO_Status s_VT_Status
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
     return uuu->sock ? SOCK_Status(uuu->sock, dir) :
-        (uuu->can_connect == eCC_None ? eIO_Closed : eIO_Success);
+        (uuu->can_connect == fCC_None ? eIO_Closed : eIO_Success);
 }
 
 
@@ -1565,7 +1569,7 @@ static EIO_Status s_VT_Close
     /* Send the accumulated output data(if any) to server, then close the
      * socket.  Regardless of the flush, clear both input and output buffers.
      */
-    if ((uuu->can_connect & eCC_Once)
+    if ((uuu->can_connect & fCC_Once)
         &&  ((!uuu->sock  &&  BUF_Size(uuu->w_buf))
              ||  (uuu->flags & fHTTP_Flushable))) {
         /* "WRITE" mode and data (or just flag) is still pending */
@@ -1729,7 +1733,7 @@ static EIO_Status s_CreateHttpConnector
 
     uuu->flags        = flags;
     uuu->reserved     = 0;
-    uuu->can_connect  = eCC_None;         /* will be properly set at open */
+    uuu->can_connect  = fCC_None;         /* will be properly set at open */
 
     ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), "");
     uuu->error_header = ConnNetInfo_Boolean(val);
