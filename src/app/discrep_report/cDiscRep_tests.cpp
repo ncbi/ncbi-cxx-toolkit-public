@@ -8915,7 +8915,7 @@ void CSeqEntry_on_incnst_user :: AddDbLinkFieldValues(const CUser_object& user_o
                  || field_str == "BioProject") {
           strtmp = "DBLink$" + field_str + "#";
           if ( (*uit)->GetData().IsStrs()) {
-              ITERATE (vector <string>, sit, (*uit)->GetData().GetStrs()) 
+              ITERATE (CUser_field::C_Data::TStrs, sit, (*uit)->GetData().GetStrs()) 
                  thisInfo.test_item_list[GetName_db()].push_back(strtmp+(*sit)+"@"+desc);
           }
           else if ( (*uit)->GetData().IsInts()) {
@@ -9141,7 +9141,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     // ONCALLER_BIOPROJECT_ID
     if (type_str == "DBLink" && user_obj.HasField("BioProject")
          && user_obj.GetField("BioProject").GetData().IsStrs()) {
-       const vector <string>& ids =user_obj.GetField("BioProject").GetData().GetStrs();
+       const CUser_field::C_Data::TStrs& ids =user_obj.GetField("BioProject").GetData().GetStrs();
        if (!ids.empty() && !ids[0].empty()) {
          if (entry_is_seq) 
               thisInfo.test_item_list[GetName_bproj()].push_back(bioseq_desc);
