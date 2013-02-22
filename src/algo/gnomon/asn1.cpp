@@ -500,7 +500,7 @@ void CAnnotationASN1::CImplementationData::DumpUnusedChains()
 void CollectUserField(const CUser_field& field, const string& name, vector<string>& values)
 {
     if (field.HasField(name)) {
-        const vector<string>& strs = field.GetField(name).GetData().GetStrs();
+        const CUser_field::C_Data::TStrs& strs = field.GetField(name).GetData().GetStrs();
         copy(strs.begin(), strs.end(), back_inserter(values));
     }
 }
