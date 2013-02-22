@@ -44,6 +44,7 @@
 
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include <objtools/edit/autodef_available_modifier.hpp>
 #include <objtools/edit/autodef_source_desc.hpp>
@@ -181,7 +182,7 @@ private:
     
     void GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range);
     bool IsSegment(CBioseq_Handle bh);
-
+    bool x_Is5SList(CFeat_CI feat_ci);
 
 };  //  end of CAutoDef
 

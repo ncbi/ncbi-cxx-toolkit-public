@@ -35,7 +35,6 @@
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
-#include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -771,6 +770,49 @@ void CAutoDef::GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range)
 }
 
 
+bool CAutoDef::x_Is5SList(CFeat_CI feat_ci)
+{
+    bool is_list = true;
+    bool is_single = true;
+    bool found_single = false;
+
+    if (!feat_ci) {
+        return false;
+    }
+    ++feat_ci;
+    if (feat_ci) {
+        is_single = false;
+    }
+    feat_ci.Rewind();
+    
+    while (feat_ci && is_list) {
+        if (feat_ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+            if (!feat_ci->GetData().GetRna().IsSetExt()
+                || !feat_ci->GetData().GetRna().GetExt().IsName()
+                || !NStr::Equal(feat_ci->GetData().GetRna().GetExt().GetName(), "5S ribosomal RNA")) {
+                is_list = false;
+            }
+        } else if (feat_ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+            if (!feat_ci->IsSetComment()) {
+                is_list = false;
+            } else if (NStr::Equal(feat_ci->GetComment(), "contains 5S ribosomal RNA and nontranscribed spacer")) {
+                found_single = true;
+            } else if (!NStr::Equal(feat_ci->GetComment(), "nontranscribed spacer")) {
+                is_list = false;
+            } 
+        } else {
+            is_list = false;
+        }
+        ++feat_ci;
+    }
+    if (is_single && !found_single) {
+        is_list = false;
+    }
+    feat_ci.Rewind();
+    return is_list;
+} 
+
+
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 {
     CAutoDefFeatureClause_Base main_clause(m_SuppressLocusTags);
@@ -805,6 +847,11 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 
     // now create clauses for real features
     CFeat_CI feat_ci(master_bh);
+
+    if (x_Is5SList(feat_ci)) {
+        return "5S ribosomal RNA gene region";
+    }
+
     while (feat_ci)
     { 
         const CSeq_feat& cf = feat_ci->GetOriginalFeature();
@@ -841,6 +888,9 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 						delete new_clause;
 						new_clause = NULL;
 					}
+        } else if (subtype == CSeqFeatData::eSubtype_misc_feature && x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags)) {
+  				delete new_clause;
+	  			new_clause = NULL;
 				} else if (new_clause->IsIntergenicSpacer()) {
 					delete new_clause;
 					x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_SuppressLocusTags);

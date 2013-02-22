@@ -189,12 +189,16 @@ static void AddTitle (CRef<CSeq_entry> entry, string defline)
     if (entry->IsSeq()) {
         entry->SetSeq().SetDescr().Set().push_back(odesc);
     } else if (entry->IsSet()) {
-        entry->SetSet().SetDescr().Set().push_back(odesc);
+        if (entry->GetSet().IsSetClass() && entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+            AddTitle (entry->SetSet().SetSeq_set().front(), defline);
+        } else {
+            entry->SetSet().SetDescr().Set().push_back(odesc);
+        }
     }
 }
 
 
-static void CheckDeflineMatches(CRef<CSeq_entry> entry)
+static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -206,8 +210,13 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry)
     // add to autodef 
     autodef.AddSources (seh);
 
-    CRef<CAutoDefModifierCombo> mod_combo (new CAutoDefModifierCombo ());
-    CBioseq_CI seq_iter(seh);
+    CRef<CAutoDefModifierCombo> mod_combo;
+    if (use_best) {
+        mod_combo = autodef.FindBestModifierCombo();
+    } else {
+        mod_combo = new CAutoDefModifierCombo ();
+    }
+    CBioseq_CI seq_iter(seh, CSeq_inst::eMol_na);
     for ( ; seq_iter; ++seq_iter ) {
        CBioseq_Handle bh (*seq_iter);
        //Display ID of sequence
@@ -224,6 +233,147 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry)
 
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
     }
+}
+
+
+CRef<CSeq_entry> FindNucInSeqEntry(CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_entry> empty(NULL);
+    if (!entry) {
+        return empty;
+    } else if (entry->IsSeq() && entry->GetSeq().IsNa()) {
+        return entry;
+    } else if (entry->IsSet()) {
+        ITERATE(CBioseq_set::TSeq_set, it, entry->GetSet().GetSeq_set()) {
+            CRef<CSeq_entry> rval = FindNucInSeqEntry(*it);
+            if (rval) {
+                return rval;
+            }
+        }
+    }
+    return empty;
+}
+
+
+static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
+{
+    CRef<CSeq_annot> annot;
+
+    if (entry->IsSeq()) {
+        if (!entry->GetSeq().IsSetAnnot() 
+            || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSeq().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSeq().SetAnnot().front();
+        }
+    } else if (entry->IsSet()) {
+        if (!entry->GetSet().IsSetAnnot() 
+            || !entry->GetSet().GetAnnot().front()->IsFtable()) {
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
+            entry->SetSet().SetAnnot().push_back(new_annot);
+            annot = new_annot;
+        } else {
+            annot = entry->SetSet().SetAnnot().front();
+        }
+    }
+
+    if (!feat->IsSetLocation() || feat->GetLocation().Which() == CSeq_loc::e_not_set) {
+        CRef<CSeq_entry> nuc_entry = FindNucInSeqEntry(entry);
+        if (nuc_entry) {
+            CRef<CSeq_id> id(new CSeq_id());
+            id->Assign(*(nuc_entry->GetSeq().GetId().front()));
+            feat->SetLocation().SetInt().SetId(*id);
+            feat->SetLocation().SetInt().SetFrom(0);
+            feat->SetLocation().SetInt().SetTo(entry->GetSeq().GetLength() - 1);
+        }
+    }
+
+    annot->SetData().SetFtable().push_back(feat);
+}
+
+
+static CRef<CSeq_entry> MakeProteinForNucProtSet (string id, string protein_name)
+{
+    // make protein
+    CRef<CBioseq> pseq(new CBioseq());
+    pseq->SetInst().SetMol(CSeq_inst::eMol_aa);
+    pseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    pseq->SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
+    pseq->SetInst().SetLength(8);
+
+    CRef<CSeq_id> pid(new CSeq_id());
+    pid->SetLocal().SetStr (id);
+    pseq->SetId().push_back(pid);
+
+    CRef<CSeqdesc> mpdesc(new CSeqdesc());
+    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);    
+    pseq->SetDescr().Set().push_back(mpdesc);
+
+    CRef<CSeq_entry> pentry(new CSeq_entry());
+    pentry->SetSeq(*pseq);
+
+    CRef<CSeq_feat> feat (new CSeq_feat());
+    feat->SetData().SetProt().SetName().push_back(protein_name);
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr(id);
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(7);
+    AddFeat (feat, pentry);
+
+    return pentry;
+}
+
+
+static CRef<CSeq_feat> MakeCDSForNucProtSet (string nuc_id, string prot_id)
+{
+    CRef<CSeq_feat> cds (new CSeq_feat());
+    cds->SetData().SetCdregion();
+    cds->SetProduct().SetWhole().SetLocal().SetStr(prot_id);
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr(nuc_id);
+    cds->SetLocation().SetInt().SetFrom(0);
+    cds->SetLocation().SetInt().SetTo(26);
+    return cds;
+}
+
+
+static CRef<CSeq_entry> BuildNucProtSet(string protein_name)
+{
+    CRef<CBioseq_set> set(new CBioseq_set());
+    set->SetClass(CBioseq_set::eClass_nuc_prot);
+
+    // make nucleotide
+    CRef<CBioseq> nseq(new CBioseq());
+    nseq->SetInst().SetMol(CSeq_inst::eMol_dna);
+    nseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    nseq->SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    nseq->SetInst().SetLength(60);
+
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr ("nuc");
+    nseq->SetId().push_back(id);
+
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
+    nseq->SetDescr().Set().push_back(mdesc);
+
+    CRef<CSeq_entry> nentry(new CSeq_entry());
+    nentry->SetSeq(*nseq);
+
+    set->SetSeq_set().push_back(nentry);
+
+    // make protein
+    CRef<CSeq_entry> pentry = MakeProteinForNucProtSet("prot", protein_name);
+
+    set->SetSeq_set().push_back(pentry);
+
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
+    set_entry->SetSet(*set);
+
+    CRef<CSeq_feat> cds = MakeCDSForNucProtSet("nuc", "prot");
+    AddFeat (cds, set_entry);
+
+    return set_entry;
 }
 
 
@@ -254,6 +404,53 @@ BOOST_AUTO_TEST_CASE(Test_UnnamedPlasmid)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_476)
+{
+    CRef<CSeq_entry> entry = BuildNucProtSet("chlorocatechol 1,2-dioxygenase");
+    CRef<CSeqdesc> desc = AddSource (entry, "Alcanivorax sp. HA03");
+    desc->SetSource().SetGenome(CBioSource::eGenome_plasmid);
+    CRef<CSubSource> sub(new CSubSource("plasmid-name", "unnamed"));
+    desc->SetSource().SetSubtype().push_back(sub);
+    AddTitle(entry, "Alcanivorax sp. HA03 plasmid chlorocatechol 1,2-dioxygenase gene, complete cds.");
+
+    CheckDeflineMatches(entry);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_630)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource (entry, "Clathrina aurea");
+    CRef<CSubSource> sub(new CSubSource("clone", "Cau_E6"));
+    desc->SetSource().SetSubtype().push_back(sub);
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetImp().SetKey("repeat_region");
+    CRef<CGb_qual> qual(new CGb_qual("satellite", "microsatellite"));
+    feat->SetQual().push_back(qual);
+    AddFeat(feat, entry);
+
+    AddTitle(entry, "Clathrina aurea microsatellite sequence.");
+
+    CheckDeflineMatches(entry);
+
+    feat->SetComment("dinucleotide");
+    CheckDeflineMatches(entry);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_169)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource (entry, "Clathrina aurea");
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetImp().SetKey("misc_feature");
+    feat->SetComment("contains 5S ribosomal RNA and nontranscribed spacer");
+    AddFeat(feat, entry);
+
+    AddTitle(entry, "Clathrina aurea 5S ribosomal RNA gene region.");
+
+    CheckDeflineMatches(entry);
+}
 
 
 END_SCOPE(objects)
