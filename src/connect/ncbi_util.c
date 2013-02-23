@@ -1046,6 +1046,71 @@ unsigned int UTIL_Adler32_Update(unsigned int checksum,
 #undef FINALIZE_ADLER
 
 
+extern void* UTIL_GenerateHMAC(const SHASH_Descriptor* hash,
+                               const void*             text,
+                               size_t                  text_len,
+                               const void*             key,
+                               size_t                  key_len,
+                               void*                   digest)
+{
+    unsigned char* pad;
+    void* ctx;
+    size_t i;
+
+    if (!hash  ||  !text  ||  !key  ||  !digest)
+        return 0;
+
+    if (!(pad = (unsigned char*) malloc(hash->block_len + hash->digest_len)))
+        return 0;
+
+    if (key_len > hash->block_len) {
+        void* tmp;
+        if (!hash->init(&ctx)) {
+            free(pad);
+            return 0;
+        }
+        tmp = pad + hash->block_len;
+        hash->update(ctx, key, key_len);
+        hash->fini(ctx, tmp);
+        key     = tmp;
+        key_len = hash->digest_len;
+    }
+
+    if (!hash->init(&ctx)) {
+        free(pad);
+        return 0;
+    }
+
+    for (i = 0;  i < key_len;  ++i)
+        pad[i] = 0x36 ^ ((unsigned char*) key)[i];
+    for (;  i < hash->block_len;  ++i)
+        pad[i] = 0x36;
+
+    hash->update(ctx, pad,  hash->block_len);
+    hash->update(ctx, text, text_len);
+
+    hash->fini(ctx, digest);
+
+    if (!hash->init(&ctx)) {
+        free(pad);
+        return 0;
+    }
+
+    for (i = 0;  i < key_len;  ++i)
+        pad[i] = 0x5C ^ ((unsigned char*) key)[i];
+    for (;  i < hash->block_len;  ++i)
+        pad[i] = 0x5C;
+
+    hash->update(ctx, pad,    hash->block_len);
+    hash->update(ctx, digest, hash->digest_len);
+
+    hash->fini(ctx, digest);
+
+    free(pad);
+    return digest;
+}
+
+
 
 /******************************************************************************
  *  MISCELLANEOUS

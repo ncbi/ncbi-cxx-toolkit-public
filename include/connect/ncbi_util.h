@@ -495,6 +495,44 @@ extern NCBI_XCONNECT_EXPORT unsigned int UTIL_Adler32_Update
 
 
 
+/** Cryptographic hash function descriptor:
+ * @var block_len
+ *  Byte length of hashing blocks (e.g. 64 bytes for MD5, SHA1, SHA256)
+ * @var digest_len
+ *  Byte length of the resultant digest (e.g. MD5: 16, SHA1: 20, SHA256: 32)
+ * @var init
+ *  Init and set hash ctx; return 0 on failure, non-zero on success
+ * @var update
+ *  Update the hash with data provided
+ * @var fini
+ *  Write out the resultant digest (if non-0) and destroy the context
+ * @sa
+ *  UTIL_GenerateHMAC
+ */
+typedef struct {
+    const size_t block_len;
+    const size_t digest_len;
+
+    int/*bool*/ (*init)  (void** ctx);
+    void        (*update)(void*  ctx, const void* data, size_t data_len);
+    void        (*fini)  (void*  ctx, void* digest);
+} SHASH_Descriptor;
+
+
+/** Generate RFC2401 digest.
+ * @sa
+ *  SHASH_Descriptor
+ */
+extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
+(const SHASH_Descriptor* hash,
+ const void*             text,
+ size_t                  text_len,
+ const void*             key,
+ size_t                  key_len,
+ void*                   digest);
+
+
+
 /******************************************************************************
  *  Miscellanea
  */
