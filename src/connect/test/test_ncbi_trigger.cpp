@@ -36,7 +36,8 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <stdlib.h>
-#include <common/test_assert.h>  // This header must go last
+
+#include "test_assert.h"  // This header must go last
 
 #define _STR(s)     #s
 #define  STR(s) _STR(s)

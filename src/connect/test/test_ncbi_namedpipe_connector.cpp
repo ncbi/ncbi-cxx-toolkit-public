@@ -37,7 +37,8 @@
 #include <connect/ncbi_namedpipe_connector.hpp>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
-#include <common/test_assert.h>  // This header must go last
+
+#include "test_assert.h"  // This header must go last
 
 
 USING_NCBI_SCOPE;

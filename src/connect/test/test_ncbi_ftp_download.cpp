@@ -46,9 +46,8 @@
 #elif defined(NCBI_OS_MSWIN)
 #  include <io.h>      // _isatty()
 #endif // NCBI_OS
-/* This header must go last */
-#include "test_assert.h"
 
+#include "test_assert.h"  // This header must go last
 
 #define SCREEN_COLS (80 - 1)
 

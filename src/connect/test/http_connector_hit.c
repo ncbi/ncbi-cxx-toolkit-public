@@ -33,8 +33,8 @@
 #include <connect/ncbi_http_connector.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 /* Holder for the cmd.-line arg values describing the URL to hit

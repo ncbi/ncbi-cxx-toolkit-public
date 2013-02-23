@@ -38,7 +38,8 @@
 #include <time.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <common/test_assert.h>  // This header must go last
+
+#include "test_assert.h"  // This header must go last
 
 #ifdef NCBI_OS_UNIX
 #  define DEV_NULL "/dev/null"

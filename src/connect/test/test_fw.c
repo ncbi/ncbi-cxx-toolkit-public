@@ -36,8 +36,8 @@
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
 #include <string.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 static void s_SendData(FILE* fp, SOCK sock)

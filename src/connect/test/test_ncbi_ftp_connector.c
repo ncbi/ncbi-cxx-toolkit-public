@@ -39,14 +39,14 @@
 #  include <sys/time.h>
 #endif /*HAVE_GETTIMEOFDAY*/
 #include <time.h>
-/* This header must go last */
-#include "test_assert.h"
 
-#define TEST_HOST "ftp.ncbi.nlm.nih.gov"
-#define TEST_PORT 0
-#define TEST_USER "ftp"
-#define TEST_PASS "none"
-#define TEST_PATH ((char*) 0)
+#include "test_assert.h"  /* This header must go last */
+
+#define TEST_HOST  "ftp.ncbi.nlm.nih.gov"
+#define TEST_PORT  0
+#define TEST_USER  "ftp"
+#define TEST_PASS  "none"
+#define TEST_PATH  ((char*) 0)
 
 
 static double s_GetTime(void)

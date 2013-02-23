@@ -37,9 +37,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
-/* This header must go last */
-#include "test_assert.h"
 
+#include "test_assert.h"  /* This header must go last */
 
 #define TEST_HUGE_BODY_SIZE     (1024*100)
 

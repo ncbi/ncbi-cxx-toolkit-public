@@ -34,8 +34,8 @@
 #include <connect/ncbi_file_connector.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 #define OUT_FILE "test_ncbi_file_connector.out"
 

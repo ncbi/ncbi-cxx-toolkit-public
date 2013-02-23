@@ -37,9 +37,8 @@
 #include "../ncbi_assert.h"
 #include <stdlib.h>
 #include <errno.h>
-/* This header must go last */
-#include "test_assert.h"
 
+#include "test_assert.h"  /* This header must go last */
 
 /* Aux. to printout a name of the next function to test
  */
@@ -59,7 +58,6 @@ extern "C" {
     static void TEST_CORE_LogCleanup(void* user_data);
 }
 #endif /* __cplusplus */
-
 
 
 

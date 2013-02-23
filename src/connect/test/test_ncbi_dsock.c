@@ -37,8 +37,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <time.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 /* maximal UDP packet size as allowed by the standard */
 #define MAX_UDP_DGRAM_SIZE 65535

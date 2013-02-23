@@ -35,8 +35,8 @@
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
 #include <time.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 int main(int argc, const char* argv[])

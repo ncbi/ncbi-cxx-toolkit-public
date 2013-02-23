@@ -35,8 +35,8 @@
 #include "../ncbi_servicep.h"
 #include <stdlib.h>
 #include <string.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 int main(int argc, char* argv[])

@@ -37,8 +37,8 @@
 #include "ncbi_conntest.h"
 #include <errno.h>
 #include <stdlib.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 #define TEST_MAX_TRY 2
 #define TEST_TIMEOUT 5.123456

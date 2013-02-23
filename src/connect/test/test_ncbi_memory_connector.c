@@ -33,8 +33,8 @@
 #include <connect/ncbi_memory_connector.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 int main(void)

@@ -41,8 +41,8 @@
 #if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
 #  include <unistd.h>
 #endif /*NCBI_OS_UNIX && HAVE_USLEEP*/
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 int main(int argc, char* argv[])

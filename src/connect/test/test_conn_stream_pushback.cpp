@@ -34,8 +34,8 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_util.h>
 #include "../../corelib/test/pbacktest.hpp"
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  // This header must go last
 
 
 int main(int argc, char* argv[])

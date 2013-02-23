@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 /* a (primitive) uniform random number generator :-) */

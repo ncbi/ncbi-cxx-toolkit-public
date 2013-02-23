@@ -33,8 +33,8 @@
 #include <connect/ncbi_connutil.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 
 int main(int argc, char** argv)

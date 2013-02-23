@@ -38,8 +38,8 @@
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_gnutls.h>
-/* This header must go last */
-#include <common/test_assert.h>
+
+#include "test_assert.h"  // This header must go last
 
 
 BEGIN_NCBI_SCOPE

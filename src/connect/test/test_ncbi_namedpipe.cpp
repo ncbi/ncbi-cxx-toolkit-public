@@ -34,7 +34,8 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_namedpipe.hpp>
-#include <common/test_assert.h>  // This header must go last
+
+#include "test_assert.h"  // This header must go last
 
 #ifdef pipe
 #undef pipe

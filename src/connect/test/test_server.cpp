@@ -39,7 +39,7 @@
 #include <connect/server.hpp>
 #include <util/random_gen.hpp>
 
-#include <common/test_assert.h>  // This header must go last
+#include "test_assert.h"  // This header must go last
 
 
 BEGIN_NCBI_SCOPE

@@ -45,8 +45,8 @@
 #else
 #  define X_SLEEP(x) ((void) 0)
 #endif
-/* This header must go last */
-#include "test_assert.h"
+
+#include "test_assert.h"  /* This header must go last */
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
