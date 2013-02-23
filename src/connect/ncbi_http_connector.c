@@ -933,6 +933,35 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         ? uuu->parse_header(str, uuu->user_data, http_code)
         : eHTTP_HeaderSuccess;
 
+    if (!(uuu->flags & fHTTP_NoAutomagicSID)) {
+        static const char kNcbiSidTag[] = "\n" HTTP_NCBI_SID " ";
+        char* s;
+        for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
+            if (strncasecmp(s, kNcbiSidTag, sizeof(kNcbiSidTag) - 1) == 0) {
+                char* sid = s + sizeof(kNcbiSidTag) - 1, *e;
+                while (*sid  &&  isspace((unsigned char)(*sid)))
+                    sid++;
+                if (!(e = strchr(sid, '\r')))
+                    e = strchr(sid, '\n');
+                if (!e)
+                    break;
+                do {
+                    if (!isspace((unsigned char) e[-1]))
+                        break;
+                } while (--e > sid);
+                n = (size_t)(e - sid);
+                if (n) {
+                    char c = sid[n];
+                    sid[n] = '\0';
+                    ConnNetInfo_OverrideUserHeader(uuu->net_info, s + 1);
+                    sid[n] = c;
+                    uuu->flags |= fHTTP_NoAutomagicSID;
+                }
+                break;
+            }
+        }
+    }
+
     if (!header_parse/*== eHTTP_HeaderError*/) {
         retry->mode = eRetry_None;
         if (!http_code  &&  uuu->error_header
@@ -960,8 +989,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     if (!isspace((unsigned char) s[-1]))
                         break;
                 } while (--s > location);
-                if (s != location  &&  n) {
-                    n = (size_t)(s - location);
+                n = (size_t)(s - location);
+                if (n) {
                     memmove(str, location, n);
                     str[n] = '\0';
                     retry->data = str;
@@ -995,14 +1024,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         if (!isspace((unsigned char) e[-1]))
                             break;
                     } while (--e > challenge);
-                    if (e != challenge) {
-                        n = (size_t)(e - challenge);
-                        if (s_IsValidAuth(challenge, n)) {
-                            memmove(str, challenge, n);
-                            str[n] = '\0';
-                            retry->data = str;
-                            break;
-                        }
+                    n = (size_t)(e - challenge);
+                    if (n  &&  s_IsValidAuth(challenge, n)) {
+                        memmove(str, challenge, n);
+                        str[n] = '\0';
+                        retry->data = str;
+                        break;
                     }
                 }
             }
@@ -1616,11 +1643,11 @@ static void s_Destroy
 
 
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
-static void x_FixupUserHeader(SConnNetInfo* net_info, int/*bool*/ has_sid)
+static int/*bool*/ x_AdjUserHeader(SConnNetInfo* net_info, int/*bool*/ has_sid)
 {
     int/*bool*/ has_referer = 0/*false*/;
-    char* referer;
     const char* s;
+    char* r;
 
     s = CORE_GetAppName();
     if (s  &&  *s) {
@@ -1656,20 +1683,19 @@ static void x_FixupUserHeader(SConnNetInfo* net_info, int/*bool*/ has_sid)
             first = 0/*false*/;
         }
     }
+    if (!has_referer  &&  net_info->http_referer  &&  *net_info->http_referer
+        &&  (r = (char*) malloc(strlen(net_info->http_referer) + 10)) != 0) {
+        sprintf(r, "Referer: %s", net_info->http_referer);
+        ConnNetInfo_AppendUserHeader(net_info, r);
+        free(r);
+    }
     if (!has_sid  &&  (s = CORE_GetNcbiSid()) != 0  &&  *s) {
         char sid[128];
         sprintf(sid, HTTP_NCBI_SID " %.80s", s);
         ConnNetInfo_AppendUserHeader(net_info, sid);
+        has_sid = 1/*true*/;
     }
-    if (has_referer)
-        return;
-    if (!net_info->http_referer  ||  !*net_info->http_referer
-        ||  !(referer = (char*) malloc(strlen(net_info->http_referer) + 10))) {
-        return;
-    }
-    sprintf(referer, "Referer: %s", net_info->http_referer);
-    ConnNetInfo_AppendUserHeader(net_info, referer);
-    free(referer);
+    return has_sid;
 }
 
 
@@ -1713,7 +1739,8 @@ static EIO_Status s_CreateHttpConnector
         }
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     }
-    x_FixupUserHeader(xxx, flags & fHTTP_NoAutomagicSID ? 1 : tunnel);
+    if (x_AdjUserHeader(xxx, flags & fHTTP_NoAutomagicSID ? 1 : tunnel))
+        flags |= fHTTP_NoAutomagicSID;
 
     if ((flags & fHTTP_NoAutoRetry)  ||  !xxx->max_try)
         xxx->max_try = 1;
