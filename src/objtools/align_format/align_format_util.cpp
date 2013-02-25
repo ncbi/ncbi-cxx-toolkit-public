@@ -768,6 +768,7 @@ void CAlignFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
 }
 
 
+
 void CAlignFormatUtil::PruneSeqalignAll(const CSeq_align_set& source_aln, 
                                      CSeq_align_set& new_aln,
                                      unsigned int number)
@@ -1528,10 +1529,9 @@ void CAlignFormatUtil::ExtractSeqAlignForSeqList(CRef<CSeq_align_set> &all_aln_s
     all_aln_set = CAlignFormatUtil::HitListToHspList(orderedSet); 
 }                          
 
-
-
-string CAlignFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
+static bool s_GetSRASeqMetadata(const CBioseq::TId& ids,string &strRun, string &strSpotId,string &strReadIndex)
 {
+    bool success = false;
     string link = NcbiEmptyString;
     CConstRef<CSeq_id> seqId = GetSeq_idByType(ids, CSeq_id::e_General);
 
@@ -1553,27 +1553,37 @@ string CAlignFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
                 }
                 catch (...)
                 {
-                    return NcbiEmptyString;
+                    return false;
                 }
 
                 if (vecInfo.size() != 3)
                 {
-                    return NcbiEmptyString;
+                    return false;
                 }
 
-                string strRun = vecInfo[0];
-                string strSpotId = vecInfo[1];
-                string strReadIndex = vecInfo[2];
-
-                // Generate the SRA link to the identified spot
-                link += user_url;
-                link += "?run=" + strRun;
-                link += "." + strSpotId;
-                link += "." + strReadIndex;
+                strRun = vecInfo[0];
+                strSpotId = vecInfo[1];
+                strReadIndex = vecInfo[2];                
+                success = true;
             }
         }
     }
+    return success;
+}
 
+string CAlignFormatUtil::BuildSRAUrl(const CBioseq::TId& ids, string user_url)
+{
+    string strRun, strSpotId,strReadIndex;
+    string link = NcbiEmptyString;
+
+    if(s_GetSRASeqMetadata(ids,strRun,strSpotId,strReadIndex))   
+    {
+        // Generate the SRA link to the identified spot
+        link += user_url;
+        link += "?run=" + strRun;
+        link += "." + strSpotId;
+        link += "." + strReadIndex;        
+    }
     return link;
 }
 
@@ -1980,7 +1990,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
     }
     if (linkout & eGeo){
         url_link = CAlignFormatUtil::GetURLFromRegistry("GEO");        
-        lnk_displ = textLink ? "GEO" : kGeoImg; 
+        lnk_displ = textLink ? "GEO Profiles" : kGeoImg; 
         if(!disableLink) {        
             lnkTitleInfo = "Expression profiles";
             //gilist contains comma separated gis            
@@ -2867,32 +2877,55 @@ string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,strin
     return outString;
 }
 
+static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *seqUrlInfo)
+{
+    string db,logstr_moltype;
+    if(seqUrlInfo->isDbNa) {                
+        db = "nucleotide";
+        logstr_moltype = "nucl";
+    } else {                
+        db = "protein";
+        logstr_moltype ="prot";
+    }
+    string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
+    string url_link = CAlignFormatUtil::MapTemplate(urlTemplate,"db",db);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",seqUrlInfo->gi);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);     
+    return url_link;
+}
+
+static string s_MapURLLink(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *seqUrlInfo, const CBioseq::TId& ids)
+{
+    //Add specific blasttype/user_url template mapping here
+    string url_link = urlTemplate;
+    if (seqUrlInfo->user_url.find("sra.cgi") != string::npos) {
+        string strRun, strSpotId,strReadIndex;
+        if(s_GetSRASeqMetadata(ids,strRun,strSpotId,strReadIndex)) {           
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"run",strRun);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"spotid",strSpotId);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"readindex",strReadIndex);
+        }
+    }
+    //This maps generic params like log, blast_rank, rid
+    url_link = s_MapCommonUrlParams(url_link, seqUrlInfo);
+    return url_link;
+}
+
 string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids)
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
     
-    string logstr_moltype,db;
-    string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
     string temp_class_info = kClassInfo; temp_class_info += " ";
-    if (seqUrlInfo->gi > 0) {
-        if(seqUrlInfo->isDbNa) {                
-            db = "nucleotide";
-            logstr_moltype = "nucl";
-        } else {                
-            db = "protein";
-            logstr_moltype ="prot";
-        }
+    if (seqUrlInfo->gi > 0) {        
         string entrezTag = (seqUrlInfo->useTemplates) ? "ENTREZ_TM" : "ENTREZ";
         string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
-
-        url_link = CAlignFormatUtil::MapTemplate(l_EntrezUrl,"db",db);
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",seqUrlInfo->gi);
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid); 
+        url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
+        
         if(!seqUrlInfo->useTemplates) {
 			url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
             temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;
@@ -2953,32 +2986,33 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
     //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)    
     bool hit_not_in_mapviewer = (seqUrlInfo->advancedView) ? true :
-                                        (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !( (seqUrlInfo->linkout & eGenomicSeq) && (seqUrlInfo->linkout & eMapviewer) )));
-    string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
+                                        (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !( (seqUrlInfo->linkout & eGenomicSeq) && (seqUrlInfo->linkout & eMapviewer) )));    
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
-    if (seqUrlInfo->user_url.find("sra.cgi") != string::npos) {
-        
-        string url_with_parameters = 
-            CAlignFormatUtil::BuildSRAUrl(*ids, seqUrlInfo->user_url);
-
-        if (url_with_parameters != NcbiEmptyString) {
-            if (!seqUrlInfo->useTemplates) url_link += "<a " + title + "href=\"";
-            url_link += url_with_parameters;
-            if (!seqUrlInfo->useTemplates) url_link += "\">";
-        }
-
-    }    
-    else if (seqUrlInfo->user_url != NcbiEmptyString && 
+    if (seqUrlInfo->user_url != NcbiEmptyString && 
         !((seqUrlInfo->user_url.find("dumpgnl.cgi") != string::npos && seqUrlInfo->gi > 0) || 
           (seqUrlInfo->user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
         
-        string url_with_parameters = 
-            CAlignFormatUtil::BuildUserUrl(*ids, seqUrlInfo->taxid, seqUrlInfo->user_url,
+        string url_with_parameters,toolURLParams;
+        if(m_Reg && !seqUrlInfo->blastType.empty() && seqUrlInfo->blastType != "newblast") {
+            toolURLParams = m_Reg->Get(seqUrlInfo->blastType, "TOOL_URL_PARAMS");            
+        }        
+        if(!toolURLParams.empty()) {            
+            string urlLinkTemplate = seqUrlInfo->user_url + toolURLParams;
+            url_with_parameters = s_MapURLLink(urlLinkTemplate, seqUrlInfo, *ids);            
+        }
+        else {            
+            if (seqUrlInfo->user_url.find("sra.cgi") != string::npos) {        
+                url_with_parameters = CAlignFormatUtil::BuildSRAUrl(*ids, seqUrlInfo->user_url);
+            }
+            else {
+                url_with_parameters = CAlignFormatUtil::BuildUserUrl(*ids, seqUrlInfo->taxid, seqUrlInfo->user_url,
                                            seqUrlInfo->database,
                                            seqUrlInfo->isDbNa, seqUrlInfo->rid,
                                            seqUrlInfo->queryNumber,
                                            seqUrlInfo->isAlignLink);
+            }
+        }        
         if (url_with_parameters != NcbiEmptyString) {
             if (!seqUrlInfo->useTemplates) {
                 string deflineInfo;
@@ -3042,6 +3076,9 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         string linkUrl,link,linkTiltle = kCustomLinkTitle;
         
         linkUrl = seqUrlInfo->seqUrl;
+        if(NStr::Find(linkUrl, "report=genbank") == NPOS) { //Geo case
+            linkUrl = s_MapCommonUrlParams(kEntrezTMUrl, seqUrlInfo);                        
+        }
         string linkText = (seqUrlInfo->isDbNa) ? "GenBank" : "GenPept";
         if(hspRange) {
             linkUrl += "&from=<@fromHSP@>&to=<@toHSP@>";
