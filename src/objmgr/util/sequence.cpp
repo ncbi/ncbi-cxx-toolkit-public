@@ -2691,8 +2691,9 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     }
 
     if ( !safe_title.empty() ) {
-        m_Out << ' ' << safe_title << '\n';
+        m_Out << ' ' << safe_title;
     }
+    m_Out << '\n';
 }
 
 void CFastaOstream::x_PrintStringModIfNotDup(
