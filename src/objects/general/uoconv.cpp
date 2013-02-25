@@ -118,7 +118,7 @@ static void s_SetAnyContentFromFields(CAnyContentObject& obj,
 {
     ITERATE (TUFData::TFields, it, fields) {
         const string& name  = (*it)->GetLabel().GetStr();
-        const string& value = (*it)->GetData().GetStr();
+        const CStringUTF8& value = (*it)->GetData().GetStr();
         SIZE_TYPE     colon = name.find(':');
         if (colon != NPOS) {
             obj.AddAttribute(name.substr(colon + 1), name.substr(0, colon - 1),
@@ -265,7 +265,7 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 break;
             case ePrimitiveValueChar:
                 data.SetStrs()
-                    .push_back(string(1, obj2.GetPrimitiveValueChar()));
+                    .push_back(CUtf8::AsUTF8(string(1, obj2.GetPrimitiveValueChar()),eEncoding_ISO8859_1));
                 break;
             case ePrimitiveValueInteger:
                 if (obj2.IsPrimitiveValueSigned()) {
@@ -279,7 +279,7 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 data.SetReals().push_back(obj2.GetPrimitiveValueDouble());
                 break;
             case ePrimitiveValueString:
-                data.SetStrs().push_back(obj2.GetPrimitiveValueString());
+                data.SetStrs().push_back(CUtf8::AsUTF8(obj2.GetPrimitiveValueString(),eEncoding_UTF8));
                 break;
             case ePrimitiveValueEnum:
             {
@@ -289,7 +289,7 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 } catch (CSerialException&) {
                     s = NStr::IntToString(obj.GetPrimitiveValueInt());
                 }
-                data.SetStrs().push_back(s);
+                data.SetStrs().push_back(CUtf8::AsUTF8(s,eEncoding_UTF8));
                 break;
             }
             case ePrimitiveValueOctetString:

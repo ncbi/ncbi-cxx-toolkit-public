@@ -199,12 +199,12 @@ CUser_object& CUser_object::AddField(const string& label,
         }
         catch (...) {
         }
-        field->SetData().SetStr(value);
+        field->SetData().SetStr(CUtf8::AsUTF8(value,eEncoding_UTF8));
         break;
 
     default:
     case eParse_String:
-        field->SetData().SetStr(value);
+        field->SetData().SetStr(CUtf8::AsUTF8(value,eEncoding_UTF8));
         break;
     }
 
@@ -267,7 +267,12 @@ CUser_object& CUser_object::AddField(const string& label,
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
     field->SetNum(value.size());
-    field->SetData().SetStrs() = value;
+
+    CUser_field_Base::C_Data::TStrs& dest = field->SetData().SetStrs();
+    dest.clear();
+    ITERATE(vector<string>, v, value) {
+        dest.push_back( CUtf8::AsUTF8( *v,eEncoding_UTF8));
+    }
 
     SetData().push_back(field);
     return *this;

@@ -66,13 +66,20 @@ CUser_field& CUser_field::AddField(const string& label, int value)
 
 
 /// add fields to the current user field
-CUser_field& CUser_field::AddField(const string& label, const string& value)
+CUser_field& CUser_field::AddField(const string& label,
+                                   const CUser_field_Base::TData::TStr& value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
     field->SetData().SetStr(value);
     SetData().SetFields().push_back(field);
     return *this;
+}
+
+CUser_field& CUser_field::AddField(const string& label,
+                                   const string& value)
+{
+    return AddField(label, CUtf8::AsUTF8( value,eEncoding_UTF8));
 }
 
 
@@ -95,9 +102,8 @@ CUser_field& CUser_field::AddField(const string& label, bool value)
     return *this;
 }
 
-
 CUser_field& CUser_field::AddField(const string& label,
-                                   const vector<string>& value)
+                                   const CUser_field_Base::TData::TStrs& value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -107,6 +113,20 @@ CUser_field& CUser_field::AddField(const string& label,
     return *this;
 }
 
+CUser_field& CUser_field::AddField(const string& label,
+                                   const vector<string>& value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
+    CUser_field_Base::C_Data::TStrs& dest = field->SetData().SetStrs();
+    dest.clear();
+    ITERATE( vector<string>, v, value) {
+        dest.push_back(CUtf8::AsUTF8( *v,eEncoding_UTF8));
+    }
+    SetData().SetFields().push_back(field);
+    return *this;
+}
 
 CUser_field& CUser_field::AddField(const string& label,
                                    const vector<int>& value)

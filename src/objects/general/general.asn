@@ -134,13 +134,13 @@ User-field ::= SEQUENCE {
     label Object-id ,                -- field label
     num INTEGER OPTIONAL ,           -- required for strs, ints, reals, oss
     data CHOICE {                    -- field contents
-        str VisibleString ,
+        str UTF8String ,
         int INTEGER ,
         real REAL ,
         bool BOOLEAN ,
         os OCTET STRING ,
         object User-object ,         -- for using other definitions
-        strs SEQUENCE OF VisibleString ,
+        strs SEQUENCE OF UTF8String ,
         ints SEQUENCE OF INTEGER ,
         reals SEQUENCE OF REAL ,
         oss SEQUENCE OF OCTET STRING ,
