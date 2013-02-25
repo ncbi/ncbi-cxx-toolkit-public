@@ -110,7 +110,7 @@ gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s\
 
 ///Geo
 // .ncbirc alias: GEO
-static const char kGeoUrl[] =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles?LinkName=nuccore_geoprofiles&from_uid=<@gi@>&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kGeoUrl[] =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles/?LinkName=nucleotide_geoprofiles&from_uid=<@gi@>&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 
 //substitues <@lnk_displ@>
