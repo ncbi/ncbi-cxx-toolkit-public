@@ -8,7 +8,7 @@ LIB_ = w_hit_matrix gui_glmesa w_gl w_wx w_data \
 	   xalgoalignutil xalnmgr ximage xcgi xhtml \
 	   entrez2cli entrez2 valerr gbseq entrezgene biotree \
 	   xconnserv xqueryparse snputil $(EUTILS_LIBS) xser xconnect xutil xmlwrapp \
-           $(BLAST_LIBS) $(OBJMGR_LIBS)
+           $(BLAST_LIBS) $(OBJMGR_LIBS) variation
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(OSMESA_LIBS) $(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(GLEW_LIBS) \
