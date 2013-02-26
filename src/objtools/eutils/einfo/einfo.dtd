@@ -36,8 +36,8 @@ $Id$
 				IsNumerical,
 				SingleToken,
 				Hierarchy,
-                                IsHidden,
-                                IsRangable,
+                                IsHidden?,
+                                IsRangable?,
                 IsTruncatable)>
 
 <!ELEMENT	Link		(Name,Menu,Description,DbTo)>
