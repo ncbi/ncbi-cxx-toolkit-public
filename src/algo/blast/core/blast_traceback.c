@@ -599,6 +599,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       }
    } /* End loop on HSPs */
 
+   Blast_HSPListPurgeNullHSPs(hsp_list);
+
    if (program_number != eBlastTypeRpsTblastn) {
       if (translation_buffer) {
          sfree(translation_buffer);
