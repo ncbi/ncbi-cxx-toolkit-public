@@ -334,7 +334,7 @@ public:
 
     void Remap(const CRangeMapper& mapper);
     enum EClipMode { eRemoveExons, eDontRemoveExons };
-    void Clip(TSignedSeqRange limits, EClipMode mode, bool ensure_cds_invariant = true);
+    void Clip(TSignedSeqRange limits, EClipMode mode, bool ensure_cds_invariant = true);  // drops the score!!!!!!!!!
     void CutExons(TSignedSeqRange hole); // clip or remove exons, dangerous, should be completely in or outside the cds, should not cut an exon in two 
     void ExtendLeft(int amount);
     void ExtendRight(int amount);
