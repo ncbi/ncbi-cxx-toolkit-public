@@ -721,6 +721,15 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input,
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
+
+static void s_CheckForColon(const string line) 
+{
+    if (line.find(':') != line.npos) {
+        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                "META data can not contain colon (:) character.");
+    }
+}
+
 void CMakeBlastDBApp::x_ProcessMaskData()
 {
     const CArgs & args = GetArgs();
@@ -744,6 +753,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
     
     if (ids.HasValue()) {
+        s_CheckForColon(ids.AsString());
         NStr::Tokenize(NStr::TruncateSpaces(ids.AsString()), ",", id_list,
                    NStr::eNoMergeDelims);
         if (file_list.size() != id_list.size()) {
@@ -761,6 +771,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
 
     if (descs.HasValue()) {
+        s_CheckForColon(descs.AsString());
         NStr::Tokenize(NStr::TruncateSpaces(descs.AsString()), ",", desc_list,
                    NStr::eNoMergeDelims);
         if (file_list.size() != desc_list.size()) {
@@ -814,6 +825,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
             if (algo_id < 0) {
                 *m_LogFile << "Mask file: " << file_list[i] << endl;
                 string opts = first_obj->GetAlgo_options();
+                s_CheckForColon(opts);
                 if (id_list.size())  {
                     algo_id = m_DB->RegisterMaskingAlgorithm(id_list[i], desc_list[i], opts);
                 } else {
