@@ -48,7 +48,7 @@
 //
 //#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
-//#define BAD_VALIDATOR
+#define BAD_VALIDATOR
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -3987,9 +3987,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     CRef<CSeq_entry> entry = BuildGoodSegSet();
     CRef<CSeq_entry> master_seg = entry->SetSet().SetSeq_set().front();
 
@@ -5102,9 +5099,6 @@ BOOST_AUTO_TEST_CASE(Test_InternalGapsInSeqRaw)
 
 BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodDeltaSeq();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
@@ -5335,6 +5329,9 @@ BOOST_AUTO_TEST_CASE(Test_BioSourceMissing)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc;
@@ -5932,6 +5929,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoMolInfoFound)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxon(entry, 0);
@@ -5950,6 +5950,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     // prepare entry
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
@@ -6020,7 +6023,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
 {
-    // prepare entry
+ #ifdef BAD_VALIDATOR
+return;
+#endif
+   // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     ResetOrgname(entry);
 
@@ -6258,6 +6264,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentProteinTitle)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc1(new CSeqdesc());
@@ -6915,6 +6924,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TransgenicProblem)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxname(entry, "Not valid");
@@ -7017,6 +7029,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingOnNonRefSeq)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
    // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxname(entry, "Arabidopsis thaliana");
@@ -9092,11 +9107,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 {
-
-#ifdef BAD_VALIDATOR
-return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc(new CSeqdesc());
@@ -9366,11 +9376,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MolInfoConflictsWithBioSource)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 {
-
-#ifdef BAD_VALIDATOR
-return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> sdesc(new CSeqdesc());
@@ -12810,6 +12815,9 @@ static string MakeWrongCap (const string& str)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
     STANDARD_SETUP
@@ -13083,8 +13091,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FarLocation)
 
     CLEAR_ERRORS
 }
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
     CRef<CSeq_feat> feat2 = AddMiscFeature (entry);

@@ -2902,6 +2902,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
         if (reply) {
             CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+            vector<CRef<COrg_ref> >::const_iterator rq_it = org_rq_list.begin();
 
             // process descriptor responses
             desc_it = src_descs.begin();
@@ -2909,7 +2910,8 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
             while (reply_it != reply->GetReply().end()
                    && desc_it != src_descs.end()
-                   && ctx_it != desc_ctxs.end()) {
+                   && ctx_it != desc_ctxs.end()
+                   && rq_it != org_rq_list.end()) {
                 if ((*reply_it)->IsError()) {
                     string err_str = "?";
                     if ((*reply_it)->GetError().IsSetMessage()) {
@@ -2928,6 +2930,42 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                     bool is_species_level = true;
                     bool force_consult = false;
                     bool has_nucleomorphs = false;
+                    if ((*reply_it)->GetData().IsSetOrg()) {
+                        const COrg_ref& orp_req = **rq_it;
+                        const COrg_ref& orp_rep = (*reply_it)->GetData().GetOrg();
+                        if (orp_req.IsSetTaxname() && orp_rep.IsSetTaxname()) {
+                            const string& taxname_req = orp_req.GetTaxname();
+                            if (orp_rep.IsSetDb() && orp_req.IsSetDb()) {
+                                int taxid_req = 0;
+                                int taxid_rep = 0;
+                                FOR_EACH_DBXREF_ON_ORGREF (q_itr, orp_req) {
+                                    const CDbtag& dbt = **q_itr;
+                                    if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
+                                        const CObject_id& id = dbt.GetTag();
+                                        if (id.IsId()) {
+                                            taxid_req = id.GetId();
+                                        }
+                                    }
+                                }
+                                FOR_EACH_DBXREF_ON_ORGREF (p_itr, orp_rep) {
+                                    const CDbtag& dbt = **p_itr;
+                                    if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
+                                        const CObject_id& id = dbt.GetTag();
+                                        if (id.IsId()) {
+                                            taxid_rep = id.GetId();
+                                        }
+                                    }
+                                }
+                                if (taxid_req != taxid_rep) {
+                                    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                                            "Organism name is '" + taxname_req
+                                            + "', taxonomy ID should be '" + NStr::IntToString (taxid_rep)
+                                            + "' but is " + NStr::IntToString (taxid_req) + "'",
+                                            **desc_it, *ctx_it);
+                                }
+                            }
+                        }
+                    }
                     (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
                     if (!is_species_level) {
                         PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
@@ -2950,11 +2988,13 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                 ++reply_it;
                 ++desc_it;
                 ++ctx_it;
+                ++rq_it;
             }
             // process feat responses
             feat_it = src_feats.begin(); 
             while (reply_it != reply->GetReply().end()
-                   && feat_it != src_feats.end()) {
+                   && feat_it != src_feats.end()
+                   && rq_it != org_rq_list.end()) {
                 if ((*reply_it)->IsError()) {
                     string err_str = "?";
                     if ((*reply_it)->GetError().IsSetMessage()) {
@@ -2988,6 +3028,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                 }
                 ++reply_it;
                 ++feat_it;
+                ++rq_it;
             }            
         }
     }
@@ -3012,8 +3053,10 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
     if (reply) {
         CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+        vector<CRef<COrg_ref> >::const_iterator rq_it = org_rq_list.begin();
 
-        while (reply_it != reply->GetReply().end()) {
+        while (reply_it != reply->GetReply().end()
+               && rq_it != org_rq_list.end()) {
             if ((*reply_it)->IsError()) {
                 string err_str = "?";
                 if ((*reply_it)->GetError().IsSetMessage()) {
@@ -3030,6 +3073,42 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                 bool is_species_level = true;
                 bool force_consult = false;
                 bool has_nucleomorphs = false;
+                if ((*reply_it)->GetData().IsSetOrg()) {
+                    const COrg_ref& orp_req = **rq_it;
+                    const COrg_ref& orp_rep = (*reply_it)->GetData().GetOrg();
+                    if (orp_req.IsSetTaxname() && orp_rep.IsSetTaxname()) {
+                        const string& taxname_req = orp_req.GetTaxname();
+                        if (orp_rep.IsSetDb() && orp_req.IsSetDb()) {
+                            int taxid_req = 0;
+                            int taxid_rep = 0;
+                            FOR_EACH_DBXREF_ON_ORGREF (q_itr, orp_req) {
+                                const CDbtag& dbt = **q_itr;
+                                if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
+                                    const CObject_id& id = dbt.GetTag();
+                                    if (id.IsId()) {
+                                        taxid_req = id.GetId();
+                                    }
+                                }
+                            }
+                            FOR_EACH_DBXREF_ON_ORGREF (p_itr, orp_rep) {
+                                const CDbtag& dbt = **p_itr;
+                                if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
+                                    const CObject_id& id = dbt.GetTag();
+                                    if (id.IsId()) {
+                                        taxid_rep = id.GetId();
+                                    }
+                                }
+                            }
+                            if (taxid_req != taxid_rep) {
+                                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
+                                        "Organism name is '" + taxname_req
+                                        + "', taxonomy ID should be '" + NStr::IntToString (taxid_rep)
+                                        + "' but is " + NStr::IntToString (taxid_req) + "'",
+                                        org);
+                            }
+                        }
+                    }
+                }
                 (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
                 if (!is_species_level) {
                     PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
@@ -3046,6 +3125,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                 }
             }
             ++reply_it;
+            ++rq_it;
         }
     }
 
