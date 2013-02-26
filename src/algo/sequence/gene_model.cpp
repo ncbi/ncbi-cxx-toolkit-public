@@ -1069,6 +1069,7 @@ void AddLiteral(CSeq_inst& inst, const string& seq, CSeq_inst::EMol mol_class)
                     break;
                 case CSeq_data::e_Iupacaa:
                     delta_seq.SetLiteral().SetSeq_data().SetIupacaa().Set() += seq;
+                    delta_seq.SetLiteral().SetLength() += seq.size();
                     return;
                 default:
                     inst.SetExt().SetDelta().AddLiteral(seq, mol_class);
