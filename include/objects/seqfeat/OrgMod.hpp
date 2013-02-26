@@ -79,6 +79,7 @@ public:
     //e.g. "DMNS:Bird" to "Denver Museum of Nature and Science, Ornithology Collections"
     // returns empty string if not found
     static const string &GetInstitutionFullName( const string &short_name );
+    static const string &GetInstitutionShortName( const string &full_name );
 
 	private:
     // Prohibit copy constructor and assignment operator
