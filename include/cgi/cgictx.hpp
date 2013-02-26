@@ -200,17 +200,20 @@ public:
     };
 
     /// Using HTTP environment variables, compose the CGI's own URL as:
-    ///   http://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
+    ///   SCHEME://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
     /// @deprecated The flag is ignored, use GetSelfURL(void).
     NCBI_DEPRECATED
     const string& GetSelfURL(ESelfUrlPort use_port) const
         { return GetSelfURL(); }
 
     /// Using HTTP environment variables, compose the CGI's own URL as:
-    ///   http://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
+    ///   SCHEME://SERVER_NAME[:SERVER_PORT]/SCRIPT_NAME
     /// Port is always included if it does not correspond to the scheme's
     /// default port.
     const string& GetSelfURL(void) const;
+
+    /// Check if the current scheme is secure (https) or not (http).
+    bool IsSecure(void) const;
 
     // Which streams are ready?
     enum EStreamStatus {
@@ -233,6 +236,13 @@ private:
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
+    // Secure protocol flag.
+    enum ESecureMode {
+        eSecure_NotSet,
+        eSecure_Off,
+        eSecure_On
+    };
+
     CCgiApplication&      m_App;
     auto_ptr<CCgiRequest> m_Request;  // CGI request  information
     CCgiResponse          m_Response; // CGI response information
@@ -247,6 +257,7 @@ private:
 
     mutable string m_SelfURL;
     mutable string m_TrackingId; // cached tracking id
+    mutable ESecureMode m_SecureMode;
 
     // Request status code and message. The status is non-zero if there
     // is an error to report.

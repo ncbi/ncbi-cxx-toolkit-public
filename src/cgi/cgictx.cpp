@@ -119,6 +119,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                                 env  ? env  : &app.GetEnvironment(),
                                 inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd),
+      m_SecureMode(eSecure_NotSet),
       m_StatusCode(CCgiException::eStatusNotSet)
 {
     if (flags & CCgiRequest::fDisableTrackingCookie) {
@@ -136,6 +137,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     : m_App(app),
       m_Request(new CCgiRequest()),
       m_Response(os, -1),
+      m_SecureMode(eSecure_NotSet),
       m_StatusCode(CCgiException::eStatusNotSet)
 {
     m_Request->Deserialize(*is,flags);
@@ -186,7 +188,7 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
     }
 
     GetSelfURL();
-    m_Response.Cookies().SetSecure(m_SelfURL.substr(0, 5) == "https");
+    m_Response.Cookies().SetSecure(IsSecure());
 }
 
 
@@ -306,6 +308,7 @@ const string& CCgiContext::GetSelfURL(void) const
 
     bool secure = AStrEquiv(GetRequest().GetRandomProperty("HTTPS",
         false), "on", PNocase());
+    m_SecureMode = secure ? eSecure_On : eSecure_Off;
     m_SelfURL = secure ? "https://" : "http://";
     m_SelfURL += server;
     string port = GetRequest().GetProperty(eCgi_ServerPort);
@@ -334,6 +337,16 @@ const string& CCgiContext::GetSelfURL(void) const
     m_SelfURL += NStr::Replace(script_uri, "//", "/");
 
     return m_SelfURL;
+}
+
+
+bool CCgiContext::IsSecure(void) const
+{
+    if (m_SecureMode == eSecure_NotSet) {
+        m_SecureMode = NStr::EqualNocase(CTempStringEx(GetSelfURL(), 5), "https")
+            ? eSecure_On : eSecure_Off;
+    }
+    return m_SecureMode == eSecure_On;
 }
 
 
