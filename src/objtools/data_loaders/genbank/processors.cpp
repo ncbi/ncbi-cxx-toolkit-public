@@ -515,6 +515,13 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 }
 
 
+inline
+int s_GetGoodDescrMask(void)
+{
+    return CSeqdesc::e_Pub | CSeqdesc::e_Comment | CSeqdesc::e_User;
+}
+
+
 bool s_IsGoodDescr(const CSeqdesc& desc)
 {
     if ( desc.Which() == CSeqdesc::e_Pub ||
@@ -566,29 +573,80 @@ CRef<CSeq_descr> s_GetWGSMasterDescr(CDataLoader* loader,
 }
 
 
-class CWGSBioseqUpdater : public CBioseqUpdater
+class CWGSBioseqUpdater_Base : public CBioseqUpdater
 {
 public:
-    CWGSBioseqUpdater(const CSeq_id_Handle& master_idh,
-                      CRef<CSeq_descr> descr)
-        : m_MasterId(master_idh),
-          m_Descr(descr)
+    CWGSBioseqUpdater_Base(const CSeq_id_Handle& master_idh)
+        : m_MasterId(master_idh)
         {
         }
-    
-    virtual void Update(CBioseq_Info& seq) {
-        const CBioseq_Info::TId& ids = seq.GetId();
-        ITERATE ( CBioseq_Info::TId, it, ids ) {
-            if ( s_GetWGSMasterSeq_id(*it) == m_MasterId ) {
-                seq.AddSeq_descr(*m_Descr);
-                break;
+
+    bool HasMasterId(const CBioseq_Info& seq) const {
+        if ( m_MasterId ) {
+            const CBioseq_Info::TId& ids = seq.GetId();
+            ITERATE ( CBioseq_Info::TId, it, ids ) {
+                if ( s_GetWGSMasterSeq_id(*it) == m_MasterId ) {
+                    return true;
+                }
             }
         }
+        return false;
     }
     
 private:
     CSeq_id_Handle m_MasterId;
+};
+
+
+class CWGSBioseqUpdaterChunk : public CWGSBioseqUpdater_Base
+{
+public:
+    CWGSBioseqUpdaterChunk(const CSeq_id_Handle& master_idh)
+        : CWGSBioseqUpdater_Base(master_idh)
+        {
+        }
+
+    virtual void Update(CBioseq_Info& seq) {
+        if ( HasMasterId(seq) ) {
+            // register master descr chunk
+            seq.x_AddDescrChunkId(s_GetGoodDescrMask(),
+                                  CProcessor::kMasterWGS_ChunkId);
+        }
+    }
+};
+
+
+class CWGSBioseqUpdaterDescr : public CWGSBioseqUpdater_Base
+{
+public:
+    CWGSBioseqUpdaterDescr(const CSeq_id_Handle& master_idh,
+                           CRef<CSeq_descr> descr)
+        : CWGSBioseqUpdater_Base(master_idh),
+          m_Descr(descr)
+        {
+        }
+
+    virtual void Update(CBioseq_Info& seq) {
+        if ( m_Descr && HasMasterId(seq) ) {
+            seq.AddSeq_descr(*m_Descr);
+        }
+    }
+
+private:
     CRef<CSeq_descr> m_Descr;
+};
+
+
+class CWGSMasterChunkInfo : public CTSE_Chunk_Info
+{
+public:
+    CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh)
+        : CTSE_Chunk_Info(CProcessor::kMasterWGS_ChunkId),
+          m_MasterId(master_idh)
+        {
+        }
+
+    CSeq_id_Handle m_MasterId;
 };
 
 
@@ -614,8 +672,19 @@ void CProcessor::SetLoaded(CReaderRequestResult& result,
 }
 
 
-void CProcessor::SetLoadedWGS(CReaderRequestResult& result,
-                              const TBlobId& blob_id,
+void CProcessor::LoadWGSMaster(CDataLoader* loader,
+                               CRef<CTSE_Chunk_Info> chunk)
+{
+    CSeq_id_Handle id = dynamic_cast<CWGSMasterChunkInfo&>(*chunk).m_MasterId;
+    CRef<CSeq_descr> descr = s_GetWGSMasterDescr(loader, id);
+    CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(id, descr));
+    const_cast<CTSE_Split_Info&>(chunk->GetSplitInfo()).x_SetBioseqUpdater(upd);
+    chunk->SetLoaded();
+}
+
+
+void CProcessor::AddWGSMaster(CReaderRequestResult& result,
+                              const TBlobId& /*blob_id*/,
                               TChunkId chunk_id,
                               CLoadLockBlob& blob)
 {
@@ -626,33 +695,14 @@ void CProcessor::SetLoadedWGS(CReaderRequestResult& result,
         CTSE_Info::TSeqIds ids;
         blob->GetBioseqsIds(ids);
         ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
-            CSeq_id_Handle master_idh = s_GetWGSMasterSeq_id(*it);
-            if ( !master_idh ) {
-                continue;
+            if ( CSeq_id_Handle id = s_GetWGSMasterSeq_id(*it) ) {
+                CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id));
+                blob->GetSplitInfo().AddChunk(*chunk);
+                CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(id));
+                blob->SetBioseqUpdater(upd);
+                break;
             }
-            result.SaveLoadedWGS(blob_id, chunk_id, blob, master_idh);
-            return;
         }
-    }
-    // default
-    SetLoaded(result, blob_id, chunk_id, blob);
-}
-
-
-void CProcessor::ProcessLoadedWGS(CReaderRequestResult& result)
-{
-    CBlob_id blob_id;
-    TChunkId chunk_id;
-    CLoadLockBlob blob;
-    CSeq_id_Handle master_idh;
-    while ( result.GetLoadedWGS(blob_id, chunk_id, blob, master_idh) ) {
-        CRef<CSeq_descr> descr =
-            s_GetWGSMasterDescr(result.GetLoaderPtr(), master_idh);
-        if ( descr ) {
-            CRef<CBioseqUpdater> upd(new CWGSBioseqUpdater(master_idh, descr));
-            blob->SetBioseqUpdater(upd);
-        }
-        SetLoaded(result, blob_id, chunk_id, blob);
     }
 }
 
@@ -1095,7 +1145,8 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
     }}
 
     SetSeq_entry(result, blob_id, chunk_id, blob, seq_entry);
-    SetLoadedWGS(result, blob_id, chunk_id, blob);
+    AddWGSMaster(result, blob_id, chunk_id, blob);
+    SetLoaded(result, blob_id, chunk_id, blob);
 }
 
 
@@ -1727,7 +1778,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                        "CProcessor_ID2: "
                        "invalid data type: "<<data.GetData_type());
     }
-    SetLoadedWGS(result, blob_id, chunk_id, blob);
+    AddWGSMaster(result, blob_id, chunk_id, blob);
+    SetLoaded(result, blob_id, chunk_id, blob);
 }
 
 

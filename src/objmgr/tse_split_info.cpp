@@ -172,7 +172,10 @@ bool CTSE_Split_Info::x_HasDelayedMainChunk(void) const
 bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 {
     TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
-    return iter != begin && (--iter)->first == kMax_Int && iter == begin;
+    if ( iter == begin || (--iter)->first != kMax_Int ) {
+        return false;
+    }
+    return iter == begin || ((--iter)->first == kMax_Int-1 && iter == begin);
 }
 
 
@@ -557,6 +560,16 @@ void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
         listener.LoadSeq_entry(tse, *add, set_info);
     }
 }
+
+
+void CTSE_Split_Info::x_SetBioseqUpdater(CRef<CBioseqUpdater> updater)
+{
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        tse.SetBioseqUpdater(updater);
+   }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

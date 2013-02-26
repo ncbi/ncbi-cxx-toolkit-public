@@ -89,6 +89,7 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     /// BLOB cache subkeys:
     enum {
         kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
+        kMasterWGS_ChunkId  = kMax_Int-1, // chunk with master WGS descr
         kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
     };
 

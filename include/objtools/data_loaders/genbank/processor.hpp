@@ -51,6 +51,8 @@ class CWriter;
 class CID2_Reply_Data;
 class CLoadLockBlob;
 class CTSE_SetObjectInfo;
+class CTSE_Chunk_Info;
+class CDataLoader;
 struct STimeSizeStatistics;
 
 class NCBI_XREADER_EXPORT CProcessor : public CObject 
@@ -85,6 +87,7 @@ public:
 
     enum {
         kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
+        kMasterWGS_ChunkId  = kMax_Int-1, // chunk with master WGS descr
         kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
     };
 
@@ -119,11 +122,12 @@ public:
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
-    static void SetLoadedWGS(CReaderRequestResult& result,
+    static void AddWGSMaster(CReaderRequestResult& result,
                              const TBlobId& blob_id,
                              TChunkId chunk_id,
                              CLoadLockBlob& blob);
-    static void ProcessLoadedWGS(CReaderRequestResult& result);
+    static void LoadWGSMaster(CDataLoader* loader,
+                              CRef<CTSE_Chunk_Info> chunk);
 
     static void SetSeq_entry(CReaderRequestResult& /*result*/,
                              const TBlobId& /*blob_id*/,

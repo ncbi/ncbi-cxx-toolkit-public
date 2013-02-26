@@ -1312,10 +1312,16 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
 
 void CGBDataLoader::GetChunk(TChunk chunk)
 {
-    CGBReaderRequestResult result(this, CSeq_id_Handle());
-    m_Dispatcher->LoadChunk(result,
-                            GetRealBlobId(chunk->GetBlobId()),
-                            chunk->GetChunkId());
+    CReader::TChunkId id = chunk->GetChunkId();
+    if ( id == CProcessor::kMasterWGS_ChunkId ) {
+        CProcessor::LoadWGSMaster(this, chunk);
+    }
+    else {
+        CGBReaderRequestResult result(this, CSeq_id_Handle());
+        m_Dispatcher->LoadChunk(result,
+                                GetRealBlobId(chunk->GetBlobId()),
+                                id);
+    }
 }
 
 
@@ -1324,8 +1330,13 @@ void CGBDataLoader::GetChunks(const TChunkSet& chunks)
     typedef map<TBlobId, CReader::TChunkIds> TChunkIdMap;
     TChunkIdMap chunk_ids;
     ITERATE(TChunkSet, it, chunks) {
-        chunk_ids[(*it)->GetBlobId()].push_back(
-            (*it)->GetChunkId());
+        CReader::TChunkId id = (*it)->GetChunkId();
+        if ( id == CProcessor::kMasterWGS_ChunkId ) {
+            CProcessor::LoadWGSMaster(this, *it);
+        }
+        else {
+            chunk_ids[(*it)->GetBlobId()].push_back(id);
+        }
     }
     ITERATE(TChunkIdMap, it, chunk_ids) {
         CGBReaderRequestResult result(this, CSeq_id_Handle());

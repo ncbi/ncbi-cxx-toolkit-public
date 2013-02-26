@@ -56,6 +56,7 @@ class CDataLoader;
 class CTSE_SetObjectInfo;
 
 class ITSE_Assigner;
+class CBioseqUpdater;
 
 struct SAnnotObjectsIndex;
 
@@ -152,6 +153,7 @@ public:
                         const TAssembly& assembly);
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info = 0);
 
+    void x_SetBioseqUpdater(CRef<CBioseqUpdater> updater);
 
 protected:
     TSeqIdToChunks::const_iterator x_FindChunk(const CSeq_id_Handle& id) const;

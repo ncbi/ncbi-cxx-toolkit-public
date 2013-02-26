@@ -656,9 +656,6 @@ bool CReaderRequestResult::IsBlobLoaded(const CBlob_id& blob_id)
     if ( info.second.IsLoaded() ) {
         return true;
     }
-    if ( m_LoadedWGSSet.find(blob_id) != m_LoadedWGSSet.end() ) {
-        return true;
-    }
     return false;
 }
 
@@ -853,36 +850,6 @@ double CReaderRequestResult::GetCurrentRequestTime(double time)
         m_RecursiveTime = time;
         return time - rec_time;
     }
-}
-
-
-void CReaderRequestResult::SaveLoadedWGS(const CBlob_id& blob_id,
-                                         int chunk_id,
-                                         CLoadLockBlob& blob,
-                                         const CSeq_id_Handle& master_idh)
-{
-    SLoadedWGSInfo& info = m_LoadedWGSSet[blob_id];
-    info.m_ChunkId = chunk_id;
-    info.m_Blob = blob;
-    info.m_MasterId = master_idh;
-}
-
-
-bool CReaderRequestResult::GetLoadedWGS(CBlob_id& blob_id,
-                                        int& chunk_id,
-                                        CLoadLockBlob& blob,
-                                        CSeq_id_Handle& master_idh)
-{
-    if ( m_LoadedWGSSet.empty() ) {
-        return false;
-    }
-    TLoadedWGSSet::iterator iter = m_LoadedWGSSet.begin();
-    blob_id = iter->first;
-    chunk_id = iter->second.m_ChunkId;
-    blob = iter->second.m_Blob;
-    master_idh = iter->second.m_MasterId;
-    m_LoadedWGSSet.erase(iter);
-    return true;
 }
 
 
