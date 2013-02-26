@@ -329,7 +329,7 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
         m_Input.SkipChar(); // '>'
         Found_gt();
     }
-    return false;
+    return SelfClosedTag();
 }
 
 bool CObjectIStreamXml::UseDefaultData(void)
@@ -1149,7 +1149,7 @@ void CObjectIStreamXml::ReadString(string& str, EStringType type)
         }
         return;
     }
-    if (SelfClosedTag()) {
+    if (EndOpeningTagSelfClosed()) {
         return;
     }
     ReadTagData(str, type);
