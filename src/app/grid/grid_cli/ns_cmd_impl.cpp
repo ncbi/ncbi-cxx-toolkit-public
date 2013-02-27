@@ -538,12 +538,11 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
     }
 }
 
-static void s_GetQueueInfo(CNetScheduleAPI ns_server_with_queue_set_up,
-        CJsonNode& queue_info_node)
+static void s_GetQueueInfo(CNetScheduleAdmin ns_admin, CNetServer ns_server,
+        const string& queue_name, CJsonNode& queue_info_node)
 {
     CNetScheduleAdmin::TQueueInfo queue_info;
-    ns_server_with_queue_set_up.GetAdmin().GetQueueInfo(
-            *ns_server_with_queue_set_up.GetService().Iterate(), queue_info);
+    ns_admin.GetQueueInfo(ns_server, queue_name, queue_info);
     ITERATE(CNetScheduleAdmin::TQueueInfo, qi, queue_info) {
         g_DetectTypeAndSet(queue_info_node, qi->first, qi->second);
     }
@@ -555,35 +554,26 @@ CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
     CJsonNode result(CJsonNode::NewObjectNode());
     CJsonNode target_map(result);
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    bool use_xsite_proxy = ns_api.GetService().IsUsingXSiteProxy();
-#endif
-
     string client_name(ns_api.GetService().GetServerPool().GetClientName());
 
     CNetScheduleAdmin::TQueueList qlist;
-    ns_api.GetAdmin().GetQueueList(qlist);
+    CNetScheduleAdmin ns_admin(ns_api.GetAdmin());
+    ns_admin.GetQueueList(qlist);
 
     ITERATE(CNetScheduleAdmin::TQueueList, server_and_its_queues, qlist) {
-        string server_address(server_and_its_queues->server.GetServerAddress());
         if (group_by_server_addr)
-            result.SetNode(server_address,
+            result.SetNode(server_and_its_queues->server.GetServerAddress(),
                     target_map = CJsonNode::NewObjectNode());
 
         if (!queue_name.empty())
-            s_GetQueueInfo(CNetScheduleAPI(server_address,
-                    client_name, queue_name), target_map);
+            s_GetQueueInfo(ns_admin, server_and_its_queues->server,
+                    queue_name, target_map);
         else {
             ITERATE(list<string>, each_queue_name,
                     server_and_its_queues->queues) {
                 CJsonNode queue_info_node(CJsonNode::NewObjectNode());
-                CNetScheduleAPI tmp_ns(server_address,
-                        client_name, *each_queue_name);
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-                if (use_xsite_proxy)
-                    tmp_ns.GetService().AllowXSiteConnections();
-#endif
-                s_GetQueueInfo(tmp_ns, queue_info_node);
+                s_GetQueueInfo(ns_admin, server_and_its_queues->server,
+                        *each_queue_name, queue_info_node);
                 target_map.SetNode(*each_queue_name, queue_info_node);
             }
         }

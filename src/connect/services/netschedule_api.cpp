@@ -87,11 +87,8 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
     m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
 }
 
-int CNetScheduleNotificationHandler::ParseNSOutput(
-        const string& attr_string,
-        const char* const* attr_names,
-        string* attr_values,
-        int attr_count)
+int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
+        string* attr_values, int attr_count)
 {
     try {
         CUrlArgs attr_parser(attr_string);
@@ -512,8 +509,8 @@ CNetScheduleAPI::EJobStatus
 
     string attr_values[NUMBER_OF_STATUS_ATTRS];
 
-    CNetScheduleNotificationHandler::ParseNSOutput(resp,
-            s_JobStatusAttrNames, attr_values, NUMBER_OF_STATUS_ATTRS);
+    g_ParseNSOutput(resp, s_JobStatusAttrNames,
+            attr_values, NUMBER_OF_STATUS_ATTRS);
 
     EJobStatus status = StringToStatus(attr_values[0]);
 
@@ -570,8 +567,7 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
 
     string attr_values[NUMBER_OF_ATTRS];
 
-    CNetScheduleNotificationHandler::ParseNSOutput(response,
-            s_AttrNames, attr_values, NUMBER_OF_ATTRS);
+    g_ParseNSOutput(response, s_AttrNames, attr_values, NUMBER_OF_ATTRS);
 
     if (job_exptime != NULL)
         *job_exptime = (time_t) NStr::StringToUInt8(attr_values[1],
@@ -595,21 +591,33 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
     m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
     m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
 
-    string cmd("GETP");
+    string cmd("QINF2 " + m_Queue);
     g_AppendClientIPAndSessionID(cmd);
-    string response(m_Service.FindServerAndExec(cmd).response);
 
-    list<CTempString> lst;
-    NStr::Split(response, ";", lst);
+    CUrlArgs url_parser(m_Service.FindServerAndExec(cmd).response);
 
-    ITERATE(list<CTempString>, it, lst) {
-        CTempString n, v;
-        if (NStr::SplitInTwo(*it, "=", n, v)) {
-            if (n == "max_input_size")
-                m_ServerParams->max_input_size = NStr::StringToInt(v) / 4;
-            else if (n == "max_output_size")
-                m_ServerParams->max_output_size = NStr::StringToInt(v) / 4;
+    enum {
+        eMaxInputSize,
+        eMaxOutputSize,
+        eNumberOfSizeParams
+    };
+
+    int field_bits = 0;
+
+    ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+        if (field->name[0] == 'm') {
+            if (field->name == "max_input_size") {
+                field_bits |= (1 << eMaxInputSize);
+                m_ServerParams->max_input_size =
+                        NStr::StringToInt(field->value) / 4;
+            } else if (field->name == "max_output_size") {
+                field_bits |= (1 << eMaxOutputSize);
+                m_ServerParams->max_output_size =
+                        NStr::StringToInt(field->value) / 4;
+            }
         }
+        if (field_bits == (1 << eNumberOfSizeParams) - 1)
+            break;
     }
 
     return *m_ServerParams;

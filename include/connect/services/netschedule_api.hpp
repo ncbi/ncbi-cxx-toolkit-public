@@ -799,8 +799,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void PrintConf(CNcbiOstream& output_stream);
 
-    void PrintQueueConf(CNcbiOstream& output_stream);
-
     enum EStatisticsOptions
     {
         eStatisticsAll,
@@ -818,8 +816,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         const string& job_group = kEmptyStr);
 
     typedef map<string, string> TQueueInfo;
+    void GetQueueInfo(CNetServer server, const string& queue_name,
+            TQueueInfo& queue_info);
     void GetQueueInfo(CNetServer server, TQueueInfo& queue_info);
-    void PrintQueueInfo(CNcbiOstream& output_stream);
+    void PrintQueueInfo(const string& queue_name, CNcbiOstream& output_stream);
 
     struct SServerQueueList {
         CNetServer server;
@@ -847,6 +847,10 @@ extern NCBI_XCONNECT_EXPORT
 void g_AppendClientIPAndSessionID(string& cmd,
         const string* default_session = NULL);
 
+extern NCBI_XCONNECT_EXPORT
+int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
+        string* attr_values, int attr_count);
+
 /// @internal
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
@@ -857,11 +861,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 {
 public:
     CNetScheduleNotificationHandler();
-
-    static int ParseNSOutput(const string& attr_string,
-            const char* const* attr_names,
-            string* attr_values,
-            int attr_count);
 
     bool ReceiveNotification(string* server_host = NULL);
 

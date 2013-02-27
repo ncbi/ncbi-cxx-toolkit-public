@@ -1159,7 +1159,8 @@ int CGridWorkerNode::Run()
         CNetScheduleAdmin::TQueueInfo queue_info;
 
         m_NetScheduleAPI.GetAdmin().GetQueueInfo(
-            m_NetScheduleAPI.GetService().Iterate().GetServer(), queue_info);
+                m_NetScheduleAPI.GetService().Iterate().GetServer(),
+                GetQueueName(), queue_info);
 
         m_QueueTimeout = NStr::StringToUInt(queue_info["timeout"]);
     }}

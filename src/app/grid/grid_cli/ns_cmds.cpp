@@ -1007,7 +1007,7 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
                     IsOptionSet(eQueueArg) ? m_Opts.queue : kEmptyStr,
                     m_NetScheduleAPI.GetService().IsLoadBalanced()));
         else if (!IsOptionSet(eAllQueues))
-            m_NetScheduleAdmin.PrintQueueInfo(NcbiCout);
+            m_NetScheduleAdmin.PrintQueueInfo(m_Opts.queue, NcbiCout);
         else {
             CNetService service(m_NetScheduleAPI.GetService());
             string client_name(service.GetServerPool().GetClientName());
@@ -1024,7 +1024,8 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
                         server_and_its_queues->queues) {
                     NcbiCout << '[' << *queue_name << ']' << NcbiEndl;
                     CNetScheduleAPI(server_address, client_name,
-                            *queue_name).GetAdmin().PrintQueueInfo(NcbiCout);
+                            *queue_name).GetAdmin().PrintQueueInfo(*queue_name,
+                                    NcbiCout);
                     NcbiCout << NcbiEndl;
                 }
                 if (load_balanced)

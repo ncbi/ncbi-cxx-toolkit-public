@@ -160,48 +160,27 @@ void CNetScheduleAdmin::DumpQueue(
 
 
 void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
-        TQueueInfo& queue_info)
+        const string& queue_name, TQueueInfo& queue_info)
 {
     CTempString queue_details, dyn_queue, queue_class;
 
-    string qinf_cmd("QINF " + m_Impl->m_API->m_Queue);
+    string qinf_cmd("QINF2 " + queue_name);
     g_AppendClientIPAndSessionID(qinf_cmd);
 
-    string getc_cmd("GETC");
-    g_AppendClientIPAndSessionID(getc_cmd);
+    CUrlArgs url_parser(server.ExecWithRetry(qinf_cmd).response);
 
-    string cmd_output(server.ExecWithRetry(qinf_cmd).response);
-
-    NStr::SplitInTwo(cmd_output, "\t", queue_details, dyn_queue);
-    switch (queue_details[0]) {
-    case '0':
-        queue_info["kind"] = "static";
-        queue_info["qclass"] = kEmptyStr;
-        queue_info["description"] = kEmptyStr;
-        break;
-    case '1':
-        queue_info["kind"] = "dynamic";
-
-        if (NStr::SplitInTwo(dyn_queue, "\t", queue_class, queue_details)) {
-            queue_info["qclass"] = queue_class;
-            queue_info["description"] = NStr::ParseQuoted(queue_details);
-        }
-    }
-
-    CNetServer::SExecResult exec_result(server.ExecWithRetry(getc_cmd));
-
-    CNetServerMultilineCmdOutput output(exec_result);
-
-    string line;
-
-    while (output.ReadLine(line)) {
-        string key, value;
-        NStr::SplitInTwo(line, "=", key, value);
-        queue_info[key] = value;
+    ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+        queue_info[field->name] = field->value;
     }
 }
 
-void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
+void CNetScheduleAdmin::GetQueueInfo(CNetServer server, TQueueInfo& queue_info)
+{
+    GetQueueInfo(server, m_Impl->m_API->m_Queue, queue_info);
+}
+
+void CNetScheduleAdmin::PrintQueueInfo(const string& queue_name,
+        CNcbiOstream& output_stream)
 {
     bool print_headers = m_Impl->m_API->m_Service.IsLoadBalanced();
 
@@ -212,7 +191,7 @@ void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
 
         TQueueInfo queue_info;
 
-        GetQueueInfo(*it, queue_info);
+        GetQueueInfo(*it, queue_name, queue_info);
 
         ITERATE(TQueueInfo, qi, queue_info) {
             output_stream << qi->first << ": " << qi->second << NcbiEndl;
@@ -295,14 +274,6 @@ void CNetScheduleAdmin::GetWorkerNodes(
 void CNetScheduleAdmin::PrintConf(CNcbiOstream& output_stream)
 {
     string cmd("GETCONF");
-    g_AppendClientIPAndSessionID(cmd);
-    m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
-        output_stream, CNetService::eMultilineOutput);
-}
-
-void CNetScheduleAdmin::PrintQueueConf(CNcbiOstream& output_stream)
-{
-    string cmd("GETC");
     g_AppendClientIPAndSessionID(cmd);
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput);

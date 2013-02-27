@@ -45,37 +45,62 @@ BEGIN_NCBI_SCOPE
 static bool s_DoParseGet2JobResponse(
     CNetScheduleJob& job, const string& response)
 {
+    enum {
+        eJobKey,
+        eJobInput,
+        eJobAuthToken,
+        eJobAffinity,
+        eClientIP,
+        eClientSessionID,
+        eJobMask,
+        eNumberOfJobBits
+    };
+    int job_bits = 0;
     CUrlArgs url_parser(response);
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
         switch (field->name[0]) {
         case 'j':
-            if (field->name == "job_key")
+            if (field->name == "job_key") {
+                job_bits |= (1 << eJobKey);
                 job.job_id = field->value;
+            }
             break;
 
         case 'i':
-            if (field->name == "input")
+            if (field->name == "input") {
+                job_bits |= (1 << eJobInput);
                 job.input = field->value;
+            }
             break;
 
         case 'a':
-            if (field->name == "affinity")
-                job.affinity = field->value;
-            else if (field->name == "auth_token")
+            if (field->name == "auth_token") {
+                job_bits |= (1 << eJobAuthToken);
                 job.auth_token = field->value;
+            } else if (field->name == "affinity") {
+                job_bits |= (1 << eJobAffinity);
+                job.affinity = field->value;
+            }
             break;
 
         case 'c':
-            if (field->name == "client_ip")
+            if (field->name == "client_ip") {
+                job_bits |= (1 << eClientIP);
                 job.client_ip = field->value;
-            else if (field->name == "client_sid")
+            } else if (field->name == "client_sid") {
+                job_bits |= (1 << eClientSessionID);
                 job.session_id = field->value;
+            }
             break;
 
         case 'm':
-            if (field->name == "mask")
+            if (field->name == "mask") {
+                job_bits |= (1 << eJobMask);
                 job.mask = atoi(field->value.c_str());
+            }
         }
+        if (job_bits == (1 << eNumberOfJobBits) - 1)
+            break;
     }
     return !job.job_id.empty();
 }
@@ -436,7 +461,7 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
 
     string attr_values[GET2_NOTIF_ATTR_COUNT];
 
-    if (ParseNSOutput(m_Message,
+    if (g_ParseNSOutput(m_Message,
             attr_names, attr_values, GET2_NOTIF_ATTR_COUNT) !=
                     GET2_NOTIF_ATTR_COUNT ||
             attr_values[1] != executor->m_API.GetQueueName())

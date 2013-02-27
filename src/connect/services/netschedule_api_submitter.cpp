@@ -376,9 +376,9 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(
     string attr_values[3];
 
     if (last_event_index == NULL)
-        ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 2);
+        g_ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 2);
     else {
-        ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 3);
+        g_ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 3);
 
         if (!attr_values[2].empty())
             *last_event_index = NStr::StringToInt(attr_values[2],
@@ -475,7 +475,7 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
 
     string attr_values[2];
 
-    ParseNSOutput(m_Message, s_JobStatusAttrNames + 1, attr_values, 2);
+    g_ParseNSOutput(m_Message, s_JobStatusAttrNames + 1, attr_values, 2);
 
     if (!attr_values[1].empty())
         *last_event_index = NStr::StringToInt(attr_values[1],
