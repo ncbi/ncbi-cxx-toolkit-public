@@ -653,8 +653,11 @@ void g_ExtractReaderContents(IReader& reader, string& s)
 ERW_Result CStringReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
     _ASSERT(m_String.size() >= m_Position);
+
     size_t n = min(count, size_t(m_String.size() - m_Position));
-    memcpy(buf, &m_String[m_Position], n);
+    if( ! m_String.empty() ) {
+        memcpy(buf, &m_String[m_Position], n);
+    }
     m_Position += n;
     if (m_Position >= m_String.size() / 2) {
         m_String.erase(0, m_Position);
