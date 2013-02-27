@@ -354,7 +354,7 @@ int CCgiApplication::Run(void)
         // Exception reporting. Use different severity for broken connection.
         ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
         CNcbiOstream* os = m_Context.get() ? m_Context->GetResponse().GetOutput() : NULL;
-        if (fex  &&  os  &&  (!os->good()  ||  m_OutputBroken)) {
+        if ((fex  &&  os  &&  !os->good())  ||  m_OutputBroken) {
             if ( !TClientConnIntOk::GetDefault() ) {
                 ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
                     "Connection interrupted");
@@ -857,7 +857,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 // Log broken connection as 299/499 status
                 CNcbiOstream* os = m_Context.get() ?
                     m_Context->GetResponse().GetOutput() : NULL;
-                if (os  &&  (!os->good()  ||  m_OutputBroken)) {
+                if ((os  &&  !os->good())  ||  m_OutputBroken) {
                     if (TClientConnIntOk::GetDefault()  ||
                         m_Context->GetResponse().AcceptRangesBytes()) {
                         rctx.SetRequestStatus(

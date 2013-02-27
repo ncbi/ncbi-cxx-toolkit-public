@@ -661,6 +661,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
         catch (exception& e) {
             // Reset stream pointers since the streams have been destroyed.
+            try {
+                CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+                if (os && !os->good()) {
+                    m_OutputBroken = true;
+                }
+            }
+            catch (exception&) {
+            }
             m_Context->GetResponse().SetOutput(0);
             m_Context->GetRequest().SetInputStream(0);
 
