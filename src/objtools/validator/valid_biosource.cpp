@@ -2777,6 +2777,16 @@ void CValidError_imp::ValidateSpecificHost
     }
 }
 
+void CValidError_imp::ValidateSpecificHost (const CSeq_entry& se)
+{
+    vector<CConstRef<CSeqdesc> > src_descs;
+    vector<CConstRef<CSeq_entry> > desc_ctxs;
+    vector<CConstRef<CSeq_feat> > src_feats;
+
+    GatherSources (se, src_descs, desc_ctxs, src_feats);
+
+    ValidateSpecificHost(src_descs, desc_ctxs, src_feats);
+}
 
 void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
 {

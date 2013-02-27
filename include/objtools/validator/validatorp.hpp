@@ -405,6 +405,7 @@ public:
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
     void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
+    void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
     void ValidateCitations (const CSeq_entry_Handle& seh);
