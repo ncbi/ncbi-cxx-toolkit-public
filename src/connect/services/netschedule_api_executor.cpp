@@ -217,30 +217,17 @@ bool CGetJobCmdExecutor::Consider(CNetServer server)
 
         CFastMutexGuard guard(m_Executor->m_PreferredAffMutex);
 
-        if (!m_Executor->m_PreferredAffinities.empty()) {
-            string cmd;
-            const char* sep = "CHAFF add=";
-            ITERATE(set<string>, it, m_Executor->m_PreferredAffinities) {
-                cmd.append(sep);
-                cmd.append(*it);
-                sep = ",";
-            }
-            g_AppendClientIPAndSessionID(cmd);
-            server.ExecWithRetry(cmd);
-        } else {
-            // Due to protocol limitations, there's no way of
-            // letting the server know that the current preferred
-            // affinity list is empty. To work around this
-            // limitation, a fake affinity is added and then
-            // immediately deleted.
-            string cmd("CHAFF add=\"*RESET*\"");
-            g_AppendClientIPAndSessionID(cmd);
-            server.ExecWithRetry(cmd);
-
-            cmd = "CHAFF del=\"*RESET*\"";
-            g_AppendClientIPAndSessionID(cmd);
-            server.ExecWithRetry(cmd);
+        string cmd("SETAFF aff=");
+        const char* sep = "";
+        ITERATE(set<string>, it, m_Executor->m_PreferredAffinities) {
+            cmd += sep;
+            cmd += *it;
+            sep = ",";
         }
+        cmd += '"';
+        g_AppendClientIPAndSessionID(cmd);
+
+        server.ExecWithRetry(cmd);
     }
     return false;
 }
