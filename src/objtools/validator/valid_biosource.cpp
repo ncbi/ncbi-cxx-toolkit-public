@@ -2948,12 +2948,15 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                             if (orp_rep.IsSetDb() && orp_req.IsSetDb()) {
                                 int taxid_req = 0;
                                 int taxid_rep = 0;
+                                bool found_should_be_id = false;
+                                bool found_is_id = false;
                                 FOR_EACH_DBXREF_ON_ORGREF (q_itr, orp_req) {
                                     const CDbtag& dbt = **q_itr;
                                     if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
                                         const CObject_id& id = dbt.GetTag();
                                         if (id.IsId()) {
                                             taxid_req = id.GetId();
+                                            found_is_id = true;
                                         }
                                     }
                                 }
@@ -2963,10 +2966,11 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                                         const CObject_id& id = dbt.GetTag();
                                         if (id.IsId()) {
                                             taxid_rep = id.GetId();
+                                            found_should_be_id = true;
                                         }
                                     }
                                 }
-                                if (taxid_req != taxid_rep) {
+                                if (found_is_id && found_should_be_id && taxid_req != taxid_rep) {
                                     PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
                                             "Organism name is '" + taxname_req
                                             + "', taxonomy ID should be '" + NStr::IntToString (taxid_rep)

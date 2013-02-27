@@ -48,7 +48,7 @@
 //
 //#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
-#define BAD_VALIDATOR
+//#define BAD_VALIDATOR
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -520,6 +520,29 @@ static void SetTaxname (CRef<CSeq_entry> entry, string taxname)
     }
 }
 
+
+static void SetSebaea_microphylla(CRef<CSeq_entry> entry)
+{
+    SetTaxname(entry, "Sebaea microphylla");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 592768);
+}
+
+
+static void SetSynthetic_construct(CRef<CSeq_entry> entry)
+{
+    SetTaxname(entry, "synthetic construct");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 32630);
+}
+
+
+static void SetDrosophila_melanogaster(CRef<CSeq_entry> entry)
+{
+    SetTaxname(entry, "Drosophila melanogaster");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 7227);
+}
 
 static void SetCommon (CRef<CSeq_entry> entry, string common)
 {
@@ -5329,9 +5352,6 @@ BOOST_AUTO_TEST_CASE(Test_BioSourceMissing)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc;
@@ -5601,7 +5621,7 @@ return;
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
     seh = scope.AddTopLevelSeqEntry(*entry);
-    SetTaxname(entry, "synthetic construct");
+    SetSynthetic_construct(entry);
     expected_errors.push_back(new CExpectedError ("good", eDiag_Warning, "InvalidForType",
                                                   "synthetic construct should have other-genetic"));
     expected_errors.push_back(new CExpectedError ("good", eDiag_Warning, "InvalidForType",
@@ -5611,7 +5631,7 @@ return;
 
     CLEAR_ERRORS
 
-    SetTaxname(entry, "Sebaea microphylla");
+    SetSebaea_microphylla(entry);
 
     SetTech(entry, CMolInfo::eTech_concept_trans);
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidForType",
@@ -5929,9 +5949,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoMolInfoFound)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxon(entry, 0);
@@ -5950,9 +5967,6 @@ return;
 
 BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
@@ -6023,9 +6037,6 @@ return;
 
 BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
 {
- #ifdef BAD_VALIDATOR
-return;
-#endif
    // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     ResetOrgname(entry);
@@ -6264,9 +6275,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentProteinTitle)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc1(new CSeqdesc());
@@ -6344,7 +6352,7 @@ return;
 
     CRef<CSeqdesc> src_desc(new CSeqdesc());
     src_desc->SetSource().SetOrg().SetTaxname("Trichechus manatus");
-    SetTaxon (src_desc->SetSource(), 127582);
+    SetTaxon (src_desc->SetSource(), 9778);
     src_desc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
     entry->SetSeq().SetDescr().Set().push_back(src_desc);
 
@@ -6924,9 +6932,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TransgenicProblem)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxname(entry, "Not valid");
@@ -7029,9 +7034,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingOnNonRefSeq)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
    // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxname(entry, "Arabidopsis thaliana");
@@ -7388,6 +7390,8 @@ return;
 
     SetTaxname (entry, "uncultured bacterium");
     SetLineage (entry, "Bacteria; foo");
+    SetTaxon(entry, 0);
+    SetTaxon(entry, 77133);
     expected_errors[0]->SetErrMsg("Uncultured should also have /environmental_sample");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7528,12 +7532,12 @@ return;
     CheckErrors (*eval, expected_errors);
     SetOrigin (entry, CBioSource::eOrigin_artificial);
     SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other_genetic);
-    SetTaxname(entry, "synthetic construct");
+    SetSynthetic_construct(entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     SetOrigin (entry, CBioSource::eOrigin_synthetic);
-    SetTaxname (entry, "Sebaea microphylla");
+    SetSebaea_microphylla(entry);
     SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_other);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -8750,7 +8754,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
     SetTaxname(entry, "Malio malefi )abc");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    SetTaxname(entry, "Sebaea microphylla");
+    SetSebaea_microphylla(entry);
     delete expected_errors[1];
     expected_errors.pop_back();
 
@@ -10375,7 +10379,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
         CheckErrors (*eval, expected_errors);
     }
 
-    SetTaxname(entry, "Sebaea microphylla");
+    SetSebaea_microphylla(entry);
     delete expected_errors[1];
     expected_errors.pop_back();
 
@@ -12815,9 +12819,6 @@ static string MakeWrongCap (const string& str)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
     STANDARD_SETUP
@@ -13094,9 +13095,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FarLocation)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateFeat)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeq_feat> feat1 = AddMiscFeature (entry);
     CRef<CSeq_feat> feat2 = AddMiscFeature (entry);
@@ -13122,13 +13120,13 @@ return;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    SetTaxname (entry, "Drosophila melanogaster");
+    SetDrosophila_melanogaster (entry);
     expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // warning if genes are partial
-    SetTaxname(entry, "Sebaea microphylla");
+    SetSebaea_microphylla(entry);
     feat1->SetPartial(true);
     feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
     feat2->SetPartial(true);
@@ -13163,13 +13161,13 @@ return;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    SetTaxname (entry, "Drosophila melanogaster");
+    SetDrosophila_melanogaster (entry);
     expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     // warning if genes are partial
-    SetTaxname(entry, "Sebaea microphylla");
+    SetSebaea_microphylla(entry);
     feat1->SetPartial(true);
     feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
     feat2->SetPartial(true);
@@ -15708,9 +15706,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousGeneXref)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
-    SetTaxname(entry, "Drosophila melanogaster");
-    SetTaxon(entry, 0);
-    SetTaxon(entry, 7227);
+    SetDrosophila_melanogaster (entry);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NT_123456");
 
     CRef<CSeq_feat> feat = AddMiscFeature(entry);
