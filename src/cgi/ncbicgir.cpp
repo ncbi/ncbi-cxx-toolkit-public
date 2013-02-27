@@ -68,6 +68,7 @@ const char* CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
 const char* CCgiResponse::sm_CacheControl       = "Cache-Control";
 const char* CCgiResponse::sm_AcceptRanges       = "Accept-Ranges";
 const char* CCgiResponse::sm_AcceptRangesBytes  = "bytes";
+const char* CCgiResponse::sm_ContentRange       = "Content-Range";
 
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 
@@ -456,6 +457,12 @@ bool CCgiResponse::AcceptRangesBytes(void) const
 {
     string accept_ranges = NStr::TruncateSpaces(GetHeaderValue(sm_AcceptRanges));
     return NStr::EqualNocase(accept_ranges, sm_AcceptRangesBytes);
+}
+
+
+bool CCgiResponse::HaveContentRange(void) const
+{
+    return HaveHeaderValue(sm_ContentRange);
 }
 
 

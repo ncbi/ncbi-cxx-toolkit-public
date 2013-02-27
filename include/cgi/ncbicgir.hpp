@@ -158,6 +158,9 @@ public:
     /// Check if 'Accept-Ranges' header is set to 'bytes'.
     bool AcceptRangesBytes(void) const;
 
+    /// Check if 'Content-Range' header is set.
+    bool HaveContentRange(void) const;
+
 public:
     void x_SetSession(const CCgiSession& session);
 
@@ -176,6 +179,7 @@ protected:
     static const char* sm_CacheControl;        // Cache-Control
     static const char* sm_AcceptRanges;        // Accept-Ranges
     static const char* sm_AcceptRangesBytes;   // bytes
+    static const char* sm_ContentRange;        // Content-Range
 
     typedef map<string, string, PNocase> TMap;
 

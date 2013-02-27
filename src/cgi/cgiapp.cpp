@@ -858,8 +858,13 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
                 CNcbiOstream* os = m_Context.get() ?
                     m_Context->GetResponse().GetOutput() : NULL;
                 if ((os  &&  !os->good())  ||  m_OutputBroken) {
+                    // 'Accept-Ranges: bytes' indicates a request for
+                    // content length, broken connection is OK.
+                    // If Content-Range is also set, the client was downloading
+                    // partial data. Broken connection is not OK in this case.
                     if (TClientConnIntOk::GetDefault()  ||
-                        m_Context->GetResponse().AcceptRangesBytes()) {
+                        (m_Context->GetResponse().AcceptRangesBytes()  &&
+                        !m_Context->GetResponse().HaveContentRange())) {
                         rctx.SetRequestStatus(
                             CRequestStatus::e299_PartialContentBrokenConnection);
                     }
