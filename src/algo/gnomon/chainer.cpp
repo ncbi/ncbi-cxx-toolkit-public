@@ -1163,14 +1163,12 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                 if(chain.m_coverage_drop_left > 0 && Include(a.Limits(),chain.m_coverage_drop_left)) {
                     to = chain.m_coverage_drop_left;
                 }
-                if(chain.m_coverage_drop_left > 0 && to > chain.m_coverage_drop_left)
                 new_limits.SetFrom(max(new_limits.GetFrom(),to));
             } else if(a.Limits().GetTo() > noclip_limits.GetTo()) {
                 int from = max(noclip_limits.GetTo(),a.Limits().GetFrom());
                 if(chain.m_coverage_drop_right > 0 && Include(a.Limits(),chain.m_coverage_drop_right)) {
                     from = chain.m_coverage_drop_right;
                 }
-                if(chain.m_coverage_drop_right > 0 && from < chain.m_coverage_drop_right)
                 new_limits.SetTo(min(new_limits.GetTo(),from));
             }
         }
