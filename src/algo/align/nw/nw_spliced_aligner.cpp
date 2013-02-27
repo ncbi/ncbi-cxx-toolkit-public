@@ -250,7 +250,7 @@ void CSplicedAligner::CheckPreferences(void)
             }
             else {
 
-                size_t maxpr (0);
+                size_t maxpr = GetSplicePriority(p2, p2e - 2);
                 int jmaxpr (0);
                 // explore the left of the splice
                 int j;
