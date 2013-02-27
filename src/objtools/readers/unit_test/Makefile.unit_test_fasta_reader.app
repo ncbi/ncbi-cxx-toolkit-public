@@ -8,11 +8,11 @@
 ###  BASIC PROJECT SETTINGS
 APP = unit_test_fasta_reader
 SRC = unit_test_fasta_reader
-# OBJ =
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = test_boost xncbi
+LIB  = $(OBJREAD_LIBS) seqset $(SEQ_LIBS) pub medline biblio general xser xutil test_boost xncbi
+LIBS = $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 

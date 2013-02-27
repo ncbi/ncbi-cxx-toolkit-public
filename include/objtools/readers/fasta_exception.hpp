@@ -83,6 +83,10 @@ public:
         // repeat any already in this CBadResiduesException.
         void AddBadIndexMap(const TBadIndexMap & additionalBadIndexMap);
 
+        void ConvertBadIndexesToString(
+            CNcbiOstream & out,
+            unsigned int maxRanges = 1000 ) const;
+
         CConstRef<CSeq_id> m_SeqId;
         TBadIndexMap m_BadIndexMap;
     };
@@ -114,11 +118,6 @@ public:
 
 private:
     SBadResiduePositions m_BadResiduePositions;
-
-    static void x_ConvertBadIndexesToString(
-        CNcbiOstream & out,
-        const SBadResiduePositions::TBadIndexMap &badIndexMap, 
-        unsigned int maxRanges );
 };
 
 END_SCOPE(objects)

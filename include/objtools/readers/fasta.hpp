@@ -42,6 +42,7 @@
 #include <objtools/readers/source_mod_parser.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
 #include <stack>
+#include <sstream>
 
 /** @addtogroup Miscellaneous
  *
@@ -146,6 +147,61 @@ public:
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
     void ClearBadMods(void) { m_BadMods.clear(); }
 
+    /// Holds information about a FASTA warning (non-fatal)
+    class NCBI_XOBJREAD_EXPORT CWarning : public CObject {
+    public:
+        enum EType {
+            // must start with 0 and increment by one only
+            eType_TitleTooLong = 0,
+            eType_NucsInTitle,
+            eType_TooManyAmbigOnFirstLine,
+            eType_InvalidResidue,
+
+            // feel free to add more warning types as necessary, but
+            // put them before eType_NUM
+            eType_NUM
+        };
+
+        CWarning(EType eType, 
+            int iLineNum,
+            const string & sMsg ) 
+            : m_eType(eType),
+            m_iLineNum(iLineNum),
+            m_sMsg(sMsg) { }
+
+        EType GetType(void) const { return m_eType; }
+        int GetLineNum(void) const { return m_iLineNum; }
+        const string & GetMsg(void) const {
+            return m_sMsg; }
+
+        static string GetStringOfType(EType eType);
+
+    private:
+        EType  m_eType;
+        int    m_iLineNum;
+        string m_sMsg;
+    };
+
+    typedef CConstRef<CWarning> TWarningRef;
+
+    typedef CObjectFor< std::vector<TWarningRef> > TWarningRefVec;
+
+    /// Set where FASTA warnings go.  The default if this function is not
+    /// called is to go to ERR_POST_X.
+    ///
+    /// @param pWarningVec
+    ///   The vector that FASTA warnings are sent into.  If unset, they 
+    ///   just go to ERR_POST_X
+    void SetWarningOutput( CRef<TWarningRefVec> pWarningRefVec ) { 
+        m_pWarningRefVec = pWarningRefVec; }
+
+    /// Get a reference to the vector of FASTA warnings (empty reference returned
+    /// if none set currently).  Note that there's no reason to call
+    /// this if you originally called SetWarningOutput and still have a reference
+    /// to the supplied pWarningRefVec.
+    CConstRef<TWarningRefVec> GetWarningOutput(void) const { 
+        return m_pWarningRefVec; }
+
 protected:
     enum EInternalFlags {
         fAligning = 0x40000000,
@@ -213,6 +269,8 @@ protected:
     void x_RecursiveApplyAllMods( CSeq_entry& entry );
 
     std::string x_NucOrProt(void) const;
+
+    CRef<TWarningRefVec> m_pWarningRefVec;
 
 private:
     struct SGap {

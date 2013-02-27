@@ -57,7 +57,7 @@ void CBadResiduesException::ReportExtra(ostream& out) const
         out << "Seq-id ::= NULL";
     }
     out << ", positions: ";
-    x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexMap, 1000 );
+    m_BadResiduePositions.ConvertBadIndexesToString( out );
 }
 
 void CBadResiduesException::SBadResiduePositions::AddBadIndexMap(const TBadIndexMap & additionalBadIndexMap)
@@ -77,14 +77,13 @@ void CBadResiduesException::SBadResiduePositions::AddBadIndexMap(const TBadIndex
     }
 }
 
-void CBadResiduesException::x_ConvertBadIndexesToString(
+void CBadResiduesException::SBadResiduePositions::ConvertBadIndexesToString(
         CNcbiOstream & out,
-        const SBadResiduePositions::TBadIndexMap &badIndexMap,
-        unsigned int maxRanges )
+        unsigned int maxRanges ) const
 {
     const char *line_prefix = "";
     unsigned int iRangesFound = 0;
-    ITERATE( SBadResiduePositions::TBadIndexMap, index_map_iter, badIndexMap ) {
+    ITERATE( SBadResiduePositions::TBadIndexMap, index_map_iter, m_BadIndexMap ) {
         const int lineNum = index_map_iter->first;
         const vector<TSeqPos> & badIndexesOnLine = index_map_iter->second;
 
@@ -147,6 +146,7 @@ void CBadResiduesException::x_ConvertBadIndexesToString(
         }
     }
 }
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

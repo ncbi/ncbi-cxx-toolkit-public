@@ -47,6 +47,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -78,6 +80,35 @@
 
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Fasta
+
+// This macro properly handles whether to put a warning into a 
+// TWarningRefVec or to send it to ERR_POST_X.
+//
+// e.g.
+// FASTA_WARNING(LineNumber(), CWarning::eType_TitleTooLong,
+//            "CFastaReader: Title is very long: " << s.length() 
+//            << " characters (max is " << kWarnTitleLength << "),");
+//
+#define FASTA_WARNING(_iFastaLineNum, _eWarningType, _MsgStreamOperators) \
+    do {                                                                \
+        const int iLineNum = (_iFastaLineNum);                          \
+        if( m_pWarningRefVec ) {                                        \
+            stringstream msg_strm;                                      \
+            msg_strm << _MsgStreamOperators;                            \
+            CRef<CWarning> pNewWarning( new CWarning(                   \
+                                            (_eWarningType),            \
+                                            iLineNum,                   \
+                                            msg_strm.str() ) );         \
+            m_pWarningRefVec->GetData().push_back( pNewWarning );       \
+        } else {                                                        \
+            if( iLineNum > 0 ) {                                        \
+                ERR_POST_X(1, Warning << _MsgStreamOperators            \
+                           << " at line " << iLineNum );        \
+            } else {                                                    \
+                ERR_POST_X(1, Warning << _MsgStreamOperators );         \
+            }                                                           \
+        }                                                               \
+    } while(0)
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -130,6 +161,31 @@ inline unsigned char s_ASCII_ToUpper(unsigned char c)
 inline bool s_ASCII_IsAmbigNuc(unsigned char c)
 {
     switch( s_ASCII_ToUpper(c) ) {
+    case 'U':
+    case 'R':
+    case 'Y':
+    case 'S':
+    case 'W':
+    case 'K':
+    case 'M':
+    case 'B':
+    case 'D':
+    case 'H':
+    case 'V':
+    case 'N':
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool s_ASCII_IsValidNuc(unsigned char c)
+{
+    switch( s_ASCII_ToUpper(c) ) {
+    case 'A':
+    case 'C':
+    case 'G':
+    case 'T':
     case 'U':
     case 'R':
     case 'Y':
@@ -390,6 +446,33 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
     m_IDGenerator.Reset(&gen);
 }
 
+// static 
+string CFastaReader::CWarning::GetStringOfType(EType eType)
+{
+    typedef SStaticPair<EType, const char *> TTypeElem;
+    static const TTypeElem sc_type_map[] = {
+        { eType_TitleTooLong, "Title line is too long" },
+        { eType_NucsInTitle,  "There seem to be nuc bases in the title" },
+        { eType_TooManyAmbigOnFirstLine, "There are too many ambiguous bases on the first line" },
+        { eType_InvalidResidue, "Invalid residue found" }
+    };
+    typedef CStaticArrayMap<EType, const char *> TTypeMap;
+    DEFINE_STATIC_ARRAY_MAP(TTypeMap, sc_TypeMap, sc_type_map);
+
+    TTypeMap::const_iterator find_iter =
+        sc_TypeMap.find(eType);
+    if( find_iter != sc_TypeMap.end() ) {
+        return find_iter->second;
+    }
+
+    // unknown, so make up a string for it
+    // (this case is why we have to 
+    // return "string" instead of "const string &")
+    stringstream type_strm;
+    type_strm << "UNKNOWN(" << static_cast<int>(eType) << ")";
+    return type_strm.str();
+}
+
 void CFastaReader::ParseDefLine(const TStr& s)
 {
     size_t start = 1, pos, len = s.length(), range_len = 0, title_start;
@@ -588,10 +671,9 @@ void CFastaReader::ParseTitle(const TStr& s)
 {
     const static size_t kWarnTitleLength = 1000;
     if( s.length() > kWarnTitleLength ) {
-        ERR_POST_X(1, Warning
-            << "CFastaReader: Title is very long: " << s.length() 
-            << " characters (max is " << kWarnTitleLength << "),"
-            << " at line " << LineNumber());
+        FASTA_WARNING(LineNumber(), CWarning::eType_TitleTooLong,
+            "CFastaReader: Title is very long: " << s.length() 
+            << " characters (max is " << kWarnTitleLength << ")");
     }
 
     const static size_t kWarnNumSeqCharsAtEnd = 20;
@@ -599,10 +681,10 @@ void CFastaReader::ParseTitle(const TStr& s)
         const string sEndOfTitle = 
             s.substr(s.length() - kWarnNumSeqCharsAtEnd, kWarnNumSeqCharsAtEnd);
         if( sEndOfTitle.find_first_not_of("ACGTacgt") == string::npos ) {
-            ERR_POST_X(1, Warning
-                << "CFastaReader: Title ends with at least " << kWarnNumSeqCharsAtEnd 
-                << " valid nucleotide characters.  Was the sequence accidentally put in the title line?"
-                << " at line " << LineNumber());
+            FASTA_WARNING(LineNumber(), CWarning::eType_NucsInTitle,
+                "CFastaReader: Title ends with at least " << kWarnNumSeqCharsAtEnd 
+                << " valid nucleotide characters.  Was the sequence "
+                << "accidentally put in the title line?");
         }
     }
 
@@ -642,8 +724,10 @@ void CFastaReader::CheckDataLine(const TStr& s)
         return;
     }
     size_t good = 0, bad = 0, len = s.length();
-    const bool bIsNuc = ( m_CurrentSeq && m_CurrentSeq->IsSetInst() &&
-        m_CurrentSeq->GetInst().IsSetMol() &&  m_CurrentSeq->IsNa() );
+    const bool bIsNuc = (
+        ( TestFlag(fAssumeNuc) && TestFlag(fForceType) )||
+        ( m_CurrentSeq && m_CurrentSeq->IsSetInst() &&
+          m_CurrentSeq->GetInst().IsSetMol() &&  m_CurrentSeq->IsNa() ) );
     size_t ambig_nuc = 0;
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
@@ -670,11 +754,10 @@ void CFastaReader::CheckDataLine(const TStr& s)
     const static size_t kWarnPercentAmbiguous = 40; // e.g. "40" means "40%"
     const size_t percent_ambig = (ambig_nuc * 100) / good;
     if( len > 3 && percent_ambig > kWarnPercentAmbiguous ) {
-        ERR_POST_X(1, Warning
-            << "CFastaReader: First data line in seq is about "
+        FASTA_WARNING(LineNumber(), CWarning::eType_TooManyAmbigOnFirstLine,
+            "CFastaReader: First data line in seq is about "
             << percent_ambig << "% ambiguous nucleotides (shouldn't be over "
-            << kWarnPercentAmbiguous << "%)"
-            << " at line " << LineNumber() );
+            << kWarnPercentAmbiguous << "%)");
     }
 }
 
@@ -693,6 +776,13 @@ void CFastaReader::ParseDataLine(const TStr& s)
         m_CurrentPos += len;
         return;
     }
+
+    // we're stricter with nucs, so try to determine if we should
+    // assume this is a nuc
+    const bool bIsNuc = ( 
+        ( TestFlag(fAssumeNuc) && TestFlag(fForceType) ) ||
+        ( FIELD_CHAIN_OF_2_IS_SET(*m_CurrentSeq, Inst, Mol) &&
+          m_CurrentSeq->IsNa() ) );
         
     m_SeqData.resize(m_CurrentPos + len);
     // this will stay empty unless there's an error
@@ -709,8 +799,11 @@ void CFastaReader::ParseDataLine(const TStr& s)
             }
             m_CurrentGapLength += pos2 - pos;
             pos = pos2 - 1;
-        } else if (s_ASCII_IsAlpha(c)  ||  c == '-'  ||  c == '*') {
-            // Restrict further if specifically expecting nucleotide data?
+        } else if (
+            s_ASCII_IsValidNuc(c) ||
+            ( ! bIsNuc &&  ( s_ASCII_IsAlpha(c) ||  c == '*' ) ) ||
+            c == '-' ) 
+        {
             CloseGap();
             if (s_ASCII_IsLower(c)) {
                 m_SeqData[m_CurrentPos] = s_ASCII_ToUpper(c);
@@ -721,17 +814,10 @@ void CFastaReader::ParseDataLine(const TStr& s)
             }
             ++m_CurrentPos;
         } else if ( !isspace(c) ) {
-            if (TestFlag(fValidate)) {
-                if( bad_pos_line_num < 0 ) {
-                    bad_pos_line_num = LineNumber();
-                }
-                bad_pos_vec.push_back(pos);
-            } else {
-                ERR_POST_X(1, Warning
-                           << "CFastaReader: Ignoring invalid " + x_NucOrProt() + "residue " << c
-                           << " at line " << LineNumber()
-                           << ", position " << pos);
+            if( bad_pos_line_num < 0 ) {
+                bad_pos_line_num = LineNumber();
             }
+            bad_pos_vec.push_back(pos);
         } 
     }
 
@@ -739,10 +825,22 @@ void CFastaReader::ParseDataLine(const TStr& s)
 
     // before throwing, be sure that we're in a valid state so that callers can
     // parse multiple lines and get the invalid residues in all of them.
+    
     if( ! bad_pos_vec.empty() ) {
+        if (TestFlag(fValidate)) {
         NCBI_THROW2(CBadResiduesException, eBadResidues,
             "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
             CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
+        } else {
+            stringstream warn_strm;
+            warn_strm << "CFastaReader: Ignoring invalid " << x_NucOrProt() 
+                << "residues at position(s): ";
+            CBadResiduesException::SBadResiduePositions( 
+                m_BestID, bad_pos_vec, bad_pos_line_num ).ConvertBadIndexesToString(warn_strm);
+
+            FASTA_WARNING(0, CWarning::eType_InvalidResidue,
+                warn_strm.str() );
+        }
     }
 }
 
@@ -998,7 +1096,9 @@ CRef<CSeq_entry> CFastaReader::ReadAlignedSet(int reference_row)
     CRef<CSeq_annot> annot(new CSeq_annot);
 
     if ( !entry->IsSet()
-        ||  entry->GetSet().GetSeq_set().size() < max(reference_row + 1, 2)) {
+        ||  entry->GetSet().GetSeq_set().size() < 
+            static_cast<unsigned int>(max(reference_row + 1, 2))) 
+    {
         NCBI_THROW2(CObjReaderParseException, eEOF,
                     "CFastaReader::ReadAlignedSet: not enough input sequences.",
                     LineNumber());
@@ -1755,6 +1855,9 @@ CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
                     i = line_size;
                     continue; // skip rest of line
                 } else if ( !isspace((unsigned char) c) ) {
+                    // can't use FASTA_WARNING here because this
+                    // function is not inside a CFastaReader.
+                    // This function is deprecated, anyway.
                     ERR_POST_X(2, Warning << "ReadFasta: Ignoring invalid residue "
                                << c << " at position "
                                << (in.tellg() - CT_POS_TYPE(0)));

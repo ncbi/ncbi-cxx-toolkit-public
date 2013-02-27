@@ -39,14 +39,300 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
 
-
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <corelib/rwstream.hpp>
+#include <corelib/stream_utils.hpp>
+#include <corelib/ncbimisc.hpp>
+
+#include <objects/seqset/Seq_entry.hpp>
+
+#include <objtools/readers/fasta.hpp>
+
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
-BOOST_AUTO_TEST_CASE(Dummy)
+namespace {
+
+    // represents inforation about one test of the CFastaReader warning system
+    struct SWarningTest {
+
+        // Each SWarningTest has one SOneWarningsInfo for each
+        // possible type of warning.
+        // The index into warnings_expected must equal the m_eType
+        // of that one.  m_eType is also for readability of array
+        struct SOneWarningsInfo {
+            enum EAppears {
+                // start with 1 so that 0 is invalid and we catch it
+                eAppears_MustNot = 1,
+                eAppears_Must
+            };
+
+            const CFastaReader::CWarning::EType m_eType;
+            const EAppears m_eAppears;
+            const int      m_iLineNumExpected; // 0 if doesn't appear or doesn't matter
+        };
+    
+        const string                m_sName; // easier than array index for humans to understand
+        const SOneWarningsInfo      m_warnings_expected[CFastaReader::CWarning::eType_NUM];
+        const CFastaReader::TFlags  m_fFastaFlags;
+        const string                m_sInputFASTA;
+    };
+
+    const static CFastaReader::TFlags kDefaultFastaReaderFlags = 
+        CFastaReader::fAssumeNuc | 
+        CFastaReader::fForceType;
+
+    // list of FASTA warning tests
+    const SWarningTest fasta_warning_test_arr[] = {
+        { 
+            "test case of no warnings",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah \n"
+            "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "title too long",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ\n"
+            "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "nucs in title",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+            "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "too many ambig on first line",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must,    2 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah\n"
+            "ACGTACGTACGTNNNNNNNNNNNNNNNTUYYYYYYYYYYYYYYYYYYYYYYYYYYTACGT\n"
+        },
+
+        {
+            "invalid residue on first line",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah\n"
+            "ACEACGTAEEEACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "invalid residue on subsequent line",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah\n"
+            "ACGACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+            "ACEACGTACGTACGTAEETACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "trigger all warnings",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must, 2 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must, 0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah ACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTAC\n"
+            "ACGACNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNGTEACGTACGTACGT\n"
+        },
+
+        {
+            "invalid residue on multiple lines",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+            },
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah\n"
+            "ACACEACGTACGTACGTEEEETACGTACGTACGTACGTACGTACGTA\n"
+            "ACEACGTACGTACGTAEETACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+    };
+}
+
+// Test that the right warnings appear under the right conditions
+BOOST_AUTO_TEST_CASE(TestWarnings)
 {
-    BOOST_CHECK("This is just a placeholder; more tests are coming soon." != NULL);
+    // this is here because the tests may need to be adjusted if
+    // the number of possible warnings changes
+    BOOST_REQUIRE( CFastaReader::CWarning::eType_NUM == 4 );
+
+    // sanity test the tests
+    for( size_t warn_test_idx = 0; 
+        warn_test_idx < ArraySize(fasta_warning_test_arr); 
+        ++warn_test_idx )
+    {
+        for( size_t iTestNum = 0; 
+            iTestNum < CFastaReader::CWarning::eType_NUM; 
+            ++iTestNum ) 
+        {
+            const SWarningTest::SOneWarningsInfo & one_warning_info = 
+                fasta_warning_test_arr[warn_test_idx].m_warnings_expected[iTestNum];
+
+            // index must equal the EType
+            BOOST_REQUIRE( one_warning_info.m_eType == iTestNum );
+            BOOST_REQUIRE( 
+                one_warning_info.m_eAppears == 
+                    SWarningTest::SOneWarningsInfo::eAppears_Must ||
+                one_warning_info.m_eAppears == 
+                    SWarningTest::SOneWarningsInfo::eAppears_MustNot );
+
+            // expected line num should be 0 if the warning isn't supposed to appear,
+            // but this isn't a show-stopper.
+            BOOST_CHECK( one_warning_info.m_eAppears == 
+                    SWarningTest::SOneWarningsInfo::eAppears_Must ||
+                    one_warning_info.m_iLineNumExpected == 0 );
+        }
+    }
+
+    for( size_t warn_test_idx = 0; 
+        warn_test_idx < ArraySize(fasta_warning_test_arr); 
+        ++warn_test_idx )
+    {
+        const SWarningTest & warning_test = fasta_warning_test_arr[warn_test_idx];
+
+        cout << endl;
+        cout << "Running test case '" << warning_test.m_sName << "'" << endl;
+
+        // this will hold warnings found
+        CRef<CFastaReader::TWarningRefVec> pWarningRefVec( 
+            new CFastaReader::TWarningRefVec );
+
+        // create fasta reader
+        CStringReader fastaStringReader( warning_test.m_sInputFASTA );
+        CRStream fastaRStream( &fastaStringReader );
+        CFastaReader fasta_reader( fastaRStream, warning_test.m_fFastaFlags );
+        fasta_reader.SetWarningOutput( pWarningRefVec );
+
+        // do the parsing
+        BOOST_CHECK_NO_THROW( fasta_reader.ReadSet() );
+
+        // make sure exactly the warnings that were supposed to appeared
+        typedef map<CFastaReader::CWarning::EType, int> TMapWarningTypeToLineNum;
+        TMapWarningTypeToLineNum mapWarningTypeToLineNum;
+
+        // load the warnings that were seen into warningsSeenFromThisTest
+        ITERATE( CFastaReader::TWarningRefVec::TObjectType, 
+            warning_load_it, pWarningRefVec->GetData() ) 
+        {
+            // check if it already exists and has a different line num
+            TMapWarningTypeToLineNum::const_iterator find_iter =
+                mapWarningTypeToLineNum.find((*warning_load_it)->GetType());
+            BOOST_CHECK_MESSAGE(
+                ( find_iter == mapWarningTypeToLineNum.end() ) || 
+                    ( find_iter->second == (*warning_load_it)->GetLineNum() ), 
+                "On warning check " << warning_test.m_sName << '('
+                << warn_test_idx << "): "
+                << "Multiple warnings on different lines of type "
+                << CFastaReader::CWarning::GetStringOfType(
+                (*warning_load_it)->GetType()) );
+            mapWarningTypeToLineNum.insert( 
+                TMapWarningTypeToLineNum::value_type(
+                    (*warning_load_it)->GetType(),
+                    (*warning_load_it)->GetLineNum() ) );
+        }
+
+        // make sure we have exactly the warnings we're expecting
+        for( size_t warning_check_idx = 0;
+            warning_check_idx < ArraySize(warning_test.m_warnings_expected);
+            ++warning_check_idx )
+        {
+            const SWarningTest::SOneWarningsInfo & one_warning_info = 
+                warning_test.m_warnings_expected[warning_check_idx];
+            const CFastaReader::CWarning::EType eExpectedType = 
+                one_warning_info.m_eType;
+            const bool bWarningShouldAppear = ( 
+                one_warning_info.m_eAppears == SWarningTest::SOneWarningsInfo::eAppears_Must );
+            const int iExpectedLineNum = one_warning_info.m_iLineNumExpected;
+
+            // check whether warning does actually appear and
+            // what line it's on
+            bool bWarningDoesAppear = false;
+            int  iWarningLineNum    = 0;
+            TMapWarningTypeToLineNum::const_iterator find_iter =
+                mapWarningTypeToLineNum.find( eExpectedType ); 
+            if( find_iter != mapWarningTypeToLineNum.end() ) {
+                bWarningDoesAppear = true;
+                iWarningLineNum    = find_iter->second;
+            }
+
+            // check if warning does appear if it's supposed to,
+            // or that it doesn't appear if it isn't supposed to
+            BOOST_CHECK_MESSAGE( 
+                bWarningShouldAppear == bWarningDoesAppear,
+                "On warning check " << warning_test.m_sName << '('
+                << warn_test_idx << "): "
+                << "Type " << CFastaReader::CWarning::GetStringOfType(
+                eExpectedType) << ": should "
+                << (bWarningShouldAppear ? "": "not ") << "appear but "
+                << "it does" << (bWarningDoesAppear ? "" : " not") );
+
+            // check that line numbers match
+            if( bWarningShouldAppear && bWarningDoesAppear &&
+                iExpectedLineNum > 0 ) 
+            {
+                BOOST_CHECK_MESSAGE(
+                    iExpectedLineNum == iWarningLineNum,
+                    "On warning check " << warning_test.m_sName << '('
+                    << warn_test_idx << "): "
+                    << "Type " << CFastaReader::CWarning::GetStringOfType(
+                    eExpectedType) << ": "
+                    << "Line num of warning should be " << iExpectedLineNum
+                    << ", but it's " << iWarningLineNum);
+            }
+        }
+    }
 }
