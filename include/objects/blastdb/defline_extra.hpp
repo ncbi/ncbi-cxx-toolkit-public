@@ -52,7 +52,8 @@ enum LinkoutTypes {
   eMapviewer              = (1<<6),  ///< The main blast link goes to entrez but we put on a linkout icon that goes to mapviewer.
   eGenomicSeq             = (1<<7),  ///< Is a genomic sequence.  Used for the genome+transcript database to show the genomic 
                                      ///< and transcript sequences separately.
-  eBioAssay               = (1<<8)   ///< Add Linkout for BioAssay (structure group resource)
+  eBioAssay               = (1<<8),  ///< Add Linkout for BioAssay (structure group resource)
+  eReprMicrobialGenomes   = (1<<9)   ///< Linkout for the representative microbial genomes
 };
 
 /// Defines a pair of LinkoutTypes and its string representation
