@@ -1916,8 +1916,9 @@ static const string* s_CheckUniqueValues(const map<string, string> & m)
         string v = iter->second;
         vector<string> items;
         NStr::Tokenize(v, ":", items);
-        if (!s_IsNumericId(items[0])) {
-            v = items[0];    
+ 
+        if (items.size() == 4) {
+            v = items[2];    
         }
         
         if (s_Contains(seen, v)) {
@@ -1949,8 +1950,8 @@ void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
     string real_desc = desc;
     vector<string> items;
     NStr::Tokenize(desc, ":", items);
-    if (!s_IsNumericId(items[0])) {
-        real_desc = items[0];
+    if (items.size() == 4) {
+        real_desc = items[2];
     }
     bool found_desc = s_Contains(m_DescToId, real_desc);
     bool found_id   = s_Contains(m_IdToDesc, id);
@@ -2108,6 +2109,11 @@ string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
     return CNcbiOstrstreamToString(retval);
 }
 
+static const string s_RestoreColon(const string &in) {
+    const char l = 0x1;
+    return NStr::Replace(in, string(l,1), ":");
+}
+
 static
 void s_GetDetails(const string          & desc, 
                   string                & program, 
@@ -2124,24 +2130,19 @@ void s_GetDetails(const string          & desc,
     NStr::Tokenize(desc, ":", items);
     
     
-    if (s_IsNumericId(items[0])) {
-        if (items.size() <=1) {
-            NCBI_THROW(CSeqDBException, eArgErr,
-                   "Error in stored mask algorithm description data.");
-        }
+    if (items.size() == 2) {
         EBlast_filter_program 
            pid = (EBlast_filter_program) NStr::StringToInt(items[0]);
         program.assign(items[0]);
         program_name.assign(enum_type_vals->FindName(pid, false));
-        algo_opts.assign(items[1]);
+        algo_opts.assign(s_RestoreColon(items[1]));
+    } else if (items.size() == 4) {
+        program.assign(s_RestoreColon(items[2]));
+        program_name.assign(s_RestoreColon(items[3]));
+        algo_opts.assign(s_RestoreColon(items[1]));
     } else {
-        if (items.size() <=2) {
-            NCBI_THROW(CSeqDBException, eArgErr,
+        NCBI_THROW(CSeqDBException, eArgErr,
                    "Error in stored mask algorithm description data.");
-        }
-        program.assign(items[0]);
-        program_name.assign(items[1]);
-        algo_opts.assign(items[2]);
     }
 }
 

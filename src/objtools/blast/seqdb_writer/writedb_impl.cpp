@@ -1265,6 +1265,11 @@ void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges,
     blob2.WritePadBytes(4, CBlastDbBlob::eSimple); 
 }
 
+static const string s_EscapeColon(const string &in) {
+    const char l = 0x1;
+    return NStr::Replace(in, ":", string(l,1));
+}
+
 int CWriteDB_Impl::
 RegisterMaskAlgorithm(EBlast_filter_program   program, 
                       const string          & options,
@@ -1273,7 +1278,8 @@ RegisterMaskAlgorithm(EBlast_filter_program   program,
     int algorithm_id = m_MaskAlgoRegistry.Add(program, options);
     
     string key = NStr::IntToString(algorithm_id);
-    string value = NStr::IntToString((int)program) + ":" + options;
+    string value = NStr::IntToString((int)program) + ":" +
+         s_EscapeColon(options);
 
     if (m_UseGiMask) {
         m_MaskAlgoMap[algorithm_id] = m_GiMasks.size();
@@ -1294,7 +1300,10 @@ RegisterMaskAlgorithm(const string &id,
     int algorithm_id = m_MaskAlgoRegistry.Add(id);
 
     string key = NStr::IntToString(algorithm_id);
-    string value = id + ":" + description + ":" + options;
+    string value = "100:" + 
+         s_EscapeColon(options) + ":" + 
+         s_EscapeColon(id) + ":" +
+         s_EscapeColon(description);
 
     m_ColumnMetas[x_GetMaskDataColumnId()][key] = value;
 
