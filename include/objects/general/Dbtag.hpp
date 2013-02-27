@@ -86,7 +86,6 @@ public:
         eDbtagType_ECOCYC,
         eDbtagType_EMBL,
         eDbtagType_ENSEMBL,
-        eDbtagType_ERIC,
         eDbtagType_ESTLIB,
         eDbtagType_EcoGene,
         eDbtagType_FANTOM_DB,
