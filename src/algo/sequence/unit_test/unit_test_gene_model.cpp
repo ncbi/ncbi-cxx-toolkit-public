@@ -420,10 +420,6 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             }
         }
 
-        *annot_is >> expected_annot;
-        const CSeq_annot::C_Data::TFtable &expected_features = 
-            expected_annot.GetData().GetFtable();
-
         if (annot_os.get() != NULL) {
             *annot_os << actual_annot;
         }
@@ -433,6 +429,10 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         *seqdata_test_os << seqs;
         BOOST_CHECK( seqdata_test_stream.match_pattern() );
+
+        *annot_is >> expected_annot;
+        const CSeq_annot::C_Data::TFtable &expected_features = 
+            expected_annot.GetData().GetFtable();
 
         s_CompareFtables(actual_features, expected_features);
     }

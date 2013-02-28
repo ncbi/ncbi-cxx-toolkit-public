@@ -100,13 +100,17 @@ struct CFeatureGenerator::SImplementation {
 
     TSignedSeqRange GetCds(const objects::CSeq_id& seqid);
 
-    static void TrimLeftExon(int trim_amount,
+    enum ETrimSide {
+        eTrimProduct,
+        eTrimGenomic
+    };
+    static void TrimLeftExon(int trim_amount, ETrimSide side,
                       vector<SExon>::reverse_iterator left_edge,
                       vector<SExon>::reverse_iterator& exon_it,
                       objects::CSpliced_seg::TExons::reverse_iterator& spl_exon_it,
                       objects::ENa_strand product_strand,
                       objects::ENa_strand genomic_strand);
-    static void TrimRightExon(int trim_amount,
+    static void TrimRightExon(int trim_amount, ETrimSide side,
                        vector<SExon>::iterator& exon_it,
                        vector<SExon>::iterator right_edge,
                        objects::CSpliced_seg::TExons::iterator& spl_exon_it,

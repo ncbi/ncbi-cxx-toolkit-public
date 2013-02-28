@@ -472,14 +472,14 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
         if (right_exon_it != exons.begin() && (right_exon_it != exons.end() || (m_flags & fTrimEnds)) &&
             cds.GetFrom() < left_exon_it->prod_to && left_exon_it->prod_to < cds.GetTo()
             )
-            TrimLeftExon((left_exon_it->prod_to - cds.GetFrom() + 1) % 3,
+            TrimLeftExon((left_exon_it->prod_to - cds.GetFrom() + 1) % 3, eTrimProduct,
                          exons.rend(), left_exon_it, left_spl_exon_it,
                          product_strand, genomic_strand);
 
         if (right_exon_it != exons.end() && (right_exon_it != exons.begin() || (m_flags & fTrimEnds)) &&
             cds.GetFrom() < right_exon_it->prod_from && right_exon_it->prod_from < cds.GetTo()
             )
-            TrimRightExon((frame_offset-right_exon_it->prod_from) % 3,
+            TrimRightExon((frame_offset-right_exon_it->prod_from) % 3, eTrimProduct,
                           right_exon_it, exons.end(), right_spl_exon_it,
                           product_strand, genomic_strand);
         
@@ -581,23 +581,30 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
 
     bool plus_strand = !(genomic_strand == eNa_strand_minus);
 
-    bool cross_the_origin = range.GetFrom() > range.GetTo();
+    TSeqRange align_range;
+    if (plus_strand) {
+        align_range = TSeqRange(spliced_seg.GetExons().front()->GetGenomic_start(),
+                                spliced_seg.GetExons().back()->GetGenomic_end());
+    } else {
+        align_range = TSeqRange(spliced_seg.GetExons().back()->GetGenomic_start(),
+                                spliced_seg.GetExons().front()->GetGenomic_end());
+    }
+    bool cross_the_origin = range.GetFrom() > range.GetTo() || align_range.GetFrom() > align_range.GetTo();
     TSeqPos genomic_size = 0;
     if (cross_the_origin) {
         genomic_size = m_scope->GetSequenceLength(spliced_seg.GetGenomic_id());
 
-        range.SetTo(range.GetTo() + genomic_size);
 
-        TSeqRange align_range;
-        if (plus_strand) {
-            align_range = TSeqRange(spliced_seg.GetExons().front()->GetGenomic_start(),
-                                    spliced_seg.GetExons().back()->GetGenomic_end());
-        } else {
-            align_range = TSeqRange(spliced_seg.GetExons().back()->GetGenomic_start(),
-                                    spliced_seg.GetExons().front()->GetGenomic_end());
+        if (range.GetFrom() > range.GetTo()) {
+            range.SetTo(range.GetTo() + genomic_size);
         }
         if (align_range.GetFrom() > align_range.GetTo()) {
             align_range.SetTo(align_range.GetTo() + genomic_size);
+        }
+
+        if (range.GetTo() < align_range.GetFrom()) {
+            range.SetFrom(range.GetFrom() + genomic_size);
+            range.SetTo(range.GetTo() + genomic_size);
         }
         if (align_range.GetTo() < range.GetFrom()) {
             align_range.SetFrom(align_range.GetFrom() + genomic_size);
@@ -613,6 +620,11 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
                 exon.SetGenomic_end() += genomic_size;
         }
     }
+
+    _ASSERT(range.GetFrom() <= range.GetTo());
+    _ASSERT(align_range.GetFrom() <= align_range.GetTo());
+    _ASSERT(!(range.GetTo() < align_range.GetFrom()));
+    _ASSERT(!(align_range.GetTo() < range.GetFrom()));
 
     vector<SExon> exons;
     GetExonStructure(spliced_seg, exons, *m_scope);
@@ -636,14 +648,14 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
         if (right_exon_it == exons.end() &&
             left_exon_it->genomic_to > range_right
             )
-            CFeatureGenerator::SImplementation::TrimLeftExon(left_exon_it->genomic_to - range_right,
+            CFeatureGenerator::SImplementation::TrimLeftExon(left_exon_it->genomic_to - range_right, eTrimGenomic,
                          exons.rend(), left_exon_it, left_spl_exon_it,
                          product_strand, genomic_strand);
 
         if (right_exon_it == exons.begin() &&
             right_exon_it->genomic_from < range_left
             )
-            CFeatureGenerator::SImplementation::TrimRightExon(range_left - right_exon_it->genomic_from,
+            CFeatureGenerator::SImplementation::TrimRightExon(range_left - right_exon_it->genomic_from, eTrimGenomic,
                           right_exon_it, exons.end(), right_spl_exon_it,
                           product_strand, genomic_strand);
         
@@ -870,7 +882,7 @@ TSignedSeqRange CFeatureGenerator::SImplementation::GetCds(const objects::CSeq_i
     return TSignedSeqRange(cds.GetFrom(), cds.GetTo());
 }
 
-void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
+void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount, ETrimSide side,
                                                       vector<SExon>::reverse_iterator left_edge,
                                                       vector<SExon>::reverse_iterator& exon_it,
                                                       CSpliced_seg::TExons::reverse_iterator& spl_exon_it,
@@ -880,7 +892,9 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
     bool is_protein = (*spl_exon_it)->GetProduct_start().IsProtpos();
 
     while (trim_amount > 0) {
-        int exon_len = exon_it->prod_to - exon_it->prod_from + 1;
+        int exon_len = side==eTrimProduct
+            ? (exon_it->prod_to - exon_it->prod_from + 1)
+            : (exon_it->genomic_to - exon_it->genomic_from + 1);
         if (exon_len <= trim_amount) {
             ++exon_it;
             ++spl_exon_it;
@@ -888,32 +902,19 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
             if (exon_it == left_edge)
                 break;
         } else {
-            if (is_protein) {
-                CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_end().SetProtpos();
-                int frame = prot_pos.GetFrame();
-                if (frame == 0)
-                    frame = 1;
-                _ASSERT( (trim_amount - frame) % 3 == 0 );
-                prot_pos.SetAmin() -= (trim_amount - frame) / 3 + 1;
-                prot_pos.SetFrame(3);
-            } else {
-                if (product_strand != eNa_strand_minus) {
-                    (*spl_exon_it)->SetProduct_end().SetNucpos() -= trim_amount;
-                } else {
-                    (*spl_exon_it)->SetProduct_start().SetNucpos() += trim_amount;
-                }
-            }
-            exon_it->prod_to -= trim_amount;
-
             (*spl_exon_it)->SetPartial(true);
             (*spl_exon_it)->ResetDonor_after_exon();
 
             int genomic_trim_amount = 0;
+            int product_trim_amount = 0;
 
             if ((*spl_exon_it)->CanGetParts() && !(*spl_exon_it)->GetParts().empty()) {
                 CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
                 CSpliced_exon_Base::TParts::iterator chunk = parts.end();
-                while (--chunk, (trim_amount>0 || (*chunk)->IsGenomic_ins())) {
+                while (--chunk, (trim_amount>0 ||
+                                 (side==eTrimProduct
+                                  ? (*chunk)->IsGenomic_ins()
+                                  : (*chunk)->IsProduct_ins()))) {
                     int product_chunk_len = 0;
                     int genomic_chunk_len = 0;
                     switch((*chunk)->Which()) {
@@ -941,44 +942,67 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
                         
                     case CSpliced_exon_chunk::e_Product_ins:
                         product_chunk_len = (*chunk)->GetProduct_ins();
-                        if (product_chunk_len > trim_amount) {
+                        if (side==eTrimProduct && product_chunk_len > trim_amount) {
                             (*chunk)->SetProduct_ins(product_chunk_len - trim_amount);
                         }
                         break;
                     case CSpliced_exon_chunk::e_Genomic_ins:
                         genomic_chunk_len = (*chunk)->GetGenomic_ins();
+                        if (side==eTrimGenomic && genomic_chunk_len > trim_amount) {
+                            (*chunk)->SetGenomic_ins(genomic_chunk_len - trim_amount);
+                        }
                         break;
                     default:
                         _ASSERT(false);
                         break;
                     }
                     
-                    if (product_chunk_len <= trim_amount) {
+                    if (side==eTrimProduct && product_chunk_len <= trim_amount) {
                         genomic_trim_amount += genomic_chunk_len;
+                        product_trim_amount += product_chunk_len;
                         trim_amount -= product_chunk_len;
-                        chunk = parts.erase(chunk);
+                    } else if (side==eTrimGenomic && genomic_chunk_len <= trim_amount) {
+                        genomic_trim_amount += genomic_chunk_len;
+                        product_trim_amount += product_chunk_len;
+                        trim_amount -= genomic_chunk_len;
                     } else {
                         genomic_trim_amount += min(trim_amount, genomic_chunk_len);
+                        product_trim_amount += min(trim_amount, product_chunk_len);
                         trim_amount = 0;
                         break;
                     }
+                    chunk = parts.erase(chunk);
                 }
                 
             } else {
                 genomic_trim_amount += trim_amount;
+                product_trim_amount += trim_amount;
                 trim_amount = 0;
             }
             
+            exon_it->prod_to -= product_trim_amount;
+            exon_it->genomic_to -= genomic_trim_amount;
+
+            if (is_protein) {
+                CProduct_pos& prot_pos = (*spl_exon_it)->SetProduct_end();
+                SetProtpos(prot_pos, exon_it->prod_to);
+            } else {
+                if (product_strand != eNa_strand_minus) {
+                    (*spl_exon_it)->SetProduct_end().SetNucpos() -= product_trim_amount;
+                } else {
+                    (*spl_exon_it)->SetProduct_start().SetNucpos() += product_trim_amount;
+                }
+            }
+
             if (genomic_strand != eNa_strand_minus) {
                 (*spl_exon_it)->SetGenomic_end() -= genomic_trim_amount;
             } else {
                 (*spl_exon_it)->SetGenomic_start() += genomic_trim_amount;
             }
-            exon_it->genomic_to -= genomic_trim_amount;
         }
     }
 }
-void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
+void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount, ETrimSide side,
                                                        vector<SExon>::iterator& exon_it,
                                                        vector<SExon>::iterator right_edge,
                                                        CSpliced_seg::TExons::iterator& spl_exon_it,
@@ -988,7 +1012,9 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
     bool is_protein = (*spl_exon_it)->GetProduct_start().IsProtpos();
 
     while (trim_amount > 0) {
-        int exon_len = exon_it->prod_to - exon_it->prod_from + 1;
+        int exon_len = side==eTrimProduct
+            ? (exon_it->prod_to - exon_it->prod_from + 1)
+            : (exon_it->genomic_to - exon_it->genomic_from + 1);
         if (exon_len <= trim_amount) {
             ++exon_it;
             ++spl_exon_it;
@@ -996,32 +1022,20 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
             if (exon_it == right_edge)
                 break;
         } else {
-            if (is_protein) {
-                CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_start().SetProtpos();
-                int frame = prot_pos.GetFrame();
-                if (frame != 0)
-                    frame -= 1;
-                _ASSERT( (frame + trim_amount) % 3 == 0 );
-                prot_pos.SetAmin() += (frame + trim_amount)/3;
-                prot_pos.SetFrame(1);
-            } else {
-                if (product_strand != eNa_strand_minus) {
-                    (*spl_exon_it)->SetProduct_start().SetNucpos() += trim_amount;
-                } else {
-                    (*spl_exon_it)->SetProduct_end().SetNucpos() -= trim_amount;
-                }
-            }
-            exon_it->prod_from += trim_amount;
-
             (*spl_exon_it)->SetPartial(true);
             (*spl_exon_it)->ResetAcceptor_before_exon();
 
             int genomic_trim_amount = 0;
+            int product_trim_amount = 0;
 
             if ((*spl_exon_it)->CanGetParts() && !(*spl_exon_it)->GetParts().empty()) {
                 CSpliced_exon::TParts& parts = (*spl_exon_it)->SetParts();
                 CSpliced_exon_Base::TParts::iterator chunk = parts.begin();
-                for (; trim_amount>0 || (*chunk)->IsGenomic_ins(); chunk = parts.erase(chunk)) {
+                for (; trim_amount>0 ||
+                         (side==eTrimProduct
+                          ? (*chunk)->IsGenomic_ins()
+                          : (*chunk)->IsProduct_ins());
+                     ) {
                     int product_chunk_len = 0;
                     int genomic_chunk_len = 0;
                     switch((*chunk)->Which()) {
@@ -1049,39 +1063,63 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
                         
                     case CSpliced_exon_chunk::e_Product_ins:
                         product_chunk_len = (*chunk)->GetProduct_ins();
-                        if (product_chunk_len > trim_amount) {
+                        if (side==eTrimProduct && product_chunk_len > trim_amount) {
                             (*chunk)->SetProduct_ins(product_chunk_len - trim_amount);
                         }
                         break;
                     case CSpliced_exon_chunk::e_Genomic_ins:
                         genomic_chunk_len = (*chunk)->GetGenomic_ins();
+                        if (side==eTrimGenomic && genomic_chunk_len > trim_amount) {
+                            (*chunk)->SetGenomic_ins(genomic_chunk_len - trim_amount);
+                        }
                         break;
                     default:
                         _ASSERT(false);
                         break;
                     }
                     
-                    if (product_chunk_len <= trim_amount) {
+                    if (side==eTrimProduct && product_chunk_len <= trim_amount) {
                         genomic_trim_amount += genomic_chunk_len;
+                        product_trim_amount += product_chunk_len;
                         trim_amount -= product_chunk_len;
+                    } else if (side==eTrimGenomic && genomic_chunk_len <= trim_amount) {
+                        genomic_trim_amount += genomic_chunk_len;
+                        product_trim_amount += product_chunk_len;
+                        trim_amount -= genomic_chunk_len;
                     } else {
                         genomic_trim_amount += min(trim_amount, genomic_chunk_len);
+                        product_trim_amount += min(trim_amount, product_chunk_len);
                         trim_amount = 0;
                         break;
                     }
+                    chunk = parts.erase(chunk);
                 }
                 
             } else {
                 genomic_trim_amount += trim_amount;
+                product_trim_amount += trim_amount;
                 trim_amount = 0;
             }
             
+            exon_it->prod_from += product_trim_amount;
+            exon_it->genomic_from += genomic_trim_amount;
+
+            if (is_protein) {
+                CProduct_pos& prot_pos = (*spl_exon_it)->SetProduct_start();
+                SetProtpos(prot_pos, exon_it->prod_from);
+            } else {
+                if (product_strand != eNa_strand_minus) {
+                    (*spl_exon_it)->SetProduct_start().SetNucpos() += product_trim_amount;
+                } else {
+                    (*spl_exon_it)->SetProduct_end().SetNucpos() -= product_trim_amount;
+                }
+            }
+
             if (genomic_strand != eNa_strand_minus) {
                 (*spl_exon_it)->SetGenomic_start() += genomic_trim_amount;
             } else {
                 (*spl_exon_it)->SetGenomic_end() -= genomic_trim_amount;
             }
-            exon_it->genomic_from += genomic_trim_amount;
         }
     }
 }

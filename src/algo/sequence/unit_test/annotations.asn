@@ -9494,3 +9494,113 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_14_43",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 0,
+              to 2,
+              strand plus,
+              id gi 385243207
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      product whole local str "PROT_14_43",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_15_44",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 0,
+              to 2,
+              strand plus,
+              id gi 385243207
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      product whole local str "PROT_15_44",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      }
+    }
+  }
+}

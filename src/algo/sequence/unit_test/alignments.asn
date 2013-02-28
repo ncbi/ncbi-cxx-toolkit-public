@@ -13864,3 +13864,130 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+          segs spliced {
+            product-id gi 385241359,
+            genomic-id gi 385243207,
+            genomic-strand plus,
+            product-type protein,
+            exons {
+              {
+                product-start protpos {
+                  amin 0,
+                  frame 1
+                },
+                product-end protpos {
+                  amin 199,
+                  frame 3
+                },
+                genomic-start 1041922,
+                genomic-end 1042521,
+                parts {
+                  match 3,
+                  diag 597
+                }
+              },
+              {
+                product-start protpos {
+                  amin 200,
+                  frame 1
+                },
+                product-end protpos {
+                  amin 590,
+                  frame 3
+                },
+                genomic-start 0,
+                genomic-end 1172,
+                parts {
+                  diag 1173
+                }
+              }
+            },
+            product-length 591,
+            modifiers {
+              start-codon-found TRUE,
+              stop-codon-found TRUE
+            }
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        },
+        {
+          label str "AdjustRange", 
+          data ints { 0, 1172 }
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type disc,
+  dim 2,
+          segs spliced {
+            product-id gi 385241359,
+            genomic-id gi 385243207,
+            genomic-strand plus,
+            product-type protein,
+            exons {
+              {
+                product-start protpos {
+                  amin 0,
+                  frame 1
+                },
+                product-end protpos {
+                  amin 199,
+                  frame 3
+                },
+                genomic-start 1041921,
+                genomic-end 1042521,
+                parts {
+                  match 3,
+                  genomic-ins 1,
+                  diag 597
+                }
+              },
+              {
+                product-start protpos {
+                  amin 200,
+                  frame 1
+                },
+                product-end protpos {
+                  amin 590,
+                  frame 3
+                },
+                genomic-start 0,
+                genomic-end 1172,
+                parts {
+                  diag 1173
+                }
+              }
+            },
+            product-length 591,
+            modifiers {
+              start-codon-found TRUE,
+              stop-codon-found TRUE
+            }
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        },
+        {
+          label str "AdjustRange", 
+          data ints { 0, 1172 }
+        }
+      }
+    }
+  }
+}
