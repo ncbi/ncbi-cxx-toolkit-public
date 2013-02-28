@@ -200,6 +200,22 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     if (opts.GetSumStatisticsMode() && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
+
+    if ( m_Program == "blastn" &&
+         opts.GetMatchReward() == 0 &&
+         opts.GetMismatchPenalty() == 0 )
+    {
+       /* This combination is an indicator that we have used matrices
+        * solely to develop the hsp score.  Also for the time being it
+        * indicates that KA stats are not available. -RMH-
+        */
+        m_DisableKAStats = true;
+    }
+    else
+    {
+        m_DisableKAStats = false;
+    }
+
     CAlignFormatUtil::GetAsciiProteinMatrix(m_MatrixName, m_ScoringMatrix);
 
     if (opts.GetProgram() == eDeltaBlast) {
