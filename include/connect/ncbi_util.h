@@ -501,7 +501,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int UTIL_Adler32_Update
  * @var digest_len
  *  Byte length of the resultant digest (e.g. MD5: 16, SHA1: 20, SHA256: 32)
  * @var init
- *  Init and set hash ctx; return 0 on failure, non-zero on success
+ *  Init and set a hash context; return 0 on failure, non-zero on success
  * @var update
  *  Update the hash with data provided
  * @var fini
@@ -510,8 +510,8 @@ extern NCBI_XCONNECT_EXPORT unsigned int UTIL_Adler32_Update
  *  UTIL_GenerateHMAC
  */
 typedef struct {
-    const size_t block_len;
-    const size_t digest_len;
+    size_t block_len;
+    size_t digest_len;
 
     int/*bool*/ (*init)  (void** ctx);
     void        (*update)(void*  ctx, const void* data, size_t data_len);
@@ -519,7 +519,21 @@ typedef struct {
 } SHASH_Descriptor;
 
 
-/** Generate RFC2401 digest.
+/** Generate an RFC2401 digest (HMAC).
+ * @param hash
+ *  Hash function descriptor
+ * @param text
+ *  Text to get a digest for
+ * @param text_key
+ *  Byte length of the text
+ * @param key
+ *  Key to hash the text with
+ * @param key_len
+ *  Byte length of the key (recommended to be no less than "hash::digest_len")
+ * @param digest
+ *  The resultant HMAC storage (must be of an adequate size)
+ * @return
+ *  NULL on errors ("digest" will not be valid), or "digest" on success.
  * @sa
  *  SHASH_Descriptor
  */
