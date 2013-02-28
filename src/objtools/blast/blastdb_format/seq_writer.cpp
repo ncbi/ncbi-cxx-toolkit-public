@@ -211,6 +211,7 @@ static string s_GetTitle(CConstRef<CBioseq> bioseq)
             return (*desc)->GetTitle();
         }
     }
+    return "";
 }
 
 static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)

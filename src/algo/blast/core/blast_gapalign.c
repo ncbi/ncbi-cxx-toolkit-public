@@ -3149,6 +3149,7 @@ BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
     max_score = 0;
     max_offset = q_start;
     score = 0;
+    match = FALSE;
     prev_match = FALSE; 
     for (index = q_start; index < q_start + q_len; index++) {
         match = (*q++ == *s++);

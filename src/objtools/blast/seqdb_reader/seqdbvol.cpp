@@ -1086,7 +1086,7 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
         if ((! have_org_desc) && provide_new_taxonomy_info) {
             try {
                 found_taxid_in_taxonomy_blastdb = tax_info->GetTaxNames(taxid, tnames, locked);
-            } catch (CSeqDBException &e) {
+            } catch (...) {
                 found_taxid_in_taxonomy_blastdb = false;
             } 
         }
