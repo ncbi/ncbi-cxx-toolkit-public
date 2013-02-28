@@ -103,9 +103,7 @@ private:
         CRef<CSeq_entry> se = fsa_reader.ReadOneSeq();
         _ASSERT(se->IsSeq());
         scope->AddTopLevelSeqEntry(*se);
-        const CSeq_id& id1 = *se->GetSeq().GetFirstId();
         const CSeq_id& best_id = fsa_reader.GetBestID();
-        _ASSERT(id1.Match(best_id));
         x_ConvertMasks(mask);
         return scope->GetBioseqHandle(best_id);
     }
