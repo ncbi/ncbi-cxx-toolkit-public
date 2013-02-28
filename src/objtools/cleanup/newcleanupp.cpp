@@ -6458,7 +6458,7 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                 s_StructuredCommentDbnameFromString( core, GET_FIELD(field.GetData(), Str) );
                 const string new_data_str = "##" + core + "-START##";
                 if( ! FIELD_CHOICE_EQUALS(field, Data, Str, new_data_str) ) {
-                    SET_FIELD(field.SetData(), Str, new_data_str);
+                    SET_FIELD(field.SetData(), Str, CUtf8::AsUTF8(new_data_str, eEncoding_Ascii) );
                     ChangeMade(CCleanupChange::eCleanUserObjectOrField);
                 }
                 if (core == "Genome-Assembly-Data") {
@@ -6471,7 +6471,7 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                 s_StructuredCommentDbnameFromString( core, GET_FIELD(field.GetData(), Str) );
                 const string new_data_str = "##" + core + "-END##";
                 if( ! FIELD_CHOICE_EQUALS(field, Data, Str, new_data_str) ) {
-                    SET_FIELD(field.SetData(), Str, new_data_str);
+                    SET_FIELD(field.SetData(), Str, CUtf8::AsUTF8(new_data_str, eEncoding_Ascii));
                     ChangeMade(CCleanupChange::eCleanUserObjectOrField);
                 }
                 if (core == "Genome-Assembly-Data") {
@@ -7965,7 +7965,7 @@ s_AddStringToUserField( CSeqdesc_Base::TUser& user, const char* field, const cha
     CRef< CUser_field > new_field( new CUser_field );
 
     new_field->SetLabel().SetStr( field );
-    new_field->SetData().SetStr( str );
+    new_field->SetData().SetStr( CUtf8::AsUTF8(str, eEncoding_Ascii) );
 
     user.SetData().push_back( new_field );
 }
