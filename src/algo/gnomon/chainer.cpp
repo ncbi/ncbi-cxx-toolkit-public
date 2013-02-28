@@ -1024,15 +1024,17 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
         ITERATE(TGeneToMembers, ig1, imdg->second) {
             CGene& gene1 = *ig1->first;
             ITERATE(CGene, ic1, gene1) { 
-                CChain* chain1p = *ic1;
-                SChainMember* mbr1p = 0;
-                for(list<SChainMember*>::const_iterator im = ig1->second.begin(); im != ig1->second.end() && mbr1p == 0; ++im) {
-                    if(binary_search(chain1p->m_members.begin(),chain1p->m_members.end(),*im))
-                       mbr1p = *im;
+                CChain* chain1p_orig = *ic1;
+                SChainMember* mbr1p_orig = 0;
+                for(list<SChainMember*>::const_iterator im = ig1->second.begin(); im != ig1->second.end() && mbr1p_orig == 0; ++im) {
+                    if(binary_search(chain1p_orig->m_members.begin(),chain1p_orig->m_members.end(),*im))
+                       mbr1p_orig = *im;
                 }
-                for(TGeneToMembers::const_iterator ig2 = imdg->second.begin(); mbr1p != 0 && ig2 != ig1; ++ig2) {
+                for(TGeneToMembers::const_iterator ig2 = imdg->second.begin(); mbr1p_orig != 0 && ig2 != ig1; ++ig2) {
                     CGene& gene2 = *ig2->first;
                     ITERATE(CGene, ic2, gene2) { 
+                        CChain* chain1p = chain1p_orig;
+                        SChainMember* mbr1p = mbr1p_orig;
                         CChain* chain2p = *ic2;
                         SChainMember* mbr2p = 0;
                         for(list<SChainMember*>::const_iterator im = ig2->second.begin(); im != ig2->second.end() && mbr2p == 0; ++im) {
