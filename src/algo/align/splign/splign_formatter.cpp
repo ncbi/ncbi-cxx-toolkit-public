@@ -795,7 +795,7 @@ const
                 string verstr (CSplign::s_GetVersion()->Print("Splign"));
                 verstr.erase(remove_if(verstr.begin(), verstr.end(), PIsSpace), 
                              verstr.end());
-                uf->SetData().SetStr(verstr);
+                uf->SetData().SetStr(CUtf8::AsUTF8(verstr, eEncoding_UTF8));
             }
 
             data.push_back(sa);
