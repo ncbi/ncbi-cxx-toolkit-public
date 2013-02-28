@@ -330,7 +330,12 @@ void CBlastTabularInfo::x_PrintSubjectAllTitles ()
 						 m_Ostream << "<>";
 
 			if((*iter)->IsSetTitle())
-				m_Ostream << (*iter)->GetTitle();
+			{
+				if((*iter)->GetTitle().empty())
+					m_Ostream << NA;
+				else
+					m_Ostream << (*iter)->GetTitle();
+			}
 			else
 				m_Ostream << NA;
 		}
@@ -352,7 +357,12 @@ void CBlastTabularInfo::x_PrintSubjectTitle()
 		else
 		{
 			if(defline.front()->IsSetTitle())
-				m_Ostream << defline.front()->GetTitle();
+			{
+				if(defline.front()->GetTitle().empty())
+					m_Ostream << NA;
+				else
+					m_Ostream << defline.front()->GetTitle();
+			}
 			else
 				m_Ostream << NA;
 		}
