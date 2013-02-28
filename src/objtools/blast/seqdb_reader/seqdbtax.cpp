@@ -162,7 +162,7 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
     if (! m_Initialized) {
         try {
             x_Init(locked);
-        } catch (...) {
+        } catch (CSeqDBException *) {
             m_MissingDB = true;
         }
     }
