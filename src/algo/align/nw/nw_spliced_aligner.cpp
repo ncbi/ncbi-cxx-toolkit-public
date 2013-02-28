@@ -167,7 +167,7 @@ size_t GetSplicePriority(const  char * dnr, const char* acc)
         "GA-AG", 
         "GT-GG", 
         "AT-AA", 
-        "AT-AT", 
+        "ATA-AT", 
         "GG-AG", 
         "GT-AT", 
         "TT-AG", 
@@ -179,7 +179,7 @@ size_t GetSplicePriority(const  char * dnr, const char* acc)
 	10  , //GA-AG
 	12  , //GT-GG
 	10  , //AT-AA -- artificially weighting this higher than AT-AT
-	8   , //AT-AT
+	8   , //ATA-AT
 	7   , //GG-AG
 	6   , //GT-AT
 	6   , //TT-AG
@@ -188,10 +188,12 @@ size_t GetSplicePriority(const  char * dnr, const char* acc)
     };
 
     for (size_t i = 0; weight[i] > 0; ++i) {
+        const char * acceptor = strchr(splice_sites[i]+2, '-')+1;
         if (splice_sites[i][0]==dnr[0] &&
             splice_sites[i][1]==dnr[1] &&
-            splice_sites[i][3]==acc[0] &&
-            splice_sites[i][4]==acc[1]
+            (splice_sites[i][2] == '-' || splice_sites[i][2] == dnr[2]) && 
+            acceptor[0]==acc[0] &&
+            acceptor[1]==acc[1]
             ) {
             return weight[i];
         }
