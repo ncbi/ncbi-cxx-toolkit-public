@@ -276,8 +276,8 @@ int CBlastDbBlob::x_WriteVarInt(Int8 x, int * offsetp)
     }
     
     while(ux) {
-        ux >>= 7;
         buf[--ptr] = (ux & 0x7F) | 0x80;
+        ux >>= 7;
     }
     
     int bytes = end_ptr - ptr;
