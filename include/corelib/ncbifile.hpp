@@ -653,16 +653,19 @@ public:
     
     /// Directory entry type.
     enum EType {
-        eFile = 0,     ///< Regular file
-        eDir,          ///< Directory
-        ePipe,         ///< Pipe
-        eLink,         ///< Symbolic link     (UNIX only)
-        eSocket,       ///< Socket            (UNIX only)
-        eDoor,         ///< Door              (UNIX only)
-        eBlockSpecial, ///< Block special     (UNIX only)
-        eCharSpecial,  ///< Character special
+        eFile = 0,                ///< Regular file
+        eDir,                     ///< Directory
+        ePipe,                    ///< Pipe
+        eLink,                    ///< Symbolic link     (UNIX only)
+        eSocket,                  ///< Socket            (UNIX only)
+        eDoor,                    ///< Door              (UNIX only)
+        eBlockSpecial,            ///< Block special     (UNIX only)
+        eCharSpecial,             ///< Character special
         //
-        eUnknown       ///< Unknown type
+        eUnknown,                 ///< Unknown type
+        //
+        eSymLink  = eLink,        ///< Symbolic link     (UNIX only)
+        eHardLink = eUnknown + 1  ///< Hard link         (UNIX only)
     };
 
     /// Construct a directory entry object of a specified type.
