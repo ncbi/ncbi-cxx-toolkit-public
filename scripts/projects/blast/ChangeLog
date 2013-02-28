@@ -1,33 +1,33 @@
 March 19, 2013
 * 2.2.28 release.
 New features:
-* Composition based statistics support in rpsblast (SB-992, SB-335, SB-1087)
-* Support for taxonomy data in custom tabular output format (SB-235)
-* Support for query coverage and title in custom tabular output format (SB-772)
-* blastdbcmd support for batch subsequence retrieval (SB-1034)
+* Composition based statistics support in rpsblast 
+* Support for taxonomy data in custom tabular output format 
+* Support for query coverage and title in custom tabular output format 
+* blastdbcmd support for batch subsequence retrieval 
 
 Improvements:
-* Adaptive BATCH_SIZE (SB-1080, SB-1077)
-* Perform incremental XML output (SB-967)
+* Adaptive BATCH_SIZE 
+* Perform incremental XML output 
 
 Bug fixes:
-* Formatting of asterix character in XML output (SB-788)
-* Segmentation fault on out-of-memory (SB-846)
-* Prevented extension of alignment into Ns (SB-986)
-* Segmentation fault in DeltaBLAST when used with -remote and -out_ascii_pssm (SB-1026)
-* Replace tabs with spaces in FASTA deflines (SB-1029)
-* blastdbcmd displaying internal sequence ID for databases built without -parse_seqid (SB-1037)
-* blastdbcmd not fetching sequence data for complete sequence ID and -target_only (SB-1074)
-* blastn missing a hit for small word sizes (SB-1042)
-* Crash in blastn when it fetches sequence data from Genbank (SB-1046)
-* DeltaBLAST returning no hits when used with -remote option and searching more than one query (SB-1057)
-* Initialization problems for indexed megablast (SB-1069)
-* psiblast problem using -import_search_strategy (SB-1071)
-* blast_formatter displaying empty query for DeltaBLAST RID (SB-1088)
-* makeblastdb problem with ASN.1 input (SB-1093)
-* dustmasker errors with acclist and maskinfo_xml output formats (SB-1100)
-* blastx reporting of HSPs dependent on -max_target_seqs (SB-1104)
-* psiblast's display of number of queries in tabular output format (SB-254)
+* Formatting of asterix character in XML output 
+* Segmentation fault on out-of-memory 
+* Prevented extension of alignment into Ns 
+* Segmentation fault in DeltaBLAST when used with -remote and -out_ascii_pssm 
+* Replace tabs with spaces in FASTA deflines 
+* blastdbcmd displaying internal sequence ID for databases built without -parse_seqid 
+* blastdbcmd not fetching sequence data for complete sequence ID and -target_only 
+* blastn missing a hit for small word sizes 
+* Crash in blastn when it fetches sequence data from Genbank 
+* DeltaBLAST returning no hits when used with -remote option and searching more than one query 
+* Initialization problems for indexed megablast 
+* psiblast problem using -import_search_strategy 
+* blast_formatter displaying empty query for DeltaBLAST RID 
+* makeblastdb problem with ASN.1 input 
+* dustmasker errors with acclist and maskinfo_xml output formats 
+* blastx reporting of HSPs dependent on -max_target_seqs 
+* psiblast's display of number of queries in tabular output format 
 
 September 10, 2012
 * 2.2.27 release.
