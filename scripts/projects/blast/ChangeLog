@@ -28,6 +28,7 @@ Bug fixes:
 * dustmasker errors with acclist and maskinfo_xml output formats 
 * blastx reporting of HSPs dependent on -max_target_seqs 
 * psiblast's display of number of queries in tabular output format 
+* blastx error when -ungapped and -comp_based_stats F are used
 
 September 10, 2012
 * 2.2.27 release.
