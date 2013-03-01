@@ -392,9 +392,9 @@ AC_ARG_WITH(oechem,
 AC_ARG_WITH(oechem2,
    [ --without-oechem        do not use OEChem])
 AC_ARG_WITH(sge,
-   [ --with-sge=DIR          use Sun Grid Engine installation in DIR])
+   [ --with-sge=DIR          use Sun/Univa Grid Engine installation in DIR])
 AC_ARG_WITH(sge2,
-   [ --without-sge           do not use Sun Grid Engine])
+   [ --without-sge           do not use Sun/Univa Grid Engine])
 AC_ARG_WITH(muparser,
    [ --with-muparser=DIR     use muParser installation in DIR])
 AC_ARG_WITH(muparser2,
@@ -5998,22 +5998,28 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
-### Sun Grid Engine
+### Sun/Univa Grid Engine
 case "$with_sge" in
    yes | "" ) ;;
    *        ) SGE_PATH=$with_sge ;;
 esac
 if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
    case "$host:$NCBI_PLATFORM_BITS" in
-      i?86-*-darwin*      ) SGE_LIBPATH=$SGE_PATH/lib/darwin-x86  ;;
-      i?86-*-linux*       ) SGE_LIBPATH=$SGE_PATH/lib/lx24-x86    ;;
-      i?86-*-solaris*:32  ) SGE_LIBPATH=$SGE_PATH/lib/sol-x86     ;;
-      i?86-*-solaris*:64  ) SGE_LIBPATH=$SGE_PATH/lib/sol-amd64   ;;
-      powerpc-*-darwin*   ) SGE_LIBPATH=$SGE_PATH/lib/darwin-ppc  ;;
-      sparc-*-solaris*:32 ) SGE_LIBPATH=$SGE_PATH/lib/sol-sparc   ;;
-      sparc-*-solaris*:64 ) SGE_LIBPATH=$SGE_PATH/lib/sol-sparc64 ;;
-      x86_64-*-linux*     ) SGE_LIBPATH=$SGE_PATH/lib/lx24-amd64  ;;
+      i?86-*-darwin*      ) SGE_PLATFORMS='darwin-x86'          ;;
+      i?86-*-linux*       ) SGE_PLATFORMS='lx24-x86 lx-x86'     ;;
+      i?86-*-solaris*:32  ) SGE_PLATFORMS='sol-x86'             ;;
+      i?86-*-solaris*:64  ) SGE_PLATFORMS='sol-amd64'           ;;
+      powerpc-*-darwin*   ) SGE_PLATFORMS='darwin-ppc'          ;;
+      sparc-*-solaris*:32 ) SGE_PLATFORMS='sol-sparc'           ;;
+      sparc-*-solaris*:64 ) SGE_PLATFORMS='sol-sparc64'         ;;
+      x86_64-*-linux*     ) SGE_PLATFORMS='lx24-amd64 lx-amd64' ;;
    esac
+   for x in $SGE_PLATFORMS; do
+      if test -d "$SGE_PATH/lib/$x"; then
+         SGE_LIBPATH="$SGE_PATH/lib/$x"
+         break
+      fi
+   done
    NCBI_RPATHIFY(SGE_LIBPATH, $SGE_LIBPATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
