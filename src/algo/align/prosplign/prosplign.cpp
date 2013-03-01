@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
 USING_SCOPE(ncbi::prosplign);
 
-const string CProSplignOptions_Base::default_score_matrix_name = "BLOSUM62";
+const char *CProSplignOptions_Base::default_score_matrix_name = "BLOSUM62";
 const bool CProSplignOptions_Base::default_allow_alt_starts = false;
 
 void CProSplignOptions_Base::SetupArgDescriptions(CArgDescriptions* arg_desc)
