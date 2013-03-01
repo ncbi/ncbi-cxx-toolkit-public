@@ -1718,17 +1718,17 @@ CFormatGuess::IsSampleNewick(
         //  Strip out comments:
         string trimmed;
         bool in_comment = false;
-        for ( size_t ii=0; line[ii] != 0; ++ii ) {
+        for ( size_t ii=0; line.c_str()[ii] != 0; ++ii ) {
             if ( ! in_comment ) {
-                if ( line[ii] != '[' ) {
-                    trimmed += line[ii];
+                if ( line.c_str()[ii] != '[' ) {
+                    trimmed += line.c_str()[ii];
                 }
                 else {
                     in_comment = true;
                 }
             }
             else /* in_comment */ {
-                if ( line[ii] == ']' ) {
+                if ( line.c_str()[ii] == ']' ) {
                     in_comment = false;
                 }
             }
@@ -1739,10 +1739,10 @@ CFormatGuess::IsSampleNewick(
         //  Compress quoted labels:
         string trimmed;
         bool in_quote = false;
-        for ( size_t ii=0; line[ii] != 0; ++ii ) {
+        for ( size_t ii=0; line.c_str()[ii] != 0; ++ii ) {
             if ( ! in_quote ) {
-                if ( line[ii] != '\'' ) {
-                    trimmed += line[ii];
+                if ( line.c_str()[ii] != '\'' ) {
+                    trimmed += line.c_str()[ii];
                 }
                 else {
                     in_quote = true;
@@ -1750,7 +1750,7 @@ CFormatGuess::IsSampleNewick(
                 }
             }
             else { /* in_quote */
-                if ( line[ii] == '\'' ) {
+                if ( line.c_str()[ii] == '\'' ) {
                     in_quote = false;
                 }
             }
@@ -1761,21 +1761,21 @@ CFormatGuess::IsSampleNewick(
         //  Strip distance markers:
         string trimmed;
         size_t ii=0;
-        while ( line[ii] != 0 ) {
-            if ( line[ii] != ':' ) {
-                trimmed += line[ii++];
+        while ( line.c_str()[ii] != 0 ) {
+            if ( line.c_str()[ii] != ':' ) {
+                trimmed += line.c_str()[ii++];
             }
             else {
                 ii++;
-                if ( line[ii] == '-'  || line[ii] == '+' ) {
+                if ( line.c_str()[ii] == '-'  || line.c_str()[ii] == '+' ) {
                     ii++;
                 }
-                while ( '0' <= line[ii] && line[ii] <= '9' ) {
+                while ( '0' <= line.c_str()[ii] && line.c_str()[ii] <= '9' ) {
                     ii++;
                 }
-                if ( line[ii] == '.' ) {
+                if ( line.c_str()[ii] == '.' ) {
                     ii++;
-                    while ( '0' <= line[ii] && line[ii] <= '9' ) {
+                    while ( '0' <= line.c_str()[ii] && line.c_str()[ii] <= '9' ) {
                         ii++;
                     }
                 }
@@ -1789,8 +1789,8 @@ CFormatGuess::IsSampleNewick(
             return false;
         }
         size_t paren_count = 1;
-        for ( size_t ii=1; line[ii] != 0; ++ii ) {
-            switch ( line[ii] ) {
+        for ( size_t ii=1; line.c_str()[ii] != 0; ++ii ) {
+            switch ( line.c_str()[ii] ) {
                 default: 
                     break;
                 case '(':
