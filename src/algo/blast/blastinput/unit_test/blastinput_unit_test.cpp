@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(ReadGenbankReport)
     BOOST_REQUIRE(source->End() == true);
 
     string s = CNcbiOstrstreamToString(error_stream);
-    BOOST_REQUIRE(s.find("Ignoring invalid residue 1 at ") != NPOS);
+    BOOST_REQUIRE(s.find("Ignoring invalid residues at ") != NPOS);
 
     BOOST_REQUIRE(ssl.seqloc->IsInt() == true);
     BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == true);
