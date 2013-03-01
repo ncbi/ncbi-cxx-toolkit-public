@@ -6514,6 +6514,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "WB<DEU>	s	Universitaet Wuerzburg",
 "WB<USA-WI>	c	Department of Bacteriology, University of Wisconsin",
 "WBCH	s	Wisbech and Fenland Museum",
+"WBG	s	Waimea Botanical Garden",
 "WBM	s	Universitaet Wuerzburg",
 "WBR	s	Laboratoire de Paleontologie, Unversite de Montpellier",
 "WBS	s	Landbouwuniversiteit",
