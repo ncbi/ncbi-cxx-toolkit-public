@@ -90,7 +90,7 @@ CAlnError::CAlnError(const CAlnError& e)
     m_Category = e.GetCategory();
     m_LineNum = e.GetLineNum();
     m_ID = e.GetID();
-    m_Message = e.GetMessage();
+    m_Message = e.GetMsg();
 }
 
 
@@ -176,7 +176,7 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
                    "Error reading alignment", 0);
     }
     
-    int first_len = strlen (afp->sequences[0]);
+    size_t first_len = strlen (afp->sequences[0]);
     for (int i = 1; i < afp->num_sequences; i++) {
         if (strlen (afp->sequences[i]) != first_len) {
             AlignmentFileFree (afp);

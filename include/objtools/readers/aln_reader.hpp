@@ -65,6 +65,10 @@ public:
     EAlnErr        GetCategory() const { return m_Category; }
     int            GetLineNum()  const { return m_LineNum; }
     const string&  GetID()       const { return m_ID; }
+    const string&  GetMsg()      const { return m_Message; }
+
+    /// @deprecated Use GetMsg() instead - to avoid conflict with Windows macro
+    NCBI_DEPRECATED
     const string&  GetMessage()  const { return m_Message; }
     
 private:
