@@ -39,6 +39,9 @@
 #include <limits>
 
 
+#define BINARY(opd) (opd >= ePOW)
+
+
 BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -599,7 +602,7 @@ CExprParser::Scan(bool operand)
 
 #ifdef NCBI_OS_MSWIN
             int n = 0;
-            ierr = sscanf(m_Buf+m_Pos-1, "%" INT_FORMAT "i%n", &ival, &n) != 1;
+            ierr = sscanf(m_Buf+m_Pos-1, "%I64i%n", &ival, &n) != 1;
             ipos = const_cast<char*>(m_Buf+m_Pos-1+n);
 #else
             errno = 0;             

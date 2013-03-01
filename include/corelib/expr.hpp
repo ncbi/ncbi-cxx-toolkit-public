@@ -39,16 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#if defined(NCBI_OS_MSWIN)
-#define INT_FORMAT "I64"
-#elif SIZEOF_LONG == 8
-#define INT_FORMAT "l"
-#else 
-#define INT_FORMAT "ll"
-#endif
-
-
-#define BINARY(opd) (opd >= ePOW)
 
 
 ////////////////////////////////////////////////////////////////////////////////
