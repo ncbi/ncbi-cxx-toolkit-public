@@ -4611,24 +4611,20 @@ bool CBDB_Cache::DropBlobWithExpCheck(unsigned           blob_id,
                                       CBDB_Transaction&  trans)
 {
     string key, subkey;
-    int version;
-    EBDB_ErrCode ret;
+    int    version;
+
     {{
         CFastMutexGuard guard(m_IDIDX_Lock_RO);
 
         m_CacheIdIDX_RO->blob_id = blob_id;
-        ret = m_CacheIdIDX_RO->Fetch();
-        if (ret == eBDB_Ok) {
-            key = m_CacheIdIDX_RO->key;
-            version = m_CacheIdIDX_RO->version;
-            subkey = m_CacheIdIDX_RO->subkey;
-        }
+        if (m_CacheIdIDX_RO->Fetch() != eBDB_Ok)
+            return false;
+        key     = m_CacheIdIDX_RO->key;
+        version = m_CacheIdIDX_RO->version;
+        subkey  = m_CacheIdIDX_RO->subkey;
     }} // m_IDIDX_Lock_RO
 
-    if (ret == eBDB_Ok) {
-        return DropBlobWithExpCheck(key, version, subkey, trans);
-    }
-    return false;
+    return DropBlobWithExpCheck(key, version, subkey, trans);
 }
 
 
@@ -4646,7 +4642,7 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
 
     unsigned coords[2] = {0,};
     unsigned split_coord[2] = {0,};
-    int overflow;
+    int overflow = 0;
     unsigned  blob_id;
 
     bool blob_expired = false;
