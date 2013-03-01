@@ -65,7 +65,7 @@ public:
     CProSplignOptions_Base& SetAltStarts(bool allow_alt_start);
     bool GetAltStarts() const;
 
-    static const string default_score_matrix_name; // BLOSUM62
+    static const char* default_score_matrix_name; // BLOSUM62
     static const bool default_allow_alt_starts;
 
 private:
