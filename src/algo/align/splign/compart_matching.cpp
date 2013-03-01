@@ -63,7 +63,7 @@ namespace {
     const Uint8        kNMersTotal        (Uint8(1) << (kN * 2));
 
     // extension to indicate repeat filtering table
-    const string kFileExt_Masked          (".rep");
+    const char *kFileExt_Masked = ".rep";
 
     // extension to indicate ID and coordinate remapping table
     const char *kFileExt_Remap = ".idc";    
