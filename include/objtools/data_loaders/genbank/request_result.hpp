@@ -673,7 +673,7 @@ private:
 
     void ReleaseLoadLock(const CRef<CLoadInfo>& info);
 
-    typedef map<CRef<CLoadInfo>, CLoadInfoLock*> TLockMap;
+    typedef map<CRef<CLoadInfo>, CRef<CLoadInfoLock> > TLockMap;
     typedef pair<TBlobVersion, CTSE_LoadLock> TBlobLoadInfo;
     typedef map<CBlob_id, TBlobLoadInfo> TBlobLoadLocks;
 

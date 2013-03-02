@@ -285,14 +285,13 @@ CLoadInfoLock::CLoadInfoLock(CReaderRequestResult& owner,
 
 CLoadInfoLock::~CLoadInfoLock(void)
 {
-    ReleaseLock();
-    m_Owner.ReleaseLoadLock(m_Info);
 }
 
 
 void CLoadInfoLock::ReleaseLock(void)
 {
     m_Guard.Release();
+    m_Owner.ReleaseLoadLock(m_Info);
 }
 
 
@@ -601,7 +600,7 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
 
 CReaderRequestResult::~CReaderRequestResult(void)
 {
-    _ASSERT(m_LockMap.empty());
+    ReleaseLocks();
     _ASSERT(!m_AllocatedConnection);
 }
 
@@ -746,21 +745,20 @@ CRef<CTSE_Info> CReaderRequestResult::GetTSE_Info(const CBlob_id& blob_id)
 CRef<CLoadInfoLock>
 CReaderRequestResult::GetLoadLock(const CRef<CLoadInfo>& info)
 {
-    CLoadInfoLock*& lock_ptr = m_LockMap[info];
-    if ( !lock_ptr ) {
-        lock_ptr = new CLoadInfoLock(*this, info);
+    CRef<CLoadInfoLock>& lock = m_LockMap[info];
+    if ( !lock ) {
+        lock = new CLoadInfoLock(*this, info);
     }
     else {
-        _ASSERT(lock_ptr->Referenced());
+        _ASSERT(lock->Referenced());
     }
-    return Ref(lock_ptr);
+    return lock;
 }
 
 
 void CReaderRequestResult::ReleaseLoadLock(const CRef<CLoadInfo>& info)
 {
-    _ASSERT(m_LockMap[info] && !m_LockMap[info]->Referenced());
-    m_LockMap.erase(info);
+    m_LockMap[info] = null;
 }
 
 
@@ -815,11 +813,11 @@ void CReaderRequestResult::SaveLocksTo(TTSE_LockSet& locks)
 
 void CReaderRequestResult::ReleaseLocks(void)
 {
-    NON_CONST_ITERATE( TLockMap, it, m_LockMap ) {
-        it->second->ReleaseLock();
-    }
     m_BlobLoadLocks.clear();
     m_TSE_LockSet.clear();
+    NON_CONST_ITERATE ( TLockMap, it, m_LockMap ) {
+        it->second = null;
+    }
 }
 
 
