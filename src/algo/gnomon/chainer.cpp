@@ -3304,7 +3304,7 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
                 bool valid_intron = false;                                     // some introns might be clipped by previous UTR clips but still be in members
                 for(int j = 1; j < (int)Exons().size() && !valid_intron; ++j) {
                     if(Exons()[j-1].m_ssplice && Exons()[j].m_fsplice) {
-                        TSignedSeqRange jntr(align.Exons()[j-1].Limits().GetTo(),align.Exons()[j].Limits().GetFrom());
+                        TSignedSeqRange jntr(Exons()[j-1].Limits().GetTo(),Exons()[j].Limits().GetFrom());
                         valid_intron = (intr == jntr);
                     }
                 }
