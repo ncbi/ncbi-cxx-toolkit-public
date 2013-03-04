@@ -3697,13 +3697,18 @@ pair<string,int> GetAccVer(const CAlignModel& a, CScope& scope)
         return make_pair(a.TargetAccession(), 0);
 
     try {
-        CSeq_id_Handle idh = sequence::GetId(*a.GetTargetId(), scope); 
-        const CTextseq_id* txtid = idh.GetSeqId()->GetTextseq_Id(); 
-        return (txtid  &&  txtid->IsSetAccession() && txtid->IsSetVersion()) ? 
-            make_pair(txtid->GetAccession(), txtid->GetVersion()) : make_pair(idh.AsString(), 0);
-    } catch (sequence::CSeqIdFromHandleException& e) {
-        return make_pair(a.TargetAccession(), 0);
+        CSeq_id_Handle idh = sequence::GetId(*a.GetTargetId(), scope,
+                                             sequence::eGetId_ForceAcc);
+        if (idh) {
+            CConstRef<CSeq_id> acc = idh.GetSeqId();
+            const CTextseq_id* txtid = acc->GetTextseq_Id();
+            return (txtid  &&  txtid->IsSetAccession() && txtid->IsSetVersion()) ?
+                make_pair(txtid->GetAccession(), txtid->GetVersion()) : make_pair(idh.AsString(), 0);
+        }
     }
+    catch (sequence::CSeqIdFromHandleException& e) {
+    }
+    return make_pair(a.TargetAccession(), 0);
 }
 
 static int s_ExonLen(const CGeneModel& a);
