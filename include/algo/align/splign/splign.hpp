@@ -69,7 +69,7 @@ public:
 
     /// Retrieve the library's version object
 
-    static CRef<CVersion> s_GetVersion(void);
+    static CVersion& s_GetVersion(void);
 
     /// Access the spliced aligner core object.
 
