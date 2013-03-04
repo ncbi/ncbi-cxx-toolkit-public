@@ -70,15 +70,15 @@ namespace {
                 eAppears_Must
             };
 
-            const CFastaReader::CWarning::EType m_eType;
-            const EAppears m_eAppears;
-            const int      m_iLineNumExpected; // 0 if doesn't appear or doesn't matter
+            CFastaReader::CWarning::EType m_eType;
+            EAppears m_eAppears;
+            int      m_iLineNumExpected; // 0 if doesn't appear or doesn't matter
         };
     
-        const string                m_sName; // easier than array index for humans to understand
-        const SOneWarningsInfo      m_warnings_expected[CFastaReader::CWarning::eType_NUM];
-        const CFastaReader::TFlags  m_fFastaFlags;
-        const string                m_sInputFASTA;
+        string                m_sName; // easier than array index for humans to understand
+        SOneWarningsInfo      m_warnings_expected[CFastaReader::CWarning::eType_NUM];
+        CFastaReader::TFlags  m_fFastaFlags;
+        string                m_sInputFASTA;
     };
 
     const static CFastaReader::TFlags kDefaultFastaReaderFlags = 
