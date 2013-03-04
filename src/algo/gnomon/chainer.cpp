@@ -283,14 +283,30 @@ public:
     double MaxScore() const { return m_maxscore; }
     bool Nested() const { return m_nested; }
     bool& Nested() { return m_nested; }
-
-    //    bool BadOverlapTest(const CGeneModel& a) const;
+    bool LargeCdsOverlap(const CGeneModel& a) const;
 
 private:
     TSignedSeqRange m_limits, m_real_cds_limits;
     double m_maxscore;
     bool m_nested;
 };
+
+bool CGene::LargeCdsOverlap(const CGeneModel& a) const {
+
+    ITERATE(CGene, it, *this) {
+        const CGeneModel& b = **it;
+        int common_cds = 0;
+        ITERATE(CGeneModel::TExons, ib, b.Exons()) {
+            ITERATE(CGeneModel::TExons, ia, a.Exons()) {
+                common_cds += (ib->Limits()&b.RealCdsLimits()&ia->Limits()&a.RealCdsLimits()).GetLength();
+            }
+        }
+        if(common_cds > 50)
+            return true;
+    }
+
+    return false;
+}
 
 void CGene::Insert(CChain& a)
 {
@@ -574,18 +590,29 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
 
         return eNotCompatible;
     }
-    
+
     if(gene_good_enough_to_be_annotation && CModelCompare::RangeNestedInIntron(gene_lim_for_nested, algn))    // gene is nested in align's intron
         return eExternal;
     
     if(Include(gene.Limits(),algn_lim_for_nested)) {
-        bool nested = true;
+        bool nested = false;
         ITERATE(CGene, it, gene) {
-            if(algn_lim.IntersectingWith((*it)->Limits()) && !CModelCompare::RangeNestedInIntron(algn_lim_for_nested, **it)) {
-                nested = false;
-                break;
+            if(!algn_lim.IntersectingWith((*it)->Limits()))
+                continue;
+
+            if(CModelCompare::RangeNestedInIntron(algn_lim_for_nested, **it)) {
+                nested = true;
+            } else {
+                TSignedSeqRange model_lim_for_nested = (*it)->Limits();
+                if((*it)->ReadingFrame().NotEmpty())
+                    model_lim_for_nested = (*it)->CompleteCds() ? (*it)->RealCdsLimits() : (*it)->MaxCdsLimits();
+                if(algn_lim_for_nested.IntersectingWith(model_lim_for_nested)) {
+                    nested = false;
+                    break;
+                }
             }
         }
+        
         if(nested) {               // algn is nested in gene's intron    
             if(algn_good_enough_to_be_annotation)
                 return eNested;
@@ -597,16 +624,9 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
 
     if(!algn_cds.Empty() && !gene_cds.Empty()) {                          // both coding
         if (!gene_cds_with_margins.IntersectingWith(algn_cds)) {          // distance > MinIntergenic 
-
             return eOtherGene;
-
-            /*
-            if(gene.BadOverlapTest(algn)) {
-                return eNotCompatible;
-            } else {
-                return eOtherGene;
-            }
-            */
+        } else if(gene.LargeCdsOverlap(algn)) {
+            return eNotCompatible;
         }
     }
     
@@ -2326,8 +2346,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         mi.MarkPostponedForChain();
 
         m_gnomon->GetScore(chain);
-        chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.RemoveFshiftsFromUTRs();
+        chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.ClipToCompleteAlignment(CGeneModel::eCap);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
@@ -2341,12 +2361,11 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             mi.MarkIncludedForChain();
 
             m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
+            chain.RemoveFshiftsFromUTRs();
             chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
             chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
             chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
             chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
-
-            chain.RemoveFshiftsFromUTRs();
         
             if (chain.FullCds()) {
                 chain.Status() |= CGeneModel::eFullSupCDS;
@@ -2384,13 +2403,12 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         if(mi.m_included) continue;
 
         CChain chain(mi);
+        chain.RemoveFshiftsFromUTRs();
 
         mi.MarkIncludedForChain();
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
-
-        chain.RemoveFshiftsFromUTRs();
 
 #ifdef _DEBUG 
         chain.AddComment("Link2  "+GetLinkedIdsForMember(mi));
@@ -2669,10 +2687,9 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
 
         m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
+        chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
-
-        chain.RemoveFshiftsFromUTRs();
 
         _ASSERT( chain.FShiftedLen(chain.GetCdsInfo().Start()+chain.ReadingFrame()+chain.GetCdsInfo().Stop(), false)%3==0 );
 
@@ -2825,6 +2842,7 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
         cov += coverage_raw[i+SCAN_WINDOW]/SCAN_WINDOW;
     }  
 }
+
 
 void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
 
@@ -3086,14 +3104,8 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
             cds.SetReadingFrame(reading_frame);
             cds.SetStart(conf_start,true);
             SetCdsInfo(cds);          
-            TInDels fs;
-            ITERATE(TInDels, i, FrameShifts()) {
-                TSignedSeqRange fullcds = cds.Start()+cds.ReadingFrame()+cds.Stop();
-                if(Include(fullcds,i->Loc()))
-                    fs.push_back(*i);
-            }
-            FrameShifts() = fs;
             gnomon.GetScore(*this);
+            RemoveFshiftsFromUTRs();
             AddComment("Restored confirmed start");
         }
     }
@@ -3103,10 +3115,17 @@ void CChain::RemoveFshiftsFromUTRs()
 {
     TInDels fs;
     ITERATE(TInDels, i, FrameShifts()) {   // removing fshifts in UTRs
-        if (i->IntersectingWith(MaxCdsLimits().GetFrom(), MaxCdsLimits().GetTo()))
+        TSignedSeqRange cds = GetCdsInfo().Cds();
+        if(OpenCds())
+            cds = MaxCdsLimits();
+        if(Include(cds,i->Loc()))
             fs.push_back(*i);
     }
-    FrameShifts() = fs;
+    if(FrameShifts().size() != fs.size()) {
+        FrameShifts() = fs;
+        int mrna_len = AlignLen();
+        m_coverage.resize(mrna_len, m_coverage.back());   // this will slightly shift values compared to recalculation from scratch but will keep better ends
+    }
 }
 
 
@@ -3277,10 +3296,13 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
     TSignedSeqRange hard_limit = amap.MapRangeOrigToEdited(genome_hard_limit);
 
     vector<double> coverage = m_coverage;
+    _ASSERT((int)coverage.size() == mrna_len);
 
     double core_coverage = 0;
-    for (int i = core_lim.GetFrom(); i <= core_lim.GetTo(); ++i)
+    for (int i = core_lim.GetFrom(); i <= core_lim.GetTo(); ++i) {
+        _ASSERT(i >= 0 && i < (int)coverage.size());
         core_coverage += coverage[i];
+    }
     core_coverage /= core_lim.GetLength();
     m_core_coverage = core_coverage;
 
@@ -4980,7 +5002,7 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
 
             if(i == 0) { //first exon
                 a.CutExons(*e);
-                --i;
+                e = &a.Exons()[0];    // we still have at least one exon
                 break;
             }
             
