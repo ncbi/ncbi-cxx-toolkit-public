@@ -2888,18 +2888,65 @@ string& NStr::Replace(const string& src,
         NCBI_THROW2(CStringException, eBadArgs,
                     "NStr::Replace():  source and destination are the same",0);
     }
-    dst = src;
-
-    if ( start_pos + search.size() > src.size() ||
-         search == replace )
+    if ( start_pos + search.size() > src.size()  ||  search == replace ) {
+        dst = src;
         return dst;
+    }
 
-    for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
-        start_pos = dst.find(search, start_pos);
-        if (start_pos == NPOS)
-            break;
-        dst.replace(start_pos, search.size(), replace);
-        start_pos += replace.size();
+    // Use different algorithms depending on size or 'search' and 'replace'
+    // for better performance (and for big strings only! > 16KB).
+
+    if (replace.size() > search.size()  &&  src.size() > 16*1024) {
+        // Replacing string is longer -- worst case.
+        // Try to avoid memory reallocations inside std::string.
+        // Count replacing strings first
+        SIZE_TYPE n = 0;
+        SIZE_TYPE start_orig = start_pos;
+        for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
+            start_pos = src.find(search, start_pos);
+            if (start_pos == NPOS)
+                break;
+            n++;
+            start_pos += search.size();
+        }
+        // Reallocate memory for destination string
+        dst.resize(src.size() - n*search.size() + n*replace.size());
+
+        // Use copy() to create destination string
+        start_pos = start_orig;
+        string::const_iterator src_start = src.begin();
+        string::const_iterator src_end   = src.begin();
+        string::iterator       dst_pos   = dst.begin();
+
+        for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
+            start_pos = src.find(search, start_pos);
+            if (start_pos == NPOS)
+                break;
+            // Copy from source string up to 'search'
+            src_end = src.begin() + start_pos;
+            copy(src_start, src_end, dst_pos); 
+            dst_pos += (src_end - src_start);
+            // Append 'replace'
+            copy(replace.begin(), replace.end(), dst_pos); 
+            dst_pos   += replace.size();
+            start_pos += search.size();
+            src_start = src.begin() + start_pos; 
+        }
+        // Copy source's string tail to the place
+        copy(src_start, src.end(), dst_pos); 
+
+    } else {
+        // Replacing string is shorter or have the same length.
+        // ReplaceInPlace() can be faster on some platform, but not much,
+        // so we use regular algorithm even for equal lengths here.
+        dst = src;
+        for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
+            start_pos = dst.find(search, start_pos);
+            if (start_pos == NPOS)
+                break;
+            dst.replace(start_pos, search.size(), replace);
+            start_pos += replace.size();
+        }
     }
     return dst;
 }
