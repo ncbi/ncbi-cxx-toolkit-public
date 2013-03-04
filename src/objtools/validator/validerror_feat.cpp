@@ -1420,6 +1420,9 @@ void CValidError_feat::ValidateCdregion (
             } else if ( NStr::EqualNocase(key, "protein_id") ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                     "protein_id should not be a gbqual on a CDS feature", feat);
+            } else if ( NStr::EqualNocase(key, "gene_synonym") ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                    "gene_synonym should not be a gbqual on a CDS feature", feat);
             } else if ( NStr::EqualNocase(key, "transcript_id") ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
                     "transcript_id should not be a gbqual on a CDS feature", feat);

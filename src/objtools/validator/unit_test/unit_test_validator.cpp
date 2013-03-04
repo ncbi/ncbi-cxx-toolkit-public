@@ -18989,6 +18989,24 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ANNOT_AnnotLOCs)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnFeature)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CGb_qual> qual(new CGb_qual("gene_synonym", "anything"));
+    cds->SetQual().push_back(qual);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "WrongQualOnFeature", 
+                              "gene_synonym should not be a gbqual on a CDS feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
     string to_fix = "43.098333, -89.405278";
