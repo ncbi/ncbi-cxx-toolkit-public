@@ -151,8 +151,13 @@ static void s_SetPrimitiveData(CUser_field& field, CConstObjectInfo obj)
         break;
 
     case ePrimitiveValueChar:
-        data.SetStr(string(1, obj.GetPrimitiveValueChar()));
+    {
+        TUnicodeSymbol buf[1];
+        buf[0] = CUtf8::CharToSymbol(obj.GetPrimitiveValueChar(),
+                                     eEncoding_ISO8859_1);
+        data.SetStr(CUtf8::AsUTF8(buf, 1));
         break;
+    }
 
     case ePrimitiveValueInteger:
         if (obj.IsPrimitiveValueSigned()) {
