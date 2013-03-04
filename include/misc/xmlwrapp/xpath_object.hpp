@@ -245,6 +245,9 @@ private:
     friend class extension_function;
     friend class extension_element;
     void *  get_object (void) const;
+    void revoke_ownership (void) const;
+    void set_from_xslt(void) const;
+    bool get_from_xslt(void) const;
     xpath_object (void *);
     friend void ::xslt_ext_func_cb(void *, int);
 

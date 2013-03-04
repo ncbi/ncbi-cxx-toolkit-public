@@ -39,6 +39,7 @@
 #include <misc/xmlwrapp/xpath_errors.hpp>
 #include <misc/xmlwrapp/extension_function.hpp>
 #include <misc/xmlwrapp/xslt_exception.hpp>
+#include <misc/xmlwrapp/xslt_init.hpp>
 
 // libxml2
 #include <libxml/xpath.h>
@@ -47,6 +48,7 @@
 #include <libxslt/xsltutils.h>
 
 #include "extension_function_impl.hpp"
+#include "stylesheet_impl.hpp"
 
 namespace xslt {
 
@@ -179,17 +181,39 @@ namespace xslt {
             throw xslt::exception("Setting XSLT extension function return value "
                                   "out of XSLT context.");
 
-        xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(
-                                                        ret_val.get_object());
+        xmlXPathObjectPtr           object =
+                    reinterpret_cast<xmlXPathObjectPtr>(ret_val.get_object());
         if (object == NULL)
             throw xslt::exception("Uninitialised xpath_object");
 
-        xmlXPathObjectPtr   copy = xmlXPathObjectCopy(object);
-        if (copy == NULL)
-            throw xslt::exception("Cannot copy xpath_object");
+        // The xslt context holds a list of nodes to be freed later
+        xsltTransformContextPtr     xslt_ctxt =
+                    xsltXPathGetTransformContext(pimpl_->xpath_parser_ctxt);
 
-        valuePush(pimpl_->xpath_parser_ctxt, copy);
-        return;
+        // This allows to avoid copying the real xpath object
+        ret_val.revoke_ownership();
+
+
+        // This is a part of a hack of leak-less handling nodeset return values
+        // from XSLT extension functions. XSLT frees nodes in a nodeset too
+        // early so the boolval must not be 1 (auto node deletion).
+        // So the boolval here is set to 0 and to avoid leaks the nodes are
+        // memorized in a transformation context to be freed later.
+        // See stylesheet.cpp and xpath_object.cpp as well.
+        if (init::get_allow_extension_functions_leak() == false) {
+            if (object->type == XPATH_NODESET ||
+                object->type == XPATH_XSLT_TREE) {
+                if (ret_val.get_from_xslt() == false) {
+                    object->boolval = 0;
+                    for (int k = 0; k < object->nodesetval->nodeNr; ++k)
+                        reinterpret_cast<xslt::impl::stylesheet_impl*>
+                            (xslt_ctxt->_private)->nodes_to_free_.push_back(
+                                                object->nodesetval->nodeTab[k]);
+                }
+            }
+        }
+
+        valuePush(pimpl_->xpath_parser_ctxt, object);
     }
 
 } // xslt namespace

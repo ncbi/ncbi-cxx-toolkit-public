@@ -39,6 +39,7 @@
 #include <misc/xmlwrapp/xpath_object.hpp>
 #include <misc/xmlwrapp/xslt_exception.hpp>
 #include <misc/xmlwrapp/node.hpp>
+#include <misc/xmlwrapp/xslt_init.hpp>
 
 #include "node_set_impl.hpp"
 
@@ -58,15 +59,17 @@ namespace xslt {
         struct xpath_obj_impl
         {
             xmlXPathObjectPtr   obj_;
+            mutable bool        owner_;
+            bool                from_xslt_;
 
             xpath_obj_impl(void*  obj) :
                 obj_(reinterpret_cast<xmlXPathObjectPtr>(obj)),
-                refcnt_(1)
+                owner_(true), from_xslt_(false), refcnt_(1)
             {}
             void inc_ref() { ++refcnt_; }
             void dec_ref() {
                 if (--refcnt_ == 0) {
-                    if (obj_)
+                    if (obj_ && owner_)
                         xmlXPathFreeObject(obj_);
                     delete this;
                 }
@@ -204,16 +207,18 @@ namespace xslt {
             throw xslt::exception("Could not create new xpath node");
         }
 
-        // libxml2 has some undocumented behavior implemented in
-        // xmlXPathFreeObject(). It appears in case if the stored object is
-        // of XPATH_NODESET or XPATH_XSLT_TREE type.
-        // Depending on the xmlXPathObjectPtr->boolval value freeing is done
-        // differently: 1) the only node set structure is deleted 2) node
-        // set structure is deleted and the nodes it points to are also
-        // deleted. By default case 1 is working and it leaves nodes not
-        // destroyed if they were copied (it is done here).
-        // So I set boolval to 1 to make the nodes freed properly.
-        new_obj->boolval = 1;
+        // This is a part of a hack of leak-less handling nodeset return values
+        // from XSLT extension functions.
+        // libxml2 has undocumented behavior of how to free xmlXPathObject.
+        // It depends on the boolval value. If it is 0 then the only
+        // xmlXPathObject structure is freed. If it is 1 then the structure is
+        // freed and all the contained nodes are freed as well. Here I have to
+        // set boolval to 1 however if this object is passed to XSLT as a
+        // return value, it should be reset due to a bug (?) in libxslt which
+        // frees the nodes too early so that xslt does not work as expected.
+        // See extension_function.cpp and stylesheet.cpp as well.
+        if (init::get_allow_extension_functions_leak() == false)
+            new_obj->boolval = 1;
 
         try {
             pimpl_ = new impl::xpath_obj_impl(new_obj);
@@ -266,8 +271,11 @@ namespace xslt {
             throw xslt::exception(kCouldNotCreateXpathNodeSet);
         }
 
-        // See the comment above about the boolval member
-        new_obj->boolval = 1;
+        // This is a part of a hack of leak-less handling nodeset return values
+        // from XSLT extension functions.
+        // See detailed comment about boolval above.
+        if (init::get_allow_extension_functions_leak() == false)
+            new_obj->boolval = 1;
 
         try {
             pimpl_ = new impl::xpath_obj_impl(new_obj);
@@ -321,8 +329,11 @@ namespace xslt {
             throw xslt::exception(kCouldNotCreateXpathNodeSet);
         }
 
-        // See the comment above about the boolval member
-        new_obj->boolval = 1;
+        // This is a part of a hack of leak-less handling nodeset return values
+        // from XSLT extension functions.
+        // See detailed comment about boolval above.
+        if (init::get_allow_extension_functions_leak() == false)
+            new_obj->boolval = 1;
 
         try {
             pimpl_ = new impl::xpath_obj_impl(new_obj);
@@ -476,6 +487,21 @@ namespace xslt {
     void *  xpath_object::get_object(void) const
     {
         return pimpl_->obj_;
+    }
+
+    void xpath_object::revoke_ownership(void) const
+    {
+        pimpl_->owner_ = false;
+    }
+
+    void xpath_object::set_from_xslt(void) const
+    {
+        pimpl_->from_xslt_ = true;
+    }
+
+    bool xpath_object::get_from_xslt(void) const
+    {
+        return pimpl_->from_xslt_;
     }
 
     xpath_object::xpath_object(void *  raw_object) :

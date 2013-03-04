@@ -61,6 +61,12 @@
 
 namespace xslt {
 
+    namespace impl {
+        // Forward declaration
+        struct stylesheet_impl;
+    }
+
+
 /**
  * The xslt::stylesheet class is used to hold information about an XSLT
  * stylesheet. You can use it to load in a stylesheet and then use that
@@ -68,8 +74,6 @@ namespace xslt {
 **/
 class stylesheet {
 public:
-    struct pimpl;
-
     /// Type for passing parameters to the stylesheet
     typedef std::map<std::string, std::string> param_type;
 
@@ -260,7 +264,7 @@ public:
     const std::string& get_error_message (void) const;
 
 private:
-    pimpl *pimpl_;
+    impl::stylesheet_impl *pimpl_;
 
     // an xslt::stylesheet cannot yet be copied or assigned to.
     stylesheet (const stylesheet&);

@@ -57,28 +57,29 @@
     #include <libexslt/exslt.h>
 #endif
 
-//####################################################################
 namespace {
     extern "C" void xslt_error (void *, const char*, ...);
 }
-//####################################################################
+
 int xslt::init::ms_counter = 0;
-//####################################################################
+bool xslt::init::ext_func_leak = false;
+
 xslt::init::init (void) {
     if ( ms_counter++ == 0 )
         init_library();
 }
-//####################################################################
+
 xslt::init::~init (void) {
     if ( --ms_counter == 0 )
         shutdown_library();
 }
-//####################################################################
+
 void xslt::init::init_library() {
     xsltInit();
 
     // set some defautls
     process_xincludes(true);
+    set_allow_extension_functions_leak(false);
 
     // keep libxslt silent
     xsltSetGenericErrorFunc(0, xslt_error);
@@ -89,17 +90,25 @@ void xslt::init::init_library() {
         exsltRegisterAll();
     #endif
 }
-//####################################################################
+
 void xslt::init::shutdown_library() {
     xsltCleanupGlobals();
 }
-//####################################################################
+
 void xslt::init::process_xincludes (bool flag) {
     xsltSetXIncludeDefault(flag ? 1 : 0);
 }
-//####################################################################
+
+void xslt::init::set_allow_extension_functions_leak (bool flag) {
+    ext_func_leak = flag;
+}
+
+bool xslt::init::get_allow_extension_functions_leak (void) {
+    return ext_func_leak;
+}
+
 namespace {
     extern "C" void xslt_error (void*, const char*, ...)
     { /* don't do anything */ }
 }
-//####################################################################
+

@@ -74,45 +74,17 @@
 #include "extension_function_impl.hpp"
 #include "extension_element_impl.hpp"
 
-
-// Typedefs to support extension functions
-// Key: func name + URI
-typedef std::pair<std::string,
-                  std::string>                  ext_func_key;
-// Properties: pointer to interface + ownership
-typedef std::pair<xslt::extension_function *,
-                  xml::ownership_type>          ext_func_props;
-// Container to store extension functions
-typedef std::map<ext_func_key,
-                 ext_func_props>                ext_funcs_map_type;
-
-// Typedefs to support extension elements
-// Key: element name + URI
-typedef std::pair<std::string,
-                  std::string>                  ext_elem_key;
-// Properties: pointer to interface + ownership
-typedef std::pair<xslt::extension_element *,
-                  xml::ownership_type>          ext_elem_props;
-// Container to store extension elements
-typedef std::map<ext_elem_key,
-                 ext_elem_props>                ext_elems_map_type;
+#include "stylesheet_impl.hpp"
 
 
 
-struct xslt::stylesheet::pimpl
+void xslt::impl::stylesheet_impl::clear_nodes (void)
 {
-    pimpl (void) : ss_(0), errors_occured_(false) { }
-
-    xsltStylesheetPtr       ss_;
-    xml::document           doc_;
-    std::string             error_;
-    bool                    errors_occured_;
-
-    // Extension functions support
-    ext_funcs_map_type      ext_functions_;
-    ext_elems_map_type      ext_elements_;
-};
-
+    for (std::vector<xmlNodePtr>::const_iterator k = nodes_to_free_.begin();
+         k != nodes_to_free_.end(); ++k)
+        xmlFreeNode(*k);
+    nodes_to_free_.clear();
+}
 
 
 extern "C" {
@@ -121,11 +93,11 @@ extern "C" {
     void xslt_ext_func_cb(void *c, int arg_num)
     {
         xmlXPathParserContext *     ctxt =
-                                reinterpret_cast<xmlXPathParserContext *>(c);
+                    reinterpret_cast<xmlXPathParserContext *>(c);
         xsltTransformContextPtr     xslt_ctxt =
-                                xsltXPathGetTransformContext(ctxt);
-        xslt::stylesheet::pimpl *   impl =
-                                reinterpret_cast<xslt::stylesheet::pimpl *>(
+                    xsltXPathGetTransformContext(ctxt);
+        xslt::impl::stylesheet_impl *   s_impl =
+                    reinterpret_cast<xslt::impl::stylesheet_impl *>(
                                                         xslt_ctxt->_private);
         xmlNodePtr                  current_node = ctxt->context->node;
         xmlDocPtr                   current_doc = ctxt->context->doc;
@@ -137,8 +109,8 @@ extern "C" {
             key.second = reinterpret_cast<const char *>(
                                         ctxt->context->functionURI);
 
-        ext_funcs_map_type::iterator  found = impl->ext_functions_.find(key);
-        if (found == impl->ext_functions_.end())
+        ext_funcs_map_type::iterator  found = s_impl->ext_functions_.find(key);
+        if (found == s_impl->ext_functions_.end())
             return; // No extension function were found
 
         // The corresponding extension function has been found.
@@ -149,14 +121,15 @@ extern "C" {
 
         // Prepare arguments for the extension function call. Arguments are
         // coming in the reverse order.
-        args.reserve( arg_num );
+        args.reserve(arg_num);
         for (int  k = 0; k < arg_num; ++k) {
             xmlXPathObjectPtr   current_arg = valuePop(ctxt);
 
-            args.insert(
-                    args.begin(),
-                    xslt::xpath_object(reinterpret_cast<void*>(current_arg)));
+            args.insert(args.begin(),
+                        xslt::xpath_object(reinterpret_cast<void*>(current_arg)));
+            args[0].set_from_xslt();
         }
+
 
         // Wrap libxml2 data with xmlwrapp and make sure that xmlwrapp does NOT
         // have ownership on the node and the document.
@@ -193,11 +166,11 @@ extern "C" {
                              void *compiled_stylesheet_info)
     {
         xsltTransformContextPtr     xslt_ctxt =
-                                reinterpret_cast<xsltTransformContextPtr>(c);
+                    reinterpret_cast<xsltTransformContextPtr>(c);
         xmlNodePtr                  instruction_node =
-                                reinterpret_cast<xmlNodePtr>(instruction_node_);
-        xslt::stylesheet::pimpl *   impl =
-                                reinterpret_cast<xslt::stylesheet::pimpl *>(
+                    reinterpret_cast<xmlNodePtr>(instruction_node_);
+        xslt::impl::stylesheet_impl *   s_impl =
+                    reinterpret_cast<xslt::impl::stylesheet_impl *>(
                                                         xslt_ctxt->_private);
 
         ext_elem_key                key;
@@ -205,8 +178,8 @@ extern "C" {
         if (instruction_node->ns != NULL && instruction_node->ns->href != NULL)
             key.second = reinterpret_cast<const char *>(instruction_node->ns->href);
 
-        ext_elems_map_type::iterator    found = impl->ext_elements_.find(key);
-        if (found == impl->ext_elements_.end())
+        ext_elems_map_type::iterator    found = s_impl->ext_elements_.find(key);
+        if (found == s_impl->ext_elements_.end())
             return; // No extension element were found
 
         // The corresponding extension element has been found.
@@ -325,18 +298,18 @@ extern "C"
 static void error_cb(void *c, const char *message, ...)
 {
     xsltTransformContextPtr ctxt = static_cast<xsltTransformContextPtr>(c);
-    xslt::stylesheet::pimpl *impl = static_cast<xslt::stylesheet::pimpl*>(
+    xslt::impl::stylesheet_impl *s_impl = static_cast<xslt::impl::stylesheet_impl*>(
                                                                 ctxt->_private);
 
-    impl->errors_occured_ = true;
+    s_impl->errors_occured_ = true;
 
     // tell the processor to stop when it gets a chance:
     if ( ctxt->state == XSLT_STATE_OK )
         ctxt->state = XSLT_STATE_STOPPED;
 
     // concatenate all error messages:
-    if ( impl->errors_occured_ )
-        impl->error_.append("\n");
+    if ( s_impl->errors_occured_ )
+        s_impl->error_.append("\n");
 
     std::string formatted;
 
@@ -345,30 +318,30 @@ static void error_cb(void *c, const char *message, ...)
     xml::impl::printf2string(formatted, message, ap);
     va_end(ap);
 
-    impl->error_.append(formatted);
+    s_impl->error_.append(formatted);
 }
 
 } // extern "C"
 
 
 
-xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
+xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
                            xmlDocPtr doc,
                            const xslt::stylesheet::param_type *p = NULL)
 {
-    xsltStylesheetPtr style = impl->ss_;
+    xsltStylesheetPtr style = s_impl->ss_;
 
     std::vector<const char*> v;
     if (p)
         make_vector_param(v, *p);
 
     xsltTransformContextPtr ctxt = xsltNewTransformContext(style, doc);
-    ctxt->_private = impl;
+    ctxt->_private = s_impl;
     xsltSetTransformErrorFunc(ctxt, ctxt, error_cb);
 
     // Register extension functions
-    for (ext_funcs_map_type::iterator k = impl->ext_functions_.begin();
-         k != impl->ext_functions_.end(); ++k) {
+    for (ext_funcs_map_type::iterator k = s_impl->ext_functions_.begin();
+         k != s_impl->ext_functions_.end(); ++k) {
         if (xsltRegisterExtFunction(
                 ctxt,
                 reinterpret_cast<const xmlChar*>(k->first.first.c_str()),
@@ -381,8 +354,8 @@ xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
     }
 
     // Register extension elements
-    for (ext_elems_map_type::iterator k = impl->ext_elements_.begin();
-         k != impl->ext_elements_.end(); ++k) {
+    for (ext_elems_map_type::iterator k = s_impl->ext_elements_.begin();
+         k != s_impl->ext_elements_.end(); ++k) {
         if (xsltRegisterExtElement(
                 ctxt,
                 reinterpret_cast<const xmlChar*>(k->first.first.c_str()),
@@ -395,16 +368,24 @@ xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
     }
 
     // clear the error flag before applying the stylesheet
-    impl->errors_occured_ = false;
+    s_impl->errors_occured_ = false;
 
     xmlDocPtr result =
         xsltApplyStylesheetUser(style, doc, p ? &v[0] : 0, NULL, NULL, ctxt);
+
+    // This is a part of a hack of leak-less handling nodeset return values
+    // from XSLT extension functions. XSLT frees nodes in a nodeset too early
+    // so the boolval is not set to 1 to free them automatically. Instead the
+    // nodes are memorized in a vector. These nodes are freed here, i.e. when
+    // the transformation is completed.
+    // See extension_function.cpp and xpath_object.cpp as well.
+    s_impl->clear_nodes();
 
     xsltFreeTransformContext(ctxt);
 
     // it's possible there was an error that didn't prevent creation of some
     // (incorrect) document
-    if ( result && impl->errors_occured_ )
+    if ( result && s_impl->errors_occured_ )
     {
         xmlFreeDoc(result);
         return NULL;
@@ -413,8 +394,8 @@ xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
     if ( !result )
     {
         // set generic error message if nothing more specific is known
-        if ( impl->error_.empty() )
-            impl->error_ = "unknown XSLT transformation error";
+        if ( s_impl->error_.empty() )
+            s_impl->error_ = "unknown XSLT transformation error";
         return NULL;
     }
 
@@ -437,10 +418,10 @@ xslt::impl::result *  xslt::impl::make_copy (xslt::impl::result *  pattern)
 
 xslt::stylesheet::stylesheet(const char *filename)
 {
-    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
-    xml::error_messages     msgs;
-    xml::document           doc(filename, &msgs, xml::type_warnings_not_errors);
-    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+    std::auto_ptr<impl::stylesheet_impl>    ap(pimpl_ = new impl::stylesheet_impl);
+    xml::error_messages                     msgs;
+    xml::document                           doc(filename, &msgs, xml::type_warnings_not_errors);
+    xmlDocPtr                               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -466,7 +447,8 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
     xml::document           doc_copy(doc);  /* NCBI_FAKE_WARNING */
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(
                                                 doc_copy.get_doc_data());
-    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
+    std::auto_ptr<impl::stylesheet_impl>
+                            ap(pimpl_ = new impl::stylesheet_impl);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -490,7 +472,8 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
 
 xslt::stylesheet::stylesheet (const char* data, size_t size)
 {
-    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
+    std::auto_ptr<impl::stylesheet_impl>
+                            ap(pimpl_ = new impl::stylesheet_impl);
     xml::error_messages     msgs;
     xml::document           doc(data, size, &msgs,
                                 xml::type_warnings_not_errors);
@@ -517,7 +500,8 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
 
 xslt::stylesheet::stylesheet (std::istream & stream)
 {
-    std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
+    std::auto_ptr<impl::stylesheet_impl>
+                            ap(pimpl_ = new impl::stylesheet_impl);
     xml::error_messages     msgs;
     xml::document           doc(stream, &msgs, xml::type_warnings_not_errors);
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
