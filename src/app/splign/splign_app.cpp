@@ -89,7 +89,7 @@ BEGIN_NCBI_SCOPE
 
 CSplignApp::CSplignApp(void)
 {
-    CRef<CVersion> version (CSplign::s_GetVersion());
+    CRef<CVersion> version (&CSplign::s_GetVersion());
     SetFullVersion(version);
     m_AppName = version->Print("Splign");
 }
