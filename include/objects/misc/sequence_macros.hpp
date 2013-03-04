@@ -947,6 +947,11 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define FIELD_IS_SET_AND_IS(Var, Fld, Chs) \
     ( (Var).IsSet##Fld() && (Var).Get##Fld().Is##Chs() )
 
+/// FIELD_IS_AND_IS_SET base macro
+
+#define FIELD_IS_AND_IS_SET(Var, Chs, Fld)                          \
+    ( (Var).Is##Chs() && (Var).Get##Chs().IsSet##Fld() )
+
 /// FIELD_IS_SET base macro
 
 #define FIELD_IS_SET(Var, Fld) \
