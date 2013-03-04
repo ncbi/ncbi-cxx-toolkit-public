@@ -918,7 +918,8 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
             CRef<CUser_field> field(new CUser_field), subfield(new CUser_field);
             field->SetLabel().SetId(0);
             subfield->SetLabel().SetStr("accession");
-            subfield->SetData().SetStr(*it);
+            subfield->SetData().SetStr
+                (CUtf8::AsUTF8(*it, eEncoding_ISO8859_1));
             field->SetData().SetFields().push_back(subfield);
             data.push_back(field);
         }
