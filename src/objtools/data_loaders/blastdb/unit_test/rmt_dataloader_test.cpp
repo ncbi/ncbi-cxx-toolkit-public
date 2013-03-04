@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
     objmgr->GetRegisteredNames(loader_names);
-    BOOST_REQUIRE_EQUAL(1, loader_names.size());
+    BOOST_REQUIRE_EQUAL(1U, loader_names.size());
     BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_ntNucleotide", loader_names.front());
 
     {{ // limit the lifespan of the CScope object
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
         scope->AddDataLoader(*name);
     }
 
-    typedef vector< pair<int, int> > TGiLengthVector;
+    typedef vector< pair<int, CSeq_inst::TLength> > TGiLengthVector;
     TGiLengthVector test_data;
     test_data.push_back(make_pair(129295, 232));
     test_data.push_back(make_pair(129296, 388));

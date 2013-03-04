@@ -711,7 +711,7 @@ void TestMapping_ThroughAlignments()
         "  Mapping through sparse-seg"
     };
 
-    for (int i = 0; i < sizeof(titles)/sizeof(titles[0]); i++) {
+    for (size_t i = 0; i < sizeof(titles)/sizeof(titles[0]); i++) {
         cout << titles[i] << endl;
         in >> MSerial_AsnText >> aln;
         auto_ptr<CSeq_loc_Mapper_Base> mapper(new CSeq_loc_Mapper_Base(aln, 0));

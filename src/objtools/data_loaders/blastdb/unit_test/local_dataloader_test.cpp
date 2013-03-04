@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseq)
      CSeq_id seqid1(CSeq_id::e_Gi, 555);  // nucleotide
 
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
-     BOOST_REQUIRE_EQUAL(624, handle1.GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(624U, handle1.GetInst().GetLength());
      int taxid = scope.GetTaxId(seqid1);
      BOOST_REQUIRE_EQUAL(9913, taxid);
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
      BOOST_REQUIRE(!handle2);
      BOOST_REQUIRE(handle2.State_NoData());
-     BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope.GetTaxId(seqid2));
+     BOOST_REQUIRE_EQUAL(-1, scope.GetTaxId(seqid2));
 }
 
 END_SCOPE(blast)
