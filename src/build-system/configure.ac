@@ -3866,7 +3866,7 @@ if test "x$with_krb5" != xno; then
       KRB5_INCLUDE=`$KRB5_CONFIG --cflags | \
          sed -e 's/$/ /; s,-I/usr/include ,,'`
       KRB5_CONFIG_LIBS=`$KRB5_CONFIG --libs gssapi | \
-         sed -e 's/^/ /; s/ -[^Ll][^ ]*//g'`
+         sed -e 's/^/ /; s/ -[[^Ll]][[^ ]]*//g'`
    fi
 else
    dnl AS_UNSET(KRB5_CONFIG_LIBS)
