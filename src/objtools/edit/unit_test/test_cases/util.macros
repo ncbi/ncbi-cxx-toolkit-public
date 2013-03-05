@@ -1,0 +1,138 @@
+#ifndef __UTIL_MACROS__
+#define __UTIL_MACROS__
+
+/* contains various handy macros */
+
+#define CONCAT(...) __VA_ARGS__
+#define PREPEND_ARG(_macro_name, _str, ...) _macro_name(_str, __VA_ARGS__)
+
+/* outputs every pairing of "..." with _1, and _2, etc. calling the given
+   macro name */
+#define PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, ... ) \
+    _macro_name(__VA_ARGS__, _1), \
+    _macro_name(__VA_ARGS__, _2), \
+    _macro_name(__VA_ARGS__, _3), \
+    _macro_name(__VA_ARGS__, _4), \
+    _macro_name(__VA_ARGS__, _5), \
+    _macro_name(__VA_ARGS__, _6), \
+    _macro_name(__VA_ARGS__, _7), \
+    _macro_name(__VA_ARGS__, _8), \
+    _macro_name(__VA_ARGS__, _9), \
+    _macro_name(__VA_ARGS__, _10)
+
+#define PAIR_CARTESIAN_PRODUCT(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10) \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1),  \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10)
+
+#define TRIPLET_CARTESIAN_PRODUCT(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10) \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _1, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _2, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _3, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _4, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _5, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _6, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _7, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _8, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _9, _10), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _1), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _2), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _3), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _4), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _5), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _6), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _7), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _8), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _9), \
+    PAIR_COMBO(_macro_name, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _10, _10)
+
+
+#endif /* ! __UTIL_MACROS__ */

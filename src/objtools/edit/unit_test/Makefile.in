@@ -4,7 +4,7 @@
 
 # $Id$
 
-APP_PROJ = unit_test_autodef
+APP_PROJ = unit_test_autodef unit_test_entry_edit
 PROJ_TAG = test
 
 srcdir = @srcdir@

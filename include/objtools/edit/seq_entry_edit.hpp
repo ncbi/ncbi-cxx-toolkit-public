@@ -92,6 +92,47 @@ NCBI_XOBJEDIT_EXPORT
 void AddBioseqToBioseqSet(const CBioseq_set_Handle& bsst, const CBioseq_Handle& seq);
 
 
+/// Split a Seq-entry, where the second part holds the given bioseqs.
+/// There are various complex rules here that may not be obvious at first glance.
+/// @param target
+///   The Seq-entry to split
+/// @param bioseq_handles
+///   The array of bioseqs that should end up in the second part of the target, with the rest in the first part.
+NCBI_XOBJEDIT_EXPORT
+void SegregateSetsByBioseqList(const CSeq_entry_Handle & target, 
+    const CScope::TBioseqHandles & bioseq_handles );    
+
+typedef vector<CSeq_entry_Handle> TVecOfSeqEntryHandles;
+
+/// Call this if the alignments directly under these seq-entries are 
+/// all jumbled up between each other.
+/// It will move each Seq-align into the proper location.
+/// In particular, it looks at all the seq-ids in each seq-align.  If
+/// none of them belong to any member of vecOfSeqEntryHandles, then
+/// that Seq-align is copied to all members of vecOfSeqEntryHandles.
+/// If it belongs to only one member of vecOfSeqEntryHandles, then it
+/// goes there.  If the align belongs to more than one, it's destroyed.
+///
+/// @param vecOfSeqEntryHandles
+///   The Seq-entries we're considering for alignments.
+NCBI_XOBJEDIT_EXPORT
+void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles);
+
+/// Moves descriptors down to children of the given bioseq-set.  Each child
+/// gets a copy of all the descriptors.  It does NOT check for 
+/// duplicate Seqdescs.
+///
+/// @param bioseq_set_h
+///   This is the bioseq_set whose descriptors we're moving.
+/// @param choices_to_delete
+///   If non-empty, it indicates the types of CSeqdescs to delete instead
+///   of propagating.
+NCBI_XOBJEDIT_EXPORT
+void BioseqSetDescriptorPropagateDown(
+    const CBioseq_set_Handle & bioseq_set_h,
+    const vector<CSeqdesc::E_Choice> &choices_to_delete = 
+        vector<CSeqdesc::E_Choice>() );
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
