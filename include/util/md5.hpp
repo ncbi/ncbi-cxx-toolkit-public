@@ -53,13 +53,14 @@ public:
     // for convenience
     static string GetHexSum(unsigned char digest[16]);
 
-private:
-    void Transform(void);
-
+protected:
     enum {
         // Block size defined by algorithm; DO NOT CHANGE.
         kBlockSize = 64
     };
+
+private:
+    void Transform(void);
 
     Uint4         m_Buf[4];
     Int8          m_Bits; // must be a 64-bit count
