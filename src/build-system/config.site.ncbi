@@ -138,6 +138,11 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    Linux*     ) : ${PERL_PATH=/opt/perl-5.8.8} ;;
+    *          ) : ${PERL_PATH=/usr} ;;
+esac
+
+case "$ncbi_platform" in
     *MAC       ) : ${PNG_PATH=/usr/X11} ;;
 esac
 
