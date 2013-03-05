@@ -391,6 +391,12 @@ const SUserAgent s_UserAgentTests[] = {
         { 5, 0, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
+    { "Mozilla/5.0 (Linux; Android 4.2.1; Nexus 4 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19",
+        CCgiUserAgent::eChrome,         { 18, 0,1025},
+        CCgiUserAgent::eEngine_KHTML,   {535, 19, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_MobileDevice
+    },
 
 
     // Platform tests

@@ -939,7 +939,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     }
     // Make additional check if platform is still undefined
     if ( m_Platform == ePlatform_Unknown ) {
-        if (m_UserAgent.find(USTR("Nokia"))        != NPOS  ||  // Nokia
+        if (m_UserAgent.find(USTR("Android "))     != NPOS  ||  // All Android based devices
+            m_UserAgent.find(USTR("Nokia"))        != NPOS  ||  // Nokia
             //m_UserAgent.find(USTR("HTC-"))       != NPOS  ||  // HTC
             //m_UserAgent.find(USTR("HTC_"))       != NPOS  ||  // HTC
             m_UserAgent.find(USTR("iPod"))         != NPOS  ||  // Apple iPod 
