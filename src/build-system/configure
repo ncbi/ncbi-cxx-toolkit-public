@@ -24949,8 +24949,9 @@ echo "${ECHO_T}no" >&6
 fi
 
    if test -x "$PERL"; then
-      PERL_ARCHLIB=`$PERL -MConfig -e 'print \$Config{archlib};'`
-      PERL_INCLUDE=-I$PERL_ARCHLIB/CORE
+      PERL_ARCHLIB=`$PERL -MConfig -e 'print \$Config{archlibexp};'`
+      PERL_FLAGS=`$PERL -MConfig -e 'print \$Config{cppflags};'`
+      PERL_INCLUDE="-I$PERL_ARCHLIB/CORE $PERL_FLAGS"
       PERL_DEPS=`$PERL -MConfig -e 'print \$Config{libs};'`
       ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
