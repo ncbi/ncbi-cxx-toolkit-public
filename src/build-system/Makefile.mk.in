@@ -392,6 +392,11 @@ PYTHON24_LIBS    = @PYTHON24_LIBS@
 PYTHON25_INCLUDE = @PYTHON25_INCLUDE@
 PYTHON25_LIBS    = @PYTHON25_LIBS@
 
+# Perl: executable, headers and libs
+PERL         = @PERL@
+PERL_INCLUDE = @PERL_INCLUDE@
+PERL_LIBS    = @PERL_LIBS@
+
 # Java: headers and installation root
 JDK_INCLUDE = @JDK_INCLUDE@
 JDK_PATH    = @JDK_PATH@

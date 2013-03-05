@@ -65,10 +65,10 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre,
-                     gcrypt, gnutls, openssl, krb5,
+                     gcrypt, gnutls, openssl, krb5, boost,
                      sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
-                     python, jni, boost, sqlite3, mimetic, sge, icu, sp, expat,
+                     python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
                      magic, curl],
@@ -337,6 +337,10 @@ AC_ARG_WITH(python,
    [ --with-python=DIR       use Python installation in DIR])
 AC_ARG_WITH(python2,
    [ --without-python        do not use Python])
+AC_ARG_WITH(perl,
+   [ --with-perl=DIR         use Perl installation in DIR])
+AC_ARG_WITH(perl2,
+   [ --without-perl          do not use Perl])
 AC_ARG_WITH(jni,
    [ --with-jni(=JDK-DIR)    build Java bindings (against the JDK in JDK-DIR)])
 AC_ARG_WITH(boost,
@@ -485,7 +489,7 @@ ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
 ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
-bdb python jni sqlite3 icu boost boost-tag \
+bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl mimetic 3psw \
@@ -536,7 +540,7 @@ for x_arg in "$@" ; do
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
-      | --with-bdb=* | --with-odbc=* | --with-python=* \
+      | --with-bdb=* | --with-odbc=* | --with-python=* | --with-perl=* \
       | --with-freetype=* | --with-ftgl=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-glew=* | --with-oechem=* \
@@ -4505,6 +4509,38 @@ if test "$with_python" != "no" ; then
    fi
 fi
 
+## Perl
+if test "$with_perl" != "no" ; then
+   case "$with_perl" in
+      yes | "" ) ;;
+      */*      ) PERL_PATH=$with_perl ;;
+   esac
+   AC_PATH_PROG(PERL, perl, [], [$PERL_PATH/bin:$PATH])
+   if test -x "$PERL"; then
+      PERL_ARCHLIB=`$PERL -MConfig -e 'print \$Config{archlib};'`
+      PERL_INCLUDE=-I$PERL_ARCHLIB/CORE
+      PERL_DEPS=`$PERL -MConfig -e 'print \$Config{libs};'`
+      NCBI_RPATHIFY(PERL_LIBS, $PERL_ARCHLIB/CORE, [ -lperl $PERL_DEPS])
+      CPPFLAGS="$PERL_INCLUDE $orig_CPPFLAGS"
+      LIBS="$PERL_LIBS $orig_LIBS"
+      AC_CACHE_CHECK([for usable Perl libraries], [ncbi_cv_lib_perl],
+         [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+                [[
+#include <EXTERN.h>
+#include <perl.h>]],
+                [[PerlInterpreter* p = perl_alloc();]])],
+             [ncbi_cv_lib_perl=yes], [ncbi_cv_lib_perl=no])])
+   fi
+   if test "$ncbi_cv_lib_perl" = yes; then
+      NCBI_PACKAGE(PERL)
+      dnl AC_DEFINE(HAVE_PERL, 1)
+   else
+      NCBI_MISSING_PACKAGE(perl)
+      PERL_INCLUDE=
+      PERL_LIBS=
+   fi
+fi
+
 ## Java
 if test "${with_jni-no}" != "no"; then
    case "$with_jni:${JAVAC+set}" in
@@ -6901,6 +6937,9 @@ AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
+AC_SUBST(PERL)
+AC_SUBST(PERL_INCLUDE)
+AC_SUBST(PERL_LIBS)
 AC_SUBST(JDK_PATH)
 AC_SUBST(JDK_INCLUDE)
 AC_SUBST(ncbi_java)
