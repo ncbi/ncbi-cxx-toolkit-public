@@ -256,7 +256,8 @@ Feat-qual-legal ::= ENUMERATED {
     location (68) ,
     tag-peptide (69) ,
     mobile-element-type-type (70) ,
-    name (71) }
+    name (71) ,
+    pcr-conditions (72) }
 
 Feat-qual-legal-val ::= SEQUENCE {
     qual Feat-qual-legal ,
