@@ -391,12 +391,12 @@ bool CAnnotWriterApp::xTryProcessSeqAnnot(
     if (objtype != "Seq-annot") {
         return false;
     }
-    CSeq_annot seq_annot;
-    istr.Read(ObjectInfo(seq_annot), CObjectIStream::eNoFileHeader);
+    CRef<CSeq_annot> pSeqAnnot(new CSeq_annot);
+    istr.Read(ObjectInfo(*pSeqAnnot), CObjectIStream::eNoFileHeader);
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
-    m_pWriter->WriteAnnot( seq_annot, xAssemblyName(), xAssemblyAccession() );
+    m_pWriter->WriteAnnot( *pSeqAnnot, xAssemblyName(), xAssemblyAccession() );
     m_pWriter->WriteFooter();
     return true;
 }
