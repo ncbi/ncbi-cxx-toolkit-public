@@ -818,11 +818,8 @@ struct SCommandDefinition {
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
         "Query and print information about a running "
-        "NetCache, NetSchedule, or worker node process.\n\n"
-        "If the '--" QUEUE_OPTION "' option is specified "
-        "for a NetSchedule server, queue parameters will "
-        "be printed instead.",
-        {eNetCache, eNetSchedule, eWorkerNode, eQueue,
+        "NetCache, NetSchedule, or worker node process.",
+        {eNetCache, eNetSchedule, eWorkerNode,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 

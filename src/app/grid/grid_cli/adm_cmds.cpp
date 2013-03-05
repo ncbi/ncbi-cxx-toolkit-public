@@ -117,30 +117,21 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
         return 2;
     }
 
-    if (api_class == eNetScheduleAdmin && IsOptionExplicitlySet(eQueue)) {
-        CNetScheduleAPI::SServerParams params =
-            m_NetScheduleAPI.GetServerParams();
-        printf("max_input_size: %lu\n"
-            "max_output_size: %lu\n",
-            (unsigned long) params.max_input_size,
-            (unsigned long) params.max_output_size);
-    } else {
-        bool print_server_address = service.IsLoadBalanced();
+    bool print_server_address = service.IsLoadBalanced();
 
-        for (CNetServiceIterator it = service.Iterate(); it; ++it) {
-            if (print_server_address)
-                printf("[%s]\n", (*it).GetServerAddress().c_str());
+    for (CNetServiceIterator it = service.Iterate(); it; ++it) {
+        if (print_server_address)
+            printf("[%s]\n", (*it).GetServerAddress().c_str());
 
-            CNetServerInfo server_info((*it).GetServerInfo());
+        CNetServerInfo server_info((*it).GetServerInfo());
 
-            string attr_name, attr_value;
+        string attr_name, attr_value;
 
-            while (server_info.GetNextAttribute(attr_name, attr_value))
-                printf("%s: %s\n", attr_name.c_str(), attr_value.c_str());
+        while (server_info.GetNextAttribute(attr_name, attr_value))
+            printf("%s: %s\n", attr_name.c_str(), attr_value.c_str());
 
-            if (print_server_address)
-                printf("\n");
-        }
+        if (print_server_address)
+            printf("\n");
     }
 
     return 0;
