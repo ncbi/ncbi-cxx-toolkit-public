@@ -173,6 +173,12 @@ esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${SQLITE3_PATH=$NCBI/sqlite-3.7.13-ncbi1}   ;;
+    SunOSx86   )
+        case "$with_64" in
+            yes) : ${SQLITE3_PATH=/usr} ;;
+            *  ) : ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1} ;;
+        esac
+        ;;
     *          ) : ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1} ;;
 esac
 
