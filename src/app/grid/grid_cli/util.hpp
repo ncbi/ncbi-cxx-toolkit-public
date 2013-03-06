@@ -40,8 +40,24 @@ BEGIN_NCBI_SCOPE
 
 void g_PrintJSON(FILE* output_stream, CJsonNode node);
 
-CJsonNode g_ExecToJson(CNetService service,
+class IExecToJson
+{
+public:
+    virtual CJsonNode ExecOn(CNetServer server) = 0;
+
+    virtual ~IExecToJson() {}
+};
+
+CJsonNode g_ExecToJson(IExecToJson& exec_to_json,
+        CNetService service,
+        CNetService::EServiceType service_type);
+
+CJsonNode g_ExecAnyCmdToJson(CNetService service,
+        CNetService::EServiceType service_type,
         const string& command, bool multiline);
+
+CJsonNode g_ServerInfoToJson(CNetService service,
+        CNetService::EServiceType service_type);
 
 void g_GetUserAndHost(string* user, string* host);
 

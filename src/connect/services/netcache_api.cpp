@@ -168,8 +168,12 @@ void CNetCacheServerListener::OnError(
 void CNetCacheServerListener::OnWarning(const string& warn_msg,
         SNetServerImpl* server)
 {
-    LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
-            ": " << warn_msg);
+    if (m_EventHandler)
+        m_EventHandler->OnWarning(warn_msg, server);
+    else {
+        LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
+                ": " << warn_msg);
+    }
 }
 
 const char* const kNetCacheAPIDriverName = "netcache_api";
@@ -189,6 +193,18 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         new CNetCacheServerListener))
 {
     m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
+}
+
+SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
+        SNetCacheAPIImpl* parent) :
+    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_ServicesFromKeys(parent->m_ServicesFromKeys),
+    m_TempDir(parent->m_TempDir),
+    m_CacheInput(parent->m_CacheInput),
+    m_CacheOutput(parent->m_CacheOutput),
+    m_MirroringMode(parent->m_MirroringMode),
+    m_Password(parent->m_Password)
+{
 }
 
 void SNetCacheAPIImpl::SetPassword(const string& password)
@@ -667,6 +683,16 @@ CNetCacheAdmin CNetCacheAPI::GetAdmin()
 CNetService CNetCacheAPI::GetService()
 {
     return m_Impl->m_Service;
+}
+
+CNetCacheAPI CNetCacheAPI::GetServer(CNetServer::TInstance server)
+{
+    return new SNetCacheAPIImpl(server->m_ServerInPool, m_Impl);
+}
+
+void CNetCacheAPI::SetEventHandler(INetEventHandler* event_handler)
+{
+    m_Impl->GetListener()->m_EventHandler = event_handler;
 }
 
 /* static */

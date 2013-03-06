@@ -352,6 +352,16 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     void SetCommunicationTimeout(const STimeout& to)
         {GetService().GetServerPool().SetCommunicationTimeout(to);}
+
+    /// Extract one of the servers comprising this service
+    /// as a separate CNetCacheAPI object.
+    /// This method is for use by the grid_cli utility only.
+    /// @internal
+    CNetCacheAPI GetServer(CNetServer::TInstance server);
+
+    /// This method is for use by the grid_cli utility only.
+    /// @internal
+    void SetEventHandler(INetEventHandler* event_handler);
 };
 
 class NCBI_XCONNECT_EXPORT CNetCachePasswordGuard

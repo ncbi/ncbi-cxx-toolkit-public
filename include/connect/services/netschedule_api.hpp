@@ -261,17 +261,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// @internal
     CNetScheduleAPI GetServer(CNetServer::TInstance server);
 
-    /// This class is for use by the grid_cli utility only.
-    /// @internal
-    class NCBI_XCONNECT_EXPORT IEventHandler : public CObject
-    {
-    public:
-        virtual void OnWarning(const string& warn_msg, CNetServer server) = 0;
-    };
-
     /// This method is for use by the grid_cli utility only.
     /// @internal
-    void SetEventHandler(IEventHandler* event_handler);
+    void SetEventHandler(INetEventHandler* event_handler);
 
     /// This method is for use by worker nodes.
     /// @internal

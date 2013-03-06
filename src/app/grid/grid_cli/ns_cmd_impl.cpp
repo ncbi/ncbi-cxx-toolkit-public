@@ -87,7 +87,8 @@ static inline string UnquoteIfQuoted(const CTempString& str)
     }
 }
 
-void g_DetectTypeAndSet(CJsonNode& node, const string& key, const string& value)
+void g_DetectTypeAndSet(CJsonNode& node,
+        const CTempString& key, const CTempString& value)
 {
     if (IsInteger(value))
         node.SetNumber(key, NStr::StringToInt8(value));
@@ -101,17 +102,21 @@ void g_DetectTypeAndSet(CJsonNode& node, const string& key, const string& value)
         node.SetString(key, UnquoteIfQuoted(value));
 }
 
-class CStructuredNetScheduleOutputParser
+class CExecAndParseStructuredOutput : public IExecToJson
 {
 public:
-    CStructuredNetScheduleOutputParser(const string& ns_output) :
-        m_NSOutput(ns_output), m_Ch(m_NSOutput.c_str())
+    CExecAndParseStructuredOutput(const string& cmd) :
+        m_Cmd(cmd)
     {
+        g_AppendClientIPAndSessionID(m_Cmd);
     }
 
-    CJsonNode ParseObject(bool root_object);
+protected:
+    virtual CJsonNode ExecOn(CNetServer server);
 
 private:
+    CJsonNode ParseObject(bool root_object);
+
     size_t GetRemainder() const
     {
         return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
@@ -139,11 +144,21 @@ private:
     CJsonNode ParseNode();
     void ThrowUnexpectedCharError();
 
-    const string m_NSOutput;
+    string m_Cmd;
+
+    string m_NSOutput;
     const char* m_Ch;
 };
 
-CJsonNode CStructuredNetScheduleOutputParser::ParseObject(bool root_object)
+CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
+{
+    m_NSOutput = server.ExecWithRetry(m_Cmd).response;
+    m_Ch = m_NSOutput.c_str();
+
+    return ParseObject(true);
+}
+
+CJsonNode CExecAndParseStructuredOutput::ParseObject(bool root_object)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
@@ -179,7 +194,7 @@ CJsonNode CStructuredNetScheduleOutputParser::ParseObject(bool root_object)
     return result;
 }
 
-CJsonNode CStructuredNetScheduleOutputParser::ParseArray()
+CJsonNode CExecAndParseStructuredOutput::ParseArray()
 {
     CJsonNode result(CJsonNode::NewArrayNode());
 
@@ -203,7 +218,7 @@ CJsonNode CStructuredNetScheduleOutputParser::ParseArray()
     return result;
 }
 
-CJsonNode CStructuredNetScheduleOutputParser::ParseNode()
+CJsonNode CExecAndParseStructuredOutput::ParseNode()
 {
     switch (*m_Ch) {
     case '[':
@@ -248,7 +263,7 @@ CJsonNode CStructuredNetScheduleOutputParser::ParseNode()
     return CJsonNode();
 }
 
-void CStructuredNetScheduleOutputParser::ThrowUnexpectedCharError()
+void CExecAndParseStructuredOutput::ThrowUnexpectedCharError()
 {
     size_t position = m_Ch - m_NSOutput.data() + 1;
 
@@ -261,11 +276,13 @@ void CStructuredNetScheduleOutputParser::ThrowUnexpectedCharError()
     }
 }
 
-CJsonNode g_StructuredNetScheduleOutputToJson(const string& ns_output)
+CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,
+        const string& cmd, CNetService::EServiceType service_type)
 {
-    CStructuredNetScheduleOutputParser parser(ns_output);
+    CExecAndParseStructuredOutput exec_and_parse_structured_output(cmd);
 
-    return parser.ParseObject(true);
+    return g_ExecToJson(exec_and_parse_structured_output,
+            ns_api.GetService(), service_type);
 }
 
 struct {
@@ -538,103 +555,97 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
     }
 }
 
-static void s_GetQueueInfo(CNetScheduleAdmin ns_admin, CNetServer ns_server,
-        const string& queue_name, CJsonNode& queue_info_node)
+struct SSingleQueueInfoToJson : public IExecToJson
+{
+    SSingleQueueInfoToJson(const CNetScheduleAdmin& ns_admin,
+            const string& queue_name) :
+        m_NetScheduleAdmin(ns_admin), m_QueueName(queue_name)
+    {
+    }
+
+    virtual CJsonNode ExecOn(CNetServer server);
+
+    CNetScheduleAdmin m_NetScheduleAdmin;
+    string m_QueueName;
+};
+
+CJsonNode SSingleQueueInfoToJson::ExecOn(CNetServer server)
 {
     CNetScheduleAdmin::TQueueInfo queue_info;
-    ns_admin.GetQueueInfo(ns_server, queue_name, queue_info);
+    m_NetScheduleAdmin.GetQueueInfo(server, m_QueueName, queue_info);
+
+    CJsonNode queue_info_node(CJsonNode::NewObjectNode());
+
     ITERATE(CNetScheduleAdmin::TQueueInfo, qi, queue_info) {
         g_DetectTypeAndSet(queue_info_node, qi->first, qi->second);
     }
+
+    return queue_info_node;
+}
+
+struct SQueueInfoToJson : public IExecToJson
+{
+    SQueueInfoToJson(const string& cmd, const string& section_prefix) :
+        m_Cmd(cmd), m_SectionPrefix(section_prefix)
+    {
+        g_AppendClientIPAndSessionID(m_Cmd);
+    }
+
+    virtual CJsonNode ExecOn(CNetServer server);
+
+    string m_Cmd;
+    string m_SectionPrefix;
+};
+
+CJsonNode SQueueInfoToJson::ExecOn(CNetServer server)
+{
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(m_Cmd));
+
+    CJsonNode queue_map(CJsonNode::NewObjectNode());
+    CJsonNode queue_params;
+
+    string line;
+    CTempString param_name, param_value;
+
+    while (output.ReadLine(line))
+        if (NStr::StartsWith(line, m_SectionPrefix) &&
+                line.length() > m_SectionPrefix.length())
+            queue_map.SetNode(line.substr(m_SectionPrefix.length(),
+                    line.length() - m_SectionPrefix.length() - 1),
+                    queue_params = CJsonNode::NewObjectNode());
+        else if (queue_params && NStr::SplitInTwo(line, ": ",
+                    param_name, param_value, NStr::eMergeDelims))
+            g_DetectTypeAndSet(queue_params, param_name, param_value);
+
+    return queue_map;
 }
 
 CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
-        const string& queue_name, bool group_by_server_addr)
+        const string& queue_name, CNetService::EServiceType service_type)
 {
-    CJsonNode result(CJsonNode::NewObjectNode());
-    CJsonNode target_map(result);
+    if (queue_name.empty()) {
+        SQueueInfoToJson queue_info_proc("STAT QUEUES", "[queue ");
 
-    string client_name(ns_api.GetService().GetServerPool().GetClientName());
-
-    CNetScheduleAdmin::TQueueList qlist;
-    CNetScheduleAdmin ns_admin(ns_api.GetAdmin());
-    ns_admin.GetQueueList(qlist);
-
-    ITERATE(CNetScheduleAdmin::TQueueList, server_and_its_queues, qlist) {
-        if (group_by_server_addr)
-            result.SetNode(server_and_its_queues->server.GetServerAddress(),
-                    target_map = CJsonNode::NewObjectNode());
-
-        if (!queue_name.empty())
-            s_GetQueueInfo(ns_admin, server_and_its_queues->server,
-                    queue_name, target_map);
-        else {
-            ITERATE(list<string>, each_queue_name,
-                    server_and_its_queues->queues) {
-                CJsonNode queue_info_node(CJsonNode::NewObjectNode());
-                s_GetQueueInfo(ns_admin, server_and_its_queues->server,
-                        *each_queue_name, queue_info_node);
-                target_map.SetNode(*each_queue_name, queue_info_node);
-            }
-        }
+        return g_ExecToJson(queue_info_proc, ns_api.GetService(), service_type);
     }
 
-    return result;
+    SSingleQueueInfoToJson single_queue_proc(ns_api.GetAdmin(), queue_name);
+
+    return g_ExecToJson(single_queue_proc, ns_api.GetService(), service_type);
 }
 
 CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
-        bool group_by_server_addr)
+        CNetService::EServiceType service_type)
 {
-    CJsonNode result(CJsonNode::NewObjectNode());
-    CJsonNode queue_class_map(result);
+    SQueueInfoToJson queue_info_proc("STAT QCLASSES", "[qclass ");
 
-    string cmd("STAT QCLASSES");
-
-    for (CNetServiceIterator it = ns_api.GetService().Iterate(); it; ++it) {
-        if (group_by_server_addr)
-            result.SetNode((*it).GetServerAddress(),
-                    queue_class_map = CJsonNode::NewObjectNode());
-
-        CNetServerMultilineCmdOutput output((*it).ExecWithRetry(cmd));
-
-        string line;
-        CJsonNode queue_class_params;
-        string param_name, param_value;
-
-        while (output.ReadLine(line))
-            if (NStr::StartsWith(line, "[qclass ") &&
-                    line.length() > sizeof("[qclass ") - 1)
-                queue_class_map.SetNode(line.substr(sizeof("[qclass ") - 1,
-                        line.length() - sizeof("[qclass ")),
-                        queue_class_params = CJsonNode::NewObjectNode());
-            else if (queue_class_params && NStr::SplitInTwo(line, ": ",
-                        param_name, param_value, NStr::eMergeDelims))
-                g_DetectTypeAndSet(queue_class_params, param_name, param_value);
-    }
-
-    return result;
+    return g_ExecToJson(queue_info_proc, ns_api.GetService(), service_type);
 }
 
 CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
-        bool group_by_server_addr)
+        CNetService::EServiceType service_type)
 {
-    CJsonNode result(CJsonNode::NewObjectNode());
-
-    string cmd("RECO");
-    g_AppendClientIPAndSessionID(cmd);
-
-    for (CNetServiceIterator it = ns_api.GetService().
-            Iterate(CNetService::eIncludePenalized); it; ++it) {
-        CJsonNode reconf_results(g_StructuredNetScheduleOutputToJson(
-                    (*it).ExecWithRetry(cmd).response));
-
-        if (!group_by_server_addr)
-            return reconf_results;
-
-        result.SetNode((*it).GetServerAddress(), reconf_results);
-    }
-
-    return result;
+    return g_ExecStructuredNetScheduleCmdToJson(ns_api, "RECO", service_type);
 }
 
 CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(

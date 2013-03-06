@@ -216,7 +216,7 @@ SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
 
 void SNetServiceImpl::ZeroInit()
 {
-    m_ServiceType = eServiceNotDefined;
+    m_ServiceType = CNetService::eServiceNotDefined;
     m_DiscoveredServers = NULL;
     m_ServerGroupPool = NULL;
     m_LatestDiscoveryIteration = 0;
@@ -224,7 +224,7 @@ void SNetServiceImpl::ZeroInit()
 
 void SNetServiceImpl::Construct(SNetServerInPool* server)
 {
-    m_ServiceType = eSingleServerService;
+    m_ServiceType = CNetService::eSingleServerService;
     m_DiscoveredServers = AllocServerGroup(0);
     CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
     m_DiscoveredServers->m_Servers.push_back(TServerRate(server, 1));
@@ -238,7 +238,7 @@ void SNetServiceImpl::Construct()
         string host, port;
 
         if (!NStr::SplitInTwo(m_ServiceName, ":", host, port))
-            m_ServiceType = eLoadBalancedService;
+            m_ServiceType = CNetService::eLoadBalancedService;
         else {
             Construct(m_ServerPool->FindOrCreateServerImpl(
                     g_NetService_gethostbyname(host),
@@ -542,7 +542,7 @@ string SNetServiceImpl::MakeAuthString()
     auth += '\"';
 
     if (!m_ServerPool->m_UseOldStyleAuth) {
-        if (m_ServiceType == eLoadBalancedService) {
+        if (m_ServiceType == CNetService::eLoadBalancedService) {
             auth += " svc=\"";
             auth += NStr::PrintableString(m_ServiceName);
             auth += '\"';
@@ -574,9 +574,14 @@ CNetServerPool CNetService::GetServerPool()
     return m_Impl->m_ServerPool;
 }
 
+CNetService::EServiceType CNetService::GetServiceType() const
+{
+    return m_Impl->m_ServiceType;
+}
+
 bool CNetService::IsLoadBalanced() const
 {
-    return m_Impl->m_ServiceType == eLoadBalancedService;
+    return m_Impl->m_ServiceType == CNetService::eLoadBalancedService;
 }
 
 void CNetServerPool::StickToServer(const string& host, unsigned short port)
@@ -684,12 +689,12 @@ CNetServiceIterator SRandomIterationBeginner::BeginIteration()
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 {
     switch (m_Impl->m_ServiceType) {
-    default: // eServiceNotDefined
+    default: // CNetService::eServiceNotDefined
         NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
                 m_Impl->m_ServerPool->m_APIName << ": command '" << cmd <<
                         "' requires a server but none specified");
 
-    case eLoadBalancedService:
+    case CNetService::eLoadBalancedService:
         {
             CNetServer::SExecResult exec_result;
 
@@ -701,7 +706,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
             return exec_result;
         }
 
-    case eSingleServerService:
+    case CNetService::eSingleServerService:
         {
             CNetServer server(new SNetServerImpl(m_Impl,
                     m_Impl->m_ServerPool->ReturnServer(
@@ -720,12 +725,12 @@ void CNetService::ExecOnAllServers(const string& cmd)
 
 void SNetServiceImpl::DiscoverServersIfNeeded()
 {
-    if (m_ServiceType == eServiceNotDefined) {
+    if (m_ServiceType == CNetService::eServiceNotDefined) {
         NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
             m_ServerPool->m_APIName << ": service name is not set");
     }
 
-    if (m_ServiceType == eLoadBalancedService) {
+    if (m_ServiceType == CNetService::eLoadBalancedService) {
         // The service is load-balanced, check if rebalancing is required.
         m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
         if (m_ServerPool->m_RebalanceStrategy->NeedRebalance())

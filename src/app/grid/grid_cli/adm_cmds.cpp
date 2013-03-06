@@ -117,21 +117,29 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
         return 2;
     }
 
-    bool print_server_address = service.IsLoadBalanced();
+    if (m_Opts.output_format == eJSON)
+        g_PrintJSON(stdout, g_ServerInfoToJson(service,
+                service.GetServiceType()));
+    else if (m_Opts.output_format == eRaw)
+        service.PrintCmdOutput("VERSION", NcbiCout,
+                CNetService::eSingleLineOutput);
+    else {
+        bool print_server_address = service.IsLoadBalanced();
 
-    for (CNetServiceIterator it = service.Iterate(); it; ++it) {
-        if (print_server_address)
-            printf("[%s]\n", (*it).GetServerAddress().c_str());
+        for (CNetServiceIterator it = service.Iterate(); it; ++it) {
+            if (print_server_address)
+                printf("[%s]\n", (*it).GetServerAddress().c_str());
 
-        CNetServerInfo server_info((*it).GetServerInfo());
+            CNetServerInfo server_info((*it).GetServerInfo());
 
-        string attr_name, attr_value;
+            string attr_name, attr_value;
 
-        while (server_info.GetNextAttribute(attr_name, attr_value))
-            printf("%s: %s\n", attr_name.c_str(), attr_value.c_str());
+            while (server_info.GetNextAttribute(attr_name, attr_value))
+                printf("%s: %s\n", attr_name.c_str(), attr_value.c_str());
 
-        if (print_server_address)
-            printf("\n");
+            if (print_server_address)
+                printf("\n");
+        }
     }
 
     return 0;
@@ -385,7 +393,7 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
 
     case eNetScheduleAdmin:
         g_PrintJSON(stdout, g_ReconfAndReturnJson(m_NetScheduleAPI,
-                m_NetScheduleAPI.GetService().IsLoadBalanced()));
+                m_NetScheduleAPI.GetService().GetServiceType()));
         return 0;
 
     default:
@@ -469,7 +477,8 @@ int CGridCommandLineInterfaceApp::Cmd_Exec()
                 IsOptionSet(eMultiline) ? CNetService::eMultilineOutput :
                 CNetService::eSingleLineOutput);
     else // Output format is eJSON.
-        g_PrintJSON(stdout, g_ExecToJson(service,
+        g_PrintJSON(stdout, g_ExecAnyCmdToJson(service,
+                service.GetServiceType(),
                 m_Opts.command, IsOptionSet(eMultiline)));
 
     return 0;

@@ -87,6 +87,12 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetServerPool GetServerPool();
 
+    enum EServiceType {
+        eServiceNotDefined,
+        eLoadBalancedService,
+        eSingleServerService
+    };
+
     enum EIterationMode {
         eSortByLoad,
         eRandomize,
@@ -103,6 +109,7 @@ class NCBI_XCONNECT_EXPORT CNetService
     CNetServiceIterator FindServer(INetServerFinder* finder,
         EIterationMode mode = eSortByLoad);
 
+    EServiceType GetServiceType() const;
     bool IsLoadBalanced() const;
 
     CNetServer::SExecResult FindServerAndExec(const string& cmd);
@@ -136,6 +143,14 @@ inline CNetServer CNetService::GetServer(const SServerAddress& server_address)
 {
     return GetServer(server_address.host, server_address.port);
 }
+
+/// This class is for use by the grid_cli utility only.
+/// @internal
+class NCBI_XCONNECT_EXPORT INetEventHandler : public CObject
+{
+public:
+    virtual void OnWarning(const string& warn_msg, CNetServer server) = 0;
+};
 
 END_NCBI_SCOPE
 

@@ -198,12 +198,6 @@ public:
     virtual ~IIterationBeginner() {}
 };
 
-enum EServiceType {
-    eServiceNotDefined,
-    eLoadBalancedService,
-    eSingleServerService
-};
-
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
     // Construct a new object.
@@ -291,7 +285,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     CNetServerPool m_ServerPool;
 
     string m_ServiceName;
-    EServiceType m_ServiceType;
+    CNetService::EServiceType m_ServiceType;
 
     CFastMutex m_DiscoveryMutex;
     SDiscoveredServers* m_DiscoveredServers;

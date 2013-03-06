@@ -38,15 +38,15 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
     public INetServerConnectionListener
 {
-protected:
+public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
 
-private:
     string m_Auth;
+    CRef<INetEventHandler> m_EventHandler;
 };
 
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
@@ -56,6 +56,9 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     // For use by SNetICacheClientImpl
     SNetCacheAPIImpl(SNetServiceImpl* service_impl) : m_Service(service_impl) {}
+
+    // Special constructor for CNetCacheAPI::GetServer().
+    SNetCacheAPIImpl(SNetServerInPool* server, SNetCacheAPIImpl* parent);
 
     IReader* GetPartReader(
         const string& blob_id,
@@ -88,6 +91,12 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         const CNetCacheKey& key, const string& cmd,
         SNetServiceImpl::EServerErrorHandling error_handling =
             SNetServiceImpl::eRethrowServerErrors);
+
+    CNetCacheServerListener* GetListener()
+    {
+        return static_cast<CNetCacheServerListener*>(
+                m_Service->m_Listener.GetPointer());
+    }
 
     CNetService m_Service;
 

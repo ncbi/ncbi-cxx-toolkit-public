@@ -31,8 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "ns_cmd_impl.hpp"
-#include "util.hpp"
+#include "automation.hpp"
 
 #ifdef WIN32
 #include <io.h>
@@ -41,142 +40,7 @@
 
 USING_NCBI_SCOPE;
 
-#define PROTOCOL_VERSION 1
-
-class CAutomationException : public CException
-{
-public:
-    enum EErrCode {
-        eInvalidInput,
-        eCommandProcessingError,
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eInvalidInput:
-            return "eInvalidInput";
-        case eCommandProcessingError:
-            return "eCommandProcessingError";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CAutomationException, CException);
-};
-
-class CArgArray
-{
-public:
-    CArgArray(const CJsonNode::TArray& args);
-
-    CJsonNode NextNodeOrNull();
-    CJsonNode NextNode();
-
-    string GetString(const CJsonNode& node);
-    string NextString() {return GetString(NextNode());}
-    string NextString(const string& default_value);
-
-    CJsonNode::TNumber GetNumber(const CJsonNode& node);
-    CJsonNode::TNumber NextNumber() {return GetNumber(NextNode());}
-    CJsonNode::TNumber NextNumber(CJsonNode::TNumber default_value);
-
-    bool GetBoolean(const CJsonNode& node);
-    bool NextBoolean() {return GetBoolean(NextNode());}
-    bool NextBoolean(bool default_value);
-
-    const CJsonNode::TArray& GetArray(const CJsonNode& node);
-    const CJsonNode::TArray& NextArray() {return GetArray(NextNode());}
-
-    void UpdateLocation(const string& location);
-    void Exception(const char* what);
-
-private:
-    const CJsonNode::TArray& m_Args;
-    CJsonNode::TArray::const_iterator m_Position;
-    string m_Location;
-};
-
-inline CArgArray::CArgArray(const CJsonNode::TArray& args) : m_Args(args)
-{
-    m_Position = args.begin();
-}
-
-inline CJsonNode CArgArray::NextNodeOrNull()
-{
-    if (m_Position != m_Args.end()) {
-        if (!m_Position->IsNull())
-            return *m_Position++;
-        ++m_Position;
-    }
-    return CJsonNode();
-}
-
-inline CJsonNode CArgArray::NextNode()
-{
-    CJsonNode next_node(NextNodeOrNull());
-    if (!next_node)
-        Exception("insufficient number of arguments");
-    return next_node;
-}
-
-inline string CArgArray::GetString(const CJsonNode& node)
-{
-    if (!node.IsString())
-        Exception("invalid argument type (expected a string)");
-    return node.GetString();
-}
-
-inline string CArgArray::NextString(const string& default_value)
-{
-    CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetString(next_node) : default_value;
-}
-
-inline CJsonNode::TNumber CArgArray::GetNumber(const CJsonNode& node)
-{
-    if (!node.IsNumber())
-        Exception("invalid argument type (expected a number)");
-    return node.GetNumber();
-}
-
-inline CJsonNode::TNumber CArgArray::NextNumber(
-        CJsonNode::TNumber default_value)
-{
-    CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetNumber(next_node) : default_value;
-}
-
-inline bool CArgArray::GetBoolean(const CJsonNode& node)
-{
-    if (!node.IsBoolean())
-        Exception("invalid argument type (expected a boolean)");
-    return node.GetBoolean();
-}
-
-inline bool CArgArray::NextBoolean(bool default_value)
-{
-    CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetBoolean(next_node) : default_value;
-}
-
-inline const CJsonNode::TArray& CArgArray::GetArray(const CJsonNode& node)
-{
-    if (!node.IsArray())
-        Exception("invalid argument type (expected an array)");
-    return node.GetArray();
-}
-
-inline void CArgArray::UpdateLocation(const string& location)
-{
-    if (m_Location.empty())
-        m_Location = location;
-    else {
-        m_Location.push_back(' ');
-        m_Location.append(location);
-    }
-}
+#define PROTOCOL_VERSION 2
 
 void CArgArray::Exception(const char* what)
 {
@@ -188,112 +52,55 @@ void CArgArray::Exception(const char* what)
     }
 }
 
-typedef Int8 TObjectID;
-
-class CAutomationProc;
-
-class CAutomationObject : public CObject
+void SNetCacheServiceAutomationObject::CEventHandler::OnWarning(
+        const string& warn_msg, CNetServer server)
 {
-public:
-    CAutomationObject(CAutomationProc* automation_proc) :
-        m_AutomationProc(automation_proc)
-    {
-    }
+    m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
+            ReturnNetCacheServerObject(m_NetCacheAPI, server));
+}
 
-    void SetID(TObjectID object_id) {m_Id = object_id;}
-
-    TObjectID GetID() const {return m_Id;}
-
-    virtual const string& GetType() const = 0;
-
-    virtual const void* GetImplPtr() const = 0;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply) = 0;
-
-protected:
-    CAutomationProc* m_AutomationProc;
-
-    TObjectID m_Id;
-};
-
-struct SNetCacheAutomationObject : public CAutomationObject
-{
-    SNetCacheAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& client_name) :
-        CAutomationObject(automation_proc),
-        m_NetCacheAPI(service_name, client_name)
-    {
-    }
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetCacheAPI m_NetCacheAPI;
-};
-
-const string& SNetCacheAutomationObject::GetType() const
+const string& SNetCacheServiceAutomationObject::GetType() const
 {
     static const string object_type("ncsvc");
 
     return object_type;
 }
 
-const void* SNetCacheAutomationObject::GetImplPtr() const
+const void* SNetCacheServiceAutomationObject::GetImplPtr() const
 {
     return m_NetCacheAPI;
 }
 
-struct SNetScheduleServiceAutomationObject : public CAutomationObject
+SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
+        CAutomationProc* automation_proc,
+        const string& service_name,
+        const string& client_name) :
+    SNetCacheServiceAutomationObject(automation_proc,
+            CNetCacheAPI(service_name, client_name))
 {
-    class CEventHandler : public CNetScheduleAPI::IEventHandler
-    {
-    public:
-        CEventHandler(CAutomationProc* automation_proc,
-                CNetScheduleAPI::TInstance ns_api) :
-            m_AutomationProc(automation_proc),
-            m_NetScheduleAPI(ns_api)
-        {
-        }
-
-        virtual void OnWarning(const string& warn_msg, CNetServer server);
-
-    private:
-        CAutomationProc* m_AutomationProc;
-        CNetScheduleAPI::TInstance m_NetScheduleAPI;
-    };
-
-    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& queue_name,
-            const string& client_name) :
-        CAutomationObject(automation_proc),
-        m_NetScheduleAPI(service_name, client_name, queue_name)
-    {
-        m_NetScheduleAPI.SetEventHandler(
-                new CEventHandler(automation_proc, m_NetScheduleAPI));
+    if (m_Service.IsLoadBalanced()) {
+        NCBI_THROW(CAutomationException, eCommandProcessingError,
+                "NetCacheServer constructor: "
+                "'server_address' must be a host:port combination");
     }
 
-    virtual const string& GetType() const;
+    m_NetServer = m_Service.Iterate().GetServer();
 
-    virtual const void* GetImplPtr() const;
+    m_NetCacheAPI.SetEventHandler(
+            new CEventHandler(automation_proc, m_NetCacheAPI));
+}
 
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
+const string& SNetCacheServerAutomationObject::GetType() const
+{
+    static const string object_type("ncsrv");
 
-    CNetScheduleAPI m_NetScheduleAPI;
+    return object_type;
+}
 
-protected:
-    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api) :
-        CAutomationObject(automation_proc),
-        m_NetScheduleAPI(ns_api)
-    {
-    }
-};
+const void* SNetCacheServerAutomationObject::GetImplPtr() const
+{
+    return m_NetServer;
+}
 
 const string& SNetScheduleServiceAutomationObject::GetType() const
 {
@@ -307,49 +114,21 @@ const void* SNetScheduleServiceAutomationObject::GetImplPtr() const
     return m_NetScheduleAPI;
 }
 
-struct SNetScheduleServerAutomationObject :
-        public SNetScheduleServiceAutomationObject
-{
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api, CNetServer::TInstance server) :
-        SNetScheduleServiceAutomationObject(automation_proc,
-                ns_api.GetServer(server)),
-        m_NetServer(server)
-    {
-    }
-
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& queue_name,
-            const string& client_name);
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetServer m_NetServer;
-};
-
 SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
         CAutomationProc* automation_proc,
         const string& service_name,
         const string& queue_name,
         const string& client_name) :
-    SNetScheduleServiceAutomationObject(automation_proc, NULL)
+    SNetScheduleServiceAutomationObject(automation_proc,
+            CNetScheduleAPI(service_name, client_name, queue_name))
 {
-    m_NetScheduleAPI = CNetScheduleAPI(service_name, client_name, queue_name);
-
-    CNetService service(m_NetScheduleAPI.GetService());
-
-    if (service.IsLoadBalanced()) {
+    if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetScheduleServer constructor: "
                 "'server_address' must be a host:port combination");
     }
 
-    m_NetServer = service.Iterate().GetServer();
+    m_NetServer = m_Service.Iterate().GetServer();
 
     m_NetScheduleAPI.SetEventHandler(
             new CEventHandler(automation_proc, m_NetScheduleAPI));
@@ -367,68 +146,22 @@ const void* SNetScheduleServerAutomationObject::GetImplPtr() const
     return m_NetServer;
 }
 
-typedef CRef<CAutomationObject> TAutomationObjectRef;
-
-class CAutomationProc
-{
-public:
-    CAutomationProc(CPipe& pipe, FILE* protocol_dump);
-
-    TAutomationObjectRef CreateObject(const string& class_name,
-            CArgArray& arg_array);
-
-    CJsonNode ProcessMessage(const CJsonNode& message);
-
-    void SendMessage(const CJsonNode& message);
-
-    void SendWarning(const string& warn_msg, TAutomationObjectRef source);
-
-    void SendError(const CTempString& error_message);
-
-    void AddObject(TAutomationObjectRef new_object, const void* impl_ptr);
-
-    TAutomationObjectRef FindObjectByPtr(const void* impl_ptr) const;
-
-    TAutomationObjectRef ReturnNetScheduleServerObject(CNetScheduleAPI::TInstance ns_api,
-            CNetServer::TInstance server);
-
-private:
-    TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
-
-    char m_WriteBuf[1024];
-
-    Int8 m_Pid;
-
-    CPipe& m_Pipe;
-    CUTTPWriter m_Writer;
-    CJsonOverUTTPWriter m_JSONWriter;
-
-    FILE* m_ProtocolDumpFile;
-    string m_ProtocolDumpTimeFormat;
-    string m_DumpInputHeaderFormat;
-    string m_DumpOutputHeaderFormat;
-
-    vector<TAutomationObjectRef> m_ObjectByIndex;
-    typedef map<const void*, TAutomationObjectRef> TPtrToObjectRefMap;
-    TPtrToObjectRefMap m_ObjectByPointer;
-
-    CJsonNode m_OKNode;
-    CJsonNode m_ErrNode;
-    CJsonNode m_WarnNode;
-};
-
-inline void CAutomationProc::AddObject(TAutomationObjectRef new_object,
-        const void* impl_ptr)
-{
-    new_object->SetID(m_Pid + m_ObjectByIndex.size());
-    m_ObjectByIndex.push_back(new_object);
-    m_ObjectByPointer[impl_ptr] = new_object;
-}
-
 TAutomationObjectRef CAutomationProc::FindObjectByPtr(const void* impl_ptr) const
 {
     TPtrToObjectRefMap::const_iterator it = m_ObjectByPointer.find(impl_ptr);
     return it != m_ObjectByPointer.end() ? it->second : TAutomationObjectRef();
+}
+
+TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
+        CNetCacheAPI::TInstance ns_api,
+        CNetServer::TInstance server)
+{
+    TAutomationObjectRef object(FindObjectByPtr(server));
+    if (!object) {
+        object = new SNetCacheServerAutomationObject(this, ns_api, server);
+        AddObject(object, server);
+    }
+    return object;
 }
 
 TAutomationObjectRef CAutomationProc::ReturnNetScheduleServerObject(
@@ -443,10 +176,74 @@ TAutomationObjectRef CAutomationProc::ReturnNetScheduleServerObject(
     return object;
 }
 
-bool SNetCacheAutomationObject::Call(const string& method,
-        CArgArray& /*arg_array*/, CJsonNode& reply)
+struct SServerAddressToJson : public IExecToJson
 {
-    return false;
+    SServerAddressToJson(int which_part) : m_WhichPart(which_part) {}
+
+    virtual CJsonNode ExecOn(CNetServer server);
+
+    int m_WhichPart;
+};
+
+CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
+{
+    switch (m_WhichPart) {
+    case 1:
+        return CJsonNode::NewStringNode(g_NetService_gethostnamebyaddr(
+                server.GetHost()));
+    case 2:
+        return CJsonNode::NewNumberNode(server.GetPort());
+    }
+    return CJsonNode::NewStringNode(server.GetServerAddress());
+}
+
+bool SNetServiceAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CJsonNode& reply)
+{
+    if (method == "get_name")
+        reply.PushString(m_Service.GetServiceName());
+    else if (method == "get_address") {
+        SServerAddressToJson server_address_proc(arg_array.NextNumber(0));
+
+        reply.PushNode(g_ExecToJson(server_address_proc,
+                m_Service, m_ActualServiceType));
+    } else if (method == "server_info") {
+        reply.PushNode(g_ServerInfoToJson(m_Service, m_ActualServiceType));
+    } else if (method == "exec") {
+        string command(arg_array.NextString());
+        reply.PushNode(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
+                command, arg_array.NextBoolean(false)));
+    } else
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (method == "allow_xsite_connections")
+            m_Service.AllowXSiteConnections();
+        else
+#endif
+            return false;
+
+    return true;
+}
+
+bool SNetCacheServiceAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CJsonNode& reply)
+{
+    if (method == "get_servers") {
+        CJsonNode object_ids(CJsonNode::NewArrayNode());
+        for (CNetServiceIterator it = m_NetCacheAPI.GetService().Iterate();
+                it; ++it)
+            object_ids.PushNumber(m_AutomationProc->
+                    ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
+        reply.PushNode(object_ids);
+    } else
+        return SNetServiceAutomationObject::Call(method, arg_array, reply);
+
+    return true;
+}
+
+bool SNetCacheServerAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CJsonNode& reply)
+{
+    return SNetCacheServiceAutomationObject::Call(method, arg_array, reply);
 }
 
 static void ExtractVectorOfStrings(CArgArray& arg_array,
@@ -462,65 +259,9 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
 bool SNetScheduleServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    if (method == "get_address") {
-        switch (arg_array.NextNumber(0)) {
-        case 0:
-            reply.PushString(m_NetServer.GetServerAddress());
-            break;
-        case 1:
-            reply.PushString(g_NetService_gethostnamebyaddr(
-                    m_NetServer.GetHost()));
-            break;
-        case 2:
-            reply.PushNumber(m_NetServer.GetPort());
-        }
-    } else if (method == "server_info") {
-        CJsonNode server_info_node(CJsonNode::NewObjectNode());
-
-        CNetServerInfo server_info(m_NetServer.GetServerInfo());
-
-        string attr_name, attr_value;
-
-        ESwitch old_format = eDefault;
-
-        while (server_info.GetNextAttribute(attr_name, attr_value)) {
-            switch (old_format) {
-            case eOn:
-                if (attr_name == "Build")
-                    attr_name = "build_date";
-                else
-                    NStr::ReplaceInPlace(NStr::ToLower(attr_name), " ", "_");
-                break;
-
-            case eDefault:
-                if (attr_name != "NCBI NetSchedule server version")
-                    old_format = eOff;
-                else {
-                    old_format = eOn;
-                    attr_name = "server_version";
-                    break;
-                }
-                /* FALL THROUGH */
-
-            case eOff:
-                if (attr_name == "version")
-                    attr_name = "server_version";
-            }
-
-            server_info_node.SetString(attr_name, attr_value);
-        }
-
-        reply.PushNode(server_info_node);
-    } else if (method == "server_status")
+    if (method == "server_status")
         reply.PushNode(g_LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
-    else if (method == "queue_info")
-        reply.PushNode(g_QueueInfoToJson(m_NetScheduleAPI,
-                arg_array.NextString(kEmptyStr), false));
-    else if (method == "queue_class_info")
-        reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, false));
-    else if (method == "reconf")
-        reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI, false));
     else if (method == "job_group_info")
         reply.PushNode(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
@@ -540,23 +281,6 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
         ExtractVectorOfStrings(arg_array, affs_to_del);
         m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(
                 &affs_to_add, &affs_to_del);
-    } else if (method == "exec") {
-        string command(arg_array.NextString());
-
-        if (!arg_array.NextBoolean(false))
-            reply.PushString(m_NetServer.ExecWithRetry(command).response);
-        else {
-            CNetServerMultilineCmdOutput output(
-                m_NetServer.ExecWithRetry(command));
-
-            CJsonNode lines(CJsonNode::NewArrayNode());
-            string line;
-
-            while (output.ReadLine(line))
-                lines.PushString(line);
-
-            reply.PushNode(lines);
-        }
     } else
         return SNetScheduleServiceAutomationObject::Call(
                 method, arg_array, reply);
@@ -574,9 +298,7 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
 bool SNetScheduleServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    if (method == "get_name")
-        reply.PushString(m_NetScheduleAPI.GetService().GetServiceName());
-    else if (method == "set_node_session") {
+    if (method == "set_node_session") {
         CJsonNode arg(arg_array.NextNode());
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientNode(arg_array.GetString(arg));
@@ -585,11 +307,13 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
             m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
     } else if (method == "queue_info")
         reply.PushNode(g_QueueInfoToJson(m_NetScheduleAPI,
-                arg_array.NextString(kEmptyStr), true));
+                arg_array.NextString(kEmptyStr), m_ActualServiceType));
     else if (method == "queue_class_info")
-        reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, true));
+        reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI,
+                m_ActualServiceType));
     else if (method == "reconf")
-        reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI, true));
+        reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI,
+                m_ActualServiceType));
     else if (method == "parse_key") {
         CJobInfoToJSON job_key_to_json;
         job_key_to_json.ProcessJobMeta(CNetScheduleKey(arg_array.NextString()));
@@ -611,10 +335,6 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
             jobs_by_status.SetNumber(it->first, it->second);
         }
         reply.PushNode(jobs_by_status);
-    } else if (method == "exec") {
-        string command(arg_array.NextString());
-        reply.PushNode(g_ExecToJson(m_NetScheduleAPI.GetService(),
-                command, arg_array.NextBoolean(false)));
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate();
@@ -624,12 +344,7 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
                     GetID());
         reply.PushNode(object_ids);
     } else
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (method == "allow_xsite_connections")
-            m_NetScheduleAPI.GetService().AllowXSiteConnections();
-        else
-#endif
-            return false;
+        return SNetServiceAutomationObject::Call(method, arg_array, reply);
 
     return true;
 }
@@ -678,11 +393,19 @@ TAutomationObjectRef CAutomationProc::CreateObject(const string& class_name,
         if (class_name == "ncsvc") {
             string service_name(arg_array.NextString());
             string client_name(arg_array.NextString());
-            SNetCacheAutomationObject* ncsvc_object_ptr =
-                    new SNetCacheAutomationObject(this,
+            SNetCacheServiceAutomationObject* ncsvc_object_ptr =
+                    new SNetCacheServiceAutomationObject(this,
                             service_name, client_name);
             impl_ptr = ncsvc_object_ptr->m_NetCacheAPI;
             new_object.Reset(ncsvc_object_ptr);
+        } else if (class_name == "ncsrv") {
+            string service_name(arg_array.NextString());
+            string client_name(arg_array.NextString());
+            SNetCacheServerAutomationObject* ncsrv_object_ptr =
+                    new SNetCacheServerAutomationObject(this,
+                            service_name, client_name);
+            impl_ptr = ncsrv_object_ptr->m_NetCacheAPI;
+            new_object.Reset(ncsrv_object_ptr);
         } else if (class_name == "nssvc") {
             string service_name(arg_array.NextString(kEmptyStr));
             string queue_name(arg_array.NextString(kEmptyStr));

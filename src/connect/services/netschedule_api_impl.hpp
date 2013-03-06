@@ -71,7 +71,7 @@ public:
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
 
     string m_Auth;
-    CRef<CNetScheduleAPI::IEventHandler> m_EventHandler;
+    CRef<INetEventHandler> m_EventHandler;
 
     typedef map<string, SNetServerInPool*> TNodeIdToServerMap;
     TNodeIdToServerMap m_ServerByNSNodeId;

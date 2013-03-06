@@ -118,30 +118,110 @@ void g_PrintJSON(FILE* output_stream, CJsonNode node)
     putc('\n', output_stream);
 }
 
-CJsonNode g_ExecToJson(CNetService service,
-        const string& command, bool multiline)
+CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
+        CNetService::EServiceType service_type)
 {
+    if (service_type == CNetService::eSingleServerService)
+        return exec_to_json.ExecOn(service.Iterate().GetServer());
+
     CJsonNode result(CJsonNode::NewObjectNode());
 
-    if (!multiline)
-        for (CNetServiceIterator it = service.Iterate(); it; ++it)
-            result.SetString((*it).GetServerAddress(),
-                    (*it).ExecWithRetry(command).response);
-    else
-        for (CNetServiceIterator it = service.Iterate(); it; ++it) {
-            CNetServerMultilineCmdOutput output(
-                    (*it).ExecWithRetry(command));
-
-            CJsonNode lines(CJsonNode::NewArrayNode());
-            string line;
-
-            while (output.ReadLine(line))
-                lines.PushString(line);
-
-            result.SetNode((*it).GetServerAddress(), lines);
-        }
+    for (CNetServiceIterator it = service.Iterate(); it; ++it)
+        result.SetNode((*it).GetServerAddress(), exec_to_json.ExecOn(*it));
 
     return result;
+}
+
+struct SExecAnyCmdToJson : public IExecToJson
+{
+    SExecAnyCmdToJson(const string& cmd, bool multiline) :
+        m_Cmd(cmd), m_Multiline(multiline)
+    {
+    }
+
+    virtual CJsonNode ExecOn(CNetServer server);
+
+    string m_Cmd;
+    bool m_Multiline;
+};
+
+CJsonNode SExecAnyCmdToJson::ExecOn(CNetServer server)
+{
+    if (!m_Multiline)
+        return CJsonNode::NewStringNode(server.ExecWithRetry(m_Cmd).response);
+
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(m_Cmd));
+
+    CJsonNode lines(CJsonNode::NewArrayNode());
+    string line;
+
+    while (output.ReadLine(line))
+        lines.PushString(line);
+
+    return lines;
+}
+
+CJsonNode g_ExecAnyCmdToJson(CNetService service,
+        CNetService::EServiceType service_type,
+        const string& command, bool multiline)
+{
+    SExecAnyCmdToJson exec_any_cmd_proc(command, multiline);
+
+    return g_ExecToJson(exec_any_cmd_proc, service, service_type);
+}
+
+struct SServerInfoToJson : public IExecToJson
+{
+    virtual CJsonNode ExecOn(CNetServer server);
+};
+
+CJsonNode SServerInfoToJson::ExecOn(CNetServer server)
+{
+    CJsonNode server_info_node(CJsonNode::NewObjectNode());
+
+    CNetServerInfo server_info(server.GetServerInfo());
+
+    string attr_name, attr_value;
+
+    ESwitch old_format = eDefault;
+
+    while (server_info.GetNextAttribute(attr_name, attr_value)) {
+        switch (old_format) {
+        case eOn:
+            if (attr_name == "Build")
+                attr_name = "build_date";
+            else
+                NStr::ReplaceInPlace(NStr::ToLower(attr_name), " ", "_");
+            break;
+
+        case eDefault:
+            if (attr_name == "NCBI NetSchedule server version" ||
+                    attr_name == "NCBI NetCache server version")
+            {
+                old_format = eOn;
+                attr_name = "server_version";
+                break;
+            } else
+                old_format = eOff;
+            /* FALL THROUGH */
+
+        case eOff:
+            if (attr_name == "version")
+                attr_name = "server_version";
+        }
+
+        server_info_node.SetString(attr_name, attr_value);
+    }
+
+    return server_info_node;
+}
+
+CJsonNode g_ServerInfoToJson(CNetService service,
+        CNetService::EServiceType service_type)
+{
+    SServerInfoToJson server_info_proc;
+
+    return g_ExecToJson(server_info_proc, service, service_type);
 }
 
 void g_GetUserAndHost(string* user, string* host)

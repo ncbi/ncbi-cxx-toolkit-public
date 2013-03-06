@@ -37,7 +37,7 @@
 /// NetCache ICache client specs.
 ///
 
-#include <connect/services/netcache_api.hpp>
+#include "netcache_api.hpp"
 
 #include <connect/ncbi_core_cxx.hpp>
 

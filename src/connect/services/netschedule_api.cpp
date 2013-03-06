@@ -700,7 +700,7 @@ CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
     return new SNetScheduleAPIImpl(server->m_ServerInPool, m_Impl);
 }
 
-void CNetScheduleAPI::SetEventHandler(IEventHandler* event_handler)
+void CNetScheduleAPI::SetEventHandler(INetEventHandler* event_handler)
 {
     m_Impl->GetListener()->m_EventHandler = event_handler;
 }

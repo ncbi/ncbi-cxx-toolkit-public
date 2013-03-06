@@ -43,9 +43,7 @@ BEGIN_NCBI_SCOPE
 #define TEMP_STRING_CTOR(str) CTempString(str, sizeof(str) - 1)
 
 void g_DetectTypeAndSet(CJsonNode& node,
-        const string& key, const string& value);
-
-CJsonNode g_StructuredNetScheduleOutputToJson(const string& ns_output);
+        const CTempString& key, const CTempString& value);
 
 CJsonNode g_GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
@@ -53,13 +51,13 @@ CJsonNode g_GenericStatToJson(CNetServer server,
 CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose);
 
 CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
-        const string& queue_name, bool group_by_server_addr);
+        const string& queue_name, CNetService::EServiceType service_type);
 
 CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
-        bool group_by_server_addr);
+        CNetService::EServiceType service_type);
 
 CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
-        bool group_by_server_addr);
+        CNetService::EServiceType service_type);
 
 class CAttrListParser
 {
