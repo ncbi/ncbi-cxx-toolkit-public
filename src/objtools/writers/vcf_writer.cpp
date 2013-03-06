@@ -349,7 +349,6 @@ bool CVcfWriter::x_WriteFeatureRef(
     m_Os << "\t";
 
     try {
-
         CSeqVector v(mf.GetLocation(), mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
         string seqstr;
         v.GetSeqData( v.begin(), v.end(), seqstr );
@@ -368,11 +367,16 @@ bool CVcfWriter::x_WriteFeatureRef(
                 continue;
             }
             const CVariation_inst& instance = (**cit).GetData().GetInstance();
-            if ( !instance.IsSetObservation() ) {
-                continue;
+            if (instance.IsSetType()  &&
+                    instance.GetType() == CVariation_inst::eType_identity) {
+                const CDelta_item& delta = **( instance.GetDelta().begin() );   
+                if ( delta.GetSeq().IsLiteral() ) {
+                    m_Os << delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                    return true;
+                }
             }
-            if ( instance.GetObservation() 
-                    == CVariation_inst::eObservation_reference ) {
+            if (instance.IsSetObservation()  &&
+                    instance.GetObservation() == CVariation_inst::eObservation_reference ) {
                 const CDelta_item& delta = **( instance.GetDelta().begin() );   
                 if ( delta.GetSeq().IsLiteral() ) {
                     m_Os << delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
@@ -416,6 +420,10 @@ bool CVcfWriter::x_WriteFeatureAlt(
 
                 default: {
                     alternatives.push_back( "?" );
+                    break;
+                }
+                case CVariation_inst::eType_identity: {
+                    //that would be the reference- already taken care of
                     break;
                 }
                 case CVariation_inst::eType_snv: {
