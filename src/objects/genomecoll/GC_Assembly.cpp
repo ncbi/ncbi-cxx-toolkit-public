@@ -405,6 +405,18 @@ void CGC_Assembly::CreateIndex()
 
                 m_SequenceMap[CSeq_id_Handle::GetHandle(seq_it->GetSeq_id())]
                     .push_back(CConstRef<CGC_Sequence>(&*seq_it));
+
+                // don't forget to index aliases
+                if (this_seq.IsSetSeq_id_synonyms()) {
+                    ITERATE (CGC_Sequence::TSeq_id_synonyms, syn_it,
+                             this_seq.GetSeq_id_synonyms()) {
+                        for (CTypeConstIterator<CSeq_id> id_it(**syn_it);
+                             id_it;  ++id_it) {
+                            m_SequenceMap[CSeq_id_Handle::GetHandle(*id_it)]
+                                .push_back(CConstRef<CGC_Sequence>(&*seq_it));
+                        }
+                    }
+                }
             }
         }
     }
@@ -453,8 +465,21 @@ void CGC_Assembly::x_Index(CGC_Assembly& root)
     m_SequenceMap.clear();
     CTypeConstIterator<CGC_Sequence> seq_it(*this);
     for ( ;  seq_it;  ++seq_it) {
-        m_SequenceMap[CSeq_id_Handle::GetHandle(seq_it->GetSeq_id())]
-            .push_back(CConstRef<CGC_Sequence>(&*seq_it));
+        const CGC_Sequence& this_seq = *seq_it;
+        m_SequenceMap[CSeq_id_Handle::GetHandle(this_seq.GetSeq_id())]
+            .push_back(CConstRef<CGC_Sequence>(&this_seq));
+
+        // don't forget to index aliases
+        if (this_seq.IsSetSeq_id_synonyms()) {
+            ITERATE (CGC_Sequence::TSeq_id_synonyms, syn_it,
+                     this_seq.GetSeq_id_synonyms()) {
+                for (CTypeConstIterator<CSeq_id> id_it(**syn_it);
+                     id_it;  ++id_it) {
+                    m_SequenceMap[CSeq_id_Handle::GetHandle(*id_it)]
+                        .push_back(CConstRef<CGC_Sequence>(&*seq_it));
+                }
+            }
+        }
     }
 }
 
