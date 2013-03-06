@@ -48,11 +48,73 @@
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <set>
 #include <sstream>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+namespace {
+    // This works just like a map except that when you iterate over it,
+    // it goes by order of initial insertion.
+    // We use private inheritance because map's destructor is non-virtual
+    // Maybe this can be put in a shared place and others can use it,
+    // but it would need more cleanup first.
+    template<typename Key, typename Data, typename Compare = less<Key>, typename Alloc = allocator<pair<const Key,Data> > >
+    class CMapWithOriginalOrderingIteration : private map<Key, Data, Compare, Alloc>  
+    {
+    public:
+        typedef typename map<Key, Data, Compare, Alloc>::value_type value_type;
+        typedef typename map<Key, Data, Compare, Alloc>::iterator iterator;
+        typedef typename map<Key, Data, Compare, Alloc>::const_iterator const_iterator;
+        // "begin" deliberately omitted
+        using map<Key, Data, Compare, Alloc>::end;
+        using map<Key, Data, Compare, Alloc>::empty;
+        using map<Key, Data, Compare, Alloc>::size;
+        using map<Key, Data, Compare, Alloc>::find;
+        // add more "using" statements if you find more things from map<> that
+        // you want to use.  Make sure to keep consistency, though.
+        // For example, don't just use "using" on "erase".  Implement
+        // erase to be a wrapper over map's erase and make sure to
+        // update m_keysInOriginalOrder, etc.
+
+        // we override insert so we can keep track of ordering
+        // of keys
+        pair<iterator, bool> insert(const value_type& x)
+        {
+            pair<iterator, bool> result = map<Key, Data, Compare, Alloc>::insert(x);
+            if( result.second ) {
+                m_keysInOriginalOrder.push_back( x.first );
+            }
+            return result;
+        }
+
+        Data & 
+            operator[](const Key & k)
+        {
+            iterator find_iter = find(k);
+            if( find_iter != end() ) {
+                // already in map, just return it
+                return find_iter->second;
+            }
+
+            // not in map, so add
+            pair<iterator, bool> result = insert( 
+                value_type(k, Data()) );
+            _ASSERT( result.second );
+            return result.first->second;
+        }
+
+        typedef vector<Key> TKeyVec;
+        const TKeyVec & GetKeysInOriginalOrder(void) const {
+            _ASSERT( m_keysInOriginalOrder.size() == size() );
+            return m_keysInOriginalOrder;
+        }
+
+    private:
+        TKeyVec m_keysInOriginalOrder;
+    };
+}
 
 static void s_AddBioseqToPartsSet
 (CBioseq_set_EditHandle& parts,
@@ -682,11 +744,11 @@ void SegregateSetsByBioseqList(
 
 // typedefs used by DivvyUpAlignments and its helper functions
 typedef map<CSeq_entry_Handle, CSeq_entry_Handle> TMapDescendentToInputEntry;
-typedef map< CRef<CSeq_annot>, CSeq_entry_Handle> TMapSeqAnnotToDest;
+typedef CMapWithOriginalOrderingIteration< CRef<CSeq_annot>, CSeq_entry_Handle> TMapSeqAnnotToDest;
 typedef vector<CSeq_annot_Handle> TVecOfSeqAnnotsToErase;
 
 typedef vector< CConstRef<CSeq_align> > TAlignVec;
-typedef map<CSeq_entry_Handle, TAlignVec> TMapEntryToAlignVec;
+typedef CMapWithOriginalOrderingIteration<CSeq_entry_Handle, TAlignVec> TMapEntryToAlignVec;
 
 // returns true if any align was changed or deleted
 static bool s_DivvyUpAlignments_ProcessAnnot_Dendiag(
@@ -966,10 +1028,13 @@ static void s_DivvyUpAlignments_ProcessAnnot(
 
     // for each destination input entry, fill in mapSeqAnnotToDest
     // with a copy of seq-annot that just includes the aligns we care about
-    NON_CONST_ITERATE( TMapEntryToAlignVec, entry_to_aligns_iter, mapEntryToAlignVec)
+    ITERATE( TMapEntryToAlignVec::TKeyVec, 
+        entry_to_aligns_iter, 
+        mapEntryToAlignVec.GetKeysInOriginalOrder() )
     {
-        const CSeq_entry_Handle & dest_input_entry = entry_to_aligns_iter->first;
-        TAlignVec & aligns_to_copy = entry_to_aligns_iter->second;
+        const CSeq_entry_Handle & dest_input_entry = *entry_to_aligns_iter;
+        TAlignVec & aligns_to_copy = 
+            mapEntryToAlignVec.find(dest_input_entry)->second;
 
         // make copy of annot without aligns, but then
         // add the aligns that are relevant to this dest input entry
@@ -1029,9 +1094,12 @@ void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles)
     }
 
     // do all the moves and copies that were requested
-    ITERATE(TMapSeqAnnotToDest, annot_move_iter, mapSeqAnnotToDest) {
-        CRef<CSeq_annot> pAnnot = annot_move_iter->first;
-        const CSeq_entry_Handle & dest_entry_h = annot_move_iter->second;
+    ITERATE(TMapSeqAnnotToDest::TKeyVec, 
+        annot_move_iter, 
+        mapSeqAnnotToDest.GetKeysInOriginalOrder() ) 
+    {
+        CRef<CSeq_annot> pAnnot = *annot_move_iter;
+        const CSeq_entry_Handle & dest_entry_h = mapSeqAnnotToDest.find(pAnnot)->second;
 
         // careful: one code path moves and the other copies.
         if( dest_entry_h ) {

@@ -136,28 +136,10 @@ namespace {
     // throws exception on error.
     CRef<CSeq_entry> s_ReadAndPreprocessEntry( const string & sFilename )
     {
-        vector<string> vecArgs;
-        vecArgs.push_back("-P");
-        vecArgs.push_back("-w");
-        vecArgs.push_back("-I");
-        vecArgs.push_back("./test_cases/");
-        vecArgs.push_back(sFilename);
-
-        stringstream empty_in_sstream;
-        stringstream result_out_sstream;
-        int iExitCode = -1;
-        CPipe::EFinish eFinish = CPipe::ExecWait(
-            "/usr/local/gcc/4.4.2/bin/cpp", 
-            vecArgs,
-            empty_in_sstream, // no input
-            result_out_sstream,
-            cerr, // share stderr
-            iExitCode );
-        BOOST_REQUIRE( eFinish == CPipe::eDone );
-        BOOST_REQUIRE( iExitCode == 0 );
-
+        ifstream in_file(sFilename.c_str());
+        BOOST_REQUIRE(in_file.good());
         CRef<CSeq_entry> pEntry( new CSeq_entry );
-        result_out_sstream >> MSerial_AsnText >> *pEntry;
+        in_file >> MSerial_AsnText >> *pEntry;
         return pEntry;
     }
 
@@ -243,7 +225,7 @@ BOOST_AUTO_TEST_CASE(divvy)
         }
 
         // do the actual function calling
-        edit::DivvyUpAlignments(vecOfEntries);
+        BOOST_CHECK_NO_THROW(edit::DivvyUpAlignments(vecOfEntries));
 
         CRef<CSeq_entry> pExpectedOutputEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
 
@@ -298,7 +280,8 @@ BOOST_AUTO_TEST_CASE(SegregateSetsByBioseqList)
             }
         }
 
-        edit::SegregateSetsByBioseqList( entry_h, bioseq_handles );
+        BOOST_CHECK_NO_THROW(
+            edit::SegregateSetsByBioseqList( entry_h, bioseq_handles ));
 
         // check if matches expected
         BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
