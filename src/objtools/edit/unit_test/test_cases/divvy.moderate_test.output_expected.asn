@@ -30,6 +30,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 0
                   }
                 },
                 {
@@ -48,6 +51,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 1
                   }
                 },
                 {
@@ -66,6 +72,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 2
                   }
                 },
                 {
@@ -84,6 +93,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 3
                   }
                 },
                 {
@@ -102,6 +114,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 4
                   }
                 },
                 {
@@ -120,6 +135,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 5
                   }
                 },
                 {
@@ -138,6 +156,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 6
                   }
                 },
                 {
@@ -156,6 +177,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 7
                   }
                 },
                 {
@@ -174,6 +198,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 8
                   }
                 },
                 {
@@ -192,6 +219,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 9
                   }
                 },
                 {
@@ -210,6 +240,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 10
                   }
                 },
                 {
@@ -228,6 +261,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 11
                   }
                 },
                 {
@@ -246,6 +282,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 12
                   }
                 },
                 {
@@ -264,6 +303,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 13
                   }
                 },
                 {
@@ -282,6 +324,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 14
                   }
                 },
                 {
@@ -300,6 +345,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 15
                   }
                 },
                 {
@@ -318,6 +366,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 16
                   }
                 },
                 {
@@ -336,6 +387,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 17
                   }
                 },
                 {
@@ -354,6 +408,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 18
                   }
                 },
                 {
@@ -372,6 +429,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 19
                   }
                 },
                 {
@@ -390,6 +450,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 20
                   }
                 },
                 {
@@ -408,6 +471,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 21
                   }
                 },
                 {
@@ -426,6 +492,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 22
                   }
                 },
                 {
@@ -444,6 +513,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 23
                   }
                 },
                 {
@@ -462,6 +534,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 24
                   }
                 }
               }
@@ -498,6 +573,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 25
                       }
                     },
                     {
@@ -516,6 +594,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 26
                       }
                     },
                     {
@@ -534,6 +615,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 27
                       }
                     },
                     {
@@ -552,6 +636,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 28
                       }
                     },
                     {
@@ -570,6 +657,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 29
                       }
                     },
                     {
@@ -588,6 +678,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 30
                       }
                     },
                     {
@@ -606,6 +699,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 31
                       }
                     },
                     {
@@ -624,6 +720,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 32
                       }
                     },
                     {
@@ -642,6 +741,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 33
                       }
                     },
                     {
@@ -660,6 +762,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 34
                       }
                     },
                     {
@@ -678,6 +783,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 35
                       }
                     },
                     {
@@ -696,6 +804,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 36
                       }
                     },
                     {
@@ -714,6 +825,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 37
                       }
                     },
                     {
@@ -732,6 +846,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 38
                       }
                     },
                     {
@@ -750,6 +867,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 39
                       }
                     },
                     {
@@ -768,6 +888,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 40
                       }
                     },
                     {
@@ -786,6 +909,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 41
                       }
                     },
                     {
@@ -804,6 +930,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 42
                       }
                     },
                     {
@@ -822,6 +951,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 43
                       }
                     },
                     {
@@ -840,6 +972,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 44
                       }
                     },
                     {
@@ -858,6 +993,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 45
                       }
                     },
                     {
@@ -876,6 +1014,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 46
                       }
                     },
                     {
@@ -894,6 +1035,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 47
                       }
                     },
                     {
@@ -912,6 +1056,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 48
                       }
                     },
                     {
@@ -930,6 +1077,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 49
                       }
                     }
                   }
@@ -964,6 +1114,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 50
                       }
                     },
                     {
@@ -982,6 +1135,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 51
                       }
                     },
                     {
@@ -1000,6 +1156,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 52
                       }
                     },
                     {
@@ -1018,6 +1177,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 53
                       }
                     },
                     {
@@ -1036,6 +1198,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 54
                       }
                     },
                     {
@@ -1054,6 +1219,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 55
                       }
                     },
                     {
@@ -1072,6 +1240,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 56
                       }
                     },
                     {
@@ -1090,6 +1261,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 57
                       }
                     },
                     {
@@ -1108,6 +1282,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 58
                       }
                     },
                     {
@@ -1126,6 +1303,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 59
                       }
                     },
                     {
@@ -1144,6 +1324,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 60
                       }
                     },
                     {
@@ -1162,6 +1345,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 61
                       }
                     },
                     {
@@ -1180,6 +1366,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 62
                       }
                     },
                     {
@@ -1198,6 +1387,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 63
                       }
                     },
                     {
@@ -1216,6 +1408,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 64
                       }
                     },
                     {
@@ -1234,6 +1429,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 65
                       }
                     },
                     {
@@ -1252,6 +1450,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 66
                       }
                     },
                     {
@@ -1270,6 +1471,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 67
                       }
                     },
                     {
@@ -1288,6 +1492,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 68
                       }
                     },
                     {
@@ -1306,6 +1513,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 69
                       }
                     },
                     {
@@ -1324,6 +1534,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 70
                       }
                     },
                     {
@@ -1342,6 +1555,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 71
                       }
                     },
                     {
@@ -1360,6 +1576,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 72
                       }
                     },
                     {
@@ -1378,6 +1597,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 73
                       }
                     },
                     {
@@ -1396,6 +1618,9 @@ Seq-entry ::= set {
                           },
                           len 25
                         }
+                      },
+                      id {
+                        id 74
                       }
                     }
                   }
@@ -1422,6 +1647,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 75
                   }
                 },
                 {
@@ -1440,6 +1668,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 76
                   }
                 },
                 {
@@ -1458,6 +1689,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 77
                   }
                 },
                 {
@@ -1476,6 +1710,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 78
                   }
                 },
                 {
@@ -1494,6 +1731,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 79
                   }
                 },
                 {
@@ -1512,6 +1752,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 80
                   }
                 },
                 {
@@ -1530,6 +1773,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 81
                   }
                 },
                 {
@@ -1548,6 +1794,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 82
                   }
                 },
                 {
@@ -1566,6 +1815,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 83
                   }
                 },
                 {
@@ -1584,6 +1836,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 84
                   }
                 },
                 {
@@ -1602,6 +1857,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 85
                   }
                 },
                 {
@@ -1620,6 +1878,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 86
                   }
                 },
                 {
@@ -1638,6 +1899,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 87
                   }
                 },
                 {
@@ -1656,6 +1920,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 88
                   }
                 },
                 {
@@ -1674,6 +1941,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 89
                   }
                 },
                 {
@@ -1692,6 +1962,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 90
                   }
                 },
                 {
@@ -1710,6 +1983,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 91
                   }
                 },
                 {
@@ -1728,6 +2004,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 92
                   }
                 },
                 {
@@ -1746,6 +2025,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 93
                   }
                 },
                 {
@@ -1764,6 +2046,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 94
                   }
                 },
                 {
@@ -1782,6 +2067,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 95
                   }
                 },
                 {
@@ -1800,6 +2088,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 96
                   }
                 },
                 {
@@ -1818,6 +2109,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 97
                   }
                 },
                 {
@@ -1836,6 +2130,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 98
                   }
                 },
                 {
@@ -1854,6 +2151,9 @@ Seq-entry ::= set {
                       },
                       len 25
                     }
+                  },
+                  id {
+                    id 99
                   }
                 }
               }
@@ -1871,7 +2171,70 @@ Seq-entry ::= set {
                 {
                   dim 2,
                   ids {
-                    local str "NONEXISTENT",
+                    local str "A",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 100
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 101
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 102
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "A",
                     local str "NONEXISTENT"
                   },
                   starts {
@@ -1880,6 +2243,240 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 104
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 105
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 106
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 107
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "B",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 109
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 110
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 111
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 112
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "C",
+                    local str "NONEXISTENT"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 114
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "A"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 120
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "B"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 121
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "C"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 122
               }
             }
           }
@@ -1902,6 +2499,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 124
               }
             }
           }
@@ -1924,6 +2524,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 125
               }
             },
             {
@@ -1942,6 +2545,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 126
               }
             },
             {
@@ -1960,6 +2566,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 127
               }
             },
             {
@@ -1978,6 +2587,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 129
               }
             },
             {
@@ -1996,6 +2608,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 130
               }
             },
             {
@@ -2014,6 +2629,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 131
               }
             },
             {
@@ -2032,6 +2650,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 132
               }
             },
             {
@@ -2050,6 +2671,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 134
               }
             },
             {
@@ -2068,6 +2692,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 135
               }
             },
             {
@@ -2086,6 +2713,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 136
               }
             },
             {
@@ -2104,6 +2734,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 137
               }
             },
             {
@@ -2122,6 +2755,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 139
               }
             },
             {
@@ -2140,6 +2776,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 145
               }
             },
             {
@@ -2158,6 +2797,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 146
               }
             },
             {
@@ -2176,6 +2818,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 147
               }
             }
           }
@@ -2189,61 +2834,7 @@ Seq-entry ::= set {
                 {
                   dim 2,
                   ids {
-                    local str "A",
-                    local str "A"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "A",
-                    local str "B"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "A",
-                    local str "C"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "A",
+                    local str "NONEXISTENT",
                     local str "NONEXISTENT"
                   },
                   starts {
@@ -2252,204 +2843,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "B",
-                    local str "A"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "B",
-                    local str "B"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "B",
-                    local str "C"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "B",
-                    local str "NONEXISTENT"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "C",
-                    local str "A"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "C",
-                    local str "B"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "C",
-                    local str "C"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "C",
-                    local str "NONEXISTENT"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "NONEXISTENT",
-                    local str "A"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "NONEXISTENT",
-                    local str "B"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "NONEXISTENT",
-                    local str "C"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
+              },
+              id {
+                id 149
               }
             }
           }
@@ -2475,7 +2871,28 @@ Seq-entry ::= set {
                 {
                   dim 2,
                   ids {
-                    local str "NONEXISTENT",
+                    local str "D",
+                    local str "D"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 118
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "D",
                     local str "NONEXISTENT"
                   },
                   starts {
@@ -2484,6 +2901,30 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 119
+              }
+            },
+            {
+              type partial,
+              dim 2,
+              segs dendiag {
+                {
+                  dim 2,
+                  ids {
+                    local str "NONEXISTENT",
+                    local str "D"
+                  },
+                  starts {
+                    3,
+                    8
+                  },
+                  len 25
+                }
+              },
+              id {
+                id 123
               }
             }
           }
@@ -2506,6 +2947,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 124
               }
             }
           }
@@ -2528,6 +2972,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 143
               }
             },
             {
@@ -2546,6 +2993,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 144
               }
             },
             {
@@ -2564,6 +3014,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
+              },
+              id {
+                id 148
               }
             }
           }
@@ -2577,25 +3030,7 @@ Seq-entry ::= set {
                 {
                   dim 2,
                   ids {
-                    local str "D",
-                    local str "D"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "D",
+                    local str "NONEXISTENT",
                     local str "NONEXISTENT"
                   },
                   starts {
@@ -2604,24 +3039,9 @@ Seq-entry ::= set {
                   },
                   len 25
                 }
-              }
-            },
-            {
-              type partial,
-              dim 2,
-              segs dendiag {
-                {
-                  dim 2,
-                  ids {
-                    local str "NONEXISTENT",
-                    local str "D"
-                  },
-                  starts {
-                    3,
-                    8
-                  },
-                  len 25
-                }
+              },
+              id {
+                id 149
               }
             }
           }
@@ -2648,6 +3068,9 @@ Seq-entry ::= set {
               },
               len 25
             }
+          },
+          id {
+            id 150
           }
         }
       }

@@ -4,6 +4,12 @@ Each final file name here fits the following pattern:
 
 ${FUNC_TO_TEST}.${NAME_OF_TEST}.${PROCESSING_STAGE}.asn
 
+If a file exists with the same name except extension ".asn_pp" instead
+of ".asn", then the ".asn" file was generated *manually* 
+via "cpp -w -P foo.asn_pp > foo.asn".  Please keep .asn_pp and .asn
+files in sync in svn manually.  They are *not* automatically
+kept in sync.
+
 ========================================
 FUNC_TO_TEST:
 This indicates what function will be run on the file.  For example,
@@ -20,8 +26,7 @@ This is free form but you must limit characters to [A-Za-z0-9_]
 PROCESSING_STAGE:
 This differs depending on the function you're testing.  A
 PROCESSING_STAGE is mandatory for a given FUNC_TO_TEST unless noted
-otherwise.  For all .asn files, we use text ASN.1 with C-style macros
-for human-readability.
+otherwise.  For all .asn files, we use text ASN.1
 
 For FUNC_TO_TEST "divvy" (C++ func: DivvyUpAlignments),
 PROCESSING_STAGE could be:
@@ -43,5 +48,4 @@ PROCESSING_STAGE could be:
   test fails if it doesn't match.
 
 ========================================
-Again, note that .asn files are sent through the C preprocessor for
-ease of human readability and editing.
+

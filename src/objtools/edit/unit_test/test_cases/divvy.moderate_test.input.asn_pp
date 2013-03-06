@@ -83,7 +83,8 @@
     {                                           \
         type partial,                           \
             dim _dim,                           \
-            segs _segs                          \
+            segs _segs,                         \
+            id { id __COUNTER__ }               \
     }
 
 #define SEQ_ALIGN_DUMMY                                 \
