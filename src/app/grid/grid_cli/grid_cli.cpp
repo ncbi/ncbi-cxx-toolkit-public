@@ -818,10 +818,15 @@ struct SCommandDefinition {
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
         "Query and print information about a running "
-        "NetCache, NetSchedule, or worker node process.",
-        {eNetCache, eNetSchedule, eWorkerNode,
-            eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
-            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+        "NetCache, NetSchedule, or worker node process."
+        "\n\nThe following output formats are supported: \""
+        HUMAN_READABLE_OUTPUT_FORMAT "\", \"" RAW_OUTPUT_FORMAT
+        "\", and \"" JSON_OUTPUT_FORMAT "\". "
+        "The default is \"" HUMAN_READABLE_OUTPUT_FORMAT "\".",
+        {eNetCache, eNetSchedule, eWorkerNode, eOutputFormat, eCompatMode,
+            eLoginToken, eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1},
+        {eHumanReadable, eRaw, eJSON, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
