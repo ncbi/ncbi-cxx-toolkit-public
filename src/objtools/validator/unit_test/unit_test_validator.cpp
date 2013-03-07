@@ -48,7 +48,7 @@
 //
 //#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
-//#define BAD_VALIDATOR
+#define BAD_VALIDATOR
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -9111,6 +9111,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 {
+#ifdef BAD_VALIDATOR
+return;
+#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc(new CSeqdesc());

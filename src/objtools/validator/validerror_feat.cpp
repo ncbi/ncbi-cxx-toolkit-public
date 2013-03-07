@@ -3834,6 +3834,27 @@ void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_fe
         if (from - 1 < range.GetFrom() || from - 1> range.GetTo() || to - 1 < range.GetFrom() || to - 1 > range.GetTo()) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_RptUnitRangeProblem,
                      "/rpt_unit_range is not within sequence length", feat);   
+        } else {
+            bool nulls_between = false;
+            for ( CTypeConstIterator<CSeq_loc> lit = ConstBegin(feat.GetLocation()); lit; ++lit ) {
+                if ( lit->Which() == CSeq_loc::e_Null ) {
+                    nulls_between = true;
+                }
+            }
+            if (nulls_between) {
+                bool in_range = false;
+                for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
+                    range = it.GetEmbeddingSeq_loc().GetTotalRange();
+                    if (from - 1 < range.GetFrom() || from - 1> range.GetTo() || to - 1 < range.GetFrom() || to - 1 > range.GetTo()) {
+                    } else {
+                        in_range = true;
+                    }
+                }
+                if (! in_range) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_RptUnitRangeProblem,
+                             "/rpt_unit_range is not within ordered intervals", feat);   
+                }
+            }
         }
     }
 }
