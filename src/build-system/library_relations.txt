@@ -7884,7 +7884,6 @@ xcleanup needs xobjutil
 xcleanup needs xregexp
 xcleanup needs xser
 xcleanup needs xutil
-xcommcs needs xncbi
 xcompress needs xncbi
 xcompress needs xutil
 xconnect includes connect
@@ -8297,7 +8296,6 @@ xhgenefetch needs xobjmgr
 xhgenefetch needs xobjutil
 xhgenefetch needs xser
 xhgenefetch needs xutil
-xhist needs xncbi
 xhtml needs xncbi
 xid_estsub needs biblio
 xid_estsub needs connect
