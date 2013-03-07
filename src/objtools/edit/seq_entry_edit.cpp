@@ -443,8 +443,7 @@ static void s_PromoteSingletonSetsInSet(
 
     // perform promotions requested
     ITERATE( TBioseqSetsToPromote, promoted_set_it, bioseqSetsToPromote ) {
-        int parents_index =  bioseq_set_h.GetSeq_entry_Index( *promoted_set_it );
-        _ASSERT( parents_index >= 0 );
+        _ASSERT( bioseq_set_h.GetSeq_entry_Index( *promoted_set_it ) >= 0 );
         promoted_set_it->GetParentEntry().Remove();
         bioseq_set_h.GetEditHandle().TakeEntry( *promoted_set_it );
     }
@@ -981,7 +980,6 @@ static void s_DivvyUpAlignments_ProcessAnnot(
     // because it's going to be copied (or at least moved)
     bool bAnyAlignNeedsChange = false;
 
-    CScope & scope = annot_h.GetScope();
     CSeq_entry_Handle old_input_entry = annot_h.GetParentEntry();
     CAlign_CI align_ci(annot_h);
     for( ; align_ci; ++align_ci) {
