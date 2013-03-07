@@ -1938,6 +1938,10 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
             smp.GetLabel(&title, CSourceModParser::fUnusedMods);
             copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
                 inserter(m_BadMods, m_BadMods.begin()) );
+            const CSourceModParser::TMods & unused_mods = 
+                smp.GetMods(CSourceModParser::fUnusedMods);
+            copy( unused_mods.begin(), unused_mods.end(),
+                  inserter(m_UnusedMods, m_UnusedMods.begin() ) );
         }
     }
 }

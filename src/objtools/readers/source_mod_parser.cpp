@@ -179,16 +179,19 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
                 }
             }}
 
-            {{
+            
+            // only add Prot_ref if amino acid (or at least not nucleic acid)
+            if( ! seq.IsNa() )
+            {
                 CAutoInitRef<CProt_ref> prot;
                 x_ApplyMods(prot);
-                if (&prot.Get(LeaveAsIs<CProt_ref>) != NULL) {
+                if ( &prot.Get(LeaveAsIs<CProt_ref>) != NULL ) {
                     CRef<CSeq_feat> feat(new CSeq_feat);
                     feat->SetData().SetProt(*prot);
                     feat->SetLocation().SetWhole(*id);
                     ftable->SetData().SetFtable().push_back(feat);
                 }
-            }}
+            }
 
             if ( !had_ftable  &&  &ftable.Get(LeaveAsIs<CSeq_annot>) != NULL ) {
                 seq.SetAnnot().push_back(CRef<CSeq_annot>(&*ftable));

@@ -143,7 +143,8 @@ public:
 
     /// Re-allow previously seen IDs even if fUniqueIds is on.
     void ResetIDTracker(void) { m_IDTracker.clear(); }
-        
+    
+    const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
     void ClearBadMods(void) { m_BadMods.clear(); }
 
@@ -301,6 +302,7 @@ private:
     TSeqPos                 m_Offset;
     TIDTracker              m_IDTracker;
     CSourceModParser::TMods m_BadMods;
+    CSourceModParser::TMods m_UnusedMods;
 };
 
 
