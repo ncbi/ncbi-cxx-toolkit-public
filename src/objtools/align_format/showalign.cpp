@@ -1997,12 +1997,6 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         alnvecInfo->alnvec = avRef;
                        
                         subid=&(avRef->GetSeqId(1));
-                        if(!previousId.Empty() && 
-                           !subid->Match(*previousId)){
-                            m_Scope.RemoveFromHistory(m_Scope.
-                                                      GetBioseqHandle(*previousId));
-                                                      //release memory 
-                        }                        
                         bool showDefLine = previousId.Empty() || !subid->Match(*previousId);
                         x_DisplayAlnvecInfo(out, alnvecInfo,showDefLine);                                            
                        
