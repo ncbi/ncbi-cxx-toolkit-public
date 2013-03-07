@@ -387,7 +387,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const vector<char>& v)
 }
 
 
-class NCBI_XOBJMGR_EXPORT CPrefetchSeqData
+class CPrefetchSeqData
     : public CPrefetchBioseq
 {
 public:
