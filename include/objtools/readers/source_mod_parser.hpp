@@ -41,6 +41,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqblock/GB_block.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
@@ -60,7 +61,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CBioseq;
-class CSeq_id;
 // class CSubmit_block;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -318,8 +318,29 @@ int CSourceModParser::CompareKeys(const CTempString& lhs,
 inline
 bool CSourceModParser::SMod::operator <(const SMod& rhs) const
 {
+    // compare the key
     int key_comp = CompareKeys(key, rhs.key);
-    return key_comp < 0  ||  (key_comp == 0  &&  pos < rhs.pos);
+    if( key_comp != 0 ) {
+        return key_comp < 0;
+    }
+
+    // compare sequence id
+    if( ! seqid.IsNull() || ! rhs.seqid.IsNull() ) {
+        // (unset seqid comes first)
+        if( seqid.IsNull() ) {
+            return true;
+        } else if( rhs.seqid.IsNull() ) {
+            return false;
+        }
+
+        int id_comp = seqid->CompareOrdered(*rhs.seqid);
+        if( id_comp != 0 ) {
+            return id_comp < 0;
+        }
+    }
+
+    // compare position
+    return pos < rhs.pos;
 }
 
 inline
