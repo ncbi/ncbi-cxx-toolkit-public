@@ -114,6 +114,11 @@ public:
             { return CompareKeys(lhs, rhs) < 0; }
     };
 
+    struct PKeyEqual {
+        bool operator()(const CTempString& lhs, const CTempString& rhs) const
+            { return CompareKeys(lhs, rhs) == 0; }
+    };
+
     struct SMod {
 
         CConstRef<CSeq_id> seqid;
@@ -172,8 +177,17 @@ public:
     /// in between if s is not empty and doesn't already end with one.
     void GetLabel(string* s, TWhichMods which = fAllMods) const;
 
-    // Allows user to get the list of bad mods
+    /// Allows user to get the list of bad mods found by this
     const TMods & GetBadMods(void) const { return m_BadMods; }
+
+    /// Given a mod name (e.g. "topology"), it returns the set of acceptable
+    /// values (e.g. "linear", "circular", etc.).  If the
+    /// mod is unknown or free-form, the returned set will be blank.
+    static const set<string> & GetModAllowedValues(const string &mod);
+
+    /// Same as GetModAllowedValues, but returns one string with all the
+    /// values.  Example: For "strand" it might give "'single', 'double', 'mixed'"
+    static const string & GetModAllowedValuesAsOneString(const string &mod);
 
 private:
     static const unsigned char kKeyCanonicalizationTable[257];
@@ -197,16 +211,8 @@ private:
     // sAllowedValues, enum_values, etc. are combined to produce the final list of
     // allowed values.
     // TModMap is some kind of map whose keys are "const char *".
-    template <typename TModMap >
     void x_HandleBadModValue(
-        const SMod& mod, 
-        const string & sAllowedValues, 
-        const TModMap * modMap,
-        const CEnumeratedTypeValues* enum_values = NULL
-        );
-    // Useful if you don't want to use modMap.  You can pass modMap something
-    // like (TDummyModMap*)NULL
-    typedef std::map<const char*, int> TDummyModMap;
+        const SMod& mod );
 };
 
 

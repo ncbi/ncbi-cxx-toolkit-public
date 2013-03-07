@@ -44,6 +44,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
+#include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -179,10 +180,10 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
                 }
             }}
 
-            
             // only add Prot_ref if amino acid (or at least not nucleic acid)
-            if( ! seq.IsNa() )
-            {
+            // (Yes, the FIELD_CHAIN_OF_2_IS_SET is necessary because IsAa()
+            // can throw an exception if mol isn't set)
+            if( ! FIELD_CHAIN_OF_2_IS_SET(seq, Inst, Mol) || seq.IsAa() ) {
                 CAutoInitRef<CProt_ref> prot;
                 x_ApplyMods(prot);
                 if ( &prot.Get(LeaveAsIs<CProt_ref>) != NULL ) {
@@ -323,45 +324,41 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         } else if (NStr::EqualNocase(mod->value, "circular")) {
             seq.SetInst().SetTopology(CSeq_inst::eTopology_circular);
         } else {
-            x_HandleBadModValue(*mod, "'linear', 'circular'", (TDummyModMap*)NULL);
+            x_HandleBadModValue(*mod);
         }
     }
 
-    // mol[ecule]
-    bool bMolSetViaMolMod = false;
-    if ((mod = FindMod("molecule", "mol")) != NULL) {
-        // TODO: should we check if mol was already set and is a conflicting value?
-        if (NStr::EqualNocase(mod->value, "dna")) {
-            seq.SetInst().SetMol( CSeq_inst::eMol_dna );
-            bMolSetViaMolMod = true;
-        } else if (NStr::EqualNocase(mod->value, "rna")) {
-            seq.SetInst().SetMol( CSeq_inst::eMol_rna );
-            bMolSetViaMolMod = true;
-        } else {
-            x_HandleBadModValue(*mod, "'dna', 'rna'", (TDummyModMap*)NULL);
-        }
-    }
+    // molecule information is not set for proteins at this time
+    // (Yes, the FIELD_CHAIN_OF_2_IS_SET is necessary because IsNa()
+    // can throw an exception if mol isn't set)
+    if( ! FIELD_CHAIN_OF_2_IS_SET(seq, Inst, Mol) || seq.IsNa() ) {
+        bool bMolSetViaMolMod = false;
 
-    // if mol/molecule not set right, we can use moltype instead
-    // mol[-]type
-    if( ! bMolSetViaMolMod ) {
-        if ((mod = FindMod("moltype", "mol-type")) != NULL) {
-            TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
-            if (it == sc_BiomolMap.end()) {
-                // construct the possible bad values by hand
-                string sAllowedValues;
-                ITERATE( TBiomolMap, map_iter, sc_BiomolMap ) {
-                    if( map_iter->second.m_eShown == SMolTypeInfo::eShown_Yes ) {
-                        if( ! sAllowedValues.empty() ) {
-                            sAllowedValues += ", ";
-                        }
-                        sAllowedValues += '\'' + string(map_iter->first) + '\'';
-                    }
-                }
-                x_HandleBadModValue(*mod, sAllowedValues, (TDummyModMap*)NULL);
+        // mol[ecule]
+        if ((mod = FindMod("molecule", "mol")) != NULL) {
+            if (NStr::EqualNocase(mod->value, "dna")) {
+                seq.SetInst().SetMol( CSeq_inst::eMol_dna );
+                bMolSetViaMolMod = true;
+            } else if (NStr::EqualNocase(mod->value, "rna")) {
+                seq.SetInst().SetMol( CSeq_inst::eMol_rna );
+                bMolSetViaMolMod = true;
             } else {
-                // moltype sets biomol and inst.mol
-                seq.SetInst().SetMol(it->second.m_eMol);
+                x_HandleBadModValue(*mod);
+            }
+        }
+
+        // if mol/molecule not set right, we can use moltype instead
+
+        // mol[-]type
+        if( ! bMolSetViaMolMod ) {
+            if ((mod = FindMod("moltype", "mol-type")) != NULL) {
+                TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
+                if (it == sc_BiomolMap.end()) {
+                    x_HandleBadModValue(*mod);
+                } else {
+                    // moltype sets biomol and inst.mol
+                    seq.SetInst().SetMol(it->second.m_eMol);
+                }
             }
         }
     }
@@ -375,7 +372,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         } else if (NStr::EqualNocase(mod->value, "mixed")) {
             seq.SetInst().SetStrand( CSeq_inst::eStrand_mixed );
         } else {
-            x_HandleBadModValue(*mod, "'single', 'double', 'mixed'", (TDummyModMap*)NULL);
+            x_HandleBadModValue(*mod);
         }
     }
 
@@ -419,9 +416,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
                 bsrc->SetGenome(CBioSource::GetTypeInfo_enum_EGenome()
                                 ->FindValue(mod->value));
             } catch (CSerialException&) {
-                x_HandleBadModValue(
-                    *mod, "'mitochondrial', 'provirus', 'extrachromosomal', 'insertion sequence'", 
-                    (TDummyModMap*)NULL);
+                x_HandleBadModValue(*mod);
             }
         }
     }
@@ -439,8 +434,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
                             ->FindValue(mod->value));
             }
         } catch (CSerialException&) {
-            x_HandleBadModValue(*mod, "'natural mutant', 'mutant'", (TDummyModMap*)NULL, 
-                CBioSource::GetTypeInfo_enum_EOrigin() );
+            x_HandleBadModValue(*mod);
         }
     }
 
@@ -706,16 +700,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
         TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
         if (it == sc_BiomolMap.end()) {
             // construct the possible bad values by hand
-            string sAllowedValues;
-            ITERATE( TBiomolMap, map_iter, sc_BiomolMap ) {
-                if( map_iter->second.m_eShown == SMolTypeInfo::eShown_Yes ) {
-                    if( ! sAllowedValues.empty() ) {
-                        sAllowedValues += ", ";
-                    }
-                    sAllowedValues += '\'' + string(map_iter->first) + '\'';
-                }
-            }
-            x_HandleBadModValue(*mod, sAllowedValues, (TDummyModMap*)NULL);
+            x_HandleBadModValue(*mod);
         } else {
             // moltype sets biomol and inst.mol
             mi->SetBiomol(it->second.m_eBiomol);
@@ -726,7 +711,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
     if ((mod = FindMod("tech")) != NULL) {
         TTechMap::const_iterator it = sc_TechMap.find(mod->value.c_str());
         if (it == sc_TechMap.end()) {
-            x_HandleBadModValue(*mod, kEmptyStr, &sc_TechMap);
+            x_HandleBadModValue(*mod);
         } else {
             mi->SetTech(it->second);
         }
@@ -736,7 +721,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
     if ((mod = FindMod("completeness", "completedness")) != NULL) {
         TTechMap::const_iterator it = sc_CompletenessMap.find(mod->value.c_str());
         if (it == sc_CompletenessMap.end()) {
-            x_HandleBadModValue(*mod, kEmptyStr, &sc_CompletenessMap);
+            x_HandleBadModValue(*mod);
         } else {
             mi->SetCompleteness(it->second);
         }
@@ -1084,11 +1069,108 @@ void CSourceModParser::GetLabel(string* s, TWhichMods which) const
     }
 }
 
-template <class TModMap>
+// static 
+const set<string> & 
+CSourceModParser::GetModAllowedValues(const string &mod)
+{
+    // since this has a lock, do NOT grab any other locks
+    // inside here.
+    static CMutex mutex;
+    CMutexGuard guard(mutex);
+
+    typedef map< string, set<string>, CSourceModParser::PKeyCompare> TMapModToValidValues;
+    static TMapModToValidValues s_mapModToValidValues;
+
+    // see if value is already calculated to try to save time
+    TMapModToValidValues::const_iterator find_iter =
+        s_mapModToValidValues.find(mod);
+    if( find_iter != s_mapModToValidValues.end() ) {
+        return find_iter->second;
+    }
+
+    // does canonical comparison, which goes a little beyond case-insensitivity
+    PKeyEqual key_equal;
+
+    // not cached, so we need to calculate it ourselves
+    set<string> & set_valid_values = s_mapModToValidValues[mod];
+    if( key_equal(mod, "topology") || key_equal(mod, "top") ) {
+        set_valid_values.insert("linear");
+        set_valid_values.insert("circular");
+    } else if( key_equal(mod, "molecule") || key_equal(mod, "mol") ) {
+        set_valid_values.insert("rna");
+        set_valid_values.insert("dna");
+    } else if( key_equal(mod, "moltype") || key_equal(mod, "mol-type") ) {
+        // construct the possible bad values by hand
+        ITERATE( TBiomolMap, map_iter, sc_BiomolMap ) {
+            if( map_iter->second.m_eShown == SMolTypeInfo::eShown_Yes ) {
+                set_valid_values.insert(map_iter->first);
+            }
+        }
+    } else if( key_equal(mod, "strand") ) {
+        set_valid_values.insert("single");
+        set_valid_values.insert("double");
+        set_valid_values.insert("mixed");
+    } else if( key_equal(mod, "location") ) {
+        set_valid_values.insert("mitochondrial");
+        set_valid_values.insert("provirus");
+        set_valid_values.insert("extrachromosomal");
+        set_valid_values.insert("insertion sequence");
+    } else if( key_equal(mod, "origin") ) {
+        set_valid_values.insert("natural mutant");
+        set_valid_values.insert("mutant");
+        ITERATE( CEnumeratedTypeValues::TValues, enum_iter, CBioSource::GetTypeInfo_enum_EOrigin()->GetValues() ) {
+            set_valid_values.insert( enum_iter->first );
+        }
+    } else if( key_equal(mod, "tech") ) {
+        ITERATE(TTechMap, tech_it, sc_TechMap) {
+            set_valid_values.insert(tech_it->first);
+        }
+    } else if( key_equal(mod, "completeness") || key_equal(mod, "completedness") ) {
+        ITERATE( TCompletenessMap, comp_it, sc_CompletenessMap ) {
+            set_valid_values.insert(comp_it->first);
+        }
+    } else {
+        set_valid_values.insert("ERROR TRYING TO DETERMINE ALLOWED VALUES");
+    }
+
+    return set_valid_values;
+}
+
+// static 
+const string & 
+CSourceModParser::GetModAllowedValuesAsOneString(const string &mod)
+{
+    // do not grab any other locks while in here (except the lock in 
+    // GetModAllowedValues)
+    static CMutex mutex;
+    CMutexGuard guard(mutex);
+
+    typedef map<string, string> TMapModNameToStringOfAllAllowedValues;
+    static TMapModNameToStringOfAllAllowedValues mapModNameToStringOfAllAllowedValues;
+
+    // see if we've already cached the value
+    TMapModNameToStringOfAllAllowedValues::const_iterator find_iter =
+        mapModNameToStringOfAllAllowedValues.find(mod);
+    if( find_iter != mapModNameToStringOfAllAllowedValues.end() ) {
+        return find_iter->second;
+    }
+
+    // not loaded, so we need to calculate it
+    string & sAllValuesAsOneString = 
+        mapModNameToStringOfAllAllowedValues[mod];
+    const set<string> & setAllowedValues = GetModAllowedValues(mod);
+    ITERATE( set<string>, value_it, setAllowedValues ) {
+        if( ! sAllValuesAsOneString.empty() ) {
+            sAllValuesAsOneString += ", ";
+        }
+        sAllValuesAsOneString += "'" + *value_it + "'";
+    }
+
+    return sAllValuesAsOneString;
+}
+
 void CSourceModParser::x_HandleBadModValue(
-    const SMod& mod, const string & sAllowedValues, 
-    const TModMap * modMap,
-    const CEnumeratedTypeValues* enum_values)
+    const SMod& mod)
 {
     m_BadMods.insert(mod);
 
@@ -1096,24 +1178,7 @@ void CSourceModParser::x_HandleBadModValue(
         return;
     }
 
-    string sAllAllowedValues = sAllowedValues;
-    if( NULL != enum_values ) {
-        ITERATE( CEnumeratedTypeValues::TValues, enum_iter, enum_values->GetValues() ) {
-            if( ! sAllAllowedValues.empty() ) {
-                sAllAllowedValues += ", ";
-            }
-            sAllAllowedValues += '\'' + enum_iter->first + '\'';
-        }
-    }
-
-    if( NULL != modMap ) {
-        ITERATE( typename TModMap, modmap_iter, *modMap ) {
-            if( ! sAllAllowedValues.empty() ) {
-                sAllAllowedValues += ", ";
-            }
-            sAllAllowedValues += string("'") + modmap_iter->first + "'";
-        }
-    }
+    const string & sAllAllowedValues = GetModAllowedValuesAsOneString(mod.key);
 
     CBadModError badModError(mod, sAllAllowedValues);
 
