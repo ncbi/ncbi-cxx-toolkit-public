@@ -9111,9 +9111,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc(new CSeqdesc());
@@ -9236,11 +9233,11 @@ return;
 
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr("Sequencing Technology");
-    field->SetData().SetStr("Sanger");
+    field->SetData().SetStr("Singer");
     desc->SetUser().SetData().push_back(field);
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
-                                  "Required field Assembly Method is missing when Sequencing Technology has value 'Sanger'"));
+                                  "Required field Assembly Method is missing when Sequencing Technology has value 'Singer'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
