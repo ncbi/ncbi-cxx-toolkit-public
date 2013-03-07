@@ -48,6 +48,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
@@ -63,6 +64,7 @@
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/seq_table_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -75,6 +77,7 @@
 #include <objmgr/table_field.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/seqref.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
 
@@ -92,6 +95,7 @@
 #endif
 
 #include <serial/iterator.hpp>
+#include <serial/objistrasn.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -108,6 +112,8 @@ class CDemoApp : public CNcbiApplication
 public:
     virtual void Init(void);
     virtual int  Run (void);
+    virtual void Exit(void);
+    void GetIds(CScope& scope, const CSeq_id_Handle& idh);
 };
 
 
@@ -150,6 +156,7 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("pause", "Pause",
                             "pause between tests in seconds",
                             CArgDescriptions::eInteger, "0");
+    arg_desc->AddFlag("pause_key", "pause and wait for ENTER between tests");
 
     arg_desc->AddDefaultKey("resolve", "ResolveMethod",
                             "Method of segments resolution",
@@ -183,11 +190,14 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("blast_type",
                             &(*new CArgAllow_Strings,
                               "protein", "p", "nucleotide", "n"));
-    arg_desc->AddFlag("sra", "Use SRA data loader as a plugin");
+    arg_desc->AddFlag("other_loaders", "Extra data loaders as plugins (comma separated)");
 
     arg_desc->AddFlag("get_ids", "Get sequence ids");
+    arg_desc->AddFlag("get_blob_id", "Get sequence blob id");
     arg_desc->AddFlag("get_gi", "Get sequence gi");
     arg_desc->AddFlag("get_acc", "Get sequence accession");
+    arg_desc->AddFlag("get_taxid", "Get TaxId");
+    arg_desc->AddFlag("get_title", "Get sequence title");
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("seg_labels", "get labels of all segments in Delta");
@@ -221,8 +231,15 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("range_to", "RangeTo",
                              "features ending at this point on the sequence",
                              CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("range_step", "RangeStep",
+                             "shift range by this value between iterations",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddFlag("plus_strand",
+                      "use plus strand of the sequence");
     arg_desc->AddFlag("minus_strand",
                       "use minus strand of the sequence");
+    arg_desc->AddFlag("ignore_strand",
+                      "ignore strand of feature location");
     arg_desc->AddOptionalKey("range_loc", "RangeLoc",
                              "features on this Seq-loc in ASN.1 text format",
                              CArgDescriptions::eString);
@@ -232,14 +249,18 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("overlap",
                             &(*new CArgAllow_Strings,
                               "totalrange", "intervals"));
+    arg_desc->AddFlag("no_map", "Do not map features to master sequence");
                              
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
     arg_desc->AddFlag("get_feat_handle", "reverse lookup of feature handle");
+    arg_desc->AddFlag("sort_seq_feat", "sort CSeq_feat objects");
+    arg_desc->AddFlag("save_mapped_feat", "save and check CMappedFeat objects");
     arg_desc->AddFlag("check_cds", "check correctness cds");
     arg_desc->AddFlag("check_seq_data", "check availability of seq_data");
     arg_desc->AddFlag("seq_vector_tse", "use TSE as a base for CSeqVector");
+    arg_desc->AddFlag("skip_graphs", "do not search for graphs");
     arg_desc->AddFlag("skip_alignments", "do not search for alignments");
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
@@ -285,7 +306,25 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("feat_id", "FeatId",
                              "Feat-id of features to search",
                              CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("feat_id_str", "FeatIdStr",
+                             "String Feat-id of features to search",
+                             CArgDescriptions::eString);
     arg_desc->AddFlag("make_tree", "make feature tree");
+    arg_desc->AddDefaultKey("feat_id_mode", "feat_id_mode",
+                            "CFeatTree xref by feat id mode",
+                            CArgDescriptions::eString,
+                            "by_type");
+    arg_desc->SetConstraint("feat_id_mode",
+                            &(*new CArgAllow_Strings,
+                              "ignore", "by_type", "always"));
+    arg_desc->AddDefaultKey("snp_strand_mode", "snp_strand_mode",
+                            "CFeatTree SNP strand mode",
+                            CArgDescriptions::eString,
+                            "both");
+    arg_desc->SetConstraint("snp_strand_mode",
+                            &(*new CArgAllow_Strings,
+                              "same", "both"));
+
     arg_desc->AddFlag("print_tree", "print feature tree");
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
@@ -296,7 +335,12 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("table_field_id", "table_field_id",
                              "Table Seq-feat field id to retrieve",
                              CArgDescriptions::eInteger);
+    arg_desc->AddFlag("print_seq_table", "print all found Seq-tables");
 
+    arg_desc->AddOptionalKey("save_NA", "save_NA_prefix",
+                             "Save named annotations blobs",
+                             CArgDescriptions::eString);
+    
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -343,8 +387,203 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const vector<char>& v)
 }
 
 
+class NCBI_XOBJMGR_EXPORT CPrefetchSeqData
+    : public CPrefetchBioseq
+{
+public:
+    typedef string TResult;
+
+    // from bioseq
+    CPrefetchSeqData(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand,
+                     CSeq_data::E_Choice encoding)
+        : CPrefetchBioseq(bioseq),
+          m_Range(range),
+          m_Strand(strand),
+          m_Encoding(encoding),
+          m_VectorCoding(CBioseq_Handle::eCoding_NotSet)
+        {
+        }
+    CPrefetchSeqData(const CBioseq_Handle& bioseq,
+                     const CRange<TSeqPos>& range,
+                     ENa_strand strand,
+                     CBioseq_Handle::EVectorCoding vector_coding)
+        : CPrefetchBioseq(bioseq),
+          m_Range(range),
+          m_Strand(strand),
+          m_Encoding(CSeq_data::e_not_set),
+          m_VectorCoding(vector_coding)
+        {
+        }
+
+    virtual bool Execute(CRef<CPrefetchRequest> token)
+        {
+            if ( !CPrefetchBioseq::Execute(token) ) {
+                return false;
+            }
+            CSeqVector sv(GetBioseqHandle(), m_VectorCoding, m_Strand);
+            if ( m_Encoding != CSeq_data::e_not_set ) {
+                sv.SetCoding(m_Encoding);
+            }
+            sv.GetSeqData(m_Range.GetFrom(), m_Range.GetToOpen(), m_Result);
+            return true;
+        }
+
+    const string& GetSequence(void) const
+        {
+            return m_Result;
+        }
+    const string& GetResult(void) const
+        {
+            return m_Result;
+        }
+
+private:
+    // from bioseq
+    CRange<TSeqPos>     m_Range;
+    ENa_strand          m_Strand;
+    // encoding
+    CSeq_data::E_Choice m_Encoding;
+    CBioseq_Handle::EVectorCoding m_VectorCoding;
+    // result
+    TResult             m_Result;
+};
+
+
+CSeq_id_Handle s_Normalize(const CSeq_id_Handle& id, CScope& scope)
+{
+    CSeq_id_Handle ret = scope.GetAccVer(id);
+    return ret? ret: id;
+}
+
+
+typedef pair<string, CMappedFeat> TFeatureKey;
+typedef set<TFeatureKey> TOrderedFeatures;
+typedef map<CMappedFeat, TOrderedFeatures> TOrderedTree;
+typedef map<TFeatureKey, size_t> TFeatureIndex;
+
+TFeatureKey s_GetFeatureKey(const CMappedFeat& child)
+{
+    CNcbiOstrstream str;
+    CRange<TSeqPos> range;
+    try {
+        range = child.GetLocation().GetTotalRange();
+    }
+    catch ( CException& ) {
+    }
+    str << setw(10) << range.GetFrom()
+        << setw(10) << range.GetTo()
+        << " " << MSerial_AsnText
+        << child.GetMappedFeature();
+    string s = CNcbiOstrstreamToString(str);
+    return TFeatureKey(s, child);
+}
+
+void s_PrintTree(const string& p1, const string& p2,
+                 TOrderedTree& tree, TFeatureKey key,
+                 TFeatureIndex& index)
+{
+    const CMappedFeat& feat = key.second;
+    const TOrderedFeatures& cc = tree[feat];
+    NcbiCout << p1 << "-F[" << index[key] << "]:"
+             << CSeqFeatData::SelectionName(feat.GetFeatType())
+             << "(subt " << feat.GetFeatSubtype() << ")";
+    if ( feat.GetFeatType() == CSeqFeatData::e_Gene ) {
+        const CGene_ref& gene = feat.GetOriginalFeature().GetData().GetGene();
+        if ( gene.IsSetLocus() ) {
+            NcbiCout << " " << gene.GetLocus();
+        }
+        if ( gene.IsSetLocus_tag() ) {
+            NcbiCout << " tag=" << gene.GetLocus_tag();
+        }
+    }
+    if ( feat.IsSetProduct() ) {
+        NcbiCout << " -> ";
+        CConstRef<CSeq_id> id;
+        try {
+            id = feat.GetProduct().GetId();
+        }
+        catch ( CException& ) {
+            NcbiCout << "*bad loc*";
+        }
+        if ( id ) {
+            NcbiCout << s_Normalize(CSeq_id_Handle::GetHandle(*id),
+                                    feat.GetScope());
+        }
+    }
+    NcbiCout << " ";
+    try {
+        NcbiCout << feat.GetLocation().GetTotalRange();
+    }
+    catch ( CException& ) {
+        NcbiCout << "*bad loc*";
+    }
+    NcbiCout << "\n";
+    ITERATE ( TOrderedFeatures, it, cc ) {
+        TOrderedFeatures::const_iterator it2 = it;
+        if ( ++it2 != cc.end() ) {
+            s_PrintTree(p2+" +", p2+" |", tree, *it, index);
+        }
+        else {
+            s_PrintTree(p2+" +", p2+"  ", tree, *it, index);
+        }
+    }
+}
+
+void CDemoApp::GetIds(CScope& scope, const CSeq_id_Handle& idh)
+{
+    const CArgs& args = GetArgs();
+
+    if ( args["get_gi"] ) {
+        NcbiCout << "Gi: "
+                 << sequence::GetId(idh, scope, sequence::eGetId_ForceGi)
+                 << NcbiEndl;
+    }
+    if ( args["get_acc"] ) {
+        if ( args["gi"] ) {
+            int gi = args["gi"].AsInteger();
+            NcbiCout << "Acc: "
+                     << sequence::GetAccessionForGi(gi, scope, sequence::eWithoutAccessionVersion)
+                     << NcbiEndl;
+        }
+    }
+    if ( args["get_taxid"] ) {
+        NcbiCout << "TaxId: "
+                 << scope.GetTaxId(idh)
+                 << NcbiEndl;
+    }
+    CSeq_id_Handle best_id =
+        sequence::GetId(idh, scope, sequence::eGetId_Best);
+    if ( best_id ) {
+        NcbiCout << "Best id: " << best_id << NcbiEndl;
+    }
+    else {
+        NcbiCout << "Best id: null" << NcbiEndl;
+    }
+    NcbiCout << "Ids:" << NcbiEndl;
+    //scope.GetBioseqHandle(idh);
+    vector<CSeq_id_Handle> ids = scope.GetIds(idh);
+    ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
+        NcbiCout << "    " << it->AsString() << NcbiEndl;
+    }
+}
+
+
+void x_Pause(const char* msg, bool pause_key)
+{
+    if ( pause_key ) {
+        NcbiCout << "Press enter before "<< msg << NcbiFlush;
+        string s;
+        getline(NcbiCin, s);
+    }
+}
+
+
 int CDemoApp::Run(void)
 {
+    SetDiagPostLevel(eDiag_Info);
+
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
@@ -391,6 +630,7 @@ int CDemoApp::Run(void)
 
     int repeat_count = args["count"].AsInteger();
     int pause = args["pause"].AsInteger();
+    bool pause_key = args["pause_key"];
     bool only_features = args["only_features"];
     bool by_product = args["by_product"];
     bool count_types = args["count_types"];
@@ -419,6 +659,7 @@ int CDemoApp::Run(void)
     bool check_cds = args["check_cds"];
     bool check_seq_data = args["check_seq_data"];
     bool seq_vector_tse = args["seq_vector_tse"];
+    bool skip_graphs = args["skip_graphs"];
     bool skip_alignments = args["skip_alignments"];
     bool get_mapped_alignments = args["get_mapped_alignments"];
     SAnnotSelector::ESortOrder order =
@@ -426,6 +667,8 @@ int CDemoApp::Run(void)
         SAnnotSelector::eSortOrder_Reverse : SAnnotSelector::eSortOrder_Normal;
     if ( args["no_sort"] )
         order = SAnnotSelector::eSortOrder_None;
+    bool sort_seq_feat = args["sort_seq_feat"];
+    bool save_mapped_feat = args["save_mapped_feat"];
     bool labels = args["labels"];
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
@@ -444,10 +687,26 @@ int CDemoApp::Run(void)
     bool whole_sequence = args["whole_sequence"];
     bool scan_whole_sequence = args["scan_whole_sequence"];
     bool used_memory_check = args["used_memory_check"];
-    bool get_synonyms = false;
+    bool get_synonyms = true;
     bool get_ids = args["get_ids"];
-    bool get_blob_id = true;
+    bool get_blob_id = args["get_blob_id"];
     bool make_tree = args["make_tree"];
+    feature::CFeatTree::EFeatIdMode feat_id_mode =
+        feature::CFeatTree::eFeatId_by_type;
+    if ( args["feat_id_mode"].AsString() == "ignore" ) {
+        feat_id_mode = feature::CFeatTree::eFeatId_ignore;
+    }
+    else if ( args["feat_id_mode"].AsString() == "always" ) {
+        feat_id_mode = feature::CFeatTree::eFeatId_always;
+    }
+    feature::CFeatTree::ESNPStrandMode snp_strand_mode =
+        feature::CFeatTree::eSNPStrand_both;
+    if ( args["snp_strand_mode"].AsString() == "same" ) {
+        snp_strand_mode = feature::CFeatTree::eSNPStrand_same;
+    }
+    else if ( args["snp_strand_mode"].AsString() == "both" ) {
+        snp_strand_mode = feature::CFeatTree::eSNPStrand_both;
+    }
     bool print_tree = args["print_tree"];
     list<string> include_named;
     if ( args["named"] ) {
@@ -461,6 +720,7 @@ int CDemoApp::Run(void)
     if ( args["named_acc"] ) {
         NStr::Split(args["named_acc"].AsString(), ",", include_named_accs);
     }
+    string save_NA_prefix = args["save_NA"]? args["save_NA"].AsString(): "";
     bool scan_seq_map = args["seq_map"];
     bool get_seg_labels = args["seg_labels"];
 
@@ -528,8 +788,12 @@ int CDemoApp::Run(void)
         }
         other_loaders.push_back(CBlastDbDataLoader::RegisterInObjectManager(*pOm, db, type).GetLoader()->GetName());
     }
-    if ( args["sra"] ) {
-        other_loaders.push_back(pOm->RegisterDataLoader(0, "sra")->GetName());
+    if ( args["other_loaders"] ) {
+        list<string> names;
+        NStr::Split(args["other_loaders"].AsString(), ",", names);
+        ITERATE ( list<string>, i, names ) {
+            other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
+        }
     }
 
     // Create a new scope.
@@ -559,6 +823,7 @@ int CDemoApp::Run(void)
         CRef<CSeq_annot> annot(new CSeq_annot);
         args["annot_file"].AsInputFile() >> MSerial_AsnText >> *annot;
         added_annot = scope.AddSeq_annot(*annot);
+        NcbiCout << "Added annot file: "<<args["annot_file"]<<NcbiEndl;
     }
     if ( args["annot_bfile"] ) {
         CRef<CSeq_annot> annot(new CSeq_annot);
@@ -568,28 +833,7 @@ int CDemoApp::Run(void)
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
     if ( get_ids ) {
-        if ( args["get_gi"] ) {
-            NcbiCout << "Gi: "
-                     << sequence::GetId(idh, scope, sequence::eGetId_ForceGi)
-                     << NcbiEndl;
-        }
-        if ( args["get_acc"] ) {
-            if ( args["gi"] ) {
-                int gi = args["gi"].AsInteger();
-                NcbiCout << "Acc: "
-                         << sequence::GetAccessionForGi(gi, scope, sequence::eWithoutAccessionVersion)
-                         << NcbiEndl;
-            }
-        }
-        NcbiCout << "Best id: "
-                 << sequence::GetId(idh, scope, sequence::eGetId_Best)
-                 << NcbiEndl;
-        NcbiCout << "Ids:" << NcbiEndl;
-        //scope.GetBioseqHandle(idh);
-        vector<CSeq_id_Handle> ids = scope.GetIds(idh);
-        ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
-            NcbiCout << "    " << it->AsString() << NcbiEndl;
-        }
+        GetIds(scope, idh);
     }
     if ( get_blob_id && gb_loader && other_loaders.empty() ) {
         try {
@@ -613,6 +857,10 @@ int CDemoApp::Run(void)
     if ( handle.GetState() ) {
         // print blob state:
         NcbiCout << "Bioseq state: 0x" << hex << handle.GetState() << dec
+                 << NcbiEndl;
+    }
+    if ( handle && args["get_title"] ) {
+        NcbiCout << "Title: \"" << sequence::GetTitle(handle) << "\""
                  << NcbiEndl;
     }
     // Check if the handle is valid
@@ -646,9 +894,13 @@ int CDemoApp::Run(void)
     // No region restrictions -- the whole bioseq is used:
     whole_loc->SetWhole(*search_id);
     CRef<CSeq_loc> range_loc;
+    bool plus_strand = args["plus_strand"];
     bool minus_strand = args["minus_strand"];
+    bool ignore_strand = args["ignore_strand"];
     TSeqPos range_from, range_to;
-    if ( minus_strand || args["range_from"] || args["range_to"] ) {
+    CRange<TSeqPos> range;
+    ENa_strand strand;
+    if ( plus_strand || minus_strand || args["range_from"] || args["range_to"] ) {
         if ( args["range_from"] ) {
             range_from = args["range_from"].AsInteger();
         }
@@ -665,13 +917,20 @@ int CDemoApp::Run(void)
         range_loc->SetInt().SetId(*search_id);
         range_loc->SetInt().SetFrom(range_from);
         range_loc->SetInt().SetTo(range_to);
-        if ( minus_strand ) {
-            range_loc->SetInt().SetStrand(eNa_strand_minus);
+        range.SetFrom(range_from).SetTo(range_to);
+        strand = eNa_strand_unknown;
+        if ( plus_strand ) {
+            range_loc->SetInt().SetStrand(strand = eNa_strand_plus);
+        }
+        else if ( minus_strand ) {
+            range_loc->SetInt().SetStrand(strand = eNa_strand_minus);
         }
     }
     else {
         range_from = range_to = 0;
         range_loc = whole_loc;
+        range = range.GetWhole();
+        strand = eNa_strand_unknown;
     }
     if ( args["range_loc"] ) {
         CNcbiIstrstream in(args["range_loc"].AsString().c_str());
@@ -682,6 +941,7 @@ int CDemoApp::Run(void)
         overlap = SAnnotSelector::eOverlap_TotalRange;
     if ( args["overlap"].AsString() == "intervals" )
         overlap = SAnnotSelector::eOverlap_Intervals;
+    bool no_map = args["no_map"];
 
     string table_field_name;
     if ( args["table_field_name"] )
@@ -692,11 +952,39 @@ int CDemoApp::Run(void)
     bool modify = args["modify"];
 
     handle.Reset();
+    
+    CRef<CPrefetchManager> prefetch_manager;
+    //prefetch_manager = new CPrefetchManager;
+    vector<CRef<CPrefetchRequest> > prefetch_snp;
+    vector<CRef<CPrefetchRequest> > prefetch_seq;
+    set<CSeq_feat_Handle> ff;
+    
     for ( int c = 0; c < repeat_count; ++c ) {
-        if ( c && pause ) {
+        if ( c ) {
+            if ( get_ids ) {
+                GetIds(scope, idh);
+            }
+        }
+        if ( 1+c && pause ) {
             SleepSec(pause);
         }
-        
+        if ( c ) {
+            NcbiCout << "Iteration " << c << NcbiEndl;
+            if ( args["range_step"] && range_loc != whole_loc ) {
+                TSeqPos step = args["range_step"].AsInteger();
+                range_from += step;
+                range_to += step;
+                range_loc->SetInt().SetFrom(range_from);
+                range_loc->SetInt().SetTo(range_to);
+            }
+        }
+        if ( c == 1 ) {
+            CRef<CSeq_entry> entry(new CSeq_entry);
+            CNcbiIfstream in("extra_entry.asn");
+            in >> MSerial_AsnText >> *entry;
+            scope.AddTopLevelSeqEntry(*entry);
+        }
+
         // get handle again, check for scope TSE locking
         handle = scope.GetBioseqHandle(idh);
         if ( !handle ) {
@@ -705,6 +993,7 @@ int CDemoApp::Run(void)
         }
 
         if ( handle && get_seg_labels ) {
+            x_Pause("getting seq map labels", pause_key);
             TSeqPos range_length =
                 range_to == 0? kInvalidSeqPos: range_to - range_from + 1;
             CSeqMap::TFlags flags = CSeqMap::fDefaultFlags;
@@ -746,6 +1035,7 @@ int CDemoApp::Run(void)
             NcbiCout << "First ID = " <<
                 (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
 
+            x_Pause("getting seq data", pause_key);
             // Get the sequence using CSeqVector. Use default encoding:
             // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
             CSeqVector seq_vect(*range_loc, scope,
@@ -762,7 +1052,7 @@ int CDemoApp::Run(void)
                 if ( seq_vect.CanGetRange(0, seq_vect.size()) ) {
                     NcbiCout << " data=";
                     sout.erase();
-                    TSeqPos size = min(seq_vect.size(), 10u);
+                    TSeqPos size = min(seq_vect.size(), 100u);
                     for ( TSeqPos i=0; i < size; ++i ) {
                         // Convert sequence symbols to printable form
                         sout += seq_vect[i];
@@ -788,15 +1078,20 @@ int CDemoApp::Run(void)
             if ( whole_sequence ) {
                 CStopWatch sw(CStopWatch::eStart);
                 TSeqPos size = seq_vect.size();
-                NcbiCout << "Whole seq data["<<size<<"] = " << NcbiFlush;
-                seq_vect.GetSeqData(0, size, sout);
-                if ( size <= 20u ) {
-                    NcbiCout << NStr::PrintableString(sout);
+                try {
+                    NcbiCout << "Whole seq data["<<size<<"] = " << NcbiFlush;
+                    seq_vect.GetSeqData(0, size, sout);
+                    if ( size <= 20u ) {
+                        NcbiCout << NStr::PrintableString(sout);
+                    }
+                    else {
+                        NcbiCout << NStr::PrintableString(sout.substr(0, 10));
+                        NcbiCout << "..";
+                        NcbiCout << NStr::PrintableString(sout.substr(size-10));
+                    }
                 }
-                else {
-                    NcbiCout << NStr::PrintableString(sout.substr(0, 10));
-                    NcbiCout << "..";
-                    NcbiCout << NStr::PrintableString(sout.substr(size-10));
+                catch ( CException& exc ) {
+                    ERR_POST("GetSeqData() failed: "<<exc);
                 }
                 NcbiCout << " in " << sw << NcbiEndl;
             }
@@ -804,27 +1099,33 @@ int CDemoApp::Run(void)
                 CStopWatch sw(CStopWatch::eStart);
                 NcbiCout << "Scanning sequence..." << NcbiFlush;
                 size_t pos = 0;
-                string buffer;
-                for ( CSeqVector_CI it(seq_vect); it; ) {
-                    _ASSERT(it.GetPos() == pos);
-                    if ( (pos & 255) == 0 ) {
-                        size_t cnt = min(size_t(99), seq_vect.size()-pos);
-                        it.GetSeqData(buffer, cnt);
-                        pos += cnt;
+                try {
+                    string buffer;
+                    for ( CSeqVector_CI it(seq_vect); it; ) {
+                        _ASSERT(it.GetPos() == pos);
+                        if ( (pos & 0xffff) == 0 ) {
+                            size_t cnt = min(size_t(99), seq_vect.size()-pos);
+                            it.GetSeqData(buffer, cnt);
+                            pos += cnt;
+                        }
+                        else {
+                            ++it;
+                            ++pos;
+                        }
+                        _ASSERT(it.GetPos() == pos);
                     }
-                    else {
-                        ++it;
-                        ++pos;
-                    }
-                    _ASSERT(it.GetPos() == pos);
+                    _ASSERT(pos == seq_vect.size());
                 }
-                _ASSERT(pos == seq_vect.size());
+                catch ( CException& exc ) {
+                    ERR_POST("sequence scan failed at "<<pos<<": "<<exc);
+                }
                 NcbiCout << "done" << " in " << sw << NcbiEndl;
             }
             // CSeq_descr iterator: iterates all descriptors starting
             // from the bioseq and going the seq-entries tree up to the
             // top-level seq-entry.
             count = 0;
+            x_Pause("getting seq desc", pause_key);
             for (CSeqdesc_CI desc_it(handle, desc_type); desc_it; ++desc_it) {
                 if ( print_descr ) {
                     NcbiCout << "\n" << MSerial_AsnText << *desc_it;
@@ -885,12 +1186,14 @@ int CDemoApp::Run(void)
         base_sel
             .SetResolveMethod(resolve)
             .SetOverlapType(overlap)
+            .SetNoMapping(no_map)
             .SetSortOrder(order)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
             .SetAdaptiveDepth(adaptive)
             .SetExactDepth(exact_depth)
-            .SetUnresolvedFlag(missing);
+            .SetUnresolvedFlag(missing)
+            .SetIgnoreStrand(ignore_strand);
         if ( no_feat_policy ) {
             base_sel.SetAdaptiveDepthFlags(base_sel.GetAdaptiveDepthFlags()&
                                            ~SAnnotSelector::fAdaptive_ByPolicy);
@@ -953,6 +1256,34 @@ int CDemoApp::Run(void)
             table_field.reset(new CTableFieldHandle<TTableField>(table_field_name));
         }
 
+        if ( prefetch_manager ) {
+            // Initialize prefetch token;
+            SAnnotSelector snp_sel = base_sel;
+            snp_sel.ResetAnnotsNames();
+            snp_sel.AddNamedAnnots("SNP");
+            prefetch_seq.clear();
+            prefetch_snp.clear();
+            TSeqPos step = args["range_step"].AsInteger();
+            for ( int i = 0; i < 2; ++i ) {
+                ENa_strand strand =
+                    minus_strand? eNa_strand_minus: eNa_strand_plus;
+                TSeqPos from = range_from + step/2*i;
+                TSeqPos to = range_to + step/2*i;
+                prefetch_snp.push_back
+                    (CStdPrefetch::GetFeat_CI(*prefetch_manager,
+                                              handle,
+                                              CRange<TSeqPos>(from, to),
+                                              strand,
+                                              snp_sel));
+                prefetch_seq.push_back
+                    (prefetch_manager->AddAction
+                     (new CPrefetchSeqData(handle,
+                                           CRange<TSeqPos>(from, to),
+                                           strand,
+                                           CBioseq_Handle::eCoding_Iupac)));
+            }
+        }
+        
         if ( get_types || get_names ) {
             if ( get_types ) {
                 CFeat_CI it(scope, *range_loc, base_sel.SetCollectTypes());
@@ -968,13 +1299,44 @@ int CDemoApp::Run(void)
                 }
             }
             if ( get_names ) {
-                {{
+                if ( !base_sel.IsIncludedAnyNamedAnnotAccession() ) {
                     NcbiCout << "Annot names:" << NcbiEndl;
                     set<string> annot_names =
                         gb_loader->GetNamedAnnotAccessions(idh);
                     ITERATE ( set<string>, i, annot_names ) {
                         NcbiCout << "Named annot: " << *i
                                  << NcbiEndl;
+                    }
+                }
+                else {
+                    ITERATE ( list<string>, it, include_named_accs ) {
+                        NcbiCout << "Annot names for "<<*it<<":" << NcbiEndl;
+                        set<string> annot_names =
+                            gb_loader->GetNamedAnnotAccessions(idh, *it);
+                        ITERATE ( set<string>, i, annot_names ) {
+                            NcbiCout << "Named annot: " << *i
+                                     << NcbiEndl;
+                        }
+                    }
+                }
+                {{
+                    NcbiCout << "All annot names:" << NcbiEndl;
+                    SAnnotSelector sel = base_sel;
+                    sel.SetCollectNames();
+                    if ( !sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        sel.IncludeNamedAnnotAccession("NA*");
+                    }
+                    CAnnotTypes_CI it(CSeq_annot::C_Data::e_not_set,
+                                      scope, *range_loc, &sel);
+                    ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                        if ( i->IsNamed() ) {
+                            NcbiCout << "Named annot: " << i->GetName()
+                                     << NcbiEndl;
+                        }
+                        else {
+                            NcbiCout << "Unnamed annot"
+                                     << NcbiEndl;
+                        }
                     }
                 }}
                 {{
@@ -986,6 +1348,84 @@ int CDemoApp::Run(void)
                     }
                     CFeat_CI it(scope, *range_loc, sel);
                     ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                        if ( i->IsNamed() ) {
+                            NcbiCout << "Named annot: " << i->GetName()
+                                     << NcbiEndl;
+                        }
+                        else {
+                            NcbiCout << "Unnamed annot"
+                                     << NcbiEndl;
+                        }
+                    }
+                }}
+                {{
+                    NcbiCout << "Seq-table names:" << NcbiEndl;
+                    SAnnotSelector sel = base_sel;
+                    sel.SetCollectNames();
+                    if ( !sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        sel.IncludeNamedAnnotAccession("NA*");
+                    }
+                    CAnnotTypes_CI it(CSeq_annot::C_Data::e_Seq_table, scope, *range_loc, &sel);
+                    ITERATE ( CFeat_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                        if ( i->IsNamed() ) {
+                            NcbiCout << "Named annot: " << i->GetName()
+                                     << NcbiEndl;
+                        }
+                        else {
+                            NcbiCout << "Unnamed annot"
+                                     << NcbiEndl;
+                        }
+                    }
+                }}
+                {{
+                    NcbiCout << "Seq-table names:" << NcbiEndl;
+                    SAnnotSelector sel = base_sel;
+                    sel.SetCollectNames();
+                    if ( !sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        sel.IncludeNamedAnnotAccession("NA*");
+                    }
+                    CSeq_table_CI it(scope, *range_loc, sel);
+                    ITERATE ( CSeq_table_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                        if ( i->IsNamed() ) {
+                            NcbiCout << "Named annot: " << i->GetName()
+                                     << NcbiEndl;
+                        }
+                        else {
+                            NcbiCout << "Unnamed annot"
+                                     << NcbiEndl;
+                        }
+                    }
+                }}
+                {{
+                    NcbiCout << "Graph names:" << NcbiEndl;
+                    CSeq_loc seq_loc;
+                    seq_loc.SetWhole().Set("NC_000001");
+                    SAnnotSelector sel = base_sel;
+                    sel.SetCollectNames();
+                    if ( !sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        sel.IncludeNamedAnnotAccession("NA*");
+                    }
+                    CGraph_CI it(scope, *range_loc, sel);
+                    ITERATE ( CGraph_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+                        if ( i->IsNamed() ) {
+                            NcbiCout << "Named annot: " << i->GetName()
+                                     << NcbiEndl;
+                        }
+                        else {
+                            NcbiCout << "Unnamed annot"
+                                     << NcbiEndl;
+                        }
+                    }
+                }}
+                {{
+                    NcbiCout << "Align names:" << NcbiEndl;
+                    SAnnotSelector sel = base_sel;
+                    sel.SetCollectNames();
+                    if ( !sel.IsIncludedAnyNamedAnnotAccession() ) {
+                        sel.IncludeNamedAnnotAccession("NA*");
+                    }
+                    CAlign_CI it(scope, *range_loc, sel);
+                    ITERATE ( CAlign_CI::TAnnotNames, i, it.GetAnnotNames() ) {
                         if ( i->IsNamed() ) {
                             NcbiCout << "Named annot: " << i->GetName()
                                      << NcbiEndl;
@@ -1050,6 +1490,51 @@ int CDemoApp::Run(void)
                     }
                 }
             }
+            if ( handle && args["feat_id_str"] ) {
+                string feat_id = args["feat_id_str"].AsString();
+                vector<CSeq_feat_Handle> feats;
+                CTSE_Handle tse = handle.GetTSE_Handle();
+                for ( int t = 0; t < 4; ++t ) {
+                    switch ( t ) {
+                    case 0:
+                        NcbiCout << "Features with id "
+                                 << feat_id << " +type:";
+                        feats = tse.GetFeaturesWithId(feat_type, feat_id);
+                        break;
+                    case 1:
+                        NcbiCout << "Features with id "
+                                 << feat_id << " +subtype:";
+                        feats = tse.GetFeaturesWithId(feat_subtype, feat_id);
+                        break;
+                    case 2:
+                        NcbiCout << "Features with xref "
+                                 << feat_id << " +type:";
+                        feats = tse.GetFeaturesWithXref(feat_type, feat_id);
+                        break;
+                    case 3:
+                        NcbiCout << "Features with xref "
+                                 << feat_id << " +subtype:";
+                        feats = tse.GetFeaturesWithXref(feat_subtype, feat_id);
+                        break;
+                    }
+                    if ( print_features ) {
+                        NcbiCout << "\n";
+                        ITERATE ( vector<CSeq_feat_Handle>, it, feats ) {
+                            NcbiCout << MSerial_AsnText << *it->GetSeq_feat();
+                        }
+                    }
+                    else {
+                        NcbiCout << " " << feats.size() << NcbiEndl;
+                    }
+                }
+            }
+
+            int matches = 0, mismatches = 0;
+            vector<CConstRef<CSeq_feat> > feats;
+            vector<CMappedFeat> mapped_feats;
+            vector<CConstRef<CSeq_loc> > mapped_locs;
+            
+            x_Pause("getting features", pause_key);
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
                     ++types_counts[it->GetFeatType()];
@@ -1105,6 +1590,13 @@ int CDemoApp::Run(void)
                     */
                     it->GetMappedFeature();
                 }
+                if ( sort_seq_feat ) {
+                    feats.push_back(ConstRef(&it->GetMappedFeature()));
+                }
+                if ( save_mapped_feat ) {
+                    mapped_feats.push_back(*it);
+                    mapped_locs.push_back(ConstRef(&it->GetLocation()));
+                }
 
                 if ( table_field.get() &&
                      it->GetSeq_feat_Handle().IsTableFeat() ) {
@@ -1116,7 +1608,13 @@ int CDemoApp::Run(void)
                 
                 // Get seq-annot containing the feature
                 if ( print_features ) {
-                    NcbiCout << "Feature:";
+                    NcbiCout << "Feature: ";
+                    try {
+                        NcbiCout << it->GetRange();
+                    }
+                    catch ( CException& ) {
+                        NcbiCout << "multiple id";
+                    }
                     if ( it->IsSetPartial() ) {
                         NcbiCout << " partial = " << it->GetPartial();
                     }
@@ -1145,6 +1643,14 @@ int CDemoApp::Run(void)
                                 MSerial_AsnText <<
                                 *mapper->Map(it->GetLocation());
                         }
+                        CSeq_id_Handle loc_id = it->GetLocationId();
+                        if ( loc_id ) {
+                            NcbiCout << loc_id;
+                        }
+                        else {
+                            NcbiCout << "NULL";
+                        }
+                        NcbiCout << NcbiEndl;
                     }
                     else {
                         NcbiCout << "Location:\n" <<
@@ -1204,9 +1710,32 @@ int CDemoApp::Run(void)
                     CConstRef<CSeq_feat> gene =
                         GetBestOverlappingFeat(it->GetLocation(),
                                                CSeqFeatData::e_Gene,
-                                               eOverlap_Contains,
+                                               eOverlap_Contained,
                                                scope);
                     NcbiCout << "GetBestGeneForCds: "<<it->GetLocation();
+                    if ( gene ) {
+                        NcbiCout << MSerial_AsnText << *gene;
+                        NcbiCout << " compare: " <<
+                            MSerial_AsnText << gene->GetLocation() <<
+                            "\n with: "<< it->GetOriginalFeature().GetLocation() <<
+                            "\n = " << sequence::Compare(gene->GetLocation(),
+                                                         it->GetOriginalFeature().GetLocation(),
+                                                         &scope);
+                    }
+                    else {
+                        NcbiCout << "null";
+                    }
+                    NcbiCout << NcbiEndl;
+                }
+                if ( print_features &&
+                     it->GetFeatSubtype() == CSeqFeatData::eSubtype_ncRNA ) {
+                    using namespace sequence;
+                    CConstRef<CSeq_feat> gene =
+                        GetBestOverlappingFeat(it->GetLocation(),
+                                               CSeqFeatData::e_Gene,
+                                               eOverlap_Contained,
+                                               scope);
+                    NcbiCout << "GetBestGeneForXxx: "<<it->GetLocation();
                     if ( gene ) {
                         NcbiCout << MSerial_AsnText << *gene;
                         NcbiCout << " compare: " <<
@@ -1237,15 +1766,47 @@ int CDemoApp::Run(void)
                                  << NcbiEndl;
                     }
                 }
-                if ( 0 ) {
-                    CMappedFeat mf1 = *it;
-                    CMappedFeat mf2 =
-                        feature::MapSeq_feat(mf1.GetSeq_feat_Handle(), handle);
-                    _ASSERT(mf1 == mf2);
-                }
             }
             NcbiCout << "Feat count (loc range, " << sel_msg << "):\t"
                      << count << NcbiEndl;
+            if ( matches ) {
+                NcbiCout << "Matches: "<< matches << NcbiEndl;
+            }
+            if ( mismatches ) {
+                NcbiCout << "Mismatches: "<< mismatches << NcbiEndl;
+            }
+            if ( sort_seq_feat && !feats.empty() ) {
+                NcbiCout << "Sorting " << feats.size() << " features..."
+                         << NcbiEndl;
+                vector<CConstRef<CSeq_feat> > sorted_feats = feats;
+                try {
+                    stable_sort(sorted_feats.begin(), sorted_feats.end(), PPtrLess<CConstRef<CSeq_feat> >());
+                    if ( sorted_feats != feats ) {
+                        NcbiCout << "Sorted features are in another order."
+                                 << NcbiEndl;
+                        for ( size_t i = 0; i < sorted_feats.size(); ++i ) {
+                            if ( feats[i] != sorted_feats[i] ) {
+                                NcbiCout << "Feature["<<i<<"]:\n"
+                                         << "CFeat_CI: " << MSerial_AsnText << *feats[i]
+                                         << " Compare: " << MSerial_AsnText << *sorted_feats[i];
+                            }
+                        }
+                    }
+                }
+                catch ( exception& exc ) {
+                    NcbiCout << "Exception while sorting: " << exc.what()
+                             << NcbiEndl;
+                }
+            }
+            if ( save_mapped_feat ) {
+                for ( size_t i = 0; i < mapped_feats.size(); ++i ) {
+                    NcbiCout << "Saved loc: " << MSerial_AsnText
+                             << *mapped_locs[i];
+                    NcbiCout << "Saved feat: " << MSerial_AsnText
+                             << mapped_feats[i].GetMappedFeature();
+                }
+            }
+
             if ( count_types ) {
                 ITERATE ( vector<int>, it, types_counts ) {
                     if ( *it ) {
@@ -1274,6 +1835,8 @@ int CDemoApp::Run(void)
             }
             if ( make_tree ) {
                 feature::CFeatTree feat_tree;
+                feat_tree.SetFeatIdMode(feat_id_mode);
+                feat_tree.SetSNPStrandMode(snp_strand_mode);
                 {{
                     CFeat_CI it(scope, *range_loc, base_sel);
                     feat_tree.AddFeatures(it);
@@ -1284,11 +1847,9 @@ int CDemoApp::Run(void)
                          << feat_tree.GetChildren(CMappedFeat()).size()
                          << NcbiEndl;
                 if ( print_tree ) {
-                    typedef pair<string, CMappedFeat> TFeatureKey;
-                    typedef set<TFeatureKey> TOrderedFeatures;
-                    typedef map<CMappedFeat, TOrderedFeatures> TOrderedTree;
                     TOrderedTree tree;
                     TOrderedFeatures all;
+                    TOrderedTree by_gene;
                     list<CMappedFeat> q;
                     q.push_back(CMappedFeat());
                     ITERATE ( list<CMappedFeat>, pit, q ) {
@@ -1298,22 +1859,36 @@ int CDemoApp::Run(void)
                         TOrderedFeatures& dst = tree[parent];
                         ITERATE ( vector<CMappedFeat>, cit, cc ) {
                             CMappedFeat child = *cit;
-                            CNcbiOstrstream str;
-                            str << MSerial_AsnText << child.GetMappedFeature();
-                            string s = CNcbiOstrstreamToString(str);
-                            dst.insert(make_pair(s, child));
-                            all.insert(make_pair(s, child));
+                            TFeatureKey key = s_GetFeatureKey(child);
+                            dst.insert(key);
+                            all.insert(key);
                             q.push_back(child);
+                            CMappedFeat gene1 = feat_tree.GetParent(child, CSeqFeatData::eSubtype_gene);
+                            CMappedFeat gene = feat_tree.GetBestGene(child, feat_tree.eBestGene_OverlappedOnly);
+                            if ( gene && gene != gene1 ) {
+                                if ( !by_gene.count(gene) ) {
+                                    by_gene[CMappedFeat()].insert(s_GetFeatureKey(gene));
+                                }
+                                by_gene[gene].insert(key);
+                            }
                         }
                     }
                     size_t cnt = 0;
-                    map<TFeatureKey, size_t> index;
+                    TFeatureIndex index;
                     ITERATE ( TOrderedFeatures, fit, all ) {
                         index[*fit] = cnt;
                         NcbiCout << "Feature "<<cnt<<": " << fit->first;
                         ++cnt;
                     }
                     NcbiCout << "Tree:\n";
+                    {
+                        NcbiCout << "Root features: ";
+                        const TOrderedFeatures& cc = tree[CMappedFeat()];
+                        ITERATE ( TOrderedFeatures, cit, cc ) {
+                            NcbiCout << " " << index[*cit];
+                        }
+                        NcbiCout << "\n";
+                    }
                     ITERATE ( TOrderedFeatures, fit, all ) {
                         NcbiCout << "Children of "<<index[*fit] << ": ";
                         const TOrderedFeatures& cc = tree[fit->second];
@@ -1323,6 +1898,24 @@ int CDemoApp::Run(void)
                         NcbiCout << "\n";
                     }
                     NcbiCout << NcbiEndl;
+                    {
+                        string prefix;
+                        NcbiCout << "= Tree =\n";
+                        const TOrderedFeatures& cc = tree[CMappedFeat()];
+                        ITERATE ( TOrderedFeatures, cit, cc ) {
+                            s_PrintTree("", "", tree, *cit, index);
+                        }
+                        NcbiCout << "= end tree =" << NcbiEndl;
+                    }
+                    if ( !by_gene.empty() ) {
+                        string prefix;
+                        NcbiCout << "= By gene =\n";
+                        const TOrderedFeatures& cc = by_gene[CMappedFeat()];
+                        ITERATE ( TOrderedFeatures, cit, cc ) {
+                            s_PrintTree("", "", by_gene, *cit, index);
+                        }
+                        NcbiCout << "= end by gene =" << NcbiEndl;
+                    }
                 }
             }
         }}
@@ -1401,12 +1994,16 @@ int CDemoApp::Run(void)
         // and start/stop points on the bioseq.
         // If both start and stop are 0 the whole bioseq is used.
         // The last parameter may be used for type filtering.
+        CStopWatch sw(CStopWatch::eStart);
         count = 0;
-        for ( CFeat_CI it(scope, *range_loc, base_sel); it; ++it ) {
-            count++;
+        
+        if ( handle ) {
+            for ( CFeat_CI it(handle, range, strand, base_sel); it; ++it ) {
+                count++;
+            }
+            NcbiCout << "Feat count (bh range, " << sel_msg << "):\t"
+                     << count << " in " << sw.Elapsed() << " secs" << NcbiEndl;
         }
-        NcbiCout << "Feat count (bh range, " << sel_msg << "):\t"
-                 << count << NcbiEndl;
 
         if ( !only_features ) {
             if ( handle && whole_tse ) {
@@ -1418,25 +2015,27 @@ int CDemoApp::Run(void)
                 NcbiCout << "Feat count        (TSE):\t" << count << NcbiEndl;
             }
 
-            // The same way may be used to iterate aligns and graphs,
-            // except that there is no type filter for both of them.
-            count = 0;
-            for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
-                count++;
-                // Get seq-annot containing the feature
-                if ( get_mapped_location )
-                    it->GetLoc();
-                if ( get_original_feature )
-                    it->GetOriginalGraph();
-                if ( get_mapped_feature )
-                    it->GetMappedGraph();
-                if ( print_features ) {
-                    NcbiCout << MSerial_AsnText <<
-                        it->GetMappedGraph() << it->GetLoc();
+            if ( !skip_graphs ) {
+                // The same way may be used to iterate aligns and graphs,
+                // except that there is no type filter for both of them.
+                count = 0;
+                for ( CGraph_CI it(scope, *range_loc, base_sel); it;  ++it) {
+                    count++;
+                    // Get seq-annot containing the feature
+                    if ( get_mapped_location )
+                        it->GetLoc();
+                    if ( get_original_feature )
+                        it->GetOriginalGraph();
+                    if ( get_mapped_feature )
+                        it->GetMappedGraph();
+                    if ( print_features ) {
+                        NcbiCout << MSerial_AsnText <<
+                            it->GetMappedGraph() << it->GetLoc();
+                    }
+                    CSeq_annot_Handle annot = it.GetAnnot();
                 }
-                CSeq_annot_Handle annot = it.GetAnnot();
+                NcbiCout << "Graph count (loc range):\t" << count << NcbiEndl;
             }
-            NcbiCout << "Graph count (loc range):\t" << count << NcbiEndl;
 
             if ( !skip_alignments ) {
                 count = 0;
@@ -1458,7 +2057,7 @@ int CDemoApp::Run(void)
 
             if ( true ) {
                 count = 0;
-                // Create CAlign_CI using the current scope and location.
+                // Create CSeq_table_CI using the current scope and location.
                 SAnnotSelector sel = base_sel;
                 sel.SetAnnotType(CSeq_annot::C_Data::e_Seq_table);
                 for (CAnnot_CI it(scope, *range_loc, sel); it;  ++it) {
@@ -1466,8 +2065,16 @@ int CDemoApp::Run(void)
                     if ( true ) {
                         CSeq_annot_Handle annot = *it;
                         size_t rows = annot.GetSeq_tableNumRows();
+                        if ( annot.IsNamed() ) {
+                            NcbiCout << "Named " << annot.GetName() << " ";
+                        }
                         NcbiCout << "Seq-table with " << rows << " rows."
                                  << NcbiEndl;
+                        if ( args["print_seq_table"] ) {
+                            NcbiCout << MSerial_AsnText
+                                     << *annot.GetCompleteObject()
+                                     << NcbiEndl;
+                        }
                         if ( table_field.get() ) {
                             for ( size_t row = 0; row < rows; ++row ) {
                                 TTableField value;
@@ -1480,6 +2087,92 @@ int CDemoApp::Run(void)
                     }
                 }
                 NcbiCout << "Table count (loc range):\t" <<count<<NcbiEndl;
+            }
+            if ( true ) {
+                count = 0;
+                // Create CSeq_table_CI using the current scope and location.
+                for (CSeq_table_CI it(scope, *range_loc, base_sel); it;  ++it) {
+                    count++;
+                    if ( true ) {
+                        CSeq_annot_Handle annot = it.GetAnnot();
+                        size_t rows = annot.GetSeq_tableNumRows();
+                        if ( annot.IsNamed() ) {
+                            NcbiCout << "Named " << annot.GetName() << " ";
+                        }
+                        NcbiCout << "Seq-table with " << rows << " rows."
+                                 << NcbiEndl;
+                        {
+                            NcbiCout << "Original location: "
+                                     << MSerial_AsnText << it.GetOriginalLocation()
+                                     << NcbiEndl;
+                        }
+                        if ( it.IsMapped() ) {
+                            NcbiCout << "Mapped location: "
+                                     << MSerial_AsnText << it.GetMappedLocation()
+                                     << NcbiEndl;
+                        }
+                        if ( args["print_seq_table"] ) {
+                            NcbiCout << MSerial_AsnText
+                                     << *annot.GetCompleteObject()
+                                     << NcbiEndl;
+                        }
+                        if ( table_field.get() ) {
+                            for ( size_t row = 0; row < rows; ++row ) {
+                                TTableField value;
+                                if ( table_field->TryGet(annot, row, value) ) {
+                                    NcbiCout << "table field["<<row<<"]: "
+                                             << value << NcbiEndl;
+                                }
+                            }
+                        }
+                    }
+                }
+                NcbiCout << "Table count (loc range):\t" <<count<<NcbiEndl;
+            }
+
+            if ( true ) {
+                count = 0;
+                // Create CAlign_CI using the current scope and location.
+                SAnnotSelector sel = base_sel;
+                sel.SetAnnotType(CSeq_annot::C_Data::e_Locs);
+                for (CAnnot_CI it(scope, *range_loc, sel); it;  ++it) {
+                    count++;
+                    NcbiCout << "Locs" << NcbiEndl;
+                }
+                NcbiCout << "Locs count (loc range):\t" <<count<<NcbiEndl;
+            }
+
+            if ( !save_NA_prefix.empty() ) {
+                set<string> accs =
+                    gb_loader->GetNamedAnnotAccessions(idh);
+                set<CTSE_Handle::TBlobId> ids;
+                ITERATE ( set<string>, nit, accs ) {
+                    const string& acc = *nit;
+                    NcbiCout << "Named: "<<acc<<NcbiEndl;
+                    if ( !NStr::StartsWith(acc, "NA") ) {
+                        continue;
+                    }
+                    SAnnotSelector sel = base_sel;
+                    sel.ResetAnnotsNames();
+                    sel.IncludeNamedAnnotAccession(acc);
+                    sel.AddNamedAnnots(acc);
+                    set<CTSE_Handle> tses;
+                    for ( CAnnot_CI it(handle, sel); it; ++it ) {
+                        CTSE_Handle tse = it->GetTSE_Handle();
+                        if ( !ids.insert(tse.GetBlobId()).second ) {
+                            continue;
+                        }
+                        tses.insert(tse);
+                        string name = save_NA_prefix+acc;
+                        name += "-"+tse.GetBlobId().ToString();
+                        NcbiCout << "Saving into "<<name<<NcbiEndl;
+                        CNcbiOfstream out(name.c_str());
+                        out << MSerial_AsnText << *tse.GetCompleteObject();
+                    }
+                    ITERATE ( set<CTSE_Handle>, it, tses ) {
+                        scope.RemoveFromHistory(*it);
+                    }
+                }
             }
         }
 
@@ -1578,14 +2271,72 @@ int CDemoApp::Run(void)
             _ASSERT(total_length == handle.GetBioseqLength());
         }
 
+        ITERATE ( vector<CRef<CPrefetchRequest> >, it, prefetch_snp ) {
+            CStdPrefetch::Wait(*it);
+            const CPrefetchFeat_CI& seq =
+                dynamic_cast<const CPrefetchFeat_CI&>(*(*it)->GetAction());
+            NcbiCout << "SNP: " << seq.GetResult().GetSize()
+                     << NcbiEndl;
+        }
+        ITERATE ( vector<CRef<CPrefetchRequest> >, it, prefetch_seq ) {
+            CStdPrefetch::Wait(*it);
+            const CPrefetchSeqData& seq =
+                dynamic_cast<const CPrefetchSeqData&>(*(*it)->GetAction());
+            NcbiCout << "Seq_data: " << seq.GetResult().size()
+                     << " = " << seq.GetResult().substr(0, 10) << "..."
+                     << NcbiEndl;
+        }
+
+        if ( handle && args["feat_id"] ) {
+            if ( 0 ) {
+                CTSE_Handle tse = handle.GetTopLevelEntry().GetTSE_Handle();
+                CSeq_feat_Handle feat = tse.GetFeatureWithId
+                    (CSeqFeatData::e_not_set, args["feat_id"].AsInteger());
+                NcbiCout << "Feature with id " << id;
+                if ( print_features ) {
+                    NcbiCout << MSerial_AsnText << *feat.GetSeq_feat();
+                }
+                NcbiCout << NcbiEndl;
+            }
+            else {
+                CTSE_Handle tse = handle.GetTopLevelEntry().GetTSE_Handle();
+                CObject_id id; id.SetId(args["feat_id"].AsInteger());
+                for ( CFeat_CI it(tse, CSeqFeatData::e_not_set, id); it; ++it ) {
+                    CSeq_feat_Handle feat = *it;
+                    NcbiCout << "Feature with id " << id;
+                    if ( print_features ) {
+                        NcbiCout << MSerial_AsnText << *feat.GetSeq_feat();
+                    }
+                    NcbiCout << NcbiEndl;
+                }
+            }
+        }
+        
         if ( handle && modify ) {
             //CTSE_Handle tse = handle.GetTSE_Handle();
             //CBioseq_EditHandle ebh = handle.GetEditHandle();
             CRef<CBioseq> newseq(new CBioseq);
             newseq->Assign(*handle.GetCompleteObject());
             CSeq_entry_Handle seh = handle.GetParentEntry();
-            seh.GetEditHandle().SelectNone();
-            seh.GetEditHandle().SelectSeq(*newseq);
+            if ( CSeq_entry_Handle pseh = seh.GetParentEntry() ) {
+                LOG_POST("Reattaching Bioseq");
+                {
+                    CBioseq_Handle product_handle = handle;
+                    handle.Reset();
+                    CBioseq_EditHandle eh(product_handle);
+                    eh.Remove();
+                }
+                _ASSERT(!handle);
+                _ASSERT(!seh);
+                _ASSERT(pseh);
+                _ASSERT(pseh == pseh.GetEditHandle());
+                pseh.GetEditHandle().AttachBioseq(*newseq);
+            }
+            else {
+                LOG_POST("Reselecting Bioseq");
+                seh.GetEditHandle().SelectNone();
+                seh.GetEditHandle().SelectSeq(*newseq);
+            }
         }
         if ( used_memory_check ) {
             if ( args["reset_scope"] ) {
@@ -1595,13 +2346,12 @@ int CDemoApp::Run(void)
             exit(0);
         }
 
-        if ( handle ) {
+        if ( handle && args["reset_scope"] ) {
             scope.RemoveFromHistory(handle);
             _ASSERT(!handle);
+            handle.Reset();
+            scope.ResetHistory();
         }
-        
-        handle.Reset();
-        scope.ResetHistory();
     }
     if ( modify ) {
         handle = scope.GetBioseqHandle(idh);
@@ -1609,7 +2359,13 @@ int CDemoApp::Run(void)
     }
 
     NcbiCout << "Done" << NcbiEndl;
-    return 0;
+    return handle? 0: 1;
+}
+
+
+void CDemoApp::Exit(void)
+{
+    //CObjectManager::GetInstance()->RevokeDataLoader("GBLOADER");
 }
 
 
