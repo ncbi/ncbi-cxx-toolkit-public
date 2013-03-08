@@ -409,7 +409,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         sinfo.hStdOutput = child_stdout;
         sinfo.hStdInput  = child_stdin;
         sinfo.dwFlags   |= STARTF_USESTDHANDLES;
-
+#  if defined(_UNICODE)
+        sinfo.dwFlags   |= CREATE_UNICODE_ENVIRONMENT;
+#  endif
         if ( !::CreateProcess(NULL,
                               (LPTSTR)(_T_XCSTRING(cmd_line)),
                               NULL, NULL, TRUE, 0,

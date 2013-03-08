@@ -661,7 +661,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 #if defined(NCBI_OS_MSWIN)
 
 #  if defined(NCBI_COMPILER_MSVC)
-    // This is Microsoft extention, and some compilers do not it.
+    // This is Microsoft extension, and some compilers do not have it.
     _flushall();
 #  endif
     STARTUPINFO         StartupInfo;
@@ -676,6 +676,9 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     StartupInfo.wShowWindow = SW_HIDE;
     DWORD dwCreateFlags     = (mode == eDetach) ? 
                               DETACHED_PROCESS : CREATE_NEW_CONSOLE;
+#  if defined(_UNICODE)
+    dwCreateFlags |= CREATE_UNICODE_ENVIRONMENT;
+#  endif
 
     // Compose command line
     cmdline.reserve(kMaxCmdLength);
