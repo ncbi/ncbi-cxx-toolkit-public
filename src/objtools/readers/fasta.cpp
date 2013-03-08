@@ -691,7 +691,7 @@ bool CFastaReader::ParseIDs(const TStr& s)
     if( count == 1 && s.length() > m_MaxIDLength ) {
         NCBI_THROW2(CObjReaderParseException, eIDTooLong,
             "CFastaReader: Near line " + NStr::NumericToString(LineNumber()) +
-            ", the sequence ID is too long.  It's length is " + NStr::NumericToString(s.length()) +
+            ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length()) +
             " but the max length allowed is " + NStr::NumericToString(m_MaxIDLength),
             LineNumber());
     }
