@@ -200,8 +200,23 @@ public:
     /// if none set currently).  Note that there's no reason to call
     /// this if you originally called SetWarningOutput and still have a reference
     /// to the supplied pWarningRefVec.
+    ///
+    /// @return A const ref to the internal warning output array.
     CConstRef<TWarningRefVec> GetWarningOutput(void) const { 
         return m_pWarningRefVec; }
+
+    /// If this is set, an exception will be thrown if a Sequence ID exceeds the
+    /// given length.
+    /// @param max_len
+    ///   The new maximum to set.  Of course, you can set it to kMax_UI4
+    ///   to effectively have no limit.
+    void SetMaxIDLength(Uint4 max_len) { m_MaxIDLength = max_len; }
+
+    /// Get the maximum ID allowed, which will be kMax_UI4
+    /// unless someone has manually lowered it.
+    ///
+    /// @returns currently set maximum ID length
+    Uint4 GetMaxIDLength(void) const { return m_MaxIDLength; }
 
 protected:
     enum EInternalFlags {
@@ -303,6 +318,7 @@ private:
     TIDTracker              m_IDTracker;
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
+    Uint4                   m_MaxIDLength;
 };
 
 

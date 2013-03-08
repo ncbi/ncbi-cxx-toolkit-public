@@ -205,21 +205,21 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
 }
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
-    : m_LineReader(&reader), m_MaskVec(0), m_IDGenerator(new CSeqIdGenerator)
+    : m_LineReader(&reader), m_MaskVec(0), m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
     : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(const string& path, TFlags flags)
     : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
@@ -686,6 +686,14 @@ bool CFastaReader::ParseIDs(const TStr& s)
         // swap(ids, old_ids);
         ids.clear();
         return false;
+    }
+    // check if ID was too long
+    if( count == 1 && s.length() > m_MaxIDLength ) {
+        NCBI_THROW2(CObjReaderParseException, eIDTooLong,
+            "CFastaReader: Near line " + NStr::NumericToString(LineNumber()) +
+            ", the sequence ID is too long.  It's length is " + NStr::NumericToString(s.length()) +
+            " but the max length allowed is " + NStr::NumericToString(m_MaxIDLength),
+            LineNumber());
     }
     return count > 0;
 }
