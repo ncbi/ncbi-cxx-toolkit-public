@@ -1003,17 +1003,20 @@ case "$host_os:$compiler" in
              [ncbi_cv_prog_cc_wl_rpath=yes], [ncbi_cv_prog_cc_wl_rpath=no])
           LDFLAGS=$orig_LDFLAGS])
       ;;
-   cygwin*:GCC )
-      LDFLAGS="-Wl,--export-all-symbols $LDFLAGS"
-      ;;
    *:GCC | *:ICC )
-      AC_CACHE_CHECK([whether $CC supports -Wl,-E], ncbi_cv_prog_cc_wl_e,
+      AC_CACHE_CHECK([whether $CC has an option to export all symbols],
+         ncbi_cv_prog_cc_export_all,
          [orig_LDFLAGS=$LDFLAGS
-          LDFLAGS="-Wl,-E $LDFLAGS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-             [ncbi_cv_prog_cc_wl_e=yes], [ncbi_cv_prog_cc_wl_e=no])
+          ncbi_cv_prog_cc_export_all=no
+          for x in -Wl,--export-all-symbols -rdynamic -Wl,-E; do
+             LDFLAGS="$x $orig_LDFLAGS"
+             AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                [ncbi_cv_prog_cc_export_all=$x])
+             test "x$ncbi_cv_prog_cc_export_all" = "xno"  ||  break
+          done
           LDFLAGS=$orig_LDFLAGS])
-      test "$ncbi_cv_prog_cc_wl_e" = no  ||  APP_LDFLAGS="-Wl,-E $APP_LDFLAGS"
+      test "$ncbi_cv_prog_cc_export_all" = no  || \
+         LDFLAGS="$ncbi_cv_prog_cc_export_all $LDFLAGS"
       AC_CACHE_CHECK([whether $CC supports -Wl,--{en,dis}able-new-dtags],
          ncbi_cv_prog_cc_new_dtags,
          [orig_LDFLAGS=$LDFLAGS
@@ -2453,6 +2456,7 @@ else
    # Some shared libraries end up containing static libraries, so make
    # sure to use DLL flags for both, as such inclusion can otherwise
    # result in linker errors.
+   DLL_LDFLAGS="$DLL_LDFLAGS $CXXFLAGS_DLL"
    CFLAGS="$CFLAGS $CFLAGS_DLL"
    CFLAGS_DLL=
    CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
