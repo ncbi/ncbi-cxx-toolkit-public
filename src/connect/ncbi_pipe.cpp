@@ -318,8 +318,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             for (int i = 0;  i < count;  i++) {
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
                 TXString tmp = _T_XSTRING(env[i]);
-                size_t n = tmp.size() + 1;
-                memcpy(block, tmp.c_str(), n * sizeof(TXChar));
+                size_t n = tmp.size();
+                memcpy(block, tmp.data(), n * sizeof(TXChar));
+                block[n++] = _TX('\0');
 #else
                 size_t n = strlen(env[i]) + 1;
                 memcpy(block, env[i], n);
