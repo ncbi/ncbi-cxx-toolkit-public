@@ -4458,7 +4458,6 @@ phytree_format needs xobjmgr
 phytree_format needs xobjutil
 phytree_format needs xser
 phytree_format needs xutil
-pmcli needs connect
 proj needs biblio
 proj needs general
 proj needs medline
