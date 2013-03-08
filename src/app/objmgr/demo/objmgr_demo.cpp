@@ -83,15 +83,15 @@
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
-#ifdef HAVE_BDB
-#  define HAVE_LDS 1
-#elif defined(HAVE_LDS)
-#  undef HAVE_LDS
+#ifdef HAVE_LIBSQLITE3
+#  define HAVE_LDS2 1
+#elif defined(HAVE_LDS2)
+#  undef HAVE_LDS2
 #endif
 
-#ifdef HAVE_LDS
-#  include <objtools/data_loaders/lds/lds_dataloader.hpp>
-#  include <objtools/lds/lds_manager.hpp>
+#ifdef HAVE_LDS2
+#  include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
+#  include <objtools/lds2/lds2.hpp>
 #endif
 
 #include <serial/iterator.hpp>
@@ -176,9 +176,12 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("loader", "Loader",
                              "Use specified GenBank loader readers (\"-\" means no GenBank",
                              CArgDescriptions::eString);
-#ifdef HAVE_LDS
+#ifdef HAVE_LDS2
     arg_desc->AddOptionalKey("lds_dir", "LDSDir",
                              "Use local data storage loader from the specified firectory",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("lds_db", "LDSDB",
+                             "Use local data storage loader from the specified LDS2 DB",
                              CArgDescriptions::eString);
 #endif
     arg_desc->AddOptionalKey("blast", "Blast",
@@ -748,24 +751,25 @@ int CDemoApp::Run(void)
     else {
         gb_loader = CGBDataLoader::RegisterInObjectManager(*pOm).GetLoader();
     }
-#ifdef HAVE_LDS
-    if ( args["lds_dir"] ) {
-        string lds_dir = args["lds_dir"].AsString();
-        CLDS_Manager::ERecurse recurse = CLDS_Manager::eRecurseSubDirs;
-        CLDS_Manager::EComputeControlSum control_sum =
-            CLDS_Manager::eComputeControlSum;
-        auto_ptr<CLDS_Database> lds_db;
-        CLDS_Manager manager(lds_dir);
-
-        try {
-            lds_db.reset(manager.ReleaseDB());
-        } catch(CBDB_ErrnoException&) {
-            manager.Index(recurse, control_sum);
-            lds_db.reset(manager.ReleaseDB());
+#ifdef HAVE_LDS2
+    if ( args["lds_dir"] || args["lds_db"] ) {
+        string lds_db, lds_dir;
+        if ( args["lds_db"] ) {
+            lds_db = args["lds_db"].AsString();
+            if ( args["lds_dir"] ) {
+                lds_dir = args["lds_dir"].AsString();
+            }
         }
-
-        other_loaders.push_back(CLDS_DataLoader::RegisterInObjectManager(*pOm, *lds_db).GetLoader()->GetName());
-        lds_db.release();
+        else {
+            lds_dir = args["lds_dir"].AsString();
+            lds_db = CDirEntry::ConcatPath(lds_dir, "lds2.db");
+        }
+        if ( !CDirEntry(lds_db).Exists() && !lds_dir.empty() ) {
+            CLDS2_Manager manager(lds_db);
+            manager.AddDataDir(lds_dir, CLDS2_Manager::eDir_Recurse);
+            manager.UpdateData();
+        }
+        other_loaders.push_back(CLDS2_DataLoader::RegisterInObjectManager(*pOm, lds_db).GetLoader()->GetName());
     }
 #endif
     if ( args["blast"] || args["blast_type"] ) {

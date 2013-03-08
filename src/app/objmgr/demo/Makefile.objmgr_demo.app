@@ -6,14 +6,15 @@
 # Build object manager demo application "objmgr_demo"
 #################################
 
-REQUIRES = objects bdb algo dbapi FreeTDS -Cygwin
+REQUIRES = objects algo dbapi FreeTDS -Cygwin
 
 APP = objmgr_demo
 SRC = objmgr_demo
-LIB = ncbi_xloader_blastdb seqdb blastdb ncbi_xloader_lds lds bdb \
-      $(OBJREAD_LIBS) xobjutil ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) \
-      dbapi_driver$(STATIC) $(OBJMGR_LIBS)
+LIB = ncbi_xloader_blastdb seqdb blastdb \
+      ncbi_xloader_lds2 lds2 sqlitewrapp \
+      ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC) \
+      $(OBJREAD_LIBS) xobjutil submit $(OBJMGR_LIBS)
 
-LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
+LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(SQLITE3_LIBS) $(ORIG_LIBS)
 
 WATCHERS = vasilche
