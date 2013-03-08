@@ -72,6 +72,12 @@
 #  define NCBI_THREADS
 #endif
 
+/* Sync Windows/Cygwin preprocessor conditionals governing wide
+ * character usage. */
+
+#if defined(UNICODE)  &&  !defined(_UNICODE)
+#  define _UNICODE 1
+#endif
 
 /* New/nonstandard keywords
  */
