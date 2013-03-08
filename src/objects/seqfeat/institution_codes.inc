@@ -4194,6 +4194,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NHV	s	Institut fuer Landwirtschaftliche Botanik",
 "NI<JPN>	c	Nagao Institute",
 "NI<SVK>	s	Slovenska pol'nohospodarska Univerzita, Katedra botaniky",
+"NIAB	b	National Institute of Agricultural Botany",
 "NIAES	c	National Institute for Agro-Environmental Sciences",
 "NIAH	c	National Institute of Animal Health",
 "NIBH	c	National Institute of Bioscience and Human-Technology",
