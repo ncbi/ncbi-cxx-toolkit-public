@@ -57,9 +57,10 @@ class NCBI_XOBJREAD_EXPORT CFeature_table_reader
 {
 public:
     enum EFlags {
-        fReportBadKey    = 0x1,
-        fKeepBadKey      = 0x2,
-        fTranslateBadKey = 0x4 // yields misc_feature /standard_name="..."
+        fReportBadKey      = 0x1,
+        fKeepBadKey        = 0x2,
+        fTranslateBadKey   = 0x4, // yields misc_feature /standard_name="..."
+        fIgnoreWebComments = 0x8
     };
     typedef int TFlags;
 

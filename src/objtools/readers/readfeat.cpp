@@ -255,6 +255,8 @@ private:
                                   string& featP, string& qualP, string& valP, Int4 offset,
                                   IErrorContainer *container, int line_num, const string &seq_id );
 
+    bool x_IsWebComment(CTempString line);
+
     bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
                                  Int4 start, Int4 stop,
                                  bool partial5, bool partial3, bool ispoint, bool isminus,
@@ -328,7 +330,6 @@ private:
 
     void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
     void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
-
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -2140,6 +2141,58 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     return false;
 }
 
+bool CFeature_table_reader_imp::x_IsWebComment(CTempString line)
+{
+    // This function is testing for a match against the following regular
+    // expression, but we avoid actual regexps for max speed:
+    // "^(===================================================================| INFO:| WARNING:| ERROR:).*"
+
+    // (that magic number is the size of the smallest possible match)
+    if( line.length() < 6 ) { 
+        return false;
+    }
+
+    if( line[0] == '=' ) {
+        static const CTempString kAllEqualsMatch =
+            "===================================================================";
+        if( NStr::StartsWith(line, kAllEqualsMatch) ) {
+            return true;
+        }
+    } else if( line[0] == ' ') {
+        switch(line[1]) {
+        case 'I':
+            {
+                static const CTempString kInfo = " INFO:";
+                if( NStr::StartsWith(line, kInfo) ) {
+                    return true;
+                }
+            }
+            break;
+        case 'W':
+            {
+                static const CTempString kWarning = " WARNING:";
+                if( NStr::StartsWith(line, kWarning) ) {
+                    return true;
+                }
+            }
+            break;
+        case 'E':
+            {
+                static const CTempString kError = " ERROR:";
+                if( NStr::StartsWith(line, kError) ) {
+                    return true;
+                }
+            }
+            break;
+        default:
+            // no match
+            break;
+        }
+    }
+
+    // no match
+    return false;
+}
 
 bool CFeature_table_reader_imp::x_AddIntervalToFeature(
     CTempString strFeatureName,
@@ -2386,6 +2439,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     Int4 offset = 0;
     CRef<CSeq_annot> sap(new CSeq_annot);
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
+    const bool bIgnoreWebComments = 
+        ( (flags & CFeature_table_reader::fIgnoreWebComments) != 0 );
 
     // if sequence ID is a list, use just one sequence ID string    
     string real_seqid = seqid;
@@ -2417,7 +2472,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
         CTempString line = *++reader;
 
-        if (! line.empty ()) {
+        if (! line.empty () && (!bIgnoreWebComments || ! x_IsWebComment(line) ) ) {
             if( s_IsFeatureLineAndFix(line) ) {
                 // if next feature table, return current sap
                 reader.UngetLine(); // we'll get this feature line the next time around
