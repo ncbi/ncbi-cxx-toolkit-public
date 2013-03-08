@@ -77,6 +77,8 @@
 
 #if defined(UNICODE)  &&  !defined(_UNICODE)
 #  define _UNICODE 1
+#elif defined(_UNICODE)  &&  !defined(UNICODE)
+#  define UNICODE 1
 #endif
 
 /* New/nonstandard keywords
