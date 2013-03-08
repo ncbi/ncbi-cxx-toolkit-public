@@ -50,8 +50,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
-#include <objtools/data_loaders/lds/lds_dataloader.hpp>
-#include <objtools/lds/lds_manager.hpp>
+#include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <serial/serial.hpp>
@@ -127,7 +126,7 @@ protected:
     bool m_verbose;
     bool m_release_all_memory;
     int m_max_errors;
-    string m_lds_dir;
+    string m_lds_db;
     
     void InitOM();
     CRef<CScope> CreateScope(void);
@@ -237,10 +236,9 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 void CTestOM::InitOM(void)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    if ( !m_lds_dir.empty() ) {
-        CLDS_Manager manager(m_lds_dir);
-        CLDS_DataLoader::RegisterInObjectManager
-            (*om, *manager.ReleaseDB(),
+    if ( !m_lds_db.empty() ) {
+        CLDS2_DataLoader::RegisterInObjectManager
+            (*om, m_lds_db, -1,
              CObjectManager::eDefault, 77);
     }
 #ifdef HAVE_PUBSEQ_OS
@@ -515,7 +513,7 @@ bool CTestOM::Thread_Run(int idx)
                 }
                 LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                          ": EXCEPTION = " << e.what());
-                if ( m_lds_dir.empty() ) ok = false;
+                if ( m_lds_db.empty() ) ok = false;
                 if ( ++error_count > m_max_errors ) {
                     ok = false;
                     break;
@@ -568,7 +566,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
                        "Include named accessions",
                        CArgDescriptions::eString, "");
     args.AddOptionalKey("lds", "lds",
-                        "Use LDS data loader from dir",
+                        "Use LDS2 data loader from DB",
                         CArgDescriptions::eString);
     args.AddDefaultKey("max_errors", "max_errors",
                        "Maxumum number of errors to pass the test",
@@ -657,7 +655,7 @@ bool CTestOM::TestApp_Init(void)
     m_release_all_memory = args["release_all_memory"];
     m_max_errors = args["max_errors"].AsInteger();
     if ( args["lds"] ) {
-        m_lds_dir = args["lds"].AsString();
+        m_lds_db = args["lds"].AsString();
     }
 
     InitOM();
