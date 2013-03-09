@@ -3321,15 +3321,23 @@ kdb needs vfs
 kdf5 needs judy
 kdf5 needs kfs
 kdf5 needs klib
+kdf5 needs kproc
+kdf5 needs ksproc
 kff needs judy
 kff needs kfg
 kff needs kfs
 kff needs klib
+kff needs kproc
+kff needs ksproc
 kfg needs judy
 kfg needs kfs
 kfg needs klib
+kfg needs kproc
+kfg needs ksproc
 kfs needs judy
 kfs needs klib
+kfs needs kproc
+kfs needs ksproc
 klib needs judy
 kproc includes ksproc
 kproc needs judy
@@ -3358,6 +3366,8 @@ ktst needs klib
 kurl needs judy
 kurl needs kfs
 kurl needs klib
+kurl needs kproc
+kurl needs ksproc
 kxfs needs judy
 kxfs needs kfg
 kxfs needs kfs
@@ -3372,6 +3382,8 @@ kxfs needs vfs
 kxml needs judy
 kxml needs kfs
 kxml needs klib
+kxml needs kproc
+kxml needs ksproc
 lbsmdapi needs connect
 lds needs bdb
 lds needs biblio
@@ -3448,7 +3460,6 @@ linkoutdb needs xser
 linkoutdb needs xutil
 load needs judy
 load needs kapp
-load needs kdb
 load needs kfg
 load needs kfs
 load needs klib
@@ -4919,6 +4930,8 @@ srapath needs judy
 srapath needs kfg
 srapath needs kfs
 srapath needs klib
+srapath needs kproc
+srapath needs ksproc
 sraread needs align-reader
 sraread needs axf
 sraread needs biblio
@@ -5309,6 +5322,8 @@ vxf needs vfs
 vxfentrez needs judy
 vxfentrez needs kfs
 vxfentrez needs klib
+vxfentrez needs kproc
+vxfentrez needs ksproc
 vxfentrez needs kurl
 w_aln_crossaln needs biblio
 w_aln_crossaln needs biotree
@@ -7135,7 +7150,6 @@ wgsxf needs kurl
 wgsxf needs srapath
 wgsxf needs vdb
 wgsxf needs vfs
-wkdb includes kdb
 wkdb needs judy
 wkdb needs kfg
 wkdb needs kfs
