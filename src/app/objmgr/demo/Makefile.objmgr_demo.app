@@ -6,7 +6,7 @@
 # Build object manager demo application "objmgr_demo"
 #################################
 
-REQUIRES = objects algo dbapi FreeTDS -Cygwin
+REQUIRES = objects algo dbapi FreeTDS SQLITE3 -Cygwin
 
 APP = objmgr_demo
 SRC = objmgr_demo
