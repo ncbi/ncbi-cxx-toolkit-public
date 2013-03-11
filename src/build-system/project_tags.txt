@@ -5,3 +5,4 @@ structure_cdtree
 gbench
 perf
 mod_loadinfo
+fwdaemon
