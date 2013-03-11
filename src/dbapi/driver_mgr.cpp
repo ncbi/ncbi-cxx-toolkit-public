@@ -97,12 +97,15 @@ CDriverManager::~CDriverManager()
 }
 
 
-IDataSource* CDriverManager::CreateDs(const string&        driver_name,
-                                      const map<string, string>* attr)
+IDataSource* CDriverManager::CreateDs(const string&              driver_name,
+                                      const map<string, string>* attr,
+                                      const string&              tag)
 {
+    string tagged_name = driver_name + tag;
+
     CMutexGuard mg(m_Mutex);
 
-    TDsContainer::iterator i_ds = m_ds_list.find(driver_name);
+    TDsContainer::iterator i_ds = m_ds_list.find(tagged_name);
     if (i_ds != m_ds_list.end()) {
         return (*i_ds).second;
     }
@@ -114,11 +117,12 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
         "CDriverManager::CreateDs() -- Failed to get context for driver: " + driver_name
         );
 
-    return RegisterDs(driver_name, ctx);
+    return RegisterDs(tagged_name, ctx);
 }
 
-IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
-                                          const IRegistry* reg)
+IDataSource* CDriverManager::CreateDsFrom(const string&    drivers,
+                                          const IRegistry* reg,
+                                          const string&    tag)
 {
     CMutexGuard mg(m_Mutex);
 
@@ -143,18 +147,21 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
         }
 
         if( ctx != 0 ) {
-            return RegisterDs( *i_name, ctx );
+            return RegisterDs( *i_name + tag, ctx );
         }
     }
     return 0;
 }
 
 
-IDataSource* CDriverManager::MakeDs(const CDBConnParams& params)
+IDataSource* CDriverManager::MakeDs(const CDBConnParams& params,
+                                    const string&        tag)
 {
+    string tagged_name = params.GetDriverName() + tag;
+
     CMutexGuard mg(m_Mutex);
 
-    TDsContainer::iterator i_ds = m_ds_list.find(params.GetDriverName());
+    TDsContainer::iterator i_ds = m_ds_list.find(tagged_name);
     if (i_ds != m_ds_list.end()) {
         return (*i_ds).second;
     }
@@ -166,7 +173,7 @@ IDataSource* CDriverManager::MakeDs(const CDBConnParams& params)
         "CDriverManager::CreateDs() -- Failed to get context for driver: " + params.GetDriverName()
         );
 
-    return RegisterDs(params.GetDriverName(), ctx);
+    return RegisterDs(tagged_name, ctx);
 }
 
 

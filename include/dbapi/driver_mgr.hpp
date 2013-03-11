@@ -73,14 +73,27 @@ public:
     // DEPRECAETD. Instance will be removed automatically.
     static void RemoveInstance();
 
-    // Create datasource object
+    // Create data source object.  By default, DBAPI uses a single
+    // shared data source per driver; however, supplying a tag will
+    // allow for multiple instances with different parameters.
+    // (SDBAPI uses this feature to ensure UTF-8 encoding.)
+
     IDataSource* CreateDs(const string& driver_name,
-                const map<string, string> *attr = 0);
+                          const map<string, string> *attr = 0,
+                          const string& tag = kEmptyStr);
+
+    IDataSource* CreateDs(const string& driver_name, const string& tag)
+        { return CreateDs(driver_name, NULL, tag); }
 
     IDataSource* CreateDsFrom(const string& drivers,
-                    const IRegistry* reg = 0);
+                              const IRegistry* reg = 0,
+                              const string& tag = kEmptyStr);
 
-    IDataSource* MakeDs(const CDBConnParams& params);
+    IDataSource* CreateDsFrom(const string& drivers, const string& tag)
+        { return CreateDs(drivers, NULL, tag); }
+
+    IDataSource* MakeDs(const CDBConnParams& params,
+                        const string& tag = kEmptyStr);
 
     // Destroy datasource object
     void DestroyDs(const string& driver_name);

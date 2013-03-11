@@ -759,7 +759,8 @@ public:
         CDBConnParamsBase params;
         params.SetDriverName("ftds");
         params.SetEncoding(eEncoding_UTF8);
-        IDataSource* ds = CDriverManager::GetInstance().MakeDs(params);
+        IDataSource* ds
+            = CDriverManager::GetInstance().MakeDs(params, ".sdbapi");
         I_DriverContext* ctx = ds->GetDriverContext();
         ctx->PushCntxMsgHandler(new CDB_UserHandler_Exception, eTakeOwnership);
         ctx->PushDefConnMsgHandler(new CDB_UserHandler_Exception, eTakeOwnership);
@@ -774,7 +775,7 @@ static impl::CDriverContext*
 s_GetDBContext(void)
 {
     ds_init.Get();
-    IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
+    IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds", ".sdapi");
     return static_cast<impl::CDriverContext*>(ds->GetDriverContext());
 }
 
@@ -1163,7 +1164,8 @@ CSDBAPI::UpdateMirror(const string& dbservice,
             const string& server_name   = (*it)->server_name;
             EMirrorConnState& state     = (*it)->state;
             if (!conn.get()) {
-                IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
+                IDataSource* ds
+                  = CDriverManager::GetInstance().CreateDs("ftds", ".sdbapi");
                 conn = ds->CreateConnection(eTakeOwnership);
             }
             if (!conn->IsAlive()) {
@@ -1311,7 +1313,8 @@ CDatabaseImpl::CDatabaseImpl(const CSDB_ConnectionParam& params)
 {
     CDBConnParamsBase lower_params;
     params.x_FillLowerParams(&lower_params);
-    IDataSource* ds = CDriverManager::GetInstance().CreateDs("ftds");
+    IDataSource* ds
+        = CDriverManager::GetInstance().CreateDs("ftds", ".sdbapi");
     AutoPtr<IConnection> conn = ds->CreateConnection();
     conn->Connect(lower_params);
     m_Conn.Reset(new CConnHolder(conn.release()));
