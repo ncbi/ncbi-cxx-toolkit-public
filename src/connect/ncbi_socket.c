@@ -1266,7 +1266,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
  */
 static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 {
-#if defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)
     unsigned long arg = nonblock ? 1 : 0;
     return ioctlsocket(sock, FIONBIO, &arg) == 0;
 #elif defined(NCBI_OS_UNIX)
@@ -1283,7 +1283,7 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
  */
 static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 {
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
     return fcntl(x_sock, F_SETFD, cloexec
                  ? fcntl(x_sock, F_GETFD, 0) |        FD_CLOEXEC
                  : fcntl(x_sock, F_GETFD, 0) & (int) ~FD_CLOEXEC) == 0;
