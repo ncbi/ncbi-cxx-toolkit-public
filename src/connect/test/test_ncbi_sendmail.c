@@ -102,9 +102,13 @@ int main(int argc, const char* argv[])
     SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
     CORE_LOGF(eLOG_Note, ("@ - <%s>", info.from));
 
-    strcpy(info.from, "user1");
+    strcpy(info.from, "user0");
     SendMailInfo_InitEx(&info, info.from, eCORE_UsernameCurrent);
-    CORE_LOGF(eLOG_Note, ("user1 - <%s>", info.from));
+    CORE_LOGF(eLOG_Note, ("user0 - <%s>", info.from));
+
+    strcpy(info.from, "user1@");
+    SendMailInfo_InitEx(&info, info.from, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("user1@ - <%s>", info.from));
 
     strcpy(val, "@host2.net");
     SendMailInfo_InitEx(&info, val, eCORE_UsernameLogin);
