@@ -211,18 +211,18 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
                 } /* else "user@" */
                 strncpy0(buf, from, len);
             }
-            if (at[1])
+            if (*++at)
                 return;  /* "user@host", all done */
-            /* at[0] && !at[1]*/
+            /* (*at) == '\0' */
         } else if (at[1]) {
             /* "@host", save host if it fits the temp buffer */
             if ((len = strlen(at)) < sizeof(x_buf)) {
                 memcpy(x_buf, at, len + 1);
                 at = x_buf;
             } else
-                at = "";
+                at = "@";
             *buf = '\0';
-            /*!at[0] ||  at[1]*/
+            /* (*at) != '\0' (=='@') */
         } else {
             /* "@" */
             *buf = '\0';
@@ -230,14 +230,15 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
         }
     } else
         at = 0;
-    if ((!at  ||  !at[0]  ||  at[1])
-        &&  (!CORE_GetUsernameEx(buf, size, user)  ||  !*buf)) {
-        strncpy0(buf, "anonymous", size - 1);
-    }
-    len   = strlen(buf);
+    if (!at  ||   *at) {
+        if (!CORE_GetUsernameEx(buf, size, user)  ||  !*buf)
+            strncpy0(buf, "anonymous", size - 1);
+        len = strlen(buf);
+    } else
+        len = strlen(buf) - 1;
     size -= len;
     buf  += len;
-    if (!at  ||  (at[0]/*=='@'*/  &&  !at[1])) {
+    if (!at  ||  !*at) {
         if (size-- > 2) {
             *buf++ = '@';
             if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
@@ -249,8 +250,9 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
                 } else
                     strcpy(buf, host);
             }
-        }
-    } else if ((len = strlen(at)) < size)
+        } else
+            *buf   = '\0';
+    } else if (1 < (len = strlen(at))  &&  len < size)
         memcpy(buf, at, len + 1);
 }
 
