@@ -198,6 +198,8 @@ private:
         NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue unknown");
     }
 
+    void x_CreateConnContext(void);
+
     // Write into socket, logs the message and closes the connection
     void x_OnCmdParserError(bool  need_request_start,
                             const string &  msg, const string &  suffix);

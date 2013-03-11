@@ -450,18 +450,8 @@ void CNetScheduleHandler::OnOpen(void)
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgAuth;
 
     // Log the fact of opened connection if needed
-    if (m_Server->IsLog()) {
-        m_ConnContext.Reset(new CRequestContext());
-        m_ConnContext->SetRequestID();
-        m_ConnContext->SetClientIP(socket.GetPeerAddress(eSAF_IP));
-
-        // Set the connection request as the current one and print request
-        // start
-        CDiagContext::SetRequestContext(m_ConnContext);
-        GetDiagContext().PrintRequestStart()
-                        .Print("_type", "conn");
-        m_ConnContext->SetRequestStatus(eStatus_OK);
-    }
+    if (m_Server->IsLog())
+        x_CreateConnContext();
 }
 
 
@@ -779,6 +769,11 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         else
             msg += m_RawAuthString;
         msg += "': ";
+
+        // This will form request context with the client IP etc.
+        if (m_ConnContext.IsNull())
+            x_CreateConnContext();
+
         // ex.what() is here to avoid unnecessery records in the log
         // if it is simple 'ex' -> 2 records are produced
         ERR_POST(msg << ex.what());
@@ -820,6 +815,10 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         }
         catch (const CNetScheduleException &  ex) {
             if (ex.GetErrCode() == CNetScheduleException::eUnknownQueue) {
+                // This will form request context with the client IP etc.
+                if (m_ConnContext.IsNull())
+                    x_CreateConnContext();
+
                 ERR_POST(ex);
                 x_SetConnRequestStatus(ex.ErrCodeToHTTPStatusCode());
                 if (x_WriteMessage("ERR:" + string(ex.GetErrCodeString()) +
@@ -2785,6 +2784,22 @@ void CNetScheduleHandler::x_ExecuteRollbackAction(CQueue * q)
         return;
     m_RollbackAction->Rollback(q);
     x_ClearRollbackAction();
+}
+
+
+void CNetScheduleHandler::x_CreateConnContext(void)
+{
+    CSocket &       socket = GetSocket();
+
+    m_ConnContext.Reset(new CRequestContext());
+    m_ConnContext->SetRequestID();
+    m_ConnContext->SetClientIP(socket.GetPeerAddress(eSAF_IP));
+
+    // Set the connection request as the current one and print request start
+    CDiagContext::SetRequestContext(m_ConnContext);
+    GetDiagContext().PrintRequestStart()
+                    .Print("_type", "conn");
+    m_ConnContext->SetRequestStatus(eStatus_OK);
 }
 
 
