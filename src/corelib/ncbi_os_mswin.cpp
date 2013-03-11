@@ -36,6 +36,10 @@
 #include "ncbi_os_mswin_p.hpp"
 
 
+// Hopefully this makes UID/GID compatible with what CYGWIN reports
+#define CYGWIN_MAGIC_ID_OFFSET  10000
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -91,8 +95,10 @@ PSID CWinSecurity::GetUserSID(const string& username)
         }
     }
     catch (int) {
-        if ( sid ) LocalFree(sid);
-        sid = NULL;
+        if ( sid ) {
+            LocalFree(sid);
+            sid = NULL;
+        }
     }
     // Clean up
     if ( domain ) free(domain);
@@ -112,38 +118,41 @@ void CWinSecurity::FreeUserSID(PSID sid)
 // Helper function for GetOwner
 bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
 {
-    // Accordingly MSDN max account name size is 20, domain name size is 256.
+    // According to MSDN max account name size is 20, domain name size is 256.
     #define MAX_ACCOUNT_LEN  256
 
-    TXChar account_name[MAX_ACCOUNT_LEN];
-    TXChar domain_name [MAX_ACCOUNT_LEN];
-    DWORD  account_size = MAX_ACCOUNT_LEN;
-    DWORD  domain_size  = MAX_ACCOUNT_LEN;
+    TXChar account_name[MAX_ACCOUNT_LEN + 1];
+    TXChar domain_name [MAX_ACCOUNT_LEN + 1];
+    DWORD  account_size = sizeof(account_name) / sizeof(account_name[0]);
+    DWORD  domain_size  = sizeof(domain_name)  / sizeof(domain_name[0]);
     SID_NAME_USE use    = SidTypeUnknown;
 
-    if ( !LookupAccountSid(NULL /*local computer*/, sid, 
-                            account_name, (LPDWORD) &account_size,
-                            domain_name,  (LPDWORD) &domain_size,
-                            &use) ) {
+    if ( !LookupAccountSid(NULL/*local computer*/, sid, 
+                           account_name, &account_size,
+                           domain_name,  &domain_size,
+                           &use) ) {
         CNcbiError::SetFromWindowsError();
         return false;
     }
     // Save account information
-    if (account)
+    if (account) {
+        account_name[account_size] = _TX('\0');
         account->assign(_T_STDSTRING(account_name));
-    if (domain)
+    }
+    if (domain) {
+        domain_name[domain_size] = _TX('\0');
         domain->assign(_T_STDSTRING(domain_name));
-
+    }
     return true;
 }
 
 
 // Helper function for SetOwner
-bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
+static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
 {
     // Get priviledge unique identifier
     LUID luid;
-    if ( !LookupPrivilegeValue(NULL, privilege, &luid) ) {
+    if ( !LookupPrivilegeValue(NULL, priv, &luid) ) {
         CNcbiError::SetFromWindowsError();
         return false;
     }
@@ -152,8 +161,8 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
 
     TOKEN_PRIVILEGES tp;
     TOKEN_PRIVILEGES tp_prev;
-    DWORD            tp_prev_size = sizeof(TOKEN_PRIVILEGES);
-    
+    DWORD            tp_prev_size = sizeof(tp_prev);
+
     tp.PrivilegeCount = 1;
     tp.Privileges[0].Luid = luid;
     tp.Privileges[0].Attributes = 0;
@@ -171,7 +180,7 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     tp_prev.Privileges[0].Luid = luid;
 
     if ( enable ) {
-        tp_prev.Privileges[0].Attributes |= (SE_PRIVILEGE_ENABLED);
+        tp_prev.Privileges[0].Attributes |= SE_PRIVILEGE_ENABLED;
     } else {
         tp_prev.Privileges[0].Attributes ^= 
             (SE_PRIVILEGE_ENABLED & tp_prev.Privileges[0].Attributes);
@@ -181,6 +190,7 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
         CNcbiError::SetFromWindowsError();
         return false;
     }
+
     // Privilege settings changed
     return true;
 }
@@ -193,12 +203,14 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
     // Get numeric owner
     if ( uid ) {
         *uid = *GetSidSubAuthority(sid_owner,
-                                   *GetSidSubAuthorityCount(sid_owner) - 1);
+                                   *GetSidSubAuthorityCount(sid_owner) - 1)
+            + CYGWIN_MAGIC_ID_OFFSET;
     }
     // Get numeric group
     if ( gid ) {
         *gid = *GetSidSubAuthority(sid_group,
-                                   *GetSidSubAuthorityCount(sid_group) - 1);
+                                   *GetSidSubAuthorityCount(sid_group) - 1)
+            + CYGWIN_MAGIC_ID_OFFSET;
     }
 
     // Get owner
@@ -288,7 +300,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
         return false;
     }
 
-    // Enable privilegies, if failed try without them
+    // Enable privileges.  If failed, then try without them
     s_EnablePrivilege(token, SE_TAKE_OWNERSHIP_NAME);
     s_EnablePrivilege(token, SE_RESTORE_NAME);
     s_EnablePrivilege(token, SE_BACKUP_NAME);
@@ -370,7 +382,6 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     if (!success) {
         CNcbiError::SetFromWindowsError();
     }
-    // Return result
     return success;
 }
 
