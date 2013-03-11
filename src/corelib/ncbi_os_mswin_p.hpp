@@ -101,7 +101,7 @@ public:
     /// Get owner name of specified system object.
     ///
     /// Retrieve the name of the named object owner and the name of the first
-    /// group, which the account belongs to. The obtained group name may
+    /// group, which the account belongs to.  The obtained group name may
     /// be an empty string, if we don't have permissions to get it.
     /// Win32 really does not use groups, but they exist for the sake
     /// of POSIX compatibility.
@@ -115,7 +115,7 @@ public:
     /// @param uid
     ///   Pointer to an int to receive a (fake) user id.
     /// @param gid
-    ///   Pointer to an int to received a(fake) group id.
+    ///   Pointer to an int to receive a (fake) group id.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     static bool GetObjectOwner(const string& objname, SE_OBJECT_TYPE objtype,
@@ -226,7 +226,7 @@ public:
     /// @param strPath
     ///   Path to the file object.
     /// @param pPermissions
-    ///   Pointer to a variable that receives a file acess mask.
+    ///   Pointer to a variable that receives a file access mask.
     ///   See MSDN or WinNT.h for all access rights constants.
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
