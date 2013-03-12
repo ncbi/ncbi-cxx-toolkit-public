@@ -286,6 +286,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     // set when strings are changed.
     "Trim Spaces",
     "Clean Double Quotes",
+    "Append To String",
     // set when lists are sorted or uniqued.
     "Clean Qualifiers List",
     "Clean Dbxrefs List",
@@ -294,8 +295,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Clean Subsource List",
     "Clean Orgmod List",
     // Set when fields are moved or have content changes
-    "Repair BioseqMol",
-    "Change Feature Key", //10
+    "Repair BioseqMol", //10
+    "Change Feature Key", 
     "Normalize Authors",
     "Change Publication",
     "Change Qualifiers",
@@ -304,9 +305,9 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Change Subsource",
     "Change Orgmod",
     "Change Exception",
-    "Change Comment",
+    "Change Comment", //20
     // Set when fields are rescued
-    "Change tRna", //20
+    "Change tRna",
     "Change rRna",
     "Change ITS",
     "Change Anticodon",
@@ -316,8 +317,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Copy ProtXref",
     // set when locations are repaired
     "Change Seqloc",
-    "Change Strand",
-    "Change WholeLocation", //30
+    "Change Strand", //30
+    "Change WholeLocation",
     // set when MolInfo descriptors are affected
     "Change MolInfo Descriptor",
     // set when prot-xref is removed
@@ -335,8 +336,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     // set when Gene Xref is created
     "Add GeneXref",
     // set when descriptor is removed
-    "Remove Descriptor",
-    "Remove Keyword", //40
+    "Remove Descriptor", //40
+    "Remove Keyword",
     "Add Descriptor",
     "Move Descriptor",
     "Convert Feature to Descriptor", 
@@ -345,8 +346,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Remove Annotation",
     "Convert Feature",
     "Remove Comment",
-    "Add BioSource OrgMod",
-    "Add BioSource SubSource", //50
+    "Add BioSource OrgMod", //50
+    "Add BioSource SubSource",
     "Change BioSource Genome", 
     "Change BioSource Origin", 
     "Change BioSource Other",
@@ -355,8 +356,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Add Qualifier",
     "Cleanup Date",
     "Change BioseqInst",
-    "Remove SeqID",
-    "Add ProtXref", // 60
+    "Remove SeqID", // 60
+    "Add ProtXref",
     "Change Partial",
     "Change Prot Names",
     "Change Prot Activities",
@@ -365,8 +366,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Change RNA-ref",
     "Move To Prot Xref",
     "Compress Spaces",
-    "Strip serial",
-    "Remove Orgmod", // 70
+    "Strip serial", // 70
+    "Remove Orgmod",
     "Remove SubSource",
     "Create Gene Nomenclature",
     "Clean Seq-feat xref",
@@ -375,8 +376,8 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Change Bioseq-set Class",
     "Unique Without Sort",
     "Add RNA-ref",
-    "Change Gene-ref",
-    "Clean Dbtag", // 80
+    "Change Gene-ref", // 80
+    "Clean Dbtag",
     "Change Biomol",
     "Change Cdregion",
     "Clean EC Number",
@@ -385,7 +386,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Clean Delta-ext",
     "Trim Flanking Quotes",
     "Clean Bioseq Title",
-    "Decode XML",
+    "Decode XML", // 90
     "Remove Dup BioSource",
     "Clean Org-ref",
 

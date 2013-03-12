@@ -229,6 +229,7 @@ use m_NewCleanup.EMBLblockBC { EMBL-block }
 use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc }
 
 # Biosource stuff
+use m_NewCleanup.BiosourceFeatBC { POST Seq-feat.data.biosrc AND Seq-feat }
 use m_NewCleanup.BiosourceBC { BioSource }
 use m_NewCleanup.x_PostBiosource { POST BioSource }
 use m_NewCleanup.x_ModernizePCRPrimers { POST BioSource }

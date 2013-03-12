@@ -54,6 +54,7 @@ public:
         // set when strings are changed.
         eTrimSpaces,
         eCleanDoubleQuotes,
+        eAppendToString,
         // set when lists are sorted or uniqued.
         eCleanQualifiers,
         eCleanDbxrefs,

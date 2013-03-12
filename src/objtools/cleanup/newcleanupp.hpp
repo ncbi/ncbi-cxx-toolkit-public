@@ -219,6 +219,7 @@ private:
     void GBblockBC (CGB_block& gbk);
     void EMBLblockBC (CEMBL_block& emb);
 
+    void BiosourceFeatBC (CBioSource& biosrc, CSeq_feat & seqfeat);
     void BiosourceBC (CBioSource& bsc);
     void OrgrefBC (COrg_ref& org);
     void OrgnameBC (COrgName& onm, COrg_ref &org_ref);

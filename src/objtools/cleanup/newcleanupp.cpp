@@ -1230,6 +1230,72 @@ static bool s_SubsourceEqual (
     return false;
 }
 
+void CNewCleanup_imp::BiosourceFeatBC (
+    CBioSource& biosrc,
+    CSeq_feat & seqfeat
+)
+{
+    // consolidate all orgmods of subtype "other" into one
+    CRef<COrgMod> pFirstOtherOrgMod;
+    EDIT_EACH_ORGMOD_ON_BIOSOURCE(orgmod_it, biosrc) {
+        COrgMod & orgmod = **orgmod_it;
+
+        // we're only cleaning the ones of type "other"
+        if( ! FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
+            ! FIELD_IS_SET(orgmod, Subname) ) 
+        {
+            continue;
+        }
+
+        if( pFirstOtherOrgMod ) {
+            STRING_FIELD_APPEND(*pFirstOtherOrgMod, Subname, "; ", GET_STRING_FLD_OR_BLANK(orgmod, Subname) );
+            ChangeMade(CCleanupChange::eChangeOrgmod);
+            ERASE_ORGMOD_ON_BIOSOURCE(orgmod_it, biosrc);
+            ChangeMade(CCleanupChange::eRemoveOrgmod);
+        } else {
+            pFirstOtherOrgMod.Reset( &orgmod );
+        }
+    }
+
+    // consolidate all subsources of subtype "other" into one
+    CRef<CSubSource> pFirstOtherSubSource;
+    EDIT_EACH_SUBSOURCE_ON_BIOSOURCE( subsrc_iter, biosrc ) {
+        CSubSource &subsrc = **subsrc_iter;
+
+        // we're only cleaning the ones of type "other"
+        if( ! FIELD_EQUALS(subsrc, Subtype, NCBI_SUBSOURCE(other) ) ||
+            ! FIELD_IS_SET(subsrc, Name) ) 
+        {
+            continue;
+        }
+
+        if( pFirstOtherSubSource ) {
+            STRING_FIELD_APPEND(*pFirstOtherSubSource, Name, "; ", GET_STRING_FLD_OR_BLANK(subsrc, Name) );
+            ChangeMade(CCleanupChange::eChangeSubsource);
+            ERASE_SUBSOURCE_ON_BIOSOURCE(subsrc_iter, biosrc);
+            ChangeMade(CCleanupChange::eRemoveSubSource);
+        } else {
+            pFirstOtherSubSource.Reset( &subsrc );
+        }
+    }
+
+    // transfer feat comment (if any) to the end of the last other subsource note
+    if( FIELD_IS_SET(seqfeat, Comment) ) {
+
+        if( ! pFirstOtherSubSource ) {
+            // create an empty subsource note if none found
+            pFirstOtherSubSource.Reset( new CSubSource );
+            SET_FIELD(*pFirstOtherSubSource, Subtype, NCBI_SUBSOURCE(other) );
+            ADD_SUBSOURCE_TO_BIOSOURCE(biosrc, pFirstOtherSubSource);
+        }
+
+        STRING_FIELD_APPEND(*pFirstOtherSubSource, Name, "; ", GET_FIELD(seqfeat, Comment));
+        ChangeMade ( CCleanupChange::eChangeSubsource );
+        RESET_FIELD(seqfeat, Comment);
+        ChangeMade ( CCleanupChange::eChangeComment );
+    }
+}
+
 void CNewCleanup_imp::BiosourceBC (
     CBioSource& biosrc
 )
@@ -5037,43 +5103,6 @@ void CNewCleanup_imp::x_SeqFeatTRNABC( CSeq_feat& feat, CTrna_ext & tRNA )
 {
     const string &comment = ( FIELD_IS_SET(feat, Comment) ? GET_FIELD(feat, Comment) : kEmptyStr );
 
-    // look for tRNA-OTHER with actual amino acid in comment
-    if ( FIELD_IS_SET(feat, Comment) && CODON_ON_TRNAEXT_IS_EMPTY_OR_UNSET(tRNA) ) {
-        bool okayToFree = true;
-        string codon;
-
-        if ( NStr::StartsWith(comment, "codon recognized: ", NStr::eNocase) ) {
-            codon = comment.substr( 18 );
-        } else if (NStr::StartsWith (comment, "codons recognized: ", NStr::eNocase) ) {
-            codon = comment.substr( 19 );
-        }
-        NStr::ToUpper( codon );
-        if ( ! codon.empty() ) {
-            if ( codon.length() > 3 && codon [3] == ';') {
-                codon.erase( 3 );
-                okayToFree = false;
-            }
-            if ( codon.length() == 3) {
-                NStr::ReplaceInPlace( codon, "U", "T" );
-                if (s_ParseDegenerateCodon (tRNA, codon)) {
-                    ChangeMade(CCleanupChange::eChange_tRna);
-                    if (okayToFree) {
-                        RESET_FIELD(feat, Comment);
-                        ChangeMade(CCleanupChange::eChangeComment);
-                    } else {
-                        string new_comment = GET_FIELD(feat, Comment).substr(22);
-                        NStr::TruncateSpacesInPlace(new_comment);
-                        RESET_FIELD(feat, Comment);
-                        if ( ! new_comment.empty() ) {
-                            SET_FIELD(feat, Comment, new_comment );
-                        }
-                        ChangeMade(CCleanupChange::eChangeComment);
-                    }
-                }
-            }
-        }
-    }
-
     if( tRNA.IsSetAa() && tRNA.GetAa().IsIupacaa() ) {
         const int old_value = tRNA.GetAa().GetIupacaa();
         tRNA.SetAa().SetNcbieaa( old_value );
@@ -5559,7 +5588,7 @@ void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioS
         if( FIELD_IS_SET(org_mod, Subtype) && 
             GET_FIELD(org_mod, Subtype) != NCBI_ORGMOD(other) )
         {
-            const string &val = ( FIELD_IS_SET(org_mod, Subname) ? GET_FIELD(org_mod, Subname) : kEmptyStr );
+            const string &val = GET_STRING_FLD_OR_BLANK(org_mod, Subname);
             existingOrgModMap[GET_FIELD(org_mod, Subtype)].insert( val );
         }
     }
@@ -5570,7 +5599,7 @@ void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioS
         if( FIELD_IS_SET(subsrc, Subtype) && 
             GET_FIELD(subsrc, Subtype) != NCBI_SUBSOURCE(other) )
         {
-            const string &val = ( FIELD_IS_SET(subsrc, Name) ? GET_FIELD(subsrc, Name) : kEmptyStr );
+            const string &val = GET_STRING_FLD_OR_BLANK(subsrc, Name);
             existingSubsourceMap[GET_FIELD(subsrc, Subtype)].insert( val );
         }
     }
@@ -5582,7 +5611,7 @@ void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioS
 
         // we're only cleaning the ones of type "other"
         if( ! FIELD_EQUALS(org_mod, Subtype, NCBI_ORGMOD(other) ) ||
-            ! FIELD_IS_SET(org_mod, Subname) ) 
+            ! FIELD_IS_SET(org_mod, Subname) )
         {
             continue;
         }
