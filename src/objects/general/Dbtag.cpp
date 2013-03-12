@@ -523,7 +523,7 @@ static const char kMaizeGDBStr[] = "http://www.maizegdb.org/cgi-bin/displaylocus
 static const char kHomdTax[] = "http://www.homd.org/taxon=";
 static const char kHomdSeq[] = "http://www.homd.org/seq=";
 
-// mapping of DB to its URL; please sort these by tag name (mostly,
+// mapping of DB to its URL; please sort these by tag value (mostly,
 // but NOT entirely, in case-sensitive ASCII-betical order as above)
 typedef SStaticPair<CDbtag::EDbtagType, const char*>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
@@ -599,7 +599,6 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" },
     { CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
     { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" },
-    { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?" },
     { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?term=" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" },
@@ -637,7 +636,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_BEEBASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/bee_genome4/?name=" },
     { CDbtag::eDbtagType_NASONIABASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
-    { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" }
+    { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
+    { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
