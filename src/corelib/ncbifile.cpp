@@ -3507,6 +3507,9 @@ void s_SetFindFileError(void)
         case ERROR_NOT_ENOUGH_MEMORY:
             errno = ENOMEM;
             break;
+        case ERROR_ACCESS_DENIED:
+            errno = EACCES;
+            break;
         default:
             errno = EINVAL;
             break;
@@ -3587,7 +3590,7 @@ CDir::TEntries CDir::GetEntries(const string& mask,
 
 
 CDir::TEntries* CDir::GetEntriesPtr(const string& mask,
-                                   TGetEntriesFlags flags) const
+                                    TGetEntriesFlags flags) const
 {
     CMaskFileName masks;
     if ( !mask.empty() ) {
@@ -3601,7 +3604,7 @@ CDir::TEntries CDir::GetEntries(const vector<string>& masks,
                                 TGetEntriesFlags flags) const
 {
     auto_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
-    return *contents.get();
+    return contents.get() ? *contents.get() : TEntries();
 }
 
 
@@ -3642,26 +3645,29 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
         FindClose(handle);
     } else {
         s_SetFindFileError();
+        delete contents;
+        return NULL;
     }
 
 #elif defined(NCBI_OS_UNIX)
     DIR* dir = opendir(base_path.c_str());
-    if ( dir ) {
-        while (struct dirent* entry = readdir(dir)) {
-            if (IS_RECURSIVE_ENTRY) {
-                continue;
-            }
-            ITERATE(vector<string>, it, masks) {
-                const string& mask = *it;
-                if ( mask.empty()  ||
-                    MatchesMask(entry->d_name, mask, use_case) ) {
-                    s_AddEntry(contents, base_path, entry, flags);
-                    break;
-                }
-            } // ITERATE
-        } // while
-        closedir(dir);
+    if ( !dir ) {
+        return NULL;
     }
+    while (struct dirent* entry = readdir(dir)) {
+        if (IS_RECURSIVE_ENTRY) {
+            continue;
+        }
+        ITERATE(vector<string>, it, masks) {
+            const string& mask = *it;
+            if ( mask.empty()  ||
+                MatchesMask(entry->d_name, mask, use_case) ) {
+                s_AddEntry(contents, base_path, entry, flags);
+                break;
+            }
+        } // ITERATE
+    } // while
+    closedir(dir);
 #endif
     return contents;
 }
@@ -3671,7 +3677,7 @@ CDir::TEntries CDir::GetEntries(const CMask& masks,
                                 TGetEntriesFlags flags) const
 {
     auto_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
-    return *contents.get();
+    return contents.get() ? *contents.get() : TEntries();
 }
 
 
@@ -3700,19 +3706,22 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
         FindClose(handle);
     } else {
         s_SetFindFileError();
+        delete contents;
+        return NULL;
     }
 
 #elif defined(NCBI_OS_UNIX)
     DIR* dir = opendir(base_path.c_str());
-    if ( dir ) {
-        while (struct dirent* entry = readdir(dir)) {
-            if ( !IS_RECURSIVE_ENTRY  &&
-                 masks.Match(entry->d_name, use_case) ) {
-                s_AddEntry(contents, base_path, entry, flags);
-            }
-        }
-        closedir(dir);
+    if ( !dir ) {
+        return NULL;
     }
+    while (struct dirent* entry = readdir(dir)) {
+        if ( !IS_RECURSIVE_ENTRY  &&
+                masks.Match(entry->d_name, use_case) ) {
+            s_AddEntry(contents, base_path, entry, flags);
+        }
+    }
+    closedir(dir);
 #endif
     return contents;
 }
@@ -3847,8 +3856,8 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
                 // Create target directory
                 if ( !dst.CreatePath() ) {
                     LOG_ERROR_AND_RETURN("CDir::Copy():"
-                                         " Cannot create target directory: "
-                                         << dst.GetPath());
+                                         " Cannot create target directory: " <<
+                                         dst.GetPath());
                 }
             }
             // Remove unneeded flags.
@@ -3866,6 +3875,10 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
 
     // Read all entries in source directory
     auto_ptr<TEntries> contents(src.GetEntriesPtr("*", fIgnoreRecursive));
+    if (!contents.get()) {
+        LOG_ERROR_AND_RETURN("CDir::Copy():"
+                             " Cannot get content of " << src.GetPath());
+    }
 
     // And copy each of them to target directory
     ITERATE(TEntries, e, *contents.get()) {
@@ -3877,8 +3890,8 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
         // Copy entry
         if ( !entry.CopyToDir(dst.GetPath(), flags, buf_size) ) {
             LOG_ERROR_AND_RETURN("CDir::Copy():"
-                                 " Cannot copy " << entry.GetPath()
-                                 << " to directory " << dst.GetPath());
+                                 " Cannot copy " << entry.GetPath() <<
+                                 " to directory " << dst.GetPath());
         }
     }
 
@@ -3914,7 +3927,10 @@ bool CDir::Remove(EDirRemoveMode mode) const
     }
     // Read all entries in directory
     auto_ptr<TEntries> contents(GetEntriesPtr());
-
+    if (!contents.get()) {
+        LOG_ERROR_AND_RETURN_ERRNO("CDir::Remove():"
+                                   " Cannot get content of " + GetPath());
+    }
     // Remove each entry
     ITERATE(TEntries, entry, *contents.get()) {
         string name = (*entry)->GetName();

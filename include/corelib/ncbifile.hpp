@@ -1617,6 +1617,7 @@ public:
 
     /// Versions of GetEntries() which returns pointer to TEntries.
     /// This methods are faster on big directories than GetEntries().
+    /// These methods return NULL on error.
     /// NOTE: Do not forget to release allocated memory using return pointer.
     TEntries* GetEntriesPtr(const string&    mask  = kEmptyStr,
                             TGetEntriesFlags flags = 0) const;
