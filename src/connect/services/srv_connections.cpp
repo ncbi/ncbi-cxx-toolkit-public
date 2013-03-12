@@ -525,7 +525,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
             else
                 err = "Unspecified error";
             NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
-                           "Error while acquiring an auth ticket from the "
+                           "Error while acquiring an auth ticket from a "
                            "cross-site connection proxy: " << err);
         }
 
