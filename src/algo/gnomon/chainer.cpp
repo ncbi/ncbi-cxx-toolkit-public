@@ -1183,13 +1183,13 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             if(a.Limits().GetFrom() < noclip_limits.GetFrom()) {
                 int to = min(noclip_limits.GetFrom(),a.Limits().GetTo());
                 if(chain.m_coverage_drop_left > 0 && Include(a.Limits(),chain.m_coverage_drop_left)) {
-                    to = chain.m_coverage_drop_left;
+                    to = min(noclip_limits.GetFrom(),chain.m_coverage_drop_left);
                 }
                 new_limits.SetFrom(max(new_limits.GetFrom(),to));
             } else if(a.Limits().GetTo() > noclip_limits.GetTo()) {
                 int from = max(noclip_limits.GetTo(),a.Limits().GetFrom());
                 if(chain.m_coverage_drop_right > 0 && Include(a.Limits(),chain.m_coverage_drop_right)) {
-                    from = chain.m_coverage_drop_right;
+                    from = max(noclip_limits.GetTo(),chain.m_coverage_drop_right);
                 }
                 new_limits.SetTo(min(new_limits.GetTo(),from));
             }
@@ -1208,8 +1208,10 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             if(chain.ReadingFrame().NotEmpty()) {
                 m_gnomon->GetScore(chain);
                 CCDSInfo cds = chain.GetCdsInfo();
-                cds.SetScore(cds.Score(),wasopen);
-                chain.SetCdsInfo(cds);
+                if(wasopen != chain.OpenCds() && (wasopen == false || cds.HasStart())) {
+                    cds.SetScore(cds.Score(),wasopen);
+                    chain.SetCdsInfo(cds);
+                }
             }
         }
     }
