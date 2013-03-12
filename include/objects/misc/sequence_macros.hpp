@@ -1037,6 +1037,33 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define STRING_FIELD_NOT_EMPTY(Var, Fld) \
     ( (Var).IsSet##Fld() && ! (Var).Get##Fld().empty() )
 
+/// STRING_FIELD_APPEND base macro
+/// Appends Str to Var's Fld, putting Delim between if Fld was previously non-empty
+/// Nothing done if Str is empty.
+
+// The macro is a bit more complex than you might expect because we don't know
+// what sort of side effects some of the parameters might have, so we make
+// sure that all code paths call them *exactly* once.
+
+#define STRING_FIELD_APPEND(Var, Fld, Delim, Str)                   \
+    do {                                                            \
+        string & field = (Var).Set##Fld();                          \
+        const size_t old_field_len = field.length();                \
+        if( old_field_len > 0 ) {                                   \
+            field += (Delim);                                       \
+        } else {                                                    \
+            (Delim);                                                \
+        }                                                           \
+        const size_t delim_len = (field.length() - old_field_len);  \
+        field += (Str);                                             \
+        if( field.length() == old_field_len + delim_len ) {         \
+            field.resize(old_field_len);                            \
+        }                                                           \
+        if( old_field_len != field.length() ) {                     \
+            ChangeMade(CCleanupChange::eAppendToString);            \
+        }                                                           \
+    } while(false)
+
 /// STRING_SET_MATCH base macro (for list or vectors)
 
 #define STRING_SET_MATCH(Var, Fld, Str) \
@@ -2185,6 +2212,9 @@ DO_UNIQUE (SUBSOURCE_ON_BIOSOURCE, Var, Func)
 #define REMOVE_IF_EMPTY_SUBSOURCE_ON_BIOSOURCE(Var) \
     REMOVE_IF_EMPTY_FIELD(SUBSOURCE_ON_BIOSOURCE, Var)
 
+#define SUBSOURCE_ON_BIOSOURCE_IS_EMPTY(Var) \
+    FIELD_IS_EMPTY( SUBSOURCE_ON_BIOSOURCE, Var )
+
 /// ORGMOD_ON_BIOSOURCE macros
 
 #define ORGMOD_ON_BIOSOURCE_Type      COrgName::TMod
@@ -2373,6 +2403,8 @@ EDIT_EACH (MOD_ON_ORGREF, Itr, Var)
 
 #define ERASE_MOD_ON_ORGREF(Itr, Var) \
 LIST_ERASE_ITEM (MOD_ON_ORGREF, Itr, Var)
+
+/// MOD_ON_ORGREF_IS_EMPTY
 
 #define MOD_ON_ORGREF_IS_EMPTY(Var) \
 FIELD_IS_EMPTY( MOD_ON_ORGREF, Var )
