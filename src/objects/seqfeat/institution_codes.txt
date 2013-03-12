@@ -2006,6 +2006,7 @@ GTC	c	Gifu Type Culture Collection
 GTC-GIFU	c	Gifu Type Culture Collection (GTC), Gifu University Culture Collection (GIFU)
 GTM	s	Grantham Museum
 GTNP	s	Grand Teton National Park
+GTV	s	Gregorio T. Velasquez Phycological Herbarium
 GU	s	Gotland University, Department of Biology
 GUA	s	DIVEA, DEP, FEEMA, FEEMA
 GUAD	s	Institut National de la Recherche Agronomique and Parc National de Guadeloupe
@@ -6387,6 +6388,7 @@ VCU	s	Virginia Commonwealth University, Biology Department
 VDAC	s	Virginia Department of Agriculture and Consumer Services
 VDAM	s	Institute of Plant Science
 VDB	s	Vanderbilt University, Department of Biological Sciences
+VECTOR	sc	State Research Center of Virology and Biotechnology
 VEN	s	Fundacion Instituto Botanico de Venezuela Dr. Tobias Lasser
 VENDA	s	Thohoyandou Botanical Gardens, Department of Agriculture, Land & Environment
 VER	s	Herbario, Museo Civico di Storia Naturale, Verona
