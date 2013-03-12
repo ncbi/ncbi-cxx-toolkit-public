@@ -37,6 +37,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_api.hpp>
+#include <connect/services/neticache_client.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <util/md5.hpp>
 #include <util/random_gen.hpp>
@@ -63,16 +64,108 @@ struct SKeyInfo
     string key;
     Uint8 size;
     string md5;
+    string created;
 };
+
+class CNCproxy
+{
+public:
+    CNCproxy(const string& service_name, const string& client_name);
+    CNCproxy(const string& service_name, const string& cache_name, const string& client_name, ICache::TFlags flags);
+    ~CNCproxy();
+
+    void SetCommunicationTimeout(unsigned int sec);
+
+    IEmbeddedStreamWriter* PutData(string* key);
+    IReader*               GetData(const string& key, size_t* blob_size);
+    void                   Remove(const string& blob_id);
+
+    bool UseNC(void) {
+        return m_NC != NULL;
+    }
+private:
+    CNetCacheAPI* m_NC;
+    CNetICacheClient* m_IC;
+
+    int m_version;
+    string m_subkey;
+};
+
+CNCproxy::CNCproxy(const string& service_name, const string& client_name)
+    : m_NC(NULL), m_IC(NULL)
+{
+    m_NC = new CNetCacheAPI(service_name, client_name);
+    m_version = 0;
+    m_subkey = client_name + "subkey";
+}
+
+CNCproxy::CNCproxy(const string& service_name, const string& cache_name,
+                   const string& client_name, ICache::TFlags flags)
+    : m_NC(NULL), m_IC(NULL)
+{
+    m_IC = new CNetICacheClient(service_name, cache_name, client_name);
+    m_IC->SetFlags(flags);
+    m_version = 0;
+    m_subkey = client_name + "subkey";
+}
+CNCproxy::~CNCproxy()
+{
+    if (m_NC) {
+        delete m_NC;
+    }
+    if (m_IC) {
+        delete m_IC;
+    }
+}
+
+void CNCproxy::SetCommunicationTimeout(unsigned int sec)
+{
+    STimeout to;
+    to.sec = sec;
+    to.usec = 0;
+    if (m_NC) {
+        m_NC->SetCommunicationTimeout(to);
+    } else {
+        m_IC->SetCommunicationTimeout(to);
+    }
+}
+IEmbeddedStreamWriter* CNCproxy::PutData(string* key)
+{
+    if (m_NC) {
+        return m_NC->PutData(key);
+    }
+    string gkey(*key);
+    return m_IC->GetNetCacheWriter( gkey, m_version, m_subkey);
+}
+
+IReader* CNCproxy::GetData(const string& key, size_t* blob_size)
+{
+    if (m_NC) {
+        return m_NC->GetData(key, blob_size);
+    }
+    return  m_IC->GetReadStream(key,m_version,m_subkey,blob_size, CNetCacheAPI::eCaching_AppDefault);
+}
+
+void CNCproxy::Remove(const string& key)
+{
+    if (m_NC) {
+        m_NC->Remove(key);
+        return;
+    }
+    m_IC->Remove(key, m_version, m_subkey);
+}
 
 
 class CReplayThread : public CThread
 {
 public:
-    CReplayThread(const string& file_prefix, int file_num);
+    CReplayThread(const string& file_name, const string& client_name);
+    CReplayThread(const string& file_name, const string& cache_name,
+                  const string& client_name, ICache::TFlags flags);
     virtual ~CReplayThread(void) {};
 
-private:
+protected:
+    void x_Init(void);
     virtual void* Main(void);
 
     bool x_ReadNextLine(CTempString& line);
@@ -82,7 +175,7 @@ private:
 
 
     CFileIO m_InFile;
-    CNetCacheAPI m_NC;
+    CNCproxy m_NC;
     typedef map<Uint8, SKeyInfo> TIdKeyMap;
     TIdKeyMap m_IdKeys;
     Uint4 m_InPos;
@@ -107,7 +200,6 @@ public:
     vector<Uint8> m_SizeErased;
     vector<Uint8> m_SizeReads;
 };
-
 
 static bool s_SelfGen = false;
 static string s_InFile;
@@ -289,34 +381,44 @@ s_PrintStats(int elapsed)
 }
 
 
-CReplayThread::CReplayThread(const string& file_prefix, int file_num)
-    : m_NC(s_NCService, "logs_replay_" + NStr::IntToString(file_num)),
-      m_InPos(0),
-      m_InReadSize(0),
-      m_TotalRead(0),
-      m_CntWrites(100),
-      m_CntErased(100),
-      m_CntReads(100),
-      m_CntErrWrites(100),
-      m_CntErrReads(100),
-      m_CntBadReads(100),
-      m_CntNotFound(100),
-      m_SumWrites(100),
-      m_SumReads(100),
-      m_SizeWrites(100),
-      m_SizeErased(100),
-      m_SizeReads(100)
+CReplayThread::CReplayThread(const string& file_name, const string& client_name)
+    : m_NC(s_NCService, client_name)
 {
-    STimeout to;
-    to.sec = 2;
-    to.usec = 0;
-    m_NC.SetCommunicationTimeout(to);
-
-    string file_name = file_prefix;
-    file_name += ".";
-    file_name += NStr::IntToString(file_num);
+    x_Init();
+    m_NC.SetCommunicationTimeout(2);
     m_InFile.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
 }
+
+CReplayThread::CReplayThread(const string& file_name, const string& cache_name,
+               const string& client_name, ICache::TFlags flags)
+    : m_NC(s_NCService, cache_name, client_name, flags)
+{
+    x_Init();
+    m_NC.SetCommunicationTimeout(2);
+    m_InFile.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
+}
+
+void CReplayThread::x_Init(void)
+{
+    m_InPos = 0;
+    m_InReadSize = 0;
+    m_TotalRead = 0;
+    m_CntWrites.resize(100);
+    m_CntErased.resize(100);
+    m_CntReads.resize(100);
+    m_CntErrWrites.resize(100);
+    m_CntErrReads.resize(100);
+    m_CntBadReads.resize(100);
+    m_CntNotFound.resize(100);
+    m_SumWrites.resize(100);
+    m_SumReads.resize(100);
+    m_SizeWrites.resize(100);
+    m_SizeErased.resize(100);
+    m_SizeReads.resize(100);
+}
+
+
+
 
 bool
 CReplayThread::x_ReadNextLine(CTempString& line)
@@ -370,6 +472,9 @@ s_GetRandom(void)
 void
 CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
 {
+    if (!m_NC.UseNC()) {
+        gen_key=true;
+    }
     string key;
     Uint8 blob_size = size;
     SKeyInfo* key_info = NULL;
@@ -383,7 +488,7 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
             key = key_info->key;
         }
     }
-    if (gen_key  &&  s_SelfGen) {
+    if (!m_NC.UseNC() || (gen_key  &&  s_SelfGen)) {
         CNetCacheKey::GenerateBlobKey(&key, s_BlobId.Add(1), "130.14.24.171", 9000, 1, s_GetRandom());
         CNetCacheKey::AddExtensions(key, s_NCService);
     }
@@ -441,6 +546,7 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
         }
         key_info->size = blob_size;
         key_info->md5 = md5.GetHexSum();
+        key_info->created = CTime(CTime::eCurrent).AsString("h:m:s.r");
     }
     catch (CException& ex) {
         ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
@@ -471,10 +577,12 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         auto_ptr<IReader> reader(m_NC.GetData(key_info->key, &blob_size));
         if (!reader.get()) {
             if (!key_info->md5.empty()  &&  key_info->size != Uint8(-1)) {
-                ERR_POST(Warning << "Blob " << key_info->key << " not found");
+                ERR_POST(Warning << "Blob " << key_info->key <<
+                                    " not found, was created at " << key_info->created);
                 ++m_CntNotFound[size_index];
             }
             key_info->md5.resize(0);
+            key_info->created.resize(0);
             key_info->size = Uint8(-1);
             return;
         }
@@ -564,6 +672,7 @@ CReplayThread::x_Remove(Uint8 key_id)
     catch (CException& ex) {
         ERR_POST("Error while deleting blob with key '" << key_info->key << "': " << ex);
     }
+    m_IdKeys.erase(key_id);
 }
 
 void*
@@ -617,7 +726,6 @@ CReplayThread::Main(void)
     return NULL;
 }
 
-
 #ifdef NCBI_OS_LINUX
 static void
 s_ProcessHUP(int)
@@ -637,20 +745,29 @@ CLogsReplayApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Split NetCache logs for testing");
+                              "Replay NetCache logs for testing");
 
     arg_desc->AddFlag("self_gen",
                       "Generate all keys, forces NC randomly to process"
                       " commands locally and to proxy commands to other"
                       " instances");
+
+    arg_desc->AddOptionalKey( "icache", "UseICache",
+        "Use ICache interface", CArgDescriptions::eString);
+    arg_desc->SetConstraint( "icache", &(*new CArgAllow_Strings,
+            "performance", "reliability"));
+
+    arg_desc->AddOptionalKey("firstfile", "fileExtension",
+                      "starting file suffix", CArgDescriptions::eInteger);
+
     arg_desc->AddPositional("in_file_prefix",
                             "Prefix for input files with test commands",
                             CArgDescriptions::eString);
     arg_desc->AddPositional("n_files",
-                            "Number of input files to create",
+                            "Number of input files (replay threads)",
                             CArgDescriptions::eInteger);
     arg_desc->AddPositional("service",
-                            "Service name to connect to NetCache",
+                            "NetCache service name to connect to",
                             CArgDescriptions::eString);
     arg_desc->AddDefaultPositional("start_time",
                                    "Time to start processing from (milliseconds)",
@@ -674,12 +791,39 @@ CLogsReplayApp::Run(void)
     s_NCService = args["service"].AsString();
     s_StartTime = Uint8(args["start_time"].AsInt8());
 
+    int startFile = args["firstfile"].AsInteger();
+    bool useIC = args["icache"].HasValue();
+    ICache::TFlags flagsIC =
+        (args["icache"].AsString() == "reliability") ? ICache::fBestReliability : ICache::fBestPerformance;
+
+// normal replay
     s_ThreadsFinished.Set(0);
     s_Threads = new vector< CRef<CReplayThread> >(n_files);
     for (int i = 0; i < n_files; ++i) {
-        CRef<CReplayThread> thr(new CReplayThread(s_InFile, i));
-        s_Threads->at(i) = thr;
-        thr->Run();
+
+        int file_num = startFile + i;
+        string file_name = s_InFile;
+        file_name += ".";
+        file_name += NStr::NumericToString(file_num);
+        CFile fo(file_name);
+        if (!fo.Exists()) {
+            ERR_POST("File not found: " << file_name);
+            continue;
+        }
+        string cache_name = fo.GetName();
+        string client_name = string("logs_replay_") + NStr::IntToString(file_num);
+
+        if (useIC) {
+            CRef<CReplayThread> thr(new CReplayThread(file_name, cache_name, client_name, flagsIC));
+            s_Threads->at(i) = thr;
+            thr->Run();
+        } else {
+            CRef<CReplayThread> thr(new CReplayThread(file_name, client_name));
+            s_Threads->at(i) = thr;
+            thr->Run();
+        }
+
+
     }
     CStopWatch watch(CStopWatch::eStart);
     while (int(s_ThreadsFinished.Get()) != n_files) {
