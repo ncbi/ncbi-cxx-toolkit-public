@@ -2549,7 +2549,6 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     return CWinSecurity::GetFileOwner(GetPath(), owner, group, uid, gid);
 
 #elif defined(NCBI_OS_UNIX)
-
     struct stat st;
     int errcode;
     
@@ -2562,23 +2561,75 @@ bool CDirEntry::GetOwner(string* owner, string* group,
         LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetOwner():"
                                    " stat() failed for " + GetPath());
     }
-    
+
     if ( uid )
         *uid = st.st_uid;
-    if ( owner ) {
-        struct passwd* pwd = getpwuid(st.st_uid);
-        if ( pwd ) {
+
+    if ( gid )
+        *gid = st.st_gid;
+
+    if (owner) {
+        struct passwd* pwd;
+
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
+        /* NB:  getpwuid() is MT-safe on Solaris */
+        pwd = getpwuid(st.st_uid);
+#  elif defined(NCBI_HAVE_GETPWUID_R)
+        char buf[1024];
+#    if   NCBI_HAVE_GETPWUID_R == 4
+        /* obsolete but still existent */
+        pwd = getpwuid_r(st.st_uid,
+                         (struct passwd*) buf, buf + sizeof(*pwd),
+                         sizeof(buf) - sizeof(*pwd));
+#    elif NCBI_HAVE_GETPWUID_R == 5
+        /* POSIX-conforming */
+        if (getpwuid_r(st.st_uid,
+                       (struct passwd*) buf, buf + sizeof(*pwd),
+                       sizeof(buf) - sizeof(*pwd), &pwd) != 0) {
+            pwd = 0;
+        }
+#    else
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
+#    endif /*NCBI_HAVE_GETPWUID_R*/
+#  else
+        pwd = 0;
+#  endif
+
+        if ( pwd  &&  pwd->pw_name ) {
             owner->assign(pwd->pw_name);
         } else {
             NStr::NumericToString(*owner, st.st_uid);
         }
     }
 
-    if ( gid )
-        *gid = st.st_gid;
     if ( group ) {
-        struct group* grp = getgrgid(st.st_gid);
-        if ( grp ) {
+        struct group* grp;
+
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
+        /* NB:  getgrgid() is MT-safe on Solaris */
+        grp = getgrgid(st.st_gid);
+#  elif defined(NCBI_HAVE_GETPWUID_R)
+        char buf[1024];
+#    if   NCBI_HAVE_GETPWUID_R == 4
+        /* obsolete but still existent */
+        grp = getgrgid_r(st.st_gid,
+                         (struct group*) buf, buf + sizeof(*grp),
+                         sizeof(buf) - sizeof(*grp));
+#    elif NCBI_HAVE_GETPWUID_R == 5
+        /* POSIX-conforming */
+        if (getgrgid_r(st.st_gid,
+                       (struct group*) buf, buf + sizeof(*grp),
+                       sizeof(buf) - sizeof(*grp), &grp) != 0) {
+            grp = 0;
+        }
+#    else
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
+#    endif /*NCBI_HAVE_GETPWUID_R*/
+#  else
+        grp = 0;
+#  endif
+
+        if ( grp  &&  grp->gr_name ) {
             group->assign(grp->gr_name);
         } else {
             NStr::NumericToString(*group, st.st_gid);
@@ -2595,16 +2646,6 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                          EFollowLinks follow,
                          unsigned int* uid, unsigned int* gid) const
 {
-#if defined(NCBI_OS_MSWIN)
-
-    // On MS Windows we can change file owner only
-    if ( gid )
-        *gid = 0;
-
-    return CWinSecurity::SetFileOwner(GetPath(), owner, uid);
-
-#elif defined(NCBI_OS_UNIX)
-
     if ( uid )
         *uid = 0;
     if ( gid )
@@ -2615,39 +2656,100 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
         return false;
     }
 
+#if defined(NCBI_OS_MSWIN)
+
+    // On MS Windows we can change file owner only
+    return CWinSecurity::SetFileOwner(GetPath(), owner, uid);
+
+#elif defined(NCBI_OS_UNIX)
+
     uid_t temp_uid = (uid_t)(-1);
     gid_t temp_gid = (gid_t)(-1);
 
     if ( !owner.empty() ) {
-        struct passwd* pwd = getpwnam(owner.c_str());
+        struct passwd* pwd;
+
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
+        /* NB:  getpwnam() is MT-safe on Solaris */
+        pwd = getpwnam(owner.c_str());
+#  elif defined(NCBI_HAVE_GETPWUID_R)
+        char buf[1024];
+#    if   NCBI_HAVE_GETPWUID_R == 4
+        /* obsolete but still existent */
+        pwd = getpwnam_r(owner.c_str(),
+                         (struct passwd*) buf, buf + sizeof(*pwd),
+                         sizeof(buf) - sizeof(*pwd));
+#    elif NCBI_HAVE_GETPWUID_R == 5
+        /* POSIX-conforming */
+        if (getpwnam_r(owner.c_str(),
+                       (struct passwd*) buf, buf + sizeof(*pwd),
+                       sizeof(buf) - sizeof(*pwd), &pwd) != 0) {
+            pwd = 0;
+        }
+#    else
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
+#    endif /*NCBI_HAVE_GETPWUID_R*/
+#  else
+        pwd = 0;
+#  endif
+
         if ( !pwd ) {
-            temp_uid = (uid_t) NStr::StringToUInt(owner.c_str(),
-                                                  NStr::fConvErr_NoThrow, 0);
-            if ( errno ) {
+            unsigned int temp;
+            if (!NStr::StringToNumeric(owner,
+                                       &temp, NStr::fConvErr_NoThrow, 0)) {
                 LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
                                            " Invalid owner name " + owner);
             }
+            temp_uid = (uid_t) temp;
         } else {
             temp_uid = pwd->pw_uid;
         }
-        if ( uid )
+        if ( uid ) {
             *uid = temp_uid;
+        }
     }
 
     if ( !group.empty() ) {
-        struct group* grp = getgrnam(group.c_str());
+        struct group* grp;
+
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
+        /* NB:  getgrnam() is MT-safe on Solaris */
+        grp = getgrnam(group.c_str());
+#  elif defined(NCBI_HAVE_GETPWUID_R)
+        char buf[1024];
+#    if   NCBI_HAVE_GETPWUID_R == 4
+        /* obsolete but still existent */
+        grp = getgrnam_r(group.c_str(),
+                         (struct group*) buf, buf + sizeof(*grp),
+                         sizeof(buf) - sizeof(*grp));
+#    elif NCBI_HAVE_GETPWUID_R == 5
+        /* POSIX-conforming */
+        if (getgrnam_r(group.c_str(),
+                       (struct group*) buf, buf + sizeof(*grp),
+                       sizeof(buf) - sizeof(*grp), &grp) != 0) {
+            grp = 0;
+        }
+#    else
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
+#    endif /*NCBI_HAVE_GETPWUID_R*/
+#  else
+        grp = 0;
+#  endif
+
         if ( !grp ) {
-            temp_gid = (gid_t) NStr::StringToUInt(group.c_str(),
-                                                  NStr::fConvErr_NoThrow, 0);
-            if ( errno ) {
+            unsigned int temp;
+            if (!NStr::StringToNumeric(group,
+                                       &temp, NStr::fConvErr_NoThrow, 0)) {
                 LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
                                            " Invalid group name " + group);
             }
+            temp_gid = (uid_t) temp;
         } else {
             temp_gid = grp->gr_gid;
         }
-        if ( gid )
+        if ( gid ) {
             *gid = temp_gid;
+        }
     }
 
     if (follow == eFollowLinks  ||  GetType(eIgnoreLinks) != eLink) {
