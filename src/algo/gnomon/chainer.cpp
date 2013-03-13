@@ -4647,7 +4647,7 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
                             CArgDescriptions::eDouble, "25.0");
     arg_desc->AddDefaultKey("longenoughcds", "longenoughcds",
                             "Minimal CDS not supported by protein or annotated mRNA to ignore the score (bp)",
-                            CArgDescriptions::eInteger, "600");
+                            CArgDescriptions::eInteger, "900");
     arg_desc->AddDefaultKey("protcdslen", "protcdslen",
                             "Minimal CDS supported by protein or annotated mRNA to ignore the score (bp)",
                             CArgDescriptions::eInteger, "300");
