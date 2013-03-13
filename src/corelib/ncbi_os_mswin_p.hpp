@@ -151,10 +151,11 @@ public:
     /// @param filename
     ///   Filename to change the owner of.
     /// @param owner
-    ///   New owner name to set.
+    ///   New owner name to set (must not be empty).
     /// @param uid
     ///   To receive (fake) numeric user id of the prospective owner
     ///   (even if the ownership change was unsuccessful), or 0 if unknown.
+    ///   If passed, the pointed to value must always be inited with a 0.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     /// @sa

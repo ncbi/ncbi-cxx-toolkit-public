@@ -62,18 +62,18 @@ PSID CWinSecurity::GetUserSID(const string& username)
     if ( t_username.empty() ) {
         return NULL;
     }
-    TXString x_username( _T_XSTRING(t_username));
+    TXString x_username( _T_XSTRING(t_username) );
 
     PSID         sid         = NULL;
     DWORD        sid_size    = 0;
     TXChar*      domain      = NULL;
     DWORD        domain_size = 0;
-    SID_NAME_USE use         = SidTypeUnknown;
+    SID_NAME_USE use;
 
     try {
         // First call to LookupAccountName to get the buffer sizes
         BOOL ret = LookupAccountName(NULL, x_username.c_str(),
-                                     sid, &sid_size,
+                                     sid,    &sid_size,
                                      domain, &domain_size, &use);
         if ( !ret  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
             CNcbiError::SetFromWindowsError();
@@ -87,7 +87,7 @@ PSID CWinSecurity::GetUserSID(const string& username)
         }
         // Second call to LookupAccountName to get the actual account info
         ret = LookupAccountName(NULL, x_username.c_str(),
-                                sid, &sid_size,
+                                sid,    &sid_size,
                                 domain, &domain_size, &use);
         if ( !ret ) {
             // Unknown local user
@@ -115,38 +115,6 @@ void CWinSecurity::FreeUserSID(PSID sid)
 }
 
 
-// Helper function for GetOwner
-bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
-{
-    // According to MSDN max account name size is 20, domain name size is 256.
-    #define MAX_ACCOUNT_LEN  256
-
-    TXChar account_name[MAX_ACCOUNT_LEN + 1];
-    TXChar domain_name [MAX_ACCOUNT_LEN + 1];
-    DWORD  account_size = sizeof(account_name) / sizeof(account_name[0]);
-    DWORD  domain_size  = sizeof(domain_name)  / sizeof(domain_name[0]);
-    SID_NAME_USE use    = SidTypeUnknown;
-
-    if ( !LookupAccountSid(NULL/*local computer*/, sid, 
-                           account_name, &account_size,
-                           domain_name,  &domain_size,
-                           &use) ) {
-        CNcbiError::SetFromWindowsError();
-        return false;
-    }
-    // Save account information
-    if (account) {
-        account_name[account_size] = _TX('\0');
-        account->assign(_T_STDSTRING(account_name));
-    }
-    if (domain) {
-        domain_name[domain_size] = _TX('\0');
-        domain->assign(_T_STDSTRING(domain_name));
-    }
-    return true;
-}
-
-
 // Helper function for SetOwner
 static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
 {
@@ -167,7 +135,8 @@ static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
     tp.Privileges[0].Luid = luid;
     tp.Privileges[0].Attributes = 0;
 
-    AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
+    AdjustTokenPrivileges(token, FALSE,
+                          &tp, sizeof(tp),
                           &tp_prev, &tp_prev_size);
     if ( GetLastError() != ERROR_SUCCESS ) {
         CNcbiError::SetFromWindowsError();
@@ -196,29 +165,84 @@ static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
 }
 
 
+// Helper function for GetOwnerGroupFromSIDs.
+// NB: *domatch is reset to 0 if the account type has no domain match.
+static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
+{
+    // According to MSDN max account name size is 20, domain name size is 256.
+    #define MAX_ACCOUNT_LEN  256
+
+    TXChar       account_name[MAX_ACCOUNT_LEN + 1];
+    TXChar       domain_name [MAX_ACCOUNT_LEN + 1];
+    DWORD        account_size = sizeof(account_name) / sizeof(account_name[0]);
+    DWORD        domain_size  = sizeof(domain_name)  / sizeof(domain_name[0]);
+    SID_NAME_USE use;
+
+    if ( !LookupAccountSid(NULL, sid,
+                           account_name, &account_size,
+                           domain_name,  &domain_size,
+                           &use) ) {
+        CNcbiError::SetFromWindowsError();
+        return false;
+    }
+    // Save account information
+    if (account) {
+        account_name[account_size] = _TX('\0');
+        account->assign(_T_STDSTRING(account_name));
+    }
+    if ( domatch ) {
+        domain_name[domain_size] = _TX('\0');
+        string domain(_T_STDSTRING(domain_name));
+        if (*domatch != int(use)  ||  domain.empty()
+            ||  NStr::EqualNocase(domain, "builtin")
+            ||  NStr::FindNoCase(domain, " ") != NPOS) {
+            *domatch = 0;
+        }
+    }
+    return true;
+}
+
+
 static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
                                     string* owner, string* group,
                                     unsigned int* uid, unsigned int* gid)
 {
+    bool success = true;
     // Get numeric owner
     if ( uid ) {
-        *uid = *GetSidSubAuthority(sid_owner,
-                                   *GetSidSubAuthorityCount(sid_owner) - 1)
-            + CYGWIN_MAGIC_ID_OFFSET;
+        int match = SidTypeUser;
+        if ( !x_LookupAccountSid(sid_owner, owner, &match) ) {
+            if ( owner )
+                success = false;
+            *uid = 0;
+        } else {
+            *uid = match ? CYGWIN_MAGIC_ID_OFFSET : 0;
+        }
+        owner = 0;
+        *uid += *GetSidSubAuthority(sid_owner,
+                                    *GetSidSubAuthorityCount(sid_owner) - 1);
     }
     // Get numeric group
     if ( gid ) {
-        *gid = *GetSidSubAuthority(sid_group,
-                                   *GetSidSubAuthorityCount(sid_group) - 1)
-            + CYGWIN_MAGIC_ID_OFFSET;
+        int match = SidTypeGroup;
+        if ( !x_LookupAccountSid(sid_group, group, &match) ) {
+            *gid = 0;
+        } else {
+            *gid = match ? CYGWIN_MAGIC_ID_OFFSET : 0;
+        }
+        group = 0;
+        *gid += *GetSidSubAuthority(sid_group,
+                                    *GetSidSubAuthorityCount(sid_group) - 1);
     }
+    if ( !success )
+        return false;
 
     // Get owner
-    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
+    if ( owner  &&  !x_LookupAccountSid(sid_owner, owner) ) {
         return false;
     }
     // Get group
-    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
+    if ( group  &&  !x_LookupAccountSid(sid_group, group) ) {
         // This is not an error, because the group name on Windows
         // is an auxiliary information.  Sometimes accounts cannot
         // belong to groups, or we don't have permissions to get
@@ -236,7 +260,7 @@ bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
 {
     PSID sid_owner;
     PSID sid_group;
-    PSECURITY_DESCRIPTOR sd = NULL;
+    PSECURITY_DESCRIPTOR sd;
 
     DWORD res = GetSecurityInfo
          ( objhndl, objtype,
@@ -262,13 +286,13 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
 {
     PSID sid_owner;
     PSID sid_group;
-    PSECURITY_DESCRIPTOR sd = NULL;
+    PSECURITY_DESCRIPTOR sd;
 
     DWORD res = GetNamedSecurityInfo
          ( (LPTSTR)(_T_XCSTRING(objname)), objtype,
            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
            &sid_owner, &sid_group, NULL, NULL, &sd );
-    if (res != ERROR_SUCCESS ) {
+    if ( res != ERROR_SUCCESS ) {
         CNcbiError::SetWindowsError(res);
         return false;
     }
@@ -283,16 +307,11 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
 bool CWinSecurity::SetFileOwner(const string& filename,
                                 const string& owner, unsigned int* uid)
 {
-    if ( uid ) {
-        *uid = 0;
-    }
-    if ( owner.empty() ) {
-        CNcbiError::Set(CNcbiError::eInvalidArgument);
-        return false;
-    }
+    _ASSERT(!owner.empty());
+    _ASSERT(!uid  ||  !*uid);
 
     // Get access token
-    HANDLE token = INVALID_HANDLE_VALUE;
+    HANDLE token;
     if ( !OpenProcessToken(GetCurrentProcess(),
                            TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
                            &token) ) {
@@ -318,7 +337,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
         // First call to LookupAccountName() to get the buffer sizes
         DWORD        sid_size    = 0;
         DWORD        domain_size = 0;
-        SID_NAME_USE use         = SidTypeUnknown;
+        SID_NAME_USE use;
         BOOL res = LookupAccountName(NULL, _T_XCSTRING(owner),
                                      NULL, &sid_size, 
                                      NULL, &domain_size, &use);
@@ -328,13 +347,13 @@ bool CWinSecurity::SetFileOwner(const string& filename,
         // Allocate buffers
         sid = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
         domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
-        if ( !sid  ||  ! domain ) {
+        if ( !sid  ||  !domain ) {
             throw(0);
         }
 
         // Second call to LookupAccountName to get the actual account info
         if ( !LookupAccountName(NULL, _T_XCSTRING(owner),
-                                sid, &sid_size, 
+                                sid,    &sid_size, 
                                 domain, &domain_size, &use) ) {
             // Unknown local user
             throw(0);
@@ -417,6 +436,7 @@ PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
         if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
                               sid, size, &size_need) ) {
             CNcbiError::SetFromWindowsError();
+            LocalFree((HLOCAL) sid);
             return NULL;
         }
     }
@@ -431,18 +451,16 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
         CNcbiError::Set(CNcbiError::eInvalidArgument);
         return false;
     }
-    DWORD dwRet = 0;
-    dwRet = GetNamedSecurityInfo((LPTSTR)(_T_XCSTRING(strPath)),
-                                 SE_FILE_OBJECT, FILE_SECURITY_INFO,
-                                 NULL, NULL, pDACL, NULL, pFileSD);
+    DWORD dwRet = GetNamedSecurityInfo(_T_XCSTRING(strPath),
+                                       SE_FILE_OBJECT, FILE_SECURITY_INFO,
+                                       NULL, NULL, pDACL, NULL, pFileSD);
     if (dwRet != ERROR_SUCCESS) {
         pFileSD = NULL;
         pDACL   = NULL;
-    }
-    if (dwRet != ERROR_SUCCESS) {
         CNcbiError::SetWindowsError(dwRet);
+        return false;
     }
-    return (dwRet == ERROR_SUCCESS);
+    return true;
 }
 
 
@@ -490,20 +508,19 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         if ( !OpenThreadToken(GetCurrentThread(),
                               TOKEN_DUPLICATE | TOKEN_QUERY,
                               FALSE, &token) ) {
+            RevertToSelf();
             throw(0);
         }
         RevertToSelf();
 
-        DWORD access = MAXIMUM_ALLOWED;
         GENERIC_MAPPING mapping;
-        memset(&mapping, 0, sizeof(GENERIC_MAPPING));
+        memset(&mapping, 0, sizeof(mapping));
 
-        PRIVILEGE_SET  privileges;
-        memset(&privileges, 0, sizeof(PRIVILEGE_SET));
-        DWORD          privileges_size = sizeof(PRIVILEGE_SET);
-        BOOL           status = true;
+        PRIVILEGE_SET privileges;
+        DWORD         privileges_size = sizeof(privileges);
+        BOOL          status;
 
-        if ( !AccessCheck(sd, token, access, &mapping,
+        if ( !AccessCheck(sd, token, MAXIMUM_ALLOWED, &mapping,
                           &privileges, &privileges_size, permissions,
                           &status)  ||  !status ) {
             throw(0);
