@@ -8652,12 +8652,9 @@ xomssa needs xutil
 xpbacktest needs xncbi
 xportal_auth needs connect
 xportal_auth needs connext
-xportal_auth needs txserv
-xportal_auth needs txservbase
 xportal_auth needs txxmldoc
 xportal_auth needs xcgi
 xportal_auth needs xcompress
-xportal_auth needs xconnect
 xportal_auth needs xncbi
 xportal_auth needs xutil
 xprimer needs biblio
