@@ -640,9 +640,9 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  */
 
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
-extern const char*    UTIL_TcharToUtf8OnHeap(const wchar_t* buffer);
-extern const char*    UTIL_TcharToUtf8      (const wchar_t* buffer);
-extern const wchar_t* UTIL_Utf8ToTchar      (const    char* buffer);
+extern const char*    UTIL_TcharToUtf8OnHeap(const wchar_t* str);
+extern const char*    UTIL_TcharToUtf8      (const wchar_t* str);
+extern const wchar_t* UTIL_Utf8ToTchar      (const    char* str);
 /*
  * NOTE:  If you change these macros (here and in #else) you need to make
  *        similar changes in ncbi_strerror.c as well.
@@ -656,7 +656,7 @@ extern const wchar_t* UTIL_Utf8ToTchar      (const    char* buffer);
 #endif /*NCBI_OS_MSWIN && _UNICODE*/
 
 #ifdef NCBI_OS_MSWIN
-extern void           UTIL_ReleaseBufferOnHeap(const void* buffer);
+extern void           UTIL_ReleaseBufferOnHeap(const void* ptr);
 #else
 #  define             UTIL_ReleaseBufferOnHeap(x)  /*void*/
 #endif /*NCBI_OS_MSWIN*/

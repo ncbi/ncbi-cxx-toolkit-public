@@ -149,10 +149,9 @@ static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
     tp_prev.Privileges[0].Luid = luid;
 
     if ( enable ) {
-        tp_prev.Privileges[0].Attributes |= SE_PRIVILEGE_ENABLED;
+        tp_prev.Privileges[0].Attributes |=  SE_PRIVILEGE_ENABLED;
     } else {
-        tp_prev.Privileges[0].Attributes ^= 
-            (SE_PRIVILEGE_ENABLED & tp_prev.Privileges[0].Attributes);
+        tp_prev.Privileges[0].Attributes &= ~SE_PRIVILEGE_ENABLED;
     }
     AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size, NULL, NULL);
     if ( GetLastError() != ERROR_SUCCESS ) {
@@ -190,7 +189,7 @@ static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
         account_name[account_size] = _TX('\0');
         account->assign(_T_STDSTRING(account_name));
     }
-    if ( domatch ) {
+    if (domatch) {
         domain_name[domain_size] = _TX('\0');
         string domain(_T_STDSTRING(domain_name));
         if (*domatch != int(use)  ||  domain.empty()
@@ -401,9 +400,10 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     // Clean up
     if ( sid )    LocalFree(sid);
     if ( domain ) free(domain);
+
     CloseHandle(token);
 
-    if (!success) {
+    if ( !success ) {
         CNcbiError::SetFromWindowsError();
     }
     return success;
@@ -459,7 +459,7 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
     DWORD dwRet = GetNamedSecurityInfo(_T_XCSTRING(strPath),
                                        SE_FILE_OBJECT, FILE_SECURITY_INFO,
                                        NULL, NULL, pDACL, NULL, pFileSD);
-    if (dwRet != ERROR_SUCCESS) {
+    if ( dwRet != ERROR_SUCCESS ) {
         pFileSD = NULL;
         pDACL   = NULL;
         CNcbiError::SetWindowsError(dwRet);
@@ -539,7 +539,7 @@ bool CWinSecurity::GetFilePermissions(const string& path,
     CloseHandle(token);
     FreeFileSD(sd);
 
-    if (!success) {
+    if ( !success ) {
         CNcbiError::SetFromWindowsError();
     }
     return success;
