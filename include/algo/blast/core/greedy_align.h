@@ -47,7 +47,7 @@ extern "C" {
 #define GREEDY_MAX_COST_FRACTION 2
 
 /** The largest distance to be examined for an optimal alignment */
-#define GREEDY_MAX_COST 10000
+#define GREEDY_MAX_COST 1000
 
 /* ----- pool allocator ----- */
 
@@ -87,6 +87,8 @@ void MBSpaceFree(SMBSpace* sp);
 
 /** All auxiliary memory needed for the greedy extension algorithm. */
 typedef struct SGreedyAlignMem {
+   Int4 max_dist;                     /**< max distance to search */
+   Int4 xdrop;                        /**< Xdrop value */
    Int4** last_seq2_off;              /**< 2-D array of distances */
    Int4* max_score;                   /**< array of maximum scores */
    SGreedyOffset** last_seq2_off_affine;  /**< Like last_seq2_off but for 

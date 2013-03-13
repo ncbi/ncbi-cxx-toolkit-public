@@ -166,34 +166,36 @@ s_BlastGreedyAlignsFree(SGreedyAlignMem* gamp)
 /** Allocate memory for the greedy gapped alignment algorithm
  * @param score_params Parameters related to scoring [in]
  * @param ext_params Options and parameters related to the extension [in]
- * @param max_dbseq_length The length of the longest sequence in the 
- *        database [in]
+ * @param max_d The maximum distance to search [in]
+ * @param Xdrop The Xdrop value [in]
  * @return The allocated SGreedyAlignMem structure
  */
 static SGreedyAlignMem* 
 s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
 		       const BlastExtensionParameters* ext_params,
-		       Int4 max_dbseq_length)
+		       Int4 max_d, Int4 Xdrop)
 {
    SGreedyAlignMem* gamp;
-   Int4 max_d, max_d_1, Xdrop, d_diff, max_cost, gd, i;
+   Int4 max_d_1, d_diff, max_cost, gd, i;
    Int4 reward, penalty, gap_open, gap_extend;
    Int4 Mis_cost, GE_cost;
    
-   if (score_params == NULL || ext_params == NULL) 
+   if (score_params == NULL || (!ext_params && !Xdrop))
       return NULL;
    
    if (score_params->reward % 2 == 1) {
       reward = 2*score_params->reward;
       penalty = -2*score_params->penalty;
-      Xdrop = 2*MAX(ext_params->gap_x_dropoff,
+      if (!Xdrop) 
+          Xdrop = 2*MAX(ext_params->gap_x_dropoff,
                     ext_params->gap_x_dropoff_final);
       gap_open = 2*score_params->gap_open;
       gap_extend = 2*score_params->gap_extend;
    } else {
       reward = score_params->reward;
       penalty = -score_params->penalty;
-      Xdrop = MAX(ext_params->gap_x_dropoff,
+      if (!Xdrop)
+          Xdrop = MAX(ext_params->gap_x_dropoff,
                   ext_params->gap_x_dropoff_final);
       gap_open = score_params->gap_open;
       gap_extend = score_params->gap_extend;
@@ -202,10 +204,9 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    if (gap_open == 0 && gap_extend == 0)
       gap_extend = reward / 2 + penalty;
 
-   max_d = MIN(GREEDY_MAX_COST,
-               max_dbseq_length / GREEDY_MAX_COST_FRACTION + 1);
-
    gamp = (SGreedyAlignMem*) calloc(1, sizeof(SGreedyAlignMem));
+   gamp->max_dist = max_d;
+   gamp->xdrop = Xdrop;
 
    if (score_params->gap_open==0 && score_params->gap_extend==0) {
       d_diff = (Xdrop+reward/2)/(penalty+reward)+1;
@@ -317,9 +318,11 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    else {
       /* allocate structures for greedy dynamic programming */
       max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
+      max_subject_length = MIN(GREEDY_MAX_COST,
+                      max_subject_length / GREEDY_MAX_COST_FRACTION + 1);
       gap_align->greedy_align_mem = 
          s_BlastGreedyAlignMemAlloc(score_params, ext_params, 
-                                    max_subject_length);
+                                    max_subject_length, 0);
       if (!gap_align->greedy_align_mem)
          gap_align = BLAST_GapAlignStructFree(gap_align);
    }
@@ -2661,22 +2664,57 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
    }
    
    /* extend to the right */
-   score = BLAST_AffineGreedyAlign(q, q_avail, s, s_avail, FALSE, X,
+   while (TRUE) {
+       Int4 new_dist, xdrop;
+       score = BLAST_AffineGreedyAlign(q, q_avail, s, s_avail, FALSE, X,
               score_params->reward, -score_params->penalty, 
               score_params->gap_open, score_params->gap_extend,
               &q_ext_r, &s_ext_r, gap_align->greedy_align_mem, 
               fwd_prelim_tback, rem, fence_hit, &fwd_start_point);
+       if (score >=0) break;
+
+       /* double the max distance */
+       new_dist = gap_align->greedy_align_mem->max_dist * 2;
+       xdrop    = gap_align->greedy_align_mem->xdrop;
+       s_BlastGreedyAlignsFree(gap_align->greedy_align_mem);
+       gap_align->greedy_align_mem = 
+          s_BlastGreedyAlignMemAlloc(score_params, NULL, new_dist, xdrop);
+
+       if (!gap_align->greedy_align_mem) {
+          gap_align = BLAST_GapAlignStructFree(gap_align);
+          return -1;
+       }
+   }
 
    if (compressed_subject)
       rem = 0;
 
    /* extend to the left */
-   score += BLAST_AffineGreedyAlign(query, q_off, 
+   while (TRUE) {
+       Int4 new_dist, xdrop, score1;
+       score1 = BLAST_AffineGreedyAlign(query, q_off, 
                subject, s_off, TRUE, X, 
                score_params->reward, -score_params->penalty, 
                score_params->gap_open, score_params->gap_extend, 
                &q_ext_l, &s_ext_l, gap_align->greedy_align_mem, 
                rev_prelim_tback, rem, fence_hit, &rev_start_point);
+       if (score1 >=0) {
+           score += score1;
+           break;
+       }
+
+       /* double the max distance */
+       new_dist = gap_align->greedy_align_mem->max_dist * 2;
+       xdrop    = gap_align->greedy_align_mem->xdrop;
+       s_BlastGreedyAlignsFree(gap_align->greedy_align_mem);
+       gap_align->greedy_align_mem = 
+          s_BlastGreedyAlignMemAlloc(score_params, NULL, new_dist, xdrop);
+
+       if (!gap_align->greedy_align_mem) {
+          gap_align = BLAST_GapAlignStructFree(gap_align);
+          return -1;
+       }
+   }
 
    /* In basic case the greedy algorithm returns number of 
       differences, hence we need to convert it to score */
@@ -2691,7 +2729,7 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
    if (do_traceback) {
       esp = Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback, 
                                              fwd_prelim_tback);
-      //TODO check for possible gap elimination
+      /* check for possible gap elimination */
       ASSERT(!compressed_subject);
       if (esp) s_ReduceGaps(esp, query+q_off-q_ext_l, subject+s_off-s_ext_l);
    }
