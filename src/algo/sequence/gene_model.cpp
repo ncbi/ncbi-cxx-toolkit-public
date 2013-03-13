@@ -981,7 +981,14 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                              cds_feat_on_genome.GetPointer(), cds_feat_on_mrna.GetPointer());
     }
     if (cds_feat_on_genome) {
-        SetFeatureExceptions(*cds_feat_on_genome, align, NULL, cds_feat_on_mrna.GetPointer());
+        TSeqPos clean_match_count = 0;
+        SetFeatureExceptions(*cds_feat_on_genome, align, NULL,
+                             cds_feat_on_mrna.GetPointer(), &clean_match_count);
+        if (!clean_match_count) {
+            /// Mot even one base matched cleanly; remove feature
+            annot.SetData().SetFtable().remove(cds_feat_on_genome);
+            cds_feat_on_genome = NULL;
+        }
     }
 
     return is_protein_align ? cds_feat_on_genome : mrna_feat;
@@ -2600,7 +2607,8 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
 
 void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                                   const CSeq_align* align,
-                                  const CSeq_feat* cds_feat_on_mrna)
+                                  const CSeq_feat* cds_feat_on_mrna,
+                                  TSeqPos *clean_match_count)
 {
     if ( !feat.IsSetProduct() ) {
         ///
@@ -2785,11 +2793,16 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     CRef<CSeq_loc_Mapper> to_mrna;
     CRef<CSeq_loc_Mapper> to_genomic;
     if (cds_feat_on_mrna) {
+        /// In some cases, the id in the CDS feature is not the same as in the
+        /// alignment; make sure the mapping is done with matching ids
+        CRef<CSeq_feat> corrected_loc_feat(new CSeq_feat);
+        corrected_loc_feat->Assign(*cds_feat_on_mrna);
+        corrected_loc_feat->SetLocation().SetId(align->GetSeq_id(0));
         to_prot.Reset(
-            new CSeq_loc_Mapper(*cds_feat_on_mrna,
+            new CSeq_loc_Mapper(*corrected_loc_feat,
                                 CSeq_loc_Mapper::eLocationToProduct));
         to_mrna.Reset(
-            new CSeq_loc_Mapper(*cds_feat_on_mrna,
+            new CSeq_loc_Mapper(*corrected_loc_feat,
                                 CSeq_loc_Mapper::eProductToLocation));
         to_genomic.Reset(
             new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Gen));
@@ -2854,9 +2867,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it2_end = xlate.end();
 
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
-        if (*it2 == '*' && to_mrna) {
-            /// Inte5rnal stop codon; annotate with a code-break instead
-            /// of an exception
+        CRef<CSeq_loc> mapped;
+        if (to_mrna) {
             TSeqPos pos = it1 - actual.begin();
             ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
                 if (range_it->GetLength() > pos) {
@@ -2866,9 +2878,13 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                     pos -= range_it->GetLength();
                 }
             }
-            CSeq_loc internal_stop_loc(*cds_id, pos, pos);
-            CRef<CSeq_loc> mrna_loc = to_mrna->Map(internal_stop_loc);
-            CRef<CSeq_loc> mapped = to_genomic->Map(*mrna_loc);
+            CSeq_loc base_loc(*cds_id, pos, pos);
+            CRef<CSeq_loc> mrna_loc = to_mrna->Map(base_loc);
+            mapped = to_genomic->Map(*mrna_loc);
+        }
+        if (*it2 == '*' && mapped) {
+            /// Inte5rnal stop codon; annotate with a code-break instead
+            /// of an exception
             TSeqPos mapped_total_bases = 0;
             ITERATE (CSeq_loc, loc_it, *mapped) {
                 mapped_total_bases += loc_it.GetRange().GetLength();
@@ -2888,10 +2904,14 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             } else {
                 has_gap = true;
             }
-        } else if (*it2 == '-') {
+        } else if (*it2 == '-' || *it2 == '*') {
             has_gap = true;
         } else if (*it1 != *it2) {
             ++mismatch_count;
+        } else if (clean_match_count && (!mapped ||
+                (mapped->IsInt() && mapped->GetTotalRange().GetLength() == 3)))
+        {
+            ++*clean_match_count;
         }
     }
 
@@ -2982,7 +3002,8 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
 void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
                                       const CSeq_align* align,
                                       CSeq_feat* cds_feat,
-                                      const CSeq_feat* cds_feat_on_mrna)
+                                      const CSeq_feat* cds_feat_on_mrna,
+                                      TSeqPos *clean_match_count)
 {
     CConstRef<CSeq_align> align_ref;
 
@@ -3023,7 +3044,7 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
         break;
 
     case CSeqFeatData::e_Cdregion:
-        x_HandleCdsExceptions(feat, align, cds_feat_on_mrna);
+        x_HandleCdsExceptions(feat, align, cds_feat_on_mrna, clean_match_count);
         break;
 
     case CSeqFeatData::e_Imp:

@@ -91,7 +91,8 @@ struct CFeatureGenerator::SImplementation {
     void SetFeatureExceptions(objects::CSeq_feat& feat,
                             const objects::CSeq_align* align,
                             objects::CSeq_feat* cds_feat = NULL,
-                            const objects::CSeq_feat* cds_feat_on_mrna = NULL);
+                            const objects::CSeq_feat* cds_feat_on_mrna = NULL,
+                            TSeqPos *clean_match_count = NULL);
     void SetPartialFlags(CRef<CSeq_feat> gene_feat,
                          CRef<CSeq_feat> mrna_feat,
                          CRef<CSeq_feat> cds_feat);
@@ -210,7 +211,8 @@ private:
                                const CSeq_feat* cds_feat_on_mrna);
     void x_HandleCdsExceptions(CSeq_feat& feat,
                                const CSeq_align* align,
-                               const CSeq_feat* cds_feat_on_mrna);
+                               const CSeq_feat* cds_feat_on_mrna,
+                               TSeqPos *clean_match_count);
     void x_SetExceptText(CSeq_feat& feat,
                          const string &except_text);
     void x_SetComment(CSeq_feat &rna_feat,
