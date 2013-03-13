@@ -165,8 +165,8 @@ static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
 }
 
 
-// Helper function for GetOwnerGroupFromSIDs.
-// NB: *domatch is reset to 0 if the account type has no domain match.
+// Helper function for GetOwnerGroupFromSIDs().
+// NB:  *domatch is reset to 0 if the account type has no domain match.
 static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
 {
     // According to MSDN max account name size is 20, domain name size is 256.
@@ -208,6 +208,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
                                     unsigned int* uid, unsigned int* gid)
 {
     bool success = true;
+
     // Get numeric owner
     if ( uid ) {
         int match = SidTypeUser;
@@ -234,8 +235,9 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
         *gid += *GetSidSubAuthority(sid_group,
                                     *GetSidSubAuthorityCount(sid_group) - 1);
     }
-    if ( !success )
+    if ( !success ) {
         return false;
+    }
 
     // Get owner
     if ( owner  &&  !x_LookupAccountSid(sid_owner, owner) ) {
@@ -263,9 +265,9 @@ bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
     PSECURITY_DESCRIPTOR sd;
 
     DWORD res = GetSecurityInfo
-         ( objhndl, objtype,
-           OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-           &sid_owner, &sid_group, NULL, NULL, &sd );
+        ( objhndl, objtype,
+          OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+          &sid_owner, &sid_group, NULL, NULL, &sd );
 
     if ( res != ERROR_SUCCESS ) {
         CNcbiError::SetWindowsError(res);
@@ -289,9 +291,10 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     PSECURITY_DESCRIPTOR sd;
 
     DWORD res = GetNamedSecurityInfo
-         ( (LPTSTR)(_T_XCSTRING(objname)), objtype,
-           OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-           &sid_owner, &sid_group, NULL, NULL, &sd );
+        ( _T_XCSTRING(objname), objtype,
+          OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
+          &sid_owner, &sid_group, NULL, NULL, &sd );
+
     if ( res != ERROR_SUCCESS ) {
         CNcbiError::SetWindowsError(res);
         return false;
@@ -307,8 +310,11 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
 bool CWinSecurity::SetFileOwner(const string& filename,
                                 const string& owner, unsigned int* uid)
 {
-    _ASSERT(!owner.empty());
-    _ASSERT(!uid  ||  !*uid);
+    if ( uid ) {
+        *uid = 0;
+    }
+
+    _ASSERT( !owner.empty() );
 
     // Get access token
     HANDLE token;
@@ -384,8 +390,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
         }
         // Set new security information for the file object
         if ( !SetFileSecurity
-             (_T_XCSTRING(filename),
-              (SECURITY_INFORMATION)(OWNER_SECURITY_INFORMATION), sd) ) {
+             (_T_XCSTRING(filename), OWNER_SECURITY_INFORMATION, sd) ) {
             throw(0);
         }
     }
@@ -405,9 +410,9 @@ bool CWinSecurity::SetFileOwner(const string& filename,
 }
 
 
-#define FILE_SECURITY_INFO (OWNER_SECURITY_INFORMATION | \
-                            GROUP_SECURITY_INFORMATION | \
-                            DACL_SECURITY_INFORMATION)
+#define FILE_SECURITY_INFO  (OWNER_SECURITY_INFORMATION | \
+                             GROUP_SECURITY_INFORMATION | \
+                             DACL_SECURITY_INFORMATION)
 
 
 PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)

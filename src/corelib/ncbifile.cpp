@@ -2646,22 +2646,41 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                          EFollowLinks follow,
                          unsigned int* uid, unsigned int* gid) const
 {
-    if ( uid )
-        *uid = 0;
-    if ( gid )
+#if defined(NCBI_OS_MSWIN)
+
+    if ( gid ) {
         *gid = 0;
-       
-    if ( owner.empty()  &&  group.empty() ) {
+    }
+
+    if ( !owner.empty() ) {
+        // On MS Windows we can change file owner only
+        return CWinSecurity::SetFileOwner(GetPath(), owner, uid);
+    }
+
+    if ( uid ) {
+        *uid = 0;
+    }
+
+    if ( group.empty() ) {
         CNcbiError::Set(CNcbiError::eInvalidArgument);
         return false;
     }
 
-#if defined(NCBI_OS_MSWIN)
-
-    // On MS Windows we can change file owner only
-    return CWinSecurity::SetFileOwner(GetPath(), owner, uid);
+    return true;
 
 #elif defined(NCBI_OS_UNIX)
+
+    if ( gid ) {
+        *gid = 0;
+    }
+    if ( uid ) {
+        *uid = 0;
+    }
+
+    if ( group.empty()  &&  owner.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
+        return false;
+    }
 
     uid_t temp_uid = (uid_t)(-1);
     gid_t temp_gid = (gid_t)(-1);
