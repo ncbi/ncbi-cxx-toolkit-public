@@ -3516,7 +3516,8 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
 auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                                         const TEntries* toc)
 {
-    auto_ptr<TEntries> entries(new TEntries);
+    auto_ptr<TEntries>       entries(new TEntries);
+    auto_ptr<CDir::TEntries> dir;
 
     const EFollowLinks follow_links = (m_Flags & fFollowLinks ?
                                        eFollowLinks : eIgnoreLinks);
@@ -3655,21 +3656,28 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     case CDirEntry::ePipe:
     case CDirEntry::eLink:
         _ASSERT(update);
-        /*FALLTHRU*/
+        m_Current.m_Stat.st_size = 0;
+        x_WriteEntryInfo(path);
+        entries->push_back(m_Current);
+        break;
+
     case CDirEntry::eDir:
+        dir.reset(CDir(path).GetEntriesPtr("*", CDir::eIgnoreRecursive));
+        if (!dir.get()) {
+            int x_errno = errno;
+            TAR_THROW(this, eRead,
+                      "Cannot list directory '" + path + '\''
+                      + s_OSReason(x_errno));
+        }
         if (update) {
             m_Current.m_Stat.st_size = 0;
             x_WriteEntryInfo(path);
             entries->push_back(m_Current);
         }
-        if (type == CDirEntry::eDir) {
-            // Append/update all files from that directory
-            CDir::TEntries dir = CDir(path).GetEntries("*",
-                                                       CDir::eIgnoreRecursive);
-            ITERATE(CDir::TEntries, e, dir) {
-                auto_ptr<TEntries> add = x_Append((*e)->GetPath(), toc);
-                entries->splice(entries->end(), *add);
-            }
+        // Append/update all files from that directory
+        ITERATE(CDir::TEntries, e, *dir) {
+            auto_ptr<TEntries> add = x_Append((*e)->GetPath(), toc);
+            entries->splice(entries->end(), *add);
         }
         break;
 
