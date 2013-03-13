@@ -3562,7 +3562,7 @@ string CDir::GetTmpDir(void)
 }
 
 
-string CDir::GetCwd()
+string CDir::GetCwd(void)
 {
     TXChar buf[4096];
     if ( NcbiSys_getcwd(buf, sizeof(buf)/sizeof(TXChar) - 1) ) {
@@ -3615,7 +3615,7 @@ bool CDirEntry::MatchesMask(const string& name,
 #if defined(NCBI_OS_MSWIN)
 
 // Set errno for failed FindFirstFile/FindNextFile
-void s_SetFindFileError(void)
+static void s_SetFindFileError(void)
 {
     DWORD err = GetLastError();
     CNcbiError::SetWindowsError(err);
@@ -3642,8 +3642,10 @@ void s_SetFindFileError(void)
       ((NcbiSys_strcmp(entry.cFileName, _TX("."))  == 0) ||  \
        (NcbiSys_strcmp(entry.cFileName, _TX("..")) == 0)) )
 
-void s_AddEntry(CDir::TEntries* contents, const string& base_path,
-                const WIN32_FIND_DATA& entry, CDir::TGetEntriesFlags flags)
+static void s_AddEntry(CDir::TEntries*        contents,
+                       const string&          base_path,
+                       const WIN32_FIND_DATA& entry,
+                       CDir::TGetEntriesFlags flags)
 {
     const string name = (flags & CDir::fIgnorePath) ?
                          _T_CSTRING(entry.cFileName) :
@@ -3666,8 +3668,10 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
       ((::strcmp(entry->d_name, ".")  == 0) || \
        (::strcmp(entry->d_name, "..") == 0)) )
 
-void s_AddEntry(CDir::TEntries* contents, const string& base_path,
-                const struct dirent* entry, CDir::TGetEntriesFlags flags)
+static void s_AddEntry(CDir::TEntries*        contents,
+                       const string&          base_path,
+                       const struct dirent*   entry,
+                       CDir::TGetEntriesFlags flags)
 {
     const string name = (flags & CDir::fIgnorePath) ?
                          entry->d_name :
@@ -3733,10 +3737,11 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                                     TGetEntriesFlags flags) const
 {
     if ( masks.empty() ) {
-        return GetEntriesPtr("", flags);
+        return GetEntriesPtr(kEmptyStr, flags);
     }
-    TEntries* contents = new(TEntries);
-    string base_path = AddTrailingPathSeparator(GetPath().empty() ? DIR_CURRENT : GetPath());
+    TEntries* contents = new TEntries;
+    string base_path =
+        AddTrailingPathSeparator(GetPath().empty() ? DIR_CURRENT : GetPath());
     NStr::ECase use_case = (flags & fNoCase) ? NStr::eNocase : NStr::eCase;
 
 #if defined(NCBI_OS_MSWIN)
@@ -3771,8 +3776,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     }
 
 #elif defined(NCBI_OS_UNIX)
+
     DIR* dir = opendir(base_path.c_str());
     if ( !dir ) {
+        delete contents;
         return NULL;
     }
     while (struct dirent* entry = readdir(dir)) {
@@ -3789,7 +3796,9 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
         } // ITERATE
     } // while
     closedir(dir);
+
 #endif
+
     return contents;
 }
 
@@ -3805,11 +3814,13 @@ CDir::TEntries CDir::GetEntries(const CMask& masks,
 CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
                                     TGetEntriesFlags flags) const
 {
-    TEntries* contents = new(TEntries);
-    string base_path = AddTrailingPathSeparator(GetPath().empty() ? DIR_CURRENT : GetPath());
+    TEntries* contents = new TEntries;
+    string base_path =
+        AddTrailingPathSeparator(GetPath().empty() ? DIR_CURRENT : GetPath());
     NStr::ECase use_case = (flags & fNoCase) ? NStr::eNocase : NStr::eCase;
 
 #if defined(NCBI_OS_MSWIN)
+
     // Append to the "path" mask for all files in directory
     string pattern = base_path + "*";
 
@@ -3832,8 +3843,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     }
 
 #elif defined(NCBI_OS_UNIX)
+
     DIR* dir = opendir(base_path.c_str());
     if ( !dir ) {
+        delete contents;
         return NULL;
     }
     while (struct dirent* entry = readdir(dir)) {
@@ -3843,7 +3856,9 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
         }
     }
     closedir(dir);
+
 #endif
+
     return contents;
 }
 
@@ -3995,7 +4010,8 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size) const
     }
 
     // Read all entries in source directory
-    auto_ptr<TEntries> contents(src.GetEntriesPtr("*", fIgnoreRecursive));
+    auto_ptr<TEntries>
+        contents(src.GetEntriesPtr(kEmptyStr, fIgnoreRecursive));
     if (!contents.get()) {
         LOG_ERROR_AND_RETURN("CDir::Copy():"
                              " Cannot get content of " << src.GetPath());

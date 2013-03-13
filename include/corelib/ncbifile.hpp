@@ -2648,8 +2648,8 @@ TFindFunc FindFilesInDir(const CDir&            dir,
     }
 
     auto_ptr<CDir::TEntries> 
-        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive | 
-                                       CDir::fIgnorePath));
+        contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | 
+                                   CDir::fIgnorePath));
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
     string path;
@@ -2700,8 +2700,8 @@ TFindFunc FindFilesInDir(const CDir&   dir,
     }
 
     auto_ptr<CDir::TEntries> 
-        contents(dir.GetEntriesPtr("", CDir::fIgnoreRecursive | 
-                                       CDir::fIgnorePath));
+        contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | 
+                                   CDir::fIgnorePath));
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
     string path;
@@ -3618,9 +3618,9 @@ CDir::GetEntries(const string&    mask,
 }
 
 inline CDir::TEntries
-CDir::GetEntries(const vector<string>& masks,
-                 EGetEntriesMode  mode,
-                 NStr::ECase      use_case) const
+CDir::GetEntries(const vector<string>&  masks,
+                 EGetEntriesMode        mode,
+                 NStr::ECase            use_case) const
 {
     if (use_case == NStr::eNocase) mode |= fNoCase;
     return GetEntries(masks, mode);
@@ -3645,9 +3645,9 @@ CDir::GetEntriesPtr(const string&    mask,
 }
 
 inline CDir::TEntries*
-CDir::GetEntriesPtr(const vector<string>& masks,
-                    EGetEntriesMode  mode,
-                    NStr::ECase      use_case) const
+CDir::GetEntriesPtr(const vector<string>&  masks,
+                    EGetEntriesMode        mode,
+                    NStr::ECase            use_case) const
 {
     if (use_case == NStr::eNocase) mode |= fNoCase;
     return GetEntriesPtr(masks, mode);
