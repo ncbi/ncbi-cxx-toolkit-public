@@ -901,6 +901,7 @@ public:
         }
 
         if (cds) {
+            cds->SetData().SetCdregion().ResetCode_break();
             string trans;
 	    CSeqTranslator::Translate(*cds, *scope, trans);
 	    if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
