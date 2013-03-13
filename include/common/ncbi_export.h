@@ -1162,6 +1162,14 @@
 #  define NCBI_XLOADER_WGS_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library ncbi_xloader_vdbgraph
+ */
+#ifdef NCBI_XLOADER_VDBGRAPH_EXPORTS
+#  define NCBI_XLOADER_VDBGRAPH_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XLOADER_VDBGRAPH_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library ncbi_xloader_bam
  */
 #ifdef NCBI_XLOADER_BAM_EXPORTS
