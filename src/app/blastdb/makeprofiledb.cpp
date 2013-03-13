@@ -637,9 +637,34 @@ void CMakeProfileDBApp::x_InitOutputDb(void)
 	return;
 }
 
+
+static void s_CreateDirectories(const string& dbname)
+{
+    CDirEntry dir_entry(dbname);
+    string dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Empty);
+    if (dir_name.empty()) {
+        return;
+    }
+
+    CDir d(dir_name);
+    if ( !d.Exists() ) {
+        if ( !d.CreatePath() ) {
+            string msg("Failed to create directory '" + d.GetName() + "'");
+            NCBI_THROW(CSeqDBException, eFileErr, msg);
+        }
+    }
+    if (!d.CheckAccess(CDirEntry::fWrite)) {
+        string msg("You do not have write permissions on '" +
+                   d.GetName() + "'");
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+    }
+}
+
+
 void CMakeProfileDBApp::x_InitRPSDbInfo(Int4 num_files)
 {
 
+	 s_CreateDirectories(m_OutDbName);
      m_RpsDbInfo.num_seqs = num_files;
 
      string rps_str = m_OutDbName + ".rps";
