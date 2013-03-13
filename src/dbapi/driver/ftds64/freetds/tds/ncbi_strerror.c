@@ -44,11 +44,11 @@
 
 #  if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
 
-static const char* s_WinStrdup(const char* s)
+static const char* s_WinStrdup(const char* str)
 {
-    size_t n = strlen(s);
-    char*  p = (char*) LocalAlloc(LMEM_FIXED, ++n * sizeof(char));
-    return p ? (const char*) memcpy(p, s, n) : 0;
+    size_t n = strlen(str);
+    char*  s = (char*) LocalAlloc(LMEM_FIXED, ++n * sizeof(*s));
+    return s ? (const char*) memcpy(s, str, n) : 0;
 }
 
 #    define   MSWIN_STRDUP(s)         s_WinStrdup(s)
@@ -76,30 +76,27 @@ static const char* s_WinStrdup(const char* s)
 
 #    ifdef _UNICODE
 
-extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
+extern const char* UTIL_TcharToUtf8(const TCHAR* str)
 {
-    char* p = NULL;
-    if (buffer) {
-        int n = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL,
-            0, NULL, NULL);
-        if (n >= 0) {
-            p = (char*) LocalAlloc(LMEM_FIXED, (n + 1) * sizeof(char));
-            if (p) {
-                WideCharToMultiByte(CP_UTF8, 0, buffer, -1, p,
-                    n, NULL, NULL);
-                p[n] = '\0';
-            }
+    char* s = NULL;
+    if (str) {
+        /* Note "-1" means to consume all input including the trailing NUL */
+        int n = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+        if (n > 0) {
+            s = (char*) LocalAlloc(LMEM_FIXED, n * sizeof(*s));
+            if (s)
+                WideCharToMultiByte(CP_UTF8, 0, str, -1, s,    n, NULL, NULL);
         }
     }
-    return p;
+    return s;
 }
 
 #    endif /*_UNICODE*/
 
-extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
+extern void UTIL_ReleaseBufferOnHeap(const void* ptr)
 {
-    if (buffer)
-        LocalFree((HLOCAL) buffer);
+    if (ptr)
+        LocalFree((HLOCAL) ptr);
 }
 
 #  endif /*NCBI_OS_MSWIN*/
@@ -286,7 +283,7 @@ static const char* s_StrErrorInternal(int error)
 
     if (!error)
         return 0;
-    for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) - 1/*dummy*/;  i++) {
+    for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) - 1/*dummy*/;  ++i) {
         if (errmap[i].errnum == error)
             return MSWIN_STRDUP(errmap[i].errtxt);
     }

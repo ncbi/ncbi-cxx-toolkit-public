@@ -56,6 +56,7 @@
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
+#  include <lmcons.h>
 #endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
 
 #define NCBI_USE_ERRCODE_X   Connect_Util
@@ -72,9 +73,8 @@ extern void CORE_SetLOCK(MT_LOCK lk)
 {
     MT_LOCK old_lk = g_CORE_MT_Lock;
     g_CORE_MT_Lock = lk;
-    if (old_lk  &&  old_lk != lk) {
+    if (old_lk  &&  old_lk != lk)
         MT_LOCK_Delete(old_lk);
-    }
 }
 
 
@@ -97,9 +97,8 @@ extern void CORE_SetLOG(LOG lg)
     old_lg = g_CORE_Log;
     g_CORE_Log = lg;
     CORE_UNLOCK;
-    if (old_lg  &&  old_lg != lg) {
+    if (old_lg  &&  old_lg != lg)
         LOG_Delete(old_lg);
-    }
 }
 
 
@@ -602,9 +601,8 @@ extern void CORE_SetREG(REG rg)
     old_rg = g_CORE_Registry;
     g_CORE_Registry = rg;
     CORE_UNLOCK;
-    if (old_rg  &&  old_rg != rg) {
+    if (old_rg  &&  old_rg != rg)
         REG_Delete(old_rg);
-    }
 }
 
 
@@ -680,7 +678,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
     struct stat    st;
     uid_t          uid;
 #  ifndef NCBI_OS_SOLARIS
-#    define NCBI_GETUSERNAME_MAXBUFSIZE 1024
+#    define NCBI_GETUSERNAME_MAXBUFSIZE  1024
 #    ifdef HAVE_GETLOGIN_R
 #      ifndef LOGIN_NAME_MAX
 #        ifdef _POSIX_LOGIN_NAME_MAX
@@ -701,12 +699,17 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #        endif /* NCBI_GETUSERNAME_BUFSIZE < NCBI_GETUSERNAME_MAXBUFSIZE */
 #      endif /*NCBI_GETUSERNAME_BUFSIZE*/
 #    endif /*NCBI_HAVE_GETPWUID_R*/
-#    ifdef       NCBI_GETUSERNAME_BUFSIZE
-    char temp   [NCBI_GETUSERNAME_BUFSIZE + sizeof(*pwd)];
-#    endif /*    NCBI_GETUSERNAME_BUFSIZE    */
+#    ifdef        NCBI_GETUSERNAME_BUFSIZE
+    char temp    [NCBI_GETUSERNAME_BUFSIZE + sizeof(*pwd)];
+#    endif /*     NCBI_GETUSERNAME_BUFSIZE    */
 #  endif /*!NCBI_OS_SOLARIS*/
 #elif defined(NCBI_OS_MSWIN)
-    TCHAR temp  [256 + 1];
+#  ifdef   UNLEN
+#    define       NCBI_GETUSERNAME_BUFSIZE  UNLEN
+#else
+#    define       NCBI_GETUSERNAME_BUFSIZE  256
+#  endif /*UNLEN*/
+    TCHAR temp   [NCBI_GETUSERNAME_BUFSIZE + 2];
     DWORD size = sizeof(temp)/sizeof(temp[0]) - 1;
 #endif /*NCBI_OS*/
     const char* login;
@@ -717,7 +720,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 
 #  ifdef NCBI_OS_MSWIN
     if (GetUserName(temp, &size)) {
-        assert(size < sizeof(temp)/sizeof(temp[0]));
+        assert(size < sizeof(temp)/sizeof(temp[0]) - 1);
         temp[size] = (TCHAR) 0;
         login = UTIL_TcharToUtf8(temp);
         buf = x_Savestr(login, buf, bufsize);
@@ -1192,11 +1195,11 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
 
 #  ifdef _UNICODE
 
-extern const char* UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
+extern const char* UTIL_TcharToUtf8OnHeap(const TCHAR* str)
 {
-    const char* p = UTIL_TcharToUtf8(buffer);
-    UTIL_ReleaseBufferOnHeap(buffer);
-    return p;
+    const char* s = UTIL_TcharToUtf8(str);
+    UTIL_ReleaseBufferOnHeap(str);
+    return s;
 }
 
 
@@ -1205,20 +1208,19 @@ extern const char* UTIL_TcharToUtf8OnHeap(const TCHAR* buffer)
  */
 
 
-extern const TCHAR* UTIL_Utf8ToTchar(const char* buffer)
+extern const TCHAR* UTIL_Utf8ToTchar(const char* str)
 {
-    TCHAR* p = NULL;
-    if (buffer) {
-        int n = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, NULL, 0);
-        if (n >= 0) {
-            p = (wchar_t*) LocalAlloc(LMEM_FIXED, (n + 1) * sizeof(wchar_t));
-            if (p) {
-                MultiByteToWideChar(CP_UTF8, 0, buffer, -1, p,    n);
-                p[n] = 0;
-            }
+    TCHAR* s = NULL;
+    if (str) {
+        /* Note "-1" means to consume all input including the trailing NUL */
+        int n = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+        if (n > 0) {
+            s = (wchar_t*) LocalAlloc(LMEM_FIXED, n * sizeof(*s));
+            if (s)
+                MultiByteToWideChar(CP_UTF8, 0, str, -1, s,    n);
         }
     }
-    return p;
+    return s;
 }
 
 #  endif /*_UNICODE*/
