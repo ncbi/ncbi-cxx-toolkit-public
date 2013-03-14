@@ -2646,10 +2646,13 @@ TFindFunc FindFilesInDir(const CDir&            dir,
         // nothing to find
         return find_func;
     }
-
     auto_ptr<CDir::TEntries> 
-        contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | 
-                                   CDir::fIgnorePath));
+        contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | CDir::fIgnorePath));
+    if (contents.get() == NULL) {
+        // error
+        return find_func;
+    }
+
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
     string path;
@@ -2698,10 +2701,13 @@ TFindFunc FindFilesInDir(const CDir&   dir,
         // nothing to find
         return find_func;
     }
-
     auto_ptr<CDir::TEntries> 
-        contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | 
-                                   CDir::fIgnorePath));
+        contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive |  CDir::fIgnorePath));
+    if (contents.get() == NULL) {
+        // error
+        return find_func;
+    }
+
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
 
     string path;
