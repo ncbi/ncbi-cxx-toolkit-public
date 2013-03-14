@@ -1045,23 +1045,24 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 // what sort of side effects some of the parameters might have, so we make
 // sure that all code paths call them *exactly* once.
 
-#define STRING_FIELD_APPEND(Var, Fld, Delim, Str)                   \
-    do {                                                            \
-        string & field = (Var).Set##Fld();                          \
-        const size_t old_field_len = field.length();                \
-        if( old_field_len > 0 ) {                                   \
-            field += (Delim);                                       \
-        } else {                                                    \
-            (Delim);                                                \
-        }                                                           \
-        const size_t delim_len = (field.length() - old_field_len);  \
-        field += (Str);                                             \
-        if( field.length() == old_field_len + delim_len ) {         \
-            field.resize(old_field_len);                            \
-        }                                                           \
-        if( old_field_len != field.length() ) {                     \
-            ChangeMade(CCleanupChange::eAppendToString);            \
-        }                                                           \
+#define STRING_FIELD_APPEND(Var, Fld, Delim, Str)               \
+    do {                                                        \
+        string & field = (Var).Set##Fld();                      \
+            const size_t old_field_len = field.length();        \
+            size_t delim_len = 0;                               \
+            if( old_field_len > 0 ) {                           \
+                field += (Delim);                               \
+                delim_len = (field.length() - old_field_len);   \
+            } else {                                            \
+                delim_len = string(Delim).length();             \
+            }                                                   \
+            field += (Str);                                     \
+            if( field.length() == old_field_len + delim_len ) { \
+                field.resize(old_field_len);                    \
+            }                                                   \
+            if( old_field_len != field.length() ) {             \
+                ChangeMade(CCleanupChange::eAppendToString);    \
+            }                                                   \
     } while(false)
 
 /// STRING_SET_MATCH base macro (for list or vectors)
