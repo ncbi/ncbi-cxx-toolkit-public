@@ -37,7 +37,7 @@
  *   multivolume / incremental archives, etc, but just regular files,
  *   devices (character or block), FIFOs, directories, and limited links:
  *   can extract both hard- and symlinks, but can store symlinks only.
- *   This version is minimally PAX(Partable Archive Interchange)-aware
+ *   This version is minimally PAX(Portable Archive Interchange)-aware
  *   for file extractions (but cannot use PAX extensions to store files).
  *
  */
@@ -3653,8 +3653,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     case CDirEntry::eBlockSpecial:
     case CDirEntry::eCharSpecial:
+    case CDirEntry::eSymLink:
     case CDirEntry::ePipe:
-    case CDirEntry::eLink:
         _ASSERT(update);
         m_Current.m_Stat.st_size = 0;
         x_WriteEntryInfo(path);

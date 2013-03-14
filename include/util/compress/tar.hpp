@@ -44,7 +44,7 @@
 ///  multivolume / incremental archives, etc, but just regular files,
 ///  devices (character or block), FIFOs, directories, and limited links:
 ///  can extract both hard- and symlinks, but can store symlinks only.
-///  This version is minimally PAX(Partable Archive Interchange)-aware
+///  This version is minimally PAX(Portable Archive Interchange)-aware
 ///  for file extractions (but cannot use PAX extensions to store files).
 ///
 
@@ -158,12 +158,12 @@ public:
     enum EType {
         eFile        = CDirEntry::eFile,         ///< Regular file
         eDir         = CDirEntry::eDir,          ///< Directory
-        eSymLink     = CDirEntry::eLink,         ///< Symbolic link
+        eSymLink     = CDirEntry::eSymLink,      ///< Symbolic link
         ePipe        = CDirEntry::ePipe,         ///< Pipe (FIFO)
         eCharDev     = CDirEntry::eCharSpecial,  ///< Character device
         eBlockDev    = CDirEntry::eBlockSpecial, ///< Block device
         eUnknown     = CDirEntry::eUnknown,      ///< Unknown type
-        eHardLink    = eUnknown + 1,             ///< Hard link
+        eHardLink    = CDirEntry::eHardLink,     ///< Hard link
         ePAXHeader,                              ///< PAX extended header
         eSparseFile,                             ///< GNU/STAR sparse file 
         eGNULongName,                            ///< GNU long name
