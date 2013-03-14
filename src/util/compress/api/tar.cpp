@@ -3662,7 +3662,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         break;
 
     case CDirEntry::eDir:
-        dir.reset(CDir(path).GetEntriesPtr("*", CDir::eIgnoreRecursive));
+        dir.reset(CDir(path).GetEntriesPtr(kEmptyStr, CDir::eIgnoreRecursive));
         if (!dir.get()) {
             int x_errno = errno;
             TAR_THROW(this, eRead,
