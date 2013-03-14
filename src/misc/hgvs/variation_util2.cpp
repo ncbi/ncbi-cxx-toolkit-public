@@ -472,11 +472,14 @@ CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation&
                     }
 
                     //note that here we are looking for annotated (packaged) alignment at the
-                    //feature's location only (we could have searched the whole sequence instead, but it is quite slow for NCs)
+                    //feature's location first (we could have searched the whole sequence instead, but it is quite slow for NCs)
                     //If we have the feature but no alignment, it is assumed that the alignment is perfect, and a synthetic seq-align
                     //is created based on RNA feature.
                     CRef<CSeq_align> aln;
                     {{
+                        CRef<CSeq_loc> target_loc = bsh.GetRangeSeq_loc(0, 0); //this returns "whole"
+                        //will try to constrain target_loc from whole to product location only
+
                         SAnnotSelector sel;
                         sel.SetResolveAll();
                         sel.SetAdaptiveDepth(true);
@@ -488,21 +491,22 @@ CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation&
                                 continue;
                             }
                             const CSeq_id& product_id = sequence::GetId(mf.GetProduct(), NULL);
-                            if(!product_id.Equals(*product_idh.GetSeqId())) {
-                                continue;
-                            }
-
-                            for(CAlign_CI ci2(*m_scope, mf.GetLocation(), sel); ci2; ++ci2) {
-                                const CSeq_align& current_aln = *ci2;
-                                if(current_aln.GetSeq_id(0).Equals(*product_idh.GetSeqId())) {
-                                    aln = SerialClone<CSeq_align>(current_aln);
-                                }
-                            } 
-                            if(!aln) {
+                            if(product_id.Equals(*product_idh.GetSeqId())) {
+                                target_loc->Assign(mf.GetLocation());
                                 aln = CreateSplicedSeqAlignFromFeat(mf.GetMappedFeature());
+                                break;
                             }
                         }
+
+                        //try to find explicit seq_align at the target-loc (if not found, will use the synthetic one)
+                        for(CAlign_CI ci2(*m_scope, *target_loc, sel); ci2; ++ci2) {
+                            const CSeq_align& current_aln = *ci2;
+                            if(current_aln.GetSeq_id(0).Equals(*product_idh.GetSeqId())) {
+                                aln = SerialClone<CSeq_align>(current_aln);
+                            }
+                        } 
                     }}
+
                     if(aln) {
                         CRef<CVariantPlacement> p2(SerialClone<CVariantPlacement>(placement));
                         ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
