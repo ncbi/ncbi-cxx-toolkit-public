@@ -70,6 +70,8 @@ protected:
 const char* const kNetICacheDriverName = "netcache";
 
 static const char* const s_NetICacheConfigSections[] = {
+    "netcache_api",
+    "netcache_client",
     kNetICacheDriverName,
     NULL
 };
