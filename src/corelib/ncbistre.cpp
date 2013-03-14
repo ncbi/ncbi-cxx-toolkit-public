@@ -274,18 +274,17 @@ bool NcbiStreamCompare(CNcbiIstream& is1, CNcbiIstream& is2)
 
 static inline
 char x_GetChar(CNcbiIstream& is, ECompareTextMode mode,
-               char* buf, streamsize buf_size, char*& pos, streamsize& sizeleft)
+               char* buf, size_t buf_size, char*& pos, size_t& sizeleft)
 {
-    char c = '\0';
+    char c;
     do {
-        if (sizeleft == 0) {
+        if ( !sizeleft ) {
             is.read(buf, buf_size);
-            sizeleft = is.gcount();
+            sizeleft = (size_t) is.gcount();
             pos = buf;
         }
         if (sizeleft > 0) {
-            c = *pos;
-            ++pos;
+            c = *pos++;
             --sizeleft;
         } else {
             return '\0';
@@ -298,25 +297,24 @@ char x_GetChar(CNcbiIstream& is, ECompareTextMode mode,
 
 
 bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
-                           ECompareTextMode mode,
-                           streamsize buf_size)
+                           ECompareTextMode mode, size_t buf_size)
 {
     if ( !buf_size ) {
-        buf_size = 4*1024;
+        buf_size = 4 * 1024;
     }
-    char* buf1  = new char[buf_size];
-    char* buf2  = new char[buf_size];
-    streamsize size1 = 0, size2 = 0;
-    char *pos1 = 0, *pos2 = 0;
-    bool  equal = true;
-    while ( equal ) {
+    char*  buf1  = new char[buf_size];
+    char*  buf2  = new char[buf_size];
+    size_t size1 = 0, size2 = 0;
+    char   *pos1 = 0, *pos2 = 0;
+    bool   equal = true;
+    do {
         char c1 = x_GetChar(is1, mode, buf1, buf_size, pos1, size1);
         char c2 = x_GetChar(is2, mode, buf2, buf_size, pos2, size2);
         equal = (c1 == c2);
         if (!c1 || !c2) {
             break;
         }
-    }
+    } while ( equal );
     delete[] buf1;
     delete[] buf2;
     return equal  &&  is1.eof()  &&  is2.eof();
@@ -324,8 +322,7 @@ bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
 
 
 bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
-                           ECompareTextMode mode,
-                           streamsize buf_size)
+                           ECompareTextMode mode, size_t buf_size)
 {
     CNcbiIstrstream istr(str.data(), str.size());
     return NcbiStreamCompareText(is, istr, mode, buf_size);
@@ -334,7 +331,7 @@ bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
 
 CNcbiOstrstreamToString::operator string(void) const
 {
-    SIZE_TYPE length = (size_t)m_Out.pcount();
+    SIZE_TYPE length = (size_t) m_Out.pcount();
     if ( length == 0 )
         return string();
     const char* str = m_Out.str();

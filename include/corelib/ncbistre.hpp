@@ -506,7 +506,7 @@ enum ECompareTextMode {
 ///   TRUE if streams content is equal; FALSE otherwise.
 NCBI_XNCBI_EXPORT
 extern bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
-                                  ECompareTextMode mode, streamsize buf_size = 0);
+                                  ECompareTextMode mode, size_t buf_size = 0);
 
 /// Compare stream content with string in text form.
 ///
@@ -523,7 +523,7 @@ extern bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
 ///   TRUE if stream and string content is equal; FALSE otherwise.
 NCBI_XNCBI_EXPORT
 extern bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
-                                  ECompareTextMode mode, streamsize buf_size = 0);
+                                  ECompareTextMode mode, size_t buf_size = 0);
 
 
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
