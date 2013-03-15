@@ -882,28 +882,30 @@ public:
 
         // first, generate a gene model
         CFeatureGenerator generator(*scope);
-        generator.SetFlags(CFeatureGenerator::fDefaults |
-                           CFeatureGenerator::fGenerateLocalIds);
+        generator.SetFlags(CFeatureGenerator::fForceTranscribeMrna |
+                           CFeatureGenerator::fCreateCdregion);
         generator.SetAllowedUnaligned(10);
 
         CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
         CSeq_annot annot;
         CBioseq_set bset;
         generator.ConvertAlignToAnnot(*clean_align, annot, bset);
-
-        // extract the CDS and translate it
-        CRef<CSeq_feat> cds;
-        ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
-            if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
-                cds = *it;
-                break;
-            }
+        if (bset.GetSeq_set().empty() ||
+            !bset.GetSeq_set().front()->IsSetAnnot())
+        {
+            return score;
         }
+
+        CScope transcribed_mrna_scope(*CObjectManager::GetInstance());
+        transcribed_mrna_scope.AddTopLevelSeqEntry(*bset.GetSeq_set().front());
+        CRef<CSeq_feat> cds = bset.GetSeq_set().front()
+                                  -> GetSeq().GetAnnot().front()
+                                  -> GetData().GetFtable().front();
 
         if (cds) {
             cds->SetData().SetCdregion().ResetCode_break();
             string trans;
-	    CSeqTranslator::Translate(*cds, *scope, trans);
+	    CSeqTranslator::Translate(*cds, transcribed_mrna_scope, trans);
 	    if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
                  NStr::EndsWith(trans, "*"))
             {
