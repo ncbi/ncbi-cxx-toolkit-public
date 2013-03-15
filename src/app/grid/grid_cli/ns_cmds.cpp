@@ -1009,28 +1009,8 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
         else if (!IsOptionSet(eAllQueues))
             m_NetScheduleAdmin.PrintQueueInfo(m_Opts.queue, NcbiCout);
         else {
-            CNetService service(m_NetScheduleAPI.GetService());
-            string client_name(service.GetServerPool().GetClientName());
-            CNetScheduleAdmin::TQueueList qlist;
-            m_NetScheduleAdmin.GetQueueList(qlist);
-            bool load_balanced = service.IsLoadBalanced();
-            ITERATE(CNetScheduleAdmin::TQueueList,
-                    server_and_its_queues, qlist) {
-                string server_address(
-                        server_and_its_queues->server.GetServerAddress());
-                if (load_balanced)
-                    NcbiCout << "[server " << server_address << ']' << NcbiEndl;
-                ITERATE(list<string>, queue_name,
-                        server_and_its_queues->queues) {
-                    NcbiCout << '[' << *queue_name << ']' << NcbiEndl;
-                    CNetScheduleAPI(server_address, client_name,
-                            *queue_name).GetAdmin().PrintQueueInfo(*queue_name,
-                                    NcbiCout);
-                    NcbiCout << NcbiEndl;
-                }
-                if (load_balanced)
-                    NcbiCout << NcbiEndl;
-            }
+            m_NetScheduleAPI.GetService().PrintCmdOutput("STAT QUEUES",
+                    NcbiCout, CNetService::eMultilineOutput);
         }
     } else if (m_Opts.output_format == eJSON)
         g_PrintJSON(stdout, g_QueueClassInfoToJson(m_NetScheduleAPI,
