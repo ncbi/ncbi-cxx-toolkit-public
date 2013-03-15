@@ -178,7 +178,7 @@ public:
     CNCBlobAccessor(void);
     virtual ~CNCBlobAccessor(void);
 
-    bool IsPurged(const string& cache);
+    bool IsPurged(const string& cache) const;
     static bool Purge(const string& cache, Uint8 when);
     static string GetPurgeData(char separator='\n');
     static bool UpdatePurgeData(const string& data, char separator='\n');

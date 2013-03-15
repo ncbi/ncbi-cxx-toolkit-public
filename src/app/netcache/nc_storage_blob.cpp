@@ -1415,7 +1415,7 @@ CNCBlobAccessor::GetCurPassword(void) const
 }
 
 bool
-CNCBlobAccessor::IsPurged(const string& cache)
+CNCBlobAccessor::IsPurged(const string& cache) const
 {
     if (cache.empty()) {
         return false;
