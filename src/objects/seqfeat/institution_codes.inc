@@ -4198,6 +4198,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NIAB	b	National Institute of Agricultural Botany",
 "NIAES	c	National Institute for Agro-Environmental Sciences",
 "NIAH	c	National Institute of Animal Health",
+"NIAS	sb	National Institute of Agrobiological Sciences",
 "NIBH	c	National Institute of Bioscience and Human-Technology",
 "NIBR	s	National Institute of Biological Resources",
 "NICC	s	National Insect Collection",
