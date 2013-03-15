@@ -172,6 +172,7 @@ protected:
     void x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size);
     void x_GetBlob(Uint8 key_id);
     void x_Remove(Uint8 key_id);
+    void x_Cleanup(void);
 
 
     CFileIO m_InFile;
@@ -546,7 +547,7 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
         }
         key_info->size = blob_size;
         key_info->md5 = md5.GetHexSum();
-        key_info->created = CTime(CTime::eCurrent).AsString("h:m:s.r");
+        key_info->created = CTime(CTime::eCurrent).AsString("y-M-D h:m:s.r");
     }
     catch (CException& ex) {
         ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
@@ -675,11 +676,33 @@ CReplayThread::x_Remove(Uint8 key_id)
     m_IdKeys.erase(key_id);
 }
 
+void CReplayThread::x_Cleanup(void)
+{
+    const size_t maxsize = 2000;
+    if (m_IdKeys.size() <= maxsize) {
+        return;
+    }
+    size_t remove = m_IdKeys.size() - maxsize;
+
+    map<string,Uint8> t;
+    TIdKeyMap::iterator it_b = m_IdKeys.begin();
+    TIdKeyMap::iterator it_e = m_IdKeys.end();
+    for (; it_b != it_e; ++it_b) {
+        t[it_b->second.created] = it_b->first;
+    }
+    for (map<string,Uint8>::const_iterator i = t.begin();
+        i != t.end() && remove != 0; ++i, --remove) {
+        x_Remove(i->second);
+    }
+}
+
 void*
 CReplayThread::Main(void)
 {
     CTime start_ctime = GetFastLocalTime();
     Uint8 start_time = Uint8(start_ctime.GetTimeT()) * 1000 + start_ctime.MilliSecond();
+    CTime cleanup_time = start_ctime;
+    cleanup_time.AddMinute(5);
 
     CTempString line;
     while (x_ReadNextLine(line)) {
@@ -720,6 +743,11 @@ CReplayThread::Main(void)
 
             CNcbiApplication::Instance()->ReloadConfig();
             s_NeedConfReload = false;
+        }
+        if (cleanup_time <= cur_ctime) {
+            x_Cleanup();
+            cleanup_time = GetFastLocalTime();
+            cleanup_time.AddMinute(5);
         }
     }
     s_ThreadsFinished.Add(1);
