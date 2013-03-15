@@ -391,17 +391,19 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
         s_ResolveIntronicOffsets(*p3);
     }
 
+    //note: AttachSeq happens only after the intronic offsets are resolved.
     AttachSeq(*p3);
-    if(!p3->IsSetExceptions()) {
-        if(p.IsSetSeq() && p3->IsSetSeq() 
-           && p.GetSeq().GetLength() == p3->GetSeq().GetLength()
-           && p.GetSeq().IsSetSeq_data() && p3->GetSeq().IsSetSeq_data()
-           && p.GetSeq().GetSeq_data().Which() == p3->GetSeq().GetSeq_data().Which()
-           && !p.GetSeq().GetSeq_data().Equals(p3->GetSeq().GetSeq_data())) 
-        {    
-            p3->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
-        }    
-    } 
+
+    //Note: as per SNP-5641 - will check for mismatches even in the presence of other more severe exceptions
+    //NcbiCerr << "Checking for mismatches-in-mapping" << MSerial_AsnText << p << MSerial_AsnText << *p3 << "\n\n";
+    if(p.IsSetSeq() && p3->IsSetSeq() 
+       && p.GetSeq().GetLength() == p3->GetSeq().GetLength()
+       && p.GetSeq().IsSetSeq_data() && p3->GetSeq().IsSetSeq_data()
+       && p.GetSeq().GetSeq_data().Which() == p3->GetSeq().GetSeq_data().Which()
+       && !p.GetSeq().GetSeq_data().Equals(p3->GetSeq().GetSeq_data())) 
+    {    
+        p3->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
+    }    
 
     CheckPlacement(*p3);
     return p3;
@@ -634,7 +636,18 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
         //we need to use the seq-align-based mapping.
         NCBI_THROW(CException, eUnknown, "Cannot use Mapper-based method to remap intronic cases; must remap via spliced-seg alignment instead.");
     }
- 
+
+
+    AttachSeq(*p2);
+    if(p.IsSetSeq() && p2->IsSetSeq() 
+       && p.GetSeq().GetLength() == p2->GetSeq().GetLength()
+       && p.GetSeq().IsSetSeq_data() && p2->GetSeq().IsSetSeq_data()
+       && p.GetSeq().GetSeq_data().Which() == p2->GetSeq().GetSeq_data().Which()
+       && !p.GetSeq().GetSeq_data().Equals(p2->GetSeq().GetSeq_data())) 
+    {    
+        p2->SetExceptions().push_back(CreateException("Mismatches in mapping", CVariationException::eCode_mismatches_in_mapping));
+    }    
+
     CheckPlacement(*p2);
     return p2;
 }
