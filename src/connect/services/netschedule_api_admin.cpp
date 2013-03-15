@@ -292,8 +292,10 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
 
 void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 {
-    string cmd("QLST");
+    string cmd("STAT QUEUES");
     g_AppendClientIPAndSessionID(cmd);
+
+    string output_line;
 
     for (CNetServiceIterator it =
             m_Impl->m_API->m_Service.Iterate(); it; ++it) {
@@ -301,8 +303,13 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 
         qlist.push_back(SServerQueueList(server));
 
-        NStr::Split(server.ExecWithRetry(cmd).response,
-            ",;", qlist.back().queues);
+        CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
+        while (cmd_output.ReadLine(output_line))
+            if (NStr::StartsWith(output_line, "[queue ") &&
+                    output_line.length() > sizeof("[queue "))
+                qlist.back().queues.push_back(output_line.substr(
+                        sizeof("[queue ") - 1,
+                        output_line.length() - sizeof("[queue ")));
     }
 }
 
