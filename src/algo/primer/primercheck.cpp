@@ -130,7 +130,337 @@ COligoSpecificityCheck::~COligoSpecificityCheck()
         delete []  m_HspOverlappingWithRightPrimerMinusStrand;
     }
 }
+   
+void COligoSpecificityCheck::x_FindMatchInfoForAlignment(CDense_seg& primer_denseg,
+                                                         bool& end_gap,
+                                                         TSeqPos& num_total_mismatch, 
+                                                         TSeqPos& num_3end_mismatch, 
+                                                         TSeqPos& num_total_gap,
+                                                         TSeqPos& num_3end_gap,
+                                                         bool is_left_primer,
+                                                         int& max_num_continuous_match,
+                                                         CRange<TSignedSeqPos>& aln_range) {
     
+
+    int num_continuous_match = 0;
+    num_total_mismatch = 0;
+    num_3end_mismatch = 0;
+    num_total_gap = 0;
+    num_3end_gap = 0;
+    max_num_continuous_match = 0;
+
+    CRef<CAlnVec> av(new CAlnVec(primer_denseg, *m_Scope));
+    //need to calculate the mismatch and gaps.
+    aln_range.SetFrom (0);
+    aln_range.SetTo(av->GetAlnStop());
+    av->SetGapChar('-');
+    av->SetEndChar('-');
+    string master_string;
+    av->GetAlnSeqString(master_string, 0, aln_range);
+    string slave_string;
+    av->GetAlnSeqString(slave_string, 1, aln_range);
+    char gap_char = av->GetGapChar(0);
+    int num_bp = 0;
+    int master_letter_len = 0;
+    for(int i=0; i< (int)master_string.size(); i++){
+        if (master_string[i] != gap_char) {
+            master_letter_len ++;
+        }
+    }
+    for(int i=0; i < (int)master_string.size(); i++){
+        
+        if (master_string[i] == gap_char) {
+            if (is_left_primer) {
+                if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                    num_3end_gap ++;
+                }
+            } else {
+                if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                    num_3end_gap ++;
+                } 
+            }
+            num_total_gap ++;
+        } else if (slave_string[i] == gap_char) {
+            if (is_left_primer) {
+                if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                    num_3end_gap ++;
+                }
+            } else {
+                if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                    num_3end_gap ++; 
+                }
+            }
+            num_bp ++;
+            num_total_gap ++;
+        } else if(master_string[i]!=slave_string[i]){
+            if (is_left_primer) {
+                if (num_bp >= (int)(master_letter_len - m_MismatchRegionLength3End)){
+                    num_3end_mismatch ++;
+                }
+            } else {
+                if (num_bp < (int)m_MismatchRegionLength3End){
+                    num_3end_mismatch ++;
+                }
+            }
+            num_total_mismatch ++;
+            num_bp ++;
+        } else {
+            num_bp ++;
+        }
+        if(master_string[i]== slave_string[i]){
+            num_continuous_match ++;
+            if (max_num_continuous_match < num_continuous_match) {
+                max_num_continuous_match = num_continuous_match;
+            }
+        } else {
+            //reset
+            num_continuous_match = 0;
+        }
+    }
+    //      cerr<< "master = " << master_string << endl;
+    //    cerr<< "slave = " << slave_string << endl;
+    if (master_string[0] == gap_char ||
+        master_string[(int)master_string.size() - 1] == gap_char || 
+        slave_string[0] == gap_char ||
+        slave_string[(int)slave_string.size() - 1] == gap_char || 
+        (int)num_total_gap >= k_MaxReliableGapNum) {
+        //blast local alignment ends with gaps may not be an accurate alignment
+        end_gap = true;
+    }
+}
+
+
+ 
+CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& desired_align_range,
+                                                        const CSeq_align& input_hit,
+                                                        TSeqPos& num_total_mismatch, 
+                                                        TSeqPos& num_3end_mismatch, 
+                                                        TSeqPos& num_total_gap,
+                                                        TSeqPos& num_3end_gap,
+                                                        bool is_left_primer,
+                                                        int& max_num_continuous_match,
+                                                        int& align_length,
+                                                        TSeqPos master_local_start,
+                                                        TSeqPos master_local_stop,
+                                                        ENa_strand hit_strand) {
+    /*  auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
+    cerr << endl << "input_hit:" << endl;       
+    *out << input_hit;
+    cerr << endl;*/
+    string master_seq;
+    m_Scope->GetBioseqHandle(input_hit.GetSeq_id(0)).GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus).
+        GetSeqData(desired_align_range.GetFrom(),
+                   desired_align_range.GetTo() + 1, master_seq);
+    string hit_seq;
+    //global hit start 
+    TSeqPos hit_full_start; 
+    TSeqPos hit_full_stop; 
+    
+    
+    TSeqPos full_master_start = max(desired_align_range.GetFrom(), 
+                                    master_local_start);
+    
+    TSeqPos full_master_stop = min(desired_align_range.GetTo(), master_local_stop);
+    
+    CRef<CAlnVec> av(new CAlnVec(input_hit.GetSegs().GetDenseg(), *m_Scope));
+                    
+    CRange<int> full_master_range(full_master_start, full_master_stop);
+    
+    
+    CRef<CAlnMap::CAlnChunkVec> master_chunk = 
+        av->GetSeqChunks(0, full_master_range,
+                                    CAlnMap::fChunkSameAsSeg);
+    
+    CConstRef<CAlnMap::CAlnChunk> chunk_ref;
+    int longest_chunk_index = 0;
+    int longest_chunk_size = 0;
+    //find the chunk that is the longest aligned region.  We will use that as
+    //basis for finding the sujbect region for global alignment
+    for (int chunk_index = 0; chunk_index < master_chunk->size(); chunk_index ++) {
+        
+        chunk_ref = (*master_chunk)[chunk_index];
+        if (!chunk_ref->IsGap()) {
+            if (chunk_ref->GetAlnRange().GetLength() > longest_chunk_size) {
+                longest_chunk_size = chunk_ref->GetAlnRange().GetLength();
+                longest_chunk_index = chunk_index;
+                
+            }
+                    }
+        /*   cerr << "longest size=" << longest_chunk_size
+             << " longest index =" << longest_chunk_index 
+             << " start = " << chunk_ref->GetAlnRange().GetFrom() 
+             << " stop =" <<  chunk_ref->GetAlnRange().GetTo() << endl;*/
+    }
+    CRange<int> longest_chunk_range = (*master_chunk)[longest_chunk_index]->GetRange();
+                
+    int hit_start_adjust = longest_chunk_range.GetFrom() - 
+        desired_align_range.GetFrom();
+    int hit_stop_adjust = desired_align_range.GetTo() - 
+        longest_chunk_range.GetTo();
+    
+    if(av->IsPositiveStrand(1)) {
+        hit_full_start = 
+            max((int)(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetFrom(),
+                                              CAlnMap::eBackwards, true) - 
+                      hit_start_adjust), 0);
+        
+        hit_full_stop = 
+            min(int(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetTo(),
+                                            CAlnMap::eBackwards, true) + 
+                    hit_stop_adjust), (int)av->GetBioseqHandle(1).
+                GetBioseqLength()); 
+    } else {
+        hit_full_start = 
+            max((int)(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetTo(),
+                                              CAlnMap::eBackwards, true) - 
+                                  hit_stop_adjust), 0);
+        
+        hit_full_stop = 
+            min(int(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetFrom(),
+                                            CAlnMap::eBackwards, true) + 
+                    hit_start_adjust),
+                (int)av->GetBioseqHandle(1). GetBioseqLength()); 
+        
+    }
+    
+    const CBioseq_Handle& hit_handle = av->GetBioseqHandle(1);
+    if (hit_strand == eNa_strand_minus) {
+        hit_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+                                eNa_strand_minus).
+            GetSeqData((int)av->GetBioseqHandle(1).GetBioseqLength() -
+                       hit_full_stop - 1, 
+                       (int)av->GetBioseqHandle(1).GetBioseqLength() -
+                       hit_full_start, hit_seq);
+    } else {
+        hit_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
+                                eNa_strand_plus).
+            GetSeqData(hit_full_start, hit_full_stop + 1, hit_seq);
+    }
+    //   cerr << "global master=" << master_seq << " hit=" << hit_seq << endl;
+    
+    CNWAligner aligner (master_seq, hit_seq);
+    aligner.SetWm(1);
+    aligner.SetWms(-1);
+    aligner.SetWg(-5);
+    aligner.SetWs(-3);
+    aligner.SetScoreMatrix(NULL);
+    aligner.Run();
+    string xcript (aligner.GetTranscriptString());
+    align_length = xcript.size();
+    TSeqPos match = 0;
+    TSeqPos total_mismatch = 0;
+    TSeqPos total_insertion = 0;
+    TSeqPos total_deletion = 0;
+    TSeqPos mismatch_3end = 0;
+    TSeqPos insertion_3end = 0;
+    TSeqPos deletion_3end = 0;
+    TSeqPos num_master_gap = 0;
+    int num_continuous_match = 0;
+    max_num_continuous_match = 0;
+    
+    ITERATE(string, iter, xcript) {
+        switch(*iter) {
+        case 'D':
+            ++ num_master_gap;
+            break;
+        default:
+            break;
+        }
+    }
+    
+    TSeqPos master_letter_len = xcript.size() - num_master_gap;
+    int num_bp = 0;
+    ITERATE(string, the_iter, xcript) {
+        switch(*the_iter) {
+            
+        case 'R':
+            if (is_left_primer) {
+                if (num_bp >= (int)(master_letter_len - m_MismatchRegionLength3End)){
+                    mismatch_3end ++;
+                            }
+            } else {
+                if (num_bp < (int)m_MismatchRegionLength3End){
+                    mismatch_3end ++;
+                }
+            }
+            total_mismatch ++;
+            num_bp ++;
+            num_continuous_match = 0;
+            break;
+            
+        case 'M': 
+            if (is_left_primer) {
+                if (num_bp >=(int)(master_letter_len - m_MismatchRegionLength3End)){
+                    match ++;
+                }
+            } else {
+                if (num_bp < (int)m_MismatchRegionLength3End){
+                    match ++;
+                }
+            }
+            num_bp ++;
+            num_continuous_match ++;
+            if (max_num_continuous_match < num_continuous_match) {
+                max_num_continuous_match = num_continuous_match;
+            }
+            break;
+            
+        case 'I':
+            if (is_left_primer) {
+                if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                    insertion_3end ++; 
+                }
+            } else {
+                if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                    insertion_3end ++; 
+                            }
+            }
+            total_insertion ++;
+            num_bp ++;
+            num_continuous_match = 0;
+            break;
+            
+        case 'D':
+            if (is_left_primer) {
+                if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                    deletion_3end ++; 
+                }
+            } else {
+                if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                    deletion_3end ++; 
+                }
+            }
+            total_deletion ++;
+            num_continuous_match = 0;
+                        break;
+        }
+    }
+    
+    /*     cout << "length =" << xcript.size() << endl;
+           cout << "mis = " << mismatch << endl;
+           cout << "match = " << match << endl;
+                       cout << "insert = " << insertion << endl;
+                       cout << "delete = " << deletion << endl;*/
+    num_total_mismatch = total_mismatch;
+    num_total_gap = total_insertion + total_deletion;
+    num_3end_mismatch = mismatch_3end;
+    num_3end_gap = insertion_3end + deletion_3end;               
+    
+    CRef<objects::CDense_seg> den_ref = aligner.GetDense_seg(desired_align_range.GetFrom(),
+                                                             eNa_strand_plus,
+                                                             av->GetSeqId(0),
+                                                             (hit_strand == 
+                                                              eNa_strand_minus ? hit_full_stop :
+                                                              hit_full_start), 
+                                                             hit_strand, 
+                                                             av->GetSeqId(1));
+    /* CNWFormatter fmt (aligner);
+      
+    string text;
+    fmt.AsText(&text, CNWFormatter::eFormatType2);
+    cerr << text << endl;*/
+    return den_ref;
+}
 
 
 /*is_left_primer controls whether mismatch is at the 5' (pass false) or 3' end (pass true).   
@@ -206,83 +536,13 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                 CRef<CDense_seg> primer_denseg = 
                     input_hit->GetSegs().GetDenseg().ExtractSlice(0, desired_align_range.GetFrom(),
                                                                  desired_align_range.GetTo());
-                CRef<CAlnVec> av(new CAlnVec(*primer_denseg, *m_Scope));
-                //need to calculate the mismatch and gaps.
-                CRange<TSignedSeqPos> aln_range (0, av->GetAlnStop());
-                av->SetGapChar('-');
-                av->SetEndChar('-');
-                string master_string;
-                av->GetAlnSeqString(master_string, 0, aln_range);
-                string slave_string;
-                av->GetAlnSeqString(slave_string, 1, aln_range);
-                char gap_char = av->GetGapChar(0);
-                int num_bp = 0;
-                int master_letter_len = 0;
-                for(int i=0; i< (int)master_string.size(); i++){
-                    if (master_string[i] != gap_char) {
-                        master_letter_len ++;
-                    }
-                }
-                for(int i=0; i < (int)master_string.size(); i++){
- 
-                    if (master_string[i] == gap_char) {
-                        if (is_left_primer) {
-                            if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
-                                num_3end_gap ++;
-                            }
-                        } else {
-                            if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
-                                num_3end_gap ++;
-                            } 
-                        }
-                        num_total_gap ++;
-                    } else if (slave_string[i] == gap_char) {
-                         if (is_left_primer) {
-                             if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
-                                 num_3end_gap ++;
-                             }
-                         } else {
-                             if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
-                                 num_3end_gap ++; 
-                             }
-                         }
-                         num_bp ++;
-                         num_total_gap ++;
-                    } else if(master_string[i]!=slave_string[i]){
-                        if (is_left_primer) {
-                            if (num_bp >= (int)(master_letter_len - m_MismatchRegionLength3End)){
-                                num_3end_mismatch ++;
-                            }
-                        } else {
-                            if (num_bp < (int)m_MismatchRegionLength3End){
-                                num_3end_mismatch ++;
-                            }
-                        }
-                        num_total_mismatch ++;
-                        num_bp ++;
-                    } else {
-                        num_bp ++;
-                    }
-                    if(master_string[i]== slave_string[i]){
-                        num_continuous_match ++;
-                        if (max_num_continuous_match < num_continuous_match) {
-                            max_num_continuous_match = num_continuous_match;
-                        }
-                    } else {
-                        //reset
-                        num_continuous_match = 0;
-                    }
-                }
-                //      cerr<< "master = " << master_string << endl;
-                //    cerr<< "slave = " << slave_string << endl;
-                if (master_string[0] == gap_char ||
-                    master_string[(int)master_string.size() - 1] == gap_char || 
-                    slave_string[0] == gap_char ||
-                    slave_string[(int)slave_string.size() - 1] == gap_char || 
-                    (int)num_total_gap >= k_MaxReliableGapNum) {
-                    //blast local alignment ends with gaps may not be an accurate alignment
-                    do_global_alignment = true;
-                } else {
+                CRange<TSignedSeqPos> aln_range;
+                x_FindMatchInfoForAlignment(*primer_denseg, do_global_alignment, num_total_mismatch, 
+                                            num_3end_mismatch, num_total_gap,num_3end_gap,
+                                            is_left_primer,
+                                            max_num_continuous_match, aln_range);
+                
+                if (!do_global_alignment) {
                     double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/aln_range.GetLength();
                     if (max_num_continuous_match >= m_WordSize && 
                         percent_ident > k_Min_Percent_Identity && 
@@ -296,229 +556,24 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                         
                         global_align = aln_ref;
                     }
-                }
-                
+                } 
             } 
             //only extend if the hit alignment does not completely covers the primer window
             if (do_global_alignment) {
-                string master_seq;
-                m_Scope->GetBioseqHandle(input_hit->GetSeq_id(0)).GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus).
-                    GetSeqData(desired_align_range.GetFrom(),
-                               desired_align_range.GetTo() + 1, master_seq);
-                string hit_seq;
-                //global hit start 
-                TSeqPos hit_full_start; 
-                TSeqPos hit_full_stop; 
-                
-            
-                TSeqPos full_master_start = max(desired_align_range.GetFrom(), 
-                                                master_local_start);
-                
-                TSeqPos full_master_stop = min(desired_align_range.GetTo(), master_local_stop);
-                
-                CRef<CAlnVec> av(new CAlnVec(input_hit->GetSegs().GetDenseg(), *m_Scope));
-                    
-                CRange<int> full_master_range(full_master_start, full_master_stop);
+                int align_length = 1;
+                CRef<CDense_seg> den_ref = x_NW_alignment(desired_align_range, *input_hit, 
+                                                          num_total_mismatch, num_3end_mismatch, 
+                                                          num_total_gap, num_3end_gap, 
+                                                          is_left_primer, max_num_continuous_match,
+                                                          align_length,
+                                                          master_local_start, master_local_stop, hit_strand);
 
-                
-                CRef<CAlnMap::CAlnChunkVec> master_chunk = 
-                    av->GetSeqChunks(0, full_master_range,
-                                    CAlnMap::fChunkSameAsSeg);
-
-                CConstRef<CAlnMap::CAlnChunk> chunk_ref;
-                int longest_chunk_index = 0;
-                int longest_chunk_size = 0;
-                //find the chunk that is the longest aligned region.  We will use that as
-                //basis for finding the sujbect region for global alignment
-                for (int chunk_index = 0; chunk_index < master_chunk->size(); chunk_index ++) {
-
-                    chunk_ref = (*master_chunk)[chunk_index];
-                    if (!chunk_ref->IsGap()) {
-                        if (chunk_ref->GetAlnRange().GetLength() > longest_chunk_size) {
-                            longest_chunk_size = chunk_ref->GetAlnRange().GetLength();
-                            longest_chunk_index = chunk_index;
-                            
-                        }
-                    }
-                    /*   cerr << "longest size=" << longest_chunk_size
-                         << " longest index =" << longest_chunk_index 
-                         << " start = " << chunk_ref->GetAlnRange().GetFrom() 
-                         << " stop =" <<  chunk_ref->GetAlnRange().GetTo() << endl;*/
-                }
-                CRange<int> longest_chunk_range = (*master_chunk)[longest_chunk_index]->GetRange();
-
-                int hit_start_adjust = longest_chunk_range.GetFrom() - 
-                    desired_align_range.GetFrom();
-                int hit_stop_adjust = desired_align_range.GetTo() - 
-                    longest_chunk_range.GetTo();
-
-                 if(av->IsPositiveStrand(1)) {
-                    hit_full_start = 
-                        max((int)(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetFrom(),
-                                                          CAlnMap::eBackwards, true) - 
-                                  hit_start_adjust), 0);
-                    
-                    hit_full_stop = 
-                        min(int(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetTo(),
-                                                        CAlnMap::eBackwards, true) + 
-                                hit_stop_adjust), (int)av->GetBioseqHandle(1).
-                            GetBioseqLength()); 
-                } else {
-                    hit_full_start = 
-                        max((int)(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetTo(),
-                                                          CAlnMap::eBackwards, true) - 
-                                  hit_stop_adjust), 0);
-                    
-                    hit_full_stop = 
-                        min(int(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetFrom(),
-                                                        CAlnMap::eBackwards, true) + 
-                                hit_start_adjust),
-                            (int)av->GetBioseqHandle(1). GetBioseqLength()); 
-                    
-                }
-
-                const CBioseq_Handle& hit_handle = av->GetBioseqHandle(1);
-                if (hit_strand == eNa_strand_minus) {
-                    hit_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
-                                            eNa_strand_minus).
-                        GetSeqData((int)av->GetBioseqHandle(1).GetBioseqLength() -
-                                   hit_full_stop - 1, 
-                                   (int)av->GetBioseqHandle(1).GetBioseqLength() -
-                                   hit_full_start, hit_seq);
-                } else {
-                    hit_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
-                                            eNa_strand_plus).
-                        GetSeqData(hit_full_start, hit_full_stop + 1, hit_seq);
-                }
-                //   cerr << "global master=" << master_seq << " hit=" << hit_seq << endl;
-             
-                CNWAligner aligner (master_seq, hit_seq);
-                aligner.SetWm(1);
-                aligner.SetWms(-1);
-                aligner.SetWg(-5);
-                aligner.SetWs(-3);
-                aligner.SetScoreMatrix(NULL);
-                aligner.Run();
-                string xcript (aligner.GetTranscriptString());
-                TSeqPos match = 0;
-                TSeqPos total_mismatch = 0;
-                TSeqPos total_insertion = 0;
-                TSeqPos total_deletion = 0;
-                TSeqPos mismatch_3end = 0;
-                TSeqPos insertion_3end = 0;
-                TSeqPos deletion_3end = 0;
-                TSeqPos num_master_gap = 0;
-                num_continuous_match = 0;
-                max_num_continuous_match = 0;
-
-                ITERATE(string, iter, xcript) {
-                    switch(*iter) {
-                    case 'D':
-                        ++ num_master_gap;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-
-                TSeqPos master_letter_len = xcript.size() - num_master_gap;
-                int num_bp = 0;
-                ITERATE(string, the_iter, xcript) {
-                    switch(*the_iter) {
-                        
-                    case 'R':
-                        if (is_left_primer) {
-                            if (num_bp >= (int)(master_letter_len - m_MismatchRegionLength3End)){
-                                mismatch_3end ++;
-                            }
-                        } else {
-                            if (num_bp < (int)m_MismatchRegionLength3End){
-                                mismatch_3end ++;
-                            }
-                        }
-                        total_mismatch ++;
-                        num_bp ++;
-                        num_continuous_match = 0;
-                        break;
-                        
-                    case 'M': 
-                        if (is_left_primer) {
-                            if (num_bp >=(int)(master_letter_len - m_MismatchRegionLength3End)){
-                                match ++;
-                            }
-                        } else {
-                            if (num_bp < (int)m_MismatchRegionLength3End){
-                                match ++;
-                            }
-                        }
-                        num_bp ++;
-                        num_continuous_match ++;
-                        if (max_num_continuous_match < num_continuous_match) {
-                            max_num_continuous_match = num_continuous_match;
-                        }
-                        break;
-                        
-                    case 'I':
-                        if (is_left_primer) {
-                            if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
-                                insertion_3end ++; 
-                            }
-                        } else {
-                            if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
-                                insertion_3end ++; 
-                            }
-                        }
-                        total_insertion ++;
-                        num_bp ++;
-                        num_continuous_match = 0;
-                        break;
-                        
-                    case 'D':
-                        if (is_left_primer) {
-                            if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
-                                deletion_3end ++; 
-                            }
-                        } else {
-                            if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
-                                deletion_3end ++; 
-                            }
-                        }
-                        total_deletion ++;
-                        num_continuous_match = 0;
-                        break;
-                    }
-                }
-                
-                /*     cout << "length =" << xcript.size() << endl;
-                       cout << "mis = " << mismatch << endl;
-                       cout << "match = " << match << endl;
-                       cout << "insert = " << insertion << endl;
-                       cout << "delete = " << deletion << endl;*/
-                num_total_mismatch = total_mismatch;
-                num_total_gap = total_insertion + total_deletion;
-                num_3end_mismatch = mismatch_3end;
-                num_3end_gap = insertion_3end + deletion_3end;
-
-                CNWFormatter fmt (aligner);
-                
-                string text;
-                //   fmt.AsText(&text, CNWFormatter::eFormatType2);
-                //   cout << text << endl;
-                double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/xcript.size();
+                double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/align_length;
                 if (max_num_continuous_match >= m_WordSize &&
                     percent_ident > k_Min_Percent_Identity && 
                     num_total_mismatch + num_total_gap < m_MaxMismatch &&
                     (num_total_mismatch + num_total_gap <= m_AllowedTotalMismatch || 
                      num_3end_mismatch + num_3end_gap <= m_Allowed3EndMismatch)) {
-                    CRef<objects::CDense_seg> den_ref =  
-                        aligner.GetDense_seg(desired_align_range.GetFrom(),
-                                             eNa_strand_plus,
-                                             av->GetSeqId(0),
-                                             (hit_strand == 
-                                              eNa_strand_minus ? hit_full_stop :
-                                              hit_full_start), 
-                                             hit_strand, 
-                                             av->GetSeqId(1));
                     
                     CRef<CSeq_align> aln_ref(new CSeq_align());
                     aln_ref->SetType(CSeq_align::eType_partial);

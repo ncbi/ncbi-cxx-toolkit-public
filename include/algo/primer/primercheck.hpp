@@ -426,6 +426,32 @@ private:
                                        const CSeq_align& left_align,
                                        const CSeq_align& right_align);
 
+
+
+    void x_FindMatchInfoForAlignment(CDense_seg& primer_denseg,
+                                     bool& end_gap,
+                                     TSeqPos& num_total_mismatch, 
+                                     TSeqPos& num_3end_mismatch, 
+                                     TSeqPos& num_total_gap,
+                                     TSeqPos& num_3end_gap,
+                                     bool is_left_primer,
+                                     int& max_num_continuous_match,
+                                     CRange<TSignedSeqPos>& aln_range);
+
+    CRef<CDense_seg> x_NW_alignment (const CRange<TSeqPos>& desired_align_range,
+                                     const CSeq_align& input_hit,
+                                     TSeqPos& num_total_mismatch, 
+                                     TSeqPos& num_3end_mismatch, 
+                                     TSeqPos& num_total_gap,
+                                     TSeqPos& num_3end_gap,
+                                     bool is_left_primer,
+                                     int& max_num_continuous_match,
+                                     int& align_length,
+                                     TSeqPos master_local_start,
+                                     TSeqPos master_local_stop,
+                                     ENa_strand hit_strand);
+
+  
     ///the requested pcr length for non-specific template
     TSeqPos m_SpecifiedProductLen;
     
