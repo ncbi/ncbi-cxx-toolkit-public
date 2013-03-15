@@ -179,6 +179,23 @@ inline bool s_ASCII_IsAmbigNuc(unsigned char c)
     }
 }
 
+inline bool s_ASCII_IsUnAmbigNuc(unsigned char c)
+{
+    switch( c ) {
+    case 'A':
+    case 'C':
+    case 'G':
+    case 'T':
+    case 'a':
+    case 'c':
+    case 'g':
+    case 't':
+        return true;
+    default:
+        return false;
+    }
+}
+
 inline bool s_ASCII_IsValidNuc(unsigned char c)
 {
     switch( s_ASCII_ToUpper(c) ) {
@@ -454,7 +471,8 @@ string CFastaReader::CWarning::GetStringOfType(EType eType)
         { eType_TitleTooLong, "Title line is too long" },
         { eType_NucsInTitle,  "There seem to be nuc bases in the title" },
         { eType_TooManyAmbigOnFirstLine, "There are too many ambiguous bases on the first line" },
-        { eType_InvalidResidue, "Invalid residue found" }
+        { eType_InvalidResidue, "Invalid residue found" },
+        { eType_AminoAcidsInTitle, "There seem to be amino acids in the title"}
     };
     typedef CStaticArrayMap<EType, const char *> TTypeMap;
     DEFINE_STATIC_ARRAY_MAP(TTypeMap, sc_TypeMap, sc_type_map);
@@ -692,7 +710,8 @@ bool CFastaReader::ParseIDs(const TStr& s)
         NCBI_THROW2(CObjReaderParseException, eIDTooLong,
             "CFastaReader: Near line " + NStr::NumericToString(LineNumber()) +
             ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length()) +
-            " but the max length allowed is " + NStr::NumericToString(m_MaxIDLength),
+            " but the max length allowed is " + NStr::NumericToString(m_MaxIDLength) + ".  Please find and correct "
+            "all sequence IDs that are too long.",
             LineNumber());
     }
     return count > 0;
@@ -744,15 +763,49 @@ void CFastaReader::ParseTitle(const TStr& s)
             << " characters (max is " << kWarnTitleLength << ")");
     }
 
-    const static size_t kWarnNumSeqCharsAtEnd = 20;
-    if( s.length() > kWarnNumSeqCharsAtEnd ) {
-        const string sEndOfTitle = 
-            s.substr(s.length() - kWarnNumSeqCharsAtEnd, kWarnNumSeqCharsAtEnd);
-        if( sEndOfTitle.find_first_not_of("ACGTacgt") == string::npos ) {
+    // check for nuc or aa sequences at the end of the title
+    const static size_t kWarnNumNucCharsAtEnd = 20;
+    const static size_t kWarnAminoAcidCharsAtEnd = 50;
+    if( s.length() > kWarnNumNucCharsAtEnd ) {
+
+        // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
+        SIZE_TYPE pos_to_check = (s.length() - 1);
+        const SIZE_TYPE last_pos_to_check_for_nuc = (s.length() - kWarnNumNucCharsAtEnd);
+        for( ; pos_to_check >= last_pos_to_check_for_nuc; --pos_to_check ) {
+            if( ! s_ASCII_IsUnAmbigNuc(s[pos_to_check]) ) {
+                // found a character which is not an unambiguous nucleotide
+                break;
+            }
+        }
+        if( pos_to_check < last_pos_to_check_for_nuc ) {
             FASTA_WARNING(LineNumber(), CWarning::eType_NucsInTitle,
-                "CFastaReader: Title ends with at least " << kWarnNumSeqCharsAtEnd 
+                "CFastaReader: Title ends with at least " << kWarnNumNucCharsAtEnd 
                 << " valid nucleotide characters.  Was the sequence "
                 << "accidentally put in the title line?");
+        } else if( s.length() > kWarnAminoAcidCharsAtEnd ) {
+            // check for aa's at the end of the title
+            // for efficiency, continue where the nuc search left off, since
+            // we know that nucs can be amino acids, also
+            const SIZE_TYPE last_pos_to_check_for_amino_acid =
+                ( s.length() - kWarnAminoAcidCharsAtEnd );
+            for( ; pos_to_check >= last_pos_to_check_for_amino_acid; --pos_to_check ) {
+                // can't just use "isalpha" in case it includes characters
+                // with diacritics (an accent, tilde, umlaut, etc.)
+                const char ch = s[pos_to_check];
+                if( ( ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') ) {
+                    // potential amino acid, so keep going
+                } else {
+                    // non-amino-acid found
+                    break;
+                }
+            }
+
+            if( pos_to_check < last_pos_to_check_for_amino_acid ) {
+                FASTA_WARNING(LineNumber(), CWarning::eType_AminoAcidsInTitle,
+                    "CFastaReader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
+                    << " valid amino acid characters.  Was the sequence "
+                    << "accidentally put in the title line?");
+            }
         }
     }
 

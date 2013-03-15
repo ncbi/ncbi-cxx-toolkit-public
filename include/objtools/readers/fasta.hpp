@@ -157,6 +157,7 @@ public:
             eType_NucsInTitle,
             eType_TooManyAmbigOnFirstLine,
             eType_InvalidResidue,
+            eType_AminoAcidsInTitle,
 
             // feel free to add more warning types as necessary, but
             // put them before eType_NUM

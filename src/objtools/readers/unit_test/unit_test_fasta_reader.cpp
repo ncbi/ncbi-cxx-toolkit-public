@@ -94,7 +94,8 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah \n"
@@ -108,10 +109,11 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
-            "> blah ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ\n"
+            "> blah ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ ABCDEFGHIJ\n"
             "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
         },
 
@@ -122,7 +124,8 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
@@ -136,7 +139,8 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must,    2 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -150,7 +154,8 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -164,7 +169,8 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -173,13 +179,29 @@ namespace {
         },
 
         {
-            "trigger all warnings",
+            "amino acids in title",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+            },
+
+            kDefaultFastaReaderFlags, // CFastaReader flags
+            "> blah ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ\n"
+        },
+
+        {
+            "trigger as many warnings as possible",
 
             {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must, 2 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must, 0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah ACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTAC\n"
@@ -193,22 +215,24 @@ namespace {
                 { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
             "ACACEACGTACGTACGTEEEETACGTACGTACGTACGTACGTACGTA\n"
             "ACEACGTACGTACGTAEETACGTACGTACGTACGTACGTACGTACGT\n"
-        },
+        }
     };
 }
 
 // Test that the right warnings appear under the right conditions
 BOOST_AUTO_TEST_CASE(TestWarnings)
 {
-    // this is here because the tests may need to be adjusted if
-    // the number of possible warnings changes
-    BOOST_REQUIRE( CFastaReader::CWarning::eType_NUM == 4 );
+    // IF THIS FAILS, IT MEANS YOU NEED TO UPDATE THE TESTS!
+    // ( this is here because the tests may need to be adjusted if
+    //   the number of possible warnings changes. )
+    BOOST_REQUIRE( CFastaReader::CWarning::eType_NUM == 5 );
 
     // sanity test the tests
     for( size_t warn_test_idx = 0; 
