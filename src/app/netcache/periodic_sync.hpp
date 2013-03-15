@@ -160,7 +160,7 @@ struct SSyncSlotSrv
     SSyncSlotSrv(CNCPeerControl* peer);
 };
 
-typedef map<Uint2, SSyncSlotSrv*>  TSlotSrvsList;
+typedef vector<SSyncSlotSrv*>  TSlotSrvsList;
 
 
 struct SSyncSlotData
@@ -176,6 +176,7 @@ struct SSyncSlotData
 };
 
 typedef map<Uint2, SSyncSlotData*>  TSyncSlotsMap;
+typedef vector<SSyncSlotData*>      TSyncSlotsList;
 
 
 typedef TSyncEvents::const_iterator     TSyncEventsIt;
@@ -329,12 +330,11 @@ private:
     Uint8   m_DelOK;
     Uint8   m_DelERR;
     bool m_ForceInitSync;
-    bool m_NeedRehash;
     bool m_DidSync;
     bool m_FinishSyncCalled;
     Uint8 m_MinNextTime;
     Uint8 m_LoopStart;
-    TSyncSlotsMap::const_iterator m_NextSlotIt;
+    TSyncSlotsList::const_iterator m_NextSlotIt;
     Uint8 m_StartTime;
 };
 
@@ -349,7 +349,7 @@ private:
     virtual void ExecuteSlice(TSrvThreadNum thr_idx);
 
 
-    TSyncSlotsMap::const_iterator m_NextSlotIt;
+    TSyncSlotsList::const_iterator m_NextSlotIt;
     map<Uint2, Uint8> m_LastForceTime;
 };
 

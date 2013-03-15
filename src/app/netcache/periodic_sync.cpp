@@ -47,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static TSyncSlotsMap    s_SlotsList;
+static TSyncSlotsList   s_SlotsList;
 static TSyncSlotsMap    s_SlotsMap;
 static CMiniMutex       s_RndLock;
 static CRandom          s_Rnd(CRandom::TValue(time(NULL)));
@@ -58,6 +58,21 @@ static CNCLogCleaner* s_LogCleaner;
 
 static FILE* s_LogFile = NULL;
 
+
+template <typename Type> void
+s_ShuffleList( vector<Type>& lst)
+{
+    random_shuffle(lst.begin(), lst.end());
+}
+
+static void
+s_ShuffleSrvsLists(void)
+{
+    TSyncSlotsList::const_iterator sl = s_SlotsList.begin();
+    for ( ; sl != s_SlotsList.end(); ++sl) {
+        s_ShuffleList<SSyncSlotSrv*>((*sl)->srvs);
+    }
+}
 
 
 static void
@@ -76,7 +91,7 @@ s_FindServerSlot(Uint8 server_id,
     TSlotSrvsList srvs = slot_data->srvs;
     slot_data->lock.Unlock();
     ITERATE(TSlotSrvsList, it_srv, srvs) {
-        SSyncSlotSrv* this_srv = it_srv->second;
+        SSyncSlotSrv* this_srv = *it_srv;
         if (this_srv->peer->GetSrvId() == server_id) {
             slot_srv = this_srv;
             return;
@@ -176,7 +191,7 @@ CNCLogCleaner::ExecuteSlice(TSrvThreadNum /* thr_idx */)
 
     Uint8 min_period = CNCDistributionConf::GetMinForcedCleanPeriod();
 
-    SSyncSlotData* slot_data = m_NextSlotIt->second;
+    SSyncSlotData* slot_data = *m_NextSlotIt;
     Uint2 slot = slot_data->slot;
     slot_data->lock.Lock();
 // if no sync currently in progress
@@ -241,14 +256,10 @@ CNCPeriodicSync::Initialize(void)
     const vector<Uint2>& slots = CNCDistributionConf::GetSelfSlots();
     for (Uint2 i = 0; i < slots.size(); ++i) {
         SSyncSlotData* data = new SSyncSlotData(slots[i]);
-        Uint2 sort_seed;
-        do {
-            sort_seed = s_Rnd.GetRand(0, numeric_limits<Uint2>::max());
-        }
-        while (s_SlotsList.find(sort_seed) != s_SlotsList.end());
-        s_SlotsList[sort_seed] = data;
+        s_SlotsList.push_back(data);
         s_SlotsMap[data->slot] = data;
     }
+    s_ShuffleList<SSyncSlotData*>(s_SlotsList);
 
     Uint4 cnt_to_sync = 0;
     const TNCPeerList& peers = CNCDistributionConf::GetPeers();
@@ -259,18 +270,14 @@ CNCPeriodicSync::Initialize(void)
         ITERATE(vector<Uint2>, it_slot, commonSlots) {
             SSyncSlotData* slot_data = s_SlotsMap[*it_slot];
             SSyncSlotSrv* slot_srv = new SSyncSlotSrv(peer);
-            Uint2 sort_seed;
-            do {
-                sort_seed = s_Rnd.GetRand(0, numeric_limits<Uint2>::max());
-            }
-            while (slot_data->srvs.find(sort_seed) != slot_data->srvs.end());
-            slot_data->srvs[sort_seed] = slot_srv;
+            slot_data->srvs.push_back(slot_srv);
         }
         if (!commonSlots.empty()) {
             peer->SetSlotsForInitSync(Uint2(commonSlots.size()));
             ++cnt_to_sync;
         }
     }
+    s_ShuffleSrvsLists();
     CNCPeerControl::SetServersForInitSync(cnt_to_sync);
 
     Uint1 cnt_syncs = CNCDistributionConf::GetCntActiveSyncs();
@@ -450,7 +457,6 @@ CNCActiveSyncControl::CNCActiveSyncControl(void)
 {
     SetState(&Me::x_StartScanSlots);
     m_ForceInitSync = false;
-    m_NeedRehash = false;
 }
 
 CNCActiveSyncControl::~CNCActiveSyncControl(void)
@@ -475,26 +481,13 @@ CNCActiveSyncControl::x_CheckSlotOurSync(void)
     if (m_NextSlotIt == s_SlotsList.end())
         return &Me::x_FinishScanSlots;
 
-    m_SlotData = m_NextSlotIt->second;
+    m_SlotData = *m_NextSlotIt;
     m_SlotData->lock.Lock();
     if (m_SlotData->cnt_sync_started == 0  ||  m_ForceInitSync) {
-        if (m_NeedRehash) {
-            TSlotSrvsList::iterator it = m_SlotData->srvs.begin();
-            SSyncSlotSrv* slot_srv = it->second;
-            m_SlotData->srvs.erase(it);
-            Uint2 rnd;
-            do {
-                s_RndLock.Lock();
-                rnd = s_Rnd.GetRand(0, numeric_limits<Uint2>::max());
-                s_RndLock.Unlock();
-            }
-            while (m_SlotData->srvs.find(rnd) != m_SlotData->srvs.end());
-            m_SlotData->srvs[rnd] = slot_srv;
-        }
         TSlotSrvsList srvs = m_SlotData->srvs;
         m_SlotData->lock.Unlock();
         ITERATE(TSlotSrvsList, it_srv, srvs) {
-            m_SlotSrv = it_srv->second;
+            m_SlotSrv = *it_srv;
             Uint8 next_time = max(m_SlotSrv->next_sync_time,
                                   m_SlotSrv->peer->GetNextSyncTime());
             if (next_time <= CSrvTime::Current().AsUSec()
@@ -519,7 +512,7 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
 
     m_SlotData->lock.Lock();
     ITERATE(TSlotSrvsList, it_srv, m_SlotData->srvs) {
-        SSyncSlotSrv* slot_srv = it_srv->second;
+        SSyncSlotSrv* slot_srv = *it_srv;
         slot_srv->lock.Lock();
         if (slot_srv->sync_started) {
             if (slot_srv->is_passive
@@ -552,7 +545,9 @@ CNCActiveSyncControl::x_FinishScanSlots(void)
     Uint8 sync_interval = CNCDistributionConf::GetPeriodicSyncInterval();
     m_ForceInitSync = CNCPeerControl::HasServersForInitSync()  &&  !m_DidSync;
     Uint8 now = CSrvTime::Current().AsUSec();
-    m_NeedRehash = now - m_LoopStart >= sync_interval;
+    if (now - m_LoopStart >= sync_interval) {
+        s_ShuffleSrvsLists();
+    }
 
     Uint8 wait_time;
     if (m_MinNextTime > now) {
