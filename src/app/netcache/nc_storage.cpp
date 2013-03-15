@@ -447,6 +447,7 @@ s_OpenIndexDB(void)
             s_IndexDB->GetAllDBFiles(s_DBFiles);
             ERASE_ITERATE(TNCDBFilesMap, it, (*s_DBFiles)) {
                 CSrvRef<SNCDBFileInfo> info = it->second;
+                Int8 file_size = -1;
 #ifdef NCBI_OS_LINUX
                 info->fd = open(info->file_name.c_str(), O_RDWR | O_NOATIME);
                 if (info->fd == -1) {
@@ -461,7 +462,7 @@ delete_file:
                     s_DBFiles->erase(it);
                     continue;
                 }
-                Int8 file_size = CFile(info->file_name).GetLength();
+                file_size = CFile(info->file_name).GetLength();
                 if (file_size == -1) {
                     SRV_LOG(Critical, "Cannot read file size (errno=" << errno
                                       << "). File " << info->file_name
@@ -925,8 +926,11 @@ SNCDBFileInfo::~SNCDBFileInfo(void)
                           << ", errno=" << errno);
     }
     if (unlink(file_name.c_str())) {
-        SRV_LOG(Critical, "Error deleting file " << file_name
-                          << ", errno=" << errno);
+// if file not found, it is not error
+        if (errno != ENOENT) {
+            SRV_LOG(Critical, "Error deleting file " << file_name
+                              << ", errno=" << errno);
+        }
     }
 #endif
 }
@@ -944,6 +948,9 @@ CNCBlobStorage::Initialize(bool do_reinit)
 
     if (!s_LockInstanceGuard())
         return false;
+    if (!s_CleanStart) {
+        do_reinit = true;
+    }
     if (!s_OpenIndexDB())
         return false;
     if (do_reinit) {
@@ -2262,7 +2269,11 @@ CBlobCacher::x_DelFileAndRetryCreate(void)
 
     // Yield execution to other tasks
     SetState(&Me::x_CreateInitialFile);
-    SetRunnable();
+// file creation failed; probably, makes sense to wait longer
+// instead of failing again and again, like thousands times per sec
+//    SetRunnable();
+    RunAfter(1);
+
     return NULL;
 }
 
