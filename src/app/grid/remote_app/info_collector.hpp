@@ -102,8 +102,6 @@ public:
     void TraverseNodes(IAction<CNetScheduleAdmin::SWorkerNodeInfo>&);
     void CancelJob(const std::string& jid);
 
-    void GetQueues(CNetScheduleAdmin::TQueueList& queues);
-
     CNSJobInfo* CreateJobInfo(const string& job_id);
 
     CNcbiIstream* GetBlobContent(const string& blob_id, size_t* blob_size);

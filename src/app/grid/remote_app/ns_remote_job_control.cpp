@@ -74,8 +74,6 @@ void CNSRemoteJobControlApp::Init(void)
                      "NetCache service address (service_name or host:port)",
                      CArgDescriptions::eString);
 
-    arg_desc->AddFlag("qlist", "Show queue list");
-
     arg_desc->AddFlag("wnlist", "Show worker nodes");
     arg_desc->AddOptionalKey("jid",
                              "job_id",
@@ -300,8 +298,6 @@ int CNSRemoteJobControlApp::Run(void)
         renderer->RenderJob(jid, flags);
     } else if (args["wnlist"]) {
         renderer->RenderWNodes(flags);
-    } else if (args["qlist"]) {
-        renderer->RenderQueueList();
     } else if (args["cancel"]) {
         string jid = args["cancel"].AsString();
         info_collector->CancelJob(jid);

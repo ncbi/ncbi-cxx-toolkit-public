@@ -184,12 +184,6 @@ CNcbiIstream* CNSInfoCollector::GetBlobContent(const string& blob_id,
 }
 
 
-void CNSInfoCollector::GetQueues(CNetScheduleAdmin::TQueueList& queues)
-{
-    x_GetNetScheduleAPI().GetAdmin().GetQueueList(queues);
-}
-
-
 void CNSInfoCollector::TraverseNodes(
     IAction<CNetScheduleAdmin::SWorkerNodeInfo>& action)
 {

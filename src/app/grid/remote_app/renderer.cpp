@@ -327,32 +327,4 @@ void CNSInfoRenderer::RenderWNodes(TFlags flags)
     m_Collector.TraverseNodes(action);
 }
 
-void CNSInfoRenderer::RenderQueueList()
-{
-    STagGuard guard(m_Writer, "Queues");
-
-    CNetScheduleAdmin::TQueueList queues;
-
-    m_Collector.GetQueues(queues);
-
-    for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
-        it != queues.end(); ++it) {
-
-        ITagWriter::TAttributes attrs;
-        attrs.push_back(ITagWriter::TAttribute("Host",
-            g_NetService_gethostnamebyaddr(it->server.GetHost())));
-
-        attrs.push_back(ITagWriter::TAttribute("Port",
-            NStr::UIntToString(it->server.GetPort())));
-
-        STagGuard guard(m_Writer,"NSServer", attrs);
-
-        ITERATE(list<string>, itl, it->queues) {
-            x_RenderString("Queue", *itl);
-        }
-    }
-}
-///////////////////////////////////////////////////////
-//
-
 END_NCBI_SCOPE

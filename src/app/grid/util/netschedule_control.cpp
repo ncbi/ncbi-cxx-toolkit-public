@@ -123,7 +123,6 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->AddFlag("ver", "Server version");
     arg_desc->AddFlag("reconf", "Reload server configuration");
-    arg_desc->AddFlag("qlist", "List available queues");
 
     arg_desc->AddFlag("qcreate", "Create queue (qclass should be present, and comment is an optional parameter)");
 
@@ -246,27 +245,6 @@ int CNetScheduleControl::Run(void)
     else if (args["ver"]) {
         ctl = x_CreateNewClient(false);
         ctl.GetAdmin().PrintServerVersion(os);
-    }
-    else if (args["qlist"]) {
-        ctl = x_CreateNewClient(false);
-
-        CNetScheduleAdmin::TQueueList queues;
-
-        ctl.GetAdmin().GetQueueList(queues);
-
-        for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
-            it != queues.end(); ++it) {
-
-            os << '[' << g_NetService_gethostnamebyaddr(it->server.GetHost()) <<
-                ':' << NStr::UIntToString(it->server.GetPort()) << ']' <<
-                std::endl;
-
-            ITERATE(std::list<std::string>, itl, it->queues) {
-                os << *itl << std::endl;
-            }
-
-            os << std::endl;
-        }
     }
     else if (args["stat"]) {
         string sstatus = args["stat"].AsString();

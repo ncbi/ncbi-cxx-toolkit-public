@@ -161,9 +161,6 @@ public:
         const CNetScheduleAdmin::SWorkerNodeInfo& info,
         TFlags flags = eMinimal);
 
-    void RenderQueueList();
-    //    void RenderQueueList(const CNSServerInfo& info);
-
 private:
     void x_RenderString(const string& name, const string& value);
     void x_RenderStream(const string& name, CNcbiIstream& is);
