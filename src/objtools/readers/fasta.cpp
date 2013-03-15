@@ -759,7 +759,7 @@ void CFastaReader::ParseTitle(const TStr& s)
     const static size_t kWarnTitleLength = 1000;
     if( s.length() > kWarnTitleLength ) {
         FASTA_WARNING(LineNumber(), CWarning::eType_TitleTooLong,
-            "CFastaReader: Title is very long: " << s.length() 
+            "FASTA-Reader: Title is very long: " << s.length() 
             << " characters (max is " << kWarnTitleLength << ")");
     }
 
@@ -779,7 +779,7 @@ void CFastaReader::ParseTitle(const TStr& s)
         }
         if( pos_to_check < last_pos_to_check_for_nuc ) {
             FASTA_WARNING(LineNumber(), CWarning::eType_NucsInTitle,
-                "CFastaReader: Title ends with at least " << kWarnNumNucCharsAtEnd 
+                "FASTA-Reader: Title ends with at least " << kWarnNumNucCharsAtEnd 
                 << " valid nucleotide characters.  Was the sequence "
                 << "accidentally put in the title line?");
         } else if( s.length() > kWarnAminoAcidCharsAtEnd ) {
@@ -802,7 +802,7 @@ void CFastaReader::ParseTitle(const TStr& s)
 
             if( pos_to_check < last_pos_to_check_for_amino_acid ) {
                 FASTA_WARNING(LineNumber(), CWarning::eType_AminoAcidsInTitle,
-                    "CFastaReader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
+                    "FASTA-Reader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
                     << " valid amino acid characters.  Was the sequence "
                     << "accidentally put in the title line?");
             }
@@ -876,7 +876,7 @@ void CFastaReader::CheckDataLine(const TStr& s)
     const size_t percent_ambig = (ambig_nuc * 100) / good;
     if( len > 3 && percent_ambig > kWarnPercentAmbiguous ) {
         FASTA_WARNING(LineNumber(), CWarning::eType_TooManyAmbigOnFirstLine,
-            "CFastaReader: First data line in seq is about "
+            "FASTA-Reader: First data line in seq is about "
             << percent_ambig << "% ambiguous nucleotides (shouldn't be over "
             << kWarnPercentAmbiguous << "%)");
     }
@@ -954,7 +954,7 @@ void CFastaReader::ParseDataLine(const TStr& s)
             CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
         } else {
             stringstream warn_strm;
-            warn_strm << "CFastaReader: Ignoring invalid " << x_NucOrProt() 
+            warn_strm << "FASTA-Reader: Ignoring invalid " << x_NucOrProt() 
                 << "residues at position(s): ";
             CBadResiduesException::SBadResiduePositions( 
                 m_BestID, bad_pos_vec, bad_pos_line_num ).ConvertBadIndexesToString(warn_strm);
