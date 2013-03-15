@@ -349,8 +349,10 @@ private:
     bool m_BlobExists;
     bool m_CmdSuccess;
     bool m_CmdFromClient;
+    bool m_Purge;
     Uint2 m_KeySize;
     string m_ErrMsg;
+    string m_SyncStartExtra;
     TNCBufferType m_ReadBuf;
 };
 

@@ -146,7 +146,8 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
       m_ProcessingStarted(false),
       m_CmdStarted(false),
       m_GotAnyAnswer(false),
-      m_CmdFromClient(false)
+      m_CmdFromClient(false),
+      m_Purge(false)
 {
     m_BlobSum = new SNCBlobSummary();
     // Right after creation CNCActiveHandler shouldn't become runnable until
@@ -324,7 +325,7 @@ CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
         SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
     m_CmdToSend.resize(0);
-    m_CmdToSend += "COPY_Purge";
+    m_CmdToSend += "COPY_PURGE";
     m_CmdToSend += " \"";
     m_CmdToSend += cache_name;
     m_CmdToSend += "\" ";
@@ -1563,23 +1564,29 @@ CNCActiveHandler::x_ReadSyncStartAnswer(void)
 CNCActiveHandler::State
 CNCActiveHandler::x_ReadSyncStartExtra(void)
 {
+    if (m_Proxy->NeedEarlyClose()) {
+        return &Me::x_CloseCmdAndConn;
+    }
     CTempString line;
-    if (!m_Proxy->HasError() && m_Proxy->CanHaveMoreRead() && m_Proxy->ReadLine(&line)) {
-        if (line == "PURGE:") {
-            string data;
-            while (m_Proxy->ReadLine(&line)) {
-                if (line.empty() || line == ";") {
-                    break;
-                }
-                data += line;
-                data += '\n';
-            }
-            if (CNCBlobAccessor::UpdatePurgeData(data)) {
+    if (!m_Purge) {
+        if (!m_Proxy->ReadLine(&line)) {
+            return NULL;
+        }
+        m_Purge = (line == "PURGE:");
+    }
+    while (m_Proxy->ReadLine(&line)) {
+        if (line.empty() || line == ";") {
+            if (CNCBlobAccessor::UpdatePurgeData(m_SyncStartExtra)) {
                 CNCBlobStorage::SavePurgeData();
             }
+            m_Purge = false;
+            m_SyncStartExtra.clear();
+            return &Me::x_FinishCommand;
         }
+        m_SyncStartExtra += line;
+        m_SyncStartExtra += '\n';
     }
-    return &Me::x_FinishCommand;
+    return NULL;
 }
 
 CNCActiveHandler::State
