@@ -1039,31 +1039,22 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 /// STRING_FIELD_APPEND base macro
 /// Appends Str to Var's Fld, putting Delim between if Fld was previously non-empty
-/// Nothing done if Str is empty.
-
-// The macro is a bit more complex than you might expect because we don't know
-// what sort of side effects some of the parameters might have, so we make
-// sure that all code paths call them *exactly* once.
-
-#define STRING_FIELD_APPEND(Var, Fld, Delim, Str)               \
-    do {                                                        \
-        string & field = (Var).Set##Fld();                      \
-            const size_t old_field_len = field.length();        \
-            size_t delim_len = 0;                               \
-            if( old_field_len > 0 ) {                           \
-                field += (Delim);                               \
-                delim_len = (field.length() - old_field_len);   \
-            } else {                                            \
-                delim_len = string(Delim).length();             \
-            }                                                   \
-            field += (Str);                                     \
-            if( field.length() == old_field_len + delim_len ) { \
-                field.resize(old_field_len);                    \
-            }                                                   \
-            if( old_field_len != field.length() ) {             \
-                ChangeMade(CCleanupChange::eAppendToString);    \
-            }                                                   \
+/// Nothing is done if Str is empty.
+#define STRING_FIELD_APPEND(Var, Fld, Delim, Str)       \
+    do {                                                \
+        const string sStr = (Str);                      \
+        if( ! sStr.empty() ) {                          \
+            if( ! (Var).IsSet##Fld() ) {                \
+                (Var).Set##Fld("");                     \
+            }                                           \
+            string & field = (Var).Set##Fld();          \
+            if( ! field.empty() ) {                     \
+                field += (Delim);                       \
+            }                                           \
+            field += sStr;                              \
+        }                                               \
     } while(false)
+
 
 /// STRING_SET_MATCH base macro (for list or vectors)
 
