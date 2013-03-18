@@ -243,7 +243,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                                                         TSeqPos master_local_start,
                                                         TSeqPos master_local_stop,
                                                         ENa_strand hit_strand) {
-    /*  auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
+    /*   auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
     cerr << endl << "input_hit:" << endl;       
     *out << input_hit;
     cerr << endl;*/
@@ -251,6 +251,8 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
     m_Scope->GetBioseqHandle(input_hit.GetSeq_id(0)).GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus).
         GetSeqData(desired_align_range.GetFrom(),
                    desired_align_range.GetTo() + 1, master_seq);
+    //   cerr << "desired_align_range.GetFrom=" << desired_align_range.GetFrom() << endl;
+    //cerr << "desired_align_range.Getto=" << desired_align_range.GetTo() << endl;
     string hit_seq;
     //global hit start 
     TSeqPos hit_full_start; 
@@ -286,7 +288,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                 
             }
                     }
-        /*   cerr << "longest size=" << longest_chunk_size
+        /*  cerr << "longest size=" << longest_chunk_size
              << " longest index =" << longest_chunk_index 
              << " start = " << chunk_ref->GetAlnRange().GetFrom() 
              << " stop =" <<  chunk_ref->GetAlnRange().GetTo() << endl;*/
@@ -308,7 +310,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
             min(int(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetTo(),
                                             CAlnMap::eBackwards, true) + 
                     hit_stop_adjust), (int)av->GetBioseqHandle(1).
-                GetBioseqLength()); 
+                GetBioseqLength() - 1); 
     } else {
         hit_full_start = 
             max((int)(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetTo(),
@@ -319,9 +321,18 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
             min(int(av->GetSeqPosFromSeqPos(1, 0, longest_chunk_range.GetFrom(),
                                             CAlnMap::eBackwards, true) + 
                     hit_start_adjust),
-                (int)av->GetBioseqHandle(1). GetBioseqLength()); 
+                (int)av->GetBioseqHandle(1).GetBioseqLength() - 1); 
         
     }
+    /*  cerr << "longest_chunk_range.GetFrom=" << longest_chunk_range.GetFrom() << endl;
+    cerr << "longest_chunk_range.GetTo=" << longest_chunk_range.GetTo() << endl;
+    cerr << "hit_start_adjust="<< hit_start_adjust << endl;
+    cerr << "hit_stop_adjust="<< hit_stop_adjust << endl;
+    cerr << "full_master_start =" << full_master_start << endl;
+    cerr << "full_master_stop =" << full_master_stop << endl;
+    cerr << "hit_full_start =" << hit_full_start << endl;
+    cerr << "hit_full_stop =" << hit_full_stop << endl;
+    */
     
     const CBioseq_Handle& hit_handle = av->GetBioseqHandle(1);
     if (hit_strand == eNa_strand_minus) {
@@ -331,18 +342,19 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                        hit_full_stop - 1, 
                        (int)av->GetBioseqHandle(1).GetBioseqLength() -
                        hit_full_start, hit_seq);
+        // cerr << "strand minus" << endl;
     } else {
         hit_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
                                 eNa_strand_plus).
             GetSeqData(hit_full_start, hit_full_stop + 1, hit_seq);
     }
-    //   cerr << "global master=" << master_seq << " hit=" << hit_seq << endl;
+    //  cerr << "global master=" << master_seq << " hit=" << hit_seq << endl;
     
     CNWAligner aligner (master_seq, hit_seq);
     aligner.SetWm(1);
     aligner.SetWms(-1);
     aligner.SetWg(-5);
-    aligner.SetWs(-3);
+    aligner.SetWs(-2);
     aligner.SetScoreMatrix(NULL);
     aligner.Run();
     string xcript (aligner.GetTranscriptString());
@@ -357,10 +369,12 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
     TSeqPos num_master_gap = 0;
     int num_continuous_match = 0;
     max_num_continuous_match = 0;
-    
+
+    //cerr << "xscript=" << xcript << endl;
+
     ITERATE(string, iter, xcript) {
         switch(*iter) {
-        case 'D':
+        case 'I':
             ++ num_master_gap;
             break;
         default:
@@ -454,7 +468,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                                                               hit_full_start), 
                                                              hit_strand, 
                                                              av->GetSeqId(1));
-    /* CNWFormatter fmt (aligner);
+    /*    CNWFormatter fmt (aligner);
       
     string text;
     fmt.AsText(&text, CNWFormatter::eFormatType2);
@@ -484,7 +498,6 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
     num_3end_mismatch = 0;
     num_total_gap = 0;
     num_3end_gap = 0;
-    int num_continuous_match = 0;
     int max_num_continuous_match = 0;
     CRef<CSeq_align> global_align(NULL);
     CConstRef<CSeq_align> input_hit = input_hsp_info->hsp;
@@ -580,7 +593,7 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                     
                     aln_ref->SetSegs().SetDenseg(*den_ref);
                     
-                    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cout));                                                       
+                    // auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cout));                                                       
                     //     *out << *aln_ref;
                     
                     global_align = aln_ref;
