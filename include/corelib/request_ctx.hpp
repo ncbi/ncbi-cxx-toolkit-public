@@ -114,6 +114,9 @@ public:
     /// Generate unique hit id, assign it to this request, return
     /// the hit id value.
     const string& SetHitID(void);
+    /// Get current hit id appended with auto-incremented sub-hit id.
+    /// If hit id is not set, return empty string.
+    string GetNextSubHitID(void);
 
     /// Request exit startus
     int  GetRequestStatus(void) const;
@@ -254,6 +257,7 @@ private:
     string         m_ClientIP;
     CEncodedString m_SessionID;
     string         m_HitID;
+    int            m_SubHitID;
     int            m_ReqStatus;
     CStopWatch     m_ReqTimer;
     Int8           m_BytesRd;
@@ -387,6 +391,9 @@ inline
 void CRequestContext::SetHitID(const string& hit)
 {
     x_SetProp(eProp_HitID);
+    if (m_HitID != hit) {
+        m_SubHitID = 0;
+    }
     m_HitID = hit;
 }
 
@@ -401,6 +408,16 @@ void CRequestContext::UnsetHitID(void)
 {
     x_UnsetProp(eProp_HitID);
     m_HitID.clear();
+    m_SubHitID = 0;
+}
+
+
+inline
+string CRequestContext::GetNextSubHitID(void)
+{
+    string phid = GetHitID();
+    if ( !x_IsSetProp(eProp_HitID) ) return kEmptyStr;
+    return GetHitID() + "." + NStr::NumericToString(++m_SubHitID);
 }
 
 

@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
+      m_SubHitID(0),
       m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
