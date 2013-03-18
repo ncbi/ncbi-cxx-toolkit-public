@@ -1343,7 +1343,7 @@ void CTar::x_Init(void)
 }
 
 
-bool CTar::x_Flush(bool nothrow)
+bool CTar::x_Flush(bool no_throw)
 {
     m_Current.m_Name.erase();
     if (m_Bad  ||  !m_OpenMode) {
@@ -1360,18 +1360,18 @@ bool CTar::x_Flush(bool nothrow)
         size_t zbc = m_ZeroBlockCount;
         size_t pad = m_BufferSize - m_BufferPos;
         memset(m_Buffer + m_BufferPos, 0, pad);
-        x_WriteArchive(pad, nothrow ? (const char*)(-1L) : 0);
+        x_WriteArchive(pad, no_throw ? (const char*)(-1L) : 0);
         _ASSERT(!(m_BufferPos % m_BufferSize) // m_BufferSize if write error
                 &&  !m_Bad == !m_BufferPos);
         if (!m_Bad  &&  (zbc += BLOCK_OF(pad)) < 2) {
             // Write EOT (two zero blocks), if have not padded enough already
             memset(m_Buffer, 0, m_BufferSize - pad);
-            x_WriteArchive(m_BufferSize, nothrow ? (const char*)(-1L) : 0);
+            x_WriteArchive(m_BufferSize, no_throw ? (const char*)(-1L) : 0);
             _ASSERT(!(m_BufferPos % m_BufferSize)
                     &&  !m_Bad == !m_BufferPos);
             if (!m_Bad  &&  (zbc += BLOCK_OF(m_BufferSize)) < 2) {
                 _ASSERT(zbc == 1  &&  m_BufferSize == BLOCK_SIZE);
-                x_WriteArchive(BLOCK_SIZE, nothrow ? (const char*)(-1L) : 0);
+                x_WriteArchive(BLOCK_SIZE, no_throw ? (const char*)(-1L) : 0);
                 _ASSERT(!(m_BufferPos % m_BufferSize)
                         &&  !m_Bad == !m_BufferPos);
             }
@@ -1383,7 +1383,7 @@ bool CTar::x_Flush(bool nothrow)
         m_Bad = true;
         int x_errno = errno;
         s_SetStateSafe(m_Stream, NcbiBadbit);
-        if (!nothrow) {
+        if (!no_throw) {
             TAR_THROW(this, eWrite,
                       "Archive flush failed" + s_OSReason(x_errno));
         }
@@ -1416,7 +1416,7 @@ void CTar::x_Close(bool truncate)
                 ::CloseHandle(handle);
             }
 #elif defined(NCBI_OS_UNIX)
-            ::truncate(m_FileName.c_str(), m_StreamPos);
+            ::truncate(m_FileName.c_str(), (off_t)m_StreamPos);
 #endif //NCBI_OS
         }
     }
@@ -3898,7 +3898,8 @@ void CTar::SetMask(CMask*    mask, EOwnership  own,
 
 void CTar::SetBaseDir(const string& dirname)
 {
-    s_BaseDir(dirname).swap(m_BaseDir);
+    string dir = s_BaseDir(dirname);
+    dir.swap(m_BaseDir);
 }
 
 

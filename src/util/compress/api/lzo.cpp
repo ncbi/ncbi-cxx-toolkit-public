@@ -108,11 +108,15 @@ const size_t kMaxHeaderSize = 512;
 // CLZOCompression
 //
 
+
 /// Define a pointer to LZO1X compression function.
-typedef int(*TLZOCompressionFunc)
-        ( const lzo_bytep src, lzo_uint  src_len,
-                lzo_bytep dst, lzo_uintp dst_len,
-                lzo_voidp wrkmem );
+extern "C" 
+{
+    typedef int(*TLZOCompressionFunc)
+            ( const lzo_bytep src, lzo_uint  src_len,
+                    lzo_bytep dst, lzo_uintp dst_len,
+                    lzo_voidp wrkmem );
+}
 
 /// Structure to define parameters for some level of compression.
 struct SCompressionParam {

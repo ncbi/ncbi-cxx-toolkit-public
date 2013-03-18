@@ -281,10 +281,10 @@ static const SEmptyInputDataTest s_EmptyInputDataTests[] =
 
 void CTest::TestEmptyInputData(CCompressStream::EMethod method)
 {
-    const size_t kBufLen = 1024;
-    char   src_buf[kBufLen];
-    char   dst_buf[kBufLen];
-    char   cmp_buf[kBufLen];
+    const size_t kLen = 1024;
+    char   src_buf[kLen];
+    char   dst_buf[kLen];
+    char   cmp_buf[kLen];
     size_t n;
 
     const int count = sizeof(s_EmptyInputDataTests) / sizeof(s_EmptyInputDataTests[0]);
@@ -330,10 +330,10 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
 
         // Buffer compression/decompression test
         {{
-            bool res = compression->CompressBuffer(src_buf, 0, dst_buf, kBufLen, &n);
+            bool res = compression->CompressBuffer(src_buf, 0, dst_buf, kLen, &n);
             assert(res == test.buffer_method_result);
             assert(n == test.buffer_output_size);
-            res = compression->DecompressBuffer(dst_buf, n, cmp_buf, kBufLen, &n);
+            res = compression->DecompressBuffer(dst_buf, n, cmp_buf, kLen, &n);
             assert(res == test.buffer_method_result);
             assert(n == 0);
         }}
@@ -341,14 +341,14 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
         // Input stream tests
         {{
             CCompressionIStream ics(is_str, stream_compressor.get());
-            ics.read(dst_buf, kBufLen);
+            ics.read(dst_buf, kLen);
             n = ics.gcount();
             assert(n == test.stream_output_size);
             assert(ics.GetProcessedSize() == 0);
             assert(ics.GetOutputSize() == n);
 
             CCompressionIStream ids(is_str, stream_decompressor.get());
-            ids.read(dst_buf, kBufLen);
+            ids.read(dst_buf, kLen);
             n = ids.gcount();
             assert(n == 0);
             assert(ids.GetProcessedSize() == 0);

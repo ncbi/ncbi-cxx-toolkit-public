@@ -326,9 +326,14 @@ protected:
     }
 
 private:
+    /// Define this method to avoid compiler warnings only. 
+    void Create(CNcbiIos&                    /*stream*/,
+                CCompressionStreamProcessor* /*read_sp*/,
+                CCompressionStreamProcessor* /*write_sp*/,
+                TOwnership                   ownership = 0);
+		
     /// Disable operator<<(bool)
     void operator<<(bool) const;
-
 };
 
 
@@ -399,6 +404,12 @@ protected:
     }
 
 private:
+    /// Define this method to avoid compiler warnings only. 
+    void Create(CNcbiIos&                    /*stream*/,
+                CCompressionStreamProcessor* /*read_sp*/,
+                CCompressionStreamProcessor* /*write_sp*/,
+                TOwnership                   ownership = 0);
+		
     /// Disable operator>>(bool)
     void operator>>(bool) const;
 };

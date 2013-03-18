@@ -445,109 +445,109 @@ class MDecompress_Proxy_ConcatenatedGZipFile {};
 // the stream to continue processing as normal.
 
 inline
-TCompressOProxy operator<<(ostream& os, MCompress_Proxy_BZip2 const& obj)
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_BZip2 const& /*obj*/)
 {
     return TCompressOProxy(os, CCompressStream::eBZip2);
 }
 
 inline
-TCompressIProxy operator>>(istream& is, MCompress_Proxy_BZip2 const& obj)
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_BZip2 const& /*obj*/)
 {
     return TCompressIProxy(is, CCompressStream::eBZip2);
 }
 
 inline
-TCompressOProxy operator<<(ostream& os, MCompress_Proxy_LZO const& obj)
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_LZO const& /*obj*/)
 {
     return TCompressOProxy(os, CCompressStream::eLZO);
 }
 
 inline
-TCompressIProxy operator>>(istream& is, MCompress_Proxy_LZO const& obj)
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_LZO const& /*obj*/)
 {
     return TCompressIProxy(is, CCompressStream::eLZO);
 }
 
 inline
-TCompressOProxy operator<<(ostream& os, MCompress_Proxy_Zip const& obj)
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_Zip const& /*obj*/)
 {
     return TCompressOProxy(os, CCompressStream::eZip);
 }
 
 inline
-TCompressIProxy operator>>(istream& is, MCompress_Proxy_Zip const& obj)
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_Zip const& /*obj*/)
 {
     return TCompressIProxy(is, CCompressStream::eZip);
 }
 
 inline
-TCompressOProxy operator<<(ostream& os, MCompress_Proxy_GZipFile const& obj)
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_GZipFile const& /*obj*/)
 {
     return TCompressOProxy(os, CCompressStream::eGZipFile);
 }
 
 inline
-TCompressIProxy operator>>(istream& is, MCompress_Proxy_GZipFile const& obj)
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_GZipFile const& /*obj*/)
 {
     return TCompressIProxy(is, CCompressStream::eGZipFile);
 }
 
 inline
-TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_BZip2 const& obj)
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_BZip2 const& /*obj*/)
 {
     return TDecompressOProxy(os, CCompressStream::eBZip2);
 }
 
 inline
-TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_BZip2 const& obj)
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_BZip2 const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eBZip2);
 }
 
 inline
-TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_LZO const& obj)
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_LZO const& /*obj*/)
 {
     return TDecompressOProxy(os, CCompressStream::eLZO);
 }
 
 inline
-TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_LZO const& obj)
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_LZO const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eLZO);
 }
 
 inline
-TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_Zip const& obj)
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_Zip const& /*obj*/)
 {
     return TDecompressOProxy(os, CCompressStream::eZip);
 }
 
 inline
-TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_Zip const& obj)
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_Zip const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eZip);
 }
 
 inline
-TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_GZipFile const& obj)
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_GZipFile const& /*obj*/)
 {
     return TDecompressOProxy(os, CCompressStream::eGZipFile);
 }
 
 inline
-TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_GZipFile const& obj)
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_GZipFile const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eGZipFile);
 }
 
 inline
-TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_ConcatenatedGZipFile const& obj)
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_ConcatenatedGZipFile const& /*obj*/)
 {
     return TDecompressOProxy(os, CCompressStream::eConcatenatedGZipFile);
 }
 
 inline
-TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_ConcatenatedGZipFile const& obj)
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_ConcatenatedGZipFile const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eConcatenatedGZipFile);
 }
