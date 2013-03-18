@@ -519,6 +519,9 @@ protected:
         int max_align_stats_len;
         vector<string> seq_property_label;
         int max_seq_property_label;
+        bool show_align_stats;
+        bool show_seq_property_label;
+        
     };
 
     
@@ -858,14 +861,11 @@ protected:
     ///@param master_feat_str: the feature for master seq
     ///@param out: the out stream
     ///
-    void x_PrintFeatures(TSAlnFeatureInfoList& feature,
+    void x_PrintFeatures(SAlnRowInfo *alnRoInfo,
                          int row, 
                          objects::CAlnMap::TSignedRange alignment_range,
                          int aln_start,
-                         int line_length, 
-                         int id_length,
-                         int start_length,
-                         int max_feature_num, 
+                         int line_length,                          
                          string& master_feat_str,
                          CNcbiOstream& out);
 
