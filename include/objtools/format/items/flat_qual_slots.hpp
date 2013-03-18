@@ -158,6 +158,11 @@ enum EFeatureQualifier {
     eFQ_xtra_prod_quals
 };
 
+// The first qualifier must have value 0 and
+// the rest must increment by one, with the last one 
+// being eSQ_NUM_SOURCE_QUALIFIERS.  This makes
+// it easy for other places to iterate through all
+// possible ESourceQualifier's.
 enum ESourceQualifier {
     eSQ_none,
     eSQ_acronym,
