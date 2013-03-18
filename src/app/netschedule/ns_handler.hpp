@@ -105,6 +105,7 @@ private:
     void x_ProcessMsgAuth(BUF buffer);
     void x_ProcessMsgQueue(BUF buffer);
     void x_ProcessMsgRequest(BUF buffer);
+    void x_UpdateClientPassedChecks(CQueue * q);
     // Message processing for ProcessSubmitBatch phases
     void x_ProcessMsgBatchHeader(BUF buffer);
     void x_ProcessMsgBatchJob(BUF buffer);
@@ -127,7 +128,7 @@ public:
     typedef void (CNetScheduleHandler::*FProcessor)(CQueue*);
     struct SCommandExtra {
         FProcessor          processor;
-        TNSClientRole       role;
+        TNSCommandChecks    checks;
     };
     typedef SNSProtoCmdDef<SCommandExtra>      SCommandMap;
     typedef SNSProtoParsedCmd<SCommandExtra>   SParsedCmd;

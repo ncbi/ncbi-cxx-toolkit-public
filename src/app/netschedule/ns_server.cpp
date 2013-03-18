@@ -250,17 +250,19 @@ CRef<CQueue> CNetScheduleServer::OpenQueue(const std::string& name)
 }
 
 
-void CNetScheduleServer::CreateDynamicQueue(const string &  qname,
+void CNetScheduleServer::CreateDynamicQueue(const CNSClientId &  client,
+                                            const string &  qname,
                                             const string &  qclass,
                                             const string &  description)
 {
-    m_QueueDB->CreateDynamicQueue(qname, qclass, description);
+    m_QueueDB->CreateDynamicQueue(client, qname, qclass, description);
 }
 
 
-void CNetScheduleServer::DeleteDynamicQueue(const std::string& qname)
+void CNetScheduleServer::DeleteDynamicQueue(const CNSClientId &  client,
+                                            const std::string& qname)
 {
-    m_QueueDB->DeleteDynamicQueue(qname);
+    m_QueueDB->DeleteDynamicQueue(client, qname);
 }
 
 

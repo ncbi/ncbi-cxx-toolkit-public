@@ -87,7 +87,6 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_LastId(0),
     m_SavedId(s_ReserveDelta),
 
-    m_ParamLock(CRWLock::fFavorWriters),
     m_Timeout(3600),
     m_RunTimeout(3600),
     m_RunTimeoutPrecision(-1),
@@ -199,7 +198,7 @@ void CQueue::x_Detach(void)
 void CQueue::SetParameters(const SQueueParameters &  params)
 {
     // When modifying this, modify all places marked with PARAMETERS
-    CWriteLockGuard     guard(m_ParamLock);
+    CFastMutexGuard     guard(m_ParamLock);
 
     m_Timeout    = params.timeout;
     m_RunTimeout = params.run_timeout;

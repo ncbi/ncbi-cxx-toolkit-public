@@ -57,9 +57,6 @@ class CNSClientId
 {
     public:
         CNSClientId();
-        CNSClientId(unsigned int            peer_addr,
-                    const TNSProtoParams &  params);
-
         void Update(unsigned int            peer_addr,
                     const TNSProtoParams &  params);
 
@@ -81,30 +78,31 @@ class CNSClientId
         { return m_ProgName; }
         const string &  GetClientName(void) const
         { return m_ClientName; }
-        unsigned int GetCapabilities(void) const
-        { return m_Capabilities; }
-        void SetCapabilities(unsigned int  capabilities)
-        { m_Capabilities = capabilities; }
         void SetClientName(const string &  client_name);
         void SetClientHost(const string &  client_host)
         { m_ClientHost = client_host; }
         void SetControlPort(unsigned short  port)
         { m_ControlPort = port; }
-        void AddCapability(unsigned int  capabilities)
-        { m_Capabilities |= capabilities; }
-        void ResetCapabilities(void)
-        { m_Capabilities = 0; }
-        void RemoveCapability(unsigned int  capabilities)
-        { m_Capabilities &= ~capabilities; }
-        void CheckAccess(TNSClientRole  role, const CQueue *  queue);
-        bool CheckVersion(const CQueue *  queue);
         unsigned int GetID(void) const
         { return m_ID; }
         void SetID(unsigned int  id)
         { m_ID = id; }
 
-    private:
-        static string x_AccessViolationMessage(unsigned int  deficit);
+        bool IsAdmin(void) const
+        { return (m_PassedChecks & eNS_Admin) != 0; }
+        void SetPassedChecks(TNSCommandChecks  check)
+        { m_PassedChecks |= check; }
+        TNSCommandChecks GetPassedChecks(void) const
+        { return m_PassedChecks; }
+
+        // The admin check is done per connection so there is no need
+        // to reset it when a queue is changed or when a queue is from a job
+        // key.
+        void ResetPassedCheck(void)
+        { if (IsAdmin()) { m_PassedChecks = 0; SetPassedChecks(eNS_Admin); }
+          else           { m_PassedChecks = 0; } }
+
+        void CheckAccess(TNSCommandChecks  cmd_reqs);
 
     private:
         unsigned int        m_Addr;           // Client peer address
@@ -120,12 +118,8 @@ class CNSClientId
         string              m_ClientHost;     // Client host name if passed in
                                               // the handshake line.
 
-        // Capabilities - that is combination of ENSAccess
-        // rights, which can be performed by this connection
-        unsigned int        m_Capabilities;
-
-        unsigned int        m_Unreported;
-        bool                m_VersionControl;
+        TNSCommandChecks    m_PassedChecks;   // What checks the client has passed
+                                              // successfully
 
         // 0 for old style clients
         // non 0 for new style clients.

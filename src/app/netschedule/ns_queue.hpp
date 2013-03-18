@@ -110,8 +110,6 @@ public:
     void Attach(SQueueDbBlock* block);
     int  GetPos() const { return m_QueueDbBlock->pos; }
 
-    void x_ReadFieldInfo(void);
-
     // Thread-safe parameter access
     typedef list<pair<string, string> > TParameterList;
     void SetParameters(const SQueueParameters& params);
@@ -122,10 +120,9 @@ public:
     CNSPreciseTime  GetMaxPendingWaitTimeout() const;
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
-    bool IsVersionControl() const;
-    bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     bool IsSubmitAllowed(unsigned host) const;
     bool IsWorkerAllowed(unsigned host) const;
+    bool IsProgramAllowed(const string &  program_name) const;
     void GetMaxIOSizes(unsigned int &  max_input_size,
                        unsigned int &  max_output_size) const;
 
@@ -141,9 +138,8 @@ public:
         return m_JobsToDelete.count();
     }
 
-    ////
     // Status matrix related
-    unsigned LoadStatusMatrix();
+    unsigned int  LoadStatusMatrix(void);
 
     const string& GetQueueName() const {
         return m_QueueName;
@@ -503,13 +499,12 @@ private:
     TNSBitVector                 m_JobsToNotify;
 
     // Configurable queue parameters
-    // When modifying this, modify all places marked with PARAMETERS
-    mutable CRWLock              m_ParamLock;
+    mutable CFastMutex           m_ParamLock;
     time_t                       m_Timeout;         ///< Result exp. timeout
     time_t                       m_RunTimeout;      ///< Execution timeout
-    /// Its precision, set at startup only, not reconfigurable
+    // Its precision, set at startup only, not reconfigurable
     int                          m_RunTimeoutPrecision;
-    /// How many attempts to make on different nodes before failure
+    // How many attempts to make on different nodes before failure
     unsigned                     m_FailedRetries;
     time_t                       m_BlacklistTime;
     unsigned                     m_MaxInputSize;
@@ -517,11 +512,11 @@ private:
     time_t                       m_WNodeTimeout;
     time_t                       m_PendingTimeout;
     CNSPreciseTime               m_MaxPendingWaitTimeout;
-    /// Client program version control
+    // Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
-    /// Host access list for job submission
+    // Host access list for job submission
     CNetScheduleAccessList       m_SubmHosts;
-    /// Host access list for job execution (workers)
+    // Host access list for job execution (workers)
     CNetScheduleAccessList       m_WnodeHosts;
 
     CNetScheduleKeyGenerator     m_KeyGenerator;
@@ -561,9 +556,7 @@ private:
 // Thread-safe parameter access. The majority of parameters are single word,
 // so if you need a single parameter, it is safe to use these methods, which
 // do not lock anything. In such cases, where the parameter is not single-word,
-// we lock m_ParamLock for reading. In cases where you need more than one
-// parameter, to provide consistency use CQueueParamAccessor, which is a smart
-// guard around the parameter block.
+// we lock m_ParamLock for reading.
 inline time_t CQueue::GetTimeout() const
 {
     return m_Timeout;
@@ -588,16 +581,6 @@ inline unsigned CQueue::GetFailedRetries() const
 {
     return m_FailedRetries;
 }
-inline bool CQueue::IsVersionControl() const
-{
-    // The m_ProgramVersionList has internal lock anyway
-    return m_ProgramVersionList.IsConfigured();
-}
-inline bool CQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
-{
-    // The m_ProgramVersionList has internal lock anyway
-    return m_ProgramVersionList.IsMatchingClient(cinfo);
-}
 inline bool CQueue::IsSubmitAllowed(unsigned host) const
 {
     // The m_SubmHosts has internal lock anyway
@@ -607,6 +590,27 @@ inline bool CQueue::IsWorkerAllowed(unsigned host) const
 {
     // The m_WnodeHosts has internal lock anyway
     return host == 0  ||  m_WnodeHosts.IsAllowed(host);
+}
+inline bool CQueue::IsProgramAllowed(const string &  program_name) const
+{
+    if (!m_ProgramVersionList.IsConfigured())
+        return true;    // No need to check
+
+    if (program_name.empty())
+        return false;
+
+    try {
+        CQueueClientInfo    auth_prog_info;
+
+        ParseVersionString(program_name,
+                           &auth_prog_info.client_name,
+                           &auth_prog_info.version_info);
+        return m_ProgramVersionList.IsMatchingClient(auth_prog_info);
+    }
+    catch (...) {
+        // There could be parsing errors
+        return false;
+    }
 }
 
 

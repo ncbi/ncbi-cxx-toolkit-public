@@ -80,6 +80,7 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
     unsigned short  wait_port = 0;
 
     // The client has connected before
+    client.SetID(known_client->second.GetID());
     if (client.GetSession() != known_client->second.GetSession()) {
         // Remove the client from its preferred affinities
         aff_registry.RemoveClientFromAffinities(
@@ -94,8 +95,6 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
         x_BuildWNAffinities();  // session is changed, i.e. the preferred
                                 // affinities were reset and they had at
                                 // least one bit set
-
-    client.SetID(known_client->second.GetID());
     return wait_port;
 }
 

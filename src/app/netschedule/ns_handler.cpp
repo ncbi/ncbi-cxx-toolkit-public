@@ -50,9 +50,11 @@ USING_NCBI_SCOPE;
 //
 
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_BatchHeaderMap[] = {
-    { "BTCH", { &CNetScheduleHandler::x_ProcessBatchStart, 0 },
+    { "BTCH", { &CNetScheduleHandler::x_ProcessBatchStart,
+                eNS_Queue | eNS_Submitter | eNS_Program },
         { { "size", eNSPT_Int, eNSPA_Required } } },
-    { "ENDS", { &CNetScheduleHandler::x_ProcessBatchSequenceEnd, 0 } },
+    { "ENDS", { &CNetScheduleHandler::x_ProcessBatchSequenceEnd,
+                eNS_Queue | eNS_Submitter | eNS_Program } },
     { NULL }
 };
 
@@ -70,92 +72,86 @@ SNSProtoArgument s_BatchArgs[] = {
 
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 
-    /*** Admin role ***/
     { "SHUTDOWN",      { &CNetScheduleHandler::x_ProcessShutdown,
-                         eNSCR_Admin },
+                         eNS_Admin },
         { { "drain",             eNSPT_Int, eNSPA_Optional, 0   },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
-                         eNSCR_Admin },
+                         eNS_Admin },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
-                         eNSCR_Admin },
+                         eNS_Admin },
         { { "mode",              eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RECO",          { &CNetScheduleHandler::x_ProcessReloadConfig,
-                         eNSCR_Admin },
+                         eNS_Admin },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-
-    /*** Any role ***/
     { "VERSION",       { &CNetScheduleHandler::x_ProcessVersion,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QUIT",          { &CNetScheduleHandler::x_ProcessQuitSession,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "ACNT",          { &CNetScheduleHandler::x_ProcessActiveCount,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QLST",          { &CNetScheduleHandler::x_ProcessQList,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QINF",          { &CNetScheduleHandler::x_ProcessQueueInfo,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QINF2",         { &CNetScheduleHandler::x_ProcessQueueInfo,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETQUEUE",      { &CNetScheduleHandler::x_ProcessSetQueue,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-
-    /*** QueueAdmin role ***/
     { "DROPQ",         { &CNetScheduleHandler::x_ProcessDropQueue,
-                         eNSCR_QueueAdmin },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-
-    /*** DynClassAdmin role ***/
+    /* QCRE checks 'program' and 'submit hosts' from the class */
     { "QCRE",          { &CNetScheduleHandler::x_ProcessCreateDynamicQueue,
-                         eNSAC_DynClassAdmin },
+                         eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Required      },
           { "qclass",            eNSPT_Id,  eNSPA_Required      },
           { "description",       eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    /* QDEL checks 'program' and 'submit hosts' from the queue it deletes */
     { "QDEL",          { &CNetScheduleHandler::x_ProcessDeleteDynamicQueue,
-                         eNSAC_DynQueueAdmin },
+                         eNS_NoChecks },
         { { "qname",             eNSPT_Id, eNSPA_Required       },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-
-    /*** Queue role ***/
     { "STATUS",        { &CNetScheduleHandler::x_ProcessStatus,
-                         eNSCR_Queue },
+                         eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "STATUS2",       { &CNetScheduleHandler::x_ProcessStatus,
-                         eNSCR_Queue },
+                         eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    /* The STAT commands makes sense with and without a queue */
     { "STAT",          { &CNetScheduleHandler::x_ProcessStatistics,
-                         eNSCR_Any },
+                         eNS_NoChecks },
         { { "option",            eNSPT_Id,  eNSPA_Optional      },
           { "comment",           eNSPT_Id,  eNSPA_Optional      },
           { "aff",               eNSPT_Str, eNSPA_Optional      },
@@ -163,18 +159,18 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "MPUT",          { &CNetScheduleHandler::x_ProcessPutMessage,
-                         eNSCR_Queue },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "progress_msg",      eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "MGET",          { &CNetScheduleHandler::x_ProcessGetMessage,
-                         eNSCR_Queue },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "DUMP",          { &CNetScheduleHandler::x_ProcessDump,
-                         eNSCR_Queue },
+                         eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
           { "status",            eNSPT_Id,  eNSPA_Optional      },
           { "start_after",       eNSPT_Id,  eNSPA_Optional      },
@@ -183,35 +179,33 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETP",          { &CNetScheduleHandler::x_ProcessGetParam,
-                         eNSCR_Queue },
+                         eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETC",          { &CNetScheduleHandler::x_ProcessGetConfiguration,
-                         eNSCR_Queue },
+                         eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CLRN",          { &CNetScheduleHandler::x_ProcessClearWorkerNode,
-                         eNSCR_Queue },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CANCELQ",       { &CNetScheduleHandler::x_ProcessCancelQueue,
-                         eNSCR_Queue },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-
-    /*** Submitter role ***/
     { "SST",           { &CNetScheduleHandler::x_ProcessFastStatusS,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SST2",          { &CNetScheduleHandler::x_ProcessFastStatusS,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SUBMIT",        { &CNetScheduleHandler::x_ProcessSubmit,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "input",             eNSPT_Str, eNSPA_Required      },
           { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional      },
@@ -221,81 +215,79 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CANCEL",        { &CNetScheduleHandler::x_ProcessCancel,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
           { "group",             eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "LISTEN",        { &CNetScheduleHandler::x_ProcessListenJob,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "port",              eNSPT_Int, eNSPA_Required      },
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "BSUB",          { &CNetScheduleHandler::x_ProcessSubmitBatch,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  } } },
     { "READ",          { &CNetScheduleHandler::x_ProcessReading,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "timeout",           eNSPT_Int, eNSPA_Optional, "0" },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CFRM",          { &CNetScheduleHandler::x_ProcessConfirm,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FRED",          { &CNetScheduleHandler::x_ProcessReadFailed,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "err_msg",           eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RDRB",          { &CNetScheduleHandler::x_ProcessReadRollback,
-                         eNSCR_Submitter },
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-
-    /*** Worker node role ***/
     { "WST",           { &CNetScheduleHandler::x_ProcessFastStatusW,
-                         eNSCR_Worker },
+                         eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WST2",          { &CNetScheduleHandler::x_ProcessFastStatusW,
-                         eNSCR_Worker },
+                         eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CHAFF",         { &CNetScheduleHandler::x_ProcessChangeAffinity,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "add",               eNSPT_Str, eNSPA_Optional, ""  },
           { "del",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETAFF",        { &CNetScheduleHandler::x_ProcessSetAffinity,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "aff",              eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET",           { &CNetScheduleHandler::x_ProcessGetJob,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "port",              eNSPT_Id,  eNSPA_Optional      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET2",          { &CNetScheduleHandler::x_ProcessGetJob,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "wnode_aff",         eNSPT_Int, eNSPA_Required, 0   },
           { "any_aff",           eNSPT_Int, eNSPA_Required, 0   },
           { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0   },
@@ -305,14 +297,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "PUT",           { &CNetScheduleHandler::x_ProcessPut,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "job_return_code",   eNSPT_Id,  eNSPA_Required      },
           { "output",            eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "PUT2",          { &CNetScheduleHandler::x_ProcessPut,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "job_return_code",   eNSPT_Id,  eNSPA_Required      },
@@ -320,29 +312,29 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RETURN",        { &CNetScheduleHandler::x_ProcessReturn,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RETURN2",       { &CNetScheduleHandler::x_ProcessReturn,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WGET",          { &CNetScheduleHandler::x_ProcessGetJob,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "port",              eNSPT_Int, eNSPA_Required      },
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CWGET",         { &CNetScheduleHandler::x_ProcessCancelWaitGet,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FPUT",          { &CNetScheduleHandler::x_ProcessPutFailure,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "err_msg",           eNSPT_Str, eNSPA_Required      },
           { "output",            eNSPT_Str, eNSPA_Required      },
@@ -350,7 +342,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FPUT2",         { &CNetScheduleHandler::x_ProcessPutFailure,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "err_msg",           eNSPT_Str, eNSPA_Required      },
@@ -359,7 +351,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "JXCG",          { &CNetScheduleHandler::x_ProcessJobExchange,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optchain      },
           { "job_return_code",   eNSPT_Int, eNSPA_Optchain      },
           { "output",            eNSPT_Str, eNSPA_Optional      },
@@ -367,26 +359,25 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "JDEX",          { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
-                         eNSCR_Worker },
+                         eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "AFLS",          { &CNetScheduleHandler::x_ProcessGetAffinityList,
-                         eNSCR_Worker },
+                         eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     // Obsolete commands
     { "REGC",          { &CNetScheduleHandler::x_CmdObsolete,
-                         eNSCR_Worker } },
+                         eNS_NoChecks } },
     { "URGC",          { &CNetScheduleHandler::x_CmdObsolete,
-                         eNSCR_Worker } },
+                         eNS_NoChecks } },
     { "INIT",          { &CNetScheduleHandler::x_CmdObsolete,
-                         eNSCR_Worker } },
+                         eNS_NoChecks } },
     { "JRTO",          { &CNetScheduleHandler::x_CmdNotImplemented,
-                         eNSCR_Worker } },
-
+                         eNS_NoChecks } },
     { NULL },
 };
 
@@ -787,13 +778,10 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
     m_ClientId.Update(this->x_GetPeerAddress(), params);
 
 
+    // Test if it is an administrative user and memorize it
     if (m_Server->AdminHostValid(m_ClientId.GetAddress()) &&
         m_Server->IsAdminClientName(m_ClientId.GetClientName()))
-    {
-        // TODO: queue admin should be checked in ProcessMsgQueue,
-        // when queue info is available
-        m_ClientId.AddCapability(eNSAC_Admin | eNSAC_QueueAdmin);
-    }
+        m_ClientId.SetPassedChecks(eNS_Admin);
 
     // Produce the log output if required
     if (m_ConnContext.NotNull()) {
@@ -810,8 +798,10 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         m_QueueName = "";
 
     if (!m_QueueName.empty()) {
+        CRef<CQueue>    queue;
         try {
-            m_QueueRef.Reset(m_Server->OpenQueue(m_QueueName));
+            queue = m_Server->OpenQueue(m_QueueName);
+            m_QueueRef.Reset(queue);
         }
         catch (const CNetScheduleException &  ex) {
             if (ex.GetErrCode() == CNetScheduleException::eUnknownQueue) {
@@ -829,13 +819,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
             throw;
         }
 
-        m_ClientId.AddCapability(eNSAC_Queue);
-
-        CRef<CQueue>    q(GetQueue());
-        if (q->IsWorkerAllowed(m_ClientId.GetAddress()))
-            m_ClientId.AddCapability(eNSAC_Worker);
-        if (q->IsSubmitAllowed(m_ClientId.GetAddress()))
-            m_ClientId.AddCapability(eNSAC_Submitter);
+        x_UpdateClientPassedChecks(queue.GetPointer());
     }
     else
         m_QueueRef.Reset(NULL);
@@ -898,11 +882,12 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     // commands which does not require a queue.
     CRef<CQueue>        queue_ref;
     CQueue *            queue_ptr = NULL;
-    unsigned int        orig_client_capabilities = 0;
-    unsigned int        orig_client_id = 0;
-    bool                restore_client = false;
 
-    if (extra.role & eNSAC_Queue) {
+    bool                restore_client = false;
+    TNSCommandChecks    orig_client_passed_checks = 0;
+    unsigned int        orig_client_id = 0;
+
+    if (extra.checks & eNS_Queue) {
         if (x_CanBeWithoutQueue(extra.processor) &&
             !m_CommandArguments.queue_from_job_key.empty()) {
             // This command must use queue name from the job key
@@ -910,18 +895,11 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
             queue_ptr = queue_ref.GetPointer();
 
             if (m_QueueName != m_CommandArguments.queue_from_job_key) {
-                // Need to check access capabilities
-                restore_client = true;
-                orig_client_capabilities = m_ClientId.GetCapabilities();
+                orig_client_passed_checks = m_ClientId.GetPassedChecks();
                 orig_client_id = m_ClientId.GetID();
+                restore_client = true;
 
-                m_ClientId.RemoveCapability(eNSAC_Worker | eNSAC_Submitter);
-                m_ClientId.AddCapability(eNSAC_Queue);
-
-                if (queue_ptr->IsWorkerAllowed(m_ClientId.GetAddress()))
-                    m_ClientId.AddCapability(eNSAC_Worker);
-                if (queue_ptr->IsSubmitAllowed(m_ClientId.GetAddress()))
-                    m_ClientId.AddCapability(eNSAC_Submitter);
+                x_UpdateClientPassedChecks(queue_ptr);
             }
         } else {
             // Old fasion way - the queue comes from handshake
@@ -934,7 +912,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     }
     else if (extra.processor == &CNetScheduleHandler::x_ProcessStatistics ||
              extra.processor == &CNetScheduleHandler::x_ProcessRefuseSubmits) {
-        if (m_QueueName.empty() == false) {
+        if (!m_QueueName.empty()) {
             // The STAT and REFUSESUBMITS commands
             // could be with or without a queue
             queue_ref.Reset(GetQueue());
@@ -942,20 +920,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         }
     }
 
-    m_ClientId.CheckAccess(extra.role, queue_ptr);
-
-
-    // we want status request to be fast, skip version control
-    if ((extra.processor != &CNetScheduleHandler::x_ProcessStatus) &&
-        (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusS) &&
-        (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusW) &&
-        (extra.processor != &CNetScheduleHandler::x_ProcessVersion))
-        if (!m_ClientId.CheckVersion(queue_ptr)) {
-            x_SetCmdRequestStatus(eStatus_BadRequest);
-            if (x_WriteMessage("ERR:eInvalidClientOrVersion:") == eIO_Success)
-                m_Server->CloseConnection(&GetSocket());
-            return;
-        }
+    m_ClientId.CheckAccess(extra.checks);
 
     if (queue_ptr)
         // The cient has a queue, so memorize the client
@@ -965,8 +930,32 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     (this->*extra.processor)(queue_ptr);
 
     if (restore_client) {
-        m_ClientId.SetCapabilities(orig_client_capabilities);
+        m_ClientId.SetPassedChecks(orig_client_passed_checks);
         m_ClientId.SetID(orig_client_id);
+    }
+}
+
+
+void CNetScheduleHandler::x_UpdateClientPassedChecks(CQueue * q)
+{
+    // Admin flag is not reset because it comes from a handshake stage and
+    // cannot be changed later.
+    m_ClientId.ResetPassedCheck();
+
+    // First, deal with a queue
+    if (q == NULL)
+        return;
+
+    m_ClientId.SetPassedChecks(eNS_Queue);
+    if (!m_ClientId.IsAdmin()) {
+        // Admin can do everything, so there is no need to check
+        // the hosts and programs for non-admins only
+        if (q->IsWorkerAllowed(m_ClientId.GetAddress()))
+            m_ClientId.SetPassedChecks(eNS_Worker);
+        if (q->IsSubmitAllowed(m_ClientId.GetAddress()))
+            m_ClientId.SetPassedChecks(eNS_Submitter);
+        if (q->IsProgramAllowed(m_ClientId.GetProgramName()))
+            m_ClientId.SetPassedChecks(eNS_Program);
     }
 }
 
@@ -2274,7 +2263,9 @@ void CNetScheduleHandler::x_ProcessQuitSession(CQueue*)
 
 void CNetScheduleHandler::x_ProcessCreateDynamicQueue(CQueue*)
 {
+    // program and submitter restrictions must be checked for the queue class
     m_Server->CreateDynamicQueue(
+                        m_ClientId,
                         m_CommandArguments.qname,
                         m_CommandArguments.qclass,
                         NStr::ParseEscapes(m_CommandArguments.description));
@@ -2285,7 +2276,9 @@ void CNetScheduleHandler::x_ProcessCreateDynamicQueue(CQueue*)
 
 void CNetScheduleHandler::x_ProcessDeleteDynamicQueue(CQueue*)
 {
-    m_Server->DeleteDynamicQueue(m_CommandArguments.qname);
+    // program and submitter restrictions must be checked for the queue to
+    // be deleted
+    m_Server->DeleteDynamicQueue(m_ClientId, m_CommandArguments.qname);
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
@@ -2336,9 +2329,7 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
         m_QueueRef.Reset(NULL);
         m_QueueName.clear();
 
-        m_ClientId.RemoveCapability(eNSAC_Queue  |
-                                    eNSAC_Worker |
-                                    eNSAC_Submitter);
+        m_ClientId.ResetPassedCheck();
 
         x_WriteMessage("OK:");
         x_PrintCmdRequestStop();
@@ -2363,13 +2354,7 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
     }
 
     // Second, update the client with its capabilities for the new queue
-    m_ClientId.RemoveCapability(eNSAC_Worker | eNSAC_Submitter);
-    m_ClientId.AddCapability(eNSAC_Queue);
-
-    if (queue_ptr->IsWorkerAllowed(m_ClientId.GetAddress()))
-        m_ClientId.AddCapability(eNSAC_Worker);
-    if (queue_ptr->IsSubmitAllowed(m_ClientId.GetAddress()))
-        m_ClientId.AddCapability(eNSAC_Submitter);
+    x_UpdateClientPassedChecks(queue_ptr);
 
     // Note:
     // The  m_ClientId.CheckAccess(...) call will take place when a command

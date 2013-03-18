@@ -132,7 +132,7 @@ public:
 
 private:
     const CQueue &      m_Queue;
-    CReadLockGuard      m_Guard;
+    CFastMutexGuard     m_Guard;
 };
 
 

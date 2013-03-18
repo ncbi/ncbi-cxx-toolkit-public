@@ -54,26 +54,17 @@ const time_t    kMaxTimet = numeric_limits<time_t>::max();
 // - new style clients; they have all three pieces,
 //                      address, node id and session id
 CNSClientId::CNSClientId() :
-    m_Addr(0), m_Capabilities(0), m_ID(0)
+    m_Addr(0), m_PassedChecks(0), m_ID(0)
 {}
 
 
-CNSClientId::CNSClientId(unsigned int            peer_addr,
-                         const TNSProtoParams &  params) :
-    m_Capabilities(0), m_Unreported(~0L),
-    m_VersionControl(true),
-    m_ID(0)
-{
-    Update(peer_addr, params);
-    return;
-}
 
-
+// Used instead of a constructor - when the queue is given
+// during the handshake phase.
 void CNSClientId::Update(unsigned int            peer_addr,
                          const TNSProtoParams &  params)
 {
     TNSProtoParams::const_iterator      found;
-
 
     m_Addr           = peer_addr;
     m_ProgName       = "";
@@ -82,9 +73,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
     m_ClientSession  = "";
     m_ClientHost     = "";
     m_ControlPort    = 0;
-    m_Capabilities   = 0;
-    m_Unreported     = ~0L;
-    m_VersionControl = true;
+    m_PassedChecks   = 0;
     m_ID             = 0;
 
     found = params.find("client_node");
@@ -128,8 +117,6 @@ void CNSClientId::Update(unsigned int            peer_addr,
     found = params.find("client_host");
     if (found != params.end())
         m_ClientHost = found->second;
-
-    return;
 }
 
 
@@ -148,116 +135,43 @@ bool CNSClientId::IsComplete(void) const
 void CNSClientId::SetClientName(const string &  client_name)
 {
     m_ClientName = client_name;
-    return;
 }
 
 
-// The code of this function has been moved from the
-// CNetScheduleHandler::x_CheckAccess().
-// The strange manipulations with eNSAC_DynQueueAdmin and
-// eNSAC_DynClassAdmin are left as they were as well as the logic with
-// reporting access violation and throwing exceptions.
-void CNSClientId::CheckAccess(TNSClientRole   role,
-                              const CQueue *  queue)
+void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs)
 {
-    unsigned int    deficit = role & (~m_Capabilities);
-
-    if (!deficit)
-        return;
-
-    if (deficit & eNSAC_DynQueueAdmin) {
-        // check that we have admin rights on queue m_JobReq.param1
-        deficit &= ~eNSAC_DynQueueAdmin;
+    if (cmd_reqs & eNS_Queue) {
+        if ((m_PassedChecks & eNS_Queue) == 0)
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: queue required");
     }
 
-    if (deficit & eNSAC_DynClassAdmin) {
-        // check that we have admin rights on class m_JobReq.param2
-        deficit &= ~eNSAC_DynClassAdmin;
+    if (IsAdmin())
+        return;     // Admin can do everything
+
+    if (cmd_reqs & eNS_Admin) {
+        if ((m_PassedChecks & eNS_Admin) == 0)
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: admin privileges required");
     }
 
-    if (!deficit)
-        return;
-
-    bool report =
-        !((~m_Capabilities) & eNSAC_Queue)  &&  // only if there is a queue
-        (m_Unreported & deficit);               // and we did not report it yet
-
-
-    if (report) {
-        m_Unreported &= ~deficit;
-        ERR_POST("Unauthorized access from: " +
-                 CSocketAPI::gethostbyaddr(m_Addr) + " " +
-                 m_ClientName + x_AccessViolationMessage(deficit));
-    } else
-        m_Unreported = ~0L;
-
-    bool deny =
-        (deficit & eNSAC_AnyAdminMask)    ||  // for any admin access
-        ((~m_Capabilities) & eNSAC_Queue);    // or if no queue
-
-    if (deny)
-        NCBI_THROW(CNetScheduleException, eAccessDenied,
-                   "Access denied:" + x_AccessViolationMessage(deficit));
-        // No space required above: the violation message will have a leading
-        // space.
-
-    return;
-}
-
-
-// The check should be done once per the client session or
-// even once for the client.
-bool  CNSClientId::CheckVersion(const CQueue *  queue)
-{
-    // There is nothing to check if it is not a queue required ops
-    if (queue == NULL || m_VersionControl == false)
-        return true;
-
-    if (m_VersionControl)
-        m_VersionControl = queue->IsVersionControl();
-
-    if (m_VersionControl == false)
-        return true;
-
-
-    m_VersionControl = false;
-    if ((m_Capabilities & eNSAC_Admin) != 0)
-        return true;
-
-
-    if (m_ProgName.empty())
-        return false;
-
-    try {
-        CQueueClientInfo    auth_prog_info;
-
-        ParseVersionString(m_ProgName,
-                           &auth_prog_info.client_name,
-                           &auth_prog_info.version_info);
-        return queue->IsMatchingClient(auth_prog_info);
+    if (cmd_reqs & eNS_Submitter) {
+        if ((m_PassedChecks & eNS_Submitter) == 0)
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: submitter privileges required");
     }
-    catch (const exception &) {
-        // There could be parsing errors
-        return false;
+
+    if (cmd_reqs & eNS_Worker) {
+        if ((m_PassedChecks & eNS_Worker) == 0)
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: worker node privileges required");
     }
-}
 
-
-string  CNSClientId::x_AccessViolationMessage(unsigned int  deficit)
-{
-    string      message;
-
-    if (deficit & eNSAC_Queue)
-        message += " queue required";
-    if (deficit & eNSAC_Worker)
-        message += " worker node privileges required";
-    if (deficit & eNSAC_Submitter)
-        message += " submitter privileges required";
-    if (deficit & eNSAC_Admin)
-        message += " admin privileges required";
-    if (deficit & eNSAC_QueueAdmin)
-        message += " queue admin privileges required";
-    return message;
+    if (cmd_reqs & eNS_Program) {
+        if ((m_PassedChecks & eNS_Program) == 0)
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: program privileges required");
+    }
 }
 
 

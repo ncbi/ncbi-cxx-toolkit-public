@@ -80,10 +80,12 @@ public:
                             string &           diff);
     unsigned CountActiveJobs() const;
     CRef<CQueue> OpenQueue(const std::string& name);
-    void CreateDynamicQueue(const string &  qname,
+    void CreateDynamicQueue(const CNSClientId &  client,
+                            const string &  qname,
                             const string &  qclass,
                             const string &  description);
-    void DeleteDynamicQueue(const string &  qname);
+    void DeleteDynamicQueue(const CNSClientId &  client,
+                            const string &  qname);
     SQueueParameters  QueueInfo(const string &  qname) const;
     string  GetQueueNames(const std::string& sep) const;
     void PrintMutexStat(CNcbiOstream& out);

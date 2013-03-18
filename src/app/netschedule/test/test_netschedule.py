@@ -10,7 +10,6 @@ Netschedule server test script
 """
 
 import os, os.path, sys, datetime
-import time
 from optparse import OptionParser
 from netschedule import NetSchedule
 import netschedule_tests_pack as pack

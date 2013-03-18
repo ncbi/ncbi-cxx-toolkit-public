@@ -36,30 +36,17 @@
 BEGIN_NCBI_SCOPE
 
 
-enum ENSAccess {
-    eNSAC_Queue         = 1 << 0,
-    eNSAC_Worker        = 1 << 1,
-    eNSAC_Submitter     = 1 << 2,
-    eNSAC_Admin         = 1 << 3,
-    eNSAC_QueueAdmin    = 1 << 4,
-    eNSAC_Test          = 1 << 5,
-    eNSAC_DynQueueAdmin = 1 << 6,
-    eNSAC_DynClassAdmin = 1 << 7,
-    eNSAC_AnyAdminMask  = eNSAC_Admin | eNSAC_QueueAdmin |
-                          eNSAC_DynQueueAdmin | eNSAC_DynClassAdmin,
+enum ENSCommandChecks {
+    eNS_NoChecks  = 0,
 
-    // Combination of flags for client roles
-    eNSCR_Any           = 0,
-    eNSCR_Queue         = eNSAC_Queue,
-    eNSCR_Worker        = eNSAC_Worker | eNSAC_Queue,
-    eNSCR_Submitter     = eNSAC_Submitter | eNSAC_Queue,
-    eNSCR_Admin         = eNSAC_Admin,
-    eNSCR_QueueAdmin    = eNSAC_QueueAdmin | eNSAC_Queue
+    eNS_Queue     = 1 << 0,     // Check that a queue is set
+    eNS_Admin     = 1 << 1,     // Check for admin permissions
+    eNS_Submitter = 1 << 2,     // Check for the submitter hosts
+    eNS_Worker    = 1 << 3,     // Check for wnode hosts
+    eNS_Program   = 1 << 4      // Check for program [and version]
 };
 
-
-typedef unsigned int        TNSClientRole;
-
+typedef unsigned int    TNSCommandChecks;
 
 
 END_NCBI_SCOPE

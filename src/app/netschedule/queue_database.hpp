@@ -127,9 +127,11 @@ public:
 
     CRef<CQueue> OpenQueue(const string &  name);
 
-    void CreateDynamicQueue(const string &  qname, const string &  qclass,
+    void CreateDynamicQueue(const CNSClientId &  client,
+                            const string &  qname, const string &  qclass,
                             const string &  description = "");
-    void DeleteDynamicQueue(const string &  qname);
+    void DeleteDynamicQueue(const CNSClientId &  client,
+                            const string &  qname);
     SQueueParameters QueueInfo(const string &  qname) const;
     string GetQueueNames(const string &  sep) const;
 

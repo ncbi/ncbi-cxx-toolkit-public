@@ -1240,7 +1240,8 @@ bool CQueueDataBase::QueueExists(const string &  qname) const
 }
 
 
-void CQueueDataBase::CreateDynamicQueue(const string &  qname,
+void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
+                                        const string &  qname,
                                         const string &  qclass,
                                         const string &  description)
 {
@@ -1270,6 +1271,38 @@ void CQueueDataBase::CreateDynamicQueue(const string &  qname,
                    "Cannot allocate queue '" + qname +
                    "'. max_queues limit reached.");
 
+    // submitter and program restrictions must be checked
+    // for the class
+    if (!client.IsAdmin()) {
+        if (!queue_class->second.subm_hosts.empty()) {
+            CNetScheduleAccessList  acl;
+            acl.SetHosts(queue_class->second.subm_hosts);
+            if (!acl.IsAllowed(client.GetAddress()))
+                NCBI_THROW(CNetScheduleException, eAccessDenied,
+                           "Access denied: submitter privileges required");
+        }
+        if (!queue_class->second.program_name.empty()) {
+            CQueueClientInfoList    acl;
+            bool                    ok = false;
+
+            acl.AddClientInfo(queue_class->second.program_name);
+            try {
+                CQueueClientInfo    auth_prog_info;
+                ParseVersionString(client.GetProgramName(),
+                                   &auth_prog_info.client_name,
+                                   &auth_prog_info.version_info);
+                ok = acl.IsMatchingClient(auth_prog_info);
+            } catch (...) {
+                // Parsing errors
+                ok = false;
+            }
+
+            if (!ok)
+                NCBI_THROW(CNetScheduleException, eAccessDenied,
+                           "Access denied: program privileges required");
+        }
+    }
+
 
     // All the preconditions are met. Create the queue
     int     new_position = m_QueueDbBlockArray.Allocate();
@@ -1288,7 +1321,8 @@ void CQueueDataBase::CreateDynamicQueue(const string &  qname,
 }
 
 
-void  CQueueDataBase::DeleteDynamicQueue(const string &  qname)
+void  CQueueDataBase::DeleteDynamicQueue(const CNSClientId &  client,
+                                         const string &  qname)
 {
     CFastMutexGuard         guard(m_ConfigureLock);
     TQueueInfo::iterator    found_queue = m_Queues.find(qname);
@@ -1301,11 +1335,20 @@ void  CQueueDataBase::DeleteDynamicQueue(const string &  qname)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Queue '" + qname + "' is static and cannot be deleted.");
 
+    // submitter and program restrictions must be checked
+    CRef<CQueue>    queue = found_queue->second.second;
+    if (!client.IsAdmin()) {
+        if (!queue->IsSubmitAllowed(client.GetAddress()))
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: submitter privileges required");
+        if (!queue->IsProgramAllowed(client.GetProgramName()))
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: program privileges required");
+    }
+
     found_queue->second.first.delete_request = true;
     x_WriteDBQueueDescriptions(m_Queues);
 
-
-    CRef<CQueue>    queue = found_queue->second.second;
     queue->SetRefuseSubmits(true);
 }
 
