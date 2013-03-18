@@ -117,6 +117,13 @@ name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
 
 static const string k_CheckboxEx = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%s\" \
 checked=\"checked\" onClick=\"synchAl(this);\">";
+
+//highlight the seqid for pairwise-with-identity format
+const string k_DefaultPairwiseWithIdntTempl = "<font color=\"#FF0000\"><b><@alndata@></b></font>";//k_ColorRed         
+const string k_DefaultFeaturesTempl = "<font color=\"#F805F5\"><b><@alndata@></b></font>";//k_ColorPink
+const string k_DefaultMaskSeqLocTempl = "<font color=\"<@color@>\"><@alndata@></font>";
+
+
 #ifdef USE_ORG_IMPL
 static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
 action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
@@ -355,33 +362,45 @@ static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
     }
 }
 
+///To add style to bases for some conditions
+///@param seq: sequence
+///@param currIndex: current seq index
+///@startStyledOutput: condition for starting output into the string to be styled
+///@stopStyledOutput: condition for stopping output into the string to be styled
+///@tmpl: template used for output of styled string
+///@styledSeqStr: the string to be styled by appling template
+///@param out: output stream
+///
+//This function appends seq[currIndex] to styledSeqStr if startStyledOutput==true or !styledSeqStr.empty() && !stopStyledOutput
+//If stopStyledOutput==true or it is the end of the seq and styledSeqStr has data,
+//Template like "<font color="#00000"><@alndata@></font>" or <span class="red"><@alndata@></span> is applied to styledSeqStr 
+// and output to CNcbiOstream
+static bool s_ProcessStyledContent(string& seq, int currIndex, bool startStyledOutput, bool stopStyledOutput, string tmpl,string &styledSeqStr,CNcbiOstream& out)
+{    
+    bool isStyled = false;
+    if(startStyledOutput || (!styledSeqStr.empty() && !stopStyledOutput)){	    
+	    styledSeqStr += seq[currIndex];                        
+        isStyled = true;
+    } 
+    if(!styledSeqStr.empty() && (stopStyledOutput || currIndex == (int)seq.size() - 1) ) {
+        styledSeqStr = CAlignFormatUtil::MapTemplate(tmpl,"alndata",styledSeqStr);                
+        out << styledSeqStr;
+        styledSeqStr = "";                
+    }   
+    return isStyled;
+}
+
 ///To add color to bases other than identityChar
 ///@param seq: sequence
 ///@param identity_char: identity character
 ///@param out: output stream
 ///
 static void s_ColorDifferentBases(string& seq, char identity_char,
-                                  CNcbiOstream& out){
-    string base_color = k_ColorRed;
-    bool tagOpened = false;
-    for(int i = 0; i < (int)seq.size(); i ++){
-        if(seq[i] != identity_char){
-            if(!tagOpened){
-                out << "<font color=\""+base_color+"\"><b>";
-                tagOpened =  true;
-            }
-            
-        } else {
-            if(tagOpened){
-                out << "</b></font>";
-                tagOpened = false;
-            }
-        }
-        out << seq[i];
-        if(tagOpened && i == (int)seq.size() - 1){
-            out << "</b></font>";
-            tagOpened = false;
-        }
+                                  CNcbiOstream& out){    
+    std::string colorSeqStr;    
+    for(int i = 0; i < (int)seq.size(); i ++){        
+        bool isStyled = s_ProcessStyledContent(seq,i,seq[i] != identity_char,seq[i] == identity_char,k_DefaultPairwiseWithIdntTempl,colorSeqStr,out);
+        if(!isStyled) out << seq[i];
     } 
 }
 
@@ -937,36 +956,15 @@ static void s_OutputFeature(string& reference_feat_line,
         }
         if(color_feat_mismatch 
            && actual_reference_feat != NcbiEmptyString &&
-           !NStr::IsBlank(actual_reference_feat)){
-            string base_color = k_ColorPink;
-            bool tagOpened = false;
+           !NStr::IsBlank(actual_reference_feat)){            
+            string styledSequenceStr;
             for(int i = 0; i < (int)actual_feat.size() &&
                     i < (int)actual_reference_feat.size(); i ++){
-                if (actual_feat[i] != actual_reference_feat[i]) {
-                    if(actual_feat[i] != ' ' &&
-                       actual_feat[i] != k_IntronChar &&
-                       actual_reference_feat[i] != k_IntronChar) {
-                        if(!tagOpened){
-                            out << "<font color=\""+base_color+"\"><b>";
-                            tagOpened =  true;
-                        }
-                        
-                    }
-                } else {
-                    if (actual_feat[i] != ' '){ //no close if space to 
-                        //minimizing the open and close of tags
-                        if(tagOpened){
-                            out << "</b></font>";
-                            tagOpened = false;
-                        }
-                    }
-                }
-                out << actual_feat[i];
-                //close tag at the end of line
-                if(tagOpened && i == (int)actual_feat.size() - 1){
-                    out << "</b></font>";
-                    tagOpened = false;
-                }
+                bool styledOutput = actual_feat[i] != actual_reference_feat[i] && 
+                                    (actual_feat[i] != ' ' &&  actual_feat[i] != k_IntronChar &&   actual_reference_feat[i] != k_IntronChar);                
+                bool stopStyledOutput = (actual_feat[i] == actual_reference_feat[i]) && actual_feat[i] != ' ';
+                bool isStyled = s_ProcessStyledContent(actual_feat,i,styledOutput,stopStyledOutput, k_DefaultFeaturesTempl,styledSequenceStr,out);
+                if(!isStyled) out << actual_feat[i];
             }
         } else {
             out << (is_html?CHTMLHelper::HTMLEncode(actual_feat):actual_feat);
@@ -976,17 +974,24 @@ static void s_OutputFeature(string& reference_feat_line,
 }
 
 
-void CDisplaySeqalign::x_PrintFeatures(TSAlnFeatureInfoList& feature,
+void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
                                        int row, 
                                        CAlnMap::TSignedRange alignment_range,
                                        int aln_start,
-                                       int line_length, 
-                                       int id_length,
-                                       int start_length,
-                                       int max_feature_num, 
+                                       int line_length,                                        
                                        string& master_feat_str,
                                        CNcbiOstream& out)
 {
+    TSAlnFeatureInfoList& feature = alnRoInfo->bioseqFeature[row];
+    int start_length = alnRoInfo->maxStartLen;
+    int id_length = alnRoInfo->maxIdLen;
+    int max_feature_num = alnRoInfo->max_feature_num;
+    if (alnRoInfo->show_align_stats) {
+        id_length += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+    }
+    if (alnRoInfo->show_seq_property_label){
+        id_length += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+    }    
     NON_CONST_ITERATE(TSAlnFeatureInfoList, iter, feature) {
         //check blank string for cases where CDS is in range 
         //but since it must align with the 2nd codon and is 
@@ -1497,23 +1502,16 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
     int rowNum = alnRoInfo->rowNum;
     vector<int> prev_stop(rowNum);
     CNcbiOstrstream out;
-    bool show_align_stats = false;
-    bool show_seq_property_label = false;
-    
+        
      //only for untranslated alignment
-    if(m_AlignOption&eShowAlignStatsForMultiAlignView &&
-       m_AlignOption&eMergeAlign && 
-       m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) {
-        show_align_stats = true;
-    }
+    alnRoInfo->show_align_stats = (m_AlignOption&eShowAlignStatsForMultiAlignView &&
+                                   m_AlignOption&eMergeAlign && 
+                                   m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
 
-    
      //only for untranslated alignment
-    if(m_AlignOption&eShowSequencePropertyLabel &&
-       m_AlignOption&eMergeAlign &&
-       m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) {
-        show_seq_property_label = true;
-    }
+    alnRoInfo->show_seq_property_label = (m_AlignOption&eShowSequencePropertyLabel &&
+                                          m_AlignOption&eMergeAlign &&
+                                          m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
 
     //output rows    
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
@@ -1545,17 +1543,9 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                   insertList);
                 }
                 //feature for query
-                if(row == 0){    
-                    int base_margin = alnRoInfo->maxIdLen;
-                    if (show_align_stats) {
-                        base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
-                    }
-                    if (show_seq_property_label){
-                        base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
-                    }
-                    x_PrintFeatures(alnRoInfo->bioseqFeature[row], row, curRange,
-                                    j,(int)actualLineLen,  base_margin,
-                                    alnRoInfo->maxStartLen, alnRoInfo->max_feature_num, 
+                if(row == 0){                        
+                    x_PrintFeatures(alnRoInfo, row, curRange,
+                                    j,(int)actualLineLen,  
                                     master_feat_str, out); 
                 }
 
@@ -1627,7 +1617,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     }
                 }
 
-                if(show_seq_property_label){
+                if(alnRoInfo->show_seq_property_label){
                     if (row > 0){
                         
                         out<<alnRoInfo->seq_property_label[row-1];
@@ -1638,7 +1628,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     }
                 } 
                 
-                if(show_align_stats){
+                if(alnRoInfo->show_align_stats){
                     if (row > 0){
                         out<<alnRoInfo->align_stats[row-1];
                         CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len -
@@ -1664,17 +1654,14 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                 //highlight the seqid for pairwise-with-identity format
                 if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch && 
-                   (m_AlignOption & eColorDifferentBases)){
-                    out<< "<font color = \""<<k_ColorRed<<"\"><b>";         
+                   (m_AlignOption & eColorDifferentBases)){                    
+                    //highlight the seqid for pairwise-with-identity format
+                    string alnStr = CAlignFormatUtil::MapTemplate(k_DefaultPairwiseWithIdntTempl,"alndata",alnRoInfo->seqidArray[row]);
+                    out<< alnStr;         
                 }
-                out<<alnRoInfo->seqidArray[row]; 
-               
-                //highlight the seqid for pairwise-with-identity format
-                if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
-                   && m_AlignOption&eShowIdentity && has_mismatch){
-                    out<< "</b></font>";         
-                } 
-               
+                else {
+                    out<<alnRoInfo->seqidArray[row]; 
+                }               
                 if(urlLink != NcbiEmptyString){
                     //mouse over seqid defline
                     if(m_AlignOption&eHtml &&
@@ -1735,10 +1722,10 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                 +alnRoInfo->maxStartLen
                                 +k_StartSequenceMargin;
                             
-                            if (show_align_stats) {
+                            if (alnRoInfo->show_align_stats) {
                                 base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
                             }
-                            if (show_seq_property_label){
+                            if (alnRoInfo->show_seq_property_label){
                                 base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
                             }
                             CAlignFormatUtil::AddSpace(out, base_margin);
@@ -1757,10 +1744,10 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                             +alnRoInfo->maxStartLen
                             +k_StartSequenceMargin;
                         
-                        if (show_align_stats) {
+                        if (alnRoInfo->show_align_stats) {
                             base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
                         }
-                        if (show_seq_property_label){
+                        if (alnRoInfo->show_seq_property_label){
                             base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
                         }
                         CAlignFormatUtil::AddSpace(out, base_margin);
@@ -1769,17 +1756,9 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     }
                 } 
                 //display subject sequence feature.
-                if(row > 0){ 
-                    int base_margin = alnRoInfo->maxIdLen;
-                    if (show_align_stats) {
-                        base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
-                    }
-                    if (show_seq_property_label){
-                        base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
-                    }
-                    x_PrintFeatures(alnRoInfo->bioseqFeature[row], row, curRange,
-                                    j,(int)actualLineLen, base_margin,
-                                    alnRoInfo->maxStartLen, alnRoInfo->max_feature_num, 
+                if(row > 0){                     
+                    x_PrintFeatures(alnRoInfo, row, curRange,
+                                    j,(int)actualLineLen,
                                     master_feat_str, out);
                 }
                 //display middle line
@@ -2514,27 +2493,30 @@ void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
         }
     } else {//now deal with font tag for mask for html display    
         bool endTag = false;
-        bool numFrontTag = 0;
+        bool frontTag = false;
+        string refStr;
+        string styledSqLocTmpl = CAlignFormatUtil::MapTemplate(k_DefaultMaskSeqLocTempl,"color",color[m_SeqLocColor]);
         for (int i = 0; i < (int)actualSeq.size(); i ++){
+            bool startStyledOutput = false,stopStyledOutput = false;
             for (list<CRange<int> >::iterator iter=actualSeqloc.begin(); 
                  iter!=actualSeqloc.end(); iter++){
                 int from = (*iter).GetFrom() - start;
                 int to = (*iter).GetTo() - start;
                 //start tag
-                if(from == i){
-                    out<<"<font color=\""+color[m_SeqLocColor]+"\">";
-                    numFrontTag = 1;
+                if(from == i){                 
+                    frontTag = true;
                 }
-                //need to close tag at the end of mask or end of sequence
-                if(to == i || i == (int)actualSeq.size() - 1 ){
+                if(to == i){
                     endTag = true;
-                }
+                }                
             }
-            out<<actualSeq[i];
-            if(endTag && numFrontTag == 1){
-                out<<"</font>";
+            startStyledOutput = frontTag;
+            stopStyledOutput = endTag && frontTag;            
+            bool isStyled = s_ProcessStyledContent(actualSeq,i,startStyledOutput,stopStyledOutput,styledSqLocTmpl ,refStr,out);
+            if(!isStyled) out<<actualSeq[i];
+            if(endTag && frontTag){             
                 endTag = false;
-                numFrontTag = 0;
+                frontTag = false;
             }
         }
     }
