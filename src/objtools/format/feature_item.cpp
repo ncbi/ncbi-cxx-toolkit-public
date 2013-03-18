@@ -5366,7 +5366,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     ff.SetQuals().reserve(m_Quals.Size());
     CFlatFeature::TQuals& qvec = ff.SetQuals();
 
-#define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
+#define DO_QUAL(x) x_FormatQual(eSQ_##x, GetStringOfSourceQual(eSQ_##x), qvec)
     DO_QUAL(organism);
 
     DO_QUAL(organelle);
@@ -5374,21 +5374,21 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(mol_type);
 
     DO_QUAL(strain);
-    x_FormatQual(eSQ_substrain, "sub_strain", qvec);
+    DO_QUAL(substrain);
     DO_QUAL(variety);
     DO_QUAL(serotype);
     DO_QUAL(serovar);
     DO_QUAL(cultivar);
     DO_QUAL(isolate);
     DO_QUAL(isolation_source);
-    x_FormatQual(eSQ_spec_or_nat_host, "host", qvec);
+    DO_QUAL(spec_or_nat_host);
     DO_QUAL(sub_species);
     DO_QUAL(specimen_voucher);
     DO_QUAL(culture_collection);
     DO_QUAL(bio_material);
 
     DO_QUAL(db_xref);
-    x_FormatQual(eSQ_org_xref, "db_xref", qvec);
+    DO_QUAL(org_xref);
 
     DO_QUAL(chromosome);
 
@@ -5396,7 +5396,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     DO_QUAL(map);
     DO_QUAL(clone);
-    x_FormatQual(eSQ_subclone, "sub_clone", qvec);
+    DO_QUAL(subclone);
     DO_QUAL(haplotype);
     DO_QUAL(haplogroup);
     DO_QUAL(sex);
@@ -5419,10 +5419,10 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(pop_variant);
     DO_QUAL(tissue_lib);
 
-    x_FormatQual(eSQ_plasmid_name, "plasmid", qvec);
-    x_FormatQual(eSQ_mobile_element, "mobile_element", qvec);
-    x_FormatQual(eSQ_transposon_name, "transposon", qvec);
-    x_FormatQual(eSQ_insertion_seq_name, "insertion_seq", qvec);
+    DO_QUAL(plasmid_name);
+    DO_QUAL(mobile_element);
+    DO_QUAL(transposon_name);
+    DO_QUAL(insertion_seq_name);
 
     DO_QUAL(country);
 
@@ -5456,7 +5456,7 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     _ASSERT(!GetContext()->Config().SrcQualsToNote());
     CFlatFeature::TQuals& qvec = ff.SetQuals();
 
-#define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
+#define DO_QUAL(x) x_FormatQual(eSQ_##x, GetStringOfSourceQual(eSQ_##x), qvec)
     DO_QUAL(metagenomic);
     DO_QUAL(linkage_group);
 
@@ -5491,13 +5491,13 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
 //    DO_QUAL(identified_by);
 //    DO_QUAL(pcr_primer);
     DO_QUAL(genotype);
-    x_FormatQual(eSQ_plastid_name, "plastid", qvec);
+    DO_QUAL(plastid_name);
     
-    x_FormatQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec);
+    DO_QUAL(endogenous_virus_name);
 
-    x_FormatQual(eSQ_zero_orgmod, "?", qvec);
-    x_FormatQual(eSQ_one_orgmod,  "?", qvec);
-    x_FormatQual(eSQ_zero_subsrc, "?", qvec);
+    DO_QUAL(zero_orgmod);
+    DO_QUAL(one_orgmod);
+    DO_QUAL(zero_subsrc);
 #undef DO_QUAL
 }
 

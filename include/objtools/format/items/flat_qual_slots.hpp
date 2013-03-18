@@ -35,7 +35,6 @@
 */
 #include <corelib/ncbistd.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -263,9 +262,16 @@ enum ESourceQualifier {
     eSQ_whole_replicon,
     eSQ_zero_orgmod,
     eSQ_one_orgmod,
-    eSQ_zero_subsrc
+    eSQ_zero_subsrc,
+
+    eSQ_NUM_SOURCE_QUALIFIERS,
 };
 
+/// Given a ESourceQualifier, this returns the qualifier name.
+/// Usually, it's the same as the enum name minus the "eSQ_" prefix, but not always.
+CTempString GetStringOfSourceQual(ESourceQualifier eSourceQualifier);
+
+// In the future, a similar GetStringOfFeatQual function may be added
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
