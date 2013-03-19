@@ -1259,9 +1259,8 @@ x_IsPcrLengthInRange(const CSeq_align& left_primer_hit_align,
             (m_PrimerInfo->left.GetLength() -1); 
     }
                 
-    if (product_len > (min((int)left_primer_hit_align.GetSeqRange(0).GetLength(),
-                           (int)right_primer_hit_align.GetSeqRange(0).GetLength()) - 
-                       k_Max_Overhang) && 
+    if (product_len >= min((int)left_primer_hit_align.GetSeqRange(0).GetLength(),
+                           (int)right_primer_hit_align.GetSeqRange(0).GetLength()) && 
         product_len <= (int)(m_SpecifiedProductLen + m_ProductLenMargin) && 
         (int)product_len >= (int)m_SpecifiedProductLen - (int)m_ProductLenMargin) { 
         result = true;
