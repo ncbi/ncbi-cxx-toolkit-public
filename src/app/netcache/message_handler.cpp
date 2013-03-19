@@ -52,6 +52,11 @@
 
 BEGIN_NCBI_SCOPE
 
+#if 0
+#define LOG_CURRENT_FUNCTION SRV_LOG(Warning, "this: " << (void*)this);
+#else
+#define LOG_CURRENT_FUNCTION
+#endif
 
 /// Definition of all NetCache commands
 /// 
@@ -1278,6 +1283,7 @@ CNCMessageHandler::CNCMessageHandler(void)
       m_SrvsIndex(0),
       m_ActiveHub(NULL)
 {
+    LOG_CURRENT_FUNCTION
     m_CopyBlobInfo = new SNCBlobVerData();
     m_LatestBlobSum = new SNCBlobSummary();
 
@@ -1289,6 +1295,7 @@ CNCMessageHandler::CNCMessageHandler(void)
 
 CNCMessageHandler::~CNCMessageHandler(void)
 {
+    LOG_CURRENT_FUNCTION
     delete m_LatestBlobSum;
     delete m_CopyBlobInfo;
 
@@ -1299,6 +1306,7 @@ CNCMessageHandler::~CNCMessageHandler(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_SocketOpened(void)
 {
+    LOG_CURRENT_FUNCTION
     m_PrevCache.clear();
     m_ClientParams.clear();
     m_CntCmds = 0;
@@ -1319,6 +1327,7 @@ CNCMessageHandler::x_SocketOpened(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_CloseCmdAndConn(void)
 {
+    LOG_CURRENT_FUNCTION
     if (GetDiagCtx()->GetRequestStatus() == eStatus_OK) {
         if (HasError()  ||  !CanHaveMoreRead())
             GetDiagCtx()->SetRequestStatus(eStatus_PrematureClose);
@@ -1337,6 +1346,7 @@ CNCMessageHandler::x_CloseCmdAndConn(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_SaveStatsAndClose(void)
 {
+    LOG_CURRENT_FUNCTION
     //CNCStat::AddClosedConnection(conn_span, GetDiagCtx()->GetRequestStatus(), m_CntCmds);
     CNCStat::ConnClosing(m_CntCmds);
     return &Me::x_PrintCmdsCntAndClose;
@@ -1345,6 +1355,7 @@ CNCMessageHandler::x_SaveStatsAndClose(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_PrintCmdsCntAndClose(void)
 {
+    LOG_CURRENT_FUNCTION
     CSrvDiagMsg().PrintExtra().PrintParam("cmds_cnt", m_CntCmds);
     CloseSocket();
     Terminate();
@@ -1354,6 +1365,7 @@ CNCMessageHandler::x_PrintCmdsCntAndClose(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_WriteInitWriteResponse(void)
 {
+    LOG_CURRENT_FUNCTION
 check_again:
     ENCClientHubStatus status = m_ActiveHub->GetStatus();
     if (status == eNCHubError) {
@@ -1387,6 +1399,7 @@ check_again:
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadAuthMessage(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedToClose()  ||  CTaskServer::IsInSoftShutdown()) {
         if (CTaskServer::IsInShutdown())
             GetDiagCtx()->SetRequestStatus(eStatus_ShuttingDown);
@@ -1443,6 +1456,7 @@ CNCMessageHandler::x_ReadAuthMessage(void)
 void
 CNCMessageHandler::x_AssignCmdParams(void)
 {
+    LOG_CURRENT_FUNCTION
     CTempString blob_key, blob_subkey;
     m_BlobVersion = 0;
     m_RawKey.clear();
@@ -1660,6 +1674,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
 void
 CNCMessageHandler::x_PrintRequestStart(CSrvDiagMsg& diag_msg)
 {
+    LOG_CURRENT_FUNCTION
     diag_msg.StartRequest();
     diag_msg.PrintParam("_type", "cmd");
     diag_msg.PrintParam("cmd", m_ParsedCmd.command->cmd);
@@ -1675,6 +1690,7 @@ CNCMessageHandler::x_PrintRequestStart(CSrvDiagMsg& diag_msg)
 CNCMessageHandler::State
 CNCMessageHandler::x_StartCommand(void)
 {
+    LOG_CURRENT_FUNCTION
     m_CmdStartTime = CSrvTime::Current();
     CNCStat::CmdStarted(m_ParsedCmd.command->cmd);
     CSrvDiagMsg diag_msg;
@@ -1841,6 +1857,7 @@ CNCMessageHandler::x_StartCommand(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadCommand(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedToClose()  ||  CTaskServer::IsInSoftShutdown()) {
         if (CTaskServer::IsInShutdown())
             GetDiagCtx()->SetRequestStatus(eStatus_ShuttingDown);
@@ -1887,6 +1904,7 @@ CNCMessageHandler::x_ReadCommand(void)
 void
 CNCMessageHandler::x_GetCurSlotServers(void)
 {
+    LOG_CURRENT_FUNCTION
     m_CheckSrvs = CNCDistributionConf::GetServersForSlot(m_BlobSlot);
     Uint4 main_srv_ip = 0;
     if (m_BlobKey[0] == '\1') {
@@ -1920,6 +1938,7 @@ CNCMessageHandler::x_GetCurSlotServers(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_WaitForBlobAccess(void)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsMetaInfoReady())
         return NULL;
     if (NeedEarlyClose())
@@ -1972,6 +1991,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReportBlobNotFound(void)
 {
+    LOG_CURRENT_FUNCTION
     x_SetFlag(fNoBlobAccessStats);
     x_UnsetFlag(fConfirmOnFinish);
     GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
@@ -1982,6 +2002,7 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
 void
 CNCMessageHandler::x_ProlongBlobDeadTime(int add_time)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_AppSetup->prolong_on_read)
         return;
 
@@ -2006,6 +2027,7 @@ CNCMessageHandler::x_ProlongBlobDeadTime(int add_time)
 void
 CNCMessageHandler::x_ProlongVersionLife(void)
 {
+    LOG_CURRENT_FUNCTION
     CSrvTime cur_srv_time = CSrvTime::Current();
     Uint8 cur_time = cur_srv_time.AsUSec();
     int new_expire = int(cur_srv_time.Sec()) + m_BlobAccess->GetCurBlobTTL();
@@ -2027,6 +2049,7 @@ CNCMessageHandler::x_ProlongVersionLife(void)
 void
 CNCMessageHandler::x_CleanCmdResources(void)
 {
+    LOG_CURRENT_FUNCTION
     int cmd_status = GetDiagCtx()->GetRequestStatus();
     bool print_size = false;
     Uint8 written_size = 0;
@@ -2102,6 +2125,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_FinishCommand(void)
 {
+    LOG_CURRENT_FUNCTION
     if (GetDiagCtx()->GetRequestStatus() == eStatus_PUT2Used)
         return &Me::x_CloseCmdAndConn;
 
@@ -2114,6 +2138,7 @@ CNCMessageHandler::x_FinishCommand(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_StartReadingBlob(void)
 {
+    LOG_CURRENT_FUNCTION
     // Flushing the initial response line that client should receive before it
     // will start writing blob data.
     Flush();
@@ -2126,6 +2151,7 @@ CNCMessageHandler::x_StartReadingBlob(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_FinishReadingBlob(void)
 {
+    LOG_CURRENT_FUNCTION
     if (x_IsFlagSet(fReadExactBlobSize)  &&  m_BlobSize != m_Size) {
         GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
         SRV_LOG(Error, "Too few data for blob size " << m_Size
@@ -2214,6 +2240,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_CloseOnPeerError(void)
 {
+    LOG_CURRENT_FUNCTION
     SRV_LOG(Warning, "Error executing command on peer: "
                      << m_ActiveHub->GetErrMsg());
     GetDiagCtx()->SetRequestStatus(eStatus_PeerError);
@@ -2223,6 +2250,7 @@ CNCMessageHandler::x_CloseOnPeerError(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadBlobSignature(void)
 {
+    LOG_CURRENT_FUNCTION
     Uint4 sig = 0;
     bool has_sig = ReadNumber(&sig);
     if (NeedEarlyClose())
@@ -2249,6 +2277,7 @@ CNCMessageHandler::x_ReadBlobSignature(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadBlobChunkLength(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_ActiveHub) {
         if (ProxyHadError()) {
             // If we were proxying blob data from client to another server and some
@@ -2334,6 +2363,7 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadBlobChunk(void)
 {
+    LOG_CURRENT_FUNCTION
     while (m_ChunkLen != 0) {
         Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
         if (m_BlobAccess->HasError()) {
@@ -2373,6 +2403,7 @@ CNCMessageHandler::x_ReadBlobChunk(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_WriteBlobData(void)
 {
+    LOG_CURRENT_FUNCTION
     while (m_Size != 0) {
         if (m_BlobAccess->GetPosition() == m_BlobAccess->GetCurBlobSize())
             return &Me::x_FinishCommand;
@@ -2406,6 +2437,7 @@ CNCMessageHandler::x_WriteBlobData(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_WriteSendBuff(void)
 {
+    LOG_CURRENT_FUNCTION
     while (m_SendPos != m_SendBuff->size()) {
         size_t n_written = Write(m_SendBuff->data() + m_SendPos,
                                  m_SendBuff->size() - m_SendPos);
@@ -2426,6 +2458,7 @@ CNCMessageHandler::x_WriteSendBuff(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_WriteSyncStartExtra(void)
 {
+    LOG_CURRENT_FUNCTION
     WriteText("PURGE:\n");
     WriteText(CNCBlobAccessor::GetPurgeData()). WriteText(";\n");
     return &Me::x_FinishCommand;
@@ -2434,6 +2467,7 @@ CNCMessageHandler::x_WriteSyncStartExtra(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ProxyToNextPeer(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
     if (m_SrvsIndex < m_CheckSrvs.size()) {
@@ -2461,6 +2495,7 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_SendCmdAsProxy(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
     if (m_ActiveHub->GetStatus() == eNCHubError) {
@@ -2525,6 +2560,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_WaitForPeerAnswer(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
     if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
@@ -2544,7 +2580,7 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
         abort();
 
     const string& err_msg = m_ActiveHub->GetErrMsg();
-    if (err_msg.empty())
+    if (!x_IsFlagSet(fConfirmOnFinish) || err_msg.empty())
         return &Me::x_FinishCommand;
 
     if (s_StatusForMsg.find(err_msg) != s_StatusForMsg.end()) {
@@ -2561,6 +2597,7 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadMetaNextPeer(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
     if (m_SrvsIndex >= m_CheckSrvs.size())
@@ -2576,6 +2613,7 @@ CNCMessageHandler::x_ReadMetaNextPeer(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_SendGetMetaCmd(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
     if (m_ActiveHub->GetStatus() == eNCHubError) {
@@ -2595,6 +2633,7 @@ CNCMessageHandler::x_SendGetMetaCmd(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadMetaResults(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
     ENCClientHubStatus status = m_ActiveHub->GetStatus();
@@ -2645,6 +2684,7 @@ meta_search_finished:
 CNCMessageHandler::State
 CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_BlobAccess->IsPurged(m_ClientParams["cache"])) {
         return &Me::x_ReportBlobNotFound;
     }
@@ -2671,6 +2711,7 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_PutToNextPeer(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_SrvsIndex >= m_CheckSrvs.size()  ||  NeedEarlyClose())
         return &Me::x_FinishCommand;
 
@@ -2684,6 +2725,7 @@ CNCMessageHandler::x_PutToNextPeer(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_SendPutToPeerCmd(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
     if (m_ActiveHub->GetStatus() == eNCHubError) {
@@ -2703,6 +2745,7 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadPutResults(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &Me::x_FinishCommand;
     if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
@@ -2726,6 +2769,7 @@ results_processed:
 CNCMessageHandler::State
 CNCMessageHandler::x_PurgeToNextPeer(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_SrvsIndex >= m_CheckSrvs.size()  ||  NeedEarlyClose())
         return &Me::x_FinishCommand;
 
@@ -2739,6 +2783,7 @@ CNCMessageHandler::x_PurgeToNextPeer(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_SendPurgeToPeerCmd(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
         return NULL;
     if (m_ActiveHub->GetStatus() == eNCHubError) {
@@ -2758,6 +2803,7 @@ CNCMessageHandler::x_SendPurgeToPeerCmd(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_ReadPurgeResults(void)
 {
+    LOG_CURRENT_FUNCTION
     if (NeedEarlyClose())
         return &Me::x_FinishCommand;
     if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
@@ -2777,12 +2823,14 @@ results_processed:
 inline unsigned int
 CNCMessageHandler::x_GetBlobTTL(void)
 {
+    LOG_CURRENT_FUNCTION
     return m_BlobTTL? m_BlobTTL: m_AppSetup->blob_ttl;
 }
 
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Health(void)
 {
+    LOG_CURRENT_FUNCTION
     const char* health_coeff = "1";
     if (CNCBlobStorage::NeedStopWrite())
         health_coeff = "0";
@@ -2817,6 +2865,7 @@ CNCMessageHandler::x_DoCmd_Health(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Shutdown(void)
 {
+    LOG_CURRENT_FUNCTION
     CTaskServer::RequestShutdown(eSrvSlowShutdown);
     return &Me::x_FinishCommand;
 }
@@ -2824,6 +2873,7 @@ CNCMessageHandler::x_DoCmd_Shutdown(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Version(void)
 {
+    LOG_CURRENT_FUNCTION
     WriteText("OK:").WriteText(NETCACHED_HUMAN_VERSION).WriteText("\n");
     return &Me::x_FinishCommand;
 }
@@ -2831,6 +2881,7 @@ CNCMessageHandler::x_DoCmd_Version(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetConfig(void)
 {
+    LOG_CURRENT_FUNCTION
     CNcbiOstrstream str;
     CTaskServer::GetConfRegistry().Write(str);
     string conf = CNcbiOstrstreamToString(str);
@@ -2841,6 +2892,7 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetStat(void)
 {
+    LOG_CURRENT_FUNCTION
     CSrvRef<CNCStat> stat = CNCStat::GetStat(m_StatType, m_StatPrev);
     if (!stat) {
         WriteText("ERR:Unknown statistics type\n");
@@ -2856,6 +2908,7 @@ CNCMessageHandler::x_DoCmd_GetStat(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Put(void)
 {
+    LOG_CURRENT_FUNCTION
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(0);
     m_BlobAccess->SetBlobVersion(0);
@@ -2866,6 +2919,7 @@ CNCMessageHandler::x_DoCmd_Put(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Get(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_AppSetup->prolong_on_read)
         x_ProlongBlobDeadTime(m_BlobAccess->GetCurBlobTTL());
 
@@ -2895,6 +2949,7 @@ CNCMessageHandler::x_DoCmd_Get(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetLast(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_AppSetup->prolong_on_read)
         x_ProlongBlobDeadTime(m_BlobAccess->GetCurBlobTTL());
 
@@ -2923,6 +2978,7 @@ CNCMessageHandler::x_DoCmd_GetLast(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SetValid(void)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired())
         return &Me::x_ReportBlobNotFound;
 
@@ -2940,6 +2996,7 @@ CNCMessageHandler::x_DoCmd_SetValid(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetSize(void)
 {
+    LOG_CURRENT_FUNCTION
     if (m_AppSetup->prolong_on_read)
         x_ProlongBlobDeadTime(m_BlobAccess->GetCurBlobTTL());
 
@@ -2952,6 +3009,7 @@ CNCMessageHandler::x_DoCmd_GetSize(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Prolong(void)
 {
+    LOG_CURRENT_FUNCTION
     bool ttl_overrun;
     if (m_BlobTTL <= m_BlobAccess->GetCurBlobTTL())
         ttl_overrun = false;
@@ -2977,6 +3035,7 @@ CNCMessageHandler::x_DoCmd_Prolong(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_HasBlob(void)
 {
+    LOG_CURRENT_FUNCTION
     bool exist = m_LatestExist  &&  m_LatestBlobSum->expire > CSrvTime::CurSecs();
     if (!exist)
         GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
@@ -2987,6 +3046,7 @@ CNCMessageHandler::x_DoCmd_HasBlob(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Remove(void)
 {
+    LOG_CURRENT_FUNCTION
     // We delete blob only from client point of view. From our POV we create
     // new blob version with expiration time one second in the past. This is
     // necessary for proper synchronization with other servers (if we delete
@@ -3012,6 +3072,7 @@ CNCMessageHandler::x_DoCmd_Remove(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_IC_Store(void)
 {
+    LOG_CURRENT_FUNCTION
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(m_AppSetup->ver_ttl);
     m_BlobAccess->SetBlobVersion(m_BlobVersion);
@@ -3024,6 +3085,7 @@ CNCMessageHandler::x_DoCmd_IC_Store(void)
 void
 CNCMessageHandler::x_WriteFullBlobsList(void)
 {
+    LOG_CURRENT_FUNCTION
     TNCBlobSumList blobs_list;
     CNCBlobStorage::GetFullBlobsList(m_Slot, blobs_list);
     m_SendBuff.reset(new TNCBufferType());
@@ -3059,6 +3121,7 @@ error_return:
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncStart(void)
 {
+    LOG_CURRENT_FUNCTION
     TReducedSyncEvents sync_events;
     ESyncInitiateResult sync_res = CNCPeriodicSync::Initiate(m_SrvId, m_Slot,
                                                 &m_LocalRecNo, &m_RemoteRecNo,
@@ -3127,6 +3190,7 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncBlobsList(void)
 {
+    LOG_CURRENT_FUNCTION
     CNCPeriodicSync::MarkCurSyncByBlobs(m_SrvId, m_Slot, m_SyncId);
     Uint8 rec_no = CNCSyncLog::GetCurrentRecNo(m_Slot);
     x_WriteFullBlobsList();
@@ -3144,6 +3208,7 @@ CNCMessageHandler::x_DoCmd_SyncBlobsList(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyPut(void)
 {
+    LOG_CURRENT_FUNCTION
     m_CopyBlobInfo->ttl = m_BlobTTL;
     m_CopyBlobInfo->password = m_BlobPass;
     m_CopyBlobInfo->blob_ver = m_BlobVersion;
@@ -3176,6 +3241,7 @@ CNCMessageHandler::x_DoCmd_CopyPut(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyProlong(void)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsBlobExists()) {
         x_SetFlag(fSyncCmdSuccessful);
         return &Me::x_ReportBlobNotFound;
@@ -3219,6 +3285,7 @@ CNCMessageHandler::x_DoCmd_CopyProlong(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncGet(void)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsBlobExists()) {
         x_SetFlag(fSyncCmdSuccessful);
         return &Me::x_ReportBlobNotFound;
@@ -3273,6 +3340,7 @@ CNCMessageHandler::x_DoCmd_SyncGet(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncProlongInfo(void)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsBlobExists()) {
         x_SetFlag(fSyncCmdSuccessful);
         return &Me::x_ReportBlobNotFound;
@@ -3293,6 +3361,7 @@ CNCMessageHandler::x_DoCmd_SyncProlongInfo(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncCommit(void)
 {
+    LOG_CURRENT_FUNCTION
     CNCPeriodicSync::Commit(m_SrvId, m_Slot, m_SyncId, m_LocalRecNo, m_RemoteRecNo);
     x_UnsetFlag(fRunsInStartedSync);
     return &Me::x_FinishCommand;
@@ -3301,6 +3370,7 @@ CNCMessageHandler::x_DoCmd_SyncCommit(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_SyncCancel(void)
 {
+    LOG_CURRENT_FUNCTION
     CNCPeriodicSync::Cancel(m_SrvId, m_Slot, m_SyncId);
     x_UnsetFlag(fRunsInStartedSync);
     return &Me::x_FinishCommand;
@@ -3309,6 +3379,7 @@ CNCMessageHandler::x_DoCmd_SyncCancel(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetMeta(void)
 {
+    LOG_CURRENT_FUNCTION
     m_SendBuff.reset(new TNCBufferType());
     m_SendBuff->reserve_mem(1024);
     string tmp;
@@ -3392,6 +3463,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_ProxyMeta(void)
 {
+    LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsBlobExists())
         return &Me::x_ReportBlobNotFound;
 
@@ -3464,6 +3536,7 @@ error_return:
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_NotImplemented(void)
 {
+    LOG_CURRENT_FUNCTION
     GetDiagCtx()->SetRequestStatus(eStatus_NoImpl);
     WriteText(s_MsgForStatus[eStatus_NoImpl]).WriteText("\n");
     return &Me::x_FinishCommand;
@@ -3472,6 +3545,7 @@ CNCMessageHandler::x_DoCmd_NotImplemented(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Purge(void)
 {
+    LOG_CURRENT_FUNCTION
     if (CNCBlobAccessor::Purge( m_ClientParams["cache"], m_CmdStartTime.AsUSec())) {
         CNCBlobStorage::SavePurgeData();
     }
@@ -3482,6 +3556,7 @@ CNCMessageHandler::x_DoCmd_Purge(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyPurge(void)
 {
+    LOG_CURRENT_FUNCTION
     if (CNCBlobAccessor::Purge( m_ClientParams["cache"], m_CopyBlobInfo->create_time)) {
         CNCBlobStorage::SavePurgeData();
     }
