@@ -2182,14 +2182,8 @@ string GetLinkedIdsForMember(const SChainMember& mi) {
     return note;
 }
 
-bool LongCdsOrGoodSupport(const CGeneModel& chain, const SMinScor& minscor, 
+bool GoodSupportForIntrons(const CGeneModel& chain, const SMinScor& minscor, 
                                    map<TSignedSeqRange,int>& mrna_count, map<TSignedSeqRange,int>& est_count, map<TSignedSeqRange,int>& rnaseq_count) {
-    if((chain.Type()&CGeneModel::eProt) || (chain.ReadingFrame().NotEmpty() && chain.RealCdsLen() >= minscor.m_minlen))
-        return true;
-
-    if(chain.ReadingFrame().NotEmpty() && chain.Exons().size() == 1)
-        return false;
-
     bool good = true;
     for(int i = 1; i < (int)chain.Exons().size() && good; ++i) {
         if(chain.Exons()[i-1].m_ssplice && chain.Exons()[i].m_fsplice) {
@@ -2206,7 +2200,7 @@ void MarkUnwantedLowSupportIntrons(vector<SChainMember*>& pointers, const SMinSc
                                    map<TSignedSeqRange,int>& mrna_count, map<TSignedSeqRange,int>& est_count, map<TSignedSeqRange,int>& rnaseq_count) {
 
     NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) 
-        (*i)->m_marked_for_deletion = !LongCdsOrGoodSupport(*(*i)->m_align, minscor, mrna_count, est_count, rnaseq_count); 
+        (*i)->m_marked_for_deletion = !GoodSupportForIntrons(*(*i)->m_align, minscor, mrna_count, est_count, rnaseq_count); 
 }
 
 TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
@@ -2359,7 +2353,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         //        if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
         if(chain.GetCdsInfo().ProtReadingFrame().Empty())
             RemovePoorCds(chain,ms);
-        if(chain.Score() != BadScore() && LongCdsOrGoodSupport(chain, minscor, mrna_count, est_count, rnaseq_count)) {
+        if(chain.Score() != BadScore() && (chain.GetCdsInfo().ProtReadingFrame().NotEmpty() || chain.RealCdsLen() >= minscor.m_minlen)) {
             mi.MarkIncludedForChain();
 
             m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
