@@ -42,6 +42,7 @@
 #include <objects/pub/Pub_.hpp>
 
 #include <objects/biblio/citation_base.hpp>
+#include <objects/biblio/Title.hpp>
 
 // generated classes
 
@@ -84,6 +85,21 @@ public:
     bool IsSetAuthors(void) const;
     const CAuth_list& GetAuthors(void) const;
 
+    typedef CConstRef<CTitle::C_E> TOneTitleRef;
+    typedef vector<TOneTitleRef> TOneTitleRefVec;
+
+    /// This gets the titles on the CPub.
+    /// @param out_titles
+    ///   Each title found will be appended to this.
+    ///   Titles of plain strings will be given as 
+    ///   type CTitle::C_E::e_Name, and complex titles will be
+    ///   a const reference to the title inside the CPub, so they
+    ///   might change if the CPub is changed.
+    /// @param iMaxToGet
+    ///   The maximum number of titles to append to out_title
+    void GetTitles(
+        TOneTitleRefVec & out_title,
+        size_t iMaxToGet = std::numeric_limits<std::size_t>::max() ) const;
 
 protected:
   
@@ -91,6 +107,14 @@ protected:
     // Prohibit copy constructor and assignment operator
     CPub(const CPub& value);
     CPub& operator=(const CPub& value);
+
+    static TOneTitleRef xs_GetTitleFromPlainString(const string & sTitle);
+
+    // append CTitle::C_E objects from in_title to out_title,
+    // (Don't append more than iMaxToGet objects)
+    static void xs_AppendTitles( TOneTitleRefVec & out_title,
+        size_t iMaxToGet, 
+        const CTitle & in_title );
 
 };
 
