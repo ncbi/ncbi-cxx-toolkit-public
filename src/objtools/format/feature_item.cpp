@@ -3793,9 +3793,9 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     const CFlatFileConfig& cfg = GetContext()->Config();
     CFlatFeature::TQuals qvec;
 
-#define DO_NOTE(x) x_FormatNoteQual(eFQ_##x, #x, qvec)
-#define DO_NOTE_PREPEND_NEWLINE(x) x_FormatNoteQual(eFQ_##x, #x, qvec, IFlatQVal::fPrependNewline )
-    x_FormatNoteQual(eFQ_transcript_id_note, "tscpt_id_note", qvec);
+#define DO_NOTE(x) x_FormatNoteQual(eFQ_##x, GetStringOfFeatQual(eFQ_##x), qvec)
+#define DO_NOTE_PREPEND_NEWLINE(x) x_FormatNoteQual(eFQ_##x, GetStringOfFeatQual(eFQ_##x), qvec, IFlatQVal::fPrependNewline )
+    DO_NOTE(transcript_id_note);
     DO_NOTE(gene_desc);
 
     if ( cfg.CodonRecognizedToNote() ) {
@@ -3822,8 +3822,6 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 //     DO_NOTE(cdd_definition);
 //    DO_NOTE(tag_peptide);
     DO_NOTE_PREPEND_NEWLINE(exception_note);
-#undef DO_NOTE
-#undef DO_NOTE_PREPEND_NEWLINE
 
     string notestr;
     string suffix = kEmptyStr;
@@ -3834,18 +3832,21 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
     if (GetContext()->Config().GoQualsToNote()) {
         qvec.clear();
-        x_FormatNoteQual(eFQ_go_component, "GO_component", qvec);
-        x_FormatNoteQual(eFQ_go_function, "GO_function", qvec);
-        x_FormatNoteQual(eFQ_go_process, "GO_process", qvec);
+        DO_NOTE(go_component);
+        DO_NOTE(go_function);
+        DO_NOTE(go_process);
         s_QualVectorToNote(qvec, false, notestr, suffix, add_period);
     }
     s_NoteFinalize(add_period, notestr, ff, eTilde_tilde);
+
+#undef DO_NOTE
+#undef DO_NOTE_PREPEND_NEWLINE
 }
 
 
 void CFeatureItem::x_FormatQual
 (EFeatureQualifier slot,
- const char* name,
+ const string & name,
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
@@ -3860,7 +3861,7 @@ void CFeatureItem::x_FormatQual
 
 void CFeatureItem::x_FormatNoteQual
 (EFeatureQualifier slot,
- const char* name, 
+ const string & name, 
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
@@ -3878,7 +3879,7 @@ void CFeatureItem::x_FormatNoteQual
 // values concatenated.
 void CFeatureItem::x_FormatGOQualCombined
 (EFeatureQualifier slot, 
- const char* name,
+ const string & name,
  CFlatFeature::TQuals& qvec, 
  TQualFlags flags) const
 {
@@ -5000,50 +5001,7 @@ void CSourceFeatureItem::x_AddQuals(CBioseqContext& ctx)
 
 static ESourceQualifier s_OrgModToSlot(const COrgMod& om)
 {
-    switch ( om.GetSubtype() ) {
-#define CASE_ORGMOD(x) case COrgMod::eSubtype_##x:  return eSQ_##x;
-        CASE_ORGMOD(strain);
-        CASE_ORGMOD(substrain);
-        CASE_ORGMOD(type);
-        CASE_ORGMOD(subtype);
-        CASE_ORGMOD(variety);
-        CASE_ORGMOD(serotype);
-        CASE_ORGMOD(serogroup);
-        CASE_ORGMOD(serovar);
-        CASE_ORGMOD(cultivar);
-        CASE_ORGMOD(pathovar);
-        CASE_ORGMOD(chemovar);
-        CASE_ORGMOD(biovar);
-        CASE_ORGMOD(biotype);
-        CASE_ORGMOD(group);
-        CASE_ORGMOD(subgroup);
-        CASE_ORGMOD(isolate);
-        CASE_ORGMOD(common);
-        CASE_ORGMOD(acronym);
-        CASE_ORGMOD(dosage);
-    case COrgMod::eSubtype_nat_host:  return eSQ_spec_or_nat_host;
-        CASE_ORGMOD(sub_species);
-        CASE_ORGMOD(specimen_voucher);
-        CASE_ORGMOD(authority);
-        CASE_ORGMOD(forma);
-        CASE_ORGMOD(forma_specialis);
-        CASE_ORGMOD(ecotype);
-        CASE_ORGMOD(culture_collection);
-        CASE_ORGMOD(bio_material);
-        CASE_ORGMOD(synonym);
-        CASE_ORGMOD(anamorph);
-        CASE_ORGMOD(teleomorph);
-        CASE_ORGMOD(breed);
-        CASE_ORGMOD(gb_acronym);
-        CASE_ORGMOD(gb_anamorph);
-        CASE_ORGMOD(gb_synonym);
-        CASE_ORGMOD(metagenome_source);
-        CASE_ORGMOD(old_lineage);
-        CASE_ORGMOD(old_name);
-#undef CASE_ORGMOD
-    case COrgMod::eSubtype_other:  return eSQ_orgmod_note;
-    default:                       return eSQ_none;
-    }
+    return GetSourceQualOfOrgMod( static_cast<COrgMod::ESubtype>(om.GetSubtype()) );
 }
 
 static string s_GetSpecimenVoucherText(
@@ -5243,56 +5201,8 @@ void CSourceFeatureItem::x_AddPcrPrimersQuals(const CBioSource& src, CBioseqCont
 
 static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
 {
-    switch (ss.GetSubtype()) {
-#define DO_SS(x) case CSubSource::eSubtype_##x:  return eSQ_##x;
-        DO_SS(chromosome);
-        DO_SS(map);
-        DO_SS(clone);
-        DO_SS(subclone);
-        DO_SS(haplotype);
-        DO_SS(genotype);
-        DO_SS(sex);
-        DO_SS(cell_line);
-        DO_SS(cell_type);
-        DO_SS(tissue_type);
-        DO_SS(clone_lib);
-        DO_SS(dev_stage);
-        DO_SS(frequency);
-        DO_SS(germline);
-        DO_SS(rearranged);
-        DO_SS(lab_host);
-        DO_SS(pop_variant);
-        DO_SS(tissue_lib);
-        DO_SS(plasmid_name);
-        DO_SS(transposon_name);
-        DO_SS(insertion_seq_name);
-        DO_SS(plastid_name);
-        DO_SS(country);
-        DO_SS(segment);
-        DO_SS(endogenous_virus_name);
-        DO_SS(transgenic);
-        DO_SS(environmental_sample);
-        DO_SS(isolation_source);
-        DO_SS(lat_lon);
-        DO_SS(altitude);
-        DO_SS(collection_date);
-        DO_SS(collected_by);
-        DO_SS(identified_by);
-        DO_SS(fwd_primer_seq);
-        DO_SS(rev_primer_seq);
-        DO_SS(fwd_primer_name);
-        DO_SS(rev_primer_name);
-        DO_SS(metagenomic);
-        DO_SS(mating_type);
-        DO_SS(linkage_group);
-        DO_SS(haplogroup);
-        DO_SS(whole_replicon);
-#undef DO_SS
-    case CSubSource::eSubtype_other:  return eSQ_subsource_note;
-    default:                          return eSQ_none;
-    }
+    return GetSourceQualOfSubSource( static_cast<CSubSource::ESubtype>(ss.GetSubtype()) );
 }
-
 
 void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) const
 {

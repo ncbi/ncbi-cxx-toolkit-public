@@ -34,12 +34,19 @@
 *
 */
 #include <corelib/ncbistd.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // super set of feature qualifiers defined by the consortium and genbank
 // specific qualifiers.
+// (The first qualifier must have value 0 and
+// the rest must increment by one, with the last one 
+// being eFQ_NUM_SOURCE_QUALIFIERS.  This makes
+// it easy for other places to iterate through all
+// possible EFeatureQualifier's.)
 enum EFeatureQualifier {
     eFQ_none,
     eFQ_allele,
@@ -155,7 +162,10 @@ enum EFeatureQualifier {
     eFQ_trna_codons,
     eFQ_UniProtKB_evidence,
     eFQ_usedin,
-    eFQ_xtra_prod_quals
+    eFQ_xtra_prod_quals,
+
+    // This must be last
+    eFQ_NUM_SOURCE_QUALIFIERS
 };
 
 // The first qualifier must have value 0 and
@@ -269,14 +279,31 @@ enum ESourceQualifier {
     eSQ_one_orgmod,
     eSQ_zero_subsrc,
 
+    // This must be last
     eSQ_NUM_SOURCE_QUALIFIERS,
 };
 
+/// Given a EFeatureQualifier, this returns the qualifier name.
+/// Usually, it's the same as the enum name minus the "eFQ_" prefix, but not always.
+/// @return
+///   The string correspondnig to the given eFeatureQualifier, or "UNKNOWN_FEAT_QUAL" on error
+CTempString GetStringOfFeatQual(EFeatureQualifier eFeatureQualifier);
+
 /// Given a ESourceQualifier, this returns the qualifier name.
 /// Usually, it's the same as the enum name minus the "eSQ_" prefix, but not always.
+/// @return
+///   The string correspondnig to the given eSourceQualifier, or "UNKNOWN_SOURCE_QUAL" on error
 CTempString GetStringOfSourceQual(ESourceQualifier eSourceQualifier);
 
-// In the future, a similar GetStringOfFeatQual function may be added
+/// Translate an org-mod subtype into a sourcequalifier
+/// @return
+///   The equivalent ESourceQualifier, or eSQ_none on error.
+ESourceQualifier GetSourceQualOfOrgMod(COrgMod::ESubtype eOrgModSubtype);
+
+/// Translate a subsource subtype into a sourcequalifier
+/// @return
+///   The equivalent ESourceQualifier, or eSQ_none on error.
+ESourceQualifier GetSourceQualOfSubSource(CSubSource::ESubtype eSubSourceSubtype);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
