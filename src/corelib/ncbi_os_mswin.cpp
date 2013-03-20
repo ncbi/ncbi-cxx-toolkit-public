@@ -36,6 +36,10 @@
 #include "ncbi_os_mswin_p.hpp"
 
 
+// According to MSDN max account name size is 20, domain name size is 256
+#define MAX_ACCOUNT_LEN  256
+
+
 // Hopefully this makes UID/GID compatible with what CYGWIN reports
 #define CYGWIN_MAGIC_ID_OFFSET  10000
 
@@ -45,13 +49,14 @@ BEGIN_NCBI_SCOPE
 
 string CWinSecurity::GetUserName(void)
 {
-    TXChar  name[UNLEN + 1];
-    DWORD name_size = UNLEN + 1;
+    TXChar name[UNLEN + 1];
+    DWORD  name_size = sizeof(name) / sizeof(name[0]) - 1;
 
     if ( !::GetUserName(name, &name_size) ) {
         CNcbiError::SetFromWindowsError();
         return kEmptyStr;
     }
+    name[name_size] = _TX('\0');
     return _T_STDSTRING(name);
 }
 
@@ -168,19 +173,15 @@ static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
 // NB:  *domatch is reset to 0 if the account type has no domain match.
 static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
 {
-    // According to MSDN max account name size is 20, domain name size is 256.
-    #define MAX_ACCOUNT_LEN  256
-
-    TXChar       account_name[MAX_ACCOUNT_LEN + 1];
-    TXChar       domain_name [MAX_ACCOUNT_LEN + 1];
-    DWORD        account_size = sizeof(account_name) / sizeof(account_name[0]);
-    DWORD        domain_size  = sizeof(domain_name)  / sizeof(domain_name[0]);
+    TXChar       account_name[MAX_ACCOUNT_LEN + 2];
+    TXChar       domain_name [MAX_ACCOUNT_LEN + 2];
+    DWORD        account_size = sizeof(account_name)/sizeof(account_name[0])-1;
+    DWORD        domain_size  = sizeof(domain_name)/sizeof(domain_name[0])-1;
     SID_NAME_USE use;
 
     if ( !LookupAccountSid(NULL, sid,
-                           account_name, &account_size,
-                           domain_name,  &domain_size,
-                           &use) ) {
+                                     account_name,       &account_size,
+                           domatch ? domain_name : NULL, &domain_size, &use) ){
         CNcbiError::SetFromWindowsError();
         return false;
     }
@@ -194,7 +195,8 @@ static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
         string domain(_T_STDSTRING(domain_name));
         if (*domatch != int(use)  ||  domain.empty()
             ||  NStr::EqualNocase(domain, "builtin")
-            ||  NStr::FindNoCase(domain, " ") != NPOS) {
+            ||  NStr::FindNoCase(domain, " ") != NPOS
+            /*||  x_DomainIsLocalComputer(domain_name)*/) {
             *domatch = 0;
         }
     }
