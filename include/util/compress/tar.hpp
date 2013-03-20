@@ -163,7 +163,7 @@ public:
         eCharDev     = CDirEntry::eCharSpecial,  ///< Character device
         eBlockDev    = CDirEntry::eBlockSpecial, ///< Block device
         eUnknown     = CDirEntry::eUnknown,      ///< Unknown type
-        eHardLink    = CDirEntry::eHardLink,     ///< Hard link
+        eHardLink,                               ///< Hard link
         ePAXHeader,                              ///< PAX extended header
         eSparseFile,                             ///< GNU/STAR sparse file 
         eGNULongName,                            ///< GNU long name
