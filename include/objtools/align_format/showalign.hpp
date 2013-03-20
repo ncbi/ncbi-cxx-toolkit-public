@@ -522,6 +522,9 @@ protected:
         bool show_align_stats;
         bool show_seq_property_label;
         
+        int currPrintSegment;
+        int currActualLineLen;
+        objects::CAlnMap::TSignedRange currRange;
     };
 
     
@@ -862,10 +865,7 @@ protected:
     ///@param out: the out stream
     ///
     void x_PrintFeatures(SAlnRowInfo *alnRoInfo,
-                         int row, 
-                         objects::CAlnMap::TSignedRange alignment_range,
-                         int aln_start,
-                         int line_length,                          
+                         int row,                          
                          string& master_feat_str,
                          CNcbiOstream& out);
 
@@ -959,6 +959,11 @@ protected:
                                      vector<string>& sequence) const; 
 
     static int x_GetGiForSeqIdList(const list< CRef<objects::CSeq_id> >& ids);
+    void x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);
+    void x_DisplaySequenceIDForPairwise(SAlnRowInfo *alnRoInfo, int row, bool has_mismatch, CNcbiOstrstream &out);
+    void x_DisplayInsertsForQueryAnchored(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);
+    void x_DisplaySequenceLine(SAlnRowInfo *alnRoInfo, int row, int prev_stop,CNcbiOstrstream &out);
+    void x_DisplayMiddLine(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);
 };
 
 
