@@ -141,6 +141,22 @@ extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 
 
+typedef enum {
+    eArch_Unknown
+} ENcbiArch;
+
+
+typedef enum {
+    fOS_Unknown,
+    fOS_IRIX    = 8,
+    fOS_Solaris = 16,
+    fOS_BSD     = 32,
+    fOS_Darwin  = 33,
+    fOS_Windows = 64,
+    fOS_Linux   = 128
+} ENcbiOSType;
+
+
 /** Host parameters */
 typedef struct {
     unsigned int       arch;    /**< Architecture ID, 0=unknown              */
