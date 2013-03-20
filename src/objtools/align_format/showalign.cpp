@@ -975,14 +975,14 @@ static void s_OutputFeature(string& reference_feat_line,
 
 
 void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
-                                       int row, 
-                                       CAlnMap::TSignedRange alignment_range,
-                                       int aln_start,
-                                       int line_length,                                        
+                                       int row,                                                          
                                        string& master_feat_str,
                                        CNcbiOstream& out)
 {
     TSAlnFeatureInfoList& feature = alnRoInfo->bioseqFeature[row];
+    CAlnMap::TSignedRange alignment_range = alnRoInfo->currRange;
+    int aln_start = alnRoInfo->currPrintSegment;
+    int line_length = alnRoInfo->currActualLineLen;    
     int start_length = alnRoInfo->maxStartLen;
     int id_length = alnRoInfo->maxIdLen;
     int max_feature_num = alnRoInfo->max_feature_num;
@@ -1522,6 +1522,9 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
             actualLineLen=m_LineLen;
         }
         CAlnMap::TSignedRange curRange(j, j+(int)actualLineLen-1);
+        alnRoInfo->currPrintSegment = j;
+        alnRoInfo->currActualLineLen = actualLineLen;
+        alnRoInfo->currRange = curRange;
         //here is each row
         for (int row=0; row<rowNum; row++) {
             bool hasSequence = true;   
@@ -1530,82 +1533,11 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
             }
             //only output rows that have sequence
             if (hasSequence){
-                int start = alnRoInfo->seqStarts[row].front() + 1;  //+1 for 1 based
-                int end = alnRoInfo->seqStops[row].front() + 1;
-                list<string> inserts;
-                string insertPosString;  //the one with "\" to indicate insert
-                if(m_AlignOption & eMasterAnchored){
-                    TSInsertInformationList insertList;
-                    x_GetInserts(insertList, alnRoInfo->insertAlnStart[row], 
-                                 alnRoInfo->insertStart[row], alnRoInfo->insertLength[row],  
-                                 j + (int)m_LineLen);
-                    x_FillInserts(row, curRange, j, inserts, insertPosString, 
-                                  insertList);
-                }
-                //feature for query
-                if(row == 0){                        
-                    x_PrintFeatures(alnRoInfo, row, curRange,
-                                    j,(int)actualLineLen,  
-                                    master_feat_str, out); 
-                }
-
-                string urlLink = NcbiEmptyString;
-                //setup url link for seqid
-                int gi = 0;
-                if(m_AlignOption & eHtml){                    
-                    if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
-                        gi = m_AV->GetSeqId(row).GetGi();
-                    }
-                    if(!(gi > 0)){
-                        gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
-                                                 GetBioseqCore()->GetId());
-                    }
-                    if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
-                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
-                        if (m_ResultPositionIndex >= 0){
-                            if(gi > 0){
-                                out<<"<a name=#_"<<m_ResultPositionIndex<<"_"<<gi<<"></a>";
-                            } else {
-                                out<<"<a name=#_"<<m_ResultPositionIndex<<"_" <<alnRoInfo->seqidArray[row]<<"></a>";
-                            }
-                        } else {
-                            if(gi > 0){
-                                out<<"<a name="<<gi<<"></a>";
-                            } else {
-                                out<<"<a name="<<alnRoInfo->seqidArray[row]<<"></a>";
-                            }
-                        }
-                    }					
-                    //get sequence checkbox
-                    if((m_AlignOption & eMergeAlign) && 
-                        (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
-                        char checkboxBuf[512];
-                        if (row == 0) {
-                            sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
-                                    m_QueryNumber); 
-                        } else {
-                            sprintf(checkboxBuf, k_Checkbox.c_str(), gi > 0 ?
-                                    NStr::IntToString(gi).c_str() :
-                                    alnRoInfo->seqidArray[row].c_str(), m_QueryNumber);
-                        }
-                        out << checkboxBuf;        
-                    }
-                    else if(m_AlignOption & eShowCheckBox) {                        
-                        const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
-                        string id_str = CAlignFormatUtil::GetLabel(seqID);
-                        if(seqID->IsLocal()) {
-                            id_str = "lcl|" + id_str;            
-                        }        
-                        char checkboxBuf[512];                        
-                        sprintf(checkboxBuf, k_CheckboxEx.c_str(), id_str.c_str());
-                        out << checkboxBuf;        
-                    }                    
-                   
-                }
-                
+                //int start = alnRoInfo->seqStarts[row].front() + 1;  //+1 for 1 based
+                int end = alnRoInfo->seqStops[row].front() + 1;                
                 bool has_mismatch = false;
-                //change the alignment line to identity style
-                if (row>0 && m_AlignOption & eShowIdentity){
+                //change the alignment line to identity style                
+                if (row>0 && m_AlignOption & eShowIdentity){//check usage - pairwise - only
                     for (int index = j; index < j + (int)actualLineLen && 
                              index < (int)alnRoInfo->sequence[row].size(); index ++){
                         if (alnRoInfo->sequence[row][index] == alnRoInfo->sequence[0][index] &&
@@ -1616,161 +1548,29 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                         }        
                     }
                 }
-
-                if(alnRoInfo->show_seq_property_label){
-                    if (row > 0){
-                        
-                        out<<alnRoInfo->seq_property_label[row-1];
-                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_seq_property_label -
-                                                   (int)alnRoInfo->seq_property_label[row-1].size() + k_SequencePropertyLabelMargin);
-                    } else {
-                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin);
-                    }
-                } 
-                
-                if(alnRoInfo->show_align_stats){
-                    if (row > 0){
-                        out<<alnRoInfo->align_stats[row-1];
-                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len -
-                                                   (int)alnRoInfo->align_stats[row-1].size() + k_AlignStatsMargin);
-                    } else {
-                        CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len + k_AlignStatsMargin);
-                    }
+                //feature for query
+                if(row == 0){                        
+                    x_PrintFeatures(alnRoInfo, row, master_feat_str, out); 
                 }
-                if(m_AlignOption & eHtml){       
-                    if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
-                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
-                        
-                        int linkout = m_LinkoutDB 
-                            ?
-                            m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
-                            : 0;
-                        
-                        m_cur_align = row;
-                        urlLink = x_GetUrl(m_AV->GetBioseqHandle(row),gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row]);
-                        out << urlLink;            
-                    }        
-                }
-                //highlight the seqid for pairwise-with-identity format
-                if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
-                   && m_AlignOption&eShowIdentity && has_mismatch && 
-                   (m_AlignOption & eColorDifferentBases)){                    
-                    //highlight the seqid for pairwise-with-identity format
-                    string alnStr = CAlignFormatUtil::MapTemplate(k_DefaultPairwiseWithIdntTempl,"alndata",alnRoInfo->seqidArray[row]);
-                    out<< alnStr;         
+                if(m_AlignOption & eMergeAlign) {
+                    x_DisplaySequenceIDForQueryAnchored(alnRoInfo,row,out);
                 }
                 else {
-                    out<<alnRoInfo->seqidArray[row]; 
-                }               
-                if(urlLink != NcbiEmptyString){
-                    //mouse over seqid defline
-                    if(m_AlignOption&eHtml &&
-                       m_AlignOption&eShowInfoOnMouseOverSeqid) {
-                        out << "<span>" <<
-                            CDeflineGenerator().GenerateDefline(m_AV->GetBioseqHandle(row)) << "</span>";
-                    }
-                    out<<"</a>";   
+                    x_DisplaySequenceIDForPairwise(alnRoInfo,row,has_mismatch,out);
                 }
-                
                 //print out sequence line
-                //adjust space between id and start
-                CAlignFormatUtil::AddSpace(out, 
-                                           alnRoInfo->maxIdLen-alnRoInfo->seqidArray[row].size()+
-                                           k_IdStartMargin);
-                //not to display start and stop number for empty row
-                if ((j > 0 && end == prev_stop[row]) 
-                    || (j == 0 && start == 1 && end == 1)) {
-                    startLen = 0;
-                } else {
-                    out << start;
-                    startLen=NStr::IntToString(start).size();
-                }
-
-                CAlignFormatUtil::AddSpace(out, alnRoInfo->maxStartLen-startLen+
-                                           k_StartSequenceMargin);
-                x_OutputSeq(alnRoInfo->sequence[row], m_AV->GetSeqId(row), j, 
-                            (int)actualLineLen, alnRoInfo->frame[row], row,
-                            (row > 0 && alnRoInfo->colorMismatch)?true:false,  
-                            alnRoInfo->masked_regions[row], out);
-                CAlignFormatUtil::AddSpace(out, k_SeqStopMargin);
-
-                 //not to display stop number for empty row in the middle
-                if (!(j > 0 && end == prev_stop[row])
-                    && !(j == 0 && start == 1 && end == 1)) {
-                    out << end;
-                }
-                
-                out<<"\n";
-                if(m_AlignOption & eMasterAnchored){//inserts for anchored view
-                    bool insertAlready = false;
-                    for(list<string>::iterator iter = inserts.begin(); 
-                        iter != inserts.end(); iter ++){   
-                        if(!insertAlready){
-                            if((m_AlignOption&eHtml)
-                               &&(m_AlignOption&eMergeAlign) 
-                               && (m_AlignOption&eSequenceRetrieval 
-                                   && m_CanRetrieveSeq)){
-                                char checkboxBuf[200];
-                                sprintf(checkboxBuf, 
-                                        k_UncheckabeCheckbox.c_str(),
-                                        m_QueryNumber);
-                                out << checkboxBuf;
-                            }
-                            
-                            int base_margin = alnRoInfo->maxIdLen
-                                +k_IdStartMargin
-                                +alnRoInfo->maxStartLen
-                                +k_StartSequenceMargin;
-                            
-                            if (alnRoInfo->show_align_stats) {
-                                base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
-                            }
-                            if (alnRoInfo->show_seq_property_label){
-                                base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
-                            }
-                            CAlignFormatUtil::AddSpace(out, base_margin);
-                            out << insertPosString<<"\n";
-                        }
-                        if((m_AlignOption&eHtml)
-                           &&(m_AlignOption&eMergeAlign) 
-                           && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
-                            char checkboxBuf[200];
-                            sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
-                                    m_QueryNumber);
-                            out << checkboxBuf;
-                        }
-                        int base_margin = alnRoInfo->maxIdLen
-                            +k_IdStartMargin
-                            +alnRoInfo->maxStartLen
-                            +k_StartSequenceMargin;
-                        
-                        if (alnRoInfo->show_align_stats) {
-                            base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
-                        }
-                        if (alnRoInfo->show_seq_property_label){
-                            base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
-                        }
-                        CAlignFormatUtil::AddSpace(out, base_margin);
-                        out<<*iter<<"\n";
-                        insertAlready = true;
-                    }
-                } 
+                x_DisplaySequenceLine(alnRoInfo, row, prev_stop[row], out);
+                if(m_AlignOption & eMasterAnchored){
+                    //inserts for anchored view
+                    x_DisplayInsertsForQueryAnchored(alnRoInfo,row,out);
+                }                
                 //display subject sequence feature.
                 if(row > 0){                     
-                    x_PrintFeatures(alnRoInfo, row, curRange,
-                                    j,(int)actualLineLen,
-                                    master_feat_str, out);
+                    x_PrintFeatures(alnRoInfo, row, master_feat_str, out);
                 }
-                //display middle line
-                if (row == 0 && ((m_AlignOption & eShowMiddleLine)) 
-                    && !(m_AlignOption&eMergeAlign)) {
-                    CSeq_id no_id;
-                    CAlignFormatUtil::
-                        AddSpace(out, alnRoInfo->maxIdLen + k_IdStartMargin
-                                 + alnRoInfo->maxStartLen + k_StartSequenceMargin);
-                    x_OutputSeq(alnRoInfo->middleLine, no_id, j, (int)actualLineLen, 0,
-                                row, false, alnRoInfo->masked_regions[row], out);
-                    out<<"\n";
+                //display middle line for pairwise
+                if (row == 0 && ((m_AlignOption & eShowMiddleLine)) && !(m_AlignOption&eMergeAlign)) {
+                    x_DisplayMiddLine(alnRoInfo, row,out);                    
                 }
                 prev_stop[row] = end; 
             }
@@ -1785,6 +1585,218 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
     }//end of displaying rows    
     string formattedString = CNcbiOstrstreamToString(out);    
     return formattedString;
+}
+
+void CDisplaySeqalign::x_DisplaySequenceLine(SAlnRowInfo *alnRoInfo, int row, int prev_stop, CNcbiOstrstream &out)
+{
+    size_t startLen=0;
+    int start = alnRoInfo->seqStarts[row].front() + 1;  //+1 for 1 based
+    int end = alnRoInfo->seqStops[row].front() + 1;
+    int j = alnRoInfo->currPrintSegment;
+    int actualLineLen = alnRoInfo->currActualLineLen;    
+    //print out sequence line
+    //adjust space between id and start
+    CAlignFormatUtil::AddSpace(out, alnRoInfo->maxIdLen-alnRoInfo->seqidArray[row].size() + k_IdStartMargin);
+    //not to display start and stop number for empty row
+    if ((j > 0 && end == prev_stop) 
+        || (j == 0 && start == 1 && end == 1)) {
+        startLen = 0;
+    } else {
+        out << start;
+        startLen=NStr::IntToString(start).size();
+    }
+
+    CAlignFormatUtil::AddSpace(out, alnRoInfo->maxStartLen-startLen + k_StartSequenceMargin);
+    x_OutputSeq(alnRoInfo->sequence[row], m_AV->GetSeqId(row), j, 
+                (int)actualLineLen, alnRoInfo->frame[row], row,
+                (row > 0 && alnRoInfo->colorMismatch)?true:false,  
+                alnRoInfo->masked_regions[row], out);
+    CAlignFormatUtil::AddSpace(out, k_SeqStopMargin);
+
+     //not to display stop number for empty row in the middle
+    if (!(j > 0 && end == prev_stop)
+        && !(j == 0 && start == 1 && end == 1)) {
+        out << end;
+    }    
+    out<<"\n";                              
+}
+
+void CDisplaySeqalign::x_DisplayInsertsForQueryAnchored(SAlnRowInfo *alnRoInfo, int row,CNcbiOstrstream &out)
+{
+    list<string> inserts;
+    string insertPosString;  //the one with "\" to indicate insert    
+    TSInsertInformationList insertList;
+    int j = alnRoInfo->currPrintSegment;
+    CAlnMap::TSignedRange curRange = alnRoInfo->currRange;    
+    x_GetInserts(insertList, alnRoInfo->insertAlnStart[row], 
+                                 alnRoInfo->insertStart[row], alnRoInfo->insertLength[row],  
+                                 j + (int)m_LineLen);
+    x_FillInserts(row, curRange, j, inserts, insertPosString, insertList);    
+    bool insertAlready = false;
+    for(list<string>::iterator iter = inserts.begin(); 
+        iter != inserts.end(); iter ++){   
+        if(!insertAlready){
+            if((m_AlignOption&eHtml) &&(m_AlignOption&eMergeAlign) 
+                    && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
+                char checkboxBuf[200];
+                sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),m_QueryNumber);
+                out << checkboxBuf;
+            }
+            
+            int base_margin = alnRoInfo->maxIdLen + k_IdStartMargin + alnRoInfo->maxStartLen + k_StartSequenceMargin;
+
+            if (alnRoInfo->show_align_stats) {
+                base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+            }
+            if (alnRoInfo->show_seq_property_label){
+                base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+            }
+            CAlignFormatUtil::AddSpace(out, base_margin);
+            out << insertPosString<<"\n";
+        }
+        if((m_AlignOption&eHtml) &&(m_AlignOption&eMergeAlign) && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
+            char checkboxBuf[200];
+            sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),m_QueryNumber);
+            out << checkboxBuf;
+        }
+        int base_margin = alnRoInfo->maxIdLen + k_IdStartMargin + alnRoInfo->maxStartLen + k_StartSequenceMargin;
+                        
+        if (alnRoInfo->show_align_stats) {
+            base_margin += alnRoInfo->max_align_stats_len + k_AlignStatsMargin;
+        }
+        if (alnRoInfo->show_seq_property_label){
+            base_margin += alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin;
+        }
+        CAlignFormatUtil::AddSpace(out, base_margin);
+        out<<*iter<<"\n";
+        insertAlready = true;
+    }
+}
+
+void CDisplaySeqalign::x_DisplaySequenceIDForPairwise(SAlnRowInfo *alnRoInfo, int row, bool has_mismatch, CNcbiOstrstream &out)
+{
+    //highlight the seqid for pairwise-with-identity format
+    if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
+            && m_AlignOption&eShowIdentity && has_mismatch && 
+            (m_AlignOption & eColorDifferentBases)){                    
+        //highlight the seqid for pairwise-with-identity format
+        string alnStr = CAlignFormatUtil::MapTemplate(k_DefaultPairwiseWithIdntTempl,"alndata",alnRoInfo->seqidArray[row]);
+        out<< alnStr;         
+     }
+     else {
+        out<<alnRoInfo->seqidArray[row]; 
+     }                                    
+}
+
+void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out)
+{
+    string urlLink = NcbiEmptyString;
+    //setup url link for seqid
+    int gi = 0;
+    if(m_AlignOption & eHtml){                    
+        if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
+            gi = m_AV->GetSeqId(row).GetGi();
+        }
+        if(!(gi > 0)){
+            gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
+                                     GetBioseqCore()->GetId());
+        }
+        if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
+                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
+            if (m_ResultPositionIndex >= 0){
+                if(gi > 0){
+                    out<<"<a name=#_"<<m_ResultPositionIndex<<"_"<<gi<<"></a>";
+                } else {
+                    out<<"<a name=#_"<<m_ResultPositionIndex<<"_" <<alnRoInfo->seqidArray[row]<<"></a>";
+                }
+            } else {
+                if(gi > 0){
+                    out<<"<a name="<<gi<<"></a>";
+                } else {
+                    out<<"<a name="<<alnRoInfo->seqidArray[row]<<"></a>";
+                }
+           }
+        }					
+        //get sequence checkbox
+        if((m_AlignOption & eMergeAlign) && 
+                        (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
+            char checkboxBuf[512];
+            if (row == 0) {
+                sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(), m_QueryNumber); 
+            } else {
+                sprintf(checkboxBuf, k_Checkbox.c_str(), gi > 0 ?
+                                    NStr::IntToString(gi).c_str() :
+                                    alnRoInfo->seqidArray[row].c_str(), m_QueryNumber);
+            }
+            out << checkboxBuf;        
+        }
+        else if(m_AlignOption & eShowCheckBox) {                        
+            const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
+            string id_str = CAlignFormatUtil::GetLabel(seqID);
+            if(seqID->IsLocal()) {
+                id_str = "lcl|" + id_str;            
+            }        
+            char checkboxBuf[512];
+            sprintf(checkboxBuf, k_CheckboxEx.c_str(), id_str.c_str());
+            out << checkboxBuf;        
+        }      
+    }
+               
+    if(alnRoInfo->show_seq_property_label){
+        if (row > 0){
+       
+            out<<alnRoInfo->seq_property_label[row-1];
+            CAlignFormatUtil::AddSpace(out, alnRoInfo->max_seq_property_label -
+                                       (int)alnRoInfo->seq_property_label[row-1].size() + k_SequencePropertyLabelMargin);
+        } else {
+            CAlignFormatUtil::AddSpace(out, alnRoInfo->max_seq_property_label + k_SequencePropertyLabelMargin);
+        }
+    } 
+    
+    if(alnRoInfo->show_align_stats){
+        if (row > 0){
+            out<<alnRoInfo->align_stats[row-1];
+            CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len -
+                           (int)alnRoInfo->align_stats[row-1].size() + k_AlignStatsMargin);
+        } else {
+            CAlignFormatUtil::AddSpace(out, alnRoInfo->max_align_stats_len + k_AlignStatsMargin);
+        }
+    }
+    if(m_AlignOption & eHtml){       
+        if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
+           (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
+            
+            int linkout = m_LinkoutDB 
+                ?
+                m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
+                : 0;
+            
+            m_cur_align = row;
+            urlLink = x_GetUrl(m_AV->GetBioseqHandle(row),gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row]);
+            out << urlLink;            
+        }        
+    }    
+    
+    out<<alnRoInfo->seqidArray[row]; 
+                   
+    if(urlLink != NcbiEmptyString){
+        //mouse over seqid defline
+        if(m_AlignOption&eHtml &&
+           m_AlignOption&eShowInfoOnMouseOverSeqid) {
+            out << "<span>" <<
+                CDeflineGenerator().GenerateDefline(m_AV->GetBioseqHandle(row)) << "</span>";
+        }
+        out<<"</a>";   
+    }    
+}
+void CDisplaySeqalign::x_DisplayMiddLine(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out)
+{
+    int j = alnRoInfo->currPrintSegment;
+    int actualLineLen = alnRoInfo->currActualLineLen;
+    CSeq_id no_id;
+    CAlignFormatUtil:: AddSpace(out, alnRoInfo->maxIdLen + k_IdStartMargin + alnRoInfo->maxStartLen + k_StartSequenceMargin);
+    x_OutputSeq(alnRoInfo->middleLine, no_id, j, (int)actualLineLen, 0, row, false, alnRoInfo->masked_regions[row], out);
+    out<<"\n";
 }
 
 void CDisplaySeqalign::x_PrepareIdentityInfo(SAlnInfo* aln_vec_info)
