@@ -260,9 +260,18 @@ const CSeq_id* CBioseq::GetFirstId() const
     return *GetId().begin();
 }
 
+static int s_BestNonLocalRank(const CRef<CSeq_id>& id)
+{
+    if (id.Empty()  ||  id->IsLocal()) {
+        return kMax_Int;
+    } else {
+        return id->BestRankScore();
+    }
+}
+
 const CSeq_id* CBioseq::GetNonLocalId() const
 {
-    CRef<CSeq_id> id = FindBestChoice(GetId(), &CSeq_id::BestRank);
+    CRef<CSeq_id> id = FindBestChoice(GetId(), &s_BestNonLocalRank);
     if (id.NotEmpty()  &&  !id->IsLocal()) {
         return &*id;
     }
