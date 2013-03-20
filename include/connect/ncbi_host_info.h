@@ -144,8 +144,19 @@ int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 typedef enum {
     eArch_Unknown
 } ENcbiArch;
+typedef unsigned short TNcbiArch;
 
 
+typedef enum {
+    fCapacity_Unknown/* = 0 */,
+    fCapacity_32     /* = 1 */, /**< 32 bits only                            */
+    fCapacity_64     /* = 2 */, /**< 64 bits, but 32-bit backward compatible */
+    fCapacity_32_64  /* = 2|1*/ /**< 32 bits, but 64-bit forward compatible  */
+} ENcbiCapacity;
+typedef unsigned short TNcbiCapacity;
+
+
+/*NB: High bit determines the OS family */
 typedef enum {
     fOS_Unknown,
     fOS_IRIX    = 8,
@@ -155,18 +166,19 @@ typedef enum {
     fOS_Windows = 64,
     fOS_Linux   = 128
 } ENcbiOSType;
+typedef unsigned short TNcbiOSType;
 
 
 /** Host parameters */
 typedef struct {
-    unsigned int       arch;    /**< Architecture ID, 0=unknown              */
-    unsigned int       ostype;  /**< OS type ID,      0=unknown              */
+    TNcbiArch          arch;    /**< Architecture ID, 0=unknown              */
+    TNcbiCapacity      bits;    /**< Platform bitness, 32/64/32+64/0=unknown */
+    TNcbiOSType        ostype;  /**< OS type ID,      0=unknown              */
     struct {
         unsigned short major;
         unsigned short minor;
         unsigned short patch;
     } kernel;                   /**< Kernel/OS version #, if available       */
-    unsigned short     bits;    /**< Platform bitness, 32/64/0=unknown       */
     size_t             pgsize;  /**< Hardware page size in bytes, if known   */
     TNCBI_Time         bootup;  /**< System boot time, time_t-compatible     */
     TNCBI_Time         startup; /**< LBSMD start time, time_t-compatible     */
