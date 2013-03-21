@@ -50,22 +50,29 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_entry_CI::CSeq_entry_CI(const CSeq_entry_Handle& entry,
-                             ERecursionMode           recursive,
-                             CSeq_entry::E_Choice     type_filter)
-    : m_Recursive(recursive),
+                             TFlags flags,
+                             CSeq_entry::E_Choice     type_filter )
+    : m_Flags(flags),
       m_Filter(type_filter)
 {
-    if ( entry.IsSet() ) {
-        x_Initialize(entry.GetSet());
+    if ( m_Flags & fIncludeGivenEntry ) {
+        m_Current = entry;
+        while ((*this)  &&  !x_ValidType()) {
+            x_Next();
+        }
+    } else {
+        if ( entry.IsSet() ) {
+            x_Initialize( entry.GetSet() );
+        }
     }
 }
 
 
 CSeq_entry_CI::CSeq_entry_CI(const CBioseq_set_Handle& seqset,
-                             ERecursionMode            recursive,
-                             CSeq_entry::E_Choice      type_filter)
-    : m_Recursive(recursive),
-      m_Filter(type_filter)
+                             TFlags flags,
+                             CSeq_entry::E_Choice      type_filter )
+    : m_Flags(flags),
+      m_Filter(type_filter)      
 {
     x_Initialize(seqset);
 }
@@ -83,7 +90,7 @@ CSeq_entry_CI& CSeq_entry_CI::operator =(const CSeq_entry_CI& iter)
         m_Parent = iter.m_Parent;
         m_Iterator = iter.m_Iterator;
         m_Current = iter.m_Current;
-        m_Recursive = iter.m_Recursive;
+        m_Flags    = iter.m_Flags;
         m_Filter = iter.m_Filter;
         if ( iter.m_SubIt.get() ) {
             m_SubIt.reset(new CSeq_entry_CI(*iter.m_SubIt));
@@ -149,7 +156,7 @@ void CSeq_entry_CI::x_Next(void)
         return;
     }
 
-    if (m_Recursive == eRecursive) {
+    if ( m_Flags & (fRecursive|fIncludeGivenEntry) ) {
         if ( m_SubIt.get() ) {
             // Already inside sub-entry - try to move forward.
             ++(*m_SubIt);
@@ -161,7 +168,10 @@ void CSeq_entry_CI::x_Next(void)
         }
         else if ( m_Current.IsSet() ) {
             // Current entry is a seq-set, iterate sub-entries.
-            m_SubIt.reset(new CSeq_entry_CI(m_Current, m_Recursive, m_Filter));
+            m_SubIt.reset(new CSeq_entry_CI(
+                m_Current, 
+                (m_Flags & ~fIncludeGivenEntry), // some flags don't get passed down recursively
+                m_Filter ));
             if ( *m_SubIt ) {
                 return;
             }
@@ -170,14 +180,26 @@ void CSeq_entry_CI::x_Next(void)
         }
     }
 
-    ++m_Iterator;
+    // m_Parent is really just a check to see if m_Iterator is valid,
+    // otherwise incrementing is undefined
+    if( m_Parent ) {
+        ++m_Iterator;
+    }
     x_SetCurrentEntry();
 }
 
 
 int CSeq_entry_CI::GetDepth(void) const
 {
-    return m_SubIt.get() ? m_SubIt->GetDepth() + 1 : 0;
+    if( m_SubIt.get() ) {
+        return (m_SubIt->GetDepth() + 1);
+    } else if( ! m_Parent && ! m_SubIt.get() && m_Current ) {
+        _ASSERT( m_Flags & fIncludeGivenEntry );
+        // we're on the given entry
+        return 0;
+    } else {
+        return ( (m_Flags & fIncludeGivenEntry) ? 1 : 0 );
+    }
 }
 
 

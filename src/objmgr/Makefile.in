@@ -3,7 +3,7 @@
 REQUIRES = objects
 
 LIB_PROJ = objmgr
-SUB_PROJ = test util split
+SUB_PROJ = test util split unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

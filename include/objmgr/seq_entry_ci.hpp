@@ -66,11 +66,25 @@ class CSeq_entry_I;
 class NCBI_XOBJMGR_EXPORT CSeq_entry_CI
 {
 public:
-    /// Recursion mode
-    enum ERecursionMode {
-        eNonRecursive, ///< Iterate single level
-        eRecursive     ///< Iterate recursively
+
+    /// Flags that affect iteration.  Flags that are irrelevant are ignored.
+    /// For example, passing fIncludeGivenEntry into the constructor that 
+    /// takes a CBioseq_set_Handle is ignored because there is no 
+    /// "given entry" because only a CBioseq_set_Handle has been given.
+    enum EFlags {
+        fRecursive         = (1 << 0), ///< Iterate recursively
+        fIncludeGivenEntry = (1 << 1), ///< Include the top (given) entry
+
+        // backward compatibility synonyms
+        eNonRecursive = 0, ///< Deprecated @deprecated No need to use.
+        eRecursive    = fRecursive ///< Deprecated @deprecated Use fRecursive instead.
     };
+    typedef int TFlags; ///< bitwise OR of "EFlags"
+
+    /// backward compatibility synonym
+    /// @deprecated
+    ///   Use EFlags instead.
+    typedef EFlags ERecursionMode;
 
     /// Create an empty iterator
     CSeq_entry_CI(void);
@@ -78,13 +92,13 @@ public:
     /// Create an iterator that enumerates Seq-entries
     /// inside the given Seq-entry.
     CSeq_entry_CI(const CSeq_entry_Handle& entry,
-                  ERecursionMode           recursive = eNonRecursive,
+                  TFlags flags = 0,
                   CSeq_entry::E_Choice     type_filter = CSeq_entry::e_not_set);
 
     /// Create an iterator that enumerates Seq-entries
     /// inside the given Bioseq-set.
     CSeq_entry_CI(const CBioseq_set_Handle& set,
-                  ERecursionMode            recursive = eNonRecursive,
+                  TFlags flags = 0,
                   CSeq_entry::E_Choice      type_filter = CSeq_entry::e_not_set);
 
     CSeq_entry_CI(const CSeq_entry_CI& iter);
@@ -105,7 +119,12 @@ public:
     const CBioseq_set_Handle& GetParentBioseq_set(void) const;
 
     /// Return current depth relative to the initial seq-entry, 0-based.
-    /// In non-recursive mode always returns 0.
+    /// If the given entry is included, then all depths are increased by
+    /// by 1 so that the given entry will have a depth of 0 rather than
+    /// allowing negative depths.
+    /// In non-recursive mode always returns 0 if given entry is not included,
+    /// otherwise it returns 0 for the given entry and 1 for all the others.
+    /// @sa fIncludeGivenEntry
     int GetDepth(void) const;
 
 private:
@@ -125,7 +144,7 @@ private:
     CBioseq_set_Handle      m_Parent;
     TIterator               m_Iterator;
     CSeq_entry_Handle       m_Current;
-    ERecursionMode          m_Recursive;
+    TFlags                  m_Flags;
     CSeq_entry::E_Choice    m_Filter;
     auto_ptr<CSeq_entry_CI> m_SubIt;
 };
@@ -214,7 +233,7 @@ private:
 
 inline
 CSeq_entry_CI::CSeq_entry_CI(void)
-    : m_Recursive(eNonRecursive),
+    : m_Flags(0),
       m_Filter(CSeq_entry::e_not_set)
 {
 }
