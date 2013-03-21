@@ -449,7 +449,8 @@ private:
                                      int& align_length,
                                      TSeqPos master_local_start,
                                      TSeqPos master_local_stop,
-                                     ENa_strand hit_strand);
+                                     ENa_strand hit_strand,
+                                     bool& nw_align_modified);
 
   
     ///the requested pcr length for non-specific template
