@@ -3,7 +3,7 @@
 # Meta-makefile (tests for object manager)
 #################################
 
-APP_PROJ = unit_test_seq_entry_ci
+EXPENDABLE_APP_PROJ = unit_test_seq_entry_ci
 PROJ_TAG = test
 SUB_PROJ =
 
