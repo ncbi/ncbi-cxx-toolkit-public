@@ -46,6 +46,7 @@
 #include <connect/ncbi_types.h>
 
 #include <util/distribution.hpp>
+#include <util/random_gen.hpp>
 
 #include "test_netschedule_data.hpp"
 

@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <util/distribution.hpp>
+#include <util/random_gen.hpp>
 
 #include <connect/services/grid_worker_app.hpp>
 
