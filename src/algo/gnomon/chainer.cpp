@@ -2370,6 +2370,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 #ifdef _DEBUG 
             chain.AddComment("Link1 "+GetLinkedIdsForMember(mi));
 #endif    
+
             tmp_chains.push_back(chain);
 
             _ASSERT( chain.FShiftedLen(chain.GetCdsInfo().Start()+chain.ReadingFrame()+chain.GetCdsInfo().Stop(), false)%3==0 );
@@ -2461,18 +2462,14 @@ struct AlignSeqOrder
     }
 };
 
-void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, vector<SChainMember*>& pointers) {
+void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, vector<SChainMember*>& pointers_all) {
 
-    sort(pointers.begin(),pointers.end(),LeftOrderD());
+    sort(pointers_all.begin(),pointers_all.end(),LeftOrderD());
 
     typedef map<Int8, vector<CGeneModel*> > TIdChainMembermap;
     TIdChainMembermap protein_parts;
-    TIVec right_ends(pointers.size());
-    vector<SChainMember> no_gap_members(pointers.size());   // helper chain members; will be used for gap filling optimisation
-    for(int k = 0; k < (int)pointers.size(); ++k) {
-        SChainMember& mi = *pointers[k];
-        right_ends[k] = mi.m_align->Limits().GetTo();
-        no_gap_members[k] = mi;
+    for(int k = 0; k < (int)pointers_all.size(); ++k) {
+        SChainMember& mi = *pointers_all[k];
         if((mi.m_align->Type() & CGeneModel::eProt) && (mi.m_copy == 0 || mi.m_cds_info->HasStart())) {  // only prots with start can have copies
             protein_parts[mi.m_align->ID()].push_back(mi.m_align);
         }
@@ -2515,9 +2512,26 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                 break;
             }
         }
+
         if(connected)
             continue;
 
+        vector<SChainMember*> pointers;
+        for(int k = 0; k < (int)pointers_all.size(); ++k) {
+            SChainMember* mip = pointers_all[k];
+            if((mip->m_type != eCDS || !Include(mip->m_cds_info->MaxCdsLimits(),mip->m_align->Limits())) && Include(palign.Limits(),mip->m_align->Limits()))  // skip all not entirely coding inside protein alignment
+                continue;
+
+            pointers.push_back(mip);
+        }
+            
+        TIVec right_ends(pointers.size());
+        vector<SChainMember> no_gap_members(pointers.size());   // temporary helper chain members; will be used for gap filling optimisation
+        for(int k = 0; k < (int)pointers.size(); ++k) {
+            SChainMember& mi = *pointers[k];
+            right_ends[k] = mi.m_align->Limits().GetTo();
+            no_gap_members[k] = mi;
+        }
 
         SChainMember* best_right = 0;
 
@@ -2543,14 +2557,14 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
             }
         }
 
+        int fully_connected_right = 0;     // rightmost point already connected to all parts
+
         for(int i = first_member; i <= last_member; ++i) {
             SChainMember& mi = *pointers[i];                   // best connection maybe gapped
             SChainMember& mi_no_gap = no_gap_members[i];       // best not gapped connection (if any)
             CGeneModel& ai = *mi.m_align;
             LRIinit(mi);
             LRIinit(mi_no_gap);
-            TContained micontained = mi.CollectContainedForMemeber();
-            sort(micontained.begin(),micontained.end(),LeftOrderD());
 
             if(ai.Strand() != palign.Strand())
                 continue;
@@ -2561,6 +2575,12 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
             if(part_to_connect >=0 && ai.Limits().GetFrom() < parts[part_to_connect]->Limits().GetTo() && !parts[part_to_connect]->isCompatible(ai))  // overlaps with part but not compatible
                 continue;
+
+            if(fully_connected_right > 0 && ai.Limits().GetFrom() > fully_connected_right)    // can't possibly be connected
+                continue;
+               
+            TContained micontained = mi.CollectContainedForMemeber();
+            sort(micontained.begin(),micontained.end(),LeftOrderD());
 
             bool compatible_with_included_parts = true;
             int last_included_part = -1;
@@ -2594,6 +2614,8 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
             if(!compatible_with_included_parts)
                 continue;
 
+            _ASSERT(part_to_connect < 0 || part_to_connect == (int)parts.size()-1 || mi.m_type == eCDS);   // coding if between parts
+
             if(includes_first_part) {
                 mi.m_fully_connected_to_part = last_included_part;
                 mi_no_gap.m_fully_connected_to_part = last_included_part;
@@ -2606,14 +2628,13 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
             for(int j = jfirst; j < i; ++j) {
                 SChainMember& mj = *pointers[j];                   // best connection maybe gapped
-                SChainMember& mj_no_gap = no_gap_members[j];       // best not gapped connection (if any)
+                if(part_to_connect >= 0 && mj.m_fully_connected_to_part < part_to_connect)   // alignmnet is not connected to all previous parts
+                    continue;
                 CGeneModel& aj = *mj.m_align;
-
                 if( ai.Strand() != aj.Strand())
                     continue;
 
-                if(part_to_connect >= 0 && mj.m_fully_connected_to_part < part_to_connect)   // alignmnet is not connected to all previous parts
-                    continue;
+                SChainMember& mj_no_gap = no_gap_members[j];       // best not gapped connection (if any)
 
                 if(ai.Limits().GetFrom() > aj.Limits().GetTo() && part_to_connect >= 0 && part_to_connect < (int)parts.size()-1 &&       // gap is not closed
                    mj_no_gap.m_fully_connected_to_part == part_to_connect &&                                                             // no additional gap
@@ -2633,7 +2654,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                         mi.m_gapped_connection = true;
                         mi.m_fully_connected_to_part = part_to_connect;
                     }
-                } else {
+                } else if(ai.Limits().IntersectingWith(aj.Limits())) {
                     int delta_cds;
                     double delta_num;
                     if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, micontained)) {      // i and j connected continuosly
@@ -2668,12 +2689,23 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
             }
 
             if(mi.m_fully_connected_to_part == (int)parts.size()-1) {   // includes all parts
+                fully_connected_right = max(fully_connected_right,mi.m_align->Limits().GetTo());
+
                 if(best_right == 0 || (mi.m_left_cds >  best_right->m_left_cds || (mi.m_left_cds ==  best_right->m_left_cds && mi.m_left_num >  best_right->m_left_num)) ) 
                     best_right = &mi;
             }
         }
 
         _ASSERT(best_right != 0);
+
+        _ASSERT(best_right < &no_gap_members.front() || best_right > &no_gap_members.back());   // don't point to temporary vector
+        for (SChainMember* mp = best_right; mp != 0; mp = mp->m_left_member) {
+            if(mp->m_left_member >= &no_gap_members.front() && mp->m_left_member <= &no_gap_members.back()) { // points to temporary vector
+                SChainMember* p = pointers[mp->m_left_member-&no_gap_members.front()];
+                *p = *mp->m_left_member;
+                mp->m_left_member = p;
+            }
+        }
 
         CChain chain(*best_right,&palign);
         m_gnomon->GetScore(chain);
