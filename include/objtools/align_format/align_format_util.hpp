@@ -154,6 +154,16 @@ static const string kMapviwerDispl =  "<div><@lnk@>-<span class=\"rlLink\">align
 static const string kMapviewBlastHitUrl = "http://www.ncbi.nlm.nih.gov/mapview/maps.cgi?maps=blast_set";
 static const string kMapviewBlastHitParams = "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
+
+///Repr microbial Genome linkout
+// .ncbirc alias: REPR_MICROBIAL_GENOMES
+static const char kReprMicrobialGenomesUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/genome?term=<@gi@>[gi]&RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+//substitues <@lnk_displ@>
+static const char kReprMicrobialGenomesImg[] = "<img border=0 height=16 width=16 src=\"images/L.gif\" alt=\"View genome information for <@label@>\">";
+//For text link <@lnk@> is substituted by formatted url
+static const string kReprMicrobialGenomesDispl =  "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>";
+
+
 ///dumpgnl
 static const char kDownloadUrl[] = "/blast/dumpgnl.cgi";
 static const char kDownloadLink[] = "<a href=\"<@download_url@>&segs=<@segs@>\"><@lnk_displ@></a>";
@@ -180,7 +190,7 @@ static const char kEntrezSubseqTMUrl[] = "http://www.ncbi.nlm.nih.gov/<@db@>/<@g
 
 ///Default linkout order 
 //.ncbirc alias: LINKOUT_ORDER
-static const char kLinkoutOrderStr[] = "G,U,M,E,S,B"; 
+static const char kLinkoutOrderStr[] = "G,U,M,E,S,B,R"; 
 
 ///Bl2seq ************fix this and test titles Irena
 // .ncbirc alias: BL2SEQ
@@ -267,6 +277,7 @@ static const TTagUrl s_TagUrls [] = {
   { "GETSEQ_SUB_FRM_1",  k_GetSeqSubmitForm_1 },
   { "MAPVIEWER",  kMapviwerUrl },
   { "MAP_SEARCH_CGI",  kMapSearchCgi },
+  { "REPR_MICROBIAL_GENOMES",  kReprMicrobialGenomesUrl},  
   { "STRUCTURE_OVW",  kStructure_Overview },
   { "STRUCTURE_URL",  kStructureUrl },
   { "TRACE",  kTraceUrl },
