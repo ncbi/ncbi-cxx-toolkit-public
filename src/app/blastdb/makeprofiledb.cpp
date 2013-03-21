@@ -818,6 +818,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
     i.SetLambda() = o.GetLambda();
     i.SetKappa() = o.GetKappa();
     i.SetH() = o.GetH();
+    i.SetScalingFactor(m_RpsDbInfo.scale_factor);
 
     return;
 }
@@ -1309,6 +1310,12 @@ int CMakeProfileDBApp::Run(void)
 				if( pssm.GetFinalData().GetScalingFactor() != m_RpsDbInfo.scale_factor)
 					NCBI_THROW(CBlastException, eCoreBlastError, "Scaling factors do not match");
 			}
+                        else
+                        {
+                               // If scaling factor not specified, the default is 1
+                               if( 1 != m_RpsDbInfo.scale_factor)
+					NCBI_THROW(CBlastException, eCoreBlastError, "Scaling factors do not match");
+                        }
 
 		}
 
