@@ -215,7 +215,7 @@ public:
         m_AllowedSeqidIndex = allowed_seqid_index;
     }
 
-    ///The maximal number of non-specific primers to return.  
+    ///The maximal number of non-specific targets to return.  
     ///Default is 20 if not specified
     ///@param number: the number
     ///
