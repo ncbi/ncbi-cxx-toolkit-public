@@ -202,11 +202,6 @@ void CPub::GetTitles(
         return;
     }
 
-    // the user might pass in a non-empty out_title, so we have
-    // to check its size ahead of time to know how 
-    // many we've added
-    const size_t old_size_of_out_title = out_title.size();
-
     switch( Which() ) {
     case CPub::e_not_set:
     case CPub::e_Medline:
