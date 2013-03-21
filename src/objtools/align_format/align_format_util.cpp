@@ -2113,6 +2113,22 @@ static list<string> s_GetLinkoutUrl(int linkout,
         }
         linkout_list.push_back(url_link);        
     }
+    if(linkout & eReprMicrobialGenomes){
+        url_link = CAlignFormatUtil::GetURLFromRegistry("REPR_MICROBIAL_GENOMES");                        
+        lnk_displ = textLink ? "Genome" : kReprMicrobialGenomesImg;            
+        if(!disableLink) {            
+            lnkTitleInfo = "genomic information";
+            //gilist contains comma separated gis            
+            url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
+        }
+        else {
+            url_link = s_MapDisabledLink(lnk_displ);
+        }        
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kReprMicrobialGenomesDispl,"lnk",url_link);
+        }
+        linkout_list.push_back(url_link);        
+    }
     return linkout_list;
 }
 
@@ -2176,7 +2192,10 @@ static int s_LinkLetterToType(string linkLetter)
     }
     else if(linkLetter == "B") {
         linkType = eBioAssay;
-    }         
+    }
+    else if(linkLetter == "R") {
+        linkType = eReprMicrobialGenomes;
+    }             
     return linkType;
 }
 
@@ -2235,6 +2254,9 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
         if(linkout & eBioAssay){        
             s_AddLinkoutInfo(linkout_map,eBioAssay,cur_id);            
         }        
+        if(linkout & eReprMicrobialGenomes){        
+            s_AddLinkoutInfo(linkout_map,eReprMicrobialGenomes,cur_id);            
+        }                
     }       
 }
 static string s_GetTaxName(int taxid)
@@ -2278,7 +2300,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
     GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
 
     vector<string> linkLetters;
-    NStr::Tokenize(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B"   
+    NStr::Tokenize(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B,R"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
         int first_gi = 0;
         vector < CBioseq::TId > idList;
