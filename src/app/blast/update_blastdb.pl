@@ -170,7 +170,7 @@ sub download($)
     for my $file (@_) {
 
         my $attempts = 0;   # Download attempts for this file
-        if ($opt_verbose and &is_multivolume_db($file) and $file =~ /00/) {
+        if ($opt_verbose and &is_multivolume_db($file) and $file =~ /\.00\./) {
             my $db_name = &extract_db_name($file);
             my $nvol = &get_num_volumes($db_name, @_);
             print "Downloading $db_name (" . $nvol . " volumes) ...\n";
@@ -272,7 +272,7 @@ sub read_md5_file($)
 sub is_multivolume_db
 {
     my $file = shift;
-    return 1 if ($file =~ /\.\d{2}\.tar\.gz$/);
+    return 1 if ($file =~ /\.\d{2,3}\.tar\.gz$/);
     return 0;
 }
 
@@ -283,7 +283,7 @@ sub extract_db_name
     my $file = shift;
     my $retval = "";
     if (&is_multivolume_db($file)) {
-        $retval = $1 if ($file =~ m/(.*)\.\d{2}\.tar\.gz$/);
+        $retval = $1 if ($file =~ m/(.*)\.\d{2,3}\.tar\.gz$/);
     } else {
         $retval = $1 if ($file =~ m/(.*)\.tar\.gz$/);
     }
@@ -298,7 +298,7 @@ sub get_num_volumes
     my $retval = 0;
     foreach (@_) {
         if (/$db/) {
-            if (/.*\.(\d{2})\.tar\.gz$/) {
+            if (/.*\.(\d{2,3})\.tar\.gz$/) {
                 $retval = int($1) if (int($1) > $retval);
             }
         }
