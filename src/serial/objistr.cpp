@@ -807,6 +807,7 @@ void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info,
     case fNotOpen:        err = CSerialException::eNotOpen;        break;
     case fMissingValue:   err = CSerialException::eMissingValue;   break;
     case fNotImplemented: err = CSerialException::eNotImplemented; break;
+    case fNullValue:      err = CSerialException::eNullValue;      break;
     }
     throw CSerialException(diag_info,0,err,GetPosition()+": "+message);
 }

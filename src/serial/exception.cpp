@@ -231,6 +231,7 @@ const char* CSerialException::GetErrCodeString(void) const
     case eFail:           return "eFail";
     case eNotOpen:        return "eNotOpen";
     case eMissingValue:   return "eMissingValue";
+    case eNullValue:      return "eNullValue";
     default:              return CException::GetErrCodeString();
     }
 }

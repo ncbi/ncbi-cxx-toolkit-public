@@ -60,7 +60,8 @@ public:
         eIllegalCall,     ///< Illegal in a given context function call
         eFail,            ///< Internal error, the real reason is unclear
         eNotOpen,         ///< No input or output file
-        eMissingValue     ///< Mandatory value was missing in the input.
+        eMissingValue,    ///< Mandatory value was missing in the input
+        eNullValue        ///< Data value is null
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);

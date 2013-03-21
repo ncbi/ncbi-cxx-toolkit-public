@@ -729,7 +729,14 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
                       memberInfo->GetTypeInfo());
     }
     catch (CSerialException& e) {
-        if (e.GetErrCode() == CSerialException::eMissingValue) {
+        if (e.GetErrCode() == CSerialException::eNullValue) {
+            if ( memberInfo->HaveSetFlag() ) {
+                memberInfo->UpdateSetFlagNo(classPtr);
+            } else {
+                NCBI_RETHROW(e, CSerialException, eFormatError,
+                    "null value " + memberInfo->GetId().GetName());
+            }
+        } else if (e.GetErrCode() == CSerialException::eMissingValue) {
             if ( memberInfo->Optional() && memberInfo->HaveSetFlag() ) {
                 in.SetFailFlags(CObjectIStream::fNoError);
                 if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
@@ -801,7 +808,14 @@ void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
     }
     catch (CSerialException& e) {
         in.SetMemberDefault(0);
-        if (e.GetErrCode() == CSerialException::eMissingValue) {
+        if (e.GetErrCode() == CSerialException::eNullValue) {
+            if ( memberInfo->HaveSetFlag() ) {
+                memberInfo->UpdateSetFlagNo(classPtr);
+            } else {
+                NCBI_RETHROW(e, CSerialException, eFormatError,
+                    "null value " + memberInfo->GetId().GetName());
+            }
+        } else if (e.GetErrCode() == CSerialException::eMissingValue) {
             if ( memberInfo->Optional() && memberInfo->HaveSetFlag() ) {
                 in.SetFailFlags(CObjectIStream::fNoError);
                 if ( memberInfo->UpdateSetFlagNo(classPtr) ) {

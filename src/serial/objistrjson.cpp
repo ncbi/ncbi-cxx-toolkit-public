@@ -234,8 +234,9 @@ TUnicodeSymbol CObjectIStreamJson::ReadUtf8Char(char c)
     return chU;
 }
 
-string CObjectIStreamJson::x_ReadString(EStringType type /*= eStringTypeVisible*/)
+string CObjectIStreamJson::x_ReadString(EStringType type)
 {
+    m_ExpectValue = false;
     Expect('\"',true);
     string str;
     for (;;) {
@@ -279,6 +280,29 @@ string CObjectIStreamJson::x_ReadData(EStringType type /*= eStringTypeVisible*/)
     return str;
 }
 
+string CObjectIStreamJson::x_ReadDataAndCheck(EStringType type)
+{
+    string d(x_ReadData(type));
+    if (d == "null") {
+        NCBI_THROW(CSerialException,eNullValue, kEmptyStr);
+    }
+    return d;
+}
+
+void  CObjectIStreamJson::x_SkipData(void)
+{
+    m_ExpectValue = false;
+    SkipWhiteSpace();
+    for (;;) {
+        bool encoded;
+        char c = ReadEncodedChar(eStringTypeUTF8, &encoded);
+        if (!encoded && strchr(",]} \r\n", c)) {
+            m_Input.UngetChar(c);
+            break;
+        }
+    }
+}
+
 string CObjectIStreamJson::ReadKey(void)
 {
     if (!m_RejectedTag.empty()) {
@@ -286,7 +310,7 @@ string CObjectIStreamJson::ReadKey(void)
         m_RejectedTag.erase();
     } else {
         SkipWhiteSpace();
-        m_LastTag = x_ReadString();
+        m_LastTag = x_ReadString(eStringTypeVisible);
         Expect(':', true);
         SkipWhiteSpace();
     }
@@ -296,7 +320,6 @@ string CObjectIStreamJson::ReadKey(void)
 
 string CObjectIStreamJson::ReadValue(EStringType type /*= eStringTypeVisible*/)
 {
-    m_ExpectValue = false;
     return x_ReadString(type);
 }
 
@@ -373,63 +396,73 @@ void CObjectIStreamJson::EndOfRead(void)
 
 bool CObjectIStreamJson::ReadBool(void)
 {
-    return NStr::StringToBool( x_ReadData());
+    return NStr::StringToBool( x_ReadDataAndCheck());
 }
 
 void CObjectIStreamJson::SkipBool(void)
 {
-    x_ReadData();
+    x_SkipData();
 }
 
 char CObjectIStreamJson::ReadChar(void)
 {
-    return x_ReadData().at(0);
+    return x_ReadDataAndCheck().at(0);
 }
 
 void CObjectIStreamJson::SkipChar(void)
 {
-    x_ReadData();
+    x_SkipData();
 }
 
 Int8 CObjectIStreamJson::ReadInt8(void)
 {
-    return NStr::StringToInt8( x_ReadData());
+    return NStr::StringToInt8( x_ReadDataAndCheck());
 }
 
 Uint8 CObjectIStreamJson::ReadUint8(void)
 {
-    return NStr::StringToUInt8( x_ReadData());
+    return NStr::StringToUInt8( x_ReadDataAndCheck());
 }
 
 void CObjectIStreamJson::SkipSNumber(void)
 {
-    x_ReadData();
+    x_SkipData();
 }
 
 void CObjectIStreamJson::SkipUNumber(void)
 {
-    x_ReadData();
+    x_SkipData();
 }
 
 double CObjectIStreamJson::ReadDouble(void)
 {
-    return NStr::StringToDouble( x_ReadData(), NStr::fDecimalPosix);
+    return NStr::StringToDouble( x_ReadDataAndCheck(), NStr::fDecimalPosix);
 }
 
 void CObjectIStreamJson::SkipFNumber(void)
 {
-    x_ReadData();
+    x_SkipData();
 }
 
 void CObjectIStreamJson::ReadString(string& s,
     EStringType type /*= eStringTypeVisible*/)
 {
+    char c = PeekChar(true);
+    if (c == 'n') {
+        if (m_Input.PeekChar(1) == 'u' &&
+            m_Input.PeekChar(2) == 'l' &&
+            m_Input.PeekChar(3) == 'l') {
+            m_ExpectValue = false;
+            m_Input.SkipChars(4);
+            NCBI_THROW(CSerialException,eNullValue, kEmptyStr);
+        }
+    }
     s = ReadValue(type);
 }
 
 void CObjectIStreamJson::SkipString(EStringType type /*= eStringTypeVisible*/)
 {
-    ReadValue(type);
+    x_SkipData();
 }
 
 void CObjectIStreamJson::ReadNull(void)
@@ -441,11 +474,12 @@ void CObjectIStreamJson::ReadNull(void)
 
 void CObjectIStreamJson::SkipNull(void)
 {
-    x_ReadData();
+    x_SkipData();
 }
 
 void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
 {
+    m_ExpectValue = false;
     obj.Reset();
     string value;
     if (!m_RejectedTag.empty()) {
@@ -456,6 +490,8 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
     }
 
     if (PeekChar(true) == '{') {
+        ThrowError(fNotImplemented, "Not Implemented");
+#if 0
         StartBlock('{');        
         while (NextElement()) {
             string name = ReadKey();
@@ -467,6 +503,7 @@ void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
             }
         }
         EndBlock('}');
+#endif
         return;
     }
     if (PeekChar(true) == '\"') {
@@ -525,6 +562,7 @@ void CObjectIStreamJson::SkipAnyContentObject(void)
 
 void CObjectIStreamJson::ReadBitString(CBitString& obj)
 {
+    m_ExpectValue = false;
 #if BITSTRING_AS_VECTOR
     ThrowError(fNotImplemented, "Not Implemented");
 #else
@@ -571,6 +609,7 @@ void CObjectIStreamJson::SkipByteBlock(void)
 
 TEnumValueType CObjectIStreamJson::ReadEnum(const CEnumeratedTypeValues& values)
 {
+    m_ExpectValue = false;
     TEnumValueType value;
     char c = SkipWhiteSpace();
     if (c == '\"') {
@@ -724,7 +763,7 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
         if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
             SkipAnyContent();
-            EndBlock(0);
+            m_ExpectValue = false;
             return BeginClassMember(classType,pos);
         } else {
             UnexpectedMember(tagName, classType->GetMembers());
@@ -843,6 +882,7 @@ int CObjectIStreamJson::GetBase64Char(void)
 size_t CObjectIStreamJson::ReadBytes(
     ByteBlock& block, char* dst, size_t length)
 {
+    m_ExpectValue = false;
     if (m_BinaryFormat != CObjectIStreamJson::eDefault) {
         return ReadCustomBytes(block,dst,length);
     }

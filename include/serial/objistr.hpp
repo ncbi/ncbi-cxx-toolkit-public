@@ -393,7 +393,9 @@ public:
         /// This is the variant of fFormatError.
         /// Normally stream throws an exception, but client can request
         /// not to throw one; in this case this flag is set instead.
-        fUnknownValue  = 1 << 10,       eUnknownValue= fUnknownValue
+        fUnknownValue  = 1 << 10,       eUnknownValue= fUnknownValue,
+        /// Input value is 'null'
+        fNullValue     = 1 << 11,       eNullValue= fNullValue
     };
     typedef int TFailFlags;
 

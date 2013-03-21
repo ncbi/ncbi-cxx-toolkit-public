@@ -196,8 +196,10 @@ private:
     int ReadEscapedChar(bool* encoded=0);
     char ReadEncodedChar(EStringType type = eStringTypeVisible, bool* encoded=0);
     TUnicodeSymbol ReadUtf8Char(char c);
-    string x_ReadString(EStringType type = eStringTypeVisible);
-    string x_ReadData(EStringType type = eStringTypeVisible);
+    string x_ReadString(EStringType type);
+    string x_ReadData(EStringType type = eStringTypeUTF8);
+    string x_ReadDataAndCheck(EStringType type = eStringTypeUTF8);
+    void   x_SkipData(void);
     string ReadKey(void);
     string ReadValue(EStringType type = eStringTypeVisible);
 
