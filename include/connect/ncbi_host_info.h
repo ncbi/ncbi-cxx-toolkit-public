@@ -159,12 +159,13 @@ typedef unsigned short TNcbiCapacity;
 /*NB: High bit determines the OS family */
 typedef enum {
     fOS_Unknown,
-    fOS_IRIX    = 8,
-    fOS_Solaris = 16,
-    fOS_BSD     = 32,
-    fOS_Darwin  = 33,
-    fOS_Windows = 64,
-    fOS_Linux   = 128
+    fOS_IRIX          = 8,
+    fOS_Solaris       = 16,
+    fOS_BSD           = 32,
+    fOS_Darwin        = 36,
+    fOS_Windows       = 64,
+    fOS_WindowsServer = 96,
+    fOS_Linux         = 128
 } ENcbiOSType;
 typedef unsigned short TNcbiOSType;
 
