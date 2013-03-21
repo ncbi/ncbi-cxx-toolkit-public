@@ -995,6 +995,13 @@ public:
      *  XPath expression to run
      * @return
      *  XPath query result nodes set
+     * @note
+     *  If the query result is a scalar value (e.g. count() function) then
+     *  the result set will have a single node of the following format:
+     *  <xpath_scalar_result type="TYPE">VALUE</xpath_scalar_result>
+     *  where TYPE is one of the following: boolean, number, or
+     *  string depending on the result type. The VALUE is the actual result
+     *  scalar value.
      * @author Sergey Satskiy, NCBI
     **/
     node_set run_xpath_query (const xpath_expression& expr);
@@ -1006,6 +1013,13 @@ public:
      *  XPath expression to run
      * @return
      *  XPath query const result nodes set
+     * @note
+     *  If the query result is a scalar value (e.g. count() function) then
+     *  the result set will have a single node of the following format:
+     *  <xpath_scalar_result type="TYPE">VALUE</xpath_scalar_result>
+     *  where TYPE is one of the following: boolean, number, or
+     *  string depending on the result type. The VALUE is the actual result
+     *  scalar value.
      * @author Sergey Satskiy, NCBI
     **/
     const node_set run_xpath_query (const xpath_expression& expr) const;
@@ -1023,6 +1037,13 @@ public:
      *  Throws exceptions in case of problems
      * @note
      *  Default namespace, if so, will not be registered
+     * @note
+     *  If the query result is a scalar value (e.g. count() function) then
+     *  the result set will have a single node of the following format:
+     *  <xpath_scalar_result type="TYPE">VALUE</xpath_scalar_result>
+     *  where TYPE is one of the following: boolean, number, or
+     *  string depending on the result type. The VALUE is the actual result
+     *  scalar value.
      * @author Sergey Satskiy, NCBI
     **/
     node_set run_xpath_query (const char *  expr);
@@ -1040,6 +1061,13 @@ public:
      *  Throws exceptions in case of problems
      * @note
      *  Default namespace, if so, will not be registered
+     * @note
+     *  If the query result is a scalar value (e.g. count() function) then
+     *  the result set will have a single node of the following format:
+     *  <xpath_scalar_result type="TYPE">VALUE</xpath_scalar_result>
+     *  where TYPE is one of the following: boolean, number, or
+     *  string depending on the result type. The VALUE is the actual result
+     *  scalar value.
      * @author Sergey Satskiy, NCBI
     **/
     const node_set run_xpath_query (const char *  expr) const;
@@ -1231,6 +1259,7 @@ private:
     void set_node_data (void *data);
     void* get_node_data (void) const;
     void* release_node_data (void);
+    node_set convert_to_nset(void *) const;
     friend class tree_parser;
     friend class impl::node_iterator;
     friend class document;

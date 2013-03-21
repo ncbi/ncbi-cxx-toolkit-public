@@ -763,7 +763,17 @@ xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) {
     xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));
     xmlXPathObjectPtr       object(reinterpret_cast<xmlXPathObjectPtr>(evaluate_xpath_expression(expr, xpath_context)));
     xmlXPathFreeContext(xpath_context);
-    return node_set(object);
+
+    switch (object->type) {
+        case XPATH_NODESET:
+            return node_set(object);
+        case XPATH_BOOLEAN:     /* These three cases are the same */
+        case XPATH_NUMBER:
+        case XPATH_STRING:
+            return convert_to_nset(object);
+        default: ;
+    }
+    throw xml::exception("Unsupported xpath run result type");
 }
 //####################################################################
 const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) const {
@@ -771,7 +781,18 @@ const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& exp
     xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));
     xmlXPathObjectPtr       object(reinterpret_cast<xmlXPathObjectPtr>(evaluate_xpath_expression(expr, xpath_context)));
     xmlXPathFreeContext(xpath_context);
-    return node_set(object);
+
+    switch (object->type) {
+        case XPATH_NODESET:     /* These two cases are the same */
+        case XPATH_XSLT_TREE:
+            return node_set(object);
+        case XPATH_BOOLEAN:     /* These three cases are the same */
+        case XPATH_NUMBER:
+        case XPATH_STRING:
+            return convert_to_nset(object);
+        default: ;
+    }
+    throw xml::exception("Unsupported xpath run result type");
 }
 //####################################################################
 xml::node_set xml::node::run_xpath_query (const char *  expr) {
@@ -977,6 +998,59 @@ void xml::node::node_to_string (std::string &xml,
     return;
 }
 //####################################################################
+node_set xml::node::convert_to_nset(void *  object_as_void) const {
+    // It converts a scalar xpath object into a nodeset with 1 node in it
+    xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(object_as_void);
+    std::string         type_name;
+    std::string         content;
+
+    switch (object->type) {
+        case XPATH_BOOLEAN:
+            type_name = "boolean";
+            if (object->boolval == 0)   content = "false";
+            else                        content = "true";
+            break;
+        case XPATH_NUMBER:
+            type_name = "number";
+            char    buffer[64];
+            sprintf(buffer, "%g", object->floatval);
+            content = std::string(buffer);
+            break;
+        case XPATH_STRING:
+            type_name = "string";
+            content = std::string(reinterpret_cast<const char*>(object->stringval));
+            break;
+        default:
+            throw xml::exception("Internal logic error: unexpected xpath "
+                                 "object type to be converted "
+                                 "into a node set");
+    }
+
+    // Create a node
+    xml::node   new_node("xpath_scalar_result", content.c_str());
+    new_node.get_attributes().insert("type", type_name.c_str());
+
+    // Add node to a node set
+    xmlNodeSetPtr   new_node_set = xmlXPathNodeSetCreate(NULL);
+    if (new_node_set == NULL)
+        throw xml::exception("Cannot create node set while "
+                             "converting xpath result");
+    xmlXPathNodeSetAdd(new_node_set,
+                       reinterpret_cast<xmlNodePtr>(new_node.get_node_data()));
+    new_node.release_node_data();
+
+    // Update the type
+    object->type = XPATH_NODESET;
+    object->nodesetval = new_node_set;
+    object->boolval = 1;    // Hack: to have the contained nodes deleted as well
+
+    return node_set(object);
+}
+
+
+
+
+
 namespace xml {
     std::ostream& operator<< (std::ostream &stream, const xml::node &n) {
         node2doc n2d(n.pimpl_->xmlnode_);
