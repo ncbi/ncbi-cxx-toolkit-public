@@ -202,7 +202,7 @@ TMemberIndex CItemsInfo::Find(const CTempString& name) const
     return i->second;
 }
 
-TMemberIndex CItemsInfo::FindDeep(const CTempString& name) const
+TMemberIndex CItemsInfo::FindDeep(const CTempString& name, bool search_attlist) const
 {
     TMemberIndex ind = Find(name);
     if (ind != kInvalidMember) {
@@ -211,12 +211,14 @@ TMemberIndex CItemsInfo::FindDeep(const CTempString& name) const
     for (CIterator item(*this); item.Valid(); ++item) {
         const CItemInfo* info = GetItemInfo(item);
         const CMemberId& id = info->GetId();
-        if (!id.IsAttlist() && id.HasNotag()) {
+        if ((!id.IsAttlist() && id.HasNotag()) ||
+            ( id.IsAttlist() && search_attlist)) {
             const CClassTypeInfoBase* classType =
                 dynamic_cast<const CClassTypeInfoBase*>(
                     FindRealTypeInfo(info->GetTypeInfo()));
             if (classType) {
-                if (classType->GetItems().FindDeep(name) != kInvalidMember) {
+                if (classType->GetItems().FindDeep(name, search_attlist)
+                    != kInvalidMember) {
                     return *item;
                 }
             }

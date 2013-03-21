@@ -191,6 +191,7 @@ private:
 
     bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
+    void UnexpectedMember(const CTempString& id, const CItemsInfo& items);
 
     int ReadEscapedChar(bool* encoded=0);
     char ReadEncodedChar(EStringType type = eStringTypeVisible, bool* encoded=0);

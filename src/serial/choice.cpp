@@ -366,6 +366,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
             in.ThrowError(in.fFormatError, "choice variant id expected");
         }
     } else {
+        for (;;) {
         const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
         if (variantInfo->GetId().IsAttlist()) {
             const CMemberInfo* memberInfo =
@@ -374,14 +375,22 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
             memberInfo->ReadMember(in,objectPtr);
             in.EndChoiceVariant();
             index = in.BeginChoiceVariant(choiceType);
-            if ( index == kInvalidMember )
-                in.ThrowError(in.fFormatError, "choice variant id expected");
+            if ( index == kInvalidMember ) {
+                if (in.CanSkipUnknownVariants()) {
+                    in.SkipAnyContentVariant();
+                    break;
+                } else {
+                    in.ThrowError(in.fFormatError, "choice variant id expected");
+                }
+            }
             variantInfo = choiceType->GetVariantInfo(index);
         }
         in.SetTopMemberId(variantInfo->GetId());
 
         variantInfo->ReadVariant(in, objectPtr);
         in.EndChoiceVariant();
+        break;
+        }
     }
     END_OBJECT_FRAME_OF(in);
     in.EndChoice();

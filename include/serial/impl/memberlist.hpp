@@ -83,7 +83,7 @@ public:
         }
 
     TMemberIndex Find(const CTempString& name) const;
-    TMemberIndex FindDeep(const CTempString& name) const;
+    TMemberIndex FindDeep(const CTempString& name, bool search_attlist = false) const;
     TMemberIndex FindEmpty(void) const;
     TMemberIndex Find(const CTempString& name, TMemberIndex pos) const;
     TMemberIndex Find(TTag tag) const;

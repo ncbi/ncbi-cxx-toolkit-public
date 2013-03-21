@@ -35,24 +35,6 @@
 #include <corelib/ncbi_limits.h>
 
 #include <serial/objistrjson.hpp>
-/*
-#include <serial/objistr.hpp>
-#include <serial/objcopy.hpp>
-#include <serial/impl/memberid.hpp>
-#include <serial/impl/memberlist.hpp>
-#include <serial/enumvalues.hpp>
-#include <serial/objhook.hpp>
-#include <serial/impl/classinfo.hpp>
-#include <serial/impl/choice.hpp>
-#include <serial/impl/continfo.hpp>
-#include <serial/delaybuf.hpp>
-#include <serial/impl/ptrinfo.hpp>
-#include <serial/error_codes.hpp>
-
-#include <stdio.h>
-#include <math.h>
-*/
-
 
 #define NCBI_USE_ERRCODE_X   Serial_OStream
 
@@ -178,6 +160,18 @@ void CObjectIStreamJson::Expect(char expect, bool skipWhiteSpace /* = false*/)
         ThrowError(fFormatError, msg);
     }
 }
+
+void CObjectIStreamJson::UnexpectedMember(const CTempString& id,
+                                          const CItemsInfo& items)
+{
+    string message =
+        "\""+string(id)+"\": unexpected member, should be one of: ";
+    for ( CItemsInfo::CIterator i(items); i.Valid(); ++i ) {
+        message += '\"' + items.GetItemInfo(i)->GetId().ToString() + "\" ";
+    }
+    ThrowError(fFormatError, message);
+}
+
 
 int CObjectIStreamJson::ReadEscapedChar(bool* encoded /*=0*/)
 {
@@ -625,7 +619,7 @@ TMemberIndex CObjectIStreamJson::FindDeep(
         deep = false;
         return i;
     }
-    i = items.FindDeep(name);
+    i = items.FindDeep(name, true);
     if (i != kInvalidMember) {
         deep = true;
         return i;
@@ -647,7 +641,7 @@ TMemberIndex CObjectIStreamJson::FindDeep(
         for (i = first; i <= last; ++i) {
             const CItemInfo* itemInfo = items.GetItemInfo(i);
             const CMemberId& id = itemInfo->GetId();
-            if (!id.IsAttlist() && id.HasNotag()) {
+            if (id.IsAttlist() || id.HasNotag()) {
                 const CClassTypeInfoBase* classType =
                     dynamic_cast<const CClassTypeInfoBase*>(
                         CItemsInfo::FindRealTypeInfo(itemInfo->GetTypeInfo()));
@@ -671,6 +665,13 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
     string tagName = ReadKey();
     bool deep = false;
     TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
+/*
+    skipping unknown members is not present here
+    this method has to do with random order of members, for example in XML attribute list
+    there is no special marker for end-of-list, so it is "ended" by unknown member.
+    In theory, I could find out memberId and check if it is Attlist
+    If the data type is SET and not attlist, then skipping unknowns can be dangerous 
+*/
     if (deep) {
         if (ind != kInvalidMember) {
             TopFrame().SetNotag();
@@ -719,6 +720,16 @@ TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classTyp
     }
     bool deep = false;
     TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
+    if ( ind == kInvalidMember ) {
+        if (CanSkipUnknownMembers()) {
+            SetFailFlags(fUnknownValue);
+            SkipAnyContent();
+            EndBlock(0);
+            return BeginClassMember(classType,pos);
+        } else {
+            UnexpectedMember(tagName, classType->GetMembers());
+        }
+    }
     if (deep) {
         if (ind != kInvalidMember) {
             TopFrame().SetNotag();
@@ -759,14 +770,14 @@ TMemberIndex CObjectIStreamJson::BeginChoiceVariant(const CChoiceTypeInfo* choic
     string tagName = ReadKey();
     bool deep = false;
     TMemberIndex ind = FindDeep(choiceType->GetVariants(), tagName, deep);
-    if (deep) {
-        if (ind == kInvalidMember) {
-            const CItemsInfo& items = choiceType->GetItems();
-            TMemberIndex first = items.FirstIndex();
-            if (items.GetItemInfo(first)->GetId().IsAttlist()) {
-                ind = first;
-            }
+    if ( ind == kInvalidMember ) {
+        if (CanSkipUnknownVariants()) {
+            SetFailFlags(fUnknownValue);
+        } else {
+            UnexpectedMember(tagName, choiceType->GetVariants());
         }
+    }
+    if (deep) {
         if (ind != kInvalidMember) {
             TopFrame().SetNotag();
         }
