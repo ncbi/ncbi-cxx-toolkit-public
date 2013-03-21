@@ -846,6 +846,11 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
     	 {
     		 m_RpsDbInfo.scale_factor = pssm_w_parameters.GetPssm().GetFinalData().GetScalingFactor();
     	 }
+	 else
+	 {
+                // asn1 default value is 1
+                m_RpsDbInfo.scale_factor = 1.0;
+	 }
      }
      else
     	 x_RPSUpdateStatistics(pssm_w_parameters, pssm_w_parameters.GetPssm().GetQueryLength());
