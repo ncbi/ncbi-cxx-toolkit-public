@@ -54,6 +54,7 @@
 #include <util/sequtil/sequtil.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
+#include <util/random_gen.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <algorithm>

@@ -34,7 +34,6 @@
 #include <corelib/ncbi_limits.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
-#include <util/random_gen.hpp>
 #include <memory>
 #include <vector>
 
@@ -85,7 +84,7 @@ public:
                            TSeqPos                uBeginIdx = 0,
                            TSeqPos                uLength   = 0,
                            bool                   bAmbig    = false,
-                           CRandom::TValue        seed      = 17734276);
+                           Uint4                  seed      = 17734276);
 
     // Alphabet conversion function with ambiguities in BLAST form, for DNA only.
     // Target encoding is ncbi2na. Ambiguities are returned in a separate vector.

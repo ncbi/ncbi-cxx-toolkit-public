@@ -37,9 +37,11 @@
 #ifndef UTIL___DISTRIBUTION__HPP
 #define UTIL___DISTRIBUTION__HPP
 
-#include "random_gen.hpp"
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CRandom;
 
 /// @internal
 class NCBI_XUTIL_EXPORT CInvalidParamException : public CException

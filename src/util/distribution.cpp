@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include <util/distribution.hpp>
+#include <util/random_gen.hpp>
 
 BEGIN_NCBI_SCOPE
 

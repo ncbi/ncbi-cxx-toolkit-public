@@ -41,8 +41,13 @@
 #include <string>
 #include <vector>
 #include <corelib/ncbistd.hpp>
-#include <util/random_gen.hpp>
 #include <algo/structure/struct_util/struct_util.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CRandom;
+
+END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 USING_SCOPE(struct_util);
@@ -119,7 +124,7 @@ public:
     //  Print the entire state (except for the AlignmentUtility object)
     //virtual string Print() const;
 
-    virtual ~CRandomRowSelector() { delete m_rng;};
+    virtual ~CRandomRowSelector();
 
 private:
 

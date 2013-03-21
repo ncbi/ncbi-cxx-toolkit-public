@@ -38,6 +38,7 @@
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
 
 #include <algo/structure/bma_refine/RowSelector.hpp>
+#include <util/random_gen.hpp>
 
 BEGIN_SCOPE(align_refine)
 
@@ -189,6 +190,11 @@ CRandomRowSelector::CRandomRowSelector(unsigned int nRows, bool unique, unsigned
 CRandomRowSelector::CRandomRowSelector(unsigned int nRows, unsigned int nTotal, bool unique, unsigned int seed) : CRowSelector(nRows, nTotal, unique), m_rng(NULL) {
 
     InitRNG(seed);
+}
+
+CRandomRowSelector::~CRandomRowSelector()
+{
+    delete m_rng;
 }
 
 void CRandomRowSelector::InitRNG(unsigned int seed) {
