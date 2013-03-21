@@ -78,12 +78,10 @@
 BEGIN_NCBI_SCOPE
 
 
-const size_t CRandom::kStateSize = sizeof(CRandom::sm_State)
-    / sizeof(CRandom::sm_State[0]);
+static const size_t kStateOffset = 12;
 
-const size_t kStateOffset = 12;
-
-const CRandom::TValue CRandom::sm_State[kStateSize] = {
+// Static array used to initialize "m_State"
+static const CRandom::TValue sm_State[CRandom::kStateSize] = {
     0xd53f1852,  0xdfc78b83,  0x4f256096,  0xe643df7,
     0x82c359bf,  0xc7794dfa,  0xd5e9ffaa,  0x2c8cb64a,
     0x2f07b334,  0xad5a7eb5,  0x96dc0cde,  0x6fc24589,
@@ -110,15 +108,15 @@ CRandom::CRandom(TValue seed)
 
 void CRandom::Reset(void)
 {
-    _ASSERT(sizeof(sm_State) / sizeof(sm_State[0]) == kStateSize);
+    _ASSERT(sizeof(sm_State) == sizeof(m_State));
     _ASSERT(kStateOffset < kStateSize);
 
-    for (size_t i = 0;  i < kStateSize;  ++i) {
+    for (int i = 0;  i < kStateSize;  ++i) {
         m_State[i] = sm_State[i];
     }
 
-    m_RJ = &m_State[kStateOffset];
-    m_RK = &m_State[kStateSize - 1];
+    m_RJ = kStateOffset;
+    m_RK = kStateSize - 1;
 }
 
 
@@ -129,14 +127,14 @@ void CRandom::SetSeed(TValue seed)
     m_State[0] = m_Seed = seed;
 
     // linear congruential initializer
-    for (size_t i = 1;  i < kStateSize;  ++i) {
+    for (int i = 1;  i < kStateSize;  ++i) {
         m_State[i] = 1103515245 * m_State[i-1] + 12345;
     }
 
-    m_RJ = &m_State[kStateOffset];
-    m_RK = &m_State[kStateSize - 1];
+    m_RJ = kStateOffset;
+    m_RK = kStateSize - 1;
 
-    for (size_t i = 0;  i < 10 * kStateSize;  ++i) {
+    for (int i = 0;  i < 10 * kStateSize;  ++i) {
         GetRand();
     }
 }

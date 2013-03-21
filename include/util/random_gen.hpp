@@ -74,20 +74,27 @@ public:
 
     // Get the next random number in the interval [0..GetMax()] (inclusive)
     TValue GetRand(void);
+
+    // Get random number in the interval [min_value..max_value] (inclusive)
     TValue GetRand(TValue min_value, TValue max_value); 
+
+    // Get random number in the interval [0..size-1] (e.g. index in array)
+    TValue GetRandIndex(TValue size);
 
     // The max. value GetRand() returns
     static TValue GetMax(void);
 
+    enum {
+        kStateSize = 33  // size of state array
+    };
+
 private:
-    // Static array used to initialize "m_State", and its size
-    static const TValue sm_State[33];
-    static const size_t kStateSize;
+    TValue x_GetRand32Bits(void);
 
     // Instance data members
-    TValue  m_State[sizeof(sm_State) / sizeof(sm_State[0])];
-    TValue* m_RJ;
-    TValue* m_RK;
+    TValue  m_State[kStateSize];
+    int     m_RJ;
+    int     m_RK;
     TValue  m_Seed;
 
 private:
@@ -115,27 +122,49 @@ inline CRandom::TValue CRandom::GetSeed(void)
 }
 
 
-inline CRandom::TValue CRandom::GetRand(void)
+inline CRandom::TValue CRandom::x_GetRand32Bits(void)
 {
     register TValue r;
 
-    r = *m_RK;
-    r += *(m_RJ--);
-    *(m_RK--) = r;
+    r = m_State[m_RK] + m_State[m_RJ--];
+    m_State[m_RK--] = r;
 
-    if (m_RK < m_State) {
-        m_RK = &m_State[sizeof(m_State) / sizeof(m_State[0]) - 1];
+    if ( m_RK < 0 ) {
+        m_RK = kStateSize - 1;
     }
-    else if (m_RJ < m_State) {
-        m_RJ = &m_State[sizeof(m_State) / sizeof(m_State[0]) - 1];
+    else if ( m_RJ < 0 ) {
+        m_RJ = kStateSize - 1;
     }
 
-    return (r >> 1) & 0x7fffffff;  // discard the least-random bit
+    return r;
 }
+
+
+inline CRandom::TValue CRandom::GetRand(void)
+{
+    return x_GetRand32Bits() >> 1; // discard the least-random bit
+}
+
+
+inline CRandom::TValue CRandom::GetRandIndex(TValue size)
+{
+    if ( (size & (size-1)) == 0 ) { // only one bit set - power of 2
+        // get high bits via multiplication - it's faster than division
+        return TValue(Uint8(x_GetRand32Bits())*size >> 32);
+    }
+
+    TValue bits, r;
+    do {
+        bits = x_GetRand32Bits();
+        r = bits % size;
+    } while ( bits > r - size ); // 32-bit overflow is intentional
+    return r;
+}
+
 
 inline CRandom::TValue CRandom::GetRand(TValue min_value, TValue max_value)
 {
-  return min_value + (GetRand() % (max_value - min_value + 1));
+    return min_value + GetRandIndex(max_value - min_value + 1);
 }
 
 

@@ -3121,7 +3121,7 @@ BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
 {
     const int num_subjects = 15;
     const int results_size[num_subjects] = 
-        { 1, 1, 0, 1, 1, 1, 2, 1, 2, 0, 0, 0, 0, 2, 1 };
+        { 1, 1, 0, 1, 1, 1, 2, 1, 2, 0, 0, 0, 0, 2, 0 };
     const int query_gi = 7274302;
     const int gi_diff = 28;
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
