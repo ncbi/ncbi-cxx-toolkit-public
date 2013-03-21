@@ -3236,6 +3236,11 @@ LSU	s	Louisiana State University, Biological Sciences Department
 LSUHC	s	La Sierra University, Herpetological Collection
 LSUM	s	Louisiana State University, Biological Sciences Department
 LSUMZ	s	Louisiana State University, Musuem of Zoology
+LSUMZ:FrozenTissue	s	Louisiana State University, Musuem of Zoology, Frozen Tissue Collection
+LSUMZ:Herpetology	s	Louisiana State University, Musuem of Zoology, Herpetology Collection
+LSUMZ:Ichthyology	s	Louisiana State University, Musuem of Zoology, Ichthyology Collection
+LSUMZ:Mammalogy	s	Louisiana State University, Musuem of Zoology, Mammal Collection
+LSUMZ:Ornithology	s	Louisiana State University, Musuem of Zoology, Bird Collection
 LSUS	s	Museum of Life Sciences, Louisiana State University
 LT	s	Universite de Montreal
 LTB	s	La Trobe University, Botany Department
