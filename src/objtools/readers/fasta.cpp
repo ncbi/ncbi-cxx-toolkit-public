@@ -468,11 +468,11 @@ string CFastaReader::CWarning::GetStringOfType(EType eType)
 {
     typedef SStaticPair<EType, const char *> TTypeElem;
     static const TTypeElem sc_type_map[] = {
-        { eType_TitleTooLong, "Title line is too long" },
-        { eType_NucsInTitle,  "There seem to be nuc bases in the title" },
-        { eType_TooManyAmbigOnFirstLine, "There are too many ambiguous bases on the first line" },
-        { eType_InvalidResidue, "Invalid residue found" },
-        { eType_AminoAcidsInTitle, "There seem to be amino acids in the title"}
+        { eType_TitleTooLong, "Title too long" },
+        { eType_NucsInTitle,  "Nucleotide bases in title" },
+        { eType_TooManyAmbigOnFirstLine, "Too many ambiguous bases on first data line" },
+        { eType_InvalidResidue, "Invalid residue(s) found" },
+        { eType_AminoAcidsInTitle, "Amino acid bases in title"}
     };
     typedef CStaticArrayMap<EType, const char *> TTypeMap;
     DEFINE_STATIC_ARRAY_MAP(TTypeMap, sc_TypeMap, sc_type_map);
