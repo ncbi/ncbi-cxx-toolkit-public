@@ -595,7 +595,7 @@ RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
         return false;
     }
     const bool is_remote_search = 
-        (args[kArgRemote].HasValue() && args[kArgRemote].AsBoolean());
+        (args.Exist(kArgRemote) && args[kArgRemote].HasValue() && args[kArgRemote].AsBoolean());
     const bool override_query = (args[kArgQuery].HasValue() && 
                                  args[kArgQuery].AsString() != kDfltArgQuery);
     const bool override_subject = CBlastDatabaseArgs::HasBeenSet(args);

@@ -72,6 +72,28 @@ public:
                bool is_remote = false,
                int dbfilt_algorithm = -1);
 
+
+    /// Constructor
+    /// @param queries Query sequences [in]
+    /// @param results results set containing one query per element or one
+    /// iteration per element in the case of PSI-BLAST [in]
+    /// @param opts Blast options container [in]
+    /// @param dbInfo vector of SDbInfo containing db names and type [in]
+    /// @param qgencode Genetic code used to translate query sequences
+    ///                 (if applicable) [in]
+    /// @param dbgencode Genetic code used to translate database sequences
+    ///                 (if applicable) [in]
+    /// @param dbfilt_algorithm DB Filtering algorithm to use, -1 means not
+    /// applicable FIXME: this is not being reported
+    CCmdLineBlastXMLReportData(CRef<blast::CBlastQueryVector> queries,
+               const blast::CSearchResultSet& results,
+               const blast::CBlastOptions& opts,
+               const vector<align_format::CAlignFormatUtil::SDbInfo> & dbInfo,
+               int qgencode = BLAST_GENETIC_CODE,
+               int dbgencode = BLAST_GENETIC_CODE,
+               bool is_remote = false,
+               int dbfilt_algorithm = -1);
+
     /// Destructor
     ~CCmdLineBlastXMLReportData();
 
@@ -261,6 +283,16 @@ private:
     ///                    BLOSUM62 [in]
     ///
     void x_FillScoreMatrix(const char *matrix_name = BLAST_DEFAULT_MATRIX);
+
+    // Used in constructors to facilitate initialization
+    void x_Init(CRef<blast::CBlastQueryVector> queries,
+                const blast::CSearchResultSet& results,
+                const blast::CBlastOptions& opts,
+                const vector<align_format::CAlignFormatUtil::SDbInfo> & dbInfo,
+                int qgencode,
+                int dbgencode,
+                bool is_remote,
+                int dbfilt_algorith);
 };
 
 END_NCBI_SCOPE

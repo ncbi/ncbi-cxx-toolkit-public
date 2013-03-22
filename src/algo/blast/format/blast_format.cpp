@@ -187,7 +187,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
     for (itInfo = m_DbInfo.begin(); itInfo != m_DbInfo.end(); itInfo++)
     {
-        m_DbName += itInfo->name + " ";
+    	if(itInfo != m_DbInfo.begin())
+    		m_DbName += " ";
+
+        m_DbName += itInfo->name;
     }
 
     m_IsBl2Seq = false;
@@ -523,13 +526,23 @@ s_SetFlags(string& program,
     return flags;
 }
 
+bool
+CBlastFormat::x_IsVdbSearch() const
+{
+	if(!m_DbInfo.empty()) {
+		if(m_DbInfo.front().definition == "VDB")
+			return true;
+	}
+
+	return false;
+}
 // Port of jzmisc.c's AddAlignInfoToSeqAnnotEx (CVS revision 6.11)
 CRef<objects::CSeq_annot>
 CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const
 {
 	return CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(*alnset,
-														   ProgramNameToEnum(m_Program),
-														   m_DbName);
+                                                           ProgramNameToEnum(m_Program),
+                                                           m_DbName, x_IsVdbSearch());
 }
 
 void 
@@ -561,14 +574,27 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
                 break;
             }
         }
-        CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries, 
-                                               m_AccumulatedResults,
-                                               *m_Options, m_DbName, m_DbIsAA,
-                                               m_QueryGenCode, m_DbGenCode,
-                                               m_IsRemoteSearch);
+
         objects::CBlastOutput xml_output;
-        BlastXML_FormatReport(xml_output, &report_data, &m_Outfile, 
-           m_BlastXMLIncremental.GetPointer());
+        if(x_IsVdbSearch()) {
+        	CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries,
+                                                   m_AccumulatedResults,
+                                                   *m_Options, m_DbInfo,
+                                                   m_QueryGenCode, m_DbGenCode,
+                                                   m_IsRemoteSearch);
+        	BlastXML_FormatReport(xml_output, &report_data, &m_Outfile,
+                                  m_BlastXMLIncremental.GetPointer());
+
+        }
+        else {
+        	CCmdLineBlastXMLReportData report_data(m_AccumulatedQueries,
+                                                   m_AccumulatedResults,
+                                                   *m_Options, m_DbName, m_DbIsAA,
+                                                   m_QueryGenCode, m_DbGenCode,
+                                                   m_IsRemoteSearch);
+        	BlastXML_FormatReport(xml_output, &report_data, &m_Outfile,
+                                  m_BlastXMLIncremental.GetPointer());
+        }
         m_AccumulatedResults.clear();
         m_AccumulatedQueries->clear();
         return;

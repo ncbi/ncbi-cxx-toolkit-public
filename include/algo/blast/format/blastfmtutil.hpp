@@ -109,7 +109,8 @@ public:
     static CRef<objects::CSeq_annot> CreateSeqAnnotFromSeqAlignSet(
     				   const objects::CSeq_align_set & alnset,
     				   blast::EProgram program,
-    				   const string & db_name);
+    				   const string & db_name,
+    				   bool vdb_search = false);
 
 
     /*

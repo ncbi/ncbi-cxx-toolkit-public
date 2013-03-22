@@ -299,7 +299,8 @@ CBlastFormatUtil::PrintAsciiPssm
 CRef<objects::CSeq_annot>
 CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & alnset,
 												blast::EProgram program,
-												const string & db_name)
+												const string & db_name,
+												bool vdb_search)
 {
     CRef<CSeq_annot> retval(new CSeq_annot);
 
@@ -319,21 +320,31 @@ CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & 
 
     //Fill in DB Title
     CRef<CUser_object> blast_db_info(new CUser_object);
-    static const string kBlastDBTitle("Blast Database Title");
-    blast_db_info->SetType().SetStr(kBlastDBTitle);
-    if(0 == db_name.size() || 0 == NStr::CompareNocase(db_name, "n/a"))
+    if(vdb_search)
     {
-    	blast_db_info->AddField( "n/a", false );
-    }
-    else if(0 == NStr::CompareNocase(db_name, "SRA"))
-    {
-    	blast_db_info->AddField( db_name, true );
+    	static const string kVDBNames("Database Names");
+    	blast_db_info->SetType().SetStr(kVDBNames);
+   		blast_db_info->AddField( db_name, true );
+
     }
     else
     {
-    	bool is_nucl = Blast_SubjectIsNucleotide(EProgramToEBlastProgramType(program));
-    	CSeqDB seqdb(db_name, is_nucl ? CSeqDB::eNucleotide:CSeqDB::eProtein);
-    	blast_db_info->AddField( seqdb.GetTitle(), is_nucl );
+    	static const string kBlastDBTitle("Blast Database Title");
+    	blast_db_info->SetType().SetStr(kBlastDBTitle);
+    	if(0 == db_name.size() || 0 == NStr::CompareNocase(db_name, "n/a"))
+    	{
+    		blast_db_info->AddField( "n/a", false );
+    	}
+    	else if(0 == NStr::CompareNocase(db_name, "SRA"))
+    	{
+    		blast_db_info->AddField( db_name, true );
+    	}
+    	else
+    	{
+    		bool is_nucl = Blast_SubjectIsNucleotide(EProgramToEBlastProgramType(program));
+    		CSeqDB seqdb(db_name, is_nucl ? CSeqDB::eNucleotide:CSeqDB::eProtein);
+    		blast_db_info->AddField( seqdb.GetTitle(), is_nucl );
+    	}
     }
 
    	retval->AddUserObject(*blast_db_info);

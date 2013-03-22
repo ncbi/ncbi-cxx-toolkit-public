@@ -389,6 +389,9 @@ private:
    CRef<objects::CSeq_annot> 
    x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const;
 
+   // Return true if the search is againist vdb databases
+   bool x_IsVdbSearch()const;
+
 };
 
 END_NCBI_SCOPE
