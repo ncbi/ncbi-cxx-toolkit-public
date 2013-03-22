@@ -258,7 +258,21 @@ void s_ProcessOneEntry(
     // clean input, then compare to output
     CCleanup cleanup;
     cleanup.BasicCleanup( input_seq_entry );
-    BOOST_CHECK( input_seq_entry.Equals(expected_output_seq_entry) );
+    const bool bSeqEntriesAreEqual = 
+        input_seq_entry.Equals(expected_output_seq_entry);
+    BOOST_CHECK( bSeqEntriesAreEqual );
+    if( ! bSeqEntriesAreEqual ) {
+        // dump out the whole seq-entry that doesn't match, but ONLY 
+        // for the first match failure to avoid flooding the logs
+        static bool s_bFirstSeqEntryDump = true;
+        if( s_bFirstSeqEntryDump ) {
+            cerr << "The entry that was received: " << endl;
+            cerr << MSerial_AsnText << input_seq_entry << endl;
+            cerr << "The entry that was expected: " << endl;
+            cerr << MSerial_AsnText << expected_output_seq_entry << endl;
+            s_bFirstSeqEntryDump = false;
+        }
+    }
 }
 
 static
