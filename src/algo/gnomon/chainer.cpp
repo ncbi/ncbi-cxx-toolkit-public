@@ -3093,13 +3093,15 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 
             if(Strand() == ePlus) {
                 if(conf_start.Empty() || start.GetFrom() < conf_start.GetFrom()) {
-                    conf_start = start;
                     rf = align.ReadingFrame().GetFrom();
+                    if(amap.FShiftedLen(rf,GetCdsInfo().Cds().GetTo()) > 75)
+                        conf_start = start;
                 }
             } else {
                 if(conf_start.Empty() || start.GetTo() > conf_start.GetTo()) {
-                    conf_start = start;
                     rf = align.ReadingFrame().GetTo();
+                    if(amap.FShiftedLen(GetCdsInfo().Cds().GetFrom(),rf) > 75)
+                        conf_start = start;
                 }
             }            
         }
@@ -3131,7 +3133,22 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
                 cds.SetReadingFrame(reading_frame&protreadingframe, true);
             cds.SetReadingFrame(reading_frame);
             cds.SetStart(conf_start,true);
-            SetCdsInfo(cds);          
+            SetCdsInfo(cds);
+
+            TSignedSeqRange new_lim = Limits();
+            for(int i = 1; i < (int)Exons().size(); ++i) {
+                if(!Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice) {
+                    TSignedSeqRange hole(Exons()[i-1].GetTo(),Exons()[i].GetFrom());
+                    if(Precede(hole,reading_frame)) {
+                        new_lim.SetFrom(hole.GetTo());
+                    } else if(Precede(reading_frame,hole)) {
+                        new_lim.SetTo(hole.GetFrom());
+                    }
+                }
+            }
+            if(new_lim != Limits())
+                ClipChain(new_lim);   // remove holes from new UTRs            
+          
             gnomon.GetScore(*this);
             RemoveFshiftsFromUTRs();
             AddComment("Restored confirmed start");
@@ -3706,7 +3723,9 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
 
     if(setconfstart) {
         CCDSInfo cds_info = GetCdsInfo();
-        cds_info.SetScore(cds_info.Score(), false);   // not open           
+        double score = cds_info.Score();
+        score += max(1.,0.3*score);
+        cds_info.SetScore(score, false);   // not open           
         cds_info.SetStart(cds_info.Start(), true);    // confirmed start            
         SetCdsInfo(cds_info);
     }
