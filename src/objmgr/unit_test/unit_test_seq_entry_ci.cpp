@@ -87,6 +87,19 @@ namespace {
         return scope->AddTopLevelSeqEntry(*pEntry);
     }
 
+    template<typename THandle>
+    bool s_IsHandleABioseqSet( const THandle & data_h )
+    {
+        const string & sTypeName = THandle::TObject::GetTypeInfo()->GetName();
+        if( sTypeName == "Bioseq-set" ) {
+            return true;
+        } else if( sTypeName == "Seq-entry" ) {
+            return false;
+        } else {
+            BOOST_FAIL( "unknown type: " << sTypeName );
+        }
+    }
+
     struct SExpectedEntry {
         const char * m_pchExpectedId;
         int          m_iExpectedDepth;
@@ -106,8 +119,8 @@ namespace {
     void s_TestExpectations( const THandle & data_h,
         const SExpectedEntry expected_entries[], // last one must have a NULL id
         const int filter_modes_to_test[] = NULL, // NULL means "try all possible combos". 
-        const CSeq_entry_CI::TFlags flags_on_mask = 0, // flags which are set on for every test done in here
-        const CSeq_entry_CI::TFlags flags_to_try_on_and_off_mask = 0 // for these flags, we will do all the tests with each flag on and each flag off.  O(2^N), where N is the number of flags set
+        const typename TSeqEntryIter::TFlags flags_on_mask = 0, // flags which are set on for every test done in here
+        const typename TSeqEntryIter::TFlags flags_to_try_on_and_off_mask = 0 // for these flags, we will do all the tests with each flag on and each flag off.  O(2^N), where N is the number of flags set
         )
     {
 
@@ -125,10 +138,10 @@ namespace {
         BOOST_REQUIRE( 0 == (flags_on_mask & flags_to_try_on_and_off_mask) );
 
         // produce all possible flag combos that we want to try
-        vector<CSeq_entry_CI::TFlags> vecAllFlagCombosToTry;
+        vector<typename TSeqEntryIter::TFlags> vecAllFlagCombosToTry;
         vecAllFlagCombosToTry.push_back(flags_on_mask);
 
-        CSeq_entry_CI::TFlags current_flag_to_process = 1;
+        typename TSeqEntryIter::TFlags current_flag_to_process = 1;
         for( ;
             current_flag_to_process <= flags_to_try_on_and_off_mask;
             current_flag_to_process <<= 1 ) 
@@ -159,7 +172,7 @@ namespace {
                 iFlagIdx < vecAllFlagCombosToTry.size();
                 ++iFlagIdx) 
             {
-                const CSeq_entry_CI::TFlags flags = vecAllFlagCombosToTry[iFlagIdx];
+                const typename TSeqEntryIter::TFlags flags = vecAllFlagCombosToTry[iFlagIdx];
 
                 TSeqEntryIter entry_ci( data_h,
                     flags,
@@ -184,7 +197,8 @@ namespace {
                     // check depth
                     // (iDepthOffset is a correction because when we include the given entry, 
                     // the depths are increased by one)
-                    const int iDepthOffset = ( (flags & CSeq_entry_CI::fIncludeGivenEntry) ? 0 : 1 );
+                    const int iDepthOffset = ( 
+                        (flags & TSeqEntryIter::fIncludeGivenEntry) ? 0 : 1 );
                     const int iDepth = entry_ci.GetDepth();
                     BOOST_CHECK_MESSAGE( iDepth == (expectedEntry.m_iExpectedDepth - iDepthOffset),
                         "Expected: " << expectedEntry << ", but depth was: " << iDepth);
@@ -192,21 +206,51 @@ namespace {
 
                 // check if we ended too early or too late
                 if( expected_entries[iEntryIdx].m_pchExpectedId == NULL ) {
-                    BOOST_CHECK_MESSAGE( ! entry_ci, "CSeq_entry_CI returned extra items" );
+                    BOOST_CHECK_MESSAGE( ! entry_ci, "TSeqEntryIter returned extra items" );
                 } else {
-                    BOOST_CHECK_MESSAGE( entry_ci, "CSeq_entry_CI ended too soon" );
+                    BOOST_CHECK_MESSAGE( entry_ci, "TSeqEntryIter ended too soon" );
                 }
             }
         }
     }
-}
 
-extern const char* sc_TestEntry;
-extern const char * sc_EntryIsJustBioseq;
+    const char * sc_EntryIsJustBioseq =
+        "Seq-entry ::= seq { id { local str \"lone\" }, inst { repr virtual, mol dna, length 100 } }";
 
-BOOST_AUTO_TEST_CASE(Test_EntryWithJustABioseq)
-{
-        CSeq_entry_Handle just_bioseq_entry_h = s_GetEntry( sc_EntryIsJustBioseq );
+    const char * sc_ComplexTestEntry =
+        "Seq-entry ::= set {"
+        "    id str \"top-level-set\","
+        "    seq-set {"
+        "        seq { id { local str \"foo\" }, inst { repr virtual, mol dna, length 100 } },"
+        "        seq { id { local str \"bar\" }, inst { repr virtual, mol dna, length 100 } },"
+        "        set {"
+        "            id str \"abc\","
+        "            seq-set {"
+        "                set {"
+        "                    id str \"some set\","
+        "                    seq-set {"
+        "                        seq { id { local str \"xyz\" }, inst { repr virtual, mol dna, length 100 } }"
+        "                    }"
+        "                },"
+        "                set {"
+        "                    id str \"another set\","
+        "                    seq-set {"
+        "                        seq { id { local str \"abcd\" }, inst { repr virtual, mol dna, length 100 } },"
+        "                        seq { id { local str \"123\" }, inst { repr virtual, mol dna, length 100 } },"
+        "                        seq { id { local str \"test\" }, inst { repr virtual, mol dna, length 100 } }"
+        "                    }"
+        "                }"
+        "            }"
+        "        },"
+        "        seq { id { local str \"last one\" }, inst { repr virtual, mol dna, length 100 } }"
+        "    }"
+        "}";
+
+
+    template<typename TSeqEntryIter, typename THandle>
+    void sTest_EntryWithJustABioseq( const THandle & data_h )
+    {
+        BOOST_REQUIRE( ! s_IsHandleABioseqSet(data_h) );
 
         // check all the combinations that lead to just the bioseq
         SExpectedEntry expect_just_bioseq[] = {
@@ -218,11 +262,11 @@ BOOST_AUTO_TEST_CASE(Test_EntryWithJustABioseq)
             CSeq_entry::e_Seq,
             kEndOfExpectationArrayMarker
         };
-        s_TestExpectations<CSeq_entry_CI>( just_bioseq_entry_h, 
+        s_TestExpectations<TSeqEntryIter>( data_h, 
             expect_just_bioseq, 
             filters_that_include_bioseq, 
-            CSeq_entry_CI::fIncludeGivenEntry, // include given, if possible
-            CSeq_entry_CI::fRecursive // try with recursion on and off
+            TSeqEntryIter::fIncludeGivenEntry, // include given, if possible
+            TSeqEntryIter::fRecursive // try with recursion on and off
             );
 
         // check all the combinations that lead to nothing
@@ -233,214 +277,207 @@ BOOST_AUTO_TEST_CASE(Test_EntryWithJustABioseq)
             CSeq_entry::e_Set,
             kEndOfExpectationArrayMarker
         };
-        s_TestExpectations<CSeq_entry_CI>( just_bioseq_entry_h, 
+        s_TestExpectations<TSeqEntryIter>( data_h, 
             expect_nothing, 
             filters_that_exclude_bioseq,
-            CSeq_entry_CI::fIncludeGivenEntry, // include given, if possible
-            CSeq_entry_CI::fRecursive // try with recursion on and off 
+            TSeqEntryIter::fIncludeGivenEntry, // include given, if possible
+            TSeqEntryIter::fRecursive // try with recursion on and off 
             );
         int exclude_given[] = {
             0,
             kEndOfExpectationArrayMarker
         };
-        s_TestExpectations<CSeq_entry_CI>( just_bioseq_entry_h, 
+        s_TestExpectations<TSeqEntryIter>( data_h, 
             expect_nothing, 
             NULL, // any filter
             0, // exclude given
-            CSeq_entry_CI::fRecursive // try with recursion on and off
+            TSeqEntryIter::fRecursive // try with recursion on and off
             );
+    }
+
+    template<typename TSeqEntryIter, typename THandle>
+    void sTest_ComplexEntry(const THandle & data_h )
+    {
+        // if top is bioseq-set, then we sometimes need an offset
+        // to make sure that we skip the given entry, since that's
+        // impossible to have if the given is a bioseq-set
+        const size_t iHandleOffset = ( s_IsHandleABioseqSet(data_h) ? 1 : 0 );
+
+        const int filtering_off[] = {
+            CSeq_entry::e_not_set,
+            kEndOfExpectationArrayMarker
+        };
+        const int bioseqs_only[] = {
+            CSeq_entry::e_Seq,
+            kEndOfExpectationArrayMarker
+        };
+        const int bioseq_sets_only[] = {
+            CSeq_entry::e_Set,
+            kEndOfExpectationArrayMarker
+        };
+
+        // recursive
+        // no filter
+        {{
+            const SExpectedEntry expectedEntry[] = {
+                { "top-level-set", 0 },
+                { "foo",           1 },
+                { "bar",           1 },
+                { "abc",           1 },
+                { "some set",      2 },
+                { "xyz",           3 },
+                { "another set",   2 },
+                { "abcd",          3 },
+                { "123",           3 },
+                { "test",          3 },
+                { "last one",      1 },
+                { NULL,            kMin_Int }
+            };
+            // include given
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (iHandleOffset + expectedEntry),
+                filtering_off,
+                TSeqEntryIter::fRecursive | TSeqEntryIter::fIncludeGivenEntry,
+                0 );
+            // exclude given, so we just skip the first one
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (1 + expectedEntry),
+                filtering_off,
+                TSeqEntryIter::fRecursive,
+                0 );
+        }}
+
+        // recursive
+        // bioseqs only
+        {{
+            const SExpectedEntry expectedEntry[] = {
+                { "foo",           1 },
+                { "bar",           1 },
+                { "xyz",           3 },
+                { "abcd",          3 },
+                { "123",           3 },
+                { "test",          3 },
+                { "last one",      1 },
+                { NULL,            kMin_Int }
+            };
+            // include given
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                expectedEntry,
+                bioseqs_only,
+                TSeqEntryIter::fRecursive,
+                TSeqEntryIter::fIncludeGivenEntry // including given entry shouldn't matter
+                );
+        }}
+
+        // recursive
+        // bioseq-sets only
+        {{
+            const SExpectedEntry expectedEntry[] = {
+                { "top-level-set", 0 },
+                { "abc",           1 },
+                { "some set",      2 },
+                { "another set",   2 },
+                { NULL,            kMin_Int }
+            };
+            // include given
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (iHandleOffset + expectedEntry),
+                bioseq_sets_only,
+                TSeqEntryIter::fRecursive | TSeqEntryIter::fIncludeGivenEntry,
+                0);
+            // exclude given, so just skip the first one
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (1 + expectedEntry),
+                bioseq_sets_only,
+                TSeqEntryIter::fRecursive,
+                0 );
+        }}
+
+        // non-recursive
+        // no filter
+        {{
+            const SExpectedEntry expectedEntry[] = {
+                { "top-level-set", 0 },
+                { "foo",           1 },
+                { "bar",           1 },
+                { "abc",           1 },
+                { "last one",      1 },
+                { NULL,            kMin_Int }
+            };
+            // include given
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (iHandleOffset + expectedEntry),
+                filtering_off,
+                TSeqEntryIter::fIncludeGivenEntry,
+                0 );
+            // exclude given, so we just skip the first one
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (1 + expectedEntry),
+                filtering_off,
+                0,
+                0 );
+        }}
+
+        // non-recursive
+        // bioseqs only
+        {{
+            const SExpectedEntry expectedEntry[] = {
+                { "foo",           1 },
+                { "bar",           1 },
+                { "last one",      1 },
+                { NULL,            kMin_Int }
+            };
+            // include given
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                expectedEntry,
+                bioseqs_only,
+                0,
+                TSeqEntryIter::fIncludeGivenEntry // same regardless of whether given entry allowed
+                );
+        }}
+
+        // non-recursive
+        // bioseq-sets only
+        {{
+            const SExpectedEntry expectedEntry[] = {
+                { "top-level-set", 0 },
+                { "abc",           1 },
+                { NULL,            kMin_Int }
+            };
+            // include given
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (iHandleOffset + expectedEntry),
+                bioseq_sets_only,
+                TSeqEntryIter::fIncludeGivenEntry,
+                0 );
+            // exclude given, so we just skip the first one
+            s_TestExpectations<TSeqEntryIter>( data_h,
+                (1 + expectedEntry),
+                bioseq_sets_only,
+                0,
+                0 );
+        }}
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Test_EntryWithJustABioseq)
+{
+    CSeq_entry_Handle just_bioseq_entry_h = s_GetEntry( sc_EntryIsJustBioseq );
+
+    // test when given is a seq-entry that is a mere bioseq
+    sTest_EntryWithJustABioseq<CSeq_entry_CI>(just_bioseq_entry_h);
+    sTest_EntryWithJustABioseq<CSeq_entry_I>(just_bioseq_entry_h.GetEditHandle());
 }
 
 BOOST_AUTO_TEST_CASE(Test_ComplexEntry)
 {
-    CSeq_entry_Handle test_entry_h = s_GetEntry( sc_TestEntry );
-    BOOST_REQUIRE(test_entry_h);
+    CSeq_entry_Handle complex_entry_h = s_GetEntry( sc_ComplexTestEntry );
 
-    const int filtering_off[] = {
-        CSeq_entry::e_not_set,
-        kEndOfExpectationArrayMarker
-    };
-    const int bioseqs_only[] = {
-        CSeq_entry::e_Seq,
-        kEndOfExpectationArrayMarker
-    };
-    const int bioseq_sets_only[] = {
-        CSeq_entry::e_Set,
-        kEndOfExpectationArrayMarker
-    };
+    // test when given is a seq-entry
+    sTest_ComplexEntry<CSeq_entry_CI>(complex_entry_h);
+    sTest_ComplexEntry<CSeq_entry_I>(complex_entry_h.GetEditHandle());   
 
-    // recursive
-    // no filter
-    {{
-        const SExpectedEntry expectedEntry[] = {
-            { "top-level-set", 0 },
-            { "foo",           1 },
-            { "bar",           1 },
-            { "abc",           1 },
-            { "some set",      2 },
-            { "xyz",           3 },
-            { "another set",   2 },
-            { "abcd",          3 },
-            { "123",           3 },
-            { "test",          3 },
-            { "last one",      1 },
-            { NULL,            kMin_Int }
-        };
-        // include given
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            expectedEntry,
-            filtering_off,
-            CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry,
-            0 );
-        // exclude given, so we just skip the first one
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            (1 + expectedEntry),
-            filtering_off,
-            CSeq_entry_CI::fRecursive,
-            0 );
-    }}
-
-    // recursive
-    // bioseqs only
-    {{
-        const SExpectedEntry expectedEntry[] = {
-            { "foo",           1 },
-            { "bar",           1 },
-            { "xyz",           3 },
-            { "abcd",          3 },
-            { "123",           3 },
-            { "test",          3 },
-            { "last one",      1 },
-            { NULL,            kMin_Int }
-        };
-        // include given
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            expectedEntry,
-            bioseqs_only,
-            CSeq_entry_CI::fRecursive,
-            CSeq_entry_CI::fIncludeGivenEntry // including given entry shouldn't matter
-            );
-    }}
-
-    // recursive
-    // bioseq-sets only
-    {{
-        const SExpectedEntry expectedEntry[] = {
-            { "top-level-set", 0 },
-            { "abc",           1 },
-            { "some set",      2 },
-            { "another set",   2 },
-            { NULL,            kMin_Int }
-        };
-        // include given
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            expectedEntry,
-            bioseq_sets_only,
-            CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry,
-            0);
-        // exclude given, so just skip the first one
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            (1 + expectedEntry),
-            bioseq_sets_only,
-            CSeq_entry_CI::fRecursive,
-            0 );
-    }}
-
-    // non-recursive
-    // no filter
-    {{
-        const SExpectedEntry expectedEntry[] = {
-            { "top-level-set", 0 },
-            { "foo",           1 },
-            { "bar",           1 },
-            { "abc",           1 },
-            { "last one",      1 },
-            { NULL,            kMin_Int }
-        };
-        // include given
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            expectedEntry,
-            filtering_off,
-            CSeq_entry_CI::fIncludeGivenEntry,
-            0 );
-        // exclude given, so we just skip the first one
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            (1 + expectedEntry),
-            filtering_off,
-            0,
-            0 );
-    }}
-
-    // non-recursive
-    // bioseqs only
-    {{
-        const SExpectedEntry expectedEntry[] = {
-            { "foo",           1 },
-            { "bar",           1 },
-            { "last one",      1 },
-            { NULL,            kMin_Int }
-        };
-        // include given
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            expectedEntry,
-            bioseqs_only,
-            0,
-            CSeq_entry_CI::fIncludeGivenEntry // same regardless of whether given entry allowed
-            );
-    }}
-
-    // non-recursive
-    // bioseq-sets only
-    {{
-        const SExpectedEntry expectedEntry[] = {
-            { "top-level-set", 0 },
-            { "abc",           1 },
-            { NULL,            kMin_Int }
-        };
-        // include given
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            expectedEntry,
-            bioseq_sets_only,
-            CSeq_entry_CI::fIncludeGivenEntry,
-            0 );
-        // exclude given, so we just skip the first one
-        s_TestExpectations<CSeq_entry_CI>( test_entry_h,
-            (1 + expectedEntry),
-            bioseq_sets_only,
-            0,
-            0 );
-    }}
+    // test when given is a bioseq-set
+    sTest_ComplexEntry<CSeq_entry_CI>(complex_entry_h.GetSet());
+    sTest_ComplexEntry<CSeq_entry_I>(complex_entry_h.GetSet().GetEditHandle());
 }
-
-
-const char * sc_TestEntry =
-    "Seq-entry ::= set {"
-    "    id str \"top-level-set\","
-    "    seq-set {"
-    "        seq { id { local str \"foo\" }, inst { repr virtual, mol dna, length 100 } },"
-    "        seq { id { local str \"bar\" }, inst { repr virtual, mol dna, length 100 } },"
-    "        set {"
-    "            id str \"abc\","
-    "            seq-set {"
-    "                set {"
-    "                    id str \"some set\","
-    "                    seq-set {"
-    "                        seq { id { local str \"xyz\" }, inst { repr virtual, mol dna, length 100 } }"
-    "                    }"
-    "                },"
-    "                set {"
-    "                    id str \"another set\","
-    "                    seq-set {"
-    "                        seq { id { local str \"abcd\" }, inst { repr virtual, mol dna, length 100 } },"
-    "                        seq { id { local str \"123\" }, inst { repr virtual, mol dna, length 100 } },"
-    "                        seq { id { local str \"test\" }, inst { repr virtual, mol dna, length 100 } }"
-    "                    }"
-    "                }"
-    "            }"
-    "        },"
-    "        seq { id { local str \"last one\" }, inst { repr virtual, mol dna, length 100 } }"
-    "    }"
-    "}";
-
-const char * sc_EntryIsJustBioseq =
-    "Seq-entry ::= seq { id { local str \"lone\" }, inst { repr virtual, mol dna, length 100 } }";

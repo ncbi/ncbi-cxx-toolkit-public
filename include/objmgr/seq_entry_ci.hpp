@@ -105,7 +105,7 @@ public:
     CSeq_entry_CI& operator =(const CSeq_entry_CI& iter);
 
     /// Check if iterator points to an object
-    DECLARE_OPERATOR_BOOL(m_Current);
+    DECLARE_OPERATOR_BOOL( IsValid() );
 
     bool operator ==(const CSeq_entry_CI& iter) const;
     bool operator !=(const CSeq_entry_CI& iter) const;
@@ -118,14 +118,19 @@ public:
 
     const CBioseq_set_Handle& GetParentBioseq_set(void) const;
 
-    /// Return current depth relative to the initial seq-entry, 0-based.
-    /// If the given entry is included, then all depths are increased by
-    /// by 1 so that the given entry will have a depth of 0 rather than
-    /// allowing negative depths.
-    /// In non-recursive mode always returns 0 if given entry is not included,
-    /// otherwise it returns 0 for the given entry and 1 for all the others.
+    /// Returns the current depth, which may vary depending on flags.
+    /// If fIncludeGivenEntry is set, it returns the current depth relative to 
+    /// the initially given seq-entry (or initially given bioseq-set), where the given 
+    /// has depth "0", its direct children have depth "1", and so on.
+    /// If fIncludeGivenEntry is NOT set, then the returned values are 1 less.
+    /// That is, "0" for direct descendents of the given, "1" for the direct descendents
+    /// of those, etc.
     /// @sa fIncludeGivenEntry
     int GetDepth(void) const;
+
+protected:
+
+    bool IsValid(void) const;
 
 private:
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
@@ -159,71 +164,55 @@ private:
 ///  @sa
 ///    CSeq_entry_CI
 
-class NCBI_XOBJMGR_EXPORT CSeq_entry_I
+class NCBI_XOBJMGR_EXPORT CSeq_entry_I : private CSeq_entry_CI
 {
 public:
-    /// Recursion mode
-    enum ERecursionMode {
-        eNonRecursive, ///< Iterate single level
-        eRecursive     ///< Iterate recursively
-    };
+
+    using CSeq_entry_CI::EFlags;
+    using CSeq_entry_CI::fRecursive;
+    using CSeq_entry_CI::fIncludeGivenEntry;
+    using CSeq_entry_CI::eNonRecursive;
+    using CSeq_entry_CI::eRecursive;
+    using CSeq_entry_CI::TFlags;
+    using CSeq_entry_CI::ERecursionMode;
+    using CSeq_entry_CI::GetDepth;
 
     /// Create an empty iterator
     CSeq_entry_I(void);
 
     /// Create an iterator that enumerates seq-entries
-    /// related to the given seq-entrie
+    /// related to the given seq-entry
     CSeq_entry_I(const CSeq_entry_EditHandle& entry,
-                 ERecursionMode               recursive = eNonRecursive,
+                 TFlags flags = 0,
                  CSeq_entry::E_Choice         type_filter = CSeq_entry::e_not_set);
 
     /// Create an iterator that enumerates seq-entries
     /// related to the given seq-set
     CSeq_entry_I(const CBioseq_set_EditHandle& set,
-                 ERecursionMode                recursive = eNonRecursive,
+                 TFlags flags = 0,
                  CSeq_entry::E_Choice          type_filter = CSeq_entry::e_not_set);
 
     CSeq_entry_I(const CSeq_entry_I& iter);
     CSeq_entry_I& operator =(const CSeq_entry_I& iter);
 
     /// Check if iterator points to an object
-    DECLARE_OPERATOR_BOOL(m_Current);
+    OVERRIDE_OPERATOR_BOOL(CSeq_entry_CI, CSeq_entry_CI::IsValid());
 
     bool operator ==(const CSeq_entry_I& iter) const;
     bool operator !=(const CSeq_entry_I& iter) const;
 
     CSeq_entry_I& operator ++(void);
 
-    const CSeq_entry_EditHandle& operator*(void) const;
-    const CSeq_entry_EditHandle* operator->(void) const;
+    const CSeq_entry_EditHandle operator*(void) const;
+    auto_ptr<const CSeq_entry_EditHandle> operator->(void) const;
 
-    const CBioseq_set_EditHandle& GetParentBioseq_set(void) const;
-
-    /// Return current depth relative to the initial seq-entry, 0-based.
-    /// In non-recursive mode always returns 0.
-    int GetDepth(void) const;
-
+    CBioseq_set_EditHandle GetParentBioseq_set(void) const;
+    
 private:
-    typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
-    typedef TSeq_set::iterator  TIterator;
-
-    void x_Initialize(const CBioseq_set_EditHandle& set);
-    void x_SetCurrentEntry(void);
-
     friend class CBioseq_set_Handle;
 
     /// Move to the next object in iterated sequence
     CSeq_entry_I& operator ++(int);
-
-    bool x_ValidType(void) const;
-    void x_Next(void);
-
-    CBioseq_set_EditHandle  m_Parent;
-    TIterator               m_Iterator;
-    CSeq_entry_EditHandle   m_Current;
-    ERecursionMode          m_Recursive;
-    CSeq_entry::E_Choice    m_Filter;
-    auto_ptr<CSeq_entry_I>  m_SubIt;
 };
 
 
@@ -256,7 +245,6 @@ bool CSeq_entry_CI::operator !=(const CSeq_entry_CI& iter) const
     return !((*this) == iter);
 }
 
-
 inline
 const CSeq_entry_Handle& CSeq_entry_CI::operator*(void) const
 {
@@ -277,6 +265,11 @@ const CBioseq_set_Handle& CSeq_entry_CI::GetParentBioseq_set(void) const
     return m_Parent;
 }
 
+inline
+bool CSeq_entry_CI::IsValid(void) const
+{
+    return m_Current;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_entry_I inline methods
@@ -284,8 +277,6 @@ const CBioseq_set_Handle& CSeq_entry_CI::GetParentBioseq_set(void) const
 
 inline
 CSeq_entry_I::CSeq_entry_I(void)
-    : m_Recursive(eNonRecursive),
-      m_Filter(CSeq_entry::e_not_set)
 {
 }
 
@@ -293,39 +284,42 @@ CSeq_entry_I::CSeq_entry_I(void)
 inline
 bool CSeq_entry_I::operator ==(const CSeq_entry_I& iter) const
 {
-    if (m_Current != iter.m_Current) return false;
-    if (m_SubIt.get()  &&  iter.m_SubIt.get()) {
-        return *m_SubIt == *iter.m_SubIt;
-    }
-    return (!m_SubIt.get()  &&  !iter.m_SubIt.get());
+    return CSeq_entry_CI::operator==(iter);
 }
 
 
 inline
 bool CSeq_entry_I::operator !=(const CSeq_entry_I& iter) const
 {
-    return !((*this) == iter);
+    return CSeq_entry_CI::operator!=(iter);
+}
+
+inline
+CSeq_entry_I& CSeq_entry_I::operator ++(void)
+{
+    CSeq_entry_CI::operator++();
+    return *this;
+}
+
+inline
+const CSeq_entry_EditHandle CSeq_entry_I::operator*(void) const
+{
+    return CSeq_entry_EditHandle( CSeq_entry_CI::operator*() );
 }
 
 
 inline
-const CSeq_entry_EditHandle& CSeq_entry_I::operator*(void) const
+auto_ptr<const CSeq_entry_EditHandle> CSeq_entry_I::operator->(void) const
 {
-    return m_SubIt.get() ? **m_SubIt : m_Current;
+    auto_ptr<const CSeq_entry_EditHandle> rval( new CSeq_entry_EditHandle( CSeq_entry_CI::operator*() ) );
+    return rval;
 }
 
 
 inline
-const CSeq_entry_EditHandle* CSeq_entry_I::operator->(void) const
+CBioseq_set_EditHandle CSeq_entry_I::GetParentBioseq_set(void) const
 {
-    return m_SubIt.get() ? &(**m_SubIt) : &m_Current;
-}
-
-
-inline
-const CBioseq_set_EditHandle& CSeq_entry_I::GetParentBioseq_set(void) const
-{
-    return m_Parent;
+    return CBioseq_set_EditHandle( CSeq_entry_CI::GetParentBioseq_set() );
 }
 
 
