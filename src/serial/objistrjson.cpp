@@ -292,13 +292,20 @@ string CObjectIStreamJson::x_ReadDataAndCheck(EStringType type)
 void  CObjectIStreamJson::x_SkipData(void)
 {
     m_ExpectValue = false;
-    SkipWhiteSpace();
+    char to = GetChar(true);
     for (;;) {
         bool encoded;
         char c = ReadEncodedChar(eStringTypeUTF8, &encoded);
-        if (!encoded && strchr(",]} \r\n", c)) {
-            m_Input.UngetChar(c);
-            break;
+        if (!encoded) {
+            if (to == '\"') {
+                if (c == to) {
+                    break;
+                }
+            }
+            else if (strchr(",]} \r\n", c)) {
+                m_Input.UngetChar(c);
+                break;
+            }
         }
     }
 }
