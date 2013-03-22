@@ -13,4 +13,4 @@ CHECK_CMD =
 CHECK_REQUIRES = in-house-resources
 CHECK_TIMEOUT = 300
 
-WATCHERS = vasilche
+WATCHERS = vasilche gouriano
