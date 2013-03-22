@@ -244,9 +244,11 @@ public:
     SUPPORT_COMPILER_OPTION(MinimalRebuild)
     virtual string BasicRuntimeChecks(void) const
     {
+#if 0
         if (m_Config.m_VTuneAddon) {
             return CMsvcMetaMakefile::TranslateOpt("0", "Compiler", "BasicRuntimeChecks");
         }
+#endif
         return GetCompilerOpt(m_MsvcMetaMakefile,
                               m_MsvcProjectMakefile,
                               "BasicRuntimeChecks",
@@ -458,9 +460,11 @@ public:
 
     virtual string FixedBaseAddress(void) const
     {
+#if 0
         if (m_Config.m_VTuneAddon) {
             return CMsvcMetaMakefile::TranslateOpt("1", "Linker", "FixedBaseAddress");
         }
+#endif
         return GetLinkerOpt(m_MsvcMetaMakefile,
                             m_MsvcProjectMakefile,
                             "FixedBaseAddress",

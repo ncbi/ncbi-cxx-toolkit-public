@@ -533,6 +533,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
         {
             config.m_VTuneAddon = true;
             configs->push_back(config);
+            config.m_VTuneAddon = false;
         }
         if (GetApp().m_AddUnicode) {
             config.m_Unicode = true;
