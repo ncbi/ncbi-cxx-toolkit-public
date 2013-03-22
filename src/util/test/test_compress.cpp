@@ -342,14 +342,14 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
         {{
             CCompressionIStream ics(is_str, stream_compressor.get());
             ics.read(dst_buf, kLen);
-            n = ics.gcount();
+            n = (size_t)ics.gcount();
             assert(n == test.stream_output_size);
             assert(ics.GetProcessedSize() == 0);
             assert(ics.GetOutputSize() == n);
 
             CCompressionIStream ids(is_str, stream_decompressor.get());
             ids.read(dst_buf, kLen);
-            n = ids.gcount();
+            n = (size_t)ids.gcount();
             assert(n == 0);
             assert(ids.GetProcessedSize() == 0);
             assert(ids.GetOutputSize() == n);
@@ -361,7 +361,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 CNcbiOstrstream os_str;
                 CCompressionOStream ocs(os_str, stream_compressor.get());
                 ocs.Finalize();
-                n = os_str.pcount();
+                n = (size_t)os_str.pcount();
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
@@ -370,7 +370,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 CNcbiOstrstream os_str;
                 CCompressionOStream ods(os_str, stream_decompressor.get());
                 ods.Finalize();
-                n = os_str.pcount();
+                n = (size_t)os_str.pcount();
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
                 assert(ods.GetOutputSize() == n);
@@ -384,7 +384,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 CCompressionOStream ocs(os_str, stream_compressor.get());
                 ocs.flush();
                 ocs.Finalize();
-                n = os_str.pcount();
+                n = (size_t)os_str.pcount();
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
@@ -394,7 +394,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 CCompressionOStream ods(os_str, stream_decompressor.get());
                 ods.flush();
                 ods.Finalize();
-                n = os_str.pcount();
+                n = (size_t)os_str.pcount();
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
                 assert(ods.GetOutputSize() == n);

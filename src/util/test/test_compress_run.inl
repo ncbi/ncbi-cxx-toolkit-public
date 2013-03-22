@@ -312,7 +312,7 @@
         
         // Read compressed data from stream
         ics_zip.read(dst_buf, kReadMax);
-        dst_len = ics_zip.gcount();
+        dst_len = (size_t)ics_zip.gcount();
         // We should have all packed data here, because compressor
         // finalization for input streams accomplishes automaticaly.
         PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, dst_len);
@@ -366,7 +366,7 @@
         CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),
                                     CCompressionStream::fOwnReader);
         ids_zip.read(cmp_buf, kReadMax);
-        out_len = ids_zip.gcount();
+        out_len = (size_t)ids_zip.gcount();
         // We should have all packed data here, because compressor
         // finalization for input streams accomplishes automatically.
         PrintResult(eDecompress, kUnknownErr, dst_len, kBufLen, out_len);
@@ -399,7 +399,7 @@
         }}
         // Get compressed size
         const char* str = os_str.str();
-        size_t os_str_len = os_str.pcount();
+        size_t os_str_len = (size_t)os_str.pcount();
         PrintResult(eCompress, kUnknownErr, kDataLen, kBufLen, os_str_len);
 
         // Try to decompress data
@@ -463,7 +463,7 @@
 
         // Get decompressed size
         const char*  str = os_str.str();
-        size_t os_str_len = os_str.pcount();
+        size_t os_str_len = (size_t)os_str.pcount();
         PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, os_str_len);
         assert(os_zip.GetProcessedSize() == out_len);
         assert(os_zip.GetOutputSize() == kDataLen);
@@ -494,7 +494,7 @@
         CCompressionIStream ids_zip(is_str, &decompressor);
 
         ids_zip.read(dst_buf, kReadMax);
-        out_len = ids_zip.gcount();
+        out_len = (size_t)ids_zip.gcount();
         PrintResult(eDecompress, kUnknownErr, kDataLen, kBufLen, out_len);
         assert(ids_zip.GetProcessedSize() == out_len);
         assert(ids_zip.GetOutputSize() == out_len);
@@ -532,7 +532,7 @@
 
             // Read data
             zip.read(cmp_buf, kDataLen);
-            out_len = zip.gcount();
+            out_len = (size_t)zip.gcount();
             assert(!stm.eof()  &&  stm.good());
             assert(!zip.eof()  &&  zip.good());
             assert(out_len == kDataLen);
@@ -609,7 +609,7 @@
                 }
             }}
             const char* str = os_str.str();
-            size_t os_str_len = os_str.pcount();
+            size_t os_str_len = (size_t)os_str.pcount();
             PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,os_str_len);
 
             // Decompress data from input stream
@@ -662,7 +662,7 @@
             _TROUBLE;
         }
         const char* str = os_str.str();
-        size_t os_str_len = os_str.pcount();
+        size_t os_str_len = (size_t)os_str.pcount();
         PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
         // Decompress data and compare with original
         result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
@@ -737,7 +737,7 @@
                 _TROUBLE;
             }
             const char* str = os_str.str();
-            size_t os_str_len = os_str.pcount();
+            size_t os_str_len = (size_t)os_str.pcount();
             PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
             // Decompress data and compare with original
             result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
@@ -764,7 +764,7 @@
                 _TROUBLE;
             }
             str = os_cmp.str();
-            out_len = os_cmp.pcount();
+            out_len = (size_t)os_cmp.pcount();
             PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
             // Compare original and decompressed data
             assert(out_len == kDataLen);
@@ -794,7 +794,7 @@
                 _TROUBLE;
             }
             const char* str = os_str.str();
-            size_t os_str_len = os_str.pcount();
+            size_t os_str_len = (size_t)os_str.pcount();
             PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
             // Decompress data and compare with original
             result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
@@ -821,7 +821,7 @@
                 _TROUBLE;
             }
             str = os_cmp.str();
-            out_len = os_cmp.pcount();
+            out_len = (size_t)os_cmp.pcount();
             PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
             // Compare original and decompressed data
             assert(out_len == kDataLen);
@@ -898,7 +898,7 @@
         } else {
             _TROUBLE;
         }
-        out_len = os_cmp.pcount();
+        out_len = (size_t)os_cmp.pcount();
         PrintResult(eDecompress, kUnknownErr, dst_len, kUnknown, out_len);
         // Compare original and decompressed data
         assert(out_len == kDataLen);
