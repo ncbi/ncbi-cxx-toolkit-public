@@ -207,6 +207,16 @@ enum EInterruptOnSignal {
 #define DECLARE_OPERATOR_BOOL_REF(Ref)          \
     DECLARE_OPERATOR_BOOL((Ref).NotNull())
 
+/// Override the DECLARE_OPERATOR_BOOL, etc.
+/// from an ancestor class.  This is needed because sometimes you can't just 
+/// use DECLARE_OPERATOR_BOOL due to cases such as the ancestor class
+/// being privately inherited from.
+#define OVERRIDE_OPERATOR_BOOL(TAncestorClass, NewBoolExpr)     \
+    using TAncestorClass::TBoolType;                                    \
+    using TAncestorClass::SSafeBoolTag;                                 \
+    operator TBoolType() const {                                \
+        return (NewBoolExpr)? & SSafeBoolTag::SafeBoolTrue : 0;        \
+    }
 
 /// Template used for empty base class optimization.
 /// See details in the August '97 "C++ Issue" of Dr. Dobb's Journal
