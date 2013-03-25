@@ -126,6 +126,9 @@ void CDataTool::Init(void)
     d->AddOptionalKey("vx", "valueFile",
                       "read value in XML format",
                       CArgDescriptions::eInputFile);
+    d->AddOptionalKey("vj", "valueFile",
+                      "read value in JSON format",
+                      CArgDescriptions::eInputFile);
     d->AddOptionalKey("d", "valueFile",
                       "read value in ASN.1 binary format (-t is required)",
                       CArgDescriptions::eInputFile);
@@ -360,6 +363,10 @@ bool CDataTool::ProcessData(void)
         inFormat = eSerial_Xml;
         inFileName = vx.AsString();
     }
+    else if ( const CArgValue& vj = args["vj"] ) {
+        inFormat = eSerial_Json;
+        inFileName = vj.AsString();
+    }
     else if ( const CArgValue& d = args["d"] ) {
         if ( !t ) {
             ERR_POST_X(3, "ASN.1 value type must be specified (-t)");
@@ -531,6 +538,12 @@ bool CDataTool::ProcessData(void)
                              *matching.begin() == *known.begin();
                         if (go) {
                             copier.Copy(typeInfo);
+                        }
+                    } catch (CSerialException& se) {
+                        if (se.GetErrCode() == CSerialException::eEOF) {
+                            go = false;
+                        } else {
+                            NCBI_RETHROW_SAME(se,kEmptyStr);
                         }
                     } catch (CEofException&) {
                         go = false;
