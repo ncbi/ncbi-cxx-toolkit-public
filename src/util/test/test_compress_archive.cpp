@@ -248,7 +248,7 @@ void s_TestFileArchive(CArchive::EFormat format,
 }
 
 
-size_t s_ExtractCallback(const CArchiveEntryInfo& info, const void* buf, size_t n)
+size_t s_ExtractCallback(const CArchiveEntryInfo& /*info*/, const void* /*buf*/, size_t n)
 {
     // Do nothing, just return 'SUCCESS' state.
     return n;

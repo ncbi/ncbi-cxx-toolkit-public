@@ -200,7 +200,7 @@ public:
     virtual void TestEntry(const CArchiveEntryInfo& info);
 
     /// Don't need to be implemented for ZIP format.
-    virtual void SkipEntry(const CArchiveEntryInfo& info) {};
+    virtual void SkipEntry(const CArchiveEntryInfo& /*info*/) {};
 
     /// Add single entry to newly created archive from file system.
     ///

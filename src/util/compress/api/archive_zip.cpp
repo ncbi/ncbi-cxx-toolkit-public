@@ -333,7 +333,7 @@ void CArchiveZip::ExtractEntryToFileSystem(const CArchiveEntryInfo& info,
     if (!pFile) {
         ZIP_THROW(eExtract, "Cannot create target file '" + dst_path + "'");
     }
-    status = mz_zip_reader_extract_to_callback(ZIP_HANDLE, info.m_Index,
+    status = mz_zip_reader_extract_to_callback(ZIP_HANDLE, (mz_uint)info.m_Index,
                                                mz_zip_file_write_callback, pFile, 0);
     if (MZ_FCLOSE(pFile) == EOF) {
         ZIP_THROW(eExtract, "Error close file '" + dst_path + "'");
@@ -359,7 +359,7 @@ void CArchiveZip::ExtractEntryToMemory(const CArchiveEntryInfo& info, void* buf,
     }
     // The code below extract files only.
     mz_bool status;
-    status = mz_zip_reader_extract_to_mem(ZIP_HANDLE, info.m_Index, buf, size, 0);
+    status = mz_zip_reader_extract_to_mem(ZIP_HANDLE, (mz_uint)info.m_Index, buf, size, 0);
     if (!status) {
         ZIP_THROW(eExtract, "Error extracting entry with index " +
             NStr::SizetToString(info.m_Index) + " to memory");
@@ -375,13 +375,16 @@ struct SWriteCallbackData {
 };
 
 // Callback for extracting data, call user-defined callback to do a real job.
-static size_t s_ZipExtractCallback(void* params, mz_uint64 /*ofs*/, const void* buf, size_t n)
+extern "C" 
 {
-    _ASSERT(params);
-    SWriteCallbackData& data = *(SWriteCallbackData*)(params);
-    // Call user callback
-    size_t processed = data.callback(*data.info, buf, n);
-    return processed;
+    static size_t s_ZipExtractCallback(void* params, mz_uint64 /*ofs*/, const void* buf, size_t n)
+    {
+        _ASSERT(params);
+        SWriteCallbackData& data = *(SWriteCallbackData*)(params);
+        // Call user callback
+        size_t processed = data.callback(*data.info, buf, n);
+        return processed;
+    }
 }
 
 void CArchiveZip::ExtractEntryToCallback(const CArchiveEntryInfo& info, Callback_Write callback)
@@ -398,7 +401,7 @@ void CArchiveZip::ExtractEntryToCallback(const CArchiveEntryInfo& info, Callback
     data.callback = callback;
     data.info     = &info;
     mz_bool status;
-    status = mz_zip_reader_extract_to_callback(ZIP_HANDLE, info.m_Index,
+    status = mz_zip_reader_extract_to_callback(ZIP_HANDLE, (mz_uint)info.m_Index,
                                                s_ZipExtractCallback, &data, 0);
     if (!status) {
         ZIP_THROW(eExtract, "Error extracting entry with index " +
@@ -409,11 +412,14 @@ void CArchiveZip::ExtractEntryToCallback(const CArchiveEntryInfo& info, Callback
 
 
 // Dummy callback to test an entry extraction
-static size_t s_ZipTestCallback(void* /*pOpaque*/, mz_uint64 /*ofs*/, 
-                                const void* /*pBuf*/, size_t n)
+extern "C" 
 {
-    // Just return number of extracted bytes
-    return n;
+    static size_t s_ZipTestCallback(void* /*pOpaque*/, mz_uint64 /*ofs*/, 
+                                   const void* /*pBuf*/, size_t n)
+    {
+        // Just return number of extracted bytes
+        return n;
+    }
 }
 
 void CArchiveZip::TestEntry(const CArchiveEntryInfo& info)
@@ -427,7 +433,8 @@ void CArchiveZip::TestEntry(const CArchiveEntryInfo& info)
     }
     // The code below test files only.
     mz_bool status;
-    status = mz_zip_reader_extract_to_callback(ZIP_HANDLE, info.m_Index, s_ZipTestCallback, 0, 0);
+    status = mz_zip_reader_extract_to_callback(ZIP_HANDLE, (mz_uint)info.m_Index,
+                                               s_ZipTestCallback, 0, 0);
     if (!status) {
         ZIP_THROW(eExtract, "Test entry with index " +
             NStr::SizetToString(info.m_Index) + " failed");
