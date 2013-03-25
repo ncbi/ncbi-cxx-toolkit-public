@@ -8,6 +8,7 @@ $Id$
 <!ELEMENT	Name		(#PCDATA)>	<!-- .+ -->
 <!ELEMENT	FullName	(#PCDATA)>	<!-- .+ -->
 <!ELEMENT	Description	(#PCDATA)>	<!-- .+ -->
+<!ELEMENT	DbBuild		(#PCDATA)>      <!-- .+ -->
 <!ELEMENT	TermCount	(#PCDATA)>	<!-- \d+ -->
 <!ELEMENT	Menu		(#PCDATA)>	<!-- .+ -->
 <!ELEMENT	DbTo		(#PCDATA)>	<!-- \S+ -->
@@ -36,9 +37,9 @@ $Id$
 				IsNumerical,
 				SingleToken,
 				Hierarchy,
-                                IsHidden?,
+                                IsHidden,
                                 IsRangable?,
-                IsTruncatable)>
+                IsTruncatable?)>
 
 <!ELEMENT	Link		(Name,Menu,Description,DbTo)>
 
@@ -50,6 +51,7 @@ $Id$
 <!ELEMENT	DbInfo		(DbName,
 				MenuName,
 				Description,
+				DbBuild?,
 				Count,
 				LastUpdate,
 				FieldList,
