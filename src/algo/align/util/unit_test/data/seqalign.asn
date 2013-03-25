@@ -2815,7 +2815,7 @@ Seq-align ::= {
     },
     {
       id str "pct_coverage_hiqual",
-      value real { 833723653395785, 10, -13 }
+      value real { 836065573770490, 10, -13 }
     },
     {
       id str "pct_identity_gap",
