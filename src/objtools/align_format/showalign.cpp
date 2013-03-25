@@ -1495,7 +1495,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
 //uses m_AV    m_LineLen m_AlignOption m_QueryNumber
 string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
 {
-    size_t startLen=0, actualLineLen=0;
+    size_t actualLineLen=0;
     string master_feat_str = NcbiEmptyString;
     size_t aln_stop=m_AV->GetAlnStop();
 
