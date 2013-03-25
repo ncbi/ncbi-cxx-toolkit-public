@@ -378,7 +378,7 @@ string CObjectIStreamJson::ReadFileHeader(void)
     m_FileHeader = true;
     StartBlock('{');
     string str( ReadKey());
-    if (TopFrame().HasTypeInfo()) {
+    if (!StackIsEmpty() && TopFrame().HasTypeInfo()) {
         const string& tname = TopFrame().GetTypeInfo()->GetName();
         if (tname.empty()) {
             UndoClassMember();
