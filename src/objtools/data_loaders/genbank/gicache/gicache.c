@@ -1628,8 +1628,10 @@ s_DecodeGiAccession(const char* inbuf, char* acc, int acc_len)
         if (retval < 0)
             return retval;
         sprintf(acc_buf+prefix_length, "%.*d", suffix_length+2, suffix);
-    } else {
-        sprintf(acc_buf, "%s", buf);
+    } else
+    {
+        /* sprintf(acc_buf, "%s", buf); */
+        strncpy( acc_buf, buf, MAX_ACCESSION_LENGTH  - 8);
     }
 
     if (version > 0)
