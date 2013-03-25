@@ -80,7 +80,8 @@ private:
     void x_GetParsedQuery  (CEntrez2Client& client,
                             const string& query, const string& db);
     void x_GetUids         (CEntrez2Client& client,
-                            const string& query, const string& db);
+                            const string& query, const string& db,
+                            int start, int max_num);
     void x_GetDocsums      (CEntrez2Client& client,
                             const string& query, const string& db,
                             int start, int max_num);
@@ -149,7 +150,7 @@ void CEntrez2ClientApp::Init(void)
                             "Starting point in the UID list for retrieval",
                             CArgDescriptions::eInteger, "-1");
     arg_desc->AddDefaultKey("max", "MaxNum",
-                            "Maximum number of records to retrieve",
+                            "Maximum number of records (or UIDs) to retrieve",
                             CArgDescriptions::eInteger, "-1");
 
     arg_desc->AddDefaultKey("out", "OutputFile", "File to dump output to",
@@ -198,7 +199,7 @@ int CEntrez2ClientApp::Run(void)
     } else if (lt == "uids") {
         LOG_POST(Info << "performing look-up type: eval-boolean"
                  " (UID list)");
-        x_GetUids(*m_Client, query, db);
+        x_GetUids(*m_Client, query, db, start, max_num);
     } else if (lt == "docsum") {
         LOG_POST(Info << "performing look-up type: get-docsum");
         x_GetDocsums(*m_Client, query, db, start, max_num);
@@ -257,10 +258,12 @@ void CEntrez2ClientApp::x_GetCount(CEntrez2Client& client,
 // display only the number fo records that match a query
 //
 void CEntrez2ClientApp::x_GetUids(CEntrez2Client& client,
-                                  const string& query, const string& db)
+                                  const string& query, const string& db,
+                                  int start, int max_num)
 {
     CRef<CEntrez2_boolean_reply> reply(x_EvalBoolean(client, query, db,
-                                                     true, true));
+                                                     true, true,
+                                                     start, max_num));
     *m_Ostream << "query: " << query << endl;
     x_FormatReply(*reply);
 }
