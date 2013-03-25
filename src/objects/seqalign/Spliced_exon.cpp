@@ -57,30 +57,12 @@ CSpliced_exon::CreateRowSeq_interval(CSeq_align::TDim    row,
                                      const CSpliced_seg& seg) const
 {
     CRef<CSeq_interval> ret;
-    if (row != 0  &&  row != 1) {
-        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                   "CSpliced_exon::CreateRowSeq_interval() - "
-                   "row number must be 0 or 1 for spliced-segs.");
-    }
     ret.Reset(new CSeq_interval);
+    TSeqRange range = GetRowSeq_range(row, false);
+    ret->SetFrom(range.GetFrom());
+    ret->SetTo(range.GetTo());
 
     if (row == 0) {
-        _ASSERT(GetProduct_start().Which() == GetProduct_end().Which());
-        switch ( GetProduct_start().Which() ) {
-        case CProduct_pos::e_Nucpos:
-            ret->SetFrom(GetProduct_start().GetNucpos());
-            ret->SetTo(GetProduct_end().GetNucpos());
-            break;
-        case CProduct_pos::e_Protpos:
-            ret->SetFrom(GetProduct_start().GetProtpos().GetAmin());
-            ret->SetTo(GetProduct_end().GetProtpos().GetAmin());
-            break;
-        default:
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "CSpliced_exon::CreateRowSeq_interval() - "
-                       "start/end product-pos types do not match.");
-            break;
-        }
         if ( IsSetProduct_id() ) {
             ret->SetId().Assign(GetProduct_id());
         }
@@ -101,8 +83,6 @@ CSpliced_exon::CreateRowSeq_interval(CSeq_align::TDim    row,
     }
     else if (row == 1) {
         // Genomic
-        ret->SetFrom(GetGenomic_start());
-        ret->SetTo(GetGenomic_end());
         if ( IsSetGenomic_id() ) {
             ret->SetId().Assign(GetGenomic_id());
         }
@@ -110,8 +90,7 @@ CSpliced_exon::CreateRowSeq_interval(CSeq_align::TDim    row,
             ret->SetId().Assign(seg.GetGenomic_id());
         }
         else {
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "CSpliced_exon::CreateRowSeq_interval() - "
+            NCBI_THROW(CSeqalignException, eInvalidAlignment, "CSpliced_exon::CreateRowSeq_interval() - "
                        "missing genomic id.");
         }
         if ( IsSetGenomic_strand() ) {
@@ -122,6 +101,146 @@ CSpliced_exon::CreateRowSeq_interval(CSeq_align::TDim    row,
         }
     }
     return ret;
+}
+
+TSeqRange CSpliced_exon::GetRowSeq_range(CSeq_align::TDim    row,
+                                         bool always_as_nuc) const
+{
+    if (row != 0  &&  row != 1) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CSpliced_exon::CreateRowSeq_interval() - "
+                   "row number must be 0 or 1 for spliced-segs.");
+    }
+    if (row == 0) {
+        _ASSERT(GetProduct_start().Which() == GetProduct_end().Which());
+        switch ( GetProduct_start().Which() ) {
+        case CProduct_pos::e_Nucpos:
+            return TSeqRange(GetProduct_start().GetNucpos(),
+                             GetProduct_end().GetNucpos());
+
+        case CProduct_pos::e_Protpos:
+            if (always_as_nuc) {
+                TSeqPos start_frame =
+                    GetProduct_start().GetProtpos().GetFrame();
+                if(start_frame > 0)
+                    --start_frame;
+                TSeqPos end_frame =
+                    GetProduct_end().GetProtpos().GetFrame();
+                if(end_frame > 0)
+                    --end_frame;
+                return TSeqRange(
+                    GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
+                    GetProduct_end().GetProtpos().GetAmin()*3 + end_frame);
+            } else {
+                return TSeqRange(GetProduct_start().GetProtpos().GetAmin(),
+                                 GetProduct_end().GetProtpos().GetAmin());
+            }
+
+        default:
+            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "CSpliced_exon::CreateRowSeq_interval() - "
+                       "start/end product-pos types do not match.");
+            break;
+        }
+    }
+    else if (row == 1) {
+        // Genomic
+        return TSeqRange(GetGenomic_start(), GetGenomic_end());
+    }
+}
+
+CRangeCollection<TSeqPos> CSpliced_exon::GetRowSeq_insertions(
+    CSeq_align::TDim    row, const CSpliced_seg& seg) const
+{
+    return GetRowSeq_insertions(row, seg,
+                          CRangeCollection<TSeqPos>(TSeqRange::GetWhole()));
+}
+
+CRangeCollection<TSeqPos> CSpliced_exon::GetRowSeq_insertions(
+    CSeq_align::TDim    row,
+    const CSpliced_seg& seg,
+    const CRangeCollection<TSeqPos> &within_product_ranges) const
+{
+    vector<ENa_strand> strand(2, eNa_strand_unknown);
+    if (IsSetProduct_strand()) {
+        strand[0] = GetProduct_strand();
+    } else if (seg.IsSetProduct_strand()) {
+        strand[0] = seg.GetProduct_strand();
+    }
+    if (IsSetGenomic_strand()) {
+        strand[1] = GetGenomic_strand();
+    } else if (seg.IsSetGenomic_strand()) {
+        strand[1] = seg.GetGenomic_strand();
+    }
+
+    vector<int> direction;
+    direction.push_back(strand[0] == eNa_strand_minus ? -1 : 1);
+    direction.push_back(strand[1] == eNa_strand_minus ? -1 : 1);
+
+    vector<TSeqPos> pos;
+    pos.push_back(strand[0] == eNa_strand_minus
+        ? GetRowSeq_range(0,true).GetTo() : GetRowSeq_range(0,true).GetFrom());
+    pos.push_back(strand[1] == eNa_strand_minus
+        ? GetRowSeq_range(1,true).GetTo() : GetRowSeq_range(1,true).GetFrom());
+
+    CRangeCollection<TSeqPos> insertions;
+    if (IsSetParts()) {
+        ITERATE (TParts, it, GetParts()) {
+            const CSpliced_exon_chunk& chunk = **it;
+            switch (chunk.Which()) {
+            case CSpliced_exon_chunk::e_Match:
+                pos[0] += chunk.GetMatch() * direction[0];
+                pos[1] += chunk.GetMatch() * direction[1];
+                break;
+    
+            case CSpliced_exon_chunk::e_Mismatch:
+                pos[0] += chunk.GetMismatch() * direction[0];
+                pos[1] += chunk.GetMismatch() * direction[1];
+                break;
+    
+            case CSpliced_exon_chunk::e_Diag:
+                pos[0] += chunk.GetDiag() * direction[0];
+                pos[1] += chunk.GetDiag() * direction[1];
+                break;
+    
+            case CSpliced_exon_chunk::e_Product_ins:
+                if (row == 0) {
+                    if (strand[0] == eNa_strand_minus) {
+                        insertions += TSeqRange(pos[0] - chunk.GetProduct_ins() + 1,
+                                          pos[0]);
+                    } else {
+                        insertions += TSeqRange(pos[0],
+                                          pos[0] + chunk.GetProduct_ins() - 1);
+                    }
+                }
+                pos[0] += chunk.GetProduct_ins() * direction[0];
+                break;
+    
+            case CSpliced_exon_chunk::e_Genomic_ins:
+                /// Add genomic insertion if the current position on the product is within the range
+                if (row == 1 && within_product_ranges.IntersectingWith(
+                                    TSeqRange(pos[0], pos[0])))
+                {
+                    if (strand[1] == eNa_strand_minus) {
+                        insertions += TSeqRange(pos[1] - chunk.GetGenomic_ins() + 1,
+                                          pos[1]);
+                    } else {
+                        insertions += TSeqRange(pos[1],
+                                          pos[1] + chunk.GetGenomic_ins() - 1);
+                    }
+                }
+                pos[1] += chunk.GetGenomic_ins() * direction[1];
+                break;
+    
+            default:
+                break;
+            }
+        }
+    }
+    if (row == 0) {
+        insertions &= within_product_ranges;
+    }
+    return insertions;
 }
 
 

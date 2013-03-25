@@ -1488,62 +1488,13 @@ s_GetGapCount(const CSeq_align& align, CSeq_align::TDim row,
     case CSeq_align::TSegs::e_Spliced:
         {{
             ITERATE (CSpliced_seg::TExons, iter, align.GetSegs().GetSpliced().GetExons()) {
-                const CSpliced_exon& exon = **iter;
-                if (exon.IsSetParts()) {
-                    TSeqPos part_start;
-                    if (exon.GetProduct_start().IsNucpos()) {
-                        part_start = exon.GetProduct_start().GetNucpos();
-                    } else if (exon.GetProduct_start().IsProtpos()) {
-                        TSeqPos start_frame =
-                            exon.GetProduct_start().GetProtpos().GetFrame();
-                        if(start_frame > 0)
-                            --start_frame;
-                        part_start = exon.GetProduct_start().GetProtpos().GetAmin()*3
-                                   + start_frame;
-                    } else {
-                        NCBI_THROW(CException, eUnknown,
-                                   "Spliced-exon is neither nuc nor prot");
-                    }
-                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                        const CSpliced_exon_chunk& chunk = **it;
-                        int part_len = 0;
-                        switch (chunk.Which()) {
-                        case CSpliced_exon_chunk::e_Match:
-                            part_len = chunk.GetMatch();
-                            break;
-
-                        case CSpliced_exon_chunk::e_Mismatch:
-                            part_len = chunk.GetMismatch();
-                            break;
-
-                        case CSpliced_exon_chunk::e_Diag:
-                            part_len = chunk.GetDiag();
-                            break;
-
-                        case CSpliced_exon_chunk::e_Product_ins:
-                            part_len = chunk.GetProduct_ins();
-                            if (row != 0) {
-                                TSeqPos gap_len = s_IntersectionLength(ranges,
-                                                TSeqRange(part_start,
-                                                  part_start + part_len - 1));
-                                retval += (get_total_count ? gap_len :
-                                               (gap_len ? 1 : 0));
-                            }
-                            break;
-
-                        case CSpliced_exon_chunk::e_Genomic_ins:
-                            if (row != 1 && s_IntersectionLength(ranges,
-                                            TSeqRange(part_start, part_start)))
-                            {
-                                retval +=
-                                    (get_total_count ? chunk.GetGenomic_ins() : 1);
-                            }
-                            break;
-
-                        default:
-                            break;
-                        }
-                        part_start += part_len;
+                for (unsigned r = 0; r < 2; ++r) {
+                    if (row != r) {
+                        CRangeCollection<TSeqPos> insertions =
+                             (*iter)->GetRowSeq_insertions(
+                                  r, align.GetSegs().GetSpliced(), ranges);
+                        retval += get_total_count ? insertions.GetCoveredLength()
+                                                  : insertions.size();
                     }
                 }
             }
@@ -1676,24 +1627,16 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                 bool frame_missing = exon.GetProduct_start().IsProtpos()
                                    && (!exon.GetProduct_start().GetProtpos().CanGetFrame()
                                    || !exon.GetProduct_start().GetProtpos().GetFrame());
-                if (exon.IsSetParts()) {
-                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                        const CSpliced_exon_chunk& chunk = **it;
-                        switch (chunk.Which()) {
-                        case CSpliced_exon_chunk::e_Product_ins:
-                            if (row != 1 && chunk.GetProduct_ins() % 3) {
+                for (unsigned r = 0; r < 2; ++r) {
+                    if (row != r) {
+                        CRangeCollection<TSeqPos> insertions =
+                             exon.GetRowSeq_insertions(
+                                  r, GetSegs().GetSpliced());
+                        ITERATE (CRangeCollection<TSeqPos>, ins_it, insertions)
+                        {
+                            if (ins_it->GetLength() % 3) {
                                 ++retval;
                             }
-                            break;
-
-                        case CSpliced_exon_chunk::e_Genomic_ins:
-                            if (row != 0 && chunk.GetGenomic_ins() % 3) {
-                                ++retval;
-                            }
-                            break;
-
-                        default:
-                            break;
                         }
                     }
                 }
@@ -1760,63 +1703,8 @@ CRangeCollection<TSeqPos> CSeq_align::GetAlignedBases(TDim row) const
     case CSeq_align::TSegs::e_Spliced:
         {{
             ITERATE (CSpliced_seg::TExons, iter, GetSegs().GetSpliced().GetExons()) {
-                const CSpliced_exon& exon = **iter;
-                if (exon.IsSetParts()) {
-                    TSeqPos current_pos;
-                    if (row == 1) {
-                        current_pos = exon.GetGenomic_start();
-                    } else if (exon.GetProduct_start().IsNucpos()) {
-                        current_pos = exon.GetProduct_start().GetNucpos();
-                    } else if (exon.GetProduct_start().IsProtpos()) {
-                        TSeqPos start_frame =
-                            exon.GetProduct_start().GetProtpos().GetFrame();
-                        if(start_frame > 0)
-                            --start_frame;
-                        current_pos =
-                            exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame;
-                    } else {
-                        NCBI_THROW(CException, eUnknown,
-                                   "Spliced-exon is neither nuc nor prot");
-                    }
-                    ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                        const CSpliced_exon_chunk& chunk = **it;
-                        bool is_gapped = false;
-                        TSeqPos part_length;
-                        switch (chunk.Which()) {
-                        case CSpliced_exon_chunk::e_Match:
-                            part_length = chunk.GetMatch();
-                            break;
-
-                        case CSpliced_exon_chunk::e_Mismatch:
-                            part_length = chunk.GetMismatch();
-                            break;
-
-                        case CSpliced_exon_chunk::e_Diag:
-                            part_length = chunk.GetDiag();
-                            break;
-
-                        case CSpliced_exon_chunk::e_Product_ins:
-                            part_length = row == 0 ?  chunk.GetProduct_ins() : 0;
-                            is_gapped = true;
-                            break;
-
-                        case CSpliced_exon_chunk::e_Genomic_ins:
-                            part_length = row == 1 ?  chunk.GetGenomic_ins() : 0;
-                            is_gapped = true;
-                            break;
-
-                        default:
-                            NCBI_ASSERT(false, "Unknown chunk type");
-                            part_length = 0;
-                        }
-                        if (!is_gapped) {
-                            ranges +=
-                                TSeqRange(current_pos,
-                                          current_pos + part_length - 1);
-                        }
-                        current_pos += part_length;
-                    }
-                }
+                ranges += (*iter)->GetRowSeq_range(row, true);
+                ranges -= (*iter)->GetRowSeq_insertions(row, GetSegs().GetSpliced());
             }
         }}
         break;
@@ -1953,77 +1841,19 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
     case CSeq_align::TSegs::e_Spliced:
         ITERATE (CSpliced_seg::TExons, iter,
                  align.GetSegs().GetSpliced().GetExons()) {
-            const CSpliced_exon& exon = **iter;
-            TSeqRange product_span;
-            if (exon.GetProduct_start().IsNucpos()) {
-                product_span.Set(exon.GetProduct_start().GetNucpos(),
-                                 exon.GetProduct_end().GetNucpos()-1);
-            } else if (exon.GetProduct_start().IsProtpos()) {
-                TSeqPos start_frame =
-                    exon.GetProduct_start().GetProtpos().GetFrame();
-                if(start_frame > 0)
-                    --start_frame;
-                TSeqPos end_frame =
-                    exon.GetProduct_end().GetProtpos().GetFrame();
-                if(end_frame > 0)
-                    --end_frame;
-                product_span.Set(
-                    exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
-                    exon.GetProduct_end().GetProtpos().GetAmin()*3 + end_frame);
+            CRangeCollection<TSeqPos> exon_ranges = ranges;
+            exon_ranges &= (*iter)->GetRowSeq_range(0, true);
+            len += exon_ranges.GetCoveredLength();
+            if (ungapped) {
+                len -= (*iter)->GetRowSeq_insertions(
+                         0, align.GetSegs().GetSpliced(), ranges).GetCoveredLength();
             } else {
-                NCBI_THROW(CException, eUnknown,
-                           "Spliced-exon is neither nuc nor prot");
+                /// When computing length without gaps, genomic inserts
+                /// are ignored; when computing with gaps, we need to add them
+                /// to length if their starting point is within range
+                len += (*iter)->GetRowSeq_insertions(
+                         1, align.GetSegs().GetSpliced(), ranges).GetCoveredLength();
             }
-            size_t exon_len = 0;
-            if (exon.IsSetParts()) {
-                TSeqPos part_start = product_span.GetFrom();
-                ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                    const CSpliced_exon_chunk& chunk = **it;
-                    int part_len = 0;
-                    bool covered = false;
-                    switch (chunk.Which()) {
-                    case CSpliced_exon_chunk::e_Match:
-                        part_len = chunk.GetMatch();
-                        covered = true;
-                        break;
-
-                    case CSpliced_exon_chunk::e_Mismatch:
-                        part_len = chunk.GetMismatch();
-                        covered = true;
-                        break;
-
-                    case CSpliced_exon_chunk::e_Diag:
-                        part_len = chunk.GetDiag();
-                        covered = true;
-                        break;
-
-                    case CSpliced_exon_chunk::e_Product_ins:
-                        part_len = chunk.GetProduct_ins();
-                        covered = !ungapped;
-                        break;
-
-                    default:
-                        break;
-                    }
-                    if(covered)
-                        exon_len += s_IntersectionLength(ranges,
-                                        TSeqRange(part_start, part_start+part_len-1));
-                    part_start += part_len;
-                    if (!ungapped && chunk.Which() ==
-                                     CSpliced_exon_chunk::e_Genomic_ins
-                                  && s_IntersectionLength(ranges,
-                                         TSeqRange(part_start, part_start)))
-                    {
-                        /// When computing length without gaps, genomic inserts
-                        /// are ignored; when computing with gaps, we need to add them
-                        /// to length if their statring point is within range
-                        exon_len += chunk.GetGenomic_ins();
-                    }
-                }
-            } else {
-                exon_len = s_IntersectionLength(ranges, product_span);
-            }
-            len += exon_len;
         }
         break;
 
@@ -2208,21 +2038,13 @@ CSeq_align::TLengthRange CSeq_align::GapLengthRange() const
              ITERATE (CSpliced_seg::TExons, iter,
                       GetSegs().GetSpliced().GetExons()) {
                  const CSpliced_exon& exon = **iter;
-                 if (exon.IsSetParts()) {
-                     ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {
-                         const CSpliced_exon_chunk& chunk = **it;
-                         switch (chunk.Which()) {
-                         case CSpliced_exon_chunk::e_Product_ins:
-                             length_range.AddLength(chunk.GetProduct_ins());
-                             break;
-
-                         case CSpliced_exon_chunk::e_Genomic_ins:
-                             length_range.AddLength(chunk.GetGenomic_ins());
-                             break;
-
-                         default:
-                             break;
-                         }
+                 for (unsigned r = 0; r < 2; ++r) {
+                     CRangeCollection<TSeqPos> insertions =
+                          exon.GetRowSeq_insertions(
+                               r, GetSegs().GetSpliced());
+                     ITERATE (CRangeCollection<TSeqPos>, ins_it, insertions)
+                     {
+                         length_range.AddLength(ins_it->GetLength());
                      }
                  }
              }

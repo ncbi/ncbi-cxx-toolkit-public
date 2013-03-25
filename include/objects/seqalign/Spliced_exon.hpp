@@ -44,6 +44,8 @@
 #include <objects/seqalign/Spliced_exon_.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
+#include <util/range_coll.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -65,6 +67,39 @@ public:
 
     CRef<CSeq_interval> CreateRowSeq_interval(CSeq_align::TDim    row,
                                               const CSpliced_seg& seg) const;
+
+    /// Return exon's range within this row
+    ///
+    /// @param row
+    ///   0 for product, 1 for genomic
+    /// @param always_as_nuc
+    ///   If true, row is 0 and product is a protein, return range as a nucleic
+    ///   acid sequence; be default for a protein return range over amino acids
+    TSeqRange GetRowSeq_range(CSeq_align::TDim    row,
+                              bool always_as_nuc) const;
+
+    /// Return insertions within exon
+    ///
+    /// @param row
+    ///   return gaps in this row; 0 for product, 1 for genomic
+    /// @param seg
+    ///   Parent SPliced-seg object
+    CRangeCollection<TSeqPos> GetRowSeq_insertions(CSeq_align::TDim    row,
+                                             const CSpliced_seg& seg) const;
+
+    /// Return insertions within exon
+    ///
+    /// @param row
+    ///   return gaps in this row; 0 for product, 1 for genomic
+    /// @param seg
+    ///   Parent SPliced-seg object
+    /// @param within_product_ranges
+    ///   Only return insertions within these ranges on the product. If row is
+    /// 1, return genomic insertions aligned to a position within these ranges
+    CRangeCollection<TSeqPos> GetRowSeq_insertions(
+        CSeq_align::TDim    row,
+        const CSpliced_seg& seg,
+        const CRangeCollection<TSeqPos> &within_product_ranges) const;
 
 private:
     // Prohibit copy constructor and assignment operator
