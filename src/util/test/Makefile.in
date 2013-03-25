@@ -3,16 +3,39 @@
 # Meta-makefile("UTIL tests" project)
 #################################
 
-APP_PROJ = test_utf8 test_rangemap test_resize_iter \
-           test_logrotate test_regexp test_compress test_checksum \
-           test_staticmap test_strsearch test_table test_tar \
-           test_transmissionrw test_align \
-           test_cache_mt test_id_mux test_compress_mt test_thread_pool \
-           test_uttp test_line_reader test_queue_mt test_thread_pool_old \
-           test_scheduler test_value_convert example_value_convert \
-           formatguess_unit_test test_floating_point_comparison \
-           test_get_console_password test_range_coll test_porter_stemming \
-           test_buffer_writer test_math
+APP_PROJ = example_value_convert \
+           formatguess_unit_test \
+           test_align \
+           test_buffer_writer \
+           test_cache_mt \
+           test_checksum \
+           test_compress \
+           test_compress_mt \
+           test_compress_archive \
+           test_tar \
+           test_id_mux \
+           test_floating_point_comparison \
+           test_get_console_password \
+           test_queue_mt \
+           test_math \
+           test_logrotate \
+           test_line_reader \
+           test_porter_stemming \
+           test_range_coll \
+           test_rangemap \
+           test_regexp \
+           test_resize_iter \
+           test_scheduler \
+           test_staticmap \
+           test_strsearch \
+           test_table \
+           test_transmissionrw \
+           test_thread_pool \
+           test_thread_pool_old \
+           test_utf8 \
+           test_uttp \
+           test_value_convert
+           
 PROJ_TAG = test
 
 srcdir = @srcdir@
