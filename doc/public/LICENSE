@@ -68,6 +68,11 @@ Location: {src,include}/util/compress/zlib
 Authors:  Jean-loup Gailly and Mark Adler
 License:  BSDish [include/util/compress/zlib/zlib.h]
 
+Location: src/util/compress/api/miniz
+Authors:  Rich Geldreich
+License:  Unrestricted; at botttom of file
+          [src/util/compress/api/miniz/miniz.c]
+
 Location: src/util/diff/diff_match_patch
 Authors:  Neil Fraser
 License:  Apache License v2.0 [src/util/diff/diff_match_patch/COPYING]
