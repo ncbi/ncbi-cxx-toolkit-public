@@ -1,11 +1,18 @@
 # $Id$
 
-# Adjust ICC flags to avoid problematic references to __svml_* functions.
+# Adjust ICC flags to avoid problematic references to proprietary functions
+# or outright compilation errors.
 
 CORE_SRCDIR ?= $(srcdir)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
+  $(CORE)blast_kappa.o: $(CORE_SRCDIR)/$(CORE)blast_kappa.c
+	$(CC_WRAPPER) $(CC) $(filter-out -ip,$(CFLAGS_ALL)) $< -o $@ \
+	    $(CC_FILTER)
   $(CORE)blast_psi_priv.o: $(CORE_SRCDIR)/$(CORE)blast_psi_priv.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-log $< -o $@ \
+	    $(CC_FILTER)
+  $(CORE)blast_stat.o: $(CORE_SRCDIR)/$(CORE)blast_stat.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strtok $< -o $@ \
 	    $(CC_FILTER)
 endif
