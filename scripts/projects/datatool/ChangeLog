@@ -108,3 +108,14 @@ Changed code generation to use custom type info description for CStringUTF8 data
 January 18, 2013
 version 2.9.0
 Changed code generation to allow mandatory sequence members with default values.
+
+March 26, 2013
+version 2.10.0
+Added handling of XML elements with default on reading, writing, copying and skipping.
+Added processing of JSON data.
+When generating C++ code, corrected conversion of enum data defaults. 
+Fixed bug in data type guessing.
+
+
+
+
