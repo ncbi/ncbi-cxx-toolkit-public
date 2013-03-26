@@ -106,7 +106,7 @@ void CArchiveZip::CreateFile(const string& filename)
     ZIP_NEW;
     m_Mode = eWrite;
     m_Location = eFile;
-    mz_bool status = mz_zip_writer_init_file(ZIP_HANDLE, _T_XCSTRING(filename), 0);
+    mz_bool status = mz_zip_writer_init_file(ZIP_HANDLE, filename.c_str(), 0);
     if (!status) {
         m_Handle = NULL;
         ZIP_THROW(eCreate, "Cannot create archive file '" + filename + "'");
@@ -134,7 +134,7 @@ void CArchiveZip::OpenFile(const string& filename)
     ZIP_NEW;
     m_Mode = eRead;
     m_Location = eFile;
-    mz_bool status = mz_zip_reader_init_file(ZIP_HANDLE, _T_XCSTRING(filename), 0);
+    mz_bool status = mz_zip_reader_init_file(ZIP_HANDLE, filename.c_str(), 0);
     if (!status) {
         ZIP_DELETE;
         ZIP_THROW(eOpen, "Cannot open archive file '" + filename + "'");
@@ -329,7 +329,7 @@ void CArchiveZip::ExtractEntryToFileSystem(const CArchiveEntryInfo& info,
     }
     // The code below extract files only.
     mz_bool status;
-    MZ_FILE *pFile = MZ_FOPEN(_T_XCSTRING(dst_path), "wb");
+    MZ_FILE *pFile = MZ_FOPEN(dst_path.c_str(), "wb");
     if (!pFile) {
         ZIP_THROW(eExtract, "Cannot create target file '" + dst_path + "'");
     }
@@ -450,14 +450,14 @@ void CArchiveZip::AddEntryFromFileSystem(const CArchiveEntryInfo& info,
     mz_uint16 comment_size = (mz_uint16)comment.size();
     mz_bool status;
     if (info.m_Type == CDirEntry::eDir) {
-        status = mz_zip_writer_add_mem_ex(ZIP_HANDLE, _T_XCSTRING(info.GetName()),
+        status = mz_zip_writer_add_mem_ex(ZIP_HANDLE, info.GetName().c_str(),
                                           NULL, 0, /* empty buffer */
                                           comment.c_str(), comment_size, (mz_uint)level, 0, 0);
     } else {
         // Files only
         _ASSERT(info.m_Type == CDirEntry::eFile);
         status = mz_zip_writer_add_file  (ZIP_HANDLE,
-                                          _T_XCSTRING(info.GetName()), _T_XCSTRING(src_path),
+                                          info.GetName().c_str(), src_path.c_str(),
                                           comment.c_str(), comment_size, (mz_uint)level);
     }
     if (!status) {
@@ -473,7 +473,7 @@ void CArchiveZip::AddEntryFromMemory(const CArchiveEntryInfo& info,
     const string& comment = info.m_Comment;
     mz_uint16 comment_size = (mz_uint16)comment.size();
     mz_bool status;
-    status = mz_zip_writer_add_mem_ex(ZIP_HANDLE, _T_XCSTRING(info.GetName()),
+    status = mz_zip_writer_add_mem_ex(ZIP_HANDLE, info.GetName().c_str(),
                                       buf, size, comment.c_str(), comment_size, (mz_uint)level, 0, 0);
     if (!status) {
         ZIP_THROW(eAppend, "Error appending entry with name '" +
