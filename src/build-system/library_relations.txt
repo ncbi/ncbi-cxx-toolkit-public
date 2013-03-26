@@ -1518,6 +1518,9 @@ geoauth needs xconnect
 geoauth needs xconnext
 geoauth needs xncbi
 geoauth needs xutil
+geobrowse needs xncbi
+geobrowse needs xser
+geobrowse needs xutil
 geocgi needs connect
 geocgi needs connext
 geocgi needs ct_ftds64
@@ -1560,6 +1563,9 @@ geoindex needs xcompress
 geoindex needs xmlwrapp
 geoindex needs xncbi
 geoindex needs xutil
+geoinfo needs xncbi
+geoinfo needs xser
+geoinfo needs xutil
 geometa needs GMA
 geometa needs connect
 geometa needs connext
