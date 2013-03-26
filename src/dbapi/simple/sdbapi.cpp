@@ -2268,10 +2268,12 @@ CBlobBookmarkImpl::GetOStream(size_t blob_size, CQuery::EAllowLog log_it)
 {
     try {
         CDB_Connection* db_conn = m_DBImpl->GetConnection()->GetCDB_Connection();
-        m_OStream.reset(new CWStream(new CxBlobWriter(
-                              db_conn, *m_Descr,
-                              blob_size, log_it == CQuery::eEnableLog, false),
-		                      0, 0, CRWStreambuf::fOwnWriter));
+        m_OStream.reset(new CWStream
+                        (new CxBlobWriter(db_conn, *m_Descr, blob_size,
+                                          log_it == CQuery::eEnableLog, false),
+                         0, 0,
+                         CRWStreambuf::fOwnWriter
+                         | CRWStreambuf::fLogExceptions));
         return *m_OStream;
     }
     SDBAPI_CATCH_LOWLEVEL()
@@ -2523,10 +2525,13 @@ CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it /* = eEnableLog */
     try {
         IConnection* conn = m_Query->GetConnection()->CloneConnection();
         CDB_Connection* db_conn = conn->GetCDB_Connection();
-        m_OStream.reset(new CWStream(new CxBlobWriter(
-                              db_conn, var_val.GetITDescriptor(),
-                              blob_size, log_it == eEnableLog, false),
-		                      0, 0, CRWStreambuf::fOwnWriter));
+        m_OStream.reset(new CWStream
+                        (new CxBlobWriter(db_conn, var_val.GetITDescriptor(),
+                                          blob_size, log_it == eEnableLog,
+                                          false),
+                         0, 0,
+                         CRWStreambuf::fOwnWriter
+                         | CRWStreambuf::fLogExceptions));
         return *m_OStream;
     }
     SDBAPI_CATCH_LOWLEVEL()
