@@ -481,7 +481,9 @@ void CObjectIStreamJson::ReadNull(void)
 
 void CObjectIStreamJson::SkipNull(void)
 {
-    x_SkipData();
+    if (m_ExpectValue) {
+        x_SkipData();
+    }
 }
 
 void CObjectIStreamJson::ReadAnyContentObject(CAnyContentObject& obj)
