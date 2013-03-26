@@ -499,7 +499,7 @@ class TWorkerNodeJob##Factory : public CSimpleJobFactory<TWorkerNodeJob> \
 public:                                                                  \
     virtual string GetJobVersion() const                                 \
     {                                                                    \
-        return #TWorkerNodeJob " version " #Version;                     \
+        return #TWorkerNodeJob " version " NCBI_AS_STRING(Version);      \
     }                                                                    \
     virtual string GetAppName() const                                    \
     {                                                                    \
@@ -507,7 +507,7 @@ public:                                                                  \
     }                                                                    \
     virtual string GetAppVersion() const                                 \
     {                                                                    \
-        return #Version;                                                 \
+        return NCBI_AS_STRING(Version);                                  \
     }                                                                    \
 }
 
@@ -547,7 +547,7 @@ class TWorkerNodeJob##FactoryEx                                          \
 public:                                                                  \
     virtual string GetJobVersion() const                                 \
     {                                                                    \
-        return #TWorkerNodeJob " version " #Version;                     \
+        return #TWorkerNodeJob " version " NCBI_AS_STRING(Version);      \
     }                                                                    \
     virtual string GetAppName() const                                    \
     {                                                                    \
@@ -555,7 +555,7 @@ public:                                                                  \
     }                                                                    \
     virtual string GetAppVersion() const                                 \
     {                                                                    \
-        return #Version;                                                 \
+        return NCBI_AS_STRING(Version);                                  \
     }                                                                    \
 }
 
