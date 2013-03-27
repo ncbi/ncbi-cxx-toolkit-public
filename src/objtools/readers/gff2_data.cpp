@@ -228,7 +228,7 @@ bool CGff2Record::AssignFromGff(
         m_peStrand = new ENa_strand( eNa_strand_unknown );
     }
 
-    if ( columns[7] == "0" ) {
+    if ( columns[7] == "0"  || columns[7] == "." ) {
         m_pePhase = new TFrame( CCdregion::eFrame_one );
     }
     if ( columns[7] == "1" ) {
@@ -244,7 +244,7 @@ bool CGff2Record::AssignFromGff(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::GetAttribute(
+bool CGff2Record::GetAttribute( 
     const string& strKey,
     string& strValue ) const
 //  ----------------------------------------------------------------------------
