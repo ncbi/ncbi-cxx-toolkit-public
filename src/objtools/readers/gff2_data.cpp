@@ -228,7 +228,7 @@ bool CGff2Record::AssignFromGff(
         m_peStrand = new ENa_strand( eNa_strand_unknown );
     }
 
-    if ( columns[7] == "0"  || columns[7] == "." ) {
+    if ( columns[7] == "0" ) {
         m_pePhase = new TFrame( CCdregion::eFrame_one );
     }
     if ( columns[7] == "1" ) {
@@ -882,6 +882,12 @@ bool CGff2Record::x_InitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
+    map<CCdregion::EFrame, CCdregion::EFrame> FramePlusToMinus;
+    FramePlusToMinus[CCdregion::eFrame_not_set] = CCdregion::eFrame_not_set;
+    FramePlusToMinus[CCdregion::eFrame_one] = CCdregion::eFrame_three;
+    FramePlusToMinus[CCdregion::eFrame_two] = CCdregion::eFrame_two;
+    FramePlusToMinus[CCdregion::eFrame_three] = CCdregion::eFrame_one;
+
     string gbkey;
     if (GetAttribute("gbkey", gbkey)) {
         if (gbkey == "Src") {
@@ -902,8 +908,11 @@ bool CGff2Record::x_InitFeatureData(
         case CSeqFeatData::e_Cdregion: {
             //oh my --- phases again ---
             CCdregion::EFrame frame = Phase();
-            if (frame != CCdregion::eFrame_not_set  &&  Strand() == eNa_strand_minus) {
-                frame = CCdregion::EFrame((4-frame)%3);
+            if (frame == CCdregion::eFrame_not_set) {
+                frame = CCdregion::eFrame_one;
+            }
+            else if (Strand() == eNa_strand_minus) {
+                frame = FramePlusToMinus[frame];
             } 
             pFeature->SetData().SetCdregion();
             pFeature->SetData().SetCdregion().SetFrame(frame);
