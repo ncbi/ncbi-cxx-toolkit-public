@@ -589,17 +589,40 @@ bool CGff2Reader::x_FeatureSetXref(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    string strParent;
-    if ( ! record.GetAttribute( "Parent", strParent ) ) {
+    switch (pFeature->GetData().GetSubtype()) {
+    default:
         return true;
+
+    case CSeqFeatData::eSubtype_cdregion: {
+            string strParent;
+            if ( ! record.GetAttribute( "Parent", strParent ) ) {
+                return true;
+            }
+            CRef< CFeat_id > pFeatId( new CFeat_id );
+            pFeatId->SetLocal().SetStr( strParent );
+            CRef< CSeqFeatXref > pXref( new CSeqFeatXref );
+            pXref->SetId( *pFeatId );    
+            pFeature->SetXref().push_back( pXref );
+
+            string strSelf;
+            if (!record.GetAttribute("ID", strSelf)) {
+                return false;
+            }
+            IdToFeatureMap::iterator it = m_MapIdToFeature.find(strParent);
+            if (it == m_MapIdToFeature.end()) {
+                return false;
+            }
+            CRef<CSeq_feat> pParent = it->second;
+            pParent->SetId(*pFeatId);
+            CRef<CFeat_id> pSelfId(new CFeat_id);
+            pSelfId->SetLocal().SetStr(strSelf);
+            pFeature->SetId(*pSelfId);
+            CRef<CSeqFeatXref> pSelfXref(new CSeqFeatXref);
+            pSelfXref->SetId(*pSelfId);
+            pParent->SetXref().push_back(pSelfXref);
+            return true;
+        }
     }
-    CRef< CFeat_id > pFeatId( new CFeat_id );
-    pFeatId->SetLocal().SetStr( strParent );
-    CRef< CSeqFeatXref > pXref( new CSeqFeatXref );
-    pXref->SetId( *pFeatId );
-    
-    pFeature->SetXref().push_back( pXref );
-    return true;
 }
 
 //  ----------------------------------------------------------------------------

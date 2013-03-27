@@ -222,6 +222,9 @@ bool CGff3Reader::x_UpdateAnnot(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
+    if (record.Type() == "CDS") {
+        x_FeatureSetXref(record, pFeature);
+    }
 
     string strId;
     if ( record.GetAttribute( "ID", strId ) ) {
