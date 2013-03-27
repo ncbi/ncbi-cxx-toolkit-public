@@ -558,6 +558,28 @@ public:
     virtual void Create(size_t initial_allocation_size);
     virtual void Create(void);
 
+    /// Save current opened/created archive to file.
+    ///
+    /// @param filename
+    ///   Path to the archive file name. The directory in that archive
+    ///   file will be create should exists. If destination file
+    ///   already exists, it will be overwritten.
+    /// @note
+    ///   Newly created archive should be finalized first.
+    /// @sa
+    ///   Create, Finalize, Load
+    void Save(const string& filename);
+
+    /// Load existing archive from file system to memory.
+    ///
+    /// @param filename
+    ///   Path to the existing archive.
+    /// @note
+    ///   If you have opened or created archive, it will be automatically closed.
+    /// @sa
+    ///   Open, Save
+    void Load(const string& filename);
+
     /// Finalize the archive created in memory.
     ///
     /// Return pointer to a buffer with created archive and its size.
@@ -581,10 +603,15 @@ protected:
 
 protected:
     // Open
-    const void* m_Buf;       ///< Buffer where the opening archive is located
-    size_t      m_BufSize;   ///< Size of m_Buf
+    const void* m_Buf;         ///< Buffer where the opening archive is located
+    size_t      m_BufSize;     ///< Size of m_Buf
+    /// Holder for the pointer to memory buffer that will be automatically
+    /// deallocated if we own it (used for Load() only).
+    /// m_Buf will have the same pointer value.
+    AutoArray<char> m_OwnBuf;
     // Create
-    size_t m_InitialAllocationSize;  ///< Initial allocation size for created archive
+    ///< Initial allocation size for created archive
+    size_t m_InitialAllocationSize;
 
 private:
     // Prohibit assignment and copy

@@ -71,6 +71,7 @@ public:
         eList,
         eExtract,
         eAppend,
+        eWrite,
         eBackup,
         eRestoreAttrs
     };
@@ -88,6 +89,7 @@ public:
         case eList:                 return "eList";
         case eExtract:              return "eExtract";
         case eAppend:               return "eAppend";
+        case eWrite:                return "eWrite";
         case eBackup:               return "eBackup";
         case eRestoreAttrs:         return "eRestoreAttrs";
         default:                    return CException::GetErrCodeString();

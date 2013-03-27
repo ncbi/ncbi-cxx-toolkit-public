@@ -1143,6 +1143,8 @@ void CArchiveMemory::Create(size_t initial_allocation_size)
 {
     ARCHIVE_CHECK;
     m_InitialAllocationSize = initial_allocation_size;
+    m_Buf = NULL;
+    m_OwnBuf.reset();
     x_Open(eCreate);
     return;
 }
@@ -1167,9 +1169,58 @@ void CArchiveMemory::Finalize(void** buf_ptr, size_t* buf_size_ptr)
     }
     ARCHIVE_CHECK;
     ARCHIVE->FinalizeMemory(buf_ptr, buf_size_ptr);
-    m_Buf = *buf_ptr;
+    m_Buf     = *buf_ptr;
     m_BufSize = *buf_size_ptr;
     return;
+}
+
+
+void CArchiveMemory::Save(const string& filename)
+{
+    ARCHIVE_CHECK;
+    if (!m_Buf || !m_BufSize) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Bad memory buffer");
+    }
+    CFileIO fio;
+    fio.Open(filename, CFileIO::eCreate, CFileIO::eReadWrite);
+    size_t n_written = fio.Write(m_Buf, m_BufSize);
+    if (n_written != m_BufSize) {
+        ARCHIVE_THROW(eWrite, "Failed to write archive to file");
+    }
+    fio.Close();
+}
+
+
+void CArchiveMemory::Load(const string& filename)
+{
+    // Close current archive, if any
+    Close();
+
+    // Get file size and allocate memory to load it
+    CFile f(filename);
+    Int8 filesize = f.GetLength();
+    if (filesize < 0) {
+        int x_errno = errno;
+        ARCHIVE_THROW(eOpen, "Cannot get status of '" + filename + '\''+ s_OSReason(x_errno));
+    }
+    if (!filesize) {
+        ARCHIVE_THROW(eOpen, "Cannot load empty file '" + filename + "' to memory");
+    }
+    AutoArray<char> tmp((size_t)filesize);
+
+    // Read file into temporary buffer
+    CFileIO fio;
+    fio.Open(filename, CFileIO::eOpen, CFileIO::eRead);
+    size_t n_read = fio.Read(tmp.get(), (size_t)filesize);
+    if (n_read != (size_t)filesize) {
+        ARCHIVE_THROW(eWrite, "Failed to load archive to memory");
+    }
+    fio.Close();
+
+    // Set new buffer
+    m_OwnBuf  = tmp;
+    m_Buf     = m_OwnBuf.get();
+    m_BufSize = n_read;
 }
 
 

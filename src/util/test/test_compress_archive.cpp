@@ -391,11 +391,11 @@ void CTest::RunInternalTestFormat(CArchive::EFormat format)
             AutoArray<char> buf_deleter((char*)buf);
 
             // Save created memory-based archive to file
-            fio.Open(a_memory, CFileIO::eCreate, CFileIO::eReadWrite);
-            size_t n_written = fio.Write(buf, buf_size);
-            assert(n_written == buf_size);
-            fio.Close();
+            a.Save(a_memory);
             assert(CFile(a_memory).Exists());
+            // Load created archive back to memory
+            // (just to check Save/Load methods)
+            a.Load(a_memory);
 
             // List entries
             a.UnsetMask();
