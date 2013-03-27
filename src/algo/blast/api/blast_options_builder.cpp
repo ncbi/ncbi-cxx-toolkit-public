@@ -97,6 +97,9 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
             p = "vecscreen";
             found = true;
         }
+        if (s == "sra") {
+        	found = true;
+        }
     } else if (p == "tblastn") {
         if (s == "rpsblast") {
             p = "rpstblastn";
