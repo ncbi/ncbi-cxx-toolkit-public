@@ -199,7 +199,8 @@ bool CGff3Reader::x_UpdateAnnot(
     }
 
     //  Special case: exon feature belonging to an RNA we have already seen
-    if (record.Type() == "exon") {
+    string type = record.Type();
+    if (type == "exon"  ||  type == "five_prime_UTR"  ||  type == "three_prime_UTR") {
         string parent;
         if (record.GetAttribute("Parent", parent)) {
             IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
