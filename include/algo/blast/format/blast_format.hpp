@@ -160,7 +160,8 @@ public:
                  bool show_gi = false, 
                  bool is_html = false, 
                  bool is_remote_search = false,
-                 const string& custom_output_format = kEmptyStr);
+                 const string& custom_output_format = kEmptyStr,
+                 bool is_vdb = false);
 
     /// Print the header of the blast report
     void PrintProlog();
@@ -309,6 +310,9 @@ private:
 
     /// BLAST options
     CConstRef<blast::CBlastOptions> m_Options;
+
+    /// Flag indicate vdb search
+    bool m_IsVdb;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

@@ -100,7 +100,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_IndexedMegablast(is_indexed), 
           m_CustomOutputFormatSpec(custom_output_format),
           m_IgOptions(ig_opts),
-          m_Options(&options)
+          m_Options(&options),
+          m_IsVdb(false)
 {
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
@@ -156,7 +157,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
                  bool show_gi, 
                  bool is_html, 
                  bool is_remote_search,
-                 const string& custom_output_format)
+                 const string& custom_output_format,
+                 bool is_vdb)
         : m_FormatType(format_type),
           m_IsHTML(is_html), 
           m_DbIsAA(!Blast_SubjectIsNucleotide(opts.GetProgramType())),
@@ -181,7 +183,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
                       opts.GetProgram() == eDiscMegablast),
           m_IndexedMegablast(opts.GetMBIndexLoaded()), 
           m_CustomOutputFormatSpec(custom_output_format),
-          m_Options(&opts)
+          m_Options(&opts),
+          m_IsVdb(is_vdb)
 {
     m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
     vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
@@ -529,12 +532,7 @@ s_SetFlags(string& program,
 bool
 CBlastFormat::x_IsVdbSearch() const
 {
-	if(!m_DbInfo.empty()) {
-		if(m_DbInfo.front().definition == "VDB")
-			return true;
-	}
-
-	return false;
+	return m_IsVdb;
 }
 // Port of jzmisc.c's AddAlignInfoToSeqAnnotEx (CVS revision 6.11)
 CRef<objects::CSeq_annot>
