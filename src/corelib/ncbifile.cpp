@@ -753,8 +753,8 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #endif
                                   '\0' };
 
-    list<string> head;            // already resolved to our satisfaction
-    list<string> tail;            // to resolve afterwards
+    std::list<string> head;       // already resolved to our satisfaction
+    std::list<string> tail;       // to resolve afterwards
     string       current;         // to resolve next
     int          link_depth = 0;
 
@@ -774,7 +774,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
     }
 
     while ( !current.empty()  ||  !tail.empty() ) {
-        list<string> pretail;
+        std::list<string> pretail;
         if ( !current.empty() ) {
             NStr::Split(current, kSeps, pretail, NStr::eNoMergeDelims);
             current.erase();
@@ -788,7 +788,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #ifdef NCBI_OS_MSWIN
                 // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\".
                 static const char* const kUNC[] = { "", "", "?", "UNC" };
-                list<string>::iterator it = pretail.begin();
+                std::list<string>::iterator it = pretail.begin();
                 unsigned int matched = 0;
                 while (matched < 4  &&  it != pretail.end()
                        &&  !NStr::CompareNocase(*it, kUNC[matched])) {
@@ -1345,7 +1345,7 @@ bool CDirEntry::StringToMode(const CTempString& mode,
 
         // eModeFormat_Symbolic
         } else {
-            list<string> parts;
+            std::list<string> parts;
             NStr::Split(mode, ",", parts);
             if ( parts.empty() ) {
                 CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
@@ -1355,7 +1355,7 @@ bool CDirEntry::StringToMode(const CTempString& mode,
             bool have_group = false;
             bool have_other = false;
 
-            ITERATE(list<string>, it, parts) {
+            ITERATE(std::list<string>, it, parts) {
                 string accessor, perm;
                 if ( !NStr::SplitInTwo(*it, "=", accessor, perm) ) {
                     CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
@@ -5464,9 +5464,9 @@ const char* CFileErrnoException::GetErrCodeString(void) const
 //
 
 void x_Glob(const string& path,
-            const list<string>& parts,
-            list<string>::const_iterator next,
-            list<string>& result,
+            const std::list<string>& parts,
+            std::list<string>::const_iterator next,
+            std::list<string>& result,
             TFindFiles flags)
 {
     vector<string> paths;
@@ -5479,14 +5479,14 @@ void x_Glob(const string& path,
         ff &= ~(fFF_File | fFF_Recursive);
         ff |= fFF_Dir;
     }
-    list<string> found;
+    std::list<string> found;
     FindFiles(found, paths.begin(), paths.end(), masks, ff);
     if ( last ) {
         result.insert(result.end(), found.begin(), found.end());
     }
     else {
         if ( !found.empty() ) {
-            ITERATE(list<string>, it, found) {
+            ITERATE(std::list<string>, it, found) {
                 x_Glob(CDirEntry::AddTrailingPathSeparator(*it),
                     parts, next, result, flags);
             }
@@ -5500,14 +5500,14 @@ void x_Glob(const string& path,
 
 
 void FindFiles(const string& pattern,
-               list<string>& result,
+               std::list<string>& result,
                TFindFiles flags)
 {
     string kDirSep(1, CDirEntry::GetPathSeparator());
     string abs_path = CDirEntry::CreateAbsolutePath(pattern);
     string search_path = kDirSep;
 
-    list<string> parts;
+    std::list<string> parts;
     NStr::Split(abs_path, kDirSep, parts);
     if ( parts.empty() ) {
         return;
