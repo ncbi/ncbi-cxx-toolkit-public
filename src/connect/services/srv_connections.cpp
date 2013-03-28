@@ -66,10 +66,8 @@ static const STimeout s_InternalConnectTimeout = {1, 250 * 1000};
 ///////////////////////////////////////////////////////////////////////////
 SNetServerMultilineCmdOutputImpl::~SNetServerMultilineCmdOutputImpl()
 {
-    if (!m_ReadCompletely) {
+    if (!m_ReadCompletely)
         m_Connection->Close();
-        ERR_POST_X(7, "Multiline command output was not completely read");
-    }
 }
 
 bool CNetServerMultilineCmdOutput::ReadLine(string& output)
