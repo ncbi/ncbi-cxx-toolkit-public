@@ -51,7 +51,6 @@ GMA needs connext
 GMA needs ct_ftds64
 GMA needs dbapi
 GMA needs dbapi_driver
-GMA needs dbconnect
 GMA needs ncbi_xdbapi_ftds
 GMA needs sdbapi
 GMA needs tds_ftds64
@@ -68,7 +67,6 @@ GMC needs connssl
 GMC needs ct_ftds64
 GMC needs dbapi
 GMC needs dbapi_driver
-GMC needs dbconnect
 GMC needs general
 GMC needs geoauth
 GMC needs geomyncbi
@@ -101,7 +99,6 @@ GMU needs connext
 GMU needs ct_ftds64
 GMU needs dbapi
 GMU needs dbapi_driver
-GMU needs dbconnect
 GMU needs geoauth
 GMU needs ncbi_xdbapi_ftds
 GMU needs sdbapi
@@ -1510,7 +1507,6 @@ geoauth needs connext
 geoauth needs ct_ftds64
 geoauth needs dbapi
 geoauth needs dbapi_driver
-geoauth needs dbconnect
 geoauth needs ncbi_xdbapi_ftds
 geoauth needs sdbapi
 geoauth needs tds_ftds64
@@ -1542,7 +1538,6 @@ geocgi2 needs connssl
 geocgi2 needs ct_ftds64
 geocgi2 needs dbapi
 geocgi2 needs dbapi_driver
-geocgi2 needs dbconnect
 geocgi2 needs geoauth
 geocgi2 needs geomyncbi
 geocgi2 needs ncbi_xdbapi_ftds
@@ -1572,7 +1567,6 @@ geometa needs connext
 geometa needs ct_ftds64
 geometa needs dbapi
 geometa needs dbapi_driver
-geometa needs dbconnect
 geometa needs ncbi_xdbapi_ftds
 geometa needs sdbapi
 geometa needs tds_ftds64
@@ -1590,7 +1584,6 @@ geomyncbi needs connssl
 geomyncbi needs ct_ftds64
 geomyncbi needs dbapi
 geomyncbi needs dbapi_driver
-geomyncbi needs dbconnect
 geomyncbi needs ncbi_xdbapi_ftds
 geomyncbi needs sdbapi
 geomyncbi needs tds_ftds64
@@ -4893,7 +4886,6 @@ softparse needs connssl
 softparse needs ct_ftds64
 softparse needs dbapi
 softparse needs dbapi_driver
-softparse needs dbconnect
 softparse needs general
 softparse needs geoauth
 softparse needs geomyncbi
@@ -4923,7 +4915,6 @@ spcgi needs connssl
 spcgi needs ct_ftds64
 spcgi needs dbapi
 spcgi needs dbapi_driver
-spcgi needs dbconnect
 spcgi needs general
 spcgi needs geoauth
 spcgi needs geomyncbi
