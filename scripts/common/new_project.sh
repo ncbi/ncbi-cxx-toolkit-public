@@ -95,7 +95,7 @@ CreateMakefile_Lib()
   lib_name="$5"
 
   case "$proj_type/$proj_subtype" in
-   lib/[^b]* | app/asn)
+   lib/[^b]* | app/asn | app/soap)
      libsrc="${lib_name}__ ${lib_name}___"
      ;;
    *)
@@ -393,9 +393,11 @@ case "${proj_type}" in
     proj_subdir=`echo ${proj_type} | sed -e 's@^app/@@'`
     proj_subtype=`echo ${proj_subdir} | tr / _`
     proj_type=app
-    if test $proj_subtype = asn; then
-      extra_inc="-I../../include -I../../include/$proj_name"
-    fi
+    case $proj_subtype in
+      asn | soap )
+        extra_inc="-I../../include -I../../include/$proj_name"
+        ;;
+    esac
     ;;
   app)
     proj_subdir=basic
@@ -425,12 +427,16 @@ if test -d "$src/$proj_type/sample/$proj_subdir"; then
   stem="$proj_type/sample" # vs. sample/app
 elif test ! -d "$src/$stem/$proj_subdir"; then
   svn co "$repository_url/trunk/c++/src/$stem/$proj_subdir" \
-    "$tmp_app_checkout_dir/$stem/$proj_subdir"
-  if test ! -d "$tmp_app_checkout_dir/$stem/$proj_subdir"; then
+    "$tmp_app_checkout_dir/src/$stem/$proj_subdir"
+  if test ! -d "$tmp_app_checkout_dir/src/$stem/$proj_subdir"; then
     rm -rf "$tmp_app_checkout_dir"
     Usage "Unsupported project type $proj_type/$proj_subtype"
   fi
-  src="`cd \"$tmp_app_checkout_dir\" && pwd`"
+  if test -n "$extra_inc"; then
+    svn co "$repository_url/trunk/c++/include/$stem/$proj_subdir" \
+      "$tmp_app_checkout_dir/include/$stem/$proj_subdir"    
+  fi
+  src="`cd \"$tmp_app_checkout_dir/src\" && pwd`"
   cleanup='yes'
 fi
 
@@ -440,6 +446,7 @@ if test ! -f ../$proj_name/tmp$$ ; then
    test -d $proj_name || mkdir $proj_name
 fi
 if test -n "$extra_inc" ; then
+   orig_extra_inc=$extra_inc
    if test -f ../../src/$proj_name/tmp$$; then
       mkdir -p ../../include/$proj_name
    elif test -f ../src/tmp$$; then
@@ -512,11 +519,16 @@ if test ! -d "$old_dir"; then
   exit 0
 fi
 
+old_header_dir="sample/${proj_type}/${proj_subdir}"
+old_header_name="sample_${proj_type}_${proj_subtype}"
+old_std_guard=`echo "$old_header_dir" | tr "a-z/" "A-Z_"`
+old_alt_guard='SAMPLELIB___OBJECT'
+uc_proj_name=`echo "$proj_name" | tr "a-z" "A-Z"`
 
 CopySources()
 {
   for input in $old_dir$1/*; do
-    base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g"`
+    base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g; s/${old_header_name}/${proj_name}/g"`
     case $base in
       *~ | CVS | .svn )
         continue ;; # skip
@@ -544,6 +556,9 @@ CopySources()
     else
       continue
     fi
+
+    back=`echo $1 | sed -e 's,/[^/]*,../,g'`
+    extra_inc=`echo $orig_extra_inc | sed -e "s,-I,-I$back,g"`
   
     case $input in
         */Makefile.*.app)
@@ -579,7 +594,12 @@ CopySources()
             ;;
         *)
             sed -e "s/${old_proj_name}/${proj_name}/g" \
-                -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
+                -e "s/${old_class_name}/${new_class_name}/g" \
+                -e "s,${old_header_dir},${proj_name},g" \
+                -e "s/${old_header_name}/${proj_name}/g" \
+                -e "s/${old_std_guard}/${uc_proj_name}/g" \
+                -e "s/${old_alt_guard}/${uc_proj_name}_${uc_proj_name}/g" \
+                < $input > $output
             ;;
     esac
     test -x $input  &&  chmod +x $output
@@ -595,6 +615,19 @@ CopySources()
 }
 
 CopySources ""
+if test -n "$extra_inc" ; then
+  orig_new_dir=$new_dir
+  src=`dirname $src`/include
+  if test -d "../../include/$proj_name"; then
+    cd "../../include/$proj_name"
+  elif test -d "../include/$proj_name"; then
+    cd "../include/$proj_name"
+  fi
+  old_dir=${src}/$stem/${proj_subdir}
+  new_dir=`pwd`
+  CopySources ""
+  new_dir=$orig_new_dir
+fi
 test -n "$cleanup" && rm -rf "$tmp_app_checkout_dir"
 
 fmt <<EOF
