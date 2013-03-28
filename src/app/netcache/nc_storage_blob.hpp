@@ -130,14 +130,14 @@ public:
     Uint4 GetReadMemSize(void);
     const void* GetReadMemPtr(void);
     void MoveReadPos(Uint4 move_size);
-    int GetCurBlobTTL(void) const;
-    int GetNewBlobTTL(void) const;
+    unsigned int GetCurBlobTTL(void) const;
+    unsigned int GetNewBlobTTL(void) const;
     /// Set blob's timeout after last access before it will be deleted.
     /// Method can be called only after lock is acquired, if blob exists and
     /// lock is acquired for eNCDelete or eNCCreate access.
-    void SetBlobTTL(int ttl);
-    int GetCurVersionTTL(void) const;
-    int GetNewVersionTTL(void) const;
+    void SetBlobTTL(unsigned int ttl);
+    unsigned int GetCurVersionTTL(void) const;
+    unsigned int GetNewVersionTTL(void) const;
     void SetVersionTTL(int ttl);
     int GetCurBlobVersion(void) const;
     void SetBlobVersion(int ver);
@@ -385,13 +385,13 @@ CNCBlobAccessor::GetCurBlobVersion(void) const
     return m_CurData->blob_ver;
 }
 
-inline int
+inline unsigned int
 CNCBlobAccessor::GetCurBlobTTL(void) const
 {
     return m_CurData->ttl;
 }
 
-inline int
+inline unsigned int
 CNCBlobAccessor::GetNewBlobTTL(void) const
 {
     return m_NewData->ttl;
@@ -463,13 +463,13 @@ CNCBlobAccessor::SetNewBlobExpire(int expire, int dead_time /* = 0 */)
     m_NewData->dead_time = dead_time;
 }
 
-inline int
+inline unsigned int
 CNCBlobAccessor::GetCurVersionTTL(void) const
 {
     return m_CurData->ver_ttl;
 }
 
-inline int
+inline unsigned int
 CNCBlobAccessor::GetNewVersionTTL(void) const
 {
     return m_NewData->ver_ttl;
@@ -483,7 +483,7 @@ CNCBlobAccessor::SetVersionTTL(int ttl)
 }
 
 inline void
-CNCBlobAccessor::SetBlobTTL(int ttl)
+CNCBlobAccessor::SetBlobTTL(unsigned int ttl)
 {
     x_CreateNewData();
     m_NewData->ttl = ttl;

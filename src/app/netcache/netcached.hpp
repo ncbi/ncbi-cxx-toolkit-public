@@ -59,6 +59,7 @@ struct SNCSpecificParams : public CObject
     ENCBlobPassPolicy pass_policy;
     //Uint4 conn_timeout;
     //Uint4 cmd_timeout;
+    Uint4 max_ttl;
     Uint4 blob_ttl;
     Uint4 ver_ttl;
     Uint2 ttl_unit;

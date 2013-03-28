@@ -260,7 +260,7 @@ private:
     /// Client finished sending blob, do cleanup
     State x_FinishReadingBlob(void);
 
-    void x_ProlongBlobDeadTime(int add_time);
+    void x_ProlongBlobDeadTime(unsigned int add_time);
     void x_ProlongVersionLife(void);
     void x_WriteFullBlobsList(void);
     void x_GetCurSlotServers(void);

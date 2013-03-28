@@ -88,7 +88,7 @@ public:
     Uint8   create_time;
     Uint8   create_server;
     Uint4   create_id;
-    int     ttl;
+    unsigned int     ttl;
     int     expire;
     int     dead_time;
     int     blob_ver;

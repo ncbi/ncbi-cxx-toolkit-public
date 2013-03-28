@@ -66,6 +66,7 @@ static const char* kNCReg_SpecPriority        = "app_setup_priority";
 //static const char* kNCReg_NetworkTimeout      = "network_timeout";
 static const char* kNCReg_DisableClient       = "disable_client";
 //static const char* kNCReg_CommandTimeout      = "cmd_timeout";
+static const char* kNCReg_MaxTTL              = "max_ttl";
 static const char* kNCReg_BlobTTL             = "blob_ttl";
 static const char* kNCReg_VerTTL              = "ver_ttl";
 static const char* kNCReg_TTLUnit             = "ttl_unit";
@@ -166,6 +167,10 @@ s_ReadSpecificParams(const IRegistry& reg,
     }
     if (reg.HasEntry(section, kNCReg_BlobTTL, IRegistry::fCountCleared)) {
         params->blob_ttl = reg.GetInt(section, kNCReg_BlobTTL, 3600);
+    }
+    if (reg.HasEntry(section, kNCReg_MaxTTL, IRegistry::fCountCleared)) {
+        Uint4 one_month = 2592000; //30 days: 3600 x 24 x 30
+        params->max_ttl = reg.GetInt(section, kNCReg_MaxTTL, max( 10 * params->blob_ttl, one_month));
     }
     if (reg.HasEntry(section, kNCReg_VerTTL, IRegistry::fCountCleared)) {
         params->ver_ttl = reg.GetInt(section, kNCReg_VerTTL, 3600);
@@ -269,6 +274,7 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
     main_params->disable         = false;
     //main_params->cmd_timeout     = 600;
     //main_params->conn_timeout    = 10;
+    main_params->max_ttl         = 2592000;
     main_params->blob_ttl        = 3600;
     main_params->ver_ttl         = 3600;
     main_params->ttl_unit        = 300;

@@ -2000,7 +2000,7 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
 }
 
 void
-CNCMessageHandler::x_ProlongBlobDeadTime(int add_time)
+CNCMessageHandler::x_ProlongBlobDeadTime(unsigned int add_time)
 {
     LOG_CURRENT_FUNCTION
     if (!m_AppSetup->prolong_on_read)
@@ -2008,7 +2008,11 @@ CNCMessageHandler::x_ProlongBlobDeadTime(int add_time)
 
     CSrvTime cur_srv_time = CSrvTime::Current();
     Uint8 cur_time = cur_srv_time.AsUSec();
-    int new_expire = int(cur_srv_time.Sec()) + add_time;
+    int now = int(cur_srv_time.Sec());
+    int new_expire = now + add_time;
+    if (new_expire < now) {
+        return;
+    }
     int old_expire = m_BlobAccess->GetCurBlobExpire();
     if (!CNCServer::IsDebugMode()  &&  new_expire - old_expire < m_AppSetup->ttl_unit)
         return;
@@ -2824,7 +2828,7 @@ inline unsigned int
 CNCMessageHandler::x_GetBlobTTL(void)
 {
     LOG_CURRENT_FUNCTION
-    return m_BlobTTL? m_BlobTTL: m_AppSetup->blob_ttl;
+    return m_BlobTTL != 0 ? min(m_BlobTTL,m_AppSetup->max_ttl) : m_AppSetup->blob_ttl;
 }
 
 CNCMessageHandler::State
@@ -3010,14 +3014,22 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Prolong(void)
 {
     LOG_CURRENT_FUNCTION
-    bool ttl_overrun;
+    bool ttl_overrun = false;
+#if 0
     if (m_BlobTTL <= m_BlobAccess->GetCurBlobTTL())
         ttl_overrun = false;
     else {
         m_BlobTTL = m_BlobAccess->GetCurBlobTTL();
         ttl_overrun = true;
     }
-    x_ProlongBlobDeadTime(int(m_BlobTTL));
+#else
+    if (m_BlobTTL > m_AppSetup->max_ttl) {
+        m_BlobTTL = m_AppSetup->max_ttl;
+        ttl_overrun = true;
+    }
+#endif
+
+    x_ProlongBlobDeadTime(m_BlobTTL);
     // Distinguish "PROLONG" vs "PROXY_PROLONG".
     // The latter has the fConfirmOnFinish flag and
     // doesn't require an explicit confirmation.
@@ -3062,7 +3074,7 @@ CNCMessageHandler::x_DoCmd_Remove(void)
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetBlobVersion(m_BlobVersion);
     int expire = CSrvTime::CurSecs() - 1;
-    int ttl = m_BlobAccess->GetNewBlobTTL();
+    unsigned int ttl = m_BlobAccess->GetNewBlobTTL();
     if (m_BlobAccess->IsBlobExists()  &&  m_BlobAccess->GetCurBlobTTL() > ttl)
         ttl = m_BlobAccess->GetCurBlobTTL();
     m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
@@ -3415,7 +3427,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 
     tmp = "\nOK:TTL: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = NStr::IntToString(m_BlobAccess->GetCurBlobTTL());
+    tmp = NStr::UIntToString(m_BlobAccess->GetCurBlobTTL());
     m_SendBuff->append(tmp.data(), tmp.size());
 
     tmp = "\nOK:Expire: ";
@@ -3442,7 +3454,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 
     tmp = "\nOK:Version's TTL: ";
     m_SendBuff->append(tmp.data(), tmp.size());
-    tmp = NStr::IntToString(m_BlobAccess->GetCurVersionTTL());
+    tmp = NStr::UIntToString(m_BlobAccess->GetCurVersionTTL());
     m_SendBuff->append(tmp.data(), tmp.size());
 
     tmp = "\nOK:Version expire: ";
