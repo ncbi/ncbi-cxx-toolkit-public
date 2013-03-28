@@ -97,6 +97,7 @@ namespace {
             return false;
         } else {
             BOOST_FAIL( "unknown type: " << sTypeName );
+            return false;
         }
     }
 
@@ -283,10 +284,6 @@ namespace {
             TSeqEntryIter::fIncludeGivenEntry, // include given, if possible
             TSeqEntryIter::fRecursive // try with recursion on and off 
             );
-        int exclude_given[] = {
-            0,
-            kEndOfExpectationArrayMarker
-        };
         s_TestExpectations<TSeqEntryIter>( data_h, 
             expect_nothing, 
             NULL, // any filter
