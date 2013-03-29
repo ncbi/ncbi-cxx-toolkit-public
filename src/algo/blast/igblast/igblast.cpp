@@ -244,12 +244,12 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
     // Only igblastn will search DJ
     CBlastOptions & opts = opts_hndl->SetOptions();
     opts.SetMatchReward(1);
-    opts.SetMismatchPenalty(-4);
     if (db_type == 2){ //J genes are longer so if can afford more reliable identification
         opts.SetWordSize(7);
         opts.SetMismatchPenalty(-3);
     } else {
         opts.SetWordSize(m_IgOptions->m_Min_D_match);
+        opts.SetMismatchPenalty(m_IgOptions->m_D_penalty);
     }
 
     opts.SetGapOpeningCost(5);

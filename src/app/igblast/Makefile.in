@@ -6,3 +6,11 @@ REQUIRES = objects algo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
+.PHONY: all $(APP_PROJ)
+
+igblastn:
+	${MAKE} ${MFLAGS} -f Makefile.igblastn_app
+igblastp:
+	${MAKE} ${MFLAGS} -f Makefile.igblastp_app
+

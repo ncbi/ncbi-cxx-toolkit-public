@@ -1348,6 +1348,11 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetConstraint(kArgMinDMatch, 
                                new CArgAllowValuesGreaterThanOrEqual(5));
         
+        arg_desc.AddDefaultKey(kArgDPenalty, "D_penalty",
+                                "Penalty for a nucleotide mismatch in D gene",
+                                CArgDescriptions::eInteger, "-4");
+        arg_desc.SetConstraint(kArgDPenalty, 
+                               new CArgAllowValuesBetween(-6, 0));
     }
 
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
@@ -1459,7 +1464,10 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args.Exist(kArgMinDMatch) && args[kArgMinDMatch]) {
         m_IgOptions->m_Min_D_match = args[kArgMinDMatch].AsInteger();
     }
-
+   
+    if (args.Exist(kArgDPenalty) && args[kArgDPenalty]) {
+        m_IgOptions->m_D_penalty = args[kArgDPenalty].AsInteger();
+    }
 
     CRef<CBlastOptionsHandle> opts_hndl;
     if (m_IgOptions->m_IsProtein) {

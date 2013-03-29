@@ -290,6 +290,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
 NCBI_BLASTINPUT_EXPORT extern const string kArgTranslate;
 ///Arugment to specify if Igblast min D gene match
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinDMatch;
+/// Argument to specify mismatch penalty for D gene search
+NCBI_BLASTINPUT_EXPORT extern const string kArgDPenalty;
 
 /// Argument to specify non-greedy dynamic programming extension
 NCBI_BLASTINPUT_EXPORT extern const string kArgNoGreedyExtension;
