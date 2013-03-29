@@ -90,7 +90,8 @@ public:
 
     /// Extract and store bracketed modifiers from a title string, returning a
     /// stripped version (which may well be empty at that point!)
-    string ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid);
+    string ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid,
+        size_t iMaxModsToParse = std::numeric_limits<size_t>::max() );
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.

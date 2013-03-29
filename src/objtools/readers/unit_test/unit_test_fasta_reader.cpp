@@ -95,7 +95,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah \n"
@@ -110,7 +111,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ ABCDEFGHIJ\n"
@@ -125,7 +127,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
@@ -140,7 +143,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must,    2 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -155,7 +159,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -170,7 +175,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -186,7 +192,8 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_Must,    0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
 
             kDefaultFastaReaderFlags, // CFastaReader flags
@@ -201,10 +208,11 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must, 2 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_Must, 1 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
-            "> blah ACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTAC\n"
+            "> blah [topology=linear] ACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTAC\n"
             "ACGACNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNGTEACGTACGTACGT\n"
         },
 
@@ -216,12 +224,54 @@ namespace {
                 { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
                 { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
             "ACACEACGTACGTACGTEEEETACGTACGTACGTACGTACGTACGTA\n"
             "ACEACGTACGTACGTAEETACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "Make sure it reads modifiers if requested",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+            },
+                // Note: non-default flags
+                CFastaReader::fAddMods | kDefaultFastaReaderFlags, // CFastaReader flags
+                "> blah [topology=linear]\n"
+                "ACACAACGTACGTACGTAAAATACGTACGTACGTACGTACGTACGTA\n"
+                "ACAACGTACGTACGTAAATACGTACGTACGTACGTACGTACGTACGT\n"
+        },
+
+        {
+            "Test unexpected mods on line other than first line",
+
+            {
+                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_Must,    4 }
+            },
+                kDefaultFastaReaderFlags, // CFastaReader flags
+                ">blah \n"
+                "ACACAACGTACGTACGTAAAATACGTACGTACGTACGTACGTACGTA\n"
+                "ACAACGTACGTACGTAAATACGTACGTACGTACGTACGTACGTACGT\n"
+                ">blahblah [topology=linear]\n"
+                "TCACAACGTACGTACGTAAAATACGTACGTACGTACGTACGTACGTA\n"
+                "ACAACGTACGTACGTAAATACGTACGTACGTACGTACGTACGTACGT\n"
+                ">blahblah2 \n"
+                "GCACAACGTACGTACGTAAAATACGTACGTACGTACGTACGTACGTA\n"
+                "ACAACGTACGTACGTAAATACGTACGTACGTACGTACGTACGTACGT\n"
         }
     };
 }
@@ -232,7 +282,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
     // IF THIS FAILS, IT MEANS YOU NEED TO UPDATE THE TESTS!
     // ( this is here because the tests may need to be adjusted if
     //   the number of possible warnings changes. )
-    BOOST_REQUIRE( CFastaReader::CWarning::eType_NUM == 5 );
+    BOOST_REQUIRE( CFastaReader::CWarning::eType_NUM == 6 );
 
     // sanity test the tests
     for( size_t warn_test_idx = 0; 

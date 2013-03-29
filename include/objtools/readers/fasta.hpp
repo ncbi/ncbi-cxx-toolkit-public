@@ -158,6 +158,7 @@ public:
             eType_TooManyAmbigOnFirstLine,
             eType_InvalidResidue,
             eType_AminoAcidsInTitle,
+            eType_ModsFoundButNotExpected,
 
             // feel free to add more warning types as necessary, but
             // put them before eType_NUM
@@ -283,7 +284,7 @@ protected:
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
 
-    void x_RecursiveApplyAllMods( CSeq_entry& entry );
+    void x_ApplyAllMods( CBioseq & bioseq );
 
     std::string x_NucOrProt(void) const;
 

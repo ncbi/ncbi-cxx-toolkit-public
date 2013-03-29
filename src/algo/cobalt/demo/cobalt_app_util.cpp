@@ -68,11 +68,6 @@ public:
         x_AddMultiwayAlignment(*annot, ids);
         entry->SetSet().SetAnnot().push_back(annot);
 
-        if(TestFlag(fAddMods)) {
-            entry->Parentize();
-            x_RecursiveApplyAllMods(*entry);
-        }
-
         return entry;
     }
 };

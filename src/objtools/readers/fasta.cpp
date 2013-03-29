@@ -356,11 +356,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(*m_CurrentSeq);
 
-    if(TestFlag(fAddMods)) {
-        entry->Parentize();
-        x_RecursiveApplyAllMods( *entry );
-    }
-
+    entry->Parentize();
     return entry;
 }
 
@@ -441,10 +437,9 @@ CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs)
             }
         }
     }
-    if(TestFlag(fAddMods)) {
-        entry->Parentize();
-        x_RecursiveApplyAllMods( *entry );
-    }
+
+    entry->Parentize();
+
     if (entry->IsSet()  &&  entry->GetSet().GetSeq_set().size() == 1) {
         return entry->SetSet().SetSeq_set().front();
     } else {
@@ -472,7 +467,8 @@ string CFastaReader::CWarning::GetStringOfType(EType eType)
         { eType_NucsInTitle,  "Nucleotide bases in title" },
         { eType_TooManyAmbigOnFirstLine, "Too many ambiguous bases on first data line" },
         { eType_InvalidResidue, "Invalid residue(s) found" },
-        { eType_AminoAcidsInTitle, "Amino acid bases in title"}
+        { eType_AminoAcidsInTitle, "Amino acid bases in title"},
+        { eType_ModsFoundButNotExpected, "FASTA modifiers not expected"}
     };
     typedef CStaticArrayMap<EType, const char *> TTypeMap;
     DEFINE_STATIC_ARRAY_MAP(TTypeMap, sc_TypeMap, sc_type_map);
@@ -812,6 +808,8 @@ void CFastaReader::ParseTitle(const TStr& s)
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetTitle().assign(s.data(), s.length());
     m_CurrentSeq->SetDescr().Set().push_back(desc);
+
+    x_ApplyAllMods(*m_CurrentSeq);
 }
 
 bool CFastaReader::IsValidLocalID(const TStr& s)
@@ -1230,11 +1228,7 @@ CRef<CSeq_entry> CFastaReader::ReadAlignedSet(int reference_row)
     }
     entry->SetSet().SetAnnot().push_back(annot);
 
-    if(TestFlag(fAddMods)) {
-        entry->Parentize();
-        x_RecursiveApplyAllMods( *entry );
-    }
-
+    entry->Parentize();
     return entry;
 }
 
@@ -2009,25 +2003,30 @@ CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
     return entry;
 }
 
-
-void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
+void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )
 {
-    if (entry.IsSet()) {
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it,
-                           entry.SetSet().SetSeq_set()) {
-            x_RecursiveApplyAllMods(**it);
+    // this is called even if there the user did not request
+    // mods to be added because we want to give a warning if there
+    // are mods when not expected.
+
+    CSourceModParser smp( TestFlag(fBadModThrow) ?
+        CSourceModParser::eHandleBadMod_Throw : 
+    CSourceModParser::eHandleBadMod_Ignore );
+    CConstRef<CSeqdesc> title_desc;
+    // find title
+    FOR_EACH_SEQDESC_ON_BIOSEQ( title_it, bioseq ) {
+        if( (*title_it)->IsTitle() ) {
+            title_desc.Reset( &(**title_it) );
+            break;
         }
-    } else {
-        CBioseq&         seq = entry.SetSeq();
-        CSourceModParser smp( TestFlag(fBadModThrow) ?
-            CSourceModParser::eHandleBadMod_Throw : 
-            CSourceModParser::eHandleBadMod_Ignore );
-        CConstRef<CSeqdesc> title_desc
-            = seq.GetClosestDescriptor(CSeqdesc::e_Title);
-        if (title_desc) {
-            string& title(const_cast<string&>(title_desc->GetTitle()));
-            title = smp.ParseTitle(title, CConstRef<CSeq_id>(seq.GetFirstId()) );
-            smp.ApplyAllMods(seq);
+    }
+    if (title_desc) {
+        string& title(const_cast<string&>(title_desc->GetTitle()));
+        
+        if( TestFlag(fAddMods) ) {
+            title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
+
+            smp.ApplyAllMods(bioseq);
             if( TestFlag(fUnknModThrow) ) {
                 CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
                 if( ! unused_mods.empty() ) 
@@ -2038,7 +2037,7 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
                     err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
 
                     // get sequence ID
-                    const CSeq_id* seq_id = seq.GetFirstId();
+                    const CSeq_id* seq_id = bioseq.GetFirstId();
                     if( seq_id ) {
                         err << seq_id->GetSeqIdString();
                     } else {
@@ -2062,7 +2061,21 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
             CSourceModParser::TMods unused_mods = 
                 smp.GetMods(CSourceModParser::fUnusedMods);
             copy( unused_mods.begin(), unused_mods.end(),
-                  inserter(m_UnusedMods, m_UnusedMods.begin() ) );
+                inserter(m_UnusedMods, m_UnusedMods.begin() ) );
+        } else {
+            // user did not request fAddMods, so we warn that we found
+            // mods anyway
+            smp.ParseTitle(
+                title, 
+                CConstRef<CSeq_id>(bioseq.GetFirstId()),
+                1 // "1" since we only care whether or not there are mods, not how many
+                );
+            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+            if( ! unused_mods.empty() ) {
+                FASTA_WARNING(LineNumber(), CWarning::eType_ModsFoundButNotExpected,
+                    "FASTA-Reader: There were FASTA modifier(s) found even "
+                    "though the input was not expected to have any.");
+            }
         }
     }
 }

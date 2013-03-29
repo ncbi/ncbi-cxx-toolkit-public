@@ -96,7 +96,9 @@ T* LeaveAsIs(void)
 }
 
 
-string CSourceModParser::ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid )
+string CSourceModParser::ParseTitle(const CTempString& title, 
+    CConstRef<CSeq_id> seqid,
+    size_t iMaxModsToParse )
 {
     SMod   mod;
     string stripped_title;
@@ -106,7 +108,10 @@ string CSourceModParser::ParseTitle(const CTempString& title, CConstRef<CSeq_id>
 
     mod.seqid = seqid;
 
-    while (pos < title.size()) {
+    size_t iModsFoundSoFar = 0;
+    for( ; (pos < title.size()) && (iModsFoundSoFar < iMaxModsToParse); 
+        ++iModsFoundSoFar )
+    {
         size_t lb_pos = title.find('[', pos), eq_pos = title.find('=', lb_pos),
                end_pos = CTempString::npos;
         if (eq_pos != CTempString::npos) {
