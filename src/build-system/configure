@@ -1043,7 +1043,8 @@ Optional Packages:
  --without-ctools        do not build NCBI C Toolkit based projects
  --without-gui           do not build most graphical projects
  --without-algo          do not build CPU-intensive algorithms
- --without-internal      do not build internal projects
+ --with-internal         always try to build internal projects
+ --without-internal      never build internal projects
  --with-gbench           ensure that Genome Workbench can be built
  --without-gbench        do not build Genome Workbench
 ***** See also HTML documentation in ./doc/index.html *****
@@ -2920,6 +2921,12 @@ fi;
 # Check whether --with-internal or --without-internal was given.
 if test "${with_internal+set}" = set; then
   withval="$with_internal"
+
+fi;
+
+# Check whether --with-internal2 or --without-internal2 was given.
+if test "${with_internal2+set}" = set; then
+  withval="$with_internal2"
 
 fi;
 

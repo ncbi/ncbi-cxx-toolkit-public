@@ -466,7 +466,9 @@ AC_ARG_WITH(gui,
 AC_ARG_WITH(algo,
    [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
-   [ --without-internal      do not build internal projects])
+   [ --with-internal         always try to build internal projects])
+AC_ARG_WITH(internal2,
+   [ --without-internal      never build internal projects])
 AC_ARG_WITH(gbench,
    [ --with-gbench           ensure that Genome Workbench can be built])
 AC_ARG_WITH(gbench2,
