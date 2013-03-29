@@ -103,7 +103,38 @@ void CGffAlignmentRecord::SetTargetLocation(
             m_strSource = "Patent";
             return;
         case CSeq_id::e_Other:
+            // "for historical reasons"
             m_strSource = "RefSeq";
+            return;
+        case CSeq_id::e_Ddbj:
+            m_strSource = "DDBJ";
+            return;
+        case CSeq_id::e_Embl:
+            m_strSource = "EMBL";
+            return;
+        case CSeq_id::e_Pir:
+            m_strSource = "PIR";
+            return;
+        case CSeq_id::e_Prf:
+            m_strSource = "PRF";
+            return;
+        case CSeq_id::e_Pdb:
+            m_strSource = "PDB";
+            return;
+        case CSeq_id::e_Tpg:
+            m_strSource = "tpg";
+            return;
+        case CSeq_id::e_Tpe:
+            m_strSource = "tpe";
+            return;
+        case CSeq_id::e_Tpd:
+            m_strSource = "tpd";
+            return;
+        case CSeq_id::e_Gpipe:
+            m_strSource = "gpipe";
+            return;
+        case CSeq_id::e_Named_annot_track :
+            m_strSource = "NADB";
             return;
         case CSeq_id::e_General:
             m_strSource = id.GetGeneral().GetDb();
@@ -163,6 +194,7 @@ void CGffAlignmentRecord::SetMatchType(
 
     CSeq_id::EAccessionInfo source_info = source.IdentifyAccession();
     CSeq_id::EAccessionInfo target_info = target.IdentifyAccession();
+
     if (target_info & CSeq_id::fAcc_prot) {
         m_strType = strProtMatch;
         return;
@@ -183,7 +215,7 @@ void CGffAlignmentRecord::SetMatchType(
         m_strType = strTransNucMatch;
         return;
     }
-//    m_strType = "match";
+    //m_strType = "match";
 }
 
 //  ----------------------------------------------------------------------------
