@@ -2073,8 +2073,8 @@ void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )
             CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
             if( ! unused_mods.empty() ) {
                 FASTA_WARNING(LineNumber(), CWarning::eType_ModsFoundButNotExpected,
-                    "FASTA-Reader: There were FASTA modifier(s) found even "
-                    "though the input was not expected to have any.");
+                    "FASTA-Reader: Ignoring FASTA modifier(s) found because "
+                    "the input was not expected to have any.");
             }
         }
     }
