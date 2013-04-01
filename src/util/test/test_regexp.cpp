@@ -82,7 +82,6 @@ int CRegexApplication::Run(void)
 
     CRegexp pattern("D\\w*g");
     assert(pattern.GetMatch("The Dodgers play baseball.") == "Dodg");
-    assert(pattern.GetMatchTempString("The Dodgers play baseball.") == "Dodg");
     
     // ---------------------------------------------------------------
     // Perl compatible regular expression pattern to match
@@ -100,7 +99,6 @@ int CRegexApplication::Run(void)
 
     // Display pattern and sub pattern matches
     assert(pattern.GetMatch(text) == "quick brown fox");
-    assert(pattern.GetMatchTempString(text) == "quick brown fox");
     assert(pattern.NumFound() == 2);
     for (int i = 0;  i < pattern.NumFound();  i++) {
         LOG_POST(pattern.GetSub(text, i));
@@ -108,9 +106,6 @@ int CRegexApplication::Run(void)
     assert(pattern.GetSub(text,0) == "quick brown fox");
     assert(pattern.GetSub(text,1) == "quick");
     assert(pattern.GetSub(text,2) == "");
-    assert(pattern.GetSubTempString(text,0) == "quick brown fox");
-    assert(pattern.GetSubTempString(text,1) == "quick");
-    assert(pattern.GetSubTempString(text,2) == "");
 
     LOG_POST(string(33, '-'));
 

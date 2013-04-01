@@ -191,14 +191,7 @@ public:
     ///   found or if noreturn is true.
     /// @sa
     ///   EMatch, GetSub, GetResult
-    string GetMatch(
-        CTempString   str,
-        size_t        offset   = 0,
-        size_t        idx      = 0,
-        TMatch        flags    = fMatch_default,
-        bool          noreturn = false
-    );
-    CTempString GetMatchTempString(
+    CTempString GetMatch(
         CTempString   str,
         size_t        offset   = 0,
         size_t        idx      = 0,
@@ -237,10 +230,8 @@ public:
     ///   subpattern match (idx > 0). Return empty string when no match.
     /// @sa
     ///   GetMatch(), GetResult()
-    string      GetSub(CTempString str, size_t idx = 0) const;
-    void        GetSub(CTempString str, size_t idx, string& dst) const;
-    CTempString GetSubTempString(CTempString str, size_t idx = 0) const;
-    void        GetSubTempString(CTempString str, size_t idx, CTempString& dst) const;
+    CTempString GetSub(CTempString str, size_t idx = 0) const;
+    NCBI_DEPRECATED void GetSub(CTempString str, size_t idx, string& dst) const;
 
     /// Get number of patterns + subpatterns.
     ///

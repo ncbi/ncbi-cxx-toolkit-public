@@ -136,6 +136,7 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 }
 
 
+// @deprecated
 void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
 {
     int start = m_Results[2 * idx];
@@ -149,37 +150,21 @@ void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
 }
 
 
-void CRegexp::GetSubTempString(CTempString str, size_t idx, CTempString& dst) const
+CTempString CRegexp::GetSub(CTempString str, size_t idx) const
 {
     int start = m_Results[2 * idx];
     int end   = m_Results[2 * idx + 1];
 
     if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
-        dst.erase();
+        return CTempString();
     } else {
-        dst.assign(str.data() + start, end - start);
+        return CTempString(str.data() + start, end - start);
     }
 }
 
 
-string CRegexp::GetSub(CTempString str, size_t idx) const
-{
-    string s;
-    GetSub(str, idx, s);
-    return s;
-}
-
-
-CTempString CRegexp::GetSubTempString(CTempString str, size_t idx) const
-{
-    CTempString s;
-    GetSubTempString(str, idx, s);
-    return s;
-}
-
-
-string CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
-                         TMatch flags, bool noreturn)
+CTempString CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
+                              TMatch flags, bool noreturn)
 {
     int x_flags = s_GetRealMatchFlags(flags);
     m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
@@ -187,26 +172,9 @@ string CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
                            x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
     if ( noreturn ) {
-        return kEmptyStr;
+        return CTempString();
     }
     return GetSub(str, idx);
-}
-
-
-CTempString CRegexp::GetMatchTempString(CTempString str, size_t offset, size_t idx,
-                                        TMatch flags, bool noreturn)
-{
-    int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
-                           (int)str.length(), (int)offset,
-                           x_flags, m_Results,
-                           (int)(kRegexpMaxSubPatterns +1) * 3);
-    CTempString s;
-    if ( noreturn ) {
-        return s;
-    }
-    GetSubTempString(str, idx, s);
-    return s;
 }
 
 
