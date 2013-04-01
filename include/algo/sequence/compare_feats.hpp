@@ -78,6 +78,19 @@ public:
         fCmp_Match                  = 1 << 19  ///< all junctions match (fuzz-agnostic)
     };
     
+    enum EOverlapMethod {
+        eOverlap_vs_Union,    ///< overlap versus the union of the two features
+        eOverlap_vs_Shorter,  ///< overlap versus the shorter of the two features
+        eOverlap_vs_First,    ///< overlap versus the first of the two features
+        eOverlap_vs_Second    ///< overlap versus the second of the two features
+    };
+
+    typedef int TCompareFlags;
+    enum FCompareFlags {
+        fCmp_IgnoreStrand    = 1 << 0,  ///< strand-less comparison
+        fCmp_Defaults        = 0
+    };
+
     //This struct keeps the result of comparison of two exons
     struct SIntervalComparisonResult : CObject
     {
@@ -97,11 +110,18 @@ public:
                                    //e.g. 1:>1>  vs. 1:<1<
     };
     
-    CCompareSeq_locs(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope2)
-        : m_loc1(&loc1)
-        , m_loc2(&loc2)
-        , m_scope_t(scope2)
+    CCompareSeq_locs(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope2, TCompareFlags flags = fCmp_Defaults)
+        : m_scope_t(scope2)
+        , m_flags(flags)
     {
+        m_loc1 = CRef<CSeq_loc>(new CSeq_loc);
+        m_loc1->Assign(loc1);
+        m_loc2 = CRef<CSeq_loc>(new CSeq_loc);
+        m_loc2->Assign(loc2);
+        if ( m_flags & fCmp_IgnoreStrand ) {
+            m_loc1->ResetStrand();
+            m_loc2->ResetStrand();
+        }
         this->Reset();            
     } 
 
@@ -116,24 +136,39 @@ public:
     /// intra-loc overlaps are merged (otherwise non-sensical results are possible)
     double GetSymmetricalOverlap() const
     {
-        if(!m_cachedOverlapValues) {
-            x_ComputeOverlapValues();
-        }
-
-        TSeqPos denom = m_len_seqloc1 + m_len_seqloc2 - m_len_seqloc_overlap;
-        
-        return (denom == 0) ? 0.0 : (static_cast<double>(m_len_seqloc_overlap) / denom);  
+        return GetOverlap(eOverlap_vs_Union);
     }
     
     /// Relative overlap is defined as ratio of the length of the overlap to the length of the shorter feature
     double GetRelativeOverlap() const
     {
+        return GetOverlap(eOverlap_vs_Shorter);
+    }
+
+    /// Calculate overlap according to the specified method.
+    double GetOverlap(EOverlapMethod method) const
+    {
         if(!m_cachedOverlapValues) {
             x_ComputeOverlapValues();
         }
 
-        TSeqPos denom = static_cast<TSeqPos>(std::min(m_len_seqloc1, m_len_seqloc2));
+        TSeqPos denom = 0;
         
+        switch(method) {
+            case eOverlap_vs_Union:
+                denom = m_len_seqloc1 + m_len_seqloc2 - m_len_seqloc_overlap;
+                break;
+            case eOverlap_vs_Shorter:
+                denom = static_cast<TSeqPos>(std::min(m_len_seqloc1, m_len_seqloc2));
+                break;
+            case eOverlap_vs_First:
+                denom = m_len_seqloc1;
+                break;
+            case eOverlap_vs_Second:
+                denom = m_len_seqloc2;
+                break;
+        }
+
         return (denom == 0) ? 0.0 : (static_cast<double>(m_len_seqloc_overlap) / denom);  
     }
 
@@ -297,9 +332,10 @@ private:
     
     
     vector<SIntervalComparisonResult> m_IntComparisons;
-    const CConstRef<CSeq_loc> m_loc1;
-    const CConstRef<CSeq_loc> m_loc2;
+    CRef<CSeq_loc> m_loc1;
+    CRef<CSeq_loc> m_loc2;
     CScope* m_scope_t;
+    TCompareFlags m_flags;
     
 };
 
