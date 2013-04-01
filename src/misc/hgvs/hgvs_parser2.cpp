@@ -1012,7 +1012,7 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq_or_len(TIterator const& i, const CCont
     CRef<CSeq_literal> literal;
     TIterator it = i->children.begin();
 
-    if(i == i->children.end()) {
+    if(it == i->children.end()) {
         HGVS_THROW(eLogic, "Unexpected parse-tree state when parsing " + context.GetHgvs());
     }
 
