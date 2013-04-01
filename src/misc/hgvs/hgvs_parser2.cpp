@@ -321,6 +321,7 @@ void AdjustMoltype(CVariation& vr, CScope& scope)
 
 
 CHgvsParser::CContext::CContext(const CContext& other)
+  : m_hgvs(other.m_hgvs)
 {
     this->m_bsh = other.m_bsh;
     this->m_cds = other.m_cds;
@@ -1010,6 +1011,10 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq_or_len(TIterator const& i, const CCont
 
     CRef<CSeq_literal> literal;
     TIterator it = i->children.begin();
+
+    if(i == i->children.end()) {
+        HGVS_THROW(eLogic, "Unexpected parse-tree state when parsing " + context.GetHgvs());
+    }
 
     if(it->value.id() == SGrammar::eID_raw_seq) {
         literal = x_raw_seq(it, context);
@@ -1897,7 +1902,7 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 #endif
         HGVS_THROW(eGrammatic, "Syntax error at pos " + NStr::SizetToString(info.length + 1) + " in " + hgvs2 + "");
     } else {
-        CContext context(m_scope, m_seq_id_resolvers);
+        CContext context(m_scope, m_seq_id_resolvers, hgvs);
         vr = x_root(info.trees.begin(), context);
         vr->SetName(hgvs2);
         sx_AppendMoltypeExceptions(*vr, context.GetScope());

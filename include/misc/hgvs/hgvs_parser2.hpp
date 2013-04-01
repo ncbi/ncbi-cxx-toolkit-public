@@ -232,9 +232,10 @@ protected:
     class CContext
     {
     public:
-        CContext(CRef<CScope> scope, CSeq_id_Resolver::TResolvers& id_resolvers)
+        CContext(CRef<CScope> scope, CSeq_id_Resolver::TResolvers& id_resolvers, const string& hgvs)
           : m_scope(scope)
           , m_seq_id_resolvers(id_resolvers)
+          , m_hgvs(hgvs)
         {
             Clear();
         }
@@ -294,12 +295,17 @@ protected:
             return CSeq_id_Resolver::s_Get(m_seq_id_resolvers, s);
         }
 
+        const string& GetHgvs() const
+        {
+            return m_hgvs;
+        }
     private:
         CBioseq_Handle m_bsh;
         CRef<CSeq_feat> m_cds;
         CRef<CVariantPlacement> m_placement;
         mutable CRef<CScope> m_scope;
         mutable CSeq_id_Resolver::TResolvers m_seq_id_resolvers;
+        const string& m_hgvs;
     };
 
     struct SGrammar: public grammar<SGrammar>
