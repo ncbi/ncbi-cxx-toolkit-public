@@ -128,32 +128,32 @@ TMgr-AssemblySpec ::= CHOICE {
 
 TMgr-AttrSpec ::= SEQUENCE {
     key VisibleString,
-    value VisibleString
+    value UTF8String
 }
 
 TMgr-Assembly ::= SEQUENCE {
     accession VisibleString,
-    name VisibleString,
-    short-name VisibleString OPTIONAL,
-    description VisibleString OPTIONAL,
+    name UTF8String,
+    short-name UTF8String OPTIONAL,
+    description UTF8String OPTIONAL,
     is-complete BOOLEAN OPTIONAL
 }
 
 TMgr-Attribute ::= SEQUENCE {
     key VisibleString,
-    value VisibleString
+    value UTF8String
 }
 
 TMgr-DisplayTrack ::= SEQUENCE {
     dtrack-id INTEGER,
-    name VisibleString,
+    name UTF8String,
     attrs SEQUENCE OF TMgr-Attribute OPTIONAL,
     data SEQUENCE OF TMgr-DatasetItem
     -- display settings
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
-    name VisibleString,
+    name UTF8String,
     attrs SEQUENCE OF TMgr-Attribute OPTIONAL
 }
 
