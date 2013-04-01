@@ -438,6 +438,7 @@ RunTest() {
    runpid='?'
    test -f check_exec.pid  &&  runpid="\`cat check_exec.pid\`"
    runid="\`date -u +%y%m%d%H%M%S\`-\$runpid-\`uname -n\`"
+   runid="\`echo \$runid | tr -d '\n\r'\`"
    rm -f check_exec.pid > /dev/null 2>&1
                 
    # Get application execution time
