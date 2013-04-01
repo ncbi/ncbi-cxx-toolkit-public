@@ -53,7 +53,7 @@ class NCBI_GENERAL_EXPORT CDate : public CDate_Base
 {
     typedef CDate_Base Tparent;
 public:
-    // for conversion from CTime
+    /// for conversion from CTime
     enum EPrecision {
         ePrecision_day,
         ePrecision_second
@@ -69,43 +69,50 @@ public:
     void  SetToTime(const CTime& time, EPrecision prec = ePrecision_second);
     CTime AsCTime  (CTime::ETimeZone tz = CTime::eLocal) const;
 
+    /// How *this relates to another date.
     enum ECompare {
-        eCompare_before = -1,
-        eCompare_same,
-        eCompare_after,
-        eCompare_unknown
+        eCompare_before = -1, ///< *this comes first.
+        eCompare_same,        ///< They're equivalent.
+        eCompare_after,       ///< *this comes second.
+        eCompare_unknown      ///< Comparison is impossible.
     };
     ECompare Compare(const CDate& date) const;
     
-    // Appends a date as a string to label. If internally, the date
-    // is a string, the string is just returned. If internally the date
-    // is a CDate_std and year_only is false, then the date is returned 
-    // as mm-dd-yyyy if possible else, just year is returned
+    /// Append a standardized string representation of the date to the label.
+    ///
+    /// Dates internally represented as strings necessarily appear as is.
+    /// Structured dates with known months and days normally appear in a
+    /// mm-dd-yyyy format; however, if either field is missing, or
+    /// year_only is true, this method will yield only the year.
     void GetDate(string* label, bool year_only = false) const;
 
-    // Format controls the treatment of Date-std.  (Strings
-    // necessarily remain as is.)  Specifically,
-    // %Y -> year
-    // %M -> month as number
-    // %N -> month as (English) word
-    // %D -> day
-    // %S -> season
-    // %h -> hour
-    // %m -> minute
-    // %s -> second
-    // Each of the above can contain a number immediately following the
-    // percent sign, indicating the number of characters to yield.
-    // 
-    // In addition, there are special directives to deal with optional
-    // elements: %{ ... %} (which may be nested) may be used to
-    // delimit subsequences that should vanish altogether if optional
-    // elements they contain are missing, and %| may be used to
-    // designate fallbacks.  (For instance, the above interface
-    // defaults to a format of "%{%2M-%2D-%}%Y, and one might format
-    // dates for GenBank with "%{%{%2D%|01%}-%3N%|01-JAN%}-%Y" if one
-    // wanted to fudge legal values if necessary.)
-    //
-    // Finally, %% -> %.
+    /// Append a custom string representation of the date to the label.
+    ///
+    /// \p format controls the treatment of Date-std.  (Strings
+    /// necessarily remain as is.)  Specifically,
+    /// \verbatim
+    /// %Y -> year
+    /// %M -> month as number
+    /// %N -> month as (English) word
+    /// %D -> day
+    /// %S -> season
+    /// %h -> hour
+    /// %m -> minute
+    /// %s -> second
+    /// \verbatim
+    /// Each of the above can contain a number immediately following the
+    /// percent sign, indicating the number of characters to yield.
+    /// 
+    /// In addition, there are special directives to deal with optional
+    /// elements: %{ ... %} (which may be nested) may be used to
+    /// delimit subsequences that should vanish altogether if optional
+    /// elements they contain are missing, and %| may be used to
+    /// designate fallbacks.  (For instance, the above interface
+    /// defaults to a format of "%{%2M-%2D-%}%Y", and one might format
+    /// dates for GenBank with "%{%{%2D%|01%}-%3N%|01-JAN%}-%Y" if one
+    /// wanted to fudge legal values if necessary.)
+    ///
+    /// Finally, %% -> %.
     void GetDate(string* label, const string& format) const;
     void GetDate(string* label, const char*   format) const;
 

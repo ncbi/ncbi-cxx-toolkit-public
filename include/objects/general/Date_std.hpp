@@ -68,9 +68,12 @@ public:
                     CDate::EPrecision prec = CDate::ePrecision_second);
     CTime AsCTime  (CTime::ETimeZone tz = CTime::eLocal) const;
 
+    /// Indicate how *this relates to another date.
     CDate::ECompare Compare(const CDate_std& date) const;
 
-    // See explanation of format in Date.hpp
+    /// Append a custom string representation of the date to the label.
+    ///
+    /// @sa CDate::GetDate
     void GetDate(string* label, const string& format) const;
 
 private:
