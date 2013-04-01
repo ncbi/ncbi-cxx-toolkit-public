@@ -2675,6 +2675,15 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
 
     string xlate;
 
+    CRef<CSeq_feat> corrected_loc_feat;
+    if (cds_feat_on_mrna) {
+        /// In some cases, the id in the CDS feature is not the same as in the
+        /// alignment; make sure the mapping is done with matching ids
+        corrected_loc_feat.Reset(new CSeq_feat);
+        corrected_loc_feat->Assign(*cds_feat_on_mrna);
+        corrected_loc_feat->SetLocation().SetId(align->GetSeq_id(0));
+    }
+
     if (align != NULL) {
         CBioseq bioseq;
         x_CollectMrnaSequence(bioseq.SetInst(), *align, feat.GetLocation(), false, false, &has_gap, &has_indel);
@@ -2716,88 +2725,10 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         CSeqTranslator::Translate(feat, *m_scope, xlate);
     }
 
-    // deal with code breaks
-    // NB: these should be folded into the translation machinery instead...
-    if (feat.GetData().GetCdregion().IsSetCode_break()) {
-        CRef<CSeq_loc_Mapper> to_mrna;
-        CRef<CSeq_loc_Mapper> to_prod;
-        if (cds_feat_on_mrna) {
-            to_mrna.Reset(
-                new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Prod));
-            to_prod.Reset(
-                new CSeq_loc_Mapper(*cds_feat_on_mrna,
-                                    CSeq_loc_Mapper::eLocationToProduct));
-        }
-        ITERATE (CCdregion::TCode_break, it,
-                 feat.GetData().GetCdregion().GetCode_break()) {
-            CRef<CSeq_loc> mrna_loc, mapped;
-            if (to_mrna) {
-               mrna_loc = to_mrna->Map((*it)->GetLoc());
-            }
-            if (mrna_loc) {
-               mapped = to_prod->Map(*mrna_loc);
-            }
-            if (mapped) {
-                TSeqRange r = mapped->GetTotalRange();
-                if (r.GetLength() == 1  &&  r.GetFrom() < xlate.size()) {
-                    string src;
-                    CSeqUtil::ECoding src_coding = CSeqUtil::e_Ncbieaa;
-
-                    switch ((*it)->GetAa().Which()) {
-                    case CCode_break::TAa::e_Ncbieaa:
-                        src += (char)(*it)->GetAa().GetNcbieaa();
-                        src_coding = CSeqUtil::e_Ncbieaa;
-                        break;
-
-                    case CCode_break::TAa::e_Ncbistdaa:
-                        src += (char)(*it)->GetAa().GetNcbistdaa();
-                        src_coding = CSeqUtil::e_Ncbistdaa;
-                        break;
-
-                    case CCode_break::TAa::e_Ncbi8aa:
-                        src += (char)(*it)->GetAa().GetNcbi8aa();
-                        src_coding = CSeqUtil::e_Ncbi8aa;
-                        break;
-
-                    default:
-                        break;
-                    }
-
-                    if (src.size()) {
-                        string dst;
-                        CSeqConvert::Convert(src, src_coding, 0, 1,
-                                             dst, CSeqUtil::e_Ncbieaa);
-                        xlate[r.GetFrom()] = dst[0];
-                    }
-                }
-            }
-        }
-    }
-
-    if (xlate.size()  &&  xlate[xlate.size() - 1] == '*') { /// strip a terminal stop
-        xlate.resize(xlate.size() - 1);
-        has_stop = true;
-    }
-    else if (feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
-        has_stop = true;
-    } else {
-        has_stop = false;
-    }
-
-    if ( (xlate.size()  &&  xlate[0] == 'M')  ||
-         feat.GetLocation().IsPartialStart(eExtreme_Biological) ) {
-        has_start = true;
-    }
-
     CRef<CSeq_loc_Mapper> to_prot;
     CRef<CSeq_loc_Mapper> to_mrna;
     CRef<CSeq_loc_Mapper> to_genomic;
-    if (cds_feat_on_mrna) {
-        /// In some cases, the id in the CDS feature is not the same as in the
-        /// alignment; make sure the mapping is done with matching ids
-        CRef<CSeq_feat> corrected_loc_feat(new CSeq_feat);
-        corrected_loc_feat->Assign(*cds_feat_on_mrna);
-        corrected_loc_feat->SetLocation().SetId(align->GetSeq_id(0));
+    if (corrected_loc_feat) {
         to_prot.Reset(
             new CSeq_loc_Mapper(*corrected_loc_feat,
                                 CSeq_loc_Mapper::eLocationToProduct));
@@ -2849,6 +2780,91 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             /// CDS starts off-frame, so translation starts one residue later
             actual.erase(0,1);
         }
+    }
+
+    // deal with code breaks
+    // NB: these should be folded into the translation machinery instead...
+    if (feat.GetData().GetCdregion().IsSetCode_break()) {
+        CRef<CSeq_loc_Mapper> genomic_to_mrna;
+        if (corrected_loc_feat) {
+            genomic_to_mrna.Reset(
+                new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Prod));
+        }
+        ITERATE (CCdregion::TCode_break, it,
+                 feat.GetData().GetCdregion().GetCode_break()) {
+            CRef<CSeq_loc> mrna_loc, mapped;
+            if (genomic_to_mrna) {
+               mrna_loc = genomic_to_mrna->Map((*it)->GetLoc());
+            }
+            if (mrna_loc) {
+               mapped = to_prot->Map(*mrna_loc);
+            }
+            if (mapped) {
+                TSeqRange r = mapped->GetTotalRange();
+                if (r.GetLength() != 1) {
+                    continue;
+                }
+                TSeqPos pos = 0;
+                bool found_pos = false;
+                ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
+                    if (range_it->GetFrom() <= r.GetFrom() &&
+                        range_it->GetTo() >= r.GetFrom())
+                    {
+                        pos += r.GetFrom() - range_it->GetFrom();
+                        found_pos = true;
+                        break;
+                    } else {
+                        pos += range_it->GetLength();
+                    }
+                }
+                if (found_pos) {
+                    string src;
+                    CSeqUtil::ECoding src_coding = CSeqUtil::e_Ncbieaa;
+
+                    switch ((*it)->GetAa().Which()) {
+                    case CCode_break::TAa::e_Ncbieaa:
+                        src += (char)(*it)->GetAa().GetNcbieaa();
+                        src_coding = CSeqUtil::e_Ncbieaa;
+                        break;
+
+                    case CCode_break::TAa::e_Ncbistdaa:
+                        src += (char)(*it)->GetAa().GetNcbistdaa();
+                        src_coding = CSeqUtil::e_Ncbistdaa;
+                        break;
+
+                    case CCode_break::TAa::e_Ncbi8aa:
+                        src += (char)(*it)->GetAa().GetNcbi8aa();
+                        src_coding = CSeqUtil::e_Ncbi8aa;
+                        break;
+
+                    default:
+                        break;
+                    }
+
+                    if (src.size()) {
+                        string dst;
+                        CSeqConvert::Convert(src, src_coding, 0, 1,
+                                             dst, CSeqUtil::e_Ncbieaa);
+                        xlate[pos] = dst[0];
+                    }
+                }
+            }
+        }
+    }
+
+    if (xlate.size()  &&  xlate[xlate.size() - 1] == '*') { /// strip a terminal stop
+        xlate.resize(xlate.size() - 1);
+        has_stop = true;
+    }
+    else if (feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        has_stop = true;
+    } else {
+        has_stop = false;
+    }
+
+    if ( (xlate.size()  &&  xlate[0] == 'M')  ||
+         feat.GetLocation().IsPartialStart(eExtreme_Biological) ) {
+        has_start = true;
     }
 
     ///
