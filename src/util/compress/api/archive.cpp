@@ -247,7 +247,7 @@ void CArchive::Close(void)
 
 void CArchive::SetMask(CMask* mask, EOwnership  own, EMaskType type, NStr::ECase acase)
 {
-    SMask* m;
+    SMask* m = NULL;
     switch (type) {
         case eFullPathMask:
             m = &m_MaskFullPath;

@@ -213,6 +213,9 @@ public:
     typedef size_t (*Callback_Write)(const CArchiveEntryInfo& info, const void* buf, size_t n);
 
 public:
+    // Dummy virtual destructor, just to avoid compilation warnings.
+    virtual ~IArchive(void) {};
+
     /// Create new archive file.
     ///
     /// @param filename
