@@ -231,6 +231,10 @@ public:
     /// @sa
     ///   GetMatch(), GetResult()
     CTempString GetSub(CTempString str, size_t idx = 0) const;
+
+    /// Get pattern/subpattern from previous GetMatch().
+    /// 
+    /// @deprecated
     NCBI_DEPRECATED void GetSub(CTempString str, size_t idx, string& dst) const;
 
     /// Get number of patterns + subpatterns.
