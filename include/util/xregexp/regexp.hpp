@@ -198,6 +198,13 @@ public:
         TMatch        flags    = fMatch_default,
         bool          noreturn = false
     );
+    CTempString GetMatchTempString(
+        CTempString   str,
+        size_t        offset   = 0,
+        size_t        idx      = 0,
+        TMatch        flags    = fMatch_default,
+        bool          noreturn = false
+    );
 
     /// Check existence substring which match a specified pattern.
     ///
@@ -230,8 +237,10 @@ public:
     ///   subpattern match (idx > 0). Return empty string when no match.
     /// @sa
     ///   GetMatch(), GetResult()
-    string GetSub(CTempString str, size_t idx = 0) const;
-    void   GetSub(CTempString str, size_t idx, string& dst) const;
+    string      GetSub(CTempString str, size_t idx = 0) const;
+    void        GetSub(CTempString str, size_t idx, string& dst) const;
+    CTempString GetSubTempString(CTempString str, size_t idx = 0) const;
+    void        GetSubTempString(CTempString str, size_t idx, CTempString& dst) const;
 
     /// Get number of patterns + subpatterns.
     ///
