@@ -686,7 +686,8 @@ DBLink-field-type ::= ENUMERATED {
   bio-sample (2) ,
   probe-db (3) ,
   sequence-read-archve (4) ,
-  bio-project (5) }
+  bio-project (5) ,
+  assembly (6) }
 
 DBLink-field-pair ::= SEQUENCE {
   from DBLink-field-type ,
