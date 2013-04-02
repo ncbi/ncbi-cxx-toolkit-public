@@ -875,11 +875,6 @@ dbassist needs xconnect
 dbassist needs xncbi
 dbassist needs xser
 dbassist needs xutil
-dbconnect needs ct_ftds64
-dbconnect needs dbapi_driver
-dbconnect needs ncbi_xdbapi_ftds
-dbconnect needs tds_ftds64
-dbconnect needs xncbi
 dbinfoasncpp_g needs xncbi
 dbinfoasncpp_g needs xser
 dbinfoasncpp_g needs xutil
