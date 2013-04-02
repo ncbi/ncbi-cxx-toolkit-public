@@ -77,9 +77,9 @@ def main():
     license_file = os.path.join(SCRIPT_DIR, "..", "..", "LICENSE")
     shutil.copy(license_file, cwd)
 
-    # User manual PDF is replaced by README.txt
     f = open("README.txt", "w")
-    f.write("Documentation available in http://www.ncbi.nlm.nih.gov/books/NBK1762\n")
+    f.write("The user manual is available in http://www.ncbi.nlm.nih.gov/books/NBK1762\n")
+    f.write("Release notes are available in http://www.ncbi.nlm.nih.gov/books/NBK131777\n")
     f.close()
 
     for aux_file in ("EnvVarUpdate.nsh", "ncbilogo.ico"):
