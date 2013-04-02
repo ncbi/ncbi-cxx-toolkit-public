@@ -416,6 +416,7 @@ NCBI_NORETURN static void
 s_DoFatalAbort(SLogData* data)
 {
     s_NeedFatalHalt = true;
+#if 0
     int cnt_halted = s_CntHaltedThreads.AddValue(1);
     int cnt_need = GetCntRunningThreads() + 2;
     if (!s_ThreadsStarted)
@@ -426,6 +427,7 @@ s_DoFatalAbort(SLogData* data)
         // In a very rare situation CntRunningThreads can change here
         cnt_need = GetCntRunningThreads() + 2;
     }
+#endif
     if (!s_FileNameInitialized)
         s_InitFileName();
     ITERATE(list<CTempString>, it, s_WriteQueue) {
@@ -435,6 +437,9 @@ s_DoFatalAbort(SLogData* data)
     if (data->cur_ptr != data->buf)
         s_WriteLog(data->buf, data->cur_ptr - data->buf);
 
+#ifdef NCBI_OS_LINUX
+    close(s_LogFd);
+#endif
     abort();
 }
 
