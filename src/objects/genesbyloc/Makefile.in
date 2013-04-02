@@ -1,0 +1,4 @@
+ASN_PROJ = genesbyloc
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

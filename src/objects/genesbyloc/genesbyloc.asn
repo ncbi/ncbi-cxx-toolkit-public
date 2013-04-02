@@ -1,0 +1,31 @@
+--$Revision$ 
+--********************************************************************** 
+-- 
+--  NCBI Genes By Location
+--  by Craig Wallin, 2013
+-- 
+--********************************************************************** 
+
+NCBI-GenesByLoc DEFINITIONS ::=
+BEGIN
+
+GBL-Data ::= SEQUENCE {
+  total INTEGER,    -- total number of genes found
+  returned INTEGER, -- number of gene records returned in the reply data, may be less than the total gene count
+  genes SEQUENCE OF GBL-Gene OPTIONAL
+}
+
+-- a single gene record
+GBL-Gene ::= SEQUENCE {
+  geneid INTEGER,       -- NCBI GeneID
+  symbol VisibleString  -- official or interim symbol for the gene
+}
+
+GBL-Reply ::= CHOICE {
+  data GBL-Data,
+  error VisibleString
+}
+
+
+END
+

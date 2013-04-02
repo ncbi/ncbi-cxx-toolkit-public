@@ -1,0 +1,3 @@
+LIB = genesbyloc
+SRC = genesbyloc__ genesbyloc___
+
