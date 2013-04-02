@@ -1216,7 +1216,7 @@ CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& con
 
     ++it;
 
-    if(it->value.id() == SGrammar::eID_raw_seq_or_len) {
+    if(it != i->children.end() && it->value.id() == SGrammar::eID_raw_seq_or_len) {
         CRef<CSeq_literal> literal = x_raw_seq_or_len(it, context);
         ++it;
         SetFirstPlacement(*vr).SetSeq(*literal);
