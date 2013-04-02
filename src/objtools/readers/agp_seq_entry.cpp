@@ -1,0 +1,153 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Mike DiCuccio, Michael Kornbluh
+ *
+ * File Description:
+ *     Convert an AGP file into a vector of Seq-entries
+ *
+ */
+
+#include <ncbi_pch.hpp>
+
+#include <objtools/readers/agp_seq_entry.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+
+BEGIN_NCBI_SCOPE
+
+USING_SCOPE(objects);
+
+CAgpToSeqEntry::CAgpToSeqEntry( void ) 
+    : CAgpReader( eAgpVersion_auto )
+{ }
+
+// static
+CRef<CSeq_id> CAgpToSeqEntry::s_DefaultSeqIdFromStr( const string & str )
+{
+    CRef<CSeq_id> seq_id;
+    try { 
+        seq_id.Reset( new CSeq_id( str ) );
+    } catch(...) {
+        // couldn't create real seq-id.  fall back on local seq-id
+        seq_id.Reset( new CSeq_id );
+        seq_id->SetLocal().SetStr( str );
+    }
+    return seq_id;
+}
+
+void CAgpToSeqEntry::OnGapOrComponent(void)
+{
+    if( ! m_bioseq || 
+        m_prev_row->GetObject() != m_this_row->GetObject() ) 
+    {
+        x_FinishedBioseq();
+
+        // initialize new bioseq
+        CRef<CSeq_inst> seq_inst( new CSeq_inst );
+        seq_inst->SetRepr(CSeq_inst::eRepr_delta);
+        seq_inst->SetMol(CSeq_inst::eMol_dna);
+        seq_inst->SetLength(0);
+
+        m_bioseq.Reset( new CBioseq );
+        m_bioseq->SetInst(*seq_inst);
+
+        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Local,
+            m_this_row->GetObject(), m_this_row->GetObject() ));
+        m_bioseq->SetId().push_back(id);
+    }
+
+    CRef<CSeq_inst> seq_inst( & m_bioseq->SetInst() );
+
+    CRef<CDelta_seq> delta_seq( new CDelta_seq );
+    seq_inst->SetExt().SetDelta().Set().push_back(delta_seq);
+
+    if( m_this_row->is_gap ) {
+        delta_seq->SetLiteral().SetLength(m_this_row->gap_length);
+        if( m_this_row->component_type == 'U' ) {
+            delta_seq->SetLiteral().SetFuzz().SetLim();
+        }
+        seq_inst->SetLength() += m_this_row->gap_length;
+    } else {
+        CSeq_loc& loc = delta_seq->SetLoc();
+
+        CRef<CSeq_id> comp_id =
+            x_GetSeqIdFromStr( m_this_row->GetComponentId() );
+        loc.SetInt().SetId(*comp_id);
+
+        loc.SetInt().SetFrom( m_this_row->component_beg - 1 );
+        loc.SetInt().SetTo(   m_this_row->component_end - 1 );
+        seq_inst->SetLength() += ( m_this_row->component_end - m_this_row->component_beg + 1 );
+
+        switch( m_this_row->orientation ) {
+        case CAgpRow::eOrientationPlus:
+            loc.SetInt().SetStrand( eNa_strand_plus );
+            break;
+        case CAgpRow::eOrientationMinus:
+            loc.SetInt().SetStrand( eNa_strand_minus );
+            break;
+        case CAgpRow::eOrientationUnknown:
+            loc.SetInt().SetStrand( eNa_strand_unknown );
+            break;
+        case CAgpRow::eOrientationIrrelevant:
+            loc.SetInt().SetStrand( eNa_strand_other );
+            break;
+        default:
+            throw runtime_error("unknown orientation " + NStr::IntToString(m_this_row->orientation));
+        }
+    }
+}
+
+int CAgpToSeqEntry::Finalize(void)
+{
+    // First, do real finalize
+    const int return_val = CAgpReader::Finalize();
+    // Then, our own finalization
+    x_FinishedBioseq();
+
+    return return_val;
+}
+
+void CAgpToSeqEntry::x_FinishedBioseq(void)
+{
+    if( m_bioseq ) {
+        CRef<CSeq_entry> entry( new CSeq_entry );
+        entry->SetSeq(*m_bioseq);
+        m_entries.push_back( entry );
+
+        m_bioseq.Reset();
+    }
+}
+
+END_NCBI_SCOPE

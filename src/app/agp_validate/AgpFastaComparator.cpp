@@ -61,129 +61,14 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
 #include <objtools/lds2/lds2.hpp>
+#include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/readers/agp_util.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
-/////////////////////////////////////////////////////////////////////////////
-//  CAgpToSeqEntry::
-
-namespace {
-
-CRef<CSeq_id> s_SeqIdFromStr( const string & str ) {
-    CRef<CSeq_id> seq_id;
-    try { 
-        seq_id.Reset( new CSeq_id( str ) );
-    } catch(...) {
-        // couldn't create real seq-id.  fall back on local seq-id
-        seq_id.Reset( new CSeq_id );
-        seq_id->SetLocal().SetStr( str );
-    }
-    return seq_id;
-}
-
-// This class is used to turn an AGP file into a Seq-entry
-class CAgpToSeqEntry : public CAgpReader {
-public:
-
-    // When reading, loads results into "entries",
-    CAgpToSeqEntry( vector< CRef<CSeq_entry> > & entries ) :
-      CAgpReader( eAgpVersion_2_0 ),
-      m_entries(entries)
-      { }
-
-protected:
-    virtual void OnGapOrComponent() {
-        if( ! m_bioseq || 
-            m_prev_row->GetObject() != m_this_row->GetObject() ) 
-        {
-            x_FinishedBioseq();
-
-            // initialize new bioseq
-            CRef<CSeq_inst> seq_inst( new CSeq_inst );
-            seq_inst->SetRepr(CSeq_inst::eRepr_delta);
-            seq_inst->SetMol(CSeq_inst::eMol_dna);
-            seq_inst->SetLength(0);
-
-            m_bioseq.Reset( new CBioseq );
-            m_bioseq->SetInst(*seq_inst);
-
-            CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Local,
-                m_this_row->GetObject(), m_this_row->GetObject() ));
-            m_bioseq->SetId().push_back(id);
-        }
-
-        CRef<CSeq_inst> seq_inst( & m_bioseq->SetInst() );
-
-        CRef<CDelta_seq> delta_seq( new CDelta_seq );
-        seq_inst->SetExt().SetDelta().Set().push_back(delta_seq);
-
-        if( m_this_row->is_gap ) {
-            delta_seq->SetLiteral().SetLength(m_this_row->gap_length);
-            if( m_this_row->component_type == 'U' ) {
-                delta_seq->SetLiteral().SetFuzz().SetLim();
-            }
-            seq_inst->SetLength() += m_this_row->gap_length;
-        } else {
-            CSeq_loc& loc = delta_seq->SetLoc();
-
-            CRef<CSeq_id> comp_id =
-                s_SeqIdFromStr( m_this_row->GetComponentId() );
-            loc.SetInt().SetId(*comp_id);
-
-            loc.SetInt().SetFrom( m_this_row->component_beg - 1 );
-            loc.SetInt().SetTo(   m_this_row->component_end - 1 );
-            seq_inst->SetLength() += ( m_this_row->component_end - m_this_row->component_beg + 1 );
-            
-            switch( m_this_row->orientation ) {
-            case CAgpRow::eOrientationPlus:
-                loc.SetInt().SetStrand( eNa_strand_plus );
-                break;
-            case CAgpRow::eOrientationMinus:
-                loc.SetInt().SetStrand( eNa_strand_minus );
-                break;
-            case CAgpRow::eOrientationUnknown:
-                loc.SetInt().SetStrand( eNa_strand_unknown );
-                break;
-            case CAgpRow::eOrientationIrrelevant:
-                loc.SetInt().SetStrand( eNa_strand_other );
-                break;
-            default:
-                throw runtime_error("unknown orientation " + NStr::IntToString(m_this_row->orientation));
-            }
-        }
-    }
-
-    virtual int Finalize(void)
-    {
-        // First, do real finalize
-        const int return_val = CAgpReader::Finalize();
-        // Then, our own finalization
-        x_FinishedBioseq();
-
-        return return_val;
-    }
-
-    void x_FinishedBioseq(void)
-    {
-        if( m_bioseq ) {
-            CRef<CSeq_entry> entry( new CSeq_entry );
-            entry->SetSeq(*m_bioseq);
-            m_entries.push_back( entry );
-
-            m_bioseq.Reset();
-        }
-    }
-
-    CRef<CBioseq> m_bioseq;
-    vector< CRef<CSeq_entry> > & m_entries;
-};
-
-} // anonymous namespace
-
 
 /////////////////////////////////////////////////////////////////////////////
 //  CAgpFastaComparator::
@@ -278,7 +163,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
             if(pos1>0 && line[pos1]=='|') pos1--;
         }
         string acc_long = line.substr(1, pos1);
-        CRef<CSeq_id> comp_id = s_SeqIdFromStr( acc_long );
+        CRef<CSeq_id> comp_id = CAgpToSeqEntry::s_DefaultSeqIdFromStr( acc_long );
         CSeq_id_Handle acc_h = CSeq_id_Handle::GetHandle(*comp_id);
         if( compSeqIds.find(acc_h) != compSeqIds.end() ) {
             // component files go into the component object
@@ -706,7 +591,7 @@ void CAgpFastaComparator::x_GetCompSeqIds(
                     // a gap)
                     if( ! isdigit(line[pos+1]) ) {
                         CRef<CSeq_id> seq_id =
-                            s_SeqIdFromStr( line.substr(pos+1, close_tab_pos - pos - 1 ) );
+                            CAgpToSeqEntry::s_DefaultSeqIdFromStr( line.substr(pos+1, close_tab_pos - pos - 1 ) );
                         out_compSeqIds.insert(
                             CSeq_id_Handle::GetHandle(*seq_id) );
                     }
@@ -838,16 +723,15 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
         const string &filename = *file_iter;
         CNcbiIfstream istr( filename.c_str() );
         while (istr) {
-            vector< CRef<CSeq_entry> > entries;
-            CAgpToSeqEntry agp_reader( entries );
-            int err_code = agp_reader.ReadStream( istr ); // loads var entries
+            CAgpToSeqEntry agp_reader;
+            int err_code = agp_reader.ReadStream( istr ); // loads entries
             if( err_code != 0 ) {
                 LOG_POST(Error << "Error occurred reading AGP file: "
                          << agp_reader.GetErrorMessage() );
                 m_bSuccess = false;
                 return;
             }
-            ITERATE (vector< CRef<CSeq_entry> >, it, entries) {
+            ITERATE (vector< CRef<CSeq_entry> >, it, agp_reader.GetResult() ) {
                 CRef<CSeq_entry> entry = *it;
 
                 CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
