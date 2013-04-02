@@ -25,7 +25,8 @@
  *
  * Authors: Josh Cherry
  *
- * File Description:  Read agp file
+ * File Description:  Read agp file.
+ * This is deprecated because it is replaced by class CAgpReader.
  */
 
 
