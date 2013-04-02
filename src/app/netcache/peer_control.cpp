@@ -54,7 +54,7 @@ static FILE* s_MirrorLogFile = NULL;
 CAtomicCounter CNCPeerControl::sm_TotalCopyRequests;
 CAtomicCounter CNCPeerControl::sm_CopyReqsRejected;
 
-static CNCPeerShutdown* s_ShutdownListener;
+static CNCPeerShutdown* s_ShutdownListener = NULL;
 
 
 

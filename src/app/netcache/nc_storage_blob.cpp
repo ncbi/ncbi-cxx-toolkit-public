@@ -44,9 +44,9 @@ static Uint2 s_WBFailedWriteDelay = 2;
 static size_t s_WBCurSize = 0;
 static size_t s_WBReleasableSize = 0;
 static size_t s_WBReleasingSize = 0;
-static SWriteBackData* s_WBData;
-static CWriteBackControl* s_WBControl;
-static TVerDataMap* s_VersMap;
+static SWriteBackData* s_WBData = NULL;
+static CWriteBackControl* s_WBControl = NULL;
+static TVerDataMap* s_VersMap = NULL;
 
 static CMiniMutex s_ConsListLock;
 static Uint4 s_CntConsumers = 0;

@@ -59,9 +59,9 @@ static const TSrvThreadNum kMaxNumberOfThreads
 SSrvThread** s_Threads = NULL;
 static CMiniMutex s_ThrMgrLock;
 static EThreadMgrState s_ThreadMgrState = eThrMgrIdle;
-static SSrvThread* s_CurMgrThread;
-static SSrvThread* s_MainThr;
-static SSrvThread* s_SvcThr;
+static SSrvThread* s_CurMgrThread = NULL;
+static SSrvThread* s_MainThr = NULL;
+static SSrvThread* s_SvcThr = NULL;
 
 #ifdef NCBI_OS_LINUX
 static pthread_key_t s_CurThreadKey;

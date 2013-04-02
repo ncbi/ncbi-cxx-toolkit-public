@@ -212,6 +212,7 @@ typedef CGuard<CMiniMutex> CMiniMutexGuard;
 
 inline
 CFutex::CFutex(void)
+    : m_Value(0)
 {}
 
 inline int
