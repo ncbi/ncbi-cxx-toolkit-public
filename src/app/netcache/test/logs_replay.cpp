@@ -819,10 +819,10 @@ CLogsReplayApp::Run(void)
     s_NCService = args["service"].AsString();
     s_StartTime = Uint8(args["start_time"].AsInt8());
 
-    int startFile = args["firstfile"].AsInteger();
+    int startFile = args["firstfile"].HasValue() ? args["firstfile"].AsInteger() : 0;
     bool useIC = args["icache"].HasValue();
     ICache::TFlags flagsIC =
-        (args["icache"].AsString() == "reliability") ? ICache::fBestReliability : ICache::fBestPerformance;
+        (useIC && args["icache"].AsString() == "reliability") ? ICache::fBestReliability : ICache::fBestPerformance;
 
 // normal replay
     s_ThreadsFinished.Set(0);
