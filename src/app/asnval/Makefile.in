@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = biosample_chk
+APP_PROJ = asnval
 srcdir = @srcdir@
 
 include @builddir@/Makefile.meta
