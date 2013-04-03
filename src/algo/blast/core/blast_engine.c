@@ -1097,10 +1097,13 @@ s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
 				hsp->subject.gapped_start =  0;
 				hsp->query.gapped_start = hsp->query.offset;
 			}
+			else
+				hsp->subject.gapped_start -= offset;
 		}
 		else
 		{
 			hsp->subject.offset -= offset;
+			hsp->subject.gapped_start -= offset;
 		}
 
 		hsp->subject.end -= offset;
