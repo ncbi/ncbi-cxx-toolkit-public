@@ -169,7 +169,7 @@ public:
 
     bool IsPassThrough() const;
 
-    /// cut partial codons and adjecent at the beginning and at the end of an alignment
+    /// cut partial codons and adjecent at the beginning and at the end good pieces
     /// called at the end of post processing
     CProSplignOutputOptions& SetCutFlankPartialCodons(bool);
     bool GetCutFlankPartialCodons() const;
@@ -178,6 +178,11 @@ public:
     /// called at the end of post processing
     CProSplignOutputOptions& SetFillHoles(bool);
     bool GetFillHoles() const;
+
+    /// cut trailing Ns at the ends of good pieces. 
+    /// called at the end of post processing
+    CProSplignOutputOptions& SetCutNs(bool);
+    bool GetCutNs() const;
 
     /// any length flank of a good piece should not be worse than this percentage threshold
     CProSplignOutputOptions& SetFlankPositives(int);
@@ -218,6 +223,7 @@ public:
 public:
     static const bool default_cut_flank_partial_codons = true;
     static const bool default_fill_holes = false;
+    static const bool default_cut_ns = false;
 
     static const int default_flank_positives = 55;
     static const int default_total_positives = 70;
@@ -237,6 +243,7 @@ public:
 private:
     bool cut_flank_partial_codons;
     bool fill_holes;
+    bool cut_ns;
     int flank_positives;
     int total_positives;
     int max_bad_len;
