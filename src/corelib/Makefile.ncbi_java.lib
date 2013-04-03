@@ -1,0 +1,17 @@
+# $Id$
+
+SRC = ncbi_java
+LIB = ncbi_java
+
+LIB_OR_DLL = dll
+DLL_TYPE = plugin
+
+DLL_UNDEF_FLAGS = $(FORBID_UNDEF)
+
+USE_PCH = no
+CPPFLAGS = $(JDK_INCLUDE) $(ORIG_CPPFLAGS)
+
+DLL_LIB = xncbi
+
+REQUIRES = Ncbi-JNI JDK
+WATCHERS = kholodov
