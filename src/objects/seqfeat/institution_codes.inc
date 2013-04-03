@@ -31,7 +31,6 @@
  */
 
 static const char* const kInstitutionCollectionCodeList[] = {
-" CCCS	c	Culture Collection of Ciliates and their Symbionts",
 "A	s	Arnold Arboretum, Harvard University",
 "AA	s	Ministry of Science, Academy of Sciences",
 "AAH	s	Arnold Arboretum, Harvard University",
@@ -803,6 +802,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology",
 "CCCM	c	Canadian Center for the Culture of Microorganisms",
 "CCCryo<DEU>	c	Culture Collection of Cryophilic Algae",
+"CCCS	c	Culture Collection of Ciliates and their Symbionts",
 "CCCZ	s	University of Malawi",
 "CCDB<BRA>	s	Crustacean Collection of the Department of Biology",
 "CCDM<CHN>	c	Culture Collection of Department of Microbiology",
