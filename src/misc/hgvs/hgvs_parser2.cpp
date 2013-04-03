@@ -1277,6 +1277,10 @@ CRef<CVariation> CHgvsParser::x_duplication(TIterator const& i, const CContext& 
         TDelta dup_seq = x_seq_ref(it, context);
         if(dup_seq->GetSeq().IsLiteral()) {
             SetFirstPlacement(*vr).SetSeq(dup_seq->SetSeq().SetLiteral());
+
+            if(CVariationUtil::s_GetLength(*vr->GetPlacements().front(), NULL) != dup_seq->GetSeq().GetLiteral().GetLength()) {
+                HGVS_THROW(eSemantic, "Location length and asserted sequence length differ");
+            }
         }
     }
 
