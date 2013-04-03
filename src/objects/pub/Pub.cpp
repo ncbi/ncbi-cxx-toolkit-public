@@ -53,7 +53,7 @@
 #include <objects/biblio/Cit_gen.hpp>
 #include <objects/medline/Medline_entry.hpp>
 
-#include <objects/misc/sequence_macros.hpp>
+#include <objects/pub/pub_macros.hpp>
 
 // generated classes
 
