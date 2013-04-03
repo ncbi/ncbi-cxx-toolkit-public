@@ -209,6 +209,12 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          CArgDescriptions::eBoolean,
          CProSplignOutputOptions::default_fill_holes?"true":"false");
     arg_desc->AddDefaultKey
+        ("cut_trailing_Ns",
+         "cut_trailing_Ns",
+         "postprocessing: remove Ns at the end of good pieces. It may slightly decrease positives and identity",
+         CArgDescriptions::eBoolean,
+         CProSplignOutputOptions::default_fill_holes?"true":"false");
+    arg_desc->AddDefaultKey
         ("flank_positives",
          "flank_positives",
          "postprocessing: any length flank of a good piece should not be worse than this",
@@ -289,6 +295,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
     case eWithHoles:
         SetCutFlankPartialCodons(default_cut_flank_partial_codons);
         SetFillHoles(default_fill_holes);
+        SetCutNs(default_cut_ns);
 
         SetFlankPositives(default_flank_positives);
         SetTotalPositives(default_total_positives);
@@ -309,6 +316,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
     case ePassThrough:
         SetCutFlankPartialCodons(false);
         SetFillHoles(false);
+        SetCutNs(false);
 
         SetFlankPositives(0);
         SetTotalPositives(0);
@@ -332,6 +340,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
     if (args["full"]) {
         SetCutFlankPartialCodons(false);
         SetFillHoles(false);
+        SetCutNs(false);
 
         SetFlankPositives(0);
         SetTotalPositives(0);
@@ -350,6 +359,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
     } else {
         SetCutFlankPartialCodons(args["cut_flank_partial_codons"].AsBoolean());
         SetFillHoles(args["fill_holes"].AsBoolean());
+        SetCutNs(args["cut_trailing_Ns"].AsBoolean());
         SetFlankPositives(args["flank_positives"].AsInteger());
         SetTotalPositives(args["total_positives"].AsInteger());
         SetMaxBadLen(args["max_bad_len"].AsInteger());
@@ -475,6 +485,16 @@ CProSplignOutputOptions& CProSplignOutputOptions::SetFillHoles(bool val)
 bool CProSplignOutputOptions::GetFillHoles() const
 {
     return fill_holes;
+}
+
+CProSplignOutputOptions& CProSplignOutputOptions::SetCutNs(bool val)
+{
+    cut_ns = val;
+    return *this;
+}
+bool CProSplignOutputOptions::GetCutNs() const
+{
+    return cut_ns;
 }
 
 CProSplignOutputOptions& CProSplignOutputOptions::SetMinExonId(int val)
@@ -1024,7 +1044,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
         return refined_align;
 
     CProteinAlignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
-    list<CNPiece> good_parts = FindGoodParts( alignment_text.GetMatch(), alignment_text.GetProtein(), output_options);
+    list<CNPiece> good_parts = FindGoodParts( alignment_text, output_options);
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts/*, output_options.GetCutFlankPartialCodons()*/);
 

@@ -222,8 +222,12 @@ list<CNPiece> BlastGoodParts(const CProteinAlignText& alignment_text, const CPro
 }
 
 
-list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSplignOutputOptionsExt m_options)
+list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignOutputOptionsExt m_options)
 {
+    
+    const string& nuc = alignment_text.GetDNA();
+    const string& outp = alignment_text.GetProtein();
+    const string& orig_match = alignment_text.GetMatch();
     list<CNPiece> m_AliPiece;
     //init
     if(m_options.IsPassThrough()) {
@@ -256,12 +260,71 @@ list<CNPiece> FindGoodParts(const string& orig_match, const string& outp, CProSp
     }
 
     if( !m_AliPiece.empty() && m_options.GetFillHoles() ) {
-        list<CNPiece> filled;
         string::size_type beg = m_AliPiece.front().beg;
         string::size_type end = m_AliPiece.back().end;
-        filled.push_back(CNPiece(beg, end, 0, 0));
-        return filled;
+        m_AliPiece.clear();
+        m_AliPiece.push_back(CNPiece(beg, end, 0, 0));
     }
+
+
+    //remove trailing NNs
+    if( !m_AliPiece.empty() && m_options.GetCutNs() ) {
+        for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+            int pos = it->end - 1;
+            for(; pos >= it->beg && nuc[pos] == 'N' ; --pos);
+            if(pos < it->beg) {
+                it =  m_AliPiece.erase(it);
+            } else {
+                it->end = pos+1;
+                ++it;
+            }
+        }
+    }
+
+    //trim partial codons 
+    if( !m_AliPiece.empty() && m_options.GetCutFlankPartialCodons() ) {
+        for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+            int pos = it->end - 1;
+            if(isupper(outp[pos])) {//case where N was trimmed
+                //cout<<it->beg<<", pos: "<<pos<<", poschar: "<<<<", pos: "<<endl;
+                _ASSERT( pos > it->beg 
+                         && (match[pos] == POSIT_CHAR || match[pos] == MATCH_CHAR) 
+                         && (match[pos-1] == POSIT_CHAR || match[pos-1] == MATCH_CHAR) );
+                pos -= 2;
+                if(pos < it->beg) {
+                    it =  m_AliPiece.erase(it);
+                } else {
+                    it->end = pos+1;
+                    ++it;
+                }
+            } else {
+                ++it;
+            }
+        }
+        for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+            //partial codons at exon end
+            int pos = it->end - 1;
+            for(; pos >= it->beg && ( islower(outp[pos]) || outp[pos] == INTRON_CHAR ) ; --pos);
+            if(pos < it->beg) {
+                it =  m_AliPiece.erase(it);
+            } else {
+                it->end = pos+1;
+                ++it;
+            }
+        }
+        for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+            //partial codons at exon end
+            int pos = it->beg;
+            for(; pos < it->end && ( islower(outp[pos]) || outp[pos] == INTRON_CHAR ) ; ++pos);
+            if(pos == it->end) {
+                it =  m_AliPiece.erase(it);
+            } else {
+                it->beg = pos;
+                ++it;
+            }
+        }
+            
+    }//end trim partial codons 
 
     return  m_AliPiece;
 }

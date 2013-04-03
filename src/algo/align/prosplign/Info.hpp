@@ -74,7 +74,7 @@ public:
 
 class CProSplignScaledScoring;
 
-list<CNPiece> FindGoodParts(const string& match, const string& protein, CProSplignOutputOptionsExt m_options);
+list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignOutputOptionsExt m_options);
 list<CNPiece> BlastGoodParts(const CProteinAlignText& alignment_text, const CProSplignScaledScoring& scoring, int score_cutoff, int score_dropoff);
 list<CNPiece> ExcludeBadExons(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options);
 list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options);
