@@ -6176,6 +6176,15 @@ if test "$with_freetype" != "no" ; then
       : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
       NCBI_RPATHIFY_OUTPUT_COND(FREETYPE_LIBS, $freetype_config --libs,
          [$no_usr_lib])
+      case "$host_os:$bit64_sfx" in
+         solaris*:64 )
+            ftprefix=`$freetype_config --exec-prefix`
+            if test -d "$ftprefix/lib/64"; then
+               FREETYPE_LIBS=`echo $FREETYPE_LIBS \
+                   | sed -e "s,$ftprefix/lib ,$ftprefix/lib/64 ,g"`
+            fi
+            ;;
+      esac
       AC_CACHE_CHECK([whether FREETYPE_INCLUDE needs doctoring],
                      ncbi_cv_lib_freetype_fix_include,
          [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"

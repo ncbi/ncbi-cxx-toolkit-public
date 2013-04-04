@@ -33174,6 +33174,15 @@ fi
     FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_R_flags}"
  fi
  fi
+      case "$host_os:$bit64_sfx" in
+         solaris*:64 )
+            ftprefix=`$freetype_config --exec-prefix`
+            if test -d "$ftprefix/lib/64"; then
+               FREETYPE_LIBS=`echo $FREETYPE_LIBS \
+                   | sed -e "s,$ftprefix/lib ,$ftprefix/lib/64 ,g"`
+            fi
+            ;;
+      esac
       echo "$as_me:$LINENO: checking whether FREETYPE_INCLUDE needs doctoring" >&5
 echo $ECHO_N "checking whether FREETYPE_INCLUDE needs doctoring... $ECHO_C" >&6
 if test "${ncbi_cv_lib_freetype_fix_include+set}" = set; then
