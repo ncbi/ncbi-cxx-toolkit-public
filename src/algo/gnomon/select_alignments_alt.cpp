@@ -127,11 +127,13 @@ bool CModelCompare::BadOverlapTest(const CGeneModel& a, const CGeneModel& b) {  
         return CountCommonSplices(a,b) > 0;
 }
 
-bool CModelCompare::RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn) {
+bool CModelCompare::RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn, bool check_in_holes) {
     for(int i = 1; i < (int)algn.Exons().size(); ++i) {
-        TSignedSeqRange intron(algn.Exons()[i-1].GetTo()+1,algn.Exons()[i].GetFrom()-1);
-        if(Include(intron, r)) 
-            return true;
+        if(check_in_holes || (algn.Exons()[i-1].m_ssplice && algn.Exons()[i].m_fsplice)) {
+            TSignedSeqRange intron(algn.Exons()[i-1].GetTo()+1,algn.Exons()[i].GetFrom()-1);
+            if(Include(intron, r)) 
+                return true;
+        }
     }
     return false;
 }

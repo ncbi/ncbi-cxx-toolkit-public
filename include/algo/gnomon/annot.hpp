@@ -117,7 +117,7 @@ public:
     static size_t CountCommonSplices(const CGeneModel& a, const CGeneModel& b);
     static bool AreSimilar(const CGeneModel& a, const CGeneModel& b, int tolerance);
     static bool BadOverlapTest(const CGeneModel& a, const CGeneModel& b);
-    static bool RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn);
+    static bool RangeNestedInIntron(TSignedSeqRange r, const CGeneModel& algn, bool check_in_holes = true);
     static bool HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel& b);
 };
 

@@ -112,7 +112,7 @@ private:
     void FindAltsForGeneSeeds(list<CGene>& alts, TChainPointerList& not_placed_yet);
     void PlaceAllYouCan(list<CGene>& alts, TChainPointerList& not_placed_yet, TChainPointerList& rejected);
     enum ECompat { eNotCompatible, eAlternative, eNested, eExternal, eOtherGene };
-    ECompat CheckCompatibility(const CGene& gene, const CGeneModel& algn);
+    ECompat CheckCompatibility(const CGene& gene, const CChain& algn);
     list<CGene> FindGenes(TChainList& cls);
     void FilterOutSimilarsWithLowerScore(TChainPointerList& not_placed_yet, TChainPointerList& rejected);
     void FilterOutTandemOverlap(TChainPointerList& not_placed_yet, TChainPointerList& rejected, double fraction);
@@ -246,7 +246,8 @@ public:
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
     void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns);
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
-    void ClipLowCoverageUTR(double utr_clip_threshold);
+    void ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& gnomon);
+    void CalculateDropLimits();
     void CalculatedSupportAndWeightFromMembers();
     void ClipChain(TSignedSeqRange limits);
 
@@ -254,6 +255,9 @@ public:
     void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
     void SetBestPlacement(TOrigAligns& orig_aligns);
     void SetConsistentCoverage();
+
+    bool HarborsNested(const CChain& other_chain, bool check_in_holes) const;
+    bool HarborsNested(const CGene& other_gene, bool check_in_holes) const;
 
     TContained m_members;
     int m_polya_cap_right_hard_limit;
@@ -272,7 +276,7 @@ public:
 class CGene : public TChainPointerList
 {
 public:
-    CGene() : m_maxscore(BadScore()), m_nested(false) {}
+    CGene() : m_maxscore(BadScore()) {}
     typedef list<CGeneModel>::iterator TIt;
     typedef list<CGeneModel>::const_iterator TConstIt;
     TSignedSeqRange Limits() const { return m_limits; }
@@ -281,15 +285,86 @@ public:
     bool IsAllowedAlternative(const ncbi::gnomon::CGeneModel&, int maxcomposite) const;
     void Insert(CChain& a);
     double MaxScore() const { return m_maxscore; }
-    bool Nested() const { return m_nested; }
-    bool& Nested() { return m_nested; }
+    bool Nested() const { return !m_nested_in_genes.empty(); }
     bool LargeCdsOverlap(const CGeneModel& a) const;
+    bool HarborsNested(const CChain& other_chain, bool check_in_holes) const;
+    bool HarborsNested(const CGene& other_gene, bool check_in_holes) const;
+
+    void AddToHarbored(CGene* p) { m_harbors_genes.insert(p); }
+    void AddToNestedIn(CGene* p) {m_nested_in_genes.insert(p); };
+    set<CGene*> RemoveGeneFromOtherGenesSets();
+    
 
 private:
+    bool HarborsRange(TSignedSeqRange range, bool check_in_holes) const;
+    void RemoveFromHarbored(CGene* p) { m_harbors_genes.erase(p); }
+    void RemoveFromNestedIn(CGene* p) {m_nested_in_genes.erase(p); };
+
     TSignedSeqRange m_limits, m_real_cds_limits;
     double m_maxscore;
-    bool m_nested;
+    set<CGene*> m_nested_in_genes;
+    set<CGene*> m_harbors_genes;
 };
+
+set<CGene*> CGene::RemoveGeneFromOtherGenesSets() {
+    NON_CONST_ITERATE(set<CGene*>, i, m_nested_in_genes)
+        (*i)->RemoveFromHarbored(this);
+    NON_CONST_ITERATE(set<CGene*>, i,m_harbors_genes)
+        (*i)->RemoveFromNestedIn(this);
+
+    return m_harbors_genes;
+}
+
+// if external model is 'open' all 5' introns can harbor
+// gene with 'double' CDS can harbor in the interval between CDSes (intron or not)
+// non coding models in external coding genes have no effect
+bool CGene::HarborsRange(TSignedSeqRange range, bool check_in_holes) const {
+    TSignedSeqRange gene_lim_for_nested = Limits();
+    if(RealCdsLimits().NotEmpty())
+        gene_lim_for_nested = front()->OpenCds() ? front()->MaxCdsLimits() : RealCdsLimits();  // 'open' could be only a single variant gene
+    if(!Include(gene_lim_for_nested,range))
+        return false;
+
+    bool nested = true;
+    ITERATE(CGene, it, *this) {
+        if(RealCdsLimits().NotEmpty() && (*it)->ReadingFrame().Empty())    // non coding model in coding gene
+            continue;
+        TSignedSeqRange model_lim_for_nested = (*it)->Limits();
+        if((*it)->ReadingFrame().NotEmpty())
+            model_lim_for_nested = (*it)->OpenCds() ? (*it)->MaxCdsLimits() : (*it)->RealCdsLimits();   // 'open' could be only a single variant gene
+        if(range.IntersectingWith(model_lim_for_nested) && !CModelCompare::RangeNestedInIntron(range, **it, check_in_holes)) {
+            nested = false;
+            break;
+        }
+    }
+    
+    return nested;
+}
+
+// if external model is 'open' all 5' introns can harbor
+// gene with 'double' CDS can harbor in the interval between CDSes (intron or not)
+// for nested model 'open' is ignored
+// non coding models in external coding genes have no effect
+bool CGene::HarborsNested(const CChain& other_chain, bool check_in_holes) const {
+    TSignedSeqRange other_lim_for_nested = other_chain.Limits();
+    if(!other_chain.ReadingFrame().Empty())
+        other_lim_for_nested = other_chain.RealCdsLimits();
+
+    return HarborsRange(other_lim_for_nested, check_in_holes);
+}
+
+// if external model is 'open' all 5' introns can harbor
+// gene with 'double' CDS can harbor in the interval between CDSes (intron or not)
+// for nested model 'open' is ignored
+// non coding models in external coding genes have no effect
+bool CGene::HarborsNested(const CGene& other_gene, bool check_in_holes) const {
+    TSignedSeqRange other_lim_for_nested = other_gene.Limits();
+    if(!other_gene.RealCdsLimits().Empty())
+        other_lim_for_nested = other_gene.RealCdsLimits();
+
+    return HarborsRange(other_lim_for_nested, check_in_holes);
+}
+
 
 bool CGene::LargeCdsOverlap(const CGeneModel& a) const {
 
@@ -550,20 +625,17 @@ static bool DescendingModelOrderPConsistentCoverage(const TChainPtr& a, const TC
         return DescendingModelOrder(*a, *b);
 }
 
-CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const CGene& gene, const CGeneModel& algn)
+CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const CGene& gene, const CChain& algn)
 {
     int minIntergenic = m_gnomon->GetMinIntergenicLen();
 
     TSignedSeqRange gene_lim_with_margins( gene.Limits().GetFrom() - minIntergenic, gene.Limits().GetTo() + minIntergenic );
     TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front()->CompleteCds()) ? gene.RealCdsLimits() : gene.front()->MaxCdsLimits();
     bool gene_good_enough_to_be_annotation = allow_partialalts || gene.front()->GoodEnoughToBeAnnotation(); 
-    TSignedSeqRange gene_lim_for_nested = gene_cds.Empty() ? gene.Limits() : gene_cds;
 
     TSignedSeqRange algn_lim = algn.Limits();
-    //    TSignedSeqRange algn_lim_with_margins(algn_lim.GetFrom() - minIntergenic, algn_lim.GetTo() + minIntergenic );
     TSignedSeqRange algn_cds = algn.CompleteCds() ? algn.RealCdsLimits() : algn.MaxCdsLimits();
     bool algn_good_enough_to_be_annotation = allow_partialalts || algn.GoodEnoughToBeAnnotation();
-    TSignedSeqRange algn_lim_for_nested = algn_cds.Empty() ? algn_lim : algn_cds;
 
     TSignedSeqRange gene_cds_with_margins = gene_cds;
     if(gene_cds.NotEmpty() && (!gene_good_enough_to_be_annotation || !algn_good_enough_to_be_annotation))
@@ -591,36 +663,20 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
         return eNotCompatible;
     }
 
-    if(gene_good_enough_to_be_annotation && CModelCompare::RangeNestedInIntron(gene_lim_for_nested, algn))    // gene is nested in align's intron
+    //    if(gene_good_enough_to_be_annotation && algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron and complete
+    if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron (could be partial)
         return eExternal;
-    
-    if(Include(gene.Limits(),algn_lim_for_nested)) {
-        bool nested = false;
-        ITERATE(CGene, it, gene) {
-            if(!algn_lim.IntersectingWith((*it)->Limits()))
-                continue;
 
-            if(CModelCompare::RangeNestedInIntron(algn_lim_for_nested, **it)) {
-                nested = true;
-            } else {
-                TSignedSeqRange model_lim_for_nested = (*it)->Limits();
-                if((*it)->ReadingFrame().NotEmpty())
-                    model_lim_for_nested = (*it)->CompleteCds() ? (*it)->RealCdsLimits() : (*it)->MaxCdsLimits();
-                if(algn_lim_for_nested.IntersectingWith(model_lim_for_nested)) {
-                    nested = false;
-                    break;
-                }
-            }
-        }
-        
-        if(nested) {               // algn is nested in gene's intron    
-            if(algn_good_enough_to_be_annotation)
-                return eNested;
-            else
-                return eNotCompatible;
-        }
+    /*
+    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation)) {   // algn is nested in gene and checked for completeness
+        if(algn_good_enough_to_be_annotation)
+            return eNested;
+        else
+            return eNotCompatible;        
     }
-
+    */
+    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation))   // algn is nested in gene (could be partial)
+        return eNested;
 
     if(!algn_cds.Empty() && !gene_cds.Empty()) {                          // both coding
         if (!gene_cds_with_margins.IntersectingWith(algn_cds)) {          // distance > MinIntergenic 
@@ -636,7 +692,7 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
             return eOtherGene; 
         else if(algn.Status() & CGeneModel::eBestPlacement && (algn.Exons().size() == 1 || (algn.Status()&CGeneModel::ecDNAIntrons))) {
 #ifdef _DEBUG 
-            const_cast<CGeneModel&>(algn).AddComment("Best placement overlap");
+            const_cast<CChain&>(algn).AddComment("Best placement overlap");
 #endif    
             return eOtherGene;
         }
@@ -676,15 +732,17 @@ void CChainer::CChainerImpl::FindGeneSeeds(list<CGene>& alts, TChainPointerList&
         }
 
         if(good_model) {
-            ITERATE(list<CGene*>, itl, possibly_nested) {
-                (*itl)->Nested() = true;
-            }
             alts.push_back(CGene());
 #ifdef _DEBUG 
             algn.AddComment("Pass1");
 #endif    
             alts.back().Insert(algn);
             not_placed_yet.erase(it);
+        }
+
+        ITERATE(list<CGene*>, itl, possibly_nested) {
+            (*itl)->AddToNestedIn(&alts.back());
+            alts.back().AddToHarbored(*itl);
         }
     }
 }
@@ -720,14 +778,20 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
 
         if(good_model && !included_in.empty() && (allow_partialalts || included_in.front()->front()->GoodEnoughToBeAnnotation())) {
             if(included_in.size() == 1) {    // alternative to only one seed
-                ITERATE(list<CGene*>, itl, possibly_nested) {
-                    (*itl)->Nested() = true;
-                }
 #ifdef _DEBUG 
-            algn.AddComment("Pass2a");
-#endif    
-                included_in.front()->Insert(algn);
+                algn.AddComment("Pass2a");
+#endif 
+
+                CGene& gene = *included_in.front();
+                gene.Insert(algn);
                 not_placed_yet.erase(it);
+
+                ITERATE(list<CGene*>, itl, possibly_nested) {
+                    if(gene.HarborsNested(**itl, true)) {
+                        (*itl)->AddToNestedIn(&gene);
+                        gene.AddToHarbored(*itl);
+                    }
+                }
             } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty() || (algn.Status()&CGeneModel::eConsistentCoverage)) {   // connects seeds but trusted  
 
                 bool cds_overlap = true;
@@ -744,28 +808,13 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                     }
                 }
 
-                bool more_than_one_splice_common = true;
-                ITERATE(list<list<CGene>::iterator>, k, included_in) {
-                    const CGene& gene = **k;
-                    size_t common_splices = 0;
-                    ITERATE(CGene, i, gene)
-                        common_splices = max(common_splices,CModelCompare::CountCommonSplices(algn, **i));
-                    if(common_splices < 2) {
-                        more_than_one_splice_common = false;
-                        break;
-                    }
-                }
-
-                
-
                 if(cds_overlap || (algn.Status()&CGeneModel::eConsistentCoverage)) {
-                    ITERATE(list<CGene*>, itl, possibly_nested) {
-                        (*itl)->Nested() = true;
-                    }
 #ifdef _DEBUG 
                     algn.AddComment("Gene overlap override");
 #endif    
-                    included_in.front()->Insert(algn);
+                    CGene& gene = *included_in.front();
+                    gene.Insert(algn);
+
                     ITERATE(list<list<CGene>::iterator>, k, included_in) {
                         if(k != included_in.begin()) {
                             ITERATE(CGene, l, **k) {
@@ -784,10 +833,20 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                                     not_placed_yet.insert(idest, *l);
                                 }
                             }
+                            set<CGene*> nested_genes = (*k)->RemoveGeneFromOtherGenesSets();
+                            ITERATE(set<CGene*>, i, nested_genes)
+                                possibly_nested.push_back(*i);
                             alts.erase(*k);
                         }
                     }
                     not_placed_yet.erase(it);
+
+                    ITERATE(list<CGene*>, itl, possibly_nested) {
+                        if(gene.HarborsNested(**itl, true)) {
+                            (*itl)->AddToNestedIn(&gene);
+                            gene.AddToHarbored(*itl);
+                        }
+                    }
                 }
             }
         }
@@ -800,9 +859,9 @@ void CChainer::CChainerImpl::PlaceAllYouCan(list<CGene>& alts, TChainPointerList
 
     ITERATE(TChainPointerList, it, not_placed_yet) {
         CChain& algn(**it);
-        bool nested = false;
         list<CGene>::iterator included_in(alts.end());
         list<CGene*> possibly_nested;
+        list<CGene*> nested_in;
 
         bool good_model = true;
         for(list<CGene>::iterator itl = alts.begin(); good_model && itl != alts.end(); ++itl) {
@@ -834,7 +893,7 @@ void CChainer::CChainerImpl::PlaceAllYouCan(list<CGene>& alts, TChainPointerList
                 }
                 break;
             case eNested:
-                nested = true;
+                nested_in.push_back(&(*itl));
                 break;
             case eExternal:
                 possibly_nested.push_back(&(*itl));  // already created gene is nested in this model
@@ -844,21 +903,32 @@ void CChainer::CChainerImpl::PlaceAllYouCan(list<CGene>& alts, TChainPointerList
             }
         }
         if(good_model) {
-            ITERATE(list<CGene*>, itl, possibly_nested) {
-                (*itl)->Nested() = true;
-            }
+            CGene* genep;
             if(included_in != alts.end()) {
 #ifdef _DEBUG 
                 algn.AddComment("Pass3a");
 #endif    
                 included_in->Insert(algn);
+                genep = &(*included_in);
             } else {
                 alts.push_back(CGene());
+                genep = &alts.back();
 #ifdef _DEBUG 
                 algn.AddComment("Pass3b");
 #endif    
                 alts.back().Insert(algn);
-                alts.back().Nested() = nested;
+            }
+            ITERATE(list<CGene*>, itl, nested_in) {
+                if((*itl)->HarborsNested(*genep, true)) {
+                   genep->AddToNestedIn(*itl); 
+                   (*itl)->AddToHarbored(genep);
+                }
+            }
+            ITERATE(list<CGene*>, itl, possibly_nested) {
+                if(genep->HarborsNested(**itl, true)) {
+                    (*itl)->AddToNestedIn(genep);
+                    genep->AddToHarbored(*itl);
+                }
             }
         }
     }
@@ -1204,7 +1274,7 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             chain.ClipToCompleteAlignment(CGeneModel::eCap);
             chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
             if(chain.Type()&CGeneModel::eNested)
-                chain.ClipLowCoverageUTR(0.1);
+                chain.ClipLowCoverageUTR(0.1, *m_gnomon);
             if(chain.ReadingFrame().NotEmpty()) {
                 m_gnomon->GetScore(chain);
                 CCDSInfo cds = chain.GetCdsInfo();
@@ -1985,6 +2055,7 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
     NON_CONST_ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
         CGeneModel& ai = *mi.m_align;
+
         LRIinit(mi);
         TContained micontained = mi.CollectContainedForMemeber();
         sort(micontained.begin(),micontained.end(),LeftOrderD());
@@ -2346,19 +2417,15 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.ClipToCompleteAlignment(CGeneModel::eCap);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold, *m_gnomon);
 
         double ms = GoodCDNAScore(chain);
 
-        //        if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
         if(chain.GetCdsInfo().ProtReadingFrame().Empty())
             RemovePoorCds(chain,ms);
         if(chain.Score() != BadScore() && (chain.GetCdsInfo().ProtReadingFrame().NotEmpty() || chain.RealCdsLen() >= minscor.m_minlen)) {
             mi.MarkIncludedForChain();
 
-            m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
-            chain.RemoveFshiftsFromUTRs();
-            chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
             chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
             chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
             chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
@@ -2370,7 +2437,6 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 #ifdef _DEBUG 
             chain.AddComment("Link1 "+GetLinkedIdsForMember(mi));
 #endif    
-
             tmp_chains.push_back(chain);
 
             _ASSERT( chain.FShiftedLen(chain.GetCdsInfo().Start()+chain.ReadingFrame()+chain.GetCdsInfo().Stop(), false)%3==0 );
@@ -2378,6 +2444,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     }
 
     CreateChainsForPartialProteins(tmp_chains, pointers);
+
 
     pointers.erase(std::remove_if(pointers.begin(),pointers.end(),MemberIsCoding),pointers.end());  // only noncoding left
 
@@ -2405,7 +2472,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         mi.MarkIncludedForChain();
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold, *m_gnomon);
 
 #ifdef _DEBUG 
         chain.AddComment("Link2  "+GetLinkedIdsForMember(mi));
@@ -2712,10 +2779,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         chain.RemoveFshiftsFromUTRs();
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
-
-        m_gnomon->GetScore(chain);                           // cds properties could change because of clipping
-        chain.RemoveFshiftsFromUTRs();
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold, *m_gnomon);
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
 
@@ -3133,7 +3197,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
                 cds.SetReadingFrame(reading_frame&protreadingframe, true);
             cds.SetReadingFrame(reading_frame);
             cds.SetStart(conf_start,true);
-            SetCdsInfo(cds);
+            SetCdsInfo(cds);          
 
             TSignedSeqRange new_lim = Limits();
             for(int i = 1; i < (int)Exons().size(); ++i) {
@@ -3143,6 +3207,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
                         new_lim.SetFrom(hole.GetTo());
                     } else if(Precede(reading_frame,hole)) {
                         new_lim.SetTo(hole.GetFrom());
+                        break;
                     }
                 }
             }
@@ -3308,7 +3373,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
 #define COVERAGE_DROP 0.1
 #define COVERAGE_BUMP 3
 
-void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
+void CChain::ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& gnomon)
 {
     if((Type()&CGeneModel::eSR) == 0)   // don't have SR coverage
         return;
@@ -3341,11 +3406,10 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
     TSignedSeqRange hard_limit = amap.MapRangeOrigToEdited(genome_hard_limit);
 
     vector<double> coverage = m_coverage;
-    _ASSERT((int)coverage.size() == mrna_len);
+    _ASSERT((int)coverage.size() == mrna_len && core_lim.GetFrom() >= 0 && core_lim.GetTo() < mrna_len);
 
     double core_coverage = 0;
     for (int i = core_lim.GetFrom(); i <= core_lim.GetTo(); ++i) {
-        _ASSERT(i >= 0 && i < (int)coverage.size());
         core_coverage += coverage[i];
     }
     core_coverage /= core_lim.GetLength();
@@ -3415,6 +3479,8 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
         core_inron_coverage /= core_introns;
     else
         core_inron_coverage = 0.5*core_coverage;
+
+    TSignedSeqRange old_limits = Limits();
 
     // 5' UTR
     if(hard_limit.GetFrom() > SCAN_WINDOW/2) {
@@ -3488,12 +3554,45 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
         }
     }
 
-    //calculate soft limits (after possible utr/polya/cap clip)
+    if(old_limits != Limits() && ReadingFrame().NotEmpty()) {
+        bool wasopen = OpenCds();
+        gnomon.GetScore(*this);
+        CCDSInfo cds = GetCdsInfo();
+        if(wasopen != OpenCds() && (wasopen == false || cds.HasStart())) {
+            cds.SetScore(cds.Score(),wasopen);
+            SetCdsInfo(cds);
+        }
+        RemoveFshiftsFromUTRs();
+    }
+
+    CalculateDropLimits();
+}
+
+void CChain::CalculateDropLimits() {
 
     m_coverage_drop_left = -1;
     m_coverage_drop_right = -1;
     m_coverage_bump_left = -1;
     m_coverage_bump_right = -1;
+
+    CAlignMap amap = GetAlignMap();
+
+    int mrna_len = amap.FShiftedLen(Limits());
+
+    vector<double> longseq_coverage(mrna_len);
+    ITERATE (TContained, it, m_members) {
+        const CGeneModel& align = *(*it)->m_align;
+        TSignedSeqRange overlap = Limits()&align.Limits();
+        if(overlap.Empty())
+            continue;
+
+        TSignedSeqRange overlap_on_mrna = amap.MapRangeOrigToEdited(overlap);
+
+        if(align.Type() == CGeneModel::emRNA || align.Type() == CGeneModel::eEST) {   //OK to clip protein in UTR
+            for(int i = overlap_on_mrna.GetFrom(); i <= overlap_on_mrna.GetTo(); ++i)
+                longseq_coverage[i] += align.Weight();
+        }
+    }
 
     TSignedSeqRange sfl(Exons().front().Limits().GetTo(),Exons().back().Limits().GetFrom());
     if(ReadingFrame().NotEmpty()) {
@@ -3512,35 +3611,33 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
     soft_limit.SetFrom(min(soft_limit.GetFrom(),m_polya_cap_left_soft_limit));
     soft_limit.SetTo(max(soft_limit.GetTo(),m_polya_cap_right_soft_limit));
 
-    //we use original (larger) mrna space
     soft_limit = amap.MapRangeOrigToEdited(soft_limit);
-    TSignedSeqRange clipped_lim = amap.MapRangeOrigToEdited(Limits());
 
     // 5' UTR
     int left_limit = soft_limit.GetFrom();
     int first_bump = -1;
     double max_cov = 0;
-    while(left_limit > clipped_lim.GetFrom() && first_bump < 0 && (longseq_coverage[left_limit] > 0 || coverage[left_limit] > core_coverage*COVERAGE_DROP)) {
-        max_cov = max(max_cov,coverage[left_limit]);
-        if(max_cov > core_coverage*COVERAGE_BUMP)
+    while(left_limit > 0 && first_bump < 0 && (longseq_coverage[left_limit] > 0 || m_coverage[left_limit] > m_core_coverage*COVERAGE_DROP)) {
+        max_cov = max(max_cov,m_coverage[left_limit]);
+        if(max_cov > m_core_coverage*COVERAGE_BUMP)
             first_bump = left_limit;
 
         --left_limit;
     }
 
     if(first_bump > 0) {
-        for( ; first_bump < soft_limit.GetFrom()-SCAN_WINDOW && coverage[first_bump+SCAN_WINDOW] < coverage[first_bump]; ++first_bump);
+        for( ; first_bump < soft_limit.GetFrom()-SCAN_WINDOW && m_coverage[first_bump+SCAN_WINDOW] < m_coverage[first_bump]; ++first_bump);
         if(Strand() == ePlus)
             m_coverage_bump_left = amap.MapEditedToOrig(first_bump);
         else
             m_coverage_bump_right = amap.MapEditedToOrig(first_bump);
-    } else if(left_limit > clipped_lim.GetFrom() || coverage[left_limit] <= core_coverage*COVERAGE_DROP) {
+    } else if(left_limit > 0 || m_coverage[left_limit] <= m_core_coverage*COVERAGE_DROP) {
         int first_drop = left_limit;
-        if(first_drop+SCAN_WINDOW/2 < clipped_lim.GetTo()) {
-            for( ; first_drop-SCAN_WINDOW/2 > clipped_lim.GetFrom(); --first_drop) {
-                if(coverage[first_drop-SCAN_WINDOW/2] >= coverage[first_drop+SCAN_WINDOW/2])  // check for negative gradient
+        if(first_drop+SCAN_WINDOW/2 < mrna_len) {
+            for( ; first_drop-SCAN_WINDOW/2 > 0; --first_drop) {
+                if(m_coverage[first_drop-SCAN_WINDOW/2] >= m_coverage[first_drop+SCAN_WINDOW/2])  // check for negative gradient
                     break;
-                if(coverage[first_drop-SCAN_WINDOW/2]+coverage[first_drop+SCAN_WINDOW/2]-2*coverage[first_drop] >= 0)  // check for decrease of gradient
+                if(m_coverage[first_drop-SCAN_WINDOW/2]+m_coverage[first_drop+SCAN_WINDOW/2]-2*m_coverage[first_drop] >= 0)  // check for decrease of gradient
                     break;
             }
         }
@@ -3554,26 +3651,26 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
     int right_limit = soft_limit.GetTo();
     first_bump = -1;
     max_cov = 0;
-    while(right_limit < clipped_lim.GetTo() && first_bump < 0 && (longseq_coverage[right_limit] > 0 || coverage[right_limit] > core_coverage*COVERAGE_DROP)) {
-        max_cov = max(max_cov,coverage[right_limit]);
-        if(first_bump < 0 && max_cov > core_coverage*COVERAGE_BUMP)
+    while(right_limit < mrna_len && first_bump < 0 && (longseq_coverage[right_limit] > 0 || m_coverage[right_limit] > m_core_coverage*COVERAGE_DROP)) {
+        max_cov = max(max_cov,m_coverage[right_limit]);
+        if(first_bump < 0 && max_cov > m_core_coverage*COVERAGE_BUMP)
             first_bump = right_limit;
 
         ++right_limit;
     }
     if(first_bump > 0) {
-        for( ; first_bump > soft_limit.GetTo()+SCAN_WINDOW && coverage[first_bump-SCAN_WINDOW] < coverage[first_bump]; --first_bump);
+        for( ; first_bump > soft_limit.GetTo()+SCAN_WINDOW && m_coverage[first_bump-SCAN_WINDOW] < m_coverage[first_bump]; --first_bump);
         if(Strand() == ePlus)
             m_coverage_bump_right = amap.MapEditedToOrig(first_bump);
         else
             m_coverage_bump_left = amap.MapEditedToOrig(first_bump);
-    } else if(right_limit < clipped_lim.GetTo() || coverage[right_limit] <= core_coverage*COVERAGE_DROP) {
+    } else if(right_limit < mrna_len || m_coverage[right_limit] <= m_core_coverage*COVERAGE_DROP) {
         int first_drop = right_limit;
-        if(first_drop-SCAN_WINDOW/2 > clipped_lim.GetFrom()) {
-            for( ; first_drop < clipped_lim.GetTo()-SCAN_WINDOW/2; ++first_drop) {
-                if(coverage[first_drop+SCAN_WINDOW/2] >= coverage[first_drop-SCAN_WINDOW/2])  // check for negative gradient
+        if(first_drop-SCAN_WINDOW/2 > 0) {
+            for( ; first_drop < mrna_len-SCAN_WINDOW/2; ++first_drop) {
+                if(m_coverage[first_drop+SCAN_WINDOW/2] >= m_coverage[first_drop-SCAN_WINDOW/2])  // check for negative gradient
                     break;
-                if(coverage[first_drop-SCAN_WINDOW/2]+coverage[first_drop+SCAN_WINDOW/2]-2*coverage[first_drop] >= 0)  // check for decrease of gradient
+                if(m_coverage[first_drop-SCAN_WINDOW/2]+m_coverage[first_drop+SCAN_WINDOW/2]-2*m_coverage[first_drop] >= 0)  // check for decrease of gradient
                     break;                    
             }
         }
@@ -3758,6 +3855,40 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
                 InsertTrustedProt(*orig_align->TrustedProt().begin());
         }
     }
+}
+
+// if external model is 'open' all 5' introns can harbor
+// for nested model 'open' is ignored
+bool CChain::HarborsNested(const CChain& other_chain, bool check_in_holes) const {
+    TSignedSeqRange lim_for_nested = Limits();
+    if(!ReadingFrame().Empty())
+        lim_for_nested = OpenCds() ? MaxCdsLimits() : RealCdsLimits();
+
+    TSignedSeqRange other_lim_for_nested = other_chain.Limits();
+    if(!other_chain.ReadingFrame().Empty())
+        other_lim_for_nested = other_chain.RealCdsLimits();
+
+    if(lim_for_nested.IntersectingWith(other_lim_for_nested))
+        return CModelCompare::RangeNestedInIntron(other_lim_for_nested, *this, check_in_holes);
+    else
+        return false;
+}
+
+// if external model is 'open' all 5' introns can harbor
+// for nested model 'open' is ignored
+bool CChain::HarborsNested(const CGene& other_gene, bool check_in_holes) const {
+    TSignedSeqRange lim_for_nested = Limits();
+    if(!ReadingFrame().Empty())
+        lim_for_nested = OpenCds() ? MaxCdsLimits() : RealCdsLimits();
+
+    TSignedSeqRange other_lim_for_nested = other_gene.Limits();
+    if(!other_gene.RealCdsLimits().Empty())
+        other_lim_for_nested = other_gene.RealCdsLimits();
+
+    if(lim_for_nested.IntersectingWith(other_lim_for_nested)) 
+        return CModelCompare::RangeNestedInIntron(other_lim_for_nested, *this, check_in_holes);
+    else
+        return false;
 }
 
 pair<string,int> GetAccVer(const CAlignModel& a, CScope& scope)

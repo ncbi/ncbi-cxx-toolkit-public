@@ -399,7 +399,7 @@ void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand
         }
 
         if ((ir->Type() & CGeneModel::eNested) !=0) {
-            ir->SetType( ir->Type() - CGeneModel::eNested );
+            //            ir->SetType( ir->Type() - CGeneModel::eNested );
             TNestedGenes::iterator nested_wall = nested_genes.find(ir->GeneID());
             if (nested_wall == nested_genes.end()) {
                 CGeneModel new_nested_wall(ir->Strand(),ir->ID(),CGeneModel::eNested+CGeneModel::eGnomon);
@@ -439,6 +439,186 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
 {
     if (models.empty() && int(m_gnomon->GetSeq().size()) < mincontig)
         return;
+
+    if (GnomonNeeded()) {
+
+        //extend partial nested
+
+        typedef list<TGeneModelList::iterator> TIterList;
+        typedef map<Int8,TIterList> TGIDIterlist;
+        TGIDIterlist genes;
+        NON_CONST_ITERATE(TGeneModelList, im, models) {
+            genes[im->GeneID()].push_back(im);
+        }
+
+        set<TSignedSeqRange> hosting_intervals;
+        ITERATE(TGIDIterlist, ig, genes) {  // first - ID; second - list    
+            bool coding_gene = false;
+            ITERATE(TIterList, im, ig->second) {
+                if((*im)->ReadingFrame().NotEmpty()) {
+                    coding_gene = true;
+                    break;
+                }
+            }
+
+            TSignedSeqRange gene_lim_for_nested;
+            ITERATE(TIterList, im, ig->second) {
+                const CGeneModel& ai = **im;
+                if(coding_gene && ai.ReadingFrame().Empty())
+                    continue;
+                TSignedSeqRange model_lim_for_nested = ai.Limits();
+                if(ai.ReadingFrame().NotEmpty())
+                    model_lim_for_nested = ai.OpenCds() ? ai.MaxCdsLimits() : ai.RealCdsLimits();   // 'open' could be only a single variant gene   
+                gene_lim_for_nested += model_lim_for_nested;
+            }
+
+            vector<int> grange(gene_lim_for_nested.GetLength(),1);
+            ITERATE(TIterList, im, ig->second) {   // exclude all positions included in CDS (any exons for not coding genes) and holes  
+                const CGeneModel& ai = **im;
+                if(coding_gene && ai.ReadingFrame().Empty())
+                    continue;
+
+                TSignedSeqRange model_lim_for_nested = ai.Limits();
+                if(ai.ReadingFrame().NotEmpty())
+                    model_lim_for_nested = ai.OpenCds() ? ai.MaxCdsLimits() : ai.RealCdsLimits();   // 'open' could be only a single variant gene   
+
+                for(int i = 0; i < (int)ai.Exons().size(); ++i) {
+                    TSignedSeqRange overlap = (model_lim_for_nested & ai.Exons()[i].Limits());
+                    for(int j = overlap.GetFrom(); j <= overlap.GetTo(); ++j)
+                        grange[j-gene_lim_for_nested.GetFrom()] = 0;
+                }
+
+                for(int i = 1; i < (int)ai.Exons().size(); ++i) {
+                    if(!ai.Exons()[i-1].m_ssplice || !ai.Exons()[i].m_fsplice) {
+                        TSignedSeqRange hole(ai.Exons()[i-1].Limits().GetTo()+1,ai.Exons()[i].Limits().GetFrom()-1);
+                        _ASSERT(Include(model_lim_for_nested, hole));
+                        for(int j = hole.GetFrom(); j <= hole.GetTo(); ++j)
+                            grange[j-gene_lim_for_nested.GetFrom()] = 0;
+                    }
+                }
+            }
+            _ASSERT(grange.front() == 0 && grange.back() == 0);
+
+            int left = -1;
+            int right;
+            for(int j = 0; j < (int)grange.size(); ++j) {
+                if(left < 0) {
+                    if(grange[j] == 1) {
+                        left = j;
+                        right = j;
+                    }
+                } else if(grange[j] == 1) {
+                    right = j;
+                } else {
+                    TSignedSeqRange interval(left+gene_lim_for_nested.GetFrom(),right+gene_lim_for_nested.GetFrom());
+                    hosting_intervals.insert(interval);
+                    left = -1; 
+                }
+            }
+        }
+
+        typedef map<TSignedSeqRange,TIterList> TRangeModels;
+        TRangeModels nested_models;
+        ITERATE(TGIDIterlist, ig, genes) {  // first - ID; second - list
+            TGeneModelList::iterator nested_modeli = ig->second.front();                      
+            if(!nested_modeli->GoodEnoughToBeAnnotation()) {
+                _ASSERT(ig->second.size() == 1);
+                TSignedSeqRange lim_for_nested = nested_modeli->RealCdsLimits().Empty() ? nested_modeli->Limits() : nested_modeli->RealCdsLimits();
+                
+                TSignedSeqRange hosting_interval;
+                ITERATE(set<TSignedSeqRange>, ii, hosting_intervals) {
+                    TSignedSeqRange interval = *ii;
+                    if(Include(interval,lim_for_nested)) {
+                        if(hosting_interval.Empty())
+                            hosting_interval = interval;
+                        else
+                            hosting_interval = (hosting_interval&interval);
+                    }
+                }
+                _ASSERT((ig->second.front()->Type()&CGeneModel::eNested) == 0 || !hosting_interval.Empty());       
+
+                if(hosting_interval.NotEmpty()) {
+                    TIterList nested(1,nested_modeli);
+                    ITERATE(TGIDIterlist, igg, genes) {  // first - ID; second - list 
+                        const TIterList& other_gene = igg->second;
+                        if(igg == ig || !other_gene.front()->GoodEnoughToBeAnnotation())
+                            continue;
+
+                        bool coding_gene = false;
+                        ITERATE(TIterList, im, other_gene) {
+                            if((*im)->ReadingFrame().NotEmpty()) {
+                                coding_gene = true;
+                                break;
+                            }
+                        }
+
+                        TSignedSeqRange finished_interval;
+                        ITERATE(TIterList, im, other_gene) {
+                            const CGeneModel& ai = **im;
+                            if(coding_gene && ai.ReadingFrame().Empty())
+                                continue;
+                
+                            finished_interval += coding_gene ? ai.RealCdsLimits() : ai.Limits();
+                        }
+                        if(!finished_interval.IntersectingWith(hosting_interval) || Include(finished_interval,hosting_interval))
+                            continue;
+
+                        if(Precede(finished_interval,lim_for_nested)) {           // before partial model
+                            hosting_interval.SetFrom(finished_interval.GetTo());
+                        } else if(Precede(lim_for_nested,finished_interval)) {    // after partial model
+                            hosting_interval.SetTo(finished_interval.GetFrom());
+                        } else {                                                  // overlaps partial model
+                            _ASSERT(CModelCompare::RangeNestedInIntron(finished_interval, *nested_modeli, true));
+                            ITERATE(TIterList, im, other_gene) {
+                                nested.push_back(*im);
+                            }
+                        }
+                    }
+                    _ASSERT(hosting_interval.NotEmpty());
+                    nested_models[hosting_interval].splice(nested_models[hosting_interval].begin(),nested);
+                }
+            }
+        }
+
+        bool scaffold_wall = wall;
+        wall = true;
+        ITERATE(TRangeModels, i, nested_models) {
+            TSignedSeqRange hosting_interval = i->first;
+            
+            TGeneModelList nested;
+            set<Int8> included_complete_models;
+            ITERATE(TIterList, im, i->second) {               
+                nested.push_back(**im);
+
+                if(!(*im)->GoodEnoughToBeAnnotation()) {
+                    if(((*im)->Type()&CGeneModel::eNested)) {
+                        nested.back().SetType(nested.back().Type()-CGeneModel::eNested);  // remove flag to allow ab initio extension
+                    }
+#ifdef _DEBUG 
+                    nested.back().AddComment("partialnested");
+#endif    
+             
+                    models.erase(*im);
+                } else {
+                    included_complete_models.insert((*im)->ID()); 
+                }
+            }
+
+            cerr << "Interval " << hosting_interval << '\t' << nested.size() << endl;
+
+            Predict(nested, bad_aligns, hosting_interval.GetFrom()+1,hosting_interval.GetTo()-1);
+
+            NON_CONST_ITERATE(TGeneModelList, im, nested) {
+                if(!im->Support().empty()) {
+                    im->SetType(im->Type()|CGeneModel::eNested);
+                    if(im->ID() == 0 || included_complete_models.find(im->ID()) == included_complete_models.end())  // include only models which we tried to extend
+                        models.push_back(*im);
+                }
+            }
+        }
+        wall = scaffold_wall;
+    }
+
     Predict(models, bad_aligns, 0, TSignedSeqPos(m_gnomon->GetSeq().size())-1);
 }
 
