@@ -735,7 +735,7 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
         *out_stream << serial_xml_start << "\n<BlastOutput_iterations>" ; 
         incremental_struct->m_SerialXmlEnd = "\n</BlastOutput_iterations>" + serial_xml_end;
     }
-
+    string query_label;
     for (unsigned int index = 0; index < data->GetNumQueries(); ++index) {
         // Check that this query's Seq-loc is available.
         const CSeq_loc* seqloc = data->GetQuery(index);
@@ -746,6 +746,9 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
         }
         if (incremental_struct)
         	incremental_struct->m_IterationNum++; 
+	query_label = string("Q(")+NStr::NumericToString(index) + 
+	    string("/")+ NStr::NumericToString(data->GetNumQueries() );
+	try{
         s_BlastXMLAddIteration(bxmlout, data->GetAlignment(index), *seqloc, 
                                data->GetScope(index), matrix.get(), 
                                data->GetMaskLocations(index), 
@@ -754,6 +757,15 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
                                data->GetMasterGeneticCode(),  data->GetSlaveGeneticCode(),
                                data->GetMessages(),
 			       out_stream);
+	}
+	catch(CException &e){
+	    ERR_POST(Error << "Failed s_BlastXMLAddIteration " << query_label << e.what() );
+	    return;
+	}
+	catch(...){
+	    ERR_POST(Error << "Failed s_BlastXMLAddIteration " << query_label  );
+	    return;
+	}
     }
 }
 
