@@ -4647,10 +4647,6 @@ Seq-annot ::= {
           tag id 2237
         },
         {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
           db "MIM",
           tag id 604355
         }
@@ -5151,10 +5147,6 @@ Seq-annot ::= {
           tag id 2237
         },
         {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
           db "MIM",
           tag id 604355
         }
@@ -5627,10 +5619,6 @@ Seq-annot ::= {
           tag id 2237
         },
         {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
           db "MIM",
           tag id 604355
         }
@@ -6101,10 +6089,6 @@ Seq-annot ::= {
         {
           db "HGNC",
           tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
         },
         {
           db "MIM",
@@ -9601,6 +9585,135 @@ Seq-annot ::= {
           id gi 385243207
         }
       }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "DIO3",
+        desc "deiodinase, iodothyronine, type III",
+        syn {
+          "5DIII",
+          "D3",
+          "DIOIII",
+          "TXDI3"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 2669779,
+        to 2671661,
+        strand minus,
+        id gi 157812221,
+        fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 1735
+        },
+        {
+          db "HGNC",
+          tag id 2885
+        },
+        {
+          db "MIM",
+          tag id 601038
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "deiodinase, iodothyronine, type III"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript aligns at 89% coverage compared to this
+ genomic sequence",
+      product whole gi 148277093,
+      location packed-int {
+        {
+          from 2669779,
+          to 2671661,
+          strand minus,
+          id gi 157812221,
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_001362.3"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        frame three,
+        code {
+          id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 2671225,
+              to 2671227,
+              strand minus,
+              id gi 157812221
+            },
+            aa ncbieaa 85
+          },
+          {
+            loc int {
+              from 2671300,
+              to 2671302,
+              strand minus,
+              id gi 157812221
+            },
+            aa ncbieaa 88
+          }
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 1 substitution and aligns at 92%
+ coverage compared to this genomic sequence",
+      product whole gi 255958313,
+      location packed-int {
+        {
+          from 2670820,
+          to 2671661,
+          strand minus,
+          id gi 157812221,
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_001353.4"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "type III iodothyronine deiodinase"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS41992.2"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
     }
   }
 }

@@ -17724,3 +17724,262 @@ ILRDMLTNGSQTFRDLMRRWNREVDRE"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 148277093
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 2120,
+        ext delta {
+          literal {
+            length 219
+          },
+          literal {
+            length 1883,
+            seq-data ncbi2na '514E759D5E79F475F8A779952165DB976E77D599F5DA4697
+D39DE9F763F7EECD6424FD7A965965AA92562560BA27412E0A628AE5D58E1595379BB58610597B
+915E9B67429AEE93A520BE8FDF424A6462A6B5A6541D62BAF795869F5225244D761C6642A05959
+EBDD0FDA49E45E145BD3A664E265F5265EB470B149986D87D74D371362826455D61A7AB451A1DD
+5C4D3544916897A285AB499262AC79242B915A799DEB5D8453A5075249DA5CE9971F626DDCED35
+22E91CF3B14A9A5BA55869C52B7789E647EBE819CE3890791A6769568ABB013506843E1E07EBA9
+EA5F625F60951B909974050B467E98A552E11E3B9E2514FD21E2DE4574944E043755C5D5EA1DE7
+DEC1EDD3D11797A747A035DFF899A8CE9F95FB5BB955287F977124FF7C45575526E574942E7FA5
+6B9F5649E44885FA51959995E2649EAF52887749D2789CBE5E91517B666688AABD5EF9FFBB7BF5
+ED5EB2A82E3B6E8EA8AAEA4AB2FD559FBFEAE44A2551E78E181CDDC1EB7E146272F783E4AA5D02
+4917017E2AA2AE77ABF5B8AC145F03A8A82FAAEDE7FA852282327E2293E98AF649954A8888009E
+21D7AA0E1BEAB8E8B5AA0222BAAA225E2B550B8AA2D7292279E3EEA9EA2BA2A55E3D8294FEB8BB
+FE7A033F5ECCC07DFD0DC430C0A7E2B01E7C'H
+          },
+          literal {
+            length 18
+          }
+        },
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              score {
+                {
+                  id str "matches",
+                  value int 1883
+                },
+                {
+                  id str "identity",
+                  value real { 89581351094196, 10, -14 }
+                },
+                {
+                  id str "splices",
+                  value int 0
+                },
+                {
+                  id str "consensus_splices",
+                  value int 0
+                },
+                {
+                  id str "product_coverage",
+                  value real { 89581351094196, 10, -14 }
+                },
+                {
+                  id str "exon_identity",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "pct_identity_gap",
+                  value real { 1, 10, 2 }
+                },
+                {
+                  id str "num_ident",
+                  value int 1883
+                },
+                {
+                  id str "num_mismatch",
+                  value int 0
+                },
+                {
+                  id str "pct_identity_ungap",
+                  value real { 1, 10, 2 }
+                },
+                {
+                  id str "gap_count",
+                  value int 0
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 89581351094196, 10, -12 }
+                },
+                {
+                  id str "pct_coverage_hiqual",
+                  value real { 89581351094196, 10, -12 }
+                },
+                {
+                  id str "weighted_identity",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "rank",
+                  value int 1
+                },
+                {
+                  id str "for_remapping",
+                  value int 0
+                }
+              },
+              segs spliced {
+                product-id gi 148277093,
+                genomic-id gi 157812221,
+                product-strand plus,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 219,
+                    product-end nucpos 2101,
+                    genomic-start 2669779,
+                    genomic-end 2671661,
+                    parts {
+                      match 1883
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 1883, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    partial TRUE
+                  }
+                },
+                poly-a 2102,
+                product-length 2120
+              },
+              id {
+                str "bd3def46-b338-43ff-a268-bd9027b7627a"
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                },
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCF_000002125.1"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 25
+                    },
+                    {
+                      label str "placement_id",
+                      data str "3b80b99a-db3d-41b9-8ea8-f8ec58a4172f"
+                    },
+                    {
+                      label str "mappable_ids",
+                      data strs {
+                        "3b80b99a-db3d-41b9-8ea8-f8ec58a4172f"
+                      }
+                    }
+                  }
+                },
+                {
+                  type str "lxr_data",
+                  data {
+                    {
+                      label str "accver",
+                      data str "ref|NM_001362.3|"
+                    },
+                    {
+                      label str "locus_ids",
+                      data ints {
+                        1735
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 1
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 653,
+                      to 655,
+                      strand plus,
+                      id gi 148277093
+                    },
+                    aa ncbieaa 85
+                  }
+                }
+              },
+              product whole gi 255958313,
+              location int {
+                from 146,
+                to 1060,
+                strand plus,
+                id gi 148277093
+              },
+              dbxref {
+                {
+                  db "CCDS",
+                  tag str "CCDS41992.2"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 255958313
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-left
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 280,
+        seq-data iupacaa "XTMLRSLLLHSLRLCAQTASCLVLFPRFLGTAFMLWLLDFLCIRKHFLGRRR
+RGQPEPEVELNSEGEEVPPDDPPICVSDDNRLCTLASLKAVWHGQKLDFFKQAHEGGPAPNSEVVLPDGFQSQHILDY
+AQGNRPLVLNFGSCTUPPFMARMSAFQRLVTKYQRDVDFLIIYIEEAHPSDGWVTTDSPYIIPQHRSLEDRVSAARVL
+QQGAPGCALVLDTMANSSSSAYGAYFERLYVIQSGTIMYQGGRGPDGYQVSELRTWLERYDEQLHGARPRRV"
+      }
+    }
+  }
+}
