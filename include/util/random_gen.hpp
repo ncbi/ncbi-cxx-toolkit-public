@@ -65,6 +65,9 @@ public:
     CRandom(void);
     CRandom(TValue seed);
 
+    // (Re-)initialize the generator using current time and PID.
+    void Randomize(void);
+
     // Initialize and Seed the random number generator
     void   SetSeed(TValue seed);
     TValue GetSeed(void);

@@ -74,6 +74,9 @@
 #include <ncbi_pch.hpp>
 #include <util/random_gen.hpp>
 
+#include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_process.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -117,6 +120,16 @@ void CRandom::Reset(void)
 
     m_RJ = kStateOffset;
     m_RK = kStateSize - 1;
+}
+
+
+void CRandom::Randomize(void)
+{
+    CTime now(CTime::eCurrent);
+
+    SetSeed(TValue(now.Second() ^
+            (now.NanoSecond() << 2) ^
+            CProcess::GetCurrentPid()));
 }
 
 
