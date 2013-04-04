@@ -6,6 +6,6 @@ SRC      = netstorage netfileid filetrack pack_int \
 LIB      = netstorage
 LIBS     = $(NETWORK_LIBS)
 
-DLL_LIB  = xthrserv xconnect xser xutil
+LIB_OR_DLL = lib
 
 WATCHERS = kazimird
