@@ -1650,6 +1650,10 @@ case "$compiler:$compiler_version:$with_bin_release" in
               # the linker doesn't merge -rpath flags...
               CONF_f_runpath="$CONF_f_runpath$dir:"
               ;;
+           solaris*)
+              # avoid interference from possible older versions in /usr/sfw.
+              LDFLAGS="-L$dir $LDFLAGS"
+              ;;
         esac
     fi
     ;;
