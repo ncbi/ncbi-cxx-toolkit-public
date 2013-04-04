@@ -732,7 +732,7 @@ ERW_Result SNetFileImpl::Write(const void* buf, size_t count,
             m_NetCacheWriter.reset(m_NetICacheClient.GetNetCacheWriter(
                     m_FileID.GetUniqueKey(), 0, kEmptyStr,
                             m_FileID.GetFields() & fNFID_TTL ?
-                                    m_FileID.GetTTL() : 0));
+                                    (unsigned) m_FileID.GetTTL() : 0));
 
             m_IOStatus = eNFS_WritingToNetCache;
 
@@ -866,15 +866,20 @@ void CNetFile::Close()
 
 CNetFile CNetStorage::Create(TNetStorageFlags flags)
 {
+    Uint8 random_number;
+
+#ifndef NCBI_OS_MSWIN
     int urandom_fd = open("/dev/urandom", O_RDONLY);
     if (urandom_fd < 0) {
         NCBI_USER_THROW_FMT("Cannot open /dev/urandom: " <<
                 strerror(errno));
     }
 
-    Uint8 random_number;
     read(urandom_fd, &random_number, sizeof(random_number));
     close(urandom_fd);
+#else
+    random_number = m_Impl->m_FileTrackAPI.GetRandom();
+#endif // NCBI_OS_MSWIN
 
     CNetFile netfile(new SNetFileImpl(m_Impl, m_Impl->GetDefaultFlags(flags),
             random_number, m_Impl->m_NetICacheClient));

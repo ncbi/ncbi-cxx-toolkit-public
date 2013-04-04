@@ -203,7 +203,8 @@ bool SNetServiceAutomationObject::Call(const string& method,
     if (method == "get_name")
         reply.PushString(m_Service.GetServiceName());
     else if (method == "get_address") {
-        SServerAddressToJson server_address_proc(arg_array.NextNumber(0));
+        SServerAddressToJson server_address_proc(
+                (int) arg_array.NextNumber(0));
 
         reply.PushNode(g_ExecToJson(server_address_proc,
                 m_Service, m_ActualServiceType));

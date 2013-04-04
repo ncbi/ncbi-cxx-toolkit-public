@@ -202,7 +202,7 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     /// @param default_flags
     ///  Default storage preferences for files created by this object.
     ///
-    explicit CNetStorage(TNetStorageFlags default_flags = 0);
+    explicit CNetStorage(TNetStorageFlags default_flags);
 
     /// Create new NetStorage file.
     /// The physical storage is allocated during the first CNetFile::Write() op

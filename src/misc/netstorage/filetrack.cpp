@@ -273,7 +273,7 @@ void SFileTrackRequest::FinishUpload()
                 CObjectIStream::Open(eSerial_Json, m_HTTPStream));
         is->ReadObject(&obj, obj.GetThisTypeInfo());
     }
-    catch (CSerialException& e) {
+    catch (CSerialException&) {
         string error;
         char err_buf[1024];
 
@@ -332,7 +332,7 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
     }
 
     if (bytes_read != NULL)
-        *bytes_read = m_HTTPStream.gcount();
+        *bytes_read = (size_t) m_HTTPStream.gcount();
 
     return m_HTTPStream.eof() ? eRW_Eof : eRW_Success;
 }
@@ -415,15 +415,18 @@ void SFileTrackAPI::SetFileTrackAttribute(CNetFileID* file_id,
     request.SendEndOfFormData();
 }
 
+Uint8 SFileTrackAPI::GetRandom()
+{
+    CFastMutexGuard guard(m_RandomMutex);
+
+    return m_Random.GetRand() * m_Random.GetRand();
+}
+
 string SFileTrackAPI::GenerateUniqueBoundary()
 {
     string boundary("FileTrack-" + NStr::NumericToString(time(NULL)));
     boundary += '-';
-
-    {
-        CFastMutexGuard guard(m_RandomMutex);
-        boundary += NStr::NumericToString(m_Random.GetRand());
-    }
+    boundary += NStr::NumericToString(GetRandom());
 
     return boundary;
 }

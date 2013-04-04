@@ -85,7 +85,7 @@ public:
         m_Dirty = true;
     }
 
-    size_t GetCacheChunkSize() const {return m_CacheChunkSize;}
+    Uint8 GetCacheChunkSize() const {return m_CacheChunkSize;}
 
     void SetTTL(Uint8 ttl)
     {

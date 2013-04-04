@@ -202,7 +202,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
             if (m_Opts.output_format == eJSON)
                 puts("\n}");
         }
-        catch (CNetStorageException& e) {
+        catch (CNetStorageException&) {
             fprintf(stderr, "Unable to recognize the specified token.\n");
             return 3;
         }
