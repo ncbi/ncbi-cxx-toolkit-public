@@ -1297,7 +1297,7 @@ CNCBlobAccessor::GetReadMemSize(void)
         m_ChunkPos = 0;
     }
 
-    Uint8 need_size = m_CurData->size - GetPosition();
+    Uint8 need_size = m_CurData->size - GetPosition() + m_ChunkPos;
     if (need_size > m_CurData->chunk_size)
         need_size = m_CurData->chunk_size;
 
