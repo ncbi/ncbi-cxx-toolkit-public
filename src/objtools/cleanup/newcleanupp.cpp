@@ -100,16 +100,11 @@ namespace {
             return m_regexpAndLockIter->second.m_pregexp->IsMatch(str, flags);
         }
  	
-        string GetSub (CTempString str, size_t idx=0) const
+        CTempString GetSub (CTempString str, size_t idx=0) const
         {
             return m_regexpAndLockIter->second.m_pregexp->GetSub(str, idx);
         }
  	
-        void GetSub (CTempString str, size_t idx, string &dst) const
-        {
-            return m_regexpAndLockIter->second.m_pregexp->GetSub(str, idx, dst);
-        }
-
         int NumFound () const
         {
             return m_regexpAndLockIter->second.m_pregexp->NumFound();
@@ -1362,7 +1357,8 @@ void CNewCleanup_imp::BiosourceBC (
                     CRegexp::fCompile_ignore_case );
 
                 if( altitude_regex.IsMatch(altitude) ) {
-                    const string new_altitude = altitude_regex.GetSub(altitude, 1) + " m.";
+                    string new_altitude = altitude_regex.GetSub(altitude, 1); 
+                    new_altitude += " m.";
                     if( altitude != new_altitude ) {
                         altitude = new_altitude;
                         ChangeMade(CCleanupChange::eCleanSubsource);
