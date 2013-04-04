@@ -1,5 +1,5 @@
-#ifndef CORELIB___NCBI_BASE64__H
-#define CORELIB___NCBI_BASE64__H
+#ifndef CONNECT___NCBI_BASE64__H
+#define CONNECT___NCBI_BASE64__H
 
 /* $Id$
  * ===========================================================================
@@ -30,12 +30,19 @@
  *          Dmitry Kazimirov (base64url variant)
  *
  * File Description:
- *   BASE-64 Encoding/Decoding (C++ Toolkit CORELIB version)
+ *   BASE-64 Encoding/Decoding (C++ Toolkit CONNECT version)
  *
  */
 
-#include <common/ncbi_export.h>
+#include <connect/connect_export.h>
 #include <stddef.h>
+
+
+#define BASE64_Encode CONNECT_BASE64_Encode
+#define BASE64_Decode CONNECT_BASE64_Decode
+#define EBase64_Result CONNECT_EBase64_Result
+#define base64url_encode CONNECT_base64url_encode
+#define base64url_decode CONNECT_base64url_decode
 
 
 #ifdef __cplusplus
@@ -54,7 +61,7 @@ extern "C" {
  *  that BASE64 encoding converts every 3 bytes of source into 4 bytes of
  *  encoded output, not including the additional line breaks ('\n').
  */
-extern NCBI_XNCBI_EXPORT void        BASE64_Encode
+extern NCBI_XCONNECT_EXPORT void        BASE64_Encode
 (const void* src_buf,     /* [in]     non-NULL */
  size_t      src_size,    /* [in]              */
  size_t*     src_read,    /* [out]    non-NULL */
@@ -75,7 +82,7 @@ extern NCBI_XNCBI_EXPORT void        BASE64_Encode
  *  will accommodate the entire output.  As a rule, each 4 bytes of source
  *  (line breaks ignored) get converted into 3 bytes of decoded output.
  */
-extern NCBI_XNCBI_EXPORT int/*bool*/ BASE64_Decode
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BASE64_Decode
 (const void* src_buf,     /* [in]     non-NULL */
  size_t      src_size,    /* [in]              */
  size_t*     src_read,    /* [out]    non-NULL */
@@ -121,7 +128,7 @@ typedef enum {
  *         eBase64_BufferTooSmall if the input buffer is too small to store
  *         the encoded string.
  */
-extern NCBI_XNCBI_EXPORT EBase64_Result base64url_encode
+extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_encode
 (const void*    src_buf,    /* [in]     */
  size_t         src_size,   /* [in]     */
  void*          dst_buf,    /* [out]    */
@@ -158,7 +165,7 @@ extern NCBI_XNCBI_EXPORT EBase64_Result base64url_encode
  *         from the base64url alphabet (alphanumeric, underscore, and dash
  *         characters).
  */
-extern NCBI_XNCBI_EXPORT EBase64_Result base64url_decode
+extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_decode
 (const void*    src_buf,    /* [in]     */
  size_t         src_size,   /* [in]     */
  void*          dst_buf,    /* [out]    */
@@ -172,4 +179,4 @@ extern NCBI_XNCBI_EXPORT EBase64_Result base64url_decode
 #endif /*__cplusplus*/
 
 
-#endif  /* CORELIB___NCBI_BASE64__H */
+#endif  /* CONNECT___NCBI_BASE64__H */
