@@ -79,6 +79,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
         return flags != 0 ? flags : m_DefaultFlags;
     }
 
+    string MoveFile(CNetFile orig_file, CNetFile new_file);
+
     CNetICacheClient m_NetICacheClient;
     TNetStorageFlags m_DefaultFlags;
 
@@ -584,6 +586,28 @@ CNetFile CNetStorage::Open(const string& file_id, TNetStorageFlags flags)
     return netfile;
 }
 
+string SNetStorageImpl::MoveFile(CNetFile orig_file, CNetFile new_file)
+{
+    char buffer[RELOCATION_BUFFER_SIZE];
+    size_t bytes_read;
+
+    while (!orig_file.Eof()) {
+        bytes_read = orig_file.Read(buffer, sizeof(buffer));
+        new_file.Write(buffer, bytes_read);
+    }
+
+    new_file.Close();
+    orig_file.Close();
+
+    if (orig_file->m_CurrentLocation == eNFL_NetCache)
+        orig_file->m_NetICacheClient.Remove(
+                orig_file->m_FileID.GetUniqueKey(), 0, kEmptyStr);
+
+    // TODO Delete orig_file from FileTrack.
+
+    return new_file->m_FileID.GetID();
+}
+
 string CNetStorage::Relocate(const string& file_id, TNetStorageFlags flags)
 {
     if (flags == 0)
@@ -603,24 +627,7 @@ string CNetStorage::Relocate(const string& file_id, TNetStorageFlags flags)
 
     new_file->m_FileID.SetStorageFlags(flags);
 
-    char buffer[RELOCATION_BUFFER_SIZE];
-    size_t bytes_read;
-
-    while (!orig_file.Eof()) {
-        bytes_read = orig_file.Read(buffer, sizeof(buffer));
-        new_file.Write(buffer, bytes_read);
-    }
-
-    new_file.Close();
-    orig_file.Close();
-
-    if (orig_file->m_CurrentLocation == eNFL_NetCache)
-        orig_file->m_NetICacheClient.Remove(
-                orig_file->m_FileID.GetUniqueKey(), 0, kEmptyStr);
-
-    // TODO Delete orig_file from FileTrack.
-
-    return new_file->m_FileID.GetID();
+    return m_Impl->MoveFile(orig_file, new_file);
 }
 
 struct SNetStorageByKeyImpl : public SNetStorageImpl
@@ -671,24 +678,7 @@ string CNetStorageByKey::Relocate(const string& unique_key,
     CNetFile new_file(new SNetFileImpl(m_Impl, old_flags,
             m_Impl->m_DomainName, unique_key, m_Impl->m_NetICacheClient));
 
-    char buffer[RELOCATION_BUFFER_SIZE];
-    size_t bytes_read;
-
-    while (!orig_file.Eof()) {
-        bytes_read = orig_file.Read(buffer, sizeof(buffer));
-        new_file.Write(buffer, bytes_read);
-    }
-
-    new_file.Close();
-    orig_file.Close();
-
-    if (orig_file->m_CurrentLocation == eNFL_NetCache)
-        orig_file->m_NetICacheClient.Remove(
-                orig_file->m_FileID.GetUniqueKey(), 0, kEmptyStr);
-
-    // TODO Delete orig_file from FileTrack.
-
-    return new_file->m_FileID.GetID();
+    return m_Impl->MoveFile(orig_file, new_file);
 }
 
 bool CNetStorageByKey::Exists(const string& key, TNetStorageFlags flags)
