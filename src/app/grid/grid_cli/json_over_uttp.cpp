@@ -25,8 +25,7 @@
  *
  * Authors: Dmitry Kazimirov
  *
- * File Description: Structured Untyped Token
- *                   Transfer Protocol (implementation).
+ * File Description: JSON to UTTP serializer/deserializer (implementation).
  *
  */
 

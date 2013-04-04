@@ -247,7 +247,7 @@ bool CBatchSubmitAttrParser::NextLine()
     ++m_LineNumber;
     m_Line.resize(0);
 
-    char buffer[64 * 1024];
+    char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
 
     while (fgets(buffer, sizeof(buffer), m_InputStream) != NULL)
@@ -509,7 +509,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
             CheckJobInputStream(job_input_stream);
         } else {
-            char buffer[16 * 1024];
+            char buffer[IO_BUFFER_SIZE];
             size_t bytes_read;
 
             while ((bytes_read = fread(buffer, 1,
@@ -637,7 +637,7 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
 int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     const string& data_or_blob_id)
 {
-    char buffer[16 * 1024];
+    char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
 
     if (IsOptionSet(eRemoteAppStdOut) || IsOptionSet(eRemoteAppStdErr)) {
@@ -919,7 +919,7 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
                 m_NetScheduleAPI.GetServerParams().max_output_size,
                 m_NetCacheAPI, job.output));
 
-        char buffer[16 * 1024];
+        char buffer[IO_BUFFER_SIZE];
         size_t bytes_read;
 
         if (!IsOptionSet(eJobOutput))

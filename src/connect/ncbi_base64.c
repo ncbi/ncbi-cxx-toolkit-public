@@ -207,78 +207,52 @@ extern int/*bool*/ BASE64_Decode
 
 #ifdef NCBI_CXX_TOOLKIT
 
-static const unsigned char xlat_bytes1and4[] =
+static const unsigned char base64url_alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-
-static const unsigned char xlat_bytes2and3[] =
-    "AAAEAIAMAQAUAYAcAgAkAoAsAwA0A4A8BABEBIBMBQBUBYBcBgBkBoBsBwB0B4B8"
-    "CACECICMCQCUCYCcCgCkCoCsCwC0C4C8DADEDIDMDQDUDYDcDgDkDoDsDwD0D4D8"
-    "EAEEEIEMEQEUEYEcEgEkEoEsEwE0E4E8FAFEFIFMFQFUFYFcFgFkFoFsFwF0F4F8"
-    "GAGEGIGMGQGUGYGcGgGkGoGsGwG0G4G8HAHEHIHMHQHUHYHcHgHkHoHsHwH0H4H8"
-    "IAIEIIIMIQIUIYIcIgIkIoIsIwI0I4I8JAJEJIJMJQJUJYJcJgJkJoJsJwJ0J4J8"
-    "KAKEKIKMKQKUKYKcKgKkKoKsKwK0K4K8LALELILMLQLULYLcLgLkLoLsLwL0L4L8"
-    "MAMEMIMMMQMUMYMcMgMkMoMsMwM0M4M8NANENINMNQNUNYNcNgNkNoNsNwN0N4N8"
-    "OAOEOIOMOQOUOYOcOgOkOoOsOwO0O4O8PAPEPIPMPQPUPYPcPgPkPoPsPwP0P4P8"
-    "QAQEQIQMQQQUQYQcQgQkQoQsQwQ0Q4Q8RARERIRMRQRURYRcRgRkRoRsRwR0R4R8"
-    "SASESISMSQSUSYScSgSkSoSsSwS0S4S8TATETITMTQTUTYTcTgTkToTsTwT0T4T8"
-    "UAUEUIUMUQUUUYUcUgUkUoUsUwU0U4U8VAVEVIVMVQVUVYVcVgVkVoVsVwV0V4V8"
-    "WAWEWIWMWQWUWYWcWgWkWoWsWwW0W4W8XAXEXIXMXQXUXYXcXgXkXoXsXwX0X4X8"
-    "YAYEYIYMYQYUYYYcYgYkYoYsYwY0Y4Y8ZAZEZIZMZQZUZYZcZgZkZoZsZwZ0Z4Z8"
-    "aAaEaIaMaQaUaYacagakaoasawa0a4a8bAbEbIbMbQbUbYbcbgbkbobsbwb0b4b8"
-    "cAcEcIcMcQcUcYcccgckcocscwc0c4c8dAdEdIdMdQdUdYdcdgdkdodsdwd0d4d8"
-    "eAeEeIeMeQeUeYecegekeoesewe0e4e8fAfEfIfMfQfUfYfcfgfkfofsfwf0f4f8"
-    "gAgEgIgMgQgUgYgcgggkgogsgwg0g4g8hAhEhIhMhQhUhYhchghkhohshwh0h4h8"
-    "iAiEiIiMiQiUiYicigikioisiwi0i4i8jAjEjIjMjQjUjYjcjgjkjojsjwj0j4j8"
-    "kAkEkIkMkQkUkYkckgkkkokskwk0k4k8lAlElIlMlQlUlYlclglklolslwl0l4l8"
-    "mAmEmImMmQmUmYmcmgmkmomsmwm0m4m8nAnEnInMnQnUnYncngnknonsnwn0n4n8"
-    "oAoEoIoMoQoUoYocogokooosowo0o4o8pApEpIpMpQpUpYpcpgpkpopspwp0p4p8"
-    "qAqEqIqMqQqUqYqcqgqkqoqsqwq0q4q8rArErIrMrQrUrYrcrgrkrorsrwr0r4r8"
-    "sAsEsIsMsQsUsYscsgsksosssws0s4s8tAtEtItMtQtUtYtctgtktotstwt0t4t8"
-    "uAuEuIuMuQuUuYucugukuousuwu0u4u8vAvEvIvMvQvUvYvcvgvkvovsvwv0v4v8"
-    "wAwEwIwMwQwUwYwcwgwkwowswww0w4w8xAxExIxMxQxUxYxcxgxkxoxsxwx0x4x8"
-    "yAyEyIyMyQyUyYycygykyoysywy0y4y8zAzEzIzMzQzUzYzczgzkzozszwz0z4z8"
-    "0A0E0I0M0Q0U0Y0c0g0k0o0s0w0004081A1E1I1M1Q1U1Y1c1g1k1o1s1w101418"
-    "2A2E2I2M2Q2U2Y2c2g2k2o2s2w2024283A3E3I3M3Q3U3Y3c3g3k3o3s3w303438"
-    "4A4E4I4M4Q4U4Y4c4g4k4o4s4w4044485A5E5I5M5Q5U5Y5c5g5k5o5s5w505458"
-    "6A6E6I6M6Q6U6Y6c6g6k6o6s6w6064687A7E7I7M7Q7U7Y7c7g7k7o7s7w707478"
-    "8A8E8I8M8Q8U8Y8c8g8k8o8s8w8084889A9E9I9M9Q9U9Y9c9g9k9o9s9w909498"
-    "-A-E-I-M-Q-U-Y-c-g-k-o-s-w-0-4-8_A_E_I_M_Q_U_Y_c_g_k_o_s_w_0_4_8";
 
 extern EBase64_Result base64url_encode(const void* src_buf, size_t src_size,
     void* dst_buf, size_t dst_size, size_t* output_len)
 {
-    const unsigned char* src = (unsigned char*) src_buf;
-    unsigned char* dst = (unsigned char*) dst_buf;
-    const unsigned char* bytes2and3;
+    const unsigned char* src;
+    unsigned char* dst;
+    const unsigned char* offset;
 
-    if ((*output_len = ((src_size << 2) + 2) / 3) > dst_size)
+    size_t result_len = ((src_size << 2) + 2) / 3;
+
+    if (output_len != NULL)
+        *output_len = result_len;
+
+    if (result_len > dst_size)
         return eBase64_BufferTooSmall;
 
+    src = (const unsigned char*) src_buf;
+    dst = (unsigned char*) dst_buf;
+
     while (src_size > 2) {
-        *dst++ = xlat_bytes1and4[*src >> 2];
-        bytes2and3 = xlat_bytes2and3 + ((*src & 3) << 9);
-        bytes2and3 += *++src << 1;
-        *dst++ = *bytes2and3;
-        *dst++ = bytes2and3[1] + (*++src >> 6);
-        *dst++ = xlat_bytes1and4[*src++ & 0x3F];
+        *dst++ = base64url_alphabet[*src >> 2];
+        offset = base64url_alphabet + ((*src & 003) << 4);
+        *dst++ = offset[*++src >> 4];
+        offset = base64url_alphabet + ((*src & 017) << 2);
+        *dst++ = offset[*++src >> 6];
+        *dst++ = base64url_alphabet[*src++ & 077];
         src_size -= 3;
     }
 
     if (src_size > 0) {
-        *dst = xlat_bytes1and4[*src >> 2];
-        bytes2and3 = xlat_bytes2and3 + ((*src & 3) << 9);
+        *dst = base64url_alphabet[*src >> 2];
+        offset = base64url_alphabet + ((*src & 003) << 4);
         if (src_size == 1)
-            *++dst = *bytes2and3;
+            *++dst = *offset;
         else { /* src_size == 2 */
-            *++dst = *(bytes2and3 += src[1] << 1);
-            *++dst = bytes2and3[1];
+            *++dst = offset[*++src >> 4];
+            *++dst = base64url_alphabet[(*src & 017) << 2];
         }
     }
 
     return eBase64_OK;
 }
 
-static const unsigned char xlat_base64_char[] =
+static const unsigned char base64url_decode_table[256] =
 {
     0200, 0200, 0200, 0200, 0200, 0200, 0200, 0200,
     0200, 0200, 0200, 0200, 0200, 0200, 0200, 0200,
@@ -315,18 +289,26 @@ static const unsigned char xlat_base64_char[] =
 };
 
 #define XLAT_BASE64_CHAR(var) \
-    if ((signed char) (var = xlat_base64_char[*src++]) < 0) \
+    if ((signed char) (var = base64url_decode_table[*src++]) < 0) \
         return eBase64_InvalidInput;
 
 extern EBase64_Result base64url_decode(const void* src_buf, size_t src_size,
     void* dst_buf, size_t dst_size, size_t* output_len)
 {
-    const unsigned char* src = (unsigned char*) src_buf;
-    unsigned char* dst = (unsigned char*) dst_buf;
+    const unsigned char* src;
+    unsigned char* dst;
     unsigned char src_ch0, src_ch1;
 
-    if ((*output_len = (src_size * 3) >> 2) > dst_size)
+    size_t result_len = (src_size * 3) >> 2;
+
+    if (output_len != NULL)
+        *output_len = result_len;
+
+    if (result_len > dst_size)
         return eBase64_BufferTooSmall;
+
+    src = (const unsigned char*) src_buf;
+    dst = (unsigned char*) dst_buf;
 
     while (src_size > 3) {
         XLAT_BASE64_CHAR(src_ch0);

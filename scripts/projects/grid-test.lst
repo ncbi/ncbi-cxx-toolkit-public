@@ -11,6 +11,7 @@ util/regexp$
 util/xregexp$
 connect$
 connect/services
+misc/netstorage
 cgi$
 cgi/impl$
 html$

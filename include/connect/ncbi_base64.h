@@ -1,5 +1,5 @@
-#ifndef CONNECT___NCBI_BASE64__H
-#define CONNECT___NCBI_BASE64__H
+#ifndef CORELIB___NCBI_BASE64__H
+#define CORELIB___NCBI_BASE64__H
 
 /* $Id$
  * ===========================================================================
@@ -30,19 +30,12 @@
  *          Dmitry Kazimirov (base64url variant)
  *
  * File Description:
- *   BASE-64 Encoding/Decoding (C++ Toolkit CONNECT version)
+ *   BASE-64 Encoding/Decoding (C++ Toolkit CORELIB version)
  *
  */
 
-#include <connect/connect_export.h>
+#include <common/ncbi_export.h>
 #include <stddef.h>
-
-
-#define BASE64_Encode CONNECT_BASE64_Encode
-#define BASE64_Decode CONNECT_BASE64_Decode
-#define EBase64_Result CONNECT_EBase64_Result
-#define base64url_encode CONNECT_base64url_encode
-#define base64url_decode CONNECT_base64url_decode
 
 
 #ifdef __cplusplus
@@ -61,7 +54,7 @@ extern "C" {
  *  that BASE64 encoding converts every 3 bytes of source into 4 bytes of
  *  encoded output, not including the additional line breaks ('\n').
  */
-extern NCBI_XCONNECT_EXPORT void        BASE64_Encode
+extern NCBI_XNCBI_EXPORT void        BASE64_Encode
 (const void* src_buf,     /* [in]     non-NULL */
  size_t      src_size,    /* [in]              */
  size_t*     src_read,    /* [out]    non-NULL */
@@ -82,7 +75,7 @@ extern NCBI_XCONNECT_EXPORT void        BASE64_Encode
  *  will accommodate the entire output.  As a rule, each 4 bytes of source
  *  (line breaks ignored) get converted into 3 bytes of decoded output.
  */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ BASE64_Decode
+extern NCBI_XNCBI_EXPORT int/*bool*/ BASE64_Decode
 (const void* src_buf,     /* [in]     non-NULL */
  size_t      src_size,    /* [in]              */
  size_t*     src_read,    /* [out]    non-NULL */
@@ -115,24 +108,25 @@ typedef enum {
  * the last chunk must be a multiple of 3 bytes. For information about the
  * base64url, please refer to RFC 4648.
  *
- * @param src_buf Data to encode.
+ * @param src_buf Data to encode. Ignored if dst_size is zero.
  * @param src_size The size of the input data.
  * @param dst_buf Output buffer. Ignored if dst_size is zero.
  * @param dst_size The size of the output buffer or zero.
  * @param output_len Variable for storing the length of the encoded string.
  *        If it turns out to be greater than dst_size, dst_buf is not
  *        written and the function returns eBase64_BufferTooSmall.
+ *        Can be NULL.
  *
  * @return eBase64_OK if the input string has been successfully encoded;
  *         eBase64_BufferTooSmall if the input buffer is too small to store
  *         the encoded string.
  */
-extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_encode
-(const void*    src_buf,    /* [in]  non-NULL   */
- size_t         src_size,   /* [in]             */
- void*          dst_buf,    /* [out]            */
- size_t         dst_size,   /* [in]             */
- size_t*        output_len  /* [out] non-NULL   */
+extern NCBI_XNCBI_EXPORT EBase64_Result base64url_encode
+(const void*    src_buf,    /* [in]     */
+ size_t         src_size,   /* [in]     */
+ void*          dst_buf,    /* [out]    */
+ size_t         dst_size,   /* [in]     */
+ size_t*        output_len  /* [out]    */
  );
 
 
@@ -148,13 +142,14 @@ extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_encode
  * must be a multiple of 4 bytes. For information about the base64url
  * variant of the Base64 family of encodings, please refer to RFC 4648.
  *
- * @param src_buf Base64url-encoded data to decode.
+ * @param src_buf Base64url-encoded data to decode. Ignored if dst_size is zero.
  * @param src_size The size of src_buf.
  * @param dst_buf Output buffer. Ignored if dst_size is zero.
  * @param dst_size The size of the output buffer or zero.
  * @param output_len Variable for storing the length of the decoded string.
  *        If more space than dst_size bytes is required, dst_buf is not
  *        written and the function returns eBase64_BufferTooSmall.
+ *        Can be NULL.
  *
  * @return eBase64_OK if the input string has been successfully decoded;
  *         eBase64_BufferTooSmall if the input buffer is too small to store
@@ -163,12 +158,12 @@ extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_encode
  *         from the base64url alphabet (alphanumeric, underscore, and dash
  *         characters).
  */
-extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_decode
-(const void*    src_buf,    /* [in] non-NULL    */
- size_t         src_size,   /* [in]             */
- void*          dst_buf,    /* [out]            */
- size_t         dst_size,   /* [in]             */
- size_t*        output_len  /* [out] non-NUL    */
+extern NCBI_XNCBI_EXPORT EBase64_Result base64url_decode
+(const void*    src_buf,    /* [in]     */
+ size_t         src_size,   /* [in]     */
+ void*          dst_buf,    /* [out]    */
+ size_t         dst_size,   /* [in]     */
+ size_t*        output_len  /* [out]    */
  );
 
 
@@ -177,4 +172,4 @@ extern NCBI_XCONNECT_EXPORT EBase64_Result base64url_decode
 #endif /*__cplusplus*/
 
 
-#endif  /* CONNECT___NCBI_BASE64__H */
+#endif  /* CORELIB___NCBI_BASE64__H */

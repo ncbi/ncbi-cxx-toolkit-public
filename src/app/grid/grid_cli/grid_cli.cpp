@@ -122,7 +122,8 @@ struct SOptionDefinition {
             "or server address.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eCache),
-        "cache", "Enable ICache mode and specify cache name to use.", {-1}},
+        CACHE_OPTION, "Enable ICache mode and specify "
+            "cache name to use.", {-1}},
 
     {OPT_DEF(ePositionalArgument, eCacheArg), "CACHE", NULL, {-1}},
 
@@ -140,6 +141,28 @@ struct SOptionDefinition {
 
     {OPT_DEF(eSwitch, eEnableMirroring),
         "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eFileKey),
+        FILE_KEY_OPTION, "Uniqie user-defined key to address the file. "
+            "Requires '--" NAMESPACE_OPTION "' (or '--" CACHE_OPTION
+            "').", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eNamespace),
+        NAMESPACE_OPTION, "Domain-specific name that isolates files "
+            "created with a user-defined key from files created "
+            "by other applications.", {-1}},
+
+    {OPT_DEF(eSwitch, ePersistent),
+        PERSISTENT_OPTION, "Use a persistent storage like FileTrack.", {-1}},
+
+    {OPT_DEF(eSwitch, eFastStorage),
+        FAST_STORAGE_OPTION, "Use a fast storage like NetCache.", {-1}},
+
+    {OPT_DEF(eSwitch, eMovable),
+        MOVABLE_OPTION, "Allow the file to move between storages.", {-1}},
+
+    {OPT_DEF(eSwitch, eCacheable),
+        CACHEABLE_OPTION, "Use NetCache for data caching.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNetSchedule),
         "ns|" NETSCHEDULE_OPTION, "NetSchedule service name "
@@ -386,6 +409,7 @@ struct SOptionDefinition {
 enum ECommandCategory {
     eGeneralCommand,
     eNetCacheCommand,
+    eNetStorageCommand,
     eNetScheduleCommand,
     eSubmitterCommand,
     eWorkerNodeCommand,
@@ -400,6 +424,7 @@ struct SCommandCategoryDefinition {
 } static const s_CategoryDefinitions[eNumberOfCommandCategories] = {
     {eGeneralCommand, "General commands"},
     {eNetCacheCommand, "NetCache commands"},
+    {eNetStorageCommand, "NetStorage commands"},
     {eNetScheduleCommand, "Universal NetSchedule commands"},
     {eSubmitterCommand, "Submitter commands"},
     {eWorkerNodeCommand, "Worker node commands"},
@@ -440,8 +465,12 @@ struct SCommandDefinition {
         "This command makes an attempt to guess the type of its "
         "argument. If the argument is successfully recognized "
         "as a token that represents a Grid object, the type-"
-        "dependent information about the object is printed.",
-        {eUntypedArg, -1}},
+        "dependent information about the object is printed.\n\n"
+        "Valid output formats are \"" HUMAN_READABLE_OUTPUT_FORMAT
+        "\" and \"" JSON_OUTPUT_FORMAT "\". The default is \""
+        HUMAN_READABLE_OUTPUT_FORMAT "\".",
+        {eUntypedArg, eOutputFormat, -1},
+        {eHumanReadable, eJSON, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Login,
         LOGIN_COMMAND, "Generate a client identification token.",
@@ -475,7 +504,7 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_PutBlob,
-        "putblob|pb", "Create or update a NetCache blob.",
+        "putblob|pb", "Create or rewrite a NetCache blob.",
         "Read data from the standard input (or a file) until EOF is "
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
@@ -496,6 +525,50 @@ struct SCommandDefinition {
         "This command purges the specified ICache database. "
         "Administrative privileges are required.",
         {eCacheArg, eNetCache, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Upload,
+        "upload", "Create or rewrite a NetStorage file.",
+        "Save the data coming from the standard input (or an input file) "
+        "to a network storage. The choice of the storage is based on the "
+        "specified combination of the '--" PERSISTENT_OPTION "', '--"
+        FAST_STORAGE_OPTION "', '--" MOVABLE_OPTION "', and '--"
+        CACHEABLE_OPTION "' options. After the data has been written, "
+        "the generated file ID is printed to the standard output.",
+        {eOptionalID, ePersistent, eFastStorage,
+            eNetCache, eCache, eTTL, eMovable, eCacheable,
+            eInput, eInputFile, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
+        "download", "Retrieve a NetStorage file.",
+        "Read the file identified by ID and send its contents to the "
+        "standard output (or to the specified output file).",
+        {eID, eNetCache, eCache, eOffset, eSize,
+            eOutputFile, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Relocate,
+        "relocate", "Move a NetStorage file to a different storage.",
+        "Transfer file contents to the new location hinted by "
+        "a combination of the '--" PERSISTENT_OPTION "', '--"
+        FAST_STORAGE_OPTION "', and '--" CACHEABLE_OPTION "' options. "
+        "After the data has been transferred, a new file ID "
+        "will be generated, which can be used instead of the old "
+        "one for faster file access.",
+        {eID, ePersistent, eFastStorage, eNetCache, eCache,
+            eTTL, eCacheable, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkFileID,
+        "mkfileid", "Turn a user-defined key into a NetFile ID.",
+        "Take a unique user-defined key/namespace pair (or an "
+        "existing file ID) and make a new file ID. The resulting "
+        "file ID will reflect storage preferences specified by the "
+        "'--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION "', '--"
+        MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
+        {eOptionalID, eFileKey, eNamespace, ePersistent, eFastStorage,
+            eNetCache, eCache, eTTL, eMovable, eCacheable, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1046,8 +1119,9 @@ int CGridCommandLineInterfaceApp::Run()
                 MarkOptionAsExplicitlySet(eID);
                 /* FALL THROUGH */
             case eID:
-            case eTargetQueueArg:
+            case eFileKey:
             case eJobId:
+            case eTargetQueueArg:
                 m_Opts.id = opt_value;
                 break;
             case eLoginToken:
@@ -1092,6 +1166,21 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eTTL:
                 m_Opts.ttl = NStr::StringToUInt(opt_value);
+                break;
+            case eNamespace:
+                m_Opts.app_domain = opt_value;
+                break;
+            case ePersistent:
+                m_Opts.netstorage_flags |= fNST_Persistent;
+                break;
+            case eFastStorage:
+                m_Opts.netstorage_flags |= fNST_Fast;
+                break;
+            case eMovable:
+                m_Opts.netstorage_flags |= fNST_Movable;
+                break;
+            case eCacheable:
+                m_Opts.netstorage_flags |= fNST_Cacheable;
                 break;
             case eNetSchedule:
             case eWorkerNode:

@@ -37,7 +37,7 @@
 #include <corelib/ncbiapp.hpp>
 
 #include <connect/services/grid_client.hpp>
-#include <connect/services/neticache_client.hpp>
+#include <misc/netstorage/netstorage.hpp>
 
 
 #define GRID_APP_NAME "grid_cli"
@@ -61,6 +61,13 @@
 
 #define LOGIN_TOKEN_OPTION "login-token"
 #define NETCACHE_OPTION "netcache"
+#define CACHE_OPTION "cache"
+#define FILE_KEY_OPTION "file-key"
+#define NAMESPACE_OPTION "namespace"
+#define PERSISTENT_OPTION "persistent"
+#define FAST_STORAGE_OPTION "fast-storage"
+#define MOVABLE_OPTION "movable"
+#define CACHEABLE_OPTION "cacheable"
 #define NETSCHEDULE_OPTION "netschedule"
 #define WORKER_NODE_OPTION "worker-node"
 #define INPUT_OPTION "input"
@@ -107,6 +114,8 @@
 
 #define NETSCHEDULE_CHECK_QUEUE "netschedule_check_queue"
 
+#define IO_BUFFER_SIZE (512 * 1024)
+
 BEGIN_NCBI_SCOPE
 
 enum EOption {
@@ -134,6 +143,12 @@ enum EOption {
     eSize,
     eTTL,
     eEnableMirroring,
+    eFileKey,
+    eNamespace,
+    ePersistent,
+    eFastStorage,
+    eMovable,
+    eCacheable,
     eNetSchedule,
     eQueue,
     eWorkerNode,
@@ -249,6 +264,7 @@ private:
         EOutputFormat output_format;
         string nc_service;
         string cache_name;
+        string app_domain;
         string password;
         size_t offset;
         size_t size;
@@ -284,6 +300,7 @@ private:
         FILE* input_stream;
         FILE* output_stream;
         FILE* protocol_dump;
+        TNetStorageFlags netstorage_flags;
 
         struct SICacheBlobKey {
             string key;
@@ -300,7 +317,8 @@ private:
             job_status(CNetScheduleAPI::eJobNotFound), job_status_mask(0),
             last_event_index(kMax_Int), extend_lifetime_by(0),
             on_off_switch(eDefault),
-            input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
+            input_stream(NULL), output_stream(NULL), protocol_dump(NULL),
+            netstorage_flags(0)
         {
             memset(option_flags, 0, sizeof(option_flags));
         }
@@ -385,6 +403,13 @@ public:
     int Cmd_RemoveBlob();
     int Cmd_Purge();
 
+// NetStorage commands.
+public:
+    int Cmd_Upload();
+    int Cmd_Download();
+    int Cmd_Relocate();
+    int Cmd_MkFileID();
+
 // NetSchedule commands.
 public:
     int Cmd_JobInfo();
@@ -463,6 +488,7 @@ private:
 
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
+    void SetUp_NetStorageCmd();
 };
 
 END_NCBI_SCOPE

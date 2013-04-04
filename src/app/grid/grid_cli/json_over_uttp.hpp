@@ -1,5 +1,5 @@
-#ifndef UTIL___SUTTP__HPP
-#define UTIL___SUTTP__HPP
+#ifndef JSON_OVER_UTTP__HPP
+#define JSON_OVER_UTTP__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,8 +28,7 @@
  *
  * Authors: Dmitry Kazimirov
  *
- * File Description: Structured Untyped Token
- *                   Transfer Protocol (declarations).
+ * File Description: JSON to UTTP serializer/deserializer (declarations).
  *
  */
 
@@ -178,4 +177,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif /* UTIL___SUTTP__HPP */
+#endif /* JSON_OVER_UTTP__HPP */

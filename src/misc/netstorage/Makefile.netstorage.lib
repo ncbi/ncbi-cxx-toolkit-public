@@ -1,0 +1,10 @@
+# $Id$
+
+SRC      = netstorage filetrack pack_int netstorage__ netstorage___
+
+LIB      = netstorage
+LIBS     = $(NETWORK_LIBS)
+
+DLL_LIB  = xthrserv xconnect xser xutil
+
+WATCHERS = kazimird

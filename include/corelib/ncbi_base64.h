@@ -108,24 +108,25 @@ typedef enum {
  * the last chunk must be a multiple of 3 bytes. For information about the
  * base64url, please refer to RFC 4648.
  *
- * @param src_buf Data to encode.
+ * @param src_buf Data to encode. Ignored if dst_size is zero.
  * @param src_size The size of the input data.
  * @param dst_buf Output buffer. Ignored if dst_size is zero.
  * @param dst_size The size of the output buffer or zero.
  * @param output_len Variable for storing the length of the encoded string.
  *        If it turns out to be greater than dst_size, dst_buf is not
  *        written and the function returns eBase64_BufferTooSmall.
+ *        Can be NULL.
  *
  * @return eBase64_OK if the input string has been successfully encoded;
  *         eBase64_BufferTooSmall if the input buffer is too small to store
  *         the encoded string.
  */
 extern NCBI_XNCBI_EXPORT EBase64_Result base64url_encode
-(const void*    src_buf,    /* [in]  non-NULL   */
- size_t         src_size,   /* [in]             */
- void*          dst_buf,    /* [out]            */
- size_t         dst_size,   /* [in]             */
- size_t*        output_len  /* [out] non-NULL   */
+(const void*    src_buf,    /* [in]     */
+ size_t         src_size,   /* [in]     */
+ void*          dst_buf,    /* [out]    */
+ size_t         dst_size,   /* [in]     */
+ size_t*        output_len  /* [out]    */
  );
 
 
@@ -141,13 +142,14 @@ extern NCBI_XNCBI_EXPORT EBase64_Result base64url_encode
  * must be a multiple of 4 bytes. For information about the base64url
  * variant of the Base64 family of encodings, please refer to RFC 4648.
  *
- * @param src_buf Base64url-encoded data to decode.
+ * @param src_buf Base64url-encoded data to decode. Ignored if dst_size is zero.
  * @param src_size The size of src_buf.
  * @param dst_buf Output buffer. Ignored if dst_size is zero.
  * @param dst_size The size of the output buffer or zero.
  * @param output_len Variable for storing the length of the decoded string.
  *        If more space than dst_size bytes is required, dst_buf is not
  *        written and the function returns eBase64_BufferTooSmall.
+ *        Can be NULL.
  *
  * @return eBase64_OK if the input string has been successfully decoded;
  *         eBase64_BufferTooSmall if the input buffer is too small to store
@@ -157,11 +159,11 @@ extern NCBI_XNCBI_EXPORT EBase64_Result base64url_encode
  *         characters).
  */
 extern NCBI_XNCBI_EXPORT EBase64_Result base64url_decode
-(const void*    src_buf,    /* [in] non-NULL    */
- size_t         src_size,   /* [in]             */
- void*          dst_buf,    /* [out]            */
- size_t         dst_size,   /* [in]             */
- size_t*        output_len  /* [out] non-NUL    */
+(const void*    src_buf,    /* [in]     */
+ size_t         src_size,   /* [in]     */
+ void*          dst_buf,    /* [out]    */
+ size_t         dst_size,   /* [in]     */
+ size_t*        output_len  /* [out]    */
  );
 
 

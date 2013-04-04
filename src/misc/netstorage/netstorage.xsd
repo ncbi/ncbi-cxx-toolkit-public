@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="ncbi-netstorage"
+    xmlns="ncbi-netstorage"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xs:element name="FT-Meta">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="expires" type="xs:string"/>
+                <xs:element name="content_url" type="xs:string"/>
+                <xs:element name="safe_name" type="xs:string"/>
+                <xs:element name="content_type" type="xs:integer"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="FT-Upload">
+        <xs:complexType>
+            <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="url"       type="xs:string"/>
+                <xs:element name="meta_url"  type="xs:string"/>
+                <xs:element name="upload_id" type="xs:string"/>
+                <xs:element name="file_id"   type="xs:string"/>
+                <xs:element name="name"      type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

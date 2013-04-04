@@ -39,13 +39,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
-    static const string kConfigSection("netcache_api");
-    static const string kEnableMirroringParam("enable_mirroring");
-
     CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
 
     if (IsOptionSet(eEnableMirroring))
-        reg.Set(kConfigSection, kEnableMirroringParam, "true");
+        reg.Set("netcache_api", "enable_mirroring", "true");
 
     switch (api_class) {
     case eNetCacheAPI:
@@ -87,7 +84,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
             m_NetICacheClient.SetFlags(ICache::fBestReliability);
         break;
 
-    default: // always eNetCacheAdmin
+    default: /* case eNetCacheAdmin: */
         if (cmd_severity != eReadOnlyAdminCmd &&
                 !IsOptionExplicitlySet(eNetCache)) {
             NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
@@ -109,10 +106,19 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 
     generation_time.SetTimeT((time_t) key.GetCreationTime());
 
-    printf("server_address: %s:%hu\n"
+    printf(m_Opts.output_format == eJSON ?
+
+        "\t\"server_host\": \"%s\",\n"
+        "\t\"server_port\": %hu,\n"
+        "\t\"id\": %u,\n"
+        "\t\"key_generation_time\": \"%s\",\n"
+        "\t\"random\": %u,\n" :
+
+        "server_address: %s:%hu\n"
         "id: %u\n"
         "key_generation_time: %s\n"
         "random: %u\n",
+
         g_NetService_TryResolveHost(key.GetHost()).c_str(),
         key.GetPort(),
         key.GetId(),
@@ -122,7 +128,11 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
     string service(key.GetServiceName());
 
     if (!service.empty())
-        printf("service_name: %s\n", service.c_str());
+        printf(m_Opts.output_format == eJSON ?
+                "\t\"service_name\": \"%s\"\n" : "service_name: %s\n",
+                service.c_str());
+    else if (m_Opts.output_format == eJSON)
+        printf("\t\"service_name\": null\n");
 }
 
 void CGridCommandLineInterfaceApp::ParseICacheKey(
@@ -314,7 +324,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             "Cannot find the requested blob");
     }
 
-    char buffer[16 * 1024];
+    char buffer[IO_BUFFER_SIZE];
     ERW_Result read_result;
     size_t bytes_read;
 
@@ -363,7 +373,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     }
 
     if (!writer.get()) {
-        NCBI_USER_THROW_FMT("Cannot create blob stream");
+        NCBI_USER_THROW("Cannot create blob stream");
     }
 
     if (icache_mode && m_NetICacheClient.GetService().IsLoadBalanced())
@@ -377,7 +387,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
                 bytes_written != m_Opts.input.length())
             goto ErrorExit;
     } else {
-        char buffer[16 * 1024];
+        char buffer[IO_BUFFER_SIZE];
         size_t bytes_read;
 
         while ((bytes_read = fread(buffer, 1,
@@ -398,7 +408,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     return 0;
 
 ErrorExit:
-    NCBI_USER_THROW_FMT("Error while writing to NetCache");
+    NCBI_USER_THROW("Error while writing to NetCache");
 }
 
 int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
