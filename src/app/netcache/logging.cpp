@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE;
 
+extern CSrvTime s_JiffyTime;
 
 struct SLogData
 {
@@ -416,13 +417,13 @@ NCBI_NORETURN static void
 s_DoFatalAbort(SLogData* data)
 {
     s_NeedFatalHalt = true;
-#if 0
+#if 1
     int cnt_halted = s_CntHaltedThreads.AddValue(1);
     int cnt_need = GetCntRunningThreads() + 2;
     if (!s_ThreadsStarted)
         cnt_need = 1;
-    while (cnt_halted != cnt_need) {
-        s_CntHaltedThreads.WaitValueChange(cnt_halted);
+    for (int attempt=0; attempt<5 && cnt_halted != cnt_need; ++attempt) {
+        s_CntHaltedThreads.WaitValueChange(cnt_halted, s_JiffyTime);
         cnt_halted = s_CntHaltedThreads.GetValue();
         // In a very rare situation CntRunningThreads can change here
         cnt_need = GetCntRunningThreads() + 2;
