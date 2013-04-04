@@ -76,6 +76,7 @@
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbithr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -128,8 +129,9 @@ void CRandom::Randomize(void)
     CTime now(CTime::eCurrent);
 
     SetSeed(TValue(now.Second() ^
-            (now.NanoSecond() << 2) ^
-            CProcess::GetCurrentPid()));
+                now.NanoSecond() ^
+                CProcess::GetCurrentPid() * 19 ^
+                CThread::GetSelf() * 5));
 }
 
 

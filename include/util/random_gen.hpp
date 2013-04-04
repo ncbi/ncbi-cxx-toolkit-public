@@ -65,7 +65,8 @@ public:
     CRandom(void);
     CRandom(TValue seed);
 
-    // (Re-)initialize the generator using current time and PID.
+    // (Re-)initialize the generator using the current time,
+    // PID, and thread ID
     void Randomize(void);
 
     // Initialize and Seed the random number generator
