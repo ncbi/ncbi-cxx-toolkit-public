@@ -4,20 +4,27 @@ C API to access this implementation, in the meantime, working with these
 sources directly is possible, but not recommended unless one is very familiar
 with them.
 
-Build instructions
-------------------
-
 NOTE: By following this approach some features supported by the NCBI C++ toolkit
 such as BLAST database access, BLAST formatting, embedded logging, MT locking,
-and configuration support will be absent or only partially supported.
+and configuration support will be absent or only partially supported. 
+
+Getting the source code
+-----------------------
+Download the source distribution of BLAST+:
+ftp://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/ncbi-blast-VERSION+-src.tar.gz
+
+Build instructions
+------------------
+Unpack the source archive in its installation directory and change working
+directory to ncbi-blast-VERSION+-src/c++.
 
 UNIX:
-To build these source files into a library without the rest of the NCBI C++
-toolkit, one should use the following commands:
+To build these source files into a library without the rest of the NCBI BLAST+
+applications/libraries, one should use the following commands:
 
 ./configure --with-projects=scripts/projects/blast_core_lib.lst \
             --without-debug --with-mt --with-build-root=ReleaseMT
-cd c++/ReleaseMT/build
+cd ReleaseMT/build
 make all_p
 
 This will configure and build an optimized library called blast, which can then
