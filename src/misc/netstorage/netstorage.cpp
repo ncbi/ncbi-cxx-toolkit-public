@@ -69,7 +69,7 @@ const char* CNetStorageException::GetErrCodeString() const
     }
 }
 
-struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
+struct SNetStorageImpl : public CObject
 {
     SNetStorageImpl(CNetICacheClient::TInstance icache_client,
             TNetStorageFlags default_flags);
@@ -120,7 +120,7 @@ enum ENetFileIOStatus {
     eNFS_ReadingFromFileTrack,
 };
 
-struct NCBI_XCONNECT_EXPORT SNetFileImpl : public CObject, public IReaderWriter
+struct SNetFileImpl : public CObject, public IReaderWriter
 {
     SNetFileImpl(SNetStorageImpl* storage_impl,
             TNetStorageFlags flags,

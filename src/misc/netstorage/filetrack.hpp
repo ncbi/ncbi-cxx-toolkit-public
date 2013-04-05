@@ -70,7 +70,7 @@ struct SFileTrackRequest : public CObject
     bool m_FirstRead;
 };
 
-struct NCBI_XCONNECT_EXPORT SFileTrackAPI
+struct SFileTrackAPI
 {
     SFileTrackAPI();
 

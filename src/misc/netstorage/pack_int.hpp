@@ -66,7 +66,7 @@ BEGIN_NCBI_SCOPE
 ///
 /// @see g_UnpackInteger
 ///
-extern NCBI_XCONNECT_EXPORT
+extern
 unsigned g_PackInteger(void* dst, size_t dst_size, Uint8 number);
 
 
@@ -92,7 +92,7 @@ unsigned g_PackInteger(void* dst, size_t dst_size, Uint8 number);
 ///
 /// @see g_PackInteger
 ///
-extern NCBI_XCONNECT_EXPORT
+extern
 unsigned g_UnpackInteger(const void* src, size_t src_size, Uint8* number);
 
 

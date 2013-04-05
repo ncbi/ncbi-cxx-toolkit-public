@@ -86,7 +86,7 @@ typedef int TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
 /// Can switch between reading and writing but only explicitly, using Close()
 ///
 
-class NCBI_XCONNECT_EXPORT CNetFile
+class CNetFile
 {
     NCBI_NET_COMPONENT(NetFile);
 
@@ -182,7 +182,7 @@ class NCBI_XCONNECT_EXPORT CNetFile
 /// Network BLOB storage API
 ///
 
-class NCBI_XCONNECT_EXPORT CNetStorage
+class CNetStorage
 {
     NCBI_NET_COMPONENT(NetStorage);
 
@@ -268,7 +268,7 @@ class NCBI_XCONNECT_EXPORT CNetStorage
 /// Network BLOB storage API -- with access by user-defined keys
 ///
 
-class NCBI_XCONNECT_EXPORT CNetStorageByKey
+class CNetStorageByKey
 {
     NCBI_NET_COMPONENT(NetStorageByKey);
 

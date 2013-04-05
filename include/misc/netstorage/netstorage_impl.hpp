@@ -48,7 +48,7 @@ enum ENetFileIDFields {
 typedef unsigned char TNetFileIDFields;
 
 /// @internal
-class NCBI_XCONNECT_EXPORT CNetFileID
+class CNetFileID
 {
 public:
     CNetFileID(TNetStorageFlags flags, Uint8 random_number);
