@@ -35,7 +35,10 @@ APP_PROJ = example_value_convert \
            test_utf8 \
            test_uttp \
            test_value_convert
-           
+
+EXPENDABLE_APP_PROJ = \
+           test_limited_map
+
 PROJ_TAG = test
 
 srcdir = @srcdir@
