@@ -763,7 +763,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
         //  NC_000001:g.100000A=        - correct
         //  NC_000001:g.100000_100123=  - correct
         //  NC_000001:g.100000_100123124= - wrong, can't use literal's length "124"
-        inst_str = (asserted_seq && asserted_seq->GetLength() < s_max_literal_length ? asserted_seq_str : "") + "=";
+        inst_str = (asserted_seq && asserted_seq->GetLength() < s_max_literal_length  && !is_prot ? asserted_seq_str : "") + "=";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
         inst_str = "inv" + asserted_seq_str;
     } else if(inst.GetType() == CVariation_inst::eType_snv) {
