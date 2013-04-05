@@ -432,7 +432,7 @@ s_DoFatalAbort(SLogData* data)
     int cnt_need = GetCntRunningThreads() + 2;
     if (!s_ThreadsStarted)
         cnt_need = 1;
-    for (int attempt=0; attempt<5 && cnt_halted != cnt_need; ++attempt) {
+    for (int attempt=0; attempt<500 && cnt_halted != cnt_need; ++attempt) {
         s_CntHaltedThreads.WaitValueChange(cnt_halted, s_JiffyTime);
         cnt_halted = s_CntHaltedThreads.GetValue();
         // In a very rare situation CntRunningThreads can change here
