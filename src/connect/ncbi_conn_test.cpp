@@ -61,7 +61,11 @@ static const char kFWSign[] =
     "NCBI Firewall Daemon:  Invalid ticket.  Connection closed.";
 
 
-const STimeout CConnTest::kTimeout = { 30, 0 };
+const STimeout CConnTest::kTimeout = {
+    (unsigned int)  DEF_CONN_TIMEOUT,
+    (unsigned int)((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT)
+                   * 1000000.0)
+};
 
 
 inline bool operator > (const STimeout* t1, const STimeout& t2)
@@ -669,6 +673,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         }
         net_info->path[0] = '\0';
         net_info->args[0] = '\0';
+        net_info->timeout = m_Timeout;
     }
 
     SERV_InitFirewallMode();
@@ -715,7 +720,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             v.push_back(make_pair(AutoPtr<CConn_SocketStream>(fw), &*cp));
         }
 
-        // Check results randomly but let modify status not more than once
+        // Check results randomly but let modify status no more than once
         unsigned int count = 0;
         do {
             NON_CONST_ITERATE(vector<CFWCheck>, ck, v) {
@@ -919,6 +924,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             temp = m_Firewall ? "Firewall port" : "Service entry";
             temp += " check FAILED";
         } else {
+            _ASSERT(net_info);
             temp = "Firewall port check PASSED";
             if (net_info->firewall != eFWMode_Fallback) {
                 temp += " only with fallback port(s)";
