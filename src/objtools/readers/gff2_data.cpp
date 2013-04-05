@@ -516,10 +516,10 @@ bool CGff2Record::x_MigrateAttributes(
         }
     }
 
-    it = attrs_left.find("Name");
-    if (it != attrs_left.end()) {
-        attrs_left.erase(it); //ignore
-    }
+    //it = attrs_left.find("Name");
+    //if (it != attrs_left.end()) {
+    //    attrs_left.erase(it); //ignore
+    //}
 
     it = attrs_left.find("codon_start");
     if (it != attrs_left.end()) {
