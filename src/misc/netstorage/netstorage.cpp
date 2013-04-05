@@ -42,6 +42,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#ifndef NCBI_OS_MSWIN
+#  include <unistd.h>
+#endif
 
 #define NCBI_USE_ERRCODE_X  NetStorage
 
