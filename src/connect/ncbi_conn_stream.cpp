@@ -281,8 +281,21 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
     if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
-        if (!proxy  &&  net_info->debug_printout)
-            ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+        if (timeout == kDefaultTimeout)
+            timeout  = net_info->timeout;
+        if (!proxy  &&  net_info->debug_printout) {
+            const SConnNetInfo* x_net_info;
+            if (timeout != net_info->timeout) {
+                SConnNetInfo* xx_net_info = ConnNetInfo_Clone(net_info);
+                if (xx_net_info)
+                    xx_net_info->timeout = timeout;
+                x_net_info = xx_net_info;
+            } else
+                x_net_info = net_info;
+            ConnNetInfo_Log(x_net_info, eLOG_Note, CORE_GetLOG());
+            if (x_net_info != net_info)
+                ConnNetInfo_Destroy((SConnNetInfo*) x_net_info);
+        }
         status = SOCK_CreateEx(host, net_info->port, timeout, &sock,
                                data, size, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
