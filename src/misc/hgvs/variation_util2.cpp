@@ -1561,12 +1561,9 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
 }
 
 //translate IUPACNA literal; do not translate last partial codon.
-string Translate(const CSeq_data& literal)
+string Translate(const string& nuc_str)
 {
-    string prot_str("");
-    string nuc_str = literal.GetIupacna().Get();
-    nuc_str.resize(nuc_str.size() - (nuc_str.size() % 3)); //truncate last partial codon, as translator may otherwise still be able to translate it
-
+    string prot_str;
     CSeqTranslator::Translate(
             nuc_str,
             prot_str,
@@ -1849,6 +1846,15 @@ CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVa
     return v;
 }
 
+size_t GetCommonPrefixLen(const string& a, const string& b)
+{
+    size_t i(0);
+    while(i < a.size() && i < b.size() && a[i] == b[i]) {
+        i++;
+    }
+    return i;
+}
+
 CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         const CVariation_inst& nuc_inst,
         const CVariantPlacement& nuc_p,
@@ -1879,11 +1885,11 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     CRef<CVariantPlacement> p(new CVariantPlacement);
     p->Assign(nuc_p);
+    p->ResetSeq(); //Will recalculate after adjusting to codon boundary
     v->SetPlacements().push_back(p);
 
     //normalize to delins form so we can deal with it uniformly
     ChangeToDelins(*v);
-
     const CDelta_item& nuc_delta = *v->GetData().GetInstance().GetDelta().front();
 
     //note: using type long instead of TSignedSeqPos is a bug on 64-bit systems: the result of the subtraction
@@ -1932,6 +1938,14 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
     }
 
+    string downstream_cds_suffix_seq_str; //cds sequence downstream of affected codons
+    {{
+        SFlankLocs flocs = CreateFlankLocs(*codons_loc, 10000000/*all the way*/);
+        CRef<CSeq_loc> downstream_cds_loc = cds_feat.GetLocation().Intersect(*flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+        CRef<CSeq_literal> literal = x_GetLiteralAtLoc(*downstream_cds_loc);
+        downstream_cds_suffix_seq_str = literal->GetSeq_data().GetIupacna().Get(); 
+    }}
+
     TSignedSeqPos frame = abs(
               (TSignedSeqPos)p->GetLoc().GetStart(eExtreme_Biological)
             - (TSignedSeqPos)codons_loc->GetStart(eExtreme_Biological));
@@ -1940,33 +1954,73 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     ChangeIdsInPlace(*prot_loc, sequence::eGetId_ForceAcc, *m_scope); //not strictly required, but generally prefer accvers in the output for readability
                                                                       //as we're dealing with various types of mols
 
-    /*
-     * extend codons-loc and the variation by two bases downstream, since a part of the next
-     * codon may become part of the variation (e.g. 1-base deletion in a codon
-     * results in first base of the downstream codon becoming part of modified one)
-     * If, on the other hand, the downstream codon does not participate, there's
-     * only two bases if it, so it won't get translated (will explicitly truncate)
-     */
-    SFlankLocs flocs = CreateFlankLocs(*codons_loc, 2);
-    CRef<CSeq_loc> extended_codons_loc = sequence::Seq_loc_Add(*codons_loc, *flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
-    x_AdjustDelinsToInterval(*v, *extended_codons_loc);
-    const CSeq_literal& extended_variant_codons_literal = v->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral();
-    string variant_codons_str = extended_variant_codons_literal.GetSeq_data().GetIupacna().Get();
-    variant_codons_str.resize(variant_codons_str.size() - (variant_codons_str.size() % 3));
-
+    x_AdjustDelinsToInterval(*v, *codons_loc);
+    if(!AttachSeq(*v)) {
+        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+    }
     if(verbose) NcbiCerr << "Adjusted-for-codons " << MSerial_AsnText << *v;
 
-    bool attached = AttachSeq(*p);
-    if(!attached) {
-        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+    string nuc_ref_prefix = v->GetPlacements().front()->GetSeq().GetSeq_data().GetIupacna().Get();
+
+    const CSeq_literal& nuc_var_literal =  v->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral();
+    string nuc_var_prefix = nuc_var_literal.GetLength() == 0 ? "" : nuc_var_literal.GetSeq_data().GetIupacna().Get();
+
+    string nuc_ref_str = nuc_ref_prefix + downstream_cds_suffix_seq_str;
+    string nuc_var_str = nuc_var_prefix + downstream_cds_suffix_seq_str;
+    string prot_ref_str = Translate(nuc_ref_str);
+    string prot_var_str = Translate(nuc_var_str);
+    int num_ref_codons = (nuc_ref_prefix.size() + 2) / 3;
+    int num_var_codons = (nuc_var_prefix.size() + 2) / 3;
+
+
+    int common_prot_prefix_len(0); //will calculate length of unchanged leading AAs in translations (starting with codons of interest)
+
+    if(prot_ref_str == prot_var_str) {
+        //No-change variation. Will truncate to original counts of affected codons, such that the 
+        //no-change variation describes the original codons that did not affect the translation.
+        prot_ref_str.resize(num_ref_codons);
+        prot_var_str.resize(num_var_codons);
+    } else {
+        //Justify the variation to first affected AA.
+        //
+        //Truncate common prefix of translations; truncate the 5'-end of the prot-loc and recalculate codons-loc accordingly.
+        //Rationale: nucleotide level might not affect translation at the affected codons' location, but change the translation
+        //downstream. That's why we have to skip unchanged translation to find the first affected AA.
+        //
+        //This does not apply to synonymous changes where there's no change at all rather than a downstream change.
+
+        common_prot_prefix_len = GetCommonPrefixLen(prot_ref_str, prot_var_str);
+        if(common_prot_prefix_len == static_cast<int>(prot_ref_str.size())) {
+            common_prot_prefix_len -= 1; //when truncating common prefx, don't want to truncate all the way 
+                                     //will leave last position as necessary
+        }
+
+        prot_ref_str = prot_ref_str.substr(common_prot_prefix_len);
+        prot_var_str = prot_var_str.substr(common_prot_prefix_len);
+
+        if(prot_loc->IsPnt()) {
+            prot_loc->SetPnt().SetPoint() += common_prot_prefix_len;
+        } else if(prot_loc->IsInt()) {
+            prot_loc->SetInt().SetFrom() += common_prot_prefix_len;
+            prot_loc->SetInt().SetTo() = max(prot_loc->GetInt().GetTo(), prot_loc->GetInt().GetFrom());
+            prot_loc = sequence::Seq_loc_Merge(*prot_loc, 0, NULL); //to convert single-pos int to point, as appropriate
+        }
+        codons_loc = prot2nuc_mapper->Map(*prot_loc); 
+        codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL));
+
+        prot_ref_str.resize(max(1, num_ref_codons - common_prot_prefix_len));
+
+        //Keep the frst AA in case of frameshifts
+        //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  NP_000483.3:p.Lys1177delfs 
+        prot_var_str.resize(max(frameshift_phase == 0 ? 0 : 1, num_var_codons - common_prot_prefix_len));
+
     }
 
 
-    string prot_ref_str = Translate(p->GetSeq().GetSeq_data());
-    string prot_delta_str = Translate(extended_variant_codons_literal.GetSeq_data());
+    if(verbose)  NcbiCerr << "reference codons: " << num_ref_codons << "; variant codons: " << num_var_codons << "; common prefix: " << common_prot_prefix_len << "\n";
 
-    
 
+    //if(verbose) NcbiCerr << "prot_ref  : " << prot_ref_str << "\n" << "prot_delta: " << prot_var_str << "\ntruncated prefix: " << common_prot_prefix_len << "\n Adjusted codons loc: " << MSerial_AsnText << *codons_loc;
 
     //Constructing protein-variation
 
@@ -2000,9 +2054,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
   
     //calculate properties 
     {{
-        if(frameshift_phase == 0 && prot_ref_str.size() == prot_delta_str.size()) { 
+        if(frameshift_phase == 0 && prot_ref_str.size() == prot_var_str.size()) { 
             //VAR-267 - calculate missense/synonymous/stop-gain/loss for non-frameshifting and non-length-changing cases only
-            CVariantProperties::TEffect prop = CalcEffectForProt(prot_ref_str, prot_delta_str);
+            CVariantProperties::TEffect prop = CalcEffectForProt(prot_ref_str, prot_var_str);
             if(prop != 0) {
                 prot_v->SetVariant_prop().SetEffect(prop);
             }
@@ -2010,12 +2064,12 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
         TSOTerms so_terms = CalcSOTermsForProt(nuc_delta_len,
                                                prot_ref_str,
-                                               prot_delta_str);
+                                               prot_var_str);
         copy(so_terms.begin(), so_terms.end(), back_inserter(prot_v->SetSo_terms()));
     }}
 
 
-    prot_v->SetData().SetInstance().SetType(CalcInstTypeForAA(prot_ref_str, prot_delta_str));
+    prot_v->SetData().SetInstance().SetType(CalcInstTypeForAA(prot_ref_str, prot_var_str));
 
 
 
@@ -2023,19 +2077,21 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     CRef<CDelta_item> di(new CDelta_item);
     prot_v->SetData().SetInstance().SetDelta().push_back(di);
 
-    if(prot_delta_str.size() > 0) {
+    if(prot_var_str.size() > 0) {
 
-#if 0
-        di->SetSeq().SetLiteral().SetSeq_data().SetNcbieaa().Set(prot_delta_str);
-        di->SetSeq().SetLiteral().SetLength(prot_delta_str.size());
-        prot_v->SetData().SetInstance().SetDelta().push_back(di);
-#else
         //Use NA alphabet instead of AA, as the dbSNP requested original codons.
-        //The user can always translate this to AAs.
-        di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(variant_codons_str);
-        di->SetSeq().SetLiteral().SetLength(variant_codons_str.size());
-#endif
-
+        //The downstream process can always translate this to AAs.
+        //
+        //Note, however, that we cannot always use the original variant codons sequence, because
+        //the location may have been adjusted downstream (see comments at TruncateCommonPrefixAndSuffix).
+        //So we'll have to get this from nuc_var_str.
+        if(false && common_prot_prefix_len == 0) {
+            di->SetSeq().Assign(v->GetData().GetInstance().GetDelta().front()->GetSeq());
+        } else {
+            string adjusted_codons_str = nuc_var_str.substr(common_prot_prefix_len * 3, prot_var_str.size() * 3);
+            di->SetSeq().SetLiteral().SetLength(adjusted_codons_str.size());
+            di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set() = adjusted_codons_str;
+        }
     } else {
         di->SetSeq().SetThis();
         di->SetAction(CDelta_item::eAction_del_at);
