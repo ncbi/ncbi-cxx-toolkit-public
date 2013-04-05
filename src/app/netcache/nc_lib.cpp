@@ -34,7 +34,14 @@
 // Additional sources to avoid linking with related libraries and to force
 // everybody to use CTaskServer's infrastructure of threads, diagnostics and
 // application-related stuff
+
+// define dummy CThread::GetSelf() -
+//        it is mentioned in random_gen.cpp, but not actually used in netcache
+namespace CThread {
+static unsigned int GetSelf() {return 1;}
+};
 #include "../../util/random_gen.cpp"
+
 #include "../../util/checksum.cpp"
 #include "../../util/md5.cpp"
 #include "../../connect/services/netservice_protocol_parser.cpp"
