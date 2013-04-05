@@ -48,7 +48,7 @@ Variation ::= {
             placements {
               {
                 loc int {
-                  from 2803,
+                  from 2804,
                   to 2805,
                   strand plus,
                   id other {
@@ -58,13 +58,13 @@ Variation ::= {
                 },
                 mol protein,
                 seq {
-                  length 3,
-                  seq-data ncbieaa "FKI"
+                  length 2,
+                  seq-data ncbieaa "KI"
                 }
               },
               {
                 loc int {
-                  from 8804,
+                  from 8807,
                   to 8812,
                   strand plus,
                   id other {
@@ -75,19 +75,17 @@ Variation ::= {
                 mol cdna,
                 frame 2,
                 seq {
-                  length 9,
-                  seq-data iupacna "TTTAAAATC"
+                  length 6,
+                  seq-data iupacna "AAAATC"
                 }
               }
             },
             data instance {
-              type prot-other,
+              type del,
               delta {
                 {
-                  seq literal {
-                    length 3,
-                    seq-data iupacna "TTC"
-                  }
+                  seq this NULL,
+                  action del-at
                 }
               }
             },
