@@ -92,6 +92,8 @@ bool CLinkage_evidence::GetLinkageEvidence(
             new_evid->SetType( eType_strobe );
         } else if( *evid_iter == "unspecified" ) {
             new_evid->SetType( eType_unspecified );
+        } else if( *evid_iter == "pcr" ) {
+            new_evid->SetType( eType_pcr );
         } else {
             // we can detect the error below
             break;
@@ -149,6 +151,9 @@ bool CLinkage_evidence::VecToString(
                     break;
                 case eType_unspecified:
                     evid_str = "unspecified";
+                    break;
+                case eType_pcr:
+                    evid_str = "pcr";
                     break;
                 default:
                     break;
