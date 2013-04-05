@@ -104,6 +104,7 @@ static int s_LastReopenTime = 0;
 static bool s_NeedFatalHalt = false;
 static bool s_FileNameInitialized = false;
 static bool s_ThreadsStarted = false;
+static bool s_DiskSpaceAlert = false;
 static CFutex s_CntHaltedThreads;
 static CFutex s_Halt;
 
@@ -112,6 +113,11 @@ extern string s_AppBaseName;
 extern SSrvThread** s_Threads;
 
 
+
+void Logging_DiskSpaceAlert(void)
+{
+    s_DiskSpaceAlert = true;
+}
 
 void
 SaveAppCmdLine(const string& cmd_line)
@@ -154,6 +160,10 @@ static inline void
 s_OpenLogFile(void)
 {
 #ifdef NCBI_OS_LINUX
+    if (s_DiskSpaceAlert) {
+        s_DiskSpaceAlert = false;
+        unlink(s_FileName.c_str());
+    }
     s_LogFd = open(s_FileName.c_str(), O_WRONLY | O_APPEND | O_CREAT,
                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 #endif

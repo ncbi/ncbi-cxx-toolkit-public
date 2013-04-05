@@ -41,6 +41,7 @@
 #include "nc_storage_blob.hpp"
 #include "sync_log.hpp"
 #include "nc_stat.hpp"
+#include "logging.hpp"
 
 
 #ifdef NCBI_OS_LINUX
@@ -1848,6 +1849,9 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
         cache->lock.Lock();
         Uint8 cnt_blobs = cache->key_map.size();
         void* big_block = malloc(size_t(cnt_blobs * sizeof(SNCTempBlobInfo)));
+        if (!big_block) {
+            return;
+        }
         SNCTempBlobInfo* info_ptr = (SNCTempBlobInfo*)big_block;
 
         ITERATE(TKeyMap, it, cache->key_map) {
@@ -2567,6 +2571,7 @@ CNCBlobStorage::CheckDiskSpace(void)
                  << "Current db size is " << g_ToSizeStr(cur_db_size)
                  << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
         s_IsStopWrite = eStopWarning;
+        Logging_DiskSpaceAlert();
     }
 
     if (s_IsStopWrite == eStopWarning) {

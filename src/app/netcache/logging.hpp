@@ -45,6 +45,7 @@ void StartThreadLogging(SSrvThread* thr);
 void StopThreadLogging(SSrvThread* thr);
 void ReleaseThreadLogging(SSrvThread* thr);
 void CheckLoggingFlush(SSrvThread* thr);
+void Logging_DiskSpaceAlert(void);
 
 
 END_NCBI_SCOPE

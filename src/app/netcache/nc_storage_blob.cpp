@@ -217,7 +217,9 @@ s_AllocWriteBackMem(Uint4 mem_size, CSrvTransConsumer* consumer)
         ||  CTaskServer::IsInShutdown())
     {
         mem = (char*)malloc(mem_size);
-        s_AddCurrentMem(mem_size);
+        if (mem) {
+            s_AddCurrentMem(mem_size);
+        }
     }
     else {
         s_ConsListLock.Lock();
