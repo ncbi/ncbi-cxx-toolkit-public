@@ -365,7 +365,7 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
     } else
         status = eIO_NotSupported;
 
-    x_error = x_GnuTlsStatusToError(status,  !sock->r_tv_set  ||
+    x_error = x_GnuTlsStatusToError(status, !sock->r_tv_set  ||
                                     (sock->r_tv.tv_sec | sock->r_tv.tv_usec)
                                     ? 1 : 0);
     if (x_error)

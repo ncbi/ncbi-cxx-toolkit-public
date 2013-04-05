@@ -630,9 +630,8 @@ static EIO_Status s_CONN_Write
             conn->w_pos += *n_written;
             conn->flags &= ~fCONN_Flush;
             break;
-        } else if (!size)
-            break;
-        if (status != eIO_Timeout)
+        }
+        if (!size  ||  status != eIO_Timeout)
             break;
         if ((status = x_Callback(conn, eCONN_OnTimeout)) != eIO_Success)
             break;
@@ -831,9 +830,8 @@ static EIO_Status s_CONN_Read
                 status = eIO_Closed;
             }
             break;
-        } else if (!size  ||  *n_read)
-            break;
-        if (status != eIO_Timeout)
+        }
+        if (!size  ||  *n_read  ||  status != eIO_Timeout)
             break;
         if ((status = x_Callback(conn, eCONN_OnTimeout)) != eIO_Success)
             break;
