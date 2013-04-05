@@ -54,12 +54,12 @@ class limited_size_map
 public:
     typedef Key key_type;
     typedef Value mapped_type;
-    typedef limited_size_map<Key, Value, Less> TThisMap;
     typedef pair<const key_type, mapped_type> value_type;
 
 protected:
     struct SNode;
     struct SLess;
+    typedef Less TLess;
     typedef set<SNode, SLess> TMap;
     typedef typename TMap::iterator TMapIterator;
     typedef typename TMap::const_iterator TMapConstIterator;
@@ -81,11 +81,11 @@ protected:
         TRemoveListIterator m_RemoveListIter;
     };
     struct SLess {
-        Less m_KeyComp;
+        TLess m_KeyComp;
         SLess()
             {
             }
-        SLess(const Less& key_comp)
+        SLess(const TLess& key_comp)
             : m_KeyComp(key_comp)
             {
             }
@@ -99,7 +99,7 @@ public:
     class iterator {
     protected:
         TMapIterator m_Iter;
-	friend class limited_size_map<Key, Value, Less>;
+        friend class limited_size_map<key_type, mapped_type, TLess>;
     public:
         iterator() {}
         explicit iterator(TMapIterator iter) : m_Iter(iter) {}
@@ -133,7 +133,7 @@ public:
     class const_iterator {
     protected:
         TMapConstIterator m_Iter;
-	friend class limited_size_map<Key, Value, Less>;
+        friend class limited_size_map<key_type, mapped_type, TLess>;
     public:
         const_iterator() {}
         explicit const_iterator(TMapConstIterator iter) : m_Iter(iter) {}
