@@ -39,6 +39,8 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistl.hpp>
 
+#include <stddef.h>
+
 BEGIN_NCBI_SCOPE
 
 
