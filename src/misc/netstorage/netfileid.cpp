@@ -198,8 +198,10 @@ CNetFileID::CNetFileID(const string& packed_id) :
         m_NetICacheClient = CNetICacheClient(nc_service_name,
                 cache_name, kEmptyStr);
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (m_Fields & fNFID_AllowXSiteConn)
             m_NetICacheClient.GetService().AllowXSiteConnections();
+#endif
     }
 
     // 6. If this file is cacheable, load the size of cache chunks.
@@ -238,10 +240,12 @@ void CNetFileID::SetNetICacheClient(CNetICacheClient::TInstance icache_client)
 
         CNetService service(m_NetICacheClient.GetService());
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (service.IsUsingXSiteProxy())
             SetFieldFlags(fNFID_AllowXSiteConn);
         else
             ClearFieldFlags(fNFID_AllowXSiteConn);
+#endif
 
         CNetServer icache_server(service.Iterate().GetServer());
 
