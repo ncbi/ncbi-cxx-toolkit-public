@@ -45,8 +45,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd()
     case OPTION_N(0) + OPTION_N(1):
         m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
                 m_Opts.cache_name, m_Opts.auth);
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (IsOptionExplicitlySet(eAllowXSiteConn))
             m_NetICacheClient.GetService().AllowXSiteConnections();
+#endif
         break;
 
     case OPTION_N(0):
