@@ -2,10 +2,12 @@
 
 DLL = gui_widgets
 
-HOSTED_LIBS    = w_wx       \
-                 w_gl       \
-                 w_data     \
-				 w_edit
+HOSTED_LIBS = \
+	w_wx \
+	w_gl \
+	w_data \
+	w_aln_score \
+	w_edit \
 
 DEPENDENCIES   = gui_config gui_utils ncbi_seqext ncbi_image ncbi_core ncbi_general
 
