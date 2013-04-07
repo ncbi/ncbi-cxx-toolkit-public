@@ -103,7 +103,7 @@ static size_t s_LoadString(string& dst, unsigned char* src, size_t& src_len)
         ++ptr;
     }
 
-    dst.assign(src, ptr);
+    dst.assign((const char*)src, len);
     src_len -= len;
     return len;
 }
