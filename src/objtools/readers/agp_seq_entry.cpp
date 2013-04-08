@@ -41,16 +41,26 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+
+#include <util/static_map.hpp>
 
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-CAgpToSeqEntry::CAgpToSeqEntry( void ) 
-    : CAgpReader( eAgpVersion_auto )
+CAgpToSeqEntry::CAgpToSeqEntry( 
+    TFlags fFlags, 
+    EAgpVersion agp_version,
+    CAgpErr* arg, 
+    bool ownAgpErr) 
+    : CAgpReader( arg, ownAgpErr, agp_version ),
+      m_fFlags(fFlags)
 { }
 
 // static
@@ -97,6 +107,11 @@ void CAgpToSeqEntry::OnGapOrComponent(void)
         delta_seq->SetLiteral().SetLength(m_this_row->gap_length);
         if( m_this_row->component_type == 'U' ) {
             delta_seq->SetLiteral().SetFuzz().SetLim();
+        }
+        if( m_fFlags & fSetSeqGap ) {
+            CSeq_data::TGap & gap_info =
+                delta_seq->SetLiteral().SetSeq_data().SetGap();
+            x_SetSeqGap(gap_info);
         }
         seq_inst->SetLength() += m_this_row->gap_length;
     } else {
@@ -148,6 +163,124 @@ void CAgpToSeqEntry::x_FinishedBioseq(void)
 
         m_bioseq.Reset();
     }
+}
+
+CRef<CSeq_id> 
+CAgpToSeqEntry::x_GetSeqIdFromStr( const std::string & str )
+{
+    if( m_fFlags & fForceLocalId ) {
+        CRef<CSeq_id> seq_id( new CSeq_id );
+        seq_id->SetLocal().SetStr( str );
+        return seq_id;
+    } else {
+        return s_DefaultSeqIdFromStr(str);
+    }
+}
+
+void CAgpToSeqEntry::x_SetSeqGap( CSeq_gap & out_gap_info )
+{
+    // convert the CAgpRow types to NCBI Objects types
+
+    // The parent class should have verified that the gap-type,
+    // linkage, linkage-evidence combos are all consistent
+
+    // gap type
+    {{
+        // conversion table
+        typedef SStaticPair<CAgpRow::EGap, CSeq_gap::EType> TGapTrans;
+        static const TGapTrans sc_GapTrans[] = {
+            { CAgpRow::eGapClone, CSeq_gap::eType_clone },
+            { CAgpRow::eGapFragment, CSeq_gap::eType_fragment },
+            { CAgpRow::eGapRepeat, CSeq_gap::eType_repeat },
+            { CAgpRow::eGapScaffold, CSeq_gap::eType_scaffold },
+            { CAgpRow::eGapContig, CSeq_gap::eType_contig },
+            { CAgpRow::eGapCentromere, CSeq_gap::eType_centromere },
+            { CAgpRow::eGapShort_arm, CSeq_gap::eType_short_arm },
+            { CAgpRow::eGapHeterochromatin, CSeq_gap::eType_heterochromatin },
+            { CAgpRow::eGapTelomere, CSeq_gap::eType_telomere }
+        };
+        typedef CStaticPairArrayMap<CAgpRow::EGap, CSeq_gap::EType> TGapMap;
+        DEFINE_STATIC_ARRAY_MAP(TGapMap, sc_GapMap, sc_GapTrans);
+
+        TGapMap::const_iterator find_iter =
+            sc_GapMap.find(m_this_row->gap_type);
+
+        if( find_iter == sc_GapMap.end() ) {
+            NCBI_USER_THROW_FMT("invalid gap type: "
+                << static_cast<int>(m_this_row->gap_type) );
+        } else {
+            out_gap_info.SetType( find_iter->second );
+        }
+    }}
+
+    // gap linkage
+    {{
+        out_gap_info.SetLinkage( m_this_row->linkage ? 
+            CSeq_gap::eLinkage_linked : 
+            CSeq_gap::eLinkage_unlinked );
+    }}
+
+    // gap linkage-evidence
+    {{
+        if( m_this_row->linkage_evidence_flags > 0 )
+        {
+            // conversion table
+            typedef SStaticPair<CAgpRow::ELinkageEvidence, CLinkage_evidence::EType> TEvidTrans;
+            static const TEvidTrans sc_EvidTrans[] = {
+                { CAgpRow::fLinkageEvidence_align_genus, CLinkage_evidence::eType_align_genus },
+                { CAgpRow::fLinkageEvidence_align_xgenus, CLinkage_evidence::eType_align_xgenus },
+                { CAgpRow::fLinkageEvidence_align_trnscpt, CLinkage_evidence::eType_align_trnscpt },
+                { CAgpRow::fLinkageEvidence_within_clone, CLinkage_evidence::eType_within_clone },
+                { CAgpRow::fLinkageEvidence_clone_contig, CLinkage_evidence::eType_clone_contig },
+                { CAgpRow::fLinkageEvidence_map, CLinkage_evidence::eType_map },
+                { CAgpRow::fLinkageEvidence_strobe, CLinkage_evidence::eType_strobe },
+                { CAgpRow::fLinkageEvidence_pcr, CLinkage_evidence::eType_pcr }
+            };
+            typedef CStaticPairArrayMap<CAgpRow::ELinkageEvidence, CLinkage_evidence::EType> TEvidMap;
+            DEFINE_STATIC_ARRAY_MAP(TEvidMap, sc_EvidMap, sc_EvidTrans);
+
+            CSeq_gap::TLinkage_evidence & link_evid = 
+                out_gap_info.SetLinkage_evidence();
+
+            _ASSERT( ! m_this_row->linkage_evidences.empty() );
+            ITERATE( CAgpRow::TLinkageEvidenceVec, evid_it,
+                m_this_row->linkage_evidences )
+            {
+                const CAgpRow::ELinkageEvidence eLinkageEvidence =
+                    *evid_it;
+                TEvidMap::const_iterator find_iter =
+                    sc_EvidMap.find(eLinkageEvidence);
+                if( find_iter == sc_EvidMap.end() ) {
+                    NCBI_USER_THROW_FMT("Unknown linkage evidence: "
+                        << static_cast<int>(eLinkageEvidence) );
+                }
+
+                CRef<CLinkage_evidence> pEvid( new CLinkage_evidence );
+                pEvid->SetType( find_iter->second );
+                link_evid.push_back( pEvid );
+            }
+        } else {
+            // check special values
+            _ASSERT( m_this_row->linkage_evidences.empty() );
+            switch( m_this_row->linkage_evidence_flags ) {
+            case CAgpRow::fLinkageEvidence_unspecified:
+                {
+                    CRef<CLinkage_evidence> pEvid( new CLinkage_evidence );
+                    pEvid->SetType( CLinkage_evidence::eType_unspecified );
+                    out_gap_info.SetLinkage_evidence().push_back( pEvid );
+                }
+                break;
+            case CAgpRow::fLinkageEvidence_na:
+                // no problem, just ignore
+                break;
+            default:
+                NCBI_USER_THROW_FMT(
+                    "Unknown or unexpected linkage_evidence_flags: " 
+                    << m_this_row->linkage_evidence_flags);
+                break;
+            }
+        }
+    }}
 }
 
 END_NCBI_SCOPE

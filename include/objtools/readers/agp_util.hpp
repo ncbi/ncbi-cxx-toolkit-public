@@ -64,7 +64,7 @@ class CAgpReader; // full definition below
 /// and the values converted to int, char, bool types (member variables).
 /// Detects formatting errors within a single line, checks that
 /// object range length equals gap length or component range length.
-class NCBI_XOBJREAD_EXPORT CAgpRow
+class NCBI_XOBJREAD_EXPORT CAgpRow : public CObject
 {
 public:
     // reader argument is used for notification of version auto-detection via SetVersion()
@@ -155,26 +155,35 @@ public:
 
         eGapCount,
         eGapYes_count=eGapScaffold+1
-    } gap_type;
+    };
+    EGap gap_type;
     bool linkage;
 
     enum ELinkageEvidence {
-        fLinkageEvidence_paired_ends  = 1,
-        fLinkageEvidence_align_genus  = 2,
-        fLinkageEvidence_align_xgenus = 4,
-        fLinkageEvidence_align_trnscpt= 8,
-        fLinkageEvidence_within_clone =16,
-        fLinkageEvidence_clone_contig =32,
-        fLinkageEvidence_map          =64,
-        fLinkageEvidence_strobe       =128,
-        fLinkageEvidence_unspecified  =0,
+        fLinkageEvidence_paired_ends  = (1 << 0),
+        fLinkageEvidence_align_genus  = (1 << 1),
+        fLinkageEvidence_align_xgenus = (1 << 2),
+        fLinkageEvidence_align_trnscpt= (1 << 3),
+        fLinkageEvidence_within_clone = (1 << 4),
+        fLinkageEvidence_clone_contig = (1 << 5),
+        fLinkageEvidence_map          = (1 << 6),
+        fLinkageEvidence_strobe       = (1 << 7),
+        fLinkageEvidence_pcr          = (1 << 8),
+        // update fLinkageEvidence_HIGHEST_BIT_MASK if more added
+        fLinkageEvidence_HIGHEST_BIT_MASK = fLinkageEvidence_pcr,
 
-        //fLinkageEvidence_COUNT,
+        fLinkageEvidence_unspecified  = 0,
         fLinkageEvidence_INVALID = -1,
         fLinkageEvidence_na = -2
     };
-    vector<ELinkageEvidence> linkage_evidences;
-    int linkage_evidence_flags; // a bit map
+    /// Might have duplicates, and is empty on error or
+    /// if there are no actual linkage evidences (e.g. "na" or "unspecified")
+    /// It does NOT hold unusual values like fLinkageEvidence_INVALID.
+    typedef vector<ELinkageEvidence> TLinkageEvidenceVec;
+    TLinkageEvidenceVec linkage_evidences;
+    /// a bit map which holds summary of info in linkage_evidences.
+    /// In particular, this is useful for weeding out duplicates
+    int linkage_evidence_flags;
 
     static bool IsGap(char c)
     {
@@ -251,9 +260,15 @@ protected:
 
 private:
     EAgpVersion m_agp_version;
+
+    // raw pointer because we *never* own this.
     CAgpReader* m_reader;
-    CAgpErr* m_AgpErr;
+
+    // m_AgpErr will be released without destruction
+    // if m_OwnAgpErr is false
+    CRef<CAgpErr> m_AgpErr;
     bool m_OwnAgpErr;
+
     // for initializing gap_type_codes:
     DECLARE_CLASS_STATIC_FAST_MUTEX(init_mutex);
     static void StaticInit();
@@ -327,8 +342,8 @@ protected:
                       //     if(need to stop && m_error_code==0) m_error_code=-1;
                       // }
 
-    CAgpRow *m_prev_row;
-    CAgpRow *m_this_row;
+    CRef<CAgpRow> m_prev_row;
+    CRef<CAgpRow> m_this_row;
     int m_line_num, m_prev_line_num;
     string m_line;  // for valid gap/component lines, corresponds to this_row
     // To save time, we do not keep the line corresponding to m_prev_row.
@@ -383,8 +398,12 @@ protected:
     }
 
 private:
-    CAgpErr* m_AgpErr; // Error handler
+
+    // if m_OwnAgpErr is false, release m_AgpErr
+    // without destroying it
+    CRef<CAgpErr> m_AgpErr; // Error handler
     bool m_OwnAgpErr;
+
     void Init();
 
     void x_CheckPragmaComment(void);
@@ -399,7 +418,7 @@ public:
 };
 
 
-class NCBI_XOBJREAD_EXPORT CAgpErr
+class NCBI_XOBJREAD_EXPORT CAgpErr : public CObject
 {
 public:
     virtual ~CAgpErr() {}
@@ -541,10 +560,16 @@ protected:
 class NCBI_XOBJREAD_EXPORT CAgpErrEx : public CAgpErr
 {
 public:
-    // ???
+
     enum {
-        CODE_First=1,
-        CODE_Extended=61, // reserve space for some user errors (to count, or to skip)
+        /// The number of the first CAgpErr error enum
+        CODE_First = E_First,
+        /// Reserve space for some user errors (to count, or to skip).
+        /// The strange value of this enum is meant to give a separation
+        /// of 10 or 20 between the last built-in error 
+        /// (currently G_Last) and the first user errors.
+        CODE_Extended = ((((G_Last / 10 ) + 2) * 10) + 1),
+        /// This is one past the last code allowed, after built-in and user errors.
         CODE_Last=CODE_Extended+20
     };
 

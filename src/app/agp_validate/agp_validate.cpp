@@ -63,7 +63,7 @@ public:
     comp_or_gap_printed=false;
   }
 
-  virtual void SaveRow(const string& s, CAgpRow* row, TRangeColl* runs_of_Ns);
+  virtual void SaveRow(const string& s, CRef<CAgpRow> row, TRangeColl* runs_of_Ns);
 
   virtual ~CAgpCompSpanSplitter() {}
 };
@@ -771,7 +771,7 @@ LengthRedefinedFa:
   exit(1);
 }
 
-void CAgpCompSpanSplitter::SaveRow(const string& s, CAgpRow* row, TRangeColl* runs_of_Ns)
+void CAgpCompSpanSplitter::SaveRow(const string& s, CRef<CAgpRow> row, TRangeColl* runs_of_Ns)
 {
   if( row ) {
     comp_or_gap_printed=true;

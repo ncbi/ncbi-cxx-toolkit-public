@@ -147,7 +147,7 @@ public:
 class NCBI_XOBJREAD_EXPORT IAgpRowOutput
 {
 public:
-  virtual void SaveRow(const string& s, CAgpRow* row, TRangeColl* runs_of_Ns)=0;
+  virtual void SaveRow(const string& s, CRef<CAgpRow> row, TRangeColl* runs_of_Ns)=0;
   virtual ~IAgpRowOutput() {}
 };
 

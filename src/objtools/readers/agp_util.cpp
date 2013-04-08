@@ -252,7 +252,7 @@ CAgpRow::CAgpRow(EAgpVersion agp_version, CAgpReader* reader) :
     }
 
     m_OwnAgpErr=true;
-    m_AgpErr = new CAgpErr;
+    m_AgpErr.Reset( new CAgpErr );
 }
 
 CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version, CAgpReader* reader) :
@@ -269,7 +269,12 @@ CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version, CAgpReader* reader) :
 
 CAgpRow::~CAgpRow()
 {
-    if(m_OwnAgpErr) delete m_AgpErr;
+    // if we don't own the m_AgpErr,
+    // we want to release it from the CRef without
+    // destroying it.
+    if( ! m_OwnAgpErr ) {
+        m_AgpErr.ReleaseOrNull();
+    }
 }
 
 void CAgpRow::StaticInit()
@@ -537,6 +542,7 @@ int CAgpRow::str_to_le(const string& str)
     if( str == "map"           ) return fLinkageEvidence_map;
     if( str == "strobe"        ) return fLinkageEvidence_strobe;
     if( str == "unspecified"   ) return fLinkageEvidence_unspecified;
+    if( str == "pcr"           ) return fLinkageEvidence_pcr;
     //if( str == "na"            ) return fLinkageEvidence_na;
     return fLinkageEvidence_INVALID;
 }
@@ -544,6 +550,8 @@ int CAgpRow::str_to_le(const string& str)
 int CAgpRow::ParseGapCols(bool log_errors)
 {
     linkage_evidences.clear();
+    linkage_evidence_flags = 0;
+
     gap_length = s2i( GetGapLength() );
     if(gap_length<=0) {
         if(log_errors) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "gap_length (column 6)" );
@@ -618,7 +626,6 @@ int CAgpRow::ParseGapCols(bool log_errors)
     }
 
     // linkage_evidence
-    linkage_evidence_flags=0;
     if( m_agp_version == eAgpVersion_2_0 ) {
         if( GetLinkageEvidence().size()==0 ) {
             if(log_errors) m_AgpErr->Msg(CAgpErr::W_MissingLinkage);
@@ -634,7 +641,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
         }
         else {
             if(GetLinkageEvidence() == "na") {
-                linkage_evidence_flags=fLinkageEvidence_INVALID;
+                linkage_evidence_flags = fLinkageEvidence_INVALID;
                 if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue,
                     "linkage_evidence (column 9): 'na' can only be used for gaps with linkage 'no'");
                 return CAgpErr::E_InvalidValue;
@@ -646,6 +653,7 @@ int CAgpRow::ParseGapCols(bool log_errors)
                 ITERATE( vector<string>, evid_iter, raw_linkage_evidences ) {
                     int le_flag = str_to_le(*evid_iter);
                     if( le_flag<0 ) {
+                        linkage_evidences.clear();
                         linkage_evidence_flags = fLinkageEvidence_INVALID;
                         if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue, "linkage_evidence (column 9): " + *evid_iter);
                         return CAgpErr::E_InvalidValue;
@@ -660,6 +668,8 @@ int CAgpRow::ParseGapCols(bool log_errors)
                     }
                 }
                 if(has_unspecified && raw_linkage_evidences.size()>1) {
+                    linkage_evidences.clear();
+                    linkage_evidence_flags = fLinkageEvidence_INVALID;
                     if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidValue,
                         "linkage_evidence (column 9) -- \"unspecified\" cannot be combined with other terms");
                     return CAgpErr::E_InvalidValue;
@@ -746,8 +756,9 @@ const char* CAgpRow::le_str(CAgpRow::ELinkageEvidence le)
         case fLinkageEvidence_map          : return "map";
         case fLinkageEvidence_strobe       : return "strobe";
         case fLinkageEvidence_unspecified  : return "unspecified";
+        case fLinkageEvidence_pcr          : return "pcr";
         case fLinkageEvidence_na           : return "na";
-        case fLinkageEvidence_INVALID      : return "INVALED_LINKAGE_EVIDENCE";
+        case fLinkageEvidence_INVALID      : return "INVALID_LINKAGE_EVIDENCE";
         default:;
     }
     //return "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" +  NStr::IntToString( le );
@@ -758,7 +769,7 @@ string CAgpRow::LinkageEvidenceFlagsToString(int le)
 {
     string res = le_str( (ELinkageEvidence)le );
     if(res.size()) return res;
-    for(unsigned mask=1; mask<=fLinkageEvidence_strobe; mask <<= 1 ) {
+    for(unsigned mask=1; mask<=fLinkageEvidence_HIGHEST_BIT_MASK; mask <<= 1 ) {
         if(le&mask) {
             if(res.size()) res += ";";
             res += le_str( (ELinkageEvidence)mask );
@@ -771,7 +782,7 @@ string CAgpRow::LinkageEvidencesToString(void)
 {
     string result;
 
-    ITERATE( vector<ELinkageEvidence>, evid_iter, linkage_evidences ) {
+    ITERATE( TLinkageEvidenceVec, evid_iter, linkage_evidences ) {
         if( ! result.empty() ) {
             result += ';';
         }
@@ -840,7 +851,7 @@ CAgpReader::CAgpReader(EAgpVersion agp_version) :
     m_agp_version(agp_version)
 {
     m_OwnAgpErr=true; // delete in destructor
-    m_AgpErr=new CAgpErr();
+    m_AgpErr=new CAgpErr;
     Init();
 }
 
@@ -848,8 +859,14 @@ CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr,
                        EAgpVersion agp_version ) :
 m_agp_version(agp_version)
 {
-    m_OwnAgpErr=ownAgpErr; // delete in destructor (default=false)
-    m_AgpErr=arg;
+    if( arg ) {
+        m_OwnAgpErr=ownAgpErr; // delete in destructor (default=false)
+        m_AgpErr=arg;
+    } else {
+        _ASSERT( ! ownAgpErr );
+        m_OwnAgpErr=true; // delete in destructor
+        m_AgpErr=new CAgpErr;
+    }
     Init();
 }
 
@@ -863,15 +880,15 @@ void CAgpReader::Init()
 
 CAgpReader::~CAgpReader()
 {
-    delete m_prev_row;
-    delete m_this_row;
-    if(m_OwnAgpErr) delete m_AgpErr;
+    if( ! m_OwnAgpErr ) {
+        m_AgpErr.ReleaseOrNull();
+    }
 }
 
 bool CAgpReader::ProcessThisRow()
 {
-    CAgpRow* this_row=m_this_row;;
-    CAgpRow* prev_row=m_prev_row;
+    CRef<CAgpRow> this_row = m_this_row;
+    CRef<CAgpRow> prev_row = m_prev_row;
 
     m_new_obj=prev_row->GetObject() != this_row->GetObject();
     if(m_new_obj) {
@@ -1028,7 +1045,7 @@ int CAgpReader::Finalize()
     if(!m_at_beg) {
         m_new_obj=true; // The only meaning here: scaffold ended because object ended
 
-        CAgpRow* prev_row=m_prev_row;
+        CRef<CAgpRow> prev_row = m_prev_row;
         if( !m_prev_line_skipped ) {
             if(prev_row->is_gap && !prev_row->GapValidAtObjectEnd()) {
                 m_AgpErr->Msg(CAgpErr::W_GapObjEnd, prev_row->GetObject(), CAgpErr::fAtPrevLine);

@@ -52,7 +52,7 @@ const char* usage=
 "   the length of the component span or gap length.\n"
 " - Renumber the part numbers for each object.\n"
 " - Lowercase gap type and linkage.\n"
-" - Reorder linkage evidence terms: paired-ends;align_genus;align_xgenus;align_trnscpt;within_clone;clone_contig;map;strobe\n"
+" - Reorder linkage evidence terms: paired-ends;align_genus;align_xgenus;align_trnscpt;within_clone;clone_contig;map;strobe;pcr\n"
 " - Reformat white space to conform to the AGP format specification:\n"
 "   - add missing tabs at the ends of gap lines;\n"
 "   - drop blank lines;\n"

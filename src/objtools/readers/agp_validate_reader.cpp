@@ -137,7 +137,7 @@ void CAgpValidateReader::OnComment()
   // No other callbacks invoked for this line.
   m_CommentLineCount++;
 
-  if(m_row_output) m_row_output->SaveRow(m_line, NULL, NULL);
+  if(m_row_output) m_row_output->SaveRow(m_line, CRef<CAgpRow>(), NULL);
 }
 
 void CAgpValidateReader::OnGapOrComponent()
@@ -882,7 +882,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     // sort by count
     typedef multimap<int,int> TMultiMapIntInt;
     TMultiMapIntInt cnt2ln_ev;
-    int label_width=0;
+    size_t label_width=0;
     for(TMapIntInt::iterator it = m_ln_ev_flags2count.begin();  it != m_ln_ev_flags2count.end(); ++it) {
       cnt2ln_ev.insert(TMultiMapIntInt::value_type(it->second, it->first));
       string label = CAgpRow::LinkageEvidenceFlagsToString(it->first);
