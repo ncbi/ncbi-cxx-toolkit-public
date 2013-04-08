@@ -146,6 +146,22 @@ bool CSubSource::NeedsNoText(const TSubtype& subtype)
 }
 
 
+bool CSubSource::IsDiscouraged(const TSubtype subtype)
+{
+    if (subtype == eSubtype_frequency
+        || subtype == eSubtype_insertion_seq_name
+        || subtype == eSubtype_metagenomic
+        || subtype == eSubtype_phenotype
+        || subtype == eSubtype_plastid_name
+        || subtype == eSubtype_transposon_name
+        || subtype == eSubtype_whole_replicon) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 static const char* const sm_LegalMonths [] = {
   "Jan",
   "Feb",

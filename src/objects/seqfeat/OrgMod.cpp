@@ -96,6 +96,22 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
 }
 
 
+bool COrgMod::IsDiscouraged(const TSubtype subtype)
+{
+    if (subtype == eSubtype_dosage
+        || subtype == eSubtype_gb_acronym
+        || subtype == eSubtype_gb_anamorph
+        || subtype == eSubtype_gb_synonym
+        || subtype == eSubtype_old_lineage
+        || subtype == eSubtype_old_name
+        || subtype == eSubtype_metagenome_source) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id)
 {
 	if (NStr::IsBlank(str) || str.length() < 3) {

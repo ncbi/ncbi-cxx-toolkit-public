@@ -84,8 +84,11 @@ public:
     static string GetSubtypeName(CSubSource::TSubtype stype,
                                  EVocabulary vocabulary = eVocabulary_raw);
 
-	// identify whether subsource value should be blank
-	static bool NeedsNoText (const TSubtype& subtype);
+	  // identify whether subsource value should be blank
+	  static bool NeedsNoText (const TSubtype& subtype);
+
+	  // identify whether subsource value should be blank
+	  static bool IsDiscouraged (const TSubtype subtype);
 
 	// read collection date from string
     static CRef<CDate> DateFromCollectionDate (const string& str) THROWS((CException));
