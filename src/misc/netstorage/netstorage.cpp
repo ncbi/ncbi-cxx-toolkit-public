@@ -174,7 +174,7 @@ struct SNetFileImpl : public CObject, public IReaderWriter
     void DemandNetCache();
 
     const ENetFileLocation* GetPossibleFileLocations(); // For reading.
-    ENetFileLocation ChooseLocation(); // For writing.
+    void ChooseLocation(); // For writing.
 
     ERW_Result s_ReadFromNetCache(char* buf, size_t count, size_t* bytes_read);
 
@@ -267,18 +267,18 @@ const ENetFileLocation* SNetFileImpl::GetPossibleFileLocations()
     return s_NetCache;
 }
 
-ENetFileLocation SNetFileImpl::ChooseLocation()
+void SNetFileImpl::ChooseLocation()
 {
     TNetStorageFlags flags = m_FileID.GetStorageFlags();
 
     if (flags == 0)
-        return SetNetICacheClient() ? eNFL_NetCache : eNFL_FileTrack;
-
-    if (flags & fNST_Persistent)
-        return eNFL_FileTrack;
-
-    DemandNetCache();
-    return eNFL_NetCache;
+        m_CurrentLocation = SetNetICacheClient() ? eNFL_NetCache : eNFL_FileTrack;
+    else if (flags & fNST_Persistent)
+        m_CurrentLocation = eNFL_FileTrack;
+    else {
+        DemandNetCache();
+        m_CurrentLocation = eNFL_NetCache;
+    }
 }
 
 ERW_Result SNetFileImpl::s_ReadFromNetCache(char* buf,
@@ -418,7 +418,7 @@ ERW_Result SNetFileImpl::Write(const void* buf, size_t count,
     switch (m_IOStatus) {
     case eNFS_Closed:
         if (m_CurrentLocation == eNFL_Unknown)
-            m_CurrentLocation = ChooseLocation();
+            ChooseLocation();
 
         if (m_CurrentLocation == eNFL_NetCache) {
             m_NetCacheWriter.reset(m_NetICacheClient.GetNetCacheWriter(
@@ -591,22 +591,34 @@ CNetFile CNetStorage::Open(const string& file_id, TNetStorageFlags flags)
 
 string SNetStorageImpl::MoveFile(CNetFile orig_file, CNetFile new_file)
 {
+    new_file->ChooseLocation();
+
+    if (new_file->m_CurrentLocation == eNFL_NetCache &&
+            (new_file->m_FileID.GetFields() & fNFID_NetICache) == 0)
+        new_file->m_FileID.SetNetICacheClient(m_NetICacheClient);
+
     char buffer[RELOCATION_BUFFER_SIZE];
-    size_t bytes_read;
 
-    while (!orig_file.Eof()) {
-        bytes_read = orig_file.Read(buffer, sizeof(buffer));
-        new_file.Write(buffer, bytes_read);
+    // Use Read() to detect the current location of orig_file.
+    size_t bytes_read = orig_file.Read(buffer, sizeof(buffer));
+
+    if (orig_file->m_CurrentLocation != new_file->m_CurrentLocation) {
+        for (;;) {
+            new_file.Write(buffer, bytes_read);
+            if (orig_file.Eof())
+                break;
+            bytes_read = orig_file.Read(buffer, sizeof(buffer));
+        }
+
+        new_file.Close();
+        orig_file.Close();
+
+        if (orig_file->m_CurrentLocation == eNFL_NetCache)
+            orig_file->m_NetICacheClient.Remove(
+                    orig_file->m_FileID.GetUniqueKey(), 0, kEmptyStr);
+
+        // TODO Delete orig_file from FileTrack.
     }
-
-    new_file.Close();
-    orig_file.Close();
-
-    if (orig_file->m_CurrentLocation == eNFL_NetCache)
-        orig_file->m_NetICacheClient.Remove(
-                orig_file->m_FileID.GetUniqueKey(), 0, kEmptyStr);
-
-    // TODO Delete orig_file from FileTrack.
 
     return new_file->m_FileID.GetID();
 }
@@ -617,11 +629,6 @@ string CNetStorage::Relocate(const string& file_id, TNetStorageFlags flags)
         return file_id;
 
     CNetFile orig_file(new SNetFileImpl(m_Impl, file_id));
-
-    if ((orig_file->m_FileID.GetStorageFlags() & fNST_Movable) == 0) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "File \"" << file_id << "\" is not movable.");
-    }
 
     if (orig_file->m_FileID.GetStorageFlags() == flags)
         return file_id;

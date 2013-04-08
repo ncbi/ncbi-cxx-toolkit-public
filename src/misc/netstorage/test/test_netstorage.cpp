@@ -33,228 +33,104 @@
 
 #include <misc/netstorage/netstorage.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <corelib/test_boost.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
-
-///////////////////////////////////////////////////////////////////////
-
 static const char* s_AppName = "test_netstorage";
 
-/// Test application
-///
-/// @internal
-///
-class CNetStorageTestApp : public CNcbiApplication
+static const char* s_NetCacheService = "NC_UnitTest";
+
+static void s_ReadAndCompare(CNetFile file, const CTempString& contents)
 {
-public:
-    void Init();
-    int Run();
-};
+    char buffer[10];
+    const char* expected = contents.data();
+    size_t remaining_size = contents.length();
 
+    while (!file.Eof()) {
+        size_t bytes_read = file.Read(buffer, sizeof(buffer));
 
-void CNetStorageTestApp::Init()
-{
-    // Setup command line arguments and parameters
+        BOOST_CHECK_MESSAGE(bytes_read <= remaining_size,
+                "Got more data than expected");
+        BOOST_CHECK_MESSAGE(memcmp(buffer, expected, bytes_read) == 0,
+                "Read() returned corrupted data");
 
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+        expected += bytes_read;
+        remaining_size -= bytes_read;
+    }
 
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-            "CNetStorage test");
+    file.Close();
 
-    arg_desc->AddPositional("ic_service", "NetCache service.",
-            CArgDescriptions::eString);
-
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
+    BOOST_CHECK_MESSAGE(remaining_size == 0, "Got less data than expected");
 }
 
-int CNetStorageTestApp::Run()
+BOOST_AUTO_TEST_CASE(TestNetStorage)
 {
-    int error_level = 0;
+    CNetICacheClient icache_client(s_NetCacheService, s_AppName, s_AppName);
 
-    CArgs args = GetArgs();
-
-    CNetICacheClient icache_client(args["ic_service"].AsString(), s_AppName, s_AppName);
-
-    const char test_data[] = "The quick brown fox jumps over the lazy dog.\n";
-    const char test_data2[] = "More data.\n";
+    const string test_data("The quick brown fox jumps over the lazy dog.");
 
     CNetStorage netstorage(icache_client);
 
-    string file1_id;
+    string file_id;
 
     {{
-        CNetFile file1 = netstorage.Create();
+        // Create a file that should to go to NetCache.
+        CNetFile new_file = netstorage.Create(fNST_Fast | fNST_Movable);
 
-        file1.Write(test_data);
+        file_id = new_file.GetID();
 
-        file1.Close();
+        new_file.Write(test_data);
 
-        file1_id = file1.GetID();
+        // Now close the file and then read it entirely
+        // into a string.
+        new_file.Close();
 
         string data;
         data.reserve(10);
 
-        file1.Read(&data);
+        new_file.Read(&data);
 
-        if (data != test_data) {
-            ERR_POST("Read(string) is broken.");
-            return 1;
-        }
-    }}
-    printf("%s\n", file1_id.c_str());
-
-    /*{{
-        key = nc_client.PutData(NULL, 0, 120);
-        NcbiCout << key << NcbiEndl;
-        assert(!key.empty());
-
-        SleepMilliSec(700);
-
-
-        size_t bsize;
-        auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
-
-        assert(rdr.get() != NULL);
-
-        cout << bsize << endl;
-        assert(bsize == 0);
+        // Make sure the data is not corrupted.
+        BOOST_CHECK_MESSAGE(data == test_data, "Read(string*) is broken");
     }}
 
+    // Now read the whole file using the buffered version
+    // of Read(). Verify that the contents of each buffer
+    // match the original data.
+    CNetFile orig_file = netstorage.Open(file_id);
 
-    {{
-        CNetCacheAPI nc_client(service, s_AppName);
+    s_ReadAndCompare(orig_file, test_data);
 
-        key = nc_client.PutData(test_data, sizeof(test_data));
-        NcbiCout << key << NcbiEndl;
-        assert(!key.empty());
+    // Generate a "non-movable" file ID by calling Relocate()
+    // with the same storage preferences (so the file should not
+    // be actually relocated).
+    string fast_storage_file_id = netstorage.Relocate(file_id, fNST_Fast);
 
-        unsigned id = CNetCacheKey(key).GetId();
-        CNetCacheKey pk(key);
-        assert(pk.GetId() == id);
+    // Relocate the file to a persistent storage.
+    string persistent_id = netstorage.Relocate(file_id, fNST_Persistent);
 
-    }}
+    // Verify that the file has disappeared from the "fast" storage.
+    CNetFile fast_storage_file = netstorage.Open(fast_storage_file_id);
 
-    {{
-        CNetCacheAPI nc_client(service, s_AppName);
+    // Make sure the relocated file does not exists in the
+    // original storage anymore.
+    BOOST_CHECK_THROW(s_ReadAndCompare(orig_file, test_data),
+            CNetStorageException);
+    BOOST_CHECK_THROW(s_ReadAndCompare(fast_storage_file, test_data),
+            CNetStorageException);
 
-        char dataBuf[1024];
-        memset(dataBuf, 0xff, sizeof(dataBuf));
-
-        size_t blob_size;
-        IReader* reader = nc_client.GetData(key, &blob_size);
-        assert(reader);
-        assert(blob_size == sizeof(test_data));
-
-        size_t bytes_read = ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
-        delete reader;
-
-        assert(bytes_read == sizeof(test_data));
-
-        int res = memcmp(dataBuf, test_data, sizeof(test_data));
-        assert(res == 0);
-
-        reader = nc_client.GetPartReader(key,
-            sizeof(test_data) - sizeof("dog."), sizeof(dataBuf), &blob_size);
-
-        assert(blob_size == sizeof("dog."));
-
-        bytes_read = ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
-
-        assert(bytes_read == sizeof("dog."));
-
-        delete reader;
-
-        res = strcmp(dataBuf, "dog.");
-        assert(res == 0);
-    }}
-
-    {{
-        CNetCacheAPI nc_client(s_AppName);
-
-        char dataBuf[1024];
-        memset(dataBuf, 0xff, sizeof(dataBuf));
-
-        CNetCacheAPI::EReadResult rres =
-            nc_client.GetData(key, dataBuf, sizeof(dataBuf));
-        assert(rres == CNetCacheAPI::eReadComplete);
-
-        int res = strcmp(dataBuf, test_data);
-        assert(res == 0);
-
-        string str;
-
-        nc_client.ReadPart(key, sizeof("The ") - 1,
-            sizeof("The quick") - sizeof("The "), str);
-
-        assert(str == "quick");
-    }}
-
-    // update existing BLOB
-    {{
-        {
-        CNetCacheAPI nc_client(service, s_AppName);
-        nc_client.PutData(key, test_data2, sizeof(test_data2));
-        }
-        {
-        CNetCacheAPI nc_client(service, s_AppName);
-        char dataBuf[1024];
-        memset(dataBuf, 0xff, sizeof(dataBuf));
-        CNetCacheAPI::EReadResult rres =
-            nc_client.GetData(key, dataBuf, sizeof(dataBuf));
-        assert(rres == CNetCacheAPI::eReadComplete);
-        int res = strcmp(dataBuf, test_data2);
-        assert(res == 0);
-
-        }
-    }}
-
-
-    // timeout test
-    {{
-        CNetCacheAPI nc_client(service, s_AppName);
-
-        key = nc_client.PutData(test_data, sizeof(test_data), 80);
-        assert(!key.empty());
-    }}
-
-    CNetCacheAPI nc_client(service, s_AppName);
-
-    bool exists = s_CheckExists(nc_client, key);
-    assert(exists);
-
-    nc_client.Remove(key);
-
-    SleepMilliSec(1800);
-
-    exists = s_CheckExists(nc_client, key);
-    assert(!exists);
-
-    s_RemoveBLOB_Test(service);
-
-    s_ReadUpdateCharTest(service);
-
-    error_level |= s_PasswordTest(service);
-    error_level |= s_AbortTest(service);
-
-    vector<STransactionInfo> log;
-    vector<STransactionInfo> log_read;
-    vector<string>           rep_keys;
-
-    unsigned repeats = 1000;*/
-
-    return error_level;
+    // However, the file must still be accessible
+    // either using the original ID:
+    s_ReadAndCompare(netstorage.Open(file_id), test_data);
+    // or using the newly generated persistent storage ID:
+    s_ReadAndCompare(netstorage.Open(persistent_id), test_data);
 }
 
-
-int main(int argc, const char* argv[])
+NCBITEST_AUTO_INIT()
 {
-    SetDiagPostLevel(eDiag_Warning);
-
-    return CNetStorageTestApp().AppMain(argc, argv, 0, eDS_Default);
+    boost::unit_test::framework::master_test_suite().p_name->assign(
+            "CNetStorage Unit Test");
 }

@@ -144,13 +144,12 @@ struct SOptionDefinition {
 
     {OPT_DEF(eOptionWithParameter, eFileKey),
         FILE_KEY_OPTION, "Uniqie user-defined key to address the file. "
-            "Requires '--" NAMESPACE_OPTION "' (or '--" CACHE_OPTION
-            "').", {-1}},
+            "Requires '--" NAMESPACE_OPTION "'.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNamespace),
         NAMESPACE_OPTION, "Domain-specific name that isolates files "
             "created with a user-defined key from files created "
-            "by other applications.", {-1}},
+            "by other users.", {-1}},
 
     {OPT_DEF(eSwitch, ePersistent),
         PERSISTENT_OPTION, "Use a persistent storage like FileTrack.", {-1}},
@@ -557,7 +556,7 @@ struct SCommandDefinition {
         "will be generated, which can be used instead of the old "
         "one for faster file access.",
         {eID, ePersistent, eFastStorage, eNetCache, eCache,
-            eTTL, eCacheable, eLoginToken, eAuth,
+            eTTL, eMovable, eCacheable, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkFileID,

@@ -350,6 +350,8 @@ void CNetFileID::Pack()
 
     m_PackedID.resize(packed_id_len);
 
+    m_PackedID[0] = '\0';
+
     base64url_encode(binary_id, binary_id_len,
             const_cast<char*>(m_PackedID.data()),
             packed_id_len, NULL);

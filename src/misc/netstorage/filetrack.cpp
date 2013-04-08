@@ -273,7 +273,7 @@ void SFileTrackRequest::FinishUpload()
                 CObjectIStream::Open(eSerial_Json, m_HTTPStream));
         is->ReadObject(&obj, obj.GetThisTypeInfo());
     }
-    catch (CSerialException&) {
+    catch (CSerialException& e) {
         string error;
         char err_buf[1024];
 
@@ -289,14 +289,16 @@ void SFileTrackRequest::FinishUpload()
         CWStream null(new CNullWriter, 0, 0, CRWStreambuf::fOwnWriter);
         NcbiStreamCopy(null, m_HTTPStream);
 
-        NCBI_THROW_FMT(CNetStorageException, eIOError,
-                "Error while uploading \"" << m_FileID->GetID() << "\": " <<
+        NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
+                "Error while uploading \"" << m_FileID->GetID() <<
+                "\" (storage key \"" << m_FileID->GetUniqueKey() << "\"): " <<
                 error << " (HTTP status " << m_HTTPStatus << ')');
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
                 "Error while uploading \"" << m_FileID->GetID() <<
-                "\" (HTTP status " << m_HTTPStatus << ')');
+                "\" (storage key \"" << m_FileID->GetUniqueKey() <<
+                "\"); HTTP status " << m_HTTPStatus);
     }
 
     CheckIOStatus();
