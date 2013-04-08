@@ -1940,10 +1940,26 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     string downstream_cds_suffix_seq_str; //cds sequence downstream of affected codons
     {{
-        SFlankLocs flocs = CreateFlankLocs(*codons_loc, 10000000/*all the way*/);
-        CRef<CSeq_loc> downstream_cds_loc = cds_feat.GetLocation().Intersect(*flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+        //extend cds-loc downstream by a little bit to allow inferring changes in the stop-codon
+        //(e.g. base in the stop-codon is deleted, and the sequence downstream of cds is now involved)
+        CRef<CSeq_loc> ext_cds_loc;
+        {{
+            SFlankLocs flocs = CreateFlankLocs(cds_feat.GetLocation(), 6);
+            ext_cds_loc = sequence::Seq_loc_Add(cds_feat.GetLocation(), *flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+        }}
+
+        CRef<CSeq_loc> downstream_cds_loc;
+        {{
+            SFlankLocs flocs = CreateFlankLocs(*codons_loc, 1000);
+            downstream_cds_loc = ext_cds_loc->Intersect(*flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+        }}
+
         CRef<CSeq_literal> literal = x_GetLiteralAtLoc(*downstream_cds_loc);
-        downstream_cds_suffix_seq_str = literal->GetSeq_data().GetIupacna().Get(); 
+        if(verbose) NcbiCerr << "Downstream-cds: " << MSerial_AsnText << *literal;
+
+        if(literal->GetLength() > 0) {
+            downstream_cds_suffix_seq_str = literal->GetSeq_data().GetIupacna().Get(); 
+        }
     }}
 
     TSignedSeqPos frame = abs(
