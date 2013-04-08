@@ -1,3 +1,14 @@
+Release 4.16.6 based on SC-11 (2013-04-08)
+
+Improvements and bug fixes
+    * NetSchedule: queue access restrictions for read-only commands
+      (JIRA: CXX-3885)
+    * NetSchedule: better logging in case of garbage input
+      (JIRA: CXX-3877)
+    * NetSchedule: marking clients as worker nodes
+      (JIRA: CXX-3839)
+
+
 Release 4.16.5 based on SC-11 (2013-02-11)
 
 Improvements and bug fixes
