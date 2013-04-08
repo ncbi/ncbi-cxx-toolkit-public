@@ -627,9 +627,6 @@ static bool DescendingModelOrderPConsistentCoverage(const TChainPtr& a, const TC
 
 CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const CGene& gene, const CChain& algn)
 {
-    int minIntergenic = m_gnomon->GetMinIntergenicLen();
-
-    TSignedSeqRange gene_lim_with_margins( gene.Limits().GetFrom() - minIntergenic, gene.Limits().GetTo() + minIntergenic );
     TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front()->CompleteCds()) ? gene.RealCdsLimits() : gene.front()->MaxCdsLimits();
     bool gene_good_enough_to_be_annotation = allow_partialalts || gene.front()->GoodEnoughToBeAnnotation(); 
 
@@ -637,12 +634,7 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
     TSignedSeqRange algn_cds = algn.CompleteCds() ? algn.RealCdsLimits() : algn.MaxCdsLimits();
     bool algn_good_enough_to_be_annotation = allow_partialalts || algn.GoodEnoughToBeAnnotation();
 
-    TSignedSeqRange gene_cds_with_margins = gene_cds;
-    if(gene_cds.NotEmpty() && (!gene_good_enough_to_be_annotation || !algn_good_enough_to_be_annotation))
-        gene_cds_with_margins = TSignedSeqRange( gene_cds.GetFrom() - minIntergenic, gene_cds.GetTo() + minIntergenic );
-
-
-    if(!gene_lim_with_margins.IntersectingWith(algn_lim))             // distance > MinIntergenic
+    if(!gene.Limits().IntersectingWith(algn_lim))             // don't overlap
         return eOtherGene;
     
     if(gene.IsAlternative(algn)) {   // has common splice or common CDS
@@ -663,23 +655,18 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
         return eNotCompatible;
     }
 
-    //    if(gene_good_enough_to_be_annotation && algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron and complete
     if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron (could be partial)
         return eExternal;
 
-    /*
-    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation)) {   // algn is nested in gene and checked for completeness
-        if(algn_good_enough_to_be_annotation)
-            return eNested;
-        else
-            return eNotCompatible;        
-    }
-    */
     if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation))   // algn is nested in gene (could be partial)
         return eNested;
 
     if(!algn_cds.Empty() && !gene_cds.Empty()) {                          // both coding
-        if (!gene_cds_with_margins.IntersectingWith(algn_cds)) {          // distance > MinIntergenic 
+        if (!gene_cds.IntersectingWith(algn_cds)) {          // don't overlap
+#ifdef _DEBUG 
+            if((gene_cds+algn_cds).GetLength() < gene_cds.GetLength()+algn_cds.GetLength()+20)
+                const_cast<CChain&>(algn).AddComment("Close proximity");
+#endif    
             return eOtherGene;
         } else if(gene.LargeCdsOverlap(algn)) {
             return eNotCompatible;
@@ -2537,6 +2524,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
     TIdChainMembermap protein_parts;
     for(int k = 0; k < (int)pointers_all.size(); ++k) {
         SChainMember& mi = *pointers_all[k];
+
         if((mi.m_align->Type() & CGeneModel::eProt) && (mi.m_copy == 0 || mi.m_cds_info->HasStart())) {  // only prots with start can have copies
             protein_parts[mi.m_align->ID()].push_back(mi.m_align);
         }

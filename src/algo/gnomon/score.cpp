@@ -454,8 +454,10 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         _ASSERT( align.Exons().size() > 0 );
 
         if((align.Type() & CGeneModel::eNested)!=0) {
-            int a = max(0,int(limits.GetFrom())-intergenic_params.MinLen()+1);
-            int b = min(len-1,limits.GetTo()+intergenic_params.MinLen()-1);
+            //            int a = max(0,int(limits.GetFrom())-intergenic_params.MinLen()+1);
+            //            int b = min(len-1,limits.GetTo()+intergenic_params.MinLen()-1);
+            int a = limits.GetFrom();
+            int b = limits.GetTo();
             
             if(opposite) {
                 for(int pnt = a; pnt <= b; ++pnt) {           // allow prediction on the opposite strand of nested models   
@@ -475,8 +477,10 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             }
             continue;
         } else if((align.Type() & CGeneModel::eWall)!=0) {
-            int a = max(0,int(limits.GetFrom())-intergenic_params.MinLen()+1);
-            int b = min(len-1,limits.GetTo()+intergenic_params.MinLen()-1);
+        //            int a = max(0,int(limits.GetFrom())-intergenic_params.MinLen()+1);
+        //            int b = min(len-1,limits.GetTo()+intergenic_params.MinLen()-1);
+            int a = limits.GetFrom();
+            int b = limits.GetTo();
 
             if(opposite) {
                 for(int pnt = a; pnt <= b; ++pnt) {           // allow prediction on the opposite strand of complete models
