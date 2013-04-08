@@ -1320,7 +1320,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
                 for(TIVec::iterator it = it_a; it != it_b; it++) {             // this loop includes only open rf (if exists) and one real start    
                     int start = *it;
                     
-                    if (stop-start-(start>=0?0:3) < 75)
+                    if (stop-start-(start>=0?0:3) < 30)
                         continue;
             
                     double s = cdrscr[frame][stop-1]-cdrscr[frame][start+2+(start>=0?0:3)];
