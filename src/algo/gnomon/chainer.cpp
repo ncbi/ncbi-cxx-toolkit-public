@@ -1387,10 +1387,10 @@ void SChainMember::MarkUnwantedCopiesForChain(const TSignedSeqRange& cds)
             if (mi->m_copy != 0) {
                 ITERATE(TContained, j, *mi->m_copy) {
                     SChainMember* mj = *j;
+                    const CCDSInfo& cinfoj = *mj->m_cds_info;
                     if(mj->m_marked_for_retention)      // already included in cds
                         continue;
-                    else if(cinfoi.HasStart()) {         // don't delete copy which overrides the start
-                        const CCDSInfo& cinfoj = *mj->m_cds_info;
+                    else if(cinfoi.HasStart() || cinfoj.HasStart()) {         // don't delete copy which overrides the start or has the start
                         if((algni.Strand() == ePlus && cinfoi.ReadingFrame().GetTo() == cinfoj.ReadingFrame().GetTo()) ||
                            (algni.Strand() == eMinus && cinfoi.ReadingFrame().GetFrom() == cinfoj.ReadingFrame().GetFrom()))
                             continue;
