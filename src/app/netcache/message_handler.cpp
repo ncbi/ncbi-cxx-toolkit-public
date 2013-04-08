@@ -3444,7 +3444,10 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     tmp = "\nOK:Password: '";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = m_BlobAccess->GetCurPassword();
-    m_SendBuff->append(tmp.data(), tmp.size());
+    if (!tmp.empty()) {
+        tmp = "yes";
+        m_SendBuff->append(tmp.data(), tmp.size());
+    }
     m_SendBuff->append("'", 1);
 
     tmp = "\nOK:Version: ";
