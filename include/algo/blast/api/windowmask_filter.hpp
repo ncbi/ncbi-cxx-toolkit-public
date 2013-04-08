@@ -60,6 +60,18 @@ NCBI_XBLAST_EXPORT string WindowMaskerTaxidToDb(int taxid);
 NCBI_XBLAST_EXPORT string 
 WindowMaskerTaxidToDb(const string& window_masker_path, int taxid);
 
+/// Initialize the path to the windowmasker data files
+/// @param window_masker_path path to window masker data files [in]
+/// @return 0 in case of success, 1 if the path does not exist or is a file
+NCBI_XBLAST_EXPORT 
+int WindowMaskerPathInit(const string& window_masker_path);
+
+/// Resets the path to the windowmasker data files
+NCBI_XBLAST_EXPORT void WindowMaskerPathReset();
+
+/// Retrieves the path to the windowmasker data files
+NCBI_XBLAST_EXPORT string WindowMaskerPathGet();
+
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
 

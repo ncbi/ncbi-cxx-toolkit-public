@@ -2027,6 +2027,19 @@ BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidTaxid) {
     BOOST_CHECK_THROW((void) blaster.RunEx(), CBlastException);
 }
 
+BOOST_AUTO_TEST_CASE(WindowMaskerPathInitInvalid) {
+    int rv = WindowMaskerPathInit(kEmptyStr);
+    BOOST_CHECK_EQUAL(1, rv);
+    rv = WindowMaskerPathInit("blast_unit_test");
+    BOOST_CHECK_EQUAL(1, rv);
+}
+
+BOOST_AUTO_TEST_CASE(WindowMaskerPathInitValid) {
+    int rv = WindowMaskerPathInit(CDir::GetCwd());
+    BOOST_CHECK_EQUAL(0, rv);
+    WindowMaskerPathReset();
+}
+
 BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_DbAndTaxid) {
     CSeq_id qid("gi|555");
     auto_ptr<SSeqLoc> query(

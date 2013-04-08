@@ -75,6 +75,31 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+static string s_WINDOW_MASKER_PATH(kEmptyStr);
+DEFINE_STATIC_MUTEX(InitMutex);
+
+int WindowMaskerPathInit(const string& window_masker_path)
+{
+    if (CDirEntry(window_masker_path).GetType() != CDirEntry::eDir) {
+        return 1;
+    }
+    {
+        CMutexGuard guard(InitMutex);
+        s_WINDOW_MASKER_PATH = window_masker_path;
+    }
+    return 0;
+}
+void WindowMaskerPathReset()
+{
+    CMutexGuard guard(InitMutex);
+    s_WINDOW_MASKER_PATH.clear();
+}
+string WindowMaskerPathGet()
+{
+    CMutexGuard guard(InitMutex);
+    return s_WINDOW_MASKER_PATH;
+}
+
 CSeqMasker* s_BuildSeqMasker(const string & lstat)
 {
     Uint1 arg_window_size            = 0; // [allow setting of this field?]
@@ -341,15 +366,19 @@ Blast_FindWindowMaskerLoc(TSeqLocVector & queries, const string & lstat)
     }
 }
 
-/// Find the path to the window masker files, first checking the environment
-/// variable WINDOW_MASKER_PATH, then the section WINDOW_MASKER, label
-/// WINDOW_MASKER_PATH in the NCBI configuration file. If not found in either
-/// location, return the current working directory
+/// Find the path to the window masker files, first checking the (optionally
+/// set) value passed to the WindowMaskerPathInit function, then the
+/// environment variable WINDOW_MASKER_PATH, then the section WINDOW_MASKER,
+/// label WINDOW_MASKER_PATH in the NCBI configuration file. If not found in
+/// either location, return the current working directory
 /// @sa s_FindPathToGeneInfoFiles
 static string
 s_FindPathToWM(void)
 {
-    string retval = kEmptyStr;
+    string retval = WindowMaskerPathGet();
+    if ( !retval.empty() ) {
+        return retval;
+    }
     const string kEnvVar("WINDOW_MASKER_PATH");
     const string kSection("WINDOW_MASKER");
     CNcbiIstrstream empty_stream(kEmptyCStr);
