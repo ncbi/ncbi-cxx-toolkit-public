@@ -39,8 +39,19 @@ echo $$ > check_exec.pid
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
+cmd="$1"
+shift
+# Quote all empty arguments
+for arg in "$@"; do
+   if test -z "$arg"; then
+      cmd+=" ''"
+   else 
+      cmd+=" $arg"
+   fi
+done
+
 # Run command.
-"$@" &
+$cmd &
 pid=$!
 trap 'kill $pid' 1 2 15
 
