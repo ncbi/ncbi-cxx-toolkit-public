@@ -2175,7 +2175,7 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
     int n = 0;
     if ((flags & fDoublePosix) && (isnan(value) || !finite(value))) {
         if (isnan(value)) {
-            strcpy(buffer, "NAN");
+            strcpy(buffer, "NaN");
             n = 4;
         } else if (value > 0.) {
             strcpy(buffer, "INF");
