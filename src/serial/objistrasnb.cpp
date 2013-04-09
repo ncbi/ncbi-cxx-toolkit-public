@@ -47,6 +47,7 @@
 #include <serial/impl/objistrimpl.hpp>
 #include <serial/pack_string.hpp>
 #include <serial/error_codes.hpp>
+#include <math.h>
 
 BEGIN_NCBI_SCOPE
 
