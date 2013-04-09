@@ -342,18 +342,31 @@ BOOST_AUTO_TEST_CASE(ParseString)
 BOOST_AUTO_TEST_CASE(NoDivisionMode)
 {
     // Switch NoDivision mode
-    CExprParser parser(CExprParser::fNoDivision);
+    CExprParser parser(CExprParser::fLogicalOnly);
 
-    // String
+    // Int
     parser.AddSymbol("/var/log", 2);
     parser.Parse("/var/log");
     BOOST_CHECK_EQUAL(CExprValue::eINT, parser.GetResult().GetType());
     BOOST_CHECK_EQUAL(2, parser.GetResult().GetInt());
 
-    // String
+    // Boolean
     parser.AddSymbol("/var/log1", true);
     parser.Parse("/var/log1");
     BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
-    BOOST_CHECK_EQUAL(true, parser.GetResult().GetInt());
+    BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());
+
+    // Check that dot is actually disabled and allowed as variable name
+    parser.AddSymbol("0.1.0/main/Group1/Test1/0.0.2", true);
+    parser.Parse("0.1.0/main/Group1/Test1/0.0.2");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());
+
+    // Check that dot is actually disabled and allowed as variable name
+    parser.AddSymbol("0.1.0/main/Group1/Test1/0.0.2", true);
+    parser.Parse("false || 0.1.0/main/Group2/Test1/0.0.2");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(false, parser.GetResult().GetBool());
+
 }
 

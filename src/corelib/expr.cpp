@@ -547,7 +547,7 @@ CExprParser::Scan(bool operand)
       case '*':
         return IfLongest2ElseChar('*', '=', eSETPOW, ePOW, eSETMUL, eMUL);
       case '/':
-        if(NoDivision())
+        if(LogicalOnly())
             goto l_SkipDivision;            // goto to default is justified - complete code refactoring otherwise (MZ)
         return IfChar('=', eSETDIV, eDIV);
       case '%':
@@ -593,6 +593,8 @@ CExprParser::Scan(bool operand)
         return eCOMMA;
       case '0': case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
+        if(LogicalOnly())
+            goto l_SkipDivision;        // goto default justified to avoid code refactoring
         {
             Int8 ival;
             double fval;            
@@ -667,7 +669,7 @@ CExprParser::Scan(bool operand)
         m_Pos -= 1;
         np = sym_name;
 
-        while (isalnum(m_Buf[m_Pos]) || m_Buf[m_Pos] == '$' || m_Buf[m_Pos] == '_' || (m_Buf[m_Pos]=='/' && NoDivision())) {
+        while (isalnum(m_Buf[m_Pos]) || m_Buf[m_Pos] == '$' || m_Buf[m_Pos] == '_' || (((m_Buf[m_Pos]=='/') || (m_Buf[m_Pos]=='.') ) && LogicalOnly())) {
             *np++ = m_Buf[m_Pos++];
         }
 

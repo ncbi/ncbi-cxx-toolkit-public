@@ -271,7 +271,7 @@ public:
     enum EAutoVar {
         fAllowAutoVar = 0,          //< create variables without previous declaration
         fDenyAutoVar  = (1 << 0),   //< call AddSymbol() to register a variable
-        fNoDivision   = (1 << 1),   //< division is interpreted as a part of a symbol (to allow directories)
+        fLogicalOnly  = (1 << 1),   //< '/','.','[0-9]' is interpreted as a part of a symbol (to allow directories)
 
         // Legacy
         eAllowAutoVar = fAllowAutoVar,
@@ -348,7 +348,7 @@ private:
         return m_ParserFlags & fDenyAutoVar;
     }
 
-    bool NoDivision(void) const { return (m_ParserFlags & fNoDivision) != 0;}
+    bool LogicalOnly(void) const { return (m_ParserFlags & fLogicalOnly) != 0;}
 
 private:
     enum {hash_table_size = 1013};
