@@ -603,10 +603,15 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
         return;
     }
     if (isnan(data)) {
-        ThrowError(fInvalidData, "invalid double: not a number");
+        m_Output.PutString("NaN", 3);
+        return;
     }
     if (!finite(data)) {
-        ThrowError(fInvalidData, "invalid double: infinite");
+        if (data < 0) {
+            m_Output.PutChar('-');
+        }
+        m_Output.PutString("INF", 3);
+        return;
     }
     char buffer[512];
     SIZE_TYPE width;
