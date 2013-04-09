@@ -32,17 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
-#include <cgi/ncbires.hpp>
-#include <cgi/ncbicgir.hpp>
-#include <cgi/cgi_util.hpp>
-#include <cgi/cgi_exception.hpp>
-
-#include <algorithm>
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cgi/user_agent.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
