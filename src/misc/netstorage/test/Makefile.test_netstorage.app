@@ -9,7 +9,7 @@ LIB = ncbi_xcache_netcache xconnserv netstorage \
 
 LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included GNUTLS
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_netstorage
