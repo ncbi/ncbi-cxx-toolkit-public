@@ -181,6 +181,12 @@ void CObjectOStreamJson::WriteDouble(double data)
 
 void CObjectOStreamJson::WriteDouble2(double data, size_t digits)
 {
+    if (isnan(data)) {
+        ThrowError(fInvalidData, "invalid double: not a number");
+    }
+    if (!finite(data)) {
+        ThrowError(fInvalidData, "invalid double: infinite");
+    }
     if (m_FastWriteDouble) {
         char buffer[64];
         WriteKeywordValue( string(buffer,
