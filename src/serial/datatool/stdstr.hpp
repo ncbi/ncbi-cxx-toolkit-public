@@ -52,8 +52,11 @@ public:
     string GetRef(const CNamespace& ns) const;
     string GetInitializer(void) const;
 
+    virtual void SetStorageType(const string& storage);
+    virtual string GetStorageType(const CNamespace& ns) const;
 private:
     string m_CType;
+    string m_Storage;
     CNamespace m_Namespace;
 };
 

@@ -681,6 +681,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
 
             string cType = i->type->GetCType(code.GetNamespace());
+
+            string valueRef(i->valueName);
+            string constValueRef(i->valueName);
+            string cTypeStorage = i->type->GetStorageType(code.GetNamespace());
+            if (cTypeStorage != cType) {
+                constValueRef = "reinterpret_cast<const " + i->tName + "&>(" + i->valueName + ")";
+                valueRef      = "reinterpret_cast<"       + i->tName + "&>(" + i->valueName + ")";
+            }
 #if 0
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
 #else
@@ -751,7 +759,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    }\n";
                 }
                 code.Methods(inl) <<
-                    "    return "<<i->valueName<<";\n"
+                    "    return "<<constValueRef<<";\n"
                     "}\n"
                     "\n";
             }
@@ -950,7 +958,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                 "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
                         }
                         inlineMethods <<                        
-                            "    "<<i->valueName<<" = value;\n";
+                            "    "<<valueRef<<" = value;\n";
                         if ( i->haveFlag ) {
                             inlineMethods <<
                                 "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
@@ -1005,7 +1013,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                     }
                     inlineMethods <<
-                        "    return "<<i->valueName<<";\n"
+                        "    return "<<valueRef<<";\n"
                         "}\n"
                         "\n";
                 }
@@ -1126,8 +1134,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 else {
                     if (!x_IsNullType(i)) {
+
+                        string tTypeStorage(i->tName);
+                        string cTypeStorage = i->type->GetStorageType(code.GetNamespace());
+                        if (cTypeStorage != i->tName) {
+                            tTypeStorage = cTypeStorage;
+                        }
                         code.ClassPrivate() <<
-                            "    "<<i->tName<<" "<<i->mName<<";\n";
+                            "    "<<tTypeStorage<<" "<<i->mName<<";\n";
                     }
                 }
             }

@@ -170,11 +170,16 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) con
 
 AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
 {
+    string storage = GetVar("_storage_type");
     string type = GetAndVerifyVar("_type");
     bool full_ns = !type.empty();
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type,Comments(),full_ns));
+    AutoPtr<CTypeStrings> a(new CStdTypeStrings(type,Comments(),full_ns));
+    if (!storage.empty()) {
+        a->SetStorageType(storage);
+    }
+    return a;
 }
 
 const char* CNullDataType::GetASNKeyword(void) const

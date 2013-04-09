@@ -139,6 +139,8 @@ public:
     {
         m_DataType = type;
     }
+    virtual void SetStorageType(const string& storage);
+    virtual string GetStorageType(const CNamespace& ns) const;
 
 private:
     string m_ModuleName;

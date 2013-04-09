@@ -905,6 +905,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             string tType = "T" + i->cName;
+            string tTypeStorage = tType;
+            string cTypeStorage = i->type->GetStorageType(code.GetNamespace());
+            if (cTypeStorage != cType) {
+                tTypeStorage = cTypeStorage;
+            }
 #if 0
             string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
 #else
@@ -1065,6 +1070,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             switch ( i->memberType ) {
             case eSimpleMember:
                 memberRef = constMemberRef = "m_"+i->cName;
+                if (tTypeStorage != tType) {
+                    constMemberRef = "reinterpret_cast<const " + tType + "&>(m_" + i->cName + ")";
+                    memberRef      = "reinterpret_cast<"       + tType + "&>(m_" + i->cName + ")";
+                }
                 break;
             case ePointerMember:
             case eBufferMember:
@@ -1284,8 +1293,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eSimpleMember ) {
                     if (!x_IsNullType(i)) {
+                        string tType = "T" + i->cName;
+                        string cTypeStorage = i->type->GetStorageType(code.GetNamespace());
+                        if (cTypeStorage != i->type->GetCType(code.GetNamespace())) {
+                            tType = cTypeStorage;
+                        }
                         code.ClassPrivate() <<
-                            "        T"<<i->cName<<" m_"<<i->cName<<";\n";
+                            "        "<<tType<<" m_"<<i->cName<<";\n";
                     }
                 }
                 else if ( i->memberType == ePointerMember ) {

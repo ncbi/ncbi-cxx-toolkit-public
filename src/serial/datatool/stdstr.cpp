@@ -60,6 +60,19 @@ string CStdTypeStrings::GetCType(const CNamespace& ns) const
         return m_CType;
 }
 
+void CStdTypeStrings::SetStorageType(const string& storage)
+{
+    m_Storage = storage;
+}
+
+string CStdTypeStrings::GetStorageType(const CNamespace& ns) const
+{
+    if (m_Storage.empty()) {
+        return GetCType(ns);
+    }
+    return m_Storage;
+}
+
 string CStdTypeStrings::GetPrefixedCType(const CNamespace& ns,
                                          const string& /*methodPrefix*/) const
 {

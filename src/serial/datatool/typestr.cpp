@@ -238,4 +238,12 @@ void CTypeStrings::BeginClassDeclaration(CClassContext& ctx) const
     ctx.AddHPPCode(hpp);
 }
 
+void CTypeStrings::SetStorageType(const string& /*storage*/)
+{
+}
+string CTypeStrings::GetStorageType(const CNamespace& ns) const
+{
+    return GetCType(ns);
+}
+
 END_NCBI_SCOPE
