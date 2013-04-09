@@ -794,7 +794,15 @@ Uint8 CObjectIStreamAsn::ReadUint8(void)
 double CObjectIStreamAsn::ReadDouble(void)
 {
     if (PeekChar(true) != '{') {
-        return NStr::StringToDouble( ScanEndOfId(true), NStr::fDecimalPosix );
+        CTempString tmp( ScanEndOfId(true) );
+        if (NStr::strncasecmp(tmp.data(), "PLUS-INFINITY", 13) == 0) {
+            return HUGE_VAL;
+        } else if (NStr::strncasecmp(tmp.data(),"MINUS-INFINITY", 14) == 0) {
+            return -HUGE_VAL;
+        } else if (NStr::strncasecmp(tmp.data(),"NOT-A-NUMBER", 12) == 0) {
+            return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
+        }
+        return NStr::StringToDouble( tmp, NStr::fDecimalPosix );
     }
     Expect('{', true);
     CTempString mantissaStr = ReadNumber();

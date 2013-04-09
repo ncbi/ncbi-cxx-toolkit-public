@@ -602,6 +602,13 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     EndOfTag();
     buffer[length] = 0;
     char* endptr;
+    if (NStr::strcasecmp(buffer,"PLUS-INFINITY") == 0) {
+        return HUGE_VAL;
+    } else if (NStr::strcasecmp(buffer,"MINUS-INFINITY") == 0) {
+        return -HUGE_VAL;
+    } else if (NStr::strcasecmp(buffer,"NOT-A-NUMBER") == 0) {
+        return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
+    }
     double data = NStr::StringToDoublePosix(buffer, &endptr);
     if ( *endptr != 0 ) {
         ThrowError(fFormatError, "bad REAL data string");

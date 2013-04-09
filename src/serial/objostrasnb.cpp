@@ -663,15 +663,28 @@ static const size_t kMaxDoubleLength = 64;
 
 void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
 {
+    char buffer[kMaxDoubleLength + 16];
+    int width;
+
+#if 1
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
     }
     if (!finite(data)) {
         ThrowError(fInvalidData, "invalid double: infinite");
     }
-
-    char buffer[kMaxDoubleLength + 16];
-    int width;
+#else
+    if (isnan(data)) {
+        strncpy(buffer,"NOT-A-NUMBER", width = 12);
+    } else if (!finite(data)) {
+        if (data > 0) {
+            strncpy(buffer,"PLUS-INFINITY", width = 13);
+        } else {
+            strncpy(buffer,"MINUS-INFINITY", width = 14);
+        }
+    }
+    else
+#endif
     if (m_FastWriteDouble) {
         width = (int)NStr::DoubleToStringPosix(data, digits, buffer, sizeof(buffer));
     } else {
