@@ -765,17 +765,17 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
     BOOST_CHECK( isnan(value) );
     BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
-    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+    BOOST_CHECK( NStr::Compare(out, "NaN") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
-    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+    BOOST_CHECK( NStr::Compare(out, "NaN") == 0 );
 
     value = NStr::StringToDoublePosix(out.c_str(), &endptr);
     BOOST_CHECK( isnan(value) );
     BOOST_CHECK( endptr && !*endptr );
     NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
-    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+    BOOST_CHECK( NStr::Compare(out, "NaN") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
-    BOOST_CHECK( NStr::Compare(out, "NAN") == 0 );
+    BOOST_CHECK( NStr::Compare(out, "NaN") == 0 );
 
     value = NStr::StringToDoublePosix("inf", &endptr);
     BOOST_CHECK( !finite(value) && value>0.);
