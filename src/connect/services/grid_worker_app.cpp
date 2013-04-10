@@ -137,6 +137,9 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
             "A TCP port number for the worker node to listen on.",
             CArgDescriptions::eInteger);
 
+    arg_desc->AddFlag("daemon", "Daemonize.");
+    arg_desc->AddFlag("nodaemon", "Do not daemonize.");
+
     arg_desc->AddOptionalKey("logfile", "file_name",
             "File to which the program log should be redirected.",
             CArgDescriptions::eOutputFile);

@@ -983,8 +983,9 @@ int CGridWorkerNode::Run()
         end_port = to_port.empty() ? start_port : NStr::StringToUInt(to_port);
     }}
 
-    bool is_daemon = reg.GetBool(kServerSec, "daemon",
-            false, 0, CNcbiRegistry::eReturn);
+    bool is_daemon = args["nodaemon"] ? false :
+            args["daemon"] ? true : reg.GetBool(kServerSec, "daemon",
+                    false, 0, CNcbiRegistry::eReturn);
 
     {{
         string memlimitstr(reg.GetString(kServerSec,
