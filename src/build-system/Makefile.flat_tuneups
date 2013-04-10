@@ -60,8 +60,10 @@ main_hintees = algo/cobalt/demo app/grid/remote_app cgi connect \
     dbapi/driver/ftds64/ctlib/samples dbapi/test dbapi/test/driver \
     objmgr/test sample/app/cgi sample/app/cgires
 
-sra_hintees_ = libs/align libs/axf libs/kdb libx/sra libs/sraxf libs/vdb \
-    libs/vxf tools/sra-dump tools/sra-load
+sra_hintees_ = libs/align libs/axf libs/kdb libs/klib libs/kns libs/kproc \
+    libs/krypto libs/sra libs/sraxf libs/vdb libs/vfs libs/vxf libs/wgsxf \
+    tools/bam-loader tools/sra-dump tools/sra-load tools/sra-pileup \
+    tools/vdb-decrypt
 sra_hintees = $(sra_hintees_:%=sra/sdk/%)
 
 gpipe_hintees_ = action_nodes/src/altloci_load align_db/user_if/AnnotAlignsDb \
