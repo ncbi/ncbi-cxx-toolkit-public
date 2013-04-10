@@ -1103,12 +1103,6 @@ int CGridWorkerNode::Run()
     CRef<CGridControlThread> control_thread(
         new CGridControlThread(this, start_port, end_port));
 
-    string control_port_str(
-            NStr::NumericToString(control_thread->GetControlPort()));
-    LOG_POST_X(60, "Control port: " << control_port_str);
-    m_NetScheduleAPI.SetAuthParam("control_port", control_port_str);
-    m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
-
     try {
         control_thread->Prepare();
     }
@@ -1126,6 +1120,12 @@ int CGridWorkerNode::Run()
             "(probably another instance of this worker node) is occupying "
             "the port(s).");
     }
+
+    string control_port_str(
+            NStr::NumericToString(control_thread->GetControlPort()));
+    LOG_POST_X(60, "Control port: " << control_port_str);
+    m_NetScheduleAPI.SetAuthParam("control_port", control_port_str);
+    m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
 
     if (m_NetScheduleAPI->m_ClientNode.empty()) {
         string client_node(m_NetScheduleAPI->
