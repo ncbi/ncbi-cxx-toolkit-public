@@ -44,9 +44,9 @@ shift
 # Quote all empty arguments
 for arg in "$@"; do
    if test -z "$arg"; then
-      cmd+=" ''"
+      cmd="$cmd ''"
    else 
-      cmd+=" $arg"
+      cmd="$cmd $arg"
    fi
 done
 
