@@ -286,6 +286,23 @@ public:
                                    const CBitString& value) const;
 };
 
+
+#ifdef NCBI_STRICT_GI
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoGi
+    : public CPrimitiveTypeInfo
+{
+    typedef CPrimitiveTypeInfo CParent;
+public:
+    CPrimitiveTypeInfoGi(void);
+
+    virtual void GetValueGi(TConstObjectPtr objectPtr,
+                            TGi& value) const;
+    virtual void SetValueGi(TObjectPtr objectPtr,
+                            const TGi& value) const;
+};
+#endif
+
+
 /* @} */
 
 

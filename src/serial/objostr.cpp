@@ -1139,4 +1139,21 @@ void CObjectOStream::SetFormattingFlags(TSerial_Format_Flags flags)
     SetUseEol(        (flags & fSerial_AsnText_NoEol)         == 0);
 }
 
+
+
+#ifdef NCBI_STRICT_GI
+void CObjectOStream::WriteGi(const TGi& obj)
+{
+    WriteInt8(obj);
+}
+
+void CObjectOStream::CopyGi(CObjectIStream& in)
+{
+    TGi obj;
+    in.ReadGi(obj);
+    WriteGi(obj);
+}
+#endif
+
+
 END_NCBI_SCOPE

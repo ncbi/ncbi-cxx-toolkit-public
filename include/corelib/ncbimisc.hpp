@@ -47,6 +47,9 @@
 #  include <ctype.h>
 #endif
 
+#include <corelib/ncbitype.h>
+#include <corelib/ncbistre.hpp>
+
 #if !defined(HAVE_NULLPTR)
 #  define nullptr NULL
 #endif
@@ -954,10 +957,117 @@ const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
 /// Use this typedef rather than its expansion, which may change.
 typedef int TSignedSeqPos;
 
+
 /// Type for sequence GI.
 ///
 /// Use this typedef rather than its expansion, which may change.
+
+//#define NCBI_STRICT_GI
+//#define NCBI_INT8_GI
+
+#ifdef NCBI_STRICT_GI
+#define NCBI_INT8_GI
+#endif
+
+#ifdef NCBI_INT8_GI
+
+#ifdef NCBI_STRICT_GI
+
+
+class CTypeInfo;
+
+// Strict mode can be enabled only for Int8 GIs.
+
+class CStrictGi
+{
+public:
+    CStrictGi(void) : m_Gi(0) {}
+
+    bool operator==(const CStrictGi& gi) const { return m_Gi == gi.m_Gi; }
+    bool operator!=(const CStrictGi& gi) const { return m_Gi != gi.m_Gi; }
+    bool operator<(const CStrictGi& gi) const { return m_Gi < gi.m_Gi; }
+    bool operator<=(const CStrictGi& gi) const { return m_Gi <= gi.m_Gi; }
+    bool operator>(const CStrictGi& gi) const { return m_Gi > gi.m_Gi; }
+    bool operator>=(const CStrictGi& gi) const { return m_Gi >= gi.m_Gi; }
+
+    CStrictGi& operator++(void) { m_Gi++; return *this; }
+    CStrictGi operator++(int) { CStrictGi tmp = *this; m_Gi++; return tmp; }
+    CStrictGi& operator--(void) { m_Gi--; return *this; }
+    CStrictGi operator--(int) { CStrictGi tmp = *this; m_Gi--; return tmp; }
+
+    CStrictGi operator+(const CStrictGi& gi) const { return CStrictGi(m_Gi + gi.m_Gi); }
+    CStrictGi operator-(const CStrictGi& gi) const { return CStrictGi(m_Gi - gi.m_Gi); }
+
+    CStrictGi(Int8 value) : m_Gi(value) {}
+    CStrictGi& operator=(Int8 value) { m_Gi = value; return *this; }
+    operator Int8(void) const { return m_Gi; }
+
+    explicit CStrictGi(Int4 value) : m_Gi(value) {}
+
+private:
+    CStrictGi& operator=(Int4);
+    operator Int4(void) const;
+
+    CStrictGi(Uint4);
+    CStrictGi& operator=(Uint4);
+    operator Uint4(void) const;
+
+    CStrictGi(Uint8);
+    CStrictGi& operator=(Uint8);
+    operator Uint8(void) const;
+
+private:
+    Int8 m_Gi;
+};
+
+
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictGi& gi)
+{
+    out << Int8(gi);
+    return out;
+}
+
+typedef CStrictGi TGi;
+
+#define ZERO_GI TGi(0)
+
+
+#else // NCBI_STRICT_GI
+
+
+typedef Int8 TGi;
+#define ZERO_GI 0
+
+
+#endif // NCBI_STRICT_GI
+
+
+// Generic id type which needs to be the same size as GI.
+typedef Int8 TIntId;
+typedef Uint8 TUintId;
+
+
+#else // NCBI_INT8_GI
+
+
 typedef int TGi;
+typedef Int4 TIntId;
+typedef Uint4 TUintId;
+
+#define ZERO_GI 0
+
+
+#endif
+
+
+/// Temporary macros to convert TGi to other types (int, unsigned etc.).
+#define GI_TO(T, gi) (T)(TIntId(gi))
+#define GI_FROM(T, value) TGi(TIntId(value))
+
+/// Convert gi-compatible int to/from other types.
+#define INT_ID_TO(T, id) (T)(id)
+#define INT_ID_FROM(T, value) TIntId(value)
 
 
 /// Helper address class

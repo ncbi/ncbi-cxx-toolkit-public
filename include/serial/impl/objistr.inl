@@ -464,6 +464,21 @@ void CObjectIStream::SkipStd(CBitString& )
 }
 
 
+#ifdef NCBI_STRICT_GI
+inline
+void CObjectIStream::ReadStd(TGi& data)
+{
+    ReadGi(data);
+}
+
+inline
+void CObjectIStream::SkipStd(TGi&)
+{
+    SkipGi();
+}
+#endif
+
+
 inline
 bool GoodVisibleChar(char c)
 {

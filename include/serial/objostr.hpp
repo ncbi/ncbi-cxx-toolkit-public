@@ -488,6 +488,7 @@ public:
     void WriteStd(char* const data);
 
     void WriteStd(const CBitString& data);
+
     // primitive writers
     // bool
     virtual void WriteBool(bool data) = 0;
@@ -539,6 +540,13 @@ public:
 
     // delayed buffer
     virtual bool Write(CByteSource& source);
+
+#ifdef NCBI_STRICT_GI
+    void WriteStd(const TGi& data);
+
+    virtual void WriteGi(const TGi& obj);
+    virtual void CopyGi(CObjectIStream& in);
+#endif
 
 //---------------------------------------------------------------------------
 // Internals

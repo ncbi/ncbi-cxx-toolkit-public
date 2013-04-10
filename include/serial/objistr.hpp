@@ -769,6 +769,14 @@ public:
 
     void SkipPointer(TTypeInfo declaredType);
 
+#ifdef NCBI_STRICT_GI
+    void ReadStd(TGi& data);
+    void SkipStd(TGi& data);
+
+    virtual void ReadGi(TGi& obj);
+    virtual void SkipGi(void);
+#endif
+
 //---------------------------------------------------------------------------
 // Internals
 

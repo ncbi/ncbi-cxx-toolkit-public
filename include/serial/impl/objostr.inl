@@ -277,6 +277,16 @@ void CObjectOStream::WriteStd(const CBitString& data)
     WriteBitString(data);
 }
 
+
+#ifdef NCBI_STRICT_GI
+inline
+void CObjectOStream::WriteStd(const TGi& data)
+{
+    WriteGi(data);
+}
+#endif
+
+
 inline
 CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
     : m_Stream(out), m_Length(length), m_Ended(false)

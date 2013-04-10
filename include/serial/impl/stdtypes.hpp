@@ -124,6 +124,13 @@ public:
     virtual void SetValueBitString(TObjectPtr objectPtr,
                                    const CBitString& value) const;
 
+#ifdef NCBI_STRICT_GI
+    virtual void GetValueGi(TConstObjectPtr objectPtr,
+                            TGi& value) const;
+    virtual void SetValueGi(TObjectPtr objectPtr,
+                            const TGi& value) const;
+#endif
+
     virtual void GetValueAnyContent(TConstObjectPtr objectPtr,
                                     CAnyContentObject& value) const;
     virtual void SetValueAnyContent(TObjectPtr objectPtr,
@@ -383,6 +390,17 @@ public:
     static TTypeInfo GetTypeInfo(void);
     static CTypeInfo* CreateTypeInfo(void);
 };
+
+
+#ifdef NCBI_STRICT_GI
+EMPTY_TEMPLATE
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<TGi>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
+#endif
 
 
 /* @} */

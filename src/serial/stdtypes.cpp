@@ -1749,4 +1749,81 @@ void CPrimitiveTypeInfoBitString::SetValueBitString(TObjectPtr objectPtr,
     TFunctions::Get(objectPtr) = value;
 }
 
+
+#ifdef NCBI_STRICT_GI
+class CGiFunctions : public CPrimitiveTypeFunctions<TGi>
+{
+public:
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
+        {
+            return new TObjectType();
+        }
+    static bool IsDefault(TConstObjectPtr objectPtr)
+        {
+            return Get(objectPtr) == TObjectType();
+        }
+    static void SetDefault(TObjectPtr objectPtr)
+        {
+            Get(objectPtr) = TObjectType();
+        }
+};
+
+CPrimitiveTypeInfoGi::CPrimitiveTypeInfoGi(void)
+    : CParent(sizeof(TGi), ePrimitiveValueGi)
+{
+    typedef CPrimitiveTypeFunctions<ncbi::TGi> TFunctions;
+    SetMemFunctions(&CGiFunctions::Create,
+                    &CGiFunctions::IsDefault,
+                    &CGiFunctions::SetDefault,
+                    &TFunctions::Equals,
+                    &TFunctions::Assign);
+    SetIOFunctions(&TFunctions::Read,
+                   &TFunctions::Write,
+                   &TFunctions::Copy,
+                   &TFunctions::Skip);
+//    CPrimitiveTypeFunctions<CGi>::SetMemFunctions(this);
+//    CPrimitiveTypeFunctions<CGi>::SetIOFunctions(this);
+}
+
+TTypeInfo CStdTypeInfo<TGi>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<TGi>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoGi();
+}
+
+void CPrimitiveTypeInfoGi::GetValueGi(TConstObjectPtr objectPtr,
+                                      TGi& value) const
+{
+    typedef CPrimitiveTypeFunctions<ncbi::TGi> TFunctions;
+    value = TFunctions::Get(objectPtr);
+}
+
+void CPrimitiveTypeInfoGi::SetValueGi(TObjectPtr objectPtr,
+                                      const TGi& value)
+    const
+{
+    typedef CPrimitiveTypeFunctions<ncbi::TGi> TFunctions;
+    TFunctions::Get(objectPtr) = value;
+}
+
+
+void CPrimitiveTypeInfo::GetValueGi(TConstObjectPtr /*objectPtr*/,
+                                    TGi& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+void CPrimitiveTypeInfo::SetValueGi(TObjectPtr /*objectPtr*/,
+                                    const TGi& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+#endif
+
+
 END_NCBI_SCOPE

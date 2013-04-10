@@ -4995,6 +4995,40 @@ bool NStr::StringToNumeric(const CTempString& str,
     return (*value || !errno);
 }
 
+//---------------------- TGi = CStrictGi
+
+#ifdef NCBI_STRICT_GI
+
+template<> inline
+string NStr::NumericToString(TGi value,
+                             TNumToStringFlags flags, int base)
+{
+    return NumericToString(GI_TO(TIntId, value), flags, base);
+}
+
+template<> inline
+void NStr::NumericToString(string& out_str, TGi value,
+                           TNumToStringFlags flags, int base)
+{
+    return NumericToString(out_str, GI_TO(TIntId, value), flags, base);
+}
+
+template <> inline
+TGi NStr::StringToNumeric(const CTempString& str, 
+                          TStringToNumFlags flags, int base)
+{
+    return GI_FROM(TIntId, StringToNumeric<TIntId>(str, flags, base));
+}
+
+template <> inline
+bool NStr::StringToNumeric(const CTempString& str, TGi* value,
+                           TStringToNumFlags flags, int base)
+{
+    return StringToNumeric(str, reinterpret_cast<TIntId*>(value), flags, base);
+}
+
+#endif
+
 //---------------------- 
 
 inline

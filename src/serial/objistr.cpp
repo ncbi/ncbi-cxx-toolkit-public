@@ -1863,4 +1863,18 @@ TObjectPtr CObjectIStream::GetParentObjectPtr(TTypeInfo type,
 }
 
 
+#ifdef NCBI_STRICT_GI
+void CObjectIStream::ReadGi(TGi& obj)
+{
+    obj = ReadInt8();
+}
+
+
+void CObjectIStream::SkipGi(void)
+{
+    SkipInt8();
+}
+#endif
+
+
 END_NCBI_SCOPE
