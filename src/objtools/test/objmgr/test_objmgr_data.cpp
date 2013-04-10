@@ -875,13 +875,6 @@ bool CTestOM::TestApp_Init(void)
     DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
 #endif
-#if 0
-    string asn_cache_db =
-        "/panfs/pan1/gpipe/prod/data01/Homo_sapiens/QA_AllPaths_YH1.14134/sequence_cache";
-    CAsnCache_DataLoader::RegisterInObjectManager(*m_ObjMgr, asn_cache_db,
-                                                  CObjectManager::eDefault,
-                                                  88);
-#endif
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
     return true;

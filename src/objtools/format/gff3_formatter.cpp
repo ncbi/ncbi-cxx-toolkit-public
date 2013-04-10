@@ -595,7 +595,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             if (  (tgt_flags & CAlnMap::fSeq)  &&
                 ! (ref_flags & CAlnMap::fSeq)) {
             // See MakeGapString() in:
-                // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
+                // /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
                 //         elif starts[2 * i] == -1:
                 //            # gap in prot
@@ -624,7 +624,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                          (ref_flags & CAlnMap::fSeq)) {
 
                 // See MakeGapString() in:
-                // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
+                // /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
                 //        else:
                 //            # gap in nuc
@@ -659,7 +659,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 // no affect on the current GFF3 output.
 
                 // See MakeGapString() in:
-                // /panfs/pan1/gpipe07/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
+                // /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/ThirdParty/ProSplignForFlyBase/production/prosplign2gff3
                 //
                 //        if starts[2 * i] != -1 and starts[2 * i + 1] != -1:
                 //            # non-gap

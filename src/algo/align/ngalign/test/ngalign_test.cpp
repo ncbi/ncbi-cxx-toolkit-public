@@ -119,7 +119,7 @@ int CNgAlignTest::Run()
 
 
     //string TestCaseIni = "/home/boukn/code/toolkit/c++/src/algo/align/uberalign/test/testcases.ini";
-    string TestCaseIni = "/panfs/pan1/genome_maint/work/uberalign/test/testcases.ini";
+    string TestCaseIni = "/panfs/pan1.be-md.ncbi.nlm.nih.gov/genome_maint/work/uberalign/test/testcases.ini";
 
     CNcbiIfstream TestCaseFile(TestCaseIni.c_str());
     CNcbiRegistry TestCases(TestCaseFile);

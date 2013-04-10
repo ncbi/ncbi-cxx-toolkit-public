@@ -3,7 +3,7 @@ use Shell qw(rm cp);
 use File::Basename;
 
 
-my $testdir = "/panfs/pan1/genome_maint/work/uberalign/test/";
+my $testdir = "/panfs/pan1.be-md.ncbi.nlm.nih.gov/genome_maint/work/uberalign/test/";
 
 my $builddir = "../../../../../GCC401-ReleaseMT64/build/algo/align/ngalign/";
 
