@@ -10,6 +10,7 @@ HOSTED_LIBS    = access     \
                  entrezgene \
                  featdef    \
                  gbseq      \
+                 genesbyloc \
                  insdseq    \
                  mim        \
                  objprt     \
