@@ -25,7 +25,7 @@ CHECK_COPY = dbapi_unit_test.ini
 
 CHECK_TIMEOUT = 600
 
-CHECK_CMD = dbapi_unit_test -dr dblib      -S MsSql
+# CHECK_CMD = dbapi_unit_test -dr dblib      -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds       -S MsSql
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
