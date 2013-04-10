@@ -761,7 +761,7 @@ BOOST_AUTO_TEST_CASE(Test_Authentication)
             auto_conn->Connect(
                 "NCBI_NT\\anyone",
                 password,
-                "MSDEV2"
+                "MSSQL100" // "MSDEV2"
                 );
 
             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
