@@ -112,9 +112,14 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         fmt = "image/png";
 
     string filename(request.GetEntry("filename", &is_found));
-    if (is_found && !filename.empty())
+    if (is_found && !filename.empty()) {
+        string is_inline(request.GetEntry("inline", &is_found));
+
         reply.SetHeaderValue("Content-Disposition",
-            "attachment; filename=" + filename);
+                (is_found && NStr::StringToBool(is_inline) ?
+                        "inline; filename=" : "attachment; filename=") +
+                filename);
+    }
 
     reply.SetContentType(fmt);
 
