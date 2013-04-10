@@ -60,6 +60,10 @@ struct SNCSyncEvent
     Uint8  local_time;      //< Timestamp when the record was
                             //< recorded locally.
 
+    SNCSyncEvent(void)
+      : rec_no(0), event_type(eSyncWrite), orig_time(0), orig_server(0), orig_rec_no(0), local_time(0)
+    {
+    }
     bool isOlder(const SNCSyncEvent& other) const
     {
         if (orig_time != other.orig_time)

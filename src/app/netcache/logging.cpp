@@ -65,6 +65,13 @@ struct SLogData
     int err_code;
     int err_subcode;
     int last_flush_time;
+
+    SLogData(void)
+        : buf(0), end_ptr(0), cur_ptr(0), cur_msg_ptr(0), post_num(0),
+          has_params(false), severity(CSrvDiagMsg::Trace), msg_file(0), msg_func(0),
+          msg_line(0), err_code(0), err_subcode(0), last_flush_time(0)
+    {
+    }
 };
 
 

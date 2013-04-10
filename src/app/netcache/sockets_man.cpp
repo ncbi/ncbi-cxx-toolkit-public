@@ -95,6 +95,11 @@ struct SSocketsData
     /// time 0 is written to sock_cnt to avoid adding the same number several
     /// times.
     Int2 sock_cnt;
+
+    SSocketsData(void)
+        : sock_cnt(0)
+    {
+    }
 };
 
 

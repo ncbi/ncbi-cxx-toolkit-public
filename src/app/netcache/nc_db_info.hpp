@@ -194,6 +194,11 @@ struct SNCBlobSummary
     int     expire;
     int     ver_expire;
 
+    SNCBlobSummary(void)
+        : size(0), create_time(0), create_server(0), create_id(0),
+          dead_time(0), expire(0), ver_expire(0)
+    {
+    }
     bool isOlder(const SNCBlobSummary& other) const
     {
         if (create_time != other.create_time)

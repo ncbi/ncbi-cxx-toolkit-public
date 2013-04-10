@@ -65,6 +65,19 @@ struct SNCSpecificParams : public CObject
     Uint2 ttl_unit;
     Uint1 quorum;
 
+    SNCSpecificParams()
+      : disable(false), prolong_on_read(false), srch_on_read(false), fast_on_main(false),
+        pass_policy(eNCBlobPassAny), max_ttl(0), blob_ttl(0), ver_ttl(0), ttl_unit(0), quorum(0)
+    {
+    }
+    SNCSpecificParams(const SNCSpecificParams& o)
+      : disable(o.disable), prolong_on_read(o.prolong_on_read),
+        srch_on_read(o.srch_on_read), fast_on_main(o.fast_on_main),
+        pass_policy(o.pass_policy),
+        max_ttl(o.max_ttl), blob_ttl(o.blob_ttl), ver_ttl(o.ver_ttl), ttl_unit(o.ttl_unit),
+        quorum(o.quorum)
+    {
+    }
     virtual ~SNCSpecificParams(void);
 };
 

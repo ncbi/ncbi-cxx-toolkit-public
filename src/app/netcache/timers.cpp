@@ -53,6 +53,11 @@ struct STimerTicket : public TTimerListHook
 {
     int timer_time;
     CSrvTask* task;
+
+    STimerTicket(void)
+        : timer_time(0), task(0)
+    {
+    }
 };
 
 typedef intr::list<STimerTicket,

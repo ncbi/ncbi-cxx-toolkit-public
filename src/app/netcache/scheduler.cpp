@@ -48,6 +48,11 @@ struct SPrtyExecQueue : public TPrtyExecMapHook
     Uint1 priority;
     Uint4 exec_time;
     TSrvTaskList tasks;
+
+    SPrtyExecQueue(void)
+        : priority(0), exec_time(0)
+    {
+    }
 };
 
 struct SPrtyExecCompare
@@ -89,6 +94,11 @@ struct SSchedInfo
     CSrvTime jfy_start_time;
     CSrvTime last_exec_time;
     TSrvThreadNum prefer_thr_num;
+
+    SSchedInfo(void)
+        : max_tasks(0), done_tasks(0), done_time(0), wait_time(0), max_slice(0), prefer_thr_num(0)
+    {
+    }
 };
 
 

@@ -43,6 +43,11 @@ struct SRCUInfo
     CSrvRCUUser* gp_marker_cur;
     CSrvRCUUser* gp_marker_next;
     Uint1 seen_gp;
+
+    SRCUInfo(void)
+        : gp_marker_cur(0), gp_marker_next(0), seen_gp(0)
+    {
+    }
 };
 
 
