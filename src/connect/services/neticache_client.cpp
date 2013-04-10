@@ -147,7 +147,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             config, section, s_NetICacheConfigSections);
     }
 
-    CNetServer::SExecResult StickToServerAndExec(const string& cmd);
+    CNetServer::SExecResult StickToServerAndExec(const string& cmd,
+        CNetServer::TInstance server_to_use = NULL);
 
     string MakeStdCmd(const char* cmd_base, const string& blob_id,
         const string& injection = kEmptyStr);
@@ -161,7 +162,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
         int version, const string& subkey,
         size_t offset, size_t part_size,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode);
+        CNetCacheAPI::ECachingMode caching_mode,
+        CNetServer::TInstance server_to_use = NULL);
 
     string m_CacheName;
     string m_ICacheCmdPrefix;
@@ -281,12 +283,15 @@ STimeout CNetICacheClient::GetCommunicationTimeout() const
     return m_Impl->m_Service->m_ServerPool.GetCommunicationTimeout();
 }
 
-CNetServer::SExecResult
-    SNetICacheClientImpl::StickToServerAndExec(const string& cmd)
+CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
+        const string& cmd, CNetServer::TInstance server_to_use)
 {
-    if (m_SelectedServer) {
+    CNetServer selected_server(server_to_use != NULL ?
+            server_to_use : (CNetServer::TInstance) m_SelectedServer);
+
+    if (selected_server) {
         try {
-            return m_SelectedServer.ExecWithRetry(cmd);
+            return selected_server.ExecWithRetry(cmd);
         }
         catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
@@ -414,7 +419,8 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
 IReader* SNetICacheClientImpl::GetReadStreamPart(
     const string& key, int version, const string& subkey,
     size_t offset, size_t part_size,
-    size_t* blob_size_ptr, CNetCacheAPI::ECachingMode caching_mode)
+    size_t* blob_size_ptr, CNetCacheAPI::ECachingMode caching_mode,
+        CNetServer::TInstance server_to_use)
 {
     try {
         string blob_id(s_KeyVersionSubkeyToBlobID(key, version, subkey));
@@ -424,7 +430,8 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
                 ' ' + NStr::UInt8ToString((Uint8) offset) +
                 ' ' + NStr::UInt8ToString((Uint8) part_size)));
 
-        CNetServer::SExecResult exec_result(StickToServerAndExec(cmd));
+        CNetServer::SExecResult exec_result(
+                StickToServerAndExec(cmd, server_to_use));
 
         return new CNetCacheReader(this, blob_id,
             exec_result, blob_size_ptr, caching_mode);
@@ -562,10 +569,11 @@ IReader* CNetICacheClient::GetReadStream(
     int version,
     const string& subkey,
     size_t* blob_size_ptr,
-    CNetCacheAPI::ECachingMode caching_mode)
+    CNetCacheAPI::ECachingMode caching_mode,
+        CNetServer::TInstance server_to_use)
 {
     return GetReadStreamPart(key, version, subkey,
-        0, 0, blob_size_ptr, caching_mode);
+        0, 0, blob_size_ptr, caching_mode, server_to_use);
 }
 
 IReader* CNetICacheClient::GetReadStreamPart(
@@ -575,10 +583,11 @@ IReader* CNetICacheClient::GetReadStreamPart(
     size_t offset,
     size_t part_size,
     size_t* blob_size_ptr,
-    CNetCacheAPI::ECachingMode caching_mode)
+    CNetCacheAPI::ECachingMode caching_mode,
+    CNetServer::TInstance server_to_use)
 {
     return m_Impl->GetReadStreamPart(key, version, subkey,
-        offset, part_size, blob_size_ptr, caching_mode);
+        offset, part_size, blob_size_ptr, caching_mode, server_to_use);
 }
 
 IReader* CNetICacheClient::GetReadStream(const string&  key,

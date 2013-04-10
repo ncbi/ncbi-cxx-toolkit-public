@@ -153,7 +153,8 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         int version,
         const string& subkey,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode);
+        CNetCacheAPI::ECachingMode caching_mode,
+        CNetServer::TInstance server_to_use = NULL);
 
     /// Read a lengthy blob via the IReader interface. The Read() method
     /// of the returned implementation is not blocking. The caller
@@ -192,6 +193,8 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     ///    that will receive the total blob size in bytes.
     /// @param caching_mode
     ///    Defines whether to enable file caching.
+    /// @param server_to_use
+    ///    Explicitly define the server to use for reading.
     /// @return
     ///    IReader* (to be deleted by the caller).
     IReader* GetReadStreamPart(
@@ -201,7 +204,8 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         size_t offset,
         size_t part_size,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode);
+        CNetCacheAPI::ECachingMode caching_mode,
+        CNetServer::TInstance server_to_use = NULL);
 
     /// Read a lengthy blob via the IReader interface. The Read() method
     /// of the returned implementation is not blocking. The caller

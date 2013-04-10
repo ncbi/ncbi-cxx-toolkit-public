@@ -314,9 +314,16 @@ bool SNetFileImpl::s_TryReadLocation(ENetFileLocation location,
         ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read)
 {
     if (location == eNFL_NetCache) {
+        CNetServer ic_server;
+
+        if (m_FileID.GetFields() & fNFID_NetICache)
+            ic_server = m_NetICacheClient.GetService().GetServer(
+                    m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
+
         m_NetCacheReader.reset(m_NetICacheClient.GetReadStream(
                 m_FileID.GetUniqueKey(), 0, kEmptyStr,
-                &m_NetCache_BlobSize, CNetCacheAPI::eCaching_Disable));
+                &m_NetCache_BlobSize, CNetCacheAPI::eCaching_Disable,
+                ic_server));
 
         if (m_NetCacheReader.get() != NULL) {
             m_NetCache_BytesRead = 0;
