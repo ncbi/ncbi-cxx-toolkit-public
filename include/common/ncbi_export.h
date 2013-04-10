@@ -503,6 +503,14 @@
 #  define NCBI_GENERAL_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library genesbyloc
+ */
+#ifdef NCBI_GENESBYLOC_EXPORTS
+#  define NCBI_GENESBYLOC_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_GENESBYLOC_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library sgenome_collection
  */
 #ifdef NCBI_GENOME_COLLECTION_EXPORTS
