@@ -4556,6 +4556,15 @@ ncqhst needs xconnserv
 ncqhst needs xncbi
 ncqhst needs xthrserv
 ncqhst needs xutil
+netstorage needs connect
+netstorage needs connssl
+netstorage needs ncbi_xcache_netcache
+netstorage needs xconnect
+netstorage needs xconnserv
+netstorage needs xncbi
+netstorage needs xser
+netstorage needs xthrserv
+netstorage needs xutil
 objmmail needs connect
 objmmail needs tables
 objprt needs xncbi
