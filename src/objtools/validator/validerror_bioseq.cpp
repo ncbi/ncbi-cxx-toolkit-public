@@ -7943,6 +7943,7 @@ void CValidError_bioseq::x_CompareStrings
     // iterate through multimap and compare strings
     bool first = true;
     bool reported_first = false;
+    bool lastIsSplit = false;
     const string* strp = 0;
     const CSeq_feat* feat = 0;
     ITERATE (TStrFeatMap, it, str_feat_map) {
@@ -7950,6 +7951,9 @@ void CValidError_bioseq::x_CompareStrings
             first = false;
             strp = &(it->first);
             feat = it->second;
+            lastIsSplit = (bool) (feat->IsSetExcept() &&
+                                  feat->IsSetExcept_text() &&
+                                  NStr::FindNoCase (feat->GetExcept_text(), "gene split at ") != string::npos);
             continue;
         }
 
@@ -7985,18 +7989,27 @@ void CValidError_bioseq::x_CompareStrings
                                        GetSequenceStringFromLoc((*it->second).GetLocation(), *m_Scope))) {
                 PostErr (eDiag_Info, eErr_SEQ_FEAT_ReplicatedGeneSequence,
                          message + ", but underlying sequences are identical", *it->second);
-            } else {   
-                if (!reported_first) {
-                    // for now, don't report first colliding gene - C Toolkit doesn't
-                    // PostErr(sev, err, message, *feat);
-                    reported_first = true;
-                }
+            } else { 
+                const CSeq_feat* nfeat = it->second;
+                bool isSplit = (bool) (nfeat->IsSetExcept() &&
+                                      nfeat->IsSetExcept_text() &&
+                                      NStr::FindNoCase (nfeat->GetExcept_text(), "gene split at ") != string::npos);
+                if (is_gene_locus || (! isSplit) || (! lastIsSplit)) {
+                    if (!reported_first) {
+                        // for now, don't report first colliding gene - C Toolkit doesn't
+                        // PostErr(sev, err, message, *feat);
+                        reported_first = true;
+                    }
 
-                PostErr(sev, err, message, *it->second);
+                    PostErr(sev, err, message, *it->second);
+                }
             }
         }
         strp = &(it->first);
         feat = it->second;
+        lastIsSplit = (bool) (feat->IsSetExcept() &&
+                              feat->IsSetExcept_text() &&
+                              NStr::FindNoCase (feat->GetExcept_text(), "gene split at ") != string::npos);
     }
 }
 

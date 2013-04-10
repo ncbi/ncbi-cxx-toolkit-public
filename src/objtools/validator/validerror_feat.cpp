@@ -5365,6 +5365,9 @@ static const string s_LegalExceptionStrings[] = {
     "heterogeneous population sequenced",
     "low-quality sequence region",
     "unextendable partial coding region",
+    "artificial location",
+    "gene split at contig boundary",
+    "gene split at sequence boundary",
     "genetic code exception",
 };
 
