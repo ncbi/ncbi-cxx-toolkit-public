@@ -23,13 +23,14 @@
  *
  * ===========================================================================
  *
- * Authors:  Mike Dicuccio, Anatoliy Kuznetsov
+ * Authors:  Mike Dicuccio, Anatoliy Kuznetsov, Dmitry Kazimirov
  *
  * File Description:
  *     BLOB (image) fetch from NetCache.
- *     Takes two CGI arguments:
+ *     Takes three CGI arguments:
  *       key=NC_KEY
- *       fmt=FORMAT  (default: "image/png")
+ *       fmt=mime/type  (default: "image/png")
+ *       filename=Example.pdf
  *
  */
 
