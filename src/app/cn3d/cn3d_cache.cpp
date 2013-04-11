@@ -145,44 +145,49 @@ static CNcbi_mime_asn1 * GetStructureFromCacheFolder(int mmdbID, EModel_type mod
 //  assemblyId = 0 means the ASU, and PDB-defined assemblies
 //  are indexed sequentially from 1.
 static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
-    const string& uid, int mmdbID, EModel_type modelType, int assemblyId = -1)
+    const string& uid, int mmdbID, EModel_type modelType, int assemblyId = 0)
 {
-    // construct URL [mmdbsrv.cgi]
-/*
-    static const string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
-    string args("save=Save&dopt=j&uid=");
-    if (mmdbID > 0)
-        args += NStr::IntToString(mmdbID);
-    else    // assume PDB id
-        args += uid;
-    args += "&Complexity=";
-    switch (modelType) {
-        case eModel_type_ncbi_all_atom: args += "3"; break;
-        case eModel_type_pdb_model: args += "4"; break;
-        case eModel_type_ncbi_backbone:
-        default:
-            args += "2"; break;
+    string host, path, args;
+    
+    if (assemblyId == 0)  {
+        // construct URL [mmdbsrv.cgi]
+        host = "www.ncbi.nlm.nih.gov";
+        path = "/Structure/mmdb/mmdbsrv.cgi";
+        args = "save=Save&dopt=j&uid=";
+        if (mmdbID > 0)
+            args += NStr::IntToString(mmdbID);
+        else    // assume PDB id
+            args += uid;
+        args += "&Complexity=";
+        switch (modelType) {
+            case eModel_type_ncbi_all_atom: args += "3"; break;
+            case eModel_type_pdb_model: args += "4"; break;
+            case eModel_type_ncbi_backbone:
+            default:
+                args += "2"; break;
+        }
     }
-*/
-    // construct URL [mmdb_strview.cgi]
-    static const string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdb_strview.cgi";
-    string args("program=cn3d&display=1&uid=");
-    if (mmdbID > 0)
-        args += NStr::IntToString(mmdbID);
-    else    // assume PDB id
-        args += uid;
-    args += "&complexity=";
-    switch (modelType) {
-        case eModel_type_ncbi_vector: args += "1"; break;
-        case eModel_type_ncbi_all_atom: args += "3"; break;
-        case eModel_type_pdb_model: args += "4"; break;
-        case eModel_type_ncbi_backbone:
-        default:
-            args += "2"; break;
-    }
-    if (assemblyId >= 0) 
+    
+    else {
+        // construct URL [mmdb_strview.cgi]
+        host = "www.ncbi.nlm.nih.gov";
+        path = "/Structure/mmdb/mmdb_strview.cgi";
+        args = "program=cn3d&display=1&uid=";
+        if (mmdbID > 0)
+            args += NStr::IntToString(mmdbID);
+        else    // assume PDB id
+            args += uid;
+        args += "&complexity=";
+        switch (modelType) {
+            case eModel_type_ncbi_vector: args += "1"; break;
+            case eModel_type_ncbi_all_atom: args += "3"; break;
+            case eModel_type_pdb_model: args += "4"; break;
+            case eModel_type_ncbi_backbone:
+            default:
+                args += "2"; break;
+        }
         args += "&buidx=" + NStr::IntToString(assemblyId);
- 
+    }
 
     // load from network
     INFOMSG("Trying to load structure data from " << host << path << '?' << args);
@@ -237,7 +242,7 @@ CNcbi_mime_asn1 * LoadStructureViaCache(const std::string& uid, ncbi::objects::E
             mmdbID = (int) tmp;
         } else {
             ERRORMSG("LoadStructureViaCache() - invalid uid " << uid);
-            return false;
+            return NULL;
         }
         TRACEMSG("Fetching MMDB " << mmdbID);
     }

@@ -317,7 +317,7 @@ void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSe
     wxStringTokenizer tkz(ids, " ,;\t\r\n", wxTOKEN_STRTOK);
     while (tkz.HasMoreTokens()) {
         wxString id = tkz.GetNextToken();
-        CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
+        CRef < CBioseq > bioseq = FetchSequenceViaHTTP(WX_TO_STD(id));
         if (bioseq.Empty())
             return;
         const Sequence *sequence = sSet->FindOrCreateSequence(*bioseq);
@@ -604,7 +604,7 @@ void UpdateViewer::ImportStructure(void)
     if (importFrom == FROM_NETWORK) {
         wxString id = wxGetTextFromUser("Enter a PDB or MMDB ID:", "Input Identifier", "", *viewerWindow);
         biostruc.Reset(new CBiostruc());
-        if (!LoadStructureViaCache(id.c_str(),
+        if (!LoadStructureViaCache(WX_TO_STD(id),
                 (master->parentSet->isAlphaOnly ? eModel_type_ncbi_backbone : eModel_type_ncbi_all_atom),
                 0,
                 biostruc, &bioseqs)) {
@@ -614,8 +614,8 @@ void UpdateViewer::ImportStructure(void)
     }
 
     else if (importFrom == FROM_FILE) {
-        string filename = wxFileSelector("Choose a single-structure file:",
-            GetUserDir().c_str(), "", "", "*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST, *viewerWindow).c_str();
+        string filename = WX_TO_STD(wxFileSelector("Choose a single-structure file:",
+            GetUserDir().c_str(), "", "", "*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST, *viewerWindow));
         if (filename.size() == 0) return;
         bool readOK = false;
         string err;

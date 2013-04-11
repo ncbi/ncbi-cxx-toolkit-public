@@ -209,7 +209,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                     if (s == se)
                         descr.Printf("%s: gi %i", m->second->identifier->ToString().c_str(),
                             m->second->identifier->gi);
-                    chainList.push_back(descr.c_str());
+                    chainList.push_back(WX_TO_STD(descr));
                 } else if (m->second->IsHeterogen()) {
                     // get name from local graph name of first (should be only) residue
                     const string& name = m->second->residues.find(1)->second->nameGraph;

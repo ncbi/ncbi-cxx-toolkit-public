@@ -262,11 +262,11 @@ bool StyleDialog::GetBackboneStyle(StyleSettings::BackboneStyle *bbStyle,
     wxButton *button;
     return (
         (choice = wxDynamicCast(FindWindow(showID), wxChoice)) != NULL &&
-        BackboneTypeStrings.Get(choice->GetStringSelection().c_str(), &(bbStyle->type)) &&
+        BackboneTypeStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(bbStyle->type)) &&
         (choice = wxDynamicCast(FindWindow(renderID), wxChoice)) != NULL &&
-        DrawingStyleStrings.Get(choice->GetStringSelection().c_str(), &(bbStyle->style)) &&
+        DrawingStyleStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(bbStyle->style)) &&
         (choice = wxDynamicCast(FindWindow(colorID), wxChoice)) != NULL &&
-        ColorSchemeStrings.Get(choice->GetStringSelection().c_str(), &(bbStyle->colorScheme)) &&
+        ColorSchemeStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(bbStyle->colorScheme)) &&
         (button = wxDynamicCast(FindWindow(userID), wxButton)) != NULL &&
         ConvertColor(button->GetBackgroundColour(), &(bbStyle->userColor))
     );
@@ -289,9 +289,9 @@ bool StyleDialog::GetGeneralStyle(StyleSettings::GeneralStyle *gStyle,
         (checkbox = wxDynamicCast(FindWindow(showID), wxCheckBox)) != NULL &&
         GetChecked(checkbox, &(gStyle->isOn)) &&
         (choice = wxDynamicCast(FindWindow(renderID), wxChoice)) != NULL &&
-        DrawingStyleStrings.Get(choice->GetStringSelection().c_str(), &(gStyle->style)) &&
+        DrawingStyleStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(gStyle->style)) &&
         (choice = wxDynamicCast(FindWindow(colorID), wxChoice)) != NULL &&
-        ColorSchemeStrings.Get(choice->GetStringSelection().c_str(), &(gStyle->colorScheme)) &&
+        ColorSchemeStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(gStyle->colorScheme)) &&
         (button = wxDynamicCast(FindWindow(userID), wxButton)) != NULL &&
         ConvertColor(button->GetBackgroundColour(), &(gStyle->userColor))
     );
@@ -314,9 +314,9 @@ bool StyleDialog::GetLabelStyle(StyleSettings::LabelStyle *lStyle,
         (spinctrl = wxDynamicCast(FindWindow(spacingID), wxSpinCtrl)) != NULL &&
         GetInteger(spinctrl, &(lStyle->spacing)) &&
         (choice = wxDynamicCast(FindWindow(typeID), wxChoice)) != NULL &&
-        LabelTypeStrings.Get(choice->GetStringSelection().c_str(), &(lStyle->type)) &&
+        LabelTypeStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(lStyle->type)) &&
         (choice = wxDynamicCast(FindWindow(numberingID), wxChoice)) != NULL &&
-        NumberTypeStrings.Get(choice->GetStringSelection().c_str(), &(lStyle->numbering)) &&
+        NumberTypeStrings.Get(WX_TO_STD(choice->GetStringSelection()), &(lStyle->numbering)) &&
         (checkbox = wxDynamicCast(FindWindow(terminiID), wxCheckBox)) != NULL &&
         GetChecked(checkbox, &(lStyle->terminiOn)) &&
         (checkbox = wxDynamicCast(FindWindow(whiteID), wxCheckBox)) != NULL &&

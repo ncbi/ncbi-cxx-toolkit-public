@@ -314,7 +314,7 @@ bool Cn3DApp::OnInit(void)
     // set preferred style if given
     wxString favStyle;
     if (commandLine.Found("s", &favStyle))
-        structureWindow->SetPreferredFavoriteStyle(favStyle.c_str());
+        structureWindow->SetPreferredFavoriteStyle(WX_TO_STD(favStyle));
 
     // get model type from -o
     EModel_type model = eModel_type_other;
@@ -336,7 +336,7 @@ bool Cn3DApp::OnInit(void)
         INFOMSG("command line file: " << filename.c_str());
         // if -o is present, assume param is a Biostruc file
         if (model != eModel_type_other) {   // -o present
-            CNcbi_mime_asn1 *mime = CreateMimeFromBiostruc(filename.c_str(), model);
+            CNcbi_mime_asn1 *mime = CreateMimeFromBiostruc(WX_TO_STD(filename), model);
             if (mime)
                 structureWindow->LoadData(NULL, commandLine.Found("f"), commandLine.Found("n"), mime);
         } else {
@@ -348,7 +348,7 @@ bool Cn3DApp::OnInit(void)
     else if (model != eModel_type_other) {  // -o present
         wxString id;
         if (commandLine.Found("d", &id)) {
-            CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model, 0);
+            CNcbi_mime_asn1 *mime = LoadStructureViaCache(WX_TO_STD(id), model, 0);
             if (mime)
                 structureWindow->LoadData(NULL, commandLine.Found("f"), commandLine.Found("n"), mime);
         } else {
@@ -369,7 +369,7 @@ bool Cn3DApp::OnInit(void)
         if (!commandLine.Found("a", &messageApp))
             messageApp = "Listener";
         structureWindow->SetupFileMessenger(
-            messageFilename.c_str(), messageApp.c_str(), commandLine.Found("r"));
+            WX_TO_STD(messageFilename), WX_TO_STD(messageApp), commandLine.Found("r"));
     }
 
     // optionally open imports window, but only if any imports present
@@ -410,7 +410,11 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
     GlobalMessenger()->ProcessRedraws();
 
     // call base class OnIdle to continue processing any other system idle-time stuff
+#if wxCHECK_VERSION(2,9,0)
+    // WARNING: no idea at all if it's necessary to do any equivalent here under 2.9...
+#else
     wxApp::OnIdle(event);
+#endif
 }
 
 #ifdef __WXMAC__

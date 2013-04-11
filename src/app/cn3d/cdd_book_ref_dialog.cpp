@@ -318,7 +318,7 @@ bool BrURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
 {
 
     CRef< CCdd_book_ref > bookRef(new CCdd_book_ref);
-    string brBookUrl = data.GetText().Strip(wxString::both).c_str();
+    string brBookUrl = WX_TO_STD(data.GetText().Strip(wxString::both));
     bool result = ncbi::cd_utils::BrBookURLToCCddBookRef(brBookUrl, bookRef);
     if (result && bookRef.NotEmpty() && descr.NotEmpty()) {
         descr->SetBook_ref().Assign(*bookRef);
@@ -335,7 +335,7 @@ bool BrURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
 bool BookURLToBookRef(wxTextDataObject& data, CRef < CCdd_descr >& descr)
 {
     CRef< CCdd_book_ref > bookRef(new CCdd_book_ref);
-    string portalBookUrl = data.GetText().Strip(wxString::both).c_str();
+    string portalBookUrl = WX_TO_STD(data.GetText().Strip(wxString::both));
     bool result = ncbi::cd_utils::PortalBookURLToCCddBookRef(portalBookUrl, bookRef);
     if (result && bookRef.NotEmpty() && descr.NotEmpty()) {
         descr->SetBook_ref().Assign(*bookRef);
@@ -427,14 +427,14 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             descr = newDescr.GetPointer();
         }
         isNew = false;
-        descr->SetBook_ref().SetBookname(tName->GetValue().c_str());
+        descr->SetBook_ref().SetBookname(WX_TO_STD(tName->GetValue()));
         descr->SetBook_ref().SetTextelement(*(enum2str.Find(string(cType->GetStringSelection().c_str()))));
         long address, subaddress;
         if (tAddress->GetValue().ToLong(&address)) {
             descr->SetBook_ref().SetElementid((int) address);
             descr->SetBook_ref().ResetCelementid();
         } else {
-            descr->SetBook_ref().SetCelementid(tAddress->GetValue().c_str());
+            descr->SetBook_ref().SetCelementid(WX_TO_STD(tAddress->GetValue()));
             descr->SetBook_ref().ResetElementid();
         }
         if (tSubaddress->GetValue().size() > 0) {
@@ -442,7 +442,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                 descr->SetBook_ref().SetSubelementid((int) subaddress);
                 descr->SetBook_ref().ResetCsubelementid();
             } else {
-                descr->SetBook_ref().SetCsubelementid(tSubaddress->GetValue().c_str());
+                descr->SetBook_ref().SetCsubelementid(WX_TO_STD(tSubaddress->GetValue()));
                 descr->SetBook_ref().ResetSubelementid();
             }
         } else {

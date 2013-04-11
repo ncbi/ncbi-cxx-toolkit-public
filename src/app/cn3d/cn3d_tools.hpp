@@ -278,6 +278,14 @@ public:
     int Size(void) const { return type2string.size(); }
 };
 
+
+#if wxCHECK_VERSION(2,9,0)
+#define WX_TO_STD(wxstring) ((wxstring).ToStdString())
+#else
+#define WX_TO_STD(wxstring) (std::string((wxstring).c_str()))
+#endif
+
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_TOOLS__HPP

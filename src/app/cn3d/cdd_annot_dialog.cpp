@@ -591,9 +591,8 @@ void CDDAnnotateDialog::EditAnnotation(void)
 bool DoesPatternMatchHighlightedResidues(const Sequence& sequence, const Sequence::MoleculeHighlightMap& restrictTo, CRegexp& regexp, set<unsigned int>* highlightedSeqIndicesPtr)
 {
     bool result = false;
-    unsigned int i = 0, count = 0;
+    unsigned int i = 0;
     unsigned int len = sequence.sequenceString.length();
-    int start = 0;
     string highlightedResidues;
 
     if (highlightedSeqIndicesPtr) highlightedSeqIndicesPtr->clear();
@@ -774,7 +773,7 @@ void CDDAnnotateDialog::NewOrEditMotif(void)
         wxMessageBox(msg, "Motif Failed Validity Checks", wxOK | wxICON_WARNING | wxCENTRE, this);
         return;
     } else {
-        selectedAnnot->SetMotif(newMotif.c_str());
+        selectedAnnot->SetMotif(WX_TO_STD(newMotif));
         selectedAnnot->SetMotifuse(0);
         structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
     }
@@ -1407,7 +1406,7 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
     if (rComment->GetValue()) {
         DECLARE_AND_FIND_WINDOW_RETURN_FALSE_ON_ERR(tComment, ID_T_COMMENT, wxTextCtrl)
         if (tComment->GetValue().size() > 0) {
-            evidence->SetComment(tComment->GetValue().c_str());
+            evidence->SetComment(WX_TO_STD(tComment->GetValue()));
             return true;
         } else {
             ERRORMSG("CDDEvidenceDialog::GetData() - comment must not be zero-length");
@@ -1445,7 +1444,7 @@ bool CDDEvidenceDialog::GetData(ncbi::objects::CFeature_evidence *evidence)
         evidence->SetBsannot().SetDescr().push_front(descr);
         // reset name
         CRef < CBiostruc_feature_set_descr > name(new CBiostruc_feature_set_descr());
-        name->SetName(tSTRUCTURE->GetValue().c_str());
+        name->SetName(WX_TO_STD(tSTRUCTURE->GetValue()));
         evidence->SetBsannot().SetFeatures().front()->SetDescr().clear();
         evidence->SetBsannot().SetFeatures().front()->SetDescr().push_front(name);
         return true;
@@ -1645,7 +1644,6 @@ bool CDDTypedAnnotDialog::GetData(ncbi::objects::CAlign_annot* alignAnnot)
     bool isPutative = cbPutative->GetValue();
     int predefType, predefTypeIndex;
     int type = cType->GetSelection();
-    int sel = cmbDescr->GetSelection();
     string descr = string(cmbDescr->GetValue().c_str());
 
 

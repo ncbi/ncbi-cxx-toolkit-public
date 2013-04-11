@@ -579,7 +579,11 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         if (visinfo)
             localVI = true;
         else
+#if wxCHECK_VERSION(2,9,0)
+            visinfo = glCanvas->GetXVisualInfo();
+#else
             visinfo = (XVisualInfo *) (glCanvas->m_vi);
+#endif
 
         // create pixmap
         xPixmap = XCreatePixmap(display,

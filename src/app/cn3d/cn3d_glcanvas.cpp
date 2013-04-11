@@ -107,7 +107,13 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
     font = *newFont;    // copy font
 
     // set up font display lists in dc and renderer
-    if (!memoryDC.Ok()) {
+    if (!memoryDC.
+#if wxCHECK_VERSION(2,9,0)
+        IsOk()
+#else
+        Ok()
+#endif
+    ) {
         wxBitmap tinyBitmap(1, 1, -1);
         memoryBitmap = tinyBitmap; // copies by reference
         memoryDC.SelectObject(memoryBitmap);

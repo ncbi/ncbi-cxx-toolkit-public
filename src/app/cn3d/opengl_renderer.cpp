@@ -947,7 +947,7 @@ void OpenGLRenderer::SetColor(OpenGLRenderer::EColorAction action,
         lastType = cachedType;
     }
 
-    GLfloat rgba[4] = { cr, cg, cb, ca };
+    GLfloat rgba[4] = { (GLfloat) cr, (GLfloat) cg, (GLfloat) cb, (GLfloat) ca };
 #if MAC_GL_OPTIMIZE
 	glMaterialfv(GL_FRONT_AND_BACK, cachedType, rgba);
 #endif

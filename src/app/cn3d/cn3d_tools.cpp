@@ -117,8 +117,7 @@ static void SetRegistryDefaults(void)
 #endif
             wxSWISS, wxNORMAL, wxBOLD, false);
         if (font && font->Ok())
-            RegistrySetString(REG_OPENGL_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO,
-			    font->GetNativeFontInfoDesc().c_str());
+            RegistrySetString(REG_OPENGL_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, WX_TO_STD(font->GetNativeFontInfoDesc()));
         else
             ERRORMSG("Can't create default structure window font");
 
@@ -135,8 +134,7 @@ static void SetRegistryDefaults(void)
 #endif
             wxROMAN, wxNORMAL, wxNORMAL, false);
         if (font && font->Ok())
-            RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO,
-			    font->GetNativeFontInfoDesc().c_str());
+            RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, WX_TO_STD(font->GetNativeFontInfoDesc()));
         else
             ERRORMSG("Can't create default sequence window font");
         if (font) delete font;
@@ -273,9 +271,7 @@ bool RegistryGetString(const string& section, const string& name, string *value)
 
 bool RegistrySetInteger(const string& section, const string& name, int value)
 {
-    wxString regStr;
-    regStr.Printf("%i", value);
-    bool okay = registry.Set(section, name, regStr.c_str(), CNcbiRegistry::ePersistent);
+    bool okay = registry.Set(section, name, NStr::IntToString(value), CNcbiRegistry::ePersistent);
     if (!okay)
         ERRORMSG("registry Set(" << section << ", " << name << ") failed");
     else
@@ -285,9 +281,7 @@ bool RegistrySetInteger(const string& section, const string& name, int value)
 
 bool RegistrySetDouble(const string& section, const string& name, double value)
 {
-    wxString regStr;
-    regStr.Printf("%g", value);
-    bool okay = registry.Set(section, name, regStr.c_str(), CNcbiRegistry::ePersistent);
+    bool okay = registry.Set(section, name, NStr::DoubleToString(value), CNcbiRegistry::ePersistent);
     if (!okay)
         ERRORMSG("registry Set(" << section << ", " << name << ") failed");
     else
@@ -348,7 +342,7 @@ void SetUpWorkingDirectories(const char* argv0)
     else if (wxPathOnly(argv0) == "")
         programDir = workingDir;
     else
-        programDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(argv0).c_str();
+        programDir = workingDir + wxFILE_SEP_PATH + WX_TO_STD(wxPathOnly(argv0));
     workingDir = workingDir + wxFILE_SEP_PATH;
     programDir = programDir + wxFILE_SEP_PATH;
 
@@ -639,7 +633,7 @@ unsigned int PrositePatternLength(const string& prosite)
                 inParens = true;
                 break;
             case ')':
-                nFromParens = NStr::StringToNumeric(betweenParens);
+                nFromParens = NStr::StringToInt(betweenParens, NStr::fConvErr_NoThrow);
 
                 //  Do not allow a variable number of repetitions.
                 //  Also, length has already been incremented by 1 for whatever the (...) references

@@ -1151,9 +1151,7 @@ bool SequenceDisplay::ProximitySort(unsigned int displayRow)
                         seq1->sequenceString[r1->from + i], seq2->sequenceString[r2->from + i]);
             }
             alnRow->alignment->SetRowDouble(alnRow->row, score);
-            wxString str;
-            str.Printf("Score vs. key row: %i", (int) score);
-            alnRow->alignment->SetRowStatusLine(alnRow->row, str.c_str());
+            alnRow->alignment->SetRowStatusLine(alnRow->row, ("Score vs. key row: " + NStr::IntToString((int) score)));
         }
     }
     if (sortedByScore.size() != keyRow->alignment->NRows()) {

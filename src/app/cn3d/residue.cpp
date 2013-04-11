@@ -357,7 +357,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
     // if not all backbone atoms present (e.g. alpha only), use alpha coords of neighboring residues
     if (l1 && (!l2 || !l3)) {
         Molecule::ResidueMap::const_iterator prevRes, nextRes;
-        const AtomCoord *prevAlpha, *nextAlpha;
+        const AtomCoord *prevAlpha = NULL, *nextAlpha = NULL;
         if ((prevRes=molecule->residues.find(id - 1)) != molecule->residues.end() &&
             prevRes->second->alphaID != NO_ALPHA_ID &&
             (prevAlpha=atomSet->GetAtom(AtomPntr(molecule->id, id - 1, prevRes->second->alphaID))) != NULL &&

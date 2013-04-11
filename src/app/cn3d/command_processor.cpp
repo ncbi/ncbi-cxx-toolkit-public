@@ -159,7 +159,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
             wxString range = tkz.GetNextToken();
             wxStringTokenizer rangeToks(range, "-", wxTOKEN_RET_EMPTY);
             if (rangeToks.CountTokens() < 1 || rangeToks.CountTokens() > 2) {
-                ADD_REPLY_ERROR(string("bad range: ") + range.c_str());
+                ADD_REPLY_ERROR(string("bad range: ") + WX_TO_STD(range));
                 continue;
             }
             unsigned long from, to;
@@ -171,7 +171,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
                 okay = (rangeToks.GetNextToken().ToULong(&from) && rangeToks.GetNextToken().ToULong(&to));
             }
             if (!okay || from >= seq->Length() || to >= seq->Length() || from > to) {
-                ADD_REPLY_ERROR(string("bad range value(s): ") + range.c_str());
+                ADD_REPLY_ERROR(string("bad range value(s): ") + WX_TO_STD(range));
                 continue;
             }
 
@@ -204,7 +204,7 @@ IMPLEMENT_COMMAND_FUNCTION(LoadFile)
 
     wxString stripped(wxString(dataIn.c_str()).Strip(wxString::both));
     if (!structureWindow->LoadData(stripped.c_str(), true, false))
-        ADD_REPLY_ERROR(string("Error loading file '") + stripped.c_str() + "'");
+        ADD_REPLY_ERROR(string("Error loading file '") + WX_TO_STD(stripped) + "'");
 }
 
 IMPLEMENT_COMMAND_FUNCTION(Exit)

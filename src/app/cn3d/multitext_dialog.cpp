@@ -178,7 +178,7 @@ bool MultiTextDialog::GetLines(TextLines *lines) const
     for (int i=0; i<textCtrl->GetNumberOfLines(); ++i)
         // don't append empty last line
         if (i < textCtrl->GetNumberOfLines() - 1 || textCtrl->GetLineText(i).size() > 0)
-            lines->push_back(textCtrl->GetLineText(i).c_str());
+            lines->push_back(WX_TO_STD(textCtrl->GetLineText(i)));
     return true;
 }
 
@@ -189,7 +189,7 @@ bool MultiTextDialog::GetLine(string *singleString) const
         // don't append empty last line
         if (i < textCtrl->GetNumberOfLines() - 1 || textCtrl->GetLineText(i).size() > 0) {
             if (i > 0) singleString->append(1, ' ');
-            singleString->append(textCtrl->GetLineText(i).Strip(wxString::both).c_str());
+            singleString->append(WX_TO_STD(textCtrl->GetLineText(i).Strip(wxString::both)));
         }
     }
     return true;

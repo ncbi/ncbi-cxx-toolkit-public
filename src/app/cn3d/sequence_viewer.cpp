@@ -433,7 +433,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                 wxString colorStr;
                 colorStr.Printf("#%02x%02x%02x",
                     (int) (color[0]*255), (int) (color[1]*255), (int) (color[2]*255));
-                rowColors.push_back(colorStr.c_str());
+                rowColors.push_back(WX_TO_STD(colorStr));
                 if (ch != '~') ++nDisplayedResidues;
             }
 
@@ -561,9 +561,9 @@ void SequenceViewer::ExportAlignment(eExportType type)
             static string prevTitle;
             if (prevTitle.size() == 0)
                 prevTitle = GetWorkingTitle();
-            string title = wxGetTextFromUser(
+            string title = WX_TO_STD(wxGetTextFromUser(
                 "Enter a name for this PSSM (to be used by other applications like PSI-BLAST or RPS-BLAST):",
-                "PSSM Title?", prevTitle.c_str(), *viewerWindow).Strip(wxString::both).c_str();
+                "PSSM Title?", prevTitle.c_str(), *viewerWindow).Strip(wxString::both));
             if (title.size() > 0) {
                 INFOMSG("exporting PSSM (" << title << ") to " << outputFile.c_str());
                 alignmentManager->GetCurrentMultipleAlignment()->GetPSSM().OutputPSSM(*ofs, title);

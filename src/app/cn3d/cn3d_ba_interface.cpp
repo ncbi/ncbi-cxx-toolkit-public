@@ -201,8 +201,8 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
     // get scores
     wxString score;
     score.Printf(" raw score: %i", result->score);
-    bma->SetRowStatusLine(0, score.c_str());
-    bma->SetRowStatusLine(1, score.c_str());
+    bma->SetRowStatusLine(0, WX_TO_STD(score));
+    bma->SetRowStatusLine(1, WX_TO_STD(score));
 
     // success
     return bma.release();

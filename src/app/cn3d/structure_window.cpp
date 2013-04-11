@@ -759,7 +759,7 @@ void StructureWindow::OnSetFont(wxCommandEvent& event)
         // set registry values appropriately
         wxFontData& fontData = dialog.GetFontData();
         wxFont font = fontData.GetChosenFont();
-        if (!RegistrySetString(section, REG_FONT_NATIVE_FONT_INFO, font.GetNativeFontInfoDesc().c_str()))
+        if (!RegistrySetString(section, REG_FONT_NATIVE_FONT_INFO, WX_TO_STD(font.GetNativeFontInfoDesc())))
         {
             ERRORMSG("StructureWindow::OnSetFont() - error setting registry data");
             return;
@@ -869,7 +869,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         // put in data from global style
         if (!glCanvas->structureSet->styleManager->GetGlobalStyle().SaveSettingsToASN(settings))
             ERRORMSG("Error converting global style to asn");
-        settings->SetName(name.c_str());
+        settings->SetName(WX_TO_STD(name));
         favoriteStylesChanged = true;
     }
 
@@ -1091,7 +1091,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             wxString newName = wxGetTextFromUser("Enter or edit the CDD name:",
                 "CDD Name", glCanvas->structureSet->GetCDDName().c_str(), this, -1, -1, false);
             if (newName.size() > 0) {
-                if (!glCanvas->structureSet->SetCDDName(newName.c_str()))
+                if (!glCanvas->structureSet->SetCDDName(WX_TO_STD(newName)))
                     ERRORMSG("Error saving CDD name");
                 SetWorkingTitle(glCanvas->structureSet);
                 GlobalMessenger()->SetAllWindowTitles();
@@ -1197,7 +1197,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
                         "", wxYES_NO | wxICON_QUESTION, this);
                     // finally, actually perform the rejection+purge
                     glCanvas->structureSet->
-                        RejectAndPurgeSequence(seqsDescrs[choice].first, reason.c_str(), purge == wxYES);
+                        RejectAndPurgeSequence(seqsDescrs[choice].first, WX_TO_STD(reason), purge == wxYES);
                 }
             }
             break;
@@ -1414,7 +1414,7 @@ static EModel_type GetModelTypeFromUser(wxWindow *parent)
     models[2] = eModel_type_pdb_model;
 
     wxSingleChoiceDialog dialog(parent, "Please select which type of model you'd like to load",
-        "Select model", 3, choices, NULL, (wxCAPTION | wxSYSTEM_MENU | wxOK | wxCENTRE));
+        "Select model", 3, choices, (char **) NULL, (wxCAPTION | wxSYSTEM_MENU | wxOK | wxCENTRE));
     if (dialog.ShowModal() != wxID_OK) {
         ERRORMSG("Oops, somehow dialog failed to return OK");
         return eModel_type_ncbi_all_atom;
@@ -1434,7 +1434,7 @@ bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *fil
         else if (wxPathOnly(filename) == "")
             userDir = GetWorkingDir();
         else
-            userDir = GetWorkingDir() + wxPathOnly(filename).c_str() + wxFILE_SEP_PATH;
+            userDir = GetWorkingDir() + WX_TO_STD(wxPathOnly(filename)) + wxFILE_SEP_PATH;
         INFOMSG("user dir: " << userDir.c_str());
     } else {
         userDir = GetWorkingDir();
@@ -1675,7 +1675,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
         if (id.size() == 0)
             return;
 
-        CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), GetModelTypeFromUser(this), 0);
+        CNcbi_mime_asn1 *mime = LoadStructureViaCache(WX_TO_STD(id), GetModelTypeFromUser(this), 0);
         if (mime)
             LoadData(NULL, false, false, mime);
     }
@@ -1775,7 +1775,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
         else if (wxPathOnly(outputFilename) == "")
             userDir = GetWorkingDir();
         else
-            userDir = GetWorkingDir() + wxPathOnly(outputFilename).c_str() + wxFILE_SEP_PATH;
+            userDir = GetWorkingDir() + WX_TO_STD(wxPathOnly(outputFilename)) + wxFILE_SEP_PATH;
         currentFile = wxFileNameFromPath(outputFilename);
         currentFileIsBinary = outputBinary;
         SetWorkingTitle(glCanvas->structureSet);

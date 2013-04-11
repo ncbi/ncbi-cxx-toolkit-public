@@ -1166,7 +1166,7 @@ static unsigned int GetSetIntersection(const SeqPosSet& set1, const SeqPosSet& s
 
 void IBISAnnotateDialog::GetAnnotIbisOverlaps(AnnotIbisOverlapMap& aioMap) const
 {
-    unsigned int i, nOverlaps;
+    unsigned int i;
     unsigned int nInteractions = vecIbisInteractions.size();
     if (nInteractions == 0) return;
 
@@ -1189,7 +1189,7 @@ void IBISAnnotateDialog::GetAnnotIbisOverlaps(AnnotIbisOverlapMap& aioMap) const
 
         for (i = 0; i < nInteractions; ++i) {
             const SeqPosSet& interactionPositions = vecIbisInteractions[i]->GetPositions();
-            nOverlaps = GetSetIntersection(interactionPositions, annotPositions, overlapPositions);
+            GetSetIntersection(interactionPositions, annotPositions, overlapPositions);
             overlaps[i] = overlapPositions;
         }
 
@@ -1253,7 +1253,6 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
     double overlapPercentage;
     unsigned int i, ibisIndex, nInteractions, nItems, nOverlaps, nRes, nResIntn;
     int selectedVecIndex = -1;
-    int pos = interactions->GetScrollPos(wxVERTICAL);
 
     CAlign_annot *annotPtr = NULL;
     //IBISInteraction::eIbisInteractionType ibisType = IBISInteraction::eIbisOther;
@@ -1382,8 +1381,6 @@ void IBISAnnotateDialog::SetupGUIControls(int selectInteraction, int selectAnnot
     //
     // Set up wxListBox with only those annotations that overlap IBIS selection
     // 
-
-    pos = annots->GetScrollPos(wxVERTICAL);
     
     isFullInteractionAnnotated = false;
     if (updateFlags & eRemakeListBox || selectedVecIndex < 0) 
@@ -1594,7 +1591,7 @@ void IBISAnnotateDialog::MakeAnnotationFromInteraction(void)
     // create a new annotation
     CRef< CAlign_annot > annot(new CAlign_annot());
     annot = selectedInt->ToAlignAnnot();
-    annot->SetDescription(descr.c_str());
+    annot->SetDescription(WX_TO_STD(descr));
 
     // fill out location ONLY IF USING THE Cn3D HIGHLIGHTS
     /*  

@@ -395,7 +395,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
         if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
         usedSequences[sequence] = true;
 
-        if (!sequence->HighlightPattern(pattern.c_str(), restrictTo)) break;
+        if (!sequence->HighlightPattern(WX_TO_STD(pattern), restrictTo)) break;
     }
 }
 
