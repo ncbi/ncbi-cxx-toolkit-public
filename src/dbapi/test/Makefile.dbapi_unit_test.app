@@ -34,6 +34,4 @@ CHECK_CMD = dbapi_unit_test -dr ftds       -S Sybase
 # Run tests against Sybase ASE 15.5 (below) as well as Sybase 12.x (above)
 CHECK_CMD = dbapi_unit_test -dr ftds       -S DBAPI_SYB155_TEST
 
-CHECK_CMD = dbapi_unit_test -dr ftds -S MsSql --run_test=Test_Authentication
-
 WATCHERS = ucko

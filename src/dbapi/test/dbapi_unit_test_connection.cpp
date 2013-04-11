@@ -728,63 +728,6 @@ BOOST_AUTO_TEST_CASE(Test_ConnPool)
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-#ifdef HAVE_LIBCONNEXT
-
-BOOST_AUTO_TEST_CASE(Test_Authentication)
-{
-    try {
-        // MSSQL10 has SSL certificate.
-        // There is no MSSQL10 any more ...
-    //     {
-    //         auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
-    //
-    //         auto_conn->Connect(
-    //             "NCBI_NT\\anyone",
-    //             "Perm1tted",
-    //             "MSSQL10"
-    //             );
-    //
-    //         auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
-    //
-    //         auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
-    //         BOOST_CHECK( rs.get() != NULL );
-    //         BOOST_CHECK( rs->Next() );
-    //     }
-
-        char* password = NcbiDecrypt("08QJLFmVZfA716", "anyone");
-
-        // No SSL certificate.
-        if (true) {
-            auto_ptr<IConnection> auto_conn( GetDS().CreateConnection() );
-
-            auto_conn->Connect(
-                "NCBI_NT\\anyone",
-                password,
-                "MSSQL100" // "MSDEV2"
-                );
-
-            auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
-
-            IResultSet* rs = auto_stmt->ExecuteQuery("select @@version");
-            BOOST_CHECK( rs != NULL );
-            BOOST_CHECK( rs->Next() );
-        }
-
-        free(password);
-    }
-    catch(const CException& ex) {
-        DBAPI_BOOST_FAIL(ex);
-    }
-}
-
-#else
-
-BOOST_AUTO_TEST_CASE(Test_Authentication)
-{}
-
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_ConnParams)
 {
