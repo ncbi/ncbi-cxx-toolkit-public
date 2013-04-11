@@ -1345,8 +1345,9 @@ int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
 };
 
 void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
-                                          bool is_protein)
+                                          const CConstRef<blast::CIgBlastOptions> &ig_opts)
 {
+    bool is_protein = ig_opts->m_IsProtein;
     SetSeqType(!is_protein);
     SetMinusStrand(annot->m_MinusStrand);
 
@@ -1446,17 +1447,23 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     }
  
     // Domain info coordinates are inclusive (and always on positive strand)
-    AddIgDomain("FWR1", annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1,
-                        annot->m_DomainInfo_S[0], annot->m_DomainInfo_S[1]+1);
-    AddIgDomain("CDR1", annot->m_DomainInfo[2], annot->m_DomainInfo[3]+1,
-                        annot->m_DomainInfo_S[2], annot->m_DomainInfo_S[3]+1);
-    AddIgDomain("FWR2", annot->m_DomainInfo[4], annot->m_DomainInfo[5]+1,
-                        annot->m_DomainInfo_S[4], annot->m_DomainInfo_S[5]+1);
-    AddIgDomain("CDR2", annot->m_DomainInfo[6], annot->m_DomainInfo[7]+1,
-                        annot->m_DomainInfo_S[6], annot->m_DomainInfo_S[7]+1);
-    AddIgDomain("FWR3", annot->m_DomainInfo[8], annot->m_DomainInfo[9]+1,
-                        annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
-    AddIgDomain("CDR3 (V segment only)", annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
+    AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"FR1":"FR1-IMGT", 
+                annot->m_DomainInfo[0], annot->m_DomainInfo[1]+1,
+                annot->m_DomainInfo_S[0], annot->m_DomainInfo_S[1]+1);
+    AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"CDR1":"CDR1-IMGT",
+                annot->m_DomainInfo[2], annot->m_DomainInfo[3]+1,
+                annot->m_DomainInfo_S[2], annot->m_DomainInfo_S[3]+1);
+    AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"FR2":"FR2-IMGT",
+                annot->m_DomainInfo[4], annot->m_DomainInfo[5]+1,
+                annot->m_DomainInfo_S[4], annot->m_DomainInfo_S[5]+1);
+    AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"CDR2":"CDR2-IMGT",
+                annot->m_DomainInfo[6], annot->m_DomainInfo[7]+1,
+                annot->m_DomainInfo_S[6], annot->m_DomainInfo_S[7]+1);
+    AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"FR3":"FR3-IMGT",
+                annot->m_DomainInfo[8], annot->m_DomainInfo[9]+1,
+                annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
+    AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"CDR3 (V gene only)":"CDR3-IMGT (germline)",
+                annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
 };
 
 void CIgBlastTabularInfo::Print(void)
@@ -1474,7 +1481,7 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
                       << "of a V gene and has been converted to the plus strand. "
                       << "The sequence positions refer to the converted sequence. " << endl << endl;
         }
-        m_Ostream << header << "V(D)J rearrangement summary for query sequence ";
+        m_Ostream << header << "V-(D)-J rearrangement summary for query sequence ";
         m_Ostream << "(Top V gene match, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
@@ -1537,7 +1544,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
                       << "of a V gene and has been converted to the plus strand. "
                       << "The sequence positions refer to the converted sequence.\n\n";
         }
-        m_Ostream << "<br>V(D)J rearrangement summary for query sequence:\n";
+        m_Ostream << "<br>V-(D)-J rearrangement summary for query sequence:\n";
         m_Ostream << "<table border=1>\n";
         m_Ostream << "<tr><td>Top V gene match</td>";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
@@ -1691,7 +1698,7 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
     }
 
     if (isHtml) {
-        m_Ostream << "<br>V(D)J junction details based on top germline gene matches:\n";
+        m_Ostream << "<br>V-(D)-J junction details based on top germline gene matches:\n";
         m_Ostream << "<table border=1>\n";
         m_Ostream << "<tr><td>V region end</td>";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
@@ -1704,11 +1711,11 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         }
         m_Ostream << "<td>J region start</td></tr>\n<tr>";
     } else {
-        m_Ostream << header << "V(D)J junction details based on top germline gene matches (V end, ";
+        m_Ostream << header << "V-(D)-J junction details based on top germline gene matches (V end, ";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB")  m_Ostream << "V-D junction, D region, D-J junction, ";
         else m_Ostream << "V-J junction, ";
-        m_Ostream << "J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either joining gene segment) are indicated in parentheses (i.e., (TACT)) but"
+        m_Ostream << "J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either rearranging gene) are indicated in parentheses (i.e., (TACT)) but"
                   << " are not included under the V, D, or J gene itself" << endl;
     }
 
@@ -1726,8 +1733,8 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         m_Ostream << "</tr>\n</table>";
 
         m_Ostream << "*: Overlapping nucleotides may exist"
-                  << " at V-D-J junction (i.e, nucleotides that could be assigned \nto either joining gene segment). "
-                  << " Such bases are indicated inside a parenthesis (i.e., (TACAT))\n"
+                  << " at V-D-J junction (i.e, nucleotides that could be assigned \nto either rearranging gene). "
+                  << " Such nucleotides are indicated inside a parenthesis (i.e., (TACAT))\n"
                   << " but are not included under the V, D or J gene itself.\n";
     }
     m_Ostream << endl << endl;

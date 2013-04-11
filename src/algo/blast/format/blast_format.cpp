@@ -690,7 +690,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
                                 annots->m_ChainType[0], 
                                 annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
-        tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions);
 
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
                                 m_DbName, 
@@ -1068,7 +1068,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                 annots->m_ChainType[0], 
                                 annots->m_ChainTypeToShow, 
                                 &m_ScoringMatrix);
-        tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
+        tabinfo.SetIgAnnotation(annots, m_IgOptions);
         m_Outfile << "Domain classification requested: " << m_IgOptions->m_DomainSystem << endl << endl;
         if (m_IsHTML) {
             tabinfo.PrintHtmlSummary();
@@ -1096,7 +1096,20 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     }
 
     list < CRef<CDisplaySeqalign::DomainInfo> >  domain;
-    string domain_name[] = {"FWR1", "CDR1", "FWR2", "CDR2", "FWR3"};
+    int domain_name_length = 5;
+    string kabat_domain_name[] = {"FR1", "CDR1", "FR2", "CDR2", "FR3"};
+    string imgt_domain_name[] = {"FR1-IMGT", "CDR1-IMGT", "FR2-IMGT", "CDR2-IMGT", "FR3-IMGT"};
+    vector<string> domain_name;
+    if (m_IgOptions->m_DomainSystem == "kabat") {
+        for (int i = 0; i < domain_name_length; i ++) {
+            domain_name.push_back(kabat_domain_name[i]);
+        }
+    } else {
+        for (int i = 0; i < domain_name_length; i ++) {
+            domain_name.push_back(imgt_domain_name[i]);
+        }
+    } 
+  
     const CRef<CIgAnnotation> & annots = results.GetIgAnnotation();
     
     for (int i=0; i<9; i = i + 2) {

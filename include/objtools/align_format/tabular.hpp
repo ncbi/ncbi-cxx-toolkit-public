@@ -598,8 +598,8 @@ public:
     }
 
     /// One method to set all annotation information
-    void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
-                         bool is_protein = true);
+    void SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot, 
+                         const CConstRef<blast::CIgBlastOptions> &ig_opts);
 
 protected:
     void x_ResetIgFields();
