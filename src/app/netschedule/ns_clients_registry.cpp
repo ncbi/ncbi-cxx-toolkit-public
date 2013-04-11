@@ -757,8 +757,8 @@ void  CNSClientsRegistry::x_BuildWNAffinities(void)
     m_WNAffinities.clear();
     for (map< string, CNSClient >::const_iterator
             k = m_Clients.begin(); k != m_Clients.end(); ++k )
-        if (k->second.GetType()  & CNSClient::eWorkerNode)
-            m_WNAffinities &= k->second.GetPreferredAffinities();
+        if (k->second.GetType() & CNSClient::eWorkerNode)
+            m_WNAffinities |= k->second.GetPreferredAffinities();
 }
 
 END_NCBI_SCOPE
