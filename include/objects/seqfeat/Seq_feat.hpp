@@ -104,6 +104,23 @@ public:
     /// returned.
     const string& GetNamedQual(const string& qual_name) const;
 
+    /// Warning: This is invalidated if the underlying except_text is 
+    /// changed in any way.
+    typedef set<CTempStringEx, PNocase> TExceptionTextSet;
+
+    /// Returns a case-insensitive set of exception texts.  
+    /// Warning: The returned contents are invalidated 
+    /// if the underlying exception_text is changed in any way.
+    AutoPtr<TExceptionTextSet> GetTempExceptionTextSet(void) const;
+
+    /// Returns whether or not the given exception_text is set for this 
+    /// feature.  Note that it always returns false if IsExcept is set,
+    /// even if there is exception text.
+    ///
+    /// @param exception_text
+    ///   The exception text to search for.
+    bool HasExceptionText(const string & exception_text ) const;
+
     /// Compare relative order of this feature and feature f2,
     /// ordering first by features' coordinates, by importance of their type,
     /// by complexity of location, and by some other fields depending on

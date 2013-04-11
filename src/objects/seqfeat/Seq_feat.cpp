@@ -342,6 +342,42 @@ const string& CSeq_feat::GetNamedQual(const string& qual_name) const
     return kEmptyStr;
 }
 
+AutoPtr<CSeq_feat::TExceptionTextSet> 
+CSeq_feat::GetTempExceptionTextSet(void) const
+{
+    AutoPtr<TExceptionTextSet> pAnswerSet( new TExceptionTextSet );
+
+    if( ! IsSetExcept() || ! GetExcept() || ! IsSetExcept_text()  ) 
+    {
+        return pAnswerSet; // empty set
+    }
+
+    const string & raw_exception_texts = GetExcept_text();
+
+    vector<CTempStringEx> exception_parts;
+    NStr::Tokenize (raw_exception_texts, ",", exception_parts, 
+        NStr::eMergeDelims);
+
+    ITERATE( vector<CTempStringEx>, part_it, exception_parts ) {
+        pAnswerSet->insert( NStr::TruncateSpaces(*part_it) );
+    }
+}
+
+bool CSeq_feat::HasExceptionText(const string & exception_text ) const
+{
+    CTempString sCleanedInputText = NStr::TruncateSpaces(exception_text);
+    if( sCleanedInputText.empty() ) {
+        // it's preferable for the caller not to give us an
+        // empty string, but... just in case
+        return false;
+    }
+
+    AutoPtr<TExceptionTextSet> p_exception_text_set = GetTempExceptionTextSet();
+
+    // is it in the set?
+    return ( p_exception_text_set->find(sCleanedInputText) != 
+        p_exception_text_set->end() );
+}
 
 ISeq_feat::~ISeq_feat(void)
 {
