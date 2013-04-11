@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NCBI_APPLOG=./ncbi_applog.bin
+NCBI_APPLOG=./ncbi_applog
 
 # By default set log_site parameter to DEV (developer machine)
 # for all request that use this CGI, if not specified otherwise.
