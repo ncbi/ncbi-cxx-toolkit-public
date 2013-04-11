@@ -1,3 +1,4 @@
+
 #ifndef ALGO_ALIGN_SPLIGN__HPP
 #define ALGO_ALIGN_SPLIGN__HPP
 
@@ -75,6 +76,14 @@ public:
 
     CRef<TAligner>&     SetAligner(void);
     CConstRef<TAligner> GetAligner(void) const;
+    //set aligner scores to current settings of CSplign object (m_match_score and so on).
+    //CSplign scores could be changed manually or set to mrna/est presettings, see "basic scores" section below
+    //aligner should be created and CSplign scores should be set before SetAlignerScores call. 
+    void SetAlignerScores(void); 
+
+    //just create an aligner
+    static CRef<CSplicedAligner> s_CreateDefaultAligner(void);
+    //create an aligner and set basic scores to mRNA or EST preset
     static CRef<CSplicedAligner> s_CreateDefaultAligner(bool low_query_quality);
 
     /// Access the scope object that the library will use to retrieve the sequences
@@ -135,6 +144,52 @@ public:
     void   SetMinPolyaLen(size_t len);
     static size_t s_GetDefaultMinPolyaLen(void);
     size_t GetMinPolyaLen(void) const;
+
+    //BEGIN basic scores
+
+    enum EScoringType {
+        eMrnaScoring,
+        eEstScoring
+    };
+
+    //note: SetScoringType call with mRNA or EST type is going to switch basic scores to preset values
+    void   SetScoringType(EScoringType type);
+    static EScoringType s_GetDefaultScoringType(void);
+    EScoringType GetScoringType(void) const;
+
+    void   SetMatchScore(int score);
+    static int s_GetDefaultMatchScore(void);
+    int GetMatchScore(void) const;
+
+    void   SetMismatchScore(int score);
+    static int s_GetDefaultMismatchScore(void);
+    int GetMismatchScore(void) const;
+
+    void   SetGapOpeningScore(int score);
+    static int s_GetDefaultGapOpeningScore(void);
+    int GetGapOpeningScore(void) const;
+
+    void   SetGapExtensionScore(int score);
+    static int s_GetDefaultGapExtensionScore(void);
+    int GetGapExtensionScore(void) const;
+
+    void   SetGtAgSpliceScore(int score);
+    static int s_GetDefaultGtAgSpliceScore(void);
+    int GetGtAgSpliceScore(void) const;
+
+    void   SetGcAgSpliceScore(int score);
+    static int s_GetDefaultGcAgSpliceScore(void);
+    int GetGcAgSpliceScore(void) const;
+
+    void   SetAtAcSpliceScore(int score);
+    static int s_GetDefaultAtAcSpliceScore(void);
+    int GetAtAcSpliceScore(void) const;
+
+    void   SetNonConsensusSpliceScore(int score);
+    static int s_GetDefaultNonConsensusSpliceScore(void);
+    int GetNonConsensusSpliceScore(void) const;
+
+    //END basic scores
 
    void   SetStartModelId(size_t model_id) {
         m_model_id = model_id - 1;
@@ -307,6 +362,17 @@ protected:
 
     // alignment pattern
     vector<size_t>        m_pattern;
+
+    //basic NW scores 
+    EScoringType m_ScoringType;
+    int m_MatchScore;
+    int m_MismatchScore;
+    int m_GapOpeningScore;
+    int m_GapExtensionScore;
+    int m_GtAgSpliceScore;
+    int m_GcAgSpliceScore;
+    int m_AtAcSpliceScore;
+    int m_NonConsensusSpliceScore;
 
     // min exon idty - others will be marked as gaps 
     double                m_MinExonIdty;
