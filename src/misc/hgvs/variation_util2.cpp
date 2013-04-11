@@ -1569,6 +1569,12 @@ string Translate(const string& nuc_str)
             prot_str,
             CSeqTranslator::fIs5PrimePartial);
 
+    //truncate everything past the first stop
+    size_t stop_pos = prot_str.find('*');
+    if(stop_pos != NPOS) {
+        prot_str.resize(stop_pos + 1);
+    }
+
     return prot_str;
 }
 
@@ -1991,12 +1997,20 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     int common_prot_prefix_len(0); //will calculate length of unchanged leading AAs in translations (starting with codons of interest)
 
+
     if(prot_ref_str == prot_var_str) {
         //No-change variation. Will truncate to original counts of affected codons, such that the 
         //no-change variation describes the original codons that did not affect the translation.
-        prot_ref_str.resize(num_ref_codons);
-        prot_var_str.resize(num_var_codons);
+        prot_ref_str.resize(min(static_cast<int>(prot_ref_str.size()), num_ref_codons));
+        prot_var_str.resize(prot_ref_str.size());
+
+        if(prot_ref_str.size() > 0 && *prot_ref_str.rbegin() == '*') {
+            //If translated all the way to stop with no-changes, this is no longer a frameshift, even though the indel is not mod%3
+            frameshift_phase = 0;
+        }
+
     } else {
+
         //Justify the variation to first affected AA.
         //
         //Truncate common prefix of translations; truncate the 5'-end of the prot-loc and recalculate codons-loc accordingly.
