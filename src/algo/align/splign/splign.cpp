@@ -93,17 +93,19 @@ namespace {
 
 
     //original Yuri's EST scores
+
     const int kEstMatchScore (1000);
-    const int kEstMismatchScore (-1044);
-    const int kEstGapOpeningScore(-3070);
-    const int kEstGapExtensionScore(-173);
+    const int kEstMismatchScore (-1011);
+    const int kEstGapOpeningScore(-1460);
+    const int kEstGapExtensionScore(-464);
 
-    const int kEstGtAgSpliceScore(-4270);
-    const int kEstGcAgSpliceScore(-5314);
-    const int kEstAtAcSpliceScore(-6358);
-    const int kEstNonConsensusSpliceScore(-7395);
-
+    const int kEstGtAgSpliceScore(-4988);
+    const int kEstGcAgSpliceScore(-5999);
+    const int kEstAtAcSpliceScore(-7010);
+    const int kEstNonConsensusSpliceScore(-13060);
 }
+
+
 
 //original Yuri's mRNA scores
 
@@ -116,31 +118,31 @@ int CSplign::s_GetDefaultMatchScore(void) {
 }
 
 int CSplign::s_GetDefaultMismatchScore(void) {
-    return -1011;
+    return -1044;
 }
 
 int CSplign::s_GetDefaultGapOpeningScore(void) {
-    return -1460;
+    return -3070;
 }
 
 int CSplign::s_GetDefaultGapExtensionScore(void) {
-    return -464;
+    return -173;
 }
 
 int CSplign::s_GetDefaultGtAgSpliceScore(void) {
-    return -4988;
+    return -4270;
 }
 
 int CSplign::s_GetDefaultGcAgSpliceScore(void) {
-    return -5999;
+    return -5314;
 }
 
 int CSplign::s_GetDefaultAtAcSpliceScore(void) {
-    return -7010;
+    return -6358;
 }
 
 int CSplign::s_GetDefaultNonConsensusSpliceScore(void) {
-    return -13060;
+    return -7395;
 }
 
 CSplign::CSplign(void):
@@ -225,7 +227,7 @@ CRef<CSplicedAligner> CSplign::s_CreateDefaultAligner(bool low_query_quality)
 {
     CRef<CSplicedAligner> aligner(s_CreateDefaultAligner());
         
-    if(false == low_query_quality) {
+    if(low_query_quality) {
         aligner->SetWm  (kEstMatchScore);
         aligner->SetWms (kEstMismatchScore);
         aligner->SetWg  (kEstGapOpeningScore);
