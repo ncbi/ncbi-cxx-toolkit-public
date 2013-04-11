@@ -2136,7 +2136,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
-                       "GI list specified but no ISAM file found for GI.");
+                       "GI list specified but no ISAM file found for GI in " + m_VolName);
         }
     }
     
@@ -2147,7 +2147,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
-                       "TI list specified but no ISAM file found for TI.");
+                       "TI list specified but no ISAM file found for TI in " + m_VolName);
         }
     }
     
@@ -2158,7 +2158,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
-                       "SI list specified but no ISAM file found for SI.");
+                       "SI list specified but no ISAM file found for SI in " + m_VolName);
         }
     }
 }
@@ -2175,7 +2175,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
-                       "GI list specified but no ISAM file found for GI.");
+                       "GI list specified but no ISAM file found for GI in " + m_VolName);
         }
     }
     
@@ -2186,7 +2186,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
-                       "TI list specified but no ISAM file found for TI.");
+                       "TI list specified but no ISAM file found for TI in " + m_VolName);
         }
     }
 }
