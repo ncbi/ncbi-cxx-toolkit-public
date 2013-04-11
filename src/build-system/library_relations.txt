@@ -111,15 +111,16 @@ GMU needs xutil
 access needs xncbi
 access needs xser
 access needs xutil
+align-access includes ncbi-bam
 align-access needs judy
 align-access needs kfg
 align-access needs kfs
 align-access needs klib
+align-access needs kns
 align-access needs kproc
 align-access needs krypto
 align-access needs ksproc
 align-access needs kurl
-align-access needs ncbi-bam
 align-access needs srapath
 align-access needs vfs
 align-reader needs judy
@@ -127,6 +128,7 @@ align-reader needs kdb
 align-reader needs kfg
 align-reader needs kfs
 align-reader needs klib
+align-reader needs kns
 align-reader needs kproc
 align-reader needs krypto
 align-reader needs ksproc
@@ -140,6 +142,7 @@ align-writer needs kdb
 align-writer needs kfg
 align-writer needs kfs
 align-writer needs klib
+align-writer needs kns
 align-writer needs kproc
 align-writer needs krypto
 align-writer needs ksproc
@@ -378,6 +381,7 @@ axf needs kdb
 axf needs kfg
 axf needs kfs
 axf needs klib
+axf needs kns
 axf needs kproc
 axf needs krypto
 axf needs ksproc
@@ -407,6 +411,7 @@ bamread needs kdb
 bamread needs kfg
 bamread needs kfs
 bamread needs klib
+bamread needs kns
 bamread needs kproc
 bamread needs krypto
 bamread needs ksproc
@@ -550,6 +555,7 @@ blast_sra needs kdb
 blast_sra needs kfg
 blast_sra needs kfs
 blast_sra needs klib
+blast_sra needs kns
 blast_sra needs kproc
 blast_sra needs krypto
 blast_sra needs ksproc
@@ -1064,6 +1070,7 @@ fastqloader needs kdb
 fastqloader needs kfg
 fastqloader needs kfs
 fastqloader needs klib
+fastqloader needs kns
 fastqloader needs kproc
 fastqloader needs kq
 fastqloader needs krypto
@@ -1113,6 +1120,7 @@ gc_load_utils needs kdb
 gc_load_utils needs kfg
 gc_load_utils needs kfs
 gc_load_utils needs klib
+gc_load_utils needs kns
 gc_load_utils needs kproc
 gc_load_utils needs krypto
 gc_load_utils needs ksproc
@@ -1213,6 +1221,7 @@ gc_utils needs kdb
 gc_utils needs kfg
 gc_utils needs kfs
 gc_utils needs klib
+gc_utils needs kns
 gc_utils needs kproc
 gc_utils needs krypto
 gc_utils needs ksproc
@@ -1311,6 +1320,7 @@ gcaccess_utils needs kdb
 gcaccess_utils needs kfg
 gcaccess_utils needs kfs
 gcaccess_utils needs klib
+gcaccess_utils needs kns
 gcaccess_utils needs kproc
 gcaccess_utils needs krypto
 gcaccess_utils needs ksproc
@@ -1483,6 +1493,9 @@ generic_db_utils needs xconnect
 generic_db_utils needs xncbi
 generic_db_utils needs xser
 generic_db_utils needs xutil
+genesbyloc needs xncbi
+genesbyloc needs xser
+genesbyloc needs xutil
 genome_collection needs biblio
 genome_collection needs general
 genome_collection needs medline
@@ -1622,6 +1635,7 @@ gpinit needs kdb
 gpinit needs kfg
 gpinit needs kfs
 gpinit needs klib
+gpinit needs kns
 gpinit needs kproc
 gpinit needs krypto
 gpinit needs ksproc
@@ -1735,6 +1749,7 @@ gpinit_admin needs kdb
 gpinit_admin needs kfg
 gpinit_admin needs kfs
 gpinit_admin needs klib
+gpinit_admin needs kns
 gpinit_admin needs kproc
 gpinit_admin needs krypto
 gpinit_admin needs ksproc
@@ -1839,6 +1854,7 @@ gpinit_buildinfo needs kdb
 gpinit_buildinfo needs kfg
 gpinit_buildinfo needs kfs
 gpinit_buildinfo needs klib
+gpinit_buildinfo needs kns
 gpinit_buildinfo needs kproc
 gpinit_buildinfo needs krypto
 gpinit_buildinfo needs ksproc
@@ -1954,6 +1970,7 @@ gpipe_alnutil needs kdb
 gpipe_alnutil needs kfg
 gpipe_alnutil needs kfs
 gpipe_alnutil needs klib
+gpipe_alnutil needs kns
 gpipe_alnutil needs kproc
 gpipe_alnutil needs krypto
 gpipe_alnutil needs ksproc
@@ -2086,6 +2103,7 @@ gpipe_objutil needs kdb
 gpipe_objutil needs kfg
 gpipe_objutil needs kfs
 gpipe_objutil needs klib
+gpipe_objutil needs kns
 gpipe_objutil needs kproc
 gpipe_objutil needs krypto
 gpipe_objutil needs ksproc
@@ -3413,6 +3431,7 @@ kapp needs judy
 kapp needs kfg
 kapp needs kfs
 kapp needs klib
+kapp needs kns
 kapp needs kproc
 kapp needs krypto
 kapp needs ksproc
@@ -3423,6 +3442,7 @@ kdb needs judy
 kdb needs kfg
 kdb needs kfs
 kdb needs klib
+kdb needs kns
 kdb needs kproc
 kdb needs krypto
 kdb needs ksproc
@@ -3449,7 +3469,12 @@ kfs needs judy
 kfs needs klib
 kfs needs kproc
 kfs needs ksproc
-klib needs judy
+klib includes judy
+kns needs judy
+kns needs kfs
+kns needs klib
+kns needs kproc
+kns needs ksproc
 kproc includes ksproc
 kproc needs judy
 kproc needs klib
@@ -3474,6 +3499,7 @@ ksrch needs judy
 ksrch needs klib
 ktst needs judy
 ktst needs klib
+kurl includes kns
 kurl needs judy
 kurl needs kfs
 kurl needs klib
@@ -3483,6 +3509,7 @@ kxfs needs judy
 kxfs needs kfg
 kxfs needs kfs
 kxfs needs klib
+kxfs needs kns
 kxfs needs kproc
 kxfs needs krypto
 kxfs needs ksproc
@@ -3574,6 +3601,7 @@ load needs kapp
 load needs kfg
 load needs kfs
 load needs klib
+load needs kns
 load needs kproc
 load needs kq
 load needs krypto
@@ -3588,6 +3616,7 @@ loader needs kdb
 loader needs kfg
 loader needs kfs
 loader needs klib
+loader needs kns
 loader needs kproc
 loader needs kq
 loader needs krypto
@@ -3969,6 +3998,7 @@ ncbi-bam needs judy
 ncbi-bam needs kfg
 ncbi-bam needs kfs
 ncbi-bam needs klib
+ncbi-bam needs kns
 ncbi-bam needs kproc
 ncbi-bam needs krypto
 ncbi-bam needs ksproc
@@ -4035,6 +4065,7 @@ ncbi_xloader_bam needs kdb
 ncbi_xloader_bam needs kfg
 ncbi_xloader_bam needs kfs
 ncbi_xloader_bam needs klib
+ncbi_xloader_bam needs kns
 ncbi_xloader_bam needs kproc
 ncbi_xloader_bam needs krypto
 ncbi_xloader_bam needs ksproc
@@ -4123,6 +4154,7 @@ ncbi_xloader_csra needs kdb
 ncbi_xloader_csra needs kfg
 ncbi_xloader_csra needs kfs
 ncbi_xloader_csra needs klib
+ncbi_xloader_csra needs kns
 ncbi_xloader_csra needs kproc
 ncbi_xloader_csra needs krypto
 ncbi_xloader_csra needs ksproc
@@ -4238,6 +4270,7 @@ ncbi_xloader_sra needs kdb
 ncbi_xloader_sra needs kfg
 ncbi_xloader_sra needs kfs
 ncbi_xloader_sra needs klib
+ncbi_xloader_sra needs kns
 ncbi_xloader_sra needs kproc
 ncbi_xloader_sra needs krypto
 ncbi_xloader_sra needs ksproc
@@ -4292,6 +4325,7 @@ ncbi_xloader_vdbgraph needs kdb
 ncbi_xloader_vdbgraph needs kfg
 ncbi_xloader_vdbgraph needs kfs
 ncbi_xloader_vdbgraph needs klib
+ncbi_xloader_vdbgraph needs kns
 ncbi_xloader_vdbgraph needs kproc
 ncbi_xloader_vdbgraph needs krypto
 ncbi_xloader_vdbgraph needs ksproc
@@ -4328,6 +4362,7 @@ ncbi_xloader_wgs needs kdb
 ncbi_xloader_wgs needs kfg
 ncbi_xloader_wgs needs kfs
 ncbi_xloader_wgs needs klib
+ncbi_xloader_wgs needs kns
 ncbi_xloader_wgs needs kproc
 ncbi_xloader_wgs needs krypto
 ncbi_xloader_wgs needs ksproc
@@ -5059,6 +5094,7 @@ sra-schema needs kdb
 sra-schema needs kfg
 sra-schema needs kfs
 sra-schema needs klib
+sra-schema needs kns
 sra-schema needs kproc
 sra-schema needs krypto
 sra-schema needs ksproc
@@ -5066,26 +5102,30 @@ sra-schema needs kurl
 sra-schema needs srapath
 sra-schema needs vdb
 sra-schema needs vfs
+sradb includes sra-schema
+sradb includes sraschema
 sradb needs judy
 sradb needs kdb
 sradb needs kfg
 sradb needs kfs
 sradb needs klib
+sradb needs kns
 sradb needs kproc
 sradb needs krypto
 sradb needs ksproc
 sradb needs kurl
-sradb needs sra-schema
 sradb needs srapath
-sradb needs sraschema
 sradb needs vdb
 sradb needs vfs
 srapath needs judy
 srapath needs kfg
 srapath needs kfs
 srapath needs klib
+srapath needs kns
 srapath needs kproc
+srapath needs krypto
 srapath needs ksproc
+srapath needs kurl
 sraread needs align-reader
 sraread needs axf
 sraread needs biblio
@@ -5095,6 +5135,7 @@ sraread needs kdb
 sraread needs kfg
 sraread needs kfs
 sraread needs klib
+sraread needs kns
 sraread needs kproc
 sraread needs krypto
 sraread needs ksproc
@@ -5123,6 +5164,7 @@ srareader needs kdb
 srareader needs kfg
 srareader needs kfs
 srareader needs klib
+srareader needs kns
 srareader needs kproc
 srareader needs krypto
 srareader needs ksproc
@@ -5139,6 +5181,7 @@ sraschema needs kdb
 sraschema needs kfg
 sraschema needs kfs
 sraschema needs klib
+sraschema needs kns
 sraschema needs kproc
 sraschema needs krypto
 sraschema needs ksproc
@@ -5151,6 +5194,7 @@ sraxf needs kdb
 sraxf needs kfg
 sraxf needs kfs
 sraxf needs klib
+sraxf needs kns
 sraxf needs kproc
 sraxf needs krypto
 sraxf needs ksproc
@@ -5346,6 +5390,7 @@ validate_regions needs kdb
 validate_regions needs kfg
 validate_regions needs kfs
 validate_regions needs klib
+validate_regions needs kns
 validate_regions needs kproc
 validate_regions needs krypto
 validate_regions needs ksproc
@@ -5432,6 +5477,7 @@ vdb needs kdb
 vdb needs kfg
 vdb needs kfs
 vdb needs klib
+vdb needs kns
 vdb needs kproc
 vdb needs krypto
 vdb needs ksproc
@@ -5443,6 +5489,7 @@ vdb-blast needs kdb
 vdb-blast needs kfg
 vdb-blast needs kfs
 vdb-blast needs klib
+vdb-blast needs kns
 vdb-blast needs kproc
 vdb-blast needs krypto
 vdb-blast needs ksproc
@@ -5456,16 +5503,17 @@ vfs needs judy
 vfs needs kfg
 vfs needs kfs
 vfs needs klib
+vfs needs kns
 vfs needs kproc
 vfs needs krypto
 vfs needs ksproc
 vfs needs kurl
-vfs needs srapath
 vxf needs judy
 vxf needs kdb
 vxf needs kfg
 vxf needs kfs
 vxf needs klib
+vxf needs kns
 vxf needs kproc
 vxf needs krypto
 vxf needs ksproc
@@ -5476,6 +5524,7 @@ vxf needs vfs
 vxfentrez needs judy
 vxfentrez needs kfs
 vxfentrez needs klib
+vxfentrez needs kns
 vxfentrez needs kproc
 vxfentrez needs ksproc
 vxfentrez needs kurl
@@ -7550,6 +7599,7 @@ waxf needs kdb
 waxf needs kfg
 waxf needs kfs
 waxf needs klib
+waxf needs kns
 waxf needs kproc
 waxf needs krypto
 waxf needs ksproc
@@ -7567,6 +7617,7 @@ wgsxf needs kdb
 wgsxf needs kfg
 wgsxf needs kfs
 wgsxf needs klib
+wgsxf needs kns
 wgsxf needs kproc
 wgsxf needs krypto
 wgsxf needs ksproc
@@ -7578,6 +7629,7 @@ wkdb needs judy
 wkdb needs kfg
 wkdb needs kfs
 wkdb needs klib
+wkdb needs kns
 wkdb needs kproc
 wkdb needs krypto
 wkdb needs ksproc
@@ -7609,6 +7661,7 @@ wsra-schema needs kdb
 wsra-schema needs kfg
 wsra-schema needs kfs
 wsra-schema needs klib
+wsra-schema needs kns
 wsra-schema needs kproc
 wsra-schema needs krypto
 wsra-schema needs ksproc
@@ -7618,24 +7671,25 @@ wsra-schema needs vdb
 wsra-schema needs vfs
 wsra-schema needs wkdb
 wsra-schema needs wvdb
+wsradb includes sra-schema
 wsradb includes sradb
+wsradb includes sraschema
+wsradb includes wsra-schema
+wsradb includes wsraschema
 wsradb needs judy
 wsradb needs kdb
 wsradb needs kfg
 wsradb needs kfs
 wsradb needs klib
+wsradb needs kns
 wsradb needs kproc
 wsradb needs krypto
 wsradb needs ksproc
 wsradb needs kurl
-wsradb needs sra-schema
 wsradb needs srapath
-wsradb needs sraschema
 wsradb needs vdb
 wsradb needs vfs
 wsradb needs wkdb
-wsradb needs wsra-schema
-wsradb needs wsraschema
 wsradb needs wvdb
 wsraschema includes sra-schema
 wsraschema includes sraschema
@@ -7645,6 +7699,7 @@ wsraschema needs kdb
 wsraschema needs kfg
 wsraschema needs kfs
 wsraschema needs klib
+wsraschema needs kns
 wsraschema needs kproc
 wsraschema needs krypto
 wsraschema needs ksproc
@@ -7660,6 +7715,7 @@ wsraxf needs kdb
 wsraxf needs kfg
 wsraxf needs kfs
 wsraxf needs klib
+wsraxf needs kns
 wsraxf needs kproc
 wsraxf needs krypto
 wsraxf needs ksproc
@@ -7676,6 +7732,7 @@ wvdb needs kdb
 wvdb needs kfg
 wvdb needs kfs
 wvdb needs klib
+wvdb needs kns
 wvdb needs kproc
 wvdb needs krypto
 wvdb needs ksproc
@@ -7689,6 +7746,7 @@ wvxf needs kdb
 wvxf needs kfg
 wvxf needs kfs
 wvxf needs klib
+wvxf needs kns
 wvxf needs kproc
 wvxf needs krypto
 wvxf needs ksproc
@@ -7704,6 +7762,7 @@ wwgsxf needs kdb
 wwgsxf needs kfg
 wwgsxf needs kfs
 wwgsxf needs klib
+wwgsxf needs kns
 wwgsxf needs kproc
 wwgsxf needs krypto
 wwgsxf needs ksproc
@@ -8442,6 +8501,7 @@ xgencoll needs kdb
 xgencoll needs kfg
 xgencoll needs kfs
 xgencoll needs klib
+xgencoll needs kns
 xgencoll needs kproc
 xgencoll needs krypto
 xgencoll needs ksproc
@@ -8542,6 +8602,7 @@ xgencollstats needs kdb
 xgencollstats needs kfg
 xgencollstats needs kfs
 xgencollstats needs klib
+xgencollstats needs kns
 xgencollstats needs kproc
 xgencollstats needs krypto
 xgencollstats needs ksproc
@@ -8654,6 +8715,7 @@ xgraphiccgi needs kdb
 xgraphiccgi needs kfg
 xgraphiccgi needs kfs
 xgraphiccgi needs klib
+xgraphiccgi needs kns
 xgraphiccgi needs kproc
 xgraphiccgi needs krypto
 xgraphiccgi needs ksproc
@@ -9237,6 +9299,7 @@ xsmall_assembly needs kdb
 xsmall_assembly needs kfg
 xsmall_assembly needs kfs
 xsmall_assembly needs klib
+xsmall_assembly needs kns
 xsmall_assembly needs kproc
 xsmall_assembly needs krypto
 xsmall_assembly needs ksproc
