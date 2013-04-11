@@ -44,13 +44,73 @@ namespace {
 BEGIN_NCBI_SCOPE
 
 void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
-{    
+{        
+    argdescr->SetCurrentGroup("Basic scores");
+
     argdescr->AddDefaultKey("type", "type",
-                            "Query cDNA type: 'mrna' or 'est'",
+                            "Query cDNA type: 'mrna' or 'est'."
+                            " Sets basic scores to preset values",
                             CArgDescriptions::eString,
                             kQueryType_mRNA);
-    
-    argdescr->AddDefaultKey
+
+     argdescr->AddOptionalKey
+        ("match_score",
+         "match_score",
+         "Score for a single match (positive)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+     argdescr->AddOptionalKey
+        ("mismatch_score",
+         "mismatch_score",
+         "Score for a single mismatch (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+     argdescr->AddOptionalKey
+        ("gap_opening_score",
+         "gap_opening_score",
+         "Score for gap opening (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+     argdescr->AddOptionalKey
+        ("gap_extension_score",
+         "gap_extension_score",
+         "Score for gap extension (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+     argdescr->AddOptionalKey
+        ("gt_ag_splice_score",
+         "gt_ag_splice_score",
+         "Score for splice (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+     argdescr->AddOptionalKey
+        ("gc_ag_splice_score",
+         "gc_ag_splice_score",
+         "Score for splice (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+     argdescr->AddOptionalKey
+        ("at_ac_splice_score",
+         "at_ac_splice_score",
+         "Score for splice (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+     argdescr->AddOptionalKey
+        ("non_consensus_splice_score",
+         "non_consensus_splice_score",
+         "Score for splice (negative)."
+         " Overrides value set by '-type'",
+         CArgDescriptions::eInteger);
+
+    argdescr->SetCurrentGroup("");
+
+   argdescr->AddDefaultKey
         ("compartment_penalty",
          "compartment_penalty",
          "Penalty to open a new compartment "
@@ -165,13 +225,44 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
     splign->SetPolyaExtIdentity(args["min_polya_ext_idty"].AsDouble());
     splign->SetMinPolyaLen(args["min_polya_len"].AsInteger());
-    const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
     double max_space (args["max_space"].AsDouble() * kMb);
     const Uint4 kMax32 (numeric_limits<Uint4>::max());
     if(max_space > kMax32) max_space = kMax32;
-    CRef<CSplicedAligner> aligner = CSplign::s_CreateDefaultAligner(query_low_quality);
+    //basic scores and aligner
+    const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
+    if(query_low_quality) {
+        splign->SetScoringType(CSplign::eEstScoring);
+    } else {
+        splign->SetScoringType(CSplign::eMrnaScoring);
+    }
+    if(args["match_score"]) {
+        splign->SetMatchScore(args["match_score"].AsInteger());
+    }
+    if(args["mismatch_score"]) {
+        splign->SetMismatchScore(args["mismatch_score"].AsInteger());
+    }
+    if(args["gap_opening_score"]) {
+        splign->SetGapOpeningScore(args["gap_opening_score"].AsInteger());
+    }
+    if(args["gap_extension_score"]) {
+        splign->SetGapExtensionScore(args["gap_extension_score"].AsInteger());
+    }
+    if(args["gt_ag_splice_score"]) {
+        splign->SetGtAgSpliceScore(args["gt_ag_splice_score"].AsInteger());
+    }
+    if(args["gc_ag_splice_score"]) {
+        splign->SetGcAgSpliceScore(args["gc_ag_splice_score"].AsInteger());
+    }
+    if(args["at_ac_splice_score"]) {
+        splign->SetAtAcSpliceScore(args["at_ac_splice_score"].AsInteger());
+    }
+    if(args["non_consensus_splice_score"]) {
+        splign->SetNonConsensusSpliceScore(args["non_consensus_splice_score"].AsInteger());
+    }
+    CRef<CSplicedAligner> aligner = CSplign::s_CreateDefaultAligner();
     aligner->SetSpaceLimit(size_t(max_space));
     splign->SetAligner() = aligner;
+    splign->SetAlignerScores();
 }
 
 

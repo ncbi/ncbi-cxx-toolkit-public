@@ -90,11 +90,72 @@ namespace {
 
     const CSplign::THit::TCoord
                  kMaxCoord (numeric_limits<CSplign::THit::TCoord>::max());
+
+
+    //original Yuri's EST scores
+    const int kEstMatchScore (1000);
+    const int kEstMismatchScore (-1044);
+    const int kEstGapOpeningScore(-3070);
+    const int kEstGapExtensionScore(-173);
+
+    const int kEstGtAgSpliceScore(-4270);
+    const int kEstGcAgSpliceScore(-5314);
+    const int kEstAtAcSpliceScore(-6358);
+    const int kEstNonConsensusSpliceScore(-7395);
+
 }
 
+//original Yuri's mRNA scores
+
+CSplign::EScoringType CSplign::s_GetDefaultScoringType(void) {
+    return eMrnaScoring;
+}
+
+int CSplign::s_GetDefaultMatchScore(void) {
+    return 1000;
+}
+
+int CSplign::s_GetDefaultMismatchScore(void) {
+    return -1011;
+}
+
+int CSplign::s_GetDefaultGapOpeningScore(void) {
+    return -1460;
+}
+
+int CSplign::s_GetDefaultGapExtensionScore(void) {
+    return -464;
+}
+
+int CSplign::s_GetDefaultGtAgSpliceScore(void) {
+    return -4988;
+}
+
+int CSplign::s_GetDefaultGcAgSpliceScore(void) {
+    return -5999;
+}
+
+int CSplign::s_GetDefaultAtAcSpliceScore(void) {
+    return -7010;
+}
+
+int CSplign::s_GetDefaultNonConsensusSpliceScore(void) {
+    return -13060;
+}
 
 CSplign::CSplign(void):
     m_CanResetHistory (true),
+    //basic scores
+    m_ScoringType(s_GetDefaultScoringType()),
+    m_MatchScore(s_GetDefaultMatchScore()),
+    m_MismatchScore(s_GetDefaultMismatchScore()),
+    m_GapOpeningScore(s_GetDefaultGapOpeningScore()),
+    m_GapExtensionScore(s_GetDefaultGapExtensionScore()),
+    m_GtAgSpliceScore(s_GetDefaultGtAgSpliceScore()),
+    m_GcAgSpliceScore(s_GetDefaultGcAgSpliceScore()),
+    m_AtAcSpliceScore(s_GetDefaultAtAcSpliceScore()),
+    m_NonConsensusSpliceScore(s_GetDefaultNonConsensusSpliceScore()),
+    //end of basic scores   
     m_MinExonIdty(s_GetDefaultMinExonIdty()),
     m_MinPolyaExtIdty(s_GetDefaultPolyaExtIdty()),
     m_MinPolyaLen(s_GetDefaultMinPolyaLen()),
@@ -140,40 +201,149 @@ CConstRef<CSplign::TAligner> CSplign::GetAligner( void ) const {
     return m_aligner;
 }
 
+void CSplign::SetAlignerScores(void) {
+    CRef<TAligner>& aligner = SetAligner();
+    aligner->SetWm  (GetMatchScore());
+    aligner->SetWms (GetMismatchScore());
+    aligner->SetWg  (GetGapOpeningScore());
+    aligner->SetWs  (GetGapExtensionScore());
+    aligner->SetScoreMatrix(NULL);
+    aligner->SetWi(0, GetGtAgSpliceScore());
+    aligner->SetWi(1, GetGcAgSpliceScore());
+    aligner->SetWi(2, GetAtAcSpliceScore());
+    aligner->SetWi(3, GetNonConsensusSpliceScore());
+}
+
+CRef<CSplicedAligner> CSplign::s_CreateDefaultAligner(void) {
+    CRef<CSplicedAligner> aligner(
+        static_cast<CSplicedAligner*>(new CSplicedAligner16));
+    return aligner;
+}
+
 
 CRef<CSplicedAligner> CSplign::s_CreateDefaultAligner(bool low_query_quality)
 {
-    CRef<CSplicedAligner> aligner(
-        static_cast<CSplicedAligner*>(new CSplicedAligner16));
+    CRef<CSplicedAligner> aligner(s_CreateDefaultAligner());
         
     if(false == low_query_quality) {
-        aligner->SetWm  (1000);
-        aligner->SetWms (-1044);
-        aligner->SetWg  (-3070);
-        aligner->SetWs  (-173);
+        aligner->SetWm  (kEstMatchScore);
+        aligner->SetWms (kEstMismatchScore);
+        aligner->SetWg  (kEstGapOpeningScore);
+        aligner->SetWs  (kEstGapExtensionScore);
         aligner->SetScoreMatrix(NULL);
-
-        aligner->SetWi(0, -4270);
-        aligner->SetWi(1, -5314);
-        aligner->SetWi(2, -6358);
-        aligner->SetWi(3, -7395);
+        aligner->SetWi(0, kEstGtAgSpliceScore);
+        aligner->SetWi(1, kEstGcAgSpliceScore);
+        aligner->SetWi(2, kEstAtAcSpliceScore);
+        aligner->SetWi(3, kEstNonConsensusSpliceScore);
     }
     else {
-        aligner->SetWm  (1000);
-        aligner->SetWms (-1011);
-        aligner->SetWg  (-1460);
-        aligner->SetWs  (-464);
+        aligner->SetWm  (s_GetDefaultMatchScore());
+        aligner->SetWms (s_GetDefaultMismatchScore());
+        aligner->SetWg  (s_GetDefaultGapOpeningScore());
+        aligner->SetWs  (s_GetDefaultGapExtensionScore());
         aligner->SetScoreMatrix(NULL);
-
-        aligner->SetWi(0, -4988);
-        aligner->SetWi(1, -5999);
-        aligner->SetWi(2, -7010);
-        aligner->SetWi(3, -13060);
+        aligner->SetWi(0, s_GetDefaultGtAgSpliceScore());
+        aligner->SetWi(1, s_GetDefaultGcAgSpliceScore());
+        aligner->SetWi(2, s_GetDefaultAtAcSpliceScore());
+        aligner->SetWi(3, s_GetDefaultNonConsensusSpliceScore());
     }
 
     return aligner;
 }
 
+//note: SetScoringType call with mRNA or EST type is going to switch basic scores to preset values
+
+void CSplign::SetScoringType(EScoringType type) 
+{
+    m_ScoringType = type;
+    if(type == eMrnaScoring) {
+        SetMatchScore(s_GetDefaultMatchScore());
+        SetMismatchScore(s_GetDefaultMismatchScore());
+        SetGapOpeningScore(s_GetDefaultGapOpeningScore());
+        SetGapExtensionScore(s_GetDefaultGapExtensionScore());
+        SetGtAgSpliceScore(s_GetDefaultGtAgSpliceScore());
+        SetGcAgSpliceScore(s_GetDefaultGcAgSpliceScore());
+        SetAtAcSpliceScore(s_GetDefaultAtAcSpliceScore());
+        SetNonConsensusSpliceScore(s_GetDefaultNonConsensusSpliceScore());
+    } else if(type == eEstScoring) {
+        SetMatchScore(kEstMatchScore);
+        SetMismatchScore(kEstMismatchScore);
+        SetGapOpeningScore(kEstGapOpeningScore);
+        SetGapExtensionScore(kEstGapExtensionScore);
+        SetGtAgSpliceScore(kEstGtAgSpliceScore);
+        SetGcAgSpliceScore(kEstGcAgSpliceScore);
+        SetAtAcSpliceScore(kEstAtAcSpliceScore);
+        SetNonConsensusSpliceScore(kEstNonConsensusSpliceScore);
+    }
+}   
+    
+CSplign::EScoringType CSplign::GetScoringType(void) const {
+    return m_ScoringType;
+}
+
+void   CSplign::SetMatchScore(int score) {
+    m_MatchScore = score;
+}
+
+int CSplign::GetMatchScore(void) const {
+    return m_MatchScore;
+}
+
+void   CSplign::SetMismatchScore(int score) {
+    m_MismatchScore = score;
+}
+
+int CSplign::GetMismatchScore(void) const {
+    return m_MismatchScore;
+}
+
+void   CSplign::SetGapOpeningScore(int score) {
+    m_GapOpeningScore = score;
+}
+
+int CSplign::GetGapOpeningScore(void) const {
+    return m_GapOpeningScore;
+}
+
+void   CSplign::SetGapExtensionScore(int score) {
+    m_GapExtensionScore = score;
+}
+
+int CSplign::GetGapExtensionScore(void) const {
+    return m_GapExtensionScore;
+}
+//     
+void   CSplign::SetGtAgSpliceScore(int score) {
+    m_GtAgSpliceScore = score;
+}
+
+int CSplign::GetGtAgSpliceScore(void) const {
+    return m_GtAgSpliceScore;
+}
+
+void   CSplign::SetGcAgSpliceScore(int score) {
+    m_GcAgSpliceScore = score;
+}
+
+int CSplign::GetGcAgSpliceScore(void) const {
+    return m_GcAgSpliceScore;
+}
+
+void   CSplign::SetAtAcSpliceScore(int score) {
+    m_AtAcSpliceScore = score;
+}
+
+int CSplign::GetAtAcSpliceScore(void) const {
+    return m_AtAcSpliceScore;
+}
+
+void   CSplign::SetNonConsensusSpliceScore(int score) {
+    m_NonConsensusSpliceScore = score;
+}
+
+int CSplign::GetNonConsensusSpliceScore(void) const {
+    return m_NonConsensusSpliceScore;
+}
 
 void CSplign::SetEndGapDetection( bool on ) {
     m_endgaps = on;
@@ -2600,5 +2770,6 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
 }
 
 
-
 END_NCBI_SCOPE
+
+
