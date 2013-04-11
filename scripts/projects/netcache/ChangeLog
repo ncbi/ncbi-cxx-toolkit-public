@@ -19,3 +19,13 @@ Added tests to release to be able to test NetCache after releasing.
 
 Apr 04, 2008
 Initial release using a release procedure
+
+...
+
+April 11, 2013
+version 6.6.1
+Fixed synchronization of PURGE data.
+Added re-initialization of database, when Netcache was not terminated properly.
+Fixed bug, when NC was sending confirmation which client did not expect.
+Added maximal time-to-live setting for blobs.
+Fixed bug in READPART command, when invalid data was returned under certain conditions.
