@@ -442,29 +442,26 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype = CS_NUMERIC_TYPE;
 
             CS_NUMERIC numeric;
-            if (param.IsNULL()) {
-                numeric.precision = 0;
-                numeric.scale     = 0;
-                memset(numeric.array, 0, sizeof(numeric.array));
-            } else {
+            if ( !param.IsNULL() ) {
                 numeric.precision = par.Precision();
                 numeric.scale     = par.Scale();
-                memcpy(numeric.array, par.RawData(), 33);
-            }
+                memcpy(numeric.array, par.RawData(), sizeof(numeric.array));
   
-            // cutoffs per http://msdn.microsoft.com/en-us/library/ms187746.aspx
-            int precision = par.Precision();
-            if (precision < 10) {
-                bind.datalen = 5;
-            } else if (precision < 20) {
-                bind.datalen = 9;
-            } else if (precision < 29) {
-                bind.datalen = 13;
-            } else {
-                bind.datalen = 17;
-            }
+                // cutoffs per
+                // http://msdn.microsoft.com/en-us/library/ms187746.aspx
+                int precision = par.Precision();
+                if (precision < 10) {
+                    bind.datalen = 5;
+                } else if (precision < 20) {
+                    bind.datalen = 9;
+                } else if (precision < 29) {
+                    bind.datalen = 13;
+                } else {
+                    bind.datalen = 17;
+                }
 
-            memcpy(bind.buffer, &numeric, sizeof(CS_NUMERIC));
+                memcpy(bind.buffer, &numeric, sizeof(CS_NUMERIC));
+            }
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) bind.buffer,
                                       &bind.datalen,
