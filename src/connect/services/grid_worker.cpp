@@ -983,9 +983,11 @@ int CGridWorkerNode::Run()
         end_port = to_port.empty() ? start_port : NStr::StringToUInt(to_port);
     }}
 
+#ifdef NCBI_OS_UNIX
     bool is_daemon = args["nodaemon"] ? false :
             args["daemon"] ? true : reg.GetBool(kServerSec, "daemon",
                     false, 0, CNcbiRegistry::eReturn);
+#endif
 
     {{
         string memlimitstr(reg.GetString(kServerSec,
@@ -1065,7 +1067,9 @@ int CGridWorkerNode::Run()
             max_total_jobs = 0;
             debug_context.SetExecuteList(files);
         }
+#ifdef NCBI_OS_UNIX
         is_daemon = false;
+#endif
     }
 
     // Now that most of parameters have been checked, create the
@@ -1084,7 +1088,7 @@ int CGridWorkerNode::Run()
         }
     }
 
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
     if (is_daemon) {
         LOG_POST_X(53, "Entering UNIX daemon mode...");
         bool daemon = CProcess::Daemonize("/dev/null",
