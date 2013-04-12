@@ -792,7 +792,9 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
         const CUser_object& uo = it->GetUser();
         if (uo.IsSetType()  &&  uo.GetType().IsStr()  &&
-            NStr::EqualNocase(uo.GetType().GetStr(), "TSA-mRNA-List")) {
+            ( NStr::EqualNocase(uo.GetType().GetStr(), "TSA-mRNA-List") ||
+              NStr::EqualNocase(uo.GetType().GetStr(), "TSA-RNA-List") ) ) 
+        {
             if (uo.HasField("Accession_first")) {
                 const CUser_field& uf = uo.GetField("Accession_first");
                 if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&

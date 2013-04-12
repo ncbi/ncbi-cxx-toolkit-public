@@ -255,7 +255,9 @@ void CGenbankGatherer::x_GatherTSA(void) const
             continue;
         }
         const string& type = uo.GetType().GetStr();
-        if ( NStr::CompareNocase(type, "TSA-mRNA-List") == 0 ) {
+        if ( NStr::EqualNocase(type, "TSA-mRNA-List") ||
+             NStr::EqualNocase(type, "TSA-RNA-List") )
+        {
             tsa_type = CTSAItem::eTSA_Projects;
         }
 
