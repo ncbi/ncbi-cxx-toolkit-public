@@ -1,2 +1,6 @@
+# $Id$
+
 LIB = blastdb
 SRC = blastdb__ blastdb___
+
+WATCHERS = camacho
