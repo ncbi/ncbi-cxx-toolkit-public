@@ -44,7 +44,7 @@
 /// Minimum valid length of a Gene->Accession line.
 #define GENE_2_ACCN_LINE_MIN                30
 /// Number of items on a valid Gene->Accession line.
-#define GENE_2_ACCN_NUM_ITEMS               13
+#define GENE_2_ACCN_NUM_ITEMS               16
 /// Index of the taxonomy ID item on a Gene->Accession line.
 #define GENE_2_ACCN_TAX_ID_INDEX            0
 /// Index of the Gene ID item on a Gene->Accession line.

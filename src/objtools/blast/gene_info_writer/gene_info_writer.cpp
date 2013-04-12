@@ -147,8 +147,13 @@ bool CGeneFileWriter::
 
     if (strItems.size() != GENE_2_ACCN_NUM_ITEMS)
     {
+        CNcbiOstrstream oss;
+        oss << "Gene2Accession file format not recognized: found ";
+        oss << strItems.size() << " elements per line instead of ";
+        oss << GENE_2_ACCN_NUM_ITEMS << " in ";
+        oss << m_strGene2AccessionFile;
         NCBI_THROW(CGeneInfoException, eDataFormatError,
-                   "Gene2Accession file format not recognized.");
+                   CNcbiOstrstreamToString(oss));
     }
 
     // read taxId
@@ -600,8 +605,13 @@ bool CGeneFileWriter::
 
     if (strItems.size() != GENE_2_PM_NUM_ITEMS)
     {
+        CNcbiOstrstream oss;
+        oss << "Gene2Pubmed file format not recognized: found ";
+        oss << strItems.size() << " elements per line instead of ";
+        oss << GENE_2_PM_NUM_ITEMS << " in ";
+        oss << m_strGene2PubMedFile;
         NCBI_THROW(CGeneInfoException, eDataFormatError,
-                   "Gene2PubMed file format not recognized.");
+                   CNcbiOstrstreamToString(oss));
     }
 
     // read geneId
