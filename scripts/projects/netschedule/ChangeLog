@@ -1,4 +1,5 @@
-Release 4.16.6 based on SC-11 (2013-04-08)
+
+Release 4.16.8 based on SC-11 (XXXX-XX-XX)
 
 Improvements and bug fixes
     * NetSchedule: queue access restrictions for read-only commands
@@ -7,6 +8,19 @@ Improvements and bug fixes
       (JIRA: CXX-3877)
     * NetSchedule: marking clients as worker nodes
       (JIRA: CXX-3839)
+
+
+Release 4.16.7 based on SC-11 (2013-04-10)
+
+Improvements and bug fixes
+    * NetSchedule: NetSchedule: incorrect 'exclusive new affinities' handling
+      (JIRA: CXX-3959)
+
+
+Release 4.16.6 based on SC-11 (2013-04-10)
+
+Improvements and bug fixes
+    * NetSchedule: logging preferred affinities (JIRA: CXX-3948)
 
 
 Release 4.16.5 based on SC-11 (2013-02-11)
