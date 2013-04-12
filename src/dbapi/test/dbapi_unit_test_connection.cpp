@@ -379,7 +379,7 @@ static void
 s_Check_Validator(TDBConnectionFactoryFactory factory,
                   IConnValidator& validator)
 {
-    TSvrRef server01(new CDBServer("MSDEV1"));
+    TSvrRef server01(new CDBServer("MSDEV2"));
     const string service_name("TEST_SERVICE_01");
     auto_ptr<IConnection> conn;
 
@@ -548,7 +548,7 @@ public:
 static void
 s_CheckConnFactory(TDBConnectionFactoryFactory factory_factory)
 {
-    const string db_name("AlignModel"); // This database should exist in MSDEV1, and not in MSDEV2
+    const string db_name("CppDocTest"); // This database should exist in MSDEV2, and not in MSDEV1
 
     // CTrivialConnValidator ...
     {
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnFactory)
     enum {num_of_tests = 128};
 
     try {
-        TSvrRef server01(new CDBServer("msdev1"));
+        TSvrRef server01(new CDBServer("msdev2"));
         TSvrRef server02(new CDBServer("msdev1"));
         TSvrRef server03(new CDBServer("mssql67"));
 
