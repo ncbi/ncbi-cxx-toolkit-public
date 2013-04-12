@@ -1671,7 +1671,7 @@ static const string& s_AaName(int aa)
     if (aa != '*') {
         idx = aa - 64;
     } else {
-        idx = 25;
+        idx = 28;
     }
     if ( idx > 0 && idx < 28 ) {
         return s_TrnaList [idx];
