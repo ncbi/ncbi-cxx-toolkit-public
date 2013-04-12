@@ -31,9 +31,11 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include "ns_clients_registry.hpp"
 #include "ns_affinity.hpp"
+#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -55,8 +57,17 @@ size_t  CNSClientsRegistry::size(void) const
 unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
                                           CNSAffinityRegistry &  aff_registry,
                                           TNSBitVector &         running_jobs,
-                                          TNSBitVector &         reading_jobs)
+                                          TNSBitVector &         reading_jobs,
+                                          bool &                 client_was_found,
+                                          bool &                 session_was_reset,
+                                          string &               old_session,
+                                          bool &                 pref_affs_were_reset)
 {
+    client_was_found = false;
+    session_was_reset = false;
+    old_session.clear();
+    pref_affs_were_reset = false;
+
     // Check if it is an old-style client
     if (!client.IsComplete())
         return 0;
@@ -77,6 +88,7 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
         return 0;
     }
 
+    client_was_found = true;
     unsigned short  wait_port = 0;
 
     // The client has connected before
@@ -91,10 +103,14 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
         wait_port = x_ResetWaiting(known_client->second, aff_registry);
     }
 
-    if (known_client->second.Touch(client, running_jobs, reading_jobs))
+    if (known_client->second.Touch(client, running_jobs, reading_jobs,
+                                   session_was_reset,old_session)) {
+        pref_affs_were_reset = true;
         x_BuildWNAffinities();  // session is changed, i.e. the preferred
                                 // affinities were reset and they had at
                                 // least one bit set
+    }
+
     return wait_port;
 }
 
@@ -324,8 +340,14 @@ unsigned short
 CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
                                     CNSAffinityRegistry &  aff_registry,
                                     TNSBitVector &         running_jobs,
-                                    TNSBitVector &         reading_jobs)
+                                    TNSBitVector &         reading_jobs,
+                                    bool &                 client_was_found,
+                                    string &               old_session,
+                                    bool &                 pref_affs_were_reset)
 {
+    client_was_found = false;
+    pref_affs_were_reset = false;
+
     // The container itself is not changed.
     // The changes are in what the element holds.
     unsigned short                      wait_port = 0;
@@ -334,6 +356,8 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
                                              m_Clients.find(client.GetNode());
 
     if (worker_node != m_Clients.end()) {
+        client_was_found = true;
+        old_session = worker_node->second.GetSession();
         running_jobs = worker_node->second.GetRunningJobs();
         reading_jobs = worker_node->second.GetReadingJobs();
 
@@ -342,9 +366,11 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
                                 worker_node->second.GetPreferredAffinities());
         wait_port = x_ResetWaiting(worker_node->second, aff_registry);
 
-        if (worker_node->second.Clear())
+        if (worker_node->second.Clear()) {
+            pref_affs_were_reset = true;
             x_BuildWNAffinities(); // Rebuild if there was at
                                    // least one preferred aff
+        }
     }
 
     return wait_port;
@@ -591,16 +617,16 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
 }
 
 
-void  CNSClientsRegistry::UpdatePreferredAffinities(
+bool  CNSClientsRegistry::UpdatePreferredAffinities(
                                 const CNSClientId &   client,
                                 unsigned int          aff_to_add,
                                 unsigned int          aff_to_del)
 {
     if (aff_to_add + aff_to_del == 0)
-        return;
+        return false;
 
     if (!client.IsComplete())
-        return;
+        return false;
 
     CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  found = m_Clients.find(client.GetNode());
@@ -610,15 +636,16 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
                    "Cannot find client '" + client.GetNode() +
                    "' to update preferred affinities");
 
-    found->second.AddPreferredAffinity(aff_to_add);
+    bool    aff_added = found->second.AddPreferredAffinity(aff_to_add);
     found->second.RemovePreferredAffinity(aff_to_del);
 
     // Update the union bit vector with WN affinities
     if (aff_to_del != 0)
         x_BuildWNAffinities();
     else
-        if (aff_to_add != 0)
+        if (aff_added)
             m_WNAffinities.set_bit(aff_to_add);
+    return aff_added;
 }
 
 
@@ -698,7 +725,8 @@ string  CNSClientsRegistry::GetNodeName(unsigned int  id) const
 vector< pair< unsigned int, unsigned short > >
 CNSClientsRegistry::Purge(time_t                  current_time,
                           time_t                  timeout,
-                          CNSAffinityRegistry &   aff_registry)
+                          CNSAffinityRegistry &   aff_registry,
+                          bool                    is_log)
 {
     // Checks if any of the worker nodes are inactive for too long
     vector< pair< unsigned int,
@@ -722,6 +750,20 @@ CNSClientsRegistry::Purge(time_t                  current_time,
                                 k->second.GetPreferredAffinities());
                 k->second.ClearPreferredAffinities();
                 need_aff_rebuild = true;
+
+                if (is_log) {
+                    CRef<CRequestContext>   ctx;
+                    ctx.Reset(new CRequestContext());
+                    ctx->SetRequestID();
+                    GetDiagContext().SetRequestContext(ctx);
+                    GetDiagContext().PrintRequestStart()
+                                    .Print("_type", "worker_node_watch")
+                                    .Print("client_node", k->first)
+                                    .Print("client_session", k->second.GetSession())
+                                    .Print("preferred_affinities_reset", "yes");
+                    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+                    GetDiagContext().PrintRequestStop();
+                }
             }
 
             wait_port = x_ResetWaiting(k->second, aff_registry);

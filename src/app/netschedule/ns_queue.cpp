@@ -682,7 +682,8 @@ bool  CQueue::GetJobOrWait(const CNSClientId &       client,
                            bool                      exclusive_new_affinity,
                            bool                      new_format,
                            CJob *                    new_job,
-                           CNSRollbackInterface * &  rollback_action)
+                           CNSRollbackInterface * &  rollback_action,
+                           string &                  added_pref_aff)
 {
     // We need exactly 1 parameter - m_RunTimeout, so we can access it without
     // CQueueParamAccessor
@@ -782,18 +783,22 @@ bool  CQueue::GetJobOrWait(const CNSClientId &       client,
                     if (job_pick.exclusive && job_pick.aff_id != 0 && outdated_job == false) {
                         if (m_ClientsRegistry.IsPreferredByAny(job_pick.aff_id))
                             continue;   // Other WN grabbed this affinity already
-                        m_ClientsRegistry.UpdatePreferredAffinities(client,
-                                                                    job_pick.aff_id,
-                                                                    0);
+                        bool added = m_ClientsRegistry.UpdatePreferredAffinities(
+                                            client, job_pick.aff_id, 0);
                         m_AffinityRegistry.AddClientToAffinity(client.GetID(),
                                                                job_pick.aff_id);
+                        if (added)
+                            added_pref_aff = m_AffinityRegistry.GetTokenByID(
+                                                            job_pick.aff_id);
                     }
                     if (outdated_job && job_pick.aff_id != 0) {
-                        m_ClientsRegistry.UpdatePreferredAffinities(client,
-                                                                    job_pick.aff_id,
-                                                                    0);
+                        bool added = m_ClientsRegistry.UpdatePreferredAffinities(
+                                            client, job_pick.aff_id, 0);
                         m_AffinityRegistry.AddClientToAffinity(client.GetID(),
                                                                job_pick.aff_id);
+                        if (added)
+                            added_pref_aff = m_AffinityRegistry.GetTokenByID(
+                                                            job_pick.aff_id);
                     }
 
                     if (x_UpdateDB_GetJobNoLock(client, curr,
@@ -2284,7 +2289,10 @@ string  CQueue::GetAffinityTokenByID(unsigned int  aff_id) const
 }
 
 
-void CQueue::ClearWorkerNode(const CNSClientId &  client)
+void CQueue::ClearWorkerNode(const CNSClientId &  client,
+                             bool &               client_was_found,
+                             string &             old_session,
+                             bool &               pref_affs_were_reset)
 {
     // Get the running and reading jobs and move them to the corresponding
     // states (pending and done)
@@ -2298,7 +2306,10 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client)
                                                 client,
                                                 m_AffinityRegistry,
                                                 running_jobs,
-                                                reading_jobs);
+                                                reading_jobs,
+                                                client_was_found,
+                                                old_session,
+                                                pref_affs_were_reset);
 
         if (wait_port != 0)
             m_NotificationsList.UnregisterListener(client, wait_port);
@@ -2825,7 +2836,8 @@ void  CQueue::PurgeWNodes(time_t  current_time)
                   unsigned short > >  notif_to_reset =
                                         m_ClientsRegistry.Purge(
                                                 current_time, m_WNodeTimeout,
-                                                m_AffinityRegistry);
+                                                m_AffinityRegistry,
+                                                m_Log);
     for (vector< pair< unsigned int,
                        unsigned short > >::const_iterator  k = notif_to_reset.begin();
          k != notif_to_reset.end(); ++k)
@@ -3012,7 +3024,11 @@ void CQueue::StatusStatistics(TJobStatus                status,
 }
 
 
-void CQueue::TouchClientsRegistry(CNSClientId &  client)
+void CQueue::TouchClientsRegistry(CNSClientId &  client,
+                                  bool &         client_was_found,
+                                  bool &         session_was_reset,
+                                  string &       old_session,
+                                  bool &         pref_affs_were_reset)
 {
     TNSBitVector        running_jobs;
     TNSBitVector        reading_jobs;
@@ -3023,7 +3039,11 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client)
                                                 client,
                                                 m_AffinityRegistry,
                                                 running_jobs,
-                                                reading_jobs);
+                                                reading_jobs,
+                                                client_was_found,
+                                                session_was_reset,
+                                                old_session,
+                                                pref_affs_were_reset);
         if (wait_port != 0)
             m_NotificationsList.UnregisterListener(client, wait_port);
     }}

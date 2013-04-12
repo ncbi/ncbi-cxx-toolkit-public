@@ -62,7 +62,11 @@ class CNSClientsRegistry
         unsigned short  Touch(CNSClientId &          client,
                               CNSAffinityRegistry &  aff_registry,
                               TNSBitVector &         running_jobs,
-                              TNSBitVector &         reading_jobs);
+                              TNSBitVector &         reading_jobs,
+                              bool &                 client_was_found,
+                              bool &                 session_was_reset,
+                              string &               old_session,
+                              bool &                 pref_affs_were_reset);
 
         // Methods to update the client records.
         void  AddToSubmitted(const CNSClientId &  client,
@@ -84,7 +88,10 @@ class CNSClientsRegistry
         unsigned short  ClearWorkerNode(const CNSClientId &    client,
                                         CNSAffinityRegistry &  aff_registry,
                                         TNSBitVector &         running_jobs,
-                                        TNSBitVector &         reading_jobs);
+                                        TNSBitVector &         reading_jobs,
+                                        bool &                 client_was_found,
+                                        string &               old_session,
+                                        bool &                 pref_affs_were_reset);
         TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client) const;
         TNSBitVector  GetBlacklistedJobs(const string &  client_node) const;
 
@@ -109,7 +116,7 @@ class CNSClientsRegistry
         void  UpdatePreferredAffinities(const CNSClientId &   client,
                                         const TNSBitVector &  aff_to_add,
                                         const TNSBitVector &  aff_to_del);
-        void  UpdatePreferredAffinities(const CNSClientId &   client,
+        bool  UpdatePreferredAffinities(const CNSClientId &   client,
                                         unsigned int          aff_to_add,
                                         unsigned int          aff_to_del);
         void  SetPreferredAffinities(const CNSClientId &   client,
@@ -123,7 +130,8 @@ class CNSClientsRegistry
         vector< pair< unsigned int, unsigned short > >
                 Purge(time_t                  current_time,
                       time_t                  timeout,
-                      CNSAffinityRegistry &   aff_registry);
+                      CNSAffinityRegistry &   aff_registry,
+                      bool                    is_log);
         void SetBlacklistTimeout(time_t  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);

@@ -189,7 +189,9 @@ class CNSClient
 
         bool Touch(const CNSClientId &  client_id,
                    TNSBitVector &       running_jobs,
-                   TNSBitVector &       reading_jobs);
+                   TNSBitVector &       reading_jobs,
+                   bool &               session_was_reset,
+                   string &             old_session);
         string Print(const string &               node_name,
                      const CQueue *               queue,
                      const CNSAffinityRegistry &  aff_registry,
@@ -205,7 +207,7 @@ class CNSClient
         TNSBitVector  GetPreferredAffinities(void) const
         { return m_Affinities; }
         void  AddPreferredAffinities(const TNSBitVector &  aff);
-        void  AddPreferredAffinity(unsigned int  aff);
+        bool  AddPreferredAffinity(unsigned int  aff);
         void  RemovePreferredAffinities(const TNSBitVector &  aff);
         void  RemovePreferredAffinity(unsigned int  aff);
         void  SetPreferredAffinities(const TNSBitVector &  aff);

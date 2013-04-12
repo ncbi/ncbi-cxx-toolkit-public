@@ -373,17 +373,23 @@ bool CNSClient::MoveRunningJobToBlacklist(unsigned int  job_id)
 // session has been changed
 bool CNSClient::Touch(const CNSClientId &  client_id,
                       TNSBitVector &       running_jobs,
-                      TNSBitVector &       reading_jobs)
+                      TNSBitVector &       reading_jobs,
+                      bool &               session_was_reset,
+                      string &             old_session)
 {
     m_LastAccess = time(0);
     m_Cleared = false;
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
+    old_session = m_Session;
 
     // Check the session id
-    if (m_Session == client_id.GetSession())
+    if (m_Session == client_id.GetSession()) {
+        session_was_reset = false;
         return false;       // It's still the same session, nothing to check
+    }
 
+    session_was_reset = true;
     m_SessionStartTime = time(0);
 
     // Here: new session so check if there are running or reading jobs
@@ -408,15 +414,6 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
 
     // There is no need to do anything neither with the blacklisted jobs
     // nor submitted jobs
-
-    unsigned int    pref_aff_count = m_Affinities.count();
-
-    ERR_POST(Warning << "Client '" << client_id.GetNode()
-                     << "' changed its session and was reset (running jobs: "
-                     << running_count << ", reading jobs: "
-                     << reading_count << ", preferred affinities: "
-                     << pref_aff_count << ", wait affinities: "
-                     << wait_aff_count << ")");
 
     if (m_Affinities.any()) {
         m_Affinities.clear();
@@ -576,12 +573,18 @@ void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
 }
 
 
-void  CNSClient::AddPreferredAffinity(unsigned int  aff)
+bool  CNSClient::AddPreferredAffinity(unsigned int  aff)
 {
     m_Type |= eWorkerNode;
-    if (aff != 0)
-        m_Affinities.set_bit(aff, true);
     m_AffReset = false;
+
+    if (aff != 0) {
+        if (m_Affinities[aff] == false) {
+            m_Affinities.set_bit(aff, true);
+            return true;
+        }
+    }
+    return false;
 }
 
 

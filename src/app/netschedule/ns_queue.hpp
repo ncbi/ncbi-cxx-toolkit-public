@@ -181,7 +181,8 @@ public:
                       bool                      exclusive_new_affinity,
                       bool                      new_format,
                       CJob *                    new_job,
-                      CNSRollbackInterface * &  rollback_action);
+                      CNSRollbackInterface * &  rollback_action,
+                      string &                  added_pref_aff);
 
     void CancelWaitGet(const CNSClientId &  client);
 
@@ -285,7 +286,10 @@ public:
 
     string  GetAffinityTokenByID(unsigned int  aff_id) const;
 
-    void ClearWorkerNode(const CNSClientId &  client);
+    void ClearWorkerNode(const CNSClientId &  client,
+                         bool &               client_was_found,
+                         string &             old_session,
+                         bool &               pref_affs_were_reset);
 
     void NotifyListenersPeriodically(time_t  current_time);
     CNSPreciseTime NotifyExactListeners(void);
@@ -339,7 +343,11 @@ public:
     string MakeKey(unsigned job_id) const
     { return m_KeyGenerator.Generate(job_id); }
 
-    void TouchClientsRegistry(CNSClientId &  client);
+    void TouchClientsRegistry(CNSClientId &  client,
+                              bool &         client_was_found,
+                              bool &         session_was_reset,
+                              string &       old_session,
+                              bool &         pref_affs_were_reset);
     void RegisterSocketWriteError(const CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;

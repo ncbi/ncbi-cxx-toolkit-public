@@ -922,9 +922,34 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 
     m_ClientId.CheckAccess(extra.checks);
 
-    if (queue_ptr)
+    if (queue_ptr) {
+        bool        client_was_found = false;
+        bool        session_was_reset = false;
+        string      old_session;
+        bool        pref_affs_were_reset = false;
+
         // The cient has a queue, so memorize the client
-        queue_ptr->TouchClientsRegistry(m_ClientId);
+        queue_ptr->TouchClientsRegistry(m_ClientId, client_was_found,
+                                        session_was_reset, old_session,
+                                        pref_affs_were_reset);
+        if (client_was_found && session_was_reset) {
+            if (m_ConnContext.NotNull()) {
+                if (pref_affs_were_reset) {
+                    GetDiagContext().Extra()
+                        .Print("client_node", m_ClientId.GetNode())
+                        .Print("client_session", m_ClientId.GetSession())
+                        .Print("client_old_session", old_session)
+                        .Print("preferred_affinities_reset", "true");
+                } else {
+                    GetDiagContext().Extra()
+                        .Print("client_node", m_ClientId.GetNode())
+                        .Print("client_session", m_ClientId.GetSession())
+                        .Print("client_old_session", old_session)
+                        .Print("preferred_affinities_reset", "had none");
+                }
+            }
+        }
+    }
 
     // Execute the command
     (this->*extra.processor)(queue_ptr);
@@ -1290,6 +1315,12 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
         return;
     }
 
+    if (m_ConnContext.NotNull())
+        GetDiagContext().Extra()
+                .Print("client_node", m_ClientId.GetNode())
+                .Print("client_session", m_ClientId.GetSession());
+
+
     list<string>    aff_to_add_list;
     list<string>    aff_to_del_list;
 
@@ -1312,6 +1343,11 @@ void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
 {
     // This functionality requires client name and the session
     x_CheckNonAnonymousClient("use SETAFF command");
+
+    if (m_ConnContext.NotNull())
+        GetDiagContext().Extra()
+                .Print("client_node", m_ClientId.GetNode())
+                .Print("client_session", m_ClientId.GetSession());
 
     list<string>    aff_to_set;
     NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
@@ -1549,6 +1585,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
+    string          added_pref_aff;
     x_ClearRollbackAction();
     if (q->GetJobOrWait(m_ClientId,
                         m_CommandArguments.port,
@@ -1559,12 +1596,21 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                         m_CommandArguments.exclusive_new_aff,
                         cmdv2,
                         &job,
-                        m_RollbackAction) == false) {
+                        m_RollbackAction,
+                        added_pref_aff) == false) {
         // Preferred affinities were reset for the client, so no job
         // and bad request
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:ePrefAffExpired:");
     } else {
+        if (added_pref_aff.empty() == false) {
+            if (m_ConnContext.NotNull()) {
+                GetDiagContext().Extra()
+                    .Print("client_node", m_ClientId.GetNode())
+                    .Print("client_session", m_ClientId.GetSession())
+                    .Print("added_preferred_affinity", added_pref_aff);
+            }
+        }
         x_PrintGetJobResponse(q, job, cmdv2);
         x_ClearRollbackAction();
     }
@@ -1683,6 +1729,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
+    string              added_pref_aff;
     x_ClearRollbackAction();
     if (q->GetJobOrWait(m_ClientId,
                         m_CommandArguments.port,
@@ -1693,12 +1740,21 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         false,
                         false,
                         &job,
-                        m_RollbackAction) == false) {
+                        m_RollbackAction,
+                        added_pref_aff) == false) {
         // Preferred affinities were reset for the client, so no job
         // and bad request
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:ePrefAffExpired:");
     } else {
+        if (added_pref_aff.empty() == false) {
+            if (m_ConnContext.NotNull()) {
+                GetDiagContext().Extra()
+                    .Print("client_node", m_ClientId.GetNode())
+                    .Print("client_session", m_ClientId.GetSession())
+                    .Print("added_preferred_affinity", added_pref_aff);
+            }
+        }
         x_PrintGetJobResponse(q, job, false);
         x_ClearRollbackAction();
     }
@@ -2361,9 +2417,34 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
     // for the changed queue is executed.
 
 
-    // The client has appeared for the queue
-    queue_ptr->TouchClientsRegistry(m_ClientId);
+    {
+        // The client has appeared for the queue - touch the client registry
+        bool        client_was_found = false;
+        bool        session_was_reset = false;
+        string      old_session;
+        bool        pref_affs_were_reset = false;
 
+        queue_ptr->TouchClientsRegistry(m_ClientId, client_was_found,
+                                        session_was_reset, old_session,
+                                        pref_affs_were_reset);
+        if (client_was_found && session_was_reset) {
+            if (m_ConnContext.NotNull()) {
+                if (pref_affs_were_reset) {
+                    GetDiagContext().Extra()
+                        .Print("client_node", m_ClientId.GetNode())
+                        .Print("client_session", m_ClientId.GetSession())
+                        .Print("client_old_session", old_session)
+                        .Print("preferred_affinities_reset", "true");
+                } else {
+                    GetDiagContext().Extra()
+                        .Print("client_node", m_ClientId.GetNode())
+                        .Print("client_session", m_ClientId.GetSession())
+                        .Print("client_old_session", old_session)
+                        .Print("preferred_affinities_reset", "had none");
+                }
+            }
+        }
+    }
 
     // Final step - update the current queue reference
 
@@ -2520,7 +2601,31 @@ void CNetScheduleHandler::x_ProcessGetAffinityList(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
-    q->ClearWorkerNode(m_ClientId);
+    bool        client_found = false;
+    bool        pref_affs_were_reset = false;
+    string      old_session;
+
+    q->ClearWorkerNode(m_ClientId, client_found,
+                       old_session, pref_affs_were_reset);
+
+    if (client_found) {
+        if (m_ConnContext.NotNull()) {
+            if (pref_affs_were_reset) {
+                GetDiagContext().Extra()
+                    .Print("client_node", m_ClientId.GetNode())
+                    .Print("client_session", m_ClientId.GetSession())
+                    .Print("client_old_session", old_session)
+                    .Print("preferred_affinities_reset", "true");
+            } else {
+                GetDiagContext().Extra()
+                    .Print("client_node", m_ClientId.GetNode())
+                    .Print("client_session", m_ClientId.GetSession())
+                    .Print("client_old_session", old_session)
+                    .Print("preferred_affinities_reset", "had none");
+            }
+        }
+    }
+
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
