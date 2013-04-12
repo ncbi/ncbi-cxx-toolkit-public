@@ -1615,7 +1615,7 @@ static size_t s_PrintParams(char* dst, size_t pos, const SNcbiLog_Param* params,
 
 
 /** Print parameters to message buffer (string version).
- *  The 'params' must be already prepared URL-encoded string.
+ *  The 'params' must be already prepared pairs with URL-encoded key and value.
  *  Return current position in the buffer, or zero on error.
  */
 static size_t s_PrintParamsStr(char* dst, size_t pos, const char* params, int /*bool*/ add_log_site)

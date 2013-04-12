@@ -188,21 +188,24 @@ extern unsigned int NcbiLogP_SetServerPort(unsigned int server_port);
 
 
 /** Variant of NcbiLog_ReqStart, that use already prepared string with
- *  parameters. All pairs 'key=value' should be already URL-encoded!
+ *  parameters. Both, key and value in pairs 'key=value' should be 
+ *  URL-encoded and separated with '&'.
  *  @sa NcbiLog_ReqStart
  */
 extern void NcbiLogP_ReqStartStr(const char* params);
 
 
 /** Variant of NcbiLog_Extra, that use already prepared string with
- *  parameters. All pairs 'key=value' should be already URL-encoded!
+ *  parameters. Both, key and value in pairs 'key=value' should be 
+ *  URL-encoded and separated with '&'.
  *  @sa NcbiLog_Extra
  */
 extern void NcbiLogP_ExtraStr(const char* params);
 
 
 /** Variant of NcbiLog_Perf, that use already prepared string with
- *  parameters. All pairs 'key=value' should be already URL-encoded!
+ *  parameters. Both, key and value in pairs 'key=value' should be 
+ *  URL-encoded and separated with '&'.
  *  @sa NcbiLog_Perf
  */
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);

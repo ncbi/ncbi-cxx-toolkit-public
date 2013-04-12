@@ -44,19 +44,31 @@
  *     and error message printed to stdout.
  *  4) No MT support. This utility assume that it can be called from 
  *     single-thread scripts or application only. Please add MT-guards yourself.
+ *  5) The -timestamp parameter allow to post messages happened in the past.
+       But be aware, if you start to use -timestamp parameter, use it for all
+       subsequent calls to ncbi_applog as well, at least with the same timestamp
+       value. Because, if you forget to specify it, current system time will
+       be used for posting, that can be unacceptable.
+       Allowed time formats:
+           1) YYYY-MM-DDThh:mm:ss
+           2) MM/DD/YY hh:mm:ss
+           3) time_t value (numbers of seconds since the Epoch)
  */
 
  /*
  Command lines:
-    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]  // -> app_token
-    ncbi_applog stop_app      <token> [-status STATUS]
-    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-logsite SITE]  // -> request_token
-    ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]  // -> app_token
-    ncbi_applog post          <token> [-severity SEV] -message MSG
-    ncbi_applog extra         <token> [-param PAIRS]
-    ncbi_applog perf          <token> [-status STATUS] -time TIMESPAN [-param PAIRS]
-    ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite] [-pid] [-rid]
-                                      [-sid] [-srvport] [-app_start_time] [-req_start_time]
+    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]
+                                      [-timestamp TIME]  // -> app_token
+    ncbi_applog stop_app      <token> [-status STATUS] [-timestamp TIME]
+    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-logsite SITE]
+                                      [-timestamp TIME]  // -> request_token
+    ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]
+                                      [-timestamp TIME]  // -> app_token
+    ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MSG
+    ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
+    ncbi_applog perf          <token> [-status STATUS] -time TIMESPAN [-param PAIRS] [-timestamp TIME]
+    ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite]
+                                      [-pid] [-rid] [-sid] [-srvport] [-app_start_time] [-req_start_time]
 
  Environment/registry settings:
      1) Logging CGI (used if /log is not accessible on current machine)
@@ -197,15 +209,15 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("sid", "SID", "Session ID (application-wide value). Each request can have it's own session identifier.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
         arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_LOG_SITE will be used.", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("srvport", "PORT", "Server port (will be used automatically for 'redirect' mode)",
@@ -222,13 +234,13 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("status", "STATUS", "Exit status of the application.", CArgDescriptions::eInteger, "0");
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("stop_app", arg.release());
     }}
 
@@ -247,15 +259,15 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("param", "PAIRS", "Parameters: string with URL-encoded pairs like 'k1=v1&k2=v2...'.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).",
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
         arg->AddDefaultKey
             ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_LOG_SITE will be used.", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("start_request", arg.release());
     }}
@@ -273,13 +285,13 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("output", "N", "Output data written during the request execution, in bytes.", CArgDescriptions::eInteger, "0");
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("stop_request", arg.release());
     }}
 
@@ -299,13 +311,13 @@ void CNcbiApplogApp::Init(void)
         arg->AddKey
             ("message", "MSG", "Posting message.", CArgDescriptions::eString);
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("post", arg.release());
     }}
 
@@ -318,13 +330,13 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("param", "PAIRS", "Parameters: string with URL-encoded pairs like 'k1=v1&k2=v2...'.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("extra", arg.release());
     }}
 
@@ -341,13 +353,13 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("param", "PAIRS", "Parameters: string with URL-encoded pairs like 'k1=v1&k2=v2...'.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
+            ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
+            CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)",
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
-        arg->AddDefaultKey
-            ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("perf", arg.release());
     }}
 
@@ -383,15 +395,20 @@ int CNcbiApplogApp::Redirect() const
 
     // We need host name, sid and log_site in the command line for 'start_app' command,
     // only, all other information it should take from the token.
-    bool is_start_app  = (GetArgs().GetCommand() == "start_app");
-    bool need_hostname = true;
-    bool need_sid      = true;
-    bool need_logsite  = true;
+    bool is_start_app   = (GetArgs().GetCommand() == "start_app");
+    bool need_hostname  = true;
+    bool need_sid       = true;
+    bool need_logsite   = true;
+    bool skip_next_arg  = false;
 
     // Create new command line to pass it to CGI
     string s_args;
     CNcbiArguments raw_args = GetArguments();
     for (size_t i = 1; i < raw_args.Size(); ++i) {
+        if (skip_next_arg) {
+            skip_next_arg = false;
+            continue;
+        }
         if (i == 2  &&  !is_start_app  &&  raw_args[i].empty() ) {
             // The token value is empty. Possible, it has passed via 
             // env.variable, insert real value into command line.
@@ -409,8 +426,22 @@ int CNcbiApplogApp::Redirect() const
                     need_logsite = false;
                 }
             }
-            // Mode will be set to 'cgi' in CGI, remove it from the command line now
-            if (!NStr::StartsWith(raw_args[i], "-mode")) {
+            if (NStr::StartsWith(raw_args[i], "-mode")) {
+                // Mode will be set to 'cgi' in CGI, remove it from the command line now
+            } else 
+            if (NStr::StartsWith(raw_args[i], "-timestamp")) {
+                // Replace original timestamp argument with already parsed
+                // value in time_t format, or use current time if not specified.
+                time_t timer = m_Info.post_time.sec;
+                if ( !timer ) {
+                    CTime::GetCurrentTimeT(&timer);
+                }
+                s_args += string(" \"-timestamp=") + NStr::UInt8ToString(timer) + "\"";
+                if (!NStr::StartsWith(raw_args[i], "-timestamp=")) {
+                    // Skip timestamp value in the next argument
+                    skip_next_arg = true;
+                }
+            } else {
                 s_args += " \"" + raw_args[i] + "\"";
             }
         }
@@ -445,12 +476,6 @@ int CNcbiApplogApp::Redirect() const
             s_args += string(" \"-srvport=") + port + "\"";
         }
     }
-    // Add current time on this host
-    time_t timer;
-    long ns;
-    CTime::GetCurrentTimeT(&timer, &ns);
-    s_args += string(" \"-htime=")   + NStr::UInt8ToString(timer) + "." 
-                                     + NStr::ULongToString(ns) + "\"";
 
 #if 0
     cout << url << endl;
@@ -743,6 +768,23 @@ int CNcbiApplogApp::Run(void)
         m_Info.state = (token_par_type == eApp ? eNcbiLog_AppRun : eNcbiLog_Request);
     }
 
+    // Get posting time if specified
+    string timestamp = args["timestamp"].AsString();
+    if ( !timestamp.empty() ) {
+        // YYYY-MM-DDThh:mm:ss
+        if (timestamp.length() == 19  &&  timestamp.find("T") != NPOS ) {
+            m_Info.post_time.sec = CTime(timestamp, "Y-M-DTh:m:s").GetTimeT();
+        } 
+        // MM/DD/YY hh:mm:ss
+        else if (timestamp.length() == 17  &&  timestamp.find("/") != NPOS ) {
+            m_Info.post_time.sec = CTime(timestamp, "M/D/y h:m:s").GetTimeT();
+        } 
+        // time_t ?
+        else {
+            m_Info.post_time.sec = NStr::StringToUInt8(timestamp);
+        }
+    }
+
     // Get mode
     string mode = args["mode"].AsString();
     if (mode == "redirect") {
@@ -806,15 +848,6 @@ int CNcbiApplogApp::Run(void)
                 throw "Failed to set output destination to " + dst_str;
             }
         }
-    }
-
-    // Get posting time on original host (if specified; redirect mode only)
-    string post_time = args["htime"].AsString();
-    if ( !post_time.empty() ) {
-        CTempString sec, ns;
-        NStr::SplitInTwo(post_time, ".", sec, ns);
-        m_Info.post_time.sec = NStr::StringToUInt8(sec);
-        m_Info.post_time.ns  = NStr::StringToULong(ns);
     }
 
 
