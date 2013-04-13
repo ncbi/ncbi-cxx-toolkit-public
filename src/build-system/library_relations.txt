@@ -581,7 +581,6 @@ blast_sra needs variation
 blast_sra needs vdb
 blast_sra needs vfs
 blast_sra needs vxf
-blast_sra needs wsra-schema
 blast_sra needs xalgoblastdbindex
 blast_sra needs xalgodustmask
 blast_sra needs xalgowinmask
@@ -1172,7 +1171,6 @@ gc_load_utils needs vdb
 gc_load_utils needs vfs
 gc_load_utils needs vxf
 gc_load_utils needs wgsxf
-gc_load_utils needs wsra-schema
 gc_load_utils needs xalgoblastdbindex
 gc_load_utils needs xalgodustmask
 gc_load_utils needs xalgowinmask
@@ -1274,7 +1272,6 @@ gc_utils needs vdb
 gc_utils needs vfs
 gc_utils needs vxf
 gc_utils needs wgsxf
-gc_utils needs wsra-schema
 gc_utils needs xalgoblastdbindex
 gc_utils needs xalgodustmask
 gc_utils needs xalgowinmask
@@ -1374,7 +1371,6 @@ gcaccess_utils needs vdb
 gcaccess_utils needs vfs
 gcaccess_utils needs vxf
 gcaccess_utils needs wgsxf
-gcaccess_utils needs wsra-schema
 gcaccess_utils needs xalgoblastdbindex
 gcaccess_utils needs xalgodustmask
 gcaccess_utils needs xalgowinmask
@@ -1570,9 +1566,6 @@ geoindex needs xcompress
 geoindex needs xmlwrapp
 geoindex needs xncbi
 geoindex needs xutil
-geoinfo needs xncbi
-geoinfo needs xser
-geoinfo needs xutil
 geometa needs GMA
 geometa needs connect
 geometa needs connext
@@ -1690,7 +1683,6 @@ gpinit needs vdb
 gpinit needs vfs
 gpinit needs vxf
 gpinit needs wgsxf
-gpinit needs wsra-schema
 gpinit needs xalgoblastdbindex
 gpinit needs xalgodustmask
 gpinit needs xalgowinmask
@@ -1805,7 +1797,6 @@ gpinit_admin needs vdb
 gpinit_admin needs vfs
 gpinit_admin needs vxf
 gpinit_admin needs wgsxf
-gpinit_admin needs wsra-schema
 gpinit_admin needs xalgoblastdbindex
 gpinit_admin needs xalgodustmask
 gpinit_admin needs xalgowinmask
@@ -1911,7 +1902,6 @@ gpinit_buildinfo needs vdb
 gpinit_buildinfo needs vfs
 gpinit_buildinfo needs vxf
 gpinit_buildinfo needs wgsxf
-gpinit_buildinfo needs wsra-schema
 gpinit_buildinfo needs xalgoblastdbindex
 gpinit_buildinfo needs xalgodustmask
 gpinit_buildinfo needs xalgowinmask
@@ -2028,7 +2018,6 @@ gpipe_alnutil needs vdb
 gpipe_alnutil needs vfs
 gpipe_alnutil needs vxf
 gpipe_alnutil needs wgsxf
-gpipe_alnutil needs wsra-schema
 gpipe_alnutil needs xalgoalignutil
 gpipe_alnutil needs xalgoblastdbindex
 gpipe_alnutil needs xalgodustmask
@@ -2162,7 +2151,6 @@ gpipe_objutil needs vdb
 gpipe_objutil needs vfs
 gpipe_objutil needs vxf
 gpipe_objutil needs wgsxf
-gpipe_objutil needs wsra-schema
 gpipe_objutil needs xalgoblastdbindex
 gpipe_objutil needs xalgodustmask
 gpipe_objutil needs xalgowinmask
@@ -4186,7 +4174,6 @@ ncbi_xloader_csra needs vdb
 ncbi_xloader_csra needs vfs
 ncbi_xloader_csra needs vxf
 ncbi_xloader_csra needs wgsxf
-ncbi_xloader_csra needs wsra-schema
 ncbi_xloader_csra needs xncbi
 ncbi_xloader_csra needs xobjmgr
 ncbi_xloader_csra needs xser
@@ -4303,7 +4290,6 @@ ncbi_xloader_sra needs vdb
 ncbi_xloader_sra needs vfs
 ncbi_xloader_sra needs vxf
 ncbi_xloader_sra needs wgsxf
-ncbi_xloader_sra needs wsra-schema
 ncbi_xloader_sra needs xncbi
 ncbi_xloader_sra needs xobjmgr
 ncbi_xloader_sra needs xser
@@ -4359,7 +4345,6 @@ ncbi_xloader_vdbgraph needs vdb
 ncbi_xloader_vdbgraph needs vfs
 ncbi_xloader_vdbgraph needs vxf
 ncbi_xloader_vdbgraph needs wgsxf
-ncbi_xloader_vdbgraph needs wsra-schema
 ncbi_xloader_vdbgraph needs xncbi
 ncbi_xloader_vdbgraph needs xobjmgr
 ncbi_xloader_vdbgraph needs xser
@@ -4397,7 +4382,6 @@ ncbi_xloader_wgs needs vdb
 ncbi_xloader_wgs needs vfs
 ncbi_xloader_wgs needs vxf
 ncbi_xloader_wgs needs wgsxf
-ncbi_xloader_wgs needs wsra-schema
 ncbi_xloader_wgs needs xncbi
 ncbi_xloader_wgs needs xobjmgr
 ncbi_xloader_wgs needs xser
@@ -5120,7 +5104,6 @@ sra-schema needs vdb
 sra-schema needs vfs
 sradb includes sra-schema
 sradb includes sraschema
-sradb includes wsra-schema
 sradb needs judy
 sradb needs kdb
 sradb needs kfg
@@ -5170,7 +5153,6 @@ sraread needs vdb
 sraread needs vfs
 sraread needs vxf
 sraread needs wgsxf
-sraread needs wsra-schema
 sraread needs xncbi
 sraread needs xser
 sraread needs xutil
@@ -5190,9 +5172,7 @@ srareader needs srapath
 srareader needs sraschema
 srareader needs vdb
 srareader needs vfs
-srareader needs wsra-schema
 sraschema includes sra-schema
-sraschema includes wsra-schema
 sraschema needs judy
 sraschema needs kdb
 sraschema needs kfg
@@ -5459,7 +5439,6 @@ validate_regions needs vdb
 validate_regions needs vfs
 validate_regions needs vxf
 validate_regions needs wgsxf
-validate_regions needs wsra-schema
 validate_regions needs xalgoblastdbindex
 validate_regions needs xalgodustmask
 validate_regions needs xalgowinmask
@@ -5517,7 +5496,6 @@ vdb-blast needs srapath
 vdb-blast needs sraschema
 vdb-blast needs vdb
 vdb-blast needs vfs
-vdb-blast needs wsra-schema
 vfs includes srapath
 vfs needs judy
 vfs needs kfg
@@ -7675,6 +7653,7 @@ writedb needs xobjmgr
 writedb needs xobjread
 writedb needs xser
 writedb needs xutil
+wsra-schema includes sra-schema
 wsra-schema needs judy
 wsra-schema needs kdb
 wsra-schema needs kfg
@@ -7688,6 +7667,8 @@ wsra-schema needs kurl
 wsra-schema needs srapath
 wsra-schema needs vdb
 wsra-schema needs vfs
+wsra-schema needs wkdb
+wsra-schema needs wvdb
 wsradb includes sra-schema
 wsradb includes sradb
 wsradb includes sraschema
@@ -7724,6 +7705,8 @@ wsraschema needs kurl
 wsraschema needs srapath
 wsraschema needs vdb
 wsraschema needs vfs
+wsraschema needs wkdb
+wsraschema needs wvdb
 wsraxf includes sraxf
 wsraxf needs judy
 wsraxf needs kdb
@@ -8567,7 +8550,6 @@ xgencoll needs vdb
 xgencoll needs vfs
 xgencoll needs vxf
 xgencoll needs wgsxf
-xgencoll needs wsra-schema
 xgencoll needs xalgoblastdbindex
 xgencoll needs xalgodustmask
 xgencoll needs xalgowinmask
@@ -8669,7 +8651,6 @@ xgencollstats needs vdb
 xgencollstats needs vfs
 xgencollstats needs vxf
 xgencollstats needs wgsxf
-xgencollstats needs wsra-schema
 xgencollstats needs xalgoblastdbindex
 xgencollstats needs xalgodustmask
 xgencollstats needs xalgowinmask
@@ -8783,7 +8764,6 @@ xgraphiccgi needs vdb
 xgraphiccgi needs vfs
 xgraphiccgi needs vxf
 xgraphiccgi needs wgsxf
-xgraphiccgi needs wsra-schema
 xgraphiccgi needs xalgoalignutil
 xgraphiccgi needs xalgoblastdbindex
 xgraphiccgi needs xalgodustmask
@@ -9368,7 +9348,6 @@ xsmall_assembly needs vdb
 xsmall_assembly needs vfs
 xsmall_assembly needs vxf
 xsmall_assembly needs wgsxf
-xsmall_assembly needs wsra-schema
 xsmall_assembly needs xalgoblastdbindex
 xsmall_assembly needs xalgodustmask
 xsmall_assembly needs xalgowinmask
