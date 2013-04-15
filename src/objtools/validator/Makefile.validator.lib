@@ -12,10 +12,3 @@ LIB = xvalidate
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr valid
 
 WATCHERS = bollin
-
-# WorkShop's optimizer can't cope with the large lat_lon_* tables.
-# Conveniently, nothing else uses -xO*.
-NOOPT_CXX = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL:-xO%=)
-
-lat_lon_country_map.o: $(srcdir)/lat_lon_country_map.cpp
-	$(NOOPT_CXX) $(srcdir)/lat_lon_country_map.cpp -o $@ $(CXX_FILTER)
