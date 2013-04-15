@@ -9,7 +9,7 @@
 #          It is used by release configurator.
 #
 
-APP: lbsmd lbsmc lbsm_feedback
+APP: lbsmd lbsmc lbsbd lbsm_feedback
 APP: launcherd fwdaemon dispd.cgi test_mghbn
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
