@@ -87,8 +87,8 @@ public:
 	  // identify whether subsource value should be blank
 	  static bool NeedsNoText (const TSubtype& subtype);
 
-	  // identify whether subsource value should be blank
-	  static bool IsDiscouraged (const TSubtype subtype);
+    // some subsources are discouraged and should not be offered to the user as an option
+    static bool IsDiscouraged (const TSubtype subtype);
 
 	// read collection date from string
     static CRef<CDate> DateFromCollectionDate (const string& str) THROWS((CException));
@@ -147,7 +147,13 @@ public:
     static bool IsValid(const string& country, bool& is_miscapitalized);
     static bool WasValid(const string& country);
     static bool WasValid(const string& country, bool& is_miscapitalized);
-
+    static string CapitalizeFirstLetterOfEveryWord (const string &phrase);
+    static string WholeCountryFix(string country);
+    static bool IsSubstringOfStringInList(const string& phrase, const string& country1, int pos1);
+    static bool ContainsMultipleCountryNames (const string &phrase);
+    static string GetCorrectedCountryCapitalization(const string& country);
+    static string NewFixCountry (const string& input);
+    static string CountryFixupItem(const string &input, bool capitalize_after_colon);
 private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];

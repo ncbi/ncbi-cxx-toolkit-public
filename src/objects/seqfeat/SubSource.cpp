@@ -1400,6 +1400,525 @@ bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
     return false;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+////// Country Capitalization Fix ///////////////////////////////////////////
+
+static const SStaticPair<const char*, const char*> s_map_whole_country_fixes[] =
+{
+  {"england", "United Kingdom: England"},
+  {"new jersey, usa", "USA: New Jersey"}
+};
+typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_whole_country_fixes, s_map_whole_country_fixes);
+
+static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = {
+{"ABW", "Aruba"},
+{"AFG", "Afghanistan"},
+{"AGO", "Angola"},
+{"AIA", "Anguilla"},
+{"ALA", "Aland Islands"},
+{"ALB", "Albania"},
+{"AND", "Andorra"},
+{"ARE", "United Arab Emirates"},
+{"ARG", "Argentina"},
+{"ARM", "Armenia"},
+{"ASM", "American Samoa"},
+{"ATA", "Antarctica"},
+{"ATF", "French Southern Territories"},
+{"ATG", "Antigua and Barbuda"},
+{"AUS", "Australia"},
+{"AUT", "Austria"},
+{"AZE", "Azerbaijan"},
+{"Antigua", "Antigua and Barbuda: Antigua"},
+{"Antigua & Barbuda", "Antigua and Barbuda"},
+{"Ashmore & Cartier Islands", "Ashmore and Cartier Islands"},
+{"Ashmore Island", "Ashmore and Cartier Islands: Ashmore Island"},
+{"Autonomous Region of the Azores", "Portugal: Azores"},
+{"Azores", "Portugal: Azores"},
+{"BDI", "Burundi"},
+{"BEL", "Belgium"},
+{"BEN", "Benin"},
+{"BES", "Bonaire, Sint Eustatius and Saba"},
+{"BFA", "Burkina Faso"},
+{"BGD", "Bangladesh"},
+{"BGR", "Bulgaria"},
+{"BHR", "Bahrain"},
+{"BHS", "Bahamas"},
+{"BIH", "Bosnia and Herzegovina"},
+{"BLM", "Saint Barthelemy"},
+{"BLR", "Belarus"},
+{"BLZ", "Belize"},
+{"BMU", "Bermuda"},
+{"BOL", "Bolivia"},
+{"BRA", "Brazil"},
+{"BRB", "Barbados"},
+{"BRN", "Brunei"},
+{"BTN", "Bhutan"},
+{"BVT", "Bouvet Island"},
+{"BWA", "Botswana"},
+{"Barbuda", "Antigua and Barbuda: Barbuda"},
+{"Bassas da India", "French Southern and Antarctic Lands: Bassas da India"},
+{"Brasil", "Brazil"},
+{"CAF", "Central African Republic"},
+{"CAN", "Canada"},
+{"CCK", "Cocos Islands"},
+{"CHE", "Switzerland"},
+{"CHL", "Chile"},
+{"CHN", "China"},
+{"CIV", "Cote d'Ivoire"},
+{"CMR", "Cameroon"},
+{"COD", "Democratic Republic of the Congo"},
+{"COG", "Republic of the Congo"},
+{"COK", "Cook Islands"},
+{"COL", "Colombia"},
+{"COM", "Comoros"},
+{"CPV", "Cape Verde"},
+{"CRI", "Costa Rica"},
+{"CUB", "Cuba"},
+{"CUW", "Curacao"},
+{"CXR", "Christmas Island"},
+{"CYM", "Cayman Islands"},
+{"CYP", "Cyprus"},
+{"CZE", "Czech Republic"},
+{"Caicos Islands", "Turks and Caicos Islands: Caicos Islands"},
+{"Canary Islands", "Spain: Canary Islands"},
+{"Cape Verde Islands", "Cape Verde"},
+{"Cartier Island", "Ashmore and Cartier Islands: Cartier Island"},
+{"DEU", "Germany"},
+{"DJI", "Djibouti"},
+{"DMA", "Dominica"},
+{"DNK", "Denmark"},
+{"DOM", "Dominican Republic"},
+{"DZA", "Algeria"},
+{"ECU", "Ecuador"},
+{"EGY", "Egypt"},
+{"ERI", "Eritrea"},
+{"ESH", "Western Sahara"},
+{"ESP", "Spain"},
+{"EST", "Estonia"},
+{"ETH", "Ethiopia"},
+{"El Hierro", "Spain: El Hierro"},
+{"Europa Island", "French Southern and Antarctic Lands: Europa Island"},
+{"FIN", "Finland"},
+{"FJI", "Fiji"},
+{"FLK", "Falkland Islands (Islas Malvinas)"},
+{"FRA", "France"},
+{"FRO", "Faroe Islands"},
+{"FSM", "Micronesia"},
+{"Falkland Islands", "Falkland Islands (Islas Malvinas)"},
+{"French Southern & Antarctic Lands", "French Southern and Antarctic Lands"},
+{"Fuerteventura", "Spain: Fuerteventura"},
+{"GAB", "Gabon"},
+{"GBR", "United Kingdom"},
+{"GEO", "Georgia"},
+{"GGY", "Guernsey"},
+{"GHA", "Ghana"},
+{"GIB", "Gibraltar"},
+{"GIN", "Guinea"},
+{"GLP", "Guadeloupe"},
+{"GMB", "Gambia"},
+{"GNB", "Guinea-Bissau"},
+{"GNQ", "Equatorial Guinea"},
+{"GRC", "Greece"},
+{"GRD", "Grenada"},
+{"GRL", "Greenland"},
+{"GTM", "Guatemala"},
+{"GUF", "French Guiana"},
+{"GUM", "Guam"},
+{"GUY", "Guyana"},
+{"Glorioso Islands", "French Southern and Antarctic Lands: Glorioso Islands"},
+{"Gran Canaria", "Spain: Gran Canaria"},
+{"Grenadines", "Saint Vincent and the Grenadines: Grenadines"},
+{"HKG", "Hong Kong"},
+{"HMD", "Heard Island and McDonald Islands"},
+{"HND", "Honduras"},
+{"HRV", "Croatia"},
+{"HTI", "Haiti"},
+{"HUN", "Hungary"},
+{"Heard Island", "Heard Island and McDonald Islands: Heard Island"},
+{"Heard Island & McDonald Islands", "Heard Island and McDonald Islands"},
+{"IDN", "Indonesia"},
+{"IMN", "Isle of Man"},
+{"IND", "India"},
+{"IOT", "British Indian Ocean Territory"},
+{"IRL", "Ireland"},
+{"IRN", "Iran"},
+{"IRQ", "Iraq"},
+{"ISL", "Iceland"},
+{"ISR", "Israel"},
+{"ITA", "Italy"},
+{"Ile Amsterdam", "French Southern and Antarctic Lands: Ile Amsterdam"},
+{"Ile Saint-Paul", "French Southern and Antarctic Lands: Ile Saint-Paul"},
+{"Iles Crozet", "French Southern and Antarctic Lands: Iles Crozet"},
+{"Iles Kerguelen", "French Southern and Antarctic Lands: Iles Kerguelen"},
+{"Ivory Coast", "Cote d'Ivoire"},
+{"JAM", "Jamaica"},
+{"JEY", "Jersey"},
+{"JOR", "Jordan"},
+{"JPN", "Japan"},
+{"Juan de Nova Island", "French Southern and Antarctic Lands: Juan de Nova Island"},
+{"KAZ", "Kazakhstan"},
+{"KEN", "Kenya"},
+{"KGZ", "Kyrgyzstan"},
+{"KHM", "Cambodia"},
+{"KIR", "Kiribati"},
+{"KNA", "Saint Kitts and Nevis"},
+{"KOR", "South Korea"},
+{"KWT", "Kuwait"},
+{"LAO", "Lao People's Democratic Republic"},
+{"LBN", "Lebanon"},
+{"LBR", "Liberia"},
+{"LBY", "Libyan Arab Jamahiriya"},
+{"LCA", "Saint Lucia"},
+{"LIE", "Liechtenstein"},
+{"LKA", "Sri Lanka"},
+{"LSO", "Lesotho"},
+{"LTU", "Lithuania"},
+{"LUX", "Luxembourg"},
+{"LVA", "Latvia"},
+{"La Gomera", "Spain: La Gomera"},
+{"La Graciosa", "Spain: La Graciosa"},
+{"La Palma", "Spain: La Palma"},
+{"La Reunion Island", "Reunion"},
+{"Lanzarote", "Spain: Lanzarote"},
+{"MAC", "Macao"},
+{"MAF", "Saint Martin (French part)"},
+{"MAR", "Morocco"},
+{"MCO", "Monaco"},
+{"MDA", "Moldova"},
+{"MDG", "Madagascar"},
+{"MDV", "Maldives"},
+{"MEX", "Mexico"},
+{"MHL", "Marshall Islands"},
+{"MKD", "Macedonia"},
+{"MLI", "Mali"},
+{"MLT", "Malta"},
+{"MMR", "Myanmar"},
+{"MNE", "Montenegro"},
+{"MNG", "Mongolia"},
+{"MNP", "Northern Mariana Islands"},
+{"MOZ", "Mozambique"},
+{"MRT", "Mauritania"},
+{"MSR", "Montserrat"},
+{"MTQ", "Martinique"},
+{"MUS", "Mauritius"},
+{"MWI", "Malawi"},
+{"MYS", "Malaysia"},
+{"MYT", "Mayotte"},
+{"Madeira", "Portugal: Madeira"},
+{"McDonald Island", "Heard Island and McDonald Islands: McDonald Island"},
+{"McDonald Islands", "Heard Island and McDonald Islands: McDonald Islands"},
+{"Miquelon", "Saint Pierre and Miquelon: Miquelon"},
+{"NAM", "Namibia"},
+{"NCL", "New Caledonia"},
+{"NER", "Niger"},
+{"NFK", "Norfolk Island"},
+{"NGA", "Nigeria"},
+{"NIC", "Nicaragua"},
+{"NIU", "Niue"},
+{"NLD", "Netherlands"},
+{"NOR", "Norway"},
+{"NPL", "Nepal"},
+{"NRU", "Nauru"},
+{"NZL", "New Zealand"},
+{"Nevis", "Saint Kitts and Nevis: Nevis"},
+{"OMN", "Oman"},
+{"P, R, China", "China"},
+{"P.R. China", "China"},
+{"P.R.China", "China"},
+{"PAK", "Pakistan"},
+{"PAN", "Panama"},
+{"PCN", "Pitcairn"},
+{"PER", "Peru"},
+{"PHL", "Philippines"},
+{"PLW", "Palau"},
+{"PNG", "Papua New Guinea"},
+{"POL", "Poland"},
+{"PRI", "Puerto Rico"},
+{"PRK", "North Korea"},
+{"PRT", "Portugal"},
+{"PRY", "Paraguay"},
+{"PSE", "Palestinian Territory"},
+{"PYF", "French Polynesia"},
+{"People's Republic of China", "China"},
+{"Pr China", "China"},
+{"Prchina", "China"},
+{"Principe", "Sao Tome and Principe: Principe"},
+{"QAT", "Qatar"},
+{"REU", "Reunion"},
+{"ROU", "Romania"},
+{"RUS", "Russia"},
+{"RWA", "Rwanda"},
+{"SAU", "Saudi Arabia"},
+{"SDN", "Sudan"},
+{"SEN", "Senegal"},
+{"SGP", "Singapore"},
+{"SGS", "South Georgia and the South Sandwich Islands"},
+{"SHN", "Saint Helena"},
+{"SJM", "Svalbard and Jan Mayen"},
+{"SLB", "Solomon Islands"},
+{"SLE", "Sierra Leone"},
+{"SLV", "El Salvador"},
+{"SMR", "San Marino"},
+{"SOM", "Somalia"},
+{"SPM", "Saint Pierre and Miquelon"},
+{"SRB", "Serbia"},
+{"SSD", "South Sudan"},
+{"STP", "Sao Tome and Principe"},
+{"SUR", "Suriname"},
+{"SVK", "Slovakia"},
+{"SVN", "Slovenia"},
+{"SWE", "Sweden"},
+{"SWZ", "Swaziland"},
+{"SXM", "Sint Maarten (Dutch part)"},
+{"SYC", "Seychelles"},
+{"SYR", "Syrian Arab Republic"},
+{"Saint Kitts", "Saint Kitts and Nevis: Saint Kitts"},
+{"Saint Kitts & Nevis", "Saint Kitts and Nevis"},
+{"Saint Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
+{"Saint Pierre & Miquelon", "Saint Pierre and Miquelon"},
+{"Saint Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
+{"Saint Vincent & Grenadines", "Saint Vincent and the Grenadines"},
+{"Saint Vincent & the Grenadines", "Saint Vincent and the Grenadines"},
+{"Saint Vincent and Grenadines", "Saint Vincent and the Grenadines"},
+{"Sao Tome", "Sao Tome and Principe: Sao Tome"},
+{"Sao Tome & Principe", "Sao Tome and Principe"},
+{"South Georgia & South Sandwich Islands", "South Georgia and the South Sandwich Islands"},
+{"South Georgia & the South Sandwich Islands", "South Georgia and the South Sandwich Islands"},
+{"South Sandwich Islands", "South Georgia and the South Sandwich Islands: South Sandwich Islands"},
+{"St Helena", "Saint Helena"},
+{"St Kitts", "Saint Kitts and Nevis: Saint Kitts"},
+{"St Lucia", "Saint Lucia"},
+{"St Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
+{"St Pierre and Miquelon", "Saint Pierre and Miquelon"},
+{"St Thomas", "USA: Saint Thomas"},
+{"St Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
+{"St Vincent and the Grenadines", "Saint Vincent and the Grenadines"},
+{"St. Helena", "Saint Helena"},
+{"St. Kitts", "Saint Kitts and Nevis: Saint Kitts"},
+{"St. Lucia", "Saint Lucia"},
+{"St. Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
+{"St. Pierre and Miquelon", "Saint Pierre and Miquelon"},
+{"St. Thomas", "USA: Saint Thomas"},
+{"St. Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
+{"St. Vincent and the Grenadines", "Saint Vincent and the Grenadines"},
+{"TCA", "Turks and Caicos Islands"},
+{"TCD", "Chad"},
+{"TGO", "Togo"},
+{"THA", "Thailand"},
+{"TJK", "Tajikistan"},
+{"TKL", "Tokelau"},
+{"TKM", "Turkmenistan"},
+{"TLS", "Timor-Leste"},
+{"TON", "Tonga"},
+{"TTO", "Trinidad and Tobago"},
+{"TUN", "Tunisia"},
+{"TUR", "Turkey"},
+{"TUV", "Tuvalu"},
+{"TWN", "Taiwan"},
+{"TZA", "Tanzania"},
+{"Tenerife", "Spain: Tenerife"},
+{"The Netherlands", "Netherlands"},
+{"Tobago", "Trinidad and Tobago: Tobago"},
+{"Trinidad", "Trinidad and Tobago: Trinidad"},
+{"Trinidad & Tobago", "Trinidad and Tobago"},
+{"Tromelin Island", "French Southern and Antarctic Lands: Tromelin Island"},
+{"Turks & Caicos", "Turks and Caicos Islands"},
+{"Turks & Caicos Islands", "Turks and Caicos Islands"},
+{"Turks Islands", "Turks and Caicos Islands: Turks Islands"},
+{"Turks and Caicos", "Turks and Caicos Islands"},
+{"U.S.A.", "USA"},
+{"UGA", "Uganda"},
+{"UK", "United Kingdom"},
+{"UKR", "Ukraine"},
+{"UMI", "United States Minor Outlying Islands"},
+{"URY", "Uruguay"},
+{"USA", "United States"},
+{"UZB", "Uzbekistan"},
+{"United States of America", "USA"},
+{"VAT", "Holy See (Vatican City State)"},
+{"VCT", "Saint Vincent and the Grenadines"},
+{"VEN", "Venezuela"},
+{"VGB", "British Virgin Islands"},
+{"VIR", "Virgin Islands"},
+{"VNM", "Viet Nam"},
+{"VUT", "Vanuatu"},
+{"Vietnam", "Viet Nam"},
+{"WLF", "Wallis and Futuna"},
+{"WSM", "Samoa"},
+{"YEM", "Yemen"},
+{"ZAF", "South Africa"},
+{"ZMB", "Zambia"},
+{"ZWE", "Zimbabwe"}
+};
+
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
+
+string CCountries::CapitalizeFirstLetterOfEveryWord (const string &phrase)
+{
+    vector<string> words;
+    NStr::Tokenize(phrase," \t\r\n",words);
+    for(vector<string>::iterator word = words.begin(); word != words.end(); ++word)
+        if (!word->empty() && isalpha(word->at(0)))
+            word->at(0) = toupper(word->at(0));
+    return NStr::Join(words," ");
+}
+
+string CCountries::WholeCountryFix(string country)
+{
+    string new_country;
+    TCStringPairsMap::const_iterator found = k_whole_country_fixes.find(NStr::ToLower(country).c_str());
+    if (found != k_whole_country_fixes.end())
+        new_country = found->second;
+    return new_country;
+}
+
+bool CCountries::IsSubstringOfStringInList(const string& phrase, const string& country1, int pos1)
+{
+    bool r = false;
+    ITERATE ( TCStrSet, c, s_CountriesSet ) 
+    {
+        string country2(*c);
+        if (country2.length() > country1.length() && NStr::FindNoCase(country2,country1) != NPOS)
+        {
+            int pos2 = NStr::FindNoCase(phrase,country2);
+            while (pos2 != NPOS)
+            { 
+                if (pos2 <= pos1 && pos2+country2.length() >= pos1+country1.length())
+                    r = true;
+                pos2 = NStr::FindNoCase(phrase,country2,pos2+country2.length());
+            }
+        }
+    }
+    return r;
+}
+
+bool CCountries::ContainsMultipleCountryNames (const string &phrase)
+{
+    int num_matches = 0;
+    ITERATE ( TCStrSet, c, s_CountriesSet ) 
+    {
+        string country(*c);
+        int pos = NStr::FindNoCase(phrase,country);
+        while (pos != NPOS)
+        {
+            if (!((pos+country.length()<phrase.length() && isalpha(phrase[pos+country.length()]))
+                  || (pos > 0 && isalpha(phrase[pos-1]))
+                  || IsSubstringOfStringInList(phrase,country,pos)))
+                num_matches++;
+            pos = NStr::FindNoCase(phrase,country,pos+country.length());
+        }
+
+    }
+    return (num_matches > 1);
+}
+
+string CCountries::GetCorrectedCountryCapitalization(const string& country)
+{
+    string output = country;
+    ITERATE ( TCStrSet, it, s_CountriesSet ) {
+        if ( NStr::EqualNocase(country, *it) ) {
+            output = *it;
+        }
+    }
+    return output;
+}
+
+string CCountries::NewFixCountry (const string& input)
+{
+    string new_country = WholeCountryFix(input);
+    if (!new_country.empty())
+        return new_country;
+    
+    bool too_many_countries = false;
+    bool bad_cap = false;
+    vector<string> countries;
+    string valid_country;
+    NStr::Tokenize(input,",:",countries);
+    for(vector<string>::iterator country = countries.begin(); country != countries.end(); ++country)
+        if (!country->empty() && !too_many_countries)
+        {
+            bool bad_cap;
+            if (IsValid(*country,bad_cap))
+            {
+                if (valid_country.empty())
+                    valid_country = *country;
+                else
+                    too_many_countries = true;
+            }
+            else // see if this is a fixable country
+            {
+                TCStringPairsMap::const_iterator found = k_country_name_fixes.find(country->c_str());
+                if (found != k_country_name_fixes.end())
+                {
+                    if (valid_country.empty())
+                        valid_country = found->second;
+                    else
+                        too_many_countries = true;
+                }
+            }
+        }
+  
+    if (!valid_country.empty() && !too_many_countries) 
+        too_many_countries = ContainsMultipleCountryNames (input);
+  
+    if (!valid_country.empty() && too_many_countries && valid_country == input) 
+    {
+        string str1,str2;
+        NStr::SplitInTwo(valid_country,":",str1,str2);
+        if (!str1.empty() && !str2.empty() && !NStr::StartsWith(str2," "))
+            new_country = str1+": "+str2;
+    }   
+    else if(!valid_country.empty() && !too_many_countries)
+    {
+        // find valid_country in input
+        int pos = NStr::Find(input,valid_country);
+        // save preceeding string without trailing spaces or delimiters ":,"
+        string before = input.substr(0,pos);
+        NStr::ReplaceInPlace(before,":"," ");
+        NStr::ReplaceInPlace(before,","," ");
+        NStr::TruncateSpacesInPlace(before,NStr::eTrunc_End);
+        // save trailing string without initial spaces or delimiters
+        string after = input.substr(pos+valid_country.length());
+        NStr::ReplaceInPlace(after,":"," ");
+        NStr::ReplaceInPlace(after,","," ");
+        NStr::TruncateSpacesInPlace(after,NStr::eTrunc_Begin);
+        if (bad_cap) new_country = GetCorrectedCountryCapitalization(valid_country);
+        else new_country = valid_country;
+        if (!before.empty() || !after.empty())
+            new_country += ": ";
+        if (!before.empty())
+            new_country += before;
+        if (!before.empty() && !after.empty())
+            new_country += ", ";
+        if (!after.empty())
+            new_country += after;
+    }
+    return new_country;
+}
+
+string CCountries::CountryFixupItem(const string &input, bool capitalize_after_colon)
+{
+    string country = NewFixCountry (input);
+    string new_country = country;
+    int pos = NStr::Find(country,":");
+    if (pos != NPOS)
+    {
+        string after = country.substr(pos+1);
+        if (!after.empty())
+        {
+            NStr::TruncateSpacesInPlace(after,NStr::eTrunc_Begin);
+            if (capitalize_after_colon) 
+                after = CapitalizeFirstLetterOfEveryWord (after);
+            new_country = country.substr(0,pos);
+            new_country += ": " + after;
+        }
+    }
+    return new_country;
+}
+      
+         
+    
 
 END_objects_SCOPE // namespace ncbi::objects::
 
