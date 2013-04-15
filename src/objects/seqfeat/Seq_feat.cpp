@@ -361,6 +361,8 @@ CSeq_feat::GetTempExceptionTextSet(void) const
     ITERATE( vector<CTempStringEx>, part_it, exception_parts ) {
         pAnswerSet->insert( NStr::TruncateSpaces(*part_it) );
     }
+
+    return pAnswerSet;
 }
 
 bool CSeq_feat::HasExceptionText(const string & exception_text ) const
