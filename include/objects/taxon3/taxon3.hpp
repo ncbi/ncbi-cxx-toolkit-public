@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Soussov, Michael Domrachev
+ * Author:  Colleen Bollin, based on work by Vladimir Soussov, Michael Domrachev
  *
  * File Description:
  *     NCBI Taxonomy information retreival library
