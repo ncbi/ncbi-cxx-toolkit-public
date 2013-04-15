@@ -216,45 +216,23 @@ void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
 class CGetJobCmdExecutor : public INetServerFinder
 {
 public:
-    CGetJobCmdExecutor(const string& cmd,
+    CGetJobCmdExecutor(const string& get_cmd,
             CNetScheduleJob& job, SNetScheduleExecutorImpl* executor) :
-        m_Cmd(cmd), m_Job(job), m_Executor(executor)
+        m_GetCmd(get_cmd), m_Job(job), m_Executor(executor)
     {
     }
 
     virtual bool Consider(CNetServer server);
 
 private:
-    const string& m_Cmd;
+    const string& m_GetCmd;
     CNetScheduleJob& m_Job;
     SNetScheduleExecutorImpl* m_Executor;
 };
 
 bool CGetJobCmdExecutor::Consider(CNetServer server)
 {
-    try {
-        return g_ParseGetJobResponse(m_Job,
-                server.ExecWithRetry(m_Cmd).response);
-    }
-    catch (CNetScheduleException& e) {
-        if (e.GetErrCode() != CNetScheduleException::ePrefAffExpired)
-            throw;
-
-        CFastMutexGuard guard(m_Executor->m_PreferredAffMutex);
-
-        string cmd("SETAFF aff=");
-        const char* sep = "";
-        ITERATE(set<string>, it, m_Executor->m_PreferredAffinities) {
-            cmd += sep;
-            cmd += *it;
-            sep = ",";
-        }
-        cmd += '"';
-        g_AppendClientIPAndSessionID(cmd);
-
-        server.ExecWithRetry(cmd);
-    }
-    return false;
+    return m_Executor->ExecGET(server, m_GetCmd, m_Job);
 }
 
 const CNetScheduleAPI::SServerParams& CNetScheduleExecutor::GetServerParams()
@@ -296,6 +274,83 @@ void CNetScheduleExecutor::SetAffinityPreference(
     m_Impl->m_AffinityPreference = aff_pref;
 }
 
+void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
+        CNetServer orig_server, const string& affinity)
+{
+    if (m_AffinityPreference != CNetScheduleExecutor::eClaimNewPreferredAffs ||
+            affinity.empty())
+        return;
+
+    CFastMutexGuard guard(m_PreferredAffMutex);
+
+    if (m_PreferredAffinities.find(affinity) == m_PreferredAffinities.end()) {
+        m_PreferredAffinities.insert(affinity);
+        string new_preferred_aff_cmd = "CHAFF add=" + affinity;
+        g_AppendClientIPAndSessionID(new_preferred_aff_cmd);
+        CNetServiceIterator it(m_API->m_Service.Iterate(orig_server));
+        while (++it)
+            try {
+                (*it).ExecWithRetry(new_preferred_aff_cmd);
+            }
+            catch (CException& e) {
+                ERR_POST("Error while notifying " << (*it).GetServerAddress() <<
+                    " of a new affinity " << e);
+
+                m_API->GetListener()->SetAffinitiesSynced(
+                        it.GetServer(), false);
+            }
+    }
+}
+
+string SNetScheduleExecutorImpl::MkSETAFFCmd()
+{
+    CFastMutexGuard guard(m_PreferredAffMutex);
+
+    string cmd("SETAFF aff=\"");
+    const char* sep = "";
+    ITERATE(set<string>, it, m_PreferredAffinities) {
+        cmd += sep;
+        cmd += *it;
+        sep = ",";
+    }
+    cmd += '"';
+    g_AppendClientIPAndSessionID(cmd);
+
+    return cmd;
+}
+
+bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
+        const string& get_cmd, CNetScheduleJob& job)
+{
+    CNetScheduleGETCmdListener get_cmd_listener(this);
+
+    CNetServer::SExecResult exec_result;
+
+    try {
+        server->ConnectAndExec(get_cmd, exec_result, NULL, &get_cmd_listener);
+    }
+    catch (CNetScheduleException& e) {
+        if (e.GetErrCode() != CNetScheduleException::ePrefAffExpired)
+            throw;
+
+        CNetScheduleServerListener* listener = m_API->GetListener();
+        listener->SetAffinitiesSynced(server, false);
+        server->ConnectAndExec(MkSETAFFCmd(), exec_result);
+        listener->SetAffinitiesSynced(server, true);
+
+        server->ConnectAndExec(get_cmd, exec_result, NULL, &get_cmd_listener);
+    }
+
+    if (!g_ParseGetJobResponse(job, exec_result.response))
+        return false;
+
+    // If a new preferred affinity is given by the server,
+    // register it with the rest of servers.
+    ClaimNewPreferredAffinity(server, job.affinity);
+
+    return true;
+}
+
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
         const string& affinity_list,
         CAbsTimeout* timeout)
@@ -319,30 +374,15 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
                         base_cmd, timeout)).response)) {
             // Notify the rest of NetSchedule servers that
             // we are no longer listening on the UDP socket.
-            // Also, if a new preferred affinity is given by
-            // the server, register it with the rest of servers.
-            string new_preferred_aff_cmd;
-
-            if (m_Impl->m_AffinityPreference == eClaimNewPreferredAffs &&
-                    !job.affinity.empty()) {
-                CFastMutexGuard guard(m_Impl->m_PreferredAffMutex);
-
-                if (m_Impl->m_PreferredAffinities.find(job.affinity) ==
-                        m_Impl->m_PreferredAffinities.end()) {
-                    m_Impl->m_PreferredAffinities.insert(job.affinity);
-                    new_preferred_aff_cmd = "CHAFF add=" + job.affinity;
-                    g_AppendClientIPAndSessionID(new_preferred_aff_cmd);
-                }
-            }
-
-            CNetServiceIterator it(m_Impl->m_API->m_Service.Iterate(server));
             string cancel_wget_cmd("CWGET");
             g_AppendClientIPAndSessionID(cancel_wget_cmd);
-            while (++it) {
+            CNetServiceIterator it(m_Impl->m_API->m_Service.Iterate(server));
+            while (++it)
                 (*it).ExecWithRetry(cancel_wget_cmd);
-                if (!new_preferred_aff_cmd.empty())
-                    (*it).ExecWithRetry(new_preferred_aff_cmd);
-            }
+
+            // Also, if a new preferred affinity is given by
+            // the server, register it with the rest of servers.
+            m_Impl->ClaimNewPreferredAffinity(server, job.affinity);
 
             return true;
         }
@@ -467,17 +507,24 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
             attr_values[1] != executor->m_API.GetQueueName())
         return false;
 
-    CNetScheduleServerListener::TNodeIdToServerMap& server_map(
-            executor->m_API->GetListener()->m_ServerByNSNodeId);
+    SNetServerInPool* known_server;
 
-    CNetScheduleServerListener::TNodeIdToServerMap::iterator server_it(
-            server_map.find(attr_values[0]));
+    {
+        CNetScheduleServerListener* listener = executor->m_API->GetListener();
 
-    if (server_it == server_map.end())
-        return false;
+        CFastMutexGuard guard(listener->m_ServerPropsMutex);
+
+        CNetScheduleServerListener::TServerPropertiesByNode::iterator
+            server_props_it(listener->m_ServerPropsByNode.find(attr_values[0]));
+
+        if (server_props_it == listener->m_ServerPropsByNode.end())
+            return false;
+
+        known_server = server_props_it->second->server_in_pool;
+    }
 
     *server = new SNetServerImpl(executor->m_API->m_Service, executor->
-            m_API->m_Service->m_ServerPool->ReturnServer(server_it->second));
+            m_API->m_Service->m_ServerPool->ReturnServer(known_server));
 
     return true;
 }
@@ -657,6 +704,33 @@ const string& CNetScheduleExecutor::GetClientName()
 const string& CNetScheduleExecutor::GetServiceName()
 {
     return m_Impl->m_API->m_Service.GetServiceName();
+}
+
+void CNetScheduleGETCmdListener::OnExec(
+        CNetServerConnection::TInstance conn_impl, const string& /*cmd*/)
+{
+    switch (m_Executor->m_AffinityPreference) {
+    case CNetScheduleExecutor::ePreferredAffsOrAnyJob:
+    case CNetScheduleExecutor::ePreferredAffinities:
+    case CNetScheduleExecutor::eClaimNewPreferredAffs:
+        {
+            CNetServerConnection conn(conn_impl);
+
+            CNetScheduleServerListener* listener =
+                    m_Executor->m_API->GetListener();
+
+            if (listener->NeedToSubmitAffinities(conn_impl->m_Server)) {
+                conn.Exec(m_Executor->MkSETAFFCmd());
+                listener->SetAffinitiesSynced(conn_impl->m_Server, true);
+            }
+        }
+        break;
+
+    default:
+        // Preferred affinities are not used -- there's no need
+        // to send the SETAFF command to the server.
+        break;
+    }
 }
 
 END_NCBI_SCOPE

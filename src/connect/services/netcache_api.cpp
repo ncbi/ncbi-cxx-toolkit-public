@@ -134,9 +134,10 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
     }
 }
 
-void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
+void CNetCacheServerListener::OnConnected(
+        CNetServerConnection::TInstance conn_impl)
 {
-    conn->WriteLine(m_Auth);
+    conn_impl->WriteLine(m_Auth);
 }
 
 void CNetCacheServerListener::OnError(

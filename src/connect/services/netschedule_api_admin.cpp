@@ -158,25 +158,46 @@ void CNetScheduleAdmin::DumpQueue(
         output_stream, CNetService::eMultilineOutput);
 }
 
-
-void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
-        const string& queue_name, TQueueInfo& queue_info)
+static string s_MkQINFCmd(const string& queue_name)
 {
-    CTempString queue_details, dyn_queue, queue_class;
-
     string qinf_cmd("QINF2 " + queue_name);
     g_AppendClientIPAndSessionID(qinf_cmd);
+    return qinf_cmd;
+}
 
-    CUrlArgs url_parser(server.ExecWithRetry(qinf_cmd).response);
+static void s_ParseQueueInfo(const string& server_output,
+        CNetScheduleAdmin::TQueueInfo& queue_info)
+{
+    CUrlArgs url_parser(server_output);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
         queue_info[field->name] = field->value;
     }
 }
 
-void CNetScheduleAdmin::GetQueueInfo(CNetServer server, TQueueInfo& queue_info)
+void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
+        const string& queue_name, CNetScheduleAdmin::TQueueInfo& queue_info)
+{
+    s_ParseQueueInfo(server.ExecWithRetry(
+            s_MkQINFCmd(queue_name)).response, queue_info);
+}
+
+void CNetScheduleAdmin::GetQueueInfo(const string& queue_name,
+        CNetScheduleAdmin::TQueueInfo& queue_info)
+{
+    s_ParseQueueInfo(m_Impl->m_API->m_Service.FindServerAndExec(
+            s_MkQINFCmd(queue_name)).response, queue_info);
+}
+
+void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
+        CNetScheduleAdmin::TQueueInfo& queue_info)
 {
     GetQueueInfo(server, m_Impl->m_API->m_Queue, queue_info);
+}
+
+void CNetScheduleAdmin::GetQueueInfo(CNetScheduleAdmin::TQueueInfo& queue_info)
+{
+    GetQueueInfo(m_Impl->m_API->m_Queue, queue_info);
 }
 
 void CNetScheduleAdmin::PrintQueueInfo(const string& queue_name,

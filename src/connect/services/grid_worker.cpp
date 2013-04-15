@@ -1163,9 +1163,7 @@ int CGridWorkerNode::Run()
     {{
         CNetScheduleAdmin::TQueueInfo queue_info;
 
-        m_NetScheduleAPI.GetAdmin().GetQueueInfo(
-                m_NetScheduleAPI.GetService().Iterate().GetServer(),
-                GetQueueName(), queue_info);
+        m_NetScheduleAPI.GetAdmin().GetQueueInfo(queue_info);
 
         m_QueueTimeout = NStr::StringToUInt(queue_info["timeout"]);
     }}
@@ -1449,6 +1447,7 @@ bool CGridWorkerNode::x_PerformTimelineAction(
         return false;
     }
 
+    // Skip servers that disappeared from LBSM.
     if (timeline_entry->m_DiscoveryIteration != m_DiscoveryIteration)
         return false;
 
@@ -1457,47 +1456,30 @@ bool CGridWorkerNode::x_PerformTimelineAction(
 
     timeline_entry->ResetTimeout(m_NSTimeout);
 
-    string get_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
-            m_NSExecutor->m_AffinityPreference, kEmptyStr));
-
-    get_cmd = m_NSExecutor->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-            get_cmd, &timeline_entry->GetTimeout());
-
-    CNetServer::SExecResult exec_result;
-
     try {
-        server->ConnectAndExec(get_cmd, exec_result);
+        if (m_NSExecutor->ExecGET(server, m_NSExecutor->
+                m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
+                        CNetScheduleNotificationHandler::MkBaseGETCmd(
+                                m_NSExecutor->m_AffinityPreference, kEmptyStr),
+                        &timeline_entry->GetTimeout()), job)) {
+            // A job has been returned; add the server to
+            // m_ImmediateActions because there can be more
+            // jobs in the queue.
+            m_ImmediateActions.Push(timeline_entry);
+            return true;
+        } else {
+            // No job has been returned by this server;
+            // query it later.
+            m_Timeline.Push(timeline_entry);
+            return false;
+        }
     }
     catch (CNetSrvConnException& e) {
+        // Because a connection error has occurred, do not
+        // put this server back to the timeline.
         LOG_POST(Warning << e.GetMsg());
         return false;
     }
-
-    if (!g_ParseGetJobResponse(job, exec_result.response)) {
-        m_Timeline.Push(timeline_entry);
-        return false;
-    }
-
-    // If a new preferred affinity is given by the server,
-    // register it with the rest of servers.
-    if (m_NSExecutor->m_AffinityPreference ==
-            CNetScheduleExecutor::eClaimNewPreferredAffs &&
-            !job.affinity.empty()) {
-        CFastMutexGuard guard(m_NSExecutor->m_PreferredAffMutex);
-
-        if (m_NSExecutor->m_PreferredAffinities.find(job.affinity) ==
-                m_NSExecutor->m_PreferredAffinities.end()) {
-            m_NSExecutor->m_PreferredAffinities.insert(job.affinity);
-            string new_preferred_aff_cmd("CHAFF add=" + job.affinity);
-            g_AppendClientIPAndSessionID(new_preferred_aff_cmd);
-            for (CNetServiceIterator it =
-                    m_NetScheduleAPI->m_Service.Iterate(server); ++it; )
-                (*it).ExecWithRetry(new_preferred_aff_cmd);
-        }
-    }
-
-    m_ImmediateActions.Push(timeline_entry);
-    return true;
 }
 
 void CGridWorkerNode::x_ProcessRequestJobNotification()

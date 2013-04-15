@@ -57,6 +57,22 @@ inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
     return cmd;
 }
 
+struct SServerProperties : public CObject
+{
+    SServerProperties(SNetServerInPool* _server_in_pool) :
+        server_in_pool(_server_in_pool),
+        affs_synced(false)
+    {
+    }
+
+    SNetServerInPool* server_in_pool;
+
+    string ns_node;
+    string ns_session;
+
+    bool affs_synced;
+};
+
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
 public:
@@ -64,18 +80,27 @@ public:
 
     void SetAuthString(SNetScheduleAPIImpl* impl);
 
+    bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
+    void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
+
+    CRef<SServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
+
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
-    virtual void OnConnected(CNetServerConnection::TInstance conn);
+    virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
 
     string m_Auth;
     CRef<INetEventHandler> m_EventHandler;
 
-    typedef map<string, SNetServerInPool*> TNodeIdToServerMap;
-    TNodeIdToServerMap m_ServerByNSNodeId;
-    CFastMutex m_FastMutex;
+    CFastMutex m_ServerPropsMutex;
+
+    typedef map<SNetServerInPool*, CRef<SServerProperties> > TServerProperties;
+    TServerProperties m_ServerProperties;
+
+    typedef map<string, SServerProperties*> TServerPropertiesByNode;
+    TServerPropertiesByNode m_ServerPropsByNode;
 
     bool m_WorkerNodeCompatMode;
 };
@@ -185,6 +210,12 @@ struct SNetScheduleExecutorImpl : public CObject
     {
     }
 
+    void ClaimNewPreferredAffinity(CNetServer orig_server,
+        const string& affinity);
+    string MkSETAFFCmd();
+    bool ExecGET(SNetServerImpl* server,
+            const string& get_cmd, CNetScheduleJob& job);
+
     void ExecWithOrWithoutRetry(const string& job_key, const string& cmd);
 
     enum EChangeAffAction {
@@ -203,6 +234,20 @@ struct SNetScheduleExecutorImpl : public CObject
     CFastMutex m_PreferredAffMutex;
     set<string> m_PreferredAffinities;
     bool m_WorkerNodeMode;
+};
+
+class CNetScheduleGETCmdListener : public INetServerExecListener
+{
+public:
+    CNetScheduleGETCmdListener(SNetScheduleExecutorImpl* executor) :
+        m_Executor(executor)
+    {
+    }
+
+    virtual void OnExec(CNetServerConnection::TInstance conn_impl,
+            const string& cmd);
+
+    SNetScheduleExecutorImpl* m_Executor;
 };
 
 struct SNetScheduleAdminImpl : public CObject

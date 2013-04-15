@@ -214,6 +214,35 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
     m_Auth = auth;
 }
 
+bool CNetScheduleServerListener::NeedToSubmitAffinities(
+        SNetServerImpl* server_impl)
+{
+    CFastMutexGuard guard(m_ServerPropsMutex);
+
+    return !x_GetServerProperties(server_impl)->affs_synced;
+}
+
+void CNetScheduleServerListener::SetAffinitiesSynced(
+        SNetServerImpl* server_impl, bool affs_synced)
+{
+    CFastMutexGuard guard(m_ServerPropsMutex);
+
+    x_GetServerProperties(server_impl)->affs_synced = affs_synced;
+}
+
+CRef<SServerProperties> CNetScheduleServerListener::x_GetServerProperties(
+        SNetServerImpl* server_impl)
+{
+    pair<TServerProperties::iterator, bool> inserted(
+            m_ServerProperties.insert(TServerProperties::value_type(
+                    server_impl->m_ServerInPool,
+                            TServerProperties::mapped_type())));
+
+    return !inserted.second ? inserted.first->second :
+            inserted.first->second = new SServerProperties(
+                    server_impl->m_ServerInPool);
+}
+
 void CNetScheduleServerListener::OnInit(
     CObject* api_impl, CConfig* config, const string& config_section)
 {
@@ -268,24 +297,41 @@ void CNetScheduleServerListener::OnInit(
 }
 
 void CNetScheduleServerListener::OnConnected(
-    CNetServerConnection::TInstance conn)
+        CNetServerConnection::TInstance conn_impl)
 {
-    CNetServerConnection conn_object(conn);
-
     if (!m_WorkerNodeCompatMode) {
-        string version_info(conn_object.Exec(m_Auth));
+        CNetServerConnection conn(conn_impl);
+
+        string version_info(conn.Exec(m_Auth));
 
         CNetServerInfo server_info(new SNetServerInfoImpl(version_info));
 
         string attr_name, attr_value;
+        string ns_node, ns_session;
 
         while (server_info.GetNextAttribute(attr_name, attr_value))
-            if (attr_name == "ns_node") {
-                CFastMutexGuard guard(m_FastMutex);
-                m_ServerByNSNodeId[attr_value] = conn->m_Server->m_ServerInPool;
+            if (attr_name == "ns_node")
+                ns_node = attr_value;
+            else if (attr_name == "ns_session")
+                ns_session = attr_value;
+
+        if (!ns_node.empty() && !ns_session.empty()) {
+            CFastMutexGuard guard(m_ServerPropsMutex);
+
+            CRef<SServerProperties> server_props =
+                    x_GetServerProperties(conn_impl->m_Server);
+
+            if (server_props->ns_node != ns_node ||
+                    server_props->ns_session != ns_session) {
+                m_ServerPropsByNode.erase(server_props->ns_node);
+                server_props->ns_node = ns_node;
+                server_props->ns_session = ns_session;
+                m_ServerPropsByNode[ns_node] = server_props.GetPointerOrNull();
+                server_props->affs_synced = false;
             }
+        }
     } else
-        conn->WriteLine(m_Auth);
+        conn_impl->WriteLine(m_Auth);
 }
 
 void CNetScheduleServerListener::OnError(

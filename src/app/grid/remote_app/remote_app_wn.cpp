@@ -79,7 +79,14 @@ public:
         CRemoteAppRequest m_Request(m_NetCacheAPI);
         CRemoteAppResult m_Result(m_NetCacheAPI);
 
-        m_Request.Deserialize(context.GetIStream());
+        try {
+            m_Request.Deserialize(context.GetIStream());
+        }
+        catch (exception&) {
+            context.CommitJobWithFailure("Error while "
+                    "unpacking remote_app arguments");
+            return -1;
+        }
 
         s_SetParam(m_Request, m_Result);
         size_t output_size = context.GetMaxServerOutputSize();

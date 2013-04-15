@@ -41,7 +41,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
 public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
-    virtual void OnConnected(CNetServerConnection::TInstance conn);
+    virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
 

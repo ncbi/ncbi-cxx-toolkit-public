@@ -603,7 +603,8 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
 }
 
 void SNetServerImpl::ConnectAndExec(const string& cmd,
-        CNetServer::SExecResult& exec_result, STimeout* timeout)
+        CNetServer::SExecResult& exec_result, STimeout* timeout,
+        INetServerExecListener* exec_listener)
 {
     m_ServerInPool->CheckIfThrottled();
 
@@ -612,6 +613,9 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     // due to inactivity.
     while ((exec_result.conn = GetConnectionFromPool()) != NULL) {
         try {
+            if (exec_listener != NULL)
+                exec_listener->OnExec(exec_result.conn, cmd);
+
             exec_result.response = exec_result.conn.Exec(cmd, timeout);
             return;
         }
@@ -629,6 +633,10 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
 
     try {
         exec_result.conn = Connect(timeout);
+
+        if (exec_listener != NULL)
+            exec_listener->OnExec(exec_result.conn, cmd);
+
         exec_result.response = exec_result.conn.Exec(cmd, timeout);
     }
     catch (CNetSrvConnException&) {

@@ -97,9 +97,18 @@ class INetServerConnectionListener : public CObject
 public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section) = 0;
-    virtual void OnConnected(CNetServerConnection::TInstance conn) = 0;
+    virtual void OnConnected(CNetServerConnection::TInstance conn_impl) = 0;
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server) = 0;
+};
+
+class INetServerExecListener
+{
+public:
+    virtual ~INetServerExecListener() {}
+
+    virtual void OnExec(CNetServerConnection::TInstance conn_impl,
+            const string& cmd) = 0;
 };
 
 struct SNetServerInPool : public CObject
@@ -176,7 +185,8 @@ struct SNetServerImpl : public CObject
 
     void ConnectAndExec(const string& cmd,
             CNetServer::SExecResult& exec_result,
-            STimeout* timeout = NULL);
+            STimeout* timeout = NULL,
+            INetServerExecListener* exec_listener = NULL);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static const char kXSiteFwd[];

@@ -808,9 +808,15 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         const string& job_group = kEmptyStr);
 
     typedef map<string, string> TQueueInfo;
+    // Get information on a particular queue of a particular server.
     void GetQueueInfo(CNetServer server, const string& queue_name,
             TQueueInfo& queue_info);
+    // The same as above, but for any random server in the service.
+    void GetQueueInfo(const string& queue_name, TQueueInfo& queue_info);
+    // Return information on the current queue.
     void GetQueueInfo(CNetServer server, TQueueInfo& queue_info);
+    // The same as above, but for any random server in the service.
+    void GetQueueInfo(TQueueInfo& queue_info);
     void PrintQueueInfo(const string& queue_name, CNcbiOstream& output_stream);
 
     struct SServerQueueList {
