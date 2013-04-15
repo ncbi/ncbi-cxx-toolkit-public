@@ -574,7 +574,18 @@ CNetFile CNetStorage::Create(TNetStorageFlags flags)
                 strerror(errno));
     }
 
-    read(urandom_fd, &random_number, sizeof(random_number));
+    char* read_buffer = reinterpret_cast<char*>(&random_number);
+    ssize_t bytes_read;
+    ssize_t bytes_remain = sizeof(random_number);
+    do {
+        bytes_read = read(urandom_fd, read_buffer, bytes_remain);
+        if (bytes_read < 0 && errno != EINTR) {
+            NCBI_USER_THROW_FMT("Error while reading "
+                    "/dev/urandom: " << strerror(errno));
+        }
+        read_buffer += bytes_read;
+    } while ((bytes_remain -= bytes_read) > 0);
+
     close(urandom_fd);
 #else
     random_number = m_Impl->m_FileTrackAPI.GetRandom();
