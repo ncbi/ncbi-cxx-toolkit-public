@@ -353,11 +353,16 @@ void NSNPVariationHelper::DecodeBitfield(CVariantProperties& prop, const CSnpBit
         prop.SetMapping(mapping);
     }
 
+
+    /// DEPRECATED
+    /// There is not 1:1 correspondance between Bitfield weight
+    /// and VariantProperties map-weight.  See SNP-5729.
+    /// So, I am commenting out.  JB Holmes, April 2013
     /// weight
-    int weight = bf.GetWeight();
-    if (weight) {
-        prop.SetMap_weight(weight);
-    }
+    // int weight = bf.GetWeight();
+    // if (weight) {
+    //    prop.SetMap_weight(weight);
+    // }
 
     /// allele frequency
     int allele_freq = 0;
