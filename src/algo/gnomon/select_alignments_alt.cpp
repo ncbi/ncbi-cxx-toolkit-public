@@ -76,8 +76,10 @@ bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tol
     if(a.Strand() != b.Strand() || !a.ReadingFrame().IntersectingWith(b.ReadingFrame())) return false;
 
     if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().NotEmpty() && a.Exons().size() == 1 && b.Exons().size()==1) {         // both coding; reading frames intersecting
-        int common_point = (a.ReadingFrame() & b.ReadingFrame()).GetFrom();
-        if(a.FShiftedLen(a.ReadingFrame().GetFrom(),common_point,false)%3 != b.FShiftedLen(b.ReadingFrame().GetFrom(),common_point,false)%3)  // different frames
+        TSignedSeqRange acds = a.GetCdsInfo().Cds();
+        TSignedSeqRange bcds = b.GetCdsInfo().Cds();
+        int common_point = (acds & bcds).GetFrom();
+        if(a.FShiftedLen(acds.GetFrom(),common_point,false)%3 != b.FShiftedLen(bcds.GetFrom(),common_point,false)%3)  // different frames
             return false;
     }
 

@@ -86,6 +86,7 @@ private:
     TGeneModelList MakeChains(TGeneModelList& models);
     void FilterOutBadScoreChainsHavingBetterCompatibles(TGeneModelList& chains);
     void CombineCompatibleChains(TChainList& chains);
+    void SetFlagsForChains(TChainList& chains);
     void CreateChainsForPartialProteins(TChainList& chains, vector<SChainMember*>& pointers);
 
     void CutParts(TGeneModelList& clust);
@@ -2400,6 +2401,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         mi.MarkPostponedForChain();
 
         m_gnomon->GetScore(chain);
+
         chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.ClipToCompleteAlignment(CGeneModel::eCap);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
@@ -2412,14 +2414,6 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             RemovePoorCds(chain,ms);
         if(chain.Score() != BadScore() && (chain.GetCdsInfo().ProtReadingFrame().NotEmpty() || chain.RealCdsLen() >= minscor.m_minlen)) {
             mi.MarkIncludedForChain();
-
-            chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
-            chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
-            chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
-        
-            if (chain.FullCds()) {
-                chain.Status() |= CGeneModel::eFullSupCDS;
-            }
 
 #ifdef _DEBUG 
             chain.AddComment("Link1 "+GetLinkedIdsForMember(mi));
@@ -2470,23 +2464,13 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     }
 
     CombineCompatibleChains(tmp_chains);
+    SetFlagsForChains(tmp_chains);
 
     NON_CONST_ITERATE(TChainList, it, tmp_chains) {
-        it->SetID(m_idnext);
-        it->SetGeneID(m_idnext);
+        CChain& chain = *it;
+        chain.SetID(m_idnext);
+        chain.SetGeneID(m_idnext);
         m_idnext += m_idinc;
-        it->SetBestPlacement(orig_aligns);
-        it->SetConsistentCoverage();
-        CGeneModel& chain = *it;
-        if(chain.Continuous() && chain.Exons().size() > 1) {
-            bool allcdnaintrons = true;
-            for(int i = 1; i < (int)chain.Exons().size() && allcdnaintrons; ++i) {
-                TSignedSeqRange intron(TSignedSeqRange(chain.Exons()[i-1].GetTo(),chain.Exons()[i].GetFrom()));
-                allcdnaintrons = (mrna_count[intron]+est_count[intron]+rnaseq_count[intron] > 0);
-            }
-            if(allcdnaintrons)
-                chain.Status() |= CGeneModel::ecDNAIntrons;
-        }
     }
 
     list<CGene> genes = FindGenes(tmp_chains);  // assigns geneid, rank, skip, nested
@@ -2494,6 +2478,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     if(genes.size() > 1) {
         TrimAlignmentsIncludedInDifferentGenes(genes);
         CombineCompatibleChains(tmp_chains);
+        SetFlagsForChains(tmp_chains);
         FindGenes(tmp_chains);                      // redo genes after trim    
     }
     
@@ -2765,25 +2750,41 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         CChain chain(*best_right,&palign);
         m_gnomon->GetScore(chain);
         chain.RemoveFshiftsFromUTRs();
+        chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold, *m_gnomon);
-        chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
-        chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
-
         _ASSERT( chain.FShiftedLen(chain.GetCdsInfo().Start()+chain.ReadingFrame()+chain.GetCdsInfo().Stop(), false)%3==0 );
-
-        chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
-        chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
-        if (chain.FullCds()) {
-            chain.Status() |= CGeneModel::eFullSupCDS;
-        }
 
 #ifdef _DEBUG
         chain.AddComment("Connected "+orig_aligns[palign.ID()]->TargetAccession());
         chain.AddComment("LinkForGapped  "+GetLinkedIdsForMember(*best_right));
 #endif
         chains.push_back(chain);
+    }
+}
+
+void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
+    NON_CONST_ITERATE(TChainList, it, chains) {
+        CChain& chain = *it;
+        chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
+        chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
+        chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
+        chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
+        chain.SetBestPlacement(orig_aligns);
+        chain.SetConsistentCoverage();
+        if(chain.Continuous() && chain.Exons().size() > 1) {
+            bool allcdnaintrons = true;
+            for(int i = 1; i < (int)chain.Exons().size() && allcdnaintrons; ++i) {
+                TSignedSeqRange intron(TSignedSeqRange(chain.Exons()[i-1].GetTo(),chain.Exons()[i].GetFrom()));
+                allcdnaintrons = (mrna_count[intron]+est_count[intron]+rnaseq_count[intron] > 0);
+            }
+            if(allcdnaintrons)
+                chain.Status() |= CGeneModel::ecDNAIntrons;
+        }
+        if (chain.FullCds()) {
+            chain.Status() |= CGeneModel::eFullSupCDS;
+        }
     }
 }
 
@@ -2807,12 +2808,14 @@ void CChainer::CChainerImpl::CombineCompatibleChains(TChainList& chains) {
                         continue;
                 }
                 TMemberPtrSet chain_alignments(itt->m_members.begin(),itt->m_members.end());
+                ITERATE(TContained, i, jtt->m_members) {
+                    chain_alignments.insert(*i);
+                }
                 itt->m_members.resize(chain_alignments.size(),0);
                 copy(chain_alignments.begin(),chain_alignments.end(),itt->m_members.begin());
                 sort(itt->m_members.begin(),itt->m_members.end(),GenomeOrderD());
                 itt->CalculatedSupportAndWeightFromMembers();
                 chains.erase(jtt);
-
             }
         }
     }
@@ -2953,13 +2956,25 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
     set<Int8> sp_core;
 
     map<Int8,int> intronnum;
+    TSignedSeqRange protreadingframe;
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
+        SetType(Type() | (align.Type() & (eSR | eEST | emRNA | eProt)));
+        protreadingframe += align.GetCdsInfo().ProtReadingFrame();
         for(int i = 1; i < (int)align.Exons().size(); ++i) {
             if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice)
                 ++intronnum[align.ID()];
         }
     }
+
+    if(protreadingframe.NotEmpty()) {
+        CCDSInfo cds = GetCdsInfo();
+        TSignedSeqRange reading_frame = cds.ReadingFrame();
+        cds.SetReadingFrame(reading_frame&protreadingframe, true);
+        cds.SetReadingFrame(reading_frame);
+        SetCdsInfo(cds);
+    }
+    
 
     TSignedSeqRange lim;
     ITERATE (TContained, it, m_members) {
@@ -3145,14 +3160,38 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 
             if(Strand() == ePlus) {
                 if(conf_start.Empty() || start.GetFrom() < conf_start.GetFrom()) {
-                    rf = align.ReadingFrame().GetFrom();
-                    if(amap.FShiftedLen(rf,GetCdsInfo().Cds().GetTo()) > 75)
+                    bool found = false;
+                    for(int i = 0; i < (int)Exons().size() && !found; ++i) {
+                        if(Include(Exons()[i].Limits(),start.GetTo())) {
+                            if(Exons()[i].Limits().GetTo() > start.GetTo()) {
+                                rf = start.GetTo()+1;
+                                found = true;
+                            } else if(i != (int)Exons().size()-1) {
+                                rf = Exons()[i+1].Limits().GetFrom();
+                                found = true;
+                            }
+                        }
+                    }
+                    
+                    if(found && amap.FShiftedLen(rf,GetCdsInfo().Cds().GetTo()) > 75)
                         conf_start = start;
                 }
             } else {
                 if(conf_start.Empty() || start.GetTo() > conf_start.GetTo()) {
-                    rf = align.ReadingFrame().GetTo();
-                    if(amap.FShiftedLen(GetCdsInfo().Cds().GetFrom(),rf) > 75)
+                    bool found = false;
+                    for(int i = 0; i < (int)Exons().size() && !found; ++i) {
+                        if(Include(Exons()[i].Limits(),start.GetFrom())) {
+                            if(Exons()[i].Limits().GetFrom() < start.GetFrom()) {
+                                rf = start.GetFrom()-1;
+                                found = true;
+                            } else if(i != 0) {
+                                rf = Exons()[i-1].Limits().GetTo();
+                                found = true;
+                            }
+                        }
+                    }
+
+                    if(found && amap.FShiftedLen(GetCdsInfo().Cds().GetFrom(),rf) > 75)
                         conf_start = start;
                 }
             }            
@@ -3255,6 +3294,17 @@ void CChain::ClipChain(TSignedSeqRange limits) {
         }
     }
     m_members = new_members;
+
+    if(RealCdsLimits().NotEmpty()) {
+        CCDSInfo cds = GetCdsInfo();
+        if((Strand() == ePlus && cds.MaxCdsLimits().GetFrom() < Limits().GetFrom()) ||
+           (Strand() == eMinus && cds.MaxCdsLimits().GetTo() > Limits().GetTo())) {
+            
+            cds.Clear5PrimeCdsLimit();
+            SetCdsInfo(cds);
+        }
+    }
+
     CalculatedSupportAndWeightFromMembers();
 }
 
@@ -3781,11 +3831,12 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
 
                 TSignedSeqPos not_aligned =  orig_align->GetAlignMap().MapRangeOrigToEdited((*i)->m_align->Limits(),false).GetFrom()-1;
                 if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned
-                    TSignedSeqPos extra_length = mrnamap.MapRangeOrigToEdited((*i)->m_align->Limits(),false).GetFrom()-
-                        mrnamap.MapRangeOrigToEdited(GetCdsInfo().Start(),false).GetFrom()-1;
-                
-                    if(extra_length > not_aligned-minscor.m_endprotfrac*orig_align->TargetLen()) {
-                        setconfstart = true;
+                    TSignedSeqPos fivep = mrnamap.MapOrigToEdited(Strand() == ePlus ? (*i)->m_align->Limits().GetFrom() : (*i)->m_align->Limits().GetTo());
+                    if(fivep > 0) {  // the end is still in chain
+                        TSignedSeqPos extra_length = fivep-mrnamap.MapRangeOrigToEdited(GetCdsInfo().Start(),false).GetFrom()-1;
+                        if(extra_length > not_aligned-minscor.m_endprotfrac*orig_align->TargetLen()) {
+                            setconfstart = true;
+                        }
                     }
                 }
             }
@@ -3795,11 +3846,12 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
 
                 TSignedSeqPos not_aligned = orig_align->TargetLen()-orig_align->GetAlignMap().MapRangeOrigToEdited((*i)->m_align->Limits(),false).GetTo();
                 if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned 
-                    TSignedSeqPos extra_length = mrnamap.MapRangeOrigToEdited(GetCdsInfo().Stop(),false).GetTo()-
-                        mrnamap.MapRangeOrigToEdited((*i)->m_align->Limits(),false).GetTo();
-                
-                    if(extra_length > not_aligned-minscor.m_endprotfrac*orig_align->TargetLen()) {
-                        setconfstop = true; 
+                    TSignedSeqPos threep = mrnamap.MapOrigToEdited(Strand() == ePlus ? (*i)->m_align->Limits().GetTo() : (*i)->m_align->Limits().GetFrom());
+                    if(threep >= 0) {  // the end is still in chain
+                        TSignedSeqPos extra_length = mrnamap.MapRangeOrigToEdited(GetCdsInfo().Stop(),false).GetTo()-threep;                
+                        if(extra_length > not_aligned-minscor.m_endprotfrac*orig_align->TargetLen()) {
+                            setconfstop = true; 
+                        }
                     }
                 }
             }
@@ -3923,6 +3975,9 @@ struct s_ByAccVerLen {
         int b_len = s_ExonLen(*b);
         if (a_len!=b_len)
             return a_len > b_len;
+
+        if((a->Status()&CGeneModel::eBestPlacement) != (b->Status()&CGeneModel::eBestPlacement))
+            return (a->Status()&CGeneModel::eBestPlacement) > (b->Status()&CGeneModel::eBestPlacement);
 
         return a->ID() < b->ID(); // to make sort deterministic
     }
