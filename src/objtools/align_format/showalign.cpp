@@ -4367,10 +4367,10 @@ static void s_MakeDomainString(int aln_from, int aln_to, const string& domain_na
         domain_string[domain_string.size()-1] = '>';
         //put the domain name in the middle of the string
         int midpoint = domain_string.size()/2;
-        int last_possible_pos = (int)domain_string.size() - 2;
-        int actual_last_pos = min(last_possible_pos,  midpoint + ((int)domain_name.size())/2);
+        int first_possible_pos = 1;
+        int actual_first_pos = max(first_possible_pos,  midpoint - ((int)domain_name.size())/2);
     
-        for (int i = actual_last_pos, j = domain_name.size() - 1; i >= 1 && j >= 0; i--, j--){
+        for (int i = actual_first_pos, j = 0; i < domain_string.size() - 1 && j < domain_name.size(); i ++, j ++){
             domain_string[i] = domain_name[j];
         }
     }
