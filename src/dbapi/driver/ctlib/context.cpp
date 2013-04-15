@@ -285,7 +285,13 @@ bool Connection::Open(const CDBConnParams& params)
 
 #if defined(FTDS_IN_USE)
         if (params.GetHost()) {
-            server_name = impl::ConvertN2A(params.GetHost());
+            if (params.GetUserName().empty()) {
+                // Kerberos authentication needs a hostname to get appropriate
+                // service tickets
+                server_name = params.GetServerName();
+            } else {
+                server_name = impl::ConvertN2A(params.GetHost());
+            }
             if (params.GetPort()) {
                 server_name += ":" + NStr::IntToString(params.GetPort());
             }
