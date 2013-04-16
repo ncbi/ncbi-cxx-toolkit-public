@@ -75,6 +75,7 @@ public:
 
     typedef list<CRef<objects::CSeq_id> > TSeqIdList;
     void SplitId(const objects::CSeq_id& Id, TSeqIdList& SplitIds);
+    void SplitLoc(const objects::CSeq_loc& Loc, TSeqIdList& SplitIds);
 
     typedef list<CRef<objects::CSeq_align> > TSeqAlignList;
     void CombineAlignments(const TSeqAlignList& SourceAligns, TSeqAlignList& MergedAligns);
@@ -97,11 +98,13 @@ private:
 
     void x_SplitDeltaExt(const objects::CSeq_id& Id,
                          objects::CBioseq_Handle OrigHandle,
-                         TSeqIdList& SplitIds);
+                         TSeqIdList& SplitIds,
+                         TSeqRange LimitRange = TSeqRange() );
     
     void x_SplitSeqData(const objects::CSeq_id& Id,
                         objects::CBioseq_Handle OrigHandle,
-                        TSeqIdList& SplitIds);
+                        TSeqIdList& SplitIds,
+                        TSeqRange LimitRange = TSeqRange() );
 
     CRef<objects::CSeq_align>
     x_FixAlignment(const objects::CSeq_align& SourceAlignment);
@@ -141,6 +144,30 @@ public:
 
 protected:
     list<CRef<objects::CSeq_id> > m_OrigSeqIdList;
+    CSeqIdListSet m_SeqIdListSet;
+    CUnorderedSplitter* m_Splitter;
+};
+
+
+// For sequence locations that need to be split up, like Phase 1 clones.
+class CSplitSeqLocListSet : public ISequenceSet
+{
+public:
+    CSplitSeqLocListSet(CUnorderedSplitter* Splitter);
+
+    void AddSeqLoc(CRef<objects::CSeq_loc> Loc);
+    void SetSeqMasker(CSeqMasker* SeqMasker);
+
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts,
+            const CAlignResultsSet& Alignments, int Threshold);
+    CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
+
+protected:
+    list<CRef<objects::CSeq_loc> > m_OrigSeqLocList;
     CSeqIdListSet m_SeqIdListSet;
     CUnorderedSplitter* m_Splitter;
 };

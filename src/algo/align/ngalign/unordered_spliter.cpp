@@ -118,6 +118,29 @@ void CUnorderedSplitter::SplitId(const CSeq_id& Id, TSeqIdList& SplitIds)
 }
 
 
+void CUnorderedSplitter::SplitLoc(const CSeq_loc& Loc, TSeqIdList& SplitIds)
+{
+    CBioseq_Handle  OrigHandle;
+    OrigHandle = m_Scope->GetBioseqHandle(Loc);
+
+    if(!OrigHandle.CanGetInst())
+        return;
+
+    const CBioseq::TInst& OrigInst = OrigHandle.GetInst();
+   
+    TSeqRange LocRange = Loc.GetTotalRange();
+
+    if(OrigInst.CanGetExt() && OrigInst.GetExt().IsDelta()) {
+        x_SplitDeltaExt(*Loc.GetId(), OrigHandle, SplitIds, LocRange);
+    } else if(OrigInst.CanGetSeq_data()) {
+        x_SplitSeqData(*Loc.GetId(), OrigHandle, SplitIds, LocRange);
+    }
+
+    // Split Other Inst types?
+
+}
+
+
 void CUnorderedSplitter::CombineAlignments(const TSeqAlignList& SourceAligns, TSeqAlignList& MergedAligns)
 {
     // Get alignments into their proper Seq-ids and coordinates
@@ -177,7 +200,8 @@ void CUnorderedSplitter::GetSplitIdList(TSeqIdList& SplitIdList)
 
 void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
                                          CBioseq_Handle OrigHandle,
-                                         TSeqIdList& SplitIds)
+                                         TSeqIdList& SplitIds,
+                                         TSeqRange LimitRange)
 {
     const CBioseq::TInst& OrigInst = OrigHandle.GetInst();
     const CDelta_ext& OrigDelta = OrigInst.GetExt().GetDelta();
@@ -193,6 +217,7 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
 
     TSeqPos SegStart = 0;
     TSeqPos BigStart = 0;
+    TSeqRange BioRange;
 
     ITERATE(CDelta_ext::Tdata, SeqIter, OrigDelta.Get()) {
 
@@ -209,10 +234,16 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
         // Its a literal, but contains no data
         if(IsGap) {
             // Finished with this Bioseq. Put an ID on it and make the next one
+            if(BioRange.Empty() ) {
+                SegStart += Seq.GetLiteral().GetLength();
+                BigStart = SegStart;
+                continue;
+            }
+
             CRef<CSeq_interval> CurrInterval(new CSeq_interval);
             CurrInterval->SetId().Assign(Id);
-            CurrInterval->SetFrom() = BigStart;
-            CurrInterval->SetTo() = SegStart-1;
+            CurrInterval->SetFrom() = BioRange.GetFrom();
+            CurrInterval->SetTo() = BioRange.GetTo();
             CurrInterval->SetStrand(eNa_strand_plus);
 
             CRef<CSeq_id> CurrId(new CSeq_id);
@@ -228,6 +259,8 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
             CurrBioseq->SetId().push_back(CurrId);
 //cerr << MSerial_AsnText << *CurrBioseq;
             m_Scope->AddBioseq(*CurrBioseq);
+            
+            BioRange = TSeqRange();
             CurrBioseq.Reset(new CBioseq);
             CurrBioseq->SetInst().SetLength(0);
             CurrBioseq->SetInst().SetRepr() = OrigInst.GetRepr();
@@ -238,25 +271,66 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
             BigStart = SegStart;
             continue;
         }
-
-        CurrBioseq->SetInst().SetExt().SetDelta().Set().push_back(*SeqIter);
+    
+        TSeqPos SeqLength = 0;
         if(Seq.IsLoc()) { // external IDs
-            TSeqPos SeqLength = (Seq.GetLoc().GetStop(eExtreme_Positional)
-                                -Seq.GetLoc().GetStart(eExtreme_Positional)+1);
-            CurrBioseq->SetInst().SetLength() += SeqLength;
-            SegStart += SeqLength;
+            SeqLength = (Seq.GetLoc().GetStop(eExtreme_Positional)
+                      -  Seq.GetLoc().GetStart(eExtreme_Positional)+1);
         } else if(Seq.IsLiteral()) { // literals containing sequence
-            CurrBioseq->SetInst().SetLength() += Seq.GetLiteral().GetLength();
-            SegStart += Seq.GetLiteral().GetLength();
+            SeqLength = Seq.GetLiteral().GetLength();
         }
-    }
+
+        TSeqRange CurrRange;
+        CurrRange.SetFrom(SegStart);
+        CurrRange.SetLength(SeqLength);
+        
+        
+        CRef<CDelta_seq> InsertSeq(new CDelta_seq);
+        InsertSeq->Assign(Seq);
+        
+
+        if(LimitRange.NotEmpty()) {
+            TSeqRange Inter = CurrRange.IntersectionWith(LimitRange);
+            if(Inter.Empty()) {
+                SegStart += SeqLength;
+                continue;
+            } else {
+                InsertSeq->SetLoc().SetInt().SetId().Assign(Id);
+                InsertSeq->SetLoc().SetInt().SetStrand(eNa_strand_plus);
+                InsertSeq->SetLoc().SetInt().SetFrom(Inter.GetFrom());
+                InsertSeq->SetLoc().SetInt().SetTo(Inter.GetTo());
+                if(CurrBioseq->GetInst().GetLength() == 0)
+                    BigStart = LimitRange.GetFrom();
+                CurrRange = Inter;
+            }
+        }
+        
+        BioRange.CombineWith(CurrRange);
+        CurrBioseq->SetInst().SetExt().SetDelta().Set().push_back(InsertSeq);
+        CurrBioseq->SetInst().SetLength() += CurrRange.GetLength();
+        
+        SegStart += SeqLength;
+    } // delta seg loop
 
     if(!CurrBioseq->GetInst().GetExt().GetDelta().Get().empty()) {
         // Finished with this Bioseq. Put an ID on it and make the next one
+        TSeqRange CurrRange = BioRange;
+        
+        if(CurrRange.Empty())
+            return;
+
+        if(LimitRange.NotEmpty()) {
+            TSeqRange Inter = CurrRange.IntersectionWith(LimitRange);
+            if(Inter.Empty()) {
+                return;
+            }
+            CurrRange = Inter;
+        }
+
         CRef<CSeq_interval> CurrInterval(new CSeq_interval);
         CurrInterval->SetId().Assign(Id);
-        CurrInterval->SetFrom() = BigStart;
-        CurrInterval->SetTo() = SegStart-1;
+        CurrInterval->SetFrom() = CurrRange.GetFrom();
+        CurrInterval->SetTo() = CurrRange.GetTo();
         CurrInterval->SetStrand(eNa_strand_plus);
 
         CRef<CSeq_id> CurrId(new CSeq_id);
@@ -278,7 +352,8 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
 
 void CUnorderedSplitter::x_SplitSeqData(const objects::CSeq_id& Id,
                                         CBioseq_Handle OrigHandle,
-                                        TSeqIdList& SplitIds)
+                                        TSeqIdList& SplitIds,
+                                        TSeqRange LimitRange)
 {
 
     CSeqVector Vec = OrigHandle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -296,11 +371,23 @@ void CUnorderedSplitter::x_SplitSeqData(const objects::CSeq_id& Id,
         Found = IupacStr.find(Ns, Start);
 
         if(Found != string::npos) {
-        
+            TSeqRange CurrRange;
+            CurrRange.SetFrom(Start);
+            CurrRange.SetTo(Found-1);
+
+            if(LimitRange.NotEmpty()) {
+                TSeqRange Inter = CurrRange.IntersectionWith(LimitRange);
+                if(Inter.Empty()) {
+                    Start = Found+Ns.size();
+                    continue;
+                }
+                CurrRange = Inter;
+            }
+
             CRef<CSeq_interval> CurrInterval(new CSeq_interval);
             CurrInterval->SetId().Assign(Id);
-            CurrInterval->SetFrom() = Start;
-            CurrInterval->SetTo() = Found-1;
+            CurrInterval->SetFrom() = CurrRange.GetFrom();
+            CurrInterval->SetTo() = CurrRange.GetTo();
             CurrInterval->SetStrand(eNa_strand_plus);
 
             CRef<CSeq_id> CurrId(new CSeq_id);
@@ -333,11 +420,22 @@ void CUnorderedSplitter::x_SplitSeqData(const objects::CSeq_id& Id,
     } while(Found != string::npos);
         
     if(Start <= Vec.size()) {
+        TSeqRange CurrRange;
+        CurrRange.SetFrom(Start);
+        CurrRange.SetTo(Vec.size()-1);
+
+        if(LimitRange.NotEmpty()) {
+            TSeqRange Inter = CurrRange.IntersectionWith(LimitRange);
+            if(Inter.Empty()) {
+                return;
+            }
+            CurrRange = Inter;
+        }
 
         CRef<CSeq_interval> CurrInterval(new CSeq_interval);
         CurrInterval->SetId().Assign(Id);
-        CurrInterval->SetFrom() = Start;
-        CurrInterval->SetTo() = Vec.size()-1;
+        CurrInterval->SetFrom() = CurrRange.GetFrom();
+        CurrInterval->SetTo() = CurrRange.GetTo();
         CurrInterval->SetStrand(eNa_strand_plus);
 
         CRef<CSeq_id> CurrId(new CSeq_id);
@@ -637,6 +735,71 @@ CSplitSeqIdListSet::CreateLocalDbAdapter(CScope& Scope,
     if(m_OrigSeqIdList.empty()) {
         NCBI_THROW(CException, eInvalid,
                    "CSplitSeqIdListSet::CreateLocalDbAdapter: Id List is empty.");
+    }
+
+
+    return m_SeqIdListSet.CreateLocalDbAdapter(Scope, BlastOpts);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+CSplitSeqLocListSet::CSplitSeqLocListSet(CUnorderedSplitter* Splitter)
+                    : m_Splitter(Splitter)
+{
+    ;
+}
+
+
+void CSplitSeqLocListSet::AddSeqLoc(const CRef<CSeq_loc> Loc)
+{
+    m_OrigSeqLocList.push_back(Loc);
+    m_Splitter->SplitLoc(*Loc, m_SeqIdListSet.SetIdList());
+}
+
+
+void CSplitSeqLocListSet::SetSeqMasker(CSeqMasker* SeqMasker)
+{
+    m_SeqIdListSet.SetSeqMasker(SeqMasker);
+}
+
+
+CRef<IQueryFactory>
+CSplitSeqLocListSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts)
+{
+    if(m_OrigSeqLocList.empty()) {
+        NCBI_THROW(CException, eInvalid,
+                   "CSplitSeqLocListSet::CreateQueryFactory: Loc List is empty.");
+    }
+
+    return m_SeqIdListSet.CreateQueryFactory(Scope, BlastOpts);
+}
+
+
+CRef<IQueryFactory>
+CSplitSeqLocListSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts,
+                                  const CAlignResultsSet& Alignments, int Threshold)
+{
+    if(m_OrigSeqLocList.empty()) {
+        NCBI_THROW(CException, eInvalid,
+                   "CSplitSeqLocListSet::CreateQueryFactory: Loc List is empty.");
+    }
+
+
+    return m_SeqIdListSet.CreateQueryFactory(Scope, BlastOpts, Alignments, Threshold);
+}
+
+
+
+CRef<CLocalDbAdapter>
+CSplitSeqLocListSet::CreateLocalDbAdapter(CScope& Scope,
+                                    const CBlastOptionsHandle& BlastOpts)
+{
+    if(m_OrigSeqLocList.empty()) {
+        NCBI_THROW(CException, eInvalid,
+                   "CSplitSeqLocListSet::CreateLocalDbAdapter: Loc List is empty.");
     }
 
 
