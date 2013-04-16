@@ -578,7 +578,7 @@ void CReportEntry::x_GetCCoordinate(CScope& scope, TSeqPos pos, TSignedSeqPos ad
 
 
 void CReportEntry::x_GetPCoordinate(CScope& scope, TSeqPos pos,
-                                    C_Coordinate_Set& coords) const
+                                    CHGVS_Coordinate_Set& coords) const
 {
     TSeqPos mapped_pos = pos;
     if (m_rna_cds  &&  m_mrna_mapper) {
