@@ -65,6 +65,7 @@
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/IUPACaa.hpp>
@@ -1941,6 +1942,9 @@ bool CValidError_bioseq::x_IsSameSeqAnnotDesc
 }
 
 
+#define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
+ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
+
 void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
@@ -1951,6 +1955,33 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
             bool short_ok = false;
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);        
             if ( bsh ) {
+                FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
+                    CSeq_id_Handle sid = *sid_itr;
+                    switch (sid.Which()) {
+                        case NCBI_SEQID(Other):
+                        case NCBI_SEQID(Genbank):
+                        case NCBI_SEQID(Embl):
+                        case NCBI_SEQID(Ddbj):
+                        {
+                            CConstRef<CSeq_id> id = sid.GetSeqId();
+                            const CTextseq_id& tsid = *id->GetTextseq_Id ();
+                            if (tsid.IsSetAccession()) {
+                                const string& acc = tsid.GetAccession ();
+                                TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
+                                TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
+                                if ( div == NCBI_ACCN(wgs) ) 
+                                {
+                                    if( (type & CSeq_id::fAcc_master) != 0 ) {
+                                        short_ok = true;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
                 CSeqdesc_CI desc( bsh, CSeqdesc::e_Molinfo );
                 if (desc && desc->GetMolinfo().IsSetCompleteness()) {
                     CMolInfo::TCompleteness completeness = desc->GetMolinfo().GetCompleteness();
