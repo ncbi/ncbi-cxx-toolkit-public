@@ -205,6 +205,116 @@ void CExpansionScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
 
 
 
+void CWeightedIdentityScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
+{
+    CScoreBuilder Scorer;
+
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AlignSet->Get()) {
+        NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
+            NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {  
+            //NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
+
+                ITERATE(CSeq_align_set::Tdata, Iter, SubjectIter->second->Get()) {
+
+                    CRef<CSeq_align> Curr(*Iter);
+					
+					CSeq_id QueryId;
+                    QueryId.Assign(Curr->GetSeq_id(0));
+                    CBioseq_Handle QueryHandle = Scope.GetBioseqHandle(QueryId);
+				
+					double WeightedIdent;
+                    double NumIdent, Matches, QueryLen;
+
+                    Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, NumIdent);
+                    Matches = Curr->GetAlignLength(false);
+                    QueryLen = QueryHandle.GetInst_Length();
+                                        
+                    WeightedIdent = (NumIdent + (Matches * m_K)) / (Matches + (QueryLen * m_K));
+                    Curr->SetNamedScore("weighted_identity", WeightedIdent); 
+                }
+            }
+        }
+    }
+}
+
+
+void CHangScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
+{
+    CScoreBuilder Scorer(blast::eMegablast);
+
+    NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AlignSet->Get()) {
+        CSeq_id QueryId;
+		QueryId.Set(QueryIter->first);
+		CBioseq_Handle Handle = Scope.GetBioseqHandle(QueryId);
+		if(!Handle)
+			continue;
+		TSeqPos QueryLen = Handle.GetInst_Length();
+				
+		NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
+            NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {  
+				CSeq_id TargetId;
+				TargetId.Set(SubjectIter->first);
+				CBioseq_Handle Handle = Scope.GetBioseqHandle(TargetId);
+				if (!Handle || !Handle.CanGetInst_Ext() || 
+					!Handle.GetInst_Ext().IsDelta()) {
+					continue;
+				}	
+				TSeqPos TargetLen = Handle.GetInst_Length();
+				const CDelta_ext& DeltaExt = Handle.GetInst_Ext().GetDelta();
+				// Get Gaps on Target
+				list<TSeqRange> Gaps;
+				TSeqPos CurrStart = 0;
+				ITERATE(list<CRef<CDelta_seq> >, DeltaIter, DeltaExt.Get()) {
+					if( (*DeltaIter)->IsLiteral() ) {
+						TSeqPos Len = (*DeltaIter)->GetLiteral().GetLength();
+						TSeqRange Gap(CurrStart, CurrStart+Len-1);
+						Gaps.push_back(Gap);
+						CurrStart += Len;
+					} else if( (*DeltaIter)->IsLoc() ) {
+						TSeqPos Len = (*DeltaIter)->GetLoc().GetInt().GetLength();
+						TSeqPos CurrStop = CurrStart + Len - 1;
+						CurrStart = CurrStop + 1;
+					}
+				}
+	
+                ITERATE(CSeq_align_set::Tdata, Iter, SubjectIter->second->Get()) {
+
+                    CRef<CSeq_align> Curr(*Iter);
+					
+					TSeqRange TargetRange = Curr->GetSeqRange(1);
+					if(TargetRange.GetLength() == QueryLen) {
+						Curr->SetNamedScore("hangs", 0);
+						continue;
+					}
+
+					// the ranges will normally be next to gaps, not intersect gaps
+					// so expand the aligned range by 1 in both directions
+					if(TargetRange.GetFrom() > 0)
+						TargetRange.SetFrom(TargetRange.GetFrom()-1);
+					TargetRange.SetTo(TargetRange.GetTo()+1);
+				
+					int Hangs = 0;
+					// check internal gaps
+					ITERATE(list<TSeqRange>, GapIter, Gaps) {
+						if(GapIter->IntersectingWith(TargetRange)) {
+							Hangs = 1;
+							break;
+						}
+					}
+					// check the edges
+					if(TargetRange.GetFrom() == 0)
+						Hangs = 1;
+					if(TargetRange.GetTo() >= (TargetLen-1))
+						Hangs = 1;
+					Curr->SetNamedScore("hangs", Hangs);				
+               	} 
+            }
+        }
+    }
+}
+
+
+
 
 void COverlapScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
 {

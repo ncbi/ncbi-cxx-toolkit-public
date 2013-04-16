@@ -95,6 +95,30 @@ public:
 };
 
 
+class CWeightedIdentityScorer : public IAlignmentScorer
+{
+public:
+    CWeightedIdentityScorer(double K = 0.02) : m_K(K) { ; }
+
+    void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+
+private:
+    double m_K;
+};
+
+
+class CHangScorer : public IAlignmentScorer
+{
+public:
+    CHangScorer()  { ; }
+
+    void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+
+private:
+};
+
+
+
 class COverlapScorer : public IAlignmentScorer
 {
 public:
@@ -110,9 +134,12 @@ private:
 class CClippedScorer : public IAlignmentScorer
 {
 public:
-    CClippedScorer() { ; }
+    CClippedScorer(double K = 0.02) : m_K(K) { ; }
 
     void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+
+private:
+    double m_K;
 };
 
 
