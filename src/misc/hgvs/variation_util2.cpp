@@ -1977,7 +1977,8 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
                                                                       //as we're dealing with various types of mols
 
     x_AdjustDelinsToInterval(*v, *codons_loc);
-    if(!AttachSeq(*v)) {
+    AttachSeq(*v, 100000); //need enough sequnece to get create reference and variant translations downstream
+    if(!v->GetPlacements().front()->GetSeq().IsSetSeq_data()) {
         return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
     }
     if(verbose) NcbiCerr << "Adjusted-for-codons " << MSerial_AsnText << *v;
