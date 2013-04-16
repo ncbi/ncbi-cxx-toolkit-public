@@ -1,0 +1,45 @@
+-- ==========================================================================
+--
+-- Objects for sequence coordinate remapping
+--
+-- ==========================================================================
+
+NCBI-HGVSCoordinate DEFINITIONS ::=
+
+BEGIN
+
+IMPORTS User-object FROM NCBI-General;
+
+HGVS-Coordinate ::= SEQUENCE {
+    -- actual marker position
+    -- this is supplied because this is the position of the marker in the main
+    -- sequence's coordinate space; this is different than the mapped
+    -- coordinate space.
+    marker-pos INTEGER,
+
+    -- pretty-printed name for the object
+    -- in general, this should be the "best" seq-id for the product
+    -- of a feature represented at a position
+    title VisibleString,
+
+    -- the fingerprint of the object in question
+    -- this is a complex reversible hash
+    object-id VisibleString OPTIONAL,
+
+    -- the mapped position in the object's coordinate space
+    -- it's not valid for DNA coordinate in UTR and intergenic region,
+    -- while hgvs-position can be meaningful, that is why OPTIONAL.
+    pos-mapped INTEGER OPTIONAL,
+
+    -- a label for this position
+    -- this shall always be in HGVS nomenclature
+    hgvs-position VisibleString,
+
+    -- a sequence for this position
+    sequence VisibleString
+}
+
+HGVS-Coordinate-Set ::= SET OF HGVS-Coordinate
+
+
+END

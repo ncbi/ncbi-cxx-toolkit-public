@@ -1,0 +1,5 @@
+# $Id$
+
+SRC = objcoords__ objcoords___ 
+LIB = hgvs
+
