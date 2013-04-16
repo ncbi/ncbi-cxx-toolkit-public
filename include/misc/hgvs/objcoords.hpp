@@ -33,8 +33,8 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 // our ASN
-#include <objects/hgvs/HGVS_Coordinate.hpp>
-#include <objects/hgvs/HGVS_Coordinate_Set.hpp>
+#include <objects/coords/HGVS_Coordinate.hpp>
+#include <objects/coords/HGVS_Coordinate_Set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
