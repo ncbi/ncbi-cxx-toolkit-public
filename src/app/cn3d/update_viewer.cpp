@@ -339,7 +339,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
     if (fastaFile.size() > 0) {
 
         // get Seq-entry of all sequences in the file
-        CNcbiIfstream ifs(WX_TO_STD(fastaFile), IOS_BASE::in);
+        CNcbiIfstream ifs(WX_TO_STD(fastaFile).c_str(), IOS_BASE::in);
         if (!ifs) {
             ERRORMSG("Unable to open file " << fastaFile.c_str());
             return;
