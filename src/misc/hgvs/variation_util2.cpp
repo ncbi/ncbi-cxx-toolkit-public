@@ -801,7 +801,9 @@ bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
                     asserted_literal = literal;
                 } else if(!variant_literal //note: finding the very first one; will that work always?
                           && (!inst.IsSetObservation() || inst.GetObservation() == CVariation_inst::eObservation_variant)
-                          && (!inst.GetDelta().front()->IsSetAction() || inst.GetDelta().front()->GetAction() == CDelta_item::eAction_morph)) 
+                          && (!inst.GetDelta().front()->IsSetAction() || inst.GetDelta().front()->GetAction() == CDelta_item::eAction_morph)
+                          && (!inst.GetDelta().front()->IsSetMultiplier() && !inst.GetDelta().front()->IsSetMultiplier_fuzz())
+                        )
                 {
                     variant_literal = literal;
                 }
