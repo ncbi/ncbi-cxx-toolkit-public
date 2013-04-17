@@ -776,14 +776,22 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
 
 bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
 {
+    v.Index();
     bool had_exceptions = false;
     if(v.IsSetPlacements()) {
 
         CConstRef<CSeq_literal> asserted_literal;
         CConstRef<CSeq_literal> variant_literal; //will only fetch for snp/mnp cases, as ref_same_as_variant test is only applicable for these
 
-        for(CTypeConstIterator<CVariation_inst> it2(Begin(v)); it2; ++it2) {
-            const CVariation_inst& inst = *it2;
+        //Find the asserted and variant literal for this variation 
+        //(don't look into consequence-variations that may also contain protein-specific asserted and variant sequence)
+        for(CTypeConstIterator<CVariation> it(Begin(v)); it; ++it) {
+            const CVariation& v2 = *it;
+            if(!v2.GetData().IsInstance() || (v2.GetConsequenceParent() && &v != &v2)) {
+                continue;
+            }
+
+            const CVariation_inst& inst = v2.GetData().GetInstance();
             if(   inst.GetDelta().size() == 1
                && inst.GetDelta().front()->IsSetSeq()
                && inst.GetDelta().front()->GetSeq().IsLiteral())
