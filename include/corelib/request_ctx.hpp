@@ -279,7 +279,8 @@ public:
     ///
     /// These generic error conditions can occur for corelib applications.
     enum EErrCode {
-        eBadSession    ///< Invalid session id
+        eBadSession,   ///< Invalid session id
+        eBadHit        ///< Invalid hit id
     };
 
     /// Translate from the error code value to its string representation.
@@ -385,16 +386,6 @@ inline
 const string& CRequestContext::GetHitID(void) const
 {
     return x_IsSetProp(eProp_HitID) ? m_HitID : kEmptyStr;
-}
-
-inline
-void CRequestContext::SetHitID(const string& hit)
-{
-    x_SetProp(eProp_HitID);
-    if (m_HitID != hit) {
-        m_SubHitID = 0;
-    }
-    m_HitID = hit;
 }
 
 inline

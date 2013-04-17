@@ -199,6 +199,96 @@ bool CRequestContext::GetDefaultAutoIncRequestIDOnPost(void)
 }
 
 
+enum EOnBadHitID {
+    eOnBadPHID_Allow,
+    eOnBadPHID_AllowAndReport,
+    eOnBadPHID_Ignore,
+    eOnBadPHID_IgnoreAndReport,
+    eOnBadPHID_Throw
+};
+
+NCBI_PARAM_ENUM_DECL(EOnBadHitID, Log, On_Bad_Hit_Id);
+NCBI_PARAM_ENUM_ARRAY(EOnBadHitID, Log, On_Bad_Hit_Id)
+{
+    {"Allow", eOnBadPHID_Allow},
+    {"AllowAndReport", eOnBadPHID_AllowAndReport},
+    {"Ignore", eOnBadPHID_Ignore},
+    {"IgnoreAndReport", eOnBadPHID_IgnoreAndReport},
+    {"Throw", eOnBadPHID_Throw}
+};
+NCBI_PARAM_ENUM_DEF_EX(EOnBadHitID, Log, On_Bad_Hit_Id,
+                       eOnBadPHID_AllowAndReport,
+                       eParam_NoThread,
+                       LOG_ON_BAD_HIT_ID);
+typedef NCBI_PARAM_TYPE(Log, On_Bad_Hit_Id) TOnBadHitId;
+
+
+static const char* kAllowedIdMarkchars = "_-.:@";
+
+
+static bool IsValidHitID(const string& hit) {
+    string id_std = kAllowedIdMarkchars;
+    size_t pos = 0;
+    size_t sep_pos = NPOS;
+    // Allow aphanumeric and some markup before the first separator (dot).
+    for (; pos < hit.size(); pos++) {
+        char c = hit[pos];
+        if (c == '.') {
+            sep_pos = pos;
+            break;
+        }
+        if (!isalnum(hit[pos])  &&  id_std.find(hit[pos]) == NPOS) {
+            return false;
+        }
+    }
+    if (sep_pos == NPOS) return true;
+    // Separator found - make sure the rest of the id contains only digits and separators
+    // (XYZ.1.2.34)
+    for (pos = sep_pos; pos < hit.size(); pos++) {
+        char c = hit[pos];
+        if (c == '.') {
+            // Need at least one digit between separators.
+            if (pos == sep_pos + 1) return false;
+            sep_pos = pos;
+            continue;
+        }
+        if ( !isdigit(c) ) return false;
+    }
+    // Make sure the last char is digit.
+    return pos > sep_pos + 1;
+}
+
+
+void CRequestContext::SetHitID(const string& hit)
+{
+    if ( !IsValidHitID(hit) ) {
+        EOnBadHitID action = TOnBadHitId::GetDefault();
+        switch ( action ) {
+        case eOnBadPHID_Ignore:
+            return;
+        case eOnBadPHID_AllowAndReport:
+        case eOnBadPHID_IgnoreAndReport:
+            ERR_POST_X(27, "Bad hit ID format: " << hit);
+            if (action == eOnBadPHID_IgnoreAndReport) {
+                return;
+            }
+            break;
+        case eOnBadPHID_Throw:
+            NCBI_THROW(CRequestContextException, eBadHit,
+                "Bad hit ID format: " + hit);
+            break;
+        case eOnBadPHID_Allow:
+            break;
+        }
+    }
+    x_SetProp(eProp_HitID);
+    if (m_HitID != hit) {
+        m_SubHitID = 0;
+    }
+    m_HitID = hit;
+}
+
+
 void CRequestContext::SetSessionID(const string& session)
 {
     if ( !IsValidSessionID(session) ) {
@@ -249,7 +339,7 @@ bool CRequestContext::IsValidSessionID(const string& session_id)
             if ( session_id.empty() ) {
                 return false;
             }
-            string id_std = "_-.:@";
+            string id_std = kAllowedIdMarkchars;
             ITERATE (string, c, session_id) {
                 if (!isalnum(*c)  &&  id_std.find(*c) == NPOS) {
                     return false;
@@ -322,6 +412,7 @@ const char* CRequestContextException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eBadSession: return "eBadSession";
+    case eBadHit:     return "eBadHit";
     default:          return CException::GetErrCodeString();
     }
 }
