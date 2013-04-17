@@ -656,11 +656,24 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
         return eNotCompatible;
     }
 
+    /*
     if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron (could be partial)
         return eExternal;
+    */
+    if(gene_good_enough_to_be_annotation && algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron and complete
+        return eExternal;
 
+    /*
     if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation))   // algn is nested in gene (could be partial)
         return eNested;
+    */
+    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation)) {   // algn is nested in gene and checked for completeness
+        if(algn_good_enough_to_be_annotation)
+            return eNested;
+        else
+            return eNotCompatible;        
+    }
+
 
     if(!algn_cds.Empty() && !gene_cds.Empty()) {                          // both coding
         if (!gene_cds.IntersectingWith(algn_cds)) {          // don't overlap
