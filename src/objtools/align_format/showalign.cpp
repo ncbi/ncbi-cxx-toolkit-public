@@ -107,17 +107,12 @@ static const int k_StartSequenceMargin = 2;
 static const int k_AlignStatsMargin = 2;
 static const int k_SequencePropertyLabelMargin = 2;
 
-static const string k_UncheckabeCheckbox = "<input type=\"checkbox\" \
-name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d',\
- 'getSeqMaster')\">";
-
-static const string k_Checkbox = "<input type=\"checkbox\" \
-name=\"getSeqGi\" value=\"%s\" onClick=\"synchronizeCheck(this.value, \
-'getSeqAlignment%d', 'getSeqGi', this.checked)\">";
-
-static const string k_CheckboxEx = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%s\" \
-checked=\"checked\" onClick=\"synchAl(this);\">";
-
+const string k_DefaultAnchorTempl = "<a name=<@id_lbl@>></a>"; 
+const string k_DefaultAnchorWithPosTempl = "<a name=#_<@resultPositionIndex@>_<@id_lbl@>></a>";
+static const string k_DefaultSpaceMaintainerTempl = "<span class=\"smn\"><@chkbox@></span>";
+static const string k_DefaultCheckboxTempl = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"<@id_lbl@>\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment<@queryNumber@>', 'getSeqGi', this.checked)\">";
+static const string k_DefaultCheckboxExTempl = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"<@id_lbl@>\" checked=\"checked\" onClick=\"synchAl(this);\">";
+ 
 //highlight the seqid for pairwise-with-identity format
 const string k_DefaultPairwiseWithIdntTempl = "<font color=\"#FF0000\"><b><@alndata@></b></font>";//k_ColorRed         
 const string k_DefaultFeaturesTempl = "<font color=\"#F805F5\"><b><@alndata@></b></font>";//k_ColorPink
@@ -1001,10 +996,8 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
                             substr(aln_start, line_length)) &&
               m_AlignOption & eShowCdsFeature)){  
             if((m_AlignOption&eHtml)&&(m_AlignOption&eMergeAlign)
-               && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
-                char checkboxBuf[200];
-                sprintf(checkboxBuf,  k_UncheckabeCheckbox.c_str(),
-                        m_QueryNumber);
+               && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){                
+                string checkboxBuf = CAlignFormatUtil::MapTemplate(k_DefaultSpaceMaintainerTempl,"chkbox","");
                 out << checkboxBuf;
             }
             out<<(*iter)->feature->feature_id;
@@ -1552,7 +1545,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                 if(row == 0){                        
                     x_PrintFeatures(alnRoInfo, row, master_feat_str, out); 
                 }
-                if(m_AlignOption & eMergeAlign) {
+                if((m_AlignOption & eMergeAlign) || (m_AlignOption & eHyperLinkMasterSeqid) || (m_AlignOption & eHyperLinkSlaveSeqid)) {                
                     x_DisplaySequenceIDForQueryAnchored(alnRoInfo,row,out);
                 }
                 else {
@@ -1637,9 +1630,8 @@ void CDisplaySeqalign::x_DisplayInsertsForQueryAnchored(SAlnRowInfo *alnRoInfo, 
         iter != inserts.end(); iter ++){   
         if(!insertAlready){
             if((m_AlignOption&eHtml) &&(m_AlignOption&eMergeAlign) 
-                    && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
-                char checkboxBuf[200];
-                sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),m_QueryNumber);
+                    && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){                
+                string checkboxBuf = CAlignFormatUtil::MapTemplate(k_DefaultSpaceMaintainerTempl,"chkbox","");
                 out << checkboxBuf;
             }
             
@@ -1654,9 +1646,8 @@ void CDisplaySeqalign::x_DisplayInsertsForQueryAnchored(SAlnRowInfo *alnRoInfo, 
             CAlignFormatUtil::AddSpace(out, base_margin);
             out << insertPosString<<"\n";
         }
-        if((m_AlignOption&eHtml) &&(m_AlignOption&eMergeAlign) && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
-            char checkboxBuf[200];
-            sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),m_QueryNumber);
+        if((m_AlignOption&eHtml) &&(m_AlignOption&eMergeAlign) && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){            
+            string checkboxBuf = CAlignFormatUtil::MapTemplate(k_DefaultSpaceMaintainerTempl,"chkbox","");
             out << checkboxBuf;
         }
         int base_margin = alnRoInfo->maxIdLen + k_IdStartMargin + alnRoInfo->maxStartLen + k_StartSequenceMargin;
@@ -1701,45 +1692,37 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
             gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
                                      GetBioseqCore()->GetId());
         }
-        if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
-                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
+        string anchorTmpl,checkBoxTmpl,id_lbl;        
+        bool showAnchor = (row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||  (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid));
+        bool showCheckbox = ((m_AlignOption & eMergeAlign) && (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq) || 
+                            (m_AlignOption & eShowCheckBox);
+        if(showAnchor){
+            anchorTmpl = (m_ResultPositionIndex >= 0) ? k_DefaultAnchorWithPosTempl : k_DefaultAnchorTempl;
             if (m_ResultPositionIndex >= 0){
-                if(gi > 0){
-                    out<<"<a name=#_"<<m_ResultPositionIndex<<"_"<<gi<<"></a>";
-                } else {
-                    out<<"<a name=#_"<<m_ResultPositionIndex<<"_" <<alnRoInfo->seqidArray[row]<<"></a>";
-                }
-            } else {
-                if(gi > 0){
-                    out<<"<a name="<<gi<<"></a>";
-                } else {
-                    out<<"<a name="<<alnRoInfo->seqidArray[row]<<"></a>";
-                }
-           }
+                anchorTmpl = CAlignFormatUtil::MapTemplate(anchorTmpl,"resultPositionIndex",m_ResultPositionIndex);        
+            }            
+            anchorTmpl = CAlignFormatUtil::MapTemplate(anchorTmpl,"id_lbl",gi > 0 ? NStr::IntToString(gi):alnRoInfo->seqidArray[row]);                    
         }					
         //get sequence checkbox
-        if((m_AlignOption & eMergeAlign) && 
-                        (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
-            char checkboxBuf[512];
-            if (row == 0) {
-                sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(), m_QueryNumber); 
-            } else {
-                sprintf(checkboxBuf, k_Checkbox.c_str(), gi > 0 ?
-                                    NStr::IntToString(gi).c_str() :
-                                    alnRoInfo->seqidArray[row].c_str(), m_QueryNumber);
+        if(showCheckbox) {
+            checkBoxTmpl = !(m_AlignOption & eShowCheckBox) ? 
+                ((row == 0) ? "" : k_DefaultCheckboxTempl) : k_DefaultCheckboxExTempl;                    
+            
+            checkBoxTmpl = CAlignFormatUtil::MapTemplate(k_DefaultSpaceMaintainerTempl,"chkbox",checkBoxTmpl);       
+            checkBoxTmpl = CAlignFormatUtil::MapTemplate(checkBoxTmpl,"queryNumber",NStr::IntToString(m_QueryNumber));       
+            if(m_AlignOption & eShowCheckBox) {
+                const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
+                id_lbl = CAlignFormatUtil::GetLabel(seqID);
+                if(seqID->IsLocal()) {
+                    id_lbl = "lcl|" + id_lbl;            
+                }        
             }
-            out << checkboxBuf;        
+        }        
+        if(showCheckbox || showAnchor) {            
+            id_lbl = id_lbl.empty() ? ((gi > 0) ? NStr::IntToString(gi) : alnRoInfo->seqidArray[row]) : id_lbl;
+            string displString = CAlignFormatUtil::MapTemplate(anchorTmpl + checkBoxTmpl,"id_lbl",id_lbl);                        
+            out << displString;
         }
-        else if(m_AlignOption & eShowCheckBox) {                        
-            const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
-            string id_str = CAlignFormatUtil::GetLabel(seqID);
-            if(seqID->IsLocal()) {
-                id_str = "lcl|" + id_str;            
-            }        
-            char checkboxBuf[512];
-            sprintf(checkboxBuf, k_CheckboxEx.c_str(), id_str.c_str());
-            out << checkboxBuf;        
-        }      
     }
                
     if(alnRoInfo->show_seq_property_label){
@@ -2306,10 +2289,9 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             out << ">";
             if ((m_AlignOption&eSequenceRetrieval)
                 && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
-                char buf[512];
-                sprintf(buf, k_Checkbox.c_str(), alnDispParams->gi > 0 ?
-                        NStr::IntToString(alnDispParams->gi).c_str() : alnDispParams->label.c_str(),
-                        m_QueryNumber);
+                string buf = CAlignFormatUtil::MapTemplate(k_DefaultCheckboxTempl,"queryNumber",NStr::IntToString(m_QueryNumber));       
+                buf = CAlignFormatUtil::MapTemplate(buf,"id_lbl",
+                                        alnDispParams->gi > 0 ?  NStr::IntToString(alnDispParams->gi) : alnDispParams->label);           
                 out << buf;
             }
                 
@@ -2381,11 +2363,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     }
                     if ((m_AlignOption&eSequenceRetrieval)
                         && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
-                        char buf[512];
-                        sprintf(buf, k_Checkbox.c_str(), alnDispParams->gi > 0 ?
-                                NStr::IntToString(alnDispParams->gi).c_str() : alnDispParams->label.c_str(),
-                                m_QueryNumber);
-                                out << buf;
+                        string buf = CAlignFormatUtil::MapTemplate(k_DefaultCheckboxTempl,"queryNumber",NStr::IntToString(m_QueryNumber));       
+                        buf = CAlignFormatUtil::MapTemplate(buf,"id_lbl",
+                                        alnDispParams->gi > 0 ?  NStr::IntToString(alnDispParams->gi) : alnDispParams->label);           
+                        out << buf;
                     }
                 
                     if(m_AlignOption&eHtml){
