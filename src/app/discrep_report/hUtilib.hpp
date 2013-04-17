@@ -119,7 +119,7 @@ void OutBlob(const AsnClass& blob, ESerialDataFormat datafm, string file_nm)
 
 
 template <class AsnClass>
-void ReadInBlob(AsnClass& blob, ESerialDataFormat datafm, string file_nm)
+void ReadInBlob(AsnClass& blob, string file_nm, ESerialDataFormat datafm=eSerial_AsnText)
 {
 
         auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, file_nm));

@@ -273,7 +273,8 @@ string CTestAndRepData :: FindReplaceString(const string& src, const string& sea
     // word boundaries: whitespace & punctuation
     // pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
     pattern = 
-          whole_word ? ("(?<![[:^alnum:]])" + pattern + "(?<![[:^alnum:]])") : pattern;
+          whole_word ? ("(?:^|(?<=[[:^alnum:]]))" + pattern + "(?:^|(?<=[[:^alnum:]]))") 
+                         : pattern;
           // include underscores
 
     CRegexp::ECompile comp_flag = case_sensitive? 
@@ -315,11 +316,9 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
   }
 
   if (gene) {
-     CConstRef <CBioseq>
-          bioseq =
-             GetBioseqFromSeqLoc(seq_feat.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
-     if (bioseq.Empty()) return (CConstRef <CSeq_feat> ());
-     CTSE_Handle tse_hl = thisInfo.scope->GetTSE_Handle(*(bioseq->GetParentEntry()));
+     CBioseq_Handle bioseq_hl =  GetBioseqFromSeqLoc(seq_feat.GetLocation(), *thisInfo.scope);
+     if (!bioseq_hl) return (CConstRef <CSeq_feat> ());
+     CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
      if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty()) ) {
          CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
          if (seq_feat_hl) return (seq_feat_hl.GetOriginalSeq_feat());
@@ -405,15 +404,6 @@ bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& 
       else {
          for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
                if (IsBiosrcEukaryotic(it->GetSource())) return true;
-/*
-             CBioSource :: EGenome genome = (CBioSource::EGenome) it->GetSource().GetGenome();
-             if (genome != CBioSource :: eGenome_mitochondrion
-                  && genome != CBioSource :: eGenome_chloroplast
-                  && genome != CBioSource :: eGenome_plastid
-                  && genome != CBioSource :: eGenome_apicoplast
-                  && HasLineage(it->GetSource(), type))
-              return true;
-*/
          }
          return false;
       }
@@ -435,16 +425,16 @@ bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& 
 
 
 
-bool CTestAndRepData :: IsAllCaps(const string& str)
+bool CDiscRepUtil :: IsAllCaps(const string& str)
 {
-  string& up_str = NStr::ToUpper(const_cast <string&> (str));
+  string up_str = NStr::ToUpper(const_cast <string&> (str));
   if (up_str == str) return true;
   else return false;
 };
 
 
 
-bool CTestAndRepData :: IsAllLowerCase(const string& str)
+bool CDiscRepUtil :: IsAllLowerCase(const string& str)
 {
   string& low_str = NStr::ToLower(const_cast <string&> (str));
   if (low_str == str) return true;
@@ -452,7 +442,7 @@ bool CTestAndRepData :: IsAllLowerCase(const string& str)
 }
 
 
-bool CTestAndRepData :: IsAllPunctuation(const string& str)
+bool CDiscRepUtil :: IsAllPunctuation(const string& str)
 {
    for (unsigned i=0; i< str.size(); i++) {
      if (!ispunct(str[i])) return false;
@@ -461,7 +451,7 @@ bool CTestAndRepData :: IsAllPunctuation(const string& str)
 };
 
 
-bool CTestAndRepData :: IsWholeWord(const string& str, const string& phrase)
+bool CDiscRepUtil :: IsWholeWord(const string& str, const string& phrase)
 {
   if (str == phrase) return true;
   size_t pos = str.find(phrase);
@@ -920,17 +910,17 @@ string CTestAndRepData :: GetLocusTagForFeature(const CSeq_feat& seq_feat)
 }; // GetLocusTagForFeature
 
 
-void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string* label)
+void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
 {
-     GetLabel(seq_feat, label, fFGL_Content);
+     GetLabel(seq_feat, &label, fFGL_Content);
      size_t pos;
-     if (!label->empty() && (string::npos != (pos = label->find("-")) ) )
-          *label = label->substr(pos+1);
+     if (!label.empty() && (string::npos != (pos = label.find("-")) ) )
+          label = label.substr(pos+1);
      strtmp = "/number=";
-     if (!label->empty() 
+     if (!label.empty() 
             && seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon 
-            && (string::npos != (pos = label->find(strtmp))))
-          *label = label->substr(pos + strtmp.size());
+            && (string::npos != (pos = label.find(strtmp))))
+          label = label.substr(pos + strtmp.size());
      strtmp.clear(); 
 };
 
@@ -970,7 +960,7 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
           if (seq_feat_p->GetData().IsPub()) {
                  if ( seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label));
           }
-          else GetSeqFeatLabel(*seq_feat_p, &context_label);
+          else GetSeqFeatLabel(*seq_feat_p, context_label);
       }
       if (context_label.empty()) context_label = "Unknown context label";
       return (thisInfo.infile + ": " + label+"\t" + context_label + "\t" 

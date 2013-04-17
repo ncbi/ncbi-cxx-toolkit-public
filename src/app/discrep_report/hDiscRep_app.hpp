@@ -63,6 +63,16 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validatorp.hpp>
 
+// macros
+#include <objects/macro/Macro_feature_type_.hpp>
+#include <objects/macro/Rna_feat_type.hpp>
+#include <objects/macro/Rna_field_.hpp>
+#include <objects/macro/Feat_qual_legal_.hpp>
+#include <objects/macro/DBLink_field_type_.hpp>
+#include <objects/macro/Source_qual_.hpp>
+#include <objects/macro/Sequence_constraint_rnamol_.hpp>
+#include <objects/macro/Molecule_type_.hpp>
+#include <objects/macro/Technique_type_.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -89,6 +99,8 @@ namespace DiscRepNmSpc{
          virtual void Exit(void);
          
          void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
+         void GetOrgModSubtpName(unsigned num1, unsigned num2, 
+                                         map <string, COrgMod::ESubtype>& orgmodnm_subtp);
      };
 
      typedef struct loginfo 
@@ -179,6 +191,24 @@ namespace DiscRepNmSpc{
            static CRef <CComment_set>                comment_rules;
            static Str2UInt                           spell_data;
            static Str2Str                            fix_data;
+           static CRef <CSuspect_rule_set>           orga_prod_rules;
+           static vector <string>                    skip_bracket_paren;
+           static vector <string>                    ok_num_prefix;
+           static map <EMacro_feature_type, CSeqFeatData::ESubtype>  feattype_featdef;
+           static map <CRna_feat_type::E_Choice, CRNA_ref::EType> rnafeattp_rnareftp;
+           static map <ERna_field, EFeat_qual_legal>  rnafield_featquallegal;
+           static map <CSeq_inst::EMol, string>       mol_molname;
+           static map <CSeq_inst::EStrand, string>    strand_strname;
+           static map <EDBLink_field_type, string>    dblink_name;
+           static map <ESource_qual, COrgMod::ESubtype>    srcqual_orgmod;
+           static map <ESource_qual, CSubSource::ESubtype> srcqual_subsrc;
+           static map <EFeat_qual_legal, string>           featquallegal_name;
+           static map <EFeat_qual_legal, unsigned>         featquallegal_subfield;
+           static map <ESequence_constraint_rnamol, CMolInfo::EBiomol> scrna_mirna;
+           static map <string, string>               pubclass_qual; 
+           static vector <string>                    months;
+           static map <EMolecule_type, CMolInfo::EBiomol>   moltp_biomol;
+           static map <ETechnique_type, CMolInfo::ETech>    techtp_mitech;
      };
 
 /*

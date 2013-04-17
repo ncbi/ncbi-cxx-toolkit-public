@@ -491,6 +491,7 @@ void CRepConfDiscrepancy :: ConfigRep()
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_NONWGS_SETS_PRESENT));
 
 // ini.
+/*
    // search function empty?
    const CSuspect_rule_set::Tdata& rules = thisInfo.suspect_rules->Get();
    rule_prop->srch_func_empty.reserve(rules.size());   // necessary for static vector?
@@ -502,6 +503,7 @@ void CRepConfDiscrepancy :: ConfigRep()
        ((*it)->IsSetExcept()) ? rule_prop->IsSearchFuncEmpty((*it)->GetExcept()) : true;
       i++;
    };
+*/
 
 // output flags
    thisInfo.output_config.use_flag = true;
