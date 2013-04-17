@@ -323,52 +323,20 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& db_name,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title)
+                              const string& title,
+                              EAliasFileFilterType alias_type /*= eGiList*/)
 {
-    bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
-    Uint8 dbsize = 0;
-    int num_seqs = 0;
-    CNcbiOstrstream fnamestr;
-    fnamestr << file_name << (is_prot ? ".pal" : ".nal");
-    string fname = CNcbiOstrstreamToString(fnamestr);
-
-    ofstream out(fname.c_str());
-    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
-        << "\n#\n";
-
-    if ( !title.empty() ) {
-        out << "TITLE " << title << "\n";
-    }
-    out << "DBLIST " << db_name << "\n";
-    if ( !gi_file_name.empty() ){
-        out << "GILIST " << gi_file_name << "\n";
-    }
-    out.close();
-
-    if (!s_ComputeNumSequencesAndDbLength(file_name, is_prot, &dbsize, &num_seqs)){
-        CDirEntry(fname).Remove();
-        string msg("BLASTDB alias file creation failed.  Some referenced files may be missing");
-        NCBI_THROW(CSeqDBException, eArgErr, msg);
-    };
-    if (num_seqs == 0) {
-        CDirEntry(fname).Remove();
-        string msg("No GIs were found in BLAST database");
-        NCBI_THROW(CSeqDBException, eArgErr, msg);
-    }
-
-    out.open(fname.c_str(), ios::out|ios::app);
-    out << "NSEQ " << num_seqs << "\n";
-    out << "LENGTH " << dbsize << "\n";
-    out.close();
-
-    s_PrintAliasFileCreationLog(file_name, is_prot, num_seqs);
+    vector<string> db(1, db_name);
+    CWriteDB_CreateAliasFile(file_name, db, seq_type, gi_file_name, title,
+                             alias_type);
 }
 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector<string>& databases,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title)
+                              const string& title,
+                              EAliasFileFilterType alias_type /*= eGiList*/)
 {
     bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
     Uint8 dbsize = 0;
@@ -390,7 +358,8 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     }
     out << "\n";
     if ( !gi_file_name.empty() ) {
-        out << "GILIST " << gi_file_name << "\n";
+        string token = (alias_type == eGiList ? "GILIST" : "TILIST");
+        out << token << " " << gi_file_name << "\n";
     }
     out.close();
 
@@ -401,7 +370,10 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     };
     if (num_seqs == 0) {
         CDirEntry(fname).Remove();
-        string msg("No GIs were found in BLAST database");
+        CNcbiOstrstream oss;
+        oss << "No " << (alias_type == eGiList ? "GI" : "TI") << "s were found"
+            << " in BLAST database";
+        string msg = CNcbiOstrstreamToString(oss);
         NCBI_THROW(CSeqDBException, eArgErr, msg);
     }
 

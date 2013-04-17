@@ -811,18 +811,22 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
     }
 }
 
-/// This function determines whether a file is a valid binary gi file.
+/// This function determines whether a file is a valid binary GI/TI file.
 /// @param fbeginp pointer to start of file [in]
 /// @param fendp pointer to end of file [in]
-/// @param has_long_ids will be set to true if the gi file contains long IDs
-/// [out]
+/// @param has_long_ids will be set to true if the gi file contains long IDs [out]
+/// @param has_tis will be set to true if the input file contains Trace IDs,
+/// otherwise the file contains GIs [out]
 /// @returns true if file is binary
 /// @throws CSeqDBException if file is empty or invalid gi file
-static bool s_SeqDB_IsBinaryGiList(const char* fbeginp, const char* fendp, 
-                                   bool& has_long_ids)
+static 
+bool s_SeqDB_IsBinaryNumericList(const char* fbeginp, const char* fendp, 
+                                 bool& has_long_ids, bool* has_tis = NULL)
 {
     bool retval = false;
     has_long_ids = false;
+    if (has_tis) 
+        *has_tis = false;
     Int8 file_size = fendp - fbeginp;
     
     if (file_size == 0) {
@@ -839,6 +843,9 @@ static bool s_SeqDB_IsBinaryGiList(const char* fbeginp, const char* fendp,
         
         if (marker == 0xFE || marker == 0xFC) {
             has_long_ids = true;
+        }
+        if (has_tis && (marker == 0xFD || marker == 0xFC)) {
+            *has_tis = true;
         }
     } else {
         NCBI_THROW(CSeqDBException,
@@ -857,7 +864,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
     bool long_ids = false;
     Int8 file_size = fendp - fbeginp;
     
-    if (s_SeqDB_IsBinaryGiList(fbeginp, fendp, long_ids)) {
+    if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
         _ASSERT(long_ids == false);
         Int4 * bbeginp = (Int4*) fbeginp;
         Int4 * bendp = (Int4*) fendp;
@@ -1017,7 +1024,7 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
     bool long_ids = false;
     Int8 file_size = fendp - fbeginp;
     
-    if (s_SeqDB_IsBinaryGiList(fbeginp, fendp, long_ids)) {
+    if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
         Int4 * bbeginp = (Int4*) fbeginp;
         Int4 * bendp = (Int4*) fendp;
         Int4 * bdatap = bbeginp + 2;
@@ -1238,7 +1245,7 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
     if (in_order) *in_order = false;
 }
 
-bool SeqDB_IsBinaryGiList(const string  & fname)
+static bool s_ContainsBinaryNumericIdList(const string& fname, CSeqDBFileGiList::EIdType type)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
 
@@ -1247,7 +1254,24 @@ bool SeqDB_IsBinaryGiList(const string  & fname)
     const char * fendp   = fbeginp + (int)file_size;
     
     bool ignore = false;
-    return s_SeqDB_IsBinaryGiList(fbeginp, fendp, ignore);
+    bool has_tis = false;
+    bool retval = s_SeqDB_IsBinaryNumericList(fbeginp, fendp, ignore, &has_tis);
+    if (type == CSeqDBFileGiList::eGiList) {
+        return retval;
+    } else {
+        retval = has_tis && retval;
+    }
+    return retval;
+}
+
+bool SeqDB_IsBinaryTiList(const string  & fname)
+{
+    return s_ContainsBinaryNumericIdList(fname, CSeqDBFileGiList::eTiList);
+}
+
+bool SeqDB_IsBinaryGiList(const string  & fname)
+{
+    return s_ContainsBinaryNumericIdList(fname, CSeqDBFileGiList::eGiList);
 }
 
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)

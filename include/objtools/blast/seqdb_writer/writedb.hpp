@@ -585,6 +585,12 @@ private:
     class CWriteDB_Column * m_Impl;
 };
 
+/// Defines the possible filtering types that can be applied to an alias file
+enum EAliasFileFilterType {
+    eGiList,        ///< Filter a BLAST database via GIs
+    eTiList         ///< Filter a BLAST database via TIs (Trace IDs)
+};
+
 /** 
  * @brief Writes an alias file that restricts a database with a gi list. 
  * 
@@ -596,13 +602,15 @@ private:
  * @param seq_type type of sequences stored in the database [in]
  * @param gi_file_name name of the file containing gis [in]
  * @param title title to use in this alias file [in]
+ * @param alias_type Type of alias file to create [in]
  */
 NCBI_XOBJWRITE_EXPORT 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& db_name,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title = string());
+                              const string& title = string(),
+                              EAliasFileFilterType alias_type = eGiList);
 
 /** 
  * @brief Writes an alias file that aggregates multiple existing BLAST
@@ -616,13 +624,15 @@ void CWriteDB_CreateAliasFile(const string& file_name,
  * @param gi_file_name name of the file containing gis [in]
  * @param seq_type type of sequences stored in the database [in]
  * @param title title to use in this alias file [in]
+ * @param alias_type Type of alias file to create [in]
  */
 NCBI_XOBJWRITE_EXPORT 
 void CWriteDB_CreateAliasFile(const string& file_name,
                               const vector <string> & db_names,
                               CWriteDB::ESeqType seq_type,
                               const string& gi_file_name,
-                              const string& title = string());
+                              const string& title = string(),
+                              EAliasFileFilterType alias_type = eGiList);
 
 /** 
  * @brief Writes an alias file that aggregates multiple existing BLAST

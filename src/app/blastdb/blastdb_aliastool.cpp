@@ -179,12 +179,8 @@ void CBlastDBAliasApp::Init()
                              CArgDescriptions::eInputFile);
     arg_desc->SetDependency(kArgGiList, CArgDescriptions::eRequires, kOutput);
 #ifdef NCBI_TI
-    arg_desc->AddFlag("create_ti_list", 
-                      "Create binary TI list instead of GI list", true);
-    arg_desc->SetDependency("create_ti_list", CArgDescriptions::eRequires,
-                            "gi_file_in");
-    arg_desc->SetDependency("create_ti_list", CArgDescriptions::eRequires,
-                            "gi_file_out");
+    arg_desc->AddFlag("process_as_tis", 
+                      "Process all numeric ID lists as TIs instead of GIs", true);
 #endif
 
     arg_desc->AddOptionalKey(kOutput, "database_name",
@@ -228,7 +224,7 @@ CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
     const CArgs& args = GetArgs();
     CBinaryListBuilder::EIdType type = CBinaryListBuilder::eGi;
     string product("GI");
-    if (args.Exist("create_ti_list") && args["create_ti_list"]) {
+    if (args.Exist("process_as_tis") && args["process_as_tis"]) {
         type = CBinaryListBuilder::eTi;
         product.assign("TI");
     }
@@ -265,6 +261,10 @@ CBlastDBAliasApp::CreateAliasFile() const
 {
     const CArgs& args = GetArgs();
     string title;
+    bool isTiList = false;
+    if (args.Exist("process_as_tis") && args["process_as_tis"]) {
+        isTiList = true;
+    }
     if (args[kArgDbTitle].HasValue()) {
         title = args[kArgDbTitle].AsString();
     } else if (args[kArgDb].HasValue()) {
@@ -282,11 +282,13 @@ CBlastDBAliasApp::CreateAliasFile() const
         if ( !CFile(gilist).Exists() ) {
             NCBI_THROW(CSeqDBException, eFileErr, gilist + " not found");
         }
-        if ( !SeqDB_IsBinaryGiList(gilist) ) {
+        if ( (!isTiList && !SeqDB_IsBinaryGiList(gilist)) ||
+             (isTiList && !SeqDB_IsBinaryTiList(gilist)) ) {
             const char mol_type = args[kArgDbType].AsString()[0];
             _ASSERT(mol_type == 'p' || mol_type == 'n');
             CNcbiOstrstream oss;
-            oss << args[kOutput].AsString() << "." << mol_type << ".gil";
+            oss << args[kOutput].AsString() << "." << mol_type << 
+                (isTiList ? ".btl" : ".gil");
             gilist.assign(CNcbiOstrstreamToString(oss));
             const string& ifname = args[kArgGiList].AsString();
             ifstream input(ifname.c_str());
@@ -295,12 +297,13 @@ CBlastDBAliasApp::CreateAliasFile() const
         }
     }
 
+    const EAliasFileFilterType alias_type = (isTiList ? eTiList : eGiList);
     if (args["dblist"].HasValue()) {
         const string dblist = args["dblist"].AsString();
         vector<string> dbs2aggregate;
         NStr::Tokenize(dblist, " ", dbs2aggregate);
         CWriteDB_CreateAliasFile(args[kOutput].AsString(), dbs2aggregate,
-                                 seq_type, gilist, title);
+                                 seq_type, gilist, title, alias_type);
     } else if (args["num_volumes"].HasValue()) {
         const unsigned int num_vols = 
             static_cast<unsigned int>(args["num_volumes"].AsInteger());
@@ -310,7 +313,7 @@ CBlastDBAliasApp::CreateAliasFile() const
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
                                  args[kArgDb].AsString(),
                                  seq_type, gilist,
-                                 title);
+                                 title, alias_type);
     }
 }
 

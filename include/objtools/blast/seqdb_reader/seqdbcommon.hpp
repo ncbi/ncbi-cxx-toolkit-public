@@ -1034,6 +1034,13 @@ void SeqDB_ReadGiList(const string  & fname,
 NCBI_XOBJREAD_EXPORT
 bool SeqDB_IsBinaryGiList(const string  & fname);
 
+/// Returns true if the file name passed contains a binary TI list
+///
+/// @param fname    The name of the TI list file. [in]
+/// @throws CSeqDBException if file is invalid or empty
+NCBI_XOBJREAD_EXPORT
+bool SeqDB_IsBinaryTiList(const string  & fname);
+
 /// CSeqDBFileGiList
 /// 
 /// This class defines a CSeqDBGiList subclass which reads a GI list
