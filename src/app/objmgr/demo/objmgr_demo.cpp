@@ -193,7 +193,9 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("blast_type",
                             &(*new CArgAllow_Strings,
                               "protein", "p", "nucleotide", "n"));
-    arg_desc->AddFlag("other_loaders", "Extra data loaders as plugins (comma separated)");
+    arg_desc->AddOptionalKey("other_loaders", "OtherLoaders",
+                             "Extra data loaders as plugins (comma separated)",
+                             CArgDescriptions::eString);
 
     arg_desc->AddFlag("get_ids", "Get sequence ids");
     arg_desc->AddFlag("get_blob_id", "Get sequence blob id");
