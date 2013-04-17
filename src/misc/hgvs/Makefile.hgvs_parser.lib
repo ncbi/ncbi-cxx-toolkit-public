@@ -13,6 +13,8 @@ ifneq "" "$(filter GCC_41% GCC_42%,$(signature))"
  endif
 endif
 
+DLL_LIB = objcoords
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Spirit
