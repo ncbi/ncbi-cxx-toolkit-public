@@ -192,7 +192,7 @@ CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
         return CJsonNode::NewStringNode(g_NetService_gethostnamebyaddr(
                 server.GetHost()));
     case 2:
-        return CJsonNode::NewNumberNode(server.GetPort());
+        return CJsonNode::NewIntegerNode(server.GetPort());
     }
     return CJsonNode::NewStringNode(server.GetServerAddress());
 }
@@ -232,7 +232,7 @@ bool SNetCacheServiceAutomationObject::Call(const string& method,
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetCacheAPI.GetService().Iterate();
                 it; ++it)
-            object_ids.PushNumber(m_AutomationProc->
+            object_ids.PushInteger(m_AutomationProc->
                     ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
         reply.PushNode(object_ids);
     } else
@@ -333,14 +333,14 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
                 affinity, job_group);
         CJsonNode jobs_by_status(CJsonNode::NewObjectNode());
         ITERATE(CNetScheduleAdmin::TStatusMap, it, status_map) {
-            jobs_by_status.SetNumber(it->first, it->second);
+            jobs_by_status.SetInteger(it->first, it->second);
         }
         reply.PushNode(jobs_by_status);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate();
                 it; ++it)
-            object_ids.PushNumber(m_AutomationProc->
+            object_ids.PushInteger(m_AutomationProc->
                     ReturnNetScheduleServerObject(m_NetScheduleAPI, *it)->
                     GetID());
         reply.PushNode(object_ids);
@@ -364,7 +364,7 @@ CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
 
     CJsonNode greeting(CJsonNode::NewArrayNode());
     greeting.PushString(GRID_APP_NAME);
-    greeting.PushNumber(PROTOCOL_VERSION);
+    greeting.PushInteger(PROTOCOL_VERSION);
 
     if (protocol_dump != NULL) {
         string pid_str(NStr::NumericToString(m_Pid));
@@ -471,7 +471,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     } else if (command == "new") {
         string class_name(arg_array.NextString());
         arg_array.UpdateLocation(class_name);
-        reply.PushNumber(CreateObject(class_name, arg_array)->GetID());
+        reply.PushInteger(CreateObject(class_name, arg_array)->GetID());
     } else if (command == "del") {
         TAutomationObjectRef& object(ObjectIdToRef(
                 (TObjectID) arg_array.NextNumber()));
@@ -502,7 +502,7 @@ void CAutomationProc::SendWarning(const string& warn_msg,
     warning.PushNode(m_WarnNode);
     warning.PushString(warn_msg);
     warning.PushString(source->GetType());
-    warning.PushNumber(source->GetID());
+    warning.PushInteger(source->GetID());
     SendMessage(warning);
 }
 

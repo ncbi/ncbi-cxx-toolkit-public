@@ -69,15 +69,21 @@ struct SJsonStringNodeImpl : public SJsonNodeImpl
 
 struct SJsonFixedSizeNodeImpl : public SJsonNodeImpl
 {
-    SJsonFixedSizeNodeImpl(CJsonNode::TNumber number) :
-        SJsonNodeImpl(CJsonNode::eNumber),
-        m_Number(number)
+    SJsonFixedSizeNodeImpl(Int8 value) :
+        SJsonNodeImpl(CJsonNode::eInteger),
+        m_Integer(value)
     {
     }
 
-    SJsonFixedSizeNodeImpl(bool boolean) :
+    SJsonFixedSizeNodeImpl(double value) :
+        SJsonNodeImpl(CJsonNode::eDouble),
+        m_Double(value)
+    {
+    }
+
+    SJsonFixedSizeNodeImpl(bool value) :
         SJsonNodeImpl(CJsonNode::eBoolean),
-        m_Boolean(boolean)
+        m_Boolean(value)
     {
     }
 
@@ -86,7 +92,8 @@ struct SJsonFixedSizeNodeImpl : public SJsonNodeImpl
     }
 
     union {
-        CJsonNode::TNumber m_Number;
+        Int8 m_Integer;
+        double m_Double;
         bool m_Boolean;
     };
 };
@@ -127,7 +134,12 @@ void CJsonNode::PushString(const string& value)
     PushNode(new SJsonStringNodeImpl(value));
 }
 
-void CJsonNode::PushNumber(CJsonNode::TNumber value)
+void CJsonNode::PushInteger(Int8 value)
+{
+    PushNode(new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::PushDouble(double value)
 {
     PushNode(new SJsonFixedSizeNodeImpl(value));
 }
@@ -173,7 +185,12 @@ void CJsonNode::SetString(const string& key, const string& value)
     SetNode(key, new SJsonStringNodeImpl(value));
 }
 
-void CJsonNode::SetNumber(const string& key, CJsonNode::TNumber value)
+void CJsonNode::SetInteger(const string& key, Int8 value)
+{
+    SetNode(key, new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::SetDouble(const string& key, double value)
 {
     SetNode(key, new SJsonFixedSizeNodeImpl(value));
 }
@@ -193,7 +210,12 @@ CJsonNode CJsonNode::NewStringNode(const string& value)
     return new SJsonStringNodeImpl(value);
 }
 
-CJsonNode CJsonNode::NewNumberNode(CJsonNode::TNumber value)
+CJsonNode CJsonNode::NewIntegerNode(Int8 value)
+{
+    return new SJsonFixedSizeNodeImpl(value);
+}
+
+CJsonNode CJsonNode::NewDoubleNode(double value)
 {
     return new SJsonFixedSizeNodeImpl(value);
 }
@@ -216,12 +238,28 @@ const string& CJsonNode::GetString() const
         m_Impl.GetPointerOrNull())->m_String;
 }
 
-CJsonNode::TNumber CJsonNode::GetNumber() const
+Int8 CJsonNode::GetInteger() const
 {
-    _ASSERT(m_Impl->m_NodeType == eNumber);
+    if (m_Impl->m_NodeType == eDouble)
+        return (Int8) static_cast<const SJsonFixedSizeNodeImpl*>(
+            m_Impl.GetPointerOrNull())->m_Double;
+
+    _ASSERT(m_Impl->m_NodeType == eInteger);
 
     return static_cast<const SJsonFixedSizeNodeImpl*>(
-        m_Impl.GetPointerOrNull())->m_Number;
+        m_Impl.GetPointerOrNull())->m_Integer;
+}
+
+double CJsonNode::GetDouble() const
+{
+    if (m_Impl->m_NodeType == eInteger)
+        return (double) static_cast<const SJsonFixedSizeNodeImpl*>(
+            m_Impl.GetPointerOrNull())->m_Integer;
+
+    _ASSERT(m_Impl->m_NodeType == eDouble);
+
+    return static_cast<const SJsonFixedSizeNodeImpl*>(
+        m_Impl.GetPointerOrNull())->m_Double;
 }
 
 bool CJsonNode::GetBoolean() const
@@ -355,11 +393,11 @@ CJsonOverUTTPReader::EParsingEvent
             if (m_ReadingChunk)
                 return eChunkContinuationExpected;
             if (m_CurrentNode.IsArray())
-                m_CurrentNode.PushNumber(reader.GetNumber());
+                m_CurrentNode.PushInteger(reader.GetNumber());
             else // The current node is eObject.
                 if (m_HashValueIsExpected) {
                     m_HashValueIsExpected = false;
-                    m_CurrentNode.SetNumber(m_HashKey, reader.GetNumber());
+                    m_CurrentNode.SetInteger(m_HashKey, reader.GetNumber());
                 } else
                     return eHashKeyMustBeString;
             break;
@@ -485,8 +523,8 @@ bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
         }
         break;
 
-    case CJsonNode::eNumber:
-        if (!m_UTTPWriter.SendNumber(node.GetNumber()))
+    case CJsonNode::eInteger:
+        if (!m_UTTPWriter.SendNumber(node.GetInteger()))
             return false;
         break;
 

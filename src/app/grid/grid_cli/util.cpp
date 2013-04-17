@@ -95,10 +95,15 @@ static void PrintJSONNode(FILE* output_stream, CJsonNode node,
         fprintf(output_stream, "\"%s\"",
                 NStr::PrintableString(node.GetString()).c_str());
         break;
-    case CJsonNode::eNumber:
+    case CJsonNode::eInteger:
         fputs(scalar_prefix, output_stream);
         Indent(output_stream, scalar_indent);
-        fprintf(output_stream, "%ld", (long) node.GetNumber());
+        fprintf(output_stream, "%ld", (long) node.GetInteger());
+        break;
+    case CJsonNode::eDouble:
+        fputs(scalar_prefix, output_stream);
+        Indent(output_stream, scalar_indent);
+        fprintf(output_stream, "%.10g", node.GetDouble());
         break;
     case CJsonNode::eBoolean:
         fputs(scalar_prefix, output_stream);

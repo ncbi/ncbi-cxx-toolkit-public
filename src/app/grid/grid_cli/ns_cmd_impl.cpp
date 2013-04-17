@@ -62,20 +62,6 @@ static void NormalizeStatKeyName(CTempString& key)
         *begin = isalnum(*begin) ? tolower(*begin) : '_';
 }
 
-static bool IsInteger(const CTempString& value)
-{
-    if (value.empty())
-        return false;
-
-    const char* digit = value.end();
-
-    while (--digit > value.begin())
-        if (!isdigit(*digit))
-            return false;
-
-    return isdigit(*digit) || (*digit == '-' && value.length() > 1);
-}
-
 static inline string UnquoteIfQuoted(const CTempString& str)
 {
     switch (str[0]) {
@@ -90,16 +76,78 @@ static inline string UnquoteIfQuoted(const CTempString& str)
 void g_DetectTypeAndSet(CJsonNode& node,
         const CTempString& key, const CTempString& value)
 {
-    if (IsInteger(value))
-        node.SetNumber(key, NStr::StringToInt8(value));
-    else if (NStr::CompareNocase(value, "FALSE") == 0)
+    const char* ch = value.begin();
+    const char* end = value.end();
+
+    switch (*ch) {
+    case '"':
+    case '\'':
+        node.SetString(key, NStr::ParseQuoted(value));
+        return;
+
+    case '-':
+        if (++ch >= end || !isdigit(*ch)) {
+            node.SetString(key, value);
+            return;
+        }
+
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+        do
+            if (++ch >= end) {
+                node.SetInteger(key, NStr::StringToInt8(value));
+                return;
+            }
+        while (isdigit(*ch));
+
+        switch (*ch) {
+        case '.':
+            if (++ch == end || !isdigit(*ch)) {
+                node.SetString(key, value);
+                return;
+            }
+            for (;;) {
+                if (++ch == end) {
+                    node.SetDouble(key, NStr::StringToDouble(value));
+                    return;
+                }
+
+                if (!isdigit(*ch)) {
+                    if (*ch == 'E' || *ch == 'e')
+                        break;
+
+                    node.SetString(key, value);
+                    return;
+                }
+            }
+            /* FALL THROUGH */
+
+        case 'E':
+        case 'e':
+            if (++ch < end && (*ch == '-' || *ch == '+' ?
+                    ++ch < end && isdigit(*ch) : isdigit(*ch)))
+                do
+                    if (++ch == end) {
+                        node.SetDouble(key, NStr::StringToDouble(value));
+                        return;
+                    }
+                while (isdigit(*ch));
+            /* FALL THROUGH */
+
+        default:
+            node.SetString(key, value);
+            return;
+        }
+    }
+
+    if (NStr::CompareNocase(value, "FALSE") == 0)
         node.SetBoolean(key, false);
     else if (NStr::CompareNocase(value, "TRUE") == 0)
         node.SetBoolean(key, true);
     else if (NStr::CompareNocase(value, "NONE") == 0)
         node.SetNull(key);
     else
-        node.SetString(key, UnquoteIfQuoted(value));
+        node.SetString(key, value);
 }
 
 class CExecAndParseStructuredOutput : public IExecToJson
@@ -115,19 +163,48 @@ protected:
     virtual CJsonNode ExecOn(CNetServer server);
 
 private:
-    CJsonNode ParseObject(bool root_object);
-
     size_t GetRemainder() const
     {
         return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
     }
 
-    string ParseString()
+    size_t GetPosition() const
+    {
+        return m_Ch - m_NSOutput.data() + 1;
+    }
+
+    string ParseString(size_t max_len)
     {
         size_t len;
-        string str(NStr::ParseQuoted(CTempString(m_Ch, GetRemainder()), &len));
+        string val(NStr::ParseQuoted(CTempString(m_Ch, max_len), &len));
+
         m_Ch += len;
-        return str;
+        return val;
+    }
+
+    Int8 ParseInt(size_t len)
+    {
+        Int8 val = NStr::StringToInt8(CTempString(m_Ch, len));
+
+        if (*m_Ch == '-') {
+            ++m_Ch;
+            --len;
+        }
+        if (*m_Ch == '0' && len > 1) {
+            NCBI_THROW2(CStringException, eFormat,
+                    "Leading zeros are not allowed", GetPosition());
+        }
+
+        m_Ch += len;
+        return val;
+    }
+
+    double ParseDouble(size_t len)
+    {
+        double val = NStr::StringToDouble(CTempString(m_Ch, len));
+
+        m_Ch += len;
+        return val;
     }
 
     bool MoreNodes()
@@ -136,13 +213,13 @@ private:
             ++m_Ch;
         if (*m_Ch != ',')
             return false;
-        ++m_Ch;
+        while (isspace(*++m_Ch))
+            ;
         return true;
     }
 
-    CJsonNode ParseArray();
-    CJsonNode ParseNode();
-    void ThrowUnexpectedCharError();
+    CJsonNode ParseObject(char closing_char);
+    CJsonNode ParseValue();
 
     string m_Cmd;
 
@@ -155,24 +232,30 @@ CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
     m_NSOutput = server.ExecWithRetry(m_Cmd).response;
     m_Ch = m_NSOutput.c_str();
 
-    return ParseObject(true);
+    return ParseObject('\0');
 }
 
-CJsonNode CExecAndParseStructuredOutput::ParseObject(bool root_object)
+#define INVALID_FORMAT_ERROR() \
+    NCBI_THROW2(CStringException, eFormat, \
+            (*m_Ch == '\0' ? "Unexpected end of NetSchedule output" : \
+                    "Syntax error in structured NetSchedule output"), \
+            GetPosition())
+
+CJsonNode CExecAndParseStructuredOutput::ParseObject(char closing_char)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
-    CJsonNode new_node;
+    while (isspace(*m_Ch))
+        ++m_Ch;
 
-    do {
-        while (isspace(*m_Ch))
-            ++m_Ch;
+    if (*m_Ch == closing_char) {
+        ++m_Ch;
+        return result;
+    }
 
-        if (*m_Ch != '\'' && *m_Ch != '"')
-            break;
-
+    while (*m_Ch == '\'' || *m_Ch == '"') {
         // New attribute/value pair
-        string attr_name(ParseString());
+        string attr_name(ParseString(GetRemainder()));
 
         while (isspace(*m_Ch))
             ++m_Ch;
@@ -180,74 +263,117 @@ CJsonNode CExecAndParseStructuredOutput::ParseObject(bool root_object)
             while (isspace(*++m_Ch))
                 ;
 
-        if (new_node = ParseNode())
-            result.SetNode(attr_name, new_node);
-        else
-            ThrowUnexpectedCharError();
-    } while (MoreNodes());
+        result.SetNode(attr_name, ParseValue());
 
-    if (root_object ? *m_Ch != '\0' : *m_Ch != '}')
-        ThrowUnexpectedCharError();
-
-    ++m_Ch;
-
-    return result;
-}
-
-CJsonNode CExecAndParseStructuredOutput::ParseArray()
-{
-    CJsonNode result(CJsonNode::NewArrayNode());
-
-    CJsonNode new_node;
-
-    do {
-        while (isspace(*m_Ch))
+        if (!MoreNodes()) {
+            if (*m_Ch != closing_char)
+                break;
             ++m_Ch;
-
-        if (new_node = ParseNode())
-            result.PushNode(new_node);
-        else
-            break;
-    } while (MoreNodes());
-
-    if (*m_Ch != ']')
-        ThrowUnexpectedCharError();
-
-    ++m_Ch;
-
-    return result;
-}
-
-CJsonNode CExecAndParseStructuredOutput::ParseNode()
-{
-    switch (*m_Ch) {
-    case '[':
-        ++m_Ch;
-        return ParseArray();
-
-    case '{':
-        ++m_Ch;
-        return ParseObject(false);
-
-    case '\'': case '"':
-        return CJsonNode::NewStringNode(ParseString());
+            return result;
+        }
     }
 
+    INVALID_FORMAT_ERROR();
+}
+
+CJsonNode CExecAndParseStructuredOutput::ParseValue()
+{
     size_t max_len = GetRemainder();
-    size_t len = 1;
+    size_t len = 0;
 
     switch (*m_Ch) {
+    /* Array */
+    case '[':
+        {
+            CJsonNode result(CJsonNode::NewArrayNode());
+
+            while (isspace(*++m_Ch))
+                ;
+
+            if (*m_Ch == ']') {
+                ++m_Ch;
+                return result;
+            }
+
+            do
+                result.PushNode(ParseValue());
+            while (MoreNodes());
+
+            if (*m_Ch == ']') {
+                ++m_Ch;
+                return result;
+            }
+        }
+        break;
+
+    /* Object */
+    case '{':
+        ++m_Ch;
+        return ParseObject('}');
+
+    /* String */
+    case '\'':
+    case '"':
+        return CJsonNode::NewStringNode(ParseString(max_len));
+
+    /* Number */
+    case '-':
+        // Check that there's at least one digit after the minus sign.
+        if (max_len <= 1 || !isdigit(m_Ch[1])) {
+            ++m_Ch;
+            break;
+        }
+        len = 1;
+
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9':
-        while (len <= max_len && isdigit(m_Ch[len]))
-            ++len;
+        // Skim through the integer part.
+        do
+            if (++len >= max_len)
+                return CJsonNode::NewIntegerNode(ParseInt(len));
+        while (isdigit(m_Ch[len]));
 
-        {
-            CJsonNode::TNumber val(NStr::StringToInt8(CTempString(m_Ch, len)));
-            m_Ch += len;
-            return CJsonNode::NewNumberNode(val);
+        // Stumbled upon a non-digit character -- check
+        // if it's a fraction part or an exponent part.
+        switch (m_Ch[len]) {
+        case '.':
+            if (++len == max_len || !isdigit(m_Ch[len])) {
+                NCBI_THROW2(CStringException, eFormat,
+                        "At least one digit after the decimal "
+                        "point is required", GetPosition());
+            }
+            for (;;) {
+                if (++len == max_len)
+                    return CJsonNode::NewDoubleNode(ParseDouble(len));
+
+                if (!isdigit(m_Ch[len])) {
+                    if (m_Ch[len] == 'E' || m_Ch[len] == 'e')
+                        break;
+
+                    return CJsonNode::NewDoubleNode(ParseDouble(len));
+                }
+            }
+            /* FALL THROUGH */
+
+        case 'E':
+        case 'e':
+            if (++len == max_len ||
+                    (m_Ch[len] == '-' || m_Ch[len] == '+' ?
+                            ++len == max_len || !isdigit(m_Ch[len]) :
+                            !isdigit(m_Ch[len]))) {
+                m_Ch += len;
+                NCBI_THROW2(CStringException, eFormat,
+                        "Invalid exponent specification", GetPosition());
+            }
+            while (++len < max_len && isdigit(m_Ch[len]))
+                ;
+            return CJsonNode::NewDoubleNode(ParseDouble(len));
+
+        default:
+            return CJsonNode::NewIntegerNode(ParseInt(len));
         }
 
+    /* Boolean */
     case 'F': case 'f': case 'N': case 'n':
     case 'T': case 't': case 'Y': case 'y':
         while (len <= max_len && isalpha(m_Ch[len]))
@@ -260,20 +386,7 @@ CJsonNode CExecAndParseStructuredOutput::ParseNode()
         }
     }
 
-    return CJsonNode();
-}
-
-void CExecAndParseStructuredOutput::ThrowUnexpectedCharError()
-{
-    size_t position = m_Ch - m_NSOutput.data() + 1;
-
-    if (*m_Ch == '\0') {
-        NCBI_THROW2(CStringException, eFormat,
-                "Unexpected end of NetSchedule output", position);
-    } else {
-        NCBI_THROW2(CStringException, eFormat,
-                "Unexpected character in NetSchedule output", position);
-    }
+    INVALID_FORMAT_ERROR();
 }
 
 CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,
@@ -389,7 +502,7 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
                     CNetScheduleAPI::eJobNotFound)
                 stat_info.SetString(key, value);
             else
-                jobs_by_status.SetNumber(key, NStr::StringToInt8(value));
+                jobs_by_status.SetInteger(key, NStr::StringToInt8(value));
         }
     }
 
@@ -782,9 +895,9 @@ void CPrintJobInfo::ProcessRawLine(const string& line)
 void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
 {
     m_JobInfo.SetString("server_host", g_NetService_TryResolveHost(key.host));
-    m_JobInfo.SetNumber("server_port", key.port);
+    m_JobInfo.SetInteger("server_port", key.port);
 
-    m_JobInfo.SetNumber("job_id", key.id);
+    m_JobInfo.SetInteger("job_id", key.id);
 
     if (!key.queue.empty())
         m_JobInfo.SetString("queue_name", UnquoteIfQuoted(key.queue));

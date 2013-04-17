@@ -76,7 +76,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
             CJsonNode job_info_node(job_info_to_json.GetRootNode());
 
             job_info_node.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
-            job_info_node.SetNumber("key_version", ns_key.version);
+            job_info_node.SetInteger("key_version", ns_key.version);
 
             job_info_to_json.ProcessJobMeta(ns_key);
 

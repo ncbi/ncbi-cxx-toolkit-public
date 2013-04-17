@@ -72,9 +72,9 @@ public:
     string NextString() {return GetString(NextNode());}
     string NextString(const string& default_value);
 
-    CJsonNode::TNumber GetNumber(const CJsonNode& node);
-    CJsonNode::TNumber NextNumber() {return GetNumber(NextNode());}
-    CJsonNode::TNumber NextNumber(CJsonNode::TNumber default_value);
+    Int8 GetNumber(const CJsonNode& node);
+    Int8 NextNumber() {return GetNumber(NextNode());}
+    Int8 NextNumber(Int8 default_value);
 
     bool GetBoolean(const CJsonNode& node);
     bool NextBoolean() {return GetBoolean(NextNode());}
@@ -128,15 +128,14 @@ inline string CArgArray::NextString(const string& default_value)
     return next_node ? GetString(next_node) : default_value;
 }
 
-inline CJsonNode::TNumber CArgArray::GetNumber(const CJsonNode& node)
+inline Int8 CArgArray::GetNumber(const CJsonNode& node)
 {
-    if (!node.IsNumber())
+    if (!node.IsInteger())
         Exception("invalid argument type (expected a number)");
-    return node.GetNumber();
+    return node.GetInteger();
 }
 
-inline CJsonNode::TNumber CArgArray::NextNumber(
-        CJsonNode::TNumber default_value)
+inline Int8 CArgArray::NextNumber(Int8 default_value)
 {
     CJsonNode next_node(NextNodeOrNull());
     return next_node ? GetNumber(next_node) : default_value;

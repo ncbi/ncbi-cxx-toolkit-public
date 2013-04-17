@@ -49,13 +49,13 @@ class CJsonNode
 
     typedef map<string, CJsonNode> TObject;
     typedef vector<CJsonNode> TArray;
-    typedef Int8 TNumber;
 
     enum ENodeType {
         eObject,
         eArray,
         eString,
-        eNumber,
+        eInteger,
+        eDouble,
         eBoolean,
         eNull
     };
@@ -65,7 +65,8 @@ class CJsonNode
     bool IsObject() const {return GetNodeType() == eObject;}
     bool IsArray() const {return GetNodeType() == eArray;}
     bool IsString() const {return GetNodeType() == eString;}
-    bool IsNumber() const {return GetNodeType() == eNumber;}
+    bool IsInteger() const {return GetNodeType() == eInteger;}
+    bool IsDouble() const {return GetNodeType() == eDouble;}
     bool IsBoolean() const {return GetNodeType() == eBoolean;}
     bool IsNull() const {return GetNodeType() == eNull;}
 
@@ -76,7 +77,8 @@ class CJsonNode
 
     void PushNode(CJsonNode::TInstance value);
     void PushString(const string& value);
-    void PushNumber(TNumber value);
+    void PushInteger(Int8 value);
+    void PushDouble(double value);
     void PushBoolean(bool value);
     void PushNull();
 
@@ -87,17 +89,20 @@ class CJsonNode
 
     void SetNode(const string& key, CJsonNode::TInstance value);
     void SetString(const string& key, const string& value);
-    void SetNumber(const string& key, TNumber value);
+    void SetInteger(const string& key, Int8 value);
+    void SetDouble(const string& key, double value);
     void SetBoolean(const string& key, bool value);
     void SetNull(const string& key);
 
     static CJsonNode NewStringNode(const string& value);
-    static CJsonNode NewNumberNode(TNumber value);
+    static CJsonNode NewIntegerNode(Int8 value);
+    static CJsonNode NewDoubleNode(double value);
     static CJsonNode NewBooleanNode(bool value);
     static CJsonNode NewNullNode();
 
     const string& GetString() const;
-    TNumber GetNumber() const;
+    Int8 GetInteger() const;
+    double GetDouble() const;
     bool GetBoolean() const;
 };
 
