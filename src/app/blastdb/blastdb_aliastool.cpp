@@ -100,7 +100,7 @@ private:
 
 const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
 "This application has three modes of operation:\n\n"
-"1) Gi file conversion:\n"
+"1) GI file conversion:\n"
 "   Converts a text file containing GIs (one per line) to a more efficient\n"
 "   binary format. This can be provided as an argument to the -gilist option\n"
 "   of the BLAST search command line binaries or to the -gilist option of\n"
@@ -178,6 +178,14 @@ void CBlastDBAliasApp::Init()
                              "to binary",
                              CArgDescriptions::eInputFile);
     arg_desc->SetDependency(kArgGiList, CArgDescriptions::eRequires, kOutput);
+#ifdef NCBI_TI
+    arg_desc->AddFlag("create_ti_list", 
+                      "Create binary TI list instead of GI list", true);
+    arg_desc->SetDependency("create_ti_list", CArgDescriptions::eRequires,
+                            "gi_file_in");
+    arg_desc->SetDependency("create_ti_list", CArgDescriptions::eRequires,
+                            "gi_file_out");
+#endif
 
     arg_desc->AddOptionalKey(kOutput, "database_name",
                              "Name of BLAST database alias to be created",
@@ -217,7 +225,14 @@ CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
                                 const string* input_fname /* = NULL */,
                                 const string* output_fname /* = NULL */) const
 {
-    CBinaryListBuilder builder(CBinaryListBuilder::eGi);
+    const CArgs& args = GetArgs();
+    CBinaryListBuilder::EIdType type = CBinaryListBuilder::eGi;
+    string product("GI");
+    if (args.Exist("create_ti_list") && args["create_ti_list"]) {
+        type = CBinaryListBuilder::eTi;
+        product.assign("TI");
+    }
+    CBinaryListBuilder builder(type);
 
     unsigned int line_ctr = 0;
     while (input) {
@@ -236,10 +251,11 @@ CBlastDBAliasApp::ConvertGiFile(CNcbiIstream& input,
 
     builder.Write(output);
     if (input_fname && output_fname) {
-        LOG_POST("Converted " << builder.Size() << " GIs from " << *input_fname
-                 << " to binary format in " << *output_fname);
+        LOG_POST("Converted " << builder.Size() << " " << product << "s from " 
+                 << *input_fname << " to binary format in " << *output_fname);
     } else {
-        LOG_POST("Converted " << builder.Size() << " GIs into binary GI file");
+        LOG_POST("Converted " << builder.Size() << " " << product << "s into "
+                 << "binary " << product << " file");
     }
     return 0;
 }
