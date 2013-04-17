@@ -2445,6 +2445,30 @@ bool CSeq_align_Mapper_Base::x_HaveMixedStrand(void) const
 }
 
 
+bool CSeq_align_Mapper_Base::x_IsEmpty(void) const
+{
+    if ( !m_Segs.empty() ) {
+        // Check if there's at least one segment with at least two rows.
+        ITERATE(TSegments, seg, m_Segs) {
+            if (seg->m_Rows.size() < 2) continue;
+            int non_empty = 0;
+            ITERATE(SAlignment_Segment::TRows, row, seg->m_Rows) {
+                if (row->m_Start == kInvalidSeqPos) continue;
+                if (++non_empty >= 2) {
+                    return false; // Found non-empty segment.
+                }
+            }
+        }
+    }
+    // No non-empty segments. Check sub-mappers.
+    ITERATE(TSubAligns, sub, m_SubAligns) {
+        if ( !(*sub)->x_IsEmpty() ) return false;
+    }
+    // No non-empty segments or sub-mappers.
+    return true;
+}
+
+
 // Get mapped alignment. In most cases the mapper tries to
 // preserve the original alignment type and copy as much
 // information as possible (scores, bounds etc.).
@@ -2453,6 +2477,12 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
     if (m_DstAlign) {
         // The mapped alignment has been created, just use it.
         return m_DstAlign;
+    }
+
+    if ( x_IsEmpty() ) {
+        NCBI_THROW(CAnnotMapperException, eBadAlignment,
+            "Mapping resulted in an empty alignment, "
+            "can not initialize Seq-align.");
     }
 
     // Find first non-gap in each row, get its seq-id.

@@ -278,6 +278,10 @@ private:
     // Check if each row contains only one strand.
     bool x_HaveMixedStrand(void) const;
 
+    // Check if the mapped alignment has at least one segment with at least
+    // two non-gap rows.
+    bool x_IsEmpty(void) const;
+
     CSeq_loc_Mapper_Base&        m_LocMapper;
     // Original alignment
     CConstRef<CSeq_align>        m_OrigAlign;
