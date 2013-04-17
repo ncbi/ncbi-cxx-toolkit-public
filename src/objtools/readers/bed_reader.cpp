@@ -415,12 +415,20 @@ void CBedReader::x_SetFeatureLocation(
     const vector<string>& fields )
 //  ----------------------------------------------------------------------------
 {
+    //
+    //  Note:
+    //  BED convention for specifying intervals is 0-based, first in, first out.
+    //  ASN convention for specifying intervals is 0-based, first in, last in.
+    //  Hence, conversion BED->ASN  leaves the first leaves the "from" coordinate
+    //  unchanged, and decrements the "to" coordinate by one.
+    //
+
     CRef<CSeq_loc> location(new CSeq_loc);
     int from, to;
 
     //already established: We got at least three columns
     try {
-        from = NStr::StringToInt(fields[1]) - 1;
+        from = NStr::StringToInt(fields[1]);
     }
     catch ( ... ) {
         CObjReaderLineException err( 
