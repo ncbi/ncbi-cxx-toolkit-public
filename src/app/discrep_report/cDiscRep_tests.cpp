@@ -170,25 +170,2498 @@ static Str2Strs JOINED_FEATURES_sfs;
 static Str2MapStr2Strs biosrc2qualvlu_nm;
 Str2QualVlus qual_nm2qual_vlus;
 
-// CRuleProperties
-bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
+// CBioseq
+/* removed
+bool CBioseqTestAndRepData :: IsSearchFuncEmpty(const CSearch_func& func)
 {
-  if (func.IsString_constraint()) {
-     const CString_constraint& str_cons = func.GetString_constraint();
-     if (str_cons.GetIs_all_lower() || str_cons.GetIs_all_lower() || str_cons.GetIs_all_punct())
+   switch (func.Which()) {
+      case CSearch_func::e_String_constraint:
+          return IsStringConstraintEmpty(&(func.GetString_constraint()));
+      case  CSearch_func::e_Prefix_and_numbers:
+          return (func.GetPrefix_and_numbers().empty());
+      default: return false;
+   }
+   retufn false;
+};
+
+bool CBioseqTestAndRepData :: IsStringConstraintEmpty(const CStrain_constraint* constraint)
+{
+   if (!constraint) return true;
+   if (constraint->GetIs_all_caps() || constraint->GetIs_all_lower() 
+                                                       || constraint->GetIs_all_punct())
+      return false;
+   else if (!constraint->CanGetMatch_text() || constraint->GetMatch_text().empty()) 
+        return true;
+   else return false;
+};
+
+string CBioseqTestAndRepData :: SkipWeasel(const string& str)
+{
+  string ret_str(kEmptyStr);
+  strtmp = str;
+  while (ret_str != strtmp) { 
+     ret_str = strtmp;
+     ITERATE (vector <string>, it, thisInfo.weasels) {
+        if (NStr::EqualNocase(strtmp.substr(0, (*it).size()), *it)
+                                             && isspace(strtmp[(*it).size()]) {
+            strtmp = NStr::TruncateSpaces(str.substr((*it).size(), NStr::eTrunca_Begin);
+            break;
+        }  
+     };
+  }
+  return (ret_str);
+};
+
+bool CBioseqTestAndRepData :: CaseNCompare(const string& str1, const string& str2, unsigned& len1, bool case_sensitive)
+{
+   if (case_sensitive) return (NStr::EqualCase(str1, 0, len1, str2));
+   else return (NStr::EqualNocase(str1, 0, len1, str2));
+};
+*/
+
+/* no idea of this one
+
+bool CBioseqTestAndRepData :: IsWholeWordAtStart(const string& str, size_t pos, bool is_start)
+{
+  if (!pos) return is_start;
+  else return( !isalpha(str[pos-1]) );
+};
+*/
+
+/* removed
+bool CBioseqTestAndRepData :: AdvancedStringCompare(const string& str, const string& str_match, const CString_constraint& constraint, bool is_start, unsigned& target_match_len)
+{
+  size_t pos_m=0, pos_s = 0;
+  bool is_start = true, ig_case, word_stat_m, word_start_s, word_end_m, word_end_s;
+  unsigned len_m = str_match.size(), len_s = str.size(), end_s, end_m;
+  string w_sub, s_sub;
+  bool ig_space = constraint.GetIgnore_space;
+  bool ig_punct = constraint.GetIgnore_punct;
+  EString_location loc = constraing.GetMatch_location();
+  while (march && pos_m < str_match.size() && !recursive_match) {
+    // first, check to see if we're skipping synonyms //
+    ITERATE (list <CRef <CWord_substitution> >, it, constraint.GetIgnore_words().Get()) {
+      ig_case = (*it)->GetCase_sensitive();
+      if ( (*it)->CanGetWord() && !((*it)->GetWord().empty()) ) {
+        w_sub = (*it)->GetWord();
+        // simple text match
+        if (!CaseNCompare(w_sub, str_match.substr(pos_m), w_sub.size(), ig_case)) {
+           word_start_m = (!pos && is_start) || !isalpha(str_match[pos_m-1]);
+           end_m = pos_m + w_sub.size();
+           word_end_m = (end_m == len_m) || (end_m < len_m && !isalphs[end_m]);
+           // if don't care or is a whole word match
+           if (!constraint.GetWhole_word() || ( word_end_m && word_start_m) ) {
+             if ( (*it)->CanGetSynonyms()) {
+                ITERATE (list <string>, sit, (*it)->GetSynonyms()) {
+                  s_sub = *sit;
+                  if ( !s_sub.empty() ) {
+                     if (!CaseNCompare(s_sub, str.substr(pos_s), s_sub.size(), ig_case)){
+                        word_start_s = (!pos_s && is_start) || !isalphs(str[pos_s-1]);
+                        end_s = pos_s + s_sub.size();
+                        word_end_s = (end_s == len_s) 
+                                          || (end_s < len_s && !isalphs(str[pos_s-1]);
+                        if (!constraint.GetWhole_word() || (word_end_s && word_start_s)){
+                           if (AdvancedStringCompare(end_s, end_m, constraint, 
+                                     word_start_m && word_start_s, &target_match_len)) {
+                              recursive_match = true;
+                           }
+                        }
+                     }
+                  }
+                }
+             }
+             else {
+                if (AdvancedStringCompare(str, end_m, constraint, word_start_m, 
+                                                                    target_march_len) ) 
+                         recursive_match = true;
+             }
+           }
+       }
+      }
+    }
+
+    if (!recursive_match) {
+      if (!CaseNCompare(pos_m, pos_s, 1, ig_case)) {
+           pos_m++;
+           pos_s++;
+           target_match_len++;
+      } 
+      else if (ig_space && (isspace (str_match[pos_m]) || isspace (str[pos_s]))) {
+        if (isspace (str_match[pos_m])) cp_m++;
+        if (isspace (str[pos_s])) {
+             cp_s++;
+             target_match_len++;
+        }
+      else if (ig_punct && (ispunct (str_match[pos_m]) || ispunct (str[pos_s]))) {
+        if (ispunct (str_match[pos_m])) cp_m++;
+        if (ispunct (str[pos_s])) {
+             cp_s++;
+             target_match_len++;
+        }
+      else match = false;
+    }
+  }
+
+  if (match && !recursive_match) {
+    while ((ig_space && isspace (str[pos_s])) || (ig_punct && ispunct (str[pos_s]))) {
+         cp_s++;
+         target_match_len++;
+    }
+    while ((ig_space && isspace (str_match[pos_m])) 
+                                     || (ig_punct && ispunct (str_match[pos_m))) 
+         pos_m++;
+
+    if (pos_m <len) match = false;
+    else if ( (loc==String_location_ends || loc==String_location_equals) && pos_s <len_s)
+             match = false;
+    else if (constraint.GetWhole_word() && (!is_start || isalpha (str[pos_s]))) 
+             match = false;
+  }
+  if (match && p_target_match_len != NULL) {
+    (*p_target_match_len) += target_match_len;
+  }
+
+  return match;
+};
+
+bool CBioseqTestAndRepData :: AdvancedStringMatch(const string& str, const CString_constraint& constraint)
+{
+  Boolean rval = false;
+
+  if (AdvancedStringCompare (str, scp->match_text, scp, true)) return true;
+  else if (constraint.GetMatch_location() == eString_location_starts 
+                           || constraint.GetMatch_location() == String_location_equals) 
            return false;
-     else if (!(str_cons.CanGetMatch_text()) || str_cons.GetMatch_text().empty()) return true;
+  else {
+    size_t pos = 1;
+    unsigned len = str.size();
+    while (!rval && pos < len)) {
+      if (constraint.GetWhole_word) 
+          while (pos < len && isalpha (str[pos-1])) pos++;
+      if (pos < len) {
+        if (AdvancedStringCompare (str.substr(pos), constraint.GetMatch_text(), 
+                                                                    constraint,true))
+                rval = true;
+        else pos++;
+      }
+    }
+  }
+  return rval;
+};
+
+string CBioseqTestAndRepData :: StripUnimportantCharacters(const string& str, bool strip_space, Boolean strip_punct)
+{
+   if (strip_space) replace_if(str.begin(), str.end(), isspace, ""); 
+   if (strip_punct) replace_if(str.begin(), str.end(), ispunct, "");
+******
+   if (strip_space && strip_punct) {
+      CRegextUtil rxu(str);
+      string pattern("[[:^alnum:]]+");
+      rxu.Replace(pattern, "");
+      return (rxu.GetResult());
+   }
+   else if (strip_space) replace_if(str.begin(), str.end(), isspace, ""); 
+   else replace_if(str.begin(), str.end(), ispunct, "");  // strip_punct
+******
+};
+
+bool CBioseqTestAndRepData :: DisallowCharacter(const string& ch, bool disallow_slash)
+{
+  if (isalpha (ch[0]) || isdigit (ch[0]) || ch[0] == '_' || ch[0] == '-') return true;
+  else if (disallow_slash && ch[0] == '/') return true;
+  else return false;
+};
+
+bool CBioseqTestAndRepData :: IsWholeWordMatch(const string& start, const size_t& found, const unsigned& match_len, bool disallow_slash = false) // ####
+{
+  bool rval = true;
+  unsigned after_idx;
+
+  if (!match_len) rval = true;
+  else if (start.empty() || found.empty()) rval = false;
+  else
+  {
+    if (found) {
+      if (DisallowCharacter (start[found-1], disallow_slash)) return false;
+    }
+    after_idx = found + match_len;
+    if ( after_idx < start.size() && DisallowCharacter(start[after_idx], disallow_slash)) rval = false;
+  }
+  return rval;
+};
+
+bool CBioseqTestAndRepData :: GetSpanFromHyphenInString(const string& str, const size_t& hyphen, string& first, string& second)
+{
+   if (!hyphen) return false;
+
+   // find range start //
+   size_t cp = str.substr(0, hyphen-1).find_last_not_of(' ');   
+   if (cp != string::npos) cp = str.substr(0, cp).find_last_not_of(" ,;"); 
+   if (cp == string::npos) cp = 0;
+
+   len = hyphen - cp;
+   first = NStr::TruncSpaces(str.substr(cp, len));
+ 
+   // find range end //
+   cp = str.find_first_not_of(' ', hyphen+1);
+   if (cp != string::npos) cp = str.find_first_not_of(" ,;");
+   if (cp == string::npos) cp = str.size() -1;   
+
+   len = cp - hyphen;
+   if (!isspace (*cp)) len--;
+   second = NStr::TruncateSpaces(str.substr(hyphen+1, len));
+
+   rval = true;
+   if (first.empty() || second.empty()) rval = false;
+   else if (!isdigit (first[first.size() - 1]) || !isdigit (second[second.size() - 1])) {
+    // if this is a span, then neither end point can end with anything other than a number //
+    rval = false;
+   }
+   if (!rval) first = second = "";
+   return rval;
+};
+
+static string digit_str("0123456789");
+static string alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+bool CBioseqTestAndRepData :: StringIsPositiveAllDigits(const string& str)
+{
+   if (str.find_first_not_of(digit_str) != string::npos) return false;
+   else return true;
+};
+
+bool CBioseqTestAndRepData :: IsStringInSpan(const string& str, const string& first, const string& second)
+{
+  string new_first, new_second, new_str;
+  if (str.empty()) return false;
+  else if (str == first || str = second) return true;
+  else if (first.empty() || second.empty()) return false;
+
+  if (StringIsPositiveAllDigits (first)) {
+    if (StringIsPositiveAllDigits (str) && StringIsPositiveAllDigits (second)) {
+      str_num = NStr::StringToUInt (str);
+      first_num = NStr::StringToUInt (first);
+      second_num = NStr::StringToUInt (second);
+      if ((str_num > first_num && str_num < second_num)
+                            || (str_num > second_num && str_num < first_num))
+          rval = true;
+     
+    }
+  } 
+  else if (StringIsPositiveAllDigits(second)) {
+    prefix_len = first.find_first_of(digit_str) + 1;
+
+    new_str = str.substr(prefix_len - 1);
+    new_first = first.substr(prefix_len - 1);
+    if (NStr::EqualCase(str, first, 0, prefix_len)
+        && StringIsPositiveAllDigits (new_str)
+        && StringIsPositiveAllDigits (new_first)) {
+      first_num = NStr::StringToUInt(new_first);
+      second_num = NStr::StringToUInt (second);
+      str_num = NStr::StringToUInt (str);
+      if ((str_num > first_num && str_num < second_num)
+                 || (str_num > second_num && str_num < first_num))
+        rval = true;
+    }
+  } 
+  else {
+    // determine length of prefix //
+    prefix_len = 0;
+    while (prefix_len < first.size() && prefix_len < second.size() 
+              && first[prefix_len] == second[prefix_len])
+       prefix_len ++;
+    prefix_len ++;
+
+    if (prefix_len <= first.size() && prefix_len <= second.size()
+        && isdigit (first[prefix_len-1]) && isdigit (second[prefix_len-1])
+        && NStr::EqualCase(str, first, 0, prefix_len)) {
+      new_first = first.substr(prefix_len);
+      new_second = second.substr(prefix_len);
+      new_str = str.substr(prefix_len);
+      if (StringIsPositiveAllDigits (new_first) && StringIsPositiveAllDigits (new_second) 
+                   && StringIsPositiveAllDigits (new_str)) {
+        first_num = NStr::StringToUInt(new_first);
+        second_num = NStr::StringToUInt (new_second);
+        str_num = NStr::StringToUInt (new_str);
+        if ((str_num > first_num && str_num < second_num)
+            || (str_num > second_num && str_num < first_num)) {
+          rval = true;
+        }
+      } else {
+        // determine whether there is a suffix //
+        size_t idx1, idx2, idx_str;
+        idx1 = first.find_first_not_of(digit_str);
+        suf1 = first.substr(prefix_len + idx1);
+        idx2 = second.find_first_not_of(digit_str);
+        suf2 = second.substr(prefix_len + idx2);
+        idx_str = str.find_first_not_of(digit_str);
+        sub_str = str.substr(prefix_len + idx_str);
+        if (suf1 == suf2 && suf1 == suf_str) {
+          // suffixes match //
+          first_num = NStr::StringToUInt(first.substr(prefix_len, idx1));
+          second_num = NStr::StringToUInt(second.substr(prefix_len, idx2));
+          str_num = NStr::StringToUInt(str.substr(prefix_len, idx_str));
+          if ((str_num > first_num && str_num < second_num)
+                           || (str_num > second_num && str_num < first_num)) {
+            rval = true;
+          }
+        }
+      }
+    }
+  }
+  return rval;
+};
+
+bool CBioseqTestAndRepData :: IsStringInSpanInList (const string& str, const string& list)
+{
+  if (list.empty() || str.empty()) return false;
+
+  size_t idx = str.find_first_not_of(alpha_str);
+  if (idx == string::npos) return false;
+
+  size_t num_start = idx;
+  idx = str.substr(idx).find_first_not_of(digit_str);
+
+  suffix_len = str.size() - num_start - idx - 1;
+
+  str_val = NStr::StringToUInt(str.substr(num_start, idx));
+
+  // find ranges //
+  size_t hyphen = list.find('-');
+  while (hyphen != string::npos && !rval) {
+    if (!hyphen) hyphen = list.substr(1).find('-');
+    else {
+      if (GetSpanFromHyphenInString (list, hyphen, range_start, range_end)) {
+        if (IsStringInSpan (str, range_start, range_end)) rval = true;
+      }
+      hyphen = list.find('-', hyphen + 1);
+    }
+  }
+  
+  return rval;
+  
+};
+
+bool CBioseqTestAndRepData :: DoesSingleStringMatchConstraint(const string& str, const CString_constraint* str_cons)
+{
+  bool rval;
+  string tmp_match;
+  CStrain_constraint tmp_constr;
+
+  if (str.empty()) return false;
+  if (!str_cons) return true;
+  if (IsStringConstraintEmpty(str_cons)) rval = true;
+  else {
+    if (str_cons->GetIgnore_weasel()) str = SkipWeasel(str);
+
+    if (str_cons->GetIs_all_caps() && !IsAllCaps(str)) rval = false;
+    else if (str_cons->GetIs_all_lower && !IsAllLowerCase(str)) rval = false;
+    else if (str_cons->GetIs_all_punct && !IsAllPunctuation(str)) rval = false;
+    else if (!str_cons->CanGetMatch_text() || str_cons->GetMatch_text().empty()) 
+        rval = true; 
+    else {
+      strtmp = Blob2Str(str_cons);
+      Str2Blob(strtmp, tmp_constr);
+      tmp_match = tmp_constr.GetMatch_text();
+      if (str_cons->GetIgnore_weasel) 
+            tmp_constr.SetMatch_text(SkipWeasel(str_cons->GetMatch_text()));
+      if ((str_cons->GetMatch_location != eString_location_inlist) 
+                                     && str_cons->CanGetIgnore_words()){
+          tmp_constr.SetMatch_text(tmp_match);
+          rval = AdvancedStringMatch(str, tmp_constr);
+      }
+      else {
+        string search(str), pattern(tmp_constr.GetMatch_text());
+        if (str_cons->GetMatch_location() != eString_location_inlist 
+              && (str_cons->GetIgnore_space() || str_cons.GetIgnore_punct())) {
+           StripUnimportantCharacters (search, str_cons->GetIgnore_space(), 
+                                                        str_cons->GetIgnore_punct());
+           StripUnimportantCharacters (pattern, str_cons->GetIgnore_space(), 
+                                                        str_cons->GetIgnore_punct());
+        } 
+
+        if (str_cons->GetCase_sensitive()) pFound = search.find(pattern);
+        else pFound = NStr::FindNoCase(search, pattern);
+        switch (str_cons->GetMatch_location()) 
+        {
+          case eString_location_contains:
+            if (string::npos == pFound) rval = false;
+            else if (str_cons->GetWhole_word()) 
+            {
+                rval = IsWholeWordMatch (search, pFound, pattern.size());
+                while (!rval && pFound != string::npos) 
+                {
+	           if (str_cons->GetCase_sensitive()) 
+                           pFound = search.substr(pFound+1).find(patten);
+	           else pFound = NStr::FindNoCase(search.substr(pFound+1), pattern);
+                   if (pFound != string::npos)
+                       rval = IsWholeWordMatch (search, pFound, pattern.size());
+                }
+            }
+            else rval = true;
+            break;
+          case eString_location_starts:
+            if (pFound == search) {
+              if (str_cons->GetWhole_word()) 
+                  rval = IsWholeWordMatch (search, pFound, pattern.size());
+              else rval = true;
+            }
+            break;
+          case eString_location_ends:
+            while (pFound != string::npos && !rval) {
+        	    char_after = *(pFound + StringLen (pattern));
+              if ( (pFound + pattern.size()) == search.size()) {
+                if (str_cons->GetWhole_word()) 
+                    rval = IsWholeWordMatch (search, pFound, pattern.size());
+                else rval = true;
+                // stop the search, we're at the end of the string //
+                pFound = string::npos;
+              }
+              else {
+  	        if (str_cons->GetCase_sensitive()) 
+                             pFound = search.substr(pFound+1).find(pattern);
+	        else pFound = NStr::FindNoCase(search.substr(pFound + 1), pattern);
+              }
+            }
+            break;
+          case eString_location_equals:
+            if (str_cons.GetCase_sensitive() && (search==pattern) ) rval= true; 
+            else if (!str_cons.GetCase_sensitive() 
+                            && !NStr::CompareNocase(search, pattern) ) rval = true;
+            break;
+          case eString_location_inlist:
+            if (str_cons.GetCase_sensitive()) pFound = pattern.find(search);
+            else pFound = NStr::FinNoCase(pattern, search);
+            if (pFound == string::npos) rval = false;
+            else {
+              rval = IsWholeWordMatch(pattern, pFound, search.size(), true);
+              while (!rval && pFound != string::npos) 
+              {
+                if (str_cons.GetCase_sensitive())
+                     pFound = pattern.substr(pFound + 1).find(search);
+                else pFound = NStr::FindNoCase(pattern.substr(pFound + 1), search);
+                if (pFound != string::npos)
+                    rval = IsWholeWordMatch (pattern, pFound, str.size(), true);
+              }
+            }
+            if (!rval) {
+              // look for spans //
+              rval = IsStringInSpanInList (search, pattern);
+            }
+            break;
+        }
+      }
+    }
+  }
+  return rval;
+};
+
+bool CBioseqTestAndRepData :: DoesStringMatchConstraint(const string& str, const CString_constraint* constraint)
+{
+  if (str.empty()) return false;
+  if (!constraint) return true;
+  bool rval = DoesSingleStringMatchConstraint (str, constraint);
+  if (constraint->GetNot_present()) return (!rval);
+  else return rval;
+};
+
+bool CBioseqTestAndRepData :: StringMayContainPlural(const string& str)
+{
+  char    last_letter, second_to_last_letter, next_letter;
+  unsigned    word_len = 0;
+  bool may_contain_plural = false;
+  string word_skip = " ,";
+
+  if (str.empty()) return false;
+  search = str;
+  while (*cp != 0 && !may_contain_plural) {
+    word_len = search.find_first_of(" ,");
+    last_letter = search[word_len -1];
+    secode_to_last_letter = search[word_len -2];
+    next_letter = word_len < search.size() ? 
+                    search[word_len] : "";
+    if (last_letter == 's') {
+      if (word_len >=5 && NStr::EqualCase(search.substr(word_len-5, "trans", 0, 5))) {
+        // not plural //
+        search = search.substr(word_len);
+        search = search.substr(search.find_first_not_of(word_skip));
+      } else if (word_len > 3
+                 && second_to_last_letter != 's'
+                 && second_to_last_letter != 'i'
+                 && second_to_last_letter != 'u'
+                 && (next_letter == ',' || next_letter == "")) {
+        may_contain_plural = true;
+      } else {
+        search = search.substr(word_len);
+        search = search.substr(search.find_first_not_of(word_skip));
+      }
+    } else {
+      search = search.substr(word_len);
+      search = search.substr(search.find_first_not_of(word_skip));
+    }
+  }
+  return may_contain_plural;
+};
+
+char CBioseqTestAndRepData :: GetClose(char bp)
+{
+  if (bp == '(') return ')';
+  else if (bp == '[') return ']';
+  else if (bp == '{') return '}';
+  else return bp;
+};
+
+bool CBioseqTestAndRepData :: SkipBracketOrParen(const unsigned& idx, string& start)
+{
+  bool rval = false;
+  CharPtr ep, ns;
+  unsigned skip_len;
+  
+
+  if (idx > 2 && start.substr(idx-3, 6) == "NAD(P)") {
+     rval = true;
+     start = start.substr(idx + 3);
+  } 
+  else {
+     unsigned len;
+     ITERATE (vector <string>, it, thisInfo.skip_braket_paren) {
+       len = (*it).size();
+       if (start.substr(idx, len) == *it) {
+         start = start.substr(idx + len);
+         rval = true;
+         break;
+       }
+     }
+     if (!rval) {
+       ns = start.find(start[idx], idx+1);
+       ep = start.find(GetClose(start[idx]), idx+1);
+       if (ep != string::npos && (ns == string::npos || ns > ep)) {
+         if (ep - idx < 5) {
+           rval = true;
+           start = start.substr(ep+1);
+         } 
+         else if (ep - idx > 3 && start.substr(ep - 3, 3) == "ing") {
+           rval = true;
+           start = start.substr(ep + 1);
+         }
+       }
+     }
+  }
+  return rval;
+};
+
+bool CBioseqTestAndRepData :: ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n)
+{
+  size_t idx, end;
+  unsigned num_found = 0;
+  string open_bp("([");
+
+  if (search.empty()) return false;
+
+  size_t idx = search.find_first_of(open_bp);
+  while (idx != string::npos && num_found < n) {
+     end = search.find(GetClose(search[idx]), idx);
+     if (SkipBracketOrParen (idx, search)) { // ignore it
+         idx = search.find_first_of(open_bp, idx+1);
+     }
+     else if (end == string::npos) { // skip, doesn't close the bracket
+         idx = search.find_first_of(open_bp, idx+1);
+     }
+     else {
+         idx = search.find_first_of(open_bp, end);
+         num_found++;
+     }
+  }
+ 
+  if (num_found >= n) return true;
+  else return false;
+};
+
+bool CBioseqTestAndRepData :: PrecededByPrefix (const string& search, const size_t& cp, const string& prefix)
+{
+  if (search.empty() || cp == string::npos || prefix.empty()) return false;
+  unsigned len = prefix.size();
+  if (cp >= len && search.substr(cp-len, len) == prefix) return true;
+  else return false;
+} 
+
+bool CBioseqTestAndRepData :: PrecededByOkPrefix (const string& search, const size_t& p)
+{
+  ITERATE (vector <string>, it, this_info.ok_num_prefix) {
+    if (PrecededByPrefix(search, p, *it)) return true;
+  }
+};
+
+bool CBioseqTestAndRepData :: InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start)
+{
+  if (cp == string::npos) return false;
+  while (cp && !isspace(start[cp]) cp--;
+  if (!cp) return false;
+  while (cp && isspace(start[cp])) cp--;
+  if (cp >= 9 && start.substr(cp-9, 10) == "cytochrome") return true;
+  else if (cp >= 7 && start.substr(cp-7, 8) == "coenzyme") return true;
+  else return false;
+};
+
+bool CBioseqTestAndRepData :: FollowedByFamily(const string& str, size_t& p)
+{
+  Int4 word_len;
+
+  if (p == string::npos || p >= str.size()) return false;
+
+  word_len = str.substr(p+1).find_first_of (" ");
+  if (p + word_len + 1 < str.size() && str.substr(p+word_len+2, 6) == "family") {
+     p = p + word_len + 7;
+     return true;
+  }
+  return false;
+};
+
+bool CBioseqTestAndRepData :: ContainsThreeOrMoreNumbersTogether(const string& search)
+{
+  size_t p=0;
+  unsigned num_digits = 0;
+
+  while (p < search.size()) {
+    if (isdigit (search[p])) {
+      if (PrecededByOkPrefix(search, p)
+             || InWordBeforeCytochromeOrCoenzyme (p, search)) {
+        p += search.substr(p).find_first_not_of(digit_str) - 1;
+        num_digits = 0;
+      } 
+      else {
+        num_digits ++;
+        if (num_digits == 3) {
+          if (FollowedByFamily (search, &p)) num_digits = 0;
+          else return true;
+        }
+      }
+    } 
+    else num_digits = 0;
+    p++;
+  }
+  return false;
+};
+
+bool CBioseqTestAndRepData :: StringContainsUnderscore(const string& search)
+{
+  size_t cp = search.find('_');
+  while (cp != string::npos) {
+    if (FollowedByFamily (search, cp)) 
+               cp = search.find('_', cp); // search again //
+    else if (cp < 3 || cp == search.size() - 1) return true;
+    else {
+      strtmp = search.substr(cp-3, 3);
+      if ((strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA")
+                && isdigit (search[cp + 1]) && !isdigit (search[cp + 2])) {
+         cp = search.find('_', cp + 1);
+      } 
+      else return true;
+    }
+  }
+  return false;
+};
+
+bool CBioseqTestAndRepData :: IsPrefixPlusNumbers(const string& prefix, const string& search)
+{
+  unsigned pattern_len, digit_len;
+
+  pattern_len = prefix.size();
+  if (pattern_len > 0 && !NStr::EqualCase(search, prefix, 0, pattern_len)) return false;
+
+  digit_len = search.substr(search + pattern_len).find_first_not_of(digit_str);
+  if (digit_len > 0 && (pattern_len + digit_len) == search.size()) return true;
+  else return false;
+};
+
+bool CBioseqTestAndRepData :: IsPropClose(const string& str, char open_p)
+{
+   if (str.empty()) return false;
+   else if (str[str.size()-1] != open_p) return false;
+   else return true;
+};
+
+bool CBioseqTestAndRepData :: StringContainsUnbalancedParentheses(const string& search)
+{
+  size_t pos = 0;
+  char ch_src;
+  strtmp = "";
+  while (pos < search.size()) {
+     ch_src = search[pos];
+     if (ch_src == '(' || ch_src == '[') strtmp += ch_src;
+     else if (ch_src == ')') {
+         if (!IsPropClose(strtmp, '(')) return true;
+         else strtmp = strtmp.substr(0, strtmp.size()-1);
+     }
+     else if (ch_arc == ']') {
+        if (!IsPropClose(strtmp, '[')) return true;
+        else strtmp = strtmp.substr(0, strtmp.size()-1);
+     }
+     pos ++;
+  }
+
+  return false;
+};
+
+bool CBioseqTestAndRepData :: ProductContainsTerm(CharPtr pattern, CharPtr search)
+{
+  // don't bother searching for c-term or n-term if product name contains "domain" //
+  if (NStr::FindNoCase(search, "domain") != string::npos) return false;
+
+  size_t pos = NStr::FindNoCase(search, pattern);
+  // c-term and n-term must be either first word or separated from other word by space, num, or punct //
+  if (pos != string::npos && (!pos || !isalpha (search[pos-1]))) return true;
+  else return false;
+};
+
+bool CBioseqTestAndRepData :: MatchesSearchFunc(const string& str, const CSearch_func& func)
+{
+   if (str.empty()) return false;
+   switch (func.Which()){
+      case CSearch_func::e_String_constraint:
+         return DoesStringMatchConstraint(str, &(func.GetString_constraint()));
+      case CSearch_func::e_Contains_plural:
+         return StringMayContainPlural (str);
+      case  CSearch_func::e_N_or_more_brackets_or_parentheses:
+         return ContainsNorMoreSetsOfBracketsOrParentheses(str, 
+                                           func.GetN_or_more_brackets_or_parentheses());
+      case CSearch_func::e_Three_numbers:
+         return ContainsThreeOrMoreNumbersTogether (str);
+      case CSearch_func::e_Underscore:
+         return StringContainsUnderscore (str);
+      case CSearch_func::e_Prefix_and_numbers:
+         return IsPrefixPlusNumbers (func.GetPrefix_and_numbers(), str);
+      case CSearch_func::e_All_caps:
+         return IsAllCaps (str);
+      case CSearch_func::e_Unbalanced_paren:
+         return StringContainsUnbalancedParentheses (str);
+      case CSearch_func::e_Too_long:
+         if (NStr::FindNoCase (str, "bifunctional") == string::npos 
+                  && NStr::FindNoCase (str, "multifunctional") == string::npos
+                  && str.size() > (unsigned) func.GetToo_long()) {
+            return true;
+         }
+         else return false;
+      case CSearch_func::e_Has_term:
+         return ProductContainsTerm (func.GetHas_term(), str);
+  }
+  return false; 
+};
+
+bool CBioseqTestAndRepData :: DoesObjectMatchStringConstraint(const CBioSource& biosrc, const CString_constraint& str_cons)
+{
+   return DoesSingleStringMatchConstraint(Blob2Str(biosrc), str_cons);
+};
+
+bool CBioseqTestAndRepData :: DoesObjectMatchStringConstraint(const CGPSetData& cgp, const CString_constraint& str_cons)
+{
+  // needed? if (scp == NULL) return TRUE;
+
+  // CDS-Gene-Prot set //
+  bool all_match = true, any_match = false;
+  if (cgp.gene && DoesObjectMatchStringConstraint ( *cgp.gene, str_cons, 
+                            GetBioseqFromSeqLoc(cgp.gene->GetLocation(), *thisInfo.scope)) 
+        any_match = true;
+  else any_match = false;
+  if (cgp.cds && (!any_match || all_match)) {
+      if (DoesObjectMatchStringConstraint( *cgp.cgs, str_cons, 
+                              GetBioseqFromSeqLoc(cgp.cds->GetLocation(), *thisInfo.scope)))
+           any_match = true;
+      else all_match = false;
+  }
+  if (cgp.mrna && (!any_match || all_match)) {
+      if (DoesObjectMatchStringConstraint( *cgp.mrna, str_cons, 
+                   GetBioseqFromSeqLoc(cgp.mrna->GetLocation(), *thisInfo.scope)))
+          any_match = true;
+      else all_match = FALSE;
+  }
+  if (cgp.prot  && (!any_match || all_match)) {
+      if (DoesObjectMatchStringConstraint( *cgp.prot, str_cons, 
+                             GetBioseqFromSeqLoc(cgp.prot->GetLocation(), *thisInfo.scope))) 
+             any_match = true;
+      else all_match = FALSE;
+  }
+  if (!any_match || all_match) {
+     ITERATE (vector <CSeq_feat*>, it, cgp.mat_peptide_list) {
+        if (DoesObjectMatchStringConstraint(
+                 **it, str_cons, GetBioseqFromSeqLoc((*it)->GetLocation(), *thisInfo.scope)))
+              any_match = true;
+        else all_match = false;
+        if (any_match && !all_match) break;
+     }
+  }
+
+  if (str_cons->GetNot_present()) return all_match;
+  else return = any_match;
+};
+
+bool CBioseqTestAndRepData :: DoesObjectMatchStringConstraint(const CSeq_feat& feat, const CString_constraint& str_cons, const CBioseq_Handle& bioseq_hl)
+{
+   bool rval 
+          = DoesSingleStringMatchConstraint(Blob2Str(feat), str_cons);  // check Asn.1 string
+   if (!rval) {
+     switch (feat.GetData().Which())
+     {
+       case CSeqFeatData::e_Cdregion: 
+         {
+            const CSeq_feat* prot_feat = GetProtForProduct(bioseq_hl);
+            if (prot_feat)
+               rval = DoesSingleStringMatchConstraint(Blob2Str(feat), str_cons);
+         }
+         break;
+       case CSeqFeatData::e_RNA:
+         {
+           if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+             string label;
+             GetSeqFeatLabel(feat, label);
+             rval = DoesSingleStringMatchConstraint(label, str_cons);
+             if (!rval) {
+               strtmp = "tRNA-" + label;
+               rval = DoesSingleStringMatchConstraint(strtmp, str_cons);
+             }
+           }
+         }
+         break;
+       case CSeqFeatData::e_IMP:
+         rval = DoesSingleStringMatchConstraint(feat.GetData().GetImp().GetKey(), str_cons);
+         break;
+       default: break;
+     }
+   }
+   if (str_cons.GetNot_present()) rval = !rval;
+   return rval;
+};
+
+bool CBioseqTestAndRepData :: IsLocationConstraintEmpty(const CLocation_constraint& loc_cons)
+{
+  if (loc_cons.GetStrand() != eStrand_constraint_any
+          || loc_cons.GetSeq_type() != eSeqtype_constraint_any
+          || loc_cons.GetPartial5() != ePartial_constraint_either
+          || loc_cons.GetPartial3() != ePartial_constraint_either)
+          || loc_cons.GetLocation_type() != eLocation_type_constraint_any)
+          || (loc_cons.CanGetEnd5() 
+                && loc_cons.GetEnd5().Which() != CLocation_pos_constraint::e_not_set)
+          || (loc_cons.CanGetEnd3()
+                && loc_cons.GetEnd3().Which() != CLocation_pos_constraint::e_not_set)) {
+    return false;
+  }
+  else return rval;
+};
+
+bool CBioseqTestAndRepData :: DoesStrandMatchConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons)
+{
+  if (loc.Which() == CSeq_loc::e_not_set) return false;
+  if (loc_cons.GetStrand() == eStrand_constraint_any) return true;
+
+  if (loc.GetStrand() == eNa_strand_minus) {
+      if (loc_cons.GetStrand() == eStrand_constraint_minus) return true;
+      else return false;
+  }
+  else {
+     if (loc_cons.GetStrand() == eStrand_constraint_plus) return true;
      else return false;
   }
-  else if (func.IsPrefix_and_numbers()) {
-      if (func.GetPrefix_and_numbers().empty()) return true;
-      else return false;
+};
+
+bool CBioseqTestAndRepData :: DoesBioseqMatchSequenceType(const CBioseq& bioseq, const ESeqtype_constraint& seq_type)
+{
+  if (seq_type == eSeqtype_constraint_any
+        || (bioseq.IsNa() && seq_type == eSeqtype_constraint_nuc)
+        || (bioseq.IsAa() && seq_type == eSeqtype_constraint_prot) {
+      return true;
   }
   else return false;
 };
 
+bool CBioseqTestAndRepData :: DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons)
+{
+  Boolean rval = FALSE;
+  Boolean partial5, partial3;
 
-// CBioseq
+  partial5 = loc.IsPartialStart(eExtreme_Biological);
+  partial3 = loc.IsPartialStop(eExtreme_Biological);
+  if ( (loc_cons.GetPartial5() == ePartial_constraint_partial && !partial5) 
+         || (loc_cons.GetPartial5() == ePartial_constraint_complete && partial5)
+         || (loc_cons.GetPartial3() == ePartial_constraint_partial && !partial3) 
+         || (loc_cons.GetPartial3() == ePartial_constraint_complete && partial3) ) { 
+       return false;
+    }
+    else return true;
+};
+
+bool CBioseqTestAndRepData :: DoesLocationMatchTypeConstraint(const CSeq_feat& feat, const CLocation_constraint& loc_cons)
+{
+  bool rval = FALSE, has_null = FALSE;
+  Int4    num_intervals = 0;
+
+  if (loc_cons.GetLocation_type() == eLocation_type_constraint_any) return true;
+  else 
+  {
+    for (CSeq_loc_CI sl_ci(feat.GetLocation()); sl_ci; ++ sl_ci) {
+       if (sl_ci.GetEmbeddingSet_loc().Which() == CSeq_loc::e_NULL) has_null = true;
+       else if (!sl_ci.IsEmpty()) num_intervals ++;
+    }
+
+    if (loc_cons.GetLocation_type() == eLocation_type_constraint_single_interval)
+    {
+      if (num_intervals == 1) return true;
+    }
+    else if (loc_cons.GetLocation_type() == eLocation_type_constraint_joined)
+    {
+      if (num_intervals > 1 && !has_null) return true;
+    } 
+    else if (loc_cons.GetLocation_type() == eLocation_type_constraint_ordered)
+    {
+      if (num_intervals > 1 && has_null) return true;
+    } 
+  }
+};
+
+bool CBioseqTestAndRepData :: DoesPositionMatchEndConstraint(int pos, const CLocation_pos_constraint& lp_cons)
+{
+   switch (lp_cons.Which())
+   {
+      case CLocation_pos_constraint:: e_Dist_from_end:
+            if (pos != lp_cons.GetDisc_from_end()) return false;
+            break;
+      case CLocation_pos_constraint:: e_Max_dist_from_end:
+            if (pos > lp_cons.GetMax_dist_from_end()) return false;
+            break;
+      case CLocation_pos_constraint:: e_Min_dist_from_end:
+            if (pos < lp_cons.GetMin_dist_from_end()) return false;
+            break;
+   } 
+   return true;
+};
+
+bool CBioseqTestAndRepData :: DoesLocationMatchDistanceConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons)
+{
+  Boolean   rval = TRUE;
+  Uint1     strand;
+  BioseqPtr bsp = NULL;
+
+  if (!loc_cons.CanGetEnd5() && !loc_cons.CanGetEnd3()) return true;
+
+  unsigned pos = loc.GetStop(eExtreme_Positional);
+  CBioseq_Handle 
+         bioseq_hl = GetBioseqFromSeqloc(loc, *thisInfo.scope);     
+  int pos2 = (bioseq_hl.IsSetInst_Length() ? bioseq_hl.GetInst_Length():0) - pos - 1;
+
+  if (loc.GetStrand() == eNa_strand_minus) 
+  {
+    if (loc_cons.CanGetEnd5()) {
+      if (bioseq_hl.GetCompletedBiose().Empty()) return false;
+      else {
+        if (!DoesPositionMatchEndConstraint(pos2, loc_cons.GetEnd5()) return false;
+      }
+    }
+    if (loc_cons.CanGetEnd3()) {
+    } return DoesPositionMatchEndConstraint(pos, loc_cons.GetEnd3();
+  }
+  else
+  {
+    if (loc_cons.CanGetEnd5()) 
+      if (!DoesPositionMatchEndConstraint(pos, loc_cons.GetEnd5())) return false;
+    if (loc_cons.CanGetEnd3()) {
+      if (bioseq_hl.GetCompletedBiose().Empty()) return false;
+      return DoesPositionMatchEndConstraint(pos2, loc_cons.GetEnd3());
+    }
+  }
+  return true;
+};
+
+bool CBioseqTestAndRepData :: DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, const CLocation_constraint& loc_cons, const CBioseq_Handle& bioseq_hl)
+{
+  if (IsLocationConstraintEmpty (loc_cons)) return true;
+
+  const CSeq_loc& feat_loc = feat.GetLocation();
+  if (loc_cons.GetStrand() != Strand_constraint_any) {
+    if (!bioseq_hl) return false;
+    else if (bioseq_hl.IsAa()) {
+      const CSeq_feat* cds = GetCDSForProduct(bioseq_hl);
+      if (!cds) return false;
+      else if (!DoesStrandMatchConstraint (cds->GetLocation(), loc_cons)) 
+        return false;
+    }
+    else if (!DoesStrandMatchConstraint (feat_loc, loc_cons))
+        return false;
+  }
+
+  if (!bioseq_hl
+      && !DoesBioseqMatchSequenceType(*(bioseq_hl.GetCompleteBioseq()),loc_cons.GetSeq_type()))
+     return false;
+
+  if (!DoesLocationMatchPartialnessConstraint (feat_loc, loc_cons)) return false;
+
+  if (!DoesLocationMatchTypeConstraint (feat_loc, loc_cons)) return false;
+
+  if (!DoesLocationMatchDistanceConstraint(feat_loc, loc_cons)) return false;
+
+  return true;
+};
+
+string CBioseqTestAndRepData :: GetQualName(ESource_qual src_qual)
+{
+   string qual_name = ENUM_METHOD_NAME(ESource_qual)()->FindName(src_qual, false); 
+   if (qual_name == "bio-material-INST") return("bio-material-inst");
+   else if (qual_name == "bio-material-COLL") return("bio-material-coll");
+   else if (qual_name == "bio-material-SpecID") return("bio-material-specid");
+   else if (qual_name == "common-name") return("common name");
+   else if (qual_name == "culture-collection-INST") return("culture-collection-inst");
+   else if (qual_name == "culture-collection-COLL") return("culture-collection-coll");
+   else if (qual_name == "culture-collection-SpecID") return("culture-collection-specid");
+   else if (qual_name == "orgmod-note") return("note-orgmod");
+   else if (qual_name == "nat-host") return("host");
+   else if (qual_name == "subsource-note") return("sub-species");
+   else if (qual_name == "all-notes") return("All Notes");
+   else if (qual_name == "all-quals") return("All");
+   else if (qual_name == "all-primers") return("All Primers");
+};
+
+bool CBioseqTestAndRepData :: IsSubsrcQual(ESource_qual src_qual)
+{
+   switch (src_qual) {
+     case eSource_qual_cell_line:
+     case eSource_qual_cell_type:
+     case eSource_qual_chromosome:
+     case eSource_qual_clone:
+     case eSource_qual_clone_lib:
+     case eSource_qual_collected_by:
+     case eSource_qual_collection_date:
+     case eSource_qual_country:
+     case eSource_qual_dev_stage:
+     case eSource_qual_endogenous_virus_name:
+     case eSource_qual_environmental_sample:
+     case eSource_qual_frequency:
+     case eSource_qual_fwd_primer_name:
+     case eSource_qual_fwd_primer_seq:
+     case eSource_qual_genotype:
+     case eSource_qual_germline:
+     case eSource_qual_haplotype:
+     case eSource_qual_identified_by:
+     case eSource_qual_insertion_seq_name:
+     case eSource_qual_isolation_source:
+     case eSource_qual_lab_host:
+     case eSource_qual_lat_lon:
+     case eSource_qual_map:
+     case eSource_qual_metagenomic:
+     case eSource_qual_plasmid_name:
+     case eSource_qual_plastid_name:
+     case eSource_qual_pop_variant:
+     case eSource_qual_rearranged:
+     case eSource_qual_rev_primer_name:
+     case eSource_qual_rev_primer_seq:
+     case eSource_qual_segment:
+     case eSource_qual_sex:
+     case eSource_qual_subclone:
+     case eSource_qual_subsource_note:
+     case eSource_qual_tissue_lib :
+     case eSource_qual_tissue_type:
+     case eSource_qual_transgenic:
+     case eSource_qual_transposon_name:
+     case eSource_qual_mating_type:
+     case eSource_qual_linkage_group:
+     case eSource_qual_haplogroup:
+     case eSource_qual_altitude:
+        return true;
+     default: return false;
+   }
+};
+
+bool CBioseqTestAndRepData :: GetNotTextqualSrcQualValue(const CBioSource& biosrc, const CString_constraint* constraint)
+{
+  string str(kEmptyStr);
+
+  switch (str_cons) {
+    case CSource_qual_choice: e_Location:
+      str = CBioSource::ENUM_METHOD_NAME(EGenome)()->FindName(
+                                         (CBioSource::EGenome)biosrc.GetGenome(), false);
+      if (str == "unknown") str = " "; // ????
+      else if (str == "extrachrom") str = "extrachromosomal";
+      if (constraint && !DoesStringMatchConstraint (str, *constraint)) str = kEmptyStr;
+      break;
+    case SourceQualChoice_origin:
+      str = CBioSource::ENUM_METHOD_NAME(EOrigin)()->FindName(
+                                               (CBioSource::EOrigin)biop->origin, false);
+      if (constraint && !DoesStringMatchConstraint (str, *constraint)) str = kEmptyStr;
+      break;
+    case SourceQualChoice_gcode:
+      if (biosrc.IsSetGcode() && biosrc.GetGcode()) str = NStr::IntToString(biosrc.GetGcode();
+      break;
+    case SourceQualChoice_mgcode:
+      if (biosrc.IsSetMgcode() && biosrc.GetMgcode()) 
+              str = NStr::IntToString(biosrc.GetMgcode());
+      break;
+  }
+  return str;
+};
+
+bool CBioseqTestAndRepData :: DoesObjectMatchFeatureFieldConstraint(const CSeq_feat& feat, const CFeature_field& feat_field, const CString_constraint& str_cons)
+{
+  if (IsStringConstraintEmpty (str_cons)) return true;
+  
+  CString_constraint tmp_cons;
+  strtmp = Blob2Str(str_cons);
+  Str2Blob(strtmp, tmp_cons);
+  tmp_cons.SetNot_present(false);
+  string str = GetQualFromFeature (data, feat_field, tmp_cons);
+  rval = str.empty() ? false : true;
+  if (str_cons.GetNot_present()) rval = !rval;
+  return rval;
+};
+*/
+
+/* other version, if necessary
+bool CBioseqTestAndRepData :: DoesObjectMatchFeatureFieldConstraint(const CSeq_desc& dest, ...
+    case OBJ_SEQDESC:
+    case OBJ_BIOSEQ:
+      bsp = GetSequenceForObject (choice, data);
+      if (bsp != NULL) {
+        subtype = GetFeatdefFromFeatureType (ffp->type);
+        not_present = string_constraint->not_present;
+        string_constraint->not_present = FALSE;
+        for (sfp = SeqMgrGetNextFeature (bsp, NULL, 0, subtype, &fcontext);
+              !rval && sfp != NULL;
+              sfp = SeqMgrGetNextFeature (bsp, sfp, 0, subtype, &fcontext)) {
+          str = GetQualFromFeature (sfp, ffp, string_constraint);
+          if (str != NULL) {
+            rval = TRUE;
+            str = MemFree (str);
+          }
+        }
+        if (not_present) {
+          rval = !rval;
+          string_constraint->not_present = TRUE;
+        }
+      }
+      break;
+    case 0:
+      cgp = (CGPSetPtr) data;
+      cds_gene_prot_field = CDSGeneProtFieldFromFeatureField (ffp);
+      if (cds_gene_prot_field > 0) {
+        not_present = string_constraint->not_present;
+        string_constraint->not_present = FALSE;
+        str = GetFieldValueFromCGPSet (cgp, cds_gene_prot_field, string_constraint);
+        if (str != NULL) {
+          rval = TRUE;
+          str = MemFree (str);
+        }
+        if (not_present) {
+          rval = !rval;
+          string_constraint->not_present = TRUE;
+        }
+      }
+      break;
+  }
+  return rval;
+};
+*/
+
+/* rm
+bool CBioseqTestAndRepData :: DoesFeatureMatchRnaType(const CSeq_feat& seq_feat, const CRna_feat_type& rna_type)
+{
+  bool rval = false;
+  if (rna_type.IsAny()) return true;
+  const CRNA_ref& rna_ref = seq_feat.GetData().GetRna();
+
+  if (rna_ref.GetType() == thisInfo.rnafeattp_rnareftp[rna_type.Which()]) {
+    switch (rna_type.Which()) {
+      case CRna_feat_type::e_NcRNA:
+        if (rna_type.GetNcRNA().empty()) rval = true;
+        else if (rna_ref.CanGetExt() && rna_ref.GetExt().IsGen()
+                     && rna_ref.GetExt().GetGen().CanGetClass()
+                     && rna_ref.GetExt().GetGen().GetClass() == rna_type.GetNcRNA())
+                rval = TRUE;
+        break;
+      case CRNA_ref::eType_tmRNA:
+        rval = TRUE;
+        break;
+      case RnaFeatType_miscRNA:
+        rval = TRUE;
+        break;
+      default:
+        rval = TRUE;
+        break;
+    }
+  }
+  return rval;
+};
+
+
+
+string CBioseqTestAndRepData :: GetRNAQualFromFeature(const CSeq_feat& seq_feat, const CRna_qual& rna_qual, const CString_constraint& str_cons)
+{
+   if (!seq_feat.GetData().IsRna() || !DoesFeatureMatchRnaType(seq_feat, rna_qual.GetType())) 
+           return kEmptyStr;
+   CFeat_qual_choice feat_qual;
+   feat_qual.SetLegal_qual(thisInfo.rnafield_featquallegal[rna_qual->GetField()]);
+   return GetQualFromFeatureAnyType (seq_feat, feat_qual, str_cons);
+};
+   
+bool CBioseqTestAndRepData :: DoesObjectMatchRnaQualConstraint (const CSeq_feat& seq_feat, const CRna_qual rna_qual, CString_constraint str_cons)
+{
+  bool           rval = FALSE;
+  string         str;
+
+  CString_constraint tmp_cons;
+  if (IsStringConstraintEmpty (str_cons)) return true;
+  strtmp = Blob2Str(constraint);
+  Str2Blob(strtmp, tmp_constr);
+  tmp_cons.SetNot_present(false);
+  str = GetRNAQualFromFeature (seq_feat, rna_qual, tmp_cons);
+  if (!str.empty()) rval = true;
+  if (str_cons.GetNot_present()) rval = !rval;
+  return rval;
+};
+
+DoesObjectMatchRnaQualConstraint (const CSeq_feat& seq_feat, const CRna_qual rna_qual, CString_constraint str_cons)
+    case OBJ_SEQDESC:
+    case OBJ_BIOSEQ:
+      bsp = GetSequenceForObject (choice, data);
+      if (bsp != NULL) {
+        if (rq->type == NULL || rq->type->choice == RnaFeatType_any) {
+          feat_choice = SEQFEAT_RNA;
+          subtype = 0;
+        } else {
+          feat_choice = 0;
+          subtype = GetFeatdefFromFeatureType(GetFeatureTypeForRnaType(rq->type->choice));
+        }
+        
+        not_present = string_constraint->not_present;
+        string_constraint->not_present = FALSE;
+        for (sfp = SeqMgrGetNextFeature (bsp, NULL, feat_choice, subtype, &fcontext);
+              !rval && sfp != NULL;
+              sfp = SeqMgrGetNextFeature (bsp, sfp, feat_choice, subtype, &fcontext)) {
+          str = GetRNAQualFromFeature (sfp, rq, string_constraint, NULL);
+          if (str != NULL) {
+            rval = TRUE;
+            str = MemFree (str);
+          }
+        }
+        if (not_present) {
+          rval = !rval;
+          string_constraint->not_present = TRUE;
+        }
+      }
+      break;
+  }
+  return rval;
+}
+
+string CBioseqTestAndRepData :: GetSequenceQualFromBioseq (const CBioseq_Handle& bioseq_hl, const CMolinfo_field& mol_field)
+{
+  if (seqdesc.Empty()) return kEmptyStr;
+  const CMolInfo* molinfo = GetMolinfo(bioseq_hl); // objmgr/util/sequence.hpp
+  string str(kEmptyStr);
+  switch (mol_field.Which()) {
+    case CMolinfo_field::e_Molecule:
+        str = CMolInfo::ENUM_METHOD_NAME(CMolInfo::EBiomol)()->FindName(molinfo->GetBiomol());
+        break;
+    case MolinfoField_technique:
+        str = CMolInfo::ENUM_METHOD_NAME(CMolInfo::ETech)()->FindName(molinfo->GetTech());
+        break;
+    case MolinfoField_completedness:
+        str = CMolInfo::ENUM_METHOD_NAME(CMolInfo::ECompleteness)()
+                                                   ->FindName(molinfo->GetCompleteness());
+        break;
+    case MolinfoField_mol_class:
+        if (bioseq_hl->IsSetInst_Mol()) {
+          str = thisInfo.mol_molname[bioseq->GetInst_Mol()];
+        }
+        break;
+    case MolinfoField_topology:
+        if (bioseq_hl->IsSetInst_Topology()) {
+           str 
+            =CSeq_inst::ENUM_METHOD_NAME(ETopology)()->FindName(bioseq_hl->GetInst_Topology());
+        }
+        break;
+    case MolinfoField_strand:
+        if (bioseq_hl->CanGetInst_Strand())
+           str = thisInfo.strand_strname[bioseq_hl->GetInst_Strand()];
+        break;
+  }
+  if (str == "unknown" || str == "not_set") str = kEmptyStr;
+  return str;
+};
+
+
+string CBioseqTestAndRepData :: GetSrcQualValue4FieldType(const CBioSource& biosrc, const CSource_qual_choice& src_qual, const CString_constraint* str_cons)
+{
+   string str(kEmptyStr);
+   switch (src_qual.Which()) {
+     case CSource_qual_choice::e_Textqual:
+       {
+          ESource_qual src_qual = field_type.GetSource_qual().GetTextqual();
+          string qual_name = GetQualName(src_qual);
+          bool is_subsrc = IsSubsrcQual(src_qual);
+          str = GetSrcQualValue( biosrc, qual_name, is_subsrc, str_cons);
+       }
+       break;
+     case CSource_qual_choice::e_not_set: break;
+     default:
+         str = GetNotTextqualSrcQualValue(biosrc, str_cons);
+   }
+   return str;
+};
+
+string CBioseqTestAndRepData :: GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDblink_field_type dblink_tp, const CString_constraint& str_cons) 
+{
+  string str(kEmptyStr);
+  bool is_str_cons_empty = IsStringConstraintEmpty(str_cons);
+  if (user_obj.GetType().IsStr() && user_obj.GetType().GetStr() == "DBLink") {
+    field_name = thisInfo.dblink_name[dblink_tp];
+    ITERATE (vector <CRef <CUser_field> >, it, user_obj.GetData()) {
+       if ( (*it)->GetLabel().IsStr() && ((*it)->GetLabel().GetStr() == field_name) ) {
+          if ( (*it)->GetData().IsStrs()) {
+             ITERATE (vector <CStringUTF8>, sit, (*it)->GetData().GetStrs()) {
+               if (is_str_cons_empty || DoesStringMatchConstraint (*sit, *str_cons)) {
+                   str = *it;
+                   break;
+               }
+             }
+          }
+          else if ( (*it)->GetData().IsInts() ) {
+             ITERATE (vector <int>, iit, (*it)->GetData().GetInts()) {
+               str = NStr::IntToString(*iit);
+               if (is_str_cons_empty || DoesStringMatchConstraint (str, *str_cons)) break;
+               else str = kEmptyStr;
+             }
+          }
+          if (!str.empty()) break; 
+       }
+    }
+  }
+  return str;
+};
+
+// GetFirstValNodeStringMatch
+string CBioseqTestAndRepData :: GetFirstStringMatch(const list <string>& strs, const CString_constraint& str_cons)
+{
+   ITERATE (list <string>, sit, strs) {
+     if ( !(*sit).empty() && DoesStringMatchConstraint (*sit, *str_cons))
+       return (*sit);
+   }   
+   return kEmptyStr;
+};
+
+string CBioseqTestAndRepData :: GetFieldValueForObjectEx (const CBioseq_Handle& bioseq_hl, const CField_type& field_type, const CString_constraint& str_cons)
+{
+  string str(kEmptyStr);
+  bool is_empty_str_cons = IsStringConstraintEmpty (str_cons);
+  switch (field_type.Which()) {
+    case CField_type::e_source_qual :
+      const CSource_qual_choice& src_qual = field_type.GetSource_qual();
+      const CBioSource* biosrc = GetBioSource(bioseq_hl);
+      if (biosrc) str =GetSrcQualValue4FieldType (*biosrc, field_type.GetSource(), &str_cons);
+      break;
+    case CField_Type::e_molinfo_field :
+      str = GetSequenceQualFromBioseq (bioseq_hl, field_type.GetMolinfo_field());
+      break;
+    case CField_Type::e_dblink:
+      for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_User); seq_ci && str.empty(); ++seq_ci)
+         str =GetDBLinkFieldFromUserObject(seq_ci->GetUser(),field_type.GetDblink(), str_cons);
+      break;
+    case CField_Type::e_misc:
+      switch (field_type.GetMisc().Which()) {
+         case eMisc_field_genome_project_id:
+              for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_User); seq_ci && str.empty(); 
+                                                                                    ++seq_ci) {
+                  const CObject_id& type = seq_ci->GetUser().GetType();
+                  if (type.IsStr() && type.GetStr() == "GenomeProjectsDB") {                 
+                     ITERATE (vector <CRef <CUser_field> >, uit, seq_ci->GetUser().GetData()) {
+                        const CObject_id& label = (*uit)->GetLabel();
+                        if (label.IsStr() && label.GetStr()== "ProjectID" 
+                                                         && (*uit)->GetData().IsInt()) {
+                            str = NStr::IntToString( (*uit)->GetData().GetInt() );
+                            if (is_empty_str_cons || DoesStringMatchConstraint (str,*str_cons))
+                                      break;
+                            else str = kEmptyStr;
+                        }
+                     }
+                  }
+              }
+              break;
+         case eMisc_field_comment_descriptor:
+              for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_Comment); seq_ci && str.empty(); 
+                                                                                  ++seq_ci) {
+                  str = seq_ci->GetComment();
+                  if (!DoesStringMatchConstraint (str, *str_cons)) str = kEmptyStr;
+              }
+              break;
+         case eMisc_field_defline:
+              for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_Title); seq_ci && str.empty();
+                                                                                   ++seq_ci) {
+                    str = seq_ci->GetTitle();
+                    if (!DoesStringMatchConstraint (str, *str_cons)) str = kEmptyStr;
+              }
+              break;
+         case eMisc_field_keyword:
+              for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_Genbank); seq_ci && str.empty();
+                                                                                  ++seq_ci) {
+                 if (seq_ci->GetGenbank().CanGetKeywords()) 
+                      str = GetFirstStringMatch(seq_ci->GetGenbank().GetKeywords(), str_cons);
+              }
+              break;
+      }
+      break;
+    default: break;
+  }
+  return str;
+};
+
+bool CBioseqTestAndRepData :: DoesObjectMatchFieldConstraint(const CSeq_feat& data, const CField_constraint& field_cons, const CBioseq_Handle& bioseq_hl)
+{
+  if (IsStringConstraintEmpty (&(field_cons.GetString_constraint()))) return true;
+
+  bool rval = false;
+  string src_str;
+  const CString_constraint& str_cons = field_cons.GetString_constraint();
+  const CField_type& field_type = field_cons.GetField();
+  switch (field_type.Which()) {
+    case CField_type::e_Source_qual:
+      {
+        const CBioSource* biosrc = GetBioSource(bioseq_hl);
+        if (biosrc)
+            str = GetSrcQualValue4FieldType(*biosrc, field_type.GetSourcce_qual(), &str_cons);
+        if (!src_str.empty()) rval = true;
+      }
+      break;
+    case CField_type:: e_Feature_field:
+      {
+          const CFeature_field& feat_field = field_type.GetFeature_field();
+          rval = DoesObjectMatchFeatureFieldConstraint(data, feat_field, src_cons);
+      }
+      break;
+    case CField_type:: e_Rna_field:
+      rval = DoesObjectMatchRnaQualConstraint (field_type.GetRna_field(), src_cons);
+    case CField_type:: e_Cds_gene_prot:
+      {
+         const CFeature_field& 
+             feat_field = FeatureFieldFromCDSGeneProtField (field_type.GetCds_gene_prot());
+         rval = DoesObjectMatchFeatureFieldConstraint (data, feat_field, str_cons);
+      }
+      break;
+    case CField_type: e_Molinfo_field:
+      if (bioseq_hl) {
+        str = GetSequenceQualFromBioseq (biosq_hl, field_type.GetMolinfo_field());
+        if ( (str.empty() && str_cons.GetNot_present()) 
+                || (!str.empty() && DoesStringMatchConstraint (str, *str_cons)) )
+            rval = true;
+      }
+      break;
+    case FieldType_misc:
+    case FieldType_dblink:
+      if (bioseq_hl) {
+        str = GetFieldValueForObjectEx (bioseq_hl, field_type, str_cons);
+        if (!str.empty()) rval = true;
+      }
+      break;
+
+// TODO LATER // 
+    case FieldType_pub:
+      break;
+  }
+  return rval; 
+};
+
+bool CBioseqTestAndRepData :: IsNonTextSourceQualPresent(const CBioSource& biosrc, ESource_qual srcqual)
+{
+  Int4 orgmod_subtype, subsrc_subtype, subfield;
+  OrgModPtr mod;
+  SubSourcePtr ssp;
+  Boolean      rval = FALSE;
+
+  if (thisInfo.srcqual_orgmod.find(srcqual) != thisInfo.srcqual_orgmod.end()) {
+     if (biosrc.IsSetOrgMod()) {
+       ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgName().GetOrgMod()) {
+          if ( (*it)->GetSubtype() == thisInfo.srcqual_orgmod[srcqual]) return true;
+       }
+     }
+  }
+  else if (thisInfo.srcqual_subsrc.find(srcqual) != thisInfo.srcqual_subsrc.end()) {
+     if (biosrc.CanGetSubSource()) {
+        ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubSource()) {
+           if ( (*it)->GetSubtype() == thisInfo.srcqual_subsrc[srcqual] ) return true;
+        }
+     }
+  }
+  return false;
+};
+
+bool CBioseqTestAndRepData :: IsSourceQualPresent (const CBioSource& biosrc, const CSource_qual_choice& src_cons)
+{
+  bool rval = false;
+  string   str;
+
+  switch (src_cons.Which()) {
+    case CSource_qual_choice::e_Textqual:
+      ESource_qual src_qual = src_cons.GetTextqual();
+      // IsNonTextSourceQual (scp->data.intvalue)) {
+      if ( src_qual == eSource_qual_transgenic || src_qual == eSource_qual_germline
+               || src_qual == eSource_qual_metagenomic 
+               || src_qual == eSource_qual_environmental_sample
+               || src_qual == eSource_qual_rearranged ) {
+           rval = IsNonTextSourceQualPresent (biop, src_qual);
+      } 
+      else {
+        str = GetSrcQualValue4FieldType(biosrc, src_cons, 0);
+        if (!str.empt()) rval = true;
+      }
+      break;
+    case CSource_qual_choice_location:
+      if (biosrc.GetGenome() != CBioSource::eGenome_unknown) rval = true;
+      break;
+    case CSource_qual_choice_origin:
+      if (biosrc.GetOrigin() != CBioSource::eOrigin_unknown) rval = true;
+      break;
+  }
+  return rval;
+}
+
+bool CBioseqTestAndRepData :: AllowSourceQualMulti(const CSource_qual_choice& src_cons)
+{
+   if (src_qual.IsTextqual()) {
+     ESource_qual src_qual = src_cons.GetTextqual();
+     if ( src_qual == eSource_qual_culture_collection || src_qual == eSource_qual_bio_material
+            || src_qual == eSource_qual_specimen_voucher || src_qual == eSource_qual_dbxref
+            || src_qual == eSource_qual_fwd_primer_name
+            || src_qual == eSource_qual_fwd_primer_seq
+            || src_qual == eSource_qual_rev_primer_name
+            || src_qual == eSource_qual_rev_primer_seq) 
+        return true;
+   }
+   return false;
+};
+
+bool CBioseqTestAndRepData :: DoesBiosourceMatchConstraint (const CBioSource& biosrc, const CSource_constraint& src_cons, const CBioseq_Handle& bioseq_hl)
+{
+  bool rval = false;
+  string str1, str2;
+  bool has_field1 = src_cons.CanGetField1();
+  bool has_field2 = src_cons.CanGetField2();
+  CSource_qual_choice field1 = has_field1 ? src_cons.GetField1() : CSource_qual_choice();
+  CSource_qual_choice field2 = has_field2 ? src_cons.GetField2() : CSource_qual_choice();
+  bool has_src_cons = src_cons.CanGetConstraint();
+  CString_constraint 
+      string_cons = has_src_cons ? src_cons.GetConstraint() : CString_constraint();
+  if (!has_src_cons || IsStringConstraintEmpty(&string_cons)) {
+    // looking for qual present //
+    if (has_field1 && !has_field2) rval = IsSourceQualPresent (biosrc, field1);
+    else if (has_field2 && !has_field1) rval = IsSourceQualPresent (biosrc, field2);
+    else if (has_field1 && has_field2) { // looking for quals to match //
+      str1 = GetSrcQualValue4FieldType (biosrc, field1, 0);
+      str2 = GetSrcQualValue4FieldType (biosrc, field2, 0);
+      if (str1 == str2) rval = true;
+    } 
+    else rval = true; // nothing specified, automatic match //
+  } 
+  else {
+    if (has_field1 && !has_field2) {
+      if ( AllowSourceQualMulti(field1) && string_cons.GetNot_present() ) {
+          CString_constraint tmp_cons;
+          strtmp = Blob2Str(string_cons;
+          tmp_cons = Str2Blob(strtmp);
+          tmp_cons.SetNot_present(false);
+          str1 = GetSrcQualValue4FieldType (biosrc, field1, &tmp_cons);
+          if (!str1.empty()) rval = false;
+          else rval = true;
+      } 
+      else {
+        str1 = GetSrcQualValue4FieldType (biosrc, field1, &string_cons);
+        if (str1.empty()) {
+          if (string_cons.GetNot_present()) {
+            str1 = GetSrcQualValue4FieldType (biosrc, field1, 0);
+            if (str1.empty()) rval = true;
+          }
+        } 
+        else rval = true;
+      }
+    } 
+    else if (has_field2 && !has_field1) {
+      str2 = GetSrcQualValue4FieldType (biosrc, field2, &string_cons);
+      if (str2.empty()) {
+        if (string_cons.GetNot_present()) {
+          str2 = GetSrcQualValue4FieldType (biosrc, field2, 0);
+          if (str2.empty()) rval = true;
+        }
+      } 
+      else rval = true;
+    }
+    else if (has_field1 && has_field2 ) {
+      str1 = GetSrcQualValue4FieldType (biosrc, field1, &string_cons);
+      str2 = GetSrcQualValue4FieldType (biosrc, field2, &string_cons);
+      if (str1 == str2) rval = true;
+    } 
+    else // generic string constraint //
+      rval = DoesObjectMatchStringConstraint (biosrc, string_cons, 0);
+  }
+  return rval;
+};
+
+
+struc cgpset {
+  CSeq_feat* cds, gene, mrna, prot;
+  vector <CSeq_feat*> mat_peptide_list;
+} CGPSetData
+
+
+CConstRef <CSeq_feat> AddProtFeatForCds(const CSeq_feat& cd_feat, const CBioseq_Handle& protbsp)
+{
+  CRef <CSeq_id> prot_id (new CSeq_id());
+  prot_id->Assign(*(protbsp->GetId().front()));
+  CRef <CSeq_feat> prot_feat(new CSeq_feat);
+  prot_feat->SetData().SetProt();
+  prot_feat->SetLocation().SetInt().SetId(*prot_id);
+  prot_feat->SetLocation().SetInt().SetFrom(0);
+  prot_feat->SetLocation().SetInt().SetTo(protbsp->GetInst_Length() - 1);
+  prot_feat->SetLocation().SetPartialStart(partial5, objects::eExtreme_Biological);
+  bool partial5 = cd_feat.GetLocation().IsPartialStart(eExtreme_Biological);
+  bool partial3 = cd_feat.GetLocation().IsPartialStop(eExtreme_Biological);
+  prot_feat->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+  prot_feat->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
+  if (partial5 || partial3) prot_feat->SetPartial(true);
+  else prot_feat->ResetPartial();
+  return prot_feat;
+};
+
+// part of BuildCGPSetFromCodingRegion
+void GetProtFromCodingRegion (CRef <CGPSetData> cgp, const CSeq_feat& cd_feat)
+{
+  CConstRef <CSeq_feat> prot(NULL);
+  vector <CConstRef <CSeq_feat> > mat_peptide_list;
+  if (cd_feat.CanGetProduct()) {
+    CBioseq_Handle prot_bhl = GetBioseqFromSeqLoc (cd_feat.GetProduct());
+    if (prot_bhl)
+    {
+      prot = CConstRef <CSeq_feat> (GetProtForProduct(prot_bhl));
+      // if there is no full-length protein feature, make one //
+      if (prot.Empty())
+      {
+// why??? 
+        prot = AddProtFeatForCds (cds, protbsp);
+        if (prot != NULL)
+        {
+          ResynchCDSPartials (cds, NULL);
+          if (indexing_needed != NULL)
+          {
+            *indexing_needed = TRUE;
+          }
+        }
+//
+      }
+      
+      // also add in mat_peptides from protein feature //
+      for (CFeat_CI fci(bioseq_handle, SAnnotSelector(CSeqFeatData::eSubtype_mat_peptide_aa).SetByProduct()); fci; ++fci) 
+          cgp.mat_peptide.push_bakc(fci->GetSeq_feat);
+    }
+  }  
+};
+
+void MakeFeatureField(CFeature_field& f, CFeat_qual_choice& f_qual, EMacro_feature_type f_tp, EFeat_qual_legal legal_qual)
+{
+   f.SetType(f_tp);
+   f_qual.SetLegal_qual(legal_qual);
+};
+
+const CFeature_field& FeatureFieldFromCDSGeneProtField (ECDSGeneProt_field cds_gene_prot_field)
+{
+  CFeature_field f;
+  CFeat_qual_choice f_qual;
+  f.SetField(f_qual);
+
+  switch (cds_gene_prot_field) {
+    case eCDSGeneProt_field_cds_comment:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_cds, eFeat_qual_legal_note);
+      break;
+    case eCDSGeneProt_field_cds_inference:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_cds, eFeat_qual_legal_inference);
+      break;
+    case eCDSGeneProt_field_codon_start:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_cds, eFeat_qual_legal_codon_start);
+      break;
+    case eCDSGeneProt_field_gene_locus:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_gene);
+      break;
+    case eCDSGeneProt_field_gene_description:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_gene_description);
+      break;
+    case eCDSGeneProt_field_gene_comment:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_note);
+      break;
+    case eCDSGeneProt_field_gene_allele:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_allele);
+      break;
+    case eCDSGeneProt_field_gene_maploc:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_map);
+      break;
+    case eCDSGeneProt_field_gene_locus_tag:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_locus_tag);
+      break;
+    case eCDSGeneProt_field_gene_synonym:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_synonym);
+      break;
+    case eCDSGeneProt_field_gene_old_locus_tag:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_old_locus_tag);
+      break;
+    case eCDSGeneProt_field_gene_inference:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_gene, eFeat_qual_legal_inference);
+      break;
+    case eCDSGeneProt_field_mrna_product:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_mRNA, eFeat_qual_legal_product);
+      break;
+    case eCDSGeneProt_field_mrna_comment:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_mRNA, eFeat_qual_legal_note);
+      break;
+    case eCDSGeneProt_field_prot_name:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_prot, eFeat_qual_legal_product);
+      break;
+    case eCDSGeneProt_field_prot_description:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_prot, eFeat_qual_legal_description);
+      break;
+    case eCDSGeneProt_field_prot_ec_number:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_prot, eFeat_qual_legal_ec_number);
+      break;
+    case eCDSGeneProt_field_prot_activity:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_prot, eFeat_qual_legal_activity);
+      break;
+    case eCDSGeneProt_field_prot_comment:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_prot, eFeat_qual_legal_note);
+      break;
+    case CDSGeneProt_field_mat_peptide_name:
+      MakeFeatureField(f,f_qual, eMacro_feature_type_mat_peptide_aa, eFeat_qual_legal_product);
+      break;
+    case CDSGeneProt_field_mat_peptide_description:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_mat_peptide_aa, 
+                                                           eFeat_qual_legal_description);
+      break;
+    case CDSGeneProt_field_mat_peptide_ec_number:
+      MakeFeatureField(f,f_qual,eMacro_feature_type_mat_peptide_aa,eFeat_qual_legal_ec_number);
+      break;
+    case CDSGeneProt_field_mat_peptide_activity:
+      MakeFeatureField(f,f_qual,eMacro_feature_type_mat_peptide_aa, eFeat_qual_legal_activity);
+      break;
+    case CDSGeneProt_field_mat_peptide_comment:
+      MakeFeatureField(f, f_qual, eMacro_feature_type_mat_peptide_aa, eFeat_qual_legal_note);
+      break;
+    default break;
+  }
+  return *f;
+}
+
+static CharPtr GetFieldValueFromCGPSet (const CGPSetData& c, ECDSGeneProt_field field, const CString_constraint* str_cons)
+{
+  string str(kEmptyStr);
+  if (c.cds) {
+    switch (field) {
+      case eCDSGeneProt_field_cds_comment:
+      case eCDSGeneProt_field_cds_inference:
+      case eCDSGeneProt_field_codon_start:
+        {
+          const CFeature_field& ffield = FeatureFieldFromCDSGeneProtField (field);
+          if (c.cds) str = GetQualFromFeature(*c.cds, ffield, *str_cons);
+          break;
+        }
+      case eCDSGeneProt_field_gene_locus:
+      case eCDSGeneProt_field_gene_inference:
+        {
+          const CFeature_field& ffield = FeatureFieldFromCDSGeneProtField (field);
+          if (has_gene) str = GetQualFromFeature(c.gene, ffield, *str_cons);
+          break;
+        }
+      default: break;
+    }
+  }
+  else if (c.gene) {
+    const CGene_ref& g_ref = c.gene->GetData().GetGene();
+    switch (field) {
+      case eCDSGeneProt_field_gene_description:
+        if (g_ref.CanGetDesc()) str = c.gene->GetData().GetGene().GetDesc();
+        break;
+      case eCDSGeneProt_field_gene_comment:
+        if (c.gene->CanGetComment()) str = c.gene->GetComment();
+        break;
+      case eCDSGeneProt_field_gene_allele:
+        if (g_ref.CanGetAllele()) str = c.gene->GetData().GetGene().GetAllele();
+        break;
+      case eCDSGeneProt_field_gene_maploc:
+        if (g_ref.CanGetMaploc()) str = c.gene->GetData().GetGene().GetMaploc();
+        break;
+      case eCDSGeneProt_field_gene_locus_tag:
+        if (g_ref.CanGetLocus_tag()) str = g_ref.GetLocus_tag();
+        break;
+      case eCDSGeneProt_field_gene_synonym:
+        if (g_ref.CanGetSyn()) str = GetFirstStringMatch(g_ref.GetSyn(), *str_cons);
+        break;
+      case eCDSGeneProt_field_gene_old_locus_tag:
+        if (c.gene->CanGetQual()) 
+              str = GetFirstGBQualMatch(c.gene->GetQual(), "old_locus_tag", 0, *str_cons);
+        break;
+      default: break;
+    }
+  }
+  else if (c.mrna) {
+    const CRNA_ref& r_ref = c.mrna->GetData().GetRNA();
+    switch (field) {
+      case eCDSGeneProt_field_mrna_product:
+        if (r_ref.CanGetExt() && r_ref.GetExt().IsName())
+            str = r_ref.GetExt().GetName();
+        break; 
+      case eCDSGeneProt_field_mrna_comment:
+        if (c.mrna->CanGetComment()) str = c.mrna->GetComment();
+        break;
+      default: break;
+    }
+  }
+  else if (!c.prot) {
+    const CProt_ref& p_ref = c.prot->GetData().GetProt();
+    swith (field) {
+      case eCDSGeneProt_field_prot_name:
+        if (p_ref.CanGetName()) str = GetFirstStringMarch(p_ref.GetName(), *str_cons);
+        break;
+      case eCDSGeneProt_field_prot_description:
+        if (p_ref.CanGetDesc()) str = p_ref.GetDesc();
+        break;
+      case eCDSGeneProt_field_prot_ec_number:
+        if (p_ref.CanGetEC()) str = GetFirstStringMatch(p_ref.GetEC(), *str_cons);
+        break;
+      case eCDSGeneProt_field_prot_activity:
+        if (p_ref.CanGetActivity()) str = GetFirstStringMatch(p_ref.GetActivity(), *str_cons);
+        break;
+      case eCDSGeneProt_field_prot_comment:
+        if (c.prot.CanGetComment()) str = c.prot.GetComment();
+        break;
+      default: break;
+    }
+  }
+  else if (!c.mat_peptide_list.empty()) {
+    switch (field) {
+      case eCDSGeneProt_field_mat_peptide_name:
+        ITERATE (vector <CSeq_feat*>, it, c.mat_peptide_list) {
+           if ((*it)->GetData().GetProt().CanGetName()) {
+              str = GetFirstStringMatch((*it)->GetData().GetProt().GetName(), *str_cons);
+              if (!str.empty()) break;
+           }
+        }
+        break;
+      case eCDSGeneProt_field_mat_peptide_description:
+        ITERATE (vector <CSeq_feat*>, it, c.mat_peptide_list) {
+           if ((*it)->GetData().GetProt().CanGetDesc()) {
+              str = (*it)->GetData().GetProt().GetDesc();
+              if (!str.empty() && DoesStringMatchConstraint(str, *str_cons)) break;
+           }
+        }
+        break;
+      case eCDSGeneProt_field_mat_peptide_ec_number:
+        ITERATE (vector <CSeq_feat*>, it, c.mat_peptide_list) {
+           if ((*it)->GetData().GetProt().CanGetEC()) {
+              str = GetFirstStringMatch((*it)->GetData().GetProt().GetEC(), *str_cons);
+              if (!str.empty()) break;
+           }
+        }
+        break;
+      case eCDSGeneProt_field_mat_peptide_activity:
+        ITERATE (vector <CSeq_feat*>, it, c.mat_peptide_list) {
+           if ((*it)->GetData().GetProt().CanGetActivity()) {
+              str = GetFirstStringMatch((*it)->GetData().GetProt().GetActivity(), *str_cons);
+              if (!str.empty()) break;
+           }
+        }
+        break;
+      case CDSGeneProt_field_mat_peptide_comment:
+        ITERATE (vector <CSeq_feat*>, it, c.mat_peptide_list) {
+           if ((*it)->CanGetComment()) {
+              str = (*it)->GetComment();
+              if (!str.empty() && DoesStringMatchConstraint(str, *str_cons)) break;
+           }
+        }
+        break;
+      default: break;
+    }
+  }
+  if (str.empty() || !DoesStringMatchConstraint(str, *str_cons)) str = kEmptyStr;
+  return str;
+};
+
+
+bool CanGetFieldString(c, const ECDSGeneProt_field field, const CString_constraint& str_cons)
+{
+   string str = GetFieldValueFromCGPSet (c, field, str_cons);
+   if (str.empty()) {
+        if (str_cons.GetNot_present()) {
+          str = GetFieldValueFromCGPSet (c, field, 0);
+          if (str.empty()) return true;
+   }
+   else return true;
+   return false;
+};
+
+static bool DoesCGPSetMatchQualConstraint (CGPSetData& cgp_set, const CCDSGeneProt_qual_constraint& cgp_cons)
+{
+  Boolean rval = FALSE;
+  CharPtr str, str1, str2;
+
+  bool has_str_cons = cgp_cons.CanGetConstraint();
+  bool has_field1 = cgp_cons.CanGetField1() && cgp_cons.GetField1().IsField();
+  bool has_field2 = cgp_cons.CanGetField2() && cgp_cons.GetField2().IsField();
+  if (!has_str_cons || IsStringConstraintEmpty (cgp_cons.GetConstraint())) {
+    // looking for qual present //
+    if (has_field1 && !has_field2) {
+      str = GetFieldValueFromCGPSet (c, cgp_cons.GetField1().GetField(), 0);
+      if (!str.empty()) rval = true;
+    } 
+    else if (has_field2 && !has_field1) {
+      str = GetFieldValueFromCGPSet (c, cgp_cons.GetField2().GetField(), 0);
+      if (str.empty()) rval = false;
+    } 
+    else if (has_field1 && has_field2) { // looking for quals to match //
+      str1 = GetFieldValueFromCGPSet (c, cgp_cons.GetField1().GetField(), 0);
+      str2 = GetFieldValueFromCGPSet (c, cgp_cons.GetField2().GetField(), 0);
+      if (str1 == str2) rval = true;
+    } 
+    else rval = true; // nothing specified, automatic match //
+  } 
+  else {
+    const CString_constraint& str_cons = cgp_cons.GetConstraint();
+    if (has_field1 && !has_field2) {
+      rval = CanGetFieldString(c, cgp_cons.GetField1().GetField(), str_cons);
+    } 
+    else if (has_field2 && !has_field1) {
+      rval = CanGetFieldString(c, cgp_cons.GetField2().GetField(), str_cons);
+    } 
+    else if (has_field1 && has_field2 ) {
+      str1 = GetFieldValueFromCGPSet (c, cgp_cons.GetField1().GetField(), str_cons);
+      str2 = GetFieldValueFromCGPSet (c, cgp_cons.GetField2().GetField(), str_cons);
+      if (str1 == str2) rval = true;
+    } 
+    else {
+      // generic string constraint //
+      rval = DoesObjectMatchStringConstraint (c, str_cons); // no need to give bioseq_hl
+    }
+  }
+  return rval;
+};
+
+const CSeq_feat* GetmRNAforCDS (const CSeq_feat& cds)
+{
+  SeqFeatPtr      mrna = NULL;
+  SeqFeatXrefPtr  xref;
+  SeqMgrFeatContext mcontext;
+  BioseqPtr         mbsp;
+
+  CSeq_feat* mrna = 0;
+  // first, check for mRNA identified by feature xref //
+  if (cds.CanGetXref()) {
+     CBioseq_Handle bioseq_hl = GetBioseqFromSeqLoc(cds.GetLocation(), *thisInfo.scope);
+     CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
+     SAnnotSelector sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+     ITERATE (vector <CRef <CSeqFeatXref> >, it, cds.GetXref()) {  // ?? which _CI constructor?
+        if ( (*it)->CanGetId()) {
+          const CFeat_id& feat_id = (*it)->GetId();
+          switch ( feat_id.Which()) {
+            case CFeat_id::e_Gibb:
+             {
+               CFeat_CI feat_ci(tse_hl, sel, feat_id.GetGibb()); 
+               if (feat_ci) mrna = *(feat_ci->GetOriginalFeature());
+               break;
+             }    
+            case CFeat_id::e_Giim:
+             {
+               CFeat_CI feat_ci(tse_hl, sel, feat_id.GetGiim().GetId());
+               if (feat_ci) mrna = *(feat_ci->GetOriginalFeature());
+               break;
+             }
+            case CFeat_id::e_Local:
+             {
+               CFeat_CI feat_ci(tse_hl, sel, feat_id.GetLocal());
+               if (feat_ci) mrna = *(feat_ci->GetOriginalFeature());
+               break;
+             }
+            case CFeat_id::e_General:
+             {
+               CFeat_CI feat_ci(tse_hl, sel, feat_id.GetGeneral().GetTag());
+               if (feat_ci) mrna = *(feat_ci->GetOriginalFeature());
+               break;
+             }
+            default: break;
+          }
+        }
+     }
+  }
+//
+  for (xref = cds->xref; xref != NULL && mrna == NULL; xref = xref->next) {
+    if (xref->id.choice != 0) {
+      mrna = SeqMgrGetFeatureByFeatID (cds->idx.entityID, NULL, NULL, xref, NULL);
+      if (mrna != NULL && mrna->idx.subtype != FEATDEF_mRNA) {
+        mrna = NULL;
+      }
+    }
+  }
+//
+  
+  // try by location if not by xref //
+  if (!mrna) {
+     //SeqMgrGetLocationSupersetmRNA (cds->location, &mcontext);
+    mrna = GetBestOverlappingFeat(cds.GetLocation(), CSeqFeatData::eSubtype_mRNA, 
+             eOverlap_Subset, *thisInfo.scope).GetPointer(); 
+    if (!mrna) {
+       // SeqMgrGetOverlappingmRNA (cds->location, &mcontext);
+      mrna = GetBestOverlappingFeat(cds.GetLocation(), CSeqFeatData::eSubtype_mRNA,
+                  eOverlap_Contained, *thisInfo.scope).GetPointer();
+    }
+  }
+
+  if (!mrna) {
+    //BioseqFindFromSeqLoc (cds->location);
+    CBioseq_Handle mbsp = GetBioseqFromSeqLoc(cds.GetLocation()); 
+    if (IsmRNASequenceInGenProdSet(*(mbsp.GetCompleteBioseq()))) {
+      // SeqMgrGetRNAgivenProduct(mbsp, &mcontext);
+      mrna = GetmRNAForProduct(mbsp); 
+    }
+  }
+
+  return mrna;
+};
+
+void ListFeaturesInLocation (const CBioseq_Handle& bioseq_hl, const CSeq_loc& seq_loc, CSeqFeatData::CSubtype subtype, vector <CSeq_feat*> feat_list)
+{
+  unsigned loc_left = seq_loc.GetStart(eExtremes_Positional);
+  unsigned loc_right = seq_loc.GetStop(eExtremes_Positional);
+  SAnnotSelector sel.IncludeFeatSubtype(subtype);
+  for (CFeat_CI ci(bioseq_hl, sel); ci; ++ci) {
+     const CSeq_feat& feat = ci->GetOriginalFeature();
+     const CSeq_loc& feat_loc = feat.GetLocation();
+     if (feat_loc.GetStart(eExtremems_Positional) > loc_right) break;
+     if (feat_loc.GetSopt(eExtremems_Positional) < loc_left) continue;
+     sequence::ECompare loc_comp = Compare(feat_loc, seq_loc, thisInfo.scope);
+     if (loc_comp == sequence::eContained) feat_list.push_back(*feat); 
+  }
+};
+
+static Boolean DoesFeatureMatchCGPPseudoConstraint (const CSeq_feat& seq_feat, const CCDSGeneProt_pseudo_constraint* cgp_p_cons)
+{
+  if (!cgp_p_cons) return true;
+
+  bool any_pseudo = false;
+  const CSeqFeatData& sf_dt = seq_feat.GetData();
+  const CSeq_loc& sf_loc = seq_feat.GetLocation();
+  bool sf_is_pseudo = (seq_feat.CanGetPseudo() && seq_feat.GetPseudo());
+  CBioseq_Handle sf_bioseq_hl = GetBioseqFromSeqLoc(sf_loc, *thisInfo.scope);
+  switch (cgp_p_cons.GetFeature()) {
+    case eCDSGeneProt_feature_type_constraint_gene :
+     { 
+       if (sf_dt.IsGene()) {
+         if (sf_is_pseudo) any_pseudo = true;
+       } 
+       else if (sf_dt.IsProt()) {
+         const CSeq_feat* cds = GetCDSForProduct(sf_bioseq_hl);
+         if (cds) {
+           CConstRef <CSeq_feat> gene = GetGeneForFeature (*cds);
+           if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo()) any_pseudo = true;
+         }
+       } 
+       else {
+         CConstRef <CSeq_feat> gene = GetGeneForFeature (seq_feat);
+         if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo()) any_pseudo = true;
+       }
+       break;
+     }
+    case eCDSGeneProt_feature_type_constraint_mRNA :
+     {
+       if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+         if (sf_is_pseudo) any_pseudo = true;
+       } 
+       else if (sf_dt.IsProt()) {
+         const CSeq_feat* cds = GetCDSForProduct(sf_bioseq_hl);
+         CConstRef <CSeq_feat> mrna;
+         if (!cds) {
+           mrna.Reset(= GetBestMrnaForCds(cds, *thisInfo.scope)); //GetmRNAforCDS (cds); above
+           if (mrna.NotEmpty() && mrna->CanGetPseudo() && mrna->GetPseudo()) any_pseudo = true;
+         }
+       } 
+       else {
+         mrna.Reset(GetBestMrnaForCds(cds, *thisInfo.scope)); // GetmRNAforCDS (sfp);
+         if (mrna.NotEmpty() && mrna->CanGetPseudo() && mrna->GetPseudo()) any_pseudo = true;
+       }
+       break;
+     }
+    case eCDSGeneProt_feature_type_constraint_cds :
+     {
+       if (sf_dt.IsCdregion()) {
+         if (sq_has_pseudo) any_pseudo = true;
+       } 
+       else if (sf_dt.IsProt()) {
+         const CSeq_feat* cds = GetCDSForProduct(sf_bioseq_hl);
+         if (cds && cds->CanGetPseudo() && cds->GetPseudo()) any_pseudo = true;
+       } 
+       else {
+         vector <CSeq_feat*> feat_list;
+         ListFeaturesInLocation(sf_bioseq_hl,sf_loc,CSeqFeatData::eSubtype_Cdregion,feat_list);
+         ITERATE (vector <CSeq_feat*>, it, feat_list) {
+            if ( (*it)->CanGetPsdueo() && it->GetPseudo()) {
+               any_pseudo = true; 
+               break;
+            }
+         }
+         feat_list.clear();
+       }
+       break;
+     }
+    case eCDSGeneProt_feature_type_constraint_prot :
+     {
+       if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_Prot) {
+         if (sf_is_pseudo) any_pseudo = true;
+       } 
+       else if (sf_dt.IsProt()) {
+         const CSeq_feat* prot = GetPROTForProduct(sf_bioseq_hl);
+         if (prot && prot->CanGetPseudo() && prot->GetPseudo()) any_pseudo = true;
+       } 
+       else if (sf_dt.IsCdregion()) {
+         if (seq_feat.CanGetProduct()) {
+            const CSeq_feat* prot = GetPROTForProduct(
+                                 GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope));
+            if (prot && prot->CanGetPseudo() && prot->GetPseudo()) any_pseudo = true;
+         }
+       } 
+       else {
+         vector <CSeq_feat*> feat_list;
+         ListFeaturesInLocation(sf_bioseq_hl,sf_loc,CSeqFeatData::eSubtype_Cdregion,feat_list);
+         ITERATE (vector <CSeq_feat*>, it, feat_list) {
+            if ( (*it)->CanGetProduct()) {
+               const CSeq_feat* prot = GetPROTForProduct(
+                              GetBioseqFromSeqLoc( (*it)->GetProduct(), *thisInfo.scope));
+               if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
+                  any_pseudo = true;
+                  break;
+               }
+            }
+         }
+         feat_list.clear();
+       }
+       break;
+     }
+    case eCDSGeneProt_feature_type_constraint_mat_peptide :
+      if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_mat_peptide_aa) {
+        if (sf_is_pseudo) any_pseudo = true;
+      } 
+      break;
+  }
+
+  if ((any_pseudo && cgp_p_cons->GetIs_pseudo()) 
+                    || (!any_pseudo && !cgp_p_cons->GetIs_pseudo())) 
+      return true;
+  else return false;
+};
+
+bool CBioseqTestAndRepData :: DoesFeatureMatchCGPQualConstraint (const CSeq_feat& feat, CCDSGeneProt_qual_constraint& cons):
+{
+  CGPSetData cgp_set;
+  const CSeq_feat* cds; 
+  vector <CConstRef <CSeq_feat> > prots;
+  const CSeqFeatData& feat_dt = feat.GetData();
+  if (feat_dt.IsCdregion() || feat_dt.IsProt()) {
+    if (feat_dt.IsProt()) 
+         cgp_set.cds = GetCDSForProduct(GetBioseqFromSeqLoc(feat.GetLocation());
+    else cgp_set.cds = &feat;
+    cgp_set.gene = GetGeneForFeature(*cds); 
+    cgp_set.mrna = GetBestMrnaForCds(*cds, *thisInfo.scope);
+
+    GetProtFromCodingRegion(*cds, prots); 
+    
+//    c = BuildCGPSetFromCodingRegion (feat, &b );
+  } 
+  else if (feat_dt.IsGene()) cgp_set.gene = CConstRef <CSeq_feat> (&feat);
+  else if (feat_dt.IsRNA() && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+     cgp_set.mrna = CConstRef <CSeq_feat> (&feat);
+     cgp_set.gene = CConstRef <CSeq_feat> (GetGeneForFeature(feat));
+    // c = BuildCGPSetFrommRNA (feat);
+  }
+  if (!cds && gene.Empty() && mrna.Empty() && prot.Empty()) return false;
+
+  bool rval = DoesCGPSetMatchQualConstraint (c, cons);
+  bool has_field1_dt = (cons.CanGetField1() && cons.GetField1().CanGetField());
+  bool has_field2_st = (cons.CanGetField2() && cons.GetField2().CanGetField());
+  string str1, str2;
+  const CString_constraint* 
+      str_cons = cons.CanGetConstraint()? &(cons.GetConstraint()) : 0;
+  if (rval && feat_dt.GetSubtype() == CSeqFeatData::e_Mat_peptide_aa) {
+    if (has_field1_dt) {
+      str1 = GetFieldValue(cgp, feat, cons.GetField1.GetField(), str_cons);
+      if (str1.empty()) rval = false;
+    }
+    if (has_field2_dt) {
+      str2 = GetFieldValue(cgp, feat, cons.GetField2.GetField(), str_cons);
+      if (str2.empty()) rval = false;
+    }
+    if (rval && cons.CanGetField1() && cons.CanGetField2() && str1 != str2) rval = false;
+  }
+  return rval;
+};
+
+bool IsSequenceConstraintEmpty (const CSequence_constraint& constraint)
+{
+  if (constraint.CanGetSeqtype() && !constraint.GetSeqtype().IsAny()) return false; // not-set?
+  if (constraint.GetFeature() != eMacro_feature_type_any) return false;
+  // note - having a num_type_features not be null isn't enough to make the constraint non-empty //
+  if (constraint.CanGetId() && !IsStringConstraintEmpty (constraint.GetId())) return false;
+  if (constraint.CanGetNum_features()) return false;
+  if (constraint.CanGetLength()) return false;
+  if (constraint.GetStrandedness() != eFeature_strandedness_constraint_any) return false;
+  return TRUE;
+};
+
+bool DoesValueMatchQuantityConstraint (unsigned val, const CQuantity_constraint& quantity)
+{
+  Boolean rval = TRUE;
+
+  switch (quantity.Which()) {
+    case CQuantity_constraint::e_not_set: return true;
+    case CQuantity_constraint::e_Equals:
+            if (val != quantity.GetEquals()) return false;
+            break;
+    case CQuantity_constraint::e_Greater_than:
+            if (val <= quantity.GetGrater_than()) return false;
+            break;
+    case CQuantity_constraint::e_Less_than:
+            if (val >= quantity->data.intvalue) return false;
+  }
+  return true;
+};
+
+bool DoesFeatureCountMatchQuantityConstraint (const CBioseq_Handle& bioseq_hl, CSeqFeatData::ESubtype featdef, const CQuantity_constraint& quantity)
+{
+  unsigned num_features = 0;
+  CQuantity_constraint::E_Choice choice = quantity.Which();
+// what if featdef  = 0???  should be all features
+  for (CFeat_CI ci(bioseq_hl, SAnnotSelector(featdef).SetByProduct()); ci; ++ci) {
+    num_features++;
+    // note - break out of loop or return as soon as we know constraint
+     * succeeds or passes - no need to iterate through all features
+     //
+    if (choice == CQuantity_constraint::e_not_set) return true;
+    if (choice == CQuantity_constraint::e_Equals && num_features > quantity.GetEquals()) 
+        return false;
+    else if (choice == CQuantity_constraint::e_Greater_than
+                       && num_features > quantity.GetGreater_than()) 
+             break;
+    else if (choice == CQuantity_constraint::e_Less_than
+                 && num_features >= quantity.GetLess_than()) 
+             return false;
+  }
+  if (choice == CQuantity_constraint::e_not_set)) { // in case no feature
+    return false;
+  } 
+  else return (DoesValueMatchQuantityConstraint(num_features, quantity));
+};
+*/
+
+/* move to new file *susrule.cpp
+DoesSeqIDListMeetStringConstraint
+*/
+
+/* removed
+bool DoesSequenceMatchSequenceConstraint (const CBioseq_Handle& bioseq_hl, const CSequence_constraint& seq_cons)
+{
+  if (IsSequenceConstraintEmpty (seq_cons)) return TRUE;
+
+  if (seq_cons.CanGetSeqType() && !seq_cons->GetSeqType().IsAny()) {
+    switch (seq_cons->GetSeqtype().Which()) {
+      case CSequence_constraint_mol_type_constraint::e_Nucleotide :
+        if (bioseq_hl.IsAa()) return false;
+        break;
+      case CSequence_constraint_mol_type_constraint::e_Dna :
+        if (bioseq_hl.CanGetInst_Mol() && bioseq_hl.GetInst_Mol() != CSeq_inst::eMol_dna)
+            return false;
+        break;
+      case CSequence_constraint_mol_type_constraint::e_Rna :
+        if (bioseq_hl.CanGetInst_Mol() && bioseq_hl.GetInst_Mol() != CSeq_inst::eMol_rna)
+             return false;
+        if (seq_cons.GetSeqtype().GetRna() != eSequence_constraint_rnamol_any) {
+           const CMolInfo* mol = GetMolInfo(bioseq_hl);
+           if (!mol) return false;
+           if ( thisInfo.srcrna_mirna[seq_cons.GetSeqType().GetRna()] != mol->GetBiomol())
+              return false;
+        }
+        break;
+      case CSequence_constraint_mol_type_constraint::e_Protein :
+        if (!bioseq_hl.IsAa()) return false;
+        break;
+    }
+  }
+
+  if (seq_cons.GetFeature() != eMacro_feature_type_any) {
+    if (seq_cons.CanGetNum_type_feature() 
+                   && !DoesFeatureCountMatchQuantityConstraint (bioseq_hl,
+                                  thisInfo.feattype_featdef[seq_cons.GetFeature()], 
+                                  seq_cons.GetNum_type_feature());
+         return false;
+  }
+
+  if (seq_cons.CanGetId() && !IsStringConstraintEmpty (seq_cons.GetId()) 
+                && !DoesSeqIDListMeetStringConstraint (bioseq_hl.GetId(), seq_cons.GetId()))
+       return false;
+
+  if (seq_cons.CanGetNum_features() 
+        && !DoesFeatureCountMatchQuantityConstraint (bioseq_hl, 0, seq_cons.GetNum_features()))
+          return false;
+
+  if (bioseq_hl.CanGetInst_length() && seq_cons.CanGetLength()
+        && !DoesValueMatchQuantityConstraint(bioseq_hl.GetInst_Length(), seq_cons.GetLength()))
+      return false;
+
+  if (!DoesSequenceMatchStrandednessConstraint(bioseq_hl, seq_cons.GetStrandedness()))
+          return false;
+
+  return true;
+};
+
+
+// should have different version for different data type.
+// check currently
+bool CBioseqTestAndRepData :: DoesObjectMatchConstraint(const CSeq_feat& data, const CConstraint_choice& cons)
+{
+  CBioseq_Handle bioseq_hl = GetBioseqFromSeqLoc(data.GetLocation(), *thisInfo.scope);
+  switch (constraint.Which()) {
+    case CConstraint_choice::e_String :
+       return (DoesObjectMatchStringConstraint (data, cons.GetString(), bioseq_hl));
+    case CConstraint_choice::e_Location :
+       return DoesFeatureMatchLocationConstraint (data, cons.GetLocation());
+    case CConstraint_choice::e_Field :
+       return DoesObjectMatchFieldConstraint (data, cons.GetField(), bioseq_hl);
+    case CConstraint_choice::e_Source :
+       if (data.GetData().IsBiosrc()) 
+         return DoesBiosourceMatchConstraint (
+                                 data.GetData().GetBiosrc(), cons.GetSource(), bioseq_hl);
+       break;
+    case CConstraint_choice::e_Cdsgeneprot_qual :
+        return DoesFeatureMatchCGPQualConstraint (data, cons.GetCdsgeneprot_qual());
+//
+      if (choice == 0) {
+        rval = DoesCGPSetMatchQualConstraint (data, cons->data.ptrvalue);
+      } else if (choice == OBJ_SEQDESC) {
+        rval = DoesSeqDescMatchCGPQualConstraint (data, cons->data.ptrvalue);
+      } else if (choice == OBJ_SEQFEAT) {
+        rval = DoesFeatureMatchCGPQualConstraint (data, cons->data.ptrvalue);
+      } else if (choice == OBJ_BIOSEQ) {
+        rval = DoesSequenceMatchCGPQualConstraint (data, cons->data.ptrvalue);
+      } else {
+        rval = FALSE;
+      }
+//
+    case CConstraint_choice::e_Cdsgeneprot_pseudo :
+        return DoesFeatureMatchCGPPseudoConstraint (data, cons.GetCdsgeneprot_pseudo());
+//
+      if (choice == 0) {
+        rval = DoesCGPSetMatchPseudoConstraint (data, cons->data.ptrvalue);
+      } else if (choice == OBJ_SEQFEAT) {
+        rval = DoesFeatureMatchCGPPseudoConstraint (data, cons->data.ptrvalue);
+      }
+//
+    case CConstraint_choice::e_Sequence :
+      {
+        CBioseq_Handle bioseq_hl = GetBioseqFromSeqLoc(data.GetLocation(), *thisInfo.scope);
+        if (bioseq_hl) 
+            return DoesSequenceMatchSequenceConstraint(bioseq_hl, cons.GetSequence());
+//      rval = DoesObjectMatchSequenceConstraint (choice, data, cons->data.ptrvalue);
+        break;
+      }
+    case CConstraint_choice::e_Pub:
+      if (data.GetData().IsPub())
+         return DoesPubMatchPublicationConstraint(data.GetData().GetPub(), cons.GetPud());
+      break;
+    case CConstraint_choice::e_Molinfo:
+      return DoesObjectMatchMolinfoFieldConstraint (data, cons.GetMolinfo()); // use bioseq_hl
+    case CConstraint_choice::e_Field_missing:
+      if (GetConstraintFieldFromObject(data, field, 0, bioseq_hl).empty()) return true; 
+      else return false;
+      // return DoesObjectMatchFieldMissingConstraint (data, cons.GetField_missing());
+    case CConstraint_choice::e_Translation:
+      // must be coding region or protein feature //
+      if (seq_feat.GetDate().IsProt()) {
+           const CSeq_feat* cds = GetCDSForProduct(bioseq_hl);
+           return DoesCodingRegionMatchTranslationConstraint (cds, cons.GetTranslation());
+      }
+      else if (seq_feat.GetData().IsCdregion())
+           return DoesCodingRegionMatchTranslationConstraint(seq_feat, cons.GetTranslation());
+      // DoesObjectMatchTranslationConstraint (data, cons.GetTrandlation());
+  }
+  return true;
+};
+
+bool CBioseqTestAndRepData :: DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, CConstraint_choice_set c_set)
+{
+  ITERATE (list <CRef <CConstraint_choice> >, it, c_set.Get()) {
+     if (!DoesObjectMatchConstraint(feat, **it)) return false;
+  }
+  return true;
+};
+*/
+
+/*
+void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)  // current test
+{
+   CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
+   const CBioSource* sd_biosrc = GetBioSource(bioseq_hl); // biosrc of seqdesc
+   if (biosrc) return;
+   CSuspectRuleCheck rule_check();
+
+   int genome = biosrc->GetSource().GetGenome();
+   if (genome == (int)CBioSource::eGenome_mitochondrion
+          || genome == (int)CBioSource::eGenome_chloroplast
+          || genome == (int)CBioSource::eGenome_plastid)
+      return;
+   
+   // source should not be bacterial or viral //
+   if (biosrc->IsSetOrgname()) {
+      if (HasLineage(*biosrc, "Bacteria") || HasLineage(*biosrc, "Viruses")) return;
+   }
+
+   // shouldn't be uncultured non-organelle //
+   if (biosrc->IsSetTaxname() && !biosrc->GetTaxname().empty() 
+             && HasUnculturedNonOrganelleName(biosrc->GetTaxname())) return;
+
+   // look for misc_features //
+   string comment;
+   ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) { 
+     if ( (*it)->CanGetComment()) {
+       comment = (*it)->GetComment();
+       if (NStr::EqualNocase( comment.substr(0, 9), "contains ") ) {
+          ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.orga_prod_rules.Get()) {
+             if (!comment.empty() 
+                         && rule_check.DoesStringMatchSuspectRule(comment, **it, **rit)) {
+                thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+                break;
+             }
+          }
+       }
+     }      
+   }
+
+   // also look for coding regions
+   //SAnnotSelector annot_sel;
+   m_annot_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_prot);
+   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+     CFeat_CI feat_ci(*thisInfo.scope, (*it)->GetLocation(), m_annot_sel); 
+     if (feat_ci) {
+       const CProt_ref prot_ref = feat_ci->GetGetOriginalFeature().GetData().GetProt(); 
+       if (prot_ref.CanGetName()) {
+          ITERATE (list <string>, nit, prot_ref.GetName()) {
+             ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.orga_prod_rules.Get()){
+                if (!(*nit).empty() 
+                           && rule_check.DoesStringMatchSuspectRule(*nit, **it, *rit)) {
+                  thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+                  break;
+                } 
+             }
+          }
+       }
+     }
+   }
+};
+
+void CBioseq_TEST_ORGANELLE_PRODUCTS :: GetReport(CRef <CClickableItem>& c_item)
+{
+};
+*/
+
 void CBioseq_DISC_GAPS :: TestOnObj(const CBioseq& bioseq)
 {
    string desc(GetDiscItemText(bioseq));
@@ -215,12 +2688,12 @@ void CBioseq_DISC_GAPS :: GetReport (CRef <CClickableItem>& c_item)
          = GetContainsComment(c_item->item_list.size(), "sequence") + "gaps";
 };
 
-static const CEnumeratedTypeValues* molinfo_tech = CMolInfo::GetTypeInfo_enum_ETech();
+// static const CEnumeratedTypeValues* molinfo_tech = CMolInfo::GetTypeInfo_enum_ETech();
 void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-    strtmp =  
-       molinfo_tech->FindName((CMolInfo::ETech)(*it)->GetMolinfo().GetTech(), false)+"$";
+    strtmp =  CMolInfo::ENUM_METHOD_NAME(ETech)()->FindName(
+                               (CMolInfo::ETech)(*it)->GetMolinfo().GetTech(), false) + "$";
     thisInfo.test_item_list[GetName()].push_back(strtmp + GetDiscItemText(bioseq));
   }
 };
@@ -1180,11 +3653,9 @@ string CBioseq_ADJACENT_PSEUDOGENES :: GetGeneStringMatch (const string& str1, c
 void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
 {
    vector <const CSeq_feat*>::const_iterator jt;   
-   ENa_strand this_strand;
    string match_txt;
    ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
      if (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()) continue;
-     this_strand = (*it)->GetLocation().GetStrand();
      jt = it + 1; 
      if (!(*jt)->CanGetPseudo() || !(*jt)->GetPseudo()) continue;
      if ((*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()) 
@@ -1267,7 +3738,7 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: GetReport(CRef <CClickableItem>& c_ite
           + " a source feature.";
      if (i > 1) thisInfo.disc_report_data.push_back(c_item);
      if (i < biosrc2feats.size()) {
-        c_item = CRef <CClickableItem> (new CClickableItem);
+        c_item.Reset(new CClickableItem);
         c_item->setting_name = GetName();
      }
    };
@@ -1356,7 +3827,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       else if (NStr::EqualNocase(taxnm, "Human immunodeficiency virus 2"))
              lookfor = "HIV-2";
       else lookfor = taxnm;
-      string pattern("\\b" + CRegexp::Escape(lookfor) + "\\b");
+      string pattern("\\b" + CRegexp::Escape(lookfor) + "\\b"); // ??? check CRegexpUtil
       CRegexp :: ECompile comp_flag = CRegexp::fCompile_ignore_case;
       CRegexp rx(pattern, comp_flag);
       if (rx.IsMatch(title)) {
@@ -1650,7 +4121,42 @@ bool CBioseqTestAndRepData :: IsPseudoSeqFeatOrXrefGene(const CSeq_feat* seq_fea
    return rvl;
 };
 
+/*
+string GetTwoFieldSubfield(const string& str, unsigned subfield)
+{
+  if (str.empty() || subfield > 2) return kEmptyStr;
+  if (!subfield) return str;
+  else {
+    size pos = str.find(':');
+    if (pos == string::npos) { 
+      if (subfield == 1) return str;
+      else return kEmptyStr;
+    } 
+    else {
+      if (subfield == 1) return str.substr(0, pos);
+      else if {
+        strtmp = str.substr(pos+1).empty();
+        if (!strtmp.empty()) return strtmp;
+        else return kEmptyStr;
+      }
+    }
+  }
+};
 
+string CBioseqTestAndRepData :: GetFirstGBQualMatch (vector <CRef <CGb_qual> > quals, cosnt string& qual_name, unsigned subfield, const CString_constraint* str_cons)
+{
+  string str(kEmptyStr);
+  ITERATE (vector <CRef <CGb_qual> >, it, quals) {
+     if (NStr::EqualNocase( (*it)->GetQual(), qual_name) {
+        str = (*it)->GetVal();
+        if (subfield) str = GetTwoFieldSubfield(str, subfield);
+        if (str.empty() || !DoesStringMatchConstraint (str, *str_cons)) str = kEmptyStr;
+        else break;
+     }
+  }
+  return str;
+}
+*/
 
 string CBioseqTestAndRepData :: GetRNAProductString(const CSeq_feat& seq_feat)
 {
@@ -1662,11 +4168,14 @@ string CBioseqTestAndRepData :: GetRNAProductString(const CSeq_feat& seq_feat)
      switch (ext.Which()) {
        case CRNA_ref::C_Ext::e_Name:
              rna_str = ext.GetName();
-             if (rna_str.empty()|| rna_str== "ncRNA"|| rna_str== "tmRNA"||rna_str== "misc_RNA")
-                 rna_str = seq_feat.GetNamedQual("product");
+             if (seq_feat.CanGetQual()
+                    && (rna_str.empty() || rna_str== "ncRNA" || rna_str== "tmRNA"
+                                                                || rna_str== "misc_RNA"))
+                 rna_str = CSuspectRuleCheck::GetFirstGBQualMatch(
+                                                    seq_feat.GetQual(), (string)"product");
              break;
        case CRNA_ref::C_Ext::e_TRNA:
-              GetSeqFeatLabel(seq_feat, &rna_str);
+              GetSeqFeatLabel(seq_feat, rna_str);
               break;
        case CRNA_ref::C_Ext::e_Gen:
               if (ext.GetGen().CanGetProduct()) rna_str = ext.GetGen().GetProduct();
@@ -1971,14 +4480,8 @@ CConstRef <CProt_ref> CBioseqTestAndRepData :: GetProtRefForFeature(const CSeq_f
   if (seq_feat.GetData().IsProt()) 
        prot_ref = CConstRef <CProt_ref> (&(seq_feat.GetData().GetProt()));
   else if (seq_feat.GetData().IsCdregion()) {
-    if (look_xref) {
-      if (seq_feat.CanGetXref()) {
-        ITERATE (vector <CRef <CSeqFeatXref> >, it, seq_feat.GetXref()) {
-          if ( (*it)->CanGetData() && (*it)->GetData().IsProt())
-            prot_ref = CConstRef <CProt_ref> (&( (*it)->GetData().GetProt() ));
-        }
-      }
-    }
+    if (look_xref) 
+      prot_ref = CConstRef <CProt_ref> (seq_feat.GetProtXref());
 
     if (prot_ref.Empty() && seq_feat.CanGetProduct()) {
         CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope);
@@ -1993,78 +4496,438 @@ CConstRef <CProt_ref> CBioseqTestAndRepData :: GetProtRefForFeature(const CSeq_f
   return prot_ref;
 };
 
-/*
-GetGBQualFromFeatQual(EFeat_qual_legal feat_legal_dt, int gb_qual, int& subfield)
+/* rm
+string CBioseqTestAndRepData :: GetDbxrefString (const vector <CRef <CDbtag> >& dbxref, const CString_constraint& str_cons)
 {
+  ValNodePtr vnp;
+  Int4       len = 0;
+  CharPtr    str = NULL, cp;
+  
+  string str(kEmptyStr), label;
+  ITERATE (vector <CRef <CDbtag> >, it, dbxref) {
+     label = kEmptyStr;
+     (*it)->GetLabel(label);
+     if (DoesStringMatchConstraint(label, *str_cons))
+       str += label + ";"; 
+  }
+  
+  if (!str.empty()) str = str.substr(0, str.size()-1);
+  return str;
 };
 
-string GetFirstGBQualMatch()
+string CBioseqTestAndRepData :: GetCodeBreakString (const CSeq_feat& seq_feat)
+{
+  string str(kEmptyStr);
+  CBioseq_Handle bioseq_hl = GetBioseqFromSeqLoc(seq_feat.GetLocation(), *thisInfo.scope);
+  if (bioseq_hl) {
+     CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank, CFlatFileConfig::eMode_Release );
+     CFlatFileContext ffctx(cfg);
+     CBioseqContext ctx(bioseq_handle, ffctx);
+     const CCdregion& cd = seq_feat.GetData().GetCdregion();
+     if (cd.CanGetCode_break()) {
+        CFlatCodeBreakQVal fcb(cd.GetCode_break());
+        vector <CRef <CFormatQual> > quals;
+        fcb(quals, "transl_except", ctx, 0);
+        ITERATE (vector <CRef <CFormatQual> >, it, quals) {
+          str += "/" + (*it)->GetName() + "=" + (*it)->GetValue() + "; ";
+        } 
+     }
+  };
 
-string GetFirstGBQualMatchConstraintName(
-*/
+  if (!str.empty()) str = str.substr(0, str.size()-2);
+  return str;
+};
 
-string CBioseqTestAndRepData :: GetFieldValueForObject(const CSeq_feat& seq_feat, const CFeat_qual_choice& feat_qual)
+string CBioseqTestAndRepData :: GettRNACodonsRecognized (const CTrna_ext& trna, CString_constraint& str_cons)
+{
+  string str(kEmptyStr);
+  if (trna.CanGetCodon()) {
+    ITERATE (list <int>, it, trna.GetCodon()) {  // should have only 6
+       if ( (*it) < 64)
+          str += CGen_code_table :: IndexToCoden(*it) + ", ";
+    }
+    if (!str.empty()) return (str.substr(0, str.size()-2));
+  }
+
+  // str_cons not used????
+};
+
+string CBioseqTestAndRepData :: GetIntervalString(const CSeq_interval& seq_int)
+{
+  bool partial5 = seq_int.IsPartialStart(eExtreme_Biological);
+  bool partial3 = seq_int.IsPartialStop(eExtreme_Biological);
+  string str;
+
+  if (seq_int.CanGetStrand() && seq_int.GetStrand() == eNa_strand_minus) {
+    str = "complement(" + (partial3 ? "<" : "") 
+             + NStr::UIntToString(seq_int.GetStart(eExtreme_Positional)) 
+             + ".." + (partial5 ? ">" : "") 
+             + NStr::UIntToString(seq_int.GetStop(eExtreme_Positional)) + ")";
+  } else {
+    str = (partial5 ? "<" : "") 
+             + NStr::UIntToString(seq_int.GetStart(eExtreme_Positional)) 
+             + ".." + (partial3 ? ">" : "") 
+             + NStr::UIntToString(seq_int.GetStop(eExtreme_Positional));
+  }
+  return str;
+};
+
+string CBioseqTestAndRepData :: GetAnticodonLocString (const CTrna_ext& trna)
+{
+  if (!trna.CanGetAnticodon()) return kEmptyStr;
+
+  string str(kEmptyStr);
+  if (trna.GetAnticodon().IsInt()) return(GetIntervalString (trna.GetAnticodon().GetInt()));
+  else if (trna.GetAnticodon().IsMix()) {
+    ITERATE (list <CRef <CSeq_loc> >, it, trna.GetAnticodon().GetMix().Get()) {
+       if ( (*it)->IsInt()) str += GetIntervalString( (*it)->GetInt() ) + ", ";
+       else return( "complex location" );
+    }
+    return (str.substr(0, str.size() - 2));
+  }
+};
+
+// C: GetQualFromFeatureAnyType
+string CBioseqTestAndRepData :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat, const CFeat_qual_choice& feat_qual, const CString_constraint& str_cons)
 {
   string ret_str(kEmptyStr);
+  bool is_legal_qual = feat_qual.IsLegal_qual();
+  bool is_illegal_qual = feat_qual.IsIllegal_qual();
+  EFeat_qual_legal 
+    legal_qual= feat_qual.IsLegal_qual() ? feat_qual.GetLegal_qual() : eFeat_qual_legal_allele;
+  const CString_constraint 
+       illegal_qual = feat_qual.IsIllegal_qual() ? 
+                         feat_qual.GetIllegal_qual() : CString_constraint();
+
+  const CSeqFeatData& seq_fdt = seq_feat.GetData();
+  // for gene fields 
+  // GetGeneInfoForFeature (seq_feat, grp, gene);
+  CConstRef <CGene_ref> gene_ref;
+  CConstRef <CSeq_feat> gene_feat;
+  if (seq_feat.GetData().IsGene()) {
+     gene_ref = CConstRef <CGene_ref> (&(seq_feat>GetData().GetGene()));
+     gene_seq = CConstRef <CSeq_feat> (&seq_feat);
+  }
+  else {
+     gene_ref = CConstRef <CGene_ref> (seq_feat.GetGeneXref());
+     if (gene_ref.Empty()) {
+        gene_feat = GetBestOverlappingFeat(seq_feat.GetLocation(), CSeqFeatData::e_Gene, 
+                                                         eOverlap_Contained, *thisInfo.scope);
+        if (gene_feat.NotEmpty())
+          gene_ref = CConstRef <CGene_ref> (gene_feat->GetData().GetGene());
+     }
+     else if (gene_ref.IsSuppressed()) gene_ref.Reset();
+  }
 
   // for protein fields
   CConstRef <CProt_ref> prot = GetProtRefForFeature (seq_feat);
 
-  /* fields common to some features */
-  /* product */
-  if (ret_str.empty()
-      && ((feat_qual.IsLegal_qual() && feat_qual.GetLegal_qual() == eFeat_qual_legal_product) 
-//          || (feat_qual.IsIllegal_qual() && DoesStringMatchConstraint ("product", field->data.ptrvalue))
-))
+  // fields common to all features 
+  // note, also known as comment
+  if ( (is_legal_qual && legal_qual == eFeat_qual_legal_note)
+      || (is_illegal_qual 
+               && CSuspechRuleCheck::DoesStringMatchConstraint("note", *illegal_qual)))
+  {
+     if (seq_feat.CanGetComment() && !(str = seq_feat.GetComment()).empty()
+                                     && DoesStringMatchConstraint(str, *str_cons))
+     else str = kEmptyStr;
+     return str;
+  }
+  // db-xref
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_db_xref)
+          || (is_illegal_qual 
+                  && CSuspectRuleCheck::DoesStringMatchConstraint ("db_xref", *illegal_qual)))
+  {
+    if (seq_feat.CanGetDbxref()) return(GetDbxrefString (seq_feat.GetDbxref(), str_cons));
+  }
+  // exception
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_exception)
+          || (is_illegal_qual 
+                && CSuspectRuleCheck::DoesStringMatchConstraint ("exception", *illegal_qual)))
+  {
+     if (seq_feat.CanGetExcept_text() && !(str = seq_feat.GetExcept_text()).empty()
+                           && CSuspectRuleCheck::DoesStringMatchConstraint(str, *str_cons));
+     else str = kEmptyStr;
+     return str;
+  }
+  // evidence
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_evidence)
+          || (is_illegal_qual && DoesStringMatchConstraint ("evidence", *illegal_qual)))
+  {
+     if (seq_feat.CanGetExp_ev()) {
+        if (seq_feat.GetExp_ev() == CSeq_feat::eExp_ev_experimental) str = "experimental";
+        else str = "non-experimental";
+        if (!DoesStringMatchConstraint(str, *str_cons)) str = kEmptyStr;
+     }
+     return str;
+  }
+
+  // citation ####?????
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_citation)
+          || (is_illegal_qual && DoesStringMatchConstraint ("citation", *illegal_qual)))
+  {
+//    str = GetCitationTextFromFeature (sfp, str_cons, batch_extra == NULL ? NULL : batch_extra->cit_list);
+      if (seq_feat.CanGetCit() && seq_feat.GetCit().GetLabel(&str) 
+            && DoesStringMatchConstraint(str, *str_cons));
+      else str = kEmptyStr;       
+      return str;
+  }
+
+  // location
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_location)
+          || (is_illegal_qual && DoesStringMatchConstraint ("location", *illegal_qual)))
+  {
+      return (SeqLocPrintUseBestID (seq_feat.GetLocation()));
+  }
+
+  // pseudo
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_pseudo)
+           || (is_illegal_qual && DoesStringMatchConstraint ("pseudogene", *illegal_qual)))
+  {
+     str = seq_feat.GetNamedQual("pseudogene");
+     if (!str.empty() && DoesStringMatchConstraint(str, *str_cons) 
+                                  && seq_feat.CanGetPseudo() && seq_feat.GetPseudo())
+          str = "unqualified";
+     return str;
+  }
+
+  // fields common to some features
+  // product
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_product) 
+           || (is_illegal_qual && DoesStringMatchConstraint ("product", *illegal_qual)))
   {
     if (prot.NotEmpty()) {
-      if (prot->CanGetName()) {
-        ret_str = *(prot->GetName().begin()); //str = GetFirstValNodeStringMatch (prp->name, scp);
-      }
+      if (prot->CanGetName()) str = GetFirstStringMatch (pror->GetName(), str_cons);
     } 
-    else if (seq_feat.GetData().IsRna()) {
-      ret_str = CBioseqTestAndRepData :: GetRNAProductString (seq_feat);
-   //   str = GetRNAProductString (seq_feat, scp);
+    else if (seq_fdt.IsRna()) {
+      str = CBioseqTestAndRepData :: GetRNAProductString (seq_feat);
+      if (!DoesStringMatchConstraint(str, *str_cons)) str = kEmptyStr;
     }
+    return str;
   }
 
-  /* actual GenBank qualifiers */
-/*
-  if (ret_str.empty()) {
-    if (feat_qual.IsLegal_qual()) {
-      gbqual = GetGBQualFromFeatQual (field->data.intvalue, &subfield);
-      if (gbqual > -1) 
-        str = GetFirstGBQualMatch (sfp->qual, ParFlat_GBQual_names [gbqual].name, subfield, scp);
-    } else {
-      str = GetFirstGBQualMatchConstraintName (sfp->qual, field->data.ptrvalue, scp);
-    }
+  // Gene fields
+  bool has_gene_ref = gene_ref.NotEmpty();
+  // locus
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_gene)
+           || (is_illegal_qual && DoesStringMatchConstraint ("locus", *illegal_qual))) {
+     if (has_gene_ref && gene_ref->CanGetLocus() && !(str = gene_ref->GetLocus()).empty()
+                                    && DoesStringMatchConstraint(str, *str_cons));
+     else str = kEmptyStr;
+     return str;
   }
+  // description
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_gene_description)
+           || (is_illegal_qual && DoesStringMatchConstraint ("description", *illegal_qual))) {
+     if (has_gene_ref && gene_ref.CanGetDesc() && !(str = gene_ref->GetDesc()).empty()
+                                       && DoesStringMatchConstraint(str, *str_cons));
+     else str = kEmptyStr;
+     return str;
+  }
+  // maploc
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_map)
+           || (is_illegal_qual && DoesStringMatchConstraint ("map", *illegal_qual))) {
+     if (has_gene_ref && gene_ref.CanGetMaploc() && !(str = gene_ref.GetMaploc())
+                                   && DoesStringMatchConstraint(str, *str_cons));
+     else str = kEmptyStr;
+     return str;
+  }
+  // allele 
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_allele)
+               || (is_illegla_qual && DoesStringMatchConstraint ("allele", *illegal_qual))
+          && seq_fdt.GetSubtype() == CSeqFeatData::eSubtype_variation) {
+     if (has_gene_ref && gene_ref.CanGetAllele() && !(str = gene_ref.GetAllele()).empty()
+                                     && DoesStringMatchConstraint(str, *str_cons));
+     else str = kEmptyStr;
+     return str;
+  }
+  // locus_tag
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_locus_tag)
+             || (is_illegal_qual && DoesStringMatchConstraint ("locus_tag", *illegal_qual))) {
+     if (has_gene_ref && gene_ref.CanGetLocus_tag() && !(str = gene_ref.GetLocus_tag()).empty()
+                             && DoesStringMatchConstraint(str, *str_cons));
+     else str = kEmptyStr;
+     return str;
+  }
+  // synonym 
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_synonym)
+              || (is_illegal_qual && DoesStringMatchConstraint ("synonym", *illegal_qual))) {
+     if (hs_gene_ref && gene_ref.CanGetSyn()) 
+          str = GetFirstStringMatch (gene_ref->GetSyn(), str_cons);
+     return str;
+  }
+
+  // gene comment
+  if (is_legal_qual && legal_qual == eFeat_qual_legal_gene_comment) {
+      if (gene_feat.NotEmpty() 
+          && gene_feat.CanGetComment() && !(str=gene_feat.GetComment()).empty() 
+          && DoesStringMatchConstraint (str, *str_cons));
+      else str = kEmptyStr;
+      return str;
+  }
+
+  // protein fields 
+  // note - product handled above
+  bool has_prot = prot.NotEmpty();
+  // description
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_description)
+            || (is_illegal_qual && DoesStringMatchConstraint ("description", *illegal_qual))) {
+       if (has_prot && prot->CanGetDesc() && !(str = prot->GetDesc()).empty()
+                                   && DoesStringMatchConstraint(str, *str_cons));
+       else str = kEmptyStr;
+       return str;
+  }
+  // ec_number //
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_ec_number)
+             || (is_illegal_qual && DoesStringMatchConstraint ("ec_number", *illegal_qual))) {
+       if (has_prot && prot->CanGetEc()) {
+         str = GetFirstStringMatch (prot->GetEc(), str_cons);
+         if (!DoesStringMatchConstraint(str, *str_cons)) str = kEmptyStr;
+       }
+       return str;
+  }
+  // activity //
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_activity)
+             || (is_illegal_qual && DoesStringMatchConstraint ("activity", *illegal_qual))) {
+       if (has_prot && prot->CanGetActivity()) {
+          str = GetFirstStringMatch (prot->GetActivity(), str_cons); 
+          if (!DoesStringMatchConstraint(str, *str_cons)) str = kEmptyStr;
+       }
+       return str;
+  }
+
+  // coding region fields //
+  bool has_cd = seq_fdt.IsCdregion();
+  // transl_except //
+  if (is_legal_qual && legal_qual == eFeat_qual_legal_transl_except) {
+     if (has_cd) str = GetCodeBreakString (seq_feat);
+     return str;
+  }
+  // transl_table //
+  if (is_legal_qual && legal_qual == eFeat_qual_legal_transl_table) {
+    if ( has_cd) {
+      if (seq_fdt.GetCdregion().CanGetCode()) {
+          ITERATE (list < CRef <CGenetic_code::C_E> >, it,
+                                      seq_fdt.GetCdregion().GetCode().Get()) {
+             if ( (*it)->IsId() ) {
+               str = NStr::IntToString( (*it)->GetId());
+               break;
+             }
+          }
+      }
+    }
+    return str;
+  }
+  // translation //
+  if (is_legal_qual && legal_qual == eFeat_qual_legal_translation) {
+      if (has_cd && seq_feat.CanGetProduct()) {
+         CBioseq_Handle
+            prot_hl = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope);
+         if (prot_hl && prot->CanGetInst_Length()) {
+            CSeqVector seq_vec = bioseq_h.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            seq_vec.GetSeqData(0, prot_hl->GetInst_Length(), str);
+         }
+      } 
+      return str;
+  }
+
+  // special RNA qualifiers //
+  // tRNA qualifiers //
+  bool is_rna = seq_fdt.IsRna();
+  bool has_ext = (is_ran && seq_fdt.GetRna().CanGetExt()) ? true : false;
+  bool is_trna = (has_ext && seq_fdt.GetRna().GetExt().IsTRNA()) ? true : false; 
+  bool is_rna_gen = (has_ext && seq_fdt.GetRna().GetExt().IsGen()) ? true : false;
+  // codon-recognized //
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_codons_recognized)
+       || (is_illegal_qual && DoesStringMatchConstraint ("codon-recognized", *illegal_qual))) {
+    if (is_trna) 
+       str = GettRNACodonsRecognized (seq_fdt.GetRna().GetExt().GetTRNA(), str_cons); 
+       // str_cons not used?????
+    return str;
+  }
+  // anticodon //
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_anticodon)
+           || (is_illegal_qual && DoesStringMatchConstraint ("anticodon", *illegal_qual))) {
+    if (is_trna) 
+       str = GetAnticodonLocString (seq_fdt.GetRna().GetExt().GetTRNA());
+    return str;
+  }
+  // tag-peptide //
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_tag_peptide)
+           || (is_illegal_qual && DoesStringMatchConstraint ("tag-peptide", *illegal_qual))) {
+     if (is_rna_gen && seq_fdt.GetRna().GetExt().GetGen().CanGetQuals()) { 
+        ITERATE (list <CRef <CRNA_qual> >, it, 
+                                     seq_fdt.GetRna().GetExt().GetGen().GetQuals().Get()) {
+            if ((*it)->GetQual() == "tag_peptide" && !(str = (*it)->GetVal()).empty()
+                                && DoesStringMatchConstraint(str, *str_cons))
+                  break;
+            else str = kEmptyStr;
+        }
+     }
+     return str;
+  }
+  // ncRNA_class //
+  if ((is_legal_qual && legal_qual == eFeat_qual_legal_ncRNA_class)
+           || (is_illegal_qual && DoesStringMatchConstraint ("ncRNA_class", *illegal_qual))) {
+     if (is_rna_gen && seq_fdt.GetRna().GetExt().GetGen().CanGetClass()) {
+        str = seq_fdt.GetRna().GetExt().GetGen().GetClass();
+        if (!DoesStringMatchConstraint(str, *str_cons)) str = kEmptyStr;
+      
+     }
+     return str;
+  }
+
+  // codon-start //
+  if (is_legal_qual && legal_qual == eFeat_qual_legal_codon_start) {
+      if (has_cd) {
+         const CCdregion& cd = seq_ft.GetCdregion();
+         if (!cd.CanGetFrame()) str = "1";
+         else str = NStr::UIntToString( (unsigned)cd.GetFrame());
+         if (!DoesStringMatchConstraint (str, *str_cons)) str = kEmptyStr;
+      }
+      return str;
+  }
+
+  // special region qualifiers //
+  if (seq_ft.IsRegion() && is_legal_qual && legal_qual == eFeat_qual_legal_name) {
+      str = seq_ft.GetRegion();
+      if (!DoesStringMatchConstraint (str, *str_cons)) str = kEmptyStr; 
+      return str;
+  } 
+
+  // actual GenBank qualifiers //
+  if (is_legal_qual && seq_feat.CanGetQual()) {
+      string feat_qual_name = thisInfo.featquallegal_name[legal_qual];
+      bool has_subfield = thisInfo.featquallegal_subfield.find(legal_qual) 
+                                        != thisInfo.featquallegal_subfield.end();
+      unsigned subfield = has_subfield ? thisInfo.featquallegal_subfield[legal_qual] : 0;
+      if (feat_qual_name == "name" || feat_qual_name == "location") {  // gbqual = -1
+           // GetFirstGBQualMatchConstraintName: the arg qua_name = first->data.ptrval is 0?
+          ITERATE (vector <CRef <CGB_qual> >, it, seq_feat.GetQual()) {
+             str = (*it)->GetVal();
+             if (!str.empty() && DoesStringMatchConstraint(str, *str_cons)) break;
+             else str = kEmptyStr;
+          }
+      }
+      else {
+         str 
+           =GetFirstGBQualMatch(seq_feat.GetNamedQual(), feat_qual_name, subfield, *str_cons);
+      }
+      return str;
+  }
+}; // GetQualFromFeatureAnyType
+
+
+// changed: 3/08
+string CBioseqTestAndRepData :: GetQualFromFeature(const CSeq_feat& seq_feat, const CFeature_field& feat_field, const CString_constraint& str_cons)
+{
+  EMacro_feature_type feat_field_type = feat_field.GetType();
+  if (eMacro_feature_type_any != feat_field_type
+            && seq_feat.GetData().GetSubtype() != thisInfo.feattype_featdef[feat_field_type])
+         return (kEmptyStr);
+  return (GetQualFromFeatureAnyType(seq_feat, feat_field.GetField(), str_cons));
+};
 */
-  return ret_str;
-}
-
-
-CSeqFeatData::ESubtype CBioseqTestAndRepData :: GetFeatdefFromFeatureType(EMacro_feature_type feat_field_type)
-{
-   switch (feat_field_type) {
-     case eMacro_feature_type_any:
-         return (CSeqFeatData :: eSubtype_any); break;
-     default: return (CSeqFeatData :: eSubtype_bad);
-   }
-};
-
-
-string CBioseqTestAndRepData :: GetQualFromFeature(const CSeq_feat& seq_feat, const CField_type& field_type)
-{
-  if (field_type.IsFeature_field()) {
-     const CFeature_field& feat_field = field_type.GetFeature_field();
-     EMacro_feature_type feat_field_type = feat_field.GetType();
-     if (eMacro_feature_type_any == feat_field_type
-             || seq_feat.GetData().GetSubtype() == GetFeatdefFromFeatureType(feat_field_type))
-        return (GetFieldValueForObject(seq_feat, feat_field.GetField()));
-  }
-  return (kEmptyStr);
-};
 
 
 bool CBioseqTestAndRepData :: IsLocationOrganelle(int genome)
@@ -2145,8 +5008,8 @@ void CBioseqTestAndRepData :: TestOnMRna(const CBioseq& bioseq)
     if (mRNA.Empty())
       thisInfo.test_item_list[GetName_no_mrna()].push_back(GetDiscItemText(**it));
     else {
-      feat_prod = GetQualFromFeature(**it, *field_type);
-      mRNA_prod = GetQualFromFeature(*mRNA, *field_type);
+      feat_prod = CSuspectRuleCheck :: GetQualFromFeature(**it, *feat_field);
+      mRNA_prod = CSuspectRuleCheck :: GetQualFromFeature(*mRNA, *feat_field);
       if (feat_prod != mRNA_prod && !ProductsMatchForRefSeq(feat_prod, mRNA_prod))
          thisInfo.test_item_list[GetName_no_mrna()].push_back(GetDiscItemText(**it));
       if (!has_qual_ids) {
@@ -2631,7 +5494,7 @@ void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& biose
 */
     CConstRef <CSeq_feat> gene_feat_4_feat (GetGeneForFeature(**it));
     if (gene_feat_4_feat.Empty() || !(gene_feat_4_feat->GetData().GetGene().CanGetLocus())
-                || !(gene_feat_4_feat->GetData().GetGene().GetLocus().empty()) ) 
+                || gene_feat_4_feat->GetData().GetGene().GetLocus().empty() ) 
         continue;  // no gene name
     if ((*it)->CanGetProduct()) {
       CBioseq_Handle bioseq_prot = GetBioseqFromSeqLoc((*it)->GetProduct(),*thisInfo.scope);
@@ -2860,7 +5723,7 @@ void CBioseq_TEST_BAD_GENE_NAME :: GetReport(CRef <CClickableItem>& c_item)
     c_item->setting_name = GetName_bad();
     has_bad_bacterial = true;
     if (!bad_name_genes.empty()) 
-         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item.Reset(new CClickableItem);
   } 
   if (!bad_name_genes.empty()) {
     c_item->setting_name = GetName();
@@ -3961,7 +6824,7 @@ void CBioseq_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
               = GetHasComment(c_sub->item_list.size(), "gene") + "locus tag " + it->first;
        if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
        else {
-          if (used_citem1) c_item = CRef <CClickableItem> (new CClickableItem);
+          if (used_citem1) c_item.Reset(new CClickableItem);
           c_item->setting_name = dup_setting_name;
           c_item->subcategories.push_back(c_sub);
        }
@@ -4812,7 +7675,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
   string context_label;
   unsigned i; 
   ITERATE (vector <const CSeq_feat*>, it, trna_feat) {
-     GetSeqFeatLabel(**it, &context_label);
+     GetSeqFeatLabel(**it, context_label);
      i=0;
      ITERATE (Str2UInt, jt, thisInfo.desired_aaList) {
         if (context_label.find(jt->first) != string::npos) {
@@ -4938,7 +7801,7 @@ void CBioseq_test_on_rna :: FindDupRNAsInList()
 
   for (i=0; (int) i < (int)rrna_feat.size() -1; i++) {
     if (is_dup[i]) continue;
-    GetSeqFeatLabel(*rrna_feat[i], &label);  // context_label in C
+    GetSeqFeatLabel(*rrna_feat[i], label);  // context_label in C
     label2dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[i]));
     is_dup[i] = 1;
     for (j=i+1; j< rrna_feat.size(); j++) {
@@ -5069,7 +7932,7 @@ void CBioseq_FIND_BADLEN_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
      c_item->description =GetIsComment(c_item->item_list.size(), "tRNAs") + "too " + it->first;
      if (i) thisInfo.disc_report_data.push_back(c_item);
      else {
-        c_item = CRef <CClickableItem> (new CClickableItem);
+        c_item.Reset(new CClickableItem);
         c_item->setting_name = GetName();
      }
      i++;
@@ -5088,7 +7951,7 @@ void CBioseq_FIND_DUP_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
     c_item->description = it->first;
     if (i > 1) thisInfo.disc_report_data.push_back(c_item);
     if (i != label2rrna.size()) {
-         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item.Reset(new CClickableItem);
          c_item->setting_name = GetName();
     }
     i++;
@@ -5111,7 +7974,7 @@ void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem>& c_item)
      else c_item->description = it->first;
      if (i > 1) thisInfo.disc_report_data.push_back(c_item);
      if (i != cnt2bioseq.size()) {
-         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item.Reset(new CClickableItem);
          c_item->setting_name = GetName_tcnt(); 
      }
      i++;
@@ -5143,7 +8006,7 @@ void CBioseq_COUNT_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
      else c_item->description = it->first;
      if (i > 1) thisInfo.disc_report_data.push_back(c_item);
      if (i != cnt2bioseq.size()) {
-         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item.Reset(new CClickableItem);
          c_item->setting_name = GetName();
      }
      i++;
@@ -5629,7 +8492,7 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
   string prod_nm;
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
      prod_nm = GetProdNmForCD(*seq_feat);
-     if ( IsWholeWord(prod_nm, "ABC")
+     if ( CDiscRepUtil::IsWholeWord(prod_nm, "ABC")
             || string::npos != NStr::FindNoCase(prod_nm, "transposon")
             || string::npos != NStr::FindNoCase(prod_nm, "transposase"))
           return false;
@@ -6179,7 +9042,7 @@ bool CBioseq_SUSPECT_PRODUCT_NAMES :: IsSearchFuncEmpty(const CSearch_func& func
 {
   if (func.IsString_constraint()) {
      const CString_constraint& str_cons = func.GetString_constraint();
-     if (str_cons.GetIs_all_lower() || str_cons.GetIs_all_lower() || str_conf.GetIs_all_punct())
+     if (str_cons.GetIs_all_lower() || str_cons.GetIs_all_lower() || str_cons.GetIs_all_punct())
            return false;
      else if (!(str_cons.CanGetMatch_text()) return true;
      else return false;
@@ -6191,158 +9054,6 @@ bool CBioseq_SUSPECT_PRODUCT_NAMES :: IsSearchFuncEmpty(const CSearch_func& func
   else return false;
 };
 
-
-
-string CBioseq_SUSPECT_PRODUCT_NAMES :: SkipWeasel(string& str)
-{
-  vector <string> words;
-  words = NStr::Tokenize(str, " ", words);
-  
-  vector <string> weasels;
-  weasels.reserve(11);
-  weasels.push_back("candidate");
-  weasels.push_back("hypothetical");
-  weasels.push_back("novel");
-  weasels.push_back("possible");
-  weasels.push_back("potential");
-  weasels.push_back("predicted");
-  weasels.push_back("probable");
-  weasels.push_back("putative");
-  weasels.push_back("uncharacterized");
-  weasels.push_back("unique");
-
-  NON_CONST_ITERATE (vector <string>, it, words) {
-     if (!(*it).empty()) {
-         ITERATE (vector <string>, jt, weasels) {
-            if ( !(*it).empty() && NStr::FindNoCase(*it, *jt)) {
-                *it = kEmptyStr;
-                break;
-            }
-         }
-     }
-  }
- 
-**
-  str = kEmptyStr;
-  ITERATE (vector <string>, it, words) {
-    if (!(*it).empty()) str += (*it) + " ";
-  }
-  return(NStr::TruncateSpaces(str));
-**
-  return (NStr::Join(words, " "));
-};
-
-
-
-bool CBioseq_SUSPECT_PRODUCT_NAMES :: DoesStringMatchConstraint(string& str, const CString_constrain& str_cons)
-{
-  if (str_cons.GetIgnore_weasel()) str = SkipWeasel(str);
-
-  if (str_cons.GetIs_all_caps() && !IsAllCaps(str)) return false;
-  if (str_cons.GetIs_all_lower && !IsAllLowerCase(str)) return false;
-  if (str_cons.GetIs_all_punct && !IsAllPunctuation(str)) return false;
-  if (!(str_conf.CanGetMatch_text())) return true; 
-
-  string tmp_match = str_conf.GetMatch_text();
-  if (str_cons.GetIgnore_weasel) {
-    str_conf.SetMatch_text(SkipWeasel (scp->match_text));
-  }
-
-  if ((str_conf.GetMatch_location != eString_location_inlist) 
-                                                      && !str_conf.CanGetIgnore_words()){
-    str_conf.SetMatch_text(tmp_match);
-    return AdvancedStringMatch(str, scp);
-  }
-
-  string search, pattern;
-  if (str_conf.GetMatch_location() != eString_location_inlist 
-           && (str_conf.GetIgnore_space() || str_cons.GetIgnore_punct())) {
-    search = str;
-    StripUnimportantCharacters (search, scp->ignore_space, scp->ignore_punct);
-    pattern = str_confs.GetMatch_text();
-    StripUnimportantCharacters (pattern, scp->ignore_space, scp->ignore_punct);
-  } else {
-    search = str;
-    pattern = scp->match_text;
-  }
-
-  bool rval;
-  if (str_conf.GetCase_sensitive()) pFound = search.find(pattern);
-  else pFound = NStr::FindNoCase(search, pattern);
-  switch (str_conf.GetMatch_location()) 
-  {
-    case eString_location_contains:
-      if (string::npos == pFound) rval = FALSE;
-      else if (str_conf.GetWhole_word()) 
-      {
-          rval = IsWholeWordMatch (search, pFound, pattern.size());
-          while (!rval && pFound != string::npos) 
-          {
-	     if (str_conf.GetCase_sensitive()) pFound = search.substr(pFound+1).find(patten);
-	     else pFound = NStr::FindNoCase(search.substr(pFound+1), pattern);
-             if (pFound != string::npos)
-                 rval = IsWholeWordMatch (search, pFound, pattern.size());
-          }
-      }
-      else rval = TRUE;
-      break;
-    case eString_location_starts:
-      if (pFound == search)
-      {
-        if (str_conf.GetWhole_word()) 
-            rval = IsWholeWordMatch (search, pFound, pattern.size());
-        else rval = TRUE;
-      }
-      break;
-    case eString_location_ends:
-      while (pFound != string::npos && !rval) {
-  	    char_after = *(pFound + StringLen (pattern));
-        if ( (pFound + pattern.size()) == search.size())
-        {
-          if (str_conf.GetWhole_word()) 
-              rval = IsWholeWordMatch (search, pFound, pattern.size());
-          else rval = true;
-          * stop the search, we're at the end of the string *
-          pFound = string::npos;
-        }
-        else
-        {
-	   if (str_conf.GetCase_sensitive()) pFound = search.substr(pFound+1).find(pattern);
-	   else pFound = NStr::FindNoCase(search.substr(pFound + 1), pattern);
-        }
-      }
-      break;
-    case eString_location_equals:
-      if (str_conf.GetCase_sensitive() && (search==pattern) ) rval= true; 
-      else if (!str_conf.GetCase_sensitive() 
-                  && !NStr::CompareNocase(search, pattern) ) rval = true;
-      break;
-    case eString_location_inlist:
-      if (str_conf.GetCase_sensitive()) pFound = pattern.find(search);
-      else pFound = NStr::FinNoCase(pattern, search);
-      if (pFound == string::npos) rval = FALSE;
-      else
-      {
-        rval = IsWholeWordMatchEx (pattern, pFound, search.size(), true);
-        while (!rval && pFound != string::npos) 
-        {
-          if (str_conf.GetCase_sensitive())
-               pFound = pattern.substr(pFound + 1).find(search);
-          else pFound = NStr::FindNoCase(pattern.substr(pFound + 1), search);
-          if (pFound != string::npos)
-              rval = IsWholeWordMatchEx (pattern, pFound, str.size(), TRUE);
-        }
-      }
-      if (!rval) {
-        * look for spans *
-        rval = IsStringInSpanInList (search, pattern);
-      }
-      break;
-  }
-
-  str_conf.SetMatch_text(tmp_match);
-  return rval;
-};
 */
 
 
@@ -6476,7 +9187,7 @@ void CBioseq_SUSPECT_PRODUCT_NAMES :: DoesStringMatchConstraint(vector <string>&
    string pattern( str_cst.GetMatch_text() ); 
    if (eString_location_inlist != str_cst.GetMatch_Location()
         && ( str_cst.GetIgnore_space() || str_cst.GetIgnore_punct()) ) {
-      StripUnimportantCharacters(prot_nm, str_cst.GetIgnore_space(), str_cst.GetIgnore_punct());
+      StripUnimportantCharacters(prot_nm,str_cst.GetIgnore_space(), str_cst.GetIgnore_punct());
    }
 
    vector <size_t> pFound;
@@ -6741,6 +9452,7 @@ void CBioseq_SUSPECT_PRODUCT_NAMES :: TestOnObj(const CBioseq& bioseq)  // with 
   
   unsigned k;
   CSeq_feat* seq_feat;
+  CSuspectRuleCheck rule_check(bioseq); 
   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
     seq_feat = const_cast <CSeq_feat*> (*it);
     const CProt_ref& prot = seq_feat->GetData().GetProt();
@@ -7138,11 +9850,10 @@ void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const 
 };
 
 
-// C: GetSourceQualFromBioSource
-string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, bool is_subsrc)
+// part of the C: GetSourceQualFromBioSource
+string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, bool is_subsrc, const CString_constraint* str_cons)
 {
  string ret_str(kEmptyStr);
- // DoesStringMatchConstraint missing
  if (is_subsrc) ret_str = Get1SubSrcValue(biosrc, qual_name);
  else if (qual_name == "location") 
             ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
@@ -7152,7 +9863,7 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
         ret_str = biosrc.IsSetCommon() ? biosrc.GetCommon() : kEmptyStr;
  else if (qual_name == "lineage") 
         ret_str = biosrc.IsSetLineage() ? biosrc.GetLineage() : kEmptyStr;
- else if (qual_name == "div") 
+ else if (qual_name == "division") 
         ret_str = biosrc.IsSetDivision() ? biosrc.GetDivision() : kEmptyStr;
  else if (qual_name == "dbxref") ret_str = "no ready yet";
  else if (qual_name == "taxid") {
@@ -7204,6 +9915,9 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
    }
  }
  else ret_str = Get1OrgModValue(biosrc, qual_name);
+
+ if (str_cons && !CSuspectRuleCheck :: DoesStringMatchConstraint(ret_str, str_cons)) 
+       ret_str = kEmptyStr;
  
  return (ret_str);
 };
@@ -7485,7 +10199,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
         c_item->item_list.clear();
         if (i) thisInfo.disc_report_data.push_back(c_item);
         if (i < qnm2qvlu_src.size() - 1 ) {
-             c_item = CRef <CClickableItem> (new CClickableItem);
+             c_item.Reset(new CClickableItem);
              c_item->setting_name = setting_name;
         }
      }
@@ -7518,7 +10232,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
     }
  
     if (!sub.empty()) {
-         c_item = CRef <CClickableItem> (new CClickableItem);
+         c_item.Reset(new CClickableItem);
          c_item->setting_name = setting_name;
          c_item->description = GetHasComment(cnt, "source") 
                                       + "two or more qualifiers with the same value";
@@ -7925,7 +10639,8 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasMultipleCultureCollection (const CBio
   bool has_one = false;
   cul_vlus = kEmptyStr; 
   strtmp 
-    =COrgMod::ENUM_METHOD_NAME(ESubtype)()->FindName(COrgMod::eSubtype_culture_collection,true)
+    = COrgMod::ENUM_METHOD_NAME(ESubtype)()->FindName(
+                                               COrgMod::eSubtype_culture_collection, false)
       + ": ";
   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() ) {  
     if ( (*it)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
@@ -8708,7 +11423,7 @@ void CSeqEntryTestAndRepData :: GetIncnstTestReport (CRef <CClickableItem>& c_it
     if (has_missing) {
         GetTestItemList(field2ls["missing"], vlu2ls, "@");
         missing_ls = vlu2ls.begin()->second;
-        c_missing.Reset(CRef <CClickableItem> (new CClickableItem)); 
+        c_missing.Reset(new CClickableItem); 
         c_missing->setting_name = setting_name;
         c_missing->item_list = missing_ls;
         c_missing->description = GetIsComment(missing_ls.size(), "Bioseq") 
@@ -8716,7 +11431,7 @@ void CSeqEntryTestAndRepData :: GetIncnstTestReport (CRef <CClickableItem>& c_it
         c_item->subcategories.insert(c_item->subcategories.begin(), c_missing);
     }
     ITERATE (Str2Strs, fid, field2ls) {
-      c_field.Reset(CRef <CClickableItem> (new CClickableItem));
+      c_field.Reset(new CClickableItem);
       c_field->setting_name = setting_name;
       if (fid->first != "missing") {
         GetTestItemList(fid->second, vlu2ls, "@");
@@ -8788,12 +11503,15 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
      // DISC_INCONSISTENT_STRUCTURED_COMMENTS
      not_empty_fields = false;
      if (type_str == "StructuredComment") {
-        prefix 
-           = user_obj.HasField("StructuredCommentPrefix") ?
-           (user_obj.GetField("StructuredCommentPrefix").GetData().IsStr()?
-                   user_obj.GetField("StructuredCommentPrefix").GetData().GetStr()
-                   : "unnamed")
-             : "unnamed";
+        if (user_obj.HasField("StructuredCommentPrefix")) {
+           if (user_obj.GetField("StructuredCommentPrefix").GetData().IsStr())
+                // how about substitute_on_error
+                prefix = CUtf8::AsSingleByteString(
+                               user_obj.GetField("StructuredCommentPrefix").GetData().GetStr(),
+                               eEncoding_Ascii);
+           else prefix = "unnamed";
+        }
+        else prefix = "unnamed";
         if (m_prefix_set.find(prefix) == m_prefix_set.end()) m_prefix_set.insert(prefix);
         if (entry_is_seq) {
            if (!seq_ref->IsAa()) {
@@ -8915,8 +11633,9 @@ void CSeqEntry_on_incnst_user :: AddDbLinkFieldValues(const CUser_object& user_o
                  || field_str == "BioProject") {
           strtmp = "DBLink$" + field_str + "#";
           if ( (*uit)->GetData().IsStrs()) {
-              ITERATE (CUser_field::C_Data::TStrs, sit, (*uit)->GetData().GetStrs()) 
-                 thisInfo.test_item_list[GetName_db()].push_back(strtmp+(*sit)+"@"+desc);
+              ITERATE (vector <CStringUTF8>, sit, (*uit)->GetData().GetStrs()) 
+                 thisInfo.test_item_list[GetName_db()].push_back(
+                       strtmp + CUtf8::AsSingleByteString(*sit, eEncoding_Ascii) + "@" + desc);
           }
           else if ( (*uit)->GetData().IsInts()) {
               ITERATE (vector <int>, iit, (*uit)->GetData().GetInts())
@@ -9141,8 +11860,8 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     // ONCALLER_BIOPROJECT_ID
     if (type_str == "DBLink" && user_obj.HasField("BioProject")
          && user_obj.GetField("BioProject").GetData().IsStrs()) {
-       const CUser_field::C_Data::TStrs& ids =user_obj.GetField("BioProject").GetData().GetStrs();
-       if (!ids.empty() && !ids[0].empty()) {
+       const vector <CStringUTF8>& ids = user_obj.GetField("BioProject").GetData().GetStrs();
+       if (!ids.empty() && !CUtf8::AsSingleByteString(ids[0], eEncoding_Ascii).empty()) {
          if (entry_is_seq) 
               thisInfo.test_item_list[GetName_bproj()].push_back(bioseq_desc);
          else 
@@ -9290,11 +12009,10 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 // new method
 
-
 CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bioseq(const CBioseqContext& ctx )
 {
    m_taxname = ctx.GetTaxname();
-// wait for new build:   CConstRef <CBioseq> m_bioseq_ref = ctx.GetHandle().GetCompleteObject();
+// wait for new build: CConstRef <CBioseq> m_bioseq_ref = ctx.GetHandle().GetCompleteObject();
    m_bioseq_desc = "!!!"; //GetDiscItemText(*m_bioseq_ref);
 
    m_src_desc = m_mol_desc = m_tlt_desc = m_pub_desc = m_gbk_desc = kEmptyStr;
@@ -9577,7 +12295,7 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>&
    unsigned cnt;
    ITERATE (Str2Strs, it, qual2ls) {
      if (it != qual2ls.begin() ) { 
-             c_item = CRef <CClickableItem> (new CClickableItem);
+             c_item.Reset(new CClickableItem);
              c_item->setting_name = GetName();
              thisInfo.disc_report_data.push_back(c_item);
      } 
@@ -9698,13 +12416,15 @@ void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
 
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc)
 {
-   const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
+//   const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
    ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
      if ((*it)->IsSeq()) {
          const CBioseq& bioseq = (*it)->GetSeq();
          if ( !bioseq.IsAa() ) {
               thisInfo.test_item_list[GetName()].push_back( 
-                         desc + mol_vlu->FindName(bioseq.GetInst().GetMol(), false) + "#" 
+                         desc + CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(
+                                                             bioseq.GetInst().GetMol(), false) 
+                         + "#" 
                          + GetDiscItemText(bioseq));
          }
      }
@@ -9717,18 +12437,21 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: AddMolinfoToBioseqsOfSet(const CBio
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_entry)
 {
    string desc;
-   const CEnumeratedTypeValues* biomol_vlu = CMolInfo::GetTypeInfo_enum_EBiomol();
-   const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
+//   const CEnumeratedTypeValues* biomol_vlu = CMolInfo::GetTypeInfo_enum_EBiomol();
+ //  const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, molinfo_seqdesc) {
       desc = NStr::UIntToString(m_entry_no) + "$" 
-              + biomol_vlu->FindName((*it)->GetMolinfo().GetBiomol(), false) + " ";
+              + CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindName(
+                                                       (*it)->GetMolinfo().GetBiomol(), false)
+              + " ";
       if ( molinfo_seqdesc_seqentry[i]->IsSeq()) {
         const CBioseq& bioseq = molinfo_seqdesc_seqentry[i]->GetSeq();
         if (!bioseq.IsAa()) {
               thisInfo.test_item_list[GetName()].push_back( 
-                         desc + mol_vlu->FindName(bioseq.GetInst().GetMol(), false) + "#" 
-                         + GetDiscItemText(bioseq));
+                         desc + CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(
+                                                              bioseq.GetInst().GetMol(), false)
+                         + "#" + GetDiscItemText(bioseq));
         }
       } 
       else AddMolinfoToBioseqsOfSet(molinfo_seqdesc_seqentry[i]->GetSet(), desc);
@@ -10968,7 +13691,7 @@ void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
         c_item->description = 
              it->first.substr(pos+1) + ": " + NStr::UIntToString(cnt) + ((cnt>1)? " present" : " presents");
         thisInfo.disc_report_data.push_back(c_item);
-        c_item = CRef <CClickableItem> (new CClickableItem);
+        c_item.Reset(new CClickableItem);
      }
    }
 };
