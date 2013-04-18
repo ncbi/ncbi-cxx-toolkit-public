@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
     srand(seed);
 
     ERR_POST(Info << "Creating HTTP connection to "
-             "http://" + host+path+&"?"[!args.empty()]+args);
+             "http://" + host + path + &"?"[args.empty() ? 1 : 0] + args);
     CConn_HttpStream ios(host, path, args, uhdr);
 
     int n = TEST_StreamPushback(ios, false/*no rewind*/);
