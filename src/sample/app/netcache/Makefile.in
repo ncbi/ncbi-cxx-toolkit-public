@@ -1,5 +1,4 @@
-APP_PROJ = netcache_client_sample1 netcache_client_sample2 netcache_client_sample3 \
-			  netcache_cgi_sample
+APP_PROJ = netcache_cgi_sample netcache_client_sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
