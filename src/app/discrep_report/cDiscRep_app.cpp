@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbifile.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
 // Objects includes
@@ -165,34 +166,7 @@ void CDiscRepApp::Init(void)
 
     SetupArgDescriptions(arg_desc.release());
 
-    // read suspect rule file
     const CNcbiRegistry& reg = GetConfig();
-
-    string suspect_rule_file = reg.Get("RuleFiles", "SuspectRuleFile");
-    ifstream ifile(suspect_rule_file.c_str());
-    
-    if (!ifile) {
-       ERR_POST(Warning << "Unable to read syspect prodect rules from " << suspect_rule_file);
-       suspect_rule_file = "/ncbi/data/product_rules.prt";
-       ifile.open(suspect_rule_file.c_str());
-       if (!ifile) 
-          ERR_POST(Warning<< "Unable to read syspect prodect rules from "<< suspect_rule_file);
-    } 
-if (thisInfo.suspect_prod_rules->IsSet())
-cerr << " is set\n";
-if (thisInfo.suspect_prod_rules->CanGet())
-cerr << "can get\n";
-       
-    if (ifile) {
-       auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, suspect_rule_file));
-       *ois >> *thisInfo.suspect_prod_rules;
-/*
-if (thisInfo.suspect_rules->IsSet())
-cerr << "222 is set\n";
-if (thisInfo.suspect_rules->CanGet())
-cerr << "222can get\n";
-*/
-    }
 
     // get other parameters from *.ini
     thisInfo.expand_defline_on_set = reg.Get("OncallerTool", "EXPAND_DEFLINE_ON_SET");
@@ -322,14 +296,20 @@ cerr << "222can get\n";
     }
 
     // ini of orga_prod_rules:
-    CSuspect_rule_set rules;
-    ReadInBlob(rules, reg.Get("RuleFiles", "OrganelleProductRuleFile"));
-    thisInfo.orga_prod_rules.Reset(&rules);
- 
-    // ini of suspect_prod_rules:
-    CSuspect_rule_set sus_rules;
-    ReadInBlob(rules, reg.Get("RuleFiles", "PRODUCT_RULES_LIST"));
-    thisInfo.suspect_prod_rules.Reset(&sus_rules);
+    strtmp = reg.Get("RuleFiles", "OrganelleProductRuleFile");
+    if (CFile(strtmp).Exists()) ReadInBlob(*thisInfo.orga_prod_rules, strtmp);
+
+    // ini. suspect rule file
+    strtmp = reg.Get("RuleFiles", "SuspectRuleFile");
+    if (!CFile(strtmp).Exists()) strtmp = "/ncbi/data/product_rules.prt";
+    if (CFile(strtmp).Exists()) ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
+
+/*
+if (thisInfo.suspect_prod_rules->IsSet())
+cerr << "222 is set\n";
+if (thisInfo.suspect_prod_rules->CanGet())
+cerr << "222can get\n";
+*/
 
     // ini of skip_bracket_paren
     strtmp = reg.Get("StringVecIni", "SkipBracketOrParen");

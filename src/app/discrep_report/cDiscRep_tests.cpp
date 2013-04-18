@@ -171,7 +171,17 @@ static Str2MapStr2Strs biosrc2qualvlu_nm;
 Str2QualVlus qual_nm2qual_vlus;
 
 // CBioseq
-void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)  // current test
+/*
+void CBioseq_SUSPECT_RULE :: TestObj(const CBioseq& bioseq)
+{
+  
+};
+
+void CBioseq_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
+{
+};
+*/
+void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
    const CBioSource* biosrc = GetBioSource(bioseq_hl); // biosrc of seqdesc
