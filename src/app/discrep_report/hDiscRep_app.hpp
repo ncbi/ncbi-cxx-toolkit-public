@@ -157,7 +157,7 @@ namespace DiscRepNmSpc{
            static COutputConfig                      output_config;
            static vector < CRef < CClickableItem > > disc_report_data;
            static Str2Strs                           test_item_list;
-           static CRef < CSuspect_rule_set>          suspect_rules;
+           static CRef < CSuspect_rule_set>          suspect_prod_rules;
            static vector <string> 		     weasels;
            static CConstRef <CSeq_submit>            seq_submit;
            static string                             expand_defline_on_set;

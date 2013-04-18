@@ -84,7 +84,7 @@ string				        CDiscRepInfo :: infile;
 vector < CRef < CClickableItem > >      CDiscRepInfo :: disc_report_data;
 Str2Strs                                CDiscRepInfo :: test_item_list;
 COutputConfig                           CDiscRepInfo :: output_config;
-CRef < CSuspect_rule_set >              CDiscRepInfo :: suspect_rules (new CSuspect_rule_set);
+CRef < CSuspect_rule_set >              CDiscRepInfo :: suspect_prod_rules;
 vector <string> 	                CDiscRepInfo :: weasels;
 CConstRef <CSeq_submit>                 CDiscRepInfo :: seq_submit = CConstRef <CSeq_submit>();
 string                                  CDiscRepInfo :: expand_defline_on_set;
@@ -178,14 +178,14 @@ void CDiscRepApp::Init(void)
        if (!ifile) 
           ERR_POST(Warning<< "Unable to read syspect prodect rules from "<< suspect_rule_file);
     } 
-if (thisInfo.suspect_rules->IsSet())
+if (thisInfo.suspect_prod_rules->IsSet())
 cerr << " is set\n";
-if (thisInfo.suspect_rules->CanGet())
+if (thisInfo.suspect_prod_rules->CanGet())
 cerr << "can get\n";
        
     if (ifile) {
        auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, suspect_rule_file));
-       *ois >> *thisInfo.suspect_rules;
+       *ois >> *thisInfo.suspect_prod_rules;
 /*
 if (thisInfo.suspect_rules->IsSet())
 cerr << "222 is set\n";
@@ -325,6 +325,11 @@ cerr << "222can get\n";
     CSuspect_rule_set rules;
     ReadInBlob(rules, reg.Get("RuleFiles", "OrganelleProductRuleFile"));
     thisInfo.orga_prod_rules.Reset(&rules);
+ 
+    // ini of suspect_prod_rules:
+    CSuspect_rule_set sus_rules;
+    ReadInBlob(rules, reg.Get("RuleFiles", "PRODUCT_RULES_LIST"));
+    thisInfo.suspect_prod_rules.Reset(&sus_rules);
 
     // ini of skip_bracket_paren
     strtmp = reg.Get("StringVecIni", "SkipBracketOrParen");

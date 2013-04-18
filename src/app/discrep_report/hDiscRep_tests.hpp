@@ -163,7 +163,6 @@ namespace DiscRepNmSpc {
   class CSuspectRuleCheck : public CObject
   {
     public:
-      CSuspectRuleCheck ();
       ~CSuspectRuleCheck () {};
 
       class CCGPSetData : public CObject
@@ -355,9 +354,6 @@ namespace DiscRepNmSpc {
                                                  const CTranslation_constraint& trans_cons);
       bool DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 
                                                   const CLocation_constraint& loc_cons);
-
-     
-    private:
   };
 
   class CRuleProperties : public CObject
@@ -2852,6 +2848,18 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+  class CBioseq_TEST_ORGANELLE_PRODUCTS : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_TEST_ORGANELLE_PRODUCTS () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("TEST_ORGANELLE_PRODUCTS"); }
+    
+    private:
+      SAnnotSelector m_annot_sel;
+  }; 
 
   class CBioseq_DISC_GAPS : public CBioseqTestAndRepData
   {
