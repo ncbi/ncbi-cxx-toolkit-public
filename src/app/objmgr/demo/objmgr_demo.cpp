@@ -2241,6 +2241,9 @@ int CDemoApp::Run(void)
                         break;
                     case CSeqMap::eSeqGap:
                         NcbiCout << "gap: ";
+                        if ( check_gaps ) {
+                            seg.GetRefData();
+                        }
                         break;
                     case CSeqMap::eSeqEnd:
                         NcbiCout << "end: ";

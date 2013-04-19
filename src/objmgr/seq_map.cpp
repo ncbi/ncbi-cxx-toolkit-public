@@ -501,6 +501,9 @@ const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
     else if ( seg.m_SegType == eSeqGap && seg.m_ObjType == eSeqData ) {
         return static_cast<const CSeq_data&>(*seg.m_RefObject);
     }
+    else if ( seg.m_SegType == eSeqGap && seg.m_ObjType == eSeqLiteral ) {
+        return static_cast<const CSeq_literal&>(*seg.m_RefObject).GetSeq_data();
+    }
     NCBI_THROW(CSeqMapException, eSegmentTypeError,
                "Invalid segment type");
 }
