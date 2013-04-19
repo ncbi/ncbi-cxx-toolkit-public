@@ -99,7 +99,8 @@ public:
         eSeqSubMap,           ///< sub seqmap
         eSeqRef,              ///< reference to Bioseq
         eSeqEnd,
-        eSeqChunk
+        eSeqChunk,
+        eSeqLiteral           ///< used only in m_ObjType for gap segments 
     };
 
     typedef CSeq_inst::TMol TMol;
@@ -175,7 +176,7 @@ public:
                                                 CScope* scope);
     static CConstRef<CSeqMap> GetSeqMapForSeq_loc(const CSeq_loc& loc,
                                                   CScope* scope);
-    virtual CRef<CSeqMap> CloneFor(const CBioseq& seq) const;
+    CRef<CSeqMap> CloneFor(const CBioseq& seq) const;
 
     // copy map for editing
     CSeqMap(const CSeqMap& sm);
@@ -295,6 +296,7 @@ protected:
                       ENa_strand strand = eNa_strand_plus);
     void x_AddGap(TSeqPos len, bool unknown_len);
     void x_AddGap(TSeqPos len, bool unknown_len, const CSeq_data& gap_data);
+    void x_AddGap(TSeqPos len, bool unknown_len, const CSeq_literal& gap_data);
     void x_Add(CSeqMap* submap);
     void x_Add(const CSeq_data& data, TSeqPos len);
     void x_Add(const CPacked_seqint& seq);
@@ -337,16 +339,17 @@ protected:
     bool x_IsChanged(void) const;
     void x_SetChanged(size_t index);
     bool x_UpdateSeq_inst(CSeq_inst& inst);
-    virtual bool x_DoUpdateSeq_inst(CSeq_inst& inst);
+    bool x_DoUpdateSeq_inst(CSeq_inst& inst);
 
     const CBioseq_Info& x_GetBioseqInfo(const CSegment& seg, CScope* scope) const;
 
     CConstRef<CSeqMap> x_GetSubSeqMap(const CSegment& seg, CScope* scope,
                                       bool resolveExternal = false) const;
-    virtual const CSeq_data& x_GetSeq_data(const CSegment& seg) const;
-    virtual const CSeq_id& x_GetRefSeqid(const CSegment& seg) const;
-    virtual TSeqPos x_GetRefPosition(const CSegment& seg) const;
-    virtual bool x_GetRefMinusStrand(const CSegment& seg) const;
+    const CSeq_data& x_GetSeq_data(const CSegment& seg) const;
+    CConstRef<CSeq_literal> x_GetSeq_literal(const CSegment& seg) const;
+    const CSeq_id& x_GetRefSeqid(const CSegment& seg) const;
+    TSeqPos x_GetRefPosition(const CSegment& seg) const;
+    bool x_GetRefMinusStrand(const CSegment& seg) const;
     
     void x_LoadObject(const CSegment& seg) const;
     CRef<CTSE_Chunk_Info> x_GetChunkToLoad(const CSegment& seg) const;
@@ -354,20 +357,20 @@ protected:
     void x_SetObject(CSegment& seg, const CObject& obj);
     void x_SetChunk(CSegment& seg, CTSE_Chunk_Info& chunk);
 
-    virtual void x_SetSeq_data(size_t index, CSeq_data& data);
-    virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
+    void x_SetSeq_data(size_t index, CSeq_data& data);
+    void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
 
-    virtual void x_SetSegmentGap(size_t index,
-                                 TSeqPos length,
-                                 CSeq_data* gap_data = 0);
-    virtual void x_SetSegmentData(size_t index,
-                                  TSeqPos length,
-                                  CSeq_data& data);
-    virtual void x_SetSegmentRef(size_t index,
-                                 TSeqPos length,
-                                 const CSeq_id& ref_id,
-                                 TSeqPos ref_pos,
-                                 bool ref_minus_strand);
+    void x_SetSegmentGap(size_t index,
+                         TSeqPos length,
+                         CSeq_data* gap_data = 0);
+    void x_SetSegmentData(size_t index,
+                          TSeqPos length,
+                          CSeq_data& data);
+    void x_SetSegmentRef(size_t index,
+                         TSeqPos length,
+                         const CSeq_id& ref_id,
+                         TSeqPos ref_pos,
+                         bool ref_minus_strand);
 
     CBioseq_Info*    m_Bioseq;
 

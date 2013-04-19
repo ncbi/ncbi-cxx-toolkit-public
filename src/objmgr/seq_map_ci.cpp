@@ -40,6 +40,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/Seq_literal.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -277,6 +278,16 @@ const CSeq_data& CSeqMap_CI::GetRefData(void) const
                    "Iterator out of range");
     }
     return x_GetSeqMap().x_GetSeq_data(x_GetSegment());
+}
+
+
+CConstRef<CSeq_literal> CSeqMap_CI::GetRefGapLiteral(void) const
+{
+    if ( !*this ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "Iterator out of range");
+    }
+    return x_GetSeqMap().x_GetSeq_literal(x_GetSegment());
 }
 
 

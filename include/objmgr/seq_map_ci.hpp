@@ -302,6 +302,10 @@ public:
     /// will allow any data segments, user should check for position and strand
     const CSeq_data& GetRefData(void) const;
 
+    /// return CSeq_literal with gap data, or null if either the segment
+    /// is not a gap, or an unspecified gap
+    CConstRef<CSeq_literal> GetRefGapLiteral(void) const;
+
     /// The following function makes sense only
     /// when the segment is a reference to another seq.
     CSeq_id_Handle GetRefSeqid(void) const;

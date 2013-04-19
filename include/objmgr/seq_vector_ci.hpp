@@ -202,6 +202,9 @@ public:
 
     /// true if current position of CSeqVector_CI is inside of sequence gap
     bool IsInGap(void) const;
+    /// returns gap Seq-data object ref
+    /// returns null if it's not a gap or an unspecified gap
+    CConstRef<CSeq_literal> GetGapSeq_literal(void) const;
     /// returns character representation of gap in sequence
     TResidue GetGapChar(void) const;
     /// returns number of gap symbols ahead including current symbol

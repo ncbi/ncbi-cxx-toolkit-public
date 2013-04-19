@@ -37,6 +37,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_vector_ci.hpp>
+#include <objects/seq/Seq_literal.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -99,6 +100,9 @@ public:
 
     /// true if sequence at 0-based position 'pos' has gap
     bool IsInGap(TSeqPos pos) const;
+    /// returns gap Seq-literal object ref
+    /// returns null if it's not a gap or an unspecified gap
+    CConstRef<CSeq_literal> GetGapSeq_literal(TSeqPos pos) const;
 
     /// Check if the sequence data is available for the interval [start, stop).
     bool CanGetRange(TSeqPos start, TSeqPos stop) const;
@@ -240,6 +244,13 @@ inline
 bool CSeqVector::IsInGap(TSeqPos pos) const
 {
     return x_GetIterator(pos).IsInGap();
+}
+
+
+inline
+CConstRef<CSeq_literal> CSeqVector::GetGapSeq_literal(TSeqPos pos) const
+{
+    return x_GetIterator(pos).GetGapSeq_literal();
 }
 
 

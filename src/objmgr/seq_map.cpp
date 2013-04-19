@@ -499,10 +499,19 @@ const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
         return *static_cast<const CSeq_data*>(x_GetObject(seg));
     }
     else if ( seg.m_SegType == eSeqGap && seg.m_ObjType == eSeqData ) {
-        return *static_cast<const CSeq_data*>(seg.m_RefObject.GetPointer());
+        return static_cast<const CSeq_data&>(*seg.m_RefObject);
     }
     NCBI_THROW(CSeqMapException, eSegmentTypeError,
                "Invalid segment type");
+}
+
+
+CConstRef<CSeq_literal> CSeqMap::x_GetSeq_literal(const CSegment& seg) const
+{
+    if ( seg.m_ObjType == eSeqLiteral ) {
+        return ConstRef(static_cast<const CSeq_literal*>(&*seg.m_RefObject));
+    }
+    return null;
 }
 
 
@@ -1244,6 +1253,16 @@ void CSeqMap::x_AddGap(TSeqPos len, bool unknown_len,
 }
 
 
+void CSeqMap::x_AddGap(TSeqPos len, bool unknown_len,
+                       const CSeq_literal& gap_data)
+{
+    x_AddSegment(eSeqGap, len, unknown_len);
+    CSegment& ret = m_Segments.back();
+    ret.m_ObjType = eSeqLiteral;
+    ret.m_RefObject = &gap_data;
+}
+
+
 void CSeqMap::x_AddUnloadedSeq_data(TSeqPos len)
 {
     x_AddSegment(eSeqData, len);
@@ -1335,7 +1354,7 @@ void CSeqMap::x_Add(const CSeq_literal& seq)
     }
     else if ( seq.GetSeq_data().IsGap() ) {
         // Seq-data.gap
-        x_AddGap(seq.GetLength(), is_unknown_len, seq.GetSeq_data());
+        x_AddGap(seq.GetLength(), is_unknown_len, seq);
     }
     else {
         x_Add(seq.GetSeq_data(), seq.GetLength());

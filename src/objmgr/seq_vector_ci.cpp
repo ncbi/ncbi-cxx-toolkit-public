@@ -335,6 +335,17 @@ void CSeqVector_CI::SetStrand(ENa_strand strand)
 }
 
 
+// returns gap Seq-data object ref
+// returns null if it's not a gap or an unspecified gap
+CConstRef<CSeq_literal> CSeqVector_CI::GetGapSeq_literal(void) const
+{
+    if ( !IsInGap() ) {
+        return null;
+    }
+    return m_Seg.GetRefGapLiteral();
+}
+
+
 // returns number of gap symbols ahead including current symbol
 // returns 0 if current position is not in gap
 TSeqPos CSeqVector_CI::GetGapSizeForward(void) const

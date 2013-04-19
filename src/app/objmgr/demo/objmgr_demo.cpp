@@ -208,6 +208,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("seg_labels", "get labels of all segments in Delta");
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
     arg_desc->AddFlag("scan_whole_sequence", "scan whole sequence");
+    arg_desc->AddFlag("check_gaps", "check sequence gaps during scanning");
     arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
     arg_desc->AddFlag("print_seq", "print sequence");
@@ -691,6 +692,7 @@ int CDemoApp::Run(void)
     bool whole_tse = args["whole_tse"];
     bool whole_sequence = args["whole_sequence"];
     bool scan_whole_sequence = args["scan_whole_sequence"];
+    bool check_gaps = args["check_gaps"];
     bool used_memory_check = args["used_memory_check"];
     bool get_synonyms = true;
     bool get_ids = args["get_ids"];
@@ -1109,6 +1111,21 @@ int CDemoApp::Run(void)
                     string buffer;
                     for ( CSeqVector_CI it(seq_vect); it; ) {
                         _ASSERT(it.GetPos() == pos);
+                        if ( check_gaps && it.IsInGap() ) {
+                            NcbiCout << "Gap " << it.GetGapSizeForward()
+                                     << " at "<<it.GetPos()<<": ";
+                            CConstRef<CSeq_literal> gap =
+                                it.GetGapSeq_literal();
+                            if ( gap ) {
+                                NcbiCout << MSerial_AsnText << *gap;
+                            }
+                            else {
+                                NcbiCout << "unspecified" << NcbiEndl;
+                            }
+                            pos += it.GetGapSizeForward();
+                            it.SkipGap();
+                            continue;
+                        }
                         if ( (pos & 0xffff) == 0 ) {
                             size_t cnt = min(size_t(99), seq_vect.size()-pos);
                             it.GetSeqData(buffer, cnt);
