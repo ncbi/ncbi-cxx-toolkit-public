@@ -53,14 +53,21 @@ typedef CVersionInfo TUserAgentVersion;
 /// CCgiUserAgent --
 ///
 /// Define class to parse user agent strings.
-/// Basicaly, support only Mozilla 'compatible' format.
-
+/// Basically, support only Mozilla 'compatible' format.
+///
 class NCBI_XCGI_EXPORT CCgiUserAgent
 {
 public:
     /// Comparison and parsing flags.
     enum EFlags {
-        fNoCase  = (1 << 1)       ///< Case insensitive compare, by default it is case sensitive
+        /// Case insensitive compare, by default it is case sensitive
+        fNoCase            = (1 << 1),
+        /// Use external pattern list from registry/environment to check
+        /// on bots, off by default
+        fUseBotPatterns    = (1 << 2),
+        /// Use external pattern lists from registry/environment to check
+        /// on phone/tablet/mobile device when parsing, off by default
+        fUseDevicePatterns = (1 << 3)
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
@@ -70,9 +77,14 @@ public:
 
     /// Constructor.
     /// Parse the user agent string passed into the constructor.
+    /// @note
+    ///   Some registry/environment parameters can affect user agent parsing.
+    ///   All such features are off by default for better performance, see EFlags.
+    ///   But they will be used regardless of specified flags in
+    ///   IsBot/IsMobileDevice/IsTabletDevice methods.
     CCgiUserAgent(const string& user_agent, TFlags flags = 0);
 
-    /// Parse new user agent string
+    /// Parse new user agent string.
     void Reset(const string& user_agent);
 
     /// Browser types.
@@ -134,7 +146,7 @@ public:
         eLinkChecker,           ///< Class: link checkers
         eWebValidator,          ///< Class: validators
 
-        /// Mobile devices (browsers and services for: telephones, smartphones, communicators, PDAs and etc)
+        /// Mobile devices (browsers and services for: telephones, smartphones, tablets and etc)
         /// Some mobile devices use standard browsers, like Opera or Safari -- see browser platform,
         /// if you need a check on mobile device.
 
@@ -188,11 +200,12 @@ public:
         ePlatform_Mac,                  ///< MacOS
         ePlatform_Unix,                 ///< Unix
 
-        // Mobile devices (telephones, smartphones, communicators, PDA's and etc...)
+        // Mobile devices (telephones, smart phones, tablets and etc...)
+        ePlatform_Android,              ///< Android
         ePlatform_Palm,                 ///< PalmOS
         ePlatform_Symbian,              ///< SymbianOS
         ePlatform_WindowsCE,            ///< Microsoft Windows CE (+ Windows Mobile)
-        ePlatform_MobileDevice          ///< Other mobile devices or services 
+        ePlatform_MobileDevice          ///< Other mobile devices or services
     };
 
     /// Get user agent string.
@@ -251,7 +264,7 @@ public:
     ///
     /// @note
     ///   This method can return FALSE for old or unknown browsers,
-    ///   or browsers for mobile devices.
+    ///   or browsers for mobile devices. Use it with caution.
     /// @sa GetBrowser, GetEngine
     bool IsBrowser(void) const;
 
@@ -276,9 +289,6 @@ public:
     ///   don't agree with parser's decision. IsBot() will return FALSE if 
     ///   the user agent string contains one of these patters.
     /// @note
-    ///   These parameters affect only IsBot() function, GetEngine() can still
-    ///   return eEngine_Bot, or any other value, as detected.
-    /// @note
     ///   Registry file:
     ///       [CGI]
     ///       Bots = ...
@@ -292,27 +302,129 @@ public:
                const string& include_patterns = kEmptyStr,
                const string& exclude_patterns = kEmptyStr) const;
 
-    /// Check that this is known mobile device.
+    /// Flags to check device type.
+    /// Zero value mean unknown device type, usually considered as desktop.
+    /// @sa GetDeviceType, IsMobileDevice, IsTableDevice
+    enum EDeviceFlags {
+        fDevice_Phone        = (1<<1),   ///< Phone / not known tablet / mobile browser on desktop
+        fDevice_Tablet       = (1<<2),   ///< Known tablet
+        fDevice_Mobile       = fDevice_Phone | fDevice_Tablet
+    };
+    typedef unsigned int TDeviceFlags;    ///< Binary OR of "EDeviceFlags"
+
+    /// Get device type.
     ///
-    /// By default it use GetPlatform() value to check on known mobile
-    /// platforms. 
+    /// Use this method with caution, because it is impossible to detect
+    /// resolution or form-factor of the device based on user agent string only.
+    /// We can only make an assumptions here.
+    /// @return
+    ///   Bit mask with categories of devices that can have such user agent string.
+    ///   Zero value mean unknown device type, usually considered as desktop.
+    /// @note
+    ///   Some registry/environment parameters can affect user agent parsing.
+    ///   See IsPhoneDevice(), IsMobileDevice() and IsTabletDevice() for details.
+    /// @sa IsMobileDevice, IsTableDevice
+    TDeviceFlags GetDeviceType(void) const
+        { return m_DeviceFlags; }
+
+
+    /// Check that this is a known phone-size device.
+    ///
+    /// Use this method with caution, because it is impossible to detect
+    /// resolution and form-factor of the device based on user agent string only,
+    /// we can only make an assumptions here. Also, we cannot say can some
+    /// device make calls or not.
     /// @include_patterns
     ///   List of additional patterns that can treat current user agent
-    ///   as mobile device If standard check fails, this string and/or
+    ///   as phone-size device if standard check fails, this string and/or
+    ///   registry/environment parameter (section 'CGI', name 'PhoneDevices')
+    ///   will be used. String value should have patterns for search in 
+    ///   the user agent string, and should looks like: "Name1 Name2 Name3".
+    ///   You can use any delimiters from next list " ;|~\t".
+    ///   All patterns are case sensitive by default unless fNoCase flag is specified.
+    /// @exclude_patterns
+    ///   This parameter and string from (section 'CGI', name 'NotPhoneDevices')
+    ///   can be used to remove any user agent signature from list of phone-size
+    ///   devices, if you don't agree with parser's decision. IsPhoneDevice()
+    ///   will return FALSE if the user agent string contains one of these patters.
+    /// @return
+    ///    Return TRUE for all user agent string that have known signatures of
+    ///    phone-size devices. We can detect only limited number of such devices,
+    ///    so be aware.
+    /// @note
+    ///   Registry file:
+    ///       [CGI]
+    ///       PhoneDevices = ...
+    ///       NotPhoneDevices = ...
+    ///   Environment variables:
+    ///       NCBI_CONFIG__CGI__PhoneDevices = ...
+    ///       NCBI_CONFIG__CGI__NotPhoneDevices = ...
+    /// @sa 
+    ///   GetDeviceType, GetPlatform, EBrowserPlatform, CParam, IsTabletDevice, IsMobileDevice
+    bool IsPhoneDevice(const string& include_patterns = kEmptyStr,
+                       const string& exclude_patterns = kEmptyStr) const;
+
+    /// Check that this is a known tablet device.
+    ///
+    /// Use this method with caution, because it is impossible to detect
+    /// resolution or form-factor of the device based on user agent string only,
+    /// we can only make an assumptions here.
+    /// @include_patterns
+    ///   List of additional patterns that can treat current user agent
+    ///   as tablet device if standard check fails, this string and/or
+    ///   registry/environment parameter (section 'CGI', name 'TabletDevices')
+    ///   will be used. String value should have patterns for search in 
+    ///   the user agent string, and should looks like: "Name1 Name2 Name3".
+    ///   You can use any delimiters from next list " ;|~\t".
+    ///   All patterns are case sensitive by default unless fNoCase flag is specified.
+    /// @exclude_patterns
+    ///   This parameter and string from (section 'CGI', name 'NotTabletDevices')
+    ///   can be used to remove any user agent signature from list of tablet
+    ///   devices, if you don't agree with parser's decision. IsTabletDevice()
+    ///   will return FALSE if the user agent string contains one of these patters.
+    /// @note
+    ///   Registry file:
+    ///       [CGI]
+    ///       TabletDevices = ...
+    ///       NotTabletDevices = ...
+    ///   Environment variables:
+    ///       NCBI_CONFIG__CGI__TabletDevices = ...
+    ///       NCBI_CONFIG__CGI__TabletDevices = ...
+    /// @return
+    ///    Return TRUE for devices that can be detected as tablets.
+    ///    Usually, IsMobileDevice() also return TRUE for the same
+    ///    user agent string. Not all devices can be detected as tablets,
+    ///    only few combinations of new versions of browsers and OS provide
+    ///    such informations in the UA-string, and limited number of device
+    ///    names can be used for such detection.
+    /// @sa 
+    ///   GetDeviceType, CParam, IsMobileDevice, IsPhoneDevice
+    bool IsTabletDevice(const string& include_patterns = kEmptyStr,
+                        const string& exclude_patterns = kEmptyStr) const;
+
+    /// Check that this is a known mobile device.
+    ///
+    /// Use this method with caution, because it is impossible to detect
+    /// resolution or form-factor of the device based on user agent string only,
+    /// we can only make an assumptions here.
+    /// @include_patterns
+    ///   List of additional patterns that can treat current user agent
+    ///   as mobile device if standard check fails, this string and/or
     ///   registry/environment parameter (section 'CGI', name 'MobileDevices')
     ///   will be used. String value should have patterns for search in 
-    ///   the user agent string, and should looks like:
-    ///       "AvantGo DoCoMo Minimo"
+    ///   the user agent string, and should looks like: "Name1 Name2 Name3".
     ///   You can use any delimiters from next list " ;|~\t".
-    ///   All patterns are case sensitive.
+    ///   All patterns are case sensitive by default unless fNoCase flag is specified.
     /// @exclude_patterns
     ///   This parameter and string from (section 'CGI', name 'NotMobileDevices')
     ///   can be used to remove any user agent signature from list of mobile
     ///   devices, if you don't agree with parser's decision. IsMobileDevice()
     ///   will return FALSE if the user agent string contains one of these patters.
-    /// @note
-    ///   These parameters affect only IsBot() function, GetEngine() can still
-    ///   return eEngine_Bot, or any other value, as detected.
+    /// @return
+    ///    Return TRUE for all devices with user agent strings that use mobile
+    ///    version of browser or have any known mobile platform signatures.
+    ///    The device can be a phone or tablet, or any other device with
+    ///    the same keywords in the UA-string.
     /// @note
     ///   Registry file:
     ///       [CGI]
@@ -322,7 +434,7 @@ public:
     ///       NCBI_CONFIG__CGI__MobileDevices = ...
     ///       NCBI_CONFIG__CGI__NotMobileDevices = ...
     /// @sa 
-    ///   GetPlatform, EBrowserPlatform, CParam
+    ///   GetDeviceType, GetPlatform, EBrowserPlatform, CParam, IsPhoneDevice, IsTabletDevice
     bool IsMobileDevice(const string& include_patterns = kEmptyStr,
                         const string& exclude_patterns = kEmptyStr) const;
 
@@ -333,7 +445,10 @@ protected:
     void x_Parse(const string& user_agent);
     /// Parse token with browser name and version.
     bool x_ParseToken(const string& token, int where);
-
+    /// Helper method to check UA-string against external pattern lists.
+    bool x_CheckPattern(int what, bool current_status, bool use_patterns,
+                        const string& include_patterns = kEmptyStr,
+                        const string& exclude_patterns = kEmptyStr) const;
 protected:
     string            m_UserAgent;      ///< User-Agent string
     TFlags            m_Flags;          ///< Comparison and parsing flags
@@ -344,6 +459,7 @@ protected:
     TUserAgentVersion m_EngineVersion;  ///< Browser engine version
     TUserAgentVersion m_MozillaVersion; ///< Browser mozilla version
     EBrowserPlatform  m_Platform;       ///< Platform type
+    TDeviceFlags      m_DeviceFlags;    ///< Device type flags
 };
 
 

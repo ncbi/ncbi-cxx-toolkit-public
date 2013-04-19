@@ -307,7 +307,7 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eSafariMobile,   {  3, 1,  2},
         CCgiUserAgent::eEngine_KHTML,   {528, 5, -1},
         { 5, 0, -1},
-        CCgiUserAgent::ePlatform_MobileDevice
+        CCgiUserAgent::ePlatform_Android
     },
     { "Mozilla/5.0 (iPhone; U; CPU iPhone OS2_2 like Mac OS X;fr-fr) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5G77 Safari/525.20",
         CCgiUserAgent::eSafariMobile,   {  3,  1, 1},
@@ -385,7 +385,7 @@ const SUserAgent s_UserAgentTests[] = {
         CCgiUserAgent::eChrome,         { 18, 0,1025},
         CCgiUserAgent::eEngine_KHTML,   {535, 19, -1},
         { 5, 0, -1},
-        CCgiUserAgent::ePlatform_MobileDevice
+        CCgiUserAgent::ePlatform_Android
     },
 
 
@@ -433,12 +433,11 @@ const SUserAgent s_UserAgentTests[] = {
         {-1, -1, -1},
         CCgiUserAgent::ePlatform_MobileDevice
     },
-    // special test for iPad -- CXX-2969
     { "Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10",
         CCgiUserAgent::eSafariMobile,   {   4, 0,  4},
         CCgiUserAgent::eEngine_KHTML,   {531, 21, 10},
         { 5, 0, -1},
-        CCgiUserAgent::ePlatform_Mac
+        CCgiUserAgent::ePlatform_MobileDevice
     }
 };
 
@@ -527,29 +526,59 @@ void TestUserAgent(CCgiUserAgent::TFlags flags)
         assert(agent.IsBot(CCgiUserAgent::fBotAll, "SomeNewCrawler SomeNewBot SomeOtherBot"));
     }}
 
-    // IsMobileDevice() -- simple test
+    // Device type simple test
     {{
         agent.Reset("Mozilla/5.0 (compatible; AvantGo 3.2; ProxiNet; Danger hiptop 1.0)");
         assert(agent.GetBrowser() == CCgiUserAgent::eAvantGo);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_MobileDevice);
+        assert(agent.IsPhoneDevice());
+        assert(agent.IsTabletDevice());
         assert(agent.IsMobileDevice());
 
         agent.Reset("Mozilla/5.0 (Windows; U; Windows CE 5.1; rv:1.8.1a3) Gecko/20060610 Minimo/0.016");
         assert(agent.GetBrowser() == CCgiUserAgent::eMinimo);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_WindowsCE);
+        assert(agent.IsPhoneDevice());
+        assert(!agent.IsTabletDevice());
         assert(agent.IsMobileDevice());
 
         agent.Reset("Mozilla/4.0 (PDA; PalmOS/sony/model prmr/Revision:1.1.54 (en))");
         assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Palm);
+        assert(agent.IsPhoneDevice());
+        assert(!agent.IsTabletDevice());
         assert(agent.IsMobileDevice());
         assert(!agent.IsMobileDevice(kEmptyStr, "somestr prmr someother"));
 
         agent.Reset("Mozilla/5.0 (SomeNewSmartphone/1.2.3)");
         assert(agent.GetBrowser() == CCgiUserAgent::eMozilla);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Unknown);
+        assert(!agent.IsPhoneDevice());
+        assert(agent.IsPhoneDevice("SomePDA SomeNewSmartphone iAnything"));
+        assert(!agent.IsTabletDevice());
         assert(!agent.IsMobileDevice());
         assert(agent.IsMobileDevice("SomePDA SomeNewSmartphone iAnything"));
+
+        agent.Reset("Mozilla/5.0 (Android; Tablet; rv:12.0) Gecko/12.0 Firefox/12.0");
+        assert(agent.GetBrowser() == CCgiUserAgent::eFirefox);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Android);
+        assert(!agent.IsPhoneDevice());
+        assert(agent.IsTabletDevice());
+        assert(agent.IsMobileDevice());
+
+        agent.Reset("Mozilla/5.0 (Linux; Android 4.2.2; Nexus Build/JDQ39) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.58 Safari/537.31");
+        assert(agent.GetBrowser() == CCgiUserAgent::eChrome);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Android);
+        assert(!agent.IsPhoneDevice());
+        assert(agent.IsTabletDevice());
+        assert(agent.IsMobileDevice());
+
+        agent.Reset("Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10");
+        assert(agent.GetBrowser() == CCgiUserAgent::eSafariMobile);
+        assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_MobileDevice);
+        assert(!agent.IsPhoneDevice());
+        assert(agent.IsTabletDevice());
+        assert(agent.IsMobileDevice());
     }}
 }
 

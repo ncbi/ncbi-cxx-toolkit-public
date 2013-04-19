@@ -49,6 +49,9 @@ BEGIN_NCBI_SCOPE
 // Conversion macro for compare/find strings
 #define USTR(str) (F_ISSET(fNoCase) ? s_ToLower(str) : (str))
 
+// Delimiters to separate pattern values (see IsBot(), IsMobileDevice(), IsTableDevice())
+const char* kPatternDelimiters = " ;\t|~";
+
 
 inline string s_ToLower(string str)
 {
@@ -91,6 +94,7 @@ void CCgiUserAgent::x_Init(void)
     m_EngineVersion.SetVersion(-1, -1, -1);
     m_MozillaVersion.SetVersion(-1, -1, -1);
     m_Platform = ePlatform_Unknown;
+    m_DeviceFlags = 0;
 }
 
 void CCgiUserAgent::Reset(const string& user_agent)
@@ -148,19 +152,199 @@ bool CCgiUserAgent::IsBrowser(void) const
 }
 
 
-// Declare the parameters to get additional bots names, or names that 
-// should be excluded from there.
+// Declare parameters to get additional bots/devices names,
+// or names that should be excluded from the check.
 
 NCBI_PARAM_DECL(string, CGI, Bots); 
 NCBI_PARAM_DEF (string, CGI, Bots, kEmptyStr);
 NCBI_PARAM_DECL(string, CGI, NotBots); 
 NCBI_PARAM_DEF (string, CGI, NotBots, kEmptyStr);
 
+NCBI_PARAM_DECL(string, CGI, PhoneDevices); 
+NCBI_PARAM_DEF (string, CGI, PhoneDevices, kEmptyStr);
+NCBI_PARAM_DECL(string, CGI, NotPhoneDevices); 
+NCBI_PARAM_DEF (string, CGI, NotPhoneDevices, kEmptyStr);
+
+NCBI_PARAM_DECL(string, CGI, TabletDevices); 
+NCBI_PARAM_DEF (string, CGI, TabletDevices, kEmptyStr);
+NCBI_PARAM_DECL(string, CGI, NotTabletDevices); 
+NCBI_PARAM_DEF (string, CGI, NotTabletDevices, kEmptyStr);
+
+NCBI_PARAM_DECL(string, CGI, MobileDevices); 
+NCBI_PARAM_DEF (string, CGI, MobileDevices, kEmptyStr);
+NCBI_PARAM_DECL(string, CGI, NotMobileDevices); 
+NCBI_PARAM_DEF (string, CGI, NotMobileDevices, kEmptyStr);
+
+
+// Helper method to check devices/bots against external patterns.
+// @sa x_Parse, IsPhoneDevice, IsMobileDevice, IsTabletDevice, IsBot
+
+enum EPattern {
+    ePhone,
+    eTablet,
+    eMobile,
+    eBot
+};
+
+
+// NOTE: Tablets must be checked before phones!!!
+//       Phones ~ almost all other mobile devices, that are not tablets
+
+bool CCgiUserAgent::x_CheckPattern(int /*EPattern*/ what,
+                                   bool current_status, bool use_patterns,
+                                   const string& include_patterns,
+                                   const string& exclude_patterns) const
+{
+    string external_patterns;
+
+    // Default check
+
+    switch (what) {
+    //------------------------------------------------------------------------
+    case ePhone:
+        switch ( GetPlatform() ) {
+            case ePlatform_Palm:
+            case ePlatform_Symbian:
+            case ePlatform_WindowsCE:
+                current_status = true;
+                break;
+            default:
+                if (m_UserAgent.find(USTR("iPhone"))       != NPOS  ||  // Apple iPhone
+                    m_UserAgent.find(USTR("iPod"))         != NPOS  ||  // Apple iPod 
+                    m_UserAgent.find(USTR("Nokia"))        != NPOS  ||  // Nokia
+                    m_UserAgent.find(USTR("SonyEricsson")) != NPOS  ||  // SonyEricsson
+                    m_UserAgent.find(USTR("J-PHONE"))      != NPOS ) {  // Ex J-Phone, now Vodafone Live!
+                    current_status = true;
+                }
+            break;
+        }
+        if (!current_status) {
+            // Some browsers developed especially for phones on PDA
+            switch ( GetBrowser() ) {
+                case eBlackberry:
+                case eDoCoMo:
+                case eOperaMini:
+                case ePIE:
+                case eReqwireless:
+                case eSEMCBrowser:
+                    current_status = true;
+                default:
+                    break;
+            }
+        }
+        break;
+
+    //------------------------------------------------------------------------
+    case eTablet:
+        if (m_UserAgent.find(USTR("Tablet;"))  != NPOS  ||   // Tablet device
+            m_UserAgent.find(USTR(" Tablet ")) != NPOS  ||   // Tablet device
+            m_UserAgent.find(USTR("iPad;"))    != NPOS  ||   // Apple iPad
+            m_UserAgent.find(USTR("Nexus 7"))  != NPOS  ||   // Google Nexus 7
+            m_UserAgent.find(USTR("Nexus 10")) != NPOS ) {   // Google Nexus 10
+            current_status = true;
+        }
+        // Google Chrome on tablet devices
+        if (m_Platform == ePlatform_Android  &&  m_Browser == eChrome  &&
+            m_UserAgent.find(USTR("Mobile")) == NPOS ) {
+            current_status = true;
+        }
+        break;
+
+    //------------------------------------------------------------------------
+    case eMobile:
+        switch ( GetPlatform() ) {
+            case ePlatform_Android:
+            case ePlatform_Palm:
+            case ePlatform_Symbian:
+            case ePlatform_WindowsCE:
+            case ePlatform_MobileDevice:
+                current_status = true;
+                break;
+            default:
+                if (m_UserAgent.find(USTR("Mobile;"))  != NPOS  ||  // Mobile device
+                    m_UserAgent.find(USTR("LGE-"))     != NPOS  ||  // LG
+                    m_UserAgent.find(USTR("LG/U"))     != NPOS  ||  // LG
+                    m_UserAgent.find(USTR("Maemo"))    != NPOS  ||  // Maemo
+                    m_UserAgent.find(USTR("MOT-"))     != NPOS  ||  // Motorola
+                    m_UserAgent.find(USTR("Samsung"))  != NPOS  ||  // Samsung
+                    m_UserAgent.find(USTR("HP iPAQ"))  != NPOS  ||
+                    m_UserAgent.find(USTR("UP.Link"))  != NPOS  ||
+                    m_UserAgent.find(USTR("PlayStation Portable")) != NPOS) {
+                    current_status = true;
+                }
+                break;
+        }
+        break;
+
+    //------------------------------------------------------------------------
+    case eBot:
+        // Just check external patterns below
+        break;
+
+    default:
+        _TROUBLE;
+    }
+
+    // Use check against patterns only if specified
+
+    if (!use_patterns) {
+        return current_status;
+    }
+    switch ((EPattern)what) {
+    case ePhone:
+        external_patterns = current_status ? 
+            USTR(NCBI_PARAM_TYPE(CGI,NotPhoneDevices)::GetDefault()) :
+            USTR(NCBI_PARAM_TYPE(CGI,PhoneDevices)::GetDefault());
+        break;
+    case eTablet:
+        external_patterns = current_status ? 
+            USTR(NCBI_PARAM_TYPE(CGI,NotTabletDevices)::GetDefault()) :
+            USTR(NCBI_PARAM_TYPE(CGI,TabletDevices)::GetDefault());
+        break;
+    case eMobile:
+        external_patterns = current_status ? 
+            USTR(NCBI_PARAM_TYPE(CGI,NotMobileDevices)::GetDefault()) :
+            USTR(NCBI_PARAM_TYPE(CGI,MobileDevices)::GetDefault());
+        break;
+    case eBot:
+        external_patterns = current_status ? 
+            USTR(NCBI_PARAM_TYPE(CGI,NotBots)::GetDefault()) :
+            USTR(NCBI_PARAM_TYPE(CGI,Bots)::GetDefault());
+        break;
+    default:
+        // unreachable
+        return current_status;
+    }
+
+    list<string> patterns;
+    // External patterns
+    if ( !external_patterns.empty() ) {
+        NStr::Split(external_patterns, kPatternDelimiters, patterns);
+    }
+    // User-defined patterns
+    if (current_status) {
+        if ( !exclude_patterns.empty() ) {
+            NStr::Split(USTR(exclude_patterns), kPatternDelimiters, patterns);
+        }
+    } else {
+        if ( !include_patterns.empty() ) {
+            NStr::Split(USTR(include_patterns), kPatternDelimiters, patterns);
+        }
+    }
+    // Search patterns
+    ITERATE(list<string>, i, patterns) {
+        if ( m_UserAgent.find(*i) !=  NPOS ) {
+            return !current_status;
+        }
+    }
+    return current_status;
+}
+
+
 bool CCgiUserAgent::IsBot(TBotFlags flags,
                           const string& include_patterns,
                           const string& exclude_patterns) const
 {
-    const char* kDelim = " ;\t|~";
     bool is_bot = false;
 
     // Default check
@@ -195,109 +379,57 @@ bool CCgiUserAgent::IsBot(TBotFlags flags,
     }
 
     // Make additional checks
-
-    if (is_bot) {
-        // Get bots antipatterns
-        string str = USTR(NCBI_PARAM_TYPE(CGI,NotBots)::GetDefault());
-        // Split patterns string
-        list<string> patterns;
-        if ( !str.empty() ) {
-            NStr::Split(str, kDelim, patterns);
-        }
-        if ( !exclude_patterns.empty() ) {
-            NStr::Split(USTR(exclude_patterns), kDelim, patterns);
-        }
-        // Search patterns
-        ITERATE(list<string>, i, patterns) {
-            if ( m_UserAgent.find(*i) !=  NPOS ) {
-                return false;
-            }
-        }
-    } else {
-        // Get bots patterns
-        string str = USTR(NCBI_PARAM_TYPE(CGI,Bots)::GetDefault());
-        // Split patterns string
-        list<string> patterns;
-        if ( !str.empty() ) {
-            NStr::Split(str, kDelim, patterns);
-        }
-        if ( !include_patterns.empty() ) {
-            NStr::Split(USTR(include_patterns), kDelim, patterns);
-        }
-        // Search patterns
-        ITERATE(list<string>, i, patterns) {
-            if ( m_UserAgent.find(*i) !=  NPOS ) {
-                return true;
-            }
-        }
-        return false;
+    if (F_ISSET(fUseDevicePatterns) &&
+        include_patterns.empty()  &&  exclude_patterns.empty()) {
+        // Already got result on parsing step
+        return GetEngine() == eEngine_Bot;
     }
+    is_bot = x_CheckPattern(eBot, is_bot, true, include_patterns, exclude_patterns);
     return is_bot;
 }
 
 
-// Declare the parameter to get additional mobile devices names,
-// or names that should be excluded from there.
+bool CCgiUserAgent::IsPhoneDevice(const string& include_patterns,
+                                  const string& exclude_patterns) const
+{
+    if (F_ISSET(fUseDevicePatterns) &&
+        include_patterns.empty()  &&  exclude_patterns.empty()) {
+        // Already got result on parsing step
+        return (m_DeviceFlags & fDevice_Mobile) > 0;
+    }
+    bool is_phone = (m_DeviceFlags & fDevice_Phone) > 0;
+    is_phone = x_CheckPattern(ePhone, is_phone, true, include_patterns, exclude_patterns);
+    return is_phone;
+}
 
-NCBI_PARAM_DECL(string, CGI, MobileDevices); 
-NCBI_PARAM_DEF (string, CGI, MobileDevices, kEmptyStr);
-NCBI_PARAM_DECL(string, CGI, NotMobileDevices); 
-NCBI_PARAM_DEF (string, CGI, NotMobileDevices, kEmptyStr);
+
+bool CCgiUserAgent::IsTabletDevice(const string& include_patterns,
+                                   const string& exclude_patterns) const
+{
+    if (F_ISSET(fUseDevicePatterns) &&
+        include_patterns.empty()  &&  exclude_patterns.empty()) {
+        // Already got result on parsing step
+        return (m_DeviceFlags & fDevice_Tablet) > 0;
+    }
+    bool is_tablet = (m_DeviceFlags & fDevice_Tablet) > 0;
+    is_tablet = x_CheckPattern(eTablet, is_tablet, true, include_patterns, exclude_patterns);
+    return is_tablet;
+}
+
 
 bool CCgiUserAgent::IsMobileDevice(const string& include_patterns,
                                    const string& exclude_patterns) const
 {
-    bool is_mobile = false;
-
-    // Default check
-    switch ( GetPlatform() ) {
-        case ePlatform_Palm:
-        case ePlatform_Symbian:
-        case ePlatform_WindowsCE:
-        case ePlatform_MobileDevice:
-            is_mobile = true;
-        default:
-            break;
+    if (F_ISSET(fUseDevicePatterns) &&
+        include_patterns.empty()  &&  exclude_patterns.empty()) {
+        // Already have an result
+        return (m_DeviceFlags & fDevice_Mobile) > 0;
     }
-    const char* kDelim = " ;\t|~";
-
-    // Make additional checks
-
-    if (is_mobile) {
-        // Get antipatterns
-        string str = USTR(NCBI_PARAM_TYPE(CGI,NotMobileDevices)::GetDefault());
-        // Split patterns string
-        list<string> patterns;
-        if ( !str.empty() ) {
-            NStr::Split(str, kDelim, patterns);
-        }
-        if ( !exclude_patterns.empty() ) {
-            NStr::Split(USTR(exclude_patterns), kDelim, patterns);
-        }
-        // Search patterns
-        ITERATE(list<string>, i, patterns) {
-            if ( m_UserAgent.find(*i) !=  NPOS ) {
-                return false;
-            }
-        }
-    } else {
-        // Get patterns
-        string str = USTR(NCBI_PARAM_TYPE(CGI,MobileDevices)::GetDefault());
-        // Split patterns string
-        list<string> patterns;
-        if ( !str.empty() ) {
-            NStr::Split(str, kDelim, patterns);
-        }
-        if ( !include_patterns.empty() ) {
-            NStr::Split(USTR(include_patterns), kDelim, patterns);
-        }
-        // Search patterns
-        ITERATE(list<string>, i, patterns) {
-            if ( m_UserAgent.find(*i) !=  NPOS ) {
-                return true;
-            }
-        }
-    }
+    bool is_mobile = (m_DeviceFlags & fDevice_Mobile) > 0;
+    // Check on phones and tablets first (almost to check external patterns)
+    is_mobile = x_CheckPattern(ePhone,  is_mobile, true);
+    is_mobile = x_CheckPattern(eTablet, is_mobile, true);
+    is_mobile = x_CheckPattern(eMobile, is_mobile, true, include_patterns, exclude_patterns);
     return is_mobile;
 }
 
@@ -625,7 +757,7 @@ const SBrowser s_Browsers[] = {
 
     { CCgiUserAgent::eChrome,       "Google Chrome",            "Chrome",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
     { CCgiUserAgent::eFluid,        "Fluid",                    "Fluid",                    CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
-    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice /* except iPad */, fVendorProduct },
+    { CCgiUserAgent::eSafariMobile, "Mobile Safari",            "Mobile Safari",            CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_MobileDevice, fVendorProduct },
     { CCgiUserAgent::eMidori,       "Midori",                   "Midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eMidori,       "Midori",                   "midori",                   CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eNetNewsWire,  "NetNewsWire",              "NetNewsWire",              CCgiUserAgent::eEngine_KHTML,   CCgiUserAgent::ePlatform_Unknown,      fAny },
@@ -741,12 +873,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         search = USTR(" Mobile/");
         if (m_UserAgent.find(search) != NPOS) {
             m_Browser  = eSafariMobile;
-            search = USTR("(iPad;");
-            if (m_UserAgent.find(search) != NPOS) {
-                m_Platform = ePlatform_Mac;
-            } else {
-                m_Platform = ePlatform_MobileDevice;
-            }
+            m_Platform = ePlatform_MobileDevice;
         }
     }
 
@@ -920,16 +1047,27 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         }
     }
 
+    // Check on bots using external patterns
+    if ( F_ISSET(fUseBotPatterns) ) {
+        if (x_CheckPattern(eBot, (m_Engine == eEngine_Bot), true)) {
+            m_Engine = eEngine_Bot;
+        } else {
+            m_Engine = eEngine_Unknown;
+        }
+    }
 
-    // Very crude algorithm to get platform type...
+    // Very crude algorithm to get platform and device types...
     // See also x_ParseToken() for specific platform types from the table.
 
     // Check mobile devices first (more precise for ePlatform_MobileDevice)
     if ( m_Platform == ePlatform_Unknown  ||
          m_Platform == ePlatform_MobileDevice ) {
+        if (m_UserAgent.find(USTR("Android"))      != NPOS) {
+            m_Platform = ePlatform_Android;
+        } else
         if (m_UserAgent.find(USTR("PalmSource"))   != NPOS  ||
             m_UserAgent.find(USTR("PalmOS"))       != NPOS  ||
-            m_UserAgent.find(USTR("webOS"))        != NPOS ) {
+            m_UserAgent.find(USTR("webOS"))        != NPOS) {
             m_Platform = ePlatform_Palm;
         } else
         if (m_UserAgent.find(USTR("Symbian"))      != NPOS) {
@@ -943,23 +1081,6 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     }
     // Make additional check if platform is still undefined
     if ( m_Platform == ePlatform_Unknown ) {
-        if (m_UserAgent.find(USTR("Android "))     != NPOS  ||  // All Android based devices
-            m_UserAgent.find(USTR("Nokia"))        != NPOS  ||  // Nokia
-            //m_UserAgent.find(USTR("HTC-"))       != NPOS  ||  // HTC
-            //m_UserAgent.find(USTR("HTC_"))       != NPOS  ||  // HTC
-            m_UserAgent.find(USTR("iPod"))         != NPOS  ||  // Apple iPod 
-            m_UserAgent.find(USTR("iPhone"))       != NPOS  ||  // Apple iPhone
-            m_UserAgent.find(USTR("LGE-"))         != NPOS  ||  // LG
-            m_UserAgent.find(USTR("LG/U"))         != NPOS  ||  // LG
-            m_UserAgent.find(USTR("MOT-"))         != NPOS  ||  // Motorola
-            m_UserAgent.find(USTR("Samsung"))      != NPOS  ||  // Samsung
-            m_UserAgent.find(USTR("SonyEricsson")) != NPOS  ||  // SonyEricsson
-            m_UserAgent.find(USTR("J-PHONE"))      != NPOS  ||  // Ex J-Phone, now Vodafone Live!
-            m_UserAgent.find(USTR("HP iPAQ"))      != NPOS  ||
-            m_UserAgent.find(USTR("UP.Link"))      != NPOS  ||
-            m_UserAgent.find(USTR("PlayStation Portable")) != NPOS) {
-            m_Platform = ePlatform_MobileDevice;
-        } else
         if (m_UserAgent.find(USTR("MacOS"))        != NPOS  || 
             m_UserAgent.find(USTR("Mac OS"))       != NPOS  ||
             m_UserAgent.find(USTR("Macintosh"))    != NPOS  ||
@@ -980,6 +1101,31 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             m_Platform = ePlatform_Windows;
         }
     }
+
+    // Check device type.
+
+    // Tablet or phone
+    if (x_CheckPattern(eTablet, false, F_ISSET(fUseDevicePatterns))) {
+        m_DeviceFlags = fDevice_Tablet;
+    } else 
+    if (x_CheckPattern(ePhone, false, F_ISSET(fUseDevicePatterns))) {
+        m_DeviceFlags = fDevice_Phone;
+    }
+    // And separate check on "mobile device" if not a phone/tablet
+    if (!m_DeviceFlags  &&  x_CheckPattern(eMobile, false, F_ISSET(fUseDevicePatterns))) {
+        m_DeviceFlags = fDevice_Mobile;
+    }
+    // If detected some mobile device via patterns, set platform type accordingly
+    if ( m_DeviceFlags & fDevice_Mobile ) {
+        switch (m_Platform) {
+            case ePlatform_Unknown:
+            case ePlatform_Windows:
+            case ePlatform_Mac:
+            case ePlatform_Unix:
+                m_Platform = ePlatform_MobileDevice;
+        }
+    }
+
     return;
 }
 
@@ -1040,6 +1186,7 @@ string CCgiUserAgent::GetPlatformName(void) const
         case ePlatform_Windows      : return "Windows";
         case ePlatform_Mac          : return "Mac";
         case ePlatform_Unix         : return "Unix";
+        case ePlatform_Android      : return "Android";
         case ePlatform_Palm         : return "Palm";
         case ePlatform_Symbian      : return "Symbian";
         case ePlatform_WindowsCE    : return "WindowsCE";
