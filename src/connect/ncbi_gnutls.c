@@ -209,14 +209,7 @@ static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
 
     switch (status) {
     case eIO_Timeout:
-        if (!timeout) {
-#  ifdef NCBI_OS_MSWIN
-            error = SOCK_EWOULDBLOCK;
-#  else
-            error = SOCK_EAGAIN;
-#  endif /*NCBI_OS_MSWIN*/
-        } else
-            error = SOCK_ETIMEDOUT;
+        error = timeout ? SOCK_ETIMEDOUT : EAGAIN;
         break;
     case eIO_Closed:
         error = SOCK_ENOTCONN;
