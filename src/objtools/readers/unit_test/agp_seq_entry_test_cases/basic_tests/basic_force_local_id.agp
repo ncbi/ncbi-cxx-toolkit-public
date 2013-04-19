@@ -1,0 +1,4 @@
+# Very basic "smoke test"
+bogus1	1	100	1	O	U54469.1	101	200	+
+bogus1	101	250	2	N	150	scaffold	yes	strobe
+bogus1	251	450	3	O	U54469.1	301	500	+

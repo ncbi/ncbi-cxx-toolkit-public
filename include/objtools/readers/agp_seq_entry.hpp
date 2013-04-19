@@ -32,6 +32,8 @@
 
 #include <objtools/readers/agp_util.hpp>
 
+#include <objects/seq/Bioseq.hpp>
+
 BEGIN_NCBI_SCOPE
 
 namespace objects {
