@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
             continue;
         }
         if (status == eIO_Success)
-            status = CONN_ReadLine(conn, blk, sizeof(blk), &n);
+            status  = CONN_ReadLine(conn, blk, sizeof(blk), &n);
         else
             n = 0;
         if (n) {
