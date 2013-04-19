@@ -260,6 +260,8 @@ public:
     bool HarborsNested(const CChain& other_chain, bool check_in_holes) const;
     bool HarborsNested(const CGene& other_gene, bool check_in_holes) const;
 
+    bool HasTrustedEvidence() const;
+
     TContained m_members;
     int m_polya_cap_right_hard_limit;
     int m_polya_cap_left_hard_limit;
@@ -461,6 +463,14 @@ bool CGene::IsAlternative(const CGeneModel& a) const
     }
 
     if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) { 
+
+        if(size() == 1 && front()->Exons().size() == 1 && !RealCdsLimits().IntersectingWith(a.RealCdsLimits())) {   // one-exon gene without variants
+            for(unsigned int j = 0; j < a.Exons().size(); ++j) {
+                if(Include(a.Exons()[j].Limits(),RealCdsLimits()))   // one exon model, CDS completely inside an exon UTR
+                    return true;
+            }
+        }
+
         CAlignMap amap(a.Exons(), a.FrameShifts(), a.Strand(), a.GetCdsInfo().Cds());
         TIVec acds_map(amap.FShiftedLen(a.GetCdsInfo().Cds()),0);
         for(unsigned int j = 0; j < a.Exons().size(); ++j) {
@@ -482,6 +492,9 @@ bool CGene::IsAlternative(const CGeneModel& a) const
                     if(p >= 0)
                         cds_map[p] = k;
                 }
+
+                if(a.Exons().size() == 1 && !RealCdsLimits().IntersectingWith(a.RealCdsLimits()) && Include((*it)->Exons()[j].Limits(),a.RealCdsLimits()))  // one exon model, CDS completely inside an exon UTR
+                    return true;
             }
         
             for(unsigned int i = 0; i < acds_map.size(); ) {
@@ -656,24 +669,19 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
         return eNotCompatible;
     }
 
-    /*
-    if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron (could be partial)
-        return eExternal;
-    */
-    if(gene_good_enough_to_be_annotation && algn.HarborsNested(gene, gene_good_enough_to_be_annotation))    // gene is nested in align's intron and complete
-        return eExternal;
-
-    /*
-    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation))   // algn is nested in gene (could be partial)
-        return eNested;
-    */
-    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation)) {   // algn is nested in gene and checked for completeness
-        if(algn_good_enough_to_be_annotation)
-            return eNested;
+    if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation)) {    // gene is nested in align's intron (could be partial)
+        if(gene_good_enough_to_be_annotation || algn.HasTrustedEvidence())
+            return eExternal;
         else
-            return eNotCompatible;        
+            return eNotCompatible;
     }
 
+    if(gene.HarborsNested(algn, algn_good_enough_to_be_annotation)) {   // algn is nested in gene (could be partial)
+        if(algn_good_enough_to_be_annotation || algn.HasTrustedEvidence())
+            return eNested;
+        else
+            return eNotCompatible;
+    }
 
     if(!algn_cds.Empty() && !gene_cds.Empty()) {                          // both coding
         if (!gene_cds.IntersectingWith(algn_cds)) {          // don't overlap
@@ -793,26 +801,51 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                         gene.AddToHarbored(*itl);
                     }
                 }
-            } else if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty() || (algn.Status()&CGeneModel::eConsistentCoverage)) {   // connects seeds but trusted  
+            } else {  // connects seeds
 
-                bool cds_overlap = true;
-                if(algn.ReadingFrame().Empty()) {
-                    cds_overlap = false;
-                } else {
-                    CGeneModel a = algn;
-                    a.Clip(a.RealCdsLimits(), CAlignModel::eRemoveExons);
-                    ITERATE(list<list<CGene>::iterator>, k, included_in) {
-                        if(!(*k)->IsAlternative(a)) {
-                            cds_overlap = false;
-                            break;
+                bool allow_connection = false;
+
+                if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty() || (algn.Status()&CGeneModel::eConsistentCoverage)) {   // connects seeds but trusted  
+                    bool cds_overlap = true;
+                    if(algn.ReadingFrame().Empty()) {
+                        cds_overlap = false;
+                    } else {
+                        CGeneModel a = algn;
+                        a.Clip(a.RealCdsLimits(), CAlignModel::eRemoveExons);
+                        ITERATE(list<list<CGene>::iterator>, k, included_in) {
+                            if(!(*k)->IsAlternative(a)) {
+                                cds_overlap = false;
+                                break;
+                            }
                         }
                     }
+
+                    if(cds_overlap || (algn.Status()&CGeneModel::eConsistentCoverage)) {
+#ifdef _DEBUG 
+                        algn.AddComment("Gene overlap override");
+#endif    
+                        allow_connection = true;
+                    }
+                } 
+
+                if(!allow_connection && algn.ReadingFrame().NotEmpty()) {
+                    int one_exons_in_utr = 0;
+                    ITERATE(list<list<CGene>::iterator>, k, included_in) {
+                        const CGene& g = **k;
+                        if(g.RealCdsLimits().NotEmpty() && g.size() == 1 && g.front()->Exons().size() == 1 && !g.RealCdsLimits().IntersectingWith(algn.RealCdsLimits())) {
+                            for(unsigned int j = 0; j < algn.Exons().size(); ++j) {
+                                if(Include(algn.Exons()[j].Limits(),g.RealCdsLimits())) { // one exon model, CDS completely inside an exon UTR
+                                    ++one_exons_in_utr;
+                                    break;
+                                }
+                            }                            
+                        }
+                    }
+                    if(one_exons_in_utr == (int)included_in.size()-1)
+                        allow_connection = true;  
                 }
 
-                if(cds_overlap || (algn.Status()&CGeneModel::eConsistentCoverage)) {
-#ifdef _DEBUG 
-                    algn.AddComment("Gene overlap override");
-#endif    
+                if(allow_connection) {
                     CGene& gene = *included_in.front();
                     gene.Insert(algn);
 
@@ -849,6 +882,7 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                         }
                     }
                 }
+
             }
         }
     }
@@ -2778,6 +2812,42 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 }
 
 void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
+
+    int left = numeric_limits<int>::max();
+    int right = 0;
+    ITERATE(TOrigAligns, it, orig_aligns) {
+        const CAlignModel& align = *it->second;
+        left = min(left,align.Limits().GetFrom());
+        right = max(right,align.Limits().GetTo());
+    }
+
+    int len = right-left+1;
+
+    vector<int> prot_cov[2][3];
+    prot_cov[0][0].resize(len,0);
+    prot_cov[0][1].resize(len,0);
+    prot_cov[0][2].resize(len,0);
+    prot_cov[1][0].resize(len,0);
+    prot_cov[1][1].resize(len,0);
+    prot_cov[1][2].resize(len,0);
+    ITERATE(TOrigAligns, it, orig_aligns) {
+        const CAlignModel& align = *it->second;
+        if(align.GetCdsInfo().ProtReadingFrame().NotEmpty()) {
+            CAlignMap amap = align.GetAlignMap();
+            int cdstr = amap.MapOrigToEdited(align.GetCdsInfo().Cds().GetFrom());
+            for(int i = 0; i < (int)align.Exons().size(); ++i) {
+                TSignedSeqRange rf = (align.Exons()[i].Limits() & align.ReadingFrame());
+                if(rf.NotEmpty()) {
+                    for(int j = rf.GetFrom(); j <= rf.GetTo(); ++j) {
+                        int jtr = amap.MapOrigToEdited(j);
+                        if(jtr >= 0)
+                            ++prot_cov[align.Strand()][abs(cdstr-jtr)%3][j-left];
+                    }
+                }
+            }
+        }
+    }    
+
     NON_CONST_ITERATE(TChainList, it, chains) {
         CChain& chain = *it;
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
@@ -2798,6 +2868,42 @@ void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
         if (chain.FullCds()) {
             chain.Status() |= CGeneModel::eFullSupCDS;
         }
+
+        if(chain.GetCdsInfo().ProtReadingFrame().Empty() && chain.ReadingFrame().NotEmpty()) {  // coding chain without protein support
+            int protcds = 0;
+            int lrf_from_proteins = numeric_limits<int>::max();
+            int rrf_from_proteins = 0;
+            CAlignMap amap = chain.GetAlignMap();
+            int cdstr = amap.MapOrigToEdited(chain.GetCdsInfo().Cds().GetFrom());
+            for(int i = 0; i < (int)chain.Exons().size(); ++i) {
+                TSignedSeqRange rf = (chain.Exons()[i].Limits() & chain.ReadingFrame());
+                if(rf.NotEmpty()) {
+                    for(int j = rf.GetFrom(); j <= rf.GetTo(); ++j) {
+                        int jtr = amap.MapOrigToEdited(j);
+                        int frame = abs(cdstr-jtr)%3;
+                        if(jtr >= 0 && prot_cov[chain.Strand()][frame][j-left] > 0) {
+                            if(frame == 0)
+                                lrf_from_proteins = min(lrf_from_proteins,j);
+                            if(frame == 2)
+                                rrf_from_proteins = max(rrf_from_proteins,j);
+                            ++protcds;
+                        }
+                    }
+                }
+            }
+            if(protcds > 0.2*amap.FShiftedLen(chain.GetCdsInfo().Cds()) && rrf_from_proteins > lrf_from_proteins) {
+                CCDSInfo cds = chain.GetCdsInfo();
+                TSignedSeqRange reading_frame = cds.ReadingFrame();
+                cds.SetReadingFrame(reading_frame&TSignedSeqRange(lrf_from_proteins,rrf_from_proteins), true);
+                cds.SetReadingFrame(reading_frame);
+                chain.SetCdsInfo(cds);
+                chain.SetType(chain.Type()|CGeneModel::eProt);
+                
+#ifdef _DEBUG 
+                chain.AddComment("Added protsupport");
+#endif    
+            }
+        }        
     }
 }
 
@@ -2939,6 +3045,14 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
     }  
 }
 
+bool CChain::HasTrustedEvidence() const {
+    ITERATE (TContained, i, m_members) {
+        if(!(*i)->m_align->TrustedProt().empty())
+            return true;
+    }
+
+    return false;
+}
 
 void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
 
