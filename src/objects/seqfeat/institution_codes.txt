@@ -3476,10 +3476,15 @@ MCVE	s	Museo di Storia Naturale di Venezia
 MCVM	s	Museo Civico, Villa Mirabello
 MCW	s	Milton College, Biology Department
 MCZ	s	Museum of Comparative Zoology, Harvard University
-MCZ:A	s	Museum of Comparative Zoology, Harvard University, Herpetology Amphibian Collection
-MCZ:HERP	s	Museum of Comparative Zoology, Harvard University, Herpetology Collection
-MCZ:I	s	Museum of Comparative Zoology, Harvard University, Ichthyology Collection
-MCZ:R	s	Museum of Comparative Zoology, Harvard University, Herpetology Reptile Collection
+MCZ:Bird	s	Museum of Comparative Zoology, Harvard University, Ornithology Collection
+MCZ:Cryo	s	Museum of Comparative Zoology, Harvard University, Cryogenic Collection
+MCZ:Ent	s	Museum of Comparative Zoology, Harvard University, Entomology Collection
+MCZ:Fish	s	Museum of Comparative Zoology, Harvard University, Ichthyology Collection
+MCZ:Herp	s	Museum of Comparative Zoology, Harvard University, Herpetology Collection
+MCZ:IP	s	Museum of Comparative Zoology, Harvard University, Invertebrate Paleontology Collection
+MCZ:IZ	s	Museum of Comparative Zoology, Harvard University, Invertebrate Zoology Collection
+MCZ:Mala	s	Museum of Comparative Zoology, Harvard University, Malacology Collection
+MCZ:Mamm	s	Museum of Comparative Zoology, Harvard University, Mammalogy Collection
 MCZR	s	Museo Civico di Zoologia
 MD<AGO>	s	Museu Regional do Dundo
 MD<DEU>	s	Museum Donaueschingen
