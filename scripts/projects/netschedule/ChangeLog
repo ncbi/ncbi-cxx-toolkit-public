@@ -1,7 +1,13 @@
 
-Release 4.16.8 based on SC-11 (XXXX-XX-XX)
+Release 4.16.8 based on SC-11 (2013-04-22)
 
 Improvements and bug fixes
+    * NetSchedule: new run_timeout_precision default value (3600sec -> 3sec)
+      (JIRA: CXX-3991)
+    * NetSchedule: Incorrect display of running and reading job expiration time
+      (JIRA: CXX-3982)
+    * NetSchedule -- to use nanosecond (or at least ms) precision for job event
+      timestamps. (JIRA: CXX-3940)
     * NetSchedule: queue access restrictions for read-only commands
       (JIRA: CXX-3885)
     * NetSchedule: better logging in case of garbage input
