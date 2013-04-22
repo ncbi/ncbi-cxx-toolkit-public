@@ -51,7 +51,7 @@ static unsigned int     default_dump_buffer_size = 100;
 static CNSPreciseTime   default_run_timeout(3600, 0);
 static unsigned int     default_failed_retries = 0;
 static CNSPreciseTime   default_blacklist_time = CNSPreciseTime(2147483647, 0);
-static CNSPreciseTime   default_run_timeout_precision(3600, 0);
+static CNSPreciseTime   default_run_timeout_precision(3, 0);
 static CNSPreciseTime   default_wnode_timeout(40, 0);
 static CNSPreciseTime   default_pending_timeout(604800, 0);
 static CNSPreciseTime   default_max_pending_wait_timeout(0, 0);
@@ -512,7 +512,7 @@ SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,
     double  val = GetDoubleNoErr("run_timeout_precision",
                                  double(default_run_timeout_precision));
     if (val < 0)
-        val = 0;
+        val = 3.0;
     return CNSPreciseTime(val);
 }
 

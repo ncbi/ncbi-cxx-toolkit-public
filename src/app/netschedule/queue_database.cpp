@@ -1161,7 +1161,7 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
 
     // Calculate the new min_run_timeout: required at the time of loading
     // NetSchedule and not used while reconfiguring on the fly
-    time_t  min_run_timeout_precision = 3600;
+    time_t  min_run_timeout_precision = 3;
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k)
         min_run_timeout_precision = std::min(min_run_timeout_precision,
