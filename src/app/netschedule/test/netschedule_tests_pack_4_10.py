@@ -10,8 +10,7 @@ Netschedule server tests pack for the features appeared in NS-4.10.0
 
 import time
 from netschedule_tests_pack import TestBase
-import grid_v01
-import ncbi.grid.ns as grid
+from ncbi_grid_1_0.ncbi.grid import ns as grid
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
 from cgi import parse_qs
@@ -5404,7 +5403,7 @@ class Scenario261( TestBase ):
             raise Exception( "Unexpected number of jobs in the group" )
 
         self.ns.cancelJob( 'TEST', jobID )
-        time.sleep( 30 )
+        time.sleep( 40 )
 
         info = getGroupInfo( ns_client, False, 0, 0 )
         return True

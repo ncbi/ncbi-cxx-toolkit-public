@@ -15,8 +15,7 @@ from netschedule_tests_pack_4_10 import getClientInfo, NON_EXISTED_JOB, \
                                         getAffinityInfo, getNotificationInfo, \
                                         getGroupInfo, changeAffinity, \
                                         execAny
-import grid_v01
-import ncbi.grid.ns as grid
+from ncbi_grid_1_0.ncbi.grid import ns as grid
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
 from cgi import parse_qs
@@ -251,11 +250,11 @@ class Scenario503( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario503' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
-        execAny( ns_client, 'LISTEN ' + jobID + " " + str( port ) + " 30")
+        execAny( ns_client, 'LISTEN ' + jobID + " " + str( port ) + " 40")
 
         # Main job loop
         # Wait till the job is deleted by GC
-        time.sleep( 35 )
+        time.sleep( 45 )
 
         # Receive from the socket
         time.sleep( 3 )
@@ -271,6 +270,7 @@ class Scenario503( TestBase ):
             except:
                 break
 
+        sock = None
         if "job_status=Deleted&last_event_index=0" not in notifications:
             raise Exception( "Did not receive job_status=Deleted&last_event_index=0" )
 

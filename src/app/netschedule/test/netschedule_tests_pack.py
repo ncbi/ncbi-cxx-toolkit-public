@@ -10,8 +10,7 @@ Netschedule server tests pack
 
 import sys
 import time
-import grid_v01
-import ncbi.grid.ns as grid
+from ncbi_grid_1_0.ncbi.grid import ns as grid
 
 class TestBase:
     " Base class for tests "
@@ -504,9 +503,12 @@ class Scenario16( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         params = self.ns.getQueueInfo( 'TEST' )
-        return params[ 'timeout' ] == '30' and \
-               params[ 'run_timeout' ] == "7" and \
-               params[ 'failed_retries' ] == "3"
+        if params[ 'timeout' ] != "30" and params[ 'timeout' ] != "30.0":
+            raise Exception( "Unexpected timeout parameter value" )
+        if params[ 'run_timeout' ] != "7" and params[ 'run_timeout' ] != "7.0":
+            raise Exception( "Unexpected run_timeout parameter value" )
+
+        return params[ 'failed_retries' ] == "3"
 
 
 
