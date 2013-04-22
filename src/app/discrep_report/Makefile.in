@@ -4,7 +4,7 @@
 # Author: J. Chen
 #
 
-EXPENDABLE_APP_PROJ = disc_report
+#EXPENDABLE_APP_PROJ = disc_report
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
