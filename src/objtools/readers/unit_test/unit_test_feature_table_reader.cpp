@@ -87,7 +87,15 @@ static bool s_IgnoreError(const ILineError& line_error)
 }
 
 
-static CRef<CSeq_annot> s_ReadOneTableFromString (const char * str)
+static CRef<CSeq_annot> s_ReadOneTableFromString (
+    const char * str,
+    // no errors expected by default
+     list<string> expected_errors = list<string>() );
+
+static CRef<CSeq_annot> s_ReadOneTableFromString (
+    const char * str,
+     list<string> expected_errors
+    )
 {
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
@@ -106,11 +114,22 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (const char * str)
 
     for (size_t i = 0; i < err_container.Count(); i++) {
         const ILineError& line_error = err_container.GetError(i);
-        if (!s_IgnoreError (line_error)) {
-            string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
-            BOOST_CHECK_EQUAL(error_text, "Unexpected Error");
+        string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
+        if( s_IgnoreError(line_error) ) {
+            // certain error types may be ignored
+        } else if( expected_errors.empty() ) {
+            BOOST_ERROR("More errors occurred than expected at " << error_text);
+        } else {
+            BOOST_CHECK_EQUAL(
+                line_error.ProblemStr() + "(" + error_text + ")", 
+                expected_errors.front() + "(" + error_text + ")" );
+            expected_errors.pop_front();
         }
-    }        
+    }
+
+    BOOST_CHECK_MESSAGE( expected_errors.empty(),
+        "There were " << expected_errors.size() 
+        << " expected errors which did not occur." );
         
     BOOST_REQUIRE(annot != NULL);
     BOOST_REQUIRE(annot->IsFtable());
@@ -119,34 +138,37 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (const char * str)
 }
 
 
-static void CheckExpectedQuals (CConstRef<CSeq_feat> feat, vector<string> expected_quals)
+static void CheckExpectedQuals (CConstRef<CSeq_feat> feat, 
+    const set<string> & expected_quals)
 {
-    vector<bool> found;
-    ITERATE (vector<string>, it, expected_quals) {
-        found.push_back(false);
-    }
+    set<string> found_quals;
     ITERATE (CSeq_feat::TQual, it, feat->GetQual()) {
-        string qual = (*it)->GetQual();
-        size_t pos = 0;
-        bool expected = false;
-        ITERATE (vector<string>, it, expected_quals) {
-            if (NStr::Equal(*it, qual)) {
-                found[pos] = true;
-                expected = true;
-            }
-            pos++;
-        }
-        if (!expected) {
-            BOOST_CHECK_EQUAL("Unexpected qualifier", qual);
-        }
+        found_quals.insert( (*it)->GetQual() );
     }
-    size_t pos = 0;
-    ITERATE (vector<string>, it, expected_quals) {
-        if (!found[pos]) {
-            BOOST_CHECK_EQUAL("Missing Qualifier", *it);
+
+    // print unexpected qualifiers
+    // (found, but not expected)
+    {{
+        set<string> unexpected_quals;
+        set_difference(found_quals.begin(), found_quals.end(),
+            expected_quals.begin(), expected_quals.end(),
+            inserter(unexpected_quals, unexpected_quals.begin() ) );
+        ITERATE(set<string>, unexpected_qual, unexpected_quals) {
+            BOOST_CHECK_EQUAL("Unexpected qualifier", *unexpected_qual);
         }
-        pos++;
-    }
+    }}
+
+    // print missing qualifiers
+    // (expected, but not found)
+    {{
+        set<string> missing_quals;
+        set_difference(expected_quals.begin(), expected_quals.end(),
+            found_quals.begin(), found_quals.end(),
+            inserter(missing_quals, missing_quals.begin() ) );
+        ITERATE(set<string>, missing_qual, missing_quals) {
+            BOOST_CHECK_EQUAL("Missing qualifier", *missing_qual);
+        }
+    }}
 }
 
 
@@ -283,10 +305,10 @@ BOOST_AUTO_TEST_CASE(Test_FlybaseFeatureTableWithMultiIntervalTranslExcept)
     BOOST_REQUIRE(cds->IsSetData());
     BOOST_REQUIRE(cds->GetData().IsCdregion());
     BOOST_CHECK_EQUAL(cds->GetQual().size(), 3);
-    vector<string> expected_quals;
-    expected_quals.push_back("transcript_id");
-    expected_quals.push_back("protein_id");
-    expected_quals.push_back("transl_except");
+    set<string> expected_quals;
+    expected_quals.insert("transcript_id");
+    expected_quals.insert("protein_id");
+    expected_quals.insert("transl_except");
     CheckExpectedQuals (cds, expected_quals);
 }
 
@@ -463,11 +485,11 @@ BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
             const CProt_ref& prot = (*feat)->GetXref().front()->GetData().GetProt();
             BOOST_REQUIRE (prot.IsSetName());
             BOOST_REQUIRE (prot.GetName().size() == 1);
-            vector<string> expected_quals;
-            expected_quals.push_back("protein_id");
+            set<string> expected_quals;
+            expected_quals.insert("protein_id");
             if (NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit II")
                 || NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit III")) {
-                expected_quals.push_back("transl_except");
+                expected_quals.insert("transl_except");
             }
             CheckExpectedQuals (*feat, expected_quals);
         } else if ((*feat)->GetData().IsGene()) {
@@ -1159,4 +1181,96 @@ static const char * sc_Table7 = "\
 BOOST_AUTO_TEST_CASE(Test_CapitalizedQualifiers)
 {
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table7); 
+}
+
+static const char * sc_Table8 = "\
+>Feature lcl|seq1\n\
+1\t10\ttRNA\n\
+20\t30\n\
+\t\t\tanticodon\t(pos:21..23,aa:His)\n\
+101\t110\ttRNA\n\
+120\t130\n\
+\t\t\tanticodon\t(pos:complement(121..123),aa:Pro)\n\
+201\t210\ttRNA\n\
+220\t230\n\
+\t\t\tanticodon\t(pos:join(210,220..221),aa:Ala)\n\
+301\t310\ttRNA\n\
+320\t330\n\
+\t\t\tanticodon\t(pos:complement(join(310,320..321)),aa:Cys)\n\
+";
+
+BOOST_AUTO_TEST_CASE(Test_tRNAAnticodonQualifiers)
+{
+    // test various conditions for anticodon qualifiers
+
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table8);
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(ftable.size(), 4);
+
+    // expect no quals
+    set<string> expected_quals;
+
+    // expected amino acids
+    int expected_aas[] = {
+        // implicit char to int casts
+        'H', 'P', 'A', 'C'
+    };
+
+    const char *pchExpectedAnticodonLocations[] = {
+        "Seq-loc ::= int { from 20, to 22, id local str \"seq1\" }",
+        "Seq-loc ::= int { from 120, to 122, strand minus, id local str \"seq1\" }",
+        "Seq-loc ::= mix { pnt { point 209, id local str \"seq1\" }, \
+               int { from 219, to 220, id local str \"seq1\" } }",
+        "Seq-loc ::= mix { int { from 319, to 320, strand minus, id local str \"seq1\" }, \
+               pnt { point 309, strand minus, id local str \"seq1\" } }"
+    };
+
+    size_t pos = 0;
+    ITERATE(CSeq_annot::TData::TFtable, feat, ftable) {
+        const CRNA_ref & trna_ref = (*feat)->GetData().GetRna();
+        BOOST_CHECK_EQUAL( trna_ref.GetType(), CRNA_ref::eType_tRNA );
+        CheckExpectedQuals (*feat, expected_quals);
+
+        const CTrna_ext & trna_ext = trna_ref.GetExt().GetTRNA();
+
+        BOOST_CHECK_EQUAL(trna_ext.GetAa().GetNcbieaa(), expected_aas[pos] );
+
+        CRef<CSeq_loc> pExpectedAnticodonLoc( new CSeq_loc );
+        CNcbiIstrstream strmAnticodonLoc(pchExpectedAnticodonLocations[pos]);
+        BOOST_REQUIRE_NO_THROW( strmAnticodonLoc >> MSerial_AsnText >> *pExpectedAnticodonLoc );
+
+        BOOST_CHECK( trna_ext.GetAnticodon().Equals(*pExpectedAnticodonLoc) );
+
+        ++pos;
+    }
+}
+
+static const char * sc_Table9 = "\
+>Feature lcl|seq1\n\
+1\t10\ttRNA\n\
+20\t30\n\
+\t\t\tanticodon\t(pos:join(10..10,complement(20..21)),aa:Pro)\n\
+";
+
+BOOST_AUTO_TEST_CASE(Test_ForbidMixedStrandAnticodonQualifier)
+{
+    list<string> expected_errors;
+    expected_errors.push_back("Qualifier had bad value");
+
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (
+        sc_Table9,
+        expected_errors);
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(ftable.size(), 1);
+
+    // expect no quals
+    set<string> expected_quals;
+    CheckExpectedQuals (ftable.front(), expected_quals);
+
+    const CRNA_ref & trna_ref = ftable.front()->GetData().GetRna();
+    BOOST_CHECK_EQUAL( trna_ref.GetType(), CRNA_ref::eType_tRNA );
+
+    const CTrna_ext & trna_ext = trna_ref.GetExt().GetTRNA();
+    BOOST_CHECK( ! trna_ext.IsSetAa() );
+    BOOST_CHECK( ! trna_ext.IsSetAnticodon() );
 }

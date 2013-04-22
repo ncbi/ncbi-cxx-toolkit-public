@@ -1322,8 +1322,16 @@ CFeature_table_reader_imp::x_ParseTrnaExtString(
                 ext_trna.ResetAa();
                 return false;
             } else {
-                ext_trna.SetAnticodon(*anticodon);
-                return true;
+                switch( anticodon->GetStrand() ) {
+                case eNa_strand_unknown:
+                case eNa_strand_plus:
+                case eNa_strand_minus:
+                    ext_trna.SetAnticodon(*anticodon);
+                    return true;
+                default:
+                    ext_trna.ResetAa();
+                    return false;
+                }
             }
         }
     }
@@ -1798,13 +1806,13 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     CUser_field& field = sfp->SetExt().SetField(label);
     CRef<CUser_field> text_field (new CUser_field());
     text_field->SetLabel().SetStr("text_string");
-    text_field->SetData().SetStr(fields[0]);
+    text_field->SetData().SetStr( CUtf8::AsUTF8(fields[0], eEncoding_Ascii));
     field.SetData().SetFields().push_back(text_field);
   
     if (!NStr::IsBlank(fields[1])) {
         CRef<CUser_field> goid (new CUser_field());
         goid->SetLabel().SetStr("go id");
-        goid->SetData().SetStr(fields[1]);
+        goid->SetData().SetStr( CUtf8::AsUTF8(fields[1], eEncoding_Ascii) );
         field.SetData().SetFields().push_back(goid);
     }
 
@@ -1818,14 +1826,14 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     if (!NStr::IsBlank(fields[2])) {
         CRef<CUser_field> goref (new CUser_field());
         goref->SetLabel().SetStr("go ref");
-        goref->SetData().SetStr(fields[2]);
+        goref->SetData().SetStr( CUtf8::AsUTF8(fields[2], eEncoding_Ascii) );
         field.SetData().SetFields().push_back(goref);
     }
 
     if (!NStr::IsBlank(fields[3])) {
         CRef<CUser_field> evidence (new CUser_field());
         evidence->SetLabel().SetStr("evidence");
-        evidence->SetData().SetStr(fields[3]);
+        evidence->SetData().SetStr( CUtf8::AsUTF8(fields[3], eEncoding_Ascii) );
         field.SetData().SetFields().push_back(evidence);
     }
 
