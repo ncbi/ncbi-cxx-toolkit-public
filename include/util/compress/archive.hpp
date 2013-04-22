@@ -209,6 +209,7 @@ public:
     ///   [out] Size of allocated memory buffer, it is equal to the size of extracted data.
     /// @note
     ///   Do not forget to deallocate memory buffer after usage.
+    ///   Use free() or AutoPtr<char, CDeleter<char>>.
     /// @sa 
     ///   ExtractFileToMemory, EctractFileToCallback, CArchiveEntryInfo::GetSize, List
     virtual void ExtractFileToHeap(const CArchiveEntryInfo& info,
@@ -593,6 +594,7 @@ public:
     ///   Size of the newly created archive.
     /// @note
     ///   Do not forget to deallocate memory buffer after usage.
+    ///   Use free() or AutoPtr<char, CDeleter<char>>.
     /// @sa
     ///   Create, Close
     virtual void Finalize(void** buf_ptr, size_t* buf_size_ptr);

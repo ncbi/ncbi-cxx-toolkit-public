@@ -398,12 +398,22 @@ void CArchive::ExtractFileToHeap(const CArchiveEntryInfo& info, void** buf_ptr, 
                                 NStr::Int8ToString(uncompressed_size));
     }
     // Allocate memory
-    size_t x_uncompressed_size = (size_t)uncompressed_size; 
-    AutoArray<char> ptr(x_uncompressed_size);
-    // Extract file
-    ExtractFileToMemory(info, ptr.get(), x_uncompressed_size, NULL);
+    size_t x_uncompressed_size = (size_t)uncompressed_size;
+    void* ptr = malloc(x_uncompressed_size);
+    if (!ptr) {
+        ARCHIVE_THROW(eMemory, "Cannot allocate " + 
+                               NStr::Int8ToString(uncompressed_size) +
+                               " bytes on heap");
+    }
+    try {
+        // Extract file
+        ExtractFileToMemory(info, ptr, x_uncompressed_size, NULL);
+    } catch(...) {
+        free(ptr);
+        throw;
+    }
     // Return result
-    *buf_ptr = ptr.release();
+    *buf_ptr = ptr;
     *buf_size_ptr = x_uncompressed_size;
     return;
 }

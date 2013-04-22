@@ -387,8 +387,9 @@ void CTest::RunInternalTestFormat(CArchive::EFormat format)
             void*  buf;
             size_t buf_size;
             a.Finalize(&buf, &buf_size);
-            // Create AutoArray to deallocate buffer automatically
-            AutoArray<char> buf_deleter((char*)buf);
+            // Create auto ptr to deallocate buffer automatically
+            AutoPtr<char, CDeleter<char> > buf_deleter((char*)buf);
+            // or use: free(buf);
 
             // Save created memory-based archive to file
             a.Save(a_memory);
@@ -464,7 +465,8 @@ void CTest::RunInternalTestFormat(CArchive::EFormat format)
             // Extract to heap with automatic memory allocation
             am.ExtractFileToHeap(info, (void**)(&buf_ptr), &buf_size);
             assert(buf_size == strlen(kStr));
-            delete [] buf_ptr;
+            free(buf_ptr);
+            // or use: AutoPtr<char, CDeleter<char> > buf_deleter(buf_ptr);
             // Extract to preallocated memory buffer
             am.ExtractFileToMemory(info, buf, sizeof(buf), &n);
             assert(buf_size == n);
