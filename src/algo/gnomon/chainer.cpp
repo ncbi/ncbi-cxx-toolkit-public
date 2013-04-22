@@ -1702,7 +1702,7 @@ void CChainer::CChainerImpl::DuplicateNotOriented(CChainMembers& pointers, TGene
         CGeneModel& algn = *mbr.m_align;
         if((algn.Status()&CGeneModel::eUnknownOrientation) != 0) {
             CGeneModel new_algn = algn;
-            new_algn.SetStrand(algn.Strand() == ePlus ? eMinus : ePlus);
+            new_algn.ReverseComplementModel();
             clust.push_back(new_algn);
             pointers.InsertMember(clust.back(), &mbr);    //reversed copy     
         }
@@ -2353,10 +2353,12 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             }
             if(pluses > 0 && minuses == 0) {
                 align.Status() ^= CGeneModel::eUnknownOrientation;
-                align.SetStrand(ePlus);
+                if(align.Strand() == eMinus)
+                    align.ReverseComplementModel();
             } else if(minuses > 0 && pluses == 0) {
                 align.Status() ^= CGeneModel::eUnknownOrientation;
-                align.SetStrand(eMinus);
+                if(align.Strand() == ePlus)
+                    align.ReverseComplementModel();
             }
         }
     }

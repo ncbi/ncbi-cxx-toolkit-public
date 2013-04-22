@@ -152,7 +152,8 @@ public:
 
 class NCBI_XALGOGNOMON_EXPORT CModelExon {
 public:
-    CModelExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0, bool fs = false, bool ss = false) : m_fsplice(fs), m_ssplice(ss), m_range(f,s) {};
+    CModelExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0, bool fs = false, bool ss = false, string fsig = "", string ssig = "", double ident = 0) : 
+        m_fsplice(fs), m_ssplice(ss), m_fsplice_sig(fsig), m_ssplice_sig(ssig), m_ident(ident), m_range(f,s) {};
 
     bool operator==(const CModelExon& p) const 
     { 
@@ -174,6 +175,8 @@ public:
     void AddTo(int d) { m_range.SetTo( m_range.GetTo() +d ); }
 
     bool m_fsplice, m_ssplice;
+    string m_fsplice_sig, m_ssplice_sig;
+    double m_ident;
 
     void Remap(const CRangeMapper& mapper) { m_range = mapper(m_range); }
 private:
@@ -326,11 +329,13 @@ public:
         m_type(type), m_id(id), m_status(0), m_ident(0), m_weight(1), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
     virtual ~CGeneModel() {}
 
-    void AddExon(TSignedSeqRange exon);
+    void AddExon(TSignedSeqRange exon, string fs = "", string ss = "", double ident = 0);
     void AddHole(); // between model and next exons
 
     typedef vector<CModelExon> TExons;
     const TExons& Exons() const { return m_exons; }
+
+    void ReverseComplementModel();
 
     void Remap(const CRangeMapper& mapper);
     enum EClipMode { eRemoveExons, eDontRemoveExons };

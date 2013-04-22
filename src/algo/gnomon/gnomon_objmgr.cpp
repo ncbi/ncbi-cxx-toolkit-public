@@ -168,7 +168,31 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             AddHole();
         prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() && exon.GetDonor_after_exon().GetBases().size()==2;
 
-        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end));
+        string fs, ss;
+        if(exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases()) {
+            fs = exon.GetAcceptor_before_exon().GetBases();
+        }
+        if(exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases()) {
+            ss = exon.GetDonor_after_exon().GetBases();
+        }
+        if(Strand() == eMinus) {
+            swap(fs,ss);
+        }
+
+        double eident = 0;
+        if(exon.CanGetScores() && exon.GetScores().CanGet()) {
+            CScore_set::Tdata scores = exon.GetScores().Get();
+            ITERATE(CScore_set::Tdata, it, scores) {
+                if((*it)->CanGetId() && (*it)->GetId().IsStr()) {
+                    if((*it)->GetId().GetStr() == "idty") {
+                        eident = (*it)->GetValue().GetReal();
+                        break;
+                    }
+                }
+            }
+        }
+
+        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end),fs,ss,eident);
         transcript_exons.push_back(TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
 
         _ASSERT(Exons().back().Limits().NotEmpty());
@@ -318,6 +342,19 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         */
     }
 
+    if(seq_align.CanGetExt()) {
+        int count = 0;
+        ITERATE(CSeq_align::TExt, i, seq_align.GetExt()) {
+            if((*i)->IsSetType() && (*i)->GetType().IsStr() && (*i)->GetType().GetStr() == "RNASeq-Counts") {
+                ITERATE(CUser_object::TData, j, (*i)->GetData()) {
+                    if(*j)
+                        count += (*j)->GetData().GetInt();
+                }
+            }
+        }
+        if(count > 0)
+            SetWeight(count);
+    }
 
     if(seq_align.CanGetScore()) {
         const CSeq_align::TScore& score = seq_align.GetScore();

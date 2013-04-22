@@ -46,6 +46,14 @@ BEGIN_SCOPE(gnomon)
 USING_SCOPE(objects);
 
 
+void CGeneModel::ReverseComplementModel() {
+    SetStrand(Strand() == ePlus ? eMinus : ePlus);
+    NON_CONST_ITERATE(TExons, it, MyExons()) {
+        ReverseComplement(it->m_fsplice_sig.begin(),it->m_fsplice_sig.end());
+        ReverseComplement(it->m_ssplice_sig.begin(),it->m_ssplice_sig.end());
+    }
+}
+
 CAlignMap CGeneModel::GetAlignMap() const { return CAlignMap(Exons(), FrameShifts(), Strand()); }
 
 CAlignModel::CAlignModel(const CGeneModel& g, const CAlignMap& a)
@@ -683,12 +691,12 @@ bool CGeneModel::IsSubAlignOf(const CGeneModel& a) const
 }
 
 
-void CGeneModel::AddExon(TSignedSeqRange exon_range)
+void CGeneModel::AddExon(TSignedSeqRange exon_range, string fs, string ss, double ident)
 {
     _ASSERT( (m_range & exon_range).Empty() );
     m_range += exon_range;
 
-    CModelExon e(exon_range.GetFrom(),exon_range.GetTo());
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,fs,ss,ident);
     if (MyExons().empty())
         MyExons().push_back(e);
     else if (MyExons().back().GetTo()<exon_range.GetFrom()) {
@@ -725,6 +733,10 @@ void CModelExon::Extend(const CModelExon& e)
     Limits().CombineWith(e.Limits());
     m_fsplice =m_fsplice || e.m_fsplice;
     m_ssplice =m_ssplice || e.m_ssplice;
+    if(e.m_fsplice && !e.m_fsplice_sig.empty())
+        m_fsplice_sig = e.m_fsplice_sig;
+    if(e.m_ssplice && !e.m_ssplice_sig.empty())
+        m_ssplice_sig = e.m_ssplice_sig;    
 }
 
 void CGeneModel::TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant)
@@ -813,6 +825,8 @@ void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
                 ++j;
             }
         }
+        if(!MyExons().empty())
+            MyExons().back().m_ident = 0;
     }
 
     RecalculateLimits();
@@ -1521,11 +1535,31 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
         }
         exon.attributes["Target"] = target;
 
+        if(e->m_ident > 0) {
+            exon.attributes["Ident"] = NStr::DoubleToString(e->m_ident);
+        }
+
+        if((!e->m_fsplice_sig.empty() && e->m_fsplice) || (!e->m_ssplice_sig.empty() && e->m_ssplice)) {
+            string fs;
+            if(!e->m_fsplice_sig.empty() && e->m_fsplice)
+                fs = e->m_fsplice_sig;
+            string ss;
+            if(!e->m_ssplice_sig.empty() && e->m_ssplice)
+                ss = e->m_ssplice_sig;
+            if(a.Strand() == ePlus) {
+                exon.attributes["Splices"] = fs+".."+ss;
+            } else {
+                exon.attributes["Splices"] = ss+".."+fs;
+            }
+        }
+
         int ies = (e->m_fsplice ? exon.start : exon.start+1);
         int iee = (e->m_ssplice ? exon.end : exon.end-1);
         exon.attributes["Gap"] = BuildGFF3Gap(exon.start, exon.end, a.GetInDels(ies, iee, false));
         exons.push_back(exon);
         exon.attributes["Gap"].erase();
+        exon.attributes["Ident"].erase();
+        exon.attributes["Splices"].erase();
 
         TSignedSeqRange cds_limits = e->Limits() & a.RealCdsLimits();
         if (cds_limits.NotEmpty()) {
@@ -1630,7 +1664,8 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     TSignedSeqRange cds;
     int phase = 0;
 
-    vector<TSignedSeqRange> exons, transcript_exons;
+    vector<CModelExon> exons;
+    vector<TSignedSeqRange> transcript_exons;
     TInDels indels;
     set<TSignedSeqRange,Precedence> mrna_parts;
 
@@ -1655,7 +1690,27 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             if(r->tstart >= 0 && r->tstrand == '-') {
                 a.Status() |= CGeneModel::eReversed;
             }
-            exons.push_back(TSignedSeqRange(r->start,r->end));
+
+            string fs, ss;
+            if(!r->attributes["Splices"].empty()) {
+                string splices = r->attributes["Splices"];
+                unsigned int ispl = splices.find("..");
+                if(ispl != string::npos) {
+                    if(ispl == 2)
+                        fs = splices.substr(0,2);
+                    if(ispl+4 == splices.length())
+                        ss = splices.substr(ispl+2,2);
+                }
+                if(a.Strand() == eMinus)
+                    swap(fs,ss);
+            }
+
+            double eident = 0;
+            if(!r->attributes["Ident"].empty()) {
+                eident = NStr::StringToDouble(r->attributes["Ident"]);
+            }
+            
+            exons.push_back(CModelExon(r->start,r->end,false,false,fs,ss,eident));
             TSignedSeqRange texon(r->tstart,r->tend);
             if(texon.NotEmpty())
                 transcript_exons.push_back(texon);
@@ -1689,14 +1744,14 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     if(orientation == eMinus)
        reverse(transcript_exons.begin(),transcript_exons.end());
     
-    ITERATE(vector<TSignedSeqRange>, e, exons) {
-        if (a.Limits().IntersectingWith(*e)) {
+    ITERATE(vector<CModelExon>, e, exons) {
+        if (a.Limits().IntersectingWith(e->Limits())) {
             return  InputError(is);
         }
         set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(*e);
-        if (p != mrna_parts.end() && p->GetFrom()==e->GetFrom())
+        if (p != mrna_parts.end() && p->GetFrom()==e->Limits().GetFrom())
             a.AddHole();
-        a.AddExon(*e);
+        a.AddExon(e->Limits(),e->m_fsplice_sig,e->m_ssplice_sig,e->m_ident);
     }
 
     sort(indels.begin(),indels.end());
