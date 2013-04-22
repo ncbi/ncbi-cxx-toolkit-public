@@ -111,7 +111,7 @@ CSeq_id_Which_Tree& CSeq_id_Mapper::x_GetTree(const CSeq_id_Handle& idh)
 }
 
 
-CSeq_id_Handle CSeq_id_Mapper::GetGiHandle(int gi)
+CSeq_id_Handle CSeq_id_Mapper::GetGiHandle(TGi gi)
 {
     _ASSERT(size_t(CSeq_id::e_Gi) < m_Trees.size());
     return m_Trees[CSeq_id::e_Gi]->GetGiHandle(gi);

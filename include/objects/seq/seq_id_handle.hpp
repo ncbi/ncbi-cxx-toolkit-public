@@ -66,6 +66,8 @@ class CSeq_id_Which_Tree;
 class CSeq_id_Info : public CObject
 {
 public:
+    typedef TIntId TPacked;
+
     NCBI_SEQ_EXPORT CSeq_id_Info(CSeq_id::E_Choice type,
                                  CSeq_id_Mapper* mapper);
     NCBI_SEQ_EXPORT CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
@@ -76,7 +78,7 @@ public:
         {
             return m_Seq_id;
         }
-    NCBI_SEQ_EXPORT virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    NCBI_SEQ_EXPORT virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
 
     // locking
     void AddLock(void) const
@@ -144,12 +146,14 @@ public:
 class CSeq_id_Handle
 {
 public:
+    typedef CSeq_id_Info::TPacked TPacked;
+
     // 'ctors
     CSeq_id_Handle(void)
         : m_Info(null), m_Packed(0)
         {
         }
-    explicit CSeq_id_Handle(const CSeq_id_Info* info, int packed = 0)
+    explicit CSeq_id_Handle(const CSeq_id_Info* info, TPacked packed = 0)
         : m_Info(info), m_Packed(packed)
         {
             _ASSERT(info);
@@ -166,10 +170,10 @@ public:
     static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(const string& str_id);
 
     /// Faster way to create a handle for a gi.
-    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(int gi);
+    static NCBI_SEQ_EXPORT CSeq_id_Handle GetHandle(TGi gi);
 
     /// Faster way to create a handle for a gi.
-    static CSeq_id_Handle GetGiHandle(int gi)
+    static CSeq_id_Handle GetGiHandle(TGi gi)
         {
             return GetHandle(gi);
         }
@@ -186,14 +190,14 @@ public:
         {
             // Packed (m_Packed != 0) first:
             // zeroes are converted to a highest unsigned value by decrement.
-            unsigned p1 = unsigned(m_Packed-1);
-            unsigned p2 = unsigned(handle.m_Packed-1);
+            TUintId p1 = INT_ID_TO(TUintId, m_Packed-1);
+            TUintId p2 = INT_ID_TO(TUintId, handle.m_Packed-1);
             return p1 < p2 || (p1 == p2 && m_Info < handle.m_Info);
         }
     bool NCBI_SEQ_EXPORT operator== (const CSeq_id& id) const;
 
     /// Compare ids in a defined order (see CSeq_id::CompareOrdered())
-    int NCBI_SEQ_EXPORT CompareOrdered(const CSeq_id_Handle& id) const;
+    TIntId NCBI_SEQ_EXPORT CompareOrdered(const CSeq_id_Handle& id) const;
     /// Predicate for sorting CSeq_id_Handles in a defined order.
     struct PLessOrdered
     {
@@ -241,7 +245,7 @@ public:
         {
             return m_Packed != 0;
         }
-    int GetPacked(void) const
+    TPacked GetPacked(void) const
         {
             return m_Packed;
         }
@@ -249,9 +253,9 @@ public:
         {
             return m_Packed && m_Info->GetType() == CSeq_id::e_Gi;
         }
-    int GetGi(void) const
+    TGi GetGi(void) const
         {
-            return IsGi()? m_Packed: 0;
+            return IsGi()? TGi(m_Packed) : ZERO_GI;
         }
     unsigned NCBI_SEQ_EXPORT GetHash(void) const;
 
@@ -307,7 +311,7 @@ private:
 
     // Seq-id info
     CConstRef<CSeq_id_Info, CSeq_id_InfoLocker> m_Info;
-    int m_Packed;
+    TPacked m_Packed;
 };
 
 /// Get CConstRef<CSeq_id> from a seq-id handle (for container

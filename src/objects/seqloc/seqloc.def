@@ -3,6 +3,7 @@ _export = NCBI_SEQLOC_EXPORT
 
 [Seq-id]
 gi._type = ncbi::TGi
+gi._storage_type = ncbi::TIntId
 
 [Seq-interval]
 from._type = TSeqPos

@@ -79,7 +79,7 @@ CSeq_id_Which_Tree& CSeq_id_Info::GetTree(void) const
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Info::GetPackedSeqId(int /*packed*/) const
+CConstRef<CSeq_id> CSeq_id_Info::GetPackedSeqId(TPacked /*packed*/) const
 {
     NCBI_THROW(CIdMapperException, eTypeError,
                "CSeq_id_Handle is not packed");
@@ -98,7 +98,7 @@ void CSeq_id_Info::x_RemoveLastLock(void) const
 //
 
 
-CSeq_id_Handle CSeq_id_Handle::GetHandle(int gi)
+CSeq_id_Handle CSeq_id_Handle::GetHandle(TGi gi)
 {
     return CSeq_id_Mapper::GetInstance()->GetGiHandle(gi);
 }
@@ -157,16 +157,16 @@ bool CSeq_id_Handle::MatchesTo(const CSeq_id_Handle& h) const
 bool CSeq_id_Handle::operator==(const CSeq_id& id) const
 {
     if ( IsGi() ) {
-        return id.IsGi() && id.GetGi() == m_Packed;
+        return id.IsGi() && id.GetGi() == TGi(m_Packed);
     }
     return *this == GetMapper().GetHandle(id);
 }
 
 
-int CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
+TIntId CSeq_id_Handle::CompareOrdered(const CSeq_id_Handle& id) const
 {
     // small optimization to avoid creation of temporary CSeq_id objects
-    if ( int diff = Which() - id.Which() ) {
+    if ( TIntId diff = Which() - id.Which() ) {
         return diff;
     }
     if ( IsGi() && id.IsGi() ) {
@@ -194,7 +194,7 @@ string CSeq_id_Handle::AsString() const
 
 unsigned CSeq_id_Handle::GetHash(void) const
 {
-    unsigned hash = m_Packed;
+    unsigned hash = INT_ID_TO(unsigned, m_Packed);
     if ( !hash ) {
         hash = unsigned((intptr_t)(m_Info.GetPointerOrNull())>>3);
     }
@@ -324,7 +324,7 @@ string GetLabel(const vector<CRef<CSeq_id> >& ids)
 CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_id_Handle& idh)
 {
     if ( idh.IsGi() ) {
-        out << "gi|"<<idh.GetPacked();
+        out << "gi|" << idh.GetPacked();
     }
     else {
         idh.GetSeqId()->WriteAsFasta(out);

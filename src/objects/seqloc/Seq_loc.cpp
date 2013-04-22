@@ -518,7 +518,7 @@ int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc) const
                    "CSeq_loc::Compare(): "
                    "cannot compare locations with several different seq-ids");
     }
-    if ( int diff = id1->CompareOrdered(*id2) ) {
+    if ( int diff = INT_ID_TO(int, id1->CompareOrdered(*id2)) ) {
         // ids are different - order by them
         return diff;
     }

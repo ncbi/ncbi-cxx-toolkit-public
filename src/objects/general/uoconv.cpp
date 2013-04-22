@@ -203,6 +203,13 @@ static void s_SetPrimitiveData(CUser_field& field, CConstObjectInfo obj)
         break;
     }
 
+#ifdef NCBI_STRICT_GI
+    case ePrimitiveValueGi:
+        ERR_POST_X(1, Warning
+                   << "s_SetPrimitiveData: ignoring ePrimitiveValueGi");
+        break;
+#endif
+
     case ePrimitiveValueOther:
         ERR_POST_X(1, Warning
                    << "s_SetPrimitiveData: ignoring ePrimitiveValueOther");
@@ -245,6 +252,14 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
             case ePrimitiveValueAny:
                 data.SetFields().reserve(count);
                 break;
+
+#ifdef NCBI_STRICT_GI
+            case ePrimitiveValueGi:
+                ERR_POST_X(2, Warning << "s_SetContainerData:"
+                           " ignoring ePrimitiveValueGi");
+                break;
+#endif
+
             case ePrimitiveValueOther:
                 ERR_POST_X(2, Warning << "s_SetContainerData:"
                            " ignoring ePrimitiveValueOther");
@@ -322,6 +337,14 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 data.SetFields().push_back(field);
                 break;
             }
+
+#ifdef NCBI_STRICT_GI
+            case ePrimitiveValueGi:
+                ERR_POST_X(3, Warning << "s_SetContainerData:"
+                           " ignoring ePrimitiveValueGi");
+                break;
+#endif
+
             case ePrimitiveValueOther:
                 ERR_POST_X(3, Warning << "s_SetContainerData:"
                            " ignoring ePrimitiveValueOther");
@@ -476,6 +499,13 @@ static void s_UnpackPrimitiveField(const TUFData& data, CObjectInfo obj)
         s_SetAnyContentFromFields(aco, data.GetFields());
         obj.SetPrimitiveValueAnyContent(aco);
     }
+
+#ifdef NCBI_STRICT_GI
+    case ePrimitiveValueGi:
+        ERR_POST_X(4, Warning << "s_UnpackPrimitiveField:"
+                   " ignoring ePrimitiveValueGi");
+        break;
+#endif
 
     case ePrimitiveValueOther:
         ERR_POST_X(4, Warning << "s_UnpackPrimitiveField:"

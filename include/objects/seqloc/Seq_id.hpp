@@ -124,7 +124,7 @@ public:
     /// @param int_seq_id
     ///   Numeric value.
     CSeq_id(E_Choice the_type,
-            int      int_seq_id);
+            TIntId   int_seq_id);
 
     /// Construct a Seq-id from a flat representation.
     /// @param the_type
@@ -158,7 +158,7 @@ public:
     CSeq_id& Set(const CDbtag& tag, bool set_as_general = true);
 
     CSeq_id& Set(E_Choice the_type,
-                 int      int_seq_id);
+                 TIntId   int_seq_id);
 
     CSeq_id& Set(E_Choice           the_type,
                  const CTempString& acc_in,
@@ -407,7 +407,7 @@ public:
 
     /// Compare() - more general
     E_SIC Compare(const CSeq_id& sid2) const;
-    int CompareOrdered(const CSeq_id& sid2) const;
+    TIntId CompareOrdered(const CSeq_id& sid2) const;
     bool operator<(const CSeq_id& sid2) const
         {
             return CompareOrdered(sid2) < 0;
@@ -717,10 +717,10 @@ CConstRef<CSeq_id> GetSeq_idByType(const container& ids,
 
 /// Return gi from id list if exists, return 0 otherwise
 template<class container>
-int FindGi(const container& ids)
+TGi FindGi(const container& ids)
 {
     CConstRef<CSeq_id> id = GetSeq_idByType(ids, CSeq_id::e_Gi);
-    return id ? id->GetGi() : 0;
+    return id ? id->GetGi() : ZERO_GI;
 }
 
 

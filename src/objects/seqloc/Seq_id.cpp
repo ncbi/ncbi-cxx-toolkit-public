@@ -415,7 +415,7 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 }
 
 
-int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
+TIntId CSeq_id::CompareOrdered(const CSeq_id& sid2) const
 {
     int ret = Which() - sid2.Which();
     if ( ret != 0 ) {
@@ -1230,7 +1230,7 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             break;
 
         case CSeq_id::e_Gi:
-            *label += NStr::IntToString(id.GetGi());
+            *label += NStr::NumericToString(id.GetGi());
             break;
 
         case CSeq_id::e_Pdb:
@@ -1560,7 +1560,7 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
     switch (type) {
     case CDbtag::eDbtagType_GenBank:
         try {
-            int gi = NStr::StringToInt(acc);
+            TIntId gi = NStr::StringToNumeric<TIntId>(acc);
             SetGi(gi);
         }
         catch (...) {
@@ -1580,7 +1580,7 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
         if (dbtag.GetTag().IsStr()) {
             Set(e_Gi, dbtag.GetTag().GetStr());
         } else {
-            SetGi(dbtag.GetTag().GetId());
+            SetGi(GI_FROM(CObject_id::TId, dbtag.GetTag().GetId()));
         }
         break;
 
@@ -1890,32 +1890,32 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
 }
 
 
-CSeq_id::CSeq_id(E_Choice the_type, int the_id)
+CSeq_id::CSeq_id(E_Choice the_type, TIntId the_id)
 {
     Set(the_type, the_id);
 }
 
-CSeq_id& CSeq_id::Set(E_Choice the_type, int the_id)
+CSeq_id& CSeq_id::Set(E_Choice the_type, TIntId the_id)
 {
     if (the_id <= 0) {
         NCBI_THROW(CSeqIdException, eFormat,
-                   "Non-positive numeric ID " + NStr::IntToString(the_id));
+                   "Non-positive numeric ID " + NStr::NumericToString(the_id));
     }
 
     switch (the_type) {
     case e_Local:
-        SetLocal().SetId(the_id);
+        SetLocal().SetId(INT_ID_TO(CObject_id::TId, the_id));
         break;
     case e_Gibbsq:
-        SetGibbsq(the_id);
+        SetGibbsq(INT_ID_TO(CSeq_id::TGibbsq, the_id));
         break;
     case e_Gibbmt:
-        SetGibbmt(the_id);
+        SetGibbmt(INT_ID_TO(CSeq_id::TGibbmt, the_id));
         break;
     case e_Giim:
     {
         CGiimport_id& giim = SetGiim();
-        giim.SetId(the_id);
+        giim.SetId(INT_ID_TO(CGiimport_id::TId, the_id));
         giim.ResetDb();
         giim.ResetRelease();
         break;

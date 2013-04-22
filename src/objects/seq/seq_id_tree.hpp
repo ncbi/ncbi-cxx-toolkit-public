@@ -92,7 +92,7 @@ public:
     // Find exaclty the same seq-id
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const = 0;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id) = 0;
-    virtual CSeq_id_Handle GetGiHandle(int gi);
+    virtual CSeq_id_Handle GetGiHandle(TGi gi);
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
@@ -118,6 +118,8 @@ public:
                                   TSeq_id_MatchList& id_list);
 protected:
     friend class CSeq_id_Mapper;
+
+    typedef CSeq_id_Info::TPacked TPacked;
 
     CSeq_id_Info* CreateInfo(CSeq_id::E_Choice type);
     CSeq_id_Info* CreateInfo(const CSeq_id& id);
@@ -198,10 +200,10 @@ public:
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
     virtual bool x_Check(const CSeq_id& id) const = 0;
-    virtual int  x_Get(const CSeq_id& id) const = 0;
+    virtual TPacked x_Get(const CSeq_id& id) const = 0;
 
 private:
-    typedef map<int, CSeq_id_Info*> TIntMap;
+    typedef map<TPacked, CSeq_id_Info*> TIntMap;
     TIntMap m_IntMap;
 };
 
@@ -216,7 +218,7 @@ public:
     CSeq_id_Gibbsq_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
-    virtual int  x_Get(const CSeq_id& id) const;
+    virtual TPacked x_Get(const CSeq_id& id) const;
 };
 
 
@@ -230,7 +232,7 @@ public:
     CSeq_id_Gibbmt_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
-    virtual int  x_Get(const CSeq_id& id) const;
+    virtual TPacked x_Get(const CSeq_id& id) const;
 };
 
 
@@ -246,7 +248,7 @@ public:
         {
         }
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
 };
 
 
@@ -260,7 +262,7 @@ public:
 
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
-    virtual CSeq_id_Handle GetGiHandle(int gi);
+    virtual CSeq_id_Handle GetGiHandle(TGi gi);
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
@@ -270,7 +272,7 @@ public:
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
     bool x_Check(const CSeq_id& id) const;
-    int  x_Get(const CSeq_id& id) const;
+    TGi x_Get(const CSeq_id& id) const;
 
     CConstRef<CSeq_id_Info> m_ZeroInfo;
     CConstRef<CSeq_id_Info> m_SharedInfo;
@@ -358,13 +360,13 @@ public:
     int GetVersion(void) const {
         return m_Key.GetVersion();
     }
-    void Restore(CTextseq_id& id, int param) const;
+    void Restore(CTextseq_id& id, TPacked param) const;
 
     static TKey ParseAcc(const string& acc, const CTextseq_id* tid);
-    int ParseAccNumber(const string& acc) const;
-    int Pack(const CTextseq_id& id) const;
+    TPacked ParseAccNumber(const string& acc) const;
+    TPacked Pack(const CTextseq_id& id) const;
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
     
 private:
     TKey m_Key;
@@ -608,7 +610,7 @@ private:
     CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
 
     typedef map<string, CSeq_id_Info*, PNocase> TByStr;
-    typedef map<int, CSeq_id_Info*>    TById;
+    typedef map<TPacked, CSeq_id_Info*>         TById;
 
     TByStr m_ByStr;
     TById  m_ById;
@@ -633,12 +635,12 @@ public:
     const string& GetDbtag(void) const {
         return m_Key;
     }
-    void Restore(CDbtag& id, int param) const;
+    void Restore(CDbtag& id, TPacked param) const;
 
     static TKey Parse(const CDbtag& id);
-    int Pack(const CDbtag& id) const;
+    TPacked Pack(const CDbtag& id) const;
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
     
 private:
     TKey m_Key;
@@ -649,7 +651,7 @@ class CSeq_id_General_Str_Info : public CSeq_id_Info {
 public:
     struct TKey {
         // all upper case
-        int m_Key;
+        TPacked m_Key;
         string m_Db;
         string m_StrPrefix;
         string m_StrSuffix;
@@ -697,13 +699,13 @@ public:
     int GetStrDigits(void) const {
         return m_Key.m_Key & 0xff;
     }
-    void Restore(CDbtag& id, int param) const;
+    void Restore(CDbtag& id, TPacked param) const;
 
     static TKey Parse(const CDbtag& id);
-    int ParseStrNumber(const string& str) const;
-    int Pack(const CDbtag& id) const;
+    TPacked ParseStrNumber(const string& str) const;
+    TPacked Pack(const CDbtag& id) const;
     
-    virtual CConstRef<CSeq_id> GetPackedSeqId(int packed) const;
+    virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
     
 private:
     TKey m_Key;
@@ -735,7 +737,7 @@ private:
     struct STagMap {
     public:
         typedef map<string, CSeq_id_Info*, PNocase> TByStr;
-        typedef map<int, CSeq_id_Info*>    TById;
+        typedef map<TPacked, CSeq_id_Info*>         TById;
         TByStr m_ByStr;
         TById  m_ById;
     };
@@ -777,7 +779,7 @@ private:
 
     // 2-level indexing: first by Id, second by Db+Release
     typedef vector<CSeq_id_Info*> TGiimList;
-    typedef map<int, TGiimList>  TIdMap;
+    typedef map<TPacked, TGiimList> TIdMap;
 
     TIdMap m_IdMap;
 };
@@ -808,7 +810,7 @@ private:
     // 3-level indexing: country, (number|app_number), seqid.
     // Ignoring patent doc-type in indexing.
     struct SPat_idMap {
-        typedef map<int, CSeq_id_Info*> TBySeqid;
+        typedef map<TPacked, CSeq_id_Info*> TBySeqid;
         typedef map<string, TBySeqid, PNocase> TByNumber; // or by App_number
 
         TByNumber m_ByNumber;

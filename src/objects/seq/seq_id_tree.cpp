@@ -208,7 +208,7 @@ void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 }
 
 
-CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(int /*gi*/)
+CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(TGi /*gi*/)
 {
     NCBI_THROW(CIdMapperException, eTypeError, "Invalid seq-id type");
 }
@@ -342,7 +342,7 @@ bool CSeq_id_int_Tree::Empty(void) const
 CSeq_id_Handle CSeq_id_int_Tree::FindInfo(const CSeq_id& id) const
 {
     _ASSERT(x_Check(id));
-    int value = x_Get(id);
+    TPacked value = x_Get(id);
 
     TReadLockGuard guard(m_TreeLock);
     TIntMap::const_iterator it = m_IntMap.find(value);
@@ -356,7 +356,7 @@ CSeq_id_Handle CSeq_id_int_Tree::FindInfo(const CSeq_id& id) const
 CSeq_id_Handle CSeq_id_int_Tree::FindOrCreate(const CSeq_id& id)
 {
     _ASSERT(x_Check(id));
-    int value = x_Get(id);
+    TPacked value = x_Get(id);
 
     TWriteLockGuard guard(m_TreeLock);
     pair<TIntMap::iterator, bool> ins =
@@ -371,7 +371,7 @@ CSeq_id_Handle CSeq_id_int_Tree::FindOrCreate(const CSeq_id& id)
 void CSeq_id_int_Tree::x_Unindex(const CSeq_id_Info* info)
 {
     _ASSERT(x_Check(*info->GetSeqId()));
-    int value = x_Get(*info->GetSeqId());
+    TPacked value = x_Get(*info->GetSeqId());
 
     _VERIFY(m_IntMap.erase(value));
 }
@@ -380,9 +380,9 @@ void CSeq_id_int_Tree::x_Unindex(const CSeq_id_Info* info)
 void CSeq_id_int_Tree::FindMatchStr(const string& sid,
                                     TSeq_id_MatchList& id_list) const
 {
-    int value;
+    TPacked value;
     try {
-        value = NStr::StringToInt(sid);
+        value = NStr::StringToNumeric<TPacked>(sid);
     }
     catch (const CStringException& /*ignored*/) {
         // Not an integer value
@@ -412,9 +412,9 @@ bool CSeq_id_Gibbsq_Tree::x_Check(const CSeq_id& id) const
 }
 
 
-int CSeq_id_Gibbsq_Tree::x_Get(const CSeq_id& id) const
+CSeq_id_Gibbsq_Tree::TPacked CSeq_id_Gibbsq_Tree::x_Get(const CSeq_id& id) const
 {
-    return id.GetGibbsq();
+    return INT_ID_FROM(CSeq_id::TGibbsq, id.GetGibbsq());
 }
 
 
@@ -434,9 +434,9 @@ bool CSeq_id_Gibbmt_Tree::x_Check(const CSeq_id& id) const
 }
 
 
-int CSeq_id_Gibbmt_Tree::x_Get(const CSeq_id& id) const
+CSeq_id_Gibbmt_Tree::TPacked CSeq_id_Gibbmt_Tree::x_Get(const CSeq_id& id) const
 {
-    return id.GetGibbmt();
+    return INT_ID_FROM(CSeq_id::TGibbmt, id.GetGibbmt());
 }
 
 
@@ -445,7 +445,7 @@ int CSeq_id_Gibbmt_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 
-CConstRef<CSeq_id> CSeq_id_Gi_Info::GetPackedSeqId(int gi) const
+CConstRef<CSeq_id> CSeq_id_Gi_Info::GetPackedSeqId(TPacked gi) const
 {
     CConstRef<CSeq_id> ret;
     typedef CSeq_id_Gi_Info TThis;
@@ -498,7 +498,7 @@ bool CSeq_id_Gi_Tree::x_Check(const CSeq_id& id) const
 
 
 inline
-int CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
+TGi CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
 {
     return id.GetGi();
 }
@@ -514,9 +514,9 @@ void CSeq_id_Gi_Tree::x_Unindex(const CSeq_id_Info* /*info*/)
 }
 
 
-CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(int gi)
+CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(TGi gi)
 {
-    if ( gi ) {
+    if ( gi != ZERO_GI ) {
         return CSeq_id_Handle(m_SharedInfo, gi);
     }
     else {
@@ -524,7 +524,7 @@ CSeq_id_Handle CSeq_id_Gi_Tree::GetGiHandle(int gi)
             TWriteLockGuard guard(m_TreeLock);
             if ( !m_ZeroInfo ) {
                 CRef<CSeq_id> zero_id(new CSeq_id);
-                zero_id->SetGi(0);
+                zero_id->SetGi(ZERO_GI);
                 m_ZeroInfo.Reset(CreateInfo(*zero_id));
             }
         }
@@ -537,8 +537,8 @@ CSeq_id_Handle CSeq_id_Gi_Tree::FindInfo(const CSeq_id& id) const
 {
     CSeq_id_Handle ret;
     _ASSERT(x_Check(id));
-    int gi = x_Get(id);
-    if ( gi ) {
+    TPacked gi = GI_TO(TPacked, x_Get(id));
+    if (gi) {
         ret = CSeq_id_Handle(m_SharedInfo, gi);
     }
     else if ( m_ZeroInfo ) {
@@ -558,15 +558,15 @@ CSeq_id_Handle CSeq_id_Gi_Tree::FindOrCreate(const CSeq_id& id)
 void CSeq_id_Gi_Tree::FindMatchStr(const string& sid,
                                    TSeq_id_MatchList& id_list) const
 {
-    int gi;
+    TPacked gi;
     try {
-        gi = NStr::StringToInt(sid);
+        gi = NStr::StringToNumeric<TPacked>(sid);
     }
     catch (const CStringException& /*ignored*/) {
         // Not an integer value
         return;
     }
-    if ( gi ) {
+    if (gi) {
         id_list.insert(CSeq_id_Handle(m_SharedInfo, gi));
     }
     else if ( m_ZeroInfo ) {
@@ -594,7 +594,7 @@ static const bool s_PackGeneral =
 
 
 static inline
-void s_RestoreNumber(string& str, size_t pos, size_t len, int number)
+void s_RestoreNumber(string& str, size_t pos, size_t len, TIntId number)
 {
     char* start = &str[pos];
     char* ptr = start + len;
@@ -608,9 +608,9 @@ void s_RestoreNumber(string& str, size_t pos, size_t len, int number)
 }
 
 static inline
-int s_ParseNumber(const string& str, size_t pos, size_t len)
+TIntId s_ParseNumber(const string& str, size_t pos, size_t len)
 {
-    int number = 0;
+    TIntId number = 0;
     for ( size_t i = pos; i < pos+len; ++i ) {
         number = number * 10 + (str[i]-'0');
     }
@@ -687,7 +687,7 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
 }
 
 
-void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, int param) const
+void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, TPacked param) const
 {
     if ( !id.IsSetAccession() ) {
         id.SetAccession(GetAccPrefix());
@@ -702,19 +702,21 @@ void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, int param) const
 }
 
 
-inline int CSeq_id_Textseq_Info::ParseAccNumber(const string& acc) const
+inline
+CSeq_id_Textseq_Info::TPacked CSeq_id_Textseq_Info::ParseAccNumber(const string& acc) const
 {
     return s_ParseNumber(acc, GetAccPrefix().size(), GetAccDigits());
 }
 
 
-inline int CSeq_id_Textseq_Info::Pack(const CTextseq_id& tid) const
+inline
+CSeq_id_Textseq_Info::TPacked CSeq_id_Textseq_Info::Pack(const CTextseq_id& tid) const
 {
     return ParseAccNumber(tid.GetAccession());
 }
 
 
-CConstRef<CSeq_id> CSeq_id_Textseq_Info::GetPackedSeqId(int param) const
+CConstRef<CSeq_id> CSeq_id_Textseq_Info::GetPackedSeqId(TPacked param) const
 {
     CConstRef<CSeq_id> ret;
     typedef CSeq_id_Textseq_Info TThis;
@@ -978,13 +980,13 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                 TPackedMap_CI it = m_PackedMap.find(key);
                 if ( it != m_PackedMap.end() ) {
                     const CSeq_id_Textseq_Info* info = it->second;
-                    int packed = info->ParseAccNumber(str);
+                    TPacked packed = info->ParseAccNumber(str);
                     id_list.insert(CSeq_id_Handle(info, packed));
                 }
             }
             else {
                 // all versions
-                int packed = 0;
+                TPacked packed = 0;
                 for ( TPackedMap_CI it = m_PackedMap.lower_bound(key);
                       it != m_PackedMap.end() && it->first.SameHashNoVer(key);
                       ++it ) {
@@ -1561,7 +1563,7 @@ void CSeq_id_Local_Tree::FindMatchStr(const string& sid,
     }
     else {
         try {
-            int value = NStr::StringToInt(sid);
+            TPacked value = NStr::StringToNumeric<TPacked>(sid);
             TById::const_iterator int_it = m_ById.find(value);
             if (int_it != m_ById.end()) {
                 id_list.insert(CSeq_id_Handle(int_it->second));
@@ -1593,9 +1595,9 @@ CSeq_id_General_Id_Info::~CSeq_id_General_Id_Info(void)
 }
 
 
-int CSeq_id_General_Id_Info::Pack(const CDbtag& dbtag) const
+CSeq_id_General_Id_Info::TPacked CSeq_id_General_Id_Info::Pack(const CDbtag& dbtag) const
 {
-    int id = dbtag.GetTag().GetId();
+    TPacked id = dbtag.GetTag().GetId();
     if ( id <= 0 ) {
         --id;
     }
@@ -1603,7 +1605,7 @@ int CSeq_id_General_Id_Info::Pack(const CDbtag& dbtag) const
 }
 
 
-void CSeq_id_General_Id_Info::Restore(CDbtag& dbtag, int param) const
+void CSeq_id_General_Id_Info::Restore(CDbtag& dbtag, TPacked param) const
 {
     if ( !dbtag.IsSetDb() ) {
         dbtag.SetDb(GetDbtag());
@@ -1611,11 +1613,11 @@ void CSeq_id_General_Id_Info::Restore(CDbtag& dbtag, int param) const
     if ( param < 0 ) {
         ++param;
     }
-    dbtag.SetTag().SetId(param);
+    dbtag.SetTag().SetId(CObject_id::TId(param));
 }
 
 
-CConstRef<CSeq_id> CSeq_id_General_Id_Info::GetPackedSeqId(int param) const
+CConstRef<CSeq_id> CSeq_id_General_Id_Info::GetPackedSeqId(TPacked param) const
 {
     CConstRef<CSeq_id> ret;
     typedef CSeq_id_General_Id_Info TThis;
@@ -1699,15 +1701,17 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
 }
 
 
-inline int CSeq_id_General_Str_Info::ParseStrNumber(const string& str) const
+inline
+CSeq_id_General_Str_Info::TPacked CSeq_id_General_Str_Info::ParseStrNumber(const string& str) const
 {
     return s_ParseNumber(str, GetStrPrefix().size(), GetStrDigits());
 }
 
 
-inline int CSeq_id_General_Str_Info::Pack(const CDbtag& dbtag) const
+inline
+CSeq_id_General_Str_Info::TPacked CSeq_id_General_Str_Info::Pack(const CDbtag& dbtag) const
 {
-    int id = ParseStrNumber(dbtag.GetTag().GetStr());
+    TPacked id = ParseStrNumber(dbtag.GetTag().GetStr());
     if ( id <= 0 ) {
         --id;
     }
@@ -1715,7 +1719,7 @@ inline int CSeq_id_General_Str_Info::Pack(const CDbtag& dbtag) const
 }
 
 
-void CSeq_id_General_Str_Info::Restore(CDbtag& dbtag, int param) const
+void CSeq_id_General_Str_Info::Restore(CDbtag& dbtag, TPacked param) const
 {
     if ( !dbtag.IsSetDb() ) {
         dbtag.SetDb(GetDbtag());
@@ -1737,7 +1741,7 @@ void CSeq_id_General_Str_Info::Restore(CDbtag& dbtag, int param) const
 }
 
 
-CConstRef<CSeq_id> CSeq_id_General_Str_Info::GetPackedSeqId(int param) const
+CConstRef<CSeq_id> CSeq_id_General_Str_Info::GetPackedSeqId(TPacked param) const
 {
     CConstRef<CSeq_id> ret;
     typedef CSeq_id_General_Str_Info TThis;
@@ -1985,10 +1989,10 @@ void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
 void CSeq_id_General_Tree::FindMatchStr(const string& sid,
                                         TSeq_id_MatchList& id_list) const
 {
-    int value;
+    TPacked value;
     bool ok;
     try {
-        value = NStr::StringToInt(sid);
+        value = NStr::StringToNumeric<TPacked>(sid);
         ok = true;
     }
     catch (const CStringException&) {
@@ -2103,7 +2107,7 @@ void CSeq_id_Giim_Tree::FindMatchStr(const string& sid,
 {
     TReadLockGuard guard(m_TreeLock);
     try {
-        int value = NStr::StringToInt(sid);
+        TPacked value = NStr::StringToNumeric<TPacked>(sid);
         TIdMap::const_iterator it = m_IdMap.find(value);
         if (it == m_IdMap.end())
             return;

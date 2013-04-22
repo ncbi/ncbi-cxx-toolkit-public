@@ -78,7 +78,7 @@ public:
     
     /// Get seq-id handle. Create new handle if not found and
     /// do_not_create is false. Get only the exactly equal seq-id handle.
-    CSeq_id_Handle GetGiHandle(int gi);
+    CSeq_id_Handle GetGiHandle(TGi gi);
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
 
     /// Get the list of matching handles, do not create new handles
