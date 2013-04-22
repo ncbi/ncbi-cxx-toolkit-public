@@ -1,7 +1,7 @@
 # $Id$
 
 APP = writedb_unit_test
-SRC = writedb_unit_test
+SRC = writedb_unit_test criteria_unit_test
 
 CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
