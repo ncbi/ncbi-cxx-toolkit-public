@@ -1793,10 +1793,11 @@ Seq-annot ::= {
   data ftable {
     {
       data gene {
-        locus "dnm2l",
-        desc "dynamin2-like",
+        locus "dnm2b",
+        desc "dynamin 2b",
         syn {
           "dnm2",
+          "dnm2l",
           "zgc:77233"
         }
       },
