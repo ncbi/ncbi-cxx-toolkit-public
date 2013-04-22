@@ -150,108 +150,56 @@ void g_DetectTypeAndSet(CJsonNode& node,
         node.SetString(key, value);
 }
 
-class CExecAndParseStructuredOutput : public IExecToJson
-{
-public:
-    CExecAndParseStructuredOutput(const string& cmd) :
-        m_Cmd(cmd)
-    {
-        g_AppendClientIPAndSessionID(m_Cmd);
-    }
-
-protected:
-    virtual CJsonNode ExecOn(CNetServer server);
-
-private:
-    string m_Cmd;
-};
-
-class CNetScheduleStructuredOutputParser
-{
-public:
-    CJsonNode Parse(const string& ns_output)
-    {
-        m_NSOutput = ns_output;
-        m_Ch = m_NSOutput.c_str();
-
-        return ParseObject('\0');
-    }
-
-private:
-    size_t GetRemainder() const
-    {
-        return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
-    }
-
-    size_t GetPosition() const
-    {
-        return m_Ch - m_NSOutput.data() + 1;
-    }
-
-    string ParseString(size_t max_len)
-    {
-        size_t len;
-        string val(NStr::ParseQuoted(CTempString(m_Ch, max_len), &len));
-
-        m_Ch += len;
-        return val;
-    }
-
-    Int8 ParseInt(size_t len)
-    {
-        Int8 val = NStr::StringToInt8(CTempString(m_Ch, len));
-
-        if (*m_Ch == '-') {
-            ++m_Ch;
-            --len;
-        }
-        if (*m_Ch == '0' && len > 1) {
-            NCBI_THROW2(CStringException, eFormat,
-                    "Leading zeros are not allowed", GetPosition());
-        }
-
-        m_Ch += len;
-        return val;
-    }
-
-    double ParseDouble(size_t len)
-    {
-        double val = NStr::StringToDouble(CTempString(m_Ch, len));
-
-        m_Ch += len;
-        return val;
-    }
-
-    bool MoreNodes()
-    {
-        while (isspace(*m_Ch))
-            ++m_Ch;
-        if (*m_Ch != ',')
-            return false;
-        while (isspace(*++m_Ch))
-            ;
-        return true;
-    }
-
-    CJsonNode ParseObject(char closing_char);
-    CJsonNode ParseValue();
-
-    string m_NSOutput;
-    const char* m_Ch;
-};
-
-CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
-{
-    CNetScheduleStructuredOutputParser parser;
-
-    return parser.Parse(server.ExecWithRetry(m_Cmd).response);
-}
-
 #define INVALID_FORMAT_ERROR() \
     NCBI_THROW2(CStringException, eFormat, \
             (*m_Ch == '\0' ? "Unexpected end of NetSchedule output" : \
                     "Syntax error in structured NetSchedule output"), \
             GetPosition())
+
+string CNetScheduleStructuredOutputParser::ParseString(size_t max_len)
+{
+    size_t len;
+    string val(NStr::ParseQuoted(CTempString(m_Ch, max_len), &len));
+
+    m_Ch += len;
+    return val;
+}
+
+Int8 CNetScheduleStructuredOutputParser::ParseInt(size_t len)
+{
+    Int8 val = NStr::StringToInt8(CTempString(m_Ch, len));
+
+    if (*m_Ch == '-') {
+        ++m_Ch;
+        --len;
+    }
+    if (*m_Ch == '0' && len > 1) {
+        NCBI_THROW2(CStringException, eFormat,
+                "Leading zeros are not allowed", GetPosition());
+    }
+
+    m_Ch += len;
+    return val;
+}
+
+double CNetScheduleStructuredOutputParser::ParseDouble(size_t len)
+{
+    double val = NStr::StringToDouble(CTempString(m_Ch, len));
+
+    m_Ch += len;
+    return val;
+}
+
+bool CNetScheduleStructuredOutputParser::MoreNodes()
+{
+    while (isspace(*m_Ch))
+        ++m_Ch;
+    if (*m_Ch != ',')
+        return false;
+    while (isspace(*++m_Ch))
+        ;
+    return true;
+}
 
 CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
 {
@@ -399,6 +347,29 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
     }
 
     INVALID_FORMAT_ERROR();
+}
+
+class CExecAndParseStructuredOutput : public IExecToJson
+{
+public:
+    CExecAndParseStructuredOutput(const string& cmd) :
+        m_Cmd(cmd)
+    {
+        g_AppendClientIPAndSessionID(m_Cmd);
+    }
+
+protected:
+    virtual CJsonNode ExecOn(CNetServer server);
+
+private:
+    string m_Cmd;
+};
+
+CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
+{
+    CNetScheduleStructuredOutputParser parser;
+
+    return parser.Parse(server.ExecWithRetry(m_Cmd).response);
 }
 
 CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,

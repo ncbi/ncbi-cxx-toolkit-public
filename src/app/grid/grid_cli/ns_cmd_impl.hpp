@@ -45,6 +45,40 @@ BEGIN_NCBI_SCOPE
 void g_DetectTypeAndSet(CJsonNode& node,
         const CTempString& key, const CTempString& value);
 
+class CNetScheduleStructuredOutputParser
+{
+public:
+    CJsonNode Parse(const string& ns_output)
+    {
+        m_NSOutput = ns_output;
+        m_Ch = m_NSOutput.c_str();
+
+        return ParseObject('\0');
+    }
+
+private:
+    size_t GetRemainder() const
+    {
+        return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
+    }
+
+    size_t GetPosition() const
+    {
+        return m_Ch - m_NSOutput.data() + 1;
+    }
+
+    string ParseString(size_t max_len);
+    Int8 ParseInt(size_t len);
+    double ParseDouble(size_t len);
+    bool MoreNodes();
+
+    CJsonNode ParseObject(char closing_char);
+    CJsonNode ParseValue();
+
+    string m_NSOutput;
+    const char* m_Ch;
+};
+
 CJsonNode g_GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
 
