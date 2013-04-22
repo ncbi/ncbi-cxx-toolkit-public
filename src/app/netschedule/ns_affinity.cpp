@@ -549,7 +549,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
 
     buffer += "OK:AFFINITY: '" +
               NStr::PrintableString(*(jobs_affinity.m_AffToken)) + "'\n"
-              "OK:  ID: " + NStr::IntToString(aff_id) + "\n";
+              "OK:  ID: " + NStr::NumericToString(aff_id) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_Jobs.any()) {
@@ -564,7 +564,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF JOBS: " +
-                  NStr::IntToString(jobs_affinity.m_Jobs.count()) + "\n";
+                  NStr::NumericToString(jobs_affinity.m_Jobs.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_Clients.any()) {
@@ -579,7 +579,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF CLIENTS (PREFERRED): " +
-                  NStr::IntToString(jobs_affinity.m_Clients.count()) + "\n";
+                  NStr::NumericToString(jobs_affinity.m_Clients.count()) + "\n";
 
     if (verbose) {
         if (jobs_affinity.m_WaitGetClients.any()) {
@@ -594,7 +594,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
     }
     else
         buffer += "OK:  NUMBER OF CLIENTS (EXPLICIT WGET): " +
-                  NStr::IntToString(jobs_affinity.m_WaitGetClients.count()) + "\n";
+                  NStr::NumericToString(jobs_affinity.m_WaitGetClients.count()) + "\n";
 
     return buffer;
 }
@@ -643,7 +643,7 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
     if (found == m_JobsAffinity.end()) {
         // It is likely an internal error
         ERR_POST("Internal error while loading affinity registry. "
-                 "The affinity with id " + NStr::UIntToString(aff_id) +
+                 "The affinity with id " + NStr::NumericToString(aff_id) +
                  " is not found in the loaded dictionary.");
         return;
     }

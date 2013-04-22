@@ -117,8 +117,8 @@ public:
     // Read queue information from registry and configure queues
     // accordingly.
     // returns minimum run timeout, necessary for watcher thread
-    unsigned int  Configure(const IRegistry &  reg,
-                            string &           diff);
+    time_t  Configure(const IRegistry &  reg,
+                      string &           diff);
 
     // Count Pending and Running jobs in all queues
     unsigned int  CountActiveJobs(void) const;
@@ -210,7 +210,7 @@ private:
                                SQueueDbBlock *           queue_db_block);
 
     unsigned x_PurgeUnconditional(void);
-    void     x_OptimizeStatusMatrix(time_t  current_time);
+    void     x_OptimizeStatusMatrix(const CNSPreciseTime &  current_time);
     bool     x_CheckStopPurge(void);
     SQueueParameters x_SingleQueueInfo(TQueueInfo::const_iterator  found) const;
 
@@ -251,16 +251,16 @@ private:
     size_t              m_PurgeStatusIndex;     // Scanned status index
     unsigned int        m_PurgeJobScanned;      // Scanned job ID within status
 
-    bool                  x_PurgeQueue(CQueue &       queue,
-                                       size_t         status_to_start,
-                                       size_t         status_to_end,
-                                       unsigned int   start_job_id,
-                                       unsigned int   end_job_id,
-                                       size_t         max_scanned,
-                                       size_t         max_mark_deleted,
-                                       time_t         current_time,
-                                       size_t &       total_scanned,
-                                       size_t &       total_mark_deleted);
+    bool x_PurgeQueue(CQueue &                queue,
+                      size_t                  status_to_start,
+                      size_t                  status_to_end,
+                      unsigned int            start_job_id,
+                      unsigned int            end_job_id,
+                      size_t                  max_scanned,
+                      size_t                  max_mark_deleted,
+                      const CNSPreciseTime &  current_time,
+                      size_t &                total_scanned,
+                      size_t &                total_mark_deleted);
     void  x_DeleteQueuesAndClasses(void);
     CRef<CQueue>  x_GetLastPurged(void);
     CRef<CQueue>  x_GetFirst(void);

@@ -285,12 +285,12 @@ string SNS_Parameters::GetParamValue(unsigned n) const
 {
     switch (n) {
     case 0:  return NStr::BoolToString(reinit);
-    case 1:  return NStr::UIntToString(max_connections);
-    case 2:  return NStr::UIntToString(max_threads);
-    case 3:  return NStr::UIntToString(init_threads);
-    case 4:  return NStr::UIntToString(port);
+    case 1:  return NStr::NumericToString(max_connections);
+    case 2:  return NStr::NumericToString(max_threads);
+    case 3:  return NStr::NumericToString(init_threads);
+    case 4:  return NStr::NumericToString(port);
     case 5:  return NStr::BoolToString(use_hostname);
-    case 6:  return NStr::UIntToString(network_timeout);
+    case 6:  return NStr::NumericToString(network_timeout);
     case 7:  return NStr::BoolToString(is_log);
     case 8:  return admin_hosts;
     case 9:  return admin_client_names;
@@ -299,16 +299,16 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 12: return NStr::BoolToString(log_cleaning_thread);
     case 13: return NStr::BoolToString(log_execution_watcher_thread);
     case 14: return NStr::BoolToString(log_statistics_thread);
-    case 15: return NStr::UIntToString(del_batch_size);
-    case 16: return NStr::UIntToString(markdel_batch_size);
-    case 17: return NStr::UIntToString(scan_batch_size);
+    case 15: return NStr::NumericToString(del_batch_size);
+    case 16: return NStr::NumericToString(markdel_batch_size);
+    case 17: return NStr::NumericToString(scan_batch_size);
     case 18: return NStr::DoubleToString(purge_timeout);
-    case 19: return NStr::UIntToString(max_affinities);
-    case 20: return NStr::UIntToString(affinity_high_mark_percentage);
-    case 21: return NStr::UIntToString(affinity_low_mark_percentage);
-    case 22: return NStr::UIntToString(affinity_high_removal);
-    case 23: return NStr::UIntToString(affinity_low_removal);
-    case 24: return NStr::UIntToString(affinity_dirt_percentage);
+    case 19: return NStr::NumericToString(max_affinities);
+    case 20: return NStr::NumericToString(affinity_high_mark_percentage);
+    case 21: return NStr::NumericToString(affinity_low_mark_percentage);
+    case 22: return NStr::NumericToString(affinity_high_removal);
+    case 23: return NStr::NumericToString(affinity_low_removal);
+    case 24: return NStr::NumericToString(affinity_dirt_percentage);
     default: return kEmptyStr;
     }
 }

@@ -46,9 +46,6 @@
 BEGIN_NCBI_SCOPE
 
 
-const time_t    kMaxTimet = numeric_limits<time_t>::max();
-
-
 // The CClientId serves two types of clients:
 // - old style clients; they have peer address only
 // - new style clients; they have all three pieces,
@@ -185,10 +182,10 @@ CNSClient::CNSClient() :
     m_Type(0),
     m_Addr(0),
     m_ControlPort(0),
-    m_RegistrationTime(0),
-    m_SessionStartTime(0),
-    m_SessionResetTime(0),
-    m_LastAccess(0),
+    m_RegistrationTime(0, 0),
+    m_SessionStartTime(0, 0),
+    m_SessionResetTime(0, 0),
+    m_LastAccess(0, 0),
     m_Session(),
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
@@ -207,16 +204,16 @@ CNSClient::CNSClient() :
 
 
 CNSClient::CNSClient(const CNSClientId &  client_id,
-                     time_t *             blacklist_timeout) :
+                     CNSPreciseTime *     blacklist_timeout) :
     m_Cleared(false),
     m_Type(0),
     m_Addr(client_id.GetAddress()),
     m_ControlPort(client_id.GetControlPort()),
     m_ClientHost(client_id.GetClientHost()),
-    m_RegistrationTime(0),
-    m_SessionStartTime(0),
-    m_SessionResetTime(0),
-    m_LastAccess(0),
+    m_RegistrationTime(0, 0),
+    m_SessionStartTime(0, 0),
+    m_SessionResetTime(0, 0),
+    m_LastAccess(0, 0),
     m_Session(client_id.GetSession()),
     m_RunningJobs(bm::BM_GAP),
     m_ReadingJobs(bm::BM_GAP),
@@ -235,9 +232,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Creating client information object for old style clients");
-    m_RegistrationTime = time(0);
+    m_RegistrationTime = CNSPreciseTime::Current();
     m_SessionStartTime = m_RegistrationTime;
-    m_SessionResetTime = 0;
     m_LastAccess = m_RegistrationTime;
     return;
 }
@@ -248,7 +244,7 @@ bool CNSClient::Clear(void)
 {
     m_Cleared = true;
     m_Session = "";
-    m_SessionResetTime = time(0);
+    m_SessionResetTime = CNSPreciseTime::Current();
 
     m_RunningJobs.clear();
     m_ReadingJobs.clear();
@@ -290,7 +286,7 @@ unsigned short CNSClient::GetAndResetWaitPort(void)
 
 void CNSClient::RegisterRunningJob(unsigned int  job_id)
 {
-    m_LastAccess = time(0);
+    m_LastAccess = CNSPreciseTime::Current();
     m_Type |= eWorkerNode;
 
     m_RunningJobs.set(job_id, true);
@@ -301,7 +297,7 @@ void CNSClient::RegisterRunningJob(unsigned int  job_id)
 
 void CNSClient::RegisterReadingJob(unsigned int  job_id)
 {
-    m_LastAccess = time(0);
+    m_LastAccess = CNSPreciseTime::Current();
     m_Type |= eReader;
 
     m_ReadingJobs.set(job_id, true);
@@ -312,7 +308,7 @@ void CNSClient::RegisterReadingJob(unsigned int  job_id)
 
 void CNSClient::RegisterSubmittedJobs(size_t  count)
 {
-    m_LastAccess = time(0);
+    m_LastAccess = CNSPreciseTime::Current();
     m_Type |= eSubmitter;
     m_NumberOfSubmitted += count;
     return;
@@ -324,7 +320,7 @@ void CNSClient::RegisterBlacklistedJob(unsigned int  job_id)
     // The type of the client should not be updated here.
     // This operation is always prepended by GET/READ so the client type is
     // set anyway.
-    m_LastAccess = time(0);
+    m_LastAccess = CNSPreciseTime::Current();
     x_AddToBlacklist(job_id);
 }
 
@@ -377,7 +373,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
                       bool &               session_was_reset,
                       string &             old_session)
 {
-    m_LastAccess = time(0);
+    m_LastAccess = CNSPreciseTime::Current();
     m_Cleared = false;
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
@@ -390,7 +386,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     }
 
     session_was_reset = true;
-    m_SessionStartTime = time(0);
+    m_SessionStartTime = CNSPreciseTime::Current();
 
     // Here: new session so check if there are running or reading jobs
     unsigned int    running_count = m_RunningJobs.count();
@@ -440,41 +436,25 @@ string CNSClient::Print(const string &               node_name,
     if (m_AffReset) buffer += "TRUE\n";
     else            buffer += "FALSE\n";
 
-    if (m_LastAccess == 0) {
+    if (m_LastAccess == CNSPreciseTime())
         buffer += "OK:  LAST ACCESS: n/a\n";
-    } else {
-        CTime       access_time;
-        access_time.SetTimeT(m_LastAccess);
-        access_time.ToLocalTime();
-        buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
-    }
+    else
+        buffer += "OK:  LAST ACCESS: " + NS_FormatPreciseTime(m_LastAccess) + "\n";
 
-    if (m_SessionStartTime == 0) {
+    if (m_SessionStartTime == CNSPreciseTime())
         buffer += "OK:  SESSION START TIME: n/a\n";
-    } else {
-        CTime       session_start_time;
-        session_start_time.SetTimeT(m_SessionStartTime);
-        session_start_time.ToLocalTime();
-        buffer += "OK:  SESSION START TIME: " + session_start_time.AsString() + "\n";
-    }
+    else
+        buffer += "OK:  SESSION START TIME: " + NS_FormatPreciseTime(m_SessionStartTime) + "\n";
 
-    if (m_RegistrationTime == 0) {
+    if (m_RegistrationTime == CNSPreciseTime())
         buffer += "OK:  REGISTRATION TIME: n/a\n";
-    } else {
-        CTime       registration_time;
-        registration_time.SetTimeT(m_RegistrationTime);
-        registration_time.ToLocalTime();
-        buffer += "OK:  REGISTRATION TIME: " + registration_time.AsString() + "\n";
-    }
+    else
+        buffer += "OK:  REGISTRATION TIME: " + NS_FormatPreciseTime(m_RegistrationTime) + "\n";
 
-    if (m_SessionResetTime == 0) {
+    if (m_SessionResetTime == CNSPreciseTime())
         buffer += "OK:  SESSION RESET TIME: n/a\n";
-    } else {
-        CTime       session_reset_time;
-        session_reset_time.SetTimeT(m_SessionResetTime);
-        session_reset_time.ToLocalTime();
-        buffer += "OK:  SESSION RESET TIME: " + session_reset_time.AsString() + "\n";
-    }
+    else
+        buffer += "OK:  SESSION RESET TIME: " + NS_FormatPreciseTime(m_SessionResetTime) + "\n";
 
     buffer += "OK:  PEER ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
 
@@ -498,22 +478,22 @@ string CNSClient::Print(const string &               node_name,
     buffer += "OK:  TYPE: " + x_TypeAsString() + "\n";
 
     buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
-              NStr::SizetToString(m_NumberOfSubmitted) + "\n";
+              NStr::NumericToString(m_NumberOfSubmitted) + "\n";
 
     x_UpdateBlacklist();
     buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
-              NStr::UIntToString(m_BlacklistedJobs.count()) + "\n";
+              NStr::NumericToString(m_BlacklistedJobs.count()) + "\n";
     if (verbose && m_BlacklistedJobs.any()) {
         buffer += "OK:  BLACKLISTED JOBS:\n";
 
         TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeKey(*en) + " " +
-                      x_GetFormattedBlacklistLimit(*en) + "\n";
+                      x_GetBlacklistLimit(*en) + "\n";
     }
 
     buffer += "OK:  NUMBER OF RUNNING JOBS: " +
-              NStr::UIntToString(m_RunningJobs.count()) + "\n";
+              NStr::NumericToString(m_RunningJobs.count()) + "\n";
     if (verbose && m_RunningJobs.any()) {
         buffer += "OK:  RUNNING JOBS:\n";
 
@@ -523,10 +503,10 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
-              NStr::SizetToString(m_NumberOfRun) + "\n";
+              NStr::NumericToString(m_NumberOfRun) + "\n";
 
     buffer += "OK:  NUMBER OF READING JOBS: " +
-              NStr::UIntToString(m_ReadingJobs.count()) + "\n";
+              NStr::NumericToString(m_ReadingJobs.count()) + "\n";
     if (verbose && m_ReadingJobs.any()) {
         buffer += "OK:  READING JOBS:\n";
 
@@ -536,10 +516,10 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +
-              NStr::SizetToString(m_NumberOfRead) + "\n";
+              NStr::NumericToString(m_NumberOfRead) + "\n";
 
     buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
-              NStr::UIntToString(m_Affinities.count()) + "\n";
+              NStr::NumericToString(m_Affinities.count()) + "\n";
     if (verbose && m_Affinities.any()) {
         buffer += "OK:  PREFERRED AFFINITIES:\n";
 
@@ -549,7 +529,7 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
-              NStr::UIntToString(m_WaitAffinities.count()) + "\n";
+              NStr::NumericToString(m_WaitAffinities.count()) + "\n";
     if (verbose && m_WaitAffinities.any()) {
         buffer += "OK:  REQUESTED AFFINITIES:\n";
 
@@ -654,7 +634,8 @@ void  CNSClient::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
 
     vector<unsigned int>    to_be_removed;
 
-    for (map<unsigned int, time_t>::const_iterator k = m_BlacklistLimits.begin();
+    for (map<unsigned int,
+             CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
          k != m_BlacklistLimits.end(); ++k) {
         if (tracker.GetStatus(k->first) == CNetScheduleAPI::eJobNotFound)
             to_be_removed.push_back(k->first);
@@ -702,13 +683,13 @@ void  CNSClient::x_AddToBlacklist(unsigned int  job_id)
         return;
     }
 
-    if (*m_BlacklistTimeout == 0)
+    if (*m_BlacklistTimeout == CNSPreciseTime())
         return;     // No need to blacklist the job (per configuration)
 
     // Here: the job must be blacklisted. So be attentive to overflow.
-    time_t      last_time_in_list = m_LastAccess + *m_BlacklistTimeout;
+    CNSPreciseTime  last_time_in_list = m_LastAccess + *m_BlacklistTimeout;
     if (last_time_in_list < m_LastAccess)
-        last_time_in_list = kMaxTimet;  // overflow
+        last_time_in_list = CNSPreciseTime::Never();  // overflow
 
     m_BlacklistLimits[job_id] = last_time_in_list;
     m_BlacklistedJobs.set_bit(job_id, true);
@@ -722,10 +703,11 @@ void  CNSClient::x_UpdateBlacklist(void) const
     if (m_BlacklistLimits.size() == 0)
         return;
 
-    time_t                  current_time = time(0);
+    CNSPreciseTime          current_time = CNSPreciseTime::Current();
     vector<unsigned int>    to_be_removed;
 
-    for (map<unsigned int, time_t>::const_iterator k = m_BlacklistLimits.begin();
+    for (map<unsigned int,
+             CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
          k != m_BlacklistLimits.end(); ++k) {
         if (k->second < current_time)
             to_be_removed.push_back(k->first);
@@ -749,9 +731,11 @@ void  CNSClient::x_UpdateBlacklist(unsigned int  job_id) const
     if (m_BlacklistedJobs[job_id] == false)
         return;
 
-    map<unsigned int, time_t>::iterator found = m_BlacklistLimits.find(job_id);
+    CNSPreciseTime                      current_time = CNSPreciseTime::Current();
+    map<unsigned int,
+        CNSPreciseTime>::iterator found = m_BlacklistLimits.find(job_id);
     if (found != m_BlacklistLimits.end()) {
-        if (found->second < time(0)) {
+        if (found->second < current_time) {
             m_BlacklistedJobs.set_bit(job_id, false);
             m_BlacklistLimits.erase(found);
         }
@@ -759,22 +743,14 @@ void  CNSClient::x_UpdateBlacklist(unsigned int  job_id) const
 }
 
 
-time_t  CNSClient::x_GetBlacklistLimit(unsigned int  job_id) const
+string
+CNSClient::x_GetBlacklistLimit(unsigned int  job_id) const
 {
-    map<unsigned int, time_t>::iterator found = m_BlacklistLimits.find(job_id);
+    map<unsigned int,
+        CNSPreciseTime>::iterator found = m_BlacklistLimits.find(job_id);
     if (found != m_BlacklistLimits.end())
-        return found->second;
-    return 0;
-}
-
-
-string  CNSClient::x_GetFormattedBlacklistLimit(unsigned int  job_id) const
-{
-    CTime       limit;
-
-    limit.SetTimeT(x_GetBlacklistLimit(job_id));
-    limit.ToLocalTime();
-    return limit.AsString();
+        return NS_FormatPreciseTime(found->second);
+    return "0.0";
 }
 
 END_NCBI_SCOPE

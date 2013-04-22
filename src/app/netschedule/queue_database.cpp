@@ -143,15 +143,15 @@ string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
     switch (n) {
     case 0:  return db_path;
     case 1:  return db_log_path;
-    case 2:  return NStr::UIntToString(max_queues);
-    case 3:  return NStr::UIntToString(cache_ram_size);
-    case 4:  return NStr::UIntToString(mutex_max);
-    case 5:  return NStr::UIntToString(max_locks);
-    case 6:  return NStr::UIntToString(max_lockers);
-    case 7:  return NStr::UIntToString(max_lockobjects);
-    case 8:  return NStr::UIntToString(log_mem_size);
-    case 9:  return NStr::UIntToString(checkpoint_kb);
-    case 10: return NStr::UIntToString(checkpoint_min);
+    case 2:  return NStr::NumericToString(max_queues);
+    case 3:  return NStr::NumericToString(cache_ram_size);
+    case 4:  return NStr::NumericToString(mutex_max);
+    case 5:  return NStr::NumericToString(max_locks);
+    case 6:  return NStr::NumericToString(max_lockers);
+    case 7:  return NStr::NumericToString(max_lockobjects);
+    case 8:  return NStr::NumericToString(log_mem_size);
+    case 9:  return NStr::NumericToString(checkpoint_kb);
+    case 10: return NStr::NumericToString(checkpoint_min);
     case 11: return NStr::BoolToString(sync_transactions);
     case 12: return NStr::BoolToString(direct_db);
     case 13: return NStr::BoolToString(direct_log);
@@ -428,25 +428,35 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.position = m_QueueDescriptionDB.pos;
         params.delete_request = m_QueueDescriptionDB.delete_request;
         params.qclass = m_QueueDescriptionDB.qclass;
-        params.timeout = m_QueueDescriptionDB.timeout;
-        params.notif_hifreq_interval = m_QueueDescriptionDB.notif_hifreq_interval;
-        params.notif_hifreq_period = m_QueueDescriptionDB.notif_hifreq_period;
+        params.timeout = CNSPreciseTime(m_QueueDescriptionDB.timeout_sec,
+                                        m_QueueDescriptionDB.timeout_nsec);
+        params.notif_hifreq_interval = CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_interval_sec,
+                                                      m_QueueDescriptionDB.notif_hifreq_interval_nsec);
+        params.notif_hifreq_period = CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_period_sec,
+                                                    m_QueueDescriptionDB.notif_hifreq_period_nsec);
         params.notif_lofreq_mult = m_QueueDescriptionDB.notif_lofreq_mult;
-        params.notif_handicap = m_QueueDescriptionDB.notif_handicap;
+        params.notif_handicap = CNSPreciseTime(m_QueueDescriptionDB.notif_handicap_sec,
+                                               m_QueueDescriptionDB.notif_handicap_nsec);
         params.dump_buffer_size = m_QueueDescriptionDB.dump_buffer_size;
-        params.run_timeout = m_QueueDescriptionDB.run_timeout;
+        params.run_timeout = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_sec,
+                                            m_QueueDescriptionDB.run_timeout_nsec);
         params.program_name = m_QueueDescriptionDB.program_name;
         params.failed_retries = m_QueueDescriptionDB.failed_retries;
-        params.blacklist_time = m_QueueDescriptionDB.blacklist_time;
+        params.blacklist_time = CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
+                                               m_QueueDescriptionDB.blacklist_time_nsec);
         params.max_input_size = m_QueueDescriptionDB.max_input_size;
         params.max_output_size = m_QueueDescriptionDB.max_output_size;
         params.subm_hosts = m_QueueDescriptionDB.subm_hosts;
         params.wnode_hosts = m_QueueDescriptionDB.wnode_hosts;
-        params.wnode_timeout = m_QueueDescriptionDB.wnode_timeout;
-        params.pending_timeout = m_QueueDescriptionDB.pending_timeout;
-        params.max_pending_wait_timeout = m_QueueDescriptionDB.max_pending_wait_timeout;
+        params.wnode_timeout = CNSPreciseTime(m_QueueDescriptionDB.wnode_timeout_sec,
+                                              m_QueueDescriptionDB.wnode_timeout_nsec);
+        params.pending_timeout = CNSPreciseTime(m_QueueDescriptionDB.pending_timeout_sec,
+                                                m_QueueDescriptionDB.pending_timeout_nsec);
+        params.max_pending_wait_timeout = CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
+                                                         m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
         params.description = m_QueueDescriptionDB.description;
-        params.run_timeout_precision = m_QueueDescriptionDB.run_timeout_precision;
+        params.run_timeout_precision = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
+                                                      m_QueueDescriptionDB.run_timeout_precision_nsec);
 
         // It is impossible to have the same entries twice in the DB
         queues[queue_name] = params;
@@ -494,25 +504,35 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.pos = params.position;
     m_QueueDescriptionDB.delete_request = params.delete_request;
     m_QueueDescriptionDB.qclass = params.qclass;
-    m_QueueDescriptionDB.timeout = params.timeout;
-    m_QueueDescriptionDB.notif_hifreq_interval = params.notif_hifreq_interval;
-    m_QueueDescriptionDB.notif_hifreq_period = params.notif_hifreq_period;
+    m_QueueDescriptionDB.timeout_sec = params.timeout.Sec();
+    m_QueueDescriptionDB.timeout_nsec = params.timeout.NSec();
+    m_QueueDescriptionDB.notif_hifreq_interval_sec = params.notif_hifreq_interval.Sec();
+    m_QueueDescriptionDB.notif_hifreq_interval_nsec = params.notif_hifreq_interval.NSec();
+    m_QueueDescriptionDB.notif_hifreq_period_sec = params.notif_hifreq_period.Sec();
+    m_QueueDescriptionDB.notif_hifreq_period_nsec = params.notif_hifreq_period.NSec();
     m_QueueDescriptionDB.notif_lofreq_mult = params.notif_lofreq_mult;
-    m_QueueDescriptionDB.notif_handicap = params.notif_handicap;
+    m_QueueDescriptionDB.notif_handicap_sec = params.notif_handicap.Sec();
+    m_QueueDescriptionDB.notif_handicap_nsec = params.notif_handicap.NSec();
     m_QueueDescriptionDB.dump_buffer_size = params.dump_buffer_size;
-    m_QueueDescriptionDB.run_timeout = params.run_timeout;
+    m_QueueDescriptionDB.run_timeout_sec = params.run_timeout.Sec();
+    m_QueueDescriptionDB.run_timeout_nsec = params.run_timeout.NSec();
     m_QueueDescriptionDB.program_name = params.program_name;
     m_QueueDescriptionDB.failed_retries = params.failed_retries;
-    m_QueueDescriptionDB.blacklist_time = params.blacklist_time;
+    m_QueueDescriptionDB.blacklist_time_sec = params.blacklist_time.Sec();
+    m_QueueDescriptionDB.blacklist_time_nsec = params.blacklist_time.NSec();
     m_QueueDescriptionDB.max_input_size = params.max_input_size;
     m_QueueDescriptionDB.max_output_size = params.max_output_size;
     m_QueueDescriptionDB.subm_hosts = params.subm_hosts;
     m_QueueDescriptionDB.wnode_hosts = params.wnode_hosts;
-    m_QueueDescriptionDB.wnode_timeout = params.wnode_timeout;
-    m_QueueDescriptionDB.pending_timeout = params.pending_timeout;
-    m_QueueDescriptionDB.max_pending_wait_timeout = params.max_pending_wait_timeout;
+    m_QueueDescriptionDB.wnode_timeout_sec = params.wnode_timeout.Sec();
+    m_QueueDescriptionDB.wnode_timeout_nsec = params.wnode_timeout.NSec();
+    m_QueueDescriptionDB.pending_timeout_sec = params.pending_timeout.Sec();
+    m_QueueDescriptionDB.pending_timeout_nsec = params.pending_timeout.NSec();
+    m_QueueDescriptionDB.max_pending_wait_timeout_sec = params.max_pending_wait_timeout.Sec();
+    m_QueueDescriptionDB.max_pending_wait_timeout_nsec = params.max_pending_wait_timeout.NSec();
     m_QueueDescriptionDB.description = params.description;
-    m_QueueDescriptionDB.run_timeout_precision = params.run_timeout_precision;
+    m_QueueDescriptionDB.run_timeout_precision_sec = params.run_timeout_precision.Sec();
+    m_QueueDescriptionDB.run_timeout_precision_nsec = params.run_timeout_precision.NSec();
 
     m_QueueDescriptionDB.UpdateInsert();
 }
@@ -1098,8 +1118,8 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
 }
 
 
-unsigned int  CQueueDataBase::Configure(const IRegistry &  reg,
-                                        string &           diff)
+time_t  CQueueDataBase::Configure(const IRegistry &  reg,
+                                  string &           diff)
 {
     CFastMutexGuard     guard(m_ConfigureLock);
 
@@ -1141,15 +1161,15 @@ unsigned int  CQueueDataBase::Configure(const IRegistry &  reg,
 
     // Calculate the new min_run_timeout: required at the time of loading
     // NetSchedule and not used while reconfiguring on the fly
-    unsigned int        min_run_timeout_precision = 3600;
+    time_t  min_run_timeout_precision = 3600;
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k)
         min_run_timeout_precision = std::min(min_run_timeout_precision,
-                                             k->second.run_timeout_precision);
+                                             k->second.run_timeout_precision.Sec());
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k)
         min_run_timeout_precision = std::min(min_run_timeout_precision,
-                                             k->second.first.run_timeout_precision);
+                                             k->second.first.run_timeout_precision.Sec());
     return min_run_timeout_precision;
 }
 
@@ -1514,7 +1534,7 @@ string CQueueDataBase::GetQueueInfo(void)
 
 void CQueueDataBase::NotifyListeners(void)
 {
-    time_t      current_time = time(0);
+    CNSPreciseTime  current_time = CNSPreciseTime::Current();
     for (unsigned int  index = 0; ; ++index) {
         CRef<CQueue>  queue = x_GetQueueAt(index);
         if (queue.IsNull())
@@ -1634,7 +1654,7 @@ void CQueueDataBase::Purge(void)
     size_t              max_scanned = m_Server->GetScanBatchSize();
     size_t              total_scanned = 0;
     size_t              total_mark_deleted = 0;
-    time_t              current_time = time(0);
+    CNSPreciseTime      current_time = CNSPreciseTime::Current();
     bool                limit_reached = false;
 
     // Cleanup the queues and classes if possible
@@ -1797,16 +1817,16 @@ CRef<CQueue>  CQueueDataBase::x_GetNext(const string &  current_name)
 // Purges jobs from a queue starting from the given status.
 // Returns true if the purge should be stopped.
 // The status argument is a status to start from
-bool  CQueueDataBase::x_PurgeQueue(CQueue &      queue,
-                                   size_t        status,
-                                   size_t        status_to_end,
-                                   unsigned int  start_job_id,
-                                   unsigned int  end_job_id,
-                                   size_t        max_scanned,
-                                   size_t        max_mark_deleted,
-                                   time_t        current_time,
-                                   size_t &      total_scanned,
-                                   size_t &      total_mark_deleted)
+bool  CQueueDataBase::x_PurgeQueue(CQueue &                queue,
+                                   size_t                  status,
+                                   size_t                  status_to_end,
+                                   unsigned int            start_job_id,
+                                   unsigned int            end_job_id,
+                                   size_t                  max_scanned,
+                                   size_t                  max_mark_deleted,
+                                   const CNSPreciseTime &  current_time,
+                                   size_t &                total_scanned,
+                                   size_t &                total_mark_deleted)
 {
     SPurgeAttributes    purge_io;
 
@@ -1897,7 +1917,8 @@ unsigned int  CQueueDataBase::x_PurgeUnconditional(void) {
 }
 
 
-void CQueueDataBase::x_OptimizeStatusMatrix(time_t  current_time)
+void
+CQueueDataBase::x_OptimizeStatusMatrix(const CNSPreciseTime &  current_time)
 {
     // optimize memory every 15 min. or after 1 million of deleted records
     static const int        kMemFree_Delay = 15 * 60;
@@ -1991,8 +2012,8 @@ void CQueueDataBase::PurgeWNodes(void)
 {
     // Worker nodes have the last access time in seconds since 1970
     // so there is no need to purge them more often than once a second
-    static time_t       last_purge = 0;
-    time_t              current_time = time(0);
+    static CNSPreciseTime   last_purge(0, 0);
+    CNSPreciseTime          current_time = CNSPreciseTime::Current();
 
     if (current_time == last_purge)
         return;
@@ -2011,11 +2032,12 @@ void CQueueDataBase::PurgeWNodes(void)
 
 void CQueueDataBase::PurgeBlacklistedJobs(void)
 {
-    static time_t       last_time = 0;
-    time_t              current_time = time(0);
+    static CNSPreciseTime   ten_seconds(10, 0);
+    static CNSPreciseTime   last_time(0, 0);
+    CNSPreciseTime          current_time = CNSPreciseTime::Current();
 
     // Run this check once in ten seconds
-    if (current_time - last_time < 10)
+    if (current_time - last_time < ten_seconds)
         return;
 
     last_time = current_time;

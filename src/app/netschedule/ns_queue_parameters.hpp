@@ -34,6 +34,8 @@
 
 #include <string>
 
+#include "ns_precise_time.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -55,27 +57,27 @@ struct SQueueParameters
 
     // General parameters, reconfigurable at run time
     string          qclass;
-    unsigned int    timeout;
-    double          notif_hifreq_interval;
-    unsigned int    notif_hifreq_period;
+    CNSPreciseTime  timeout;
+    CNSPreciseTime  notif_hifreq_interval;
+    CNSPreciseTime  notif_hifreq_period;
     unsigned int    notif_lofreq_mult;
-    double          notif_handicap;
+    CNSPreciseTime  notif_handicap;
     unsigned int    dump_buffer_size;
-    unsigned int    run_timeout;
+    CNSPreciseTime  run_timeout;
     string          program_name;
     unsigned int    failed_retries;
-    time_t          blacklist_time;
+    CNSPreciseTime  blacklist_time;
     unsigned int    max_input_size;
     unsigned int    max_output_size;
     string          subm_hosts;
     string          wnode_hosts;
-    time_t          wnode_timeout;
-    time_t          pending_timeout;
-    double          max_pending_wait_timeout;
+    CNSPreciseTime  wnode_timeout;
+    CNSPreciseTime  pending_timeout;
+    CNSPreciseTime  max_pending_wait_timeout;
     string          description;
 
     // This parameter is not reconfigurable
-    unsigned int    run_timeout_precision;
+    CNSPreciseTime  run_timeout_precision;
 
     // These fields are not for reading/writing/printing
     // It is used for QINF2 command which should print this status
@@ -97,25 +99,25 @@ struct SQueueParameters
                                   bool  url_encoded) const;
 
     // Parameters are always: registry and section name
-    unsigned int  ReadTimeout(const IRegistry &, const string &);
-    double        ReadNotifHifreqInterval(const IRegistry &, const string &);
-    unsigned int  ReadNotifHifreqPeriod(const IRegistry &, const string &);
-    unsigned int  ReadNotifLofreqMult(const IRegistry &, const string &);
-    double        ReadNotifHandicap(const IRegistry &, const string &);
-    unsigned int  ReadDumpBufferSize(const IRegistry &, const string &);
-    unsigned int  ReadRunTimeout(const IRegistry &, const string &);
-    string        ReadProgram(const IRegistry &, const string &);
-    unsigned int  ReadFailedRetries(const IRegistry &, const string &);
-    time_t        ReadBlacklistTime(const IRegistry &, const string &);
-    unsigned int  ReadMaxInputSize(const IRegistry &, const string &);
-    unsigned int  ReadMaxOutputSize(const IRegistry &, const string &);
-    string        ReadSubmHosts(const IRegistry &, const string &);
-    string        ReadWnodeHosts(const IRegistry &, const string &);
-    time_t        ReadWnodeTimeout(const IRegistry &, const string &);
-    time_t        ReadPendingTimeout(const IRegistry &, const string &);
-    double        ReadMaxPendingWaitTimeout(const IRegistry &, const string &);
-    string        ReadDescription(const IRegistry &, const string &);
-    unsigned int  ReadRunTimeoutPrecision(const IRegistry &, const string &);
+    CNSPreciseTime  ReadTimeout(const IRegistry &, const string &);
+    CNSPreciseTime  ReadNotifHifreqInterval(const IRegistry &, const string &);
+    CNSPreciseTime  ReadNotifHifreqPeriod(const IRegistry &, const string &);
+    unsigned int    ReadNotifLofreqMult(const IRegistry &, const string &);
+    CNSPreciseTime  ReadNotifHandicap(const IRegistry &, const string &);
+    unsigned int    ReadDumpBufferSize(const IRegistry &, const string &);
+    CNSPreciseTime  ReadRunTimeout(const IRegistry &, const string &);
+    string          ReadProgram(const IRegistry &, const string &);
+    unsigned int    ReadFailedRetries(const IRegistry &, const string &);
+    CNSPreciseTime  ReadBlacklistTime(const IRegistry &, const string &);
+    unsigned int    ReadMaxInputSize(const IRegistry &, const string &);
+    unsigned int    ReadMaxOutputSize(const IRegistry &, const string &);
+    string          ReadSubmHosts(const IRegistry &, const string &);
+    string          ReadWnodeHosts(const IRegistry &, const string &);
+    CNSPreciseTime  ReadWnodeTimeout(const IRegistry &, const string &);
+    CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &);
+    CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &, const string &);
+    string          ReadDescription(const IRegistry &, const string &);
+    CNSPreciseTime  ReadRunTimeoutPrecision(const IRegistry &, const string &);
 };
 
 

@@ -1201,9 +1201,9 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
                 .Print("transaction_time",
                        NStr::DoubleToString(db_elapsed, 4, NStr::fDoubleFixed));
 
-        x_WriteMessage("OK:" + NStr::UIntToString(job_id) + " " +
+        x_WriteMessage("OK:" + NStr::NumericToString(job_id) + " " +
                        m_Server->GetHost().c_str() + " " +
-                       NStr::UIntToString(unsigned(m_Server->GetPort())));
+                       NStr::NumericToString(unsigned(m_Server->GetPort())));
         x_ClearRollbackAction();
     }
     catch (const CNetScheduleException &  ex) {
@@ -1246,7 +1246,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
 {
     bool            cmdv2(m_CommandArguments.cmd == "SST2");
-    time_t          lifetime;
+    CNSPreciseTime  lifetime;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
                                                      true, &lifetime);
 
@@ -1259,14 +1259,14 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
         if (cmdv2)
             x_WriteMessage("ERR:eJobNotFound:");
         else
-            x_WriteMessage("OK:" + NStr::IntToString((int) status));
+            x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     } else {
         if (cmdv2)
             x_WriteMessage("OK:job_status=" +
                            CNetScheduleAPI::StatusToString(status) +
-                           "&job_exptime=" + NStr::NumericToString(lifetime));
+                           "&job_exptime=" + NStr::NumericToString(lifetime.Sec()));
         else
-            x_WriteMessage("OK:" + NStr::IntToString((int) status));
+            x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     }
     x_PrintCmdRequestStop();
 }
@@ -1275,7 +1275,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
 void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 {
     bool            cmdv2(m_CommandArguments.cmd == "WST2");
-    time_t          lifetime;
+    CNSPreciseTime  lifetime;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
                                                      false, &lifetime);
 
@@ -1288,14 +1288,14 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
         if (cmdv2)
             x_WriteMessage("ERR:eJobNotFound:");
         else
-            x_WriteMessage("OK:" + NStr::IntToString((int) status));
+            x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     } else {
         if (cmdv2)
             x_WriteMessage("OK:job_status=" +
                            CNetScheduleAPI::StatusToString(status) +
-                           "&job_exptime=" + NStr::NumericToString(lifetime));
+                           "&job_exptime=" + NStr::NumericToString(lifetime.Sec()));
         else
-            x_WriteMessage("OK:" + NStr::IntToString((int) status));
+            x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     }
     x_PrintCmdRequestStop();
 }
@@ -1422,7 +1422,7 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
         m_WithinBatchSubmit = true;
 
         m_BatchSubmPort    = m_CommandArguments.port;
-        m_BatchSubmTimeout = m_CommandArguments.timeout;
+        m_BatchSubmTimeout = CNSPreciseTime(m_CommandArguments.timeout, 0);
         m_BatchClientIP    = m_CommandArguments.ip;
         m_BatchClientSID   = m_CommandArguments.sid;
         m_BatchGroup       = m_CommandArguments.group;
@@ -1519,7 +1519,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 {
     CJob            job;
     bool            cmdv2 = (m_CommandArguments.cmd == "STATUS2");
-    time_t          lifetime;
+    CNSPreciseTime  lifetime;
 
     if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) ==
                 CNetScheduleAPI::eJobNotFound) {
@@ -1531,7 +1531,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
             x_WriteMessage("ERR:eJobNotFound:");
         else
             x_WriteMessage("OK:" +
-                           NStr::IntToString(
+                           NStr::NumericToString(
                                         (int)CNetScheduleAPI::eJobNotFound));
         x_PrintCmdRequestStop();
         return;
@@ -1542,16 +1542,16 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
         x_WriteMessage("OK:"
                        "job_status=" +
                        CNetScheduleAPI::StatusToString(job.GetStatus()) +
-                       "&job_exptime=" + NStr::NumericToString(lifetime) +
-                       "&ret_code=" + NStr::IntToString(job.GetRetCode()) +
+                       "&job_exptime=" + NStr::NumericToString(lifetime.Sec()) +
+                       "&ret_code=" + NStr::NumericToString(job.GetRetCode()) +
                        "&output=" + NStr::URLEncode(job.GetOutput()) +
                        "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
                        "&input=" + NStr::URLEncode(job.GetInput())
                       );
 
     else
-        x_WriteMessage("OK:" + NStr::IntToString((int) job.GetStatus()) +
-                       " " + NStr::IntToString(job.GetRetCode()) +
+        x_WriteMessage("OK:" + NStr::NumericToString((int) job.GetStatus()) +
+                       " " + NStr::NumericToString(job.GetRetCode()) +
                        " \""   + NStr::PrintableString(job.GetOutput()) +
                        "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
                        "\" \"" + NStr::PrintableString(job.GetInput()) +
@@ -1590,7 +1590,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
     if (q->GetJobOrWait(m_ClientId,
                         m_CommandArguments.port,
                         m_CommandArguments.timeout,
-                        time(0), &aff_list,
+                        CNSPreciseTime::Current(), &aff_list,
                         m_CommandArguments.wnode_affinity,
                         m_CommandArguments.any_affinity,
                         m_CommandArguments.exclusive_new_aff,
@@ -1639,7 +1639,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     }
 
     string      output = NStr::ParseEscapes(m_CommandArguments.output);
-    TJobStatus  old_status = q->PutResult(m_ClientId, time(0),
+    TJobStatus  old_status = q->PutResult(m_ClientId, CNSPreciseTime::Current(),
                                           m_CommandArguments.job_id,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
@@ -1698,8 +1698,8 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
 
 
-    time_t      curr = time(0);
-    string      output = NStr::ParseEscapes(m_CommandArguments.output);
+    CNSPreciseTime  curr = CNSPreciseTime::Current();
+    string          output = NStr::ParseEscapes(m_CommandArguments.output);
 
     // PUT part
     TJobStatus      old_status = q->PutResult(m_ClientId, curr,
@@ -1780,8 +1780,8 @@ void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
 {
-    CJob        job;
-    time_t      lifetime;
+    CJob            job;
+    CNSPreciseTime  lifetime;
 
     if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) !=
             CNetScheduleAPI::eJobNotFound)
@@ -1922,8 +1922,9 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
         return;
     }
 
+    CNSPreciseTime  timeout(m_CommandArguments.timeout, 0);
     TJobStatus      status = q->JobDelayExpiration(m_CommandArguments.job_id,
-                                                   m_CommandArguments.timeout);
+                                                   timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << "JDEX for unknown job "
@@ -1954,11 +1955,12 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
 {
     size_t          last_event_index = 0;
+    CNSPreciseTime  timeout(m_CommandArguments.timeout, 0);
     TJobStatus      status = q->SetJobListener(
                                     m_CommandArguments.job_id,
                                     m_ClientId.GetAddress(),
                                     m_CommandArguments.port,
-                                    m_CommandArguments.timeout,
+                                    timeout,
                                     &last_event_index);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1980,7 +1982,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 {
     CSocket &           socket = GetSocket();
     const string &      what   = m_CommandArguments.option;
-    time_t              curr   = time(0);
+    CNSPreciseTime      curr   = CNSPreciseTime::Current();
 
     if (!what.empty() && what != "QCLASSES" && what != "QUEUES" &&
         what != "JOBS" && what != "ALL" && what != "CLIENTS" &&
@@ -2065,18 +2067,18 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         unsigned        count = q->CountStatus(st);
 
         x_WriteMessage("OK:" + CNetScheduleAPI::StatusToString(st) +
-                       ": " + NStr::UIntToString(count));
+                       ": " + NStr::NumericToString(count));
 
         if (what == "ALL") {
             TNSBitVector::statistics bv_stat;
             q->StatusStatistics(st, &bv_stat);
             x_WriteMessage("OK:"
                            "  bit_blk=" +
-                           NStr::UIntToString(bv_stat.bit_blocks) +
+                           NStr::NumericToString(bv_stat.bit_blocks) +
                            "; gap_blk=" +
-                           NStr::UIntToString(bv_stat.gap_blocks) +
+                           NStr::NumericToString(bv_stat.gap_blocks) +
                            "; mem_used=" +
-                           NStr::UIntToString(bv_stat.memory_used));
+                           NStr::NumericToString(bv_stat.memory_used));
         }
     } // for
 
@@ -2134,7 +2136,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             size_t      pool_vec_size = bv.size();
 
             x_WriteMessage("OK:Pool vector size: " +
-                           NStr::SizetToString(pool_vec_size));
+                           NStr::NumericToString(pool_vec_size));
 
             for (size_t  i = 0; i < pool_vec_size; ++i) {
                 const TBlockAlloc::TBucketPool::TResourcePool* rp =
@@ -2142,8 +2144,8 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
                 if (rp) {
                     size_t pool_size = rp->GetSize();
                     if (pool_size) {
-                        x_WriteMessage("OK:Pool [ " + NStr::SizetToString(i) +
-                                       "] = " + NStr::SizetToString(pool_size));
+                        x_WriteMessage("OK:Pool [ " + NStr::NumericToString(i) +
+                                       "] = " + NStr::NumericToString(pool_size));
                     }
                 }
             }
@@ -2208,7 +2210,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessActiveCount(CQueue* q)
 {
-    string      active_jobs = NStr::UIntToString(m_Server->CountActiveJobs());
+    string      active_jobs = NStr::NumericToString(m_Server->CountActiveJobs());
 
     x_WriteMessage("OK:" + active_jobs);
     x_PrintCmdRequestStop();
@@ -2359,17 +2361,17 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
             jobs_part += "&" +
                 CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
-                "=" + NStr::SizetToString(jobs_per_state[index]);
+                "=" + NStr::NumericToString(jobs_per_state[index]);
             total += jobs_per_state[index];
         }
-        jobs_part += "&Total=" + NStr::SizetToString(total);
+        jobs_part += "&Total=" + NStr::NumericToString(total);
 
         // Include queue classes and use URL encoding
         x_WriteMessage("OK:" + params.GetPrintableParameters(true, true) +
                        jobs_part);
     }
     else
-        x_WriteMessage("OK:" + NStr::IntToString(params.kind) + "\t" +
+        x_WriteMessage("OK:" + NStr::NumericToString(params.kind) + "\t" +
                        params.qclass + "\t\"" +
                        NStr::PrintableString(params.description) + "\"");
 
@@ -2463,9 +2465,9 @@ void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
 
     q->GetMaxIOSizes(max_input_size, max_output_size);
     x_WriteMessage("OK:max_input_size=" +
-                   NStr::IntToString(max_input_size) + ";"
+                   NStr::NumericToString(max_input_size) + ";"
                    "max_output_size=" +
-                   NStr::IntToString(max_output_size) + ";" +
+                   NStr::NumericToString(max_output_size) + ";" +
                    NETSCHEDULED_FEATURES);
     x_PrintCmdRequestStop();
 }
@@ -2490,10 +2492,10 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
     CJob            job;
 
     x_ClearRollbackAction();
-    q->GetJobForReading(m_ClientId, m_CommandArguments.timeout,
-                                    m_CommandArguments.group,
-                                    &job,
-                                    m_RollbackAction);
+    q->GetJobForReading(m_ClientId,
+                        CNSPreciseTime(m_CommandArguments.timeout, 0),
+                        m_CommandArguments.group,
+                        &job, m_RollbackAction);
 
     unsigned int    job_id = job.GetId();
     string          job_key;
@@ -2826,7 +2828,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                        "&affinity=" + NStr::URLEncode(q->GetAffinityTokenByID(job.GetAffinityId())) +
                        "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
                        "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
-                       "&mask=" + NStr::UIntToString(job.GetMask()) +
+                       "&mask=" + NStr::NumericToString(job.GetMask()) +
                        "&auth_token=" + job.GetAuthToken());
     else
         x_WriteMessage("OK:" + job_key +
@@ -2834,7 +2836,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                        " \"" + NStr::PrintableString(
                                 q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
                        " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
-                       " " + NStr::UIntToString(job.GetMask()));
+                       " " + NStr::NumericToString(job.GetMask()));
 }
 
 
@@ -2928,9 +2930,10 @@ void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
 }
 
 
-void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
-                                          const string &  what,
-                                          time_t          curr)
+void
+CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
+                                     const string &          what,
+                                     const CNSPreciseTime &  curr)
 {
     bool   verbose = (m_CommandArguments.comment == "VERBOSE");
     string info;

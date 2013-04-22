@@ -46,7 +46,7 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
     pos       = pos_;
     allocated = false;
 
-    string      prefix = "jsq_" + NStr::IntToString(pos);
+    string      prefix = "jsq_" + NStr::NumericToString(pos);
     bool        group_tables_for_queue = false;
 
     try {

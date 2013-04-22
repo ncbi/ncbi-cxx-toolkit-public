@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 
 CNSClientsRegistry::CNSClientsRegistry() :
-    m_LastID(0), m_BlacklistTimeout(0)
+    m_LastID(0), m_BlacklistTimeout()
 {}
 
 
@@ -723,8 +723,8 @@ string  CNSClientsRegistry::GetNodeName(unsigned int  id) const
 
 
 vector< pair< unsigned int, unsigned short > >
-CNSClientsRegistry::Purge(time_t                  current_time,
-                          time_t                  timeout,
+CNSClientsRegistry::Purge(const CNSPreciseTime &  current_time,
+                          const CNSPreciseTime &  timeout,
                           CNSAffinityRegistry &   aff_registry,
                           bool                    is_log)
 {

@@ -42,19 +42,19 @@
 BEGIN_NCBI_SCOPE
 
 
-static unsigned int     default_timeout = 3600;
-static double           default_notif_hifreq_interval = 0.1;
-static unsigned int     default_notif_hifreq_period = 5;
+static CNSPreciseTime   default_timeout(3600, 0);
+static CNSPreciseTime   default_notif_hifreq_interval(0, kNSecsPerSecond/10); // 0.1
+static CNSPreciseTime   default_notif_hifreq_period(5, 0);
 static unsigned int     default_notif_lofreq_mult = 50;
-static double           default_notif_handicap = 0.0;
+static CNSPreciseTime   default_notif_handicap(0, 0);
 static unsigned int     default_dump_buffer_size = 100;
-static unsigned int     default_run_timeout = 3600;
+static CNSPreciseTime   default_run_timeout(3600, 0);
 static unsigned int     default_failed_retries = 0;
-static time_t           default_blacklist_time = 2147483647;
-static int              default_run_timeout_precision = 3600;
-static time_t           default_wnode_timeout = 40;
-static time_t           default_pending_timeout = 604800;
-static double           default_max_pending_wait_timeout = 0.0;
+static CNSPreciseTime   default_blacklist_time = CNSPreciseTime(2147483647, 0);
+static CNSPreciseTime   default_run_timeout_precision(3600, 0);
+static CNSPreciseTime   default_wnode_timeout(40, 0);
+static CNSPreciseTime   default_pending_timeout(604800, 0);
+static CNSPreciseTime   default_max_pending_wait_timeout(0, 0);
 
 
 SQueueParameters::SQueueParameters() :
@@ -131,20 +131,22 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                                  qclass,
                                  other.qclass);
 
-    if (timeout != other.timeout)
+    if (timeout.Sec() != other.timeout.Sec())
         AddParameterToDiffString(diff, "timeout",
-                                 timeout,
-                                 other.timeout);
+                                 timeout.Sec(),
+                                 other.timeout.Sec());
 
     if (notif_hifreq_interval != other.notif_hifreq_interval)
-        AddParameterToDiffString(diff, "notif_hifreq_interval",
-                                 notif_hifreq_interval,
-                                 other.notif_hifreq_interval);
+        AddParameterToDiffString(
+                diff, "notif_hifreq_interval",
+                NS_FormatPreciseTimeAsSec(notif_hifreq_interval),
+                NS_FormatPreciseTimeAsSec(other.notif_hifreq_interval));
 
     if (notif_hifreq_period != other.notif_hifreq_period)
-        AddParameterToDiffString(diff, "notif_hifreq_period",
-                                 notif_hifreq_period,
-                                 other.notif_hifreq_period);
+        AddParameterToDiffString(
+                diff, "notif_hifreq_period",
+                NS_FormatPreciseTimeAsSec(notif_hifreq_period),
+                NS_FormatPreciseTimeAsSec(other.notif_hifreq_period));
 
     if (notif_lofreq_mult != other.notif_lofreq_mult)
         AddParameterToDiffString(diff, "notif_lofreq_mult",
@@ -152,9 +154,10 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                                  other.notif_lofreq_mult);
 
     if (notif_handicap != other.notif_handicap)
-        AddParameterToDiffString(diff, "notif_handicap",
-                                 notif_handicap,
-                                 other.notif_handicap);
+        AddParameterToDiffString(
+                diff, "notif_handicap",
+                NS_FormatPreciseTimeAsSec(notif_handicap),
+                NS_FormatPreciseTimeAsSec(other.notif_handicap));
 
     if (dump_buffer_size != other.dump_buffer_size)
         AddParameterToDiffString(diff, "dump_buffer_size",
@@ -162,9 +165,10 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                                  other.dump_buffer_size);
 
     if (run_timeout != other.run_timeout)
-        AddParameterToDiffString(diff, "run_timeout",
-                                 run_timeout,
-                                 other.run_timeout);
+        AddParameterToDiffString(
+                diff, "run_timeout",
+                NS_FormatPreciseTimeAsSec(run_timeout),
+                NS_FormatPreciseTimeAsSec(other.run_timeout));
 
     if (program_name != other.program_name)
         AddParameterToDiffString(diff, "program",
@@ -177,9 +181,10 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                                  other.failed_retries);
 
     if (blacklist_time != other.blacklist_time)
-        AddParameterToDiffString(diff, "blacklist_time",
-                                 blacklist_time,
-                                 other.blacklist_time);
+        AddParameterToDiffString(
+                diff, "blacklist_time",
+                NS_FormatPreciseTimeAsSec(blacklist_time),
+                NS_FormatPreciseTimeAsSec(other.blacklist_time));
 
     if (max_input_size != other.max_input_size)
         AddParameterToDiffString(diff, "max_input_size",
@@ -202,19 +207,22 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                                  other.wnode_hosts);
 
     if (wnode_timeout != other.wnode_timeout)
-        AddParameterToDiffString(diff, "wnode_timeout",
-                                 wnode_timeout,
-                                 other.wnode_timeout);
+        AddParameterToDiffString(
+                diff, "wnode_timeout",
+                NS_FormatPreciseTimeAsSec(wnode_timeout),
+                NS_FormatPreciseTimeAsSec(other.wnode_timeout));
 
     if (pending_timeout != other.pending_timeout)
-        AddParameterToDiffString(diff, "pending_timeout",
-                                 pending_timeout,
-                                 other.pending_timeout);
+        AddParameterToDiffString(
+                diff, "pending_timeout",
+                NS_FormatPreciseTimeAsSec(pending_timeout),
+                NS_FormatPreciseTimeAsSec(other.pending_timeout));
 
     if (max_pending_wait_timeout != other.max_pending_wait_timeout)
-        AddParameterToDiffString(diff, "max_pending_wait_timeout",
-                                 max_pending_wait_timeout,
-                                 other.max_pending_wait_timeout);
+        AddParameterToDiffString(
+                diff, "max_pending_wait_timeout",
+                NS_FormatPreciseTimeAsSec(max_pending_wait_timeout),
+                NS_FormatPreciseTimeAsSec(other.max_pending_wait_timeout));
 
     if (include_description && description != other.description)
         AddParameterToDiffString(diff, "description",
@@ -268,21 +276,21 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
 
     result +=
     prefix + "delete_request" + suffix + NStr::BoolToString(delete_request) + separator +
-    prefix + "timeout" + suffix + NStr::NumericToString(timeout) + separator +
-    prefix + "notif_hifreq_interval" + suffix + NStr::NumericToString(notif_hifreq_interval) + separator +
-    prefix + "notif_hifreq_period" + suffix + NStr::NumericToString(notif_hifreq_period) + separator +
+    prefix + "timeout" + suffix + NStr::NumericToString(timeout.Sec()) + separator +
+    prefix + "notif_hifreq_interval" + suffix + NS_FormatPreciseTimeAsSec(notif_hifreq_interval) + separator +
+    prefix + "notif_hifreq_period" + suffix + NS_FormatPreciseTimeAsSec(notif_hifreq_period) + separator +
     prefix + "notif_lofreq_mult" + suffix + NStr::NumericToString(notif_lofreq_mult) + separator +
-    prefix + "notif_handicap" + suffix + NStr::NumericToString(notif_handicap) + separator +
+    prefix + "notif_handicap" + suffix + NS_FormatPreciseTimeAsSec(notif_handicap) + separator +
     prefix + "dump_buffer_size" + suffix + NStr::NumericToString(dump_buffer_size) + separator +
-    prefix + "run_timeout" + suffix + NStr::NumericToString(run_timeout) + separator +
+    prefix + "run_timeout" + suffix + NS_FormatPreciseTimeAsSec(run_timeout) + separator +
     prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
-    prefix + "blacklist_time" + suffix + NStr::NumericToString(blacklist_time) + separator +
+    prefix + "blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(blacklist_time) + separator +
     prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
     prefix + "max_output_size" + suffix + NStr::NumericToString(max_output_size) + separator +
-    prefix + "wnode_timeout" + suffix + NStr::NumericToString(wnode_timeout) + separator +
-    prefix + "pending_timeout" + suffix + NStr::NumericToString(pending_timeout) + separator +
-    prefix + "max_pending_wait_timeout" + suffix + NStr::NumericToString(max_pending_wait_timeout) + separator +
-    prefix + "run_timeout_precision" + suffix + NStr::NumericToString(run_timeout_precision) + separator;
+    prefix + "wnode_timeout" + suffix + NS_FormatPreciseTimeAsSec(wnode_timeout) + separator +
+    prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
+    prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
+    prefix + "run_timeout_precision" + suffix + NS_FormatPreciseTimeAsSec(run_timeout_precision) + separator;
 
     if (url_encoded) {
         result +=
@@ -302,34 +310,39 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
 }
 
 
-unsigned int
+CNSPreciseTime
 SQueueParameters::ReadTimeout(const IRegistry &  reg,
                               const string &     sname)
 {
-    return GetIntNoErr("timeout", default_timeout);
+    double  val = GetDoubleNoErr("timeout",
+                                 double(default_timeout));
+
+    if (val <= 0)
+        return default_timeout;
+    return CNSPreciseTime(val);
 }
 
-double
+CNSPreciseTime
 SQueueParameters::ReadNotifHifreqInterval(const IRegistry &  reg,
                                           const string &     sname)
 {
     double  val = GetDoubleNoErr("notif_hifreq_interval",
-                                 default_notif_hifreq_interval);
+                                 double(default_notif_hifreq_interval));
     val = (int(val * 10)) / 10.0;
     if (val <= 0)
-        val = default_notif_hifreq_interval;
-    return val;
+        return default_notif_hifreq_interval;
+    return CNSPreciseTime(val);
 }
 
-unsigned int
+CNSPreciseTime
 SQueueParameters::ReadNotifHifreqPeriod(const IRegistry &  reg,
                                         const string &     sname)
 {
-    unsigned int    val = GetIntNoErr("notif_hifreq_period",
-                                      default_notif_hifreq_period);
+    double  val = GetDoubleNoErr("notif_hifreq_period",
+                                 double(default_notif_hifreq_period));
     if (val <= 0)
-        val = default_notif_hifreq_period;
-    return val;
+        return default_notif_hifreq_period;
+    return CNSPreciseTime(val);
 }
 
 unsigned int
@@ -339,19 +352,19 @@ SQueueParameters::ReadNotifLofreqMult(const IRegistry &  reg,
     unsigned int    val = GetIntNoErr("notif_lofreq_mult",
                                       default_notif_lofreq_mult);
     if (val <= 0)
-        val = default_notif_lofreq_mult;
+        return default_notif_lofreq_mult;
     return val;
 }
 
-double
+CNSPreciseTime
 SQueueParameters::ReadNotifHandicap(const IRegistry &  reg,
                                     const string &     sname)
 {
     double  val = GetDoubleNoErr("notif_handicap",
-                                 default_notif_handicap);
+                                 double(default_notif_handicap));
     if (val <= 0)
-        val = default_notif_handicap;
-    return val;
+        return default_notif_handicap;
+    return CNSPreciseTime(val);
 }
 
 unsigned int
@@ -367,11 +380,15 @@ SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
     return val;
 }
 
-unsigned int
+CNSPreciseTime
 SQueueParameters::ReadRunTimeout(const IRegistry &  reg,
                                  const string &     sname)
 {
-    return GetIntNoErr("run_timeout", default_run_timeout);
+    double  val = GetDoubleNoErr("run_timeout",
+                                 double(default_run_timeout));
+    if (val < 0)
+        return default_run_timeout;
+    return CNSPreciseTime(val);
 }
 
 string
@@ -388,11 +405,15 @@ SQueueParameters::ReadFailedRetries(const IRegistry &  reg,
     return GetIntNoErr("failed_retries", default_failed_retries);
 }
 
-time_t
+CNSPreciseTime
 SQueueParameters::ReadBlacklistTime(const IRegistry &  reg,
                                     const string &     sname)
 {
-    return GetIntNoErr("blacklist_time", default_blacklist_time);
+    double  val = GetDoubleNoErr("blacklist_time",
+                                 double(default_blacklist_time));
+    if (val < 0)
+        return default_blacklist_time;
+    return CNSPreciseTime(val);
 }
 
 unsigned int
@@ -443,38 +464,37 @@ SQueueParameters::ReadWnodeHosts(const IRegistry &  reg,
     return reg.GetString(sname, "wnode_host", kEmptyStr);
 }
 
-time_t
+CNSPreciseTime
 SQueueParameters::ReadWnodeTimeout(const IRegistry &  reg,
                                    const string &     sname)
 {
-    time_t  val = GetIntNoErr("wnode_timeout", default_wnode_timeout);
-
+    double  val = GetDoubleNoErr("wnode_timeout",
+                                 double(default_wnode_timeout));
     if (val <= 0)
-        val = default_wnode_timeout;
-    return val;
+        return default_wnode_timeout;
+    return CNSPreciseTime(val);
 }
 
-time_t
+CNSPreciseTime
 SQueueParameters::ReadPendingTimeout(const IRegistry &  reg,
                                      const string &     sname)
 {
-    time_t  val = GetIntNoErr("pending_timeout", default_pending_timeout);
-
+    double  val = GetDoubleNoErr("pending_timeout",
+                                 double(default_pending_timeout));
     if (val <= 0)
-        val = default_pending_timeout;
-    return val;
+        return default_pending_timeout;
+    return CNSPreciseTime(val);
 }
 
-double
+CNSPreciseTime
 SQueueParameters::ReadMaxPendingWaitTimeout(const IRegistry &  reg,
                                             const string &     sname)
 {
     double  val = GetDoubleNoErr("max_pending_wait_timeout",
-                                 default_max_pending_wait_timeout);
-
-    if (val < 0.0)
-        val = 0.0;
-    return val;
+                                 double(default_max_pending_wait_timeout));
+    if (val < 0)
+        val = 0;
+    return CNSPreciseTime(val);
 }
 
 string
@@ -485,12 +505,15 @@ SQueueParameters::ReadDescription(const IRegistry &  reg,
 }
 
 
-unsigned int
+CNSPreciseTime
 SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,
                                           const string &     sname)
 {
-    return GetIntNoErr("run_timeout_precision",
-                       default_run_timeout_precision);
+    double  val = GetDoubleNoErr("run_timeout_precision",
+                                 double(default_run_timeout_precision));
+    if (val < 0)
+        val = 0;
+    return CNSPreciseTime(val);
 }
 
 END_NCBI_SCOPE

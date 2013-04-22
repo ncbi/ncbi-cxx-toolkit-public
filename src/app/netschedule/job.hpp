@@ -39,6 +39,7 @@
 #include "ns_db.hpp"
 #include "job_status.hpp"
 #include "ns_command_arguments.hpp"
+#include "ns_precise_time.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -111,7 +112,7 @@ public:
     { return m_Status; }
     EJobEvent GetEvent() const
     { return m_Event; }
-    unsigned GetTimestamp() const
+    CNSPreciseTime GetTimestamp() const
     { return m_Timestamp; }
     unsigned GetNodeAddr() const
     { return m_NodeAddr; }
@@ -132,9 +133,9 @@ public:
     void SetEvent(EJobEvent  event)
     { m_Dirty = true;
       m_Event = event; }
-    void SetTimestamp(time_t t)
+    void SetTimestamp(const CNSPreciseTime & t)
     { m_Dirty = true;
-      m_Timestamp = (unsigned int) t; }
+      m_Timestamp = t; }
     void SetNodeAddr(unsigned int  node_ip)
     { m_Dirty = true;
       m_NodeAddr = node_ip; }
@@ -152,27 +153,28 @@ private:
 
     // SEventDB fields
     // id, event id - implicit
-    TJobStatus      m_Status;           ///< Job status after the event
-    EJobEvent       m_Event;            ///< Event
-    unsigned        m_Timestamp;        ///< event timestamp
-    unsigned        m_NodeAddr;         ///< IP of a client (typically, worker node)
-    int             m_RetCode;          ///< Return code
-    string          m_ClientNode;       ///< Client node id
-    string          m_ClientSession;    ///< Client session
-    string          m_ErrorMsg;         ///< Error message (exception::what())
+    TJobStatus      m_Status;           // Job status after the event
+    EJobEvent       m_Event;            // Event
+    CNSPreciseTime  m_Timestamp;        // event timestamp
+    unsigned        m_NodeAddr;         // IP of a client (typically, worker node)
+    int             m_RetCode;          // Return code
+    string          m_ClientNode;       // Client node id
+    string          m_ClientSession;    // Client session
+    string          m_ErrorMsg;         // Error message (exception::what())
 };
 
 
 
-time_t  GetJobExpirationTime(time_t      last_touch,
-                             TJobStatus  status,
-                             time_t      job_submit_time,
-                             time_t      job_timeout,
-                             time_t      job_run_timeout,
-                             time_t      queue_timeout,
-                             time_t      queue_run_timeout,
-                             time_t      queue_pending_timeout,
-                             time_t      event_time);
+CNSPreciseTime
+GetJobExpirationTime(const CNSPreciseTime &   last_touch,
+                     TJobStatus               status,
+                     const CNSPreciseTime &   job_submit_time,
+                     const CNSPreciseTime &   job_timeout,
+                     const CNSPreciseTime &   job_run_timeout,
+                     const CNSPreciseTime &   queue_timeout,
+                     const CNSPreciseTime &   queue_run_timeout,
+                     const CNSPreciseTime &   queue_pending_timeout,
+                     const CNSPreciseTime &   event_time);
 
 
 // Internal representation of a Job
@@ -208,20 +210,20 @@ public:
     unsigned int   GetPassport() const
     { return m_Passport; }
     string         GetAuthToken() const
-    { return NStr::IntToString(m_Passport) + "_" +
-             NStr::SizetToString(m_Events.size()); }
+    { return NStr::NumericToString(m_Passport) + "_" +
+             NStr::NumericToString(m_Events.size()); }
     TJobStatus     GetStatus() const
     { return m_Status; }
-    time_t         GetTimeout() const
+    CNSPreciseTime GetTimeout() const
     { return m_Timeout; }
-    unsigned       GetRunTimeout() const
+    CNSPreciseTime GetRunTimeout() const
     { return m_RunTimeout; }
 
     unsigned       GetSubmAddr() const
     { return m_Events[0].m_NodeAddr; }
     unsigned short GetSubmNotifPort() const
     { return m_SubmNotifPort; }
-    unsigned       GetSubmNotifTimeout() const
+    CNSPreciseTime GetSubmNotifTimeout() const
     { return m_SubmNotifTimeout; }
 
     unsigned int   GetListenerNotifAddr() const
@@ -243,7 +245,7 @@ public:
     { return m_Mask; }
     unsigned       GetGroupId() const
     { return m_GroupId; }
-    time_t         GetLastTouch() const
+    CNSPreciseTime GetLastTouch() const
     { return m_LastTouch; }
     const string&  GetClientIP() const
     { return m_ClientIP; }
@@ -275,17 +277,17 @@ public:
     void           SetStatus(TJobStatus status)
     { m_Status = status;
       m_Dirty |= fJobPart; }
-    void           SetTimeout(time_t t)
-    { m_Timeout = (unsigned) t;
+    void           SetTimeout(const CNSPreciseTime & t)
+    { m_Timeout = t;
       m_Dirty |= fJobPart; }
-    void           SetRunTimeout(time_t t)
-    { m_RunTimeout = (unsigned) t;
+    void           SetRunTimeout(const CNSPreciseTime & t)
+    { m_RunTimeout = t;
       m_Dirty |= fJobPart; }
 
     void           SetSubmNotifPort(unsigned short port)
     { m_SubmNotifPort = port;
       m_Dirty |= fJobPart; }
-    void           SetSubmNotifTimeout(unsigned t)
+    void           SetSubmNotifTimeout(const CNSPreciseTime & t)
     { m_SubmNotifTimeout = t;
       m_Dirty |= fJobPart; }
 
@@ -295,7 +297,7 @@ public:
     void           SetListenerNotifPort(unsigned short  port)
     { m_ListenerNotifPort = port;
       m_Dirty |= fJobPart; }
-    void           SetListenerNotifAbsTime(time_t  abs_time)
+    void           SetListenerNotifAbsTime(const CNSPreciseTime & abs_time)
     { m_ListenerNotifAbsTime = abs_time;
       m_Dirty |= fJobPart; }
 
@@ -318,7 +320,7 @@ public:
     void           SetGroupId(unsigned id)
     { m_GroupId = id;
       m_Dirty |= fJobPart; }
-    void           SetLastTouch(time_t  t)
+    void           SetLastTouch(const CNSPreciseTime &  t)
     { m_LastTouch = t;
       m_Dirty |= fJobPart; }
 
@@ -344,13 +346,14 @@ public:
     const CJobEvent *   GetLastEvent() const;
     CJobEvent *         GetLastEvent();
 
-    time_t          GetSubmitTime(void) const
+    CNSPreciseTime      GetSubmitTime(void) const
     { return m_Events[0].m_Timestamp; }
 
-    time_t          GetExpirationTime(time_t  queue_timeout,
-                                      time_t  queue_run_timeout,
-                                      time_t  queue_pending_timeout,
-                                      time_t  event_time) const
+    CNSPreciseTime      GetExpirationTime(
+                                const CNSPreciseTime &  queue_timeout,
+                                const CNSPreciseTime &  queue_run_timeout,
+                                const CNSPreciseTime &  queue_pending_timeout,
+                                const CNSPreciseTime &  event_time) const
     {
        return GetJobExpirationTime(m_LastTouch, m_Status,
                                    GetSubmitTime(),
@@ -373,9 +376,9 @@ public:
     // EJobFetchResult FetchNext(CQueue* queue);
     bool Flush(CQueue* queue);
 
-    bool ShouldNotifySubmitter(time_t current_time) const;
-    bool ShouldNotifyListener(time_t          current_time,
-                              TNSBitVector &  jobs_to_notify) const;
+    bool ShouldNotifySubmitter(const CNSPreciseTime & current_time) const;
+    bool ShouldNotifyListener(const CNSPreciseTime &  current_time,
+                              TNSBitVector &          jobs_to_notify) const;
 
     string Print(const CQueue &               queue,
                  const CNSAffinityRegistry &  aff_registry,
@@ -386,8 +389,8 @@ private:
 
 private:
     // Service flags
-    bool                m_New;     ///< Object should be inserted, not updated
-    bool                m_Deleted; ///< Object with this id should be deleted
+    bool                m_New;     // Object should be inserted, not updated
+    bool                m_Deleted; // Object with this id should be deleted
     unsigned            m_Dirty;
 
     // Reflection of database structures
@@ -396,15 +399,15 @@ private:
     unsigned            m_Id;
     unsigned int        m_Passport;
     TJobStatus          m_Status;
-    unsigned            m_Timeout;       ///< Individual timeout
-    unsigned            m_RunTimeout;    ///< Job run timeout
+    CNSPreciseTime      m_Timeout;       // Individual timeout
+    CNSPreciseTime      m_RunTimeout;    // Job run timeout
 
-    unsigned short      m_SubmNotifPort;    ///< Submit notification port
-    unsigned            m_SubmNotifTimeout; ///< Submit notification timeout
+    unsigned short      m_SubmNotifPort;    // Submit notification port
+    CNSPreciseTime      m_SubmNotifTimeout; // Submit notification timeout
 
     unsigned int        m_ListenerNotifAddress;
     unsigned short      m_ListenerNotifPort;
-    time_t              m_ListenerNotifAbsTime;
+    CNSPreciseTime      m_ListenerNotifAbsTime;
 
     unsigned            m_RunCount;
     unsigned            m_ReadCount;
@@ -412,7 +415,7 @@ private:
     unsigned            m_AffinityId;
     unsigned            m_Mask;
     unsigned            m_GroupId;
-    time_t              m_LastTouch;
+    CNSPreciseTime      m_LastTouch;
 
     string              m_ClientIP;
     string              m_ClientSID;

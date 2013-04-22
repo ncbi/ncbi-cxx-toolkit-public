@@ -46,21 +46,6 @@ public:
         m_Queue(queue), m_Guard(queue.m_ParamLock)
     {}
 
-    int GetTimeout() const
-    { return m_Queue.m_Timeout; }
-
-    double GetNotifHifreqInterval() const
-    { return m_Queue.m_NotifHifreqInterval; }
-
-    double GetNotifHandicapTimeout() const
-    { return m_Queue.m_HandicapTimeout; }
-
-    int GetRunTimeout() const
-    { return m_Queue.m_RunTimeout; }
-
-    int GetRunTimeoutPrecision() const
-    { return m_Queue.m_RunTimeoutPrecision; }
-
     unsigned int GetFailedRetries() const
     { return m_Queue.m_FailedRetries; }
 
@@ -69,21 +54,6 @@ public:
 
     unsigned int GetMaxOutputSize() const
     { return m_Queue.m_MaxOutputSize; }
-
-    const CQueueClientInfoList &  GetProgramVersionList() const
-    { return m_Queue.m_ProgramVersionList; }
-
-    const CNetScheduleAccessList &  GetSubmHosts() const
-    { return m_Queue.m_SubmHosts; }
-
-    const CNetScheduleAccessList &  GetWnodeHosts() const
-    { return m_Queue.m_WnodeHosts; }
-
-    unsigned int GetNotifHifreqPeriod() const
-    { return m_Queue.m_NotifHifreqPeriod; }
-
-    unsigned int GetNotifLofreqMult() const
-    { return m_Queue.m_NotifLofreqMult; }
 
     unsigned GetNumParams() const
     { return 15; }
@@ -100,7 +70,7 @@ public:
         case 7:  return "run_timeout_precision";
         case 8:  return "failed_retries";
         case 9:  return "blacklist_time";
-        case 10:  return "max_input_size";
+        case 10: return "max_input_size";
         case 11: return "max_output_size";
         case 12: return "program";
         case 13: return "subm_host";
@@ -111,18 +81,18 @@ public:
 
     string GetParamValue(unsigned int  n) const {
         switch (n) {
-        case 0:  return NStr::NumericToString(m_Queue.m_Timeout);
-        case 1:  return NStr::DoubleToString(m_Queue.m_NotifHifreqInterval);
-        case 2:  return NStr::IntToString(m_Queue.m_NotifHifreqPeriod);
-        case 3:  return NStr::IntToString(m_Queue.m_NotifLofreqMult);
-        case 4:  return NStr::DoubleToString(m_Queue.m_HandicapTimeout);
-        case 5:  return NStr::IntToString(m_Queue.m_DumpBufferSize);
-        case 6:  return NStr::NumericToString(m_Queue.m_RunTimeout);
-        case 7:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
-        case 8:  return NStr::IntToString(m_Queue.m_FailedRetries);
-        case 9:  return NStr::NumericToString(m_Queue.m_BlacklistTime);
-        case 10:  return NStr::IntToString(m_Queue.m_MaxInputSize);
-        case 11: return NStr::IntToString(m_Queue.m_MaxOutputSize);
+        case 0:  return NStr::NumericToString(m_Queue.m_Timeout.Sec());
+        case 1:  return NS_FormatPreciseTimeAsSec(m_Queue.m_NotifHifreqInterval);
+        case 2:  return NS_FormatPreciseTimeAsSec(m_Queue.m_NotifHifreqPeriod);
+        case 3:  return NStr::NumericToString(m_Queue.m_NotifLofreqMult);
+        case 4:  return NS_FormatPreciseTimeAsSec(m_Queue.m_HandicapTimeout);
+        case 5:  return NStr::NumericToString(m_Queue.m_DumpBufferSize);
+        case 6:  return NS_FormatPreciseTimeAsSec(m_Queue.m_RunTimeout);
+        case 7:  return NS_FormatPreciseTimeAsSec(m_Queue.m_RunTimeoutPrecision);
+        case 8:  return NStr::NumericToString(m_Queue.m_FailedRetries);
+        case 9:  return NS_FormatPreciseTimeAsSec(m_Queue.m_BlacklistTime);
+        case 10: return NStr::NumericToString(m_Queue.m_MaxInputSize);
+        case 11: return NStr::NumericToString(m_Queue.m_MaxOutputSize);
         case 12: return m_Queue.m_ProgramVersionList.Print();
         case 13: return m_Queue.m_SubmHosts.Print("", ",");
         case 14: return m_Queue.m_WnodeHosts.Print("", ",");

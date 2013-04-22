@@ -56,7 +56,7 @@ struct SNSNotificationAttributes
 {
     unsigned int    m_Address;
     unsigned short  m_Port;
-    time_t          m_Lifetime;
+    CNSPreciseTime  m_Lifetime;
 
     string          m_ClientNode;   // Non-empty for the new style clients
     bool            m_WnodeAff;     // true if I need to consider the node
@@ -74,7 +74,7 @@ struct SNSNotificationAttributes
     // when a job is available.
     // second stage is infrequent (slow) till the end of the notifications.
 
-    time_t          m_HifreqNotifyLifetime;
+    CNSPreciseTime  m_HifreqNotifyLifetime;
     bool            m_SlowRate;     // true if the client did not come after
                                     // fast notifications period.
     unsigned int    m_SlowRateCount;
@@ -124,28 +124,28 @@ class CNSNotificationList
                              const string &  job_key,
                              TJobStatus      job_status,
                              size_t          last_event_index);
-        void CheckTimeout(time_t                 current_time,
+        void CheckTimeout(const CNSPreciseTime & current_time,
                           CNSClientsRegistry &   clients_registry,
                           CNSAffinityRegistry &  aff_registry);
-        void NotifyPeriodically(time_t                 current_time,
+        void NotifyPeriodically(const CNSPreciseTime & current_time,
                                 unsigned int           notif_lofreq_mult,
                                 CNSClientsRegistry &   clients_registry,
                                 CNSAffinityRegistry &  aff_registry);
-        void CheckOutdatedJobs(const TNSBitVector &  outdated_jobs,
-                               CNSClientsRegistry &  clients_registry,
-                               unsigned int          notif_highfreq_period);
+        void CheckOutdatedJobs(const TNSBitVector &    outdated_jobs,
+                               CNSClientsRegistry &    clients_registry,
+                               const CNSPreciseTime &  notif_highfreq_period);
         void Notify(unsigned int           job_id,
                     unsigned int           aff_id,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
-                    unsigned int           notif_highfreq_period,
+                    const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap);
         void Notify(const TNSBitVector &   jobs,
                     const TNSBitVector &   affinities,
                     bool                   no_aff_jobs,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
-                    unsigned int           notif_highfreq_period,
+                    const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap);
         string Print(const CNSClientsRegistry &   clients_registry,
                      const CNSAffinityRegistry &  aff_registry,
@@ -165,7 +165,7 @@ class CNSNotificationList
         void x_SendNotificationPacket(unsigned int    address,
                                       unsigned short  port,
                                       bool            new_format);
-        bool x_TestTimeout(time_t                       current_time,
+        bool x_TestTimeout(const CNSPreciseTime &       current_time,
                            CNSClientsRegistry &         clients_registry,
                            CNSAffinityRegistry &        aff_registry,
                            list<SNSNotificationAttributes> &            container,

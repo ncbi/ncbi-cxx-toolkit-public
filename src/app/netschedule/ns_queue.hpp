@@ -114,11 +114,10 @@ public:
     typedef list<pair<string, string> > TParameterList;
     void SetParameters(const SQueueParameters& params);
     TParameterList GetParameters() const;
-    time_t GetTimeout() const;
-    time_t GetRunTimeout() const;
-    time_t GetPendingTimeout() const;
+    CNSPreciseTime GetTimeout() const;
+    CNSPreciseTime GetRunTimeout() const;
+    CNSPreciseTime GetPendingTimeout() const;
     CNSPreciseTime  GetMaxPendingWaitTimeout() const;
-    int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
     bool IsSubmitAllowed(unsigned host) const;
     bool IsWorkerAllowed(unsigned host) const;
@@ -163,18 +162,18 @@ public:
                          const string &                  group,
                          CNSRollbackInterface * &        rollback_action);
 
-    TJobStatus  PutResult(const CNSClientId &  client,
-                          time_t               curr,
-                          unsigned             job_id,
-                          const string &       auth_token,
-                          int                  ret_code,
-                          const string *       output);
+    TJobStatus  PutResult(const CNSClientId &     client,
+                          const CNSPreciseTime &  curr,
+                          unsigned                job_id,
+                          const string &          auth_token,
+                          int                     ret_code,
+                          const string *          output);
 
     bool GetJobOrWait(const CNSClientId &       client,
                       unsigned short            port, // Port the client
                                                       // will wait on
                       unsigned int              timeout,
-                      time_t                    curr,
+                      const CNSPreciseTime &    curr,
                       const list<string> *      aff_list,
                       bool                      wnode_affinity,
                       bool                      any_affinity,
@@ -192,18 +191,18 @@ public:
     void SetAffinity(const CNSClientId &     client,
                      const list<string> &    aff);
 
-    TJobStatus  JobDelayExpiration(unsigned        job_id,
-                                   time_t          tm);
+    TJobStatus  JobDelayExpiration(unsigned int            job_id,
+                                   const CNSPreciseTime &  tm);
 
-    TJobStatus  GetStatusAndLifetime(unsigned int  job_id,
-                                     bool          need_touch,
-                                     time_t *      lifetime);
+    TJobStatus  GetStatusAndLifetime(unsigned int      job_id,
+                                     bool              need_touch,
+                                     CNSPreciseTime *  lifetime);
 
-    TJobStatus  SetJobListener(unsigned int     job_id,
-                               unsigned int     address,
-                               unsigned short   port,
-                               time_t           timeout,
-                               size_t *         last_event_index);
+    TJobStatus  SetJobListener(unsigned int            job_id,
+                               unsigned int            address,
+                               unsigned short          port,
+                               const CNSPreciseTime &  timeout,
+                               size_t *                last_event_index);
 
     // Worker node-specific methods
     bool PutProgressMessage(unsigned      job_id,
@@ -215,9 +214,9 @@ public:
                           string &                warning,
                           bool                    is_ns_rollback = false);
 
-    TJobStatus  ReadAndTouchJob(unsigned int  job_id,
-                                CJob &        job,
-                                time_t *      lifetime);
+    TJobStatus  ReadAndTouchJob(unsigned int      job_id,
+                                CJob &            job,
+                                CNSPreciseTime *  lifetime);
 
     // Remove all jobs
     void Truncate(void);
@@ -244,7 +243,7 @@ public:
     // Read-Confirm stage
     // Request done jobs for reading with timeout
     void GetJobForReading(const CNSClientId &       client,
-                          unsigned int              read_timeout,
+                          const CNSPreciseTime &    read_timeout,
                           const string &            group,
                           CJob *                    job,
                           CNSRollbackInterface * &  rollback_action);
@@ -291,7 +290,7 @@ public:
                          string &             old_session,
                          bool &               pref_affs_were_reset);
 
-    void NotifyListenersPeriodically(time_t  current_time);
+    void NotifyListenersPeriodically(const CNSPreciseTime &  current_time);
     CNSPreciseTime NotifyExactListeners(void);
     string PrintClientsList(bool verbose) const;
     string PrintNotificationsList(bool verbose) const;
@@ -307,22 +306,25 @@ public:
     // given last_job id
     // Returns the # of performed scans, the # of jobs marked for deletion and
     // the last scanned job id.
-    SPurgeAttributes CheckJobsExpiry(time_t             current_time,
-                                     SPurgeAttributes   attributes,
-                                     unsigned int       last_job,
-                                     TJobStatus         status);
+    SPurgeAttributes CheckJobsExpiry(const CNSPreciseTime &  current_time,
+                                     SPurgeAttributes        attributes,
+                                     unsigned int            last_job,
+                                     TJobStatus              status);
 
-    void TimeLineMove(unsigned job_id, time_t old_time, time_t new_time);
-    void TimeLineAdd(unsigned job_id, time_t job_time);
-    void TimeLineRemove(unsigned job_id);
-    void TimeLineExchange(unsigned remove_job_id,
-                          unsigned add_job_id,
-                          time_t   new_time);
+    void TimeLineMove(unsigned int            job_id,
+                      const CNSPreciseTime &  old_time,
+                      const CNSPreciseTime &  new_time);
+    void TimeLineAdd(unsigned int            job_id,
+                     const CNSPreciseTime &  job_time);
+    void TimeLineRemove(unsigned int  job_id);
+    void TimeLineExchange(unsigned int            remove_job_id,
+                          unsigned int            add_job_id,
+                          const CNSPreciseTime &  new_time);
 
     unsigned int  DeleteBatch(unsigned int  max_deleted);
     unsigned int  PurgeAffinities(void);
     unsigned int  PurgeGroups(void);
-    void          PurgeWNodes(time_t  current_time);
+    void          PurgeWNodes(const CNSPreciseTime &  current_time);
     void          PurgeBlacklistedJobs(void);
 
     CBDB_FileCursor& GetEventsCursor();
@@ -400,21 +402,21 @@ private:
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,
-                                    time_t                  curr,
+                                    const CNSPreciseTime &  curr,
                                     int                     ret_code,
                                     const string &          output,
                                     CJob &                  job,
                                     const CNSClientId &     client);
 
-    bool  x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
-                                  time_t               curr,
-                                  unsigned int         job_id,
-                                  CJob &               job);
+    bool  x_UpdateDB_GetJobNoLock(const CNSClientId &     client,
+                                  const CNSPreciseTime &  curr,
+                                  unsigned int            job_id,
+                                  CJob &                  job);
 
-    void x_CheckExecutionTimeout(unsigned  queue_run_timeout,
-                                 unsigned  job_id,
-                                 time_t    curr_time,
-                                 bool      logging);
+    void x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
+                                 unsigned                job_id,
+                                 const CNSPreciseTime &  curr_time,
+                                 bool                    logging);
 
     void x_LogSubmit(const CJob &       job,
                      const string &     aff,
@@ -430,11 +432,11 @@ private:
                                        const TNSBitVector &  jobs);
     void x_ResetReadingDueToNewSession(const CNSClientId &   client,
                                        const TNSBitVector &  jobs);
-    TJobStatus x_ResetDueTo(const CNSClientId &   client,
-                            unsigned int          job_id,
-                            time_t                current_time,
-                            TJobStatus            status_from,
-                            CJobEvent::EJobEvent  event_type);
+    TJobStatus x_ResetDueTo(const CNSClientId &     client,
+                            unsigned int            job_id,
+                            const CNSPreciseTime &  current_time,
+                            TJobStatus              status_from,
+                            CJobEvent::EJobEvent    event_type);
 
     void x_RegisterGetListener(const CNSClientId &   client,
                                unsigned short        port,
@@ -455,9 +457,9 @@ private:
                       unsigned int           count);
     void x_CancelJobs(const CNSClientId &   client,
                       const TNSBitVector &  jobs_to_cancel);
-    time_t x_GetEstimatedJobLifetime(unsigned int   job_id,
-                                     TJobStatus     status) const;
-    time_t x_GetSubmitTime(unsigned int  job_id);
+    CNSPreciseTime x_GetEstimatedJobLifetime(unsigned int   job_id,
+                                             TJobStatus     status) const;
+    CNSPreciseTime x_GetSubmitTime(unsigned int  job_id);
 
 private:
     friend class CJob;
@@ -508,17 +510,17 @@ private:
 
     // Configurable queue parameters
     mutable CFastMutex           m_ParamLock;
-    time_t                       m_Timeout;         ///< Result exp. timeout
-    time_t                       m_RunTimeout;      ///< Execution timeout
+    CNSPreciseTime               m_Timeout;         // Result exp. timeout
+    CNSPreciseTime               m_RunTimeout;      // Execution timeout
     // Its precision, set at startup only, not reconfigurable
-    int                          m_RunTimeoutPrecision;
+    CNSPreciseTime               m_RunTimeoutPrecision;
     // How many attempts to make on different nodes before failure
     unsigned                     m_FailedRetries;
-    time_t                       m_BlacklistTime;
+    CNSPreciseTime               m_BlacklistTime;
     unsigned                     m_MaxInputSize;
     unsigned                     m_MaxOutputSize;
-    time_t                       m_WNodeTimeout;
-    time_t                       m_PendingTimeout;
+    CNSPreciseTime               m_WNodeTimeout;
+    CNSPreciseTime               m_PendingTimeout;
     CNSPreciseTime               m_MaxPendingWaitTimeout;
     // Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
@@ -536,7 +538,6 @@ private:
 
     CStatisticsCounters          m_StatisticsCounters;
 
-    time_t                       m_LastAffinityGC;
     unsigned int                 m_MaxAffinities;
     unsigned int                 m_AffinityHighMarkPercentage;
     unsigned int                 m_AffinityLowMarkPercentage;
@@ -546,8 +547,8 @@ private:
 
     // Notifications support
     CNSNotificationList          m_NotificationsList;
-    double                       m_NotifHifreqInterval;
-    unsigned int                 m_NotifHifreqPeriod;
+    CNSPreciseTime               m_NotifHifreqInterval;
+    CNSPreciseTime               m_NotifHifreqPeriod;
     unsigned int                 m_NotifLofreqMult;
     CNSPreciseTime               m_HandicapTimeout;
 
@@ -565,25 +566,21 @@ private:
 // so if you need a single parameter, it is safe to use these methods, which
 // do not lock anything. In such cases, where the parameter is not single-word,
 // we lock m_ParamLock for reading.
-inline time_t CQueue::GetTimeout() const
+inline CNSPreciseTime CQueue::GetTimeout() const
 {
     return m_Timeout;
 }
-inline time_t CQueue::GetRunTimeout()  const
+inline CNSPreciseTime CQueue::GetRunTimeout()  const
 {
     return m_RunTimeout;
 }
-inline time_t CQueue::GetPendingTimeout() const
+inline CNSPreciseTime CQueue::GetPendingTimeout() const
 {
     return m_PendingTimeout;
 }
 inline CNSPreciseTime  CQueue::GetMaxPendingWaitTimeout() const
 {
     return m_MaxPendingWaitTimeout;
-}
-inline int CQueue::GetRunTimeoutPrecision() const
-{
-    return m_RunTimeoutPrecision;
 }
 inline unsigned CQueue::GetFailedRetries() const
 {

@@ -79,7 +79,7 @@ public:
     unsigned int  Configure(const IRegistry &  reg,
                             string &           diff);
     unsigned CountActiveJobs() const;
-    CRef<CQueue> OpenQueue(const std::string& name);
+    CRef<CQueue> OpenQueue(const string &  name);
     void CreateDynamicQueue(const CNSClientId &  client,
                             const string &  qname,
                             const string &  qclass,
@@ -87,7 +87,7 @@ public:
     void DeleteDynamicQueue(const CNSClientId &  client,
                             const string &  qname);
     SQueueParameters  QueueInfo(const string &  qname) const;
-    string  GetQueueNames(const std::string& sep) const;
+    string  GetQueueNames(const string &  sep) const;
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
@@ -100,7 +100,7 @@ public:
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }
 
     unsigned GetInactivityTimeout(void) const   { return m_InactivityTimeout; }
-    std::string& GetHost()                      { return m_Host; }
+    string & GetHost()                          { return m_Host; }
     unsigned GetPort() const                    { return m_Port; }
     unsigned GetDeleteBatchSize(void) const     { return m_DeleteBatchSize; }
     unsigned GetMarkdelBatchSize(void) const    { return m_MarkdelBatchSize; }
@@ -136,11 +136,11 @@ protected:
     virtual void Exit();
 
 private:
-    /// API for background threads
+    // API for background threads
     CNetScheduleBackgroundHost                  m_BackgroundHost;
     CNetScheduleRequestExecutor                 m_RequestExecutor;
-    /// Host name where server runs
-    std::string                                 m_Host;
+    // Host name where server runs
+    string                                      m_Host;
     unsigned                                    m_Port;
     unsigned                                    m_HostNetAddr;
     mutable bool                                m_Shutdown;
@@ -181,9 +181,7 @@ private:
     unsigned int                                m_AffinityLowRemoval;
     unsigned int                                m_AffinityDirtPercentage;
 
-    /// Quick local timer
-    CFastLocalTime                              m_LocalTimer;
-    /// List of admin stations
+    // List of admin stations
     CNetScheduleAccessList                      m_AdminHosts;
 
     CAtomicCounter                              m_AtomicCommandNumber;

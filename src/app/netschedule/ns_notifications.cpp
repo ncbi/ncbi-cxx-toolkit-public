@@ -36,6 +36,7 @@
 
 #include "ns_notifications.hpp"
 #include "queue_database.hpp"
+#include "ns_precise_time.hpp"
 
 #include "ns_clients.hpp"
 #include "ns_clients_registry.hpp"
@@ -59,11 +60,8 @@ string  SNSNotificationAttributes::Print(
     buffer += "OK:CLIENT: '" + m_ClientNode + "'\n"
               "OK:  RECEPIENT ADDRESS: " +
                     CSocketAPI::gethostbyaddr(m_Address) + ":" +
-                    NStr::IntToString(m_Port) + "\n";
-
-    CTime   lifetime(m_Lifetime);
-    lifetime.ToLocalTime();
-    buffer += "OK:  LIFE TIME: " + lifetime.AsString() + "\n";
+                    NStr::NumericToString(m_Port) + "\n"
+              "OK:  LIFE TIME: " + NS_FormatPreciseTime(m_Lifetime) + "\n";
 
     buffer += "OK:  ANY JOB: ";
     if (m_AnyJob)
@@ -132,12 +130,9 @@ string  SNSNotificationAttributes::Print(
     else
         buffer += s_False;
 
-    if (m_HifreqNotifyLifetime != 0) {
-        CTime   highfreq_lifetime(m_HifreqNotifyLifetime);
-        highfreq_lifetime.ToLocalTime();
+    if (m_HifreqNotifyLifetime != CNSPreciseTime())
         buffer += "OK:  HIGH FREQUENCY LIFE TIME: " +
-                  highfreq_lifetime.AsString() + "\n";
-    }
+                  NS_FormatPreciseTime(m_HifreqNotifyLifetime) + "\n";
     else
         buffer += "OK:  HIGH FREQUENCY LIFE TIME: n/a\n";
 
@@ -187,13 +182,13 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
     found = x_FindListener(m_PassiveListeners, address, port);
     if (found != m_PassiveListeners.end()) {
         // Passive was here
-        found->m_Lifetime = time(0) + timeout;
+        found->m_Lifetime = CNSPreciseTime::Current() + CNSPreciseTime(timeout, 0);
         found->m_ClientNode = client.GetNode();
         found->m_WnodeAff = wnode_aff;
         found->m_AnyJob = any_job;
         found->m_ExclusiveNewAff = exclusive_new_affinity;
         found->m_NewFormat = new_format;
-        found->m_HifreqNotifyLifetime = 0;
+        found->m_HifreqNotifyLifetime = CNSPreciseTime();
         found->m_SlowRate = false;
         found->m_SlowRateCount = 0;
 
@@ -220,13 +215,13 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
 
     attributes.m_Address = address;
     attributes.m_Port = port;
-    attributes.m_Lifetime = time(0) + timeout;
+    attributes.m_Lifetime = CNSPreciseTime::Current() + CNSPreciseTime(timeout, 0);
     attributes.m_ClientNode = client.GetNode();
     attributes.m_WnodeAff = wnode_aff;
     attributes.m_AnyJob = any_job;
     attributes.m_ExclusiveNewAff = exclusive_new_affinity;
     attributes.m_NewFormat = new_format;
-    attributes.m_HifreqNotifyLifetime = 0;
+    attributes.m_HifreqNotifyLifetime = CNSPreciseTime();
     attributes.m_SlowRate = false;
     attributes.m_SlowRateCount = 0;
 
@@ -292,7 +287,7 @@ void CNSNotificationList::NotifyJobStatus(unsigned int    address,
 // Checks if a timeout is over and delete those records;
 // Called from the notification thread when there are no jobs in pending state,
 // so the notification flag should be reset.
-void CNSNotificationList::CheckTimeout(time_t                 current_time,
+void CNSNotificationList::CheckTimeout(const CNSPreciseTime & current_time,
                                        CNSClientsRegistry &   clients_registry,
                                        CNSAffinityRegistry &  aff_registry)
 {
@@ -324,7 +319,7 @@ void CNSNotificationList::CheckTimeout(time_t                 current_time,
 
 // Called from a notification thread which notifies worker nodes periodically
 void
-CNSNotificationList::NotifyPeriodically(time_t                 current_time,
+CNSNotificationList::NotifyPeriodically(const CNSPreciseTime & current_time,
                                         unsigned int           notif_lofreq_mult,
                                         CNSClientsRegistry &   clients_registry,
                                         CNSAffinityRegistry &  aff_registry)
@@ -364,11 +359,11 @@ CNSNotificationList::NotifyPeriodically(time_t                 current_time,
 
 
 void
-CNSNotificationList::CheckOutdatedJobs(const TNSBitVector &  outdated_jobs,
-                                       CNSClientsRegistry &  clients_registry,
-                                       unsigned int          notif_highfreq_period)
+CNSNotificationList::CheckOutdatedJobs(const TNSBitVector &    outdated_jobs,
+                                       CNSClientsRegistry &    clients_registry,
+                                       const CNSPreciseTime &  notif_highfreq_period)
 {
-    time_t                                      current_time = time(0);
+    CNSPreciseTime                              current_time = CNSPreciseTime::Current();
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
 
@@ -397,7 +392,7 @@ void CNSNotificationList::Notify(unsigned int           job_id,
                                  unsigned int           aff_id,
                                  CNSClientsRegistry &   clients_registry,
                                  CNSAffinityRegistry &  aff_registry,
-                                 unsigned int           notif_highfreq_period,
+                                 const CNSPreciseTime & notif_highfreq_period,
                                  const CNSPreciseTime & notif_handicap)
 {
     TNSBitVector    aff_ids;
@@ -422,10 +417,10 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             bool                   no_aff_jobs,
                             CNSClientsRegistry &   clients_registry,
                             CNSAffinityRegistry &  aff_registry,
-                            unsigned int           notif_highfreq_period,
+                            const CNSPreciseTime & notif_highfreq_period,
                             const CNSPreciseTime & notif_handicap)
 {
-    time_t          current_time = time(0);
+    CNSPreciseTime  current_time = CNSPreciseTime::Current();
     TNSBitVector    all_preferred_affs =
                                 clients_registry.GetAllPreferredAffinities();
 
@@ -627,7 +622,7 @@ CNSNotificationList::x_SendNotificationPacket(unsigned int    address,
 // If so, it deletes the record and moves the iterator to the next record.
 bool
 CNSNotificationList::x_TestTimeout(
-                time_t                                       current_time,
+                const CNSPreciseTime &                       current_time,
                 CNSClientsRegistry &                         clients_registry,
                 CNSAffinityRegistry &                        aff_registry,
                 list<SNSNotificationAttributes> &            container,

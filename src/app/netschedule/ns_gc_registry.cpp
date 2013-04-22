@@ -53,7 +53,7 @@ void CJobGCRegistry::RegisterJob(unsigned int            job_id,
                                  const CNSPreciseTime &  submit_time,
                                  unsigned int            aff_id,
                                  unsigned int            group_id,
-                                 time_t                  life_time)
+                                 const CNSPreciseTime &  life_time)
 {
     SJobGCInfo                      job_attr(aff_id, group_id, life_time);
     job_attr.m_SubmitTime = submit_time;
@@ -68,10 +68,10 @@ void CJobGCRegistry::RegisterJob(unsigned int            job_id,
 // Returns true if the record has been deleted, i.e. the has to be marked
 // for deletion. The aff_id and group_id are filled only if the job is
 // deleted
-bool CJobGCRegistry::DeleteIfTimedOut(unsigned int    job_id,
-                                      time_t          current_time,
-                                      unsigned int *  aff_id,
-                                      unsigned int *  group_id)
+bool CJobGCRegistry::DeleteIfTimedOut(unsigned int            job_id,
+                                      const CNSPreciseTime &  current_time,
+                                      unsigned int *          aff_id,
+                                      unsigned int *          group_id)
 {
     CFastMutexGuard                          guard(m_Lock);
     map<unsigned int, SJobGCInfo>::iterator  attrs = m_JobsAttrs.find(job_id);
@@ -79,7 +79,7 @@ bool CJobGCRegistry::DeleteIfTimedOut(unsigned int    job_id,
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Testing life time of non-registered job (ID: " +
-                   NStr::UIntToString(job_id) + ")");
+                   NStr::NumericToString(job_id) + ")");
 
     if (current_time < attrs->second.m_LifeTime)
         return false;
@@ -93,8 +93,8 @@ bool CJobGCRegistry::DeleteIfTimedOut(unsigned int    job_id,
 
 
 // Updates the job life time
-void CJobGCRegistry::UpdateLifetime(unsigned int  job_id,
-                                    time_t        life_time)
+void CJobGCRegistry::UpdateLifetime(unsigned int            job_id,
+                                    const CNSPreciseTime &  life_time)
 {
     CFastMutexGuard                          guard(m_Lock);
     map<unsigned int, SJobGCInfo>::iterator  attrs = m_JobsAttrs.find(job_id);
@@ -102,14 +102,14 @@ void CJobGCRegistry::UpdateLifetime(unsigned int  job_id,
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Updating life time of non-registered job (ID: " +
-                   NStr::UIntToString(job_id) + ")");
+                   NStr::NumericToString(job_id) + ")");
 
     attrs->second.m_LifeTime = life_time;
     return;
 }
 
 
-time_t  CJobGCRegistry::GetLifetime(unsigned int  job_id) const
+CNSPreciseTime  CJobGCRegistry::GetLifetime(unsigned int  job_id) const
 {
     CFastMutexGuard                     guard(m_Lock);
     map<unsigned int,
@@ -118,7 +118,7 @@ time_t  CJobGCRegistry::GetLifetime(unsigned int  job_id) const
     if (attrs == m_JobsAttrs.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Retreiving life time of non-registered job (ID: " +
-                   NStr::UIntToString(job_id) + ")");
+                   NStr::NumericToString(job_id) + ")");
 
     return attrs->second.m_LifeTime;
 }

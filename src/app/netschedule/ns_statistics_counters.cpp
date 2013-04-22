@@ -287,17 +287,17 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 string CStatisticsCounters::PrintTransitions(void) const
 {
     string result = "OK:submits: " +
-                    NStr::IntToString(m_SubmitCounter.Get()) + "\n"
+                    NStr::NumericToString(m_SubmitCounter.Get()) + "\n"
                     "OK:ns_submit_rollbacks: " +
-                    NStr::IntToString(m_NSSubmitRollbackCounter.Get()) + "\n"
+                    NStr::NumericToString(m_NSSubmitRollbackCounter.Get()) + "\n"
                     "OK:ns_get_rollbacks: " +
-                    NStr::IntToString(m_NSGetRollbackCounter.Get()) + "\n"
+                    NStr::NumericToString(m_NSGetRollbackCounter.Get()) + "\n"
                     "OK:ns_read_rollbacks: " +
-                    NStr::IntToString(m_NSReadRollbackCounter.Get()) + "\n"
+                    NStr::NumericToString(m_NSReadRollbackCounter.Get()) + "\n"
                     "OK:picked_as_outdated: " +
-                    NStr::IntToString(m_PickedAsOutdated.Get()) + "\n"
+                    NStr::NumericToString(m_PickedAsOutdated.Get()) + "\n"
                     "OK:dbdeletions: " +
-                    NStr::IntToString(m_DBDeleteCounter.Get()) + "\n";
+                    NStr::NumericToString(m_DBDeleteCounter.Get()) + "\n";
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -309,38 +309,38 @@ string CStatisticsCounters::PrintTransitions(void) const
                     static_cast<TNCBIAtomicValue>(-1))
                 result += "OK:" +
                           x_GetTransitionCounterName(index_from, index_to) + ": " +
-                          NStr::IntToString(m_Transitions[index_from][index_to].Get()) + "\n";
+                          NStr::NumericToString(m_Transitions[index_from][index_to].Get()) + "\n";
         }
     }
     return result +
            "OK:Running_Pending_timeout: " +
-           NStr::IntToString(m_ToPendingDueToTimeoutCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToPendingDueToTimeoutCounter.Get()) + "\n"
            "OK:Running_Pending_fail: " +
-           NStr::IntToString(m_ToPendingDueToFailCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToPendingDueToFailCounter.Get()) + "\n"
            "OK:Running_Pending_clear: " +
-           NStr::IntToString(m_ToPendingDueToClearCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToPendingDueToClearCounter.Get()) + "\n"
            "OK:Running_Failed_clear: " +
-           NStr::IntToString(m_ToFailedDueToClearCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToFailedDueToClearCounter.Get()) + "\n"
            "OK:Running_Pending_new_session: " +
-           NStr::IntToString(m_ToPendingDueToNewSessionCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToPendingDueToNewSessionCounter.Get()) + "\n"
            "OK:Running_Failed_new_session: " +
-           NStr::IntToString(m_ToFailedDueToNewSessionCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToFailedDueToNewSessionCounter.Get()) + "\n"
            "OK:Running_Failed_timeout: " +
-           NStr::IntToString(m_ToFailedDueToTimeoutCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToFailedDueToTimeoutCounter.Get()) + "\n"
            "OK:Reading_Done_timeout: " +
-           NStr::IntToString(m_ToDoneDueToTimeoutCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToDoneDueToTimeoutCounter.Get()) + "\n"
            "OK:Reading_Done_fail: " +
-           NStr::IntToString(m_ToDoneDueToFailCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToDoneDueToFailCounter.Get()) + "\n"
            "OK:Reading_Done_clear: " +
-           NStr::IntToString(m_ToDoneDueToClearCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToDoneDueToClearCounter.Get()) + "\n"
            "OK:Reading_ReadFailed_clear: " +
-           NStr::IntToString(m_ToReadFailedDueToClearCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToReadFailedDueToClearCounter.Get()) + "\n"
            "OK:Reading_Done_new_session: " +
-           NStr::IntToString(m_ToDoneDueToNewSessionCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToDoneDueToNewSessionCounter.Get()) + "\n"
            "OK:Reading_ReadFailed_new_session: " +
-           NStr::IntToString(m_ToReadFailedDueToNewSessionCounter.Get()) + "\n"
+           NStr::NumericToString(m_ToReadFailedDueToNewSessionCounter.Get()) + "\n"
            "OK:Reading_ReadFailed_timeout: " +
-           NStr::IntToString(m_ToReadFailedDueToTimeoutCounter.Get()) + "\n";
+           NStr::NumericToString(m_ToReadFailedDueToTimeoutCounter.Get()) + "\n";
 }
 
 
@@ -356,8 +356,8 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
         if (m_Transitions[index_from][index_to].Get() ==
                static_cast<TNCBIAtomicValue>(-1)) {
             ERR_POST("Disabled transition is counted. From index: " +
-                     NStr::SizetToString(index_from) + " To index: " +
-                     NStr::SizetToString(index_to));
+                     NStr::NumericToString(index_from) + " To index: " +
+                     NStr::NumericToString(index_to));
             m_Transitions[index_from][index_to].Add(1);
         }
         m_Transitions[index_from][index_to].Add(1);     // Common case

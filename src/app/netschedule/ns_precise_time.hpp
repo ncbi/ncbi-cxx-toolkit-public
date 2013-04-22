@@ -83,8 +83,6 @@ class CNSPreciseTime : public timespec
         { return tv_nsec; }
         long NSec(void) const
         { return tv_nsec; }
-        Uint8 AsUSec(void) const
-        { return tv_sec * kUSecsPerSecond + tv_nsec / kNSecsPerUSec; }
         int Compare(const CNSPreciseTime &  t) const
         {
             if (tv_sec < t.tv_sec)
@@ -165,6 +163,37 @@ bool operator!= (const CNSPreciseTime &  lhs,
                  const CNSPreciseTime &  rhs)
 {
     return !(lhs == rhs);
+}
+
+
+inline
+string NS_FormatPreciseTime(const CNSPreciseTime &  t)
+{
+    CTime       converted(t.Sec());
+    long        usec = t.NSec() / kNSecsPerUSec;
+
+    converted.ToLocalTime();
+    if (usec == 0)
+        return converted.AsString() + ".0";
+
+    char        buffer[32];
+    sprintf(buffer, "%06lu", usec);
+    return converted.AsString() + "." + buffer;
+}
+
+inline
+string NS_FormatPreciseTimeAsSec(const CNSPreciseTime &  t)
+{
+    long        usec = t.NSec() / kNSecsPerUSec;
+    char        buffer[32];
+
+    if (usec == 0) {
+        sprintf(buffer, "%lu.0", t.Sec());
+        return buffer;
+    }
+
+    sprintf(buffer, "%lu.%06lu", t.Sec(), usec);
+    return buffer;
 }
 
 

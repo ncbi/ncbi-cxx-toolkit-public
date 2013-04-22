@@ -45,6 +45,7 @@
 #include "netschedule_version.hpp"
 #include "ns_clients.hpp"
 #include "ns_access.hpp"
+#include "ns_precise_time.hpp"
 
 
 
@@ -206,7 +207,8 @@ private:
                             const string &  msg, const string &  suffix);
 
     // Moved from CNetScheduleServer
-    void x_StatisticsNew(CQueue* q, const std::string& what, time_t curr);
+    void x_StatisticsNew(CQueue *  q, const string &  what,
+                         const CNSPreciseTime &  curr);
 
     void x_PrintCmdRequestStart(const SParsedCmd& cmd);
     void x_PrintCmdRequestStart(CTempString  msg);
@@ -242,13 +244,10 @@ private:
     vector< pair<CJob, string> >    m_BatchJobs;    // Job + aff_token
     string                          m_BatchGroup;
     unsigned                        m_BatchSubmPort;
-    unsigned                        m_BatchSubmTimeout;
+    CNSPreciseTime                  m_BatchSubmTimeout;
     std::string                     m_BatchClientIP;
     std::string                     m_BatchClientSID;
     bool                            m_WithinBatchSubmit;
-
-    // Quick local timer
-    CFastLocalTime                  m_LocalTimer;
 
     // Parsers for incoming commands and their parser tables
     TProtoParser                    m_SingleCmdParser;

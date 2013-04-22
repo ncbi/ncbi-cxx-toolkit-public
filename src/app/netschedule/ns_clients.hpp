@@ -37,6 +37,7 @@
 
 #include "ns_types.hpp"
 #include "ns_access.hpp"
+#include "ns_precise_time.hpp"
 
 #include <string>
 
@@ -153,7 +154,7 @@ class CNSClient
     public:
         CNSClient();
         CNSClient(const CNSClientId &  client_id,
-                  time_t *             blacklist_timeout);
+                  CNSPreciseTime *     blacklist_timeout);
         bool Clear(void);
         TNSBitVector GetRunningJobs(void) const
         { return m_RunningJobs; }
@@ -165,13 +166,13 @@ class CNSClient
         { m_WaitPort = port; }
         string GetSession(void) const
         { return m_Session; }
-        time_t GetRegistrationTime(void) const
+        CNSPreciseTime GetRegistrationTime(void) const
         { return m_RegistrationTime; }
-        time_t GetSessionStartTime(void) const
+        CNSPreciseTime GetSessionStartTime(void) const
         { return m_SessionStartTime; }
-        time_t GetSessionResetTime(void) const
+        CNSPreciseTime GetSessionResetTime(void) const
         { return m_SessionResetTime; }
-        time_t GetLastAccess(void) const
+        CNSPreciseTime GetLastAccess(void) const
         { return m_LastAccess; }
         void RegisterSocketWriteError(void)
         { ++m_NumberOfSockErrors; }
@@ -243,10 +244,10 @@ class CNSClient
         unsigned short  m_ControlPort;    // Worker node control port
         string          m_ClientHost;     // Client host as given in the
                                           // handshake line.
-        time_t          m_RegistrationTime;
-        time_t          m_SessionStartTime;
-        time_t          m_SessionResetTime;
-        time_t          m_LastAccess;     // The last time the client accessed
+        CNSPreciseTime  m_RegistrationTime;
+        CNSPreciseTime  m_SessionStartTime;
+        CNSPreciseTime  m_SessionResetTime;
+        CNSPreciseTime  m_LastAccess;     // The last time the client accessed
                                           // netschedule
         string          m_Session;        // Client session id
 
@@ -272,18 +273,18 @@ class CNSClient
                                             // client inactivity timeout
         size_t          m_NumberOfSockErrors;
 
-        time_t *        m_BlacklistTimeout;
+        CNSPreciseTime *    m_BlacklistTimeout;
         mutable
         map<unsigned int,
-            time_t>     m_BlacklistLimits;  // job id -> last second the job is in
+            CNSPreciseTime>
+                        m_BlacklistLimits;  // job id -> last second the job is in
                                             // the blacklist
 
         string  x_TypeAsString(void) const;
         void    x_AddToBlacklist(unsigned int  job_id);
         void    x_UpdateBlacklist(void) const;
         void    x_UpdateBlacklist(unsigned int  job_id) const;
-        time_t  x_GetBlacklistLimit(unsigned int  job_id) const;
-        string  x_GetFormattedBlacklistLimit(unsigned int  job_id) const;
+        string  x_GetBlacklistLimit(unsigned int  job_id) const;
 };
 
 

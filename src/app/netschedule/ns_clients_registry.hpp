@@ -128,11 +128,11 @@ class CNSClientsRegistry
         string  GetNodeName(unsigned int  id) const;
         bool  GetAffinityReset(const CNSClientId &   client) const;
         vector< pair< unsigned int, unsigned short > >
-                Purge(time_t                  current_time,
-                      time_t                  timeout,
+                Purge(const CNSPreciseTime &  current_time,
+                      const CNSPreciseTime &  timeout,
                       CNSAffinityRegistry &   aff_registry,
                       bool                    is_log);
-        void SetBlacklistTimeout(time_t  blacklist_timeout)
+        void SetBlacklistTimeout(const CNSPreciseTime &  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);
         void AppendType(const CNSClientId &  client,
@@ -156,7 +156,7 @@ class CNSClientsRegistry
         TNSBitVector                m_WNAffinities; // Union of all affinities,
                                                     // assigned to all WNodes.
 
-        time_t                      m_BlacklistTimeout;
+        CNSPreciseTime              m_BlacklistTimeout;
 
         unsigned int  x_GetNextID(void);
 
