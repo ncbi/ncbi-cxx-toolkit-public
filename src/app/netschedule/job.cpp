@@ -594,19 +594,29 @@ string CJob::Print(const CQueue &               queue,
     CNSPreciseTime  timeout = m_Timeout;
     CNSPreciseTime  run_timeout = m_RunTimeout;
     CNSPreciseTime  pending_timeout = queue.GetPendingTimeout();
+    CNSPreciseTime  queue_timeout = queue.GetTimeout();
+    CNSPreciseTime  queue_run_timeout = queue.GetRunTimeout();
     string          result;
 
     result.reserve(2048);   // Voluntary; must be enough for most of the cases
 
     if (m_Timeout == CNSPreciseTime())
-        timeout = queue.GetTimeout();
+        timeout = queue_timeout;
     if (m_RunTimeout == CNSPreciseTime())
-        run_timeout = queue.GetRunTimeout();
+        run_timeout = queue_run_timeout;
 
-    CNSPreciseTime  exp_time = GetExpirationTime(queue.GetTimeout(),
-                                                 queue.GetRunTimeout(),
-                                                 pending_timeout,
-                                                 CNSPreciseTime());
+    CNSPreciseTime  exp_time;
+    if (m_Status == CNetScheduleAPI::eRunning ||
+        m_Status == CNetScheduleAPI::eReading)
+        exp_time = GetExpirationTime(queue_timeout,
+                                     queue_run_timeout,
+                                     pending_timeout,
+                                     GetLastEventTime());
+    else
+        exp_time = GetExpirationTime(queue_timeout,
+                                     queue_run_timeout,
+                                     pending_timeout,
+                                     m_LastTouch);
 
     result = "OK:id: " + NStr::NumericToString(m_Id) + "\n"
              "OK:key: " + queue.MakeKey(m_Id) + "\n"

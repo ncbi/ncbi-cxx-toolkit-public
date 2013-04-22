@@ -348,6 +348,8 @@ public:
 
     CNSPreciseTime      GetSubmitTime(void) const
     { return m_Events[0].m_Timestamp; }
+    CNSPreciseTime      GetLastEventTime(void) const
+    { return m_Events[GetLastEventIndex()].m_Timestamp; }
 
     CNSPreciseTime      GetExpirationTime(
                                 const CNSPreciseTime &  queue_timeout,
