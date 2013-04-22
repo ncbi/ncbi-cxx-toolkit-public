@@ -1123,6 +1123,9 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             case ePlatform_Mac:
             case ePlatform_Unix:
                 m_Platform = ePlatform_MobileDevice;
+                //break;
+            default:
+                break;
         }
     }
 
