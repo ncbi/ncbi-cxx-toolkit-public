@@ -163,6 +163,21 @@ protected:
     virtual CJsonNode ExecOn(CNetServer server);
 
 private:
+    string m_Cmd;
+};
+
+class CNetScheduleStructuredOutputParser
+{
+public:
+    CJsonNode Parse(const string& ns_output)
+    {
+        m_NSOutput = ns_output;
+        m_Ch = m_NSOutput.c_str();
+
+        return ParseObject('\0');
+    }
+
+private:
     size_t GetRemainder() const
     {
         return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
@@ -221,18 +236,15 @@ private:
     CJsonNode ParseObject(char closing_char);
     CJsonNode ParseValue();
 
-    string m_Cmd;
-
     string m_NSOutput;
     const char* m_Ch;
 };
 
 CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
 {
-    m_NSOutput = server.ExecWithRetry(m_Cmd).response;
-    m_Ch = m_NSOutput.c_str();
+    CNetScheduleStructuredOutputParser parser;
 
-    return ParseObject('\0');
+    return parser.Parse(server.ExecWithRetry(m_Cmd).response);
 }
 
 #define INVALID_FORMAT_ERROR() \
@@ -241,7 +253,7 @@ CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
                     "Syntax error in structured NetSchedule output"), \
             GetPosition())
 
-CJsonNode CExecAndParseStructuredOutput::ParseObject(char closing_char)
+CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
@@ -276,7 +288,7 @@ CJsonNode CExecAndParseStructuredOutput::ParseObject(char closing_char)
     INVALID_FORMAT_ERROR();
 }
 
-CJsonNode CExecAndParseStructuredOutput::ParseValue()
+CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
 {
     size_t max_len = GetRemainder();
     size_t len = 0;
