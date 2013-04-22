@@ -1622,25 +1622,48 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                           == eNa_strand_minus
                               };
             CConstRef<CSpliced_exon> last_exon;
+            vector<TSeqPos> last_edge_insertions(2);
             ITERATE (CSpliced_seg::TExons, iter, GetSegs().GetSpliced().GetExons()) {
                 const CSpliced_exon& exon = **iter;
                 bool frame_missing = exon.GetProduct_start().IsProtpos()
                                    && (!exon.GetProduct_start().GetProtpos().CanGetFrame()
                                    || !exon.GetProduct_start().GetProtpos().GetFrame());
+                vector<TSeqPos> edge_insertions(2, 0);
                 for (unsigned r = 0; r < 2; ++r) {
                     if (row != r) {
-                        CRangeCollection<TSeqPos> insertions =
+                        CRangeCollection<TSeqPos> insertions = 
                              exon.GetRowSeq_insertions(
                                   r, GetSegs().GetSpliced());
+                        vector<TSeqRange> edges;
+                        edges.push_back(TSeqRange(exon.GetRowSeq_range(r,true).GetFrom(),
+                                                  exon.GetRowSeq_range(r,true).GetFrom()));
+                        edges.push_back(TSeqRange(exon.GetRowSeq_range(r,true).GetTo(),
+                                                  exon.GetRowSeq_range(r,true).GetTo()));
+                        if (is_minus[r]) {
+                            reverse(edges.begin(), edges.end());
+                        }
                         ITERATE (CRangeCollection<TSeqPos>, ins_it, insertions)
                         {
-                            if (ins_it->GetLength() % 3) {
-                                ++retval;
+                            if (ins_it->GetLength() % 3 == 0) {
+                                continue;
                             }
+                            if (ins_it->IntersectingWith(edges[1])) {
+                                edge_insertions[r] = ins_it->GetLength();
+                            }
+                            if (ins_it->IntersectingWith(edges[0])) {
+                                last_edge_insertions[r] += ins_it->GetLength();
+                                if (last_edge_insertions[r] % 3 == 0) {
+                                    /// This insertion is on edge of exon, and
+                                    /// combines with edge of last exon to a multiple of 3
+                                    --retval;
+                                }
+                                continue;
+                            }
+                            ++retval;
                         }
                     }
                 }
-                if (last_exon && frame_missing && row <= 0) {
+                if (last_exon && !frame_missing && row != 0) {
                     const CSpliced_exon &lower_exon = is_minus[0]
                                                     ? exon : *last_exon;
                     const CSpliced_exon &higher_exon = is_minus[0]
@@ -1649,11 +1672,12 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                         s_ProductPosAsSeqPos(lower_exon.GetProduct_end()) + 1;
                     TSeqPos gap_end =
                         s_ProductPosAsSeqPos(higher_exon.GetProduct_start());
-                    if ((gap_end - gap_start) % 3) {
+                    if ((gap_end - gap_start + last_edge_insertions[0]) % 3) {
                         ++retval;
                     }
                 }
                 last_exon.Reset(&exon);
+                last_edge_insertions = edge_insertions;
             }
         }}
         break;
