@@ -172,11 +172,65 @@ Str2QualVlus qual_nm2qual_vlus;
 
 // CBioseq
 /*
-void CBioseq_SUSPECT_RULE :: TestObj(const CBioseq& bioseq)
+void CBioseq_SUSPECT_RULE :: FindSuspectProductNamesCallback()
 {
-  
+   const CSeq_feat* feat_in_use = 0;
+   const CBioSource* biosrc_p = 0;
+   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+     const CSeqFeatData& sf_dt = (*it)->GetData();
+     const CProt_ref& prot = sf_dt.GetProt();
+
+     // add coding region rather than protein 
+     if (sf_dt.GetSubtype == CSeqFeatData::eSubtype_prot) {
+         feat_in_use = GetCDSForProduct(m_bioseq_hl);
+         // find BioSource, to check whether we want to run all categories
+         biosrc_p = GetBioSource (m_bioseq_hl);
+     }
+     else continue;
+
+     ITERATE (Str2Strs, sit, thisInfo.suspect_prod_terms) {
+       if (!CategoryOkForBioSource(biosrc_p, (sit->second)[1])) continue;
+       if (feat_in_use.CanGetName()) {
+          ITERATE (list <string>, nit, feat_in_use.GetName()) {
+             if ((sit->second)[0] == "BeginsWithPunct") && BeginsWithPunch(sit->first))
+              thisInfo.test_item_list["Sus_Prod"].push_back(GetDiscItemText(*feat_in_use));
+          }
+       }
+     }
+   }
 };
 
+void CBioseq_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
+{
+   FindSuspectProductNamesCallback();    
+};
+
+void CBioseq_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
+{
+};
+*/
+
+static const CBioseq_on_SUSPECT_RULE::SuspectProductNameData suspect_product_terms[] = {
+  { "beginning with period, comma, or hyphen" , 0, eSuspectNameType_InappropriateSymbol, kEmptyStr, 0 } ,
+  { "begins or ends with quotes", CTestAndRepData::BeginsOrEndsWithQuotes, eSuspectNameType_QuickFix, NULL, CTestAndRepData::RemoveBeginningAndEndingQuotes } ,
+  { "binding" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
+  { "domain", CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
+  { "like" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
+  { "motif" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
+  { "related" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
+  { "repeat", CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL },
+};
+
+void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
+{
+/*
+   m_bioseq_hl = *(thisInfo.scope->GetBioseqHandle(bioseq));
+   if (thisInfo.suspect_prod_rule->Get().empty()) FindSuspectProductNamesWithStaticList();
+   else FindSuspectProductNamesWithRules();
+*/
+};
+
+/*
 void CBioseq_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
 {
 };
@@ -9656,7 +9710,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
   block_text =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
-  ITERATE (Str2UInt, it, thisInfo.spell_data) {
+  ITERATE (Str2UInt, it, thisInfo.whole_word) {
      if (CTestAndRepData 
            :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)) {
        switch (which_block) {

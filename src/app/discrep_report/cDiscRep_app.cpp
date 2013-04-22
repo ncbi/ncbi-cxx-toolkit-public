@@ -35,7 +35,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/ncbifile.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
 // Objects includes
@@ -116,7 +115,7 @@ vector <string>                         CDiscRepInfo :: taxnm_env;
 vector <string>                         CDiscRepInfo :: virus_lineage;
 vector <string>                         CDiscRepInfo :: strain_tax;
 CRef <CComment_set>                     CDiscRepInfo :: comment_rules;
-Str2UInt                                CDiscRepInfo :: spell_data;
+Str2UInt                                CDiscRepInfo :: whole_word;
 Str2Str                                 CDiscRepInfo :: fix_data;
 CRef <CSuspect_rule_set>                CDiscRepInfo :: orga_prod_rules;
 vector <string>                         CDiscRepInfo :: skip_bracket_paren;
@@ -136,6 +135,7 @@ map <string, string>                    CDiscRepInfo :: pubclass_qual;
 vector <string>                         CDiscRepInfo :: months;
 map <EMolecule_type, CMolInfo::EBiomol> CDiscRepInfo :: moltp_biomol;
 map <ETechnique_type, CMolInfo::ETech>  CDiscRepInfo :: techtp_mitech;
+Str2Strs                                CDiscRepInfo :: suspect_prod_terms;
 
 void CDiscRepApp::Init(void)
 {
@@ -289,10 +289,10 @@ void CDiscRepApp::Init(void)
     reg.EnumerateEntries("SpellFixData", &strs);
     ITERATE (list <string>, it, strs) {
       arr.clear();
-      arr = NStr::Tokenize(reg.Get("SpellFixData-spell", *it), ",", arr);
+      arr = NStr::Tokenize(reg.Get("SpellFixData", *it), ",", arr);
       strtmp = ( *it == "nuclear-shutting") ? "nuclear shutting" : *it;
       thisInfo.fix_data[strtmp] = arr[0].empty()? "no" : "yes";
-      thisInfo.spell_data[strtmp]= NStr::StringToUInt(arr[1]);
+      thisInfo.whole_word[strtmp]= NStr::StringToUInt(arr[1]);
     }
 
     // ini of orga_prod_rules:
@@ -679,6 +679,34 @@ cerr << "222can get\n";
              = (CMolInfo::ETech)CMolInfo::ENUM_METHOD_NAME(ETech)()->FindValue(strtmp);
      }
    }
+
+   // ini of static suspect product list
+   ifstream ifile("suspect_product_terms");
+   if (!ifile)
+       NCBI_THROW(CException, eUnknown, "missing static suspect product name list");
+   size_t pos, pos2;
+   string pattern;
+   if (!ifile.eof()) std::getline(ifile, strtmp);
+   while (!ifile.eof()) {
+       std::getline(ifile, strtmp);
+       // pattern
+       pos = strtmp.find('"') + 1;
+       pos2 = strtmp.find('"', pos);
+       pattern = strtmp.substr(pos, pos2 - pos);
+
+       pos = strtmp.find(',', pos2);
+       strtmp = strtmp.substr(pos+1);
+       arr.clear();
+       arr.reserve(4);
+       arr = NStr::Tokenize(strtmp, ",", arr);
+
+       // sch_func
+       thisInfo.suspect_prod_terms[pattern].push_back(NStr::TruncateSpaces(arr[0]));
+
+       // fix_type 
+       thisInfo.suspect_prod_terms[pattern].push_back(NStr::TruncateSpaces(arr[1]));
+   }
+   ifile.close();
 }
 
 void CDiscRepApp :: GetOrgModSubtpName(unsigned num1, unsigned num2, map <string, COrgMod::ESubtype>& orgmodnm_subtp)

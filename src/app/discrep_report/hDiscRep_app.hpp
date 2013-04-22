@@ -189,7 +189,7 @@ namespace DiscRepNmSpc{
            static vector <string>                    virus_lineage;
            static vector <string>                    strain_tax;
            static CRef <CComment_set>                comment_rules;
-           static Str2UInt                           spell_data;
+           static Str2UInt                           whole_word;
            static Str2Str                            fix_data;
            static CRef <CSuspect_rule_set>           orga_prod_rules;
            static vector <string>                    skip_bracket_paren;
@@ -209,6 +209,7 @@ namespace DiscRepNmSpc{
            static vector <string>                    months;
            static map <EMolecule_type, CMolInfo::EBiomol>   moltp_biomol;
            static map <ETechnique_type, CMolInfo::ETech>    techtp_mitech;
+           static Str2Strs                                  suspect_prod_terms;
      };
 
 /*

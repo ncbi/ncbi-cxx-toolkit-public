@@ -150,6 +150,76 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
+bool CTestAndRepData :: AllCapitalLetters(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: BeginsWithPunct(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: BeginsOrEndsWithQuotes(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsDoubleSpace(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsTwoSetsOfBracketsOrParentheses(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsWholeWord(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsWholeWordCaseSensitive(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsUnbalancedParentheses(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsUnderscore(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ContainsUnknownName(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: EndsWithFold(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: EndsWithPattern(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: EndsWithPunct(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: IsSingleWord(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: IsSingleWordOrWeaselPlusSingleWord(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: IsTooLong(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: MayContainPlural(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: NormalSearch(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: PrefixPlusNumbersOnly(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ProductContainsTerm(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: StartsWithPattern(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: StartsWithPutativeReplacement(const string& str1, const string& str2)
+{ return true;
+}
+bool CTestAndRepData :: ThreeOrMoreNumbersTogether(const string& str1, const string& str2)
+{ return true;
+}
+
 bool CTestAndRepData :: AllVecElesSame(const vector <string> arr)
 {
     if (arr.size() > 1)
