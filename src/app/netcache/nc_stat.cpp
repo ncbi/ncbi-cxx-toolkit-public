@@ -773,6 +773,7 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
     proxy << ", start " << buf;
     m_EndState.state_time.Print(buf, CSrvTime::eFmtHumanUSecs);
     proxy << ", end " << buf <<endl;
+    proxy << "PID - " <<  CProcess::GetCurrentPid() << endl;
     CSrvTime time_diff = m_EndState.state_time;
     time_diff -= m_StartState.state_time;
     Uint8 time_secs = time_diff.AsUSec() / kUSecsPerSecond;
