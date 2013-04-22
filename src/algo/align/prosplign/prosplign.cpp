@@ -609,9 +609,7 @@ class CProSplign::CImplementation {
 public:
     static CImplementation* create(CProSplignScoring scoring, bool intronless, bool one_stage, bool just_second_stage, bool old);
     CImplementation(CProSplignScoring scoring) :
-        m_scoring(scoring), m_matrix(m_scoring.GetScoreMatrix(), m_scoring.sm_koef)
-    {
-    }
+        m_scoring(scoring), m_matrix(m_scoring.GetScoreMatrix(), m_scoring.sm_koef) {}
     virtual ~CImplementation() {}
     virtual CImplementation* clone()=0;
 
@@ -653,6 +651,12 @@ public:
         NCBI_THROW(CProSplignException, eGenericError, "method relevant only for two stage prosplign");
     }
 
+    void Interrupt(void)
+    {
+        m_Interrupt.Interrupt();
+    }
+
+
 private:
     virtual int stage1() = 0;
     virtual void stage2(CAli& ali) = 0;
@@ -666,6 +670,9 @@ protected:
     CRef<CSeq_loc> m_genomic;
     auto_ptr<CPSeq> m_protseq;
     auto_ptr<CNSeq> m_cnseq;
+
+    CProSplignInterrupt m_Interrupt;
+    
 };
 
 class COneStage : public CProSplign::CImplementation {
@@ -683,7 +690,7 @@ private:
 int COneStage::stage1()
 {
     m_bi.Init((int)m_protseq->seq.size(), (int)m_cnseq->size());//backtracking
-    return AlignFNog(m_bi, m_protseq->seq, *m_cnseq, m_scoring, m_matrix);
+    return AlignFNog(m_Interrupt, m_bi, m_protseq->seq, *m_cnseq, m_scoring, m_matrix);
 }
 
 void COneStage::stage2(CAli& ali)
@@ -744,7 +751,7 @@ int CTwoStageOld::stage1()
 {
     if (m_just_second_stage)
         return 0;
-    int score = FindIGapIntrons(m_igi, m_protseq->seq, *m_cnseq,
+    int score = FindIGapIntrons(m_Interrupt, m_igi, m_protseq->seq, *m_cnseq,
                                 m_scoring.GetGapOpeningCost(),
                                 m_scoring.GetGapExtensionCost(),
                                 m_scoring.GetFrameshiftOpeningCost(), m_scoring, m_matrix);
@@ -761,7 +768,7 @@ void CTwoStageOld::stage2(CAli& ali)
     CBackAlignInfo bi;
     bi.Init((int)m_protseq->seq.size(), (int)cfrnseq.size()); //backtracking
         
-    FrAlign(bi, m_protseq->seq, cfrnseq,
+    FrAlign(m_Interrupt, bi, m_protseq->seq, cfrnseq,
             m_scoring.GetGapOpeningCost(),
             m_scoring.GetGapExtensionCost(),
             m_scoring.GetFrameshiftOpeningCost(), m_scoring, m_matrix);
@@ -775,7 +782,7 @@ int CTwoStageNew::stage1()
 {
     if (m_just_second_stage)
         return 0;
-    return FindFGapIntronNog(m_igi, m_protseq->seq, *m_cnseq, m_lgap, m_rgap, m_scoring, m_matrix);
+    return FindFGapIntronNog(m_Interrupt, m_igi, m_protseq->seq, *m_cnseq, m_lgap, m_rgap, m_scoring, m_matrix);
 }
 
 void CTwoStageNew::stage2(CAli& ali)
@@ -786,7 +793,7 @@ void CTwoStageNew::stage2(CAli& ali)
     CBackAlignInfo bi;
     bi.Init((int)m_protseq->seq.size(), (int)cfrnseq.size()); //backtracking
         
-    FrAlignFNog1(bi, m_protseq->seq, cfrnseq, m_scoring, m_matrix, m_lgap, m_rgap);
+    FrAlignFNog1(m_Interrupt, bi, m_protseq->seq, cfrnseq, m_scoring, m_matrix, m_lgap, m_rgap);
 
     FrBackAlign(bi, ali);
     CAli new_ali(m_igi, m_lgap, m_rgap, ali);
@@ -821,7 +828,7 @@ private:
 int CIntronlessOld::stage1()
 {
     m_bi.Init((int)m_protseq->seq.size(), (int)m_cnseq->size());//backtracking
-    return FrAlign(m_bi, m_protseq->seq, *m_cnseq,
+    return FrAlign(m_Interrupt, m_bi, m_protseq->seq, *m_cnseq,
                    m_scoring.GetGapOpeningCost(),
                    m_scoring.GetGapExtensionCost(),
                    m_scoring.GetFrameshiftOpeningCost(), m_scoring, m_matrix); 
@@ -830,7 +837,7 @@ int CIntronlessOld::stage1()
 int CIntronlessNew::stage1()
 { 
     m_bi.Init((int)m_protseq->seq.size(), (int)m_cnseq->size());//backtracking
-    return FrAlignFNog1(m_bi, m_protseq->seq, *m_cnseq, m_scoring, m_matrix);
+    return FrAlignFNog1(m_Interrupt, m_bi, m_protseq->seq, *m_cnseq, m_scoring, m_matrix);
 }
 
 void CIntronless::stage2(CAli& ali)
@@ -910,6 +917,10 @@ bool IsProteinSpanWhole(const CSpliced_seg& sps)
 
     //Use this method to set/change genetic code field in ASN 
 
+void CProSplign::Interrupt(void)
+{
+    m_implementation->Interrupt();
+}
 
 void CProSplign::AssignGeneticCode(CScope& scope, const CSeq_id& gid, int gcode) {
     CBioseq_Handle hp = scope.GetBioseqHandle(gid);
@@ -1054,26 +1065,6 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
 
     m_implementation->SeekStartStop(*refined_align);
     prosplign::SetScores(*refined_align, scope, output_options.GetScoreMatrix());
-
-    return refined_align;
-}
-
-CRef<objects::CSeq_align> CProSplign::BlastAlignment(CScope& scope, const CSeq_align& seq_align, int score_cutoff, int score_dropoff)
-{
-    CRef<CSeq_align> refined_align(new CSeq_align);
-    refined_align->Assign(seq_align);
-
-    CProteinAlignText alignment_text(scope, seq_align, m_implementation->GetScaleScoring().GetScoreMatrix());
-    list<CNPiece> good_parts = BlastGoodParts( alignment_text, m_implementation->GetScaleScoring(), score_cutoff, score_dropoff );
-
-    prosplign::RefineAlignment(scope, *refined_align, good_parts);
-
-    if (good_parts.size()!=1 || !IsProteinSpanWhole(refined_align->GetSegs().GetSpliced())) {
-        refined_align->SetType(CSeq_align::eType_disc);
-    }
-
-    m_implementation->SeekStartStop(*refined_align);
-    prosplign::SetScores(*refined_align, scope, m_implementation->GetScaleScoring().GetScoreMatrix());
 
     return refined_align;
 }

@@ -45,6 +45,8 @@
 
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
+#include <algo/align/prosplign/prosplign_exception.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 
@@ -171,24 +173,47 @@ class CAli;
 class CAlignInfo;
 class CProSplignScaledScoring;
 
+
+//interface to interrupt calculations by user request from another thread
+class CProSplignInterrupt {
+public:
+    CProSplignInterrupt(void)    
+    {
+        m_Interrupt.Set(0);
+    }
+    void Interrupt(void) {
+        m_Interrupt.Add(1);
+    }
+    inline void CheckUserInterrupt(void) const
+    {
+        if(m_Interrupt.Get()) NCBI_THROW(CProSplignException, CProSplignException::eUserInterrupt, "Interrupted by user" );
+    }
+
+
+private:
+    CAtomicCounter m_Interrupt;
+};
+
+
+
 // *****   versions without gap/frameshift penalty at the beginning/end
 //fast variant of FrAlignNog1
-int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix, bool left_gap = false, bool right_gap = false);
+int   FrAlignFNog1(const CProSplignInterrupt& interrupt, CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix, bool left_gap = false, bool right_gap = false);
 //**** good  for FrAlignNog, FrAlignNog1, FrAlign and FrAlignFNog1
 void FrBackAlign(CBackAlignInfo& bi, CAli& ali);
 
 // *****   versions without gap/frameshift penalty at the beginning/end ONE STAGE, FAST
-int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
+int AlignFNog(const CProSplignInterrupt& interrupt, CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 void BackAlignNog(CTBackAlignInfo<CBMode>& bi, CAli& ali);
 
 // *****   versions without gap/frameshift penalty at the beginning/end FAST
-int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, 
+int FindFGapIntronNog(const CProSplignInterrupt& interrupt, vector<pair<int, int> >& igi/*to return end gap/intron set*/, 
                       const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 
 //*** mixed gap penalty (OLD, aka version 2)
-int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
+int FindIGapIntrons(const CProSplignInterrupt& interrupt, vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
             int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
-int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
+int   FrAlign(const CProSplignInterrupt& interrupt, CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
             int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 
 

@@ -269,6 +269,14 @@ public:
     CProSplign( CProSplignScoring scoring = CProSplignScoring(), bool intronless=false );
     ~CProSplign();
 
+
+    ///for MT usage
+    ///set a signal for core algirithm to interrupt calculations
+    ///after this method is called from one thread for a ProSplign object,
+    ///FindAlignment for the same ProSplign object in other thread
+    /// is going to throw CProSplignException of "eUserInterrupt" type 
+    void Interrupt(void);
+
     /// Aligns protein to a region on genomic sequence.
     /// genomic seq_loc should be a continuous region - an interval or a whole sequence
     ///
@@ -300,13 +308,6 @@ public:
     RefineAlignment(objects::CScope& scope,
                     const objects::CSeq_align& seq_align,
                     CProSplignOutputOptions output_options = CProSplignOutputOptions());
-
-    /// TEMPRARY TEST VERSION. BASED ON SCORES, BLAST STYLE
-    /// Refines Spliced-seg alignment by removing bad pieces according to output_options.
-    /// This is irreversible action - more relaxed parameters will not change the alignment back
-    CRef<objects::CSeq_align>
-    BlastAlignment(objects::CScope& scope,
-                   const objects::CSeq_align& seq_align, int score_cutoff, int score_dropoff);
 
     //Use this method to set/change genetic code field in genomic ASN 
     //ProSplign tries to get genetic code from ASN. If fails, standart code (1) is used.

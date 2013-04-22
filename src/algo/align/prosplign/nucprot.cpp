@@ -168,7 +168,7 @@ void CFastIScore::Init(const CSubstMatrix& matrix) {
 
 
 
-int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
+int   FrAlign(const CProSplignInterrupt& interrupt, CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
               int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
   int ilen = (int)pseq.size() + 1;
@@ -196,6 +196,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
     crow->v[1] = crow->v[2]  = infinity;
     hpre1 = hpre2 = h0 = infinity;
 	for(j=3;j<jlen;j++) {
+        interrupt.CheckUserInterrupt();
         char& b = bi.b[i-1][j-1];
         b = (char)0;
         hpre3 = hpre2;
@@ -256,7 +257,7 @@ int   FrAlign(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*ga
   return wmax;
 }
 
-int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
+int FindFGapIntronNog(const CProSplignInterrupt& interrupt, vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, bool& left_gap, bool& right_gap, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
 	CIgapIntronPool pool;
 
@@ -334,6 +335,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
         pv =  &prow->v[0];
         // *******  INTERNAL LOOP ******************
     	for(j=3;j<jlen_1;++j) {
+            interrupt.CheckUserInterrupt();
             const CBestI& bei = fin.Step(j, scoring, fiscore);
             //rest
             int w1 = *pw3 + fiscore.GetScore();
@@ -503,7 +505,7 @@ int FindFGapIntronNog(vector<pair<int, int> >& igi/*to return end gap/intron set
     return wmax;
 }
 
-int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
+int FindIGapIntrons(const CProSplignInterrupt& interrupt, vector<pair<int, int> >& igi/*to return end gap/intron set*/, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
                     int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
     // in matrices letters starts at [1]
@@ -546,6 +548,7 @@ int FindIGapIntrons(vector<pair<int, int> >& igi/*to return end gap/intron set*/
     CHIntronScore spl101, spl102, spl103, spl104, spl105;
     CHIntronScore dspl101, dspl102, dspl103, dspl104;
 	for(j=3;j<jlen;j++) {
+        interrupt.CheckUserInterrupt();
             chin.NucStep(scoring, matrix);
 	  int d1, d2, d3, d4, d5, d6;
       int h1, h2;
@@ -768,7 +771,7 @@ void FrBackAlign(CBackAlignInfo& bi, CAli& ali) {
 
 
 
-int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
+int   FrAlignFNog1(const CProSplignInterrupt& interrupt, CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
                    // int g/*gap opening*/, int e/*one nuc extension cost*/, int f/*frameshift opening cost*/,
                    const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix,
                    bool left_gap, bool right_gap)
@@ -838,6 +841,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
     pv =  &prow->v[0];
     fiscore.SetAmin(pseq[i-1], matrix);
 	for(j=3;j<jlen_1;++j) {
+        interrupt.CheckUserInterrupt();
         bb = 0;
         //rest
         int w1 = *pw3 + fiscore.GetScore();
@@ -930,7 +934,7 @@ int   FrAlignFNog1(CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq,
 }
 
 
-int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
+int AlignFNog(const CProSplignInterrupt& interrupt, CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
   if(nseq.size() < 1) return 0;
   int ilen = (int)pseq.size() + 1;
@@ -993,6 +997,7 @@ int AlignFNog(CTBackAlignInfo<CBMode>& bi, const PSEQ& pseq, const CNSeq& nseq, 
     int jlen_1 = jlen - 1;
   // *******  INTERNAL LOOP ******************
 	for(j=3;j<jlen_1;++j) {
+        interrupt.CheckUserInterrupt();
         int bb = 0;
         const CBestI& bei = fin.Step(j, scoring, fiscore);
         //rest

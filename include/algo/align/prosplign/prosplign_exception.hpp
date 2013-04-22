@@ -53,6 +53,7 @@ public:
         eWrongScore,
         eParam,
         eNotEnoughMemory,
+        eUserInterrupt,
         eGenericError
     };
     virtual const char* GetErrCodeString(void) const {
@@ -73,6 +74,8 @@ public:
             return "Parameters for alignment are out of scope";
         case eNotEnoughMemory:
             return "Not enough memory error";
+        case eUserInterrupt:
+            return "Interrupted by user";
         case eGenericError:
             return "Generic error";
         default:
