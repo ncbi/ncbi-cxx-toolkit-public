@@ -560,6 +560,8 @@ TGeneModelList CParse::GetGenes() const
             gen_exons.back().push_back(static_cast<const CExon*>(p));
         }
     
+    const EResidue* seqp = m_seqscr.SeqPtr(0, ePlus);
+    
     ITERATE(vector< vector<const CExon*> >, g_it, gen_exons) {
         EStrand strand = g_it->back()->Strand();
         genes.push_front(CGeneModel(strand,0,CGeneModel::eGnomon));
@@ -568,13 +570,30 @@ TGeneModelList CParse::GetGenes() const
         double score = 0;
 
         CGeneModel local_gene(strand);
-        for (vector<const CExon*>::const_reverse_iterator e_it = g_it->rbegin(); e_it != g_it->rend(); ++e_it) {
-            const CExon* pe = *e_it;
+        for(int i = (int)g_it->size()-1; i >= 0; --i) {
+            const CExon* pe = (*g_it)[i];
+            //        for (vector<const CExon*>::const_reverse_iterator e_it = g_it->rbegin(); e_it != g_it->rend(); ++e_it) {
+            //            const CExon* pe = *e_it;
 
             TSignedSeqRange local_exon(pe->Start(),pe->Stop());
             local_gene.AddExon(local_exon);
             TSignedSeqRange exon = seq_map.MapRangeEditedToOrig(local_exon);
-            gene.AddExon(exon);
+
+            string fsig, ssig;
+            if(i != (int)g_it->size()-1) {
+                fsig.push_back(toACGT(seqp[local_exon.GetFrom()-2]));
+                fsig.push_back(toACGT(seqp[local_exon.GetFrom()-1]));
+            }
+            if(i != 0) {
+                ssig.push_back(toACGT(seqp[local_exon.GetTo()+1]));
+                ssig.push_back(toACGT(seqp[local_exon.GetTo()+2]));
+            }
+            if(pe->isMinus()) {
+                ReverseComplement(fsig.begin(),fsig.end());
+                ReverseComplement(ssig.begin(),ssig.end());
+            }
+            
+            gene.AddExon(exon, fsig, ssig);
 
             score += pe->RgnScore()+pe->ExonScore();
         }
@@ -678,7 +697,6 @@ TGeneModelList CParse::GetGenes() const
             cds_info.AddPStop(*s);
 
         cds_info.SetScore(score);
-
         gene.SetCdsInfo(cds_info);
     }
     
