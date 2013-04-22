@@ -231,10 +231,10 @@ CBlast_def_line::TMemberships CCriteriaSet_CalculateMemberships(
         // First time through, create the default criteria set.
         critSet_ptr = new CCriteriaSet;
         // Assert that all will succeed.
-        assert(critSet_ptr->AddCriteria("swissprot"));
-        assert(critSet_ptr->AddCriteria("pdb"));
-        assert(critSet_ptr->AddCriteria("refseq_genomic"));
-        assert(critSet_ptr->AddCriteria("refseq_rna"));
+        _ASSERT(critSet_ptr->AddCriteria("swissprot"));
+        _ASSERT(critSet_ptr->AddCriteria("pdb"));
+        _ASSERT(critSet_ptr->AddCriteria("refseq_genomic"));
+        _ASSERT(critSet_ptr->AddCriteria("refseq_rna"));
     }
 
     // Need number of bits per mask word (i.e. an int).
