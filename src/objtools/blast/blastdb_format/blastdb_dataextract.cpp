@@ -76,7 +76,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
             m_Oid = oids[0];
             if (m_TargetOnly || ! get_data) {
                 // TODO check if id is complete
-                seq_id.Reset(new CSeq_id(acc, CSeq_id::fParse_PartialOK));
+                seq_id.Reset(new CSeq_id(acc, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default));
                 target_seq_id = &(*seq_id);
             }
         }
