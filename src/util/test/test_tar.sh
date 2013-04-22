@@ -263,10 +263,10 @@ if [ "`uname`" = "Linux" ]; then
   $test_tar -T -f $test_base.tar                                                                        ||  exit 1
 
   if $okay ; then
-    free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
+    free="`df -k ${TMPDIR:-/tmp} | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
     if [ "$free" -gt "4200000" ]; then
       echo
-      echo "`date` *** ${free}KiB available in /tmp:  Checking 4GiB barrier"
+      echo "`date` *** ${free}KiB available in ${TMPDIR:-/tmp}:  Checking 4GiB barrier"
       echo
 
       dd of=$test_base.1/newdir/huge-file bs=1 count="`expr 1 + $$ % 10000`" seek=4G if=/dev/urandom    ||  exit 1
