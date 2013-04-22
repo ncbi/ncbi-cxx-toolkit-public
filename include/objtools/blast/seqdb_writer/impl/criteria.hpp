@@ -446,7 +446,7 @@ struct less_than
     /// \param s2 second string to be compared
     /// \return true if s1 comes before s2 lexicographically,
     /// case insensitively.
-    bool operator()(const string& s1, const string& s2) {
+    bool operator()(const string& s1, const string& s2) const {
         return (NStr::CompareNocase(s1, s2) < 0);
     }
 };
