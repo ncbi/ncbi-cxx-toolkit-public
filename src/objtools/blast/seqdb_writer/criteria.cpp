@@ -119,17 +119,12 @@ CCriteriaSet::CCriteriaSet(void) {}
 /* static */ ICriteria* CCriteriaSet::GetCriteriaInstance(
         const string& label
 ) {
-    // If the map doesn't already include an entry with the supplied
-    // criteria class's label, an exception will be thrown.
-    // (This is a characteristic of method map::at.)
-    // The catch clause will intercept the exception and return a NULL
-    // to the caller.
-    // If the map does have such an entry, it is returned to the caller.
-    try {
-        return GetAvailableCriteria().at(label);
-    }
-    catch (out_of_range& e) {
+    TCriteriaMap& critMap = GetAvailableCriteria();
+    TCriteriaMap::iterator it = critMap.find(label);
+    if (it == critMap.end()) {
         return NULL;
+    } else {
+        return it->second;
     }
 }
 
@@ -165,18 +160,12 @@ bool CCriteriaSet::AddCriteria(
 bool CCriteriaSet::AddCriteria(
         const string& label
 ) {
-    // If the map doesn't already include an entry with the supplied
-    // label, a new entry will be created after looking up the matching
-    // criteria class in the predefined set of criteria classes.
-    // If the map does have such an entry already, the map is not changed.
-    try {
-        // Exception will be thrown by at() if label doesn't match
-        // any predefined criteria class.
-        return AddCriteria(GetAvailableCriteria().at(label));
-    }
-    catch (out_of_range& e) {
-        // Criteria class is not on predefined list.
+    TCriteriaMap& critMap = GetAvailableCriteria();
+    TCriteriaMap::iterator it = critMap.find(label);
+    if (it == critMap.end()) {
         return false;
+    } else {
+        return AddCriteria(it->second);
     }
 }
 
@@ -189,17 +178,11 @@ bool CCriteriaSet::AddCriteria(
 const ICriteria* CCriteriaSet::FindCriteria(
         const string& label
 ) {
-    // If the map doesn't already include an entry with the supplied
-    // criteria class's label, an exception will be thrown.
-    // (This is a characteristic of method map::at.)
-    // The catch clause will intercept the exception and return a NULL
-    // to the caller.
-    // If the map does have such an entry, it is returned to the caller.
-    try {
-        return this->m_Crit_from_Label.at(label);
-    }
-    catch (out_of_range& e) {
+    TCriteriaMap::iterator it = this->m_Crit_from_Label.find(label);
+    if (it == this->m_Crit_from_Label.end()) {
         return NULL;
+    } else {
+        return it->second;
     }
 }
 
