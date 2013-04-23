@@ -106,7 +106,7 @@ public:
         eDO_NOT_USE         =  0,   // under threat of torture
         eSWISSPROT          =  1,
         ePDB                =  2,
-        eREFSEQ_PROTEIN     =  3,
+        eREFSEQ             =  3,
         eREFSEQ_CHROMOSOME  =  4
     };
 
@@ -337,7 +337,7 @@ public:
 
     /// @inheritDoc
     virtual const int GetMembershipBit(void) const {
-        return ICriteria::eUNASSIGNED;
+        return ICriteria::eREFSEQ;
     }
 };
 
@@ -436,23 +436,7 @@ public:
 };
 
 
-/// Case-insensitive comparator for criteria function labels.
-struct less_than
-{
-    /// This is required for the std::map class to allow criteria function
-    /// labels to be specified in upper-, lower-, or mixed-case.
-    ///
-    /// \param s1 first string to be compared
-    /// \param s2 second string to be compared
-    /// \return true if s1 comes before s2 lexicographically,
-    /// case insensitively.
-    bool operator()(const string& s1, const string& s2) const {
-        return (NStr::CompareNocase(s1, s2) < 0);
-    }
-};
-
-
-typedef map<string, ICriteria*, less_than> TCriteriaMap;
+typedef map<string, ICriteria*, ncbi::PNocase> TCriteriaMap;
 
 
 /// CCriteriaSet
