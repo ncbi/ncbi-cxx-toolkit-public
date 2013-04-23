@@ -624,7 +624,7 @@ void CUnorderedSplitter::x_TrimRows(const CDense_seg& DomSeg, CDense_seg& NonSeg
     try { 
         Slice = NonSeg.ExtractSlice(Row, NonRange.GetFrom(), NonRange.GetTo());
     } catch(CException& e) {
-        cerr << "ExtractSlice failed" << endl;
+        //cerr << "ExtractSlice failed" << endl;
         NonSeg.SetStarts().clear();
         NonSeg.SetStarts().push_back(-1);
         NonSeg.SetStarts().push_back(-1);
