@@ -265,6 +265,17 @@ Int4 CLocalBlast::GetNumExtensions()
     return retv;
 }
 
+BlastDiagnostics* CLocalBlast::GetDiagnostics()
+{
+    BlastDiagnostics* diag;
+    
+    if (m_InternalData) {
+        diag = Blast_DiagnosticsCopy(m_InternalData->m_Diagnostics->GetPointer());
+    }
+
+    return diag;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

@@ -109,6 +109,9 @@ public:
     /// Retrieve the number of extensions performed during the search
     Int4 GetNumExtensions();
 
+    /// Get the diagnostics structure (deep copy, needs to be deleted by caller)
+    BlastDiagnostics* GetDiagnostics();
+
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;
