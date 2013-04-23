@@ -47,6 +47,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -365,6 +366,9 @@ void CAsn2Asn::Init(void)
                       CArgDescriptions::eOutputFile);
     d->AddFlag("e",
                "treat data as Seq-entry");
+    d->AddFlag("sub",
+               "treat data as Seq-submit");
+    d->SetDependency("e", CArgDescriptions::eExcludes, "sub");
     d->AddFlag("b",
                "binary ASN.1 input format");
     d->AddFlag("X",
@@ -893,7 +897,17 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
     }
     outFile += outFileSuffix;
 
-    bool inSeqEntry = args["e"];
+    enum EDataType {
+        eDataType_BioseqSet, // the default
+        eDataType_SeqEntry,
+        eDataType_SeqSubmit
+    };
+    EDataType eDataType = eDataType_BioseqSet;
+    if( args["e"] ) {
+        eDataType = eDataType_SeqEntry;
+    } else if( args["sub"] ) {
+        eDataType = eDataType_SeqSubmit;
+    }
     bool skip = args["S"];
     bool convert = args["C"];
     bool merge = args["Mgi"] && (args["Min"] || args["Mext"]);
@@ -928,10 +942,17 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                                                           eSerial_StdWhenAny));
 
         for ( ;; ) {
-            if ( inSeqEntry ) { /* read one Seq-entry */
+            /* read one Seq-entry or Seq-submit */
+            if ( eDataType == eDataType_SeqEntry ||
+                 eDataType == eDataType_SeqSubmit ) 
+            {
+                const CObjectTypeInfo objectTypeInfo = (
+                    eDataType == eDataType_SeqEntry ?
+                    CType<CSeq_entry>().operator ncbi::CObjectTypeInfo() :
+                    CType<CSeq_submit>().operator ncbi::CObjectTypeInfo() );
                 if ( skip ) {
                     if ( displayMessages )
-                        NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
+                        NcbiCerr << "Skipping " << objectTypeInfo.GetName() << "..." << NcbiEndl;
                     if ( readHook ) {
                         {{
                             CObjectTypeInfo type = CType<CSeq_descr>();
@@ -948,20 +969,22 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                             type.FindMember("topology").SetLocalSkipHook
                                 (*in, new CReadInSkipClassMemberHook<CSeq_inst::TTopology>);
                         }}
-                        in->Skip(CType<CSeq_entry>());
+                        in->Skip(objectTypeInfo);
                     }
                     else {
-                        in->Skip(CType<CSeq_entry>());
+                        in->Skip(objectTypeInfo);
                     }
                 }
                 else if ( convert && haveOutput ) {
                     if ( displayMessages )
-                        NcbiCerr << "Copying Seq-entry..." << NcbiEndl;
+                        NcbiCerr << "Copying " << objectTypeInfo.GetName() << "..." << NcbiEndl;
 
                     CObjectStreamCopier copier(*in, *out);
                     copier.Copy(CType<CSeq_entry>());
                 }
-                else if ( merge && haveOutput ) {
+                else if ( eDataType == eDataType_SeqEntry &&
+                    merge && haveOutput ) 
+                {
                     if ( displayMessages )
                         NcbiCerr << "Merging Seq-annot..." << NcbiEndl;
 
@@ -977,16 +1000,39 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                     }
                 }
                 else {
-                    TSeqEntry entry;
+                    CRef<CSerialObject> pObjectFromIn;
                     //entry.DoNotDeleteThisObject();
                     if ( displayMessages )
-                        NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
-                    *in >> entry;
-                    SeqEntryProcess(entry);     /* do any processing */
+                        NcbiCerr << "Reading " << objectTypeInfo.GetName() << "..." << NcbiEndl;
+
+                    // read in the CSerialObject, then
+                    // extract the Seq-entry inside there for processing
+                    CRef<CSeq_entry> pInnerSeqEntry;
+                    if( eDataType == eDataType_SeqEntry ) {
+                        CRef<CSeq_entry> pEntry( new CSeq_entry );
+                        *in >> *pEntry;
+                        pObjectFromIn = pEntry;
+                        // input *is* a seq-entry, so no digging necessary
+                        pInnerSeqEntry = static_cast<CSeq_entry*>(pObjectFromIn.GetPointer());
+                    } else {
+                        CRef<CSeq_submit> pSeqSubmit( new CSeq_submit );
+                        *in >> *pSeqSubmit;
+                        pObjectFromIn = pSeqSubmit;
+                        // get the one Seq-entry from the Seq-submit
+                        if( pSeqSubmit->GetData().GetEntrys().size() == 1 ) {
+                            pInnerSeqEntry = pSeqSubmit->GetData().GetEntrys().front();
+                        }
+                    }
+
+                    /* do any processing */
+                    if( pInnerSeqEntry ) {
+                        SeqEntryProcess(*pInnerSeqEntry);
+                    }
+
                     if ( haveOutput ) {
                         if ( displayMessages )
-                            NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
-                        *out << entry;
+                            NcbiCerr << "Writing " << objectTypeInfo.GetName() << "..." << NcbiEndl;
+                        *out << *pObjectFromIn;
                     }
                 }
             }
