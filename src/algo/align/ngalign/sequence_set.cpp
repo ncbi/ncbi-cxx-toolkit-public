@@ -700,6 +700,9 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
     CBlastInput Input(&FastaSource, GetQueryBatchSize(kProgram));
 
     TSeqLocVector FastaLocVec = Input.GetAllSeqLocs(Scope);
+    //ITERATE(TSeqLocVector, LocIter, FastaLocVec) {
+    //    cerr << *LocIter->seqloc->GetId() << endl;
+    //}
 
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);
@@ -724,7 +727,15 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
     CFastaReader FastaReader(*m_FastaStream);
     CRef<CSeq_entry> Entry = FastaReader.ReadSet();
     try {
-        Scope.AddTopLevelSeqEntry(*Entry);
+        bool PreExisting = false;
+        if(Entry->IsSet() && Entry->GetSet().GetSeq_set().front()->GetSeq().GetFirstId() != NULL) {
+            const CSeq_id& Id = *Entry->GetSet().GetSeq_set().front()->GetSeq().GetFirstId();
+            CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
+            if(Handle)
+                PreExisting = true;
+        }
+        if(!PreExisting)
+            Scope.AddTopLevelSeqEntry(*Entry);
     } catch(...) {
         ERR_POST(Info << "Eating the Scope Fasta Dup Insert Exception");
     }
@@ -745,6 +756,7 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
         int i = 0;
         TSeqLocVector::iterator Curr;
         for(Curr = FastaLocVec.begin(); Curr != FastaLocVec.end(); ) {
+            //cerr << " * " << Curr->seqloc->GetId()->AsFastaString() << " * " << endl;
             if( i < m_Start) {
                 Curr = FastaLocVec.erase(Curr);
                 i++;

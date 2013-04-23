@@ -134,6 +134,10 @@ public:
     void AddSeqId(CRef<objects::CSeq_id> Id);
     void SetSeqMasker(CSeqMasker* SeqMasker);
 
+    bool Empty() { // either nothing was added, or everything that was added was pure gap
+        return m_SeqIdListSet.SetIdList().empty();
+    }
+
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
     CRef<blast::IQueryFactory> CreateQueryFactory(
@@ -157,6 +161,10 @@ public:
 
     void AddSeqLoc(CRef<objects::CSeq_loc> Loc);
     void SetSeqMasker(CSeqMasker* SeqMasker);
+    
+    bool Empty() { // either nothing was added, or everything that was added was pure gap
+        return m_SeqIdListSet.SetIdList().empty();
+    }
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);

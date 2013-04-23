@@ -102,8 +102,10 @@ void CUnorderedSplitter::SplitId(const CSeq_id& Id, TSeqIdList& SplitIds)
     CBioseq_Handle  OrigHandle;
     OrigHandle = m_Scope->GetBioseqHandle(Id);
 
-    if(!OrigHandle.CanGetInst())
+    if(!OrigHandle.CanGetInst()) {
+        ERR_POST(Error << "Nothing to split for " << Id.AsFastaString() );
         return;
+    }
 
     const CBioseq::TInst& OrigInst = OrigHandle.GetInst();
 
@@ -123,17 +125,21 @@ void CUnorderedSplitter::SplitLoc(const CSeq_loc& Loc, TSeqIdList& SplitIds)
     CBioseq_Handle  OrigHandle;
     OrigHandle = m_Scope->GetBioseqHandle(Loc);
 
-    if(!OrigHandle.CanGetInst())
+    if(!OrigHandle.CanGetInst()) {
+        ERR_POST(Error << "Nothing to split for " << "loc" );
         return;
+    }
 
     const CBioseq::TInst& OrigInst = OrigHandle.GetInst();
    
     TSeqRange LocRange = Loc.GetTotalRange();
-
+    
     if(OrigInst.CanGetExt() && OrigInst.GetExt().IsDelta()) {
         x_SplitDeltaExt(*Loc.GetId(), OrigHandle, SplitIds, LocRange);
     } else if(OrigInst.CanGetSeq_data()) {
         x_SplitSeqData(*Loc.GetId(), OrigHandle, SplitIds, LocRange);
+    } else {
+        ERR_POST(Error << "Unknown type" );
     }
 
     // Split Other Inst types?
@@ -222,7 +228,7 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
     ITERATE(CDelta_ext::Tdata, SeqIter, OrigDelta.Get()) {
 
         const CDelta_seq& Seq = **SeqIter;
-
+        
         bool IsGap;
         // A Gap is a Seq-literal without a Seq-data
         IsGap  = (Seq.IsLiteral() && !Seq.GetLiteral().CanGetSeq_data());
@@ -255,7 +261,7 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
 
             m_PartsMap[CurrId->AsFastaString()] = CurrInterval;
 
-            SplitIds.push_back(CurrId);
+            SplitIds.push_back(CurrId); 
             CurrBioseq->SetId().push_back(CurrId);
 //cerr << MSerial_AsnText << *CurrBioseq;
             m_Scope->AddBioseq(*CurrBioseq);
@@ -342,7 +348,7 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
 
         m_PartsMap[CurrId->AsFastaString()] = CurrInterval;
 
-        SplitIds.push_back(CurrId);
+        SplitIds.push_back(CurrId); 
         CurrBioseq->SetId().push_back(CurrId);
     //cerr << MSerial_AsnText << *CurrBioseq;
         m_Scope->AddBioseq(*CurrBioseq);
@@ -610,11 +616,25 @@ void CUnorderedSplitter::x_TrimRows(const CDense_seg& DomSeg, CDense_seg& NonSeg
     } else {
         return;
     }
+    
 
     //cerr << "NonRange Row " << Row << "  " << NonRange.GetFrom() << " to " << NonRange.GetTo() << endl;
 
     CRef<CDense_seg> Slice;
-    Slice = NonSeg.ExtractSlice(Row, NonRange.GetFrom(), NonRange.GetTo());
+    try { 
+        Slice = NonSeg.ExtractSlice(Row, NonRange.GetFrom(), NonRange.GetTo());
+    } catch(CException& e) {
+        cerr << "ExtractSlice failed" << endl;
+        NonSeg.SetStarts().clear();
+        NonSeg.SetStarts().push_back(-1);
+        NonSeg.SetStarts().push_back(-1);
+        NonSeg.SetLens().clear();
+        NonSeg.SetLens().push_back(1);
+        NonSeg.SetNumseg(1);
+        NonSeg.SetStrands().clear();
+        return;
+    }
+
     NonSeg.Assign(*Slice);
 }
 
