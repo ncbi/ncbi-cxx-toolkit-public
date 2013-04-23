@@ -236,6 +236,30 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
     INVALID_FORMAT_ERROR();
 }
 
+CJsonNode CNetScheduleStructuredOutputParser::ParseArray(char closing_char)
+{
+    CJsonNode result(CJsonNode::NewArrayNode());
+
+    while (isspace(*m_Ch))
+        ++m_Ch;
+
+    if (*m_Ch == closing_char) {
+        ++m_Ch;
+        return result;
+    }
+
+    do
+        result.PushNode(ParseValue());
+    while (MoreNodes());
+
+    if (*m_Ch == closing_char) {
+        ++m_Ch;
+        return result;
+    }
+
+    INVALID_FORMAT_ERROR();
+}
+
 CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
 {
     size_t max_len = GetRemainder();
@@ -244,27 +268,8 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
     switch (*m_Ch) {
     /* Array */
     case '[':
-        {
-            CJsonNode result(CJsonNode::NewArrayNode());
-
-            while (isspace(*++m_Ch))
-                ;
-
-            if (*m_Ch == ']') {
-                ++m_Ch;
-                return result;
-            }
-
-            do
-                result.PushNode(ParseValue());
-            while (MoreNodes());
-
-            if (*m_Ch == ']') {
-                ++m_Ch;
-                return result;
-            }
-        }
-        break;
+        ++m_Ch;
+        return ParseArray(']');
 
     /* Object */
     case '{':
@@ -369,7 +374,7 @@ CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
 {
     CNetScheduleStructuredOutputParser parser;
 
-    return parser.Parse(server.ExecWithRetry(m_Cmd).response);
+    return parser.ParseObject(server.ExecWithRetry(m_Cmd).response);
 }
 
 CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,

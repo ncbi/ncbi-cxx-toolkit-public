@@ -163,6 +163,15 @@ public:
     /// @sa EStreamParsingEvent
     EStreamParsingEvent GetNextEvent();
 
+    /// Tell the reader to switch to reading raw data of the specified
+    /// length.
+    /// @param
+    ///   data_size Expected raw data size.
+    /// @return
+    ///   One of the following three constants:
+    ///   eChunkPart, eChunk, or eEndOfBuffer.
+    EStreamParsingEvent ReadRawData(size_t data_size);
+
     /// Return the control symbol that has been just read.  The returned
     /// value is only valid after a successful call to the GetNextEvent()
     /// method, that is, when it returned eControlSymbol.
@@ -319,7 +328,8 @@ public:
     ///   True if adding "symbol" to the output buffer did not result in the
     ///   buffer overflow condition; false - when the output buffer is full and
     ///   must be flushed with a call to GetOutputBuffer() before any of
-    ///   SendControlSymbol(), SendNumber(), or SendChunk() can be called again.
+    ///   SendControlSymbol(), SendNumber(), SendChunk(), or SendRawData()
+    ///   can be called again.
     bool SendControlSymbol(char symbol);
 
     /// Send a chunk of data to the output buffer.
@@ -348,8 +358,24 @@ public:
     ///   True if this addition to the output buffer did not result in the
     ///   buffer overflow condition; false - when the output buffer is full and
     ///   must be flushed with a call to GetOutputBuffer() before any of
-    ///   SendControlSymbol(), SendNumber(), or SendChunk() can be called again.
+    ///   SendControlSymbol(), SendNumber(), SendChunk(), or SendRawData()
+    ///   can be called again.
     bool SendNumber(Int8 number);
+
+    /// Mix a chunk of raw data right in the output stream. Must be
+    /// matched by a call to ReadRawData() on the reader side requesting
+    /// the same amount of data.
+    /// @param data
+    ///   A pointer to the memory area containing the chunk of data to be sent.
+    /// @param data_size
+    ///   Length of data in bytes.
+    /// @return
+    ///   True if adding data_size bytes of data did not result in buffer
+    ///   overflow; false - when the output buffer is full and
+    ///   must be flushed with a call to GetOutputBuffer() before
+    ///   SendControlSymbol(), SendNumber(), SendChunk(), or SendRawData()
+    ///   call can be called again.
+    bool SendRawData(const void* data, size_t data_size);
 
     /// Return data to be sent over the output stream and extend internal
     /// pointers to the next buffer. This method can be called at any time,

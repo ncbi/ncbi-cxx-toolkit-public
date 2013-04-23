@@ -101,6 +101,7 @@
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 #define DRAIN_OPTION "drain"
+#define PROTOCOL_DUMP_OPTION "protocol-dump"
 
 #define LOGIN_COMMAND "login"
 #define JOBINFO_COMMAND "jobinfo"
@@ -216,6 +217,7 @@ enum EOption {
     eCommand,
     eMultiline,
     eProtocolDump,
+    eDebugConsole,
     eDumpNSNotifications,
     eNumberOfOptions
 };
@@ -489,6 +491,9 @@ private:
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
     void SetUp_NetStorageCmd();
+
+    int Automation_PipeServer();
+    int Automation_DebugConsole();
 };
 
 END_NCBI_SCOPE

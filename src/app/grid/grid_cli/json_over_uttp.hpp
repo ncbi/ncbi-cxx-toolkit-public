@@ -75,6 +75,9 @@ class CJsonNode
     const TArray& GetArray() const;
     TArray& GetArray();
 
+    CJsonNode& operator [](size_t index) {return GetArray()[index];}
+    const CJsonNode& operator [](size_t index) const {return GetArray()[index];}
+
     void PushNode(CJsonNode::TInstance value);
     void PushString(const string& value);
     void PushInteger(Int8 value);
@@ -86,6 +89,8 @@ class CJsonNode
 
     const CJsonNode::TObject& GetObject() const;
     CJsonNode::TObject& GetObject();
+
+    CJsonNode& operator [](const string& key) {return GetObject()[key];}
 
     void SetNode(const string& key, CJsonNode::TInstance value);
     void SetString(const string& key, const string& value);
@@ -136,11 +141,18 @@ public:
     void Reset();
 
 private:
+    enum {
+        eInitialState,
+        eReadingString,
+        eReadingDouble
+    } m_State;
     TNodeStack m_NodeStack;
     CJsonNode m_CurrentNode;
     string m_CurrentChunk;
+    double m_Double;
+    char* m_DoublePtr;
+    char m_DoubleEndianness;
     string m_HashKey;
-    bool m_ReadingChunk;
     bool m_HashValueIsExpected;
 };
 
@@ -177,6 +189,7 @@ private:
 
     TOutputStack m_OutputStack;
     SOutputStackFrame m_CurrentOutputNode;
+    double m_Double;
     bool m_SendHashValue;
 };
 

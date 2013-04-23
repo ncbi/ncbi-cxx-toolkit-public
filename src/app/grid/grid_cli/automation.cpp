@@ -40,7 +40,9 @@
 
 USING_NCBI_SCOPE;
 
-#define PROTOCOL_VERSION 2
+#define PROTOCOL_VERSION 3
+
+#define AUTOMATION_IO_BUFFER_SIZE 4096
 
 void CArgArray::Exception(const char* what)
 {
@@ -204,7 +206,7 @@ bool SNetServiceAutomationObject::Call(const string& method,
         reply.PushString(m_Service.GetServiceName());
     else if (method == "get_address") {
         SServerAddressToJson server_address_proc(
-                (int) arg_array.NextNumber(0));
+                (int) arg_array.NextInteger(0));
 
         reply.PushNode(g_ExecToJson(server_address_proc,
                 m_Service, m_ActualServiceType));
@@ -350,39 +352,13 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
     return true;
 }
 
-CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
-    m_Pipe(pipe),
-    m_JSONWriter(pipe, m_Writer),
-    m_ProtocolDumpFile(protocol_dump),
+CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
+    m_MessageSender(message_sender),
+    m_Pid((Int8) CProcess::GetCurrentPid()),
     m_OKNode(CJsonNode::NewBooleanNode(true)),
     m_ErrNode(CJsonNode::NewBooleanNode(false)),
     m_WarnNode(CJsonNode::NewStringNode("WARNING"))
 {
-    m_Writer.Reset(m_WriteBuf, sizeof(m_WriteBuf));
-
-    m_Pid = (Int8) CProcess::GetCurrentPid();
-
-    CJsonNode greeting(CJsonNode::NewArrayNode());
-    greeting.PushString(GRID_APP_NAME);
-    greeting.PushInteger(PROTOCOL_VERSION);
-
-    if (protocol_dump != NULL) {
-        string pid_str(NStr::NumericToString(m_Pid));
-
-        m_DumpInputHeaderFormat.assign(1, '\n');
-        m_DumpInputHeaderFormat.append(71 + pid_str.length(), '=');
-        m_DumpInputHeaderFormat.append("\n----- IN ------ %s (pid: ");
-        m_DumpInputHeaderFormat.append(pid_str);
-        m_DumpInputHeaderFormat.append(") -----------------------\n");
-
-        m_DumpOutputHeaderFormat.assign("----- OUT ----- %s (pid: ");
-        m_DumpOutputHeaderFormat.append(pid_str);
-        m_DumpOutputHeaderFormat.append(") -----------------------\n");
-
-        m_ProtocolDumpTimeFormat = "Y/M/D h:m:s.l";
-    }
-
-    SendMessage(greeting);
 }
 
 TAutomationObjectRef CAutomationProc::CreateObject(const string& class_name,
@@ -440,12 +416,6 @@ TAutomationObjectRef CAutomationProc::CreateObject(const string& class_name,
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
-    if (m_ProtocolDumpFile != NULL) {
-        fprintf(m_ProtocolDumpFile, m_DumpInputHeaderFormat.c_str(),
-                GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
-        g_PrintJSON(m_ProtocolDumpFile, message);
-    }
-
     CArgArray arg_array(message.GetArray());
 
     string command(arg_array.NextString());
@@ -460,7 +430,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 
     if (command == "call") {
         TAutomationObjectRef object_ref(ObjectIdToRef(
-                (TObjectID) arg_array.NextNumber()));
+                (TObjectID) arg_array.NextInteger()));
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
         if (!object_ref->Call(method, arg_array, reply)) {
@@ -474,25 +444,17 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         reply.PushInteger(CreateObject(class_name, arg_array)->GetID());
     } else if (command == "del") {
         TAutomationObjectRef& object(ObjectIdToRef(
-                (TObjectID) arg_array.NextNumber()));
+                (TObjectID) arg_array.NextInteger()));
         m_ObjectByPointer.erase(object->GetImplPtr());
         object = NULL;
-    } else {
+    } else if (command == "echo") {
+        CJsonNode reply(message);
+        reply[0] = CJsonNode::NewBooleanNode(true);
+        return reply;
+    } else
         arg_array.Exception("unknown command");
-    }
 
     return reply;
-}
-
-void CAutomationProc::SendMessage(const CJsonNode& message)
-{
-    if (m_ProtocolDumpFile != NULL) {
-        fprintf(m_ProtocolDumpFile, m_DumpOutputHeaderFormat.c_str(),
-                GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
-        g_PrintJSON(m_ProtocolDumpFile, message);
-    }
-
-    m_JSONWriter.SendMessage(message);
 }
 
 void CAutomationProc::SendWarning(const string& warn_msg,
@@ -503,7 +465,7 @@ void CAutomationProc::SendWarning(const string& warn_msg,
     warning.PushString(warn_msg);
     warning.PushString(source->GetType());
     warning.PushInteger(source->GetID());
-    SendMessage(warning);
+    m_MessageSender->SendMessage(warning);
 }
 
 void CAutomationProc::SendError(const CTempString& error_message)
@@ -511,7 +473,7 @@ void CAutomationProc::SendError(const CTempString& error_message)
     CJsonNode error(CJsonNode::NewArrayNode());
     error.PushNode(m_ErrNode);
     error.PushString(error_message);
-    SendMessage(error);
+    m_MessageSender->SendMessage(error);
 }
 
 TAutomationObjectRef& CAutomationProc::ObjectIdToRef(TObjectID object_id)
@@ -525,7 +487,79 @@ TAutomationObjectRef& CAutomationProc::ObjectIdToRef(TObjectID object_id)
     return m_ObjectByIndex[index];
 }
 
-int CGridCommandLineInterfaceApp::Cmd_Automate()
+class CMessageSender : public IMessageSender
+{
+public:
+    CMessageSender(CJsonOverUTTPWriter& json_writer) : m_JSONWriter(json_writer)
+    {
+    }
+
+    virtual void SendMessage(const CJsonNode& message)
+    {
+        m_JSONWriter.SendMessage(message);
+    }
+
+private:
+    CJsonOverUTTPWriter& m_JSONWriter;
+};
+
+class CMessageDumperSender : public IMessageSender
+{
+public:
+    CMessageDumperSender(IMessageSender* actual_sender,
+            FILE* protocol_dump_file);
+
+    void DumpInputMessage(const CJsonNode& message);
+
+    virtual void SendMessage(const CJsonNode& message);
+
+private:
+    IMessageSender* m_ActualSender;
+
+    FILE* m_ProtocolDumpFile;
+    string m_ProtocolDumpTimeFormat;
+    string m_DumpInputHeaderFormat;
+    string m_DumpOutputHeaderFormat;
+};
+
+CMessageDumperSender::CMessageDumperSender(
+        IMessageSender* actual_sender,
+        FILE* protocol_dump_file) :
+    m_ActualSender(actual_sender),
+    m_ProtocolDumpFile(protocol_dump_file),
+    m_ProtocolDumpTimeFormat("Y/M/D h:m:s.l")
+{
+    string pid_str(NStr::NumericToString((Int8) CProcess::GetCurrentPid()));
+
+    m_DumpInputHeaderFormat.assign(1, '\n');
+    m_DumpInputHeaderFormat.append(71 + pid_str.length(), '=');
+    m_DumpInputHeaderFormat.append("\n----- IN ------ %s (pid: ");
+    m_DumpInputHeaderFormat.append(pid_str);
+    m_DumpInputHeaderFormat.append(") -----------------------\n");
+
+    m_DumpOutputHeaderFormat.assign("----- OUT ----- %s (pid: ");
+    m_DumpOutputHeaderFormat.append(pid_str);
+    m_DumpOutputHeaderFormat.append(") -----------------------\n");
+}
+
+void CMessageDumperSender::DumpInputMessage(const CJsonNode& message)
+{
+    fprintf(m_ProtocolDumpFile, m_DumpInputHeaderFormat.c_str(),
+            GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
+    g_PrintJSON(m_ProtocolDumpFile, message);
+}
+
+void CMessageDumperSender::SendMessage(const CJsonNode& message)
+{
+    fprintf(m_ProtocolDumpFile, m_DumpOutputHeaderFormat.c_str(),
+            GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
+    g_PrintJSON(m_ProtocolDumpFile, message);
+
+    if (m_ActualSender != NULL)
+        m_ActualSender->SendMessage(message);
+}
+
+int CGridCommandLineInterfaceApp::Automation_PipeServer()
 {
     CPipe pipe;
 
@@ -536,30 +570,58 @@ int CGridCommandLineInterfaceApp::Cmd_Automate()
     setmode(fileno(stdout), O_BINARY);
 #endif
 
-    size_t bytes_read;
-
-    char read_buf[1024];
+    char read_buf[AUTOMATION_IO_BUFFER_SIZE];
+    char write_buf[AUTOMATION_IO_BUFFER_SIZE];
 
     CUTTPReader reader;
-    CJsonOverUTTPReader suttp_reader;
+    CUTTPWriter writer;
 
-    CAutomationProc proc(pipe, m_Opts.protocol_dump);
+    writer.Reset(write_buf, sizeof(write_buf));
+
+    CJsonOverUTTPReader json_reader;
+    CJsonOverUTTPWriter json_writer(pipe, writer);
+
+    CMessageSender message_sender(json_writer);
+
+    auto_ptr<CMessageDumperSender> dumper_and_sender;
+
+    if (IsOptionSet(eProtocolDump))
+        dumper_and_sender.reset(new CMessageDumperSender(&message_sender,
+                m_Opts.protocol_dump));
+
+    CAutomationProc proc(dumper_and_sender.get() != NULL ?
+            static_cast<IMessageSender*>(dumper_and_sender.get()) :
+            static_cast<IMessageSender*>(&message_sender));
+
+    {
+        CJsonNode greeting(CJsonNode::NewArrayNode());
+        greeting.PushString(GRID_APP_NAME);
+        greeting.PushInteger(PROTOCOL_VERSION);
+
+        message_sender.SendMessage(greeting);
+    }
+
+    size_t bytes_read;
 
     while (pipe.Read(read_buf, sizeof(read_buf), &bytes_read) == eIO_Success) {
         reader.SetNewBuffer(read_buf, bytes_read);
 
         CJsonOverUTTPReader::EParsingEvent ret_code =
-            suttp_reader.ProcessParsingEvents(reader);
+            json_reader.ProcessParsingEvents(reader);
 
         switch (ret_code) {
         case CJsonOverUTTPReader::eEndOfMessage:
             try {
-                CJsonNode reply(proc.ProcessMessage(suttp_reader.GetMessage()));
+                if (dumper_and_sender.get() != NULL)
+                    dumper_and_sender->DumpInputMessage(
+                            json_reader.GetMessage());
+
+                CJsonNode reply(proc.ProcessMessage(json_reader.GetMessage()));
 
                 if (!reply)
                     return 0;
 
-                proc.SendMessage(reply);
+                message_sender.SendMessage(reply);
             }
             catch (CAutomationException& e) {
                 switch (e.GetErrCode()) {
@@ -574,7 +636,7 @@ int CGridCommandLineInterfaceApp::Cmd_Automate()
                 proc.SendError(e.GetMsg());
             }
 
-            suttp_reader.Reset();
+            json_reader.Reset();
 
             /* FALL THROUGH */
 
@@ -587,4 +649,57 @@ int CGridCommandLineInterfaceApp::Cmd_Automate()
     }
 
     return 0;
+}
+
+#define DEBUG_CONSOLE_PROMPT ">>> "
+
+int CGridCommandLineInterfaceApp::Automation_DebugConsole()
+{
+    printf("[" GRID_APP_NAME " automation debug console; "
+            "protocol version " NCBI_AS_STRING(PROTOCOL_VERSION) "]\n"
+            "Press ^D or type \"exit\" (in double qoutes) to quit.\n"
+            "\n" DEBUG_CONSOLE_PROMPT);
+
+    char read_buf[AUTOMATION_IO_BUFFER_SIZE];
+
+    CMessageDumperSender dumper_and_sender(NULL, stdout);
+
+    CAutomationProc proc(&dumper_and_sender);
+
+    CNetScheduleStructuredOutputParser parser;
+
+    while (fgets(read_buf, sizeof(read_buf), stdin) != NULL) {
+        try {
+            CJsonNode input_message(parser.ParseArray(read_buf));
+
+            try {
+                dumper_and_sender.DumpInputMessage(input_message);
+
+                CJsonNode reply(proc.ProcessMessage(input_message));
+
+                if (!reply)
+                    return 0;
+
+                dumper_and_sender.SendMessage(reply);
+            }
+            catch (CException& e) {
+                proc.SendError(e.GetMsg());
+            }
+        }
+        catch (CStringException& e) {
+            printf("%*c syntax error\n", int(e.GetPos() +
+                    sizeof(DEBUG_CONSOLE_PROMPT) - 1), int('^'));
+        }
+        printf(DEBUG_CONSOLE_PROMPT);
+    }
+
+    puts("");
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_Automate()
+{
+    return IsOptionSet(eDebugConsole) ?
+            Automation_DebugConsole() : Automation_PipeServer();
 }

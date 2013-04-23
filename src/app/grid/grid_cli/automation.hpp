@@ -72,9 +72,9 @@ public:
     string NextString() {return GetString(NextNode());}
     string NextString(const string& default_value);
 
-    Int8 GetNumber(const CJsonNode& node);
-    Int8 NextNumber() {return GetNumber(NextNode());}
-    Int8 NextNumber(Int8 default_value);
+    Int8 GetInteger(const CJsonNode& node);
+    Int8 NextInteger() {return GetInteger(NextNode());}
+    Int8 NextInteger(Int8 default_value);
 
     bool GetBoolean(const CJsonNode& node);
     bool NextBoolean() {return GetBoolean(NextNode());}
@@ -128,17 +128,17 @@ inline string CArgArray::NextString(const string& default_value)
     return next_node ? GetString(next_node) : default_value;
 }
 
-inline Int8 CArgArray::GetNumber(const CJsonNode& node)
+inline Int8 CArgArray::GetInteger(const CJsonNode& node)
 {
     if (!node.IsInteger())
-        Exception("invalid argument type (expected a number)");
+        Exception("invalid argument type (expected an integer)");
     return node.GetInteger();
 }
 
-inline Int8 CArgArray::NextNumber(Int8 default_value)
+inline Int8 CArgArray::NextInteger(Int8 default_value)
 {
     CJsonNode next_node(NextNodeOrNull());
-    return next_node ? GetNumber(next_node) : default_value;
+    return next_node ? GetInteger(next_node) : default_value;
 }
 
 inline bool CArgArray::GetBoolean(const CJsonNode& node)
@@ -367,17 +367,21 @@ struct SNetScheduleServerAutomationObject :
 
 typedef CRef<CAutomationObject> TAutomationObjectRef;
 
+class IMessageSender
+{
+public:
+    virtual void SendMessage(const CJsonNode& message) = 0;
+};
+
 class CAutomationProc
 {
 public:
-    CAutomationProc(CPipe& pipe, FILE* protocol_dump);
+    CAutomationProc(IMessageSender* message_sender);
 
     TAutomationObjectRef CreateObject(const string& class_name,
             CArgArray& arg_array);
 
     CJsonNode ProcessMessage(const CJsonNode& message);
-
-    void SendMessage(const CJsonNode& message);
 
     void SendWarning(const string& warn_msg, TAutomationObjectRef source);
 
@@ -398,18 +402,9 @@ public:
 private:
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 
-    char m_WriteBuf[1024];
+    IMessageSender* m_MessageSender;
 
     Int8 m_Pid;
-
-    CPipe& m_Pipe;
-    CUTTPWriter m_Writer;
-    CJsonOverUTTPWriter m_JSONWriter;
-
-    FILE* m_ProtocolDumpFile;
-    string m_ProtocolDumpTimeFormat;
-    string m_DumpInputHeaderFormat;
-    string m_DumpOutputHeaderFormat;
 
     vector<TAutomationObjectRef> m_ObjectByIndex;
     typedef map<const void*, TAutomationObjectRef> TPtrToObjectRefMap;

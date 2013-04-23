@@ -98,7 +98,7 @@ static void PrintJSONNode(FILE* output_stream, CJsonNode node,
     case CJsonNode::eInteger:
         fputs(scalar_prefix, output_stream);
         Indent(output_stream, scalar_indent);
-        fprintf(output_stream, "%ld", (long) node.GetInteger());
+        fprintf(output_stream, "%lld", (long long) node.GetInteger());
         break;
     case CJsonNode::eDouble:
         fputs(scalar_prefix, output_stream);

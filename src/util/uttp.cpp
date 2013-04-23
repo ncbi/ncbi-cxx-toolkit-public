@@ -131,6 +131,38 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
     }
 }
 
+CUTTPReader::EStreamParsingEvent CUTTPReader::ReadRawData(size_t data_size)
+{
+    _ASSERT(m_State == eReadControlChars && "Can only switch "
+            "to raw data mode after reading a control character.");
+
+    if (m_BufferSize == 0) {
+        m_LengthAcc = data_size;
+        m_State = eReadChunk;
+        return eEndOfBuffer;
+    }
+
+    m_ChunkPart = m_Buffer;
+
+    if (m_BufferSize >= data_size) {
+        m_ChunkPartSize = data_size;
+        m_BufferSize -= data_size;
+        m_Buffer += data_size;
+        m_Offset += (off_t) data_size;
+        // The requested amount of data has been read;
+        // get back to reading control symbols.
+        m_State = eReadControlChars;
+        return eChunk;
+    } else {
+        m_ChunkPartSize = m_BufferSize;
+        m_Offset += (off_t) m_BufferSize;
+        m_LengthAcc = data_size - m_BufferSize;
+        m_BufferSize = 0;
+        m_State = eReadChunk;
+        return eChunkPart;
+    }
+}
+
 void CUTTPWriter::Reset(char* buffer,
     size_t buffer_size, size_t max_buffer_size)
 {
@@ -231,6 +263,28 @@ bool CUTTPWriter::SendNumber(Int8 number)
     m_ChunkPartSize = 0;
     m_OutputBufferSize = m_BufferSize;
     return false;
+}
+
+bool CUTTPWriter::SendRawData(const void* data, size_t data_size)
+{
+    _ASSERT(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
+        m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
+        "Must be in the state of filling the output buffer.");
+
+    char* free_buffer = m_Buffer + m_OutputBufferSize;
+    size_t free_buf_size = m_BufferSize - m_OutputBufferSize;
+
+    if (data_size < free_buf_size) {
+        memcpy(free_buffer, data, data_size);
+        m_OutputBufferSize += data_size;
+        return true;
+    } else {
+        memcpy(free_buffer, data, free_buf_size);
+        m_ChunkPartSize = data_size - free_buf_size;
+        m_ChunkPart = reinterpret_cast<const char*>(data) + free_buf_size;
+        m_OutputBufferSize = m_BufferSize;
+        return false;
+    }
 }
 
 bool CUTTPWriter::NextOutputBuffer()

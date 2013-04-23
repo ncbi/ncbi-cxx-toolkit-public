@@ -394,8 +394,12 @@ struct SOptionDefinition {
         "multiline", "Expect multiple lines of output.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eProtocolDump),
-        "protocol-dump", "Dump input and output messages of "
+        PROTOCOL_DUMP_OPTION, "Dump input and output messages of "
             "the automation protocol to the specified file.", {-1}},
+
+    {OPT_DEF(eSwitch, eDebugConsole),
+        "debug-console", "Start automation debugging session "
+            "(inhibits '--" PROTOCOL_DUMP_OPTION "').", {-1}},
 
     {OPT_DEF(eSwitch, eDumpNSNotifications),
         "dump-ns-notifications", "Suppress normal processing "
@@ -999,7 +1003,7 @@ struct SCommandDefinition {
         "This command starts " GRID_APP_NAME " as an automation "
         "server that can be used to interact with Grid objects "
         "through a Python module (ncbi.grid).",
-        {eProtocolDump, -1}},
+        {eProtocolDump, eDebugConsole, -1}},
 };
 
 #define TOTAL_NUMBER_OF_COMMANDS int(sizeof(s_CommandDefinitions) / \

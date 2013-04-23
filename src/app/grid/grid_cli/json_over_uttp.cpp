@@ -33,6 +33,8 @@
 
 #include "json_over_uttp.hpp"
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 
 struct SJsonNodeImpl : public CObject
@@ -271,11 +273,17 @@ bool CJsonNode::GetBoolean() const
 }
 
 CJsonOverUTTPReader::CJsonOverUTTPReader() :
+    m_State(eInitialState),
     m_CurrentNode(CJsonNode::NewArrayNode()),
-    m_ReadingChunk(false),
     m_HashValueIsExpected(false)
 {
 }
+
+#ifdef WORDS_BIGENDIAN
+#define DOUBLE_PREFIX 'D'
+#else
+#define DOUBLE_PREFIX 'd'
+#endif
 
 CJsonOverUTTPReader::EParsingEvent
     CJsonOverUTTPReader::ProcessParsingEvents(CUTTPReader& reader)
@@ -283,24 +291,51 @@ CJsonOverUTTPReader::EParsingEvent
     for (;;)
         switch (reader.GetNextEvent()) {
         case CUTTPReader::eChunkPart:
-            if (m_ReadingChunk)
-                m_CurrentChunk.append(reader.GetChunkPart(),
-                    reader.GetChunkPartSize());
-            else {
-                m_ReadingChunk = true;
+            switch (m_State) {
+            case eInitialState:
+                m_State = eReadingString;
                 m_CurrentChunk.assign(reader.GetChunkPart(),
-                    reader.GetChunkPartSize());
+                        reader.GetChunkPartSize());
+                break;
+            case eReadingString:
+                m_CurrentChunk.append(reader.GetChunkPart(),
+                        reader.GetChunkPartSize());
+                break;
+            default: /* case eReadingDouble: */
+                memcpy(m_DoublePtr, reader.GetChunkPart(),
+                        reader.GetChunkPartSize());
+                m_DoublePtr += reader.GetChunkPartSize();
             }
             break;
 
         case CUTTPReader::eChunk:
-            if (m_ReadingChunk) {
-                m_ReadingChunk = false;
-                m_CurrentChunk.append(reader.GetChunkPart(),
-                    reader.GetChunkPartSize());
-            } else
+            switch (m_State) {
+            case eInitialState:
                 m_CurrentChunk.assign(reader.GetChunkPart(),
-                    reader.GetChunkPartSize());
+                        reader.GetChunkPartSize());
+                break;
+            case eReadingString:
+                m_State = eInitialState;
+                m_CurrentChunk.append(reader.GetChunkPart(),
+                        reader.GetChunkPartSize());
+                break;
+            default: /* case eReadingDouble: */
+                m_State = eInitialState;
+                memcpy(m_DoublePtr, reader.GetChunkPart(),
+                        reader.GetChunkPartSize());
+                if (m_DoubleEndianness != DOUBLE_PREFIX)
+                    reverse(reinterpret_cast<char*>(&m_Double),
+                            reinterpret_cast<char*>(&m_Double + 1));
+                if (m_CurrentNode.IsArray())
+                    m_CurrentNode.PushDouble(m_Double);
+                else // The current node is eObject.
+                    if (m_HashValueIsExpected) {
+                        m_HashValueIsExpected = false;
+                        m_CurrentNode.SetDouble(m_HashKey, m_Double);
+                    } else
+                        return eHashKeyMustBeString;
+                continue;
+            }
             if (m_CurrentNode.IsArray())
                 m_CurrentNode.PushString(m_CurrentChunk);
             else // The current node is eObject.
@@ -315,7 +350,7 @@ CJsonOverUTTPReader::EParsingEvent
 
         case CUTTPReader::eControlSymbol:
             {
-                if (m_ReadingChunk)
+                if (m_State != eInitialState)
                     return eChunkContinuationExpected;
 
                 char control_symbol = reader.GetControlSymbol();
@@ -356,6 +391,48 @@ CJsonOverUTTPReader::EParsingEvent
                     m_NodeStack.pop_back();
                     break;
 
+                case 'D':
+                case 'd':
+                    switch (reader.ReadRawData(sizeof(double))) {
+                    default: /* case CUTTPReader::eEndOfBuffer: */
+                        m_State = eReadingDouble;
+                        m_DoubleEndianness = control_symbol;
+                        m_DoublePtr = reinterpret_cast<char*>(&m_Double);
+                        return eNextBuffer;
+                    case CUTTPReader::eChunkPart:
+                        m_State = eReadingDouble;
+                        m_DoubleEndianness = control_symbol;
+                        memcpy(&m_Double, reader.GetChunkPart(),
+                                reader.GetChunkPartSize());
+                        m_DoublePtr = reinterpret_cast<char*>(&m_Double) +
+                                reader.GetChunkPartSize();
+                        break;
+                    case CUTTPReader::eChunk:
+                        _ASSERT(reader.GetChunkPartSize() == sizeof(double));
+
+                        if (control_symbol == DOUBLE_PREFIX)
+                            memcpy(&m_Double, reader.GetChunkPart(), sizeof(double));
+                        else {
+                            const char* src = reader.GetChunkPart();
+                            char* dst = reinterpret_cast<char*>(&m_Double + 1);
+                            int count = sizeof(double);
+
+                            do
+                                *--dst = *src++;
+                            while (--count > 0);
+                        }
+
+                        if (m_CurrentNode.IsArray())
+                            m_CurrentNode.PushDouble(m_Double);
+                        else // The current node is eObject.
+                            if (m_HashValueIsExpected) {
+                                m_HashValueIsExpected = false;
+                                m_CurrentNode.SetDouble(m_HashKey, m_Double);
+                            } else
+                                return eHashKeyMustBeString;
+                    }
+                    break;
+
                 case 'Y':
                 case 'N':
                     {
@@ -390,7 +467,7 @@ CJsonOverUTTPReader::EParsingEvent
             break;
 
         case CUTTPReader::eNumber:
-            if (m_ReadingChunk)
+            if (m_State != eInitialState)
                 return eChunkContinuationExpected;
             if (m_CurrentNode.IsArray())
                 m_CurrentNode.PushInteger(reader.GetNumber());
@@ -448,7 +525,7 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
             } else
                 if (!SendNode(*m_CurrentOutputNode.m_ArrayIterator++))
                     return true;
-        } else { // The current node is eObject.
+        } else if (m_CurrentOutputNode.m_Node.IsObject()) {
             if (m_CurrentOutputNode.m_ObjectIterator ==
                     m_CurrentOutputNode.m_Node.GetObject().end()) {
                 m_CurrentOutputNode = m_OutputStack.back();
@@ -470,6 +547,12 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
                 if (!SendNode(m_CurrentOutputNode.m_ObjectIterator++->second))
                     return true;
             }
+        } else {
+            _ASSERT(m_CurrentOutputNode.m_Node.IsDouble());
+
+            m_OutputStack.pop_back();
+            if (!m_UTTPWriter.SendRawData(&m_Double, sizeof(m_Double)))
+                return true;
         }
 }
 
@@ -503,42 +586,38 @@ bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
         m_CurrentOutputNode.m_Node = node;
         m_CurrentOutputNode.m_ObjectIterator = node.GetObject().begin();
         m_SendHashValue = false;
-        if (!m_UTTPWriter.SendControlSymbol('{'))
-            return false;
-        break;
+        return m_UTTPWriter.SendControlSymbol('{');
 
     case CJsonNode::eArray:
         m_OutputStack.push_back(m_CurrentOutputNode);
         m_CurrentOutputNode.m_Node = node;
         m_CurrentOutputNode.m_ArrayIterator = node.GetArray().begin();
-        if (!m_UTTPWriter.SendControlSymbol('['))
-            return false;
-        break;
+        return m_UTTPWriter.SendControlSymbol('[');
 
     case CJsonNode::eString:
         {
             string str(node.GetString());
-            if (!m_UTTPWriter.SendChunk(str.data(), str.length(), false))
-                return false;
+            return m_UTTPWriter.SendChunk(str.data(), str.length(), false);
         }
-        break;
 
     case CJsonNode::eInteger:
-        if (!m_UTTPWriter.SendNumber(node.GetInteger()))
+        return m_UTTPWriter.SendNumber(node.GetInteger());
+
+    case CJsonNode::eDouble:
+        m_Double = node.GetDouble();
+        if (!m_UTTPWriter.SendControlSymbol(DOUBLE_PREFIX)) {
+            m_OutputStack.push_back(m_CurrentOutputNode);
+            m_CurrentOutputNode.m_Node = node;
             return false;
-        break;
+        }
+        return m_UTTPWriter.SendRawData(&m_Double, sizeof(m_Double));
 
     case CJsonNode::eBoolean:
-        if (!m_UTTPWriter.SendControlSymbol(node.GetBoolean() ? 'Y' : 'N'))
-            return false;
-        break;
+        return m_UTTPWriter.SendControlSymbol(node.GetBoolean() ? 'Y' : 'N');
 
-    case CJsonNode::eNull:
-        if (!m_UTTPWriter.SendControlSymbol('U'))
-            return false;
+    default: /* case CJsonNode::eNull: */
+        return m_UTTPWriter.SendControlSymbol('U');
     }
-
-    return true;
 }
 
 END_NCBI_SCOPE

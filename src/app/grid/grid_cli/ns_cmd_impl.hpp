@@ -48,12 +48,18 @@ void g_DetectTypeAndSet(CJsonNode& node,
 class CNetScheduleStructuredOutputParser
 {
 public:
-    CJsonNode Parse(const string& ns_output)
+    CJsonNode ParseObject(const string& ns_output)
     {
-        m_NSOutput = ns_output;
-        m_Ch = m_NSOutput.c_str();
+        m_Ch = (m_NSOutput = ns_output).c_str();
 
         return ParseObject('\0');
+    }
+
+    CJsonNode ParseArray(const string& ns_output)
+    {
+        m_Ch = (m_NSOutput = ns_output).c_str();
+
+        return ParseArray('\0');
     }
 
 private:
@@ -73,6 +79,7 @@ private:
     bool MoreNodes();
 
     CJsonNode ParseObject(char closing_char);
+    CJsonNode ParseArray(char closing_char);
     CJsonNode ParseValue();
 
     string m_NSOutput;
