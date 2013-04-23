@@ -398,7 +398,7 @@ struct SOptionDefinition {
             "the automation protocol to the specified file.", {-1}},
 
     {OPT_DEF(eSwitch, eDebugConsole),
-        "debug-console", "Start automation debugging session "
+        "debug-console", "Start an automation debugging session "
             "(inhibits '--" PROTOCOL_DUMP_OPTION "').", {-1}},
 
     {OPT_DEF(eSwitch, eDumpNSNotifications),
