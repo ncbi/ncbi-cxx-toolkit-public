@@ -2689,6 +2689,9 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
     // Collect all annotations from the annot
     ITERATE ( CSeq_annot_Info::TAnnotObjectInfos, aoit,
               annot_info.GetAnnotObjectInfos() ) {
+        if ( aoit->IsRemoved() ) {
+            continue;
+        }
         if ( !m_Selector->MatchType(*aoit) ) {
             continue;
         }
