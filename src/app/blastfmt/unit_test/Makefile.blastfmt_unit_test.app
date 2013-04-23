@@ -17,6 +17,7 @@ LIB_ = $(BLAST_FORMATTER_LIBS) w_hit_matrix gui_glmesa w_gl w_wx w_data \
 
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(OSMESA_LIBS) $(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(GLEW_LIBS) \
+           $(FTGL_LIBS) $(OPENGL_LIBS) \
            $(IMAGE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
            $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(ORIG_LIBS)
 

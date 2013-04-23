@@ -40,6 +40,10 @@
 #include <objmgr/util/sequence.hpp>
 
 #include <connect/services/netcache_api.hpp>
+#include <gui/opengl/ftglfontmanager.hpp>
+#include <gui/opengl/gltexturefont.hpp>
+#include <gui/opengl/glrender.hpp>
+#include <gui/opengl/glresmgr.hpp>
 #include "blast_hitmatrix.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -83,7 +87,8 @@ void CBlastHitMatrix::x_InitPort()
 CBlastHitMatrix::CBlastHitMatrix(const list< CRef< CSeq_align > > &seqAligns, 
                                  int height,
                                  int width,
-                                 CImageIO::EType format)
+                                 CImageIO::EType format,
+                                 const string& font_path)
 {
     ITERATE (CSeq_annot::TData::TAlign, iter, seqAligns) {
         CRef< CSeq_align > seq_align = *iter;
@@ -94,6 +99,9 @@ CBlastHitMatrix::CBlastHitMatrix(const list< CRef< CSeq_align > > &seqAligns,
     m_Format = format;
     m_FileOut = false;
     m_Thumbnail = false;
+
+    x_InitGraphics(font_path);
+    m_Renderer.reset(new CHitMatrixRenderer);
 }
 
 
@@ -149,11 +157,11 @@ void CBlastHitMatrix::x_PreProcess(void)
 
     x_InitPort();       
     
-    m_Renderer.ShowRulers(!m_Thumbnail);
-    m_Renderer.ShowGrid(!m_Thumbnail);
+    m_Renderer->ShowRulers(!m_Thumbnail);
+    m_Renderer->ShowGrid(!m_Thumbnail);
     CRgbaColor cl("236 255 243");
-    m_Renderer.SetBackgroundColor(cl);
-    m_Renderer.Update(m_DataSource.GetPointer(), m_Port);
+    m_Renderer->SetBackgroundColor(cl);
+    m_Renderer->Update(m_DataSource.GetPointer(), m_Port);
 }
 
 
@@ -162,18 +170,18 @@ void CBlastHitMatrix::x_PreProcess(void)
 void CBlastHitMatrix::x_Render(void)
 {
     if(m_Aligns.size() > 0) {
-        m_Renderer.Resize(m_Width, m_Height, m_Port);
+        m_Renderer->Resize(m_Width, m_Height, m_Port);
         if(m_Thumbnail) {
-            m_Renderer.GetBottomRuler().SetDisplayOptions(CRuler::fHideLabels);        
-            m_Renderer.GetLeftRuler().SetDisplayOptions(CRuler::fHideLabels);            
+            m_Renderer->GetBottomRuler().SetDisplayOptions(CRuler::fHideLabels);        
+            m_Renderer->GetLeftRuler().SetDisplayOptions(CRuler::fHideLabels);            
             //m_Renderer.SetBackGroundColor(CRgbaColor("211 223 245"));
             //m_Renderer.SetBackGroundColor(CRgbaColor("238 238 238"));
         }
         else {
-            m_Renderer.GetBottomRuler().SetDisplayOptions(CRuler::fShowTextLabel);        
-            m_Renderer.GetLeftRuler().SetDisplayOptions(CRuler::fShowTextLabel);
-            m_Renderer.GetBottomRuler().SetTextLabel(m_QueryID);        
-            m_Renderer.GetLeftRuler().SetTextLabel(m_SubjectID);
+            m_Renderer->GetBottomRuler().SetDisplayOptions(CRuler::fShowTextLabel);        
+            m_Renderer->GetLeftRuler().SetDisplayOptions(CRuler::fShowTextLabel);
+            m_Renderer->GetBottomRuler().SetTextLabel(m_QueryID);        
+            m_Renderer->GetLeftRuler().SetTextLabel(m_SubjectID);
         }
         
 
@@ -186,7 +194,7 @@ void CBlastHitMatrix::x_Render(void)
         m_Port.SetViewport(TVPRect(10, 10, m_Width, m_Height)); ///### this have to be eliminated
         m_Port.ZoomAll();
 
-        m_Renderer.Render(m_Port);
+        m_Renderer->Render(m_Port);
     }   
 }
 
@@ -221,6 +229,10 @@ bool CBlastHitMatrix::x_RenderImage(void)
 {
   bool success = false;
   try {
+         // Clear any previously used OpenGL states
+         CGlRender& gl = GetGl();
+         gl.Clear();
+
          x_PreProcess();
 
          m_Context.Reset(new CGlOsContext(m_Width, m_Height));
@@ -245,6 +257,51 @@ bool CBlastHitMatrix::x_RenderImage(void)
     return success;
 }
 
+void CBlastHitMatrix::x_InitGraphics(const string& font_path)
+{
+    try {
+        m_Context.Reset(new CGlOsContext(m_Width, m_Height));
+        m_Context->MakeCurrent();
+
+        GLEWContext  glew_context;
+        GLenum err = glewContextInit(&glew_context);
+        if (GLEW_OK != err) {
+            // Problem: Error creating glew context
+            _TRACE("Error creating glew context");
+        } else {
+            CGLGlewContext::GetInstance().SetGlewContext(&glew_context);
+            err = glewInit();
+            if (GLEW_OK != err) {
+                // Problem: glewInit failed, something is seriously wrong.
+                //   No extenstions will be available.
+                _TRACE("Error loading opengl extensions");
+            }
+        }
+
+        // initialize OpenGL fonts
+        CFtglFontManager::Instance().SetDeviceResolution(72);
+        // path to find font files (they can be copied from svn
+        // gbench/trunk/src/gui/res/share/gbench/fonts
+        CFtglFontManager::Instance().SetFontPath(font_path.empty() ? "./"
+                                                 : font_path);
+        CFtglFontManager::Instance().Clear();
+
+        CRef<CGlRender>  mgr = CGlResMgr::Instance().
+            GetRenderer( CGlResMgr::Instance().GetApiLevel());
+        if (mgr.IsNull()) {
+            LOG_POST(Error << "CGlRender object not available.");
+            NCBI_THROW(CException, eUnknown,
+                       string("no CGlRender object not available"));
+
+        }
+    }
+    catch (CException& e) {
+        m_ErrorMessage = "Error during initialization: " + e.GetMsg();
+    }
+    catch (...) {
+        m_ErrorMessage = "Error during rendering initialization: unknown error";
+    }
+}
 
 
 END_NCBI_SCOPE

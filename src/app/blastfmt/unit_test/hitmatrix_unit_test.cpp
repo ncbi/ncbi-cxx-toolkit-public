@@ -50,6 +50,9 @@
 
 USING_NCBI_SCOPE;
 
+// font files must be present in kFontPath + "/fonts"
+const string kFontPath = "data";
+
 BOOST_AUTO_TEST_SUITE(hitmatrix)
 BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileAcc)
 {
@@ -63,7 +66,8 @@ BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileAcc)
     
 
     auto_ptr<CBlastHitMatrix> blastHitMatrix
-        (new CBlastHitMatrix(fileSeqAlignSet->Get()));
+        (new CBlastHitMatrix(fileSeqAlignSet->Get(),
+                             600, 800, CImageIO::ePng, kFontPath));
     CTmpFile tmpfile;
     blastHitMatrix->SetFileName(tmpfile.GetFileName());
     blastHitMatrix->WriteToFile();
@@ -84,7 +88,8 @@ BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileFasta)
     
 
     auto_ptr<CBlastHitMatrix> blastHitMatrix
-        (new CBlastHitMatrix(fileSeqAlignSet->Get()));
+        (new CBlastHitMatrix(fileSeqAlignSet->Get(), 600, 800, CImageIO::ePng,
+                             kFontPath));
     CTmpFile tmpfile;
     blastHitMatrix->SetFileName(tmpfile.GetFileName());
     blastHitMatrix->WriteToFile();

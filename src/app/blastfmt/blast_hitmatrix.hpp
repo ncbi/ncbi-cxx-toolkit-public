@@ -89,10 +89,14 @@ public:
     ///@param height: image height
     ///@param width: image width
     ///@param format: image type (png, bmp etc)    
+    ///@param font_path: path to font files for rendering, the rendering
+    /// library will look for the fonts in font_path + "/fonts"
     CBlastHitMatrix(const list< CRef< CSeq_align > > &seqAligns,
-                                 int height = 600,
-                                 int width = 800,
-                                 CImageIO::EType format = CImageIO::ePng);
+                    int height = 600,
+                    int width = 800,
+                    CImageIO::EType format = CImageIO::ePng,
+                    const string& font_path = ""
+);
     ///Destructor    
     ~CBlastHitMatrix(){};
     
@@ -153,6 +157,9 @@ protected:
     ///Inits renderer display options and text labels
     void    x_Render(void);
 
+    ///Initialize rendering environment
+    void    x_InitGraphics(const string& font_path = "");
+
 private:    
     ///Object manager
     CRef<CObjectManager>    m_ObjMgr;
@@ -199,8 +206,7 @@ private:
     CGlPane m_Port;
 
     /// Renderer setup Parameter
-    CHitMatrixRenderer   m_Renderer;
-    //CBlastHitMatrixRenderer   m_Renderer;
+    auto_ptr<CHitMatrixRenderer>   m_Renderer;
 
     ///CGlOsContext context
     CRef <CGlOsContext> m_Context;
