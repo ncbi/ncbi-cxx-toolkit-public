@@ -494,19 +494,31 @@ public:
     virtual void Process(void);
     virtual void Cancel(void);
 private:
+    void x_Process(void);
     CServer_Connection* m_Connection;
 } ;
+
+
+void CServerConnectionRequest::x_Process(void)
+{
+    try {
+        m_Connection->OnSocketEvent(m_Event);
+    } catch (...) {
+        m_ConnPool.CloseConnection(m_Connection);
+        throw;
+    }
+}
 
 
 void CServerConnectionRequest::Process(void)
 {
     if (TParamServerCatchExceptions::GetDefault()) {
         try {
-            m_Connection->OnSocketEvent(m_Event);
+            x_Process();
         } NCBI_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
     }
     else {
-        m_Connection->OnSocketEvent(m_Event);
+        x_Process();
     }
     if (m_Event != eServIO_Inactivity  &&  m_Event != eServIO_Delete) {
         // Return socket to poll vector
