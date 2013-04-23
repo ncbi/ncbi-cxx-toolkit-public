@@ -186,7 +186,7 @@ public:
     }
     inline void CheckUserInterrupt(void) const
     {
-        if(m_Interrupt.Get()) NCBI_THROW(CProSplignException, CProSplignException::eUserInterrupt, "Interrupted by user" );
+        if(m_Interrupt.Get()) NCBI_THROW(CProSplignException, eUserInterrupt, "Interrupted by user" );
     }
 
 
