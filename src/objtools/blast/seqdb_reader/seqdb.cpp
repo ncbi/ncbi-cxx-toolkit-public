@@ -1354,11 +1354,11 @@ CSeqDB::ESeqType
 ParseMoleculeTypeString(const string& s)
 {
     CSeqDB::ESeqType retval = CSeqDB::eUnknown;
-    if (NStr::StartsWith(s, "prot")) {
+    if (NStr::StartsWith(s, "prot", NStr::eNocase)) {
         retval = CSeqDB::eProtein;
-    } else if (NStr::StartsWith(s, "nucl")) {
+    } else if (NStr::StartsWith(s, "nucl", NStr::eNocase)) {
         retval = CSeqDB::eNucleotide;
-    } else if (NStr::StartsWith(s, "guess")) {
+    } else if (NStr::StartsWith(s, "guess", NStr::eNocase)) {
         retval = CSeqDB::eUnknown;
     } else {
         _ASSERT("Unknown molecule for BLAST DB" != 0);
@@ -1374,7 +1374,9 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
     vector<string> extn;
     SeqDB_GetFileExtensions((seq_type == CSeqDB::eProtein), extn);
 
-    CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files);
+    try { 
+        CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files);
+    } catch (...) {}    // ignore any errors here
     ITERATE(vector<string>, f, db_files) {
         ITERATE(vector<string>, e, extn) {
             CNcbiOstrstream oss;

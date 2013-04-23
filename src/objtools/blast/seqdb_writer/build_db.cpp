@@ -1010,8 +1010,11 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     
     m_LogFile << "New DB name:   " << dbname << endl;
     m_LogFile << "New DB title:  " << title << endl;
-    m_LogFile << "Sequence type: "
-              << (is_protein ? "Protein" : "Nucleotide") << endl;
+    const string mol_type(is_protein ? "Protein" : "Nucleotide");
+    m_LogFile << "Sequence type: " << mol_type << endl;
+    if (DeleteBlastDb(dbname, ParseMoleculeTypeString(mol_type))) {
+        m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+    }
     
     CWriteDB::ESeqType seqtype =
         (is_protein ? CWriteDB::eProtein : CWriteDB::eNucleotide);
@@ -1053,8 +1056,11 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     
     m_LogFile << "New DB name:   " << dbname << endl;
     m_LogFile << "New DB title:  " << title << endl;
-    m_LogFile << "Sequence type: "
-              << (is_protein ? "Protein" : "Nucleotide") << endl;
+    const string mol_type(is_protein ? "Protein" : "Nucleotide");
+    m_LogFile << "Sequence type: " << mol_type << endl;
+    if (DeleteBlastDb(dbname, ParseMoleculeTypeString(mol_type))) {
+        m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+    }
     
     CWriteDB::ESeqType seqtype =
         (is_protein ? CWriteDB::eProtein : CWriteDB::eNucleotide);
