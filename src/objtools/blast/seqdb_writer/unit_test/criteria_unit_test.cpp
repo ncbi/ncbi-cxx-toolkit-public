@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(Test_Criteria_Subclasses)
     {
         CCriteria_REFSEQ crit;
         BOOST_CHECK(crit.GetLabel() == string("refseq"));
-        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eUNASSIGNED);
+        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eREFSEQ);
 
         SDIRecord sdiRecord;
         sdiRecord.acc = "?B_123456";                // wrong
