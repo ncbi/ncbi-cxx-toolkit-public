@@ -75,9 +75,6 @@ class CJsonNode
     const TArray& GetArray() const;
     TArray& GetArray();
 
-    CJsonNode& operator [](size_t index) {return GetArray()[index];}
-    const CJsonNode& operator [](size_t index) const {return GetArray()[index];}
-
     void PushNode(CJsonNode::TInstance value);
     void PushString(const string& value);
     void PushInteger(Int8 value);
@@ -89,8 +86,6 @@ class CJsonNode
 
     const CJsonNode::TObject& GetObject() const;
     CJsonNode::TObject& GetObject();
-
-    CJsonNode& operator [](const string& key) {return GetObject()[key];}
 
     void SetNode(const string& key, CJsonNode::TInstance value);
     void SetString(const string& key, const string& value);

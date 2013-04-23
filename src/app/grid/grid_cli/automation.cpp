@@ -449,7 +449,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         object = NULL;
     } else if (command == "echo") {
         CJsonNode reply(message);
-        reply[0] = CJsonNode::NewBooleanNode(true);
+        reply.GetArray()[0] = CJsonNode::NewBooleanNode(true);
         return reply;
     } else
         arg_array.Exception("unknown command");
