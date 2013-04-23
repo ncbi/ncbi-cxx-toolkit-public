@@ -1374,9 +1374,8 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
     vector<string> extn;
     SeqDB_GetFileExtensions((seq_type == CSeqDB::eProtein), extn);
 
-    try { 
-        CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files);
-    } catch (...) {}    // ignore any errors here
+    try { CSeqDB::FindVolumePaths(dbpath, seq_type, db_files, &alias_files); }
+    catch (...) {}    // ignore any errors from the invocation above
     ITERATE(vector<string>, f, db_files) {
         ITERATE(vector<string>, e, extn) {
             CNcbiOstrstream oss;

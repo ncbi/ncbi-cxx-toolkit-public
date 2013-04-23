@@ -708,7 +708,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     }
     
     if (parse_ids) {
-        iflags |= CFastaReader::fAllSeqIds;
+        iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
     } else {
         iflags |= CFastaReader::fNoParseID;
     }
@@ -739,10 +739,12 @@ CConstRef<CBioseq> CFastaBioseqSource::GetNext()
                 start += kKeyword.size();
                 pos = string(e.what()).substr(start, end-start);
             }
-            ERR_POST(Error << "Error while reading input at position " << pos);
-            ERR_POST(Error << "Aborting processing prematurely.");
-            // additional handling needed
-            throw(e);
+            string msg = e.GetMsg();
+            const string extra_string("CFastaReader: ");
+            if (NStr::StartsWith(msg, extra_string)) {
+                msg.erase(0, extra_string.size());
+            }
+            NCBI_THROW(CWriteDBException, eFileErr, msg);
         }
         
         if (entry.NotEmpty()) {
