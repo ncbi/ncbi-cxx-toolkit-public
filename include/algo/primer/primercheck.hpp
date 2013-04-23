@@ -219,8 +219,8 @@ public:
     ///Default is 20 if not specified
     ///@param number: the number
     ///
-    void SetNumNonSpecificPrimer(int number) {
-        m_NumNonSpecificPrimer = number;
+    void SetNumNonSpecificTargets(int number) {
+        m_NumNonSpecificTarget = number;
     }
 
     ///the length of region at the 3' end of primer during which the mismatched are
@@ -231,39 +231,39 @@ public:
         m_MismatchRegionLength3End = length;
     }
     
-    ///check the specificity of the primer pair. Note that this funtion can
+    ///check the specificity of the primer pairs. Note that this funtion can
     ///can be called repeatedly with different primer_info after constructor call, 
     ///assuming the input seqalign is the same. Subsequent calls will be very fast
     ///if the primer window has been checked before as the primer match info is
     ///cached
     ///@param primer_info: the primer to be checked for specificity
-    ///@return: true if the primer pair is specific to the input template. false otherwise.
+   
     ///
-    bool CheckSpecificity(const SPrimerInfo& primer_info);
+    void CheckSpecificity(const vector<SPrimerInfo>& primer_info_list);
 
     ///return the non-specific hits that the primer pairs can amplify
     ///
-    const vector<SPrimerHitInfo>& GetNonSpecificPrimerList() const {
+    const vector<vector<SPrimerHitInfo> >& GetNonSpecificTargetList() const {
         return m_PrimerHit;
     }
 
     ///return the hits the primer pair can amplify but users want to ignore for specificity
     //checking
     ///
-    const vector<SPrimerHitInfo>& GetAllowedPrimerList() const {
+    const vector<vector<SPrimerHitInfo> >& GetAllowedTargetList() const {
         return m_AllowedHit;
     }
 
     ///retrun the hit whose seqid is the same as the template hit itself.  
     ///
-    const vector<SPrimerHitInfo>& GetSelfPrimerList() const {
+    const vector<vector<SPrimerHitInfo> >& GetSelfTargetList() const {
         return m_SelfHit;
     }
 
     ///return the hits that represent the transcript variant from the same gene
     ///as the input pcr template.
     ///
-    const vector<SPrimerHitInfo>& GetTranscriptVariantPrimerList() const {
+    const vector<vector<SPrimerHitInfo> >& GetTranscriptVariantTargetList() const {
         return m_VariantHit;
     }
 
@@ -271,19 +271,22 @@ public:
 private:
     
     ///the information about primer to be checked
-    const SPrimerInfo* m_PrimerInfo;
+    const vector<SPrimerInfo>* m_PrimerInfoList;
     
+    //current primer
+    const SPrimerInfo* m_PrimerInfo;
+
     ///the non-specific hit for the primer pair
-    vector<SPrimerHitInfo> m_PrimerHit;
+    vector<vector<SPrimerHitInfo> > m_PrimerHit;
 
     ///the hit represent the input template
-    vector<SPrimerHitInfo> m_SelfHit;
+    vector<vector<SPrimerHitInfo> > m_SelfHit;
 
     ///the hit that user choose to ingnore for specificity
-    vector<SPrimerHitInfo> m_AllowedHit;
+    vector<vector<SPrimerHitInfo> > m_AllowedHit;
 
     ///the hits represent the transcript variants from the same gene as the input template
-    vector<SPrimerHitInfo> m_VariantHit;
+    vector<vector<SPrimerHitInfo> >m_VariantHit;
 
     ///bioseq handle for input bioseq
     const CBioseq_Handle& m_TemplateHandle;
@@ -420,7 +423,7 @@ private:
                               const vector<SHspInfo*>& hsp_list);
     
     
-    void x_SortPrimerHit(vector<SPrimerHitInfo>& primer_hit_list);
+    void x_SortPrimerHit(vector<vector<SPrimerHitInfo> >& primer_hit_list_list);
 
     bool x_SequencesMappedToSameTarget(CSeq_id::EAccessionInfo hit_type,
                                        const CSeq_align& left_align,
@@ -456,6 +459,8 @@ private:
     ///the requested pcr length for non-specific template
     TSeqPos m_SpecifiedProductLen;
     
+    int m_CurrentPrimerIndex;
+
     ///the requested length margin  for non-specific template
     TSeqPos m_ProductLenMargin;
 
@@ -584,8 +589,8 @@ private:
     ///the length or region at the 3' end for checking mismatches
     TSeqPos m_MismatchRegionLength3End;
 
-    ///the number non-specific primer pairs to return
-    int m_NumNonSpecificPrimer;
+    ///the number non-specific targets to return
+    int m_NumNonSpecificTarget;
    
     bool m_UseITree;
 

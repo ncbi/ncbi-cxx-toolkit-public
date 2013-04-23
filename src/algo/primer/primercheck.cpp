@@ -95,12 +95,13 @@ COligoSpecificityCheck::COligoSpecificityCheck(const CBioseq_Handle& template_ha
                             scope.GetBioseqHandle(input_seqalign.Get().front()
                                                   ->GetSeq_id(0)).GetBioseqLength());
     }
-    m_NumNonSpecificPrimer = 20;
+    m_NumNonSpecificTarget = 20;
     m_FeatureScope = NULL;
     const CRef<CSeq_id> wid
         = FindBestChoice(template_handle.GetBioseqCore()->GetId(),
                          CSeq_id::WorstRank);
     m_TemplateType = wid->IdentifyAccession();
+    
 }
 
 COligoSpecificityCheck::~COligoSpecificityCheck()
@@ -986,7 +987,7 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     //self hits
     if (template_hit_same_id && left_template_aln_overlap && right_template_aln_overlap) {
         
-        m_SelfHit.push_back(info);
+        m_SelfHit[m_CurrentPrimerIndex].push_back(info);
     } else if (m_TemplateHandle.GetSeqId()->Which() != CSeq_id::e_Local && 
                ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
                 (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
@@ -1001,14 +1002,14 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
                !template_hit_same_id &&
                x_SequencesMappedToSameTarget(hit_type, left_align, right_align)) {
         //try mapping the template
-        m_SelfHit.push_back(info);
+        m_SelfHit[m_CurrentPrimerIndex].push_back(info);
         cerr << "self hit by mapping" << endl;
     } else {
         bool hit_assigned = false;
         //allowed hits
         ITERATE(vector<TSeqPos>, iter, m_AllowedSeqidIndex) {
             if (index == *iter) {
-                m_AllowedHit.push_back(info);
+                m_AllowedHit[m_CurrentPrimerIndex].push_back(info);
                 hit_assigned  = true;
                 break;
             }
@@ -1025,7 +1026,7 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
                 ITERATE(IGeneInfoInput::TGeneIdList, iter1, master_gene_id_list) {
                     ITERATE(IGeneInfoInput::TGeneIdList, iter2, subj_gene_id_list) {
                         if (*iter1 == *iter2){
-                            m_VariantHit.push_back(info);
+                            m_VariantHit[m_CurrentPrimerIndex].push_back(info);
                             hit_assigned = true;
                             break;
                         }
@@ -1038,7 +1039,8 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
         }
         //non specific hit
         if (!hit_assigned) {
-            m_PrimerHit.push_back(info);
+             
+            m_PrimerHit[m_CurrentPrimerIndex].push_back(info);
         } 
     }
     
@@ -1170,7 +1172,7 @@ void COligoSpecificityCheck::x_AnalyzeTwoPrimers(TSortedHsp& sorted_hsp,
     int HspOverlappingWithLeftPrimerMinusStrand_size;
     int HspOverlappingWithRightPrimerMinusStrand_size;
 
-
+  
     x_FindOverlappingHSP(m_HspOverlappingWithLeftPrimer,
                          HspOverlappingWithLeftPrimer_size,
                          m_HspOverlappingWithRightPrimer,
@@ -1179,8 +1181,7 @@ void COligoSpecificityCheck::x_AnalyzeTwoPrimers(TSortedHsp& sorted_hsp,
                          m_PrimerInfo->right,
                          eNa_strand_plus, hit_index, sorted_hsp.first); 
 
-  
-       
+
     x_FindOverlappingHSP(m_HspOverlappingWithLeftPrimerMinusStrand,
                          HspOverlappingWithLeftPrimerMinusStrand_size,
                          m_HspOverlappingWithRightPrimerMinusStrand, 
@@ -1205,7 +1206,8 @@ void COligoSpecificityCheck::x_AnalyzeTwoPrimers(TSortedHsp& sorted_hsp,
     } else {
         analyze_plus_strand_first = false;
     }
-    
+      
+
     if (analyze_plus_strand_first) {
         //analyze plus strand
         x_AnalyzeLeftAndRightPrimer(sorted_hsp.first,
@@ -1236,6 +1238,7 @@ void COligoSpecificityCheck::x_AnalyzeTwoPrimers(TSortedHsp& sorted_hsp,
                                     HspOverlappingWithRightPrimer_size,
                                     hit_index);
     }
+
     //only need to check the plus strand case as one primer cases are palindrom 
     x_AnalyzeOnePrimer(sorted_hsp.first, sorted_hsp.second,
                        HspOverlappingWithLeftPrimer_size,
@@ -1315,7 +1318,7 @@ x_AnalyzeLeftAndRightPrimer(const vector<SHspInfo*>& hsp_list,
         if (hit_strand == eNa_strand_minus) {
             left_primer_hsp_index = m_HspOverlappingWithLeftPrimerMinusStrand[i].index; 
         }
-        if ((int)(m_PrimerHit.size()) >= m_NumNonSpecificPrimer){
+        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_NumNonSpecificTarget){
             break;
         }
         CRange<TSeqPos> left_primer_master_overlap = 
@@ -1499,7 +1502,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
     for (int i = 0; i < HspOverlappingWithLeftPrimer_size; i ++) {
        
         int left_hsp_index = m_HspOverlappingWithLeftPrimer[i].index;
-        if ((int)(m_PrimerHit.size()) >= m_NumNonSpecificPrimer){
+        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_NumNonSpecificTarget){
             break;
         }
         
@@ -1633,7 +1636,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
 
     for (int i = 0; i < HspOverlappingWithRightPrimer_size; i ++) {
         int left_hsp_index = m_HspOverlappingWithRightPrimer[i].index;
-        if ((int)(m_PrimerHit.size()) >= m_NumNonSpecificPrimer){
+        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_NumNonSpecificTarget){
             break;
         }
        
@@ -1769,17 +1772,18 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
 
 void COligoSpecificityCheck::x_AnalyzePrimerSpecificity()
 {   
-    
-    m_PrimerHit.clear();
-    m_SelfHit.clear();
-    m_VariantHit.clear();
-    m_AllowedHit.clear();
-    m_SpecifiedProductLen = m_PrimerInfo->right.GetTo() - m_PrimerInfo->left.GetFrom() + 1; 
-   
-    for (TSeqPos i = 0; i < m_SortHit.size(); i ++) {
-
-        x_AnalyzeTwoPrimers(m_SortHit[i], i);
        
+    for (TSeqPos i = 0; i < m_SortHit.size(); i ++) {
+     
+        for (int j = 0; j < (int)m_PrimerInfoList->size(); j ++) {
+           
+            m_CurrentPrimerIndex = j;
+            
+            m_PrimerInfo = &((*m_PrimerInfoList)[j]);
+            m_SpecifiedProductLen = m_PrimerInfo->right.GetTo() - m_PrimerInfo->left.GetFrom() + 1;
+            x_AnalyzeTwoPrimers(m_SortHit[i], i);
+            
+        }
     }
 }
 
@@ -1832,13 +1836,15 @@ static bool SortPrimerHitByMismatchAscending(const vector<COligoSpecificityCheck
     return mismatch1 < mismatch2;
 }
 
-void COligoSpecificityCheck::x_SortPrimerHit(vector<SPrimerHitInfo>& primer_hit_list){
+void COligoSpecificityCheck::x_SortPrimerHit(vector<vector<SPrimerHitInfo> >& primer_hit_list_list){
+    for (int i = 0; i < (int) primer_hit_list_list.size(); i ++){
+        vector<COligoSpecificityCheck::SPrimerHitInfo>* primer_hit_list = &primer_hit_list_list[i];
     //group hit with the same subject sequence together
     vector<vector<SPrimerHitInfo*>* > result;
     CConstRef<CSeq_id> previous_id;
     vector<SPrimerHitInfo*>* temp;
 
-    NON_CONST_ITERATE(vector<COligoSpecificityCheck::SPrimerHitInfo>, iter, primer_hit_list) {
+    NON_CONST_ITERATE(vector<COligoSpecificityCheck::SPrimerHitInfo>, iter, *primer_hit_list) {
         const CSeq_id& cur_id = iter->aln.first->GetSeq_id(1);
        
         if(previous_id.Empty()) {
@@ -1870,18 +1876,54 @@ void COligoSpecificityCheck::x_SortPrimerHit(vector<SPrimerHitInfo>& primer_hit_
         (**iter).clear();
         delete *iter;
     }
-    primer_hit_list.clear();
-    primer_hit_list = temp2;
+    primer_hit_list->clear();
+    *primer_hit_list = temp2;
+    }
 }
 
-bool COligoSpecificityCheck::CheckSpecificity(const SPrimerInfo& primer_info)
+void COligoSpecificityCheck::CheckSpecificity(const vector<SPrimerInfo>& primer_info_list)
 {
-   
-    m_PrimerInfo = &primer_info;
+    //clear before processing each batch
+    if(m_PrimerHit.size() > 0){
+        for (int i = 0; i < (int) m_PrimerHit.size(); i ++) {
+            m_PrimerHit[i].clear();
+        }
+        m_PrimerHit.clear();
+    }
+    if(m_SelfHit.size() > 0){
+        for (int i = 0; i < (int) m_SelfHit.size(); i ++) {
+            m_SelfHit[i].clear();
+        }
+        m_SelfHit.clear();
+    }
+    if(m_VariantHit.size() > 0){
+        for (int i = 0; i < (int) m_VariantHit.size(); i ++) {
+            m_VariantHit[i].clear();
+        }
+        m_VariantHit.clear();
+    }
+    if(m_AllowedHit.size() > 0){
+        for (int i = 0; i < (int) m_AllowedHit.size(); i ++) {
+            m_AllowedHit[i].clear();
+        }
+        m_AllowedHit.clear();
+    }
+    
+
+  
+    m_PrimerInfoList = &primer_info_list;
+    for (int i = 0; i < (int) m_PrimerInfoList->size(); i ++) {
+        vector<SPrimerHitInfo> temp;
+        m_PrimerHit.push_back(temp);
+        m_SelfHit.push_back(temp);
+        m_VariantHit.push_back(temp);
+        m_AllowedHit.push_back(temp);
+
+    }
    
     x_AnalyzePrimerSpecificity();
     x_SortPrimerHit(m_PrimerHit);
-    return m_PrimerHit.empty();
+
 }
 
 
