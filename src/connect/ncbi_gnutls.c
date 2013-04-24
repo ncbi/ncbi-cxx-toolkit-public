@@ -156,7 +156,6 @@ static const int kGnuTlsCertPrio[] = {
     0
 };
 static const int kGnuTlsCompPrio[] = {
-    GNUTLS_COMP_LZO,
     GNUTLS_COMP_ZLIB,
     GNUTLS_COMP_NULL,
     0
