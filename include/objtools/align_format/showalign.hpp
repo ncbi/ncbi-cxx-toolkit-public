@@ -271,6 +271,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         string alignFeatureLinkTmpl; ///< Template for displaying  align features link -ALN_FEATURES_LINK         
         string alignRowTmpl;    ///<Template for displayin actual pairwise alignment - BLAST_ALIGN_ROWS
         string alignRowTmplLast; ///<Template for displayin actual last pairwise alignment - BLAST_ALIGN_ROWS_LST
+
     };
        
     /// Set functions
@@ -712,7 +713,7 @@ protected:
     CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(int giToUse,string accession,int linkout,
         int taxid,const list<CRef<objects::CSeq_id> >& ids);
 
-    string x_GetUrl(const objects::CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid);
+    string x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,int giToUse);
     void x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo,const list< CRef<objects::CBlast_def_line > > &bdl_list,CRef<objects::CSeq_id>  &seqID,int lnkDispPrarms);
 
     ///get dumpgnl url to sequence record
