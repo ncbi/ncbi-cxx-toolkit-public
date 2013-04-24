@@ -463,14 +463,6 @@ bool CGene::IsAlternative(const CGeneModel& a) const
     }
 
     if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) { 
-
-        if(size() == 1 && front()->Exons().size() == 1 && !RealCdsLimits().IntersectingWith(a.RealCdsLimits())) {   // one-exon gene without variants
-            for(unsigned int j = 0; j < a.Exons().size(); ++j) {
-                if(Include(a.Exons()[j].Limits(),RealCdsLimits()))   // one exon model, CDS completely inside an exon UTR
-                    return true;
-            }
-        }
-
         CAlignMap amap(a.Exons(), a.FrameShifts(), a.Strand(), a.GetCdsInfo().Cds());
         TIVec acds_map(amap.FShiftedLen(a.GetCdsInfo().Cds()),0);
         for(unsigned int j = 0; j < a.Exons().size(); ++j) {
@@ -492,9 +484,6 @@ bool CGene::IsAlternative(const CGeneModel& a) const
                     if(p >= 0)
                         cds_map[p] = k;
                 }
-
-                if(a.Exons().size() == 1 && !RealCdsLimits().IntersectingWith(a.RealCdsLimits()) && Include((*it)->Exons()[j].Limits(),a.RealCdsLimits()))  // one exon model, CDS completely inside an exon UTR
-                    return true;
             }
         
             for(unsigned int i = 0; i < acds_map.size(); ) {
@@ -828,23 +817,6 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                     }
                 } 
 
-                if(!allow_connection && algn.ReadingFrame().NotEmpty()) {
-                    int one_exons_in_utr = 0;
-                    ITERATE(list<list<CGene>::iterator>, k, included_in) {
-                        const CGene& g = **k;
-                        if(g.RealCdsLimits().NotEmpty() && g.size() == 1 && g.front()->Exons().size() == 1 && !g.RealCdsLimits().IntersectingWith(algn.RealCdsLimits())) {
-                            for(unsigned int j = 0; j < algn.Exons().size(); ++j) {
-                                if(Include(algn.Exons()[j].Limits(),g.RealCdsLimits())) { // one exon model, CDS completely inside an exon UTR
-                                    ++one_exons_in_utr;
-                                    break;
-                                }
-                            }                            
-                        }
-                    }
-                    if(one_exons_in_utr == (int)included_in.size()-1)
-                        allow_connection = true;  
-                }
-
                 if(allow_connection) {
                     CGene& gene = *included_in.front();
                     gene.Insert(algn);
@@ -882,7 +854,6 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                         }
                     }
                 }
-
             }
         }
     }
@@ -2459,9 +2430,11 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
         double ms = GoodCDNAScore(chain);
 
-        if(chain.GetCdsInfo().ProtReadingFrame().Empty())
+        bool has_trusted = chain.HasTrustedEvidence();
+
+        if(!has_trusted)
             RemovePoorCds(chain,ms);
-        if(chain.Score() != BadScore() && (chain.GetCdsInfo().ProtReadingFrame().NotEmpty() || chain.RealCdsLen() >= minscor.m_minlen)) {
+        if(chain.Score() != BadScore() && (has_trusted || chain.RealCdsLen() >= minscor.m_minlen)) {
             mi.MarkIncludedForChain();
 
 #ifdef _DEBUG 
@@ -3049,7 +3022,7 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
 
 bool CChain::HasTrustedEvidence() const {
     ITERATE (TContained, i, m_members) {
-        if(!(*i)->m_align->TrustedProt().empty())
+        if(!(*i)->m_align->TrustedProt().empty() || (!(*i)->m_align->TrustedmRNA().empty() && (*i)->m_cds_info->ProtReadingFrame().NotEmpty()))
             return true;
     }
 
