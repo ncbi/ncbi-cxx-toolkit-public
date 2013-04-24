@@ -171,63 +171,121 @@ static Str2MapStr2Strs biosrc2qualvlu_nm;
 Str2QualVlus qual_nm2qual_vlus;
 
 // CBioseq
-/*
-void CBioseq_SUSPECT_RULE :: FindSuspectProductNamesCallback()
+bool CBioseq_on_SUSPECT_RULE :: CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type) 
+{
+  if (name_type != eSuspectNameType_NoOrganelleForProkaryote) return true;
+  else if (!HasTaxonomyID (*biosrc_p)) return TRUE;
+  else if (IsBiosrcEukaryotic(*biosrc_p)) return false;
+  else return true;
+};
+
+string CBioseq_on_SUSPECT_RULE :: ClickableItemTypeForNameCat (ESuspectNameType k)
+{
+  if (k == eSuspectNameType_Typo) return "DISC_PRODUCT_NAME_TYPO";
+  else if (k == eSuspectNameType_QuickFix) return "DISC_PRODUCT_NAME_QUICKFIX";
+  else return "DISC_SUSPECT_PRODUCT_NAME";
+};
+
+//FindSuspectProductNamesCallback()
+void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList() 
 {
    const CSeq_feat* feat_in_use = 0;
    const CBioSource* biosrc_p = 0;
+   unsigned i, sz;
+   string pattern, test_name, test_desc;
+   sz = SusProdTermsLen();
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
 
      // add coding region rather than protein 
-     if (sf_dt.GetSubtype == CSeqFeatData::eSubtype_prot) {
+     if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_prot) {
          feat_in_use = GetCDSForProduct(m_bioseq_hl);
          // find BioSource, to check whether we want to run all categories
          biosrc_p = GetBioSource (m_bioseq_hl);
      }
      else continue;
 
-     ITERATE (Str2Strs, sit, thisInfo.suspect_prod_terms) {
-       if (!CategoryOkForBioSource(biosrc_p, (sit->second)[1])) continue;
-       if (feat_in_use.CanGetName()) {
-          ITERATE (list <string>, nit, feat_in_use.GetName()) {
-             if ((sit->second)[0] == "BeginsWithPunct") && BeginsWithPunch(sit->first))
-              thisInfo.test_item_list["Sus_Prod"].push_back(GetDiscItemText(*feat_in_use));
+     for (i = 0; i < sz; i++) {
+       const SuspectProductNameData& this_term = GetSusProdTerm(i);
+       pattern = this_term.pattern; 
+       if (!CategoryOkForBioSource(biosrc_p, this_term.fix_type)) continue;
+       if (prot.CanGetName()) {
+          ITERATE (list <string>, nit, prot.GetName()) {
+            if ( this_term.search_func && this_term.search_func(pattern, *nit)) {
+                 test_name = ClickableItemTypeForNameCat(this_term.fix_type);
+                 if (this_term.search_func == CTestAndRepData :: EndsWithPattern)
+                     test_desc = "end";
+                 else if (this_term.search_func == CTestAndRepData :: StartsWithPattern)
+                     test_desc = "start";
+                 else test_desc = "contain";
+                 thisInfo.test_item_list[GetName()].push_back(
+                         test_name + "$" + NStr::UIntToString((unsigned)this_term.fix_type) + "@" 
+                         + pattern + "#" + test_desc + "%" + GetDiscItemText(*feat_in_use));
+            }
+            // only check the first name
+            if (!(*nit).empty()) break;
           }
        }
      }
    }
 };
 
-void CBioseq_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
+void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
 {
-   FindSuspectProductNamesCallback();    
+   Str2Strs test2ls;
+   GetTestItemList(c_item->item_list, test2ls);
+   c_item->item_list.clear();
+   
+   string test_name, pattern, desc;
+   Str2Strs name_cat, feat_ls, desc2feats;
+   ESuspectNameType name_type;
+   CRef <CClickableItem> name_cat_citem (new CClickableItem);
+   ITERATE (Str2Strs, it, test2ls) {
+     test_name = it->first;
+     name_cat.clear();
+     GetTestItemList(it->second, name_cat, "@");
+     ITERATE (Str2Strs, nit, name_cat) {  // name_cat
+       name_type = (ESuspectNameType)(NStr::StringToUInt(nit->first));
+       feat_ls.clear();
+       GetTestItemList(nit->second, feat_ls, "#");
+       name_cat_citem.Reset(new CClickableItem);
+       name_cat_citem->setting_name = test_name;
+       ITERATE (Str2Strs, fit, feat_ls) {
+          pattern = fit->first;
+          desc2feats.clear(); 
+          GetTestItemList(fit->second, desc2feats, "%");
+          ITERATE (Str2Strs, dit, desc2feats) {
+            desc = dit->first;
+            if (desc == "contain") {
+                desc = GetContainsComment(nit->second.size(), "protein name")
+                           + " '" + pattern + "'";
+            }
+            else desc = GetNoun(dit->second.size(), "protein name") + " "
+                              + GetOtherComment(dit->second.size(), desc, desc + 's')
+                              + " with " + pattern;
+            AddSubcategories(name_cat_citem, test_name, dit->second, desc, kEmptyStr);
+          } 
+       }
+     } 
+     AddSubcategories(c_item, test_name, name_cat_citem->item_list,
+         thisInfo.suspect_name_category_names[(unsigned)name_type], kEmptyStr); 
+   }
+   c_item->description = GetContainsComment(c_item->item_list.size(), "protein name")
+                           + "suspect phrase or characters";
 };
 
-void CBioseq_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
-{
-};
-*/
 
-static const CBioseq_on_SUSPECT_RULE::SuspectProductNameData suspect_product_terms[] = {
-  { "beginning with period, comma, or hyphen" , 0, eSuspectNameType_InappropriateSymbol, kEmptyStr, 0 } ,
-  { "begins or ends with quotes", CTestAndRepData::BeginsOrEndsWithQuotes, eSuspectNameType_QuickFix, NULL, CTestAndRepData::RemoveBeginningAndEndingQuotes } ,
-  { "binding" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
-  { "domain", CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
-  { "like" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
-  { "motif" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
-  { "related" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
-  { "repeat", CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL },
+void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
+{
+   
 };
 
 void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
 {
-/*
-   m_bioseq_hl = *(thisInfo.scope->GetBioseqHandle(bioseq));
-   if (thisInfo.suspect_prod_rule->Get().empty()) FindSuspectProductNamesWithStaticList();
+   m_bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);  // necessary?
+   if (thisInfo.suspect_prod_rules->Get().empty()) FindSuspectProductNamesWithStaticList();
    else FindSuspectProductNamesWithRules();
-*/
 };
 
 /*

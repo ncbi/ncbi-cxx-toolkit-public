@@ -210,6 +210,8 @@ namespace DiscRepNmSpc{
            static map <EMolecule_type, CMolInfo::EBiomol>   moltp_biomol;
            static map <ETechnique_type, CMolInfo::ETech>    techtp_mitech;
            static Str2Strs                                  suspect_prod_terms;
+           static vector <string>                           s_putative_replacements;
+           static vector <string>                           suspect_name_category_names;
      };
 
 /*

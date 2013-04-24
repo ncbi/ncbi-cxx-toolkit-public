@@ -136,6 +136,8 @@ vector <string>                         CDiscRepInfo :: months;
 map <EMolecule_type, CMolInfo::EBiomol> CDiscRepInfo :: moltp_biomol;
 map <ETechnique_type, CMolInfo::ETech>  CDiscRepInfo :: techtp_mitech;
 Str2Strs                                CDiscRepInfo :: suspect_prod_terms;
+vector <string>                         CDiscRepInfo :: s_putative_replacements;
+vector <string>                         CDiscRepInfo :: suspect_name_category_names;
 
 void CDiscRepApp::Init(void)
 {
@@ -680,33 +682,15 @@ cerr << "222can get\n";
      }
    }
 
-   // ini of static suspect product list
-   ifstream ifile("suspect_product_terms");
-   if (!ifile)
-       NCBI_THROW(CException, eUnknown, "missing static suspect product name list");
-   size_t pos, pos2;
-   string pattern;
-   if (!ifile.eof()) std::getline(ifile, strtmp);
-   while (!ifile.eof()) {
-       std::getline(ifile, strtmp);
-       // pattern
-       pos = strtmp.find('"') + 1;
-       pos2 = strtmp.find('"', pos);
-       pattern = strtmp.substr(pos, pos2 - pos);
+   // ini. of s_putative_replacements
+   strtmp = reg.Get("StringVecIni", "SPutativeReplacements");
+   thisInfo.s_putative_replacements 
+            = NStr::Tokenize(strtmp, ",", thisInfo.s_putative_replacements);
 
-       pos = strtmp.find(',', pos2);
-       strtmp = strtmp.substr(pos+1);
-       arr.clear();
-       arr.reserve(4);
-       arr = NStr::Tokenize(strtmp, ",", arr);
-
-       // sch_func
-       thisInfo.suspect_prod_terms[pattern].push_back(NStr::TruncateSpaces(arr[0]));
-
-       // fix_type 
-       thisInfo.suspect_prod_terms[pattern].push_back(NStr::TruncateSpaces(arr[1]));
-   }
-   ifile.close();
+   // ini. of suspect_name_category_names
+   strtmp = reg.Get("StringVecIni", "SuspectNameCategoryNames");
+   thisInfo.suspect_name_category_names
+        = NStr::Tokenize(strtmp, ",", thisInfo.suspect_name_category_names);
 }
 
 void CDiscRepApp :: GetOrgModSubtpName(unsigned num1, unsigned num2, map <string, COrgMod::ESubtype>& orgmodnm_subtp)
@@ -717,8 +701,6 @@ void CDiscRepApp :: GetOrgModSubtpName(unsigned num1, unsigned num2, map <string
        if (!strtmp.empty()) orgmodnm_subtp[strtmp] = (COrgMod::ESubtype)i;
     }
 };
-
-
 
 
 void CDiscRepApp :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)

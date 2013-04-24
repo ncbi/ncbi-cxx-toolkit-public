@@ -173,6 +173,9 @@ namespace DiscRepNmSpc {
      eSuspectNameType_UseProtein,
      eSuspectNameType_Max
   };
+  typedef bool (*FSuspectProductNameSearchFunc) (const string& str1, const string& str2);
+  typedef void (*FSuspectProductNameReplaceFunc) (const string& str, const string& str2, 
+                                                   const string& str3, const CSeq_feat& feat);
 
   class CSuspectRuleCheck : public CObject
   {
@@ -223,19 +226,20 @@ namespace DiscRepNmSpc {
                                                    string& first, string& second);
       static bool IsStringInSpan(const string& str, const string& first, const string& second);
       static bool StringIsPositiveAllDigits(const string& str);
-      bool StringMayContainPlural(const string& str);
-      bool ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n);
-      bool SkipBracketOrParen(const unsigned& idx, string& start);
-      char GetClose(char bp);
-      bool ContainsThreeOrMoreNumbersTogether(const string& search);
-      bool PrecededByOkPrefix (const string& search, const size_t& p);
-      bool PrecededByPrefix (const string& search, const size_t& cp, const string& prefix);
-      bool InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start);
-      bool FollowedByFamily(const string& str, size_t& p);
-      bool StringContainsUnderscore(const string& search);
-      bool IsPrefixPlusNumbers(const string& prefix, const string& search);
-      bool IsPropClose(const string& str, char open_p);
-      bool StringContainsUnbalancedParentheses(const string& search);
+      static bool StringMayContainPlural(const string& str);
+      static bool ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n);
+      static bool SkipBracketOrParen(const unsigned& idx, string& start);
+      static char GetClose(char bp);
+      static bool ContainsThreeOrMoreNumbersTogether(const string& search);
+      static bool PrecededByOkPrefix (const string& search, const size_t& p);
+      static bool PrecededByPrefix (const string& search, const size_t& cp, const string& prefix);
+      static bool InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start);
+      static bool FollowedByFamily(const string& str, size_t& p);
+      static bool StringContainsUnderscore(const string& search);
+      static bool IsPrefixPlusNumbers(const string& prefix, const string& search);
+      static bool IsPropClose(const string& str, char open_p);
+      static bool StringContainsUnbalancedParentheses(const string& search);
+      static bool ProductContainsTerm(const string& pattern, const string& search);
 
       // object ~ rule/constraint
       bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, 
@@ -406,6 +410,8 @@ namespace DiscRepNmSpc {
       static bool IsAllCaps(const string& str);
       static bool IsAllLowerCase(const string& str);
       static bool IsAllPunctuation(const string& str);
+   
+      static string digit_str, alpha_str;
   };
 
   class CTestAndRepData : public CObject
@@ -423,32 +429,31 @@ namespace DiscRepNmSpc {
 
       virtual string GetName() const =0;
 
-      typedef bool (*SuspectProductNameSearchFunc) (const string& str1, const string& str2);
-      typedef void (*SuspectProductNameReplaceFunc) (const string& str);
-
-      static bool AllCapitalLetters(const string& str1, const string& str2);
-      static bool BeginsWithPunct(const string& str1, const string& str2);
-      static bool BeginsOrEndsWithQuotes(const string& str1, const string& str2);
-      static bool ContainsDoubleSpace(const string& str1, const string& str2);
-      static bool ContainsTwoSetsOfBracketsOrParentheses(const string& str1, const string& str2);
-      static bool ContainsWholeWord(const string& str1, const string& str2);
-      static bool ContainsWholeWordCaseSensitive(const string& str1, const string& str2);
-      static bool ContainsUnbalancedParentheses(const string& str1, const string& str2);
-      static bool ContainsUnderscore(const string& str1, const string& str2);
-      static bool ContainsUnknownName(const string& str1, const string& str2);
-      static bool EndsWithFold(const string& str1, const string& str2);
-      static bool EndsWithPattern(const string& str1, const string& str2);
-      static bool EndsWithPunct(const string& str1, const string& str2);
-      static bool IsSingleWord(const string& str1, const string& str2);
-      static bool IsSingleWordOrWeaselPlusSingleWord(const string& str1, const string& str2);
-      static bool IsTooLong(const string& str1, const string& str2);
-      static bool MayContainPlural(const string& str1, const string& str2);
-      static bool NormalSearch(const string& str1, const string& str2);
-      static bool PrefixPlusNumbersOnly(const string& str1, const string& str2);
-      static bool ProductContainsTerm(const string& str1, const string& str2);
-      static bool StartsWithPattern(const string& str1, const string& str2);
-      static bool StartsWithPutativeReplacement(const string& str1, const string& str2);
-      static bool ThreeOrMoreNumbersTogether(const string& str1, const string& str2);
+      static bool AllCapitalLetters(const string& pattern, const string& search);
+      static bool BeginsWithPunct(const string& pattern, const string& search);
+      static bool BeginsOrEndsWithQuotes(const string& pattern, const string& search);
+      static bool ContainsDoubleSpace(const string& pattern, const string& search);
+      static bool ContainsTwoSetsOfBracketsOrParentheses(const string& pattern, 
+                                                                     const string& search);
+      static bool ContainsWholeWord(const string& pattern, const string& search);
+      static bool ContainsWholeWordCaseSensitive(const string& pattern, const string& search);
+      static bool ContainsUnbalancedParentheses(const string& pattern, const string& search);
+      static bool ContainsUnderscore(const string& pattern, const string& search);
+      static bool ContainsUnknownName(const string& pattern, const string& search);
+      static bool EndsWithFold(const string& pattern, const string& search);
+      static bool EndsWithPattern(const string& pattern, const string& search);
+      static bool EndsWithPunct(const string& pattern, const string& search);
+      static bool IsSingleWord(const string& pattern, const string& search);
+      static bool IsSingleWordOrWeaselPlusSingleWord(const string& pattern, 
+                                                                  const string& search);
+      static bool IsTooLong(const string& pattern, const string& search);
+      static bool MayContainPlural(const string& pattern, const string& search);
+      static bool NormalSearch(const string& pattern, const string& search);
+      static bool PrefixPlusNumbersOnly(const string& pattern, const string& search);
+      static bool ProductContainsTerm(const string& pattern, const string& search);
+      static bool StartsWithPattern(const string& pattern, const string& search);
+      static bool StartsWithPutativeReplacement(const string& pattern, const string& search);
+      static bool ThreeOrMoreNumbersTogether(const string& pattern, const string& search);
 
       static void HaemReplaceFunc(const string& str, const string& str2, 
                                              const string& str3, const CSeq_feat& feat) {};
@@ -539,6 +544,7 @@ namespace DiscRepNmSpc {
       bool HasLineage(const CBioSource& biosrc, const string& type);
       bool IsBiosrcEukaryotic(const CBioSource& biosrc);
       bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc=true);
+      bool HasTaxonomyID(const CBioSource& biosec);
       void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
       void AddSubcategories(CRef <CClickableItem>& c_item, const string& setting_name, 
            const vector <string>& itemlist, const string& desc1, const string& desc2, 
@@ -1953,26 +1959,35 @@ namespace DiscRepNmSpc {
   class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData
   {
     public:
+      CBioseq_on_SUSPECT_RULE ();
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) {};
-      virtual string GetName() const { return "try";};
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("DISC_SUSPECT_PRODUCT_NAME");};
 
-      typedef  bool (*SuspectProductNameSearchFunc) (const string& str1, const string& str2);
-      typedef void (*SuspectProductNameReplaceFunc) (const string& str, const string& str2, 
-                                                   const string& str3, const CSeq_feat& feat);
-
-     struct SuspectProductNameData {
-         string pattern;
-         SuspectProductNameSearchFunc search_func;
+      struct SuspectProductNameData {
+         const char* pattern;
+         FSuspectProductNameSearchFunc search_func;
          ESuspectNameType fix_type;
-         string replace_phrase;
-         SuspectProductNameReplaceFunc replace_func;
-     };
+         const char* replace_phrase;
+         FSuspectProductNameReplaceFunc replace_func;
+      };
  
     protected:
-      const CBioseq_Handle* m_bioseq_hl;
+      CBioseq_Handle m_bioseq_hl;
+      Str2Strs m_feature_list;
+      SuspectProductNameData suspect_prod_terms[];
+
+      bool CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type);
+      void FindSuspectProductNamesCallback();
+      void FindSuspectProductNamesWithStaticList();
+      void FindSuspectProductNamesWithRules();
+      unsigned SusProdTermsLen() 
+          { return sizeof(suspect_prod_terms)/sizeof(SuspectProductNameData); };
+      const SuspectProductNameData& GetSusProdTerm(unsigned i)
+          { return suspect_prod_terms[i]; };
+      string ClickableItemTypeForNameCat (ESuspectNameType k);
   };
 
   class CBioseq_on_tax_def :  public CBioseqTestAndRepData

@@ -83,6 +83,9 @@ using namespace sequence;
 static string strtmp;
 static CDiscRepInfo thisInfo;
 
+string CDiscRepUtil::digit_str("0123456789");
+string CDiscRepUtil::alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
 CBioseq_Handle CSuspectRuleCheck::m_bioseq_hl;
 
 string CSuspectRuleCheck :: GetFieldValue(const CCGPSetData& cgp, const CSeq_feat& feat, ECDSGeneProt_field val, const CString_constraint* str_cons)
@@ -1189,11 +1192,9 @@ bool CSuspectRuleCheck :: GetSpanFromHyphenInString(const string& str, const siz
    return rval;
 };
 
-static string digit_str("0123456789");
-static string alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 bool CSuspectRuleCheck :: StringIsPositiveAllDigits(const string& str)
 {
-   if (str.find_first_not_of(digit_str) != string::npos) return false;
+   if (str.find_first_not_of(CDiscRepUtil::digit_str) != string::npos) return false;
    else return true;
 };
 
@@ -1219,7 +1220,7 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
     }
   } 
   else if (StringIsPositiveAllDigits(second)) {
-    prefix_len = first.find_first_of(digit_str) + 1;
+    prefix_len = first.find_first_of(CDiscRepUtil::digit_str) + 1;
 
     new_str = str.substr(prefix_len - 1);
     new_first = first.substr(prefix_len - 1);
@@ -1261,11 +1262,11 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
         /* determine whether there is a suffix */
         size_t idx1, idx2, idx_str;
         string suf1, suf2, sub_str;
-        idx1 = first.find_first_not_of(digit_str);
+        idx1 = first.find_first_not_of(CDiscRepUtil::digit_str);
         suf1 = first.substr(prefix_len + idx1);
-        idx2 = second.find_first_not_of(digit_str);
+        idx2 = second.find_first_not_of(CDiscRepUtil::digit_str);
         suf2 = second.substr(prefix_len + idx2);
-        idx_str = str.find_first_not_of(digit_str);
+        idx_str = str.find_first_not_of(CDiscRepUtil::digit_str);
         sub_str = str.substr(prefix_len + idx_str);
         if (suf1 == suf2 && suf1 == sub_str) {
           /* suffixes match */
@@ -1287,10 +1288,10 @@ bool CSuspectRuleCheck :: IsStringInSpanInList (const string& str, const string&
 {
   if (list.empty() || str.empty()) return false;
 
-  size_t idx = str.find_first_not_of(alpha_str);
+  size_t idx = str.find_first_not_of(CDiscRepUtil::alpha_str);
   if (idx == string::npos) return false;
 
-  idx = str.substr(idx).find_first_not_of(digit_str);
+  idx = str.substr(idx).find_first_not_of(CDiscRepUtil::digit_str);
 
   /* find ranges */
   size_t hyphen = list.find('-');
@@ -1610,7 +1611,7 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
     if (isdigit (search[p])) {
       if (PrecededByOkPrefix(search, p)
              || InWordBeforeCytochromeOrCoenzyme (p, search)) {
-        p += search.substr(p).find_first_not_of(digit_str) - 1;
+        p += search.substr(p).find_first_not_of(CDiscRepUtil::digit_str) - 1;
         num_digits = 0;
       }
       else {
@@ -1653,7 +1654,7 @@ bool CSuspectRuleCheck :: IsPrefixPlusNumbers(const string& prefix, const string
   pattern_len = prefix.size();
   if (pattern_len > 0 && !NStr::EqualCase(search, 0, pattern_len, prefix)) return false;
 
-  size_t digit_len = search.substr(pattern_len).find_first_not_of(digit_str);
+  size_t digit_len = search.substr(pattern_len).find_first_not_of(CDiscRepUtil::digit_str);
   if (digit_len && (pattern_len + digit_len) == search.size()) return true;
   else return false;
 };
@@ -1683,9 +1684,20 @@ bool CSuspectRuleCheck :: StringContainsUnbalancedParentheses(const string& sear
      }
      pos ++;
   }
-
   return false;
 };
+
+bool CSuspectRuleCheck :: ProductContainsTerm(const string& pattern, const string& search)
+{
+  /* don't bother searching for c-term or n-term if product name contains "domain" */
+  if (NStr::FindNoCase(search, "domain") != string::npos) return false;
+
+  size_t pos = NStr::FindNoCase(search, pattern);
+  /* c-term and n-term must be either first word or separated from other word by space, 
+    num, or punct */
+  if (pos != string::npos && (!pos || !isalpha (search[pos-1]))) return true;
+  else return false;
+}
 
 bool CSuspectRuleCheck :: MatchesSearchFunc(const string& str, const CSearch_func& func)
 {
@@ -1715,16 +1727,7 @@ bool CSuspectRuleCheck :: MatchesSearchFunc(const string& str, const CSearch_fun
          }
          else return false;
       case CSearch_func::e_Has_term:  
-        {
-          // ProductContainsTerm(func.GetHas_term(), str);
-          /* don't bother searching for c-term or n-term if product name contains "domain" */
-          if (NStr::FindNoCase(str, "domain") != string::npos) return false;
-          size_t pos = NStr::FindNoCase(str, func.GetHas_term());
-          /* c-term and n-term must be either first word or separated from other word by space
-             , num, or punct */
-          if (pos != string::npos && (!pos || !isalpha (str[pos-1]))) return true;
-          else return false;
-        }
+        return ProductContainsTerm(func.GetHas_term(), str);
       default: break;
   }
   return false; 

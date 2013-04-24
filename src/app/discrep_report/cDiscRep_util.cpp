@@ -150,74 +150,182 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 
 // CTestAndRepData
-bool CTestAndRepData :: AllCapitalLetters(const string& str1, const string& str2)
-{ return true;
+bool CTestAndRepData :: AllCapitalLetters(const string& pattern, const string& search)
+{ 
+  if (search.empty()) return false;
+  if (search.find_first_of(CDiscRepUtil::alpha_str) == string::npos) return false;
+  return (CDiscRepUtil::IsAllCaps(search));
 }
-bool CTestAndRepData :: BeginsWithPunct(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: BeginsWithPunct(const string& pattern, const string& search)
+{ 
+  if (search.empty()) return false;
+  if (search[0] == '.' || search[0] == ',' || search[0] == '-' || search[0] == '_' 
+                                                  || search[0] == ':' || search[0] == '/') 
+    return true;
+  else return false;
 }
-bool CTestAndRepData :: BeginsOrEndsWithQuotes(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: BeginsOrEndsWithQuotes(const string& pattern, const string& search)
+{ 
+  if (search.empty()) return false;
+  if (search[0] == '\'' || search[0] == '"') return true;
+  else {
+    unsigned len = search.size();
+    if ((len > 1) && (search[len - 1] == '\'' || search[len - 1] == '"')) 
+      return true;
+    else return false;
+  }
 }
-bool CTestAndRepData :: ContainsDoubleSpace(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsDoubleSpace(const string& pattern, const string& search)
+{
+  if (search.empty()) return false;
+  if (search.find("  ") != string::npos) return true;
+  else return false;
 }
-bool CTestAndRepData :: ContainsTwoSetsOfBracketsOrParentheses(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsTwoSetsOfBracketsOrParentheses(const string& pattern, const string& search)
+{ 
+   return CSuspectRuleCheck::ContainsNorMoreSetsOfBracketsOrParentheses (search, 2);
 }
-bool CTestAndRepData :: ContainsWholeWord(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsWholeWord(const string& pattern, const string& search)
+{
+  if (DoesStringContainPhrase(search, pattern, false, true)) return true;
+  else return false;
 }
-bool CTestAndRepData :: ContainsWholeWordCaseSensitive(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsWholeWordCaseSensitive(const string& pattern, const string& search)
+{ 
+  if (DoesStringContainPhrase (search, pattern, true, true)) return true;
+  else return false;
 }
-bool CTestAndRepData :: ContainsUnbalancedParentheses(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsUnbalancedParentheses(const string& pattern, const string& search)
+{ 
+   return CSuspectRuleCheck :: StringContainsUnbalancedParentheses(search);
 }
-bool CTestAndRepData :: ContainsUnderscore(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsUnderscore(const string& pattern, const string& search)
+{ 
+   return CSuspectRuleCheck :: StringContainsUnderscore(search);
 }
-bool CTestAndRepData :: ContainsUnknownName(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ContainsUnknownName(const string& pattern, const string& search)
+{
+  unsigned len = search.size();
+  if (NStr::FindNoCase(search, pattern, 0, len) != string::npos
+           && NStr::FindNoCase(search, "protein of unknown function", 0, len) == string::npos
+           && NStr::FindNoCase(search, "domain of unknown function", 0, len) == string::npos)
+    return true;
+  else return false;
 }
-bool CTestAndRepData :: EndsWithFold(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: EndsWithFold(const string& pattern, const string& search)
+{ 
+  if (search.empty()) return false;
+  unsigned len = search.size();
+  if (len < 4) return false;
+  strtmp = search.substr(len-5);
+  if (NStr::EqualNocase(strtmp, "fold")) {
+    if (strtmp == "folD" || strtmp == "FolD") return false;
+    else return true;
+  }
+  else return false;
 }
-bool CTestAndRepData :: EndsWithPattern(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: EndsWithPattern(const string& pattern, const string& search)
+{ 
+  unsigned phrase_len = pattern.size();
+  unsigned len = search.size();
+
+  if (len >= phrase_len && NStr::EqualNocase(search.substr(len - phrase_len-1), pattern))
+      return true;
+  else return false;
 }
-bool CTestAndRepData :: EndsWithPunct(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: EndsWithPunct(const string& pattern, const string& search)
+{
+  unsigned len = search.size();
+  char last_ch = search[len - 1];
+  if (last_ch == '.' || last_ch == ',' || last_ch == '-' || last_ch == '_' 
+                                                       || last_ch == ':' || last_ch == '/')
+    return true;
+  else return false;
 }
-bool CTestAndRepData :: IsSingleWord(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: IsSingleWord(const string& pattern, const string& search)
+{
+  if (NStr::EqualNocase(search, pattern)) return true;
+  else return false;
 }
-bool CTestAndRepData :: IsSingleWordOrWeaselPlusSingleWord(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: IsSingleWordOrWeaselPlusSingleWord(const string& pattern, const string& search)
+{
+  unsigned len;
+  if (NStr::EqualNocase(search, pattern)) return true;
+  else {
+    ITERATE (vector <string>, it, thisInfo.weasels) {
+       len = (*it).size();
+       if (NStr::EqualNocase(search, 0, len, *it)
+              && search.find(" ", len) != string::npos
+              && search.substr(search.find(" ", len)) == pattern) return true;    
+    }
+    return false;
+  }
 }
-bool CTestAndRepData :: IsTooLong(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: IsTooLong(const string& pattern, const string& search)
+{ 
+  if (NStr::FindNoCase(search, "bifunctional") != string::npos 
+                         || NStr::FindNoCase(search, "multifunctional") != string::npos)
+       return false;
+  else if (search.size() > 100) return true;
+  else return false;
 }
-bool CTestAndRepData :: MayContainPlural(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: MayContainPlural(const string& pattern, const string& search)
+{ 
+    return CSuspectRuleCheck :: StringMayContainPlural (search);
 }
-bool CTestAndRepData :: NormalSearch(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: NormalSearch(const string& pattern, const string& search)
+{
+  if (NStr::FindNoCase(search, pattern) != string::npos) return true;
+  else return false;
 }
-bool CTestAndRepData :: PrefixPlusNumbersOnly(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: PrefixPlusNumbersOnly(const string& pattern, const string& search)
+{
+   return CSuspectRuleCheck :: IsPrefixPlusNumbers (pattern, search);
 }
-bool CTestAndRepData :: ProductContainsTerm(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ProductContainsTerm(const string& pattern, const string& search)
+{ 
+   return CSuspectRuleCheck::ProductContainsTerm( pattern, search);
 }
-bool CTestAndRepData :: StartsWithPattern(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: StartsWithPattern(const string& pattern, const string& search)
+{
+  unsigned phrase_len = pattern.size();
+  unsigned len = search.size();
+
+  if (len >= phrase_len && NStr::EqualNocase(search,0, phrase_len, pattern)) return true;
+  else return false;
 }
-bool CTestAndRepData :: StartsWithPutativeReplacement(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: StartsWithPutativeReplacement(const string& pattern, const string& search)
+{
+  ITERATE (vector <string>, it, thisInfo.s_putative_replacements) {
+     if (StartsWithPattern( *it, search)) return true;
+  }
+  return false;
 }
-bool CTestAndRepData :: ThreeOrMoreNumbersTogether(const string& str1, const string& str2)
-{ return true;
+
+bool CTestAndRepData :: ThreeOrMoreNumbersTogether(const string& pattern, const string& search)
+{
+   return CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether (search);
 }
 
 bool CTestAndRepData :: AllVecElesSame(const vector <string> arr)
@@ -494,8 +602,14 @@ bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& 
 };
 
 
+bool CTestAndRepData :: HasTaxonomyID(const CBioSource& biosrc)
+{
+   ITERATE (vector <CRef <CDbtag> >, it, biosrc.GetOrg().GetDb())
+       if ((*it)->GetType() == CDbtag::eDbtagType_taxon) return true;
+   return false;
+};
 
-bool CDiscRepUtil :: IsAllCaps(const string& str)
+bool CDiscRepUtil :: IsAllCaps(const string& str)  // may include # etc non-character
 {
   string up_str = NStr::ToUpper(const_cast <string&> (str));
   if (up_str == str) return true;
