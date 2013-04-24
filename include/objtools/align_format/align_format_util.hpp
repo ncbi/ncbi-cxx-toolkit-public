@@ -180,6 +180,10 @@ static const char kSeqViewerUrlNonGi[] = "http://www.ncbi.nlm.nih.gov/projects/s
 
 static const char kCustomLinkTemplate[] = "<a href=\"<@custom_url@>\" class=\"<@custom_cls@>\" target=\"<@custom_trg@>\" title=\"<@custom_title@>\"><@custom_lnk_displ@></a>"; 
 static const char kCustomLinkTitle[]="Show <@custom_report_type@> report for <@seqid@>";
+
+static const char kGenericLinkTemplate[] = "<a title=\"Show report for <@seqid@>\" <@cssInf@>href=\"<@url@>\" ><@seqid@>"; 
+
+
 ///Sub-sequence
 // .ncbirc alias: ENTREZ_SUBSEQ
 
@@ -1077,6 +1081,9 @@ public:
     ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
     ///@param ids: CBioseq::TId object        
     static string GetIDUrl(SSeqURLInfo *seqUrlInfo,
+                            const objects::CBioseq::TId* ids);                            
+
+    static string GetFullIDLink(SSeqURLInfo *seqUrlInfo,
                             const objects::CBioseq::TId* ids);                            
 
     ///Create URL for seqid that goes to entrez or trace
