@@ -676,7 +676,7 @@ string CCommentItem::GetStringForRefTrack
          oss << s;
      }}
 
-    const static string kRefSeqGeneLink = "<a href=\"http://www.ncbi.nlm.nih.gov/RefSeq/RSG\">RefSeqGene</a>";
+    const static string kRefSeqGeneLink = "<a href=\"http://www.ncbi.nlm.nih.gov/refseq/rsg/\">RefSeqGene</a>";
     const static string kRefSeqGene = "RefSeqGene";
 
     /// check for a concomitant RefSeqGene item
