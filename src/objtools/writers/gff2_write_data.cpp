@@ -306,15 +306,6 @@ bool CGffWriteRecord::CorrectLocation(
             *m_peStrand = interval.GetStrand();
         }
     }
-
-    unsigned int parentStart = parent.m_uSeqStart;
-    unsigned int parentStop = parent.m_uSeqStop;
-    if (m_uSeqStart < parentStart  &&  m_uSeqStart+seqLength <= parentStop) {
-        m_uSeqStart += seqLength;
-    }
-    if (m_uSeqStop < parentStart  &&  m_uSeqStop+seqLength <= parentStop) {
-        m_uSeqStop += seqLength;
-    }
     return true; 
 }
 

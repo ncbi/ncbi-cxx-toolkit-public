@@ -175,19 +175,6 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
             break;
         } 
     }
-    //unsigned int lowest = sublocs.front()->GetFrom();
-    //for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-        //CSeq_interval& subint = **it;
-        //shift entire intervals into virtual space as necessary to maintain
-        //  proper ordering
-        //if (subint.IsSetFrom()  &&  subint.GetFrom() < lowest) {
-        //    subint.SetFrom(subint.GetFrom() + len);
-        //}
-        //if (subint.IsSetTo()  &&  subint.GetTo() < lowest) {
-        //    subint.SetTo(subint.GetFrom() + len);
-        //}
-    //}
-    //fl new circular coordinate handling ends here <<<
     if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
         (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
         sublocs.erase(it_floor);
