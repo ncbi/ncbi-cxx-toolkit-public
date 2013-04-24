@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/services/netschedule_api.hpp>
+#include <corelib/request_ctx.hpp>
 
 
 #include "ns_command_arguments.hpp"
@@ -160,7 +161,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
                 ip = val;
                 if (val.empty())
                     ip = peer_socket.GetPeerAddress(eSAF_IP);
-                GetDiagContext().SetDefaultClientIP(ip);
+                CDiagContext::GetRequestContext().SetClientIP(ip);
             }
             break;
         case 'j':
@@ -218,7 +219,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
             }
             else if (key == "sid") {
                 sid = val;
-                GetDiagContext().SetDefaultSessionID(NStr::URLDecode(val));
+                CDiagContext::GetRequestContext().SetSessionID(NStr::URLDecode(val));
             }
             else if (key == "start_after") {
                 start_after = val;

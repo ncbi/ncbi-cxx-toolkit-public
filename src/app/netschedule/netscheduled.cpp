@@ -326,6 +326,7 @@ int main(int argc, const char* argv[])
 {
     g_Diag_Use_RWLock();
     CDiagContext::SetOldPostFormat(false);
+    CRequestContext::SetAllowedSessionIDFormat(CRequestContext::eSID_Other);
     CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
     return CNetScheduleDApp().AppMain(argc, argv, NULL, eDS_ToStdlog);

@@ -2905,7 +2905,7 @@ void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
     // Truncating is done to prevent output of an arbitrary long garbage
 
     if (need_request_start) {
-        GetDiagContext().SetDefaultClientIP(GetSocket().GetPeerAddress(eSAF_IP));
+        CDiagContext::GetRequestContext().SetClientIP(GetSocket().GetPeerAddress(eSAF_IP));
         x_PrintCmdRequestStart("Invalid command");
     }
 
