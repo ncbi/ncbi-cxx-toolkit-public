@@ -3075,6 +3075,23 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,obje
     return url_link;
 }
 
+//static const char kGenericLinkTemplate[] = "<a href=\"<@url@>\" target=\"lnk<@rid@>\" <@cssInf@> title=\"Show report for <@seqid@>\"><@gi@><@seqid@></a>"; 
+string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids)
+{
+    string seqLink;
+    string linkURL = GetIDUrl(seqUrlInfo,ids);
+    if(!linkURL.empty()) {
+        seqLink = CAlignFormatUtil::MapTemplate(kGenericLinkTemplate,"url",linkURL);
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi);    
+        string temp_class_info = kClassInfo; temp_class_info += " ";        
+        temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;        
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info : "");        
+    }    
+    return seqLink;
+}
+
 static string s_MapCustomLink(string linkUrl,string reportType,string accession, string linkText, string linktrg, string linkTitle = kCustomLinkTitle,string linkCls = "")
 {
     string link = CAlignFormatUtil::MapTemplate(kCustomLinkTemplate,"custom_url",linkUrl);         

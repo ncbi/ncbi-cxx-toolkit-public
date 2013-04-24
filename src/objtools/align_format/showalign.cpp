@@ -1052,15 +1052,21 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
     
 }
 
-string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,string accession,int linkout,int taxid)
+string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,int giToUse)
 {
+    const CBioseq_Handle& bsp_handle = m_AV->GetBioseqHandle(row);
+    int linkout = m_LinkoutDB 
+                ?
+                m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
+                : 0;                
     string urlLink = NcbiEmptyString;
     const list<CRef<CSeq_id> >& ids = bsp_handle.GetBioseqCore()->GetId();    
-    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,accession,linkout,taxid,ids);     
+    CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row],ids);     
     if(m_AlignOption & eShowInfoOnMouseOverSeqid) {
         seqUrlInfo->defline = sequence::CDeflineGenerator().GenerateDefline(bsp_handle);
     }
-    urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids);
+    seqUrlInfo->useTemplates = true;
+    urlLink = CAlignFormatUtil::GetFullIDLink(seqUrlInfo,&ids);
     delete seqUrlInfo;
     return urlLink;
 }
@@ -1747,31 +1753,26 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
     }
     if(m_AlignOption & eHtml){       
         if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
-           (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
-            
-            int linkout = m_LinkoutDB 
-                ?
-                m_LinkoutDB->GetLinkout(m_AV->GetSeqId(row),m_MapViewerBuildName) 
-                : 0;
-            
-            m_cur_align = row;
-            urlLink = x_GetUrl(m_AV->GetBioseqHandle(row),gi,alnRoInfo->seqidArray[row],linkout,alnRoInfo->taxid[row]);
-            out << urlLink;            
-        }        
+           (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){                        
+            m_cur_align = row;            
+            urlLink = x_HTMLSeqIDLink(alnRoInfo, row,gi);                        
+        }                
     }    
-    
-    out<<alnRoInfo->seqidArray[row]; 
-                   
-    if(urlLink != NcbiEmptyString){
-        //mouse over seqid defline
+    if(!urlLink.empty()) {
+        out << urlLink;
+        //mouse over seqid defline            
         if(m_AlignOption&eHtml &&
-           m_AlignOption&eShowInfoOnMouseOverSeqid) {
+            m_AlignOption&eShowInfoOnMouseOverSeqid) {
             out << "<span>" <<
-                CDeflineGenerator().GenerateDefline(m_AV->GetBioseqHandle(row)) << "</span>";
-        }
+            CDeflineGenerator().GenerateDefline(m_AV->GetBioseqHandle(row)) << "</span>";
+        }            
         out<<"</a>";   
-    }    
+    }
+    else {
+        out<<alnRoInfo->seqidArray[row]; 
+    }            
 }
+
 void CDisplaySeqalign::x_DisplayMiddLine(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out)
 {
     int j = alnRoInfo->currPrintSegment;
