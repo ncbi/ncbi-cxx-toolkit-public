@@ -1177,9 +1177,10 @@ public:
     bool any() const
     {
     #ifdef BMCOUNTOPT
-        if (count_is_valid_ && count_) return true;
+        if (count_is_valid_)
+            return count_ != 0;
     #endif
-        
+
         word_t*** blk_root = blockman_.get_rootblock();
         if (!blk_root) 
             return false;
