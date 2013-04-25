@@ -2791,6 +2791,9 @@ AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
 AC_CHECK_HEADERS(atomic.h dlfcn.h ieeefp.h poll.h sys/epoll.h sys/mount.h \
                  sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h)
+case "$host_os" in
+   cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
+esac
 # for FreeTDS 0.6x
 AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h \
                  netinet/in.h netinet/tcp.h paths.h signal.h \
