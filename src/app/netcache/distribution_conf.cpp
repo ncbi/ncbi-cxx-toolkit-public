@@ -74,6 +74,7 @@ static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
 static Uint4    s_TimeRndShare  = numeric_limits<Uint4>::max();
 static Uint8    s_SelfID        = 0;
 static string   s_SelfGroup;
+static string   s_SelfName;
 static CMiniMutex s_KeyRndLock;
 static CRandom  s_KeyRnd(CRandom::TValue(time(NULL)));
 static string   s_SelfHostIP;
@@ -150,6 +151,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             return false;
         }
         Uint8 srv_id = (Uint8(host) << 32) + port;
+        string peer_str = host_str + ":" + port_str;
         if (srv_id == s_SelfID) {
             if (found_self) {
                 SRV_LOG(Critical, "Bad configuration: self host mentioned twice");
@@ -157,9 +159,9 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             }
             found_self = true;
             s_SelfGroup = grp_name;
+            s_SelfName = peer_str;
         }
         else {
-            string peer_str = host_str + ":" + port_str;
             if (s_Peers.find(srv_id) != s_Peers.end()) {
                 SRV_LOG(Critical, "Bad configuration: host " << peer_str
                                   << " mentioned twice");
@@ -333,6 +335,23 @@ const TNCPeerList&
 CNCDistributionConf::GetPeers(void)
 {
     return s_Peers;
+}
+
+string
+CNCDistributionConf::GetPeerName(Uint8 srv_id)
+{
+    string name;
+    if (srv_id == s_SelfID) {
+        name = s_SelfName;
+    }
+    else if (s_Peers.find(srv_id) != s_Peers.end()) {
+        name = s_Peers[srv_id];
+    }
+    else {
+        name = "unknown_server";
+    }
+//    name += "(" + NStr::NumericToString(srv_id) + ")";
+    return name;
 }
 
 TServersList

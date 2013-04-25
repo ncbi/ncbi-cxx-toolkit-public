@@ -1523,6 +1523,7 @@ CNCActiveHandler::x_ReadSyncStartHeader(void)
         return &Me::x_FinishCommand;
     }
     if (NStr::FindCase(m_Response, "NEED_ABORT") != NPOS) {
+        m_Peer->AbortInitialSync();
         x_FinishSyncCmd(eSynAborted);
         return &Me::x_FinishCommand;
     }

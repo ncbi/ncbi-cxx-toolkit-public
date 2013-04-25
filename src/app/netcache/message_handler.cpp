@@ -3148,6 +3148,14 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
         WriteText("OK:IN_PROGRESS,SIZE=0\n");
         return &Me::x_FinishCommand;
     }
+    else if (sync_res == eUnknownServer) {
+        GetDiagCtx()->SetRequestStatus(eStatus_NotAllowed);
+        WriteText("OK:SIZE=0, NEED_ABORT2\n");
+        if (CNCStat::AddUnknownServer(m_SrvId)) {
+            SRV_LOG(Warning, "SYNC_START request from unknown server " << m_SrvId);
+        }
+        return &Me::x_FinishCommand;
+    }
 
     // Set fRunsInStartedSync flag so that x_CleanCmdResources() could properly call
     // CNCPeriodicSync::SyncCommandFinished() or CNCPeriodicSync::Cancel().

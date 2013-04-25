@@ -48,6 +48,7 @@ static CMiniMutex s_MapLock;
 static TControlMap s_Controls;
 static CAtomicCounter s_SyncOnInit;
 static CAtomicCounter s_WaitToOpenToClients;
+static CAtomicCounter s_AbortedSyncClients;
 
 static CAtomicCounter s_MirrorQueueSize;
 static FILE* s_MirrorLogFile = NULL;
@@ -191,7 +192,8 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
             Uint8 period = CNCDistributionConf::GetPeerThrottlePeriod();
             if (cur_time - m_ThrottleStart <= period) {
                 m_ObjLock.Unlock();
-                SRV_LOG(Warning, "Connection to " << m_SrvId << " is throttled");
+                SRV_LOG(Warning, "Connection to "
+                    << CNCDistributionConf::GetPeerName(m_SrvId) << " is throttled");
                 return false;
             }
 
@@ -615,6 +617,7 @@ CNCPeerControl::SetServersForInitSync(Uint4 cnt_servers)
 {
     s_SyncOnInit.Set(cnt_servers);
     s_WaitToOpenToClients.Set(cnt_servers);
+    s_AbortedSyncClients.Set(cnt_servers);
 }
 
 bool
@@ -634,25 +637,34 @@ CNCPeerControl::StartActiveSync(void)
 }
 
 void
-CNCPeerControl::x_SrvInitiallySynced(void)
+CNCPeerControl::x_SrvInitiallySynced(bool succeeded)
 {
     if (!m_InitiallySynced) {
-        INFO("Initial sync for " << m_SrvId << " completed");
+        INFO("Initial sync: for "
+            << CNCDistributionConf::GetPeerName(m_SrvId) << " completed");
         m_InitiallySynced = true;
         s_SyncOnInit.Add(-1);
+        CNCStat::InitialSyncDone(m_SrvId, succeeded);
     }
 }
 
 void
-CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots)
+CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted)
 {
     if (cnt_slots != 0  &&  m_SlotsToInitSync != 0) {
+        bool succeeded = true;
         if (cnt_slots != 1) {
-            INFO("Server " << m_SrvId << " is out of reach");
+            INFO("Initial sync: Server "
+                << CNCDistributionConf::GetPeerName(m_SrvId) << " is out of reach");
+            succeeded = false;
         }
         m_SlotsToInitSync -= cnt_slots;
         if (m_SlotsToInitSync == 0) {
-            x_SrvInitiallySynced();
+            x_SrvInitiallySynced(succeeded);
+            if (aborted && s_AbortedSyncClients.Add(-1) == 0) {
+                SRV_LOG(Critical, "Initial sync: unable to synchronize with any server");
+                CTaskServer::RequestShutdown(eSrvSlowShutdown);
+            }
             if (s_WaitToOpenToClients.Add(-1) == 0)
                 CNCServer::InitialSyncComplete();
         }
@@ -681,11 +693,16 @@ CNCPeerControl::RegisterSyncStop(bool is_passive,
     else {
         s_SetNextTime(m_NextSyncTime, next_time, true);
         if (now - m_FirstNWErrTime >= CNCDistributionConf::GetNetworkErrorTimeout())
-            x_SlotsInitiallySynced(m_SlotsToInitSync);
+            x_SlotsInitiallySynced(m_SlotsToInitSync, m_FirstNWErrTime == 1);
     }
 
     if (!is_passive)
         --m_CntActiveSyncs;
+}
+
+void CNCPeerControl::AbortInitialSync(void)
+{
+    m_FirstNWErrTime = 1;
 }
 
 bool

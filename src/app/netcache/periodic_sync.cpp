@@ -111,7 +111,7 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
         if (!is_passive  ||  !slot_srv->is_passive  ||  slot_srv->started_cmds != 0)
             return eCrossSynced;
         if (slot_srv->cnt_sync_ops != 0)
-            CNCStat::PeerSyncFinished(slot_srv->cnt_sync_ops, false);
+            CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_srv->cnt_sync_ops, false);
         slot_srv->sync_started = false;
         --slot_data->cnt_sync_started;
     }
@@ -142,14 +142,14 @@ s_StopSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
 static void
 s_CancelSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, Uint8 next_delay)
 {
-    CNCStat::PeerSyncFinished(slot_srv->cnt_sync_ops, false);
+    CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_srv->cnt_sync_ops, false);
     s_StopSync(slot_data, slot_srv, next_delay);
 }
 
 static void
 s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv)
 {
-    CNCStat::PeerSyncFinished(slot_srv->cnt_sync_ops, true);
+    CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_srv->cnt_sync_ops, true);
     if (slot_srv->is_by_blobs)
         slot_srv->was_blobs_sync = true;
     if (!slot_srv->made_initial_sync  &&  !CNCServer::IsInitiallySynced())
@@ -274,6 +274,7 @@ CNCPeriodicSync::Initialize(void)
         }
         if (!commonSlots.empty()) {
             peer->SetSlotsForInitSync(Uint2(commonSlots.size()));
+            CNCStat::AddSyncServer(it_peer->first);
             ++cnt_to_sync;
         }
     }
@@ -315,6 +316,9 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
     if (slot_srv) {
         slot_srv->peer->RegisterConnSuccess();
+    }
+    if (slot_srv == NULL) {
+        return eUnknownServer;
     }
     if (slot_srv == NULL
         ||  (CNCPeerControl::HasServersForInitSync()

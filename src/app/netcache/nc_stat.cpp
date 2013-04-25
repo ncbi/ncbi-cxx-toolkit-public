@@ -32,6 +32,8 @@
 
 #include "nc_stat.hpp"
 #include "netcached.hpp"
+#include "distribution_conf.hpp"
+#include <set>
 
 
 BEGIN_NCBI_SCOPE
@@ -56,6 +58,13 @@ static CMiniMutex s_RotateLock;
 static Uint1 s_PeriodsCollected[kCntStatPeriods] = {0};
 static int s_LastRotateSecs = 0;
 
+static CMiniMutex s_CommonStatLock;
+static set<Uint8> s_SyncSrv;
+static set<Uint8> s_UnknownSrv;
+typedef map<Uint8, CSrvTime> TSyncTimes;
+static TSyncTimes s_SyncSucceeded;
+static TSyncTimes s_SyncFailed;
+static TSyncTimes s_SyncPeriodic;
 
 
 static void
@@ -147,6 +156,33 @@ s_SizeIndex(Uint8 size)
     return g_GetLogBase2(size);
 }
 
+void
+CNCStat::AddSyncServer(Uint8 srv_id)
+{
+    CMiniMutexGuard guard(s_CommonStatLock);
+    s_SyncSrv.insert(srv_id);
+}
+
+bool CNCStat::AddUnknownServer(Uint8 srv_id)
+{
+    CMiniMutexGuard guard(s_CommonStatLock);
+    if (s_UnknownSrv.find(srv_id) == s_UnknownSrv.end()) {
+        s_UnknownSrv.insert(srv_id);
+        return true;
+    }
+    return false;
+}
+
+void
+CNCStat::InitialSyncDone(Uint8 srv_id, bool succeeded)
+{
+    CMiniMutexGuard guard(s_CommonStatLock);
+    if (succeeded) {
+        s_SyncSucceeded[srv_id] = CSrvTime::Current();
+    } else {
+        s_SyncFailed[srv_id] = CSrvTime::Current();
+    }
+}
 
 void
 CNCStat::Initialize(void)
@@ -501,12 +537,16 @@ CNCStat::PeerDataRead(size_t data_size)
 }
 
 void
-CNCStat::PeerSyncFinished(Uint8 cnt_ops, bool success)
+CNCStat::PeerSyncFinished(Uint8 srv_id, Uint8 cnt_ops, bool success)
 {
     CNCStat* stat = s_Stat();
     if (success)
         AtomicAdd(stat->m_PeerSyncs, 1);
     AtomicAdd(stat->m_PeerSynOps, cnt_ops);
+    if (success) {
+        CMiniMutexGuard guard(s_CommonStatLock);
+        s_SyncPeriodic[srv_id] = CSrvTime::Current();
+    }
 }
 
 void
@@ -773,7 +813,40 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
     proxy << ", start " << buf;
     m_EndState.state_time.Print(buf, CSrvTime::eFmtHumanUSecs);
     proxy << ", end " << buf <<endl;
-    proxy << "PID - " <<  CProcess::GetCurrentPid() << endl;
+    proxy << "PID - " <<  (Uint8)CProcess::GetCurrentPid() << endl;
+
+    {
+        CMiniMutexGuard guard(s_CommonStatLock);
+        Uint8 now = CSrvTime::Current().AsUSec();
+        if (!s_SyncSrv.empty()) {
+            vector<string> t;
+            ITERATE(set<Uint8>, s, s_SyncSrv) {
+                t.push_back(CNCDistributionConf::GetPeerName(*s));
+            }
+            proxy << "Sync servers - " <<  NStr::Join(t,",") << endl;
+            ITERATE(TSyncTimes, s, s_SyncSucceeded) {
+                s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
+                proxy << "Initial Sync succeeded - " <<
+                    CNCDistributionConf::GetPeerName(s->first) << " at " << buf << endl;
+            }
+            if (!s_SyncFailed.empty()) {
+                ITERATE(TSyncTimes, s, s_SyncFailed) {
+                    s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
+                    proxy << "Initial Sync failed    - " <<
+                        CNCDistributionConf::GetPeerName(s->first) << " at " << buf << endl;
+                }
+            }
+            ITERATE(TSyncTimes, s, s_SyncPeriodic) {
+                Uint8 agoSec = (now - s->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
+                Uint8 agoUsec = (now - s->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
+                s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
+                proxy << "Periodic Sync          - " <<
+                    CNCDistributionConf::GetPeerName(s->first) << " at " << buf <<
+                    ", " << agoSec << "." << agoUsec << "s ago" << endl;
+            }
+        }
+    }
+
     CSrvTime time_diff = m_EndState.state_time;
     time_diff -= m_StartState.state_time;
     Uint8 time_secs = time_diff.AsUSec() / kUSecsPerSecond;

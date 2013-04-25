@@ -141,6 +141,7 @@ public:
     static CAtomicCounter   sm_TotalCopyRequests;
     static CAtomicCounter   sm_CopyReqsRejected;
 
+    void AbortInitialSync(void);
 
 private:
     CNCPeerControl(Uint8 srv_id);
@@ -149,8 +150,8 @@ private:
 
     virtual void ExecuteSlice(TSrvThreadNum thr_num);
 
-    void x_SrvInitiallySynced(void);
-    void x_SlotsInitiallySynced(Uint2 cnt_slots);
+    void x_SrvInitiallySynced(bool succeeded);
+    void x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted=false);
     CNCActiveHandler* x_GetPooledConnImpl(void);
     bool x_ReserveBGConn(void);
     void x_UnreserveBGConn(void);

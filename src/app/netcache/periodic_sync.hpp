@@ -50,7 +50,8 @@ enum ESyncInitiateResult {
     eServerBusy,            //< Clean is in progress
     eCrossSynced,
     eProceedWithEvents,     //< The sync can proceed basing on events log
-    eProceedWithBlobs       //< The sync can proceed basing on full list of blobs
+    eProceedWithBlobs,      //< The sync can proceed basing on full list of blobs
+    eUnknownServer          //< command came from unknown server
 };
 
 
