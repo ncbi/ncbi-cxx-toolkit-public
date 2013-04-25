@@ -290,6 +290,10 @@
 1.22.n.n	Acting on halogen in donors
 1.22.1.-	With NAD(+) or NADP(+) as acceptor
 1.22.1.n	With NAD(+) or NADP(+) as acceptor
+1.23.-.-	Reducing C-O-C group as acceptor
+1.23.n.n	Reducing C-O-C group as acceptor
+1.23.1.-	With NADH or NADPH as donor
+1.23.1.n	With NADH or NADPH as donor
 1.97.-.-	Other oxidoreductases
 1.97.n.n	Other oxidoreductases
 1.97.1.-	Sole sub-subclass for oxidoreductases that do not belong in the other subclasses
