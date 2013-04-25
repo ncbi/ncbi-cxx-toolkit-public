@@ -641,6 +641,10 @@ public:
     void AddDbxref(const string& db_name, const string& db_key);
     void AddDbxref(const string& db_name, int db_key);
 
+    /// Add the given exception_text and set the except flag to true.
+    /// If the exception_text is already there, it just sets the except flag.
+    void AddExceptText(const string & exception_text);
+
     /// Add feature id
     void AddFeatId(int id);
     void AddFeatId(const string& id);

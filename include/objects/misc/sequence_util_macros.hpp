@@ -126,6 +126,12 @@ NCBI_NC_ITERATE (Base##_Test(Var), Base##_Type, Itr, Base##_Set(Var))
 #define RAW_FIELD_IS_EMPTY_OR_UNSET(Var, Fld) \
     ( ! (Var).IsSet##Fld() || (Var).Get##Fld().empty() )
 
+/// RAW_FIELD_GET_SIZE_IF_SET
+
+// returns the size of the field if it's set; else zero.
+#define RAW_FIELD_GET_SIZE_IF_SET(Var, Fld) \
+    ( (Var).IsSet##Fld() ? (Var).Get##Fld().size() : 0 )
+
 /// SET_FIELD_IF_UNSET macro
 
 // (The do-while is just so the user has to put a semi-colon after it)

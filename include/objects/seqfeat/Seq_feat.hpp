@@ -94,6 +94,10 @@ public:
     void AddDbxref(const string& db_name, const string& db_key);
     void AddDbxref(const string& db_name, int db_key);
 
+    /// Add the given exception_text and set the except flag to true.
+    /// If the exception_text is already there, it just sets the except flag.
+    void AddExceptText(const string & exception_text);
+
     /// Return a specified DB xref.  This will find the *first* item in the
     /// given referenced database.  If no item is found, an empty CConstRef<>
     /// is returned.

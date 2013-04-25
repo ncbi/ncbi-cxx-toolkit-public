@@ -514,6 +514,11 @@ void CSeq_feat_EditHandle::AddDbxref(const string& db_name, int db_key)
     //Update(); no index information is changed by dbxref
 }
 
+void CSeq_feat_EditHandle::AddExceptText(const string & exception_text)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).AddExceptText(exception_text);
+    //Update(); no index information is changed by except_text
+}
 
 void CSeq_feat_EditHandle::AddFeatId(const CObject_id& id)
 {

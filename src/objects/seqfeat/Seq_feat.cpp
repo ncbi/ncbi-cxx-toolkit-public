@@ -314,6 +314,22 @@ void CSeq_feat::AddDbxref(const string& db, int tag)
     SetDbxref().push_back(dbtag);
 }
 
+void CSeq_feat::AddExceptText(const string & exception_text)
+{
+    // always set this
+    SetExcept(true);
+
+    if( HasExceptionText(exception_text) ) {
+        // nothing to do; it already has it
+        return;
+    }
+
+    string & sCurrentExceptTextContents = SetExcept_text();
+    if( ! sCurrentExceptTextContents.empty() ) {
+        sCurrentExceptTextContents += ',';
+    }
+    sCurrentExceptTextContents += exception_text;
+}
 
 CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db) const
 {
