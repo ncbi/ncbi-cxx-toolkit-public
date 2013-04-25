@@ -507,9 +507,9 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
             attr_values[1] != executor->m_API.GetQueueName())
         return false;
 
-    SNetServerInPool* known_server;
+    SNetServerInPool* known_server; /* NCBI_FAKE_WARNING */
 
-    {
+    {{
         CNetScheduleServerListener* listener = executor->m_API->GetListener();
 
         CFastMutexGuard guard(listener->m_ServerPropsMutex);
@@ -521,7 +521,7 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
             return false;
 
         known_server = server_props_it->second->server_in_pool;
-    }
+    }}
 
     *server = new SNetServerImpl(executor->m_API->m_Service, executor->
             m_API->m_Service->m_ServerPool->ReturnServer(known_server));
