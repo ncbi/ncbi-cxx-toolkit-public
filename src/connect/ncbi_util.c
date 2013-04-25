@@ -840,6 +840,7 @@ extern size_t CORE_GetVMPageSize(void)
 
     if (!ps) {
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+        /* NB: CYGWIN's PAGESIZE (== PAGE_SIZE) are actually granularity */
         SYSTEM_INFO si;
         GetSystemInfo(&si);
         ps = (size_t) si.dwPageSize;
