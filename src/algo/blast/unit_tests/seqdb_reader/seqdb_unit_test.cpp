@@ -3446,10 +3446,10 @@ BOOST_AUTO_TEST_CASE(FilteredHeaders)
     // also assuming that at least 5 more redundant GIs will exist
     // than we have proteins in refseq for this PIG.
     
-    BOOST_REQUIRE(size1);
-    BOOST_REQUIRE(size2);
-    BOOST_REQUIRE(size1 >= 14);
-    BOOST_REQUIRE(size1 > (size2 + 5));
+    BOOST_CHECK_NE(0, size1);
+    BOOST_CHECK_NE(0, size2);
+    BOOST_CHECK_GE(size1, 14);
+    BOOST_CHECK_GT(size1, (size2 + 5));
 }
 
 static void s_CheckIdLookup(CSeqDB & db, const string & acc, size_t exp_oids, size_t exp_size)
