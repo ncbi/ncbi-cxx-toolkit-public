@@ -371,6 +371,8 @@ class IMessageSender
 {
 public:
     virtual void SendMessage(const CJsonNode& message) = 0;
+
+    virtual ~IMessageSender() {}
 };
 
 class CAutomationProc
