@@ -614,6 +614,7 @@ END_NCBI_SCOPE
  *  };
  *  @endcode
  *
+ *  - Using the custom criteria class in application code
  *  To set up an application's accepted set of criteria functions, you use
  *  class CCriteriaSet's AddCriteria methods.  To add one of the predefined
  *  criteria class, you would probably use "AddCriteria(const string& label)",
