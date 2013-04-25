@@ -1274,3 +1274,4 @@ BOOST_AUTO_TEST_CASE(Test_ForbidMixedStrandAnticodonQualifier)
     BOOST_CHECK( ! trna_ext.IsSetAa() );
     BOOST_CHECK( ! trna_ext.IsSetAnticodon() );
 }
+
