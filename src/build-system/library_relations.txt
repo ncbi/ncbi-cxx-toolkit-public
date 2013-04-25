@@ -1137,6 +1137,7 @@ gc_load_utils needs ncbi_xloader_csra
 gc_load_utils needs ncbi_xloader_genbank
 gc_load_utils needs ncbi_xloader_lds
 gc_load_utils needs ncbi_xloader_lds2
+gc_load_utils needs ncbi_xloader_wgs
 gc_load_utils needs ncbi_xreader
 gc_load_utils needs ncbi_xreader_cache
 gc_load_utils needs ncbi_xreader_id1
@@ -1238,6 +1239,7 @@ gc_utils needs ncbi_xloader_csra
 gc_utils needs ncbi_xloader_genbank
 gc_utils needs ncbi_xloader_lds
 gc_utils needs ncbi_xloader_lds2
+gc_utils needs ncbi_xloader_wgs
 gc_utils needs ncbi_xreader
 gc_utils needs ncbi_xreader_cache
 gc_utils needs ncbi_xreader_id1
@@ -1337,6 +1339,7 @@ gcaccess_utils needs ncbi_xloader_csra
 gcaccess_utils needs ncbi_xloader_genbank
 gcaccess_utils needs ncbi_xloader_lds
 gcaccess_utils needs ncbi_xloader_lds2
+gcaccess_utils needs ncbi_xloader_wgs
 gcaccess_utils needs ncbi_xreader
 gcaccess_utils needs ncbi_xreader_cache
 gcaccess_utils needs ncbi_xreader_id1
@@ -1649,6 +1652,7 @@ gpinit needs ncbi_xloader_csra
 gpinit needs ncbi_xloader_genbank
 gpinit needs ncbi_xloader_lds
 gpinit needs ncbi_xloader_lds2
+gpinit needs ncbi_xloader_wgs
 gpinit needs ncbi_xreader
 gpinit needs ncbi_xreader_cache
 gpinit needs ncbi_xreader_id1
@@ -1763,6 +1767,7 @@ gpinit_admin needs ncbi_xloader_csra
 gpinit_admin needs ncbi_xloader_genbank
 gpinit_admin needs ncbi_xloader_lds
 gpinit_admin needs ncbi_xloader_lds2
+gpinit_admin needs ncbi_xloader_wgs
 gpinit_admin needs ncbi_xreader
 gpinit_admin needs ncbi_xreader_cache
 gpinit_admin needs ncbi_xreader_id1
@@ -1868,6 +1873,7 @@ gpinit_buildinfo needs ncbi_xloader_csra
 gpinit_buildinfo needs ncbi_xloader_genbank
 gpinit_buildinfo needs ncbi_xloader_lds
 gpinit_buildinfo needs ncbi_xloader_lds2
+gpinit_buildinfo needs ncbi_xloader_wgs
 gpinit_buildinfo needs ncbi_xreader
 gpinit_buildinfo needs ncbi_xreader_cache
 gpinit_buildinfo needs ncbi_xreader_id1
@@ -1984,6 +1990,7 @@ gpipe_alnutil needs ncbi_xloader_csra
 gpipe_alnutil needs ncbi_xloader_genbank
 gpipe_alnutil needs ncbi_xloader_lds
 gpipe_alnutil needs ncbi_xloader_lds2
+gpipe_alnutil needs ncbi_xloader_wgs
 gpipe_alnutil needs ncbi_xreader
 gpipe_alnutil needs ncbi_xreader_cache
 gpipe_alnutil needs ncbi_xreader_id1
@@ -2117,6 +2124,7 @@ gpipe_objutil needs ncbi_xloader_csra
 gpipe_objutil needs ncbi_xloader_genbank
 gpipe_objutil needs ncbi_xloader_lds
 gpipe_objutil needs ncbi_xloader_lds2
+gpipe_objutil needs ncbi_xloader_wgs
 gpipe_objutil needs ncbi_xreader
 gpipe_objutil needs ncbi_xreader_cache
 gpipe_objutil needs ncbi_xreader_id1
@@ -5416,6 +5424,7 @@ validate_regions needs ncbi_xloader_csra
 validate_regions needs ncbi_xloader_genbank
 validate_regions needs ncbi_xloader_lds
 validate_regions needs ncbi_xloader_lds2
+validate_regions needs ncbi_xloader_wgs
 validate_regions needs ncbi_xreader
 validate_regions needs ncbi_xreader_cache
 validate_regions needs ncbi_xreader_id1
@@ -8528,6 +8537,7 @@ xgencoll needs ncbi_xloader_csra
 xgencoll needs ncbi_xloader_genbank
 xgencoll needs ncbi_xloader_lds
 xgencoll needs ncbi_xloader_lds2
+xgencoll needs ncbi_xloader_wgs
 xgencoll needs ncbi_xreader
 xgencoll needs ncbi_xreader_cache
 xgencoll needs ncbi_xreader_id1
@@ -8629,6 +8639,7 @@ xgencollstats needs ncbi_xloader_csra
 xgencollstats needs ncbi_xloader_genbank
 xgencollstats needs ncbi_xloader_lds
 xgencollstats needs ncbi_xloader_lds2
+xgencollstats needs ncbi_xloader_wgs
 xgencollstats needs ncbi_xreader
 xgencollstats needs ncbi_xreader_cache
 xgencollstats needs ncbi_xreader_id1
@@ -9326,6 +9337,7 @@ xsmall_assembly needs ncbi_xloader_csra
 xsmall_assembly needs ncbi_xloader_genbank
 xsmall_assembly needs ncbi_xloader_lds
 xsmall_assembly needs ncbi_xloader_lds2
+xsmall_assembly needs ncbi_xloader_wgs
 xsmall_assembly needs ncbi_xreader
 xsmall_assembly needs ncbi_xreader_cache
 xsmall_assembly needs ncbi_xreader_id1
