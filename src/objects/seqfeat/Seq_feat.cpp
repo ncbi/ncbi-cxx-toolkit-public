@@ -323,6 +323,11 @@ void CSeq_feat::AddExceptText(const string & exception_text)
     // always set this
     SetExcept(true);
 
+    if( ! IsSetExcept_text() ) {
+        SetExcept_text(exception_text);
+        return;
+    }
+
     if( HasExceptionText(exception_text) ) {
         // nothing to do; it already has it
         return;
