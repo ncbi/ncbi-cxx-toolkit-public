@@ -526,6 +526,12 @@ void CSeq_feat_EditHandle::AddExceptText(const string & exception_text)
     //Update(); no index information is changed by except_text
 }
 
+void CSeq_feat_EditHandle::RemoveExceptText(const string & exception_text)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).RemoveExceptText(exception_text);
+    //Update(); no index information is changed by except_text
+}
+
 void CSeq_feat_EditHandle::AddFeatId(const CObject_id& id)
 {
     if ( !IsPlainFeat() ) {

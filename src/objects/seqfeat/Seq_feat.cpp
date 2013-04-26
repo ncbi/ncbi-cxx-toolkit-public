@@ -335,9 +335,38 @@ void CSeq_feat::AddExceptText(const string & exception_text)
 
     string & sCurrentExceptTextContents = SetExcept_text();
     if( ! sCurrentExceptTextContents.empty() ) {
-        sCurrentExceptTextContents += ',';
+        sCurrentExceptTextContents += ", ";
     }
-    sCurrentExceptTextContents += exception_text;
+    sCurrentExceptTextContents += NStr::TruncateSpaces(exception_text);
+}
+
+void CSeq_feat::RemoveExceptText(const string & exception_text)
+{
+    if( ! IsSetExcept() || ! GetExcept() || ! IsSetExcept_text()  ) {
+        return;
+    }
+
+    list<CTempString> list_of_except_texts;
+    NStr::Split(GetExcept_text(), ",", list_of_except_texts);
+
+    // remove occurrences of exception_text (case-insensitive)
+    string new_except_texts; // build answer in this variable
+    ITERATE(list<CTempString>, text_it, list_of_except_texts) {
+        if( ! NStr::EqualNocase(*text_it, exception_text) ) {
+            if( ! new_except_texts.empty() ) {
+                new_except_texts += ", ";
+            }
+            new_except_texts += NStr::TruncateSpaces(*text_it);
+        }
+    }
+
+    // no exceptions left, so erase
+    if( new_except_texts.empty() ) {
+        ResetExcept();
+    }
+
+    // swap faster than assignment
+    SetExcept_text().swap(new_except_texts);
 }
 
 CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db) const

@@ -648,6 +648,10 @@ public:
     /// If the exception_text is already there, it just sets the except flag.
     void AddExceptText(const string & exception_text);
 
+    /// Remove all instances of the given exception text in this feature,
+    /// and reset the except flag if there are no exception texts left.
+    void RemoveExceptText(const string & exception_text);
+
     /// Add feature id
     void AddFeatId(int id);
     void AddFeatId(const string& id);

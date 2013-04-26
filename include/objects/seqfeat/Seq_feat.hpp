@@ -98,6 +98,10 @@ public:
     /// If the exception_text is already there, it just sets the except flag.
     void AddExceptText(const string & exception_text);
 
+    /// Remove all instances of the given exception text in this feature,
+    /// and reset the except flag if there are no exception texts left.
+    void RemoveExceptText(const string & exception_text);
+
     /// Return a specified DB xref.  This will find the *first* item in the
     /// given referenced database.  If no item is found, an empty CConstRef<>
     /// is returned.
