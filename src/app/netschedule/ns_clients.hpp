@@ -285,6 +285,18 @@ class CNSClient
         void    x_UpdateBlacklist(void) const;
         void    x_UpdateBlacklist(unsigned int  job_id) const;
         string  x_GetBlacklistLimit(unsigned int  job_id) const;
+
+        size_t  m_RunningJobsOpCount;
+        size_t  m_ReadingJobsOpCount;
+        mutable size_t  m_BlacklistedJobsOpCount;
+        size_t  m_AffinitiesOpCount;
+        size_t  m_WaitAffinitiesOpCount;
+
+        void x_RunningJobsOp(void);
+        void x_ReadingJobsOp(void);
+        void x_BlacklistedOp(void) const;
+        void x_AffinitiesOp(void);
+        void x_WaitAffinitiesOp(void);
 };
 
 

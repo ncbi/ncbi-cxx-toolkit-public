@@ -199,7 +199,12 @@ CNSClient::CNSClient() :
     m_NumberOfRun(0),
     m_AffReset(false),
     m_NumberOfSockErrors(0),
-    m_BlacklistTimeout(NULL)
+    m_BlacklistTimeout(NULL),
+    m_RunningJobsOpCount(0),
+    m_ReadingJobsOpCount(0),
+    m_BlacklistedJobsOpCount(0),
+    m_AffinitiesOpCount(0),
+    m_WaitAffinitiesOpCount(0)
 {}
 
 
@@ -227,7 +232,12 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_NumberOfRun(0),
     m_AffReset(false),
     m_NumberOfSockErrors(0),
-    m_BlacklistTimeout(blacklist_timeout)
+    m_BlacklistTimeout(blacklist_timeout),
+    m_RunningJobsOpCount(0),
+    m_ReadingJobsOpCount(0),
+    m_BlacklistedJobsOpCount(0),
+    m_AffinitiesOpCount(0),
+    m_WaitAffinitiesOpCount(0)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -247,12 +257,16 @@ bool CNSClient::Clear(void)
     m_SessionResetTime = CNSPreciseTime::Current();
 
     m_RunningJobs.clear();
+    x_RunningJobsOp();
     m_ReadingJobs.clear();
+    x_ReadingJobsOp();
 
     m_WaitAffinities.clear();
+    x_WaitAffinitiesOp();
 
     if (m_Affinities.any()) {
         m_Affinities.clear();
+        x_AffinitiesOp();
         return true;
     }
     return false;
@@ -290,6 +304,7 @@ void CNSClient::RegisterRunningJob(unsigned int  job_id)
     m_Type |= eWorkerNode;
 
     m_RunningJobs.set(job_id, true);
+    x_RunningJobsOp();
     ++m_NumberOfRun;
     return;
 }
@@ -301,6 +316,7 @@ void CNSClient::RegisterReadingJob(unsigned int  job_id)
     m_Type |= eReader;
 
     m_ReadingJobs.set(job_id, true);
+    x_ReadingJobsOp();
     ++m_NumberOfRead;
     return;
 }
@@ -328,6 +344,7 @@ void CNSClient::RegisterBlacklistedJob(unsigned int  job_id)
 void CNSClient::UnregisterReadingJob(unsigned int  job_id)
 {
     m_ReadingJobs.set(job_id, false);
+    x_ReadingJobsOp();
     return;
 }
 
@@ -338,6 +355,7 @@ bool CNSClient::MoveReadingJobToBlacklist(unsigned int  job_id)
     if (m_ReadingJobs[job_id]) {
         m_ReadingJobs.set(job_id, false);
         x_AddToBlacklist(job_id);
+        x_ReadingJobsOp();
         return true;
     }
     return false;
@@ -347,6 +365,7 @@ bool CNSClient::MoveReadingJobToBlacklist(unsigned int  job_id)
 void CNSClient::UnregisterRunningJob(unsigned int  job_id)
 {
     m_RunningJobs.set(job_id, false);
+    x_RunningJobsOp();
     return;
 }
 
@@ -357,6 +376,7 @@ bool CNSClient::MoveRunningJobToBlacklist(unsigned int  job_id)
     if (m_RunningJobs[job_id]) {
         m_RunningJobs.set(job_id, false);
         x_AddToBlacklist(job_id);
+        x_RunningJobsOp();
         return true;
     }
     return false;
@@ -393,26 +413,31 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     if (running_count > 0) {
         running_jobs = m_RunningJobs;
         m_RunningJobs.clear();
+        x_RunningJobsOp();
     }
 
     unsigned int    reading_count = m_ReadingJobs.count();
     if (reading_count > 0) {
         reading_jobs = m_ReadingJobs;
         m_ReadingJobs.clear();
+        x_ReadingJobsOp();
     }
 
     // Update the session identifier
     m_Session = client_id.GetSession();
 
     unsigned int    wait_aff_count = m_WaitAffinities.count();
-    if (wait_aff_count > 0)
+    if (wait_aff_count > 0) {
         m_WaitAffinities.clear();
+        x_WaitAffinitiesOp();
+    }
 
     // There is no need to do anything neither with the blacklisted jobs
     // nor submitted jobs
 
     if (m_Affinities.any()) {
         m_Affinities.clear();
+        x_AffinitiesOp();
         return true;
     }
     return false;
@@ -561,6 +586,7 @@ bool  CNSClient::AddPreferredAffinity(unsigned int  aff)
     if (aff != 0) {
         if (m_Affinities[aff] == false) {
             m_Affinities.set_bit(aff, true);
+            x_AffinitiesOp();
             return true;
         }
     }
@@ -579,8 +605,10 @@ void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
 void  CNSClient::RemovePreferredAffinity(unsigned int  aff)
 {
     m_Type |= eWorkerNode;
-    if (aff != 0)
+    if (aff != 0) {
         m_Affinities.set_bit(aff, false);
+        x_AffinitiesOp();
+    }
     m_AffReset = false;
 }
 
@@ -620,6 +648,7 @@ bool  CNSClient::ClearPreferredAffinities(void)
 {
     if (m_Affinities.any()) {
         m_Affinities.clear();
+        x_AffinitiesOp();
         return true;
     }
     return false;
@@ -629,7 +658,7 @@ bool  CNSClient::ClearPreferredAffinities(void)
 void  CNSClient::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
 {
     // Checks if jobs should be removed from a worker node blacklist
-    if (m_BlacklistLimits.size() == 0)
+    if (m_BlacklistLimits.empty())
         return;
 
     vector<unsigned int>    to_be_removed;
@@ -644,6 +673,7 @@ void  CNSClient::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
     for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
          j != to_be_removed.end(); ++j) {
         m_BlacklistedJobs.set_bit(*j, false);
+        x_BlacklistedOp();
         m_BlacklistLimits.erase(m_BlacklistLimits.find(*j));
     }
 }
@@ -693,6 +723,7 @@ void  CNSClient::x_AddToBlacklist(unsigned int  job_id)
 
     m_BlacklistLimits[job_id] = last_time_in_list;
     m_BlacklistedJobs.set_bit(job_id, true);
+    x_BlacklistedOp();
     return;
 }
 
@@ -700,15 +731,18 @@ void  CNSClient::x_AddToBlacklist(unsigned int  job_id)
 void  CNSClient::x_UpdateBlacklist(void) const
 {
     // Checks if jobs should be removed from a worker node blacklist
-    if (m_BlacklistLimits.size() == 0)
+    if (m_BlacklistLimits.empty())
         return;
 
     CNSPreciseTime          current_time = CNSPreciseTime::Current();
     vector<unsigned int>    to_be_removed;
+    map<unsigned int,
+        CNSPreciseTime>::const_iterator
+                            end_iterator = m_BlacklistLimits.end();
 
     for (map<unsigned int,
              CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
-         k != m_BlacklistLimits.end(); ++k) {
+         k != end_iterator; ++k) {
         if (k->second < current_time)
             to_be_removed.push_back(k->first);
     }
@@ -716,6 +750,7 @@ void  CNSClient::x_UpdateBlacklist(void) const
     for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
          j != to_be_removed.end(); ++j) {
         m_BlacklistedJobs.set_bit(*j, false);
+        x_BlacklistedOp();
         m_BlacklistLimits.erase(m_BlacklistLimits.find(*j));
     }
 }
@@ -725,7 +760,7 @@ void  CNSClient::x_UpdateBlacklist(unsigned int  job_id) const
 {
     // Checks if a single job is in a blacklist and
     // whether it should be removed from there
-    if (m_BlacklistLimits.size() == 0)
+    if (m_BlacklistLimits.empty())
         return;
 
     if (m_BlacklistedJobs[job_id] == false)
@@ -737,6 +772,7 @@ void  CNSClient::x_UpdateBlacklist(unsigned int  job_id) const
     if (found != m_BlacklistLimits.end()) {
         if (found->second < current_time) {
             m_BlacklistedJobs.set_bit(job_id, false);
+            x_BlacklistedOp();
             m_BlacklistLimits.erase(found);
         }
     }
@@ -751,6 +787,51 @@ CNSClient::x_GetBlacklistLimit(unsigned int  job_id) const
     if (found != m_BlacklistLimits.end())
         return NS_FormatPreciseTime(found->second);
     return "0.0";
+}
+
+
+void CNSClient::x_RunningJobsOp(void)
+{
+    if (++m_RunningJobsOpCount >= k_OpLimitToOptimize) {
+        m_RunningJobsOpCount = 0;
+        m_RunningJobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+
+void CNSClient::x_ReadingJobsOp(void)
+{
+    if (++m_ReadingJobsOpCount >= k_OpLimitToOptimize) {
+        m_ReadingJobsOpCount = 0;
+        m_ReadingJobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+
+void CNSClient::x_BlacklistedOp(void) const
+{
+    if (++m_BlacklistedJobsOpCount >= k_OpLimitToOptimize) {
+        m_BlacklistedJobsOpCount = 0;
+        m_BlacklistedJobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+
+void CNSClient::x_AffinitiesOp(void)
+{
+    if (++m_AffinitiesOpCount >= k_OpLimitToOptimize) {
+        m_AffinitiesOpCount = 0;
+        m_Affinities.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+
+void CNSClient::x_WaitAffinitiesOp(void)
+{
+    if (++m_WaitAffinitiesOpCount >= k_OpLimitToOptimize) {
+        m_WaitAffinitiesOpCount = 0;
+        m_WaitAffinities.optimize(0, TNSBitVector::opt_free_0);
+    }
 }
 
 END_NCBI_SCOPE

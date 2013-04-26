@@ -53,6 +53,8 @@
 
 BEGIN_NCBI_SCOPE
 
+const size_t    k_OpLimitToOptimize = 1000000;
+
 class CNSClientsRegistry;
 class CQueue;
 class CJobStatusTracker;
@@ -82,8 +84,16 @@ struct SNSJobsAffinity
     TNSBitVector    m_Clients;
     TNSBitVector    m_WaitGetClients;
 
+    size_t          m_JobsOpCount;
+    size_t          m_ClientsOpCount;
+    size_t          m_WaitGetClientsOpCount;
+
     SNSJobsAffinity();
     bool CanBeDeleted(void) const;
+
+    void JobsOp(void);
+    void ClientsOp(void);
+    void WaitGetOp(void);
 };
 
 

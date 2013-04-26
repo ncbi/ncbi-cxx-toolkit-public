@@ -45,15 +45,45 @@ SNSJobsAffinity::SNSJobsAffinity() :
     m_AffToken(NULL),
     m_Jobs(bm::BM_GAP),
     m_Clients(bm::BM_GAP),
-    m_WaitGetClients(bm::BM_GAP)
+    m_WaitGetClients(bm::BM_GAP),
+    m_JobsOpCount(0),
+    m_ClientsOpCount(0),
+    m_WaitGetClientsOpCount(0)
 {}
 
 
 bool SNSJobsAffinity::CanBeDeleted(void) const
 {
-    return (!m_Jobs.any()) &&
-           (!m_Clients.any()) &&
-           (!m_WaitGetClients.any());
+    return (m_Jobs.count() == 0) &&
+           (m_Clients.count() == 0) &&
+           (m_WaitGetClients.count() == 0);
+}
+
+
+void  SNSJobsAffinity::JobsOp(void)
+{
+    if (++m_JobsOpCount >= k_OpLimitToOptimize) {
+        m_JobsOpCount = 0;
+        m_Jobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+
+void  SNSJobsAffinity::ClientsOp(void)
+{
+    if (++m_ClientsOpCount >= k_OpLimitToOptimize) {
+        m_ClientsOpCount = 0;
+        m_Clients.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+
+void  SNSJobsAffinity::WaitGetOp(void)
+{
+    if (++m_WaitGetClientsOpCount >= k_OpLimitToOptimize) {
+        m_WaitGetClientsOpCount = 0;
+        m_WaitGetClients.optimize(0, TNSBitVector::opt_free_0);
+    }
 }
 
 
@@ -151,10 +181,14 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
 
         map< unsigned int,
              SNSJobsAffinity >::iterator        jobs_affinity = m_JobsAffinity.find(aff_id);
-        if (job_id != 0)
+        if (job_id != 0) {
             jobs_affinity->second.m_Jobs.set(job_id, true);
-        if (client_id != 0)
+            jobs_affinity->second.JobsOp();
+        }
+        if (client_id != 0) {
             jobs_affinity->second.m_Clients.set(client_id, true);
+            jobs_affinity->second.ClientsOp();
+        }
         return aff_id;
     }
 
@@ -174,10 +208,14 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
     // Create a record in the id->attributes map
     SNSJobsAffinity     new_job_affinity;
     new_job_affinity.m_AffToken = new_token;
-    if (job_id != 0)
+    if (job_id != 0) {
         new_job_affinity.m_Jobs.set(job_id, true);
-    if (client_id != 0)
+        new_job_affinity.JobsOp();
+    }
+    if (client_id != 0) {
         new_job_affinity.m_Clients.set(client_id, true);
+        new_job_affinity.ClientsOp();
+    }
     m_JobsAffinity[aff_id] = new_job_affinity;
 
     // Memorize the new affinity id
@@ -217,6 +255,7 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
                 map< unsigned int,
                      SNSJobsAffinity >::iterator        jobs_affinity = m_JobsAffinity.find(aff_id);
                 jobs_affinity->second.m_WaitGetClients.set(client_id, true);
+                jobs_affinity->second.WaitGetOp();
             }
             result.set(aff_id, true);
             continue;
@@ -238,8 +277,10 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
         // Create a record in the id->attributes map
         SNSJobsAffinity     new_job_affinity;
         new_job_affinity.m_AffToken = new_token;
-        if (client_id != 0)
+        if (client_id != 0) {
             new_job_affinity.m_WaitGetClients.set(client_id, true);
+            new_job_affinity.WaitGetOp();
+        }
         m_JobsAffinity[aff_id] = new_job_affinity;
 
         // Memorize the new affinity ID
@@ -378,6 +419,7 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
         return;
 
     found->second.m_Jobs.set(job_id, false);
+    found->second.JobsOp();
     if (found->second.CanBeDeleted())
         // Mark for deletion by the garbage collector
         m_RemoveCandidates.set(aff_id, true);
@@ -422,6 +464,7 @@ CNSAffinityRegistry::AddClientToAffinity(unsigned int  client_id,
                     // This should never happened basically.
 
     found->second.m_Clients.set(client_id, true);
+    found->second.ClientsOp();
     return;
 }
 
@@ -445,10 +488,14 @@ CNSAffinityRegistry::x_RemoveClientFromAffinities(unsigned int          client_i
             continue;   // Affinity is not known.
                         // This should never happened basically.
 
-        if (is_wait_client)
+        if (is_wait_client) {
             found->second.m_WaitGetClients.set(client_id, false);
-        else
+            found->second.WaitGetOp();
+        }
+        else {
             found->second.m_Clients.set(client_id, false);
+            found->second.ClientsOp();
+        }
 
         if (found->second.CanBeDeleted()) {
             // Mark for the deletion by the garbage collector
@@ -478,6 +525,7 @@ void  CNSAffinityRegistry::SetWaitClientForAffinities(unsigned int          clie
                         // This should never happened basically.
 
         found->second.m_WaitGetClients.set(client_id, true);
+        found->second.WaitGetOp();
     }
 
     return;
@@ -649,6 +697,7 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
     }
 
     found->second.m_Jobs.set(job_id, true);
+    found->second.JobsOp();
     return;
 }
 
