@@ -2400,7 +2400,7 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
         CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
         string seq;
         vec.GetSeqData(from, to, seq);
-        TSeqPos len = seq.size();
+        size_t len = seq.size();
         if (bsh.IsNa()) {
             inst.SetSeq_data().SetIupacna().Set().swap(seq);
             CSeqportUtil::Pack(&inst.SetSeq_data(), len);
@@ -3307,7 +3307,7 @@ static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
         last->SetLiteral().SetSeq_data().SetIupacaa().Set().append(1, residue);
     }
         
-    size_t len = last->GetLiteral().GetLength();
+    TSeqPos len = last->GetLiteral().GetLength();
     last->SetLiteral().SetLength(len + 1);
 }
 
@@ -3581,6 +3581,33 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     }
 
     return prot;
+}
+
+
+bool CSeqTranslator::ChangeDeltaProteinToRawProtein(CRef<CBioseq> protein)
+{
+    if (!protein || !protein->IsAa() || !protein->IsSetInst() || !protein->GetInst().IsSetRepr()
+        || protein->GetInst().GetRepr() != objects::CSeq_inst::eRepr_delta
+        || !protein->GetInst().IsSetExt()
+        || !protein->GetInst().GetExt().IsDelta()) {
+        return false;
+    }
+    // can only do this if all elements are literal
+    ITERATE (objects::CDelta_ext::Tdata, it, protein->GetInst().GetExt().GetDelta().Get()) {
+        if (!(*it)->IsLiteral()) {
+            return false;
+        }
+    }
+
+    objects::CSeqVector prot_vec(*protein);
+    prot_vec.SetCoding(objects::CSeq_data::e_Iupacaa);
+    string buffer = "";
+    prot_vec.GetSeqData(0, protein->GetLength(), buffer);
+    protein->SetInst().ResetExt();
+    protein->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    protein->SetInst().SetSeq_data().SetIupacaa().Set(buffer);
+    protein->SetInst().SetLength(buffer.length());
+    return true;
 }
 
 

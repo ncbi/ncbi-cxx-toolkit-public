@@ -1020,6 +1020,7 @@ public:
     static CRef<CBioseq> TranslateToProtein(const CSeq_feat& cds,
                                               CScope& scope);
 
+    static bool ChangeDeltaProteinToRawProtein(CRef<CBioseq> protein);
 };
 
 
