@@ -208,6 +208,7 @@ def generateNSConfig( baseDir, numberOfQueues, port, pathDB ):
                    "[queue_CRASH" + str( index ) + "]\n" \
                    "failed_retries=3\n" \
                    "timeout=300\n" \
+                   "blacklist_time=600\n" \
                    "notif_timeout=1.0\n" \
                    "run_timeout=600\n" \
                    "run_timeout_precision=30\n" \
