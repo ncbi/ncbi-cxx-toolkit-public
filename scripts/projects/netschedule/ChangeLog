@@ -1,7 +1,10 @@
 
-Release 4.16.8 based on SC-11 (2013-04-22)
+Release 4.16.8 based on SC-11 (2013-04-26)
 
 Improvements and bug fixes
+    * NetSchedule: performance tweaks (JIRA: CXX-4021)
+    * NetSchedule: non efficient handling session id and client ip in logging
+      (JIRA: CXX-4001)
     * NetSchedule: new run_timeout_precision default value (3600sec -> 3sec)
       (JIRA: CXX-3991)
     * NetSchedule: Incorrect display of running and reading job expiration time
