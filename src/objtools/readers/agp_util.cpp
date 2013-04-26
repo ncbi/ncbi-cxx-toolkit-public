@@ -84,7 +84,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     kEmptyCStr, // E_Last
 
     // Content Warnings
-    "gap at the end of object ",
+    "gap at the end of object (OK if X is the circular chromosome/plasmid)",
     "gap at the beginning of object ",
     "two consequtive gap lines (e.g. a gap at the end of "
         "a scaffold, two non scaffold-breaking gaps, ...)",
