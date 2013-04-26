@@ -173,6 +173,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// Create a stream object for sending data to a blob.
     /// If the string "key" is empty, a new blob will be created
     /// and its ID will be returned via the "key" parameter.
+    /// Note:  The blob will not be available from NetCache until
+    /// the stream is destructed.
     CNcbiOstream* CreateOStream(string& key, unsigned time_to_live = 0);
 
     /// Check if the BLOB identified by the key "key" exists.
