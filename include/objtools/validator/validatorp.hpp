@@ -469,6 +469,7 @@ public:
     inline bool DoesAnyGeneHaveLocusTag(void) const { return m_GeneHasLocusTag; }
     inline bool DoesAnyProteinHaveGeneralID(void) const { return m_ProteinHasGeneralID; }
     inline bool IsINSDInSep(void) const { return m_IsINSDInSep; }
+    inline bool IsGeneious(void) const { return m_IsGeneious; }
 
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
@@ -661,6 +662,7 @@ private:
     bool m_ProteinHasGeneralID;
     bool m_IsINSDInSep;
     bool m_FarFetchFailure;
+    bool m_IsGeneious;
 
     bool m_IsTbl2Asn;
 

@@ -1649,7 +1649,7 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     }
     
     // non-pseudo CDS must have /product
-    PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
+    PostErr(m_Imp.IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
         "Expected CDS product absent", feat);
 }
 
@@ -6214,7 +6214,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
             msg += ". Genetic code [" + gccode + "]";
             if (report_errors  &&  !mismatch_except) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+                PostErr(m_Imp.IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
             }
         } else {
             // report individual mismatches
@@ -6237,7 +6237,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                         msg += " at " + nuclocstr;
                     }
                     if (report_errors  &&  !mismatch_except) {
-                        PostErr(sev, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
+                        PostErr(m_Imp.IsGeneious() ? eDiag_Warning : sev, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
                     }
                 }
             }

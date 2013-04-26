@@ -233,6 +233,7 @@ void CValidError_imp::Reset(void)
     m_GeneHasLocusTag = false;
     m_ProteinHasGeneralID = false;
     m_IsINSDInSep = false;
+    m_IsGeneious = false;
     m_PrgCallback = 0;
     m_NumAlign = 0;
     m_NumAnnot = 0;
@@ -1732,6 +1733,10 @@ void CValidError_imp::Validate(const CSeq_submit& ss, CScope* scope)
     // Get CCit_sub pointer
     const CCit_sub* cs = &ss.GetSub().GetCit();
 
+    if (ss.IsSetSub() && ss.GetSub().IsSetTool() && NStr::StartsWith(ss.GetSub().GetTool(), "Geneious")) {
+        m_IsGeneious = true;
+    }
+
     // Just loop thru CSeq_entrys
     FOR_EACH_SEQENTRY_ON_SEQSUBMIT (se_itr, ss) {
         const CSeq_entry& se = **se_itr;
@@ -2220,7 +2225,7 @@ void CValidError_imp::ValidateSeqLoc
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "] in small genome set - set trans-splicing exception if appropriate", obj);
             } else {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
+                PostErr(IsGeneious() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "]", obj);
             }
