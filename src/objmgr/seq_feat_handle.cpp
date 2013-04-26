@@ -499,6 +499,12 @@ void CSeq_feat_EditHandle::AddQualifier(const string& qual_name,
     //Update(); no index information is changed by qualifiers
 }
 
+void CSeq_feat_EditHandle::RemoveQualifier(const string& qual_name)
+{
+    const_cast<CSeq_feat&>(*GetSeq_feat()).RemoveQualifier(qual_name);
+    //Update(); no index information is changed by qualifiers
+}
+
 
 void CSeq_feat_EditHandle::AddDbxref(const string& db_name,
                                      const string& db_key)

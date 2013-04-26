@@ -637,6 +637,9 @@ public:
     /// Add a qualifier to this feature
     void AddQualifier(const string& qual_name, const string& qual_val);
 
+    /// Remove all qualifiers with the given name on this feature.
+    void RemoveQualifier(const string& qual_name);
+
     /// add a DB xref to this feature
     void AddDbxref(const string& db_name, const string& db_key);
     void AddDbxref(const string& db_name, int db_key);
