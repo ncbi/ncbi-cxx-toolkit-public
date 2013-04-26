@@ -151,7 +151,7 @@
 	ERROR, line skipped: expecting 9 tab-separated columns, found 11
 
 213:chrB	1	100	1	N	100	fragment	yes	
-	WARNING: gap at the end of object chrB
+	WARNING: gap at the end of object (OK if chrB is the circular chromosome/plasmid)
 	WARNING: no components in object chrB
 
 214:chrY	1	177051	1	D	AC163727.2	1	177051	+
@@ -209,7 +209,7 @@
       1  e15  'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold
       5  e16  object_beg != previous object_end + 1
       2  e18  consequtive gaps lines with the same type and linkage
-      1  w31  gap at the end of object 
+      1  w31  gap at the end of object (OK if X is the circular chromosome/plasmid)
       1  w34  no components in object
       4  w35  the span overlaps a previous span for this component
       2  w36  component span appears out of order
