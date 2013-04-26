@@ -648,7 +648,7 @@ int CTarTest::Run(void)
                     NcbiCerr << pfx << it->GetName() + x_Pos(*it) << NcbiEndl;
                 }
             }
-            tar->Close();  // finalize TAR file before streams closed (below)
+            tar->Close();  // finalize TAR file before streams close (below)
         } else if (action == eList  ||  action == eExtract) {
             if (n) {
                 auto_ptr<CMaskFileName> mask(new CMaskFileName);
