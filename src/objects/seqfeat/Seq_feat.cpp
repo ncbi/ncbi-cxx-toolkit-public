@@ -282,6 +282,10 @@ void CSeq_feat::RemoveQualifier(const string& qual_name)
     // Instead we construct a new qual vector and do a swap (swap should
     // be a constant-time operation)
 
+    if( ! IsSetQual() ) {
+        return;
+    }
+
     TQual new_qual_vec;
     new_qual_vec.reserve(GetQual().size());
 
