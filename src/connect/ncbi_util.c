@@ -690,7 +690,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #      define     NCBI_GETUSERNAME_BUFSIZE   LOGIN_NAME_MAX
 #    endif /*HAVE_GETLOGIN_R*/
 #    ifdef NCBI_HAVE_GETPWUID_R
-#      ifndef NCBI_GETUSERNAME_BUFSIZE
+#      ifndef     NCBI_GETUSERNAME_BUFSIZE
 #        define   NCBI_GETUSERNAME_BUFSIZE   NCBI_GETUSERNAME_MAXBUFSIZE
 #      else
 #        if       NCBI_GETUSERNAME_BUFSIZE < NCBI_GETUSERNAME_MAXBUFSIZE
@@ -706,7 +706,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #elif defined(NCBI_OS_MSWIN)
 #  ifdef   UNLEN
 #    define       NCBI_GETUSERNAME_BUFSIZE  UNLEN
-#else
+#  else
 #    define       NCBI_GETUSERNAME_BUFSIZE  256
 #  endif /*UNLEN*/
     TCHAR temp   [NCBI_GETUSERNAME_BUFSIZE + 2];
@@ -779,20 +779,21 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         break;
     }
 
-#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
+#  if defined(NCBI_OS_SOLARIS)  ||                                  \
+    (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     /* NB:  getpwuid() is MT-safe on Solaris, so use it here, if available */
-#  ifndef NCBI_OS_SOLARIS
+#    ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
-#  endif /*!NCBI_OS_SOLARIS*/
+#    endif /*!NCBI_OS_SOLARIS*/
     if ((pwd = getpwuid(uid)) != 0) {
         if (pwd->pw_name)
             buf = x_Savestr(pwd->pw_name, buf, bufsize);
         else
             pwd = 0;
     }
-#  ifndef NCBI_OS_SOLARIS
+#    ifndef NCBI_OS_SOLARIS
     CORE_UNLOCK;
-#  endif /*!NCBI_OS_SOLARIS*/
+#    endif /*!NCBI_OS_SOLARIS*/
     if (pwd)
         return buf;
 #  elif defined(NCBI_HAVE_GETPWUID_R)
