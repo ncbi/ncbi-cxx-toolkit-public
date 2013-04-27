@@ -37,7 +37,7 @@
 
 #include <corelib/ncbi_process.hpp>
 #ifndef NCBI_OS_UNIX
-#  error "ncbi_os_unix.hpp must be used on UNIX platforms only"
+#  error "ncbi_os_unix.hpp can be used on UNIX platforms only"
 #endif
 
 #ifdef NCBI_COMPILER_GCC
