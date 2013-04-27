@@ -1032,6 +1032,8 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #    else
 #      error "Unknown HAVE_GETHOSTBYNAME_R value"
 #    endif /*HAVE_GETHOSTNBYNAME_R == N*/
+        if (!he  &&  !x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
+            log = eOn;
 #  else
         static const char suffix[] = "";
 
@@ -1043,13 +1045,12 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
         x_error = h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
-        if (he && he->h_addrtype == AF_INET && he->h_length == sizeof(host)) {
-            memcpy(&host, he->h_addr, sizeof(host));
-        } else {
-            host = 0;
+        if (!he || he->h_addrtype != AF_INET || he->h_length != sizeof(host)) {
             if (he)
                 x_error = EINVAL;
-        }
+            host = 0;
+        } else
+            memcpy(&host, he->h_addr, sizeof(host));
 
 #  ifndef HAVE_GETHOSTBYNAME_R
 #    ifndef SOCK_GHB_THREAD_SAFE
@@ -1145,12 +1146,17 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
         if ((x_error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
                                    name, namelen, 0, 0, 0)) != 0  ||  !*name) {
             if (SOCK_ntoa(host, name, namelen) != 0) {
-                if (!x_error) {
+                if (x_error == EAI_SYSTEM)
+                    x_error  = SOCK_ERRNO;
+                else if (x_error)
+                    x_error += EAI_BASE;
+                else {
 #ifdef ENOSPC
-                    x_error = ENOSPC;
+                    x_error  = ENOSPC;
 #else
-                    x_error = ERANGE;
+                    x_error  = ERANGE;
 #endif /*ENOSPC*/
+                    log = eOn;
                 }
                 name[0] = '\0';
                 name = 0;
@@ -1159,10 +1165,6 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                 const char* strerr;
                 if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                     sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
-                if (x_error == EAI_SYSTEM)
-                    x_error  = SOCK_ERRNO;
-                else
-                    x_error += EAI_BASE;
                 strerr = SOCK_STRERROR(x_error);
                 CORE_LOGF_ERRNO_EXX(107, eLOG_Warning,
                                     x_error, strerr,
@@ -1193,6 +1195,8 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #    else
 #      error "Unknown HAVE_GETHOSTBYADDR_R value"
 #    endif /*HAVE_GETHOSTBYADDR_R == N*/
+        if (!he  &&  !x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
+            log = eOn;
 #  else /*HAVE_GETHOSTBYADDR_R*/
         static const char suffix[] = "";
 
@@ -1212,11 +1216,11 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                 x_error = ERANGE;
 #endif /*ENOSPC*/
                 name[0] = '\0';
+                log = eOn;
                 name = 0;
             }
-        } else {
+        } else
             strcpy(name, he->h_name);
-        }
 
 #  ifndef HAVE_GETHOSTBYADDR_R
 #    ifndef SOCK_GHB_THREAD_SAFE
