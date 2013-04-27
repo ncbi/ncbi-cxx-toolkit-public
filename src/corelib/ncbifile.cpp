@@ -42,16 +42,17 @@
 #if defined(NCBI_OS_MSWIN)
 #  include "ncbi_os_mswin_p.hpp"
 #  include <corelib/ncbi_limits.hpp>
-#  include <io.h>
 #  include <direct.h>
-#  include <sys/utime.h>
+#  include <io.h>
 #  include <fcntl.h> // for _O_* flags
+#  include <sys/utime.h>
 
 #elif defined(NCBI_OS_UNIX)
-#  include <unistd.h>
+#  include "ncbi_os_unix_p.hpp"
 #  include <dirent.h>
-#  include <pwd.h>
 #  include <fcntl.h>
+#  include <unistd.h>
+#  include <utime.h>
 #  include <sys/mman.h>
 #  include <sys/time.h>
 #  ifdef HAVE_SYS_STATVFS_H
@@ -64,9 +65,6 @@
 #  ifdef HAVE_SYS_VFS_H
 #    include <sys/vfs.h>
 #  endif
-#  include <utime.h>
-#  include <pwd.h>
-#  include <grp.h>
 #  if !defined(MAP_FAILED)
 #    define MAP_FAILED ((void *) -1)
 #  endif
@@ -1484,58 +1482,59 @@ void CDirEntry::SetUmask(TMode user_mode, TMode group_mode,
 #    define CAS_CAST
 #endif
 
-static bool s_CheckAccessStat(const CAS_ARG1* p, int amode)
+static bool s_CheckAccessStat(const CAS_ARG1* p, int mode)
 {
     const struct stat& st = *CAS_CAST(p);
     uid_t uid = geteuid();
 
     // Check user permissions
     if (uid == st.st_uid) {
-        return (!(amode & R_OK)  ||  (st.st_mode & S_IRUSR))  &&
-               (!(amode & W_OK)  ||  (st.st_mode & S_IWUSR))  &&
-               (!(amode & X_OK)  ||  (st.st_mode & S_IXUSR));
+        return (!(mode & R_OK)  ||  (st.st_mode & S_IRUSR))  &&
+               (!(mode & W_OK)  ||  (st.st_mode & S_IWUSR))  &&
+               (!(mode & X_OK)  ||  (st.st_mode & S_IXUSR));
     }
 
     // Initialize list of group IDs for effective user
     int ngroups = 0;
     gid_t gids[NGROUPS_MAX + 1];
     gids[0] = getegid();
-    ngroups = getgroups((int)(sizeof(gids)/sizeof(gids[0])-1), gids+1);
+    ngroups = getgroups((int)(sizeof(gids)/sizeof(gids[0])) - 1, gids + 1);
     if (ngroups < 0) {
         ngroups = 1;
     } else {
         ngroups++;
     }
-    for (int i = 1; i < ngroups; i++) {
+    for (int i = 1;  i < ngroups;  i++) {
         if (gids[i] == uid) {
             if (i < --ngroups) {
-                memmove(&gids[i], &gids[i+1], sizeof(gids[0])*(ngroups-i));
+                memmove(&gids[i], &gids[i + 1], sizeof(gids[0])*(ngroups-i));
             }
             break;
         }
     }
 
     // Check group permissions
-    for (int i = 0; i < ngroups; i++) {
+    for (int i = 0;  i < ngroups;  i++) {
         if (gids[i] == st.st_gid) {
-            return  (!(amode & R_OK)  ||  (st.st_mode & S_IRGRP))  &&
-                    (!(amode & W_OK)  ||  (st.st_mode & S_IWGRP))  &&
-                    (!(amode & X_OK)  ||  (st.st_mode & S_IXGRP));
+            return  (!(mode & R_OK)  ||  (st.st_mode & S_IRGRP))  &&
+                    (!(mode & W_OK)  ||  (st.st_mode & S_IWGRP))  &&
+                    (!(mode & X_OK)  ||  (st.st_mode & S_IXGRP));
         }
     }
 
     // Check other permissions
-    if ( (!(amode & R_OK)  ||  (st.st_mode & S_IROTH))  &&
-         (!(amode & W_OK)  ||  (st.st_mode & S_IWOTH))  &&
-         (!(amode & X_OK)  ||  (st.st_mode & S_IXOTH)) )
+    if ( (!(mode & R_OK)  ||  (st.st_mode & S_IROTH))  &&
+         (!(mode & W_OK)  ||  (st.st_mode & S_IWOTH))  &&
+         (!(mode & X_OK)  ||  (st.st_mode & S_IXOTH)) ) {
         return true;
+    }
 
     // Permissions not granted
     return false;
 }
 
 
-static bool s_CheckAccessPath(const char* path, int amode)
+static bool s_CheckAccessPath(const char* path, int mode)
 {
     if (!path) {
         errno = 0;
@@ -1552,10 +1551,11 @@ static bool s_CheckAccessPath(const char* path, int amode)
         return false;
     }
 
-    if (!s_CheckAccessStat(&st, amode)) {
+    if (!s_CheckAccessStat(&st, mode)) {
         CNcbiError::SetErrno(errno = EACCES, path);
         return false;
     }
+ 
     // Permissions granted
     return true;
 }
@@ -1578,35 +1578,49 @@ bool CDirEntry::CheckAccess(TMode access_mode) const
      return false;
 
 #elif defined(NCBI_OS_UNIX)
-    int amode = F_OK;
-    if ( access_mode & fRead)    amode |= R_OK;
-    if ( access_mode & fWrite)   amode |= W_OK;
-    if ( access_mode & fExecute) amode |= X_OK;
+    const char* path = GetPath().c_str();
+    int         mode = F_OK;
+
+    if ( access_mode & fRead)    mode |= R_OK;
+    if ( access_mode & fWrite)   mode |= W_OK;
+    if ( access_mode & fExecute) mode |= X_OK;
     
     // Use euidaccess() where possible
 #  if defined(HAVE_EUIDACCESS)
-    return euidaccess(GetPath().c_str(), amode) == 0;
+    if (euidaccess(path, mode) != 0) {
+        CNcbiError::SetFromErrno(path);
+        return false;
+    }
+    return true;
 
 #  elif defined(EFF_ONLY_OK)
     // Some Unix have special flag for access() to use effective user ID.
-    amode |= EFF_ONLY_OK;
-    return access(GetPath().c_str(), amode) == 0;
+    mode |= EFF_ONLY_OK;
+    if (access(path, mode) != 0) {
+        CNcbiError::SetFromErrno(path);
+        return false;
+    }
+    return true;
 
 #  else
     // We can use access() only if effective and real user/group IDs are equal.
     // access() operate with real IDs only, but we should check access
     // for effective IDs.
     if (getuid() == geteuid()  &&  getgid() == getegid()) {
-        return access(GetPath().c_str(), amode) == 0;
+        if (access(path, mode) != 0) {
+            CNcbiError::SetFromErrno(path);
+            return false;
+        }
+        return true;
     }
     // Otherwise, try to check permissions itself.
     // Note, that this function is not perfect, it doesn't work with ACL,
     // which implementation can differ for each platform.
     // But in most cases it works.
-    return s_CheckAccessPath(GetPath().c_str(), amode);
+    return s_CheckAccessPath(path, mode);
 
 #  endif
-#endif
+#endif // NCBI_OS
 }
 
 
@@ -2562,76 +2576,22 @@ bool CDirEntry::GetOwner(string* owner, string* group,
                                    " stat() failed for " + GetPath());
     }
 
-    if ( uid )
+    if ( uid ) {
         *uid = st.st_uid;
-
-    if ( gid )
+    }
+    if ( gid ) {
         *gid = st.st_gid;
+    }
 
-    if (owner) {
-        struct passwd* pwd;
-
-#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
-        /* NB:  getpwuid() is MT-safe on Solaris */
-        pwd = getpwuid(st.st_uid);
-#  elif defined(NCBI_HAVE_GETPWUID_R)
-        char buf[1024];
-#    if   NCBI_HAVE_GETPWUID_R == 4
-        /* obsolete but still existent */
-        pwd = getpwuid_r(st.st_uid,
-                         (struct passwd*) buf, buf + sizeof(*pwd),
-                         sizeof(buf) - sizeof(*pwd));
-#    elif NCBI_HAVE_GETPWUID_R == 5
-        /* POSIX-conforming */
-        if (getpwuid_r(st.st_uid,
-                       (struct passwd*) buf, buf + sizeof(*pwd),
-                       sizeof(buf) - sizeof(*pwd), &pwd) != 0) {
-            pwd = 0;
-        }
-#    else
-#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
-#    endif /*NCBI_HAVE_GETPWUID_R*/
-#  else
-        pwd = 0;
-#  endif
-
-        if ( pwd  &&  pwd->pw_name ) {
-            owner->assign(pwd->pw_name);
-        } else {
+    if ( owner ) {
+        CUnixFeature::GetUserNameByUID(st.st_uid).swap(*owner);
+        if (owner->empty()) {
             NStr::NumericToString(*owner, st.st_uid);
         }
     }
-
     if ( group ) {
-        struct group* grp;
-
-#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
-        /* NB:  getgrgid() is MT-safe on Solaris */
-        grp = getgrgid(st.st_gid);
-#  elif defined(NCBI_HAVE_GETPWUID_R)
-        char buf[1024];
-#    if   NCBI_HAVE_GETPWUID_R == 4
-        /* obsolete but still existent */
-        grp = getgrgid_r(st.st_gid,
-                         (struct group*) buf, buf + sizeof(*grp),
-                         sizeof(buf) - sizeof(*grp));
-#    elif NCBI_HAVE_GETPWUID_R == 5
-        /* POSIX-conforming */
-        if (getgrgid_r(st.st_gid,
-                       (struct group*) buf, buf + sizeof(*grp),
-                       sizeof(buf) - sizeof(*grp), &grp) != 0) {
-            grp = 0;
-        }
-#    else
-#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
-#    endif /*NCBI_HAVE_GETPWUID_R*/
-#  else
-        grp = 0;
-#  endif
-
-        if ( grp  &&  grp->gr_name ) {
-            group->assign(grp->gr_name);
-        } else {
+        CUnixFeature::GetGroupNameByGID(st.st_gid).swap(*group);
+        if (group->empty()) {
             NStr::NumericToString(*group, st.st_gid);
         }
     }
@@ -2682,37 +2642,10 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
         return false;
     }
 
-    uid_t temp_uid = (uid_t)(-1);
-    gid_t temp_gid = (gid_t)(-1);
-
+    uid_t temp_uid;
     if ( !owner.empty() ) {
-        struct passwd* pwd;
-
-#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
-        /* NB:  getpwnam() is MT-safe on Solaris */
-        pwd = getpwnam(owner.c_str());
-#  elif defined(NCBI_HAVE_GETPWUID_R)
-        char buf[1024];
-#    if   NCBI_HAVE_GETPWUID_R == 4
-        /* obsolete but still existent */
-        pwd = getpwnam_r(owner.c_str(),
-                         (struct passwd*) buf, buf + sizeof(*pwd),
-                         sizeof(buf) - sizeof(*pwd));
-#    elif NCBI_HAVE_GETPWUID_R == 5
-        /* POSIX-conforming */
-        if (getpwnam_r(owner.c_str(),
-                       (struct passwd*) buf, buf + sizeof(*pwd),
-                       sizeof(buf) - sizeof(*pwd), &pwd) != 0) {
-            pwd = 0;
-        }
-#    else
-#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
-#    endif /*NCBI_HAVE_GETPWUID_R*/
-#  else
-        pwd = 0;
-#  endif
-
-        if ( !pwd ) {
+        temp_uid = CUnixFeature::GetUserUIDByName(owner);
+        if (temp_uid == (uid_t)(-1L)){
             unsigned int temp;
             if (!NStr::StringToNumeric(owner,
                                        &temp, NStr::fConvErr_NoThrow, 0)) {
@@ -2720,55 +2653,31 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                                            " Invalid owner name " + owner);
             }
             temp_uid = (uid_t) temp;
-        } else {
-            temp_uid = pwd->pw_uid;
         }
         if ( uid ) {
             *uid = temp_uid;
         }
+    } else {
+        temp_uid = (uid_t)(-1L);
     }
 
+    gid_t temp_gid;
     if ( !group.empty() ) {
-        struct group* grp;
-
-#  if defined(NCBI_OS_SOLARIS)  ||  !defined(NCBI_HAVE_GETPWUID_R)
-        /* NB:  getgrnam() is MT-safe on Solaris */
-        grp = getgrnam(group.c_str());
-#  elif defined(NCBI_HAVE_GETPWUID_R)
-        char buf[1024];
-#    if   NCBI_HAVE_GETPWUID_R == 4
-        /* obsolete but still existent */
-        grp = getgrnam_r(group.c_str(),
-                         (struct group*) buf, buf + sizeof(*grp),
-                         sizeof(buf) - sizeof(*grp));
-#    elif NCBI_HAVE_GETPWUID_R == 5
-        /* POSIX-conforming */
-        if (getgrnam_r(group.c_str(),
-                       (struct group*) buf, buf + sizeof(*grp),
-                       sizeof(buf) - sizeof(*grp), &grp) != 0) {
-            grp = 0;
-        }
-#    else
-#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
-#    endif /*NCBI_HAVE_GETPWUID_R*/
-#  else
-        grp = 0;
-#  endif
-
-        if ( !grp ) {
+        temp_gid = CUnixFeature::GetGroupGIDByName(group);
+        if (temp_gid == (gid_t)(-1L)) {
             unsigned int temp;
             if (!NStr::StringToNumeric(group,
                                        &temp, NStr::fConvErr_NoThrow, 0)) {
                 LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
                                            " Invalid group name " + group);
             }
-            temp_gid = (uid_t) temp;
-        } else {
-            temp_gid = grp->gr_gid;
+            temp_gid = (gid_t) temp;
         }
         if ( gid ) {
             *gid = temp_gid;
         }
+    } else {
+        temp_gid = (gid_t)(-1L);
     }
 
     if (follow == eFollowLinks  ||  GetType(eIgnoreLinks) != eLink) {
@@ -2777,15 +2686,16 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                                        " Cannot change owner for "
                                        + GetPath());
         }
-    } else {
+    }
 #  if defined(HAVE_LCHOWN)
+    else {
         if ( lchown(GetPath().c_str(), temp_uid, temp_gid) ) {
             LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::SetOwner():"
                                        " Cannot change symlink owner for "
                                        + GetPath());
         }
-#  endif
     }
+#  endif
 
     return true;
 
