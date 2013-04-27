@@ -52,11 +52,12 @@
 #include <util/compress/tar.hpp>
 #include <util/error_codes.hpp>
 
-#if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
-#  error "Class CTar can be defined on MS-Windows and UNIX platforms only!"
+#if !defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_MSWIN)
+#  error "Class CTar can be defined on UNIX and MS-Windows platforms only!"
 #endif
 
-#if   defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
+#  include "../../../corelib/ncbi_os_unix_p.hpp"
 #  include <grp.h>
 #  include <pwd.h>
 #  include <unistd.h>
@@ -66,13 +67,14 @@
 #      error "Device macros undefined in this UNIX build!"
 #    endif
 #  endif
-#elif defined(NCBI_OS_MSWIN)
+#endif //NCBI_OS_UNIX
+#ifdef NCBI_OS_MSWIN
 #  include "../../../corelib/ncbi_os_mswin_p.hpp"
 #  include <io.h>
 typedef unsigned int mode_t;
 typedef unsigned int uid_t;
 typedef unsigned int gid_t;
-#endif //NCBI_OS
+#endif //NCBI_OS_MSWIN
 
 
 #define NCBI_USE_ERRCODE_X  Util_Compress
@@ -1402,7 +1404,10 @@ void CTar::x_Close(bool truncate)
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
         if (!m_Bad  &&  !(m_Flags & fTarfileNoTruncate)  &&  truncate) {
-#if   defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_UNIX
+            ::truncate(m_FileName.c_str(), (off_t)m_StreamPos);
+#endif //NCBI_OS_UNIX
+#ifdef NCBI_OS_MSWIN
             TXString filename(_T_XSTRING(m_FileName));
             HANDLE handle = ::CreateFile(filename.c_str(), GENERIC_WRITE,
                                          0/*sharing*/, NULL, OPEN_EXISTING,
@@ -1415,9 +1420,7 @@ void CTar::x_Close(bool truncate)
                 }
                 ::CloseHandle(handle);
             }
-#elif defined(NCBI_OS_UNIX)
-            ::truncate(m_FileName.c_str(), (off_t)m_StreamPos);
-#endif //NCBI_OS
+#endif //NCBI_OS_MSWIN
         }
     }
     m_OpenMode  = eNone;
@@ -1808,7 +1811,7 @@ CTar::EStatus CTar::x_ParsePAXData(const string& buffer)
     Uint8 size = 0, sparse = 0, uid = 0, gid = 0;
     Uint8 mtime = 0, atime = 0, ctime = 0, dummy;
     string path, linkpath, name, uname, gname;
-    string* nodot = (string*)(-1);
+    string* nodot = (string*)(-1L);
     const struct SPAXParseTable {
         const char* key;
         Uint8*      val;  // non-null for numeric, else do as string
@@ -3774,13 +3777,12 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     m_Current.m_Stat.st_uid = geteuid();
     m_Current.m_Stat.st_gid = getegid();
 
-    struct passwd *pwd = getpwuid(m_Current.m_Stat.st_uid);
-    if (pwd)
-        m_Current.m_UserName = pwd->pw_name;
-    struct group  *grp = getgrgid(m_Current.m_Stat.st_gid);
-    if (grp)
-        m_Current.m_GroupName = grp->gr_name;
-#else
+    CUnixFeature::GetUserNameByUID(m_Current.m_Stat.st_uid)
+        .swap(m_Current.m_UserName);
+    CUnixFeature::GetGroupNameByGID(m_Current.m_Stat.st_gid)
+        .swap(m_Current.m_GroupName);
+#endif //NCBI_OS_UNIX
+#ifdef NCBI_OS_MSWIN
     // safe file mode
     m_Current.m_Stat.st_mode = (fTarURead | fTarUWrite |
                                 fTarGRead | fTarORead);
@@ -3794,7 +3796,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     // these are fake but we don't want to leave plain 0 (Unix root) in there
     m_Current.m_Stat.st_uid = (uid_t) uid;
     m_Current.m_Stat.st_gid = (gid_t) gid;
-#endif //NCBI_OS_UNIX
+#endif //NCBI_OS_MSWIN
 
     x_AppendStream(entry.GetName(), is);
 
