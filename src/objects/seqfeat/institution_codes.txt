@@ -1089,7 +1089,7 @@ CNU<CHN>	s	Capital Normal University, College of Life Sciences
 CNU<KOR>	s	Chonbuk National University
 CNWGRGL	b	Chinese National Waterfowl Germplasm Resources Gene Library
 CO	s	Museum National d'Histoire Naturelle, Department of Marine Biology
-COA	s	Universidad de Cordoba, Departamento de Ciencias y Recursos Agricolas y Forestales
+COA	s	Herbario, Universidad de Cordoba - Jardin Botanico de Cordoba
 COAH	s	Instituto Amazonico de Investigaciones Cientificas SINCHI
 COCA	s	Comision Tecnico Consultiva de Coeficientes de Agostadero (COTECOCA)
 COCH	s	Universidad Mayor de San Simon, Departamento de Botanica
@@ -1778,6 +1778,7 @@ FPRL	s	Building Research Establishment
 FQH	s	Fort Qu'Appelle Herbarium
 FR	sb	Forschungsinstitut Senckenberg
 FRC	s	Institute of Forest Genetics and Tree Breeding
+FRC<USA-PA>	c	Fusarium Research Center
 FRCL	s	Fisheries Research Centre
 FRCS	s	Forest Research Centre
 FRDC	b	Fruit Tree Research & Development Center of ThuaThien-Hue-Vietnam
@@ -3528,7 +3529,7 @@ MFB	s	Southern Research Station
 MFC	c	Matsushima Fungus Collection
 MFGC	c	Margot Forde Germplasm Centre, AgResearch GrasslandsWar
 MFLB	s	Marine Fisheries Laboratory
-MFLU<THA>	sc	Mae Fah Laung University Herbarium
+MFLU	sc	Mae Fah Laung University Herbarium
 MFLUCC<THA>	c	Mae Fah Luang University Culture Collection
 MfN<DEU>	s	Museum fur Naturkunde
 MFNB	s	Museo Friulano di Storia Naturale
@@ -5914,8 +5915,8 @@ UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
+UAM<USA-AL>	s	University of Alabama, Malacology Collection
 UAM<USA-AR>	s	University of Arkansas at Monticello
-UAM<USA:AL>	s	University of Alabama, Malacology Collection
 UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias
 UAMH	scb	University of Alberta Microfungus Collection and Herbarium
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)
