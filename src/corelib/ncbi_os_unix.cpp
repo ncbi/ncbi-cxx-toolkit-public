@@ -59,7 +59,7 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
 #  if defined(NCBI_OS_SOLARIS)  ||                                  \
     (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     // NB:  getpwuid() is MT-safe on Solaris
-    const passwd* pwd = getpwuid(uid);
+    const struct passwd* pwd = getpwuid(uid);
     if (pwd  &&  pwd->pw_name) {
         user.assign(pwd->pw_name);
     }
