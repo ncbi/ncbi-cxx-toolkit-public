@@ -176,6 +176,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
                  CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet)
                  .GetLoader()->GetName();
         _ASSERT( !m_BlastDbLoaderName.empty() );
+        _TRACE("Registered BLAST DB data loader '" << m_BlastDbLoaderName 
+               << "' as non-default");
     } catch (const CSeqDBException& e) {
         // if the database isn't found, ignore the exception as the
         // remote BLAST database data loader will be tried next
@@ -191,6 +193,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
                      CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet)
                      .GetLoader()->GetName();
             _ASSERT( !m_BlastDbLoaderName.empty() );
+            _TRACE("Registered BLAST DB data loader '" << m_BlastDbLoaderName 
+                   << "' as non-default");
         } catch (const CSeqDBException& e) {
             ERR_POST(Warning << "Error initializing remote BLAST database "
                           << "data loader: " << e.GetMsg());
@@ -216,6 +220,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
                     (*m_ObjMgr, db_handle, m_Config.m_UseFixedSizeSlices,
                      CObjectManager::eNonDefault).GetLoader()->GetName();
             _ASSERT( !m_BlastDbLoaderName.empty() );
+            _TRACE("Registered BLAST DB data loader '" << m_BlastDbLoaderName 
+                   << "' as non-default");
 
         } catch (const exception& e) {
 
@@ -237,6 +243,8 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(CRef<CSeqDB> db_handle)
                          CObjectManager::kPriority_NotSet)
                          .GetLoader()->GetName();
                 _ASSERT( !m_BlastDbLoaderName.empty() );
+                _TRACE("Registered BLAST DB data loader '" << m_BlastDbLoaderName 
+                       << "' as non-default");
             } catch (const CSeqDBException& e) {
                 ERR_POST(Warning << "Error initializing remote BLAST database "
                               << "data loader: " << e.GetMsg());
@@ -258,6 +266,8 @@ CBlastScopeSource::x_InitGenbankDataLoader()
         m_GbLoaderName = CGBDataLoader::RegisterInObjectManager
             (*m_ObjMgr, reader, CObjectManager::eNonDefault)
             .GetLoader()->GetName();
+        _TRACE("Registered Genbank data loader '" << m_GbLoaderName
+               << "' as non-default");
     } catch (const CException& e) {
         m_GbLoaderName.erase();
         ERR_POST(Warning << "Error initializing Genbank data loader: " 
