@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -47,6 +47,7 @@
 // Some initial defaults for faster lookups
 #define PWD_BUF  1024
 #define GRP_BUF  4096
+#define MAX_TRY  3
 
 
 BEGIN_NCBI_SCOPE
@@ -71,7 +72,7 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
     size_t size = sizeof(x_buf);
     char*  buf  = x_buf;
 
-    for (int n = 0;  n < 3;  ++n) {
+    for (int n = 0;  n < MAX_TRY;  ++n) {
 #    if   NCBI_HAVE_GETPWUID_R == 4
         // obsolete but still existent
         pwd = getpwuid_r(uid,
@@ -103,16 +104,16 @@ string CUnixFeature::GetUserNameByUID(uid_t uid)
 #    else
             maxsize = size << 1;
 #    endif //_SC_GETPW_R_SIZE_MAX
-            ERR_POST_ONCE((maxsize > size ? Error : Critical)
+            ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getpwuid parse buffer too small ("
                           STRINGIFY(PWD_BUF) "), please enlarge it!");
+            _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                _ASSERT(buf == x_buf);
                 buf = new char[size];
                 continue;
             }
-        } else if (n == 2) {
+        } else if (n == MAX_TRY - 1) {
             ERR_POST_ONCE(Critical << "getpwuid parse buffer too small ("
                           << NStr::NumericToString(size) << ")!");
             break;
@@ -144,7 +145,7 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
 #  if defined(NCBI_OS_SOLARIS)   ||                                 \
     (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     // NB:  getpwnam() is MT-safe on Solaris
-    const struct* pwd = getpwnam(user.c_str());
+    const struct passwd* pwd = getpwnam(user.c_str());
     uid = pwd ? pwd->pw_uid : (uid_t)(-1L);
 
 #  elif defined(NCBI_HAVE_GETPWUID_R)
@@ -154,7 +155,7 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
     size_t size = sizeof(x_buf);
     char*  buf  = x_buf;
 
-    for (int n = 0;  n < 3;  ++n) {
+    for (int n = 0;  n < MAX_TRY;  ++n) {
 #    if   NCBI_HAVE_GETPWUID_R == 4
         // obsolete but still existent
         pwd = getpwnam_r(user.c_str(),
@@ -186,16 +187,16 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
 #    else
             maxsize = size << 1;
 #    endif //_SC_GETPW_R_SIZE_MAX
-            ERR_POST_ONCE((maxsize > size ? Error : Critical)
+            ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getpwnam parse buffer too small ("
                           STRINGIFY(PWD_BUF) "), please enlarge it!");
+            _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                _ASSERT(buf == x_buf);
                 buf = new char[size];
                 continue;
             }
-        } else if (n == 2) {
+        } else if (n == MAX_TRY - 1) {
             ERR_POST_ONCE(Critical << "getpwnam parse buffer too small ("
                           << NStr::NumericToString(size) << ")!");
             break;
@@ -241,7 +242,7 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
     size_t size = sizeof(x_buf);
     char*  buf  = x_buf;
 
-    for (int n = 0;  n < 3;  ++n) {
+    for (int n = 0;  n < MAX_TRY;  ++n) {
 #    if   NCBI_HAVE_GETPWUID_R == 4
         // obsolete but still existent
         grp = getgrgid_r(gid,
@@ -273,16 +274,16 @@ string CUnixFeature::GetGroupNameByGID(gid_t gid)
 #    else
             maxsize = size << 1;
 #    endif //_SC_GETGR_R_SIZE_MAX
-            ERR_POST_ONCE((maxsize > size ? Error : Critical)
+            ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getgrgid parse buffer too small ("
                           STRINGIFY(GRP_BUF) "), please enlarge it!");
+            _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
-                _ASSERT(buf == x_buf);
                 buf = new char[size];
                 continue;
             }
-        } else if (n == 2) {
+        } else if (n == MAX_TRY - 1) {
             ERR_POST_ONCE(Critical << "getgrgid parse buffer too small ("
                           << NStr::NumericToString(size) << ")!");
             break;
@@ -325,7 +326,7 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
     size_t size = sizeof(x_buf);
     char*  buf  = x_buf;
 
-    for (int n = 0;  n < 3;  ++n) {
+    for (int n = 0;  n < MAX_TRY;  ++n) {
 #    if   NCBI_HAVE_GETPWUID_R == 4
         // obsolete but still existent
         grp = getgrnam_r(group.c_str(),
@@ -357,15 +358,16 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
 #    else
             maxsize = size << 1;
 #    endif //_SC_GETGR_R_SIZE_MAX
-            ERR_POST_ONCE((maxsize > size ? Error : Critical)
+            ERR_POST_ONCE((size < maxsize ? Error : Critical)
                           << "getgrnam parse buffer too small ("
                           STRINGIFY(GRP_BUF) "), please enlarge it!");
+            _ASSERT(buf == x_buf);
             if (size < maxsize) {
                 size = maxsize;
                 buf = new char[size];
                 continue;
             }
-        } else if (n == 2) {
+        } else if (n == MAX_TRY - 1) {
             ERR_POST_ONCE(Critical << "getgrnam parse buffer too small ("
                           << NStr::NumericToString(size) << ")!");
             break;
