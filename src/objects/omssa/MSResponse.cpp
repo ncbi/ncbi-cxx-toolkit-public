@@ -108,7 +108,7 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
                 string Accession("");
                 if((*iPephit)->CanGetAccession())
                     Accession = CSVString((*iPephit)->GetAccession());
-                int Gi(0);
+                TGi Gi = ZERO_GI;
                 if((*iPephit)->CanGetGi())
                     Gi = (*iPephit)->GetGi();
                 os <<  HitSet->GetNumber() << "," << CSVString(id) << "," << 

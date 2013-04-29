@@ -12,3 +12,6 @@ hits._type=vector
 hitsets._type=vector
 
 
+[MSPepHit]
+gi._type=ncbi::TGi
+gi._storage_type=ncbi::TIntId

@@ -66,7 +66,7 @@ public:
     /// Place the CBlast_def_line object which contains the requested gi as the
     /// first in the list (if found)
     /// @param gi gi to be placed first [in]
-    void PutTargetGiFirst(int gi);
+    void PutTargetGiFirst(TGi gi);
 
 private:
     // Prohibit copy constructor and assignment operator

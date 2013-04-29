@@ -85,7 +85,7 @@ CRef<CSeq_entry> CID1Client::AskGetsefromgi(const CID1server_maxcomplex& req,
 }
 
 
-CRef<CSeq_entry> CID1Client::FetchEntry(int gi, int max_complexity)
+CRef<CSeq_entry> CID1Client::FetchEntry(TGi gi, int max_complexity)
 {
     CRef<CID1server_maxcomplex> mc(new CID1server_maxcomplex);
     mc->SetGi(gi);
@@ -96,8 +96,8 @@ CRef<CSeq_entry> CID1Client::FetchEntry(int gi, int max_complexity)
 
 CRef<CSeq_entry> CID1Client::FetchEntry(const CSeq_id& id, int max_complexity)
 {
-    int gi = AskGetgi(id);
-    if (gi == 0) {
+    TGi gi = AskGetgi(id);
+    if (gi == ZERO_GI) {
         return CRef<CSeq_entry>();
     }
     return FetchEntry(gi, max_complexity);

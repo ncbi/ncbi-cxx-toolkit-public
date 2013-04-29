@@ -750,15 +750,15 @@ public:
             synonyms.insert(id);
         }
 
-    void AddSeq(int gi, TSeqType seqtype, TSeqPos len)
+    void AddSeq(TGi gi, TSeqType seqtype, TSeqPos len)
         {
             m_Types[gi] = seqtype;
             m_Lengths[gi] = len;
         }
 
 private:
-    typedef map<int, TSeqType> TTypeMap;
-    typedef map<int, TSeqPos>  TLenMap;
+    typedef map<TGi, TSeqType> TTypeMap;
+    typedef map<TGi, TSeqPos>  TLenMap;
 
     TTypeMap m_Types;
     TLenMap  m_Lengths;
@@ -770,8 +770,8 @@ void TestMapper_Sequence_Info()
     CNcbiIfstream in("mapper_test_data/seqinfo.asn");
     cout << "Test mapping with sequence info provider" << endl;
     CRef<CTestMapperSeqInfo> info(new CTestMapperSeqInfo);
-    info->AddSeq(4, CSeq_loc_Mapper_Base::eSeq_nuc, 300);
-    info->AddSeq(5, CSeq_loc_Mapper_Base::eSeq_prot, 100);
+    info->AddSeq(TGi(4), CSeq_loc_Mapper_Base::eSeq_nuc, 300);
+    info->AddSeq(TGi(5), CSeq_loc_Mapper_Base::eSeq_prot, 100);
 
     CSeq_loc src, dst;
     // Read seq-locs first to skip ASN.1 comments

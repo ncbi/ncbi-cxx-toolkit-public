@@ -345,7 +345,7 @@ public:
     //       tax_id if found
     //       0      if not found
     ///
-    bool GetTaxId4GI(int gi, int& tax_id_out);
+    bool GetTaxId4GI(TGi gi, int& tax_id_out);
 
     //--------------------------------------------------
     // Get "blast" name for id

@@ -162,9 +162,9 @@ CBlast_def_line_set::SortBySeqIdRank(bool is_protein)
 }
 
 void
-CBlast_def_line_set::PutTargetGiFirst(int gi)
+CBlast_def_line_set::PutTargetGiFirst(TGi gi)
 {
-    if (gi <= 0) {
+    if (gi <= ZERO_GI) {
         return;
     }
 

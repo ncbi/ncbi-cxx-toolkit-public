@@ -70,7 +70,7 @@ public:
     virtual CRef<CSeq_entry> AskGetsefromgi(const CID1server_maxcomplex& req,
                                             TReply* reply = 0);
     // Simplified interface for retrieving entries by gi or sequence id
-    CRef<CSeq_entry> FetchEntry(int gi, int max_complexity = 0);
+    CRef<CSeq_entry> FetchEntry(TGi gi, int max_complexity = 0);
     CRef<CSeq_entry> FetchEntry(const CSeq_id& id, int max_complexity = 0);
     CRef<CSeq_entry> FetchEntry(const string& id_string,
                                 int max_complexity = 0);

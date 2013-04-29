@@ -145,17 +145,17 @@ void CTestID1ClientApp::RunCommand(const string& command)
     } else if (verb == "getsefromgi") {
         CID1server_maxcomplex maxplex;
         maxplex.SetMaxplex(eEntry_complexities_entry);
-        maxplex.SetGi(NStr::StringToInt(args.front()));
+        maxplex.SetGi(NStr::StringToNumeric<TGi>(args.front()));
         *m_OutAsn << *m_Client->AskGetsefromgi(maxplex);
         m_OutAsn->Flush();
     } else if (verb == "getseqidsfromgi") {
-        int gi = NStr::StringToInt(args.front());
+        TGi gi = NStr::StringToNumeric<TGi>(args.front());
         CID1server_back::TIds ids = m_Client->AskGetseqidsfromgi(gi);
         ITERATE (CID1server_back::TIds, id, ids) {
             *m_Out << (*id)->DumpAsFasta() << endl;
         }
     } else if (verb == "getgihist") {
-        int gi = NStr::StringToInt(args.front());
+        TGi gi = NStr::StringToNumeric<TGi>(args.front());
         typedef list< CRef<CID1Seq_hist> > THistory;
         THistory hist = m_Client->AskGetgihist(gi);
         ITERATE (THistory, iter, hist) {
@@ -163,7 +163,7 @@ void CTestID1ClientApp::RunCommand(const string& command)
         }
         m_OutAsn->Flush();
     } else if (verb == "getgirev") {
-        int gi = NStr::StringToInt(args.front());
+        TGi gi = NStr::StringToNumeric<TGi>(args.front());
         typedef list< CRef<CID1Seq_hist> > THistory;
         THistory hist = m_Client->AskGetgirev(gi);
         ITERATE (THistory, iter, hist) {
@@ -171,7 +171,7 @@ void CTestID1ClientApp::RunCommand(const string& command)
         }
         m_OutAsn->Flush();
     } else if (verb == "getgistate") {
-        int gi = NStr::StringToInt(args.front());
+        TGi gi = NStr::StringToNumeric<TGi>(args.front());
         *m_Out << m_Client->AskGetgistate(gi) << endl;
     } else {
         ERR_POST("Unrecognized command \"" << command << "\"");

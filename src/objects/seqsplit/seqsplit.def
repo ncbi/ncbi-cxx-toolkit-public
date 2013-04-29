@@ -13,6 +13,7 @@ start._type = TSeqPos
 [ID2S-Gi-Interval]
 start._type = TSeqPos
 length._type = TSeqPos
+gi._type = ncbi::TGi
 
 [ID2S-Interval]
 start._type = TSeqPos
@@ -20,3 +21,18 @@ length._type = TSeqPos
 
 [ID2S-Seq-feat-Ids-Info]
 local-ids._type = vector
+
+[ID2S-Gi-Ints]
+gi._type = ncbi::TGi
+
+[ID2S-Seq-loc]
+whole-gi._type = ncbi::TGi
+
+[ID2S-Gi-Range]
+start._type = ncbi::TGi
+
+[ID2S-Bioseq-ids]
+E.gi._type = ncbi::TGi
+
+[ID2S-Chunk-data]
+id.gi._type = ncbi::TGi

@@ -1294,7 +1294,7 @@ CTaxon1::IsAlive(void)
 }
 
 bool
-CTaxon1::GetTaxId4GI(int gi, int& tax_id_out )
+CTaxon1::GetTaxId4GI(TGi gi, int& tax_id_out )
 {
     SetLastError(NULL);
     CTaxon1_req  req;

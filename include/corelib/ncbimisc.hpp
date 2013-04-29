@@ -1031,6 +1031,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CStrictGi& gi)
 typedef CStrictGi TGi;
 
 #define ZERO_GI TGi(0)
+#define INVALID_GI TGi(-1)
 
 
 #else // NCBI_STRICT_GI
@@ -1038,6 +1039,7 @@ typedef CStrictGi TGi;
 
 typedef Int8 TGi;
 #define ZERO_GI 0
+#define INVALID_GI -1
 
 
 #endif // NCBI_STRICT_GI
@@ -1056,6 +1058,7 @@ typedef Int4 TIntId;
 typedef Uint4 TUintId;
 
 #define ZERO_GI 0
+#define INVALID_GI -1
 
 
 #endif
