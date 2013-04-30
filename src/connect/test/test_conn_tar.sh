@@ -21,7 +21,7 @@ case "`expr '(' $$ / 10 ')' '%' 2`" in
   else
     url='http://www.ncbi.nlm.nih.gov'
   fi
-  huge_tar="$url"/"geosuppl/?acc=GSE1580"
+  huge_tar="$url"/"download/?acc=GSE1580&format=file"
   ;;
   1)
   huge_tar="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
