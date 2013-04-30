@@ -50,6 +50,7 @@
 
 #include <objtools/readers/fasta.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -408,5 +409,21 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
                     << ", but it's " << iWarningLineNum);
             }
         }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
+{
+    static const string kFastaWhereAllModsRemoved = 
+        ">Seq1 [topology=circular]\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n";
+    CMemoryLineReader line_reader( kFastaWhereAllModsRemoved.c_str(),
+        kFastaWhereAllModsRemoved.length() );
+    CFastaReader fasta_reader( line_reader, CFastaReader::fAddMods );
+
+    CRef<CSeq_entry> pSeqEntry = fasta_reader.ReadOneSeq();
+
+    FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, pSeqEntry->GetSeq()) {
+        BOOST_CHECK( ! (*desc_it)->IsTitle() );
     }
 }

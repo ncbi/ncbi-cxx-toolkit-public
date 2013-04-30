@@ -2012,71 +2012,91 @@ void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )
     CSourceModParser smp( TestFlag(fBadModThrow) ?
         CSourceModParser::eHandleBadMod_Throw : 
     CSourceModParser::eHandleBadMod_Ignore );
-    CConstRef<CSeqdesc> title_desc;
+    CRef<CSeqdesc> title_desc;
+
+
+    if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
+        return;
+    }
+
     // find title
-    FOR_EACH_SEQDESC_ON_BIOSEQ( title_it, bioseq ) {
-        if( (*title_it)->IsTitle() ) {
-            title_desc.Reset( &(**title_it) );
+    // (and remember iter in case we need to delete later)
+    CSeq_descr::Tdata & desc_container = bioseq.SetDescr().Set();
+    CSeq_descr::Tdata::iterator desc_it = desc_container.begin();
+    const CSeq_descr::Tdata::iterator desc_end = desc_container.end();
+    for( ; desc_it != desc_end; ++desc_it ) {
+        if( (*desc_it)->IsTitle() ) {
+            title_desc.Reset( &(**desc_it) );
             break;
         }
     }
-    if (title_desc) {
-        string& title(const_cast<string&>(title_desc->GetTitle()));
-        
-        if( TestFlag(fAddMods) ) {
-            title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
 
-            smp.ApplyAllMods(bioseq);
-            if( TestFlag(fUnknModThrow) ) {
-                CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-                if( ! unused_mods.empty() ) 
-                {
-                    // there are unused mods and user specified to throw if any
-                    // unused 
-                    CNcbiOstrstream err;
-                    err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
+    if ( ! title_desc ) {
+        return;
+    }
 
-                    // get sequence ID
-                    const CSeq_id* seq_id = bioseq.GetFirstId();
-                    if( seq_id ) {
-                        err << seq_id->GetSeqIdString();
-                    } else {
-                        // seq-id unknown
-                        err << "sequence";
-                    }
+    string& title = title_desc->SetTitle();
 
-                    err << ":";
-                    ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                        err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
-                    }
-                    err << " around line " + NStr::NumericToString(LineNumber());
-                    NCBI_THROW2(CObjReaderParseException, eUnusedMods,
-                        (string)CNcbiOstrstreamToString(err),
-                        LineNumber());
-                }
-            }
-            smp.GetLabel(&title, CSourceModParser::fUnusedMods);
-            copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
-                inserter(m_BadMods, m_BadMods.begin()) );
-            CSourceModParser::TMods unused_mods = 
-                smp.GetMods(CSourceModParser::fUnusedMods);
-            copy( unused_mods.begin(), unused_mods.end(),
-                inserter(m_UnusedMods, m_UnusedMods.begin() ) );
-        } else {
-            // user did not request fAddMods, so we warn that we found
-            // mods anyway
-            smp.ParseTitle(
-                title, 
-                CConstRef<CSeq_id>(bioseq.GetFirstId()),
-                1 // "1" since we only care whether or not there are mods, not how many
-                );
+    if( TestFlag(fAddMods) ) {
+        title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
+
+        smp.ApplyAllMods(bioseq);
+        if( TestFlag(fUnknModThrow) ) {
             CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-            if( ! unused_mods.empty() ) {
-                FASTA_WARNING(LineNumber(), CWarning::eType_ModsFoundButNotExpected,
-                    "FASTA-Reader: Ignoring FASTA modifier(s) found because "
-                    "the input was not expected to have any.");
+            if( ! unused_mods.empty() ) 
+            {
+                // there are unused mods and user specified to throw if any
+                // unused 
+                CNcbiOstrstream err;
+                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
+
+                // get sequence ID
+                const CSeq_id* seq_id = bioseq.GetFirstId();
+                if( seq_id ) {
+                    err << seq_id->GetSeqIdString();
+                } else {
+                    // seq-id unknown
+                    err << "sequence";
+                }
+
+                err << ":";
+                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
+                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
+                }
+                err << " around line " + NStr::NumericToString(LineNumber());
+                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
+                    (string)CNcbiOstrstreamToString(err),
+                    LineNumber());
             }
         }
+
+        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+
+        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
+            inserter(m_BadMods, m_BadMods.begin()) );
+        CSourceModParser::TMods unused_mods = 
+            smp.GetMods(CSourceModParser::fUnusedMods);
+        copy( unused_mods.begin(), unused_mods.end(),
+            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
+    } else {
+        // user did not request fAddMods, so we warn that we found
+        // mods anyway
+        smp.ParseTitle(
+            title, 
+            CConstRef<CSeq_id>(bioseq.GetFirstId()),
+            1 // "1" since we only care whether or not there are mods, not how many
+            );
+        CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+        if( ! unused_mods.empty() ) {
+            FASTA_WARNING(LineNumber(), CWarning::eType_ModsFoundButNotExpected,
+                "FASTA-Reader: Ignoring FASTA modifier(s) found because "
+                "the input was not expected to have any.");
+        }
+    }
+
+    // remove title if empty
+    if( title.empty() ) {
+        desc_container.erase(desc_it);
     }
 }
 
