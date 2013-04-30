@@ -487,7 +487,7 @@ public:
     
     bool IdenticalAlign(const CGeneModel& a) const
     { return Strand()==a.Strand() && Limits()==a.Limits() && Exons() == a.Exons() && FrameShifts()==a.FrameShifts() && 
-            GetCdsInfo().PStops() == a.GetCdsInfo().PStops() && Type() == a.Type(); }
+            GetCdsInfo().PStops() == a.GetCdsInfo().PStops() && Type() == a.Type() && Status() == a.Status(); }
     bool operator==(const CGeneModel& a) const
     {
         return IdenticalAlign(a) && Type()==a.Type() && m_id==a.m_id && m_support==a.m_support;
