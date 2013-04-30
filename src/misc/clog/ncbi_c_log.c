@@ -1464,9 +1464,11 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     sx_Info->psn++;
     ctx->tsn++;
 
-    /* Reset posting time */
-    sx_Info->post_time.sec = 0;
-    sx_Info->post_time.ns  = 0;
+    /* Reset posting time if no user time defined */
+    if (sx_Info->user_posting_time == 0) {
+        sx_Info->post_time.sec = 0;
+        sx_Info->post_time.ns  = 0;
+    }
 }
 
 
@@ -2064,8 +2066,6 @@ ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned i
     ds = sx_Info->destination;
     MT_UNLOCK;
     return ds;
-
-
 }
 
 
@@ -2129,6 +2129,7 @@ void NcbiLog_SetTime(time_t time_sec, unsigned long time_ns)
     MT_LOCK_API;
     sx_Info->post_time.sec = time_sec;
     sx_Info->post_time.ns  = time_ns;
+    sx_Info->user_posting_time = (time_sec || time_ns ? 1 : 0);
     MT_UNLOCK;
 }
 

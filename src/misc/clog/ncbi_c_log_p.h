@@ -105,6 +105,7 @@ struct SInfo_tag {
     TNcbiLog_Counter  psn;                      /**< Serial number of the posting within the process     */
     STime             post_time;                /**< GMT time at which the message was posted, 
                                                      use current time if it is not specified (equal to 0)*/
+    int/*bool*/       user_posting_time;        /**< If TRUE use post_time as is, and never change it    */
     char              host[NCBILOG_HOST_MAX+1]; /**< Name of the host where the process runs 
                                                      (UNK_HOST if unknown)                               */
     char              appname[3*NCBILOG_APPNAME_MAX+1]; /**< Name of the application (UNK_APP if unknown)*/
@@ -133,7 +134,7 @@ struct SInfo_tag {
     char*             file_err_name;
     char*             file_log_name;
     char*             file_perf_name;
-    int               reuse_file_names;         /**< File names where not changed, reuse it */
+    int/*bool*/       reuse_file_names;         /**< File names where not changed, reuse it */
 };
 typedef struct SInfo_tag TNcbiLog_Info;
 

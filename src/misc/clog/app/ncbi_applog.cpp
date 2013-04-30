@@ -680,6 +680,7 @@ void CNcbiApplogApp::SetInfo()
     g_ctx->req_start_time  = m_Info.req_start_time;
     if (m_Info.post_time.sec) {
         g_info->post_time = m_Info.post_time;
+        g_info->user_posting_time = 1;
     }
 
     if (!m_Info.host.empty()) {
@@ -732,7 +733,6 @@ int CNcbiApplogApp::Run(void)
 {
     string     s;  
     bool       is_api_init = false;         ///< C Logging API is initialized
-    string     token;                       ///< Token string
     ETokenType token_gen_type = eUndefined; ///< Token type to generate (app, request)
     ETokenType token_par_type = eUndefined; ///< Parsed token type (app, request)
 
@@ -976,7 +976,7 @@ int CNcbiApplogApp::Run(void)
 
     // Print token (start_app, start_request)
     if (token_gen_type != eUndefined) {
-        token = GenerateToken(token_gen_type);
+        string token = GenerateToken(token_gen_type);
         cout << token;
     }
     return 0;
