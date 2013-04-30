@@ -1,9 +1,9 @@
 #! /bin/sh
 # $Id$
 
-huge_tar_file="DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
-huge_tar_dir="/panfs/traces01/ftp-geo-pub/public"
-huge_tar_ftp="ftp://ftp.ncbi.nlm.nih.gov/pub/geo"
+huge_tar_file="series/GSE15nnn/GSE15735/suppl/GSE15735_RAW.tar"
+huge_tar_dir="/netmnt/traces04/ftp-geo-pub/public/GEO"
+huge_tar_ftp="ftp://ftp.ncbi.nlm.nih.gov/geo"
 
 if [ "`basename $0 .sh`" != "test_conn_tar" ]; then
   # Locate native tar;  exit successfully if none found
@@ -14,7 +14,7 @@ if [ "`basename $0 .sh`" != "test_conn_tar" ]; then
     tar="`echo $string | cut -f2 -d' '`"
   fi
   test -x "$tar"  ||  exit 0
-  # NB:  only works correctly on intprod21
+  # NB:  works correctly only on intprod21
   huge_tar="$huge_tar_dir"/"$huge_tar_file"
 else
   test_conn_tar="test_conn_tar"
