@@ -117,7 +117,9 @@ CFormatGuessApp::Run(void)
     FormatStrings[ CFormatGuess::eBed ] = "UCSC BED file";
     FormatStrings[ CFormatGuess::eBed15 ] = "UCSC microarray file";
     FormatStrings[ CFormatGuess::eHgvs ] = "HGVS Variation file";
-                
+    FormatStrings[ CFormatGuess::eGff2 ] = "GFF2 feature table";
+    FormatStrings[ CFormatGuess::eGff3 ] = "GFF3 feature table";
+    FormatStrings[ CFormatGuess::eGvf ] = "GVF gene variation data";
     CFormatGuess Guesser( strFileName );
     CFormatGuess::EFormat uFormat = Guesser.GuessFormat();
 
