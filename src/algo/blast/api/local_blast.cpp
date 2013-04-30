@@ -267,7 +267,7 @@ Int4 CLocalBlast::GetNumExtensions()
 
 BlastDiagnostics* CLocalBlast::GetDiagnostics()
 {
-    BlastDiagnostics* diag;
+    BlastDiagnostics* diag=NULL;
     
     if (m_InternalData) {
         diag = Blast_DiagnosticsCopy(m_InternalData->m_Diagnostics->GetPointer());
