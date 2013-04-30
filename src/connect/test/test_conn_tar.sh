@@ -24,7 +24,7 @@ case "`expr '(' $$ / 10 ')' '%' 2`" in
   huge_tar="$url"/"geosuppl/?acc=GSE1580"
   ;;
   1)
-  huge_tar="ftp://ftp.ncbi.nlm.nih.gov/pub/geo/DATA/supplementary/series/GSE1580/GSE1580_RAW.tar"
+  huge_tar="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
   ;;
 esac
 
