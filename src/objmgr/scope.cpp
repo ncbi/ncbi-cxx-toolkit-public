@@ -375,7 +375,7 @@ CSeq_id_Handle CScope::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CScope::GetGi(const CSeq_id_Handle& idh)
+TGi CScope::GetGi(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh, false);
 }
@@ -394,7 +394,7 @@ CSeq_id_Handle CScope::x_GetAccVer(const TIds& ids)
 }
 
 
-int CScope::x_GetGi(const TIds& ids)
+TGi CScope::x_GetGi(const TIds& ids)
 {
     ITERATE ( TIds, iter, ids ) {
         if ( iter->IsGi() ) {
@@ -404,7 +404,7 @@ int CScope::x_GetGi(const TIds& ids)
             return iter->GetSeqId()->GetGi();
         }
     }
-    return 0;
+    return ZERO_GI;
 }
 
 

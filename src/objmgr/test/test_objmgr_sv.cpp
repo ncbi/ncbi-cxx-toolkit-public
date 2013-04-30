@@ -71,7 +71,7 @@ public:
     virtual int  Run (void);
 
     typedef vector< pair<int, int> > TLevel;
-    CConstRef<CBioseq> CreateBioseq(int gi, bool protein,
+    CConstRef<CBioseq> CreateBioseq(TGi gi, bool protein,
                                     int segments, const TLevel& pll);
     
 protected:
@@ -115,7 +115,7 @@ void CTestApp::Init(void)
 }
 
 
-CConstRef<CBioseq> CTestApp::CreateBioseq(int gi,
+CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                                           bool protein,
                                           int segments,
                                           const TLevel& pll)
@@ -248,7 +248,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(int gi,
         }
         else {
             int index = m_Random.GetRand(0, pll.size()-1);
-            int ref_gi = pll[index].first;
+            TGi ref_gi = GI_FROM(int, pll[index].first);
             int ref_len = pll[index].second;
             CSeq_interval& interval = s->SetLoc().SetInt();
             interval.SetId().SetGi(ref_gi);
@@ -366,14 +366,14 @@ int CTestApp::Run(void)
             swap(ll, pll);
             ll.clear();
             for ( int seqnum = 0; seqnum < sequences; ++seqnum ) {
-                int gi = level*1000 + seqnum;
+                TGi gi = GI_FROM(int, level*1000 + seqnum);
                 CConstRef<CBioseq> seq =
                     CreateBioseq(gi, protein, segments, pll);
                 if ( verbose ) {
                     NcbiCout << "Level "<<level<<" "<<MSerial_AsnText<<*seq;
                 }
                 CBioseq_Handle bh = scope.AddBioseq(*seq);
-                ll.push_back(pair<int, int>(gi, bh.GetBioseqLength()));
+                ll.push_back(pair<int, int>(GI_TO(int, gi), bh.GetBioseqLength()));
                 if ( level == levels - 1 ) {
                     main = bh;
                     break;

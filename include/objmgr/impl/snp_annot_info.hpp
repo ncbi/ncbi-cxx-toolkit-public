@@ -189,7 +189,7 @@ public:
 
     const_iterator FirstIn(const TRange& range) const;
 
-    int GetGi(void) const;
+    TGi GetGi(void) const;
     const CSeq_id& GetSeq_id(void) const;
 
     size_t GetSize(void) const;
@@ -216,8 +216,8 @@ protected:
     SSNP_Info::TExtraIndex x_GetExtraIndex(const string& str);
     const string& x_GetExtra(SSNP_Info::TExtraIndex index) const;
 
-    bool x_CheckGi(int gi);
-    void x_SetGi(int gi);
+    bool x_CheckGi(TGi gi);
+    void x_SetGi(TGi gi);
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
@@ -229,7 +229,7 @@ private:
     friend struct SSNP_Info;
     friend class CSeq_feat_Handle;
 
-    int                         m_Gi;
+    TGi                         m_Gi;
     CRef<CSeq_id>               m_Seq_id;
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
@@ -284,7 +284,7 @@ CSeq_annot_SNP_Info::FirstIn(const CRange<TSeqPos>& range) const
 
 
 inline
-int CSeq_annot_SNP_Info::GetGi(void) const
+TGi CSeq_annot_SNP_Info::GetGi(void) const
 {
     return m_Gi;
 }
@@ -298,12 +298,12 @@ const CSeq_id& CSeq_annot_SNP_Info::GetSeq_id(void) const
 
 
 inline
-bool CSeq_annot_SNP_Info::x_CheckGi(int gi)
+bool CSeq_annot_SNP_Info::x_CheckGi(TGi gi)
 {
     if ( gi == m_Gi ) {
         return true;
     }
-    if ( m_Gi < 0 ) {
+    if ( m_Gi < ZERO_GI ) {
         x_SetGi(gi);
         return true;
     }

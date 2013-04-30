@@ -360,10 +360,10 @@ public:
     TIds GetIds(const CSeq_id_Handle& idh);
 
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    int GetGi(const CSeq_id_Handle& idh);
+    TGi GetGi(const CSeq_id_Handle& idh);
     
     static CSeq_id_Handle x_GetAccVer(const TIds& ids);
-    static int x_GetGi(const TIds& ids);
+    static TGi x_GetGi(const TIds& ids);
 
     /// Get short description of bioseq, usually "accession.version"
     enum EForceLabelLoad {
@@ -406,7 +406,7 @@ public:
     void GetAccVers(TSeq_id_Handles* results,
                     const TSeq_id_Handles& idhs,
                     EForceLoad force_load = eNoForceLoad);
-    typedef vector<int> TGIs;
+    typedef vector<TGi> TGIs;
     TGIs GetGis(const TSeq_id_Handles& idhs,
                 EForceLoad force_load = eNoForceLoad);
     void GetGis(TGIs* results,

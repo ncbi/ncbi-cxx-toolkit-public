@@ -263,7 +263,7 @@ public:
     bool OnlyGiAnnotIds(void) const;
 
     // indexes types
-    typedef map<int, CBioseq_set_Info*>                      TBioseq_sets;
+    typedef map<TIntId, CBioseq_set_Info*>                   TBioseq_sets;
     typedef CBioseq_Info*                                    TBioseqInfo;
     typedef map<CSeq_id_Handle, TBioseqInfo>                 TBioseqs;
 

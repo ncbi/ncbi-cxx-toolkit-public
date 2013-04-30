@@ -1183,9 +1183,9 @@ CSeq_id_Handle CDataSource::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CDataSource::GetGi(const CSeq_id_Handle& idh)
+TGi CDataSource::GetGi(const CSeq_id_Handle& idh)
 {
-    int ret = 0;
+    TGi ret = ZERO_GI;
     TTSE_LockSet locks;
     SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
     if ( match ) {

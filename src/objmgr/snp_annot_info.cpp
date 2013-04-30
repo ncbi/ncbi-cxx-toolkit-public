@@ -631,7 +631,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     { // location
         TSeqPos to_position = m_ToPosition;
         TPositionDelta position_delta = m_PositionDelta;
-        int gi = annot.GetGi();
+        TGi gi = annot.GetGi();
         if ( position_delta == 0 ) {
             // point
             feat.SetLocation().Reset();
@@ -690,7 +690,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     { // location
         TSeqPos to_position = m_ToPosition;
         TPositionDelta position_delta = m_PositionDelta;
-        int gi = annot.GetGi();
+        TGi gi = annot.GetGi();
         if ( position_delta == 0 ) {
             // point
             CSeq_point& point = feat.SetLocation().SetPnt();
@@ -1015,9 +1015,9 @@ CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
 }
 
 
-void CSeq_annot_SNP_Info::x_SetGi(int gi)
+void CSeq_annot_SNP_Info::x_SetGi(TGi gi)
 {
-    _ASSERT(m_Gi == -1);
+    _ASSERT(m_Gi == INVALID_GI);
     m_Gi = gi;
     _ASSERT(!m_Seq_id);
     m_Seq_id.Reset(new CSeq_id);
@@ -1042,7 +1042,7 @@ void CSeq_annot_SNP_Info::x_FinishParsing(void)
 
 void CSeq_annot_SNP_Info::Reset(void)
 {
-    m_Gi = -1;
+    m_Gi = INVALID_GI;
     m_Seq_id.Reset();
     m_Comments.Clear();
     m_Alleles.Clear();

@@ -323,7 +323,7 @@ public:
     // Get "native" bioseq ids without filtering and matching.
     TIds GetIds(const CSeq_id_Handle& idh);
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh, bool force_load);
-    int GetGi(const CSeq_id_Handle& idh, bool force_load);
+    TGi GetGi(const CSeq_id_Handle& idh, bool force_load);
     string GetLabel(const CSeq_id_Handle& idh, bool force_load);
     int GetTaxId(const CSeq_id_Handle& idh, bool force_load);
 
@@ -337,7 +337,7 @@ public:
     void GetAccVers(TIds& ret, const TIds& idhs, bool force_load);
 
     // Get a set of gis
-    typedef vector<int> TGIs;
+    typedef vector<TGi> TGIs;
     void GetGis(TGIs& ret, const TIds& idhs, bool force_load);
 
     // Get a set of label strings

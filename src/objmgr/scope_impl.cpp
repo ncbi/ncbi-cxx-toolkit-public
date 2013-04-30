@@ -2471,10 +2471,10 @@ CSeq_id_Handle CScope_Impl::GetAccVer(const CSeq_id_Handle& idh,
 }
 
 
-int CScope_Impl::GetGi(const CSeq_id_Handle& idh,
+TGi CScope_Impl::GetGi(const CSeq_id_Handle& idh,
                        bool force_load)
 {
-    int ret = 0;
+    TGi ret = ZERO_GI;
     TConfReadLockGuard rguard(m_ConfLock);
 
     if ( !force_load ) {
@@ -2493,7 +2493,7 @@ int CScope_Impl::GetGi(const CSeq_id_Handle& idh,
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CPrefetchManager::IsActive();
         ret = it->GetDataSource().GetGi(idh);
-        if ( ret ) {
+        if (ret != ZERO_GI) {
             break;
         }
     }

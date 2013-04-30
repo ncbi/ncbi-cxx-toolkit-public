@@ -218,7 +218,7 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    int GetGi(const CSeq_id_Handle& idh);
+    TGi GetGi(const CSeq_id_Handle& idh);
     string GetLabel(const CSeq_id_Handle& idh);
     int GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
@@ -226,7 +226,7 @@ public:
 
     // bulk interface
     typedef vector<bool> TLoaded;
-    typedef vector<int> TGis;
+    typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
     typedef vector<TSeqPos> TSequenceLengths;

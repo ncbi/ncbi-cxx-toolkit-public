@@ -127,7 +127,7 @@ typedef int EGetIdType;
 /// Id type in the flags is ignored, only VerifyId and ThrowOnError
 /// flags are checked.
 NCBI_XOBJUTIL_EXPORT
-int GetGiForAccession(const string& acc,
+TGi GetGiForAccession(const string& acc,
                       CScope& scope,
                       EGetIdType flags = 0);
 
@@ -137,7 +137,7 @@ int GetGiForAccession(const string& acc,
 /// Id type in the flags is ignored, only VerifyId and ThrowOnError
 /// flags are checked.
 NCBI_XOBJUTIL_EXPORT
-string GetAccessionForGi(int           gi,
+string GetAccessionForGi(TGi           gi,
                          CScope&       scope,
                          EAccessionVersion use_version = eWithAccessionVersion,
                          EGetIdType flags = 0);
@@ -148,7 +148,7 @@ string GetAccessionForGi(int           gi,
 /// Id type in the flags is ignored, only VerifyId and ThrowOnError
 /// flags are checked.
 NCBI_XOBJUTIL_EXPORT
-int GetGiForId(const objects::CSeq_id& id,
+TGi GetGiForId(const objects::CSeq_id& id,
                CScope& scope,
                EGetIdType flags = 0);
 

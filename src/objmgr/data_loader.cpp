@@ -237,7 +237,7 @@ CSeq_id_Handle CDataLoader::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CDataLoader::GetGi(const CSeq_id_Handle& idh)
+TGi CDataLoader::GetGi(const CSeq_id_Handle& idh)
 {
     TIds ids;
     GetIds(idh, ids);

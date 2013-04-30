@@ -80,26 +80,26 @@ CScope& GetScope()
 }
 
 
-CRef<CSeq_loc> MakeBond(int giA, TSeqPos posA, int giB = 0, TSeqPos posB = 0)
+CRef<CSeq_loc> MakeBond(TIntId giA, TSeqPos posA, int giB = 0, TSeqPos posB = 0)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetBond().SetA().SetId().SetGi(giA);
+    ret->SetBond().SetA().SetId().SetGi(GI_FROM(TIntId, giA));
     ret->SetBond().SetA().SetPoint(posA);
     if (giB > 0) {
-        ret->SetBond().SetB().SetId().SetGi(giB);
+        ret->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, giB));
         ret->SetBond().SetB().SetPoint(posB);
     }
     return ret;
 }
 
 
-CRef<CSeq_loc> MakeInterval(int        gi,
+CRef<CSeq_loc> MakeInterval(TIntId        gi,
                             TSeqPos    from,
                             TSeqPos    to,
                             ENa_strand strand = eNa_strand_unknown)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetInt().SetId().SetGi(gi);
+    ret->SetInt().SetId().SetGi(GI_FROM(TIntId, gi));
     ret->SetInt().SetFrom(from);
     ret->SetInt().SetTo(to);
     if (strand != eNa_strand_unknown) {
@@ -125,10 +125,10 @@ CRef<CSeq_loc> MakeInterval(CRef<CSeq_id> id,
 }
 
 
-CRef<CSeq_loc> MakePoint(int gi, TSeqPos pos)
+CRef<CSeq_loc> MakePoint(TIntId gi, TSeqPos pos)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetPnt().SetId().SetGi(gi);
+    ret->SetPnt().SetId().SetGi(GI_FROM(TIntId, gi));
     ret->SetPnt().SetPoint(pos);
     return ret;
 }
@@ -139,8 +139,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_whole)
     CScope* scope = &GetScope();
 
     CSeq_loc wg2, wg3, wl2, wl3;
-    wg2.SetWhole().SetGi(2);
-    wg3.SetWhole().SetGi(3);
+    wg2.SetWhole().SetGi(GI_FROM(TIntId, 2));
+    wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
     wl2.SetWhole().SetLocal().SetStr("local2");
     wl3.SetWhole().SetLocal().SetStr("local3");
 
@@ -156,8 +156,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_interval)
     CScope* scope = &GetScope();
 
     CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(2);
-    wg3.SetWhole().SetGi(3);
+    wg2.SetWhole().SetGi(GI_FROM(TIntId, 2));
+    wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
 
     // Partial overlap
     CRef<CSeq_loc> i = MakeInterval(2, 10, 20);
@@ -178,8 +178,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_packed_interval)
     CScope* scope = &GetScope();
 
     CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(2);
-    wg3.SetWhole().SetGi(3);
+    wg2.SetWhole().SetGi(GI_FROM(TIntId, 2));
+    wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
 
     CSeq_id gi2("gi|2");
     CSeq_id gi3("gi|3");
@@ -212,8 +212,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_point)
     CScope* scope = &GetScope();
 
     CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(2);
-    wg3.SetWhole().SetGi(3);
+    wg2.SetWhole().SetGi(GI_FROM(TIntId, 2));
+    wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
 
     CRef<CSeq_loc> pt = MakePoint(2, 10);
     BOOST_CHECK_EQUAL(Compare(wg2, *pt, scope), eContains);
@@ -228,13 +228,13 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_packed_point)
     CScope* scope = &GetScope();
 
     CSeq_loc wg2, wg3, wl2, wl3;
-    wg2.SetWhole().SetGi(2);
-    wg3.SetWhole().SetGi(3);
+    wg2.SetWhole().SetGi(GI_FROM(TIntId, 2));
+    wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
     wl2.SetWhole().SetLocal().SetStr("local2");
     wl3.SetWhole().SetLocal().SetStr("local3");
 
     CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(2);
+    pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(10);
     pp.SetPacked_pnt().AddPoint(20);
     pp.SetPacked_pnt().AddPoint(30);
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_mix)
     CScope* scope = &GetScope();
 
     CSeq_loc w;
-    w.SetWhole().SetGi(2);
+    w.SetWhole().SetGi(GI_FROM(TIntId, 2));
 
     // Check some basic cases
     CSeq_loc mix;
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_mix)
     mix.SetMix().Set().clear();
     mix.SetMix().Set().push_back(MakeInterval(2, 0, 1441));
     CRef<CSeq_loc> sub(new CSeq_loc);
-    sub->SetWhole().SetGi(2);
+    sub->SetWhole().SetGi(GI_FROM(TIntId, 2));
     mix.SetMix().Set().push_back(sub);
     BOOST_CHECK_EQUAL(Compare(w, mix, scope), eContains);
     BOOST_CHECK_EQUAL(Compare(mix, w, scope), eContains);
@@ -295,8 +295,8 @@ BOOST_AUTO_TEST_CASE(Test_Compare_whole_vs_bond)
     CScope* scope = &GetScope();
 
     CSeq_loc wg2, wg3;
-    wg2.SetWhole().SetGi(2);
-    wg3.SetWhole().SetGi(3);
+    wg2.SetWhole().SetGi(GI_FROM(TIntId, 2));
+    wg3.SetWhole().SetGi(GI_FROM(TIntId, 3));
 
     // B not set
     CRef<CSeq_loc> bond = MakeBond(2, 10);
@@ -606,7 +606,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_packed_point)
     CRef<CSeq_loc> i3 = MakeInterval(3, 10, 20);
 
     CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(2);
+    pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(5);
 
     // No overlap
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     // Whole
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
-    sub->SetWhole().SetGi(2);
+    sub->SetWhole().SetGi(GI_FROM(TIntId, 2));
     mix.SetMix().Set().push_back(sub);
     BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContained);
     BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContains);
@@ -662,14 +662,14 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     // Packed points - some more complicated cases
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
-    sub->SetPacked_pnt().SetId().SetGi(2);
+    sub->SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub->SetPacked_pnt().AddPoint(30);
     sub->SetPacked_pnt().AddPoint(60);
     mix.SetMix().Set().push_back(sub);
     BOOST_CHECK_EQUAL(Compare(*i, mix, scope), eContains);
     BOOST_CHECK_EQUAL(Compare(mix, *i, scope), eContained);
     sub2.Reset(new CSeq_loc);
-    sub2->SetPacked_pnt().SetId().SetGi(2);
+    sub2->SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub2->SetPacked_pnt().AddPoint(10);
     sub2->SetPacked_pnt().AddPoint(50);
     mix.SetMix().Set().push_back(sub2);
@@ -749,7 +749,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_interval_vs_mix)
     // Mixed sub-location types
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
-    sub->SetPnt().SetId().SetGi(2);
+    sub->SetPnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub->SetPnt().SetPoint(30);
     mix.SetMix().Set().push_back(MakePoint(2, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 35, 40));
@@ -979,7 +979,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_packed_point)
     CScope* scope = &GetScope();
 
     CSeq_loc pkp;
-    pkp.SetPacked_pnt().SetId().SetGi(2);
+    pkp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pkp.SetPacked_pnt().AddPoint(15);
 
     CSeq_id gi2("gi|2");
@@ -1078,7 +1078,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     // Whole
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
-    sub->SetWhole().SetGi(2);
+    sub->SetWhole().SetGi(GI_FROM(TIntId, 2));
     mix.SetMix().Set().push_back(sub);
     BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContained);
     BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContains);
@@ -1106,14 +1106,14 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     // Packed points - some more complicated cases
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
-    sub->SetPacked_pnt().SetId().SetGi(2);
+    sub->SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub->SetPacked_pnt().AddPoint(15);
     sub->SetPacked_pnt().AddPoint(33);
     mix.SetMix().Set().push_back(sub);
     BOOST_CHECK_EQUAL(Compare(pki, mix, scope), eContains);
     BOOST_CHECK_EQUAL(Compare(mix, pki, scope), eContained);
     sub2.Reset(new CSeq_loc);
-    sub2->SetPacked_pnt().SetId().SetGi(2);
+    sub2->SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub2->SetPacked_pnt().AddPoint(5);
     sub2->SetPacked_pnt().AddPoint(37);
     mix.SetMix().Set().push_back(sub2);
@@ -1203,7 +1203,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_mix)
     // Mixed sub-location types
     mix.SetMix().Set().clear();
     sub.Reset(new CSeq_loc);
-    sub->SetPnt().SetId().SetGi(2);
+    sub->SetPnt().SetId().SetGi(GI_FROM(TIntId, 2));
     sub->SetPnt().SetPoint(30);
     mix.SetMix().Set().push_back(MakePoint(2, 30));
     mix.SetMix().Set().push_back(MakeInterval(2, 35, 40));
@@ -1262,7 +1262,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_bond)
     BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
     BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContains);
 
-    b->SetBond().SetB().SetId().SetGi(2);
+    b->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, 2));
     b->SetBond().SetB().SetPoint(25);
 
     pki.SetPacked_int().Set().clear();
@@ -1293,7 +1293,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_interval_vs_bond)
     BOOST_CHECK_EQUAL(Compare(pki, *b, scope), eContains);
     BOOST_CHECK_EQUAL(Compare(*b, pki, scope), eContained);
 
-    b->SetBond().SetB().SetId().SetGi(3);
+    b->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, 3));
 
     pki.SetPacked_int().Set().clear();
     pki.SetPacked_int().AddInterval(gi2, 20, 30);
@@ -1340,7 +1340,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_packed_point)
     CRef<CSeq_loc> p = MakePoint(2, 5);
 
     CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(2);
+    pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(10);
 
     // No overlap
@@ -1361,7 +1361,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_point_vs_packed_point)
     // Special case: all packed points are the same.
     // The first seq-loc contains the second one in any direction.
     pp.Reset();
-    pp.SetPacked_pnt().SetId().SetGi(2);
+    pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(10);
     pp.SetPacked_pnt().AddPoint(10);
     BOOST_CHECK_EQUAL(Compare(*p, pp, scope), eContains);
@@ -1430,17 +1430,17 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_packed_point)
     CScope* scope = &GetScope();
 
     CSeq_loc pp1;
-    pp1.SetPacked_pnt().SetId().SetGi(2);
+    pp1.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp1.SetPacked_pnt().AddPoint(10);
 
     CSeq_loc pp2;
-    pp2.SetPacked_pnt().SetId().SetGi(3);
+    pp2.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 3));
     pp2.SetPacked_pnt().AddPoint(10);
 
     // No overlap for different bioseqs
     BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eNoOverlap);
     pp1.SetPacked_pnt().AddPoint(20);
-    pp2.SetPacked_pnt().SetId().SetGi(2);
+    pp2.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp2.SetPacked_pnt().SetPoints().front() = 5;
     pp2.SetPacked_pnt().AddPoint(15);
     BOOST_CHECK_EQUAL(Compare(pp1, pp2, scope), eNoOverlap);
@@ -1496,7 +1496,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_mix)
     CScope* scope = &GetScope();
 
     CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(2);
+    pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(25);
     pp.SetPacked_pnt().AddPoint(85);
 
@@ -1520,7 +1520,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_packed_point_vs_bond)
     CScope* scope = &GetScope();
 
     CSeq_loc pp;
-    pp.SetPacked_pnt().SetId().SetGi(2);
+    pp.SetPacked_pnt().SetId().SetGi(GI_FROM(TIntId, 2));
     pp.SetPacked_pnt().AddPoint(10);
 
     CRef<CSeq_loc> b = MakeBond(3, 10);
@@ -1651,7 +1651,7 @@ BOOST_AUTO_TEST_CASE(Test_Compare_mix_vs_mix)
 
     // Empty should not change anything (?)
     CRef<CSeq_loc> sub(new CSeq_loc);
-    sub->SetEmpty().SetGi(2);
+    sub->SetEmpty().SetGi(GI_FROM(TIntId, 2));
     mix2.SetMix().Set().push_back(sub);
     BOOST_CHECK_EQUAL(Compare(mix1, mix2, scope), eContains);
     BOOST_CHECK_EQUAL(Compare(mix2, mix1, scope), eContains);

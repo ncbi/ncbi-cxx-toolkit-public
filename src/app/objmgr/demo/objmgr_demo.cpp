@@ -548,7 +548,7 @@ void CDemoApp::GetIds(CScope& scope, const CSeq_id_Handle& idh)
     }
     if ( args["get_acc"] ) {
         if ( args["gi"] ) {
-            int gi = args["gi"].AsInteger();
+            TGi gi = GI_FROM(int, args["gi"].AsInteger());
             NcbiCout << "Acc: "
                      << sequence::GetAccessionForGi(gi, scope, sequence::eWithoutAccessionVersion)
                      << NcbiEndl;
@@ -596,7 +596,7 @@ int CDemoApp::Run(void)
     // Create seq-id, set it to GI specified on the command line
     CRef<CSeq_id> id;
     if ( args["gi"] ) {
-        int gi = args["gi"].AsInteger();
+        TGi gi = GI_FROM(int, args["gi"].AsInteger());
         id.Reset(new CSeq_id);
         id->SetGi(gi);
     }

@@ -383,8 +383,8 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
             if ( idh.IsGi()  &&  (type & eGetId_VerifyId) == 0 ) {
                 return idh;
             }
-            int gi = scope.GetGi(idh);
-            if ( gi ) {
+            TGi gi = scope.GetGi(idh);
+            if (gi != ZERO_GI) {
                 ret = CSeq_id_Handle::GetGiHandle(gi);
             }
         }
@@ -452,7 +452,7 @@ CSeq_id_Handle GetId(const CBioseq_Handle& handle,
 }
 
 
-int GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
+TGi GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
 {
     // Clear throw-on-error flag
     EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
@@ -468,11 +468,11 @@ int GetGiForAccession(const string& acc, CScope& scope, EGetIdType flags)
         NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
             "sequence::GetGiForAccession(): invalid seq-id type");
     }
-    return 0;
+    return ZERO_GI;
 }
 
 
-int GetGiForId(const objects::CSeq_id& id, CScope& scope, EGetIdType flags)
+TGi GetGiForId(const objects::CSeq_id& id, CScope& scope, EGetIdType flags)
 {
     // Clear throw-on-error flag
     EGetIdType get_id_flags = (flags & eGetId_VerifyId) | eGetId_ForceGi;
@@ -484,11 +484,11 @@ int GetGiForId(const objects::CSeq_id& id, CScope& scope, EGetIdType flags)
         NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
             "sequence::GetGiForId(): seq-id not found in the scope");
     }
-    return 0;
+    return ZERO_GI;
 }
 
 
-string GetAccessionForGi(int           gi,
+string GetAccessionForGi(TGi           gi,
                          CScope&       scope,
                          EAccessionVersion use_version,
                          EGetIdType flags)

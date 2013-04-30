@@ -526,7 +526,8 @@ void CSeqTableLocColumns::ParseDefaults(void)
     if ( m_Gi ) {
         if ( m_Gi->IsSetDefault() ) {
             m_DefaultIdHandle =
-                CSeq_id_Handle::GetGiHandle(m_Gi->GetDefault().GetInt());
+                CSeq_id_Handle::GetGiHandle(
+                GI_FROM(CSeqTable_single_data::TInt, m_Gi->GetDefault().GetInt()));
         }
     }
 
@@ -593,7 +594,7 @@ CSeq_id_Handle CSeqTableLocColumns::GetIdHandle(size_t row) const
         if ( m_Gi->IsSetData() ) {
             int gi;
             if ( m_Gi.GetInt(row, gi) ) {
-                return CSeq_id_Handle::GetGiHandle(gi);
+                return CSeq_id_Handle::GetGiHandle(GI_FROM(int, gi));
             }
         }
     }
@@ -644,13 +645,15 @@ void CSeqTableLocColumns::UpdateSeq_loc(size_t row,
     CSeq_loc& loc = *seq_loc;
 
     CConstRef<CSeq_id> id;
-    int gi = 0;
+    TGi gi = ZERO_GI;
     if ( m_Id ) {
         id = GetId(row);
     }
     else {
         _ASSERT(m_Gi);
-        m_Gi.GetInt(row, gi);
+        int igi = 0;
+        m_Gi.GetInt(row, igi);
+        gi = GI_FROM(int, igi);
     }
 
     int from = 0;
