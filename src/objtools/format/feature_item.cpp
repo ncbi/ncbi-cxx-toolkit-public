@@ -389,6 +389,15 @@ static bool s_CheckQuals_gap(const CMappedFeat& feat)
     return !feat.GetNamedQual("estimated_length").empty();
 }
 
+static bool s_CheckQuals_assembly_gap(const CMappedFeat& feat)
+{
+    // assembly_gap feature must have /estimated_length qual
+    // and /gap_type
+    return ! feat.GetNamedQual("estimated_length").empty() &&
+        ! feat.GetNamedQual("gap_type").empty();
+}
+
+
 static bool s_CheckQuals_ncRNA(const CMappedFeat& feat)
 {
     if( !NStr::IsBlank(feat.GetNamedQual("ncRNA_class")) ) {
@@ -440,6 +449,10 @@ static bool s_CheckMandatoryQuals(const CMappedFeat& feat,
     case CSeqFeatData::eSubtype_gap:
         {
             return s_CheckQuals_gap(feat);
+        }
+    case CSeqFeatData::eSubtype_assembly_gap:
+        {
+            return s_CheckQuals_assembly_gap(feat);
         }
     case CSeqFeatData::eSubtype_ncRNA:
         {
@@ -1671,7 +1684,7 @@ static const string& s_AaName(int aa)
     if (aa != '*') {
         idx = aa - 64;
     } else {
-        idx = 28;
+        idx = 28;   
     }
     if ( idx > 0 && idx < 28 ) {
         return s_TrnaList [idx];
@@ -3270,10 +3283,12 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(experiment),
         DO_IMPORT(frequency),
         DO_IMPORT(function),
+        DO_IMPORT(gap_type),
         DO_IMPORT(gen_map),
         DO_IMPORT(inference),
         DO_IMPORT(insertion_seq),
         DO_IMPORT(label),
+        DO_IMPORT(linkage_evidence),
         DO_IMPORT(map),
         DO_IMPORT(mobile_element),
         DO_IMPORT(mobile_element_type),
@@ -3706,6 +3721,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(gen_map);
     DO_QUAL(rad_map);
     DO_QUAL(estimated_length);
+    DO_QUAL(gap_type);
+    DO_QUAL(linkage_evidence);
     DO_QUAL(allele);
     DO_QUAL(map);
     DO_QUAL(mod_base);
@@ -3842,7 +3859,6 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 #undef DO_NOTE
 #undef DO_NOTE_PREPEND_NEWLINE
 }
-
 
 void CFeatureItem::x_FormatQual
 (EFeatureQualifier slot,
@@ -4304,6 +4320,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_figure, CSeqFeatData::eQual_note },
     { eFQ_frequency, CSeqFeatData::eQual_frequency },
     { eFQ_function, CSeqFeatData::eQual_function },
+    { eFQ_gap_type, CSeqFeatData::eQual_gap_type },
     { eFQ_gene, CSeqFeatData::eQual_gene },
     { eFQ_gene_desc, CSeqFeatData::eQual_note },
     { eFQ_gene_allele, CSeqFeatData::eQual_allele },
@@ -4319,6 +4336,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_illegal_qual, CSeqFeatData::eQual_bad },
     { eFQ_inference, CSeqFeatData::eQual_inference },
     { eFQ_label, CSeqFeatData::eQual_label },
+    { eFQ_linkage_evidence, CSeqFeatData::eQual_linkage_evidence },
     { eFQ_locus_tag, CSeqFeatData::eQual_locus_tag },
     { eFQ_map, CSeqFeatData::eQual_map },
     { eFQ_maploc, CSeqFeatData::eQual_note },

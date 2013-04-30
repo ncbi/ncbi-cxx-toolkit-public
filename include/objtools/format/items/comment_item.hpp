@@ -244,6 +244,20 @@ private:
     CConstRef<CObject_id> m_Oid;
 };
 
+// --- CFileIdComment
+
+class NCBI_FORMAT_EXPORT CFileIdComment : public CCommentItem
+{
+public:
+    CFileIdComment(const CObject_id& oid, CBioseqContext& ctx);
+
+private:
+    void x_GatherInfo(CBioseqContext& ctx);
+
+    // data
+    CConstRef<CObject_id> m_Oid;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 //  inline methods
 

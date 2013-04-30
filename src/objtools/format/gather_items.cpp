@@ -918,6 +918,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
     EGenomeAnnotComment eGenomeAnnotComment) const
 {
     const CObject_id* local_id = 0;
+    const CObject_id* file_id = 0;
 
     string genome_build_number =
         CGenomeAnnotComment::GetGenomeBuildNumber(ctx.GetHandle());
@@ -968,9 +969,13 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
         case CSeq_id::e_General:
             {{
                 const CDbtag& dbtag = id.GetGeneral();
-                if ( dbtag.CanGetDb()  &&  dbtag.GetDb() == "GSDB"  &&
-                     dbtag.CanGetTag()  &&  dbtag.GetTag().IsId() ) {
+                if ( STRING_FIELD_MATCH(dbtag, Db, "GSDB")  &&
+                    FIELD_IS_SET_AND_IS(dbtag, Tag, Id) ) 
+                {
                     x_AddGSDBComment(dbtag, ctx);
+                }
+                if( STRING_FIELD_MATCH(dbtag, Db, "NCBIFILE") ) {
+                    file_id = &(id.GetGeneral().GetTag());
                 }
             }}
             break;
@@ -984,10 +989,13 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
         }
     }
 
-    if ( local_id != 0 ) {
-        if ( ctx.IsTPA()  ||  ctx.IsGED() ) {
-            if ( ctx.Config().IsModeGBench()  ||  ctx.Config().IsModeDump() ) {
+    if ( ctx.IsTPA()  ||  ctx.IsGED() ) {
+        if ( ctx.Config().IsModeGBench()  ||  ctx.Config().IsModeDump() ) {
+            if ( local_id != 0 ) {
                 x_AddComment(new CLocalIdComment(*local_id, ctx));
+            }
+            if( file_id != 0 ) {
+                x_AddComment(new CFileIdComment(*file_id, ctx));
             }
         }
     }
@@ -1984,14 +1992,16 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         } else {
             sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
         }
+
         if (cfg.ShowContigFeatures()) {
             sel.SetResolveAll()
-               .SetAdaptiveDepth(true);
+                .SetAdaptiveDepth(true);
         } else {
             sel.SetLimitTSE(ctx.GetHandle().GetTSE_Handle())
-               .SetResolveTSE();
+                .SetResolveTSE();
         }
     }
+
     /// make sure we are sorting correctly
     sel.SetFeatComparator(new feature::CFeatComparatorByLabel);
     sel.SetIgnoreFarLocationsForSorting( ctx.GetHandle() );
@@ -2186,10 +2196,24 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
     TSeqPos pos     = gap_it.GetPosition();
     TSeqPos end_pos = gap_it.GetEndPosition();
 
+    // attempt to find CSeq_gap info
+    const CSeq_gap * pGap = NULL;
+    if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
+        pGap = &gap_it.GetData().GetGap();
+    } else {
+        CConstRef<CSeq_literal> pSeqLiteral = gap_it.GetRefGapLiteral();
+        if( pSeqLiteral && pSeqLiteral->IsSetSeq_data() )
+        {
+             const CSeq_data & seq_data = pSeqLiteral->GetSeq_data();
+             if( seq_data.IsGap() ) {
+                 pGap = &seq_data.GetGap();
+             }
+        }
+    }
+
     string sType;
     CGapItem::TEvidence sEvidence;
-    if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
-        const CSeq_gap & gap = gap_it.GetData().GetGap();
+    if( pGap ) {
 
         // true if we need to have a /linkage-evidence tag.
         // Also, if this is false, we should *not* have any
@@ -2199,12 +2223,12 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
         // determine if we're linked, and also determine if
         // we need linkage-evidence
         const bool is_linkage =
-            gap.CanGetLinkage() && 
-            gap.GetLinkage() == CSeq_gap::eLinkage_linked;
+            pGap->CanGetLinkage() && 
+            pGap->GetLinkage() == CSeq_gap::eLinkage_linked;
 
         // For /gap_type qual
-        if( gap.CanGetType() ) {
-            switch( gap.GetType() ) {
+        if( pGap->CanGetType() ) {
+            switch( pGap->GetType() ) {
             case CSeq_gap::eType_unknown:
                 // don't show /gap_type
                 break;
@@ -2246,16 +2270,16 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
                 break;
             default:
                 sType = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
-                    NStr::IntToString(gap.GetType()) + ")";
+                    NStr::IntToString(pGap->GetType()) + ")";
                 break;
             }
         }
 
         // For linkage evidence
-        if( gap.CanGetLinkage_evidence() ) {
+        if( pGap->CanGetLinkage_evidence() ) {
             ITERATE( CSeq_gap::TLinkage_evidence, 
                 evidence_iter, 
-                gap.GetLinkage_evidence() ) 
+                pGap->GetLinkage_evidence() ) 
             {
                 const CLinkage_evidence & evidence = **evidence_iter;
                 if( evidence.CanGetType() ) {

@@ -1652,6 +1652,37 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext&)
     x_SetComment(CNcbiOstrstreamToString(msg));
 }
 
+// --- CFileIdComment
+
+CFileIdComment::CFileIdComment(const CObject_id& oid, CBioseqContext& ctx) :
+    CCommentItem(ctx, false), m_Oid(&oid)
+{
+    x_GatherInfo(ctx);
+}
+
+
+void CFileIdComment::x_GatherInfo(CBioseqContext&)
+{
+    CNcbiOstrstream msg;
+
+    switch ( m_Oid->Which() ) {
+    case CObject_id::e_Id:
+        msg << "FileID: " << m_Oid->GetId();    
+        break;
+    case CObject_id::e_Str:
+        if ( m_Oid->GetStr().length() < 1000 ) {
+            msg << "FileID: " << m_Oid->GetStr();
+        } else {
+            msg << "FileID string too large";
+        }
+        break;
+    default:
+        break;
+    }
+    x_SetComment(CNcbiOstrstreamToString(msg));
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
