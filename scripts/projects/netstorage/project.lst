@@ -1,0 +1,20 @@
+corelib$
+util$
+util/regexp$
+util/compress
+util/fileblobstorage$
+util/qparse$
+util/bitset$ update-only
+util/cache$ update-only
+util/math$ update-only
+connect$
+connect/services$
+db$
+db/bdb$
+app$
+app/netstorage$
+app/netstorage/test$
+dll
+misc$
+misc/third_party
+misc/third_party_static
