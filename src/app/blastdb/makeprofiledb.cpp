@@ -641,9 +641,18 @@ void CMakeProfileDBApp::x_InitOutputDb(void)
 static void s_CreateDirectories(const string& dbname)
 {
     CDirEntry dir_entry(dbname);
-    string dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Empty);
-    if (dir_name.empty()) {
-        return;
+
+
+    string dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Current);
+    CDir tmp(dir_name);
+    if (!tmp.CheckAccess(CDirEntry::fWrite)) {
+        string msg("You do not have write permissions in the destination directory");
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+    }
+
+    dir_name = dir_entry.GetDir(CDirEntry::eIfEmptyPath_Empty);
+    if(dir_name.empty()) {
+    	return;
     }
 
     CDir d(dir_name);
@@ -653,11 +662,22 @@ static void s_CreateDirectories(const string& dbname)
             NCBI_THROW(CSeqDBException, eFileErr, msg);
         }
     }
-    if (!d.CheckAccess(CDirEntry::fWrite)) {
-        string msg("You do not have write permissions on '" +
-                   d.GetName() + "'");
-        NCBI_THROW(CSeqDBException, eFileErr, msg);
-    }
+
+}
+
+static bool s_DeleteMakeprofileDb(const string & name )
+{
+	bool isRemoved = false;
+	static const char * ext[]={".rps", ".loo", ".aux", ".freq", ".blocks", ".wcounts", ".obsr", NULL};
+	for(const char ** p=ext; *p != NULL; p++) {
+		CFile f(name + (*p));
+		if(f.Remove())
+			isRemoved = true;
+	}
+	if(DeleteBlastDb(name, CSeqDB::eProtein))
+		isRemoved = true;
+
+	return isRemoved;
 }
 
 
@@ -665,6 +685,9 @@ void CMakeProfileDBApp::x_InitRPSDbInfo(Int4 num_files)
 {
 
 	 s_CreateDirectories(m_OutDbName);
+	 if ( s_DeleteMakeprofileDb(m_OutDbName)) {
+		 *m_LogFile << "Deleted existing BLAST database with identical name." << endl;
+	 }
      m_RpsDbInfo.num_seqs = num_files;
 
      string rps_str = m_OutDbName + ".rps";
