@@ -148,7 +148,7 @@ x_check_mult=1
 if test $x_compiler == "MSVC" ; then
     case "$x_cfg" in
        Debug* )
-           x_check_mult=2
+           x_check_mult=3
            ;;        
     esac
 fi
@@ -278,6 +278,9 @@ esac
 
 ## Run
 
+# Set log_site for tests
+export NCBI_LOG_SITE=testcxx
+
 # Export some global vars
 export top_srcdir="\$root_dir"
 
@@ -359,17 +362,22 @@ RunTest() {
    x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
    x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
    x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
+   x_applog_sh="\$x_work_dir/\$x_app.boost_rep\$x_ext"
 
    if \$is_db_load; then
       echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
       case "$x_compiler" in
          MSVC )
-            test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+            test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" "\$(cygpath -w "\$x_applog_sh")" >> "\$build_dir/test_stat_load.log" 2>&1
             ;;        
          XCODE ) 
             $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
             ;;
       esac
+      if test -f \$x_applog_sh; then
+         chmod a+x \$x_applog_sh
+         ##\$x_applog_sh >> "\$build_dir/test_stat_load_applog.log" 2>&1
+      fi
       return 0
    fi
    

@@ -290,6 +290,9 @@ case "\$method" in
 esac
 
 
+# Set log_site for tests
+export NCBI_LOG_SITE=testcxx
+
 # Include configuration file
 . \${build_dir}/check.cfg
 if test -z "\$NCBI_CHECK_TOOLS"; then
