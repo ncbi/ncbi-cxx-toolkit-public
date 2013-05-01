@@ -768,21 +768,24 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     char _id[32];
     size_t i;
 
-    if (p  &&  (p < heap->base  ||  e <= p
-                ||  p->head.size <= sizeof(SHEAP_Block)
-                ||  HEAP_ALIGN(p->head.size) != p->head.size
-                ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p)))) {
-        CORE_LOGF_X(28, eLOG_Error,
-                    ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
-        return 0;
-    }
-    b = p ? HEAP_NEXT(p) : heap->base;
+    if (p) {
+        if (p < heap->base  ||  e <= p
+            ||  p->head.size <= sizeof(SHEAP_Block)
+            ||  HEAP_ALIGN(p->head.size) != p->head.size
+            ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p))) {
+            CORE_LOGF_X(28, eLOG_Error,
+                        ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
+            return 0;
+        }
+        b = HEAP_NEXT(p);
+    } else
+        b = heap->base;
 
-    if (e <= b
+    if (e <= b  ||  b <= p
         ||  b->head.size <= sizeof(SHEAP_Block)
         ||  HEAP_ALIGN(b->head.size) != b->head.size
         ||  (!HEAP_ISFREE(b)  &&  !HEAP_ISUSED(b))
-        ||  e < (n = HEAP_NEXT(b))) {
+        ||  e < (n = HEAP_NEXT(b))  ||  n <= b) {
         if (b != e  ||  (b  &&  !p)) {
             CORE_LOGF_X(26, eLOG_Error,
                         ("Heap Walk%s: Heap corrupt", s_HEAP_Id(_id, heap)));
@@ -823,8 +826,8 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
                     c = 0;
                     break;
                 }
-                self = (c->prevfree == c->nextfree
-                        &&  c == heap->base + c->nextfree);
+                self = (c->prevfree == c->nextfree  &&
+                        c == heap->base + c->nextfree);
                 if (self  ||  (c <= b  &&  b <= s)){
                     if (ok  ||  s < n) {
                         c = 0;
@@ -850,7 +853,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
             else if (c)
                 c = b;
         } else {
-            /* RO heap does not have any free block peculiarities */
+            /* RO heap may not have any free block peculiarities */
             c = b;
             if (b->prevfree >= heap->size  ||
                 b->nextfree >= heap->size
@@ -862,9 +865,9 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
                 for (i = 0;  i < heap->size;  ++i) {
                     const SHEAP_HeapBlock* s = b;
                     b = heap->base + b->nextfree;
-                    if (!HEAP_ISFREE(b)  ||  b == s
-                        ||  b->nextfree >= heap->size
-                        ||  s != heap->base + b->prevfree) {
+                    if (!HEAP_ISFREE(b)  ||  b == s  ||
+                        b->nextfree >= heap->size    ||
+                        s != heap->base + b->prevfree) {
                         b = 0;
                         break;
                     }
@@ -951,7 +954,7 @@ SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
         if (!ptr)
             return &heap->base->head;
         b = HEAP_NEXT((SHEAP_HeapBlock*) ptr);
-        return &b->head != ptr  &&  b < heap->base + heap->size ? &b->head : 0;
+        return ptr < &b->head  &&  b < heap->base + heap->size ? &b->head : 0;
     }
     return s_HEAP_Walk(heap, ptr);
 }
