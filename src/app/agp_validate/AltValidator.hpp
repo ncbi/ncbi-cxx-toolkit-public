@@ -40,7 +40,7 @@
 #include <set>
 
 BEGIN_NCBI_SCOPE
-extern CAgpErrEx agpErr;
+extern CRef<CAgpErrEx> pAgpErr;
 
 class CAltValidator
 {

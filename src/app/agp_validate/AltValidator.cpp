@@ -112,7 +112,7 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
   }
   //    catch (CSeqIdException::eFormat)
   catch (...) {
-    agpErr.Msg(CAgpErrEx::G_InvalidCompId, string(": ")+acc);
+    pAgpErr->Msg(CAgpErrEx::G_InvalidCompId, string(": ")+acc);
     return 0;
   }
 
@@ -121,7 +121,7 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
   try {
     bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
     if( !bioseq_handle ) {
-      agpErr.Msg(CAgpErrEx::G_NotInGenbank, string(": ")+acc);
+      pAgpErr->Msg(CAgpErrEx::G_NotInGenbank, string(": ")+acc);
       return 0;
     }
 
@@ -140,7 +140,7 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
         }
       }
       catch (...) {
-        agpErr.Msg(CAgpErrEx::G_DataError,
+        pAgpErr->Msg(CAgpErrEx::G_DataError,
           string(" - cannot get GI for ") + acc);
         return 0;
       }
@@ -150,14 +150,14 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
       acc_data.len   = (int) bioseq_handle.GetInst_Length();
       acc_data.taxid =  sequence::GetTaxId(bioseq_handle);;\
       if(acc_data.taxid<=0) {
-        agpErr.Msg(CAgpErrEx::G_DataError,
+        pAgpErr->Msg(CAgpErrEx::G_DataError,
           " - cannot retrieve taxonomic id for "+acc);
       }
     }
 
   }
   catch (...) {
-    agpErr.Msg(CAgpErrEx::G_DataError,
+    pAgpErr->Msg(CAgpErrEx::G_DataError,
       string(" - cannot get version for ") + acc);
     return 0;
   }
@@ -179,21 +179,21 @@ void CAltValidator::ValidateLength(
     details += NStr::IntToString(comp_len);
     details += " bp";
 
-    agpErr.Msg(CAgpErrEx::G_CompEndGtLength, details );
+    pAgpErr->Msg(CAgpErrEx::G_CompEndGtLength, details );
   }
 }
 */
 
 void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
-  int e_count=agpErr.CountTotals(CAgpErrEx::E_Last) + agpErr.CountTotals(CAgpErrEx::G_Last);
+  int e_count=pAgpErr->CountTotals(CAgpErrEx::E_Last) + pAgpErr->CountTotals(CAgpErrEx::G_Last);
 
   if(use_xml) {
     cout << " <LinesWithValidCompAcc>" << m_GenBankCompLineCount << "</LinesWithValidCompAcc>\n";
     cout << " <errors>" << e_count << "</errors>\n";
     // >0: too many messages
-    cout << " <skipped>" << agpErr.m_msg_skipped << "</skipped>\n";
-    agpErr.PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
+    cout << " <skipped>" << pAgpErr->m_msg_skipped << "</skipped>\n";
+    pAgpErr->PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
   }
   else {
     if(m_GenBankCompLineCount) {
@@ -205,9 +205,9 @@ void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
     if(e_count) {
       if(e_count==1) out << ".\n1 error";
       else out << ".\n" << e_count << " errors";
-      if(agpErr.m_msg_skipped) out << ", " << agpErr.m_msg_skipped << " not printed";
+      if(pAgpErr->m_msg_skipped) out << ", " << pAgpErr->m_msg_skipped << " not printed";
       out << ":\n";
-      agpErr.PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
+      pAgpErr->PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
     }
     else {
       out << "; no invalid component accessions.\n";
@@ -255,7 +255,7 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
       id, is_species, is_uncultured, blast_name
     );
     if(org_ref == null) {
-      agpErr.Msg(CAgpErrEx::G_TaxError,
+      pAgpErr->Msg(CAgpErrEx::G_TaxError,
         string(" for taxid ")+ NStr::IntToString(id) );
       return 0;
     }
@@ -275,7 +275,7 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
     else{
       blast_name0 = string("taxid ") + NStr::IntToString(taxid);
     }
-    agpErr.Msg(CAgpErrEx::G_DataError,
+    pAgpErr->Msg(CAgpErrEx::G_DataError,
       string(" - ") + blast_name0 +
       " is above species level");
   }
@@ -289,7 +289,7 @@ void CAltValidator::x_AddToTaxidMap(
 {
   SAgpLineInfo line_info;
 
-  line_info.file_num = agpErr.GetFileNum();
+  line_info.file_num = pAgpErr->GetFileNum();
   line_info.line_num = line_num;
   line_info.component_id = comp_id;
 
@@ -355,14 +355,14 @@ bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
          out << " <CompBadTaxid taxid=\"" << taxid
              << "\" line_num=\"" << list_it->line_num
              << (list_it->file_num ? string(
-                  "\" filename=\"" + NStr::XmlEncode(agpErr.GetFile(list_it->file_num))
+                  "\" filename=\"" + NStr::XmlEncode(pAgpErr->GetFile(list_it->file_num))
                 ) : NcbiEmptyString)
              << "\">" <<  NStr::XmlEncode(list_it->component_id)<< "</CompBadTaxid>\n";
       }
       else {
         cerr << "\t";
         if(list_it->file_num) {
-          cerr << agpErr.GetFile(list_it->file_num)  << ":";
+          cerr << pAgpErr->GetFile(list_it->file_num)  << ":";
         }
         cerr<< list_it->line_num << ": " << list_it->component_id
             << " - Taxid " << taxid << "\n";
@@ -517,13 +517,13 @@ void CAltValidator::ProcessQueue()
         m_GenBankCompLineCount++;
 
         // Warn if no version was supplied and GenBank version is > 1
-        if(ver==0 && acc_data.ver>1) agpErr.Msg(CAgpErrEx::G_NeedVersion,
+        if(ver==0 && acc_data.ver>1) pAgpErr->Msg(CAgpErrEx::G_NeedVersion,
           acc + " (current version " + NStr::IntToString(acc_data.ver) + ")",
           CAgpErr::fAtThisLine);
 
         if(m_check_len_taxid) {
           // Component out of bounds check
-          CAgpRow::CheckComponentEnd( acc, it->comp_end, acc_data.len, agpErr );
+          CAgpRow::CheckComponentEnd( acc, it->comp_end, acc_data.len, *pAgpErr );
 
           // Taxid check
           int taxid = acc_data.taxid;
@@ -537,7 +537,7 @@ void CAltValidator::ProcessQueue()
       }
     }
 
-    agpErr.LineDone(it->orig_line, it->line_num);
+    pAgpErr->LineDone(it->orig_line, it->line_num);
   }
 
   lineQueue.clear();

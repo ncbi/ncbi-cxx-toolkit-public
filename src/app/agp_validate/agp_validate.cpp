@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE
 
-CAgpErrEx agpErr;
+CRef<CAgpErrEx> pAgpErr;
 
 class CAgpCompSpanSplitter: public IAgpRowOutput
 {
@@ -100,7 +100,7 @@ private:
   void x_ReportFastaSeqCount();
 
 public:
-  CAgpValidateApplication() : m_reader(agpErr, m_comp2len, m_comp2range_coll)
+  CAgpValidateApplication() : m_reader( (pAgpErr.Reset(new CAgpErrEx), *pAgpErr), m_comp2len, m_comp2range_coll)
   {
     m_agp_version=eAgpVersion_auto;
     m_use_xml=false;
@@ -262,8 +262,8 @@ int CAgpValidateApplication::Run(void)
 
   if( args["xml"].HasValue() ) {
     m_use_xml=true;
-    agpErr.m_use_xml=true;
-    agpErr.m_out = &cout;
+    pAgpErr->m_use_xml=true;
+    pAgpErr->m_out = &cout;
   }
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
@@ -303,8 +303,8 @@ int CAgpValidateApplication::Run(void)
     // m_ContextValidator = new CAgpContextValidator(checkCompNames);
     if(checkCompNames) {
       // also print WGS component_id/component_type mismatches.
-      agpErr.SkipMsg(CAgpErr::W_CompIsWgsTypeIsNot, true);
-      agpErr.SkipMsg(CAgpErr::W_CompIsNotWgsTypeIs, true);
+      pAgpErr->SkipMsg(CAgpErr::W_CompIsWgsTypeIsNot, true);
+      pAgpErr->SkipMsg(CAgpErr::W_CompIsNotWgsTypeIs, true);
       m_reader.m_CheckCompNames=true;
     }
 
@@ -340,16 +340,16 @@ int CAgpValidateApplication::Run(void)
     }
 
     err_warn = &( args["only"].GetStringList() );
-    agpErr.SkipMsg("all");
+    pAgpErr->SkipMsg("all");
     action="Allowed messages:\n";
   }
   if(err_warn) {
-    // Inform agpErr what to skip; show messages that we skip.
+    // Inform pAgpErr what to skip; show messages that we skip.
     bool needHeading=true; // avoid printing >action when not needed
     for( CArgValue::TStringArray::const_iterator it =
       err_warn->begin();  it != err_warn->end(); ++it
     ) {
-      string res  = agpErr.SkipMsg(*it, onlyNotSkip);
+      string res  = pAgpErr->SkipMsg(*it, onlyNotSkip);
       if(res=="") {
         cerr << "WARNING: no matches for " << *it << "\n";
         needHeading=true;
@@ -373,11 +373,11 @@ int CAgpValidateApplication::Run(void)
     for( CArgValue::TStringArray::const_iterator it =
       err_warn->begin();  it != err_warn->end(); ++it
     ) {
-      agpErr.SkipMsg(*it, true);
+      pAgpErr->SkipMsg(*it, true);
     }
   }
 
-  agpErr.m_MaxRepeat =
+  pAgpErr->m_MaxRepeat =
     args["limit"].HasValue() ? args["limit"].AsInteger() : 100;
 
   if(args["v"].HasValue() ) {
@@ -424,7 +424,7 @@ int CAgpValidateApplication::Run(void)
       if(m_use_xml) {
         cout << "</page>\n";
       }
-      return agpErr.CountTotals(CAgpErrEx::E_Last)>0 || taxid_check_failed ? 2 : 0;
+      return pAgpErr->CountTotals(CAgpErrEx::E_Last)>0 || taxid_check_failed ? 2 : 0;
   }
   else {
       // Note: traditional validation (now in the "if" clause above) used to be done regardless of args["comp"].
@@ -530,7 +530,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
 
         m_reader.PrintTotals(cout, m_use_xml);
         m_reader.Reset(true);
-        agpErr.ResetTotals();
+        pAgpErr->ResetTotals();
 
         if(!m_use_xml) cout << "\n===== Reading Chromosome from scaffold AGP =====" << endl;
         continue;
@@ -553,7 +553,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
       }
       else {
         if(allowFasta && num_fasta_files) x_ReportFastaSeqCount();
-        if( args.GetNExtra()-num_fasta_files>1 ) agpErr.StartFile(m_CurrentFileName);
+        if( args.GetNExtra()-num_fasta_files>1 ) pAgpErr->StartFile(m_CurrentFileName);
         x_ValidateFile(istr);
         allowFasta=false;
       }
@@ -580,7 +580,7 @@ void CAgpValidateApplication::x_ValidateFile(
   else {
     int line_num = 0;
     string  line;
-    CAgpRow agp_row(&agpErr, m_agp_version);
+    CAgpRow agp_row(pAgpErr.GetPointer(), m_agp_version);
 
     // Allow Unix, DOS, Mac EOL characters
     while( NcbiGetline(istr, line, "\r\n") ) {
@@ -622,17 +622,17 @@ void CAgpValidateApplication::x_ValidateFile(
       if( code!=0 || comp2len_check_failed || // process the batch now so that error lines are printed in the correct order
           m_AltValidator->QueueSize() >= 1000
       ) {
-        CNcbiOstrstream* tmp_messages = agpErr.m_messages;
-        agpErr.m_messages =  new CNcbiOstrstream();
+        CNcbiOstrstream* tmp_messages = pAgpErr->m_messages;
+        pAgpErr->m_messages =  new CNcbiOstrstream();
 
         // process a batch of preceding lines
         m_AltValidator->ProcessQueue();
 
-        delete agpErr.m_messages;
-        agpErr.m_messages = tmp_messages;
+        delete pAgpErr->m_messages;
+        pAgpErr->m_messages = tmp_messages;
       }
 
-      agpErr.LineDone(line, line_num, code!=0 );
+      pAgpErr->LineDone(line, line_num, code!=0 );
     }
     m_AltValidator->ProcessQueue();
   }
