@@ -247,8 +247,8 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
     heap->serial = serial;
     if (size != heap->size << _HEAP_ALIGNSHIFT) {
         CORE_LOGF_X(4, eLOG_Warning,
-                    ("Heap Attach: Heap size truncation (%u->%u) "
-                     "can result in missing data",
+                    ("Heap Attach: Heap size truncation (%u->%u)"
+                     " can result in missing data",
                      size, heap->size << _HEAP_ALIGNSHIFT));
     }
     return heap;
