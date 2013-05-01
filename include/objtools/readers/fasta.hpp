@@ -95,7 +95,8 @@ public:
         fBadModThrow  = 1<<20, ///< Throw an exception if there's a bad modifier value (e.g. "[topology=nonsense]")
         fUnknModThrow = 1<<21, ///< Throw if there are any unknown (unused) mods left over
         fLeaveAsText  = 1<<22, ///< Don't reencode at all, just parse
-        fQuickIDCheck = 1<<23  ///< Just check local IDs' first characters
+        fQuickIDCheck = 1<<23, ///< Just check local IDs' first characters
+        fUseIupacaa   = 1<<24  ///< If Prot, use iupacaa instead of the default ncbieaa.  fNoSplit is recommended with this, since CDelta_ext does not seem to support iupacaa.
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -244,7 +245,6 @@ protected:
     virtual bool   ParseGapLine  (const TStr& s);
     virtual void   AssembleSeq   (void);
     virtual void   AssignMolType (void);
-    virtual void   SaveSeqData   (CSeq_data& seq_data, const TStr& raw_string);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
@@ -287,7 +287,7 @@ protected:
     void x_ApplyAllMods( CBioseq & bioseq );
 
     std::string x_NucOrProt(void) const;
-
+    
     CRef<TWarningRefVec> m_pWarningRefVec;
 
 private:

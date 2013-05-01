@@ -53,6 +53,7 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/NCBIeaa.hpp>
+#include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -222,7 +223,8 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
 }
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
-    : m_LineReader(&reader), m_MaskVec(0), m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+    : m_LineReader(&reader), m_MaskVec(0), 
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
@@ -1031,8 +1033,13 @@ void CFastaReader::AssembleSeq(void)
         m_SegmentBase += GetCurrentPos(ePosWithGaps);
     }
     AssignMolType();
+
     CSeq_data::E_Choice format
-        = inst.IsAa() ? CSeq_data::e_Ncbieaa : CSeq_data::e_Iupacna;
+        = ( inst.IsAa() ?
+            ( TestFlag(fUseIupacaa) ? 
+              CSeq_data::e_Iupacaa : 
+              CSeq_data::e_Ncbieaa ) :
+            CSeq_data::e_Iupacna);
     if (TestFlag(fValidate)) {
         CSeq_data tmp_data(m_SeqData, format);
         vector<TSeqPos> badIndexes;
@@ -1182,28 +1189,6 @@ void CFastaReader::AssignMolType(void)
                         LineNumber());
         } else {
             inst.SetMol(default_mol);
-        }
-    }
-}
-
-// XXX - no longer called
-void CFastaReader::SaveSeqData(CSeq_data& seq_data, const TStr& raw_string)
-{
-    SIZE_TYPE len = raw_string.length();
-    if (m_CurrentSeq->IsAa()) {
-        seq_data.SetNcbieaa().Set().assign(raw_string.data(),
-                                           len);
-    } else {
-        // nucleotide -- pack to ncbi2na, or at least ncbi4na
-        vector<char> v((len+1) / 2, '\0');
-        CSeqUtil::ECoding coding;
-        CSeqConvert::Pack(raw_string.data(), len, CSeqUtil::e_Iupacna, &v[0],
-                          coding);
-        if (coding == CSeqUtil::e_Ncbi2na) {
-            seq_data.SetNcbi2na().Set().assign(v.begin(),
-                                               v.begin() + (len + 3) / 4);
-        } else {
-            swap(seq_data.SetNcbi4na().Set(), v);
         }
     }
 }
@@ -1670,7 +1655,7 @@ static void s_AddData(CSeq_inst& inst, const string& residues)
 
     string* s = 0;
     if (inst.GetMol() == CSeq_inst::eMol_aa) {
-        if (data->IsNcbieaa()) {
+        if (data->IsNcbieaa() ) {
             s = &data->SetNcbieaa().Set();
         } else {
             data->SetNcbieaa().Set(residues);

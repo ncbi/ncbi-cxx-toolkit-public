@@ -427,3 +427,27 @@ BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
         BOOST_CHECK( ! (*desc_it)->IsTitle() );
     }
 }
+
+BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
+{
+    static const string kFastaWithProtGap = 
+        ">Dobi [organism=Canis familiaris] [breed=Doberman pinscher]\n"
+        "MMMTGCMTGGGTMMMMGTMGTMGMMGMGMMGGCTTTTMGCCCMGMMGTMMTMCCCMTGTTTTCMGCMTTM\n"
+        "GGMMMMMGGGCTGTTG\n"
+        ">?unk100\n"
+        "TGGMTGMCMGMMMCCTTGTTGGTCCMMMMTGCMMMCCCMGMTKGTMMGMCCMTTTTMMMMGCMTTGGGTC\n"
+        "TTMGMMMTMGGGCMMCMCMGMMCMMMMMT\n"
+        ">?234\n"
+        "MMMMMTMMMMGCMTTMGTMGMMMTTTGTMCMGMMCTGGMMMMGGMMGGMMMMMTTTCMMMMMTTGGGCCT\n";
+
+    CMemoryLineReader line_reader( kFastaWithProtGap.c_str(),
+        kFastaWithProtGap.length() );
+    CFastaReader fasta_reader( line_reader, 
+        CFastaReader::fAddMods | 
+        CFastaReader::fAssumeProt |  // Yes, assume prot even though you see only ACGT above
+        CFastaReader::fUseIupacaa |
+        CFastaReader::fNoSplit
+        );
+
+    BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
+}
