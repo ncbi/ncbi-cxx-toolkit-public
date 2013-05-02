@@ -909,21 +909,6 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
 }
 
 
-const char* CIO_Exception::GetErrCodeString(void) const
-{
-    switch (GetErrCode()) {
-    case eTimeout:       return "eIO_Timeout";
-    case eClosed:        return "eIO_Closed";
-    case eInterrupt:     return "eIO_Interrupt";
-    case eInvalidArg:    return "eIO_InvalidArg";
-    case eNotSupported:  return "eIO_NotSupported";
-    case eUnknown:       return "eIO_Unknown";
-    default:             break;
-    }
-    return  CException::GetErrCodeString();
-}
-
-
 /* non-public class */
 class CConn_FileStream : public CConn_IOStream
 {
@@ -1031,6 +1016,21 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         }
     }
     return 0;
+}
+
+
+const char* CIO_Exception::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eTimeout:       return "eIO_Timeout";
+    case eClosed:        return "eIO_Closed";
+    case eInterrupt:     return "eIO_Interrupt";
+    case eInvalidArg:    return "eIO_InvalidArg";
+    case eNotSupported:  return "eIO_NotSupported";
+    case eUnknown:       return "eIO_Unknown";
+    default:             break;
+    }
+    return CException::GetErrCodeString();
 }
 
 

@@ -51,11 +51,12 @@ class NCBI_XCONNECT_EXPORT CConnException
 {
 public:
     enum EErrCode {
-        eConn
+        eConn ///< Unspecified connect problem
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CConnException, CException);
 };
+
 
 /// IO exception. 
 /// Thrown if error is specific to the NCBI BDB C++ library.
@@ -74,10 +75,10 @@ public:
         eNotSupported = eIO_NotSupported,
         eUnknown      = eIO_Unknown
     };
-
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CIO_Exception, CException);
 };
+
 
 /// Check EIO_Status, throw an exception if something is wrong
 ///
