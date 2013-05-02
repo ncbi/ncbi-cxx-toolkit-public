@@ -82,6 +82,9 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
+
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
@@ -201,7 +204,7 @@ CGff2Reader::ReadSeqAnnotsNew(
             if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
-            if ( ! x_ParseFeatureGff( line, annots ) ) {
+            if ( ! x_ParseDataGff( line, annots ) ) {
                 continue;
             }
         }
@@ -365,6 +368,18 @@ bool CGff2Reader::x_ParseStructuredCommentGff(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff2Reader::x_ParseDataGff(
+    const string& strLine,
+    TAnnots& annots )
+//  ----------------------------------------------------------------------------
+{
+    if ( CGff2Reader::IsAlignmentData(strLine) ) {
+        return x_ParseAlignmentGff(strLine, annots);
+    }
+    return x_ParseFeatureGff(strLine, annots);
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ParseFeatureGff(
     const string& strLine,
     TAnnots& annots )
@@ -398,7 +413,62 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  information:
     //
     if ( it != annots.end() ) {
-        if ( ! x_UpdateAnnot( *pRecord, *it ) ) {
+        if ( ! x_UpdateAnnotFeature( *pRecord, *it ) ) {
+            return false;
+        }
+    }
+
+    //
+    //  Otherwise, create a new annot pertaining to the new ID and initialize it
+    //  with the given feature information:
+    //
+    else {
+        CRef< CSeq_annot > pAnnot( new CSeq_annot );
+        if ( ! x_InitAnnot( *pRecord, pAnnot ) ) {
+            return false;
+        }
+        annots.push_back( pAnnot );      
+    }
+ 
+    delete pRecord;
+    return true; 
+};
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::x_ParseAlignmentGff(
+    const string& strLine,
+    TAnnots& annots )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Parse the record and determine which ID the given feature will pertain 
+    //  to:
+    //
+    CGff2Record* pRecord = x_CreateRecord();
+    if ( ! pRecord->AssignFromGff( strLine ) ) {
+        return false;
+    }
+
+    //
+    //  Search annots for a pre-existing annot pertaining to the same ID:
+    //
+    TAnnotIt it = annots.begin();
+    for ( /*NOOP*/; it != annots.end(); ++it ) {
+        string strAnnotId;
+        if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
+            return false;
+        }
+        if ( pRecord->Id() == strAnnotId ) {
+            break;
+        }
+    }
+
+    //
+    //  If a preexisting annot was found, update it with the new feature
+    //  information:
+    //
+    if ( it != annots.end() ) {
+        if ( ! x_UpdateAnnotAlignment( *pRecord, *it ) ) {
             return false;
         }
     }
@@ -516,7 +586,7 @@ bool CGff2Reader::x_InitAnnot(
     CRef< CAnnot_id > pAnnotId( new CAnnot_id );
     pAnnotId->SetLocal().SetStr( gff.Id() );
     pAnnot->SetId().push_back( pAnnotId );
-    pAnnot->SetData().SetFtable();
+    //pAnnot->SetData().SetFtable();
 
     // if available, add current browser information
     if ( m_CurrentBrowserInfo ) {
@@ -535,11 +605,18 @@ bool CGff2Reader::x_InitAnnot(
         pAnnot->SetTitleDesc(m_AnnotTitle);
     }
 
-    return x_UpdateAnnot( gff, pAnnot );
+    if (gff.IsAlignmentRecord()) {
+        pAnnot->SetData().SetAlign();
+        return x_UpdateAnnotAlignment( gff, pAnnot );
+    }
+    else {
+        pAnnot->SetData().SetFtable();
+        return x_UpdateAnnotFeature( gff, pAnnot );
+    }
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_UpdateAnnot(
+bool CGff2Reader::x_UpdateAnnotFeature(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
@@ -568,6 +645,176 @@ bool CGff2Reader::x_UpdateAnnot(
     }
 
     return x_AddFeatureToAnnot( pFeature, pAnnot );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::x_UpdateAnnotAlignment(
+    const CGff2Record& gff,
+    CRef< CSeq_annot > pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_align> pAlign( new CSeq_align );
+    pAlign->SetType(CSeq_align::eType_partial);
+    pAlign->SetDim(2);
+
+    //score
+    if (!xAlignmentSetScore(gff, pAlign)) {
+        return false;
+    }
+    if (!xAlignmentSetSegment(gff, pAlign)) {
+        return false;
+    }
+    pAnnot->SetData().SetAlign().push_back( pAlign ) ;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xAlignmentSetSegment(
+    const CGff2Record& gff,
+    CRef<CSeq_align> pAlign)
+//  ----------------------------------------------------------------------------
+{
+    string targetInfo;
+    vector<string> targetParts;
+    if (!gff.GetAttribute("Target", targetInfo)) {
+        return false;
+    }
+    NStr::Tokenize(targetInfo, " ", targetParts);
+    if (targetParts.size() != 4) {
+        return false;
+    }
+    
+    string gapInfo;
+    vector<string> gapParts;
+    if (!gff.GetAttribute("Gap", gapInfo)) {
+        return false;
+    }
+    NStr::Tokenize(gapInfo, " ", gapParts);
+    int gapCount = gapParts.size();
+
+    //meta
+    CSeq_align::TSegs& segs = pAlign->SetSegs();
+    CSeq_align::C_Segs::TDenseg& denseg = segs.SetDenseg();
+    denseg.SetDim(2);
+    denseg.SetNumseg(gapCount);
+
+    //ids
+    denseg.SetIds().push_back(
+        CRef<CSeq_id>(new CSeq_id(targetParts[0])));
+    denseg.SetIds().push_back(
+        CRef<CSeq_id>(new CSeq_id(gff.Id())));
+
+    //starts
+    size_t targetOffset = 0;
+    size_t identOffset = gff.SeqStart();
+    for (int i=0; i < gapCount; ++i) {
+        char changeType = gapParts[i][0];
+        int changeSize = NStr::StringToInt(gapParts[i].substr(1));
+        switch (changeType) {
+        default:
+            return false;
+        case 'M':
+            denseg.SetStarts().push_back(targetOffset);
+            denseg.SetStarts().push_back(identOffset);
+            targetOffset += changeSize;
+            identOffset += changeSize;
+            break;
+        case 'I':
+            denseg.SetStarts().push_back(targetOffset);
+            denseg.SetStarts().push_back(-1);
+            targetOffset += changeSize;
+            break;
+        case 'D':
+            denseg.SetStarts().push_back(-1);
+            denseg.SetStarts().push_back(identOffset);
+            identOffset += changeSize;
+            break;
+        }
+    }
+    //lengths
+    for (int i=0; i < gapCount; ++i) {
+        denseg.SetLens().push_back(NStr::StringToInt(gapParts[i].substr(1)));
+    }
+    //strands
+    ENa_strand targetStrand = eNa_strand_plus;
+    if (targetParts[3] == "-") {
+        targetStrand = eNa_strand_minus;
+    }
+    ENa_strand identStrand = eNa_strand_plus;
+    if (gff.IsSetStrand()) {
+        identStrand = gff.Strand();
+    }
+    for (int i=0; i < gapCount; ++i) {
+        denseg.SetStrands().push_back(targetStrand);
+        denseg.SetStrands().push_back(identStrand);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xAlignmentSetScore(
+    const CGff2Record& gff,
+    CRef<CSeq_align> pAlign)
+//  ----------------------------------------------------------------------------
+{
+    if (gff.IsSetScore()) {
+        pAlign->SetNamedScore(CSeq_align::eScore_Score, 
+            int(gff.Score()));
+    }
+
+    string extraScore;
+
+    const string intScores[] = {
+        //official
+        "score",
+        "align_length",
+        "num_ident",
+        "num_positives",
+        "num_negatives",
+        "num_mismatch",
+        "num_gap",
+
+        //picked up from real data files
+        "common_component",
+        "filter_score",
+        "for_remapping",
+        "merge_aligner",
+        "rank",
+        "reciprocity",
+    };
+
+    const size_t intCount(sizeof(intScores)/sizeof(string));
+    for (size_t i=0; i < intCount; ++i) {
+        if (gff.GetAttribute(intScores[i], extraScore)) {
+            pAlign->SetNamedScore(
+                intScores[i], int(NStr::StringToDouble(extraScore)));
+        }
+    }
+
+    const string realScores[] = {
+        //official
+        "bit_score",
+        "e_value",
+        "pct_identity_gap",
+        "pct_identity_ungap",
+        "pct_identity_gapopen_only",
+        "pct_coverage",
+        "sum_e",
+        "comp_adjustment_method",
+        "pct_coverage_hiqual",
+
+        //picked up from real data files
+    };
+
+    const size_t realCount(sizeof(realScores)/sizeof(string));
+    for (size_t i=0; i < realCount; ++i) {
+        if (gff.GetAttribute(realScores[i], extraScore)) {
+            pAlign->SetNamedScore(
+                realScores[i], NStr::StringToDouble(extraScore));
+        }
+    }
+
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -964,6 +1211,22 @@ CGff2Reader::x_ParseDbtag(
         pDbtag->SetTag().SetStr( str );
     }
     return pDbtag;
+}
+
+//  ============================================================================
+bool CGff2Reader::IsAlignmentData(
+    const string& line)
+//  ============================================================================
+{
+    vector<string> columns;
+    NStr::Tokenize( line, "\t", columns, NStr::eMergeDelims );
+    if (columns.size() < 9) {
+        return false;
+    }
+    if (NStr::StartsWith(columns[2], "match")) {
+        return true;
+    }
+    return false;
 }
 
 END_objects_SCOPE

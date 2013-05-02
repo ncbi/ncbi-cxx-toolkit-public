@@ -116,6 +116,13 @@ public:
         IErrorContainer* =0 );
 
     //
+    // class interface:
+    //
+    static bool 
+    IsAlignmentData(
+        const string&);
+
+    //
     //  new stuff: 
     //
     bool x_ParseBrowserLineGff(
@@ -129,8 +136,16 @@ public:
     virtual bool x_ParseStructuredCommentGff(
         const string&,
         CRef< CAnnotdesc >& );
-                                
+    
+    virtual bool x_ParseDataGff(
+        const string&,
+        TAnnots& );
+
     virtual bool x_ParseFeatureGff(
+        const string&,
+        TAnnots& );
+
+    virtual bool x_ParseAlignmentGff(
         const string&,
         TAnnots& );
 
@@ -142,7 +157,11 @@ public:
         const CGff2Record&,
         CRef< CSeq_annot > );
 
-    virtual bool x_UpdateAnnot(
+    virtual bool x_UpdateAnnotFeature(
+        const CGff2Record&,
+        CRef< CSeq_annot > );
+
+    virtual bool x_UpdateAnnotAlignment(
         const CGff2Record&,
         CRef< CSeq_annot > );
 
@@ -209,6 +228,14 @@ public:
     bool x_FeatureMergeExon(
         CRef< CSeq_feat >,
         CRef< CSeq_feat > );
+
+    bool xAlignmentSetScore(
+        const CGff2Record&,
+        CRef<CSeq_align> );
+
+    bool xAlignmentSetSegment(
+        const CGff2Record&,
+        CRef<CSeq_align> );
 
     static CRef< CDbtag >
     x_ParseDbtag(

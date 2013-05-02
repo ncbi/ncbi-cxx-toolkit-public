@@ -96,7 +96,12 @@ public:
     bool IsSetPhase() const { 
         return m_pePhase != 0; 
     };
-
+    bool IsAlignmentRecord() const {
+        if (NStr::StartsWith(Type(), "match")) {
+            return true;
+        }
+        return false;
+    };
     CRef<CSeq_id> GetSeqId(
         int ) const;
     CRef<CSeq_loc> GetSeqLoc(
