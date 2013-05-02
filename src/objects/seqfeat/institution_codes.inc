@@ -1689,7 +1689,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FAN	s	Museum of Fanjingshan National Nature Reserve",
 "FAR	s	University of Tarbiat-Moaallem, Biology Department",
 "FARM	s	Longwood University, Department of Natural Sciences",
-"FAU	sc	Florida Atlantic University, Biological Sciences Department",
+"FAU	s	Florida Atlantic University, Biological Sciences Department",
 "FAUC	s	Universidad de Caldas, Departamento de Recursos Naturales",
 "FAUN	s	Universidad de Narino",
 "FAVU	s	Universidade Federal do Rio Grande do Sul, Faculdade Agronomia e Veterenaria",
