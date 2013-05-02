@@ -104,7 +104,7 @@ public:
     };
 
     /// Constructor.
-    CNamedPipe();
+    CNamedPipe(void);
 
     /// Destructor. 
     virtual ~CNamedPipe();
@@ -228,7 +228,7 @@ class NCBI_XCONNECT_EXPORT CNamedPipeClient : public CNamedPipe
 {
 public:
     /// Default constructor.
-    CNamedPipeClient();
+    CNamedPipeClient(void);
 
     /// Constructor.
     ///
@@ -270,7 +270,7 @@ class NCBI_XCONNECT_EXPORT CNamedPipeServer : public CNamedPipe
 {
 public:
     /// Default constructor.
-    CNamedPipeServer();
+    CNamedPipeServer(void);
 
     /// Constructor.
     ///

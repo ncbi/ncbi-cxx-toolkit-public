@@ -581,10 +581,8 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
 const char* CConnException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eConn:
-        return "eConn";
-    default:
-        break;
+    case eConn:  return "eConn";
+    default:     break;
     }
     return CException::GetErrCodeString();
 }
