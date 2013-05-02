@@ -177,7 +177,7 @@ void CPrefetchThreadOld::AddRequest(CPrefetchTokenOld_Impl& token)
 {
     {{
         CFastMutexGuard guard(m_Lock);
-        m_Queue.Put(Ref(&token));
+        m_Queue.Push(Ref(&token));
     }}
 }
 
@@ -189,21 +189,19 @@ void CPrefetchThreadOld::Terminate(void)
         m_Stop = true;
     }}
     // Unlock the thread
-    m_Queue.Put(CRef<CPrefetchTokenOld_Impl>(0));
+    m_Queue.Push(CRef<CPrefetchTokenOld_Impl>(0));
 }
 
 
 void* CPrefetchThreadOld::Main(void)
 {
     do {
-        TPrefetchQueue::TItemHandle handle = m_Queue.GetHandle();
-        CRef<CPrefetchTokenOld_Impl> token = handle->GetRequest();
+        CRef<CPrefetchTokenOld_Impl> token = m_Queue.Pop();
         {{
             CFastMutexGuard guard(m_Lock);
             if (m_Stop) {
                 return 0;
             }
-            _ASSERT( handle );
             if ( token->IsEmpty() ) {
                 // Token may have been canceled
                 continue;

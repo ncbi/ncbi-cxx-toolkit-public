@@ -80,9 +80,11 @@ public:
     ///  Set of seq-ids to prefetch
     /// @param depth
     ///  Number of TSEs allowed to be prefetched.
+    NCBI_DEPRECATED
     CPrefetchTokenOld(CScope& scope, const TIds& ids, unsigned int depth = 2);
 
     /// Do not lock prefetched TSEs, prefetch depth is ignored.
+    NCBI_DEPRECATED
     CPrefetchTokenOld(CScope& scope, const TIds& ids, ENon_locking_prefetch);
     ~CPrefetchTokenOld(void);
 

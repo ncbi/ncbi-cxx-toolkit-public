@@ -38,6 +38,7 @@
 #include <corelib/ncbithr.hpp>
 #include <objmgr/data_loader.hpp>
 #include <util/thread_pool.hpp>
+#include <util/sync_queue.hpp>
 #include <vector>
 #include <set>
 
@@ -122,7 +123,7 @@ protected:
 
 private:
     // Using list to be able to delete elements
-    typedef CBlockingQueue<CRef<CPrefetchTokenOld_Impl> > TPrefetchQueue;
+    typedef CSyncQueue<CRef<CPrefetchTokenOld_Impl> > TPrefetchQueue;
 
     CDataSource&   m_DataSource;
     TPrefetchQueue m_Queue;
