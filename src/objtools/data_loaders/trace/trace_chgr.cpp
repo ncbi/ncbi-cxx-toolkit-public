@@ -113,7 +113,7 @@ CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
 
     CID1server_maxcomplex maxplex;
     maxplex.SetMaxplex(16);
-    maxplex.SetGi(0);
+    maxplex.SetGi(ZERO_GI);
     maxplex.SetSat("TRACE_CHGR");
     maxplex.SetEnt(ti);
 

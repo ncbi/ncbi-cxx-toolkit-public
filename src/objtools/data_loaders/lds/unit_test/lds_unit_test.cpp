@@ -95,7 +95,7 @@ static void s_MakeLDS()
     manager.Index();
 }
 
-static int s_RetrieveFeat(int gi, CObjectManager& om, const string& lds_name)
+static int s_RetrieveFeat(TGi gi, CObjectManager& om, const string& lds_name)
 {
     CScope scope(om);
     scope.AddDefaults();
@@ -110,7 +110,7 @@ static int s_RetrieveFeat(int gi, CObjectManager& om, const string& lds_name)
     return count;
 }
 
-static int s_RetrieveFeat(int gi)
+static int s_RetrieveFeat(TGi gi)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
@@ -132,7 +132,7 @@ static int s_RetrieveFeat(int gi)
     }
 }
 
-static int s_RetrieveAlign(int gi, CObjectManager& om, const string& lds_name)
+static int s_RetrieveAlign(TGi gi, CObjectManager& om, const string& lds_name)
 {
     CScope scope(om);
     scope.AddDefaults();
@@ -147,7 +147,7 @@ static int s_RetrieveAlign(int gi, CObjectManager& om, const string& lds_name)
     return count;
 }
 
-static int s_RetrieveAlign(int gi)
+static int s_RetrieveAlign(TGi gi)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*om);
@@ -174,10 +174,10 @@ BOOST_AUTO_TEST_CASE(LDS_Test_align)
     s_InitLDSDir();
     s_CopyFile("lds_align.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign(2) == 3);
+    BOOST_REQUIRE(s_RetrieveAlign(GI_FROM(TIntId, 2)) == 3);
     s_TouchFile("lds_align.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign(2) == 3);
+    BOOST_REQUIRE(s_RetrieveAlign(GI_FROM(TIntId, 2)) == 3);
 }
 
 BOOST_AUTO_TEST_CASE(LDS_Test_annot)
@@ -185,10 +185,10 @@ BOOST_AUTO_TEST_CASE(LDS_Test_annot)
     s_InitLDSDir();
     s_CopyFile("lds_annot.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign(2) == 1);
+    BOOST_REQUIRE(s_RetrieveAlign(GI_FROM(TIntId, 2)) == 1);
     s_TouchFile("lds_annot.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign(2) == 1);
+    BOOST_REQUIRE(s_RetrieveAlign(GI_FROM(TIntId, 2)) == 1);
 }
 
 BOOST_AUTO_TEST_CASE(LDS_Test_entry)
@@ -196,10 +196,10 @@ BOOST_AUTO_TEST_CASE(LDS_Test_entry)
     s_InitLDSDir();
     s_CopyFile("lds_entry.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign(2) == 0);
+    BOOST_REQUIRE(s_RetrieveAlign(GI_FROM(TIntId, 2)) == 0);
     s_TouchFile("lds_entry.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveAlign(2) == 0);
+    BOOST_REQUIRE(s_RetrieveAlign(GI_FROM(TIntId, 2)) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(LDS_Test_conflict)
@@ -212,16 +212,16 @@ BOOST_AUTO_TEST_CASE(LDS_Test_conflict)
     s_MakeLDS();
     s_CopyFile("lds_conflict2.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
-    BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
+    BOOST_REQUIRE(s_RetrieveFeat(GI_FROM(TIntId, 5)) == 3);
+    BOOST_REQUIRE(s_RetrieveFeat(GI_FROM(TIntId, 6)) == 1);
     s_RemoveFile("lds_conflict1.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveFeat(5) == 3);
-    BOOST_REQUIRE(s_RetrieveFeat(6) == 1);
+    BOOST_REQUIRE(s_RetrieveFeat(GI_FROM(TIntId, 5)) == 3);
+    BOOST_REQUIRE(s_RetrieveFeat(GI_FROM(TIntId, 6)) == 1);
     s_CopyFile("lds_conflict1.asn");
     s_MakeLDS();
-    BOOST_REQUIRE(s_RetrieveFeat(5) == 4);
-    BOOST_REQUIRE(s_RetrieveFeat(6) == 2);
+    BOOST_REQUIRE(s_RetrieveFeat(GI_FROM(TIntId, 5)) == 4);
+    BOOST_REQUIRE(s_RetrieveFeat(GI_FROM(TIntId, 6)) == 2);
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

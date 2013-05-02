@@ -71,7 +71,7 @@ void CMemTestApp::Init(void)
 int CMemTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    int gi = args["gi"]? args["gi"].AsInteger(): -1;
+    TGi gi = GI_FROM(int, args["gi"]? args["gi"].AsInteger(): -1);
     string file = args["file"]? args["file"].AsString(): string();
     int repeat_count = args["count"]?args["count"].AsInteger():100;
     bool add_to_objmgr = args["objmgr"];
@@ -132,7 +132,7 @@ int CMemTestApp::Run(void)
             }
         }
     }
-    else if ( gi > 0 ) {
+    else if ( gi > ZERO_GI ) {
         for ( int count = 0; count < repeat_count; ++count ) {
             typedef CNCBI2na TObject;
             typedef map<const CObject*, int> TCounterMap;

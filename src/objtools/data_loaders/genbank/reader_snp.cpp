@@ -567,7 +567,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
 {
     // header
     write_unsigned(stream, MAGIC);
-    write_unsigned(stream, snp_info.GetGi());
+    write_unsigned(stream, GI_TO(unsigned int, snp_info.GetGi()));
 
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
@@ -604,7 +604,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
-    snp_info.x_SetGi(read_unsigned(stream));
+    snp_info.x_SetGi(GI_FROM(unsigned int, read_unsigned(stream)));
 
     // strings
     LoadIndexedStringsFrom(stream,

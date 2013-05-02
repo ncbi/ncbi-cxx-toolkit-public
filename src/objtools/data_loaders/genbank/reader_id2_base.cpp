@@ -1784,7 +1784,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             }
         }
         CRef<CSeq_id> no_acc(new CSeq_id);
-        no_acc->SetGi(0);
+        no_acc->SetGi(ZERO_GI);
         SetAndSaveSeq_idAccVer(result, seq_id, ids, *no_acc);
         break;
     }}

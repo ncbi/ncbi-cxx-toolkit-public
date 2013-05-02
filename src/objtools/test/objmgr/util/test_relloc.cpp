@@ -78,7 +78,7 @@ int CRelLocTester::Run(void)
     CScope         scope(*objmgr);
     CSeq_id        id;
     
-    id.SetGi(args["gi"].AsInteger());
+    id.SetGi(GI_FROM(int, args["gi"].AsInteger()));
 
     CGBDataLoader::RegisterInObjectManager(*objmgr);
     scope.AddDefaults();

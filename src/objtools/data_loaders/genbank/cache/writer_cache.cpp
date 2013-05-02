@@ -232,7 +232,7 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedGi() ) {
         CStoreBuffer str;
-        str.StoreInt4(ids->GetGi());
+        str.StoreInt4(GI_TO(Int4, ids->GetGi()));
         try {
             if ( GetDebugLevel() ) {
                 LOG_POST(Info<<"CCache:Write: "<<seq_id<<","<<GetGiSubkey());
@@ -268,7 +268,7 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
     CLoadLockSeq_ids ids(result, seq_id);
     if ( ids->IsLoadedGi() ) {
         CStoreBuffer str;
-        str.StoreInt4(ids->GetGi());
+        str.StoreInt4(GI_TO(Int4, ids->GetGi()));
         try {
             if ( GetDebugLevel() ) {
                 LOG_POST(Info<<"CCache:Write: "<<GetIdKey(seq_id)<<","<<GetGiSubkey());

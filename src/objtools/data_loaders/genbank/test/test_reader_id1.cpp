@@ -99,7 +99,7 @@ int CTestApplication::Run(void)
         dispatcher->InsertReader(0, reader);
         for ( int gi = gi_from; gi <= gi_to; gi++ ) {
             NcbiCout << "gi: " << gi << ": " << NcbiEndl;
-            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
+            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(GI_FROM(int, gi));
             CStandaloneRequestResult request(seq_id);
             dispatcher->LoadSeq_idSeq_ids(request, seq_id);
             CLoadLockSeq_ids seq_ids(request, seq_id);

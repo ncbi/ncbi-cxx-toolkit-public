@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
 
     CScope::TIds ids;
     ITERATE(TGiLengthVector, itr, test_data) {
-        ids.push_back(CSeq_id_Handle::GetHandle(itr->first));
+        ids.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, itr->first)));
     }
     BOOST_REQUIRE_EQUAL(ids.size(), test_data.size());
 

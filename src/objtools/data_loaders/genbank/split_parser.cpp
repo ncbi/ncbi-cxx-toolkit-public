@@ -134,7 +134,8 @@ namespace {
             case CID2S_Bioseq_Ids::C_E::e_Gi_range:
             {
                 const CID2S_Gi_Range& r = e.GetGi_range();
-                for( int id = r.GetStart(), n = r.GetCount(); n--; ++id ) {
+                int n = r.GetCount();
+                for( TGi id = r.GetStart(); n--; ++id ) {
                     func(CSeq_id_Handle::GetGiHandle(id));
                 }
                 break;
@@ -315,14 +316,14 @@ void CSplitParser::x_AddInterval(TLocationSet& vec,
 
 
 inline
-void CSplitParser::x_AddGiWhole(TLocationSet& vec, int gi)
+void CSplitParser::x_AddGiWhole(TLocationSet& vec, TGi gi)
 {
     x_AddWhole(vec, CSeq_id_Handle::GetGiHandle(gi));
 }
 
 
 inline
-void CSplitParser::x_AddGiInterval(TLocationSet& vec, int gi,
+void CSplitParser::x_AddGiInterval(TLocationSet& vec, TGi gi,
                                    TSeqPos start, TSeqPos length)
 {
     x_AddInterval(vec, CSeq_id_Handle::GetGiHandle(gi), start, length);
@@ -405,7 +406,7 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
     case CID2S_Seq_loc::e_Whole_gi_range:
     {
         const CID2S_Gi_Range& wr = loc.GetWhole_gi_range();
-        for ( int gi = wr.GetStart(), end = gi+wr.GetCount(); gi < end; ++gi )
+        for ( TGi gi = wr.GetStart(), end = GI_FROM(TIntId, GI_TO(TIntId, gi) + wr.GetCount()); gi < end; ++gi )
             x_AddGiWhole(vec, gi);
         break;
     }
@@ -433,7 +434,7 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
     case CID2S_Seq_loc::e_Gi_ints:
     {
         const CID2S_Gi_Ints& ints = loc.GetGi_ints();
-        int gi = ints.GetGi();
+        TGi gi = ints.GetGi();
         ITERATE ( CID2S_Gi_Ints::TInts, it, ints.GetInts() ) {
             const CID2S_Interval& interval = **it;
             x_AddGiInterval(vec, gi,

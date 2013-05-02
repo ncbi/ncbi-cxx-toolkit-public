@@ -276,9 +276,9 @@ void CLDS2TestApplication::x_TestDatabase(const string& id)
 }
 
 
-const int kStressTestFiles = 50;
-const int kStressTestEntriesPerFile = 20;
-const int kStressTestEntries = kStressTestFiles*kStressTestEntriesPerFile;
+const TIntId kStressTestFiles = 50;
+const TIntId kStressTestEntriesPerFile = 20;
+const TIntId kStressTestEntries = kStressTestFiles*kStressTestEntriesPerFile;
 
 void CLDS2TestApplication::x_InitStressTest(void)
 {
@@ -319,13 +319,13 @@ void CLDS2TestApplication::x_InitStressTest(void)
             out.reset(CObjectOStream::Open(m_Fmt, *out_stream));
         }
 
-        for (int idx = 0; idx < kStressTestEntriesPerFile; idx++) {
-            int gi = idx + f*kStressTestEntriesPerFile;
+        for (TIntId idx = 0; idx < kStressTestEntriesPerFile; idx++) {
+            TGi gi = GI_FROM(TIntId, idx + f*kStressTestEntriesPerFile);
             CSeq_id& id = *e.SetSeq().SetId().front();
             id.SetGi(gi);
             CSeq_feat& feat = *e.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
             feat.SetLocation().SetWhole().SetGi(gi);
-            feat.SetProduct().SetWhole().SetGi(gi+1);
+            feat.SetProduct().SetWhole().SetGi(gi+GI_FROM(TIntId, 1));
             if ( fasta_out.get() ) {
                 fasta_out->Write(e);
             }
@@ -362,7 +362,7 @@ CLDS2_TestThread::CLDS2_TestThread(int id, int step)
 
 void* CLDS2_TestThread::Main(void)
 {
-    int gi = kStressTestEntriesPerFile + m_Id;
+    TIntId gi = kStressTestEntriesPerFile + m_Id;
     CSeq_id seq_id;
     for (; gi < kStressTestEntries; gi += m_Step) {
         seq_id.SetGi(gi);

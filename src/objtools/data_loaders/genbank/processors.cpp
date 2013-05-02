@@ -2321,11 +2321,11 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         blob->SetName(name);
     }
 
-    int gi = blob_id.GetSatKey();
+    TGi gi = GI_FROM(int, blob_id.GetSatKey());
     CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
     CSeq_id seq_id;
     seq_id.SetGeneral().SetDb(db_name);
-    seq_id.SetGeneral().SetTag().SetId(gi);
+    seq_id.SetGeneral().SetTag().SetId(GI_TO(CObject_id::TId, gi));
     CSeq_id_Handle seh = CSeq_id_Handle::GetHandle(seq_id);
     
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));

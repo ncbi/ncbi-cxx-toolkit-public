@@ -99,7 +99,7 @@ void* CTestThread::Main(void)
 
     LOG_POST(" Processing gis from "<< m_Start << " to " << m_Stop);
   
-    for (int i = m_Start;  i < m_Stop;  i++) {
+    for (TIntId i = m_Start;  i < m_Stop;  i++) {
         CScope scope2(*pom);
         scope2.AddDefaults();
 
@@ -112,7 +112,7 @@ void* CTestThread::Main(void)
             throw runtime_error("unexpected mode");
         }
     
-        int gi = i ; // (i + m_Idx)/2+3;
+        TGi gi = i ; // (i + m_Idx)/2+3;
         CSeq_id x;
         x.SetGi(gi);
         CBioseq_Handle h = s->GetBioseqHandle(x);

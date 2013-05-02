@@ -89,7 +89,7 @@ int CTestApplication::Run()
     CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm)
         .GetLoader());
 
-    for ( int gi = 18565540;  gi < 18565650; gi++ ) {
+    for ( TIntId gi = 18565540;  gi < 18565650; gi++ ) {
         CSeq_id id;
         id.SetGi(gi);
         CConstRef<CSeqref> sr = pLoader->GetSatSatkey(id);
@@ -102,7 +102,7 @@ int CTestApplication::Run()
         }
     }
 
-    for ( int gi = 18565530;  gi < 18565550; gi++ ) {
+    for ( TIntId gi = 18565530;  gi < 18565550; gi++ ) {
         CScope scope(*pOm);
         scope.AddDefaults();
         CSeq_id id;

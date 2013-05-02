@@ -54,7 +54,7 @@ int main()
         CRef<CReader> reader(new CPubseqReader);
         dispatcher->InsertReader(0, reader);
 
-        int gi = 156895+k-1;
+        TGi gi = GI_FROM(int, 156895+k-1);
 
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CStandaloneRequestResult request(seq_id);

@@ -69,7 +69,7 @@ public:
     virtual int Run(void);
 
     typedef vector<CSeq_id_Handle> TIds;
-    typedef vector<int> TGis;
+    typedef CScope::TGIs TGis;
     typedef vector<CSeq_id_Handle> TAccs;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
@@ -171,18 +171,18 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
             m_Ids.size() << " Seq-ids from file)..." << NcbiEndl;
     }
     if ( m_Ids.empty() && (args["fromgi"] || args["togi"]) ) {
-        int gi_from  = args["fromgi"]? args["fromgi"].AsInteger(): g_gi_from;
-        int gi_to    = args["togi"]? args["togi"].AsInteger(): g_gi_to;
-        int delta = gi_to > gi_from? 1: -1;
-        for ( int gi = gi_from; gi != gi_to+delta; gi += delta ) {
+        TIntId gi_from  = args["fromgi"]? args["fromgi"].AsInteger(): g_gi_from;
+        TIntId gi_to    = args["togi"]? args["togi"].AsInteger(): g_gi_to;
+        TIntId delta = gi_to > gi_from? 1: -1;
+        for ( TIntId gi = gi_from; gi != gi_to+delta; gi += delta ) {
             m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
         }
         NcbiCout << "Testing bulk info load ("
             "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
     }
     if ( m_Ids.empty() ) {
-        int count = g_gi_to-g_gi_from+1;
-        for ( int i = 0; i < count; ++i ) {
+        TIntId count = g_gi_to-g_gi_from+1;
+        for ( TIntId i = 0; i < count; ++i ) {
             if ( i % 3 != 0 ) {
                 m_Ids.push_back(CSeq_id_Handle::GetGiHandle(i+g_gi_from));
             }

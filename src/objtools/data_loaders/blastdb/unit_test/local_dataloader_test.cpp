@@ -115,43 +115,43 @@ BOOST_AUTO_TEST_CASE(LocalFetchBatchData)
      CScope::TTaxIds reference_TI, test_TI;
 
      CScope::TSeq_id_Handles idhs;
-     idhs.push_back(CSeq_id_Handle::GetHandle(4));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 4)));
      reference_L.push_back(556);
      reference_TI.push_back(9646);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle( 7 ));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 7)));
      reference_L.push_back(437);
      reference_TI.push_back(9913);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(9));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 9)));
      reference_L.push_back(1512);
      reference_TI.push_back(9913);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(11));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 11)));
      reference_L.push_back(2367);
      reference_TI.push_back(9913);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(15));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 15)));
      reference_L.push_back(540);
      reference_TI.push_back(9915);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(16));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 16)));
      reference_L.push_back(1759);
      reference_TI.push_back(9771);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(17));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 17)));
      reference_L.push_back(1758);
      reference_TI.push_back(9771);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(18));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 18)));
      reference_L.push_back(1758);
      reference_TI.push_back(9771);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(19));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 19)));
      reference_L.push_back(422);
      reference_TI.push_back(9771);
 
-     idhs.push_back(CSeq_id_Handle::GetHandle(20));
+     idhs.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, 20)));
      reference_L.push_back(410);
      reference_TI.push_back(9771);
 

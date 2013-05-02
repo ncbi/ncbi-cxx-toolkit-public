@@ -92,7 +92,7 @@ public:
     // bulk requests
     typedef vector<CSeq_id_Handle> TIds;
     typedef vector<bool> TLoaded;
-    typedef vector<int> TGis;
+    typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
     virtual bool LoadAccVers(CReaderRequestResult& result,
@@ -135,12 +135,12 @@ public:
                                  const string& seq_id) const;
     void SetAndSaveStringGi(CReaderRequestResult& result,
                             const string& seq_id,
-                            int gi) const;
+                            TGi gi) const;
     void SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id) const;
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
-                            int gi) const;
+                            TGi gi) const;
     void SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
                                 const CSeq_id& acc_id) const;
@@ -171,14 +171,14 @@ public:
     void SetAndSaveStringGi(CReaderRequestResult& result,
                             const string& seq_id,
                             CLoadLockSeq_ids& seq_ids,
-                            int gi) const;
+                            TGi gi) const;
     void SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  CLoadLockSeq_ids& seq_ids) const;
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             CLoadLockSeq_ids& seq_ids,
-                            int gi) const;
+                            TGi gi) const;
     void SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
                                 CLoadLockSeq_ids& seq_ids,

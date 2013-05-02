@@ -564,12 +564,12 @@ const
 {
     const THit::TId& subjid_lhs (m_HitRefs.front()->GetSubjId());
     const THit::TId& subjid_rhs (rhs.m_HitRefs.front()->GetSubjId());
-    const int co (subjid_lhs->CompareOrdered(*subjid_rhs));
+    const TIntId co (subjid_lhs->CompareOrdered(*subjid_rhs));
     if(co == 0) {
 
         const THit::TId& queryid_lhs (m_HitRefs.front()->GetQueryId());
         const THit::TId& queryid_rhs (rhs.m_HitRefs.front()->GetQueryId());
-        const int co (queryid_lhs->CompareOrdered(*queryid_rhs));
+        const TIntId co (queryid_lhs->CompareOrdered(*queryid_rhs));
 
         if(co == 0) {
 

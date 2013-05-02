@@ -757,7 +757,7 @@ CSeq_id_Handle CGBDataLoader::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
+TGi CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
 {
     CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);

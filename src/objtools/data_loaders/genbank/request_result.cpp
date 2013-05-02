@@ -112,7 +112,7 @@ bool CLoadInfoSeq_ids::IsLoadedGi(void)
     }
     ITERATE ( CLoadInfoSeq_ids, it, *this ) {
         if ( it->Which() == CSeq_id::e_Gi ) {
-            int gi;
+            TGi gi;
             if ( it->IsGi() ) {
                 gi = it->GetGi();
             }
@@ -123,12 +123,12 @@ bool CLoadInfoSeq_ids::IsLoadedGi(void)
             return true;
         }
     }
-    SetLoadedGi(0);
+    SetLoadedGi(ZERO_GI);
     return true;
 }
 
 
-void CLoadInfoSeq_ids::SetLoadedGi(int gi)
+void CLoadInfoSeq_ids::SetLoadedGi(TGi gi)
 {
     _ASSERT(!m_GiLoaded || m_Gi == gi);
     m_Gi = gi;
@@ -159,7 +159,7 @@ bool CLoadInfoSeq_ids::IsLoadedAccVer(void)
 void CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc)
 {
     if ( !acc || acc.Which() == CSeq_id::e_Gi ) {
-        _ASSERT(!acc || acc.GetGi() == 0);
+        _ASSERT(!acc || acc.GetGi() == ZERO_GI);
         _ASSERT(!m_AccLoaded || m_Acc == CSeq_id_Handle());
         m_Acc = CSeq_id_Handle();
     }

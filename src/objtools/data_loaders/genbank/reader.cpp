@@ -796,7 +796,7 @@ void CReader::SetAndSaveStringSeq_ids(CReaderRequestResult& result,
 
 void CReader::SetAndSaveStringGi(CReaderRequestResult& result,
                                  const string& seq_id,
-                                 int gi) const
+                                 TGi gi) const
 {
     CLoadLockSeq_ids seq_ids(result, seq_id);
     SetAndSaveStringGi(result, seq_id, seq_ids, gi);
@@ -813,7 +813,7 @@ void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
 
 void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
-                                 int gi) const
+                                 TGi gi) const
 {
     CLoadLockSeq_ids seq_ids(result, seq_id);
     SetAndSaveSeq_idGi(result, seq_id, seq_ids, gi);
@@ -887,7 +887,7 @@ void CReader::SetAndSaveStringSeq_ids(CReaderRequestResult& result,
 void CReader::SetAndSaveStringGi(CReaderRequestResult& result,
                                  const string& seq_id,
                                  CLoadLockSeq_ids& seq_ids,
-                                 int gi) const
+                                 TGi gi) const
 {
     if ( seq_ids->IsLoadedGi() ) {
         return;
@@ -925,7 +925,7 @@ void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
 void CReader::SetAndSaveSeq_idGi(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  CLoadLockSeq_ids& seq_ids,
-                                 int gi) const
+                                 TGi gi) const
 {
     if ( seq_ids->IsLoadedGi() ) {
         return;

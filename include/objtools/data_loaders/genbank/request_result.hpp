@@ -106,12 +106,12 @@ public:
     ~CLoadInfoSeq_ids(void);
 
     bool IsLoadedGi(void);
-    int GetGi(void) const
+    TGi GetGi(void) const
         {
             _ASSERT(m_GiLoaded);
             return m_Gi;
         }
-    void SetLoadedGi(int gi);
+    void SetLoadedGi(TGi gi);
 
     bool IsLoadedAccVer(void);
     CSeq_id_Handle GetAccVer(void) const
@@ -171,7 +171,7 @@ public:
     bool        m_AccLoaded;
     bool        m_LabelLoaded;
     bool        m_TaxIdLoaded;
-    int         m_Gi;
+    TGi         m_Gi;
     CSeq_id_Handle m_Acc;
     string      m_Label;
     int         m_TaxId;

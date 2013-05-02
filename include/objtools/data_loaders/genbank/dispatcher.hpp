@@ -97,7 +97,7 @@ public:
 
     // bulk requests
     typedef vector<bool> TLoaded;
-    typedef vector<int> TGis;
+    typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
     void LoadAccVers(CReaderRequestResult& result,

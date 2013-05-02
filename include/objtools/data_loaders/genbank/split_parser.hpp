@@ -89,8 +89,8 @@ protected:
     static void x_AddWhole(TLocationSet& vec, const TLocationId& id);
     static void x_AddInterval(TLocationSet& vec, const TLocationId& id,
                               TSeqPos start, TSeqPos length);
-    static void x_AddGiWhole(TLocationSet& vec, int gi);
-    static void x_AddGiInterval(TLocationSet& vec, int gi,
+    static void x_AddGiWhole(TLocationSet& vec, TGi gi);
+    static void x_AddGiInterval(TLocationSet& vec, TGi gi,
                                 TSeqPos start, TSeqPos length);
 };
 

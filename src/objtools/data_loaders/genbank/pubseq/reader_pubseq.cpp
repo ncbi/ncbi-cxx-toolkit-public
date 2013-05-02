@@ -475,14 +475,14 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
 
     if ( seq_id.IsGi() ) {
         _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
-        int gi;
+        TGi gi;
         if ( seq_id.IsGi() ) {
             gi = seq_id.GetGi();
         }
         else {
             gi = seq_id.GetSeqId()->GetGi();
         }
-        if ( gi != 0 ) {
+        if (gi != ZERO_GI) {
             _TRACE("ResolveGi to Acc: " << gi);
 
             CConn conn(result, this);
@@ -490,7 +490,7 @@ bool CPubseqReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                 CDB_Connection* db_conn = x_GetConnection(conn);
     
                 AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_accn_ver_by_gi"));
-                CDB_Int giIn = gi;
+                CDB_Int giIn = GI_TO(Int4, gi);
                 cmd->SetParam("@gi", &giIn);
                 cmd->Send();
                 
@@ -708,7 +708,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                     // we've got gi
                     if ( !seq_ids->IsLoadedGi() ) {
                         SetAndSaveSeq_idGi(result, seq_id, seq_ids,
-                                           giGot.Value());
+                                           GI_FROM(Int4, giGot.Value()));
                     }
                 }
             }
@@ -822,8 +822,8 @@ void CPubseqReader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     if ( ids.IsLoaded() ) { // may be loaded as extra information for gi
         return;
     }
-    int gi = ids->GetGi();
-    if ( !gi ) {
+    TGi gi = ids->GetGi();
+    if (gi == ZERO_GI) {
         // no gi -> no Seq-ids
         return;
     }
@@ -843,14 +843,14 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
                                  CLoadLockSeq_ids& ids)
 {
     _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
-    int gi;
+    TGi gi;
     if ( seq_id.IsGi() ) {
         gi = seq_id.GetGi();
     }
     else {
         gi = seq_id.GetSeqId()->GetGi();
     }
-    if ( gi == 0 ) {
+    if ( gi == ZERO_GI ) {
         return;
     }
 
@@ -861,7 +861,7 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
     
         AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi"));
-        CDB_Int giIn = gi;
+        CDB_Int giIn = GI_TO(Int4, gi);
         CDB_TinyInt binIn = 1;
         cmd->SetParam("@gi", &giIn);
         cmd->SetParam("@bin", &binIn);

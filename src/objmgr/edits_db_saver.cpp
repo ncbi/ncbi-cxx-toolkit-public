@@ -95,10 +95,10 @@ static CRef<CSeqEdit_Id> s_Convert(const CBioObjectId& id)
         }
         break;
     case CBioObjectId::eSetId :
-        ret->SetBioseqset_id(id.GetSetId());
+        ret->SetBioseqset_id((CSeqEdit_Id_Base::TBioseqset_id)id.GetSetId());
         break;
     case CBioObjectId::eUniqNumber :
-        ret->SetUnique_num(id.GetUniqNumber());
+        ret->SetUnique_num((CSeqEdit_Id_Base::TUnique_num)id.GetUniqNumber());
         break;
     default:
         _ASSERT(0);

@@ -63,7 +63,7 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     /// Return Id cache key string based on CSeq_id of gi
     static string GetIdKey(const CSeq_id& id);
     static string GetIdKey(const CSeq_id_Handle& id);
-    static string GetIdKey(int gi);
+    static string GetIdKey(TGi gi);
 
     /// Id cache subkeys:
     // Seq-id/gi -> blob_id & contents info

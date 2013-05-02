@@ -303,12 +303,12 @@ bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
     CID1server_back id1_reply;
     x_ResolveId(result, id1_reply, id1_request);
 
-    int gi;
+    TGi gi;
     if ( id1_reply.IsGotgi() ) {
         gi = id1_reply.GetGotgi();
     }
     else {
-        gi = 0;
+        gi = ZERO_GI;
     }
     SetAndSaveSeq_idGi(result, seq_id, ids, gi);
     return true;
@@ -350,8 +350,8 @@ void CId1Reader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     if ( ids.IsLoaded() ) {
         return;
     }
-    int gi = ids->GetGi();
-    if ( !gi ) {
+    TGi gi = ids->GetGi();
+    if (gi == ZERO_GI) {
         // no gi -> no Seq-ids
         return;
     }
@@ -407,8 +407,8 @@ bool CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
 
     CLoadLockSeq_ids seq_ids(result, seq_id);
     m_Dispatcher->LoadSeq_idGi(result, seq_id);
-    int gi = seq_ids->GetGi();
-    if ( !gi ) {
+    TGi gi = seq_ids->GetGi();
+    if (gi == ZERO_GI) {
         // no gi -> no blobs
         SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return true;
@@ -431,14 +431,14 @@ void CId1Reader::GetGiSeq_ids(CReaderRequestResult& result,
                               CLoadLockSeq_ids& ids)
 {
     _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
-    int gi;
+    TGi gi;
     if ( seq_id.IsGi() ) {
         gi = seq_id.GetGi();
     }
     else {
         gi = seq_id.GetSeqId()->GetGi();
     }
-    if ( gi == 0 ) {
+    if ( gi == ZERO_GI ) {
         return;
     }
 
@@ -468,14 +468,14 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
                                CLoadLockBlob_ids& ids)
 {
     _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
-    int gi;
+    TGi gi;
     if ( seq_id.IsGi() ) {
         gi = seq_id.GetGi();
     }
     else {
         gi = seq_id.GetSeqId()->GetGi();
     }
-    if ( gi == 0 ) {
+    if ( gi == ZERO_GI ) {
         SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids);
         return;
     }
@@ -493,7 +493,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
     if ( !id1_reply.IsGotblobinfo() ) {
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
-        blob_id.SetSatKey(gi);
+        blob_id.SetSatKey(GI_TO(int, gi));
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         if ( !state ) {
             state = 
@@ -509,7 +509,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
     if (info.GetWithdrawn() > 0) {
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
-        blob_id.SetSatKey(gi);
+        blob_id.SetSatKey(GI_TO(int, gi));
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_withdrawn|
                       CBioseq_Handle::fState_no_data);
@@ -519,7 +519,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
     if (info.GetConfidential() > 0) {
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
-        blob_id.SetSatKey(gi);
+        blob_id.SetSatKey(GI_TO(int, gi));
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_confidential|
                       CBioseq_Handle::fState_no_data);
@@ -530,7 +530,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
         LOG_POST_X(3, Warning<<"CId1Reader: gi "<<gi<<" negative sat/satkey");
         CBlob_id blob_id;
         blob_id.SetSat(kSat_BlobError);
-        blob_id.SetSatKey(gi);
+        blob_id.SetSatKey(GI_TO(int, gi));
         ids.AddBlob_id(blob_id, CBlob_Info(0));
         ids->SetState(CBioseq_Handle::fState_other_error|
                       CBioseq_Handle::fState_no_data);
@@ -552,7 +552,7 @@ void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
                 ext_feat -= bit;
                 CBlob_id blob_id;
                 blob_id.SetSat(GetAnnotSat(bit));
-                blob_id.SetSatKey(gi);
+                blob_id.SetSatKey(GI_TO(int, gi));
                 blob_id.SetSubSat(bit);
                 ids.AddBlob_id(blob_id, CBlob_Info(fBlobHasExtAnnot));
             }
@@ -699,7 +699,7 @@ void CId1Reader::x_SetParams(CID1server_maxcomplex& params,
 {
     int bits = (~blob_id.GetSubSat() & 0xffff) << 4;
     params.SetMaxplex(eEntry_complexities_entry | bits);
-    params.SetGi(0);
+    params.SetGi(ZERO_GI);
     params.SetEnt(blob_id.GetSatKey());
     int sat = blob_id.GetSat();
     if ( IsAnnotSat(sat) ) {

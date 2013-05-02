@@ -90,7 +90,7 @@ CCachedSequence::CCachedSequence(IBlastDbAdapter& db,
     m_Length = m_BlastDb.GetSeqLength(m_OID);
     
     CRef<CBioseq> bioseq(m_BlastDb.GetBioseqNoData(m_OID,
-                                                  m_SIH.IsGi()? m_SIH.GetGi(): 0));
+                                                  m_SIH.IsGi()? GI_TO(int, m_SIH.GetGi()): 0));
     s_ReplaceProvidedSeqIdsForRequestedSeqIds(m_SIH, *bioseq);
     
     CConstRef<CSeq_id> first_id( bioseq->GetFirstId() );

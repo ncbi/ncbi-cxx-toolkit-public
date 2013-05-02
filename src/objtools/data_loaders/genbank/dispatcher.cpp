@@ -593,7 +593,7 @@ namespace {
     public:
         typedef vector<CSeq_id_Handle> TKey;
         typedef vector<bool> TLoaded;
-        typedef vector<int> TRet;
+        typedef vector<TGi> TRet;
         CCommandLoadGis(CReaderRequestResult& result,
                         const TKey& key, TLoaded& loaded, TRet& ret)
             : CReadDispatcherCommand(result),

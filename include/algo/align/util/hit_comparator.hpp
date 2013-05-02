@@ -175,7 +175,7 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         
     case eSubjIdQueryId: 
         {
-            const int co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
+            const TIntId co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
             if(co == 0) {
                 rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
             }
@@ -193,8 +193,8 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         
     case eQueryIdSubjIdSubjStrand:
         {
-            const int qid = lhs->GetQueryId()->CompareOrdered(*(rhs->GetQueryId()));
-            const int sid = lhs->GetSubjId()->CompareOrdered(*(rhs->GetSubjId()));
+            const TIntId qid = lhs->GetQueryId()->CompareOrdered(*(rhs->GetQueryId()));
+            const TIntId sid = lhs->GetSubjId()->CompareOrdered(*(rhs->GetSubjId()));
 
             if(qid == 0) {
                 if(sid == 0) {

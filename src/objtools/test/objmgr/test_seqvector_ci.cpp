@@ -288,7 +288,7 @@ int CTestApp::Run(void)
     const CArgs& args = GetArgs();
 
     // GI with many segments of different sizes.
-    int gi = args["gi"].AsInteger(); // 29791621;
+    TGi gi = GI_FROM(int, args["gi"].AsInteger()); // 29791621;
 
     m_OM = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_OM);

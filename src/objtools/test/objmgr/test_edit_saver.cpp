@@ -358,7 +358,7 @@ const string kAddedFeatTitle = "Added Feature";
 const string kAddedAnnotName = "TestAnnot";
 static void s_AddFeat(const CBioseq_Handle& handle) 
 {
-    int gi;
+    TGi gi;
     CSeq_id_Handle sid = GetId(handle, eGetId_ForceGi);
     if (!sid)
         THROW("Bioseq does not have a gi seq_id");
@@ -428,7 +428,7 @@ static void s_RemoveAnnot(const CBioseq_Handle& handle)
 int CTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    int gi = args["gi"].AsInteger();
+    TGi gi = GI_FROM(int, args["gi"].AsInteger());
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 

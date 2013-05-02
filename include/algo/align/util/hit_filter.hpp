@@ -675,7 +675,7 @@ protected:
             const Uint1 where2 = rhs.m_Point < 2? 0: 1;
             const THit& h1 = **m_Ptr;
             const THit& h2 = **rhs.m_Ptr;
-            int c = h1.GetId(where1)->CompareOrdered(*h2.GetId(where2));
+            TIntId c = h1.GetId(where1)->CompareOrdered(*h2.GetId(where2));
             return c < 0? true: (c > 0? false:
              (m_X == rhs.m_X? (h1.GetScore() < h2.GetScore()): m_X < rhs.m_X) );
         }

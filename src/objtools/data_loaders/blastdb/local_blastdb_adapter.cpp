@@ -63,7 +63,7 @@ CLocalBlastDbAdapter::GetTaxId(const CSeq_id_Handle& idh)
             map<int, int> gi_to_taxid;
             m_SeqDB->GetTaxIDs(oid, gi_to_taxid);
             if (idh.IsGi()) {
-                retval = gi_to_taxid[idh.GetGi()];
+                retval = gi_to_taxid[GI_TO(int, idh.GetGi())];
             } else {
                 retval = gi_to_taxid.begin()->second;
             }

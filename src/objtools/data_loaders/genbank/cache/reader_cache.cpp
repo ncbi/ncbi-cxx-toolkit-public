@@ -83,9 +83,9 @@ string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 }
 
 
-string SCacheInfo::GetIdKey(int gi)
+string SCacheInfo::GetIdKey(TGi gi)
 {
-    return NStr::IntToString(gi);
+    return NStr::NumericToString(gi);
 }
 
 
@@ -475,7 +475,7 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     
     CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetGiSubkey());
     if ( str.Found() ) {
-        int gi = str.ParseInt4();
+        TGi gi = GI_FROM(Int4, str.ParseInt4());
         if ( str.Done() ) {
             ids->SetLoadedGi(gi);
             return true;
