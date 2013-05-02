@@ -362,7 +362,7 @@ RunTest() {
    x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
    x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
    x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
-   x_applog_sh="\$x_work_dir/\$x_app.boost_rep\$x_ext"
+   x_applog_sh="\$x_work_dir/\$x_app.applog.sh"
 
    if \$is_db_load; then
       echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
