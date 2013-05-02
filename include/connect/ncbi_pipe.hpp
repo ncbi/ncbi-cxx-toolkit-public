@@ -509,15 +509,12 @@ class NCBI_XCONNECT_EXPORT CPipeException
 public:
     /// Error types for pipe exceptions.
     enum EErrCode {
-        eInit,      ///< Pipe initialization error
-        eOpen,      ///< Unable to open pipe (from constructor)
-        eSetBuf     ///< setbuf() not permitted
+        eOpen ///< Unable to open pipe
     };
-
     /// Translate from an error code value to its string representation.
     virtual const char* GetErrCodeString(void) const;
     // Standard exception boiler plate code.
-    NCBI_EXCEPTION_DEFAULT(CPipeException,CCoreException);
+    NCBI_EXCEPTION_DEFAULT(CPipeException, CCoreException);
 };
 
 

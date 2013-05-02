@@ -63,7 +63,7 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
 
-#define IS_SET(flags, mask) (((flags) & (mask)) == (mask))
+#define IS_SET(flags, mask)  (((flags) & (mask)) == (mask))
 
 
 BEGIN_NCBI_SCOPE
@@ -1297,7 +1297,7 @@ void CPipeHandle::OpenSelf(void)
 
     NcbiCout.flush();
     ::fflush(stdout);
-    m_ChildStdIn  = fileno(stdout);  // NB: a macro on BSD
+    m_ChildStdIn  = fileno(stdout);  // NB: a macro on BSD, so no "::" scope
     m_ChildStdOut = fileno(stdin);
     m_Pid = ::getpid();
 
@@ -1657,14 +1657,18 @@ CPipe::CPipe(const string&         cmd,
              TCreateFlags          create_flags,
              const string&         current_dir,
              const char*   const   env[])
-    : m_PipeHandle(new CPipeHandle), m_ReadHandle(eStdOut),
+    : m_PipeHandle(0), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
+    auto_ptr<CPipeHandle> handle_ptr(new CPipeHandle);
+    m_PipeHandle = handle_ptr.get();
     EIO_Status status = Open(cmd, args, create_flags, current_dir, env);
     if (status != eIO_Success) {
-        NCBI_THROW(CPipeException, eOpen, "CPipe::Open() failed");
+        NCBI_THROW(CPipeException, eOpen,
+                   "CPipe::Open(): " + string(IO_StatusStr(status)));
     }
+    handle_ptr.release();
 }
 
 
@@ -1698,11 +1702,18 @@ EIO_Status CPipe::Open(const string& cmd, const vector<string>& args,
 
 void CPipe::OpenSelf(void)
 {
-    if (m_PipeHandle) {
+    try {
+        if ( !m_PipeHandle ) {
+            throw string("Pipe invalid");
+        }
         m_PipeHandle->OpenSelf();
-        m_ReadStatus  = eIO_Success;
-        m_WriteStatus = eIO_Success;
     }
+    catch (string& err) {
+        NCBI_THROW(CPipeException, eOpen,
+                   "CPipe::OpenSelf(): " + err);
+    }
+    m_ReadStatus  = eIO_Success;
+    m_WriteStatus = eIO_Success;
 }
 
 
@@ -1993,11 +2004,10 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
 const char* CPipeException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eInit:   return "eInit";
-    case eOpen:   return "eOpen";
-    case eSetBuf: return "eSetBuf";
-    default:      return CException::GetErrCodeString();
+    case eOpen:  return "eOpen";
+    default:     break;
     }
+    return CCoreException::GetErrCodeString();
 }
 
 
