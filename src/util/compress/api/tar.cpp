@@ -1295,7 +1295,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
 CTar::~CTar()
 {
     // Close stream(s)
-    x_Close(x_Flush(true/*nothrow*/));
+    x_Close(x_Flush(true/*no_throw*/));
     delete m_FileStream;
     m_FileStream = 0;
 
@@ -1405,7 +1405,7 @@ void CTar::x_Close(bool truncate)
         m_FileStream->close();
         if (!m_Bad  &&  !(m_Flags & fTarfileNoTruncate)  &&  truncate) {
 #ifdef NCBI_OS_UNIX
-            ::truncate(m_FileName.c_str(), (off_t)m_StreamPos);
+            ::truncate(m_FileName.c_str(), (off_t) m_StreamPos);
 #endif //NCBI_OS_UNIX
 #ifdef NCBI_OS_MSWIN
             TXString filename(_T_XSTRING(m_FileName));
