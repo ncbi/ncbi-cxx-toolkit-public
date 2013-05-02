@@ -451,3 +451,4 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
 
     BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
 }
+
