@@ -51,6 +51,8 @@ class NCBI_XCONNECT_EXPORT CNetServiceIterator
     CNetServiceIterator& operator ++() {Next(); return *this;}
     bool Prev();
     CNetServiceIterator& operator --() {Prev(); return *this;}
+
+    double GetRate() const;
 };
 
 class INetServerFinder

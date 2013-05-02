@@ -103,6 +103,11 @@ bool CNetServiceIterator::Prev()
     return false;
 }
 
+double CNetServiceIterator::GetRate() const
+{
+    return m_Impl->m_Position->second;
+}
+
 bool SNetServiceIteratorImpl::Next()
 {
     return ++m_Position != m_ServerGroup->m_Servers.end();
