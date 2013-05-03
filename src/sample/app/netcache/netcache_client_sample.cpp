@@ -129,7 +129,7 @@ void CSampleNetCacheClient::DemoPutRead(void)
     // Overwrite the data by reusing the key, and specify a time-to-live.
     {{
         string message("second message");
-        nc_api.PutData(key, message.c_str(), message.size(), 600);
+        nc_api.PutData(key, message.c_str(), message.size(), nc_blob_ttl = 600);
     }}
 
     // By not setting a time-to-live (TTL), the previously set TTL value
@@ -240,7 +240,8 @@ void CSampleNetCacheClient::DemoStream(void)
 
     // Write to NetCache stream.
     {{
-        auto_ptr<CNcbiOstream> os(nc_api_p->CreateOStream(key, 600));
+        auto_ptr<CNcbiOstream> os(nc_api_p->CreateOStream(key,
+                nc_blob_ttl = 600));
         *os << "line one\n";
         *os << "line two\n";
         *os << "line three" << NcbiEndl;
@@ -335,7 +336,8 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
     // but it's just done once here to cleanly illustrate the API call.
     {{
         // Create a data writer.
-        auto_ptr<IEmbeddedStreamWriter> writer(nc_api.PutData(&key, 600));
+        auto_ptr<IEmbeddedStreamWriter> writer(nc_api.PutData(&key,
+                nc_blob_ttl = 600));
 
         if (m_StreamStyle == "iostream") {
             // Write some data via ostream API.
