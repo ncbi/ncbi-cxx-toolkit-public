@@ -38,8 +38,7 @@
 ///
 
 #include "netservice_api_impl.hpp"
-
-#include <connect/services/netcache_api.hpp>
+#include "netcache_params.hpp"
 
 #include <connect/ncbi_conn_reader_writer.hpp>
 
@@ -75,7 +74,7 @@ public:
         const string& blob_id,
         CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode);
+        const CNetCacheAPIParameters* parameters);
 
     virtual ~CNetCacheReader();
 
@@ -112,9 +111,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheWriter : public IEmbeddedStreamWriter
 public:
     CNetCacheWriter(SNetCacheAPIImpl* impl,
         string* blob_id,
-        unsigned time_to_live,
         ENetCacheResponseType response_type,
-        CNetCacheAPI::ECachingMode caching_mode);
+        const CNetCacheAPIParameters* parameters);
 
     virtual ~CNetCacheWriter();
 
@@ -136,8 +134,6 @@ public:
 
     void SetBlobID(const string& blob_id) {m_BlobID = blob_id;}
 
-    unsigned GetTimeToLive() const {return m_TimeToLive;}
-
 private:
     bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
     void ResetWriters();
@@ -154,7 +150,8 @@ private:
 
     CNetCacheAPI m_NetCacheAPI;
     string m_BlobID;
-    unsigned m_TimeToLive;
+    const CNetCacheAPIParameters* m_Parameters;
+
     CFileIO m_CacheFile;
     bool m_CachingEnabled;
 };

@@ -59,10 +59,14 @@ BEGIN_NCBI_SCOPE
 struct NCBI_XCONNECT_EXPORT CNetCacheKey
 {
 public:
-    /*CNetCacheKey(unsigned int  _id,
-                 const string& _host,
-                 unsigned int  _port,
-                 unsigned int  ver = 1);*/
+    /// Blob and blob key features.
+    enum ENCKeyFlag {
+        eNCKey_SingleServer = 1 << 0,   ///< Mark this blob as not mirrored.
+        eNCKey_NoServerCheck = 1 << 1,  ///< Disable the check for whether
+                                        ///< the server IP is still in service.
+    };
+    typedef unsigned TNCKeyFlags;       ///< Binary OR of ENCKeyFlag.
+
     /// Create the key out of string
     explicit CNetCacheKey(const string& key_str);
 
@@ -85,10 +89,13 @@ public:
     string StripKeyExtensions() const;
 
     /// Unconditionally append a service name to the specified string.
-    static void AddExtensions(string& blob_id, const string& service_name);
+    static void AddExtensions(string& blob_id, const string& service_name,
+            TNCKeyFlags flags);
 
-    /// Extend this key with the specified service name.
-    void SetServiceName(const string& service_name);
+    TNCKeyFlags GetFlags() const {return m_Flags;}
+    bool GetFlag(ENCKeyFlag flag) const {return (m_Flags & flag) != 0;}
+    void SetFlag(ENCKeyFlag flag) {m_Flags |= (TNCKeyFlags) flag;}
+    void ClearFlag(ENCKeyFlag flag) {m_Flags &= ~(TNCKeyFlags) flag;}
 
     /// Generate blob key string
     ///
@@ -107,15 +114,17 @@ public:
                          const string&  host,
                          unsigned short port,
                          unsigned int   ver,
-                         unsigned int   rnd_num);
+                         unsigned int   rnd_num,
+                         time_t         creation_time = 0);
 
-    /// Generate a key that includes a service name.
+    /// Generate a key with extensions.
     static void GenerateBlobKey(
         string* key,
         unsigned id,
         const string& host,
         unsigned short port,
-        const string& service_name);
+        const string& service_name,
+        TNCKeyFlags flags);
 
     /// Parse blob key, extract id
     static unsigned int GetBlobId(const string& key_str);
@@ -144,9 +153,10 @@ private:
     time_t m_CreationTime;
     Uint4 m_Random;
     size_t m_PrimaryKeyLength;
+
+    // Key extensions
     string m_ServiceName;
-    size_t m_ServiceNameExtPos;
-    size_t m_ServiceNameExtLen;
+    TNCKeyFlags m_Flags;
 };
 
 
@@ -154,13 +164,10 @@ private:
 // Inline functions
 //////////////////////////////////////////////////////////////////////////
 
-/*inline
-CNetCacheKey::CNetCacheKey(unsigned int  _id,
-                           const string& _host,
-                           unsigned int  _port,
-                           unsigned int  ver)
-    : m_Id(_id), m_Host(_host), m_Port(_port), m_Version(ver)
-{}*/
+inline string CNetCacheKey::StripKeyExtensions() const
+{
+    return HasExtensions() ? string(m_Key.data(), m_PrimaryKeyLength) : m_Key;
+}
 
 inline const string& CNetCacheKey::GetKey() const
 {

@@ -287,14 +287,15 @@ void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
         m_PreferredAffinities.insert(affinity);
         string new_preferred_aff_cmd = "CHAFF add=" + affinity;
         g_AppendClientIPAndSessionID(new_preferred_aff_cmd);
-        CNetServiceIterator it(m_API->m_Service.Iterate(orig_server));
-        while (++it)
+        for (CNetServiceIterator it =
+                m_API->m_Service.ExcludeServer(orig_server); it; ++it)
             try {
                 (*it).ExecWithRetry(new_preferred_aff_cmd);
             }
             catch (CException& e) {
-                ERR_POST("Error while notifying " << (*it).GetServerAddress() <<
-                    " of a new affinity " << e);
+                ERR_POST("Error while notifying " <<
+                        (*it).GetServerAddress() <<
+                        " of a new affinity " << e);
 
                 m_API->GetListener()->SetAffinitiesSynced(
                         it.GetServer(), false);
@@ -376,8 +377,8 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
             // we are no longer listening on the UDP socket.
             string cancel_wget_cmd("CWGET");
             g_AppendClientIPAndSessionID(cancel_wget_cmd);
-            CNetServiceIterator it(m_Impl->m_API->m_Service.Iterate(server));
-            while (++it)
+            for (CNetServiceIterator it =
+                    m_Impl->m_API->m_Service.ExcludeServer(server); it; ++it)
                 (*it).ExecWithRetry(cancel_wget_cmd);
 
             // Also, if a new preferred affinity is given by

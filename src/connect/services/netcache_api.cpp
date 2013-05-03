@@ -58,8 +58,6 @@
 
 #define NCBI_USE_ERRCODE_X  ConnServ_NetCache
 
-#define MAX_NETCACHE_PASSWORD_LENGTH 64
-
 
 BEGIN_NCBI_SCOPE
 
@@ -117,20 +115,36 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
         string enable_mirroring(config->GetString(config_section,
                 "enable_mirroring", CConfig::eErr_NoThrow, kEmptyStr));
 
-        if (enable_mirroring.empty() ||
-                NStr::CompareNocase(enable_mirroring, "if_key_mirrored") == 0 ||
-                NStr::CompareNocase(enable_mirroring, "on_read") == 0 ||
-                NStr::CompareNocase(enable_mirroring, "onread") == 0)
-            nc_impl->m_MirroringMode = CNetCacheAPI::eIfKeyMirrored;
-        else
-            nc_impl->m_MirroringMode = NStr::StringToBool(enable_mirroring) ?
-                    CNetCacheAPI::eMirroringEnabled :
-                    CNetCacheAPI::eMirroringDisabled;
+        if (!enable_mirroring.empty()) {
+            NStr::ReplaceInPlace(enable_mirroring, "_", kEmptyStr);
+
+            nc_impl->m_DefaultParameters.SetMirroringMode(
+                NStr::CompareNocase(enable_mirroring, "ifkeymirrored") == 0 ||
+                NStr::CompareNocase(enable_mirroring, "onread") == 0 ?
+                    CNetCacheAPI::eIfKeyMirrored :
+                        NStr::StringToBool(enable_mirroring) ?
+                            CNetCacheAPI::eMirroringEnabled :
+                            CNetCacheAPI::eMirroringDisabled);
+        }
+
+        string server_check(config->GetString(config_section,
+            "server_check", CConfig::eErr_NoThrow, kEmptyStr));
+
+        if (!server_check.empty())
+            nc_impl->m_DefaultParameters.SetServerCheck(
+                NStr::CompareNocase(server_check, "auto") == 0 ?
+                    eDefault : NStr::StringToBool(server_check) ? eOn : eOff);
+
+        server_check = config->GetString(config_section,
+            "server_check_hint", CConfig::eErr_NoThrow, kEmptyStr);
+
+        if (!server_check.empty())
+            nc_impl->m_DefaultParameters.SetServerCheckHint(
+                    NStr::StringToBool(server_check));
     } else {
         nc_impl->m_TempDir = default_temp_dir;
         nc_impl->m_CacheInput = false;
         nc_impl->m_CacheOutput = false;
-        nc_impl->m_MirroringMode = CNetCacheAPI::eIfKeyMirrored;
     }
 }
 
@@ -191,7 +205,8 @@ static const string s_NetCacheAPIName("NetCacheAPI");
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name) :
     m_Service(new SNetServiceImpl(s_NetCacheAPIName, client_name,
-        new CNetCacheServerListener))
+        new CNetCacheServerListener)),
+    m_DefaultParameters(eVoid)
 {
     m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
 }
@@ -203,30 +218,11 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
     m_TempDir(parent->m_TempDir),
     m_CacheInput(parent->m_CacheInput),
     m_CacheOutput(parent->m_CacheOutput),
-    m_MirroringMode(parent->m_MirroringMode),
-    m_Password(parent->m_Password)
+    m_DefaultParameters(parent->m_DefaultParameters)
 {
 }
 
-void SNetCacheAPIImpl::SetPassword(const string& password)
-{
-    if (password.empty())
-        m_Password = kEmptyStr;
-    else {
-        string encoded_password(NStr::PrintableString(password));
-
-        if (encoded_password.length() > MAX_NETCACHE_PASSWORD_LENGTH) {
-            NCBI_THROW(CNetCacheException,
-                eAuthenticationError, "Password is too long");
-        }
-
-        m_Password.assign(" pass=\"");
-        m_Password.append(encoded_password);
-        m_Password.append("\"");
-    }
-}
-
-void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd)
+void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
     cmd->append(" \"");
@@ -234,47 +230,85 @@ void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd)
     cmd->append("\" \"");
     cmd->append(req.GetSessionID());
     cmd->append("\"");
-    if (!m_Password.empty())
-        cmd->append(m_Password);
+}
+
+void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd,
+        const CNetCacheAPIParameters* parameters)
+{
+    AppendClientIPSessionID(cmd);
+
+    string password(parameters->GetPassword());
+    if (!password.empty())
+        cmd->append(password);
 }
 
 string SNetCacheAPIImpl::MakeCmd(const char* cmd)
 {
     string result(cmd);
-    AppendClientIPSessionIDPassword(&result);
+    AppendClientIPSessionID(&result);
     return result;
 }
 
-string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key)
+string SNetCacheAPIImpl::MakeCmd(const char* cmd,
+        const CNetCacheAPIParameters* parameters)
+{
+    string result(cmd);
+    AppendClientIPSessionIDPassword(&result, parameters);
+    return result;
+}
+
+string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key,
+        const CNetCacheAPIParameters* parameters)
 {
     string result(cmd_base + key.StripKeyExtensions());
-    AppendClientIPSessionIDPassword(&result);
+    AppendClientIPSessionIDPassword(&result, parameters);
     return result;
 }
 
-class SNCMirrorIterationBeginner : public IIterationBeginner
+class SNetCacheMirrorTraversal : public IServiceTraversal
 {
 public:
-    SNCMirrorIterationBeginner(CNetService service,
-            CNetServer::TInstance primary_server) :
+    SNetCacheMirrorTraversal(CNetService::TInstance service,
+            CNetServer::TInstance primary_server, ESwitch server_check) :
         m_Service(service),
-        m_PrimaryServer(primary_server)
+        m_PrimaryServer(primary_server),
+        m_PrimaryServerCheck(server_check != eOff)
     {
     }
 
-    virtual CNetServiceIterator BeginIteration();
+    virtual CNetServer BeginIteration();
+    virtual CNetServer NextServer();
 
     CNetService m_Service;
+    CNetServiceIterator m_Iterator;
     CNetServer::TInstance m_PrimaryServer;
+    bool m_PrimaryServerCheck;
 };
 
-CNetServiceIterator SNCMirrorIterationBeginner::BeginIteration()
+CNetServer SNetCacheMirrorTraversal::BeginIteration()
 {
-    return m_Service.Iterate(m_PrimaryServer);
+    if (m_PrimaryServerCheck)
+        return *(m_Iterator = m_Service.Iterate(m_PrimaryServer));
+
+    return m_PrimaryServer;
 }
 
-CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
+CNetServer SNetCacheMirrorTraversal::NextServer()
 {
+    if (m_PrimaryServerCheck)
+        return ++m_Iterator ? *m_Iterator : NULL;
+
+    m_PrimaryServerCheck = true;
+    return *(m_Iterator = m_Service.Iterate(m_PrimaryServer));
+}
+
+CNetService SNetCacheAPIImpl::FindOrCreateService(const CNetCacheKey& key)
+{
+    const string& service_name(key.GetServiceName());
+
+    if (service_name == m_Service.GetServiceName())
+        return m_Service;
+
     pair<TNetServiceByName::iterator, bool> loc(m_ServicesFromKeys.insert(
             TNetServiceByName::value_type(service_name, CNetService())));
 
@@ -290,31 +324,49 @@ CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
 
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     const CNetCacheKey& key, const string& cmd,
+    const CNetCacheAPIParameters* parameters,
     SNetServiceImpl::EServerErrorHandling error_handling)
 {
     CNetServer primary_server(GetServer(key));
 
-    if (!key.HasExtensions() ||
-            m_MirroringMode == CNetCacheAPI::eMirroringDisabled)
+    bool service_name_is_defined = !key.GetServiceName().empty();
+
+    bool key_is_mirrored = service_name_is_defined &&
+            !key.GetFlag(CNetCacheKey::eNCKey_SingleServer);
+
+    ESwitch server_check = eDefault;
+    parameters->GetServerCheck(&server_check);
+    if (server_check == eDefault)
+        server_check = key.GetFlag(CNetCacheKey::eNCKey_NoServerCheck) ?
+                eOff : eOn;
+
+    if (!key_is_mirrored || parameters->GetMirroringMode() ==
+            CNetCacheAPI::eMirroringDisabled) {
+        if (service_name_is_defined && server_check != eOff &&
+                !FindOrCreateService(key)->IsInService(primary_server)) {
+            NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
+                    key.GetKey() << ": NetCache server " <<
+                    primary_server.GetServerAddress() << " could not be "
+                    "accessed because it is not registered for the service.");
+        }
         return primary_server.ExecWithRetry(cmd);
+    } else {
+        CNetServer::SExecResult exec_result;
 
-    CNetServer::SExecResult exec_result;
+        SNetCacheMirrorTraversal mirror_traversal(FindOrCreateService(key),
+                primary_server, server_check);
 
-    SNCMirrorIterationBeginner iteration_beginner(key.HasExtensions() &&
-                key.GetServiceName() != m_Service.GetServiceName() ?
-            FindOrCreateService(key.GetServiceName()) : m_Service,
-            primary_server);
+        m_Service->IterateUntilExecOK(cmd, exec_result,
+                &mirror_traversal, error_handling);
 
-    m_Service->IterateUntilExecOK(cmd, exec_result,
-            &iteration_beginner, error_handling);
-
-    return exec_result;
+        return exec_result;
+    }
 }
 
 CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
     const string& password)
 {
-    if (!nc_api->m_Password.empty()) {
+    if (!nc_api->m_DefaultParameters.GetPassword().empty()) {
         NCBI_THROW(CNetCacheException, eAuthenticationError,
             "Cannot reuse a password-protected NetCache API object.");
     }
@@ -322,7 +374,7 @@ CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
         m_NetCacheAPI = nc_api;
     else {
         m_NetCacheAPI = new SNetCacheAPIImpl(*nc_api);
-        m_NetCacheAPI->SetPassword(password);
+        m_NetCacheAPI->m_DefaultParameters.SetPassword(password);
     }
 }
 
@@ -355,16 +407,16 @@ CNetCacheAPI::CNetCacheAPI(const string& service_name,
 }
 
 string CNetCacheAPI::PutData(const void* buf, size_t size,
-    unsigned time_to_live)
+        const CNamedParameterList* optional)
 {
-    return PutData(kEmptyStr, buf, size, time_to_live);
+    return PutData(kEmptyStr, buf, size, optional);
 }
 
 CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
-    CNetCacheWriter* nc_writer)
+    CNetCacheWriter* nc_writer, const CNetCacheAPIParameters* parameters)
 {
     string cmd("PUT3 ");
-    cmd.append(NStr::IntToString(nc_writer->GetTimeToLive()));
+    cmd.append(NStr::IntToString(parameters->GetTTL()));
 
     const string& blob_id(nc_writer->GetBlobID());
 
@@ -375,17 +427,16 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
     if (write_existing_blob) {
         key.Assign(blob_id);
         cmd.push_back(' ');
-        stripped_blob_id = !key.HasExtensions() ?
-                blob_id : key.StripKeyExtensions();
+        stripped_blob_id = key.StripKeyExtensions();
         cmd.append(stripped_blob_id);
     }
 
-    AppendClientIPSessionIDPassword(&cmd);
+    AppendClientIPSessionIDPassword(&cmd, parameters);
 
     CNetServer::SExecResult exec_result;
 
     if (write_existing_blob)
-        exec_result = ExecMirrorAware(key, cmd,
+        exec_result = ExecMirrorAware(key, cmd, parameters,
                 SNetServiceImpl::eIgnoreServerErrors);
     else {
         try {
@@ -429,10 +480,21 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
                 " in response to PUT3 \"" << stripped_blob_id << "\"");
         }
     } else {
-        if (m_MirroringMode == CNetCacheAPI::eMirroringEnabled &&
-                m_Service.IsLoadBalanced())
+        if (m_Service.IsLoadBalanced()) {
+            CNetCacheKey::TNCKeyFlags key_flags = 0;
+
+            if (parameters->GetMirroringMode() !=
+                    CNetCacheAPI::eMirroringEnabled)
+                key_flags |= CNetCacheKey::eNCKey_SingleServer;
+
+            bool server_check_hint = true;
+            parameters->GetServerCheckHint(&server_check_hint);
+            if (!server_check_hint)
+                key_flags |= CNetCacheKey::eNCKey_NoServerCheck;
+
             CNetCacheKey::AddExtensions(exec_result.response,
-                m_Service.GetServiceName());
+                    m_Service.GetServiceName(), key_flags);
+        }
 
         nc_writer->SetBlobID(exec_result.response);
     }
@@ -444,39 +506,52 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
 string  CNetCacheAPI::PutData(const string& key,
                               const void*   buf,
                               size_t        size,
-                              unsigned int  time_to_live)
+                              const CNamedParameterList* optional)
 {
     string actual_key(key);
 
-    CNetCacheWriter writer(m_Impl, &actual_key, time_to_live,
-        eNetCache_Wait, CNetCacheAPI::eCaching_Disable);
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+    parameters.SetCachingMode(eCaching_Disable);
+
+    CNetCacheWriter writer(m_Impl, &actual_key, eNetCache_Wait, &parameters);
 
     writer.WriteBufferAndClose(reinterpret_cast<const char*>(buf), size);
 
     return actual_key;
 }
 
-CNcbiOstream* CNetCacheAPI::CreateOStream(string& key, unsigned time_to_live)
+CNcbiOstream* CNetCacheAPI::CreateOStream(string& key,
+        const CNamedParameterList* optional)
 {
-    return new CWStream(PutData(&key, time_to_live), 0, NULL,
+    return new CWStream(PutData(&key, optional), 0, NULL,
         CRWStreambuf::fOwnWriter | CRWStreambuf::fLeakExceptions);
 }
 
 IEmbeddedStreamWriter* CNetCacheAPI::PutData(string* key,
-    unsigned time_to_live, ECachingMode caching_mode)
+        const CNamedParameterList* optional)
 {
-    return new CNetCacheWriter(m_Impl, key, time_to_live,
-        eNetCache_Wait, caching_mode);
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
+    return new CNetCacheWriter(m_Impl, key, eNetCache_Wait, &parameters);
 }
 
 
-bool CNetCacheAPI::HasBlob(const string& blob_id)
+bool CNetCacheAPI::HasBlob(const string& blob_id,
+        const CNamedParameterList* optional)
 {
     CNetCacheKey key(blob_id);
 
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
     try {
-        return m_Impl->ExecMirrorAware(key,
-                m_Impl->MakeCmd("HASB ", key)).response[0] == '1';
+        return m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("HASB ",
+                key, &parameters), &parameters).response[0] == '1';
     } catch (CNetServiceException& e) {
         if (!TCGI_NetCacheUseHasbFallback::GetDefault() ||
                 e.GetErrCode() != CNetServiceException::eCommunicationError ||
@@ -487,19 +562,32 @@ bool CNetCacheAPI::HasBlob(const string& blob_id)
 }
 
 
-size_t CNetCacheAPI::GetBlobSize(const string& blob_id)
+size_t CNetCacheAPI::GetBlobSize(const string& blob_id,
+        const CNamedParameterList* optional)
 {
     CNetCacheKey key(blob_id);
+
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
     return CheckBlobSize(NStr::StringToUInt8(m_Impl->ExecMirrorAware(key,
-        m_Impl->MakeCmd("GSIZ ", key)).response));
+        m_Impl->MakeCmd("GSIZ ", key, &parameters), &parameters).response));
 }
 
 
-void CNetCacheAPI::Remove(const string& blob_id)
+void CNetCacheAPI::Remove(const string& blob_id,
+        const CNamedParameterList* optional)
 {
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
     CNetCacheKey key(blob_id);
+
     try {
-        m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("RMV2 ", key));
+        m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("RMV2 ",
+                key, &parameters), &parameters);
     } catch (std::exception& e) {
         ERR_POST("Could not remove blob \"" << blob_id << "\": " << e.what());
     } catch (...) {
@@ -507,29 +595,36 @@ void CNetCacheAPI::Remove(const string& blob_id)
     }
 }
 
-void CNetCacheAPI::SetMirroringMode(CNetCacheAPI::EMirroringMode mirroring_mode)
+void CNetCacheAPI::SetDefaultParameters(const CNamedParameterList* parameters)
 {
-    m_Impl->m_MirroringMode = mirroring_mode;
+    m_Impl->m_DefaultParameters.LoadNamedParameters(parameters);
 }
 
-CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id)
+CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id,
+        const CNamedParameterList* optional)
 {
     string cmd("GETMETA " + blob_id);
     cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServerHost == 0 ?
             " 0" : " 1");
 
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
     CNetCacheKey key(blob_id);
 
-    CNetServerMultilineCmdOutput output(m_Impl->ExecMirrorAware(key, cmd));
+    CNetServerMultilineCmdOutput output(m_Impl->ExecMirrorAware(key,
+            cmd, &parameters));
 
     output->SetNetCacheCompatMode();
 
     return output;
 }
 
-void CNetCacheAPI::PrintBlobInfo(const string& blob_key)
+void CNetCacheAPI::PrintBlobInfo(const string& blob_key,
+        const CNamedParameterList* optional)
 {
-    CNetServerMultilineCmdOutput output(GetBlobInfo(blob_key));
+    CNetServerMultilineCmdOutput output(GetBlobInfo(blob_key, optional));
 
     string line;
 
@@ -541,24 +636,35 @@ void CNetCacheAPI::PrintBlobInfo(const string& blob_key)
     }
 }
 
-void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl)
+void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
+        const CNamedParameterList* optional)
 {
     string cmd("PROLONG \"\" " + blob_key);
 
     cmd += " \"\" ttl=";
     cmd += NStr::NumericToString(ttl);
 
-    m_Impl->AppendClientIPSessionIDPassword(&cmd);
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
 
-    m_Impl->ExecMirrorAware(CNetCacheKey(blob_key), cmd);
+    parameters.LoadNamedParameters(optional);
+
+    m_Impl->AppendClientIPSessionIDPassword(&cmd, &parameters);
+
+    m_Impl->ExecMirrorAware(CNetCacheKey(blob_key), cmd, &parameters);
 }
 
-string CNetCacheAPI::GetOwner(const string& blob_id)
+string CNetCacheAPI::GetOwner(const string& blob_id,
+        const CNamedParameterList* optional)
 {
     CNetCacheKey key(blob_id);
+
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
     try {
-        return m_Impl->ExecMirrorAware(key,
-                m_Impl->MakeCmd("GBOW ", key)).response;
+        return m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("GBOW ",
+                key, &parameters), &parameters).response;
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
             return kEmptyStr;
@@ -567,30 +673,32 @@ string CNetCacheAPI::GetOwner(const string& blob_id)
 }
 
 IReader* CNetCacheAPI::GetReader(const string& key, size_t* blob_size,
-    CNetCacheAPI::ECachingMode caching_mode)
+    const CNamedParameterList* optional)
 {
-    return m_Impl->GetPartReader(key, 0, 0, blob_size, caching_mode);
+    return m_Impl->GetPartReader(key, 0, 0, blob_size, optional);
 }
 
 IReader* CNetCacheAPI::GetPartReader(const string& key,
     size_t offset, size_t part_size, size_t* blob_size,
-    ECachingMode caching_mode)
+    const CNamedParameterList* optional)
 {
     return m_Impl->GetPartReader(key, offset, part_size,
-        blob_size, caching_mode);
+        blob_size, optional);
 }
 
-void CNetCacheAPI::ReadData(const string& key, string& buffer)
+void CNetCacheAPI::ReadData(const string& key, string& buffer,
+        const CNamedParameterList* optional)
 {
-    ReadPart(key, 0, 0, buffer);
+    ReadPart(key, 0, 0, buffer, optional);
 }
 
 void CNetCacheAPI::ReadPart(const string& key,
-    size_t offset, size_t part_size, string& buffer)
+    size_t offset, size_t part_size, string& buffer,
+    const CNamedParameterList* optional)
 {
     size_t blob_size;
     auto_ptr<IReader> reader(GetPartReader(key, offset, part_size,
-        &blob_size, eCaching_Disable));
+        &blob_size, optional));
 
     buffer.resize(blob_size);
 
@@ -599,10 +707,10 @@ void CNetCacheAPI::ReadPart(const string& key,
 }
 
 IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size,
-    CNetCacheAPI::ECachingMode caching_mode)
+    const CNamedParameterList* optional)
 {
     try {
-        return GetReader(key, blob_size, caching_mode);
+        return GetReader(key, blob_size, optional);
     } catch (CNetCacheException& e) {
         switch (e.GetErrCode()) {
         case CNetCacheException::eBlobNotFound:
@@ -615,7 +723,7 @@ IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size,
 
 IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
     size_t offset, size_t part_size,
-    size_t* blob_size_ptr, CNetCacheAPI::ECachingMode caching_mode)
+    size_t* blob_size_ptr, const CNamedParameterList* optional)
 {
     CNetCacheKey key(blob_id);
 
@@ -627,25 +735,30 @@ IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
             NStr::UInt8ToString((Uint8) offset) + ' ' +
             NStr::UInt8ToString((Uint8) part_size));
 
-    AppendClientIPSessionIDPassword(&cmd);
+    CNetCacheAPIParameters parameters(&m_DefaultParameters);
 
-    CNetServer::SExecResult exec_result(ExecMirrorAware(key, cmd));
+    parameters.LoadNamedParameters(optional);
+
+    AppendClientIPSessionIDPassword(&cmd, &parameters);
+
+    CNetServer::SExecResult exec_result(ExecMirrorAware(key, cmd, &parameters));
 
     return new CNetCacheReader(this, blob_id,
-        exec_result, blob_size_ptr, caching_mode);
+            exec_result, blob_size_ptr, &parameters);
 }
 
 CNetCacheAPI::EReadResult CNetCacheAPI::GetData(const string&  key,
                       void*          buf,
                       size_t         buf_size,
                       size_t*        n_read,
-                      size_t*        blob_size)
+                      size_t*        blob_size,
+                      const CNamedParameterList* optional)
 {
     _ASSERT(buf && buf_size);
 
     size_t x_blob_size = 0;
 
-    auto_ptr<IReader> reader(GetData(key, &x_blob_size, eCaching_Disable));
+    auto_ptr<IReader> reader(GetData(key, &x_blob_size, optional));
     if (reader.get() == 0)
         return eNotFound;
 
@@ -657,11 +770,12 @@ CNetCacheAPI::EReadResult CNetCacheAPI::GetData(const string&  key,
 }
 
 CNetCacheAPI::EReadResult CNetCacheAPI::GetData(
-    const string& key, CSimpleBuffer& buffer)
+    const string& key, CSimpleBuffer& buffer,
+    const CNamedParameterList* optional)
 {
     size_t x_blob_size = 0;
 
-    auto_ptr<IReader> reader(GetData(key, &x_blob_size, eCaching_Disable));
+    auto_ptr<IReader> reader(GetData(key, &x_blob_size, optional));
     if (reader.get() == 0)
         return eNotFound;
 
@@ -670,9 +784,10 @@ CNetCacheAPI::EReadResult CNetCacheAPI::GetData(
         (char*) buffer.data(), x_blob_size, NULL, x_blob_size);
 }
 
-CNcbiIstream* CNetCacheAPI::GetIStream(const string& key, size_t* blob_size)
+CNcbiIstream* CNetCacheAPI::GetIStream(const string& key, size_t* blob_size,
+        const CNamedParameterList* optional)
 {
-    return new CRStream(GetReader(key, blob_size), 0, NULL,
+    return new CRStream(GetReader(key, blob_size, optional), 0, NULL,
         CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions);
 }
 

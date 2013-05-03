@@ -190,12 +190,13 @@ struct SNetServiceIterator_Circular : public SNetServiceIteratorImpl
     TNetServerList::const_iterator m_Pivot;
 };
 
-class IIterationBeginner
+class IServiceTraversal
 {
 public:
-    virtual CNetServiceIterator BeginIteration() = 0;
+    virtual CNetServer BeginIteration() = 0;
+    virtual CNetServer NextServer() = 0;
 
-    virtual ~IIterationBeginner() {}
+    virtual ~IServiceTraversal() {}
 };
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
@@ -255,6 +256,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     void DiscoverServersIfNeeded();
     void GetDiscoveredServers(CRef<SDiscoveredServers>& discovered_servers);
 
+    bool IsInService(CNetServer::TInstance server);
+
     enum EServerErrorHandling {
         eRethrowServerErrors,
         eIgnoreServerErrors
@@ -262,7 +265,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     void IterateUntilExecOK(const string& cmd,
         CNetServer::SExecResult& exec_result,
-        IIterationBeginner* iteration_beginner,
+        IServiceTraversal* service_traversal,
         EServerErrorHandling error_handling);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);

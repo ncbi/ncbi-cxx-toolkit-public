@@ -201,7 +201,7 @@ int CGridCommandLineInterfaceApp::NetCacheSanityCheck()
     }
 
     auto_ptr<IReader> reader(m_NetCacheAPI.GetData(key, &blob_size,
-        CNetCacheAPI::eCaching_Disable));
+            nc_caching_mode = CNetCacheAPI::eCaching_Disable));
 
     if (reader.get() == 0) {
         NcbiCerr << "Failed to read data." << NcbiEndl;
@@ -228,7 +228,7 @@ int CGridCommandLineInterfaceApp::NetCacheSanityCheck()
 
     memset(data_buf, 0xff, sizeof(data_buf));
     reader.reset(m_NetCacheAPI.GetReader(key, &blob_size,
-                CNetCacheAPI::eCaching_Disable));
+            nc_caching_mode = CNetCacheAPI::eCaching_Disable));
     reader->Read(data_buf, 1024);
     res = strcmp(data_buf, test_data2);
     if (res != 0) {

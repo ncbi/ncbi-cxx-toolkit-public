@@ -41,6 +41,7 @@
 #include "netservice_api.hpp"
 #include "netcache_api_expt.hpp"
 #include "netcache_key.hpp"
+#include "named_parameters.hpp"
 
 #include <util/simple_buffer.hpp>
 
@@ -123,25 +124,25 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     explicit CNetCacheAPI(const string& client_name);
 
     /// Construct client, working with the specified service
-    CNetCacheAPI(const string& service_name,
-        const string& client_name);
+    CNetCacheAPI(const string& service_name, const string& client_name);
 
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is
     /// transferred.
     ///
-    /// @param time_to_live
-    ///    BLOB time to live value in seconds.
-    ///    0 - server side default is assumed.
+    /// @param buf
+    ///    Data to be written.
+    /// @param size
+    ///    Number of bytes to write.
+    /// @param optional
+    ///    An optional list of named blob creation parameters in the
+    ///    form of (param_name = param_value, ...).
+    ///    @see NetCacheClientParams
     ///
-    /// Please note that time_to_live is controlled by the server-side
-    /// parameter so if you set time_to_live higher than server-side value,
-    /// server side TTL will be in effect.
+    /// @return NetCache blob key
     ///
-    /// @return NetCache access key
-    string PutData(const void*   buf,
-                   size_t        size,
-                   unsigned int  time_to_live = 0);
+    string PutData(const void* buf, size_t size,
+            const CNamedParameterList* optional = NULL);
 
     /// Put BLOB to server.  This method is blocking, it
     /// waits for a confirmation from NetCache after all
@@ -151,16 +152,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///
     /// @param key
     ///    NetCache key, if empty new key is created
-    /// @param time_to_live
-    ///    BLOB time to live value in seconds.
-    ///    0 - server side default is assumed.
-    /// @param caching_mode
-    ///    Defines whether to enable file caching.
+    /// @param optional
+    ///    An optional list of named blob creation parameters in the
+    ///    form of (param_name = param_value, ...).
+    ///    @see NetCacheClientParams
     /// @return
     ///    IEmbeddedStreamWriter* (caller must delete it).
     IEmbeddedStreamWriter* PutData(string* key,
-        unsigned int time_to_live = 0,
-        ECachingMode caching_mode = eCaching_AppDefault);
+            const CNamedParameterList* optional = NULL);
 
     /// Update an existing BLOB.  Just like all other PutData
     /// methods, this one is blocking and waits for a confirmation
@@ -168,32 +167,44 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     string PutData(const string& key,
                    const void*   buf,
                    size_t        size,
-                   unsigned int  time_to_live = 0);
+                   const CNamedParameterList* optional = NULL);
 
     /// Create a stream object for sending data to a blob.
     /// If the string "key" is empty, a new blob will be created
     /// and its ID will be returned via the "key" parameter.
-    /// Note:  The blob will not be available from NetCache until
-    /// the stream is destructed.
-    CNcbiOstream* CreateOStream(string& key, unsigned time_to_live = 0);
+    /// @note
+    ///   The blob will not be available from NetCache until
+    ///   the stream is destructed.
+    CNcbiOstream* CreateOStream(string& key,
+            const CNamedParameterList* optional = NULL);
 
     /// Check if the BLOB identified by the key "key" exists.
     ///
     /// @param key
     ///    Key of the BLOB to check for existence.
+    /// @param optional
+    ///    An optional list of named blob creation parameters in the
+    ///    form of (param_name = param_value, ...).
+    ///    @see NetCacheClientParams
     ///
     /// @return
     ///    True, if the BLOB exists; false otherwise.
-    bool HasBlob(const string& blob_id);
+    bool HasBlob(const string& blob_id,
+            const CNamedParameterList* optional = NULL);
 
     /// Returns the size of the BLOB identified by the "key" parameter.
     ///
     /// @param key
     ///    The key of the BLOB the size of which to be returned.
+    /// @param optional
+    ///    An optional list of named blob creation parameters in the
+    ///    form of (param_name = param_value, ...).
+    ///    @see NetCacheClientParams
     ///
     /// @return
     ///    Size of the BLOB in bytes.
-    size_t GetBlobSize(const string& blob_id);
+    size_t GetBlobSize(const string& blob_id,
+            const CNamedParameterList* optional = NULL);
 
     /// Get a pointer to the IReader interface to read blob contents.
     /// This is a safe version of the GetData method having the same
@@ -207,7 +218,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///
     /// @code
     /// size_t blob_size;
-    /// auto_ptr<IReader> reader(nc_api.GetReader(key, &blob_size));
+    /// auto_ptr<IReader> reader(nc_api.GetReader(key, &blob_size,
+    ///         CNetCacheAPI::caching_mode = CNetCacheAPI::eCaching_Disable));
     /// size_t bytes_read;
     /// size_t total_bytes_read = 0;
     ///
@@ -228,7 +240,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// return total_bytes_read;
     /// @endcode
     IReader* GetReader(const string& key, size_t* blob_size = NULL,
-        ECachingMode caching_mode = eCaching_AppDefault);
+            const CNamedParameterList* optional = NULL);
 
     /// Get a pointer to the IReader interface to read a portion of
     /// the blob contents. See the description of GetReader() for details.
@@ -237,7 +249,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @see CNetCacheAPI::GetReader() for details.
     IReader* GetPartReader(const string& key,
         size_t offset, size_t part_size, size_t* blob_size = NULL,
-        ECachingMode caching_mode = eCaching_AppDefault);
+        const CNamedParameterList* optional = NULL);
 
     /// Read the blob pointed to by "key" and store its contents
     /// in "buffer". The output string is resized as required.
@@ -247,7 +259,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///    a protocol error occurred.
     /// @throw CNetServiceException
     ///    Thrown if a communication error occurred.
-    void ReadData(const string& key, string& buffer);
+    void ReadData(const string& key, string& buffer,
+        const CNamedParameterList* optional = NULL);
 
     /// Read a part of the blob pointed to by "key" and store its contents
     /// in "buffer". The output string is resized as required.
@@ -258,7 +271,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @throw CNetServiceException
     ///    Thrown if a communication error occurred.
     void ReadPart(const string& key,
-        size_t offset, size_t part_size, string& buffer);
+        size_t offset, size_t part_size, string& buffer,
+        const CNamedParameterList* optional = NULL);
 
     /// Retrieve BLOB from server by key.
     //
@@ -277,16 +291,17 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @param blob_size
     ///    Pointer to the memory location where the size
     ///    of the requested blob will be stored.
-    /// @param caching_mode
-    ///    Overrides the default caching mode defined in the application
-    ///    registry.
+    /// @param optional
+    ///    An optional list of named blob creation parameters in the
+    ///    form of (param_name = param_value, ...).
+    ///    @see NetCacheClientParams
     /// @return
     ///    If the requested blob is found, the method returns a pointer
     ///    to the IReader interface for reading the blob contents (the
     ///    caller must delete it). If the blob is not found (that is,
     ///    if it's expired), NULL is returned.
     IReader* GetData(const string& key, size_t* blob_size = NULL,
-        ECachingMode caching_mode = eCaching_AppDefault);
+            const CNamedParameterList* optional = NULL);
 
     /// Status of GetData() call
     /// @sa GetData
@@ -304,7 +319,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
                         void*          buf,
                         size_t         buf_size,
                         size_t*        n_read    = 0,
-                        size_t*        blob_size = 0);
+                        size_t*        blob_size = 0,
+                        const CNamedParameterList* optional = NULL);
 
     /// Retrieve BLOB from server by key
     /// This method retrieves BLOB size, allocates memory and gets all
@@ -316,37 +332,44 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///
     /// @return
     ///    eReadComplete if BLOB found (eNotFound otherwise)
-    EReadResult GetData(const string& key, CSimpleBuffer& buffer);
+    EReadResult GetData(const string& key, CSimpleBuffer& buffer,
+            const CNamedParameterList* optional = NULL);
 
     /// Create an istream object for reading blob data.
     /// @throw CNetCacheException
     ///    The requested blob does not exist.
-    CNcbiIstream* GetIStream(const string& key, size_t* blob_size = NULL);
+    CNcbiIstream* GetIStream(const string& key, size_t* blob_size = NULL,
+            const CNamedParameterList* optional = NULL);
 
     /// Retrieve BLOB's owner information as registered by the server
-    string GetOwner(const string& blob_id);
+    string GetOwner(const string& blob_id,
+            const CNamedParameterList* optional = NULL);
 
     /// Remove BLOB by key
-    void Remove(const string& blob_id);
+    void Remove(const string& blob_id,
+            const CNamedParameterList* optional = NULL);
 
     /// Return a CNetServerMultilineCmdOutput object for reading
     /// meta information about the specified blob.
-    CNetServerMultilineCmdOutput GetBlobInfo(const string& blob_id);
+    CNetServerMultilineCmdOutput GetBlobInfo(const string& blob_id,
+            const CNamedParameterList* optional = NULL);
 
     /// Print meta information about the specified blob.
-    void PrintBlobInfo(const string& blob_key);
+    void PrintBlobInfo(const string& blob_key,
+            const CNamedParameterList* optional = NULL);
 
-    void ProlongBlobLifetime(const string& blob_key, unsigned ttl);
+    void ProlongBlobLifetime(const string& blob_key, unsigned ttl,
+            const CNamedParameterList* optional = NULL);
 
-    /// Mirroring modes. eIfKeyMirrored means unconditionally
-    /// enable mirroring for blobs that were created in mirroring
-    /// mode.
+    /// Mirroring modes. eIfKeyMirrored unconditionally enables
+    /// mirroring for blobs that were created in mirroring mode.
     enum EMirroringMode {
         eMirroringDisabled,
         eMirroringEnabled,
         eIfKeyMirrored
     };
-    void SetMirroringMode(EMirroringMode mirroring_mode);
+
+    void SetDefaultParameters(const CNamedParameterList* parameters);
 
     CNetCacheAdmin GetAdmin();
 
@@ -366,7 +389,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     void SetEventHandler(INetEventHandler* event_handler);
 };
 
-class NCBI_XCONNECT_EXPORT CNetCachePasswordGuard
+NCBI_DEPRECATED_CLASS NCBI_XCONNECT_EXPORT CNetCachePasswordGuard
 {
 public:
     CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
@@ -459,6 +482,50 @@ private:
     CBlobStorage_NetCache(const CBlobStorage_NetCache&);
     CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
 };
+
+/* @} */
+
+/** @addtogroup NetCacheClientParams
+ *
+ * @{
+ */
+
+// Named parameters that can be used when calling
+// CNetCacheAPI methods that accept CNamedParameterList.
+enum ENetCacheNamedParameterTag {
+    eNetCacheNPT_TTL,
+    eNetCacheNPT_CachingMode,
+    eNetCacheNPT_MirroringMode,
+    eNetCacheNPT_ServerCheck,
+    eNetCacheNPT_ServerCheckHint,
+    eNetCacheNPT_Password
+};
+
+/// Blob life span in seconds. If zero or greater than the
+/// server-side value, then the server-side TTL is used.
+static CNamedParameter<unsigned, eNetCacheNPT_TTL> nc_blob_ttl;
+
+/// Caching mode.
+/// @see ECachingMode for details.
+static CNamedParameter<CNetCacheAPI::ECachingMode,
+        eNetCacheNPT_CachingMode> nc_caching_mode;
+
+/// Mirroring mode.
+/// @see CNetCacheAPI::EMirroringMode for details.
+static CNamedParameter<CNetCacheAPI::EMirroringMode,
+        eNetCacheNPT_MirroringMode> nc_mirroring_mode;
+
+/// For blob readers: whether to check if the primary
+/// server that stores the blob is still in service.
+static CNamedParameter<ESwitch, eNetCacheNPT_ServerCheck> nc_server_check;
+
+/// For blob writers: whether to advise the readers to check
+/// if the primary server that stores the blob is still in service.
+static CNamedParameter<bool, eNetCacheNPT_ServerCheckHint> nc_server_check_hint;
+
+/// Blob password. Used to protect the blob when writing;
+/// required for reading a password-protected blob.
+static CNamedParameter<std::string, eNetCacheNPT_Password> nc_blob_password;
 
 /* @} */
 

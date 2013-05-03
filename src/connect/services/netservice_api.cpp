@@ -673,22 +673,30 @@ CNetServer CNetService::GetServer(unsigned host, unsigned short port)
     return new SNetServerImpl(m_Impl, server);
 }
 
-class SRandomIterationBeginner : public IIterationBeginner
+class SRandomServiceTraversal : public IServiceTraversal
 {
 public:
-    SRandomIterationBeginner(CNetService& service) :
+    SRandomServiceTraversal(CNetService::TInstance service) :
         m_Service(service)
     {
     }
 
-    virtual CNetServiceIterator BeginIteration();
+    virtual CNetServer BeginIteration();
+    virtual CNetServer NextServer();
 
-    CNetService& m_Service;
+private:
+    CNetService m_Service;
+    CNetServiceIterator m_Iterator;
 };
 
-CNetServiceIterator SRandomIterationBeginner::BeginIteration()
+CNetServer SRandomServiceTraversal::BeginIteration()
 {
-    return m_Service.Iterate(CNetService::eRandomize);
+    return *(m_Iterator = m_Service.Iterate(CNetService::eRandomize));
+}
+
+CNetServer SRandomServiceTraversal::NextServer()
+{
+    return ++m_Iterator ? *m_Iterator : NULL;
 }
 
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
@@ -703,9 +711,9 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
         {
             CNetServer::SExecResult exec_result;
 
-            SRandomIterationBeginner iteration_beginner(*this);
+            SRandomServiceTraversal random_traversal(*this);
 
-            m_Impl->IterateUntilExecOK(cmd, exec_result, &iteration_beginner,
+            m_Impl->IterateUntilExecOK(cmd, exec_result, &random_traversal,
                     SNetServiceImpl::eIgnoreServerErrors);
 
             return exec_result;
@@ -846,9 +854,23 @@ void SNetServiceImpl::GetDiscoveredServers(
     discovered_servers->m_Service = this;
 }
 
+bool SNetServiceImpl::IsInService(CNetServer::TInstance server)
+{
+    CRef<SDiscoveredServers> servers;
+    GetDiscoveredServers(servers);
+
+    // Find the requested server among the discovered servers.
+    ITERATE(TNetServerList, it, servers->m_Servers) {
+        if (it->first == server->m_ServerInPool)
+            return true;
+    }
+
+    return false;
+}
+
 void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     CNetServer::SExecResult& exec_result,
-    IIterationBeginner* iteration_beginner,
+    IServiceTraversal* service_traversal,
     SNetServiceImpl::EServerErrorHandling error_handling)
 {
     int retry_count = (int) TServConn_ConnMaxRetries::GetDefault();
@@ -858,7 +880,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     CAbsTimeout max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
         (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
 
-    CNetServiceIterator it = iteration_beginner->BeginIteration();
+    CNetServer server = service_traversal->BeginIteration();
 
     unsigned number_of_servers = 0;
     unsigned ns_with_submits_disabled = 0;
@@ -869,14 +891,14 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
     for (;;) {
         try {
-            (*it)->ConnectAndExec(cmd, exec_result, timeout);
+            server->ConnectAndExec(cmd, exec_result, timeout);
             return;
         }
         catch (CNetCacheException& ex) {
             if (error_handling == eRethrowServerErrors ||
                     (retry_count <= 0 && !m_UseSmartRetries))
                 throw;
-            LOG_POST(Warning << (*it).GetServerAddress() << ": " << ex);
+            LOG_POST(Warning << server.GetServerAddress() << ": " << ex);
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -886,7 +908,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             else if (error_handling == eRethrowServerErrors)
                 throw;
             else {
-                LOG_POST(Warning << (*it).GetServerAddress() << ": " << ex);
+                LOG_POST(Warning << server.GetServerAddress() << ": " << ex);
             }
         }
         catch (CNetSrvConnException& ex) {
@@ -909,18 +931,18 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         }
 
         ++number_of_servers;
-        ++it;
+        server = service_traversal->NextServer();
 
         if (m_ServerPool->m_MaxConnectionTime > 0 &&
                 max_connection_time.GetRemainingTime().GetAsMilliSeconds() <=
-                        (it ? 0 : retry_delay)) {
+                        (server ? 0 : retry_delay)) {
             NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout,
                     "Exceeded max_connection_time=" <<
                     m_ServerPool->m_MaxConnectionTime <<
                     "; cmd=[" << cmd << "]");
         }
 
-        if (!it) {
+        if (!server) {
             if (number_of_servers == ns_with_submits_disabled) {
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
                         "Cannot execute ["  << cmd <<
@@ -943,7 +965,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
             SleepMilliSec(retry_delay);
 
-            it = iteration_beginner->BeginIteration();
+            server = service_traversal->BeginIteration();
 
             number_of_servers = 0;
             ns_with_submits_disabled = 0;
@@ -1030,17 +1052,32 @@ CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server)
         // The requested server is not found in this service,
         // however there are servers, so return them.
         return new SNetServiceIteratorImpl(servers);
-    else {
-        // The service is empty, allocate a server group to contain
-        // solely the requested server.
-        servers.Reset();
-        CFastMutexGuard discovery_mutex_lock(m_Impl->m_DiscoveryMutex);
-        (servers = m_Impl->AllocServerGroup(0))->m_Servers.push_back(
-            TServerRate(priority_server->m_ServerInPool, 1));
-        servers->m_Service = m_Impl;
-        servers->m_SuppressedBegin = servers->m_Servers.end();
-        return new SNetServiceIteratorImpl(servers);
+
+    NCBI_THROW(CNetSrvConnException, eSrvListEmpty,
+        "Couldn't find any available servers for the " +
+        m_Impl->m_ServiceName + " service.");
+}
+
+CNetServiceIterator CNetService::ExcludeServer(CNetServer::TInstance server)
+{
+    CRef<SDiscoveredServers> servers;
+    m_Impl->GetDiscoveredServers(servers);
+
+    // Find the requested server among the discovered servers.
+    ITERATE(TNetServerList, it, servers->m_Servers) {
+        if (it->first == server->m_ServerInPool) {
+            // The server is found. Make an iterator and
+            // skip to the next server (the iterator may become NULL).
+            CNetServiceIterator server_it(
+                    new SNetServiceIterator_Circular(servers, it));
+            return ++server_it;
+        }
     }
+
+    // The requested server is not found in this service, so
+    // return the rest of servers or NULL if there are none.
+    return !servers->m_Servers.empty() ?
+            new SNetServiceIteratorImpl(servers) : NULL;
 }
 
 CNetServiceIterator CNetService::FindServer(INetServerFinder* finder,

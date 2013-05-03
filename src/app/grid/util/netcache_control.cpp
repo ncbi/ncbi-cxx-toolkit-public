@@ -272,21 +272,23 @@ int CNetCacheControl::Run()
             switch (reader_select) {
             case 0: /* no special case */
                 reader.reset(nc_client.GetReader(key, &blob_size,
-                    CNetCacheAPI::eCaching_Disable));
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
                 break;
             case 1: /* use offset */
-                reader.reset(nc_client.GetPartReader(key, offset, part_size,
-                    &blob_size, CNetCacheAPI::eCaching_Disable));
+                reader.reset(nc_client.GetPartReader(key,
+                    offset, part_size, &blob_size,
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
                 break;
             case 2: /* use password */
-                reader.reset(CNetCachePasswordGuard(nc_client,
-                    password_arg.AsString())->GetReader(key, &blob_size,
-                    CNetCacheAPI::eCaching_Disable));
+                reader.reset(nc_client.GetReader(key, &blob_size,
+                    (nc_blob_password = password_arg.AsString(),
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable)));
                 break;
             case 3: /* use password and offset */
-                reader.reset(CNetCachePasswordGuard(nc_client,
-                    password_arg.AsString())->GetPartReader(key, offset,
-                    part_size, &blob_size, CNetCacheAPI::eCaching_Disable));
+                reader.reset(nc_client.GetPartReader(key, offset,
+                    part_size, &blob_size,
+                    (nc_blob_password = password_arg.AsString(),
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable)));
             }
         } else {
             ICache::EBlobVersionValidity validity;
@@ -361,8 +363,9 @@ int CNetCacheControl::Run()
     case eCmdStore:
         {{
         auto_ptr<IEmbeddedStreamWriter> writer(!icache_mode ?
-            password_arg.HasValue() ? CNetCachePasswordGuard(nc_client,
-                password_arg.AsString())->PutData(&key) :
+            password_arg.HasValue() ?
+                    nc_client.PutData(&key,
+                            nc_blob_password = password_arg.AsString()) :
                     nc_client.PutData(&key) :
             password_arg.HasValue() ? CNetICachePasswordGuard(icache_client,
                 password_arg.AsString())->GetNetCacheWriter(blob_address.key,
@@ -416,8 +419,8 @@ int CNetCacheControl::Run()
     case eCmdRemove:
         if (!icache_mode)
             if (password_arg.HasValue())
-                CNetCachePasswordGuard(nc_client,
-                    password_arg.AsString())->Remove(key);
+                nc_client.Remove(key,
+                        nc_blob_password = password_arg.AsString());
             else
                 nc_client.Remove(key);
         else

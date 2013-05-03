@@ -59,12 +59,23 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
         const string& blob_id,
         CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode) :
+        const CNetCacheAPIParameters* parameters) :
     m_BlobID(blob_id),
-    m_Connection(exec_result.conn),
-    m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
-        impl->m_CacheInput : caching_mode == CNetCacheAPI::eCaching_Enable)
+    m_Connection(exec_result.conn)
 {
+    switch (parameters->GetCachingMode()) {
+    case CNetCacheAPI::eCaching_AppDefault:
+        m_CachingEnabled = impl->m_CacheInput;
+        break;
+
+    case CNetCacheAPI::eCaching_Disable:
+        m_CachingEnabled = false;
+        break;
+
+    default: /* case CNetCacheAPI::eCaching_Enable: */
+        m_CachingEnabled = true;
+    }
+
     string::size_type pos = exec_result.response.find("SIZE=");
 
     if (pos == string::npos) {
@@ -211,16 +222,26 @@ void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
 /////////////////////////////////////////////////
 CNetCacheWriter::CNetCacheWriter(SNetCacheAPIImpl* impl,
         string* blob_id,
-        unsigned time_to_live,
         ENetCacheResponseType response_type,
-        CNetCacheAPI::ECachingMode caching_mode) :
+        const CNetCacheAPIParameters* parameters) :
     m_ResponseType(response_type),
     m_NetCacheAPI(impl),
     m_BlobID(*blob_id),
-    m_TimeToLive(time_to_live),
-    m_CachingEnabled(caching_mode == CNetCacheAPI::eCaching_AppDefault ?
-        impl->m_CacheOutput : caching_mode == CNetCacheAPI::eCaching_Enable)
+    m_Parameters(parameters)
 {
+    switch (parameters->GetCachingMode()) {
+    case CNetCacheAPI::eCaching_AppDefault:
+        m_CachingEnabled = impl->m_CacheOutput;
+        break;
+
+    case CNetCacheAPI::eCaching_Disable:
+        m_CachingEnabled = false;
+        break;
+
+    default: /* case CNetCacheAPI::eCaching_Enable: */
+        m_CachingEnabled = true;
+    }
+
     if (m_CachingEnabled)
         m_CacheFile.CreateTemporary(impl->m_TempDir, s_OutputBlobCachePrefix);
 
@@ -404,7 +425,7 @@ void CNetCacheWriter::EstablishConnection()
 {
     ResetWriters();
 
-    m_Connection = m_NetCacheAPI->InitiateWriteCmd(this);
+    m_Connection = m_NetCacheAPI->InitiateWriteCmd(this, m_Parameters);
 
     m_Connection->m_Socket.SetCork(true);
 

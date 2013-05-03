@@ -53,6 +53,7 @@ public:
         eConnClosedByServer,
         eCommunicationError,
         eServerThrottle,
+        eServerNotInService,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -67,6 +68,7 @@ public:
         case eConnClosedByServer: return "eConnClosedByServer";
         case eCommunicationError: return "eCommunicationError";
         case eServerThrottle:     return "eServerThrottle";
+        case eServerNotInService: return "eServerNotInService";
         default:                  return CException::GetErrCodeString();
         }
     }

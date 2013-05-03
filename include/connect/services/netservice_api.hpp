@@ -108,6 +108,10 @@ class NCBI_XCONNECT_EXPORT CNetService
     CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
     CNetServiceIterator Iterate(CNetServer::TInstance priority_server);
 
+    /// Start iteration excluding 'server' (return the next server
+    /// after 'server' or NULL).
+    CNetServiceIterator ExcludeServer(CNetServer::TInstance server);
+
     CNetServiceIterator FindServer(INetServerFinder* finder,
         EIterationMode mode = eSortByLoad);
 

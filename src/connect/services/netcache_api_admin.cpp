@@ -52,7 +52,7 @@ void CNetCacheAdmin::ReloadServerConfig()
 
 void CNetCacheAdmin::Purge(const string& cache_name)
 {
-    string cmd("PURGE " + NStr::PrintableString(cache_name));
+    string cmd("PURGE \"" + NStr::PrintableString(cache_name));
     cmd += '"';
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }

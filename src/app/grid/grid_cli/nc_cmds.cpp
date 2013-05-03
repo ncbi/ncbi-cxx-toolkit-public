@@ -236,7 +236,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             reader.reset(m_NetCacheAPI.GetReader(
                 m_Opts.id,
                 &blob_size,
-                CNetCacheAPI::eCaching_Disable));
+                nc_caching_mode = CNetCacheAPI::eCaching_Disable));
             break;
         case OPTION_N(0): /* use offset */
             reader.reset(m_NetCacheAPI.GetPartReader(
@@ -244,23 +244,23 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 m_Opts.offset,
                 m_Opts.size,
                 &blob_size,
-                CNetCacheAPI::eCaching_Disable));
+                nc_caching_mode = CNetCacheAPI::eCaching_Disable));
             break;
         case OPTION_N(1): /* use password */
-            reader.reset(CNetCachePasswordGuard(m_NetCacheAPI,
-                m_Opts.password)->GetReader(
+            reader.reset(m_NetCacheAPI.GetReader(
                     m_Opts.id,
                     &blob_size,
-                    CNetCacheAPI::eCaching_Disable));
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_blob_password = m_Opts.password)));
             break;
         case OPTION_N(1) | OPTION_N(0): /* use password and offset */
-            reader.reset(CNetCachePasswordGuard(m_NetCacheAPI,
-                m_Opts.password)->GetPartReader(
+            reader.reset(m_NetCacheAPI.GetPartReader(
                     m_Opts.id,
                     m_Opts.offset,
                     m_Opts.size,
                     &blob_size,
-                    CNetCacheAPI::eCaching_Disable));
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_blob_password = m_Opts.password)));
         }
     } else {
         bool version_is_defined = true;
@@ -348,13 +348,12 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
     auto_ptr<IEmbeddedStreamWriter> writer;
 
-    string blob_key;
+    string blob_key = m_Opts.id;
 
     if (!icache_mode) {
-        writer.reset(IsOptionSet(ePassword) ?
-            CNetCachePasswordGuard(m_NetCacheAPI,
-                m_Opts.password)->PutData(&blob_key, m_Opts.ttl) :
-            m_NetCacheAPI.PutData(&blob_key, m_Opts.ttl));
+        writer.reset(m_NetCacheAPI.PutData(&blob_key, IsOptionSet(ePassword) ?
+                (nc_blob_ttl = m_Opts.ttl, nc_blob_password = m_Opts.password) :
+                (nc_blob_ttl = m_Opts.ttl)));
     } else {
         ParseICacheKey();
 
@@ -402,7 +401,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
     writer->Close();
 
-    if (!icache_mode)
+    if (!icache_mode && m_Opts.id.empty())
         NcbiCout << blob_key << NcbiEndl;
 
     return 0;
@@ -419,8 +418,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
 
     if (!icache_mode)
         if (IsOptionSet(ePassword))
-            CNetCachePasswordGuard(m_NetCacheAPI,
-                m_Opts.password)->Remove(m_Opts.id);
+            m_NetCacheAPI.Remove(m_Opts.id, nc_blob_password = m_Opts.password);
         else
             m_NetCacheAPI.Remove(m_Opts.id);
     else

@@ -142,7 +142,7 @@ string s_PutBlob(
 
     info.connection_time = sw.Elapsed();
     sw.Restart();
-    info.key = nc_client.PutData(buf, size, 60 * 8);
+    info.key = nc_client.PutData(buf, size, nc_blob_ttl = 60 * 8);
     info.transaction_time = sw.Elapsed();
 
     log->push_back(info);
@@ -348,7 +348,7 @@ void s_RemoveBLOB_Test(const string& service)
     CNetCacheAPI nc(service, s_ClientName);
 
     char z = 'Z';
-    string key = nc.PutData(&z, 1, 1);
+    string key = nc.PutData(&z, 1, nc_blob_ttl = 1);
 
     NcbiCout << "Removing: " << key << NcbiEndl;
     nc.Remove(key);
@@ -367,10 +367,10 @@ void s_ReadUpdateCharTest(const string& service)
     CNetCacheAPI nc(service, s_ClientName);
 
     char z = 'Z';
-    string key = nc.PutData(&z, 1, 100);
+    string key = nc.PutData(&z, 1, nc_blob_ttl = 100);
     cout << endl << key << endl << endl;;
     z = 'Q';
-    nc.PutData(key, &z, 1, 100);
+    nc.PutData(key, &z, 1, nc_blob_ttl = 100);
 
     z = 0;
     size_t blob_size = 0;
@@ -383,10 +383,10 @@ void s_ReadUpdateCharTest(const string& service)
 
     for (int i = 0; i < 10; ++i) {
         char z = 'X';
-        nc.PutData(key, &z, 1, 100);
+        nc.PutData(key, &z, 1, nc_blob_ttl = 100);
 
         z = 'Y';
-        nc.PutData(key, &z, 1, 100);
+        nc.PutData(key, &z, 1, nc_blob_ttl = 100);
 
         z = 0;
         size_t blob_size = 0;
@@ -404,10 +404,10 @@ static int s_PasswordTest(const string& service)
 {
     static const int err_code = 4;
     CNetCacheAPI nc(service, s_ClientName);
-    CNetCachePasswordGuard pwd_guard(nc, "password");
+    string password("password");
 
     static const char data[] = "data";
-    string key = pwd_guard->PutData(data, 4);
+    string key = nc.PutData(data, 4, nc_blob_password = password);
 
     char buffer[4];
     size_t bytes_read;
@@ -419,7 +419,8 @@ static int s_PasswordTest(const string& service)
         return err_code;
     }
 
-    res = pwd_guard->GetData(key, buffer, 4, &bytes_read);
+    res = nc.GetData(key, buffer, 4, &bytes_read,
+            NULL, nc_blob_password = password);
     if (res != CNetCacheAPI::eReadComplete || bytes_read != 4 ||
             memcmp(data, buffer, 4) != 0) {
         NcbiCout << "Error reading a password-protected blob; key=" <<
@@ -439,8 +440,8 @@ static int s_AbortTest(const string& service)
     string key;
 
     {{
-        auto_ptr<IEmbeddedStreamWriter> writer(nc.PutData(&key, 0,
-            CNetCacheAPI::eCaching_Disable));
+        auto_ptr<IEmbeddedStreamWriter> writer(nc.PutData(&key,
+                nc_caching_mode = CNetCacheAPI::eCaching_Disable));
 
         writer->Write("Hello", 5);
         writer->Abort();
@@ -460,7 +461,71 @@ static int s_AbortTest(const string& service)
     return err_code;
 }
 
-static size_t ReadIntoBuffer(IReader* reader, char* buf_ptr, size_t buf_size)
+static int s_ServiceInBlobKeyTest(const string& service)
+{
+    static const int err_code = 16;
+
+    static char data[] = "test_data";
+    static size_t data_size = sizeof(data) - 1;
+
+    CNetCacheAPI nc(service, s_ClientName);
+
+    string blob_id = nc.PutData(data, data_size,
+            (nc_mirroring_mode = CNetCacheAPI::eMirroringDisabled,
+            nc_server_check_hint = false));
+    CNetCacheKey key(blob_id);
+
+    if (key.GetServiceName().empty() ||
+            !key.GetFlag(CNetCacheKey::eNCKey_SingleServer))
+        return err_code;
+
+    string mangled_blob_id;
+    CNetCacheKey::GenerateBlobKey(&mangled_blob_id, key.GetId(),
+            key.GetHost(), key.GetPort(), key.GetVersion(),
+            key.GetRandomPart(), key.GetCreationTime());
+    // Change the service name, so that the primary server cannot be discovered.
+    CNetCacheKey::AddExtensions(mangled_blob_id,
+            "NoSuchService", key.GetFlags());
+
+    try {
+        string buffer;
+
+        nc.ReadData(mangled_blob_id, buffer);
+
+        if (buffer != data)
+            return err_code;
+    }
+    catch (CException&) {
+        return err_code;
+    }
+
+    try {
+        string buffer;
+
+        nc.ReadData(mangled_blob_id, buffer, nc_server_check = eOn);
+
+        return err_code;
+    }
+    catch (CNetSrvConnException& e) {
+        if (e.GetErrCode() != CNetSrvConnException::eServerNotInService)
+            return err_code;
+    }
+    catch (CException&) {
+        return err_code;
+    }
+
+    blob_id = nc.PutData(data, data_size,
+            nc_mirroring_mode = CNetCacheAPI::eMirroringEnabled);
+    key.Assign(blob_id);
+
+    if (key.GetServiceName().empty() ||
+            key.GetFlag(CNetCacheKey::eNCKey_SingleServer))
+        return err_code;
+
+    return 0;
+}
+
+static size_t s_ReadIntoBuffer(IReader* reader, char* buf_ptr, size_t buf_size)
 {
     size_t bytes_read;
     size_t total_bytes_read = 0;
@@ -497,7 +562,7 @@ int CTestNetCacheClient::Run(void)
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
 
-        key = nc_client.PutData(NULL, 0, 120);
+        key = nc_client.PutData(NULL, 0, nc_blob_ttl = 120);
         NcbiCout << key << NcbiEndl;
         assert(!key.empty());
 
@@ -538,7 +603,7 @@ int CTestNetCacheClient::Run(void)
         assert(reader);
         assert(blob_size == sizeof(test_data));
 
-        size_t bytes_read = ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
+        size_t bytes_read = s_ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
         delete reader;
 
         assert(bytes_read == sizeof(test_data));
@@ -551,7 +616,7 @@ int CTestNetCacheClient::Run(void)
 
         assert(blob_size == sizeof("dog."));
 
-        bytes_read = ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
+        bytes_read = s_ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
 
         assert(bytes_read == sizeof("dog."));
 
@@ -606,7 +671,7 @@ int CTestNetCacheClient::Run(void)
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
 
-        key = nc_client.PutData(test_data, sizeof(test_data), 80);
+        key = nc_client.PutData(test_data, sizeof(test_data), nc_blob_ttl = 80);
         assert(!key.empty());
     }}
 
@@ -628,6 +693,7 @@ int CTestNetCacheClient::Run(void)
 
     error_level |= s_PasswordTest(service);
     error_level |= s_AbortTest(service);
+    error_level |= s_ServiceInBlobKeyTest(service);
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;

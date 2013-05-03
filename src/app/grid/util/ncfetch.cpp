@@ -129,7 +129,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
     auto_ptr<IReader> reader;
     if (m_PasswordSource == eNoPassword)
         reader.reset(nc_api.GetReader(key, &blob_size,
-            CNetCacheAPI::eCaching_Disable));
+            nc_caching_mode = CNetCacheAPI::eCaching_Disable));
     else {
         string password;
         if (m_PasswordSource == ePasswordFromCookie) {
@@ -151,8 +151,9 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
                         "Password required.", CCgiException::e403_Forbidden);
             }
         }
-        reader.reset(CNetCachePasswordGuard(nc_api, password)->GetReader(key,
-            &blob_size, CNetCacheAPI::eCaching_Disable));
+        reader.reset(nc_api.GetReader(key, &blob_size,
+            (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+            nc_blob_password = password)));
     }
     if (!reader.get()) {
         ERR_POST("Could not retrieve blob " << key);

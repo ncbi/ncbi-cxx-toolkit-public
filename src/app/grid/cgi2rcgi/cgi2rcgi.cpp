@@ -833,13 +833,13 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
 
         CNetServer bad_server(service.GetServer(key.host, key.port));
 
-        CNetServiceIterator it(service.Iterate(bad_server));
-
         // Skip to the next available server in the service.
         // If the server that caused a connection exception
         // was the only server in the service, rethrow the
         // exception.
-        if (!++it)
+        CNetServiceIterator it(service.ExcludeServer(bad_server));
+
+        if (!it)
             throw;
 
         CNetScheduleAdmin::TQueueInfo queue_info;

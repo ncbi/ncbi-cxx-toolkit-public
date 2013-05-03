@@ -55,7 +55,11 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         const string& service, const string& client_name);
 
     // For use by SNetICacheClientImpl
-    SNetCacheAPIImpl(SNetServiceImpl* service_impl) : m_Service(service_impl) {}
+    SNetCacheAPIImpl(SNetServiceImpl* service_impl) :
+        m_Service(service_impl),
+        m_DefaultParameters(eVoid)
+    {
+    }
 
     // Special constructor for CNetCacheAPI::GetServer().
     SNetCacheAPIImpl(SNetServerInPool* server, SNetCacheAPIImpl* parent);
@@ -65,7 +69,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         size_t offset,
         size_t part_size,
         size_t* blob_size,
-        CNetCacheAPI::ECachingMode caching_mode);
+        const CNamedParameterList* optional);
 
     static CNetCacheAPI::EReadResult ReadBuffer(
         IReader& reader,
@@ -79,16 +83,21 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         return m_Service.GetServer(key.GetHost(), key.GetPort());
     }
 
-    virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer);
+    virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer,
+            const CNetCacheAPIParameters* parameters);
 
-    void SetPassword(const string& password);
-    void AppendClientIPSessionIDPassword(string* cmd);
+    void AppendClientIPSessionID(string* cmd);
+    void AppendClientIPSessionIDPassword(string* cmd,
+            const CNetCacheAPIParameters* parameters);
     string MakeCmd(const char* cmd);
-    string MakeCmd(const char* cmd_base, const CNetCacheKey& key);
-    CNetService FindOrCreateService(const string& service_name);
+    string MakeCmd(const char* cmd, const CNetCacheAPIParameters* parameters);
+    string MakeCmd(const char* cmd_base, const CNetCacheKey& key,
+            const CNetCacheAPIParameters* parameters);
+    CNetService FindOrCreateService(const CNetCacheKey& key);
 
     CNetServer::SExecResult ExecMirrorAware(
         const CNetCacheKey& key, const string& cmd,
+        const CNetCacheAPIParameters* parameters,
         SNetServiceImpl::EServerErrorHandling error_handling =
             SNetServiceImpl::eRethrowServerErrors);
 
@@ -108,9 +117,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     bool m_CacheInput;
     bool m_CacheOutput;
 
-    CNetCacheAPI::EMirroringMode m_MirroringMode;
-
-    string m_Password;
+    CNetCacheAPIParameters m_DefaultParameters;
 };
 
 struct SNetCacheAdminImpl : public CObject

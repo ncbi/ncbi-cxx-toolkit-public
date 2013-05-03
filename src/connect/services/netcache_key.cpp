@@ -110,7 +110,7 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
 
         // Key extensions
         key_obj->m_ServiceName = kEmptyStr;
-        key_obj->m_ServiceNameExtLen = key_obj->m_ServiceNameExtPos = 0;
+        key_obj->m_Flags = 0;
     }
 
     if (ch < ch_end) {
@@ -137,50 +137,53 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
             const char* ext_value = ++ch;
             while (ch < ch_end && (*ch != '_' || --underscores_to_skip >= 0))
                 ++ch;
-            if (key_obj != NULL && ext_tag == 'S') {
-                key_obj->m_ServiceName.assign(ext_value, ch - ext_value);
-                key_obj->m_ServiceNameExtPos = extension - key_str;
-                key_obj->m_ServiceNameExtLen = ch - extension;
-            }
+            if (key_obj != NULL)
+                switch (ext_tag) {
+                case 'S':
+                    key_obj->m_ServiceName.assign(ext_value, ch - ext_value);
+                    break;
+
+                case 'F':
+                    while (ext_value < ch)
+                        switch (*ext_value++) {
+                        case '1':
+                            if (ext_value == ch ||
+                                    *ext_value < 'a' || *ext_value > 'z')
+                                key_obj->SetFlag(eNCKey_SingleServer);
+                            break;
+                        case 'N':
+                            if (ext_value == ch ||
+                                    *ext_value < 'a' || *ext_value > 'z')
+                                key_obj->SetFlag(eNCKey_NoServerCheck);
+                        }
+                }
         } while (ch < ch_end);
     }
 
     return true;
 }
 
-string CNetCacheKey::StripKeyExtensions() const
-{
-    return HasExtensions() ? string(m_Key.data(), m_PrimaryKeyLength) : m_Key;
-}
-
 static void AppendServiceNameExtension(string& blob_id,
     const string& service_name)
 {
     blob_id.append(g_NumberOfUnderscoresPlusOne(service_name), '_');
-    blob_id.append("S_");
+    blob_id.append("S_", 2);
     blob_id.append(service_name);
 }
 
-void CNetCacheKey::AddExtensions(string& blob_id, const string& service_name)
+void CNetCacheKey::AddExtensions(string& blob_id, const string& service_name,
+        CNetCacheKey::TNCKeyFlags flags)
 {
     blob_id.append(KEY_EXTENSION_MARKER, KEY_EXTENSION_MARKER_LENGTH);
     AppendServiceNameExtension(blob_id, service_name);
-}
 
-void CNetCacheKey::SetServiceName(const string& service_name)
-{
-    if (HasExtensions()) {
-        string service_name_ext;
-        AppendServiceNameExtension(service_name_ext, service_name);
-        m_Key.replace(m_ServiceNameExtPos, m_ServiceNameExtLen,
-            service_name_ext);
-        m_ServiceNameExtLen = service_name_ext.length();
-    } else {
-        AddExtensions(m_Key, service_name);
-        m_ServiceNameExtPos = m_PrimaryKeyLength + KEY_EXTENSION_MARKER_LENGTH;
-        m_ServiceNameExtLen = m_Key.length() - m_ServiceNameExtPos;
+    if (flags != 0) {
+        blob_id.append("_F_", 3);
+        if (flags & eNCKey_SingleServer)
+            blob_id.append(1, '1');
+        if (flags & eNCKey_NoServerCheck)
+            blob_id.append(1, 'N');
     }
-    m_ServiceName = service_name;
 }
 
 CNetCacheKey::CNetCacheKey(const string& key_str)
@@ -218,7 +221,8 @@ CNetCacheKey::GenerateBlobKey(string*        key,
                               const string&  host,
                               unsigned short port,
                               unsigned int   ver,
-                              unsigned int   rnd_num)
+                              unsigned int   rnd_num,
+                              time_t         creation_time)
 {
     key->assign(KEY_PREFIX, KEY_PREFIX_LENGTH);
 
@@ -238,7 +242,9 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     key->append(1, '_');
     key->append(tmp);
 
-    NStr::ULongToString(tmp, (unsigned long) ::time(0));
+    if (creation_time == 0)
+        creation_time = ::time(0);
+    NStr::UInt8ToString(tmp, (Uint8) creation_time);
     key->append(1, '_');
     key->append(tmp);
 
@@ -248,10 +254,11 @@ CNetCacheKey::GenerateBlobKey(string*        key,
 }
 
 void CNetCacheKey::GenerateBlobKey(string* key, unsigned id,
-    const string& host, unsigned short port, const string& service_name)
+    const string& host, unsigned short port, const string& service_name,
+    CNetCacheKey::TNCKeyFlags flags)
 {
     GenerateBlobKey(key, id, host, port);
-    AddExtensions(*key, service_name);
+    AddExtensions(*key, service_name, flags);
 }
 
 unsigned int
