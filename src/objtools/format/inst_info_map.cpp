@@ -59,6 +59,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_kctc_base("http://www.brc.re.kr/English/_SearchView.aspx?sn=");
     static const string s_ku_base("http://collections.nhm.ku.edu/");
     static const string s_lcr_base("http://scd.landcareresearch.co.nz/Specimen/");
+    static const string s_mcz_base("http://mczbase.mcz.harvard.edu/guid/");
     static const string s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
     static const string s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
     static const string s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
@@ -109,6 +110,15 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         TVoucherInfoElem("KU:I",             TVoucherInfoRef(new SVoucherInfo(&s_ku_base,   false, &s_kui_pfx,    NULL,        "University of Kansas, Museum of Natural History, Ichthyology collection") ) ),
         TVoucherInfoElem("KU:IT",            TVoucherInfoRef(new SVoucherInfo(&s_ku_base,   false, &s_kuit_pfx,   NULL,        "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ) ),
         TVoucherInfoElem("KWP:Ento",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Kenelm W. Philip Collection, University of Alaska Museum of the North, Lepidoptera collection") ) ),
+        TVoucherInfoElem("MCZ:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Ornithology Collection") ) ),
+        TVoucherInfoElem("MCZ:Cryo",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Cryogenic Collection") ) ),
+        TVoucherInfoElem("MCZ:Ent",          TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Entomology Collection") ) ),
+        TVoucherInfoElem("MCZ:Fish",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Icthyology Collection") ) ),
+        TVoucherInfoElem("MCZ:Herp",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Herpetology Collection") ) ),
+        TVoucherInfoElem("MCZ:IP",           TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Invertebrate Paleontology Collection") ) ),
+        TVoucherInfoElem("MCZ:IZ",           TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Invertebrate Zoology Collection") ) ),
+        TVoucherInfoElem("MCZ:Mala",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Mollusk Collection") ) ),
+        TVoucherInfoElem("MCZ:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,  true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Mammal Collection") ) ),
         TVoucherInfoElem("MLZ:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Moore Laboratory of Zoology, Occidental College, Bird Collection" ) ) ),
         TVoucherInfoElem("MLZ:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Moore Laboratory of Zoology, Occidental College, Mammal Collection" ) ) ),
         TVoucherInfoElem("MSB:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Bird Collection") ) ),
