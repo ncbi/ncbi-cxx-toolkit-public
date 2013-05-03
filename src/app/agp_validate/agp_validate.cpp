@@ -145,6 +145,7 @@ public:
     "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
     "  -xml       Report results in XML format.\n"
+    "  -complcl   Force component IDs to be considered local, even if they look like a legitimate accession.\n"
     "\n"
     "  Extra checks specific to an object type:\n"
     "  -un        Unplaced/unlocalized scaffolds:\n"
@@ -193,6 +194,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("scaf", "");
   arg_desc->AddFlag("chr" , "");
   arg_desc->AddFlag("comp", "");
+  arg_desc->AddFlag("complcl", "");
   arg_desc->AddFlag("xml" , "");
 
   // -comp args
@@ -458,11 +460,17 @@ int CAgpValidateApplication::Run(void)
 
       int diffsToFind = args["diffstofind"].AsInteger();
 
+      CAgpFastaComparator::EIdStyle eIdStyle = ( 
+          args["complcl"] ? 
+          CAgpFastaComparator::eIdStyle_ForceLocal :
+          CAgpFastaComparator::eIdStyle_Normal );
+
       CAgpFastaComparator agpFastaComparator;
       if( CAgpFastaComparator::eResult_Success !=
           agpFastaComparator.Run( filenames, comploadlog,
                                   agp_as_fasta_file, diffsToHide,
-                                  diffsToFind) )
+                                  diffsToFind,
+                                  eIdStyle) )
       {
           cerr << "AGP/FASTA comparison failed." << endl;
       }
