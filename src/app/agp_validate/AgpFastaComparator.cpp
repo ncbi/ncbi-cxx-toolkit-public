@@ -70,12 +70,63 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+namespace {
+
+    // slight customization to CAgpToSeqEntry:
+    // if an ID can be found in GenBank, use that
+    // and otherwise fall back on local ID
+    class CCustomAgpToSeqEntry : public CAgpToSeqEntry {
+    public:
+
+        CCustomAgpToSeqEntry(CScope * pScope)
+            : m_pScope(pScope)
+        {
+        }
+
+    protected:
+        virtual CRef<CSeq_id> x_GetSeqIdFromStr( const std::string & str_arg )
+        {
+            // trim "lcl|" from beginning
+            const char * const pchPrefixToTrim = "lcl|";
+            string str = str_arg;
+            if( NStr::StartsWith(str, pchPrefixToTrim) ) {
+                str = str.substr( strlen(pchPrefixToTrim) );
+            }
+            
+            // start with parent class's default parsing
+            CRef<CSeq_id> seq_id = CAgpToSeqEntry::x_GetSeqIdFromStr(str);
+
+            // optimize for the (hopefully common) fast case of local IDs
+            if( seq_id->IsLocal() ) {
+                return seq_id;
+            }
+
+            // reject prot-only accessions, or accessions that aren't found
+            CSeq_id::EAccessionInfo fAccnInfo = seq_id->IdentifyAccession();
+            const bool bAccnIsProtOnly = ( (fAccnInfo & CSeq_id::fAcc_prot) && ! (fAccnInfo & CSeq_id::fAcc_nuc));
+            if( bAccnIsProtOnly ||
+                ! m_pScope->GetBioseqHandle(*seq_id) ) 
+            {
+                // fall back on local ID
+                CRef<CSeq_id> pLocalSeqId( new CSeq_id );
+                pLocalSeqId->SetLocal().SetStr( str );
+                return pLocalSeqId;
+            }
+
+            // everything looks fine, so return it
+            return seq_id;
+        }
+
+    private:
+        CRef<CScope> m_pScope;
+    };
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CAgpFastaComparator::
 
 CAgpFastaComparator::CAgpFastaComparator(void)
-    : m_bSuccess(true),
-      m_eIdStyle(eIdStyle_Normal)
+    : m_bSuccess(true)
 {
 }
 
@@ -88,15 +139,12 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     const std::string & loadlog,
     const std::string & agp_as_fasta_file,
     TDiffsToHide diffsToHide,
-    int diffs_to_find,           // how many differences to show
-    EIdStyle eIdStyle
+    int diffs_to_find           // how many differences to show
     )
 {
     LOG_POST(Error << "" );     // newline
     LOG_POST(Error << "Starting AGP/Fasta Compare" );
     LOG_POST(Error << "" );     // newline
-
-    m_eIdStyle = eIdStyle;
 
     // figure out which files are AGP and which are FASTA
     list<string> compAndObjFiles;
@@ -143,9 +191,8 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     // (workaround for CXX-3453 which caused WGS-246 )
     CFastaReader::TFlags fasta_flags = lds_mgr->GetFastaFlags();
     fasta_flags &= ~CFastaReader::fParseGaps;
-    if( eIdStyle == eIdStyle_ForceLocal ) {
-        fasta_flags &= ~CFastaReader::fParseRawID;
-    }
+    // component ids are always interpreted as local
+    fasta_flags &= ~CFastaReader::fParseRawID; 
     lds_mgr->SetFastaFlags(fasta_flags);
 
     list<string> objfiles;
@@ -440,7 +487,7 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
             LOG_POST(Error << "  Skipping one: could not load due to error, "
                 "probably in AGP file, possibly a length issue, for " 
                 << idh << Endl() << Endl() 
-                << "Raw error information: " << ex.what() );
+                << "Raw technical information about error: " << ex.what() );
             m_bSuccess = false;
             continue;
         }
@@ -729,15 +776,15 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
     if( m_pLoadLogFile.get() != NULL ) {
         *m_pLoadLogFile << "Processing AGP..." << endl;
     }
+
+    CRef<CScope> pAgpToSeqEntryScope(new CScope(*CObjectManager::GetInstance()));
+    pAgpToSeqEntryScope->AddDefaults();
+
     ITERATE( list<string>, file_iter, filenames ) {
         const string &filename = *file_iter;
         CNcbiIfstream istr( filename.c_str() );
         while (istr) {
-            CAgpToSeqEntry::TFlags fAgpToSeqEntryFlags = 0;
-            if( m_eIdStyle == eIdStyle_ForceLocal ) {
-                fAgpToSeqEntryFlags |= CAgpToSeqEntry::fForceLocalId;
-            }
-            CAgpToSeqEntry agp_reader(fAgpToSeqEntryFlags);
+            CCustomAgpToSeqEntry agp_reader(pAgpToSeqEntryScope.GetPointer());
             int err_code = agp_reader.ReadStream( istr ); // loads entries
             if( err_code != 0 ) {
                 LOG_POST(Error << "Error occurred reading AGP file: "
@@ -947,18 +994,5 @@ CAgpFastaComparator::EFileType CAgpFastaComparator::x_GuessFileType( const strin
 CRef<CSeq_id> 
 CAgpFastaComparator::x_SeqIdFromStr(const string & sStr)
 {
-    switch(m_eIdStyle) {
-    case eIdStyle_Normal:
-        return CAgpToSeqEntry::s_DefaultSeqIdFromStr(sStr);
-    case eIdStyle_ForceLocal:
-        {
-            CRef<CSeq_id> pSeqId( new CSeq_id );
-            pSeqId->SetLocal().SetStr( sStr );
-            return pSeqId;
-        }
-    default:
-        _TROUBLE;
-        // when we're not in debug mode:
-        return CAgpToSeqEntry::s_DefaultSeqIdFromStr(sStr);
-    }
+    return CAgpToSeqEntry::s_DefaultSeqIdFromStr(sStr);
 }

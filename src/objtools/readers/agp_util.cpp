@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Victor Sapojnikov
+ * Author:  Victor Sapojnikov, Michael Kornbluh
  *
  * File Description:
  *     Generic fast AGP stream reader    (CAgpReader),

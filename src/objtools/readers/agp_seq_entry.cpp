@@ -166,8 +166,15 @@ void CAgpToSeqEntry::x_FinishedBioseq(void)
 }
 
 CRef<CSeq_id> 
-CAgpToSeqEntry::x_GetSeqIdFromStr( const std::string & str )
+CAgpToSeqEntry::x_GetSeqIdFromStr( const std::string & str_arg )
 {
+    const char * const pchPrefixToTrim = "lcl|";
+
+    string str = str_arg;
+    if( NStr::StartsWith(str, pchPrefixToTrim) ) {
+        str = str.substr( strlen(pchPrefixToTrim) );
+    }
+
     if( m_fFlags & fForceLocalId ) {
         CRef<CSeq_id> seq_id( new CSeq_id );
         seq_id->SetLocal().SetStr( str );

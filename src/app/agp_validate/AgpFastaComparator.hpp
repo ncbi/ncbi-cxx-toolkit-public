@@ -57,11 +57,6 @@ public:
     };
     typedef int TDiffsToHide;
 
-    enum EIdStyle {
-        eIdStyle_Normal,
-        eIdStyle_ForceLocal
-    };
-
     enum EResult {
         eResult_Failure,
         eResult_Success
@@ -70,8 +65,7 @@ public:
                  const std::string & loadlog,
                  const std::string & agp_as_fasta_file,
                  TDiffsToHide diffsToHide,
-                 int diffs_to_find,
-                 EIdStyle eIdStyle );
+                 int diffs_to_find);
 
     typedef set<objects::CSeq_id_Handle> TSeqIdSet;
 private:
@@ -100,8 +94,6 @@ private:
     // where we write detailed loading logs
     // This is unset if we're not writing anywhere
     auto_ptr<CNcbiOfstream> m_pLoadLogFile;
-
-    EIdStyle m_eIdStyle;
 
     // where we output AGP in FASTA format (unset if we're not
     // supposed to write it)
