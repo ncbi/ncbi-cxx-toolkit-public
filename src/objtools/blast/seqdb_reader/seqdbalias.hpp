@@ -46,7 +46,7 @@
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include "seqdboidlist.hpp"
 #include <objtools/blast/seqdb_reader/impl/seqdbfile.hpp>
-#include "seqdbvol.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbvol.hpp>
 #include "seqdbvolset.hpp"
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
 

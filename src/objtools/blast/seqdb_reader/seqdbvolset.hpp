@@ -39,7 +39,7 @@
 /// 
 /// Implemented for: UNIX, MS-Windows
 
-#include "seqdbvol.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbvol.hpp>
 #include "seqdbfilter.hpp"
 #include <algo/blast/core/ncbi_std.h>
 
