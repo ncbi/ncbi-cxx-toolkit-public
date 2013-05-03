@@ -491,7 +491,7 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
     }
     if (!m_NC.UseNC() || (gen_key  &&  s_SelfGen)) {
         CNetCacheKey::GenerateBlobKey(&key, s_BlobId.Add(1), "130.14.24.171", 9000, 1, s_GetRandom());
-        CNetCacheKey::AddExtensions(key, s_NCService);
+        CNetCacheKey::AddExtensions(key, s_NCService, 0);
     }
 
     Uint4 size_index = s_GetSizeIndex(size);

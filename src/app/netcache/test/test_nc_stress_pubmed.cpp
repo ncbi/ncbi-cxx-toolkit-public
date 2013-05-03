@@ -323,7 +323,7 @@ public :
         TimePotam TPot;
         string NcKey;
         CNetCacheKey::GenerateBlobKey(&NcKey, s_BlobId.Add(1), "130.14.24.171", 9000, 1, s_Rnd.GetRand() * 2);
-        CNetCacheKey::AddExtensions(NcKey, cln.GetService().GetServiceName());
+        CNetCacheKey::AddExtensions(NcKey, cln.GetService().GetServiceName(), 0);
         int wtime = -1;
         try {
             cln.PutData(NcKey, mpBuffer, mBufferSize);
