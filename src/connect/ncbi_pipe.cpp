@@ -211,7 +211,7 @@ public:
                     const char* const   env[]);
     void       OpenSelf(void);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
-    EIO_Status CloseHandle (CPipe::EChildIOHandle handle);
+    EIO_Status CloseHandle(CPipe::EChildIOHandle handle);
     EIO_Status Read(void* buf, size_t count, size_t* n_read,
                     const CPipe::EChildIOHandle from_handle,
                     const STimeout* timeout) const;
