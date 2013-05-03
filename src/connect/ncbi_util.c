@@ -271,10 +271,10 @@ extern const char* NcbiMessagePlusError
  int          error,
  const char*  descr)
 {
+    int/*bool*/ release;
     char*  buf;
     size_t mlen;
     size_t dlen;
-    int/*bool*/ release = 0/*false*/;
 
     /* Check for an empty addition */
     if (!error  &&  (!descr  ||  !*descr)) {
@@ -285,8 +285,8 @@ extern const char* NcbiMessagePlusError
     }
 
     /* Adjust description, if necessary and possible */
-    
-    if (error >=0  &&  !descr) {
+    release = 0/*false*/;
+    if (error > 0  &&  !descr) {
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
         descr = UTIL_TcharToUtf8( _wcserror(error) );
         release = 1/*true*/;
@@ -294,14 +294,16 @@ extern const char* NcbiMessagePlusError
         descr = strerror(error);
 #endif /*NCBI_OS_MSWIN && _UNICODE*/
     }
-    if (!descr) {
+    if (descr  &&  *descr) {
+        dlen = strlen(descr);
+        while (dlen  &&  isspace((unsigned char) descr[dlen - 1]))
+            dlen--;
+        if (dlen > 1  &&  descr[dlen - 1] == '.')
+            dlen--;
+    } else {
         descr = "";
+        dlen = 0;
     }
-    dlen = strlen(descr);
-    while (dlen  &&  isspace((unsigned char) descr[dlen - 1]))
-        dlen--;
-    if (dlen > 1  &&  descr[dlen - 1] == '.')
-        dlen--;
 
     mlen = message ? strlen(message) : 0;
 
