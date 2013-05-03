@@ -162,6 +162,11 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     kEmptyCStr  // G_Last
 };
 
+CAgpErr::CAgpErr()
+    : m_apply_to(0)
+{
+}
+
 const char* CAgpErr::GetMsg(int code)
 {
     if(code>0 && code<G_Last) return s_msg[code];

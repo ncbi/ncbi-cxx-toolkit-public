@@ -421,6 +421,7 @@ public:
 class NCBI_XOBJREAD_EXPORT CAgpErr : public CObject
 {
 public:
+    CAgpErr();
     virtual ~CAgpErr() {}
 
     enum EAppliesTo{
