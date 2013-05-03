@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(MaskedQueryRegions) {
 
     CRemoteBlast rmt_blast(oh);
     //rmt_blast.SetVerbose();
-    rmt_blast.SetDatabase("month.nt");
+    rmt_blast.SetDatabase("UniVec");
 
     const size_t kNumQueries(2);
     CRemoteBlast::TSeqLocList query_seqlocs(kNumQueries);
