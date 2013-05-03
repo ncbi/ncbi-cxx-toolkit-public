@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-class CNetCacheAPIParameters
+class NCBI_XCONNECT_EXPORT CNetCacheAPIParameters
 {
 public:
     enum EDefinedParameter {

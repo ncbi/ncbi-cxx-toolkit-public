@@ -164,9 +164,9 @@ bool SNetServiceIterator_RandomPivot::Next()
         } while (number_of_servers > 0);
         // Shuffle m_RandomIterators starting from the element with index '1'.
         if (m_RandomIterators.size() > 2) {
-            TRandomIterators::iterator it = m_RandomIterators.begin();
-            while (++it != m_RandomIterators.end())
-                swap(*it, m_RandomIterators[s_RandomIteratorGen.GetRand(1,
+            TRandomIterators::iterator rnt_it = m_RandomIterators.begin();
+            while (++rnt_it != m_RandomIterators.end())
+                swap(*rnt_it, m_RandomIterators[s_RandomIteratorGen.GetRand(1,
                     CRandom::TValue(m_RandomIterators.size() - 1))]);
         }
         m_RandomIterator = m_RandomIterators.begin();
@@ -696,7 +696,7 @@ CNetServer SRandomServiceTraversal::BeginIteration()
 
 CNetServer SRandomServiceTraversal::NextServer()
 {
-    return ++m_Iterator ? *m_Iterator : NULL;
+    return ++m_Iterator ? *m_Iterator : CNetServer();
 }
 
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
