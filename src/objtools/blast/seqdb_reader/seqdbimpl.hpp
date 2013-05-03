@@ -43,7 +43,7 @@
 #include "seqdbvolset.hpp"
 #include "seqdbalias.hpp"
 #include "seqdboidlist.hpp"
-#include "seqdbcol.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbcol.hpp>
 #include "seqdbgimask.hpp"
 
 BEGIN_NCBI_SCOPE
