@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "json_over_uttp.hpp"
+#include <connect/services/json_over_uttp.hpp>
 
 #include <algorithm>
 
@@ -492,7 +492,7 @@ void CJsonOverUTTPReader::Reset()
     m_CurrentNode = CJsonNode::NewArrayNode();
 }
 
-void CJsonOverUTTPWriter::SendMessage(const CJsonNode& root_node)
+void CJsonOverUTTPWriter::SetOutputMessage(const CJsonNode& root_node)
 {
     _ASSERT(m_OutputStack.empty());
 
@@ -501,11 +501,6 @@ void CJsonOverUTTPWriter::SendMessage(const CJsonNode& root_node)
         m_CurrentOutputNode.m_Node.GetArray().begin();
 
     m_SendHashValue = false;
-
-    while (ContinueWithReply())
-        SendOutputBuffer();
-
-    SendOutputBuffer();
 }
 
 bool CJsonOverUTTPWriter::ContinueWithReply()
@@ -554,28 +549,6 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
             if (!m_UTTPWriter.SendRawData(&m_Double, sizeof(m_Double)))
                 return true;
         }
-}
-
-void CJsonOverUTTPWriter::SendOutputBuffer()
-{
-    const char* output_buffer;
-    size_t output_buffer_size;
-    size_t bytes_written;
-
-    do {
-        m_UTTPWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
-        for (;;) {
-            if (m_Pipe.Write(output_buffer, output_buffer_size,
-                    &bytes_written) != eIO_Success) {
-                NCBI_THROW(CIOException, eWrite,
-                    "Error while writing to the pipe");
-            }
-            if (bytes_written == output_buffer_size)
-                break;
-            output_buffer += bytes_written;
-            output_buffer_size -= bytes_written;
-        }
-    } while (m_UTTPWriter.NextOutputBuffer());
 }
 
 bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)

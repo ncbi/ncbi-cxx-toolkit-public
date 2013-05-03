@@ -490,18 +490,52 @@ TAutomationObjectRef& CAutomationProc::ObjectIdToRef(TObjectID object_id)
 class CMessageSender : public IMessageSender
 {
 public:
-    CMessageSender(CJsonOverUTTPWriter& json_writer) : m_JSONWriter(json_writer)
+    CMessageSender(CJsonOverUTTPWriter& json_writer, CPipe& pipe) :
+        m_JSONWriter(json_writer),
+        m_Pipe(pipe)
     {
     }
 
-    virtual void SendMessage(const CJsonNode& message)
-    {
-        m_JSONWriter.SendMessage(message);
-    }
+    virtual void SendMessage(const CJsonNode& message);
 
 private:
+    void SendOutputBuffer();
+
     CJsonOverUTTPWriter& m_JSONWriter;
+    CPipe& m_Pipe;
 };
+
+void CMessageSender::SendMessage(const CJsonNode& message)
+{
+    m_JSONWriter.SetOutputMessage(message);
+
+    while (m_JSONWriter.ContinueWithReply())
+        SendOutputBuffer();
+
+    SendOutputBuffer();
+}
+
+void CMessageSender::SendOutputBuffer()
+{
+    const char* output_buffer;
+    size_t output_buffer_size;
+    size_t bytes_written;
+
+    do {
+        m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
+        for (;;) {
+            if (m_Pipe.Write(output_buffer, output_buffer_size,
+                    &bytes_written) != eIO_Success) {
+                NCBI_THROW(CIOException, eWrite,
+                    "Error while writing to the pipe");
+            }
+            if (bytes_written == output_buffer_size)
+                break;
+            output_buffer += bytes_written;
+            output_buffer_size -= bytes_written;
+        }
+    } while (m_JSONWriter.NextOutputBuffer());
+}
 
 class CMessageDumperSender : public IMessageSender
 {
@@ -579,9 +613,9 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
     writer.Reset(write_buf, sizeof(write_buf));
 
     CJsonOverUTTPReader json_reader;
-    CJsonOverUTTPWriter json_writer(pipe, writer);
+    CJsonOverUTTPWriter json_writer(writer);
 
-    CMessageSender message_sender(json_writer);
+    CMessageSender message_sender(json_writer, pipe);
 
     auto_ptr<CMessageDumperSender> dumper_and_sender;
 

@@ -32,7 +32,7 @@
  *
  */
 
-#include <connect/services/netcomponent.hpp>
+#include "netcomponent.hpp"
 
 #include <connect/ncbi_pipe.hpp>
 
@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 struct SJsonNodeImpl;
 
-class CJsonNode
+class NCBI_XCONNECT_EXPORT CJsonNode
 {
     NCBI_NET_COMPONENT(JsonNode);
 
@@ -106,7 +106,7 @@ class CJsonNode
     bool GetBoolean() const;
 };
 
-class CJsonOverUTTPReader
+class NCBI_XCONNECT_EXPORT CJsonOverUTTPReader
 {
 public:
     typedef list<CJsonNode> TNodeStack;
@@ -156,15 +156,24 @@ inline const CJsonNode CJsonOverUTTPReader::GetMessage() const
     return m_CurrentNode;
 }
 
-class CJsonOverUTTPWriter
+class NCBI_XCONNECT_EXPORT CJsonOverUTTPWriter
 {
 public:
-    CJsonOverUTTPWriter(CPipe& pipe, CUTTPWriter& writer) :
-        m_Pipe(pipe), m_UTTPWriter(writer)
+    CJsonOverUTTPWriter(CUTTPWriter& writer) :
+        m_UTTPWriter(writer)
     {
     }
 
-    void SendMessage(const CJsonNode& root_node);
+    void SetOutputMessage(const CJsonNode& root_node);
+    bool ContinueWithReply();
+    void GetOutputBuffer(const char** output_buffer, size_t* output_buffer_size)
+    {
+        m_UTTPWriter.GetOutputBuffer(output_buffer, output_buffer_size);
+    }
+    bool NextOutputBuffer()
+    {
+        return m_UTTPWriter.NextOutputBuffer();
+    }
 
 private:
     struct SOutputStackFrame {
@@ -175,11 +184,8 @@ private:
 
     typedef list<SOutputStackFrame> TOutputStack;
 
-    bool ContinueWithReply();
-    void SendOutputBuffer();
     bool SendNode(const CJsonNode& node);
 
-    CPipe& m_Pipe;
     CUTTPWriter& m_UTTPWriter;
 
     TOutputStack m_OutputStack;

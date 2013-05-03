@@ -33,9 +33,9 @@
 #ifndef NS_CMD_IMPL__HPP
 #define NS_CMD_IMPL__HPP
 
-#include "json_over_uttp.hpp"
 #include "grid_cli.hpp"
 
+#include <connect/services/json_over_uttp.hpp>
 #include <connect/services/netschedule_api.hpp>
 
 BEGIN_NCBI_SCOPE
