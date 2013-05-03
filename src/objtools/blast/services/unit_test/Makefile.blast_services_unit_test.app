@@ -12,5 +12,6 @@ LIB = test_boost blast_services xnetblastcli xnetblast seqdb blastdb scoremat \
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = blast_services_unit_test
+CHECK_COPY = blast_services_unit_test.ini 
 
 WATCHERS = madden camacho
