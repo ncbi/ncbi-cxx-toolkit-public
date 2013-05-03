@@ -163,6 +163,28 @@ CConstRef<CSeq_id> CGC_Sequence::GetSynonymSeq_id( CGC_TypedSeqId::E_Choice syn_
 }
 
 
+CConstRef<CSeq_id> CGC_Sequence::GetSubmitterName( ) const
+{
+    CConstRef<CSeq_id> ret;
+    
+    if( !IsSetSeq_id_synonyms() )
+        return ret;
+
+    CConstRef<CGC_TypedSeqId> typed_seq_id;
+    ITERATE( TSeq_id_synonyms, it_syn, GetSeq_id_synonyms() )
+    {
+        if( (*it_syn)->IsExternal() && 
+            NStr::EqualNocase((*it_syn)->GetExternal().GetExternal(), "SUBMITTER") )
+        {
+            ret = &((*it_syn)->GetExternal().GetId());
+            break;
+        }
+    }
+    
+    return ret;
+    
+}
+
 bool CGC_Sequence::HasRole(int Role) const 
 {
 	if( !CanGetRoles() )
