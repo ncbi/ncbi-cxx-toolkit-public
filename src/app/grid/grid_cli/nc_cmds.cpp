@@ -351,9 +351,13 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     string blob_key = m_Opts.id;
 
     if (!icache_mode) {
-        writer.reset(m_NetCacheAPI.PutData(&blob_key, IsOptionSet(ePassword) ?
-                (nc_blob_ttl = m_Opts.ttl, nc_blob_password = m_Opts.password) :
-                (nc_blob_ttl = m_Opts.ttl)));
+        if (IsOptionSet(ePassword))
+            writer.reset(m_NetCacheAPI.PutData(&blob_key,
+                    (nc_blob_ttl = m_Opts.ttl,
+                    nc_blob_password = m_Opts.password)));
+        else
+            writer.reset(m_NetCacheAPI.PutData(&blob_key,
+                    nc_blob_ttl = m_Opts.ttl));
     } else {
         ParseICacheKey();
 

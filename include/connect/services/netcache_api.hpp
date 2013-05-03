@@ -503,29 +503,30 @@ enum ENetCacheNamedParameterTag {
 
 /// Blob life span in seconds. If zero or greater than the
 /// server-side value, then the server-side TTL is used.
-static CNamedParameter<unsigned, eNetCacheNPT_TTL> nc_blob_ttl;
+#define nc_blob_ttl CNamedParameter<unsigned, eNetCacheNPT_TTL>()
 
 /// Caching mode.
 /// @see ECachingMode for details.
-static CNamedParameter<CNetCacheAPI::ECachingMode,
-        eNetCacheNPT_CachingMode> nc_caching_mode;
+#define nc_caching_mode CNamedParameter<CNetCacheAPI::ECachingMode, \
+        eNetCacheNPT_CachingMode>()
 
 /// Mirroring mode.
 /// @see CNetCacheAPI::EMirroringMode for details.
-static CNamedParameter<CNetCacheAPI::EMirroringMode,
-        eNetCacheNPT_MirroringMode> nc_mirroring_mode;
+#define nc_mirroring_mode CNamedParameter<CNetCacheAPI::EMirroringMode, \
+        eNetCacheNPT_MirroringMode>()
 
 /// For blob readers: whether to check if the primary
 /// server that stores the blob is still in service.
-static CNamedParameter<ESwitch, eNetCacheNPT_ServerCheck> nc_server_check;
+#define nc_server_check CNamedParameter<ESwitch, eNetCacheNPT_ServerCheck>()
 
 /// For blob writers: whether to advise the readers to check
 /// if the primary server that stores the blob is still in service.
-static CNamedParameter<bool, eNetCacheNPT_ServerCheckHint> nc_server_check_hint;
+#define nc_server_check_hint CNamedParameter<bool, \
+        eNetCacheNPT_ServerCheckHint>()
 
 /// Blob password. Used to protect the blob when writing;
 /// required for reading a password-protected blob.
-static CNamedParameter<std::string, eNetCacheNPT_Password> nc_blob_password;
+#define nc_blob_password CNamedParameter<string, eNetCacheNPT_Password>()
 
 /* @} */
 
