@@ -296,7 +296,7 @@ CNetServer SNetCacheMirrorTraversal::BeginIteration()
 CNetServer SNetCacheMirrorTraversal::NextServer()
 {
     if (m_PrimaryServerCheck)
-        return ++m_Iterator ? *m_Iterator : NULL;
+        return ++m_Iterator ? *m_Iterator : CNetServer();
 
     m_PrimaryServerCheck = true;
     return *(m_Iterator = m_Service.Iterate(m_PrimaryServer));
