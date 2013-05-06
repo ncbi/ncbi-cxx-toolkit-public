@@ -123,7 +123,6 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
             return false;
         do {
             int underscores_to_skip = 0;
-            const char* extension = ch;
             for (;;) {
                 if (++ch == ch_end)
                     return false;
