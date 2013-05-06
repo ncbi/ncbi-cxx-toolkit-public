@@ -1,0 +1,171 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "Hist Seqalign",
+      data {
+        {
+          label str "Hist Seqalign",
+          data bool TRUE
+        }
+      }
+    },
+    user {
+      type str "Blast Type",
+      data {
+        {
+          label str "blastn",
+          data int 1
+        }
+      }
+    },
+    user {
+      type str "Blast Database Title",
+      data {
+        {
+          label str "n/a",
+          data bool FALSE
+        }
+      }
+    }
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 221
+        },
+        {
+          id str "e_value",
+          value real { 13413146789277, 10, -126 }
+        },
+        {
+          id str "bit_score",
+          value real { 409229867400388, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 226
+        },
+        {
+          id str "pc_ident",
+          value real { 991228070175439, 10, -15 }
+        },
+        {
+          id str "seq_evalue",
+          value real { 13413146789277, 10, -126 }
+        },
+        {
+          id str "seq_bit_score",
+          value real { 409229867400388, 10, -12 }
+        },
+        {
+          id str "seq_total_bit_score",
+          value real { 777833442449342, 10, -12 }
+        },
+        {
+          id str "seq_percent_coverage",
+          value int 96
+        },
+        {
+          id str "seq_percent_identity",
+          value int 100
+        },
+        {
+          id str "seq_hspnum",
+          value int 2
+        },
+        {
+          id str "seq_align_totlen",
+          value real { 427, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          gi 18824838,
+          gi 224514737
+        },
+        starts {
+          205,
+          2121008,
+          204,
+          -1,
+          201,
+          2121228,
+          -1,
+          2121231,
+          198,
+          2121232
+        },
+        lens {
+          220,
+          1,
+          3,
+          1,
+          3
+        },
+        strands {
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus,
+          minus,
+          plus
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 199
+        },
+        {
+          id str "e_value",
+          value real { 227647710979667, 10, -115 }
+        },
+        {
+          id str "bit_score",
+          value real { 368603575048954, 10, -12 }
+        },
+        {
+          id str "num_ident",
+          value int 199
+        },
+        {
+          id str "pc_ident",
+          value real { 1, 10, 0 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 18824838,
+          gi 224514737
+        },
+        starts {
+          7,
+          2122014
+        },
+        lens {
+          199
+        },
+        strands {
+          minus,
+          plus
+        }
+      }
+    }
+  }
+}
