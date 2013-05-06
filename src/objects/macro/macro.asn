@@ -1430,7 +1430,8 @@ Macro-action-choice ::= CHOICE {
   trim-terminal-ns NULL ,
   update-replaced-ecnumbers Update-replaced-ec-numbers-action ,
   instantiate-protein-titles NULL ,
-  retranslate-cds Retranslate-cds-action }
+  retranslate-cds Retranslate-cds-action ,
+  add-selenocysteine-except NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
