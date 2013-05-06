@@ -71,11 +71,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 {
 
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-       CGBDataLoader::RegisterInObjectManager(*om,
-                                              0,
-                                              CObjectManager::eDefault
-                                            );
-
+    CGBDataLoader::RegisterInObjectManager(*om, 0,  CObjectManager::eDefault);
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
@@ -92,7 +88,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
     CSplign splign;
     CRef<CSplicedAligner> aligner = CSplign::s_CreateDefaultAligner();//default is mrna
-    aligner->SetSpaceLimit(1024);
+    aligner->SetSpaceLimit(2 * 1024 * 1024);
     splign.SetAligner() = aligner;
     splign.SetScope().Reset(scope);
     splign.PreserveScope();
@@ -117,7 +113,9 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         sf.SetSeqIds(query_id, subj_id);
         CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(NULL, CSplignFormatter::eAF_SplicedSegWithParts));
 
-        cout<<sf. AsAlignmentText(scope, &splign.GetResult())<<endl;
+        //cout<<sf. AsAlignmentText(scope, &splign.GetResult())<<endl;
+        cout<<sf.AsExonTable();
+        //cout<<sf. AsAlignmentText(scope)<<endl;
 
 
         /*
