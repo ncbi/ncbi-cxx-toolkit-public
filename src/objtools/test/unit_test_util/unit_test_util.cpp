@@ -89,7 +89,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(unit_test_util)
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id)
+void SetDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id)
 {
     CRef<objects::CDbtag> dbtag(new objects::CDbtag());
     dbtag->SetDb(db);
@@ -98,7 +98,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (objects::CBioSource& src, string db, 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id)
+void RemoveDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id)
 {
     if (src.IsSetOrg() && src.GetOrg().IsSetDb()) {
         objects::COrg_ref::TDb::iterator it = src.SetOrg().SetDb().begin();
@@ -114,7 +114,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (objects::CBioSource& src, string d
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (objects::CBioSource& src, size_t taxon)
+void SetTaxon (objects::CBioSource& src, size_t taxon)
 {
     if (taxon == 0) {
         RemoveDbxref (src, "taxon", 0);
@@ -124,7 +124,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (objects::CBioSource& src, size_t taxon
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSeq(void)
+CRef<objects::CSeq_entry> BuildGoodSeq(void)
 {
     CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
     entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
@@ -147,7 +147,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSeq(void)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeqdesc> BuildGoodPubSeqdesc()
+CRef<objects::CSeqdesc> BuildGoodPubSeqdesc()
 {
     CRef<objects::CSeqdesc> pdesc(new objects::CSeqdesc());
     CRef<objects::CPub> pub(new objects::CPub());
@@ -158,7 +158,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeqdesc> BuildGoodPubSeqdesc()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void AddGoodPub (CRef<objects::CSeq_entry> entry)
+void AddGoodPub (CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeqdesc> pdesc = BuildGoodPubSeqdesc();
 
@@ -170,7 +170,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AddGoodPub (CRef<objects::CSeq_entry> entry)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void AddGoodSource (CRef<objects::CSeq_entry> entry)
+void AddGoodSource (CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeqdesc> odesc(new objects::CSeqdesc());
     odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
@@ -189,7 +189,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AddGoodSource (CRef<objects::CSeq_entry> entry)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (objects::CBioSource& src, string db, string id)
+void SetDbxref (objects::CBioSource& src, string db, string id)
 {
     CRef<objects::CDbtag> dbtag(new objects::CDbtag());
     dbtag->SetDb(db);
@@ -198,7 +198,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (objects::CBioSource& src, string db, 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id::TId id)
+void SetDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id::TId id)
 {
     if (!entry) {
         return;
@@ -219,7 +219,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_entry> entry, stri
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_entry> entry, string db, string id)
+void SetDbxref (CRef<objects::CSeq_entry> entry, string db, string id)
 {
     if (!entry) {
         return;
@@ -240,7 +240,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_entry> entry, stri
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id::TId id)
+void SetDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id::TId id)
 {
     if (!feat) {
         return;
@@ -252,7 +252,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_feat> feat, string
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_feat> feat, string db, string id)
+void SetDbxref (CRef<objects::CSeq_feat> feat, string db, string id)
 {
     if (!feat) {
         return;
@@ -265,7 +265,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDbxref (CRef<objects::CSeq_feat> feat, string
 
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id::TId id)
+void RemoveDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id::TId id)
 {
     if (!entry) {
         return;
@@ -286,7 +286,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (CRef<objects::CSeq_entry> entry, s
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id::TId id)
+void RemoveDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id::TId id)
 {
     if (!feat) {
         return;
@@ -305,7 +305,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (CRef<objects::CSeq_feat> feat, str
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (CRef<objects::CSeq_entry> entry, size_t taxon)
+void SetTaxon (CRef<objects::CSeq_entry> entry, size_t taxon)
 {
     if (!entry) {
         return;
@@ -326,7 +326,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (CRef<objects::CSeq_entry> entry, size_
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_entry> entry)
+void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_entry> entry)
 {
     if (!entry || !annot) {
         return;
@@ -341,7 +341,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry)
+void AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_annot> annot;
 
@@ -368,7 +368,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AddFeat (CRef<objects::CSeq_feat> feat, CRef<obj
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CSeq_entry> entry) 
+CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CSeq_entry> entry) 
 {
     CRef<objects::CSeq_feat> feat (new objects::CSeq_feat());
     feat->SetData().SetProt().SetName().push_back("fake protein name");
@@ -380,7 +380,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CS
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddGoodSourceFeature(CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_feat> AddGoodSourceFeature(CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
     feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
@@ -396,7 +396,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddGoodSourceFeature(CRef<ob
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeMiscFeature(CRef<objects::CSeq_id> id, size_t right_end, size_t left_end)
+CRef<objects::CSeq_feat> MakeMiscFeature(CRef<objects::CSeq_id> id, size_t right_end, size_t left_end)
 {
     CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
     feat->SetLocation().SetInt().SetId().Assign(*id);
@@ -407,7 +407,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeMiscFeature(CRef<objects
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<CSeq_feat> BuildGoodFeat ()
+CRef<CSeq_feat> BuildGoodFeat ()
 {
     CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
@@ -419,7 +419,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<CSeq_feat> BuildGoodFeat ()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_id> IdFromEntry(CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_id> IdFromEntry(CRef<objects::CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
         return entry->SetSeq().SetId().front();
@@ -432,7 +432,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_id> IdFromEntry(CRef<objects::CSeq
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry, size_t right_end)
+CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry, size_t right_end)
 {
     CRef<objects::CSeq_feat> feat = MakeMiscFeature(IdFromEntry(entry), right_end);
     feat->SetComment("misc_feature needs a comment");
@@ -441,13 +441,13 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects:
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry)
 {
     return AddMiscFeature (entry, 10);
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxname (CRef<objects::CSeq_entry> entry, string taxname)
+void SetTaxname (CRef<objects::CSeq_entry> entry, string taxname)
 {
     if (!entry) {
         return;
@@ -476,7 +476,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxname (CRef<objects::CSeq_entry> entry, str
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetSebaea_microphylla(CRef<objects::CSeq_entry> entry)
+void SetSebaea_microphylla(CRef<objects::CSeq_entry> entry)
 {
     SetTaxname(entry, "Sebaea microphylla");
     SetTaxon(entry, 0);
@@ -484,7 +484,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetSebaea_microphylla(CRef<objects::CSeq_entry> 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetSynthetic_construct(CRef<objects::CSeq_entry> entry)
+void SetSynthetic_construct(CRef<objects::CSeq_entry> entry)
 {
     SetTaxname(entry, "synthetic construct");
     SetTaxon(entry, 0);
@@ -492,14 +492,14 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetSynthetic_construct(CRef<objects::CSeq_entry>
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDrosophila_melanogaster(CRef<objects::CSeq_entry> entry)
+void SetDrosophila_melanogaster(CRef<objects::CSeq_entry> entry)
 {
     SetTaxname(entry, "Drosophila melanogaster");
     SetTaxon(entry, 0);
     SetTaxon(entry, 7227);
 }
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetCommon (CRef<objects::CSeq_entry> entry, string common)
+void SetCommon (CRef<objects::CSeq_entry> entry, string common)
 {
     if (!entry) {
         return;
@@ -528,7 +528,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetCommon (CRef<objects::CSeq_entry> entry, stri
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetLineage (CRef<objects::CSeq_entry> entry, string lineage)
+void SetLineage (CRef<objects::CSeq_entry> entry, string lineage)
 {
     if (!entry) {
         return;
@@ -557,7 +557,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetLineage (CRef<objects::CSeq_entry> entry, str
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetDiv (CRef<objects::CSeq_entry> entry, string div)
+void SetDiv (CRef<objects::CSeq_entry> entry, string div)
 {
     if (!entry) {
         return;
@@ -586,7 +586,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetDiv (CRef<objects::CSeq_entry> entry, string 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetOrigin (CRef<objects::CSeq_entry> entry, objects::CBioSource::TOrigin origin)
+void SetOrigin (CRef<objects::CSeq_entry> entry, objects::CBioSource::TOrigin origin)
 {
     if (!entry) {
         return;
@@ -607,7 +607,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetOrigin (CRef<objects::CSeq_entry> entry, obje
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode gcode)
+void SetGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode gcode)
 {
     if (!entry) {
         return;
@@ -628,7 +628,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetGcode (CRef<objects::CSeq_entry> entry, objec
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ResetOrgname (CRef<objects::CSeq_entry> entry)
+void ResetOrgname (CRef<objects::CSeq_entry> entry)
 {
     if (!entry) {
         return;
@@ -649,7 +649,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ResetOrgname (CRef<objects::CSeq_entry> entry)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetFocus (CRef<objects::CSeq_entry> entry)
+void SetFocus (CRef<objects::CSeq_entry> entry)
 {
     if (!entry) {
         return;
@@ -670,7 +670,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetFocus (CRef<objects::CSeq_entry> entry)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ClearFocus (CRef<objects::CSeq_entry> entry)
+void ClearFocus (CRef<objects::CSeq_entry> entry)
 {
     if (!entry) {
         return;
@@ -691,7 +691,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ClearFocus (CRef<objects::CSeq_entry> entry)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetGenome (CRef<objects::CSeq_entry> entry, objects::CBioSource::TGenome genome)
+void SetGenome (CRef<objects::CSeq_entry> entry, objects::CBioSource::TGenome genome)
 {
     if (!entry) {
         return;
@@ -712,7 +712,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetGenome (CRef<objects::CSeq_entry> entry, obje
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtype subtype, string val)
+void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtype subtype, string val)
 {
     if (NStr::IsBlank(val)) {
         if (src.IsSetSubtype()) {
@@ -735,7 +735,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetSubSource (objects::CBioSource& src, objects:
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetSubSource (CRef<objects::CSeq_entry> entry, objects::CSubSource::TSubtype subtype, string val)
+void SetSubSource (CRef<objects::CSeq_entry> entry, objects::CSubSource::TSubtype subtype, string val)
 {
     if (!entry) {
         return;
@@ -756,7 +756,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetSubSource (CRef<objects::CSeq_entry> entry, o
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetChromosome (objects::CBioSource& src, string chromosome) 
+void SetChromosome (objects::CBioSource& src, string chromosome) 
 {
     if (NStr::IsBlank(chromosome)) {
         if (src.IsSetSubtype()) {
@@ -776,7 +776,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetChromosome (objects::CBioSource& src, string 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetChromosome (CRef<objects::CSeq_entry> entry, string chromosome)
+void SetChromosome (CRef<objects::CSeq_entry> entry, string chromosome)
 {
     if (!entry) {
         return;
@@ -797,7 +797,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetChromosome (CRef<objects::CSeq_entry> entry, 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTransgenic (objects::CBioSource& src, bool do_set) 
+void SetTransgenic (objects::CBioSource& src, bool do_set) 
 {
     if (do_set) {
         CRef<objects::CSubSource> sub(new objects::CSubSource(objects::CSubSource::eSubtype_transgenic, ""));
@@ -815,7 +815,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetTransgenic (objects::CBioSource& src, bool do
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetTransgenic (CRef<objects::CSeq_entry> entry, bool do_set)
+void SetTransgenic (CRef<objects::CSeq_entry> entry, bool do_set)
 {
     if (!entry) {
         return;
@@ -836,7 +836,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetTransgenic (CRef<objects::CSeq_entry> entry, 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetOrgMod (objects::CBioSource& src, objects::COrgMod::TSubtype subtype, string val)
+void SetOrgMod (objects::CBioSource& src, objects::COrgMod::TSubtype subtype, string val)
 {
     if (NStr::IsBlank(val)) {
         if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
@@ -856,7 +856,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetOrgMod (objects::CBioSource& src, objects::CO
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetOrgMod (CRef<objects::CSeq_entry> entry, objects::COrgMod::TSubtype subtype, string val)
+void SetOrgMod (CRef<objects::CSeq_entry> entry, objects::COrgMod::TSubtype subtype, string val)
 {
     if (!entry) {
         return;
@@ -877,7 +877,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetOrgMod (CRef<objects::CSeq_entry> entry, obje
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CAuthor> BuildGoodAuthor()
+CRef<objects::CAuthor> BuildGoodAuthor()
 {
     CRef<objects::CAuthor> author(new objects::CAuthor());
     author->SetName().SetName().SetLast("Last");
@@ -887,7 +887,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CAuthor> BuildGoodAuthor()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CPub> BuildGoodArticlePub()
+CRef<objects::CPub> BuildGoodArticlePub()
 {
     CRef<objects::CPub> pub(new objects::CPub());
 
@@ -908,7 +908,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CPub> BuildGoodArticlePub()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::CAuthor> author, int serial_number)
+CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::CAuthor> author, int serial_number)
 {
     CRef<objects::CPub> pub(new objects::CPub());
     if (!author) {
@@ -926,7 +926,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::
 
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void MakeSeqLong(objects::CBioseq& seq)
+void MakeSeqLong(objects::CBioseq& seq)
 {
     if (seq.SetInst().IsSetSeq_data()) {
         if (seq.GetInst().GetSeq_data().IsIupacna()) {
@@ -948,7 +948,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void MakeSeqLong(objects::CBioseq& seq)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetBiomol (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TBiomol biomol)
+void SetBiomol (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TBiomol biomol)
 {
     bool found = false;
 
@@ -966,7 +966,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetBiomol (CRef<objects::CSeq_entry> entry, obje
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetCompleteness(CRef<objects::CSeq_entry> entry, objects::CMolInfo::TCompleteness completeness)
+void SetCompleteness(CRef<objects::CSeq_entry> entry, objects::CMolInfo::TCompleteness completeness)
 {
     if (entry->IsSeq()) {
         bool found = false;
@@ -990,7 +990,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetCompleteness(CRef<objects::CSeq_entry> entry,
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodProtSeq(void)
+CRef<objects::CSeq_entry> BuildGoodProtSeq(void)
 {
     CRef<objects::CSeq_entry> entry = BuildGoodSeq();
 
@@ -1009,7 +1009,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodProtSeq(void)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id)
+CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id)
 {
     // make protein
     CRef<objects::CBioseq> pseq(new objects::CBioseq());
@@ -1040,7 +1040,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSe
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (string nuc_id, string prot_id)
+CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (string nuc_id, string prot_id)
 {
     CRef<objects::CSeq_feat> cds (new objects::CSeq_feat());
     cds->SetData().SetCdregion();
@@ -1052,7 +1052,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (st
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodNucProtSet(void)
+CRef<objects::CSeq_entry> BuildGoodNucProtSet(void)
 {
     CRef<objects::CBioseq_set> set(new objects::CBioseq_set());
     set->SetClass(objects::CBioseq_set::eClass_nuc_prot);
@@ -1094,7 +1094,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodNucProtSet(void)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void AdjustProtFeatForNucProtSet(CRef<objects::CSeq_entry> entry)
+void AdjustProtFeatForNucProtSet(CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_feat> prot;
     CRef<objects::CSeq_entry> prot_seq;
@@ -1115,7 +1115,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AdjustProtFeatForNucProtSet(CRef<objects::CSeq_e
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetNucProtSetProductName (CRef<objects::CSeq_entry> entry, string new_name)
+void SetNucProtSetProductName (CRef<objects::CSeq_entry> entry, string new_name)
 {
     CRef<objects::CSeq_feat> prot;
     CRef<objects::CSeq_entry> prot_seq;
@@ -1139,32 +1139,32 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetNucProtSetProductName (CRef<objects::CSeq_ent
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetCDSFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_feat> GetCDSFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
 {
     return entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetNucleotideSequenceFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_entry> GetNucleotideSequenceFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().front();
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetProteinSequenceFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_entry> GetProteinSequenceFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().back();
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
     return pentry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RetranslateCdsForNucProtSet (CRef<objects::CSeq_entry> entry, objects::CScope &scope)
+void RetranslateCdsForNucProtSet (CRef<objects::CSeq_entry> entry, objects::CScope &scope)
 {
     CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     CRef<objects::CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*cds, scope);
@@ -1175,7 +1175,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RetranslateCdsForNucProtSet (CRef<objects::CSeq_
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool partial3)
+void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool partial3)
 {
     // partials for CDS
     CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
@@ -1203,7 +1203,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetNucProtSetPartials (CRef<objects::CSeq_entry>
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucProtSetProteinId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
+void ChangeNucProtSetProteinId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
 {
     CRef<objects::CSeq_entry> pseq = GetProteinSequenceFromGoodNucProtSet(entry);
     pseq->SetSeq().SetId().front()->Assign(*id);
@@ -1216,7 +1216,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucProtSetProteinId (CRef<objects::CSeq_en
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucProtSetNucId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
+void ChangeNucProtSetNucId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
 {
     CRef<objects::CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
     nseq->SetSeq().SetId().front()->Assign(*id);
@@ -1231,7 +1231,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucProtSetNucId (CRef<objects::CSeq_entry>
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void MakeNucProtSet3Partial (CRef<objects::CSeq_entry> entry)
+void MakeNucProtSet3Partial (CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(59);
@@ -1251,7 +1251,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void MakeNucProtSet3Partial (CRef<objects::CSeq_entry
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
+void ChangeId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
 {
     if (annot && annot->IsFtable()) {
         objects::CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
@@ -1263,7 +1263,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_annot> annot, CRef<o
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeProductId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
+void ChangeProductId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
 {
     if (annot && annot->IsFtable()) {
         objects::CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
@@ -1277,7 +1277,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeProductId(CRef<objects::CSeq_annot> annot,
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
+void ChangeNucId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
 {
     if (!np_set || !np_set->IsSet()) {
         return;
@@ -1299,7 +1299,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeNucId(CRef<objects::CSeq_entry> np_set, CR
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeProtId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
+void ChangeProtId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
 {
     if (!np_set || !np_set->IsSet()) {
         return;
@@ -1319,7 +1319,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeProtId(CRef<objects::CSeq_entry> np_set, C
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_id> BuildRefSeqId(void)
+CRef<objects::CSeq_id> BuildRefSeqId(void)
 {
     CRef<objects::CSeq_id> id(new objects::CSeq_id());
     id->SetOther().SetAccession("NC_123456");
@@ -1327,7 +1327,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_id> BuildRefSeqId(void)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
+void ChangeId(CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
 {
     if (entry->IsSeq()) {
         entry->SetSeq().SetId().front()->Assign(*id);
@@ -1348,7 +1348,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_entry> entry, CRef<o
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_annot> annot, string suffix)
+void ChangeId(CRef<objects::CSeq_annot> annot, string suffix)
 {
     if (annot && annot->IsFtable()) {
         objects::CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
@@ -1363,7 +1363,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_annot> annot, string
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_entry> entry, string suffix)
+void ChangeId(CRef<objects::CSeq_entry> entry, string suffix)
 {
     if (entry->IsSeq()) {
         entry->SetSeq().SetId().front()->SetLocal().SetStr().append(suffix);
@@ -1391,7 +1391,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void ChangeId(CRef<objects::CSeq_entry> entry, string
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGenProdSetNucProtSet (CRef<objects::CSeq_id> nuc_id, CRef<objects::CSeq_id> prot_id)
+CRef<objects::CSeq_entry> BuildGenProdSetNucProtSet (CRef<objects::CSeq_id> nuc_id, CRef<objects::CSeq_id> prot_id)
 {
     CRef<objects::CSeq_entry> np = BuildGoodNucProtSet();
     CRef<objects::CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(np);
@@ -1409,7 +1409,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGenProdSetNucProtSet (
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakemRNAForCDS (CRef<objects::CSeq_feat> feat)
+CRef<objects::CSeq_feat> MakemRNAForCDS (CRef<objects::CSeq_feat> feat)
 {
     CRef<objects::CSeq_feat> mrna(new objects::CSeq_feat());
     mrna->SetData().SetRna().SetType(objects::CRNA_ref::eType_mRNA);
@@ -1418,7 +1418,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakemRNAForCDS (CRef<objects
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodGenProdSet()
+CRef<objects::CSeq_entry> BuildGoodGenProdSet()
 {
     CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
     entry->SetSet().SetClass(objects::CBioseq_set::eClass_gen_prod_set);
@@ -1445,13 +1445,13 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodGenProdSet()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetGenomicFromGenProdSet (CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_entry> GetGenomicFromGenProdSet (CRef<objects::CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().front();
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetmRNAFromGenProdSet(CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_feat> GetmRNAFromGenProdSet(CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
     CRef<objects::CSeq_feat> mrna = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
@@ -1459,13 +1459,13 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetmRNAFromGenProdSet(CRef<o
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> GetNucProtSetFromGenProdSet(CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_entry> GetNucProtSetFromGenProdSet(CRef<objects::CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().back();
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetCDSFromGenProdSet (CRef<objects::CSeq_entry> entry)
+CRef<objects::CSeq_feat> GetCDSFromGenProdSet (CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
     CRef<objects::CSeq_feat> cds = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
@@ -1473,7 +1473,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetCDSFromGenProdSet (CRef<o
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (objects::CBioseq& bioseq)
+void RevComp (objects::CBioseq& bioseq)
 {
     if (!bioseq.IsNa() || !bioseq.IsSetInst()
         || !bioseq.GetInst().IsSetSeq_data()
@@ -1518,7 +1518,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (objects::CBioseq& bioseq)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (objects::CSeq_loc& loc, size_t len)
+void RevComp (objects::CSeq_loc& loc, size_t len)
 {
     if (loc.IsInt()) {
         TSeqPos new_from = len - loc.GetInt().GetTo() - 1;
@@ -1539,7 +1539,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (objects::CSeq_loc& loc, size_t len)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (CRef<objects::CSeq_entry> entry)
+void RevComp (CRef<objects::CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
         RevComp(entry->SetSeq());
@@ -1556,7 +1556,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RevComp (CRef<objects::CSeq_entry> entry)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodDeltaSeq(void)
+CRef<objects::CSeq_entry> BuildGoodDeltaSeq(void)
 {
     CRef<objects::CSeq_entry> entry = BuildGoodSeq();
 
@@ -1574,7 +1574,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodDeltaSeq(void)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDeltaSeqGaps(CRef<objects::CSeq_entry> entry) 
+void RemoveDeltaSeqGaps(CRef<objects::CSeq_entry> entry) 
 {
     objects::CDelta_ext::Tdata::iterator seg_it = entry->SetSeq().SetInst().SetExt().SetDelta().Set().begin();
     while (seg_it != entry->SetSeq().SetInst().SetExt().SetDelta().Set().end()) {
@@ -1592,7 +1592,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDeltaSeqGaps(CRef<objects::CSeq_entry> ent
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void AddToDeltaSeq(CRef<objects::CSeq_entry> entry, string seq)
+void AddToDeltaSeq(CRef<objects::CSeq_entry> entry, string seq)
 {
     size_t orig_len = entry->GetSeq().GetLength();
     size_t add_len = seq.length();
@@ -1606,7 +1606,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AddToDeltaSeq(CRef<objects::CSeq_entry> entry, s
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildSegSetPart(string id_str)
+CRef<objects::CSeq_entry> BuildSegSetPart(string id_str)
 {
     CRef<objects::CSeq_entry> part(new objects::CSeq_entry());
     part->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
@@ -1620,7 +1620,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildSegSetPart(string id_s
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSegSet(void)
+CRef<objects::CSeq_entry> BuildGoodSegSet(void)
 {
     CRef<objects::CSeq_entry> segset(new objects::CSeq_entry());
     segset->SetSet().SetClass(objects::CBioseq_set::eClass_segset);
@@ -1680,7 +1680,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSegSet(void)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSet()
+CRef<objects::CSeq_entry> BuildGoodEcoSet()
 {
     CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
     entry->SetSet().SetClass(objects::CBioseq_set::eClass_eco_set);
@@ -1702,7 +1702,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSet()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_align> BuildGoodAlign()
+CRef<objects::CSeq_align> BuildGoodAlign()
 {
     CRef<objects::CSeq_align> align(new objects::CSeq_align());
     CRef<objects::CSeq_id> id1(new objects::CSeq_id());
@@ -1725,7 +1725,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_align> BuildGoodAlign()
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string id)
+CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string id)
 {
     CRef<objects::CSeq_graph> graph(new objects::CSeq_graph());
     graph->SetLoc().SetInt().SetFrom(0);
@@ -1739,7 +1739,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E_Choice desc_choice)
+void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E_Choice desc_choice)
 {
     EDIT_EACH_DESCRIPTOR_ON_SEQENTRY (dit, *entry) {
         if ((*dit)->Which() == desc_choice) {
@@ -1749,7 +1749,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDescriptorType (CRef<objects::CSeq_entry> 
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq_id> id)
+CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq_id> id)
 {
     CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
     feat->SetLocation().SetInt().SetId().Assign(*id);
@@ -1766,7 +1766,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> BuildGoodtRNA(CRef<objects::CSeq_id> id)
+CRef<objects::CSeq_feat> BuildGoodtRNA(CRef<objects::CSeq_id> id)
 {
     CRef<objects::CSeq_feat> trna = BuildtRNA(id);
     trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(8);
@@ -1776,7 +1776,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> BuildGoodtRNA(CRef<objects::
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_loc> MakeMixLoc (CRef<objects::CSeq_id> id)
+CRef<objects::CSeq_loc> MakeMixLoc (CRef<objects::CSeq_id> id)
 {
     CRef<objects::CSeq_loc> loc1(new objects::CSeq_loc());
     loc1->SetInt().SetFrom(0);
@@ -1793,7 +1793,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_loc> MakeMixLoc (CRef<objects::CSe
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeIntronForMixLoc (CRef<objects::CSeq_id> id)
+CRef<objects::CSeq_feat> MakeIntronForMixLoc (CRef<objects::CSeq_id> id)
 {
     CRef<objects::CSeq_feat> intron (new objects::CSeq_feat());
     intron->SetData().SetImp().SetKey("intron");
@@ -1804,7 +1804,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeIntronForMixLoc (CRef<ob
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT void SetSpliceForMixLoc (objects::CBioseq& seq)
+void SetSpliceForMixLoc (objects::CBioseq& seq)
 {
     seq.SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
     seq.SetInst().SetSeq_data().SetIupacna().Set()[17] = 'T';
@@ -1813,7 +1813,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetSpliceForMixLoc (objects::CBioseq& seq)
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeGeneForFeature (CRef<objects::CSeq_feat> feat)
+CRef<objects::CSeq_feat> MakeGeneForFeature (CRef<objects::CSeq_feat> feat)
 {
     CRef<objects::CSeq_feat> gene(new objects::CSeq_feat());
     gene->SetData().SetGene().SetLocus("gene locus");
@@ -1825,7 +1825,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeGeneForFeature (CRef<obj
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> AddGoodImpFeat (CRef<objects::CSeq_entry> entry, string key)
+CRef<objects::CSeq_feat> AddGoodImpFeat (CRef<objects::CSeq_entry> entry, string key)
 {
     CRef<objects::CSeq_feat> imp_feat = AddMiscFeature (entry, 10);
     imp_feat->SetData().SetImp().SetKey(key);
