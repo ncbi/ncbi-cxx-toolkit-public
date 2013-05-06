@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (object utilities)
+##################################
+
+LIB_PROJ = unit_test_util
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

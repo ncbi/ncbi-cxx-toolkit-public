@@ -126,9 +126,6 @@ private:
 	                      | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
-CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, size_t right_end = 10);
-CRef<CSeq_entry> BuildGoodSeq(void);
-CRef<CSeq_feat> AddGoodImpFeat (CRef<CSeq_entry> entry, string key);
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors);
 

@@ -148,6 +148,7 @@
 #  define NCBI_FORMAT_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORTS
 #  define NCBI_CLEANUP_EXPORTS
+#  define NCBI_UNIT_TEST_UTIL_EXPORTS
 #  define NCBI_VALERR_EXPORTS
 #  define NCBI_BLASTDB_FORMAT_EXPORTS
 #endif
@@ -895,6 +896,14 @@
 #  define NCBI_CLEANUP_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_CLEANUP_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library unit_test_util
+ */
+#ifdef NCBI_UNIT_TEST_UTIL_EXPORTS
+#  define NCBI_UNIT_TEST_UTIL_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_UNIT_TEST_UTIL_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library xalgoalign

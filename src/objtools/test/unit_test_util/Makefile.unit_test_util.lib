@@ -1,0 +1,12 @@
+# $Id$
+
+# Build library "xobjutil"
+###############################
+
+SRC = unit_test_util
+
+LIB = xunittestutil
+
+ASN_DEP = general biblio pub seq seqset submit
+
+WATCHERS = bollin

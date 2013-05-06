@@ -45,6 +45,7 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validator.hpp>
+#include <objtools/test/unit_test_util/unit_test_util.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -4851,7 +4852,7 @@ static const int k_NumKeyQualVals = sizeof (s_KeyQualVal) / sizeof (TKeyQualVal)
 
 BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
 {
-    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     STANDARD_SETUP_WITH_DATABASE
 
@@ -4861,8 +4862,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_WrongQualOnImpFeat)
     for (int i = 0; i < k_NumKeyQualVals; i++) {
         if (!NStr::Equal(s_KeyQualVal[i].key, last_key)) {
             scope.RemoveTopLevelSeqEntry(seh);
-            entry = BuildGoodSeq();
-            imp = AddGoodImpFeat(entry, s_KeyQualVal[i].key);
+            entry = unit_test_util::BuildGoodSeq();
+            imp = unit_test_util::AddGoodImpFeat(entry, s_KeyQualVal[i].key);
             seh = scope.AddTopLevelSeqEntry(*entry);
             last_key = s_KeyQualVal[i].key;
         }

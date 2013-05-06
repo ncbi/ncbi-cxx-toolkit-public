@@ -66,9 +66,12 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/test/unit_test_util/unit_test_util.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+using namespace unit_test_util;
 
 extern const char* sc_TestEntryRemoveOldName;
 extern const char *sc_TestEntryDontRemoveOldName;
@@ -151,144 +154,6 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
         BOOST_CHECK_EQUAL("unexpected cleanup", "old-name incorrectly removed");
     }
 
-}
-
-
-static void SetDbxref (CBioSource& src, string db, size_t id)
-{
-    CRef<CDbtag> dbtag(new CDbtag());
-    dbtag->SetDb(db);
-    dbtag->SetTag().SetId(id);
-    src.SetOrg().SetDb().push_back(dbtag);
-}
-
-static void RemoveDbxref (CBioSource& src, string db, size_t id)
-{
-    if (src.IsSetOrg()) {
-        EDIT_EACH_DBXREF_ON_ORGREF(it, src.SetOrg()) {            
-            if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
-                if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
-                    ERASE_DBXREF_ON_ORGREF(it, src.SetOrg());
-                }
-            }
-        }
-    }
-}
-
-
-static void SetTaxon (CBioSource& src, size_t taxon)
-{
-    if (taxon == 0) {
-        RemoveDbxref (src, "taxon", 0);
-    } else {
-        SetDbxref(src, "taxon", taxon);
-    }
-}
-
-
-static void AddGoodSource (CRef<CSeq_entry> entry)
-{
-    CRef<CSeqdesc> odesc(new CSeqdesc());
-    odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
-    odesc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
-    SetTaxon(odesc->SetSource(), 592768);
-    CRef<CSubSource> subsrc(new CSubSource());
-    subsrc->SetSubtype(CSubSource::eSubtype_chromosome);
-    subsrc->SetName("1");
-    odesc->SetSource().SetSubtype().push_back(subsrc);
-
-    if (entry->IsSeq()) {
-        entry->SetSeq().SetDescr().Set().push_back(odesc);
-    } else if (entry->IsSet()) {
-        entry->SetSet().SetDescr().Set().push_back(odesc);
-    }
-}
-
-
-static CRef<CSeqdesc> BuildGoodPubSeqdesc()
-{
-    CRef<CSeqdesc> pdesc(new CSeqdesc());
-    CRef<CPub> pub(new CPub());
-    pub->SetPmid((CPub::TPmid)1);
-    pdesc->SetPub().SetPub().Set().push_back(pub);
-
-    return pdesc;
-}
-
-
-static void AddGoodPub (CRef<CSeq_entry> entry)
-{
-    CRef<CSeqdesc> pdesc = BuildGoodPubSeqdesc();
-
-    if (entry->IsSeq()) {
-        entry->SetSeq().SetDescr().Set().push_back(pdesc);
-    } else if (entry->IsSet()) {
-        entry->SetSet().SetDescr().Set().push_back(pdesc);
-    }
-}
-
-
-static CRef<CSeq_entry> BuildGoodSeq(void)
-{
-    CRef<CBioseq> seq(new CBioseq());
-    seq->SetInst().SetMol(CSeq_inst::eMol_dna);
-    seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-    seq->SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
-    seq->SetInst().SetLength(60);
-
-    CRef<CSeq_id> id(new CSeq_id());
-    id->SetLocal().SetStr ("good");
-    seq->SetId().push_back(id);
-
-    CRef<CSeqdesc> mdesc(new CSeqdesc());
-    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
-    seq->SetDescr().Set().push_back(mdesc);
-
-    CRef<CSeq_entry> entry(new CSeq_entry());
-    entry->SetSeq(*seq);
-    AddGoodSource (entry);
-    AddGoodPub(entry);
-
-    return entry;
-}
-
-
-static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
-{
-    CRef<CSeq_annot> annot;
-
-    if (entry->IsSeq()) {
-        if (!entry->GetSeq().IsSetAnnot() 
-            || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
-            CRef<CSeq_annot> new_annot(new CSeq_annot());
-            entry->SetSeq().SetAnnot().push_back(new_annot);
-            annot = new_annot;
-        } else {
-            annot = entry->SetSeq().SetAnnot().front();
-        }
-    } else if (entry->IsSet()) {
-        if (!entry->GetSet().IsSetAnnot() 
-            || !entry->GetSet().GetAnnot().front()->IsFtable()) {
-            CRef<CSeq_annot> new_annot(new CSeq_annot());
-            entry->SetSet().SetAnnot().push_back(new_annot);
-            annot = new_annot;
-        } else {
-            annot = entry->SetSet().SetAnnot().front();
-        }
-    }
-    annot->SetData().SetFtable().push_back(feat);
-}
-
-
-CRef<CSeq_feat> BuildGoodFeat ()
-{
-    CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(59);
-    feat->SetData().SetImp().SetKey("misc_feature");
-
-    return feat;
 }
 
 
