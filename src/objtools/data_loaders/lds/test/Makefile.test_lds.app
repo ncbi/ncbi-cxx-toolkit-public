@@ -5,7 +5,7 @@ SRC = test_lds
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = ncbi_xloader_lds lds xobjread xobjutil bdb test_boost $(SOBJMGR_LIBS)
+LIB = ncbi_xloader_lds lds $(OBJREAD_LIBS) xobjutil bdb test_boost $(SOBJMGR_LIBS)
 LIBS = $(BERKELEYDB_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = test.data

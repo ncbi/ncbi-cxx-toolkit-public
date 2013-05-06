@@ -8,7 +8,7 @@ LIB = xngalign \
       xalgoalignnw xalgoalignutil xalgoseq \
       blastinput $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) \
       align_format gene_info xalnmgr \
-      xobjutil xobjread creaders taxon1  \
+      xobjutil $(OBJREAD_LIBS) taxon1  \
       xcgi xhtml xregexp $(PCRE_LIB) xqueryparse \
 	  $(GENBANK_LIBS)  $(QOBJMGR_ONLY_LIBS)  \
 

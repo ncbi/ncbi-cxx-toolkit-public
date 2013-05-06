@@ -8,7 +8,7 @@ APP = winmasker
 SRC = main win_mask_app
 LIB = xalgowinmask \
 	  xblast xnetblastcli xnetblast scoremat seqdb blastdb tables \
-	  xobjread xobjutil $(OBJMGR_LIBS)
+	  $(OBJREAD_LIBS) xobjutil $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)

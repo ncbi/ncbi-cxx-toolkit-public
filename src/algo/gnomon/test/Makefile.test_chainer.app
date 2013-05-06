@@ -5,7 +5,7 @@ SRC = test_chainer
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = xalgognomon xalgoseq xalnmgr xobjread xobjutil taxon1 creaders \
+LIB  = xalgognomon xalgoseq xalnmgr $(OBJREAD_LIBS) xobjutil taxon1 \
        tables xregexp $(PCRE_LIB) xconnect test_boost $(SOBJMGR_LIBS)
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

@@ -1,4 +1,4 @@
-#################################
+ #################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
@@ -621,7 +621,7 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
               einfo uilist ehistory
 
 # Object readers
-OBJREAD_LIBS = xobjread variation creaders
+OBJREAD_LIBS = xobjread variation creaders submit
 
 # formatting code
 XFORMAT_LIBS = xformat gbseq submit mlacli mla medlars pubmed
