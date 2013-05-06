@@ -1,3 +1,6 @@
+#ifndef NETSCHEDULE_SERVER_MISC__HPP
+#define NETSCHEDULE_SERVER_MISC__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -25,39 +28,34 @@
  *
  * Authors:  Denis Vakatov
  *
- * File Description: Network Storage middleman server exception
+ * File Description: NetStorage connection factory
  *
  */
 
-#include <ncbi_pch.hpp>
-
-#include "nst_exception.hpp"
-
-
-USING_NCBI_SCOPE;
+#include <string>
+#include <connect/server.hpp>
 
 
-const char *  CNetStorageServerException::GetErrCodeString() const
+BEGIN_NCBI_SCOPE
+
+class CNetStorageServer;
+
+
+class CNetStorageConnectionFactory : public IServer_ConnectionFactory
 {
-    switch (GetErrCode()) {
-        case eInvalidArgument:
-            return "eInvalidArgument";
-        case eInternalError:
-            return "eInternalError";
-        default:
-            return CException::GetErrCodeString();
-    }
-}
+public:
+    CNetStorageConnectionFactory(CNetStorageServer *  server):
+        m_Server(server)
+    {}
+
+    IServer_ConnectionHandler *  Create(void);
+
+private:
+    CNetStorageServer *     m_Server;
+};
 
 
-unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode() const
-{
-    switch (GetErrCode()) {
-        case eInvalidArgument:      return 400;
-        default:                    break;
-    }
+END_NCBI_SCOPE
 
-    /* Including eInternalError */
-    return 500;
-}
+#endif
 

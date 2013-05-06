@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include "nst_server_parameters.hpp"
+#include "nst_exception.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -41,15 +42,15 @@ USING_NCBI_SCOPE;
     reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
 
 
-static unsigned int     default_max_connections = 100;
-static unsigned int     default_max_threads = 25;
+static unsigned int     default_max_connections = 500;
+static unsigned int     default_max_threads = 50;
 static unsigned int     default_init_threads = 10;
-static unsigned short   default_port = 9600;
 static unsigned int     default_network_timeout = 10;
 static bool             default_log = true;
 
 
-void SNSTServerParameters::Read(const IRegistry& reg, const string& sname)
+void SNetStorageServerParameters::Read(const IRegistry &  reg,
+                                       const string &     sname)
 {
     max_connections = GetIntNoErr("max_connections", default_max_connections);
     max_threads     = GetIntNoErr("max_threads", default_max_threads);
@@ -63,7 +64,11 @@ void SNSTServerParameters::Read(const IRegistry& reg, const string& sname)
         init_threads = max_threads;
     }
 
-    port = (unsigned short) GetIntNoErr("port", default_port);
+    port = (unsigned short) GetIntNoErr("port", 0);
+    if (port <= 0 || port >= 65535)
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Server listening port number is not specified "
+                   "or invalid ([server]/port)");
 
     network_timeout = GetIntNoErr("network_timeout", default_network_timeout);
     if (network_timeout == 0) {
@@ -74,5 +79,6 @@ void SNSTServerParameters::Read(const IRegistry& reg, const string& sname)
     }
 
     log = GetBoolNoErr("log", default_log);
+    admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
 }
 

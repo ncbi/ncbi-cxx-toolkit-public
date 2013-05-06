@@ -1,3 +1,6 @@
+#ifndef NETSTORAGE_SERVER__HPP
+#define NETSTORAGE_SERVER__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -23,89 +26,77 @@
  *
  * ===========================================================================
  *
- * Authors:
- *   Dmitry Kazimirov
+ * Authors:  Denis Vakatov
  *
- * File Description:
- *   The CServer part of netstoraged - declarations.
+ * File Description: NetStorage threaded server
  *
  */
 
-#ifndef NCBI_NETSTORAGE_SERVER_HPP
-#define NCBI_NETSTORAGE_SERVER_HPP
+#include <string>
+#include <connect/server.hpp>
+
 
 #include "nst_server_parameters.hpp"
+#include "nst_precise_time.hpp"
 
-#include <connect/services/json_over_uttp.hpp>
-
-#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
+
+
 
 class CNetStorageServer : public CServer
 {
 public:
-    static CNetStorageServer* GetInstance();
+    CNetStorageServer();
+    virtual ~CNetStorageServer();
 
-    virtual bool ShutdownRequested();
+    void AddDefaultListener(IServer_ConnectionFactory *  factory);
+    void SetParameters(const SNetStorageServerParameters &  new_params);
 
-    void SetShutdownFlag(int signum);
+    virtual bool ShutdownRequested(void);
+    void SetShutdownFlag(int signum = 0);
 
-    void SetNSTParameters(SNSTServerParameters& params, bool bool_param);
-};
+    const bool &  IsLog() const
+    { return m_Log; }
 
-class CNetStorageConnectionHandler : public IServer_ConnectionHandler
-{
-public:
-    CNetStorageConnectionHandler(CNetStorageServer* server);
-    virtual ~CNetStorageConnectionHandler();
+    unsigned int  GetNetworkTimeout(void) const
+    { return m_NetworkTimeout; }
+    unsigned short  GetPort() const
+    { return m_Port; }
+    unsigned int  GetHostNetAddr() const
+    { return m_HostNetAddr; }
+    const CNSTPreciseTime &  GetStartTime(void) const
+    { return m_StartTime; }
+    string  GetSessionID(void) const
+    { return m_SessionID; }
 
-private:
-    enum EReadMode {
-        eReadMessages,
-        eReadRawData
-    };
+    bool IsAdminClientName(const string &  name) const;
 
-    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
+    static CNetStorageServer *  GetInstance(void);
 
-    virtual void OnOpen();
-    virtual void OnRead();
-    virtual void OnWrite();
-
-    bool ReadRawData(CUTTPReader::EStreamParsingEvent uttp_event);
-
-    virtual void OnMessage(const CJsonNode& message,
-        size_t* raw_data_size);
-    void OnData(const void* data, size_t data_size);
-
-    void SendMessage(const CJsonNode& message);
-    void SendOutputBuffer();
-
-    CNetStorageServer* m_Server;
-    char* m_ReadBuffer;
-    EReadMode m_ReadMode;
-    CUTTPReader m_UTTPReader;
-    CJsonOverUTTPReader m_JSONReader;
-
-    char* m_WriteBuffer;
-    CUTTPWriter m_UTTPWriter;
-    CJsonOverUTTPWriter m_JSONWriter;
-
-    CFastMutex m_OutputQueueMutex;
-    vector<CJsonNode> m_OutputQueue;
-};
-
-class CNetStorageConnectionFactory : public IServer_ConnectionFactory
-{
-public:
-    CNetStorageConnectionFactory(CNetStorageServer* server);
+protected:
+    virtual void Exit();
 
 private:
-    virtual IServer_ConnectionHandler* Create();
+    unsigned short              m_Port;
+    unsigned int                m_HostNetAddr;
+    mutable bool                m_Shutdown;
+    int                         m_SigNum;
+    bool                        m_Log;
+    string                      m_SessionID;
+    unsigned int                m_NetworkTimeout;
+    CNSTPreciseTime             m_StartTime;
+    vector<string>              m_AdminClientNames;
 
-    CNetStorageServer* m_Server;
+    static CNetStorageServer *  sm_netstorage_server;
+
+private:
+    string  x_GenerateGUID(void) const;
+    void x_SetAdminClientNames(const string &  client_names);
 };
+
 
 END_NCBI_SCOPE
 
-#endif // NCBI_NETSTORAGE_SERVER_HPP
+#endif
+

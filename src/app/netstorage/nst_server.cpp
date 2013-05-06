@@ -23,11 +23,9 @@
  *
  * ===========================================================================
  *
- * Authors:
- *   Dmitry Kazimirov
+ * Authors:  Denis Vakatov
  *
- * File Description:
- *   The CServer part of netstoraged - implementation.
+ * File Description: NetStorage threaded server
  *
  */
 
@@ -35,203 +33,101 @@
 
 #include "nst_server.hpp"
 
-#define READ_BUFFER_SIZE 6
-#define WRITE_BUFFER_SIZE 24
+
 
 USING_NCBI_SCOPE;
 
-CNetStorageServer* CNetStorageServer::GetInstance()
-{
-    static CNetStorageServer server;
 
-    return &server;
+CNetStorageServer *  CNetStorageServer::sm_netstorage_server = NULL;
+
+
+
+CNetStorageServer::CNetStorageServer()
+   : m_Port(0),
+     m_HostNetAddr(CSocketAPI::gethostbyname(kEmptyStr)),
+     m_Shutdown(false),
+     m_SigNum(0),
+     m_Log(true),
+     m_SessionID("s" + x_GenerateGUID()),
+     m_NetworkTimeout(0),
+     m_StartTime(CNSTPreciseTime::Current())
+{
+    sm_netstorage_server = this;
 }
 
-bool CNetStorageServer::ShutdownRequested()
+
+CNetStorageServer::~CNetStorageServer()
+{}
+
+
+void
+CNetStorageServer::AddDefaultListener(IServer_ConnectionFactory *  factory)
 {
-    return CServer::ShutdownRequested();
+    AddListener(factory, m_Port);
 }
 
-void CNetStorageServer::SetShutdownFlag(int /*signum*/)
+
+void
+CNetStorageServer::SetParameters(const SNetStorageServerParameters &  params)
 {
+    CServer::SetParameters(params);
+
+    m_Port = params.port;
+    m_Log = params.log;
+    m_NetworkTimeout = params.network_timeout;
+    x_SetAdminClientNames(params.admin_client_names);
 }
 
-void CNetStorageServer::SetNSTParameters(SNSTServerParameters& /*params*/,
-        bool /*bool_param*/)
+
+bool CNetStorageServer::ShutdownRequested(void)
 {
+    return m_Shutdown;
 }
 
-CNetStorageConnectionHandler::CNetStorageConnectionHandler(
-        CNetStorageServer* server) :
-    m_Server(server),
-    m_ReadBuffer(new char[READ_BUFFER_SIZE]),
-    m_ReadMode(CNetStorageConnectionHandler::eReadMessages),
-    m_WriteBuffer(new char[WRITE_BUFFER_SIZE]),
-    m_JSONWriter(m_UTTPWriter)
+
+void CNetStorageServer::SetShutdownFlag(int signum)
 {
-    m_UTTPWriter.Reset(m_WriteBuffer, WRITE_BUFFER_SIZE);
-}
-
-CNetStorageConnectionHandler::~CNetStorageConnectionHandler()
-{
-    delete[] m_WriteBuffer;
-    delete[] m_ReadBuffer;
-}
-
-EIO_Event CNetStorageConnectionHandler::GetEventsToPollFor(
-        const CTime** /*alarm_time*/) const
-{
-    return m_OutputQueue.empty() ? eIO_Read : eIO_ReadWrite;
-}
-
-void CNetStorageConnectionHandler::OnOpen()
-{
-}
-
-void CNetStorageConnectionHandler::OnRead()
-{
-    size_t n_read;
-
-    EIO_Status status = GetSocket().Read(m_ReadBuffer,
-            READ_BUFFER_SIZE, &n_read);
-
-    switch (status) {
-    case eIO_Success:
-        break;
-    case eIO_Timeout:
-        this->OnTimeout();
-        return;
-    case eIO_Closed:
-        this->OnClose(IServer_ConnectionHandler::eClientClose);
-        return;
-    default:
-        // TODO: ??? OnError -- this TODO is a verbatim copy from server.cpp
-        return;
-    }
-
-    m_UTTPReader.SetNewBuffer(m_ReadBuffer, n_read);
-
-    if (m_ReadMode == eReadMessages ||
-            ReadRawData(m_UTTPReader.GetNextEvent())) {
-        CJsonOverUTTPReader::EParsingEvent ret_code;
-
-        while ((ret_code = m_JSONReader.ProcessParsingEvents(m_UTTPReader)) ==
-                CJsonOverUTTPReader::eEndOfMessage) {
-            size_t raw_data_size = 0;
-            OnMessage(m_JSONReader.GetMessage(), &raw_data_size);
-            m_JSONReader.Reset();
-            if (raw_data_size > 0 &&
-                    !ReadRawData(m_UTTPReader.ReadRawData(raw_data_size)))
-                break;
-        }
-
-        if (ret_code != CJsonOverUTTPReader::eNextBuffer) {
-            // Parsing error
-            printf("Parsing error %d\n", int(ret_code));
-            // TODO close the reading end
-        }
+    if (!m_Shutdown) {
+        m_Shutdown = true;
+        m_SigNum = signum;
     }
 }
 
-void CNetStorageConnectionHandler::OnWrite()
+
+CNetStorageServer *  CNetStorageServer::GetInstance(void)
 {
-    for (;;) {
-        CJsonNode message;
-
-        {
-            CFastMutexGuard guard(m_OutputQueueMutex);
-
-            if (m_OutputQueue.empty())
-                break;
-
-            message = m_OutputQueue.front();
-            m_OutputQueue.erase(m_OutputQueue.begin());
-        }
-
-        m_JSONWriter.SetOutputMessage(message);
-
-        while (m_JSONWriter.ContinueWithReply())
-            SendOutputBuffer();
-
-        SendOutputBuffer();
-    }
+    return sm_netstorage_server;
 }
 
-bool CNetStorageConnectionHandler::ReadRawData(
-        CUTTPReader::EStreamParsingEvent uttp_event)
+
+void CNetStorageServer::Exit()
+{}
+
+
+string  CNetStorageServer::x_GenerateGUID(void) const
 {
-    switch (uttp_event) {
-    case CUTTPReader::eChunk:
-        OnData(m_UTTPReader.GetChunkPart(), m_UTTPReader.GetChunkPartSize());
-        m_ReadMode = eReadMessages;
-        return true;
+    // Naive implementation of the unique identifier.
+    Int8        pid = CProcess::GetCurrentPid();
+    Int8        current_time = time(0);
 
-    case CUTTPReader::eChunkPart:
-        OnData(m_UTTPReader.GetChunkPart(), m_UTTPReader.GetChunkPartSize());
-        /* FALL THROUGH */
-
-    default: /* case CUTTPReader::eEndOfBuffer: */
-        m_ReadMode = eReadRawData;
-        return false;
-    }
+    return NStr::NumericToString((pid << 32) | current_time);
 }
 
-void CNetStorageConnectionHandler::OnMessage(const CJsonNode& message,
-        size_t* raw_data_size)
+
+bool CNetStorageServer::IsAdminClientName(const string &  name) const
 {
-    *raw_data_size = 0;
-    SendMessage(message);
+    for (vector<string>::const_iterator  k(m_AdminClientNames.begin());
+         k != m_AdminClientNames.end(); ++k)
+        if (*k == name)
+            return true;
+    return false;
 }
 
-void CNetStorageConnectionHandler::OnData(
-        const void* /*data*/, size_t /*data_size*/)
+
+void CNetStorageServer::x_SetAdminClientNames(const string &  client_names)
 {
+    m_AdminClientNames.clear();
+    NStr::Tokenize(client_names, ";, ", m_AdminClientNames,
+                   NStr::eMergeDelims);
 }
 
-void CNetStorageConnectionHandler::SendMessage(const CJsonNode& message)
-{
-    CJsonNode output_message(message);
-
-    output_message.PushString("Hi! I'll be your server today.");
-
-    {
-        CFastMutexGuard guard(m_OutputQueueMutex);
-
-        m_OutputQueue.push_back(output_message);
-    }
-
-    m_Server->WakeUpPollCycle();
-}
-
-void CNetStorageConnectionHandler::SendOutputBuffer()
-{
-    const char* output_buffer;
-    size_t output_buffer_size;
-    size_t bytes_written;
-
-    do {
-        m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
-        for (;;) {
-            if (GetSocket().Write(output_buffer, output_buffer_size,
-                    &bytes_written) != eIO_Success) {
-                NCBI_THROW(CIOException, eWrite,
-                    "Error while writing to the socket");
-            }
-            if (bytes_written == output_buffer_size)
-                break;
-            output_buffer += bytes_written;
-            output_buffer_size -= bytes_written;
-        }
-    } while (m_JSONWriter.NextOutputBuffer());
-}
-
-CNetStorageConnectionFactory::CNetStorageConnectionFactory(
-        CNetStorageServer* server) :
-    m_Server(server)
-{
-}
-
-IServer_ConnectionHandler* CNetStorageConnectionFactory::Create()
-{
-    return new CNetStorageConnectionHandler(m_Server);
-}

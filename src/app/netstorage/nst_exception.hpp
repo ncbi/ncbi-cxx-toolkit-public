@@ -1,3 +1,6 @@
+#ifndef NETSTORAGE_EXCEPTION__HPP
+#define NETSTORAGE_EXCEPTION__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -23,34 +26,34 @@
  *
  * ===========================================================================
  *
- * Authors:
- *   Dmitry Kazimirov
+ * Authors:  Denis Vakatov
  *
- * File Description:
- *   NetStorage server exception type.
+ * File Description: Network Storage middleman server exception
  *
  */
 
-#ifndef NCBI_NETSTORAGE_EXCEPTION_HPP
-#define NCBI_NETSTORAGE_EXCEPTION_HPP
-
-#include <connect/connect_export.h>
 
 #include <corelib/ncbiexpt.hpp>
 
+
 BEGIN_NCBI_SCOPE
+
 
 class CNetStorageServerException : public CException
 {
-public:
-    enum EErrCode {
-        eInvalidArgument,
-        eInternalError
-    };
-    virtual const char* GetErrCodeString() const;
-    NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
+    public:
+        enum EErrCode {
+            eInvalidArgument,
+            eInternalError
+        };
+        virtual const char *  GetErrCodeString() const;
+        unsigned int ErrCodeToHTTPStatusCode() const;
+        NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
 };
+
 
 END_NCBI_SCOPE
 
-#endif  /* NCBI_NETSTORAGE_EXCEPTION_HPP */
+
+#endif /* NETSTORAGE_EXCEPTION__HPP */
+

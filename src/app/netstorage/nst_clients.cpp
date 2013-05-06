@@ -23,41 +23,84 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: Network Storage middleman server exception
+ * File Description:
+ *   NetStorage clients registry supporting facilities
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include "nst_exception.hpp"
+#include "nst_clients.hpp"
 
 
 USING_NCBI_SCOPE;
 
 
-const char *  CNetStorageServerException::GetErrCodeString() const
+
+CNSTClient::CNSTClient() :
+    m_Type(0),
+    m_Addr(0),
+    m_RegistrationTime(CNSTPreciseTime::Current()),
+    m_LastAccess(m_RegistrationTime),
+    m_NumberOfBytesWritten(0),
+    m_NumberOfBytesRead(0),
+    m_NumberOfBytesRelocated(0),
+    m_NumberOfObjectsWritten(0),
+    m_NumberOfObjectsRead(0),
+    m_NumberOfObjectsRelocated(0),
+    m_NumberOfSockErrors(0)
+{}
+
+
+
+bool CNSTClient::Touch(void)
 {
-    switch (GetErrCode()) {
-        case eInvalidArgument:
-            return "eInvalidArgument";
-        case eInternalError:
-            return "eInternalError";
-        default:
-            return CException::GetErrCodeString();
-    }
+    return false;
 }
 
 
-unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode() const
+string CNSTClient::Print(const string &  client_name) const
 {
-    switch (GetErrCode()) {
-        case eInvalidArgument:      return 400;
-        default:                    break;
+    return "";
+}
+
+
+string  CNSTClient::x_TypeAsString(void) const
+{
+    string      result;
+
+    if (m_Type & eReader)
+        result = "reader";
+
+    if (m_Type & eWriter) {
+        if (!result.empty())
+            result += " | ";
+        result += "writer";
     }
 
-    /* Including eInternalError */
-    return 500;
+    if (m_Type & eAdministrator) {
+        if (!result.empty())
+            result += " | ";
+        result += "administrator";
+    }
+
+    if (result.empty())
+        return "unknown";
+    return result;
 }
+
+
+
+
+CNSTClientRegistry::CNSTClientRegistry()
+{}
+
+
+size_t CNSTClientRegistry::size(void) const
+{
+    return m_Clients.size();
+}
+
 

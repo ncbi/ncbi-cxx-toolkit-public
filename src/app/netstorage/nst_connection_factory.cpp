@@ -25,39 +25,21 @@
  *
  * Authors:  Denis Vakatov
  *
- * File Description: Network Storage middleman server exception
+ * File Description: NetStorage connection factory
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include "nst_exception.hpp"
+#include "nst_handler.hpp"
+#include "nst_connection_factory.hpp"
 
 
 USING_NCBI_SCOPE;
 
 
-const char *  CNetStorageServerException::GetErrCodeString() const
+IServer_ConnectionHandler *  CNetStorageConnectionFactory::Create(void)
 {
-    switch (GetErrCode()) {
-        case eInvalidArgument:
-            return "eInvalidArgument";
-        case eInternalError:
-            return "eInternalError";
-        default:
-            return CException::GetErrCodeString();
-    }
-}
-
-
-unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode() const
-{
-    switch (GetErrCode()) {
-        case eInvalidArgument:      return 400;
-        default:                    break;
-    }
-
-    /* Including eInternalError */
-    return 500;
+    return new CNetStorageHandler(m_Server);
 }
 
