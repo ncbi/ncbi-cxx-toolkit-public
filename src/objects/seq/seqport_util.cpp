@@ -2909,7 +2909,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
     TSeqPos out_seq_pos = 0;
     if (out_seq_length) {
         out_seq_pos = *out_seq_length;
-        *out_seq_length += uLength;
+        *out_seq_length += uLenSav;
     }
     TSeqPos rbit = 2*(out_seq_pos % 4);
     TSeqPos lbit = 8 - rbit;
