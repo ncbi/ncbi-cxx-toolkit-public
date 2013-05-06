@@ -31,11 +31,6 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-//#include <serial/serialbase.hpp>
-//#include <objects/submit/Seq_submit.hpp>
-//#include <objects/seq/Bioseq.hpp>
-//#include <objects/seq/Seqdesc.hpp>
-//#include <objmgr/object_manager.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -109,7 +104,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (objects::CBioSource& src, string d
         objects::COrg_ref::TDb::iterator it = src.SetOrg().SetDb().begin();
         while (it != src.SetOrg().SetDb().end()) {
             if ((NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db)))
-                && (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (size_t)(*it)->GetTag().GetId() == id))) {
+                && (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id))) {
                 it = src.SetOrg().SetDb().erase(it);
             } else {
                 ++it;
@@ -129,7 +124,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetTaxon (objects::CBioSource& src, size_t taxon
 }
 
 
-NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> unit_test_util::BuildGoodSeq(void)
+NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSeq(void)
 {
     CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
     entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
@@ -300,7 +295,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDbxref (CRef<objects::CSeq_feat> feat, str
         objects::CSeq_feat::TDbxref::iterator it = feat->SetDbxref().begin();
         while (it != feat->SetDbxref().end()) {
             if ((NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) 
-                && (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (size_t)(*it)->GetTag().GetId() == id))) {
+                && (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id))) {
                 it = feat->SetDbxref().erase(it);
             } else {
                 ++it;
