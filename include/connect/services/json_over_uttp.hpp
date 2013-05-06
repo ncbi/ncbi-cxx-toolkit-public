@@ -123,11 +123,10 @@ public:
         eUTTPFormatError = 21,
         eChunkContinuationExpected = 22,
         eUnexpectedEOM = 23,
-        eExtraCharsPastEOM = 24,
-        eHashKeyMustBeString = 25,
-        eUnexpectedClosingBracket = 26,
-        eUnknownControlSymbol = 27,
-        eMessageTooLong = 28,
+        eHashKeyMustBeString = 24,
+        eUnexpectedClosingBracket = 25,
+        eUnknownControlSymbol = 26,
+        eMessageTooLong = 27,
     };
 
     CJsonOverUTTPReader();

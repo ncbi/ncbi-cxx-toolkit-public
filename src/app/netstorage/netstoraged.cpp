@@ -50,9 +50,10 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
-#include "nst_server_parameters.hpp"
+#include "nst_server.hpp"
+#include "nst_exception.hpp"
 #include "nst_version.hpp"
-
+#include "nst_server_parameters.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -171,7 +172,7 @@ int CNetStorageDApp::Run(void)
     }
 
     // [server] section
-    SNS_Parameters      params;
+    SNSTServerParameters params;
     params.Read(reg, "server");
 
     m_ServerAcceptTimeout.sec  = 1;
@@ -185,7 +186,8 @@ int CNetStorageDApp::Run(void)
     server->SetNSTParameters(params, false);
 
     // Use port passed through parameters
-    server->AddDefaultListener(new CNetStorageConnectionFactory(&*server));
+    server->AddListener(new CNetStorageConnectionFactory(&*server),
+            params.port);
     server->StartListening();
     LOG_POST(Message << Warning
                      << "Server listening on port " << params.port);

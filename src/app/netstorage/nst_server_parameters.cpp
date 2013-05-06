@@ -44,7 +44,7 @@ USING_NCBI_SCOPE;
 static unsigned int     default_max_connections = 100;
 static unsigned int     default_max_threads = 25;
 static unsigned int     default_init_threads = 10;
-static unsigned short   default_port = 9100;
+static unsigned short   default_port = 9600;
 static unsigned int     default_network_timeout = 10;
 static bool             default_log = true;
 

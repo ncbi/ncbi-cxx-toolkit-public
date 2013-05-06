@@ -359,8 +359,6 @@ CJsonOverUTTPReader::EParsingEvent
                 case '\n':
                     if (m_NodeStack.size() != 0)
                         return eUnexpectedEOM;
-                    if (reader.GetNextEvent() != CUTTPReader::eEndOfBuffer)
-                        return eExtraCharsPastEOM;
                     return eEndOfMessage;
 
                 case '[':

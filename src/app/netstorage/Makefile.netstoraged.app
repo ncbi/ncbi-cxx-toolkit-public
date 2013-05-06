@@ -5,7 +5,7 @@
 WATCHERS = satskyse
 
 APP = netstoraged
-SRC = netstoraged nst_server_parameters
+SRC = netstoraged nst_server_parameters nst_server nst_exception
 
 REQUIRES = MT Linux
 
