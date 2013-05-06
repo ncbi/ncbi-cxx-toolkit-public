@@ -3369,18 +3369,16 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
     }
 
     if(v.IsSetParent_id()) {
-        vr->SetId().Assign(v.GetParent_id());
+        vr->SetParent_id().Assign(v.GetParent_id());
     }
 
     if(v.IsSetSample_id() && v.GetSample_id().size() > 0) {
-        vr->SetId().Assign(*v.GetSample_id().front());
+        vr->SetSample_id().Assign(*v.GetSample_id().front());
     }
 
     if(v.IsSetOther_ids()) {
         ITERATE(CVariation::TOther_ids, it, v.GetOther_ids()) {
-            CRef<CDbtag> dbtag(new CDbtag);
-            dbtag->Assign(**it);
-            vr->SetOther_ids().push_back(dbtag);
+            vr->SetOther_ids().push_back(CRef<CDbtag>(SerialClone(**it)));
         }
     }
 
@@ -3584,18 +3582,16 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
     }
 
     if(vr.IsSetParent_id()) {
-        v->SetId().Assign(vr.GetParent_id());
+        v->SetParent_id().Assign(vr.GetParent_id());
     }
 
     if(vr.IsSetSample_id()) {
-        v->SetId().Assign(vr.GetSample_id());
+        v->SetSample_id().push_back(CRef<CObject_id>(SerialClone(vr.GetSample_id())));
     }
 
     if(vr.IsSetOther_ids()) {
         ITERATE(CVariation_ref::TOther_ids, it, vr.GetOther_ids()) {
-            CRef<CDbtag> dbtag(new CDbtag);
-            dbtag->Assign(**it);
-            v->SetOther_ids().push_back(dbtag);
+            v->SetOther_ids().push_back(CRef<CDbtag>(SerialClone(**it)));
         }
     }
 
