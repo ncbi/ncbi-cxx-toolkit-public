@@ -113,13 +113,10 @@ using namespace DiscRepNmSpc;
 using namespace feature;
 using namespace validator;
 
-vector <bool>   CRuleProperties :: srch_func_empty;
-vector <bool>   CRuleProperties :: except_empty;
-
 static CDiscRepInfo thisInfo;
-static CRef <CRuleProperties> rule_prop;
 static string strtmp(kEmptyStr);
 static CDiscTestInfo thisTest;
+static CSuspectRuleCheck rule_check;
 
 // ini. CDiscTestInfo
 bool CDiscTestInfo :: is_Aa_run;
@@ -179,21 +176,22 @@ bool CBioseq_on_SUSPECT_RULE :: CategoryOkForBioSource(const CBioSource* biosrc_
   else return true;
 };
 
+/*
 string CBioseq_on_SUSPECT_RULE :: ClickableItemTypeForNameCat (ESuspectNameType k)
 {
   if (k == eSuspectNameType_Typo) return "DISC_PRODUCT_NAME_TYPO";
   else if (k == eSuspectNameType_QuickFix) return "DISC_PRODUCT_NAME_QUICKFIX";
   else return "DISC_SUSPECT_PRODUCT_NAME";
 };
+*/
 
 //FindSuspectProductNamesCallback()
 void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList() 
 {
    const CSeq_feat* feat_in_use = 0;
    const CBioSource* biosrc_p = 0;
-   unsigned i, sz;
+   unsigned i;
    string pattern, test_name, test_desc;
-   sz = SusProdTermsLen();
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
@@ -206,6 +204,20 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
      }
      else continue;
 
+     for (i=0; i< thisInfo.susterm_summ.size(); i++) {
+       SuspectProductNameData& this_term = thisInfo.suspect_prod_terms[i];
+       if (!CategoryOkForBioSource(biosrc_p, this_term.fix_type)) continue;
+       if (prot.CanGetName()) {
+          ITERATE (list <string>, nit, prot.GetName()) {
+             if ( this_term.search_func && this_term.search_func(pattern, *nit)) {
+               thisInfo.test_item_list[GetName()].push_back(
+                  NStr::UIntToString((unsigned)this_term.fix_type) + "$" 
+                  + NStr::UIntToString(i) + "#" + GetDiscItemText(*feat_in_use));
+             }
+          }
+       }
+     }
+/*
      for (i = 0; i < sz; i++) {
        const SuspectProductNameData& this_term = GetSusProdTerm(i);
        pattern = this_term.pattern; 
@@ -228,11 +240,63 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
           }
        }
      }
+*/
    }
 };
 
-void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
+const char* suspect_name_category_names[] = {
+  "Unknown category",
+  "Typo",
+  "Quick fix",
+  "Organelles not appropriate in prokaryote",
+  "Suspicious phrase; should this be nonfunctional?",
+  "May contain database identifier more appropriate in note; remove from product name",
+  "Remove organism from product name",
+  "Possible parsing error or incorrect formatting; remove inappropriate symbols",
+  "Implies evolutionary relationship; change to -like protein",
+  "Add protein to the end of product name",
+  "Unknown category"
+};
+
+void CBioseq_on_SUSPECT_RULE :: GetReportForStaticList(CRef <CClickableItem>& c_item)
 {
+   Str2Strs fixtp2term_feats, term2feats;
+   GetTestItemList(c_item->item_list, fixtp2term_feats);
+   c_item->item_list.clear();
+
+   unsigned fixtp, cnt;
+   string pattern, test_name, test_desc;
+   ITERATE (Str2Strs, fit, fixtp2term_feats) {
+      fixtp = NStr::StringToUInt(fit->first);
+      CRef <CClickableItem> name_cat_citem (new CClickableItem);
+
+      term2feats.clear(); 
+      GetTestItemList(fit->second, term2feats, "#");
+      ITERATE (Str2Strs, tit, term2feats) {
+        unsigned term_idx = NStr::StringToUInt(tit->first);
+        pattern = thisInfo.susterm_summ[term_idx][0];
+        test_name = thisInfo.susterm_summ[term_idx][1];
+        test_desc = thisInfo.susterm_summ[term_idx][2];
+        cnt = tit->second.size();
+        if (test_desc == "contain") {
+                strtmp = GetContainsComment(cnt, "protein name") + " '" + pattern + "'";
+        }
+        else strtmp = GetNoun(cnt, "protein name") + " "
+                      + GetOtherComment(cnt, test_desc + 's', test_desc) + " with " + pattern;
+
+        AddSubcategories(name_cat_citem, test_name, tit->second, strtmp,strtmp,e_OtherComment);
+      }
+
+      AddSubcategories(c_item, test_name, name_cat_citem->item_list, 
+       suspect_name_category_names[fixtp], suspect_name_category_names[fixtp], e_OtherComment);
+   }
+
+   c_item->description = GetContainsComment(c_item->item_list.size(), "product_name") 
+                          + "suspect phrase or characters";
+   
+   fixtp2term_feats.clear();
+   term2feats.clear();
+/*
    Str2Strs test2ls;
    GetTestItemList(c_item->item_list, test2ls);
    c_item->item_list.clear();
@@ -273,13 +337,75 @@ void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
    }
    c_item->description = GetContainsComment(c_item->item_list.size(), "protein name")
                            + "suspect phrase or characters";
+*/
 };
 
-
+// FindSuspectProductNamesWithRulesCallback
 void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
 {
-   
+   const CSeq_feat* feat_in_use = 0;
+   const CBioSource* biosrc_p = 0;
+   string prot_nm;
+   unsigned rule_idx;
+   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+     const CSeqFeatData& sf_dt = (*it)->GetData();
+     const CProt_ref& prot = sf_dt.GetProt();
+
+     // add coding region rather than protein
+     if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_prot) {
+         feat_in_use = GetCDSForProduct(m_bioseq_hl);
+         // find BioSource, to check whether we want to run all categories
+         biosrc_p = GetBioSource (m_bioseq_hl);
+     }
+     else continue;
+     
+     if (prot.CanGetName()) {
+       prot_nm = *(prot.GetName().begin()); 
+       rule_idx = 0;
+       ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
+         if (rule_check.DoesStringMatchSuspectRule (prot_nm, *feat_in_use, **rit)) {
+              thisInfo.test_item_list[GetName()].push_back(
+                   NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
+                   + NStr::UIntToString(rule_idx++) + "@" + GetDiscItemText(*feat_in_use));
+         }
+       }
+     }
+   }
 };
+
+void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
+{
+   Str2Strs fixtp2rule_feats, rule2feats;
+   GetTestItemList(c_item->item_list, fixtp2rule_feats);
+   c_item->item_list.clear();
+
+   string test_name, fixtp_name, summ;
+   unsigned rule_idx, fixtp;
+   ITERATE (Str2Strs, fit, fixtp2rule_feats) {
+     fixtp = NStr::StringToUInt(fit->first); 
+     CRef <CClickableItem> name_cat_citem (new CClickableItem);
+
+     rule2feats.clear();
+     GetTestItemList(fit->second, rule2feats, "@");
+     ITERATE (Str2Strs, rit, rule2feats) {
+       rule_idx = NStr::StringToUInt(rit->first);
+       test_name = thisInfo.susrule_summ[rule_idx][0];
+       fixtp_name = thisInfo.susrule_summ[rule_idx][1];
+       summ = thisInfo.susrule_summ[rule_idx][2];
+       AddSubcategories(name_cat_citem, test_name, rit->second, "feature" + summ, 
+                                                 "features " + summ,  e_OtherComment);
+     } 
+ 
+     AddSubcategories(c_item, GetName(), name_cat_citem->item_list,fixtp_name, 
+                          fixtp_name, e_OtherComment);
+   }   
+
+   c_item->description = GetContainsComment(c_item->item_list.size(), "product_name") 
+                            + "suspect phrase or characters";
+   fixtp2rule_feats.clear();
+   rule2feats.clear();
+};
+
 
 void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
 {
@@ -288,17 +414,18 @@ void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
    else FindSuspectProductNamesWithRules();
 };
 
-/*
-void CBioseq_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   if (thisInfo.suspect_prod_rules->Get().empty()) GetReportForStaticList(c_item);
+   else GetReportForRules(c_item);
 };
-*/
+
+
 void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
    const CBioSource* biosrc = GetBioSource(bioseq_hl); // biosrc of seqdesc
    if (biosrc) return;
-   CSuspectRuleCheck rule_check;
 
    int genome = biosrc->GetGenome();
    if (genome == (int)CBioSource::eGenome_mitochondrion
@@ -1869,7 +1996,7 @@ string CBioseqTestAndRepData :: GetRNAProductString(const CSeq_feat& seq_feat)
              if (seq_feat.CanGetQual()
                     && (rna_str.empty() || rna_str== "ncRNA" || rna_str== "tmRNA"
                                                                 || rna_str== "misc_RNA"))
-                 rna_str = CSuspectRuleCheck::GetFirstGBQualMatch(
+                 rna_str = rule_check.GetFirstGBQualMatch(
                                                     seq_feat.GetQual(), (string)"product");
              break;
        case CRNA_ref::C_Ext::e_TRNA:
@@ -2334,17 +2461,17 @@ string CBioseqTestAndRepData :: GetQualFromFeatureAnyType(const CSeq_feat& seq_f
   // db-xref
   if ((is_legal_qual && legal_qual == eFeat_qual_legal_db_xref)
           || (is_illegal_qual 
-                  && CSuspectRuleCheck::DoesStringMatchConstraint ("db_xref", *illegal_qual)))
+                  && rule_check.DoesStringMatchConstraint ("db_xref", *illegal_qual)))
   {
     if (seq_feat.CanGetDbxref()) return(GetDbxrefString (seq_feat.GetDbxref(), str_cons));
   }
   // exception
   if ((is_legal_qual && legal_qual == eFeat_qual_legal_exception)
           || (is_illegal_qual 
-                && CSuspectRuleCheck::DoesStringMatchConstraint ("exception", *illegal_qual)))
+                && rule_check.DoesStringMatchConstraint ("exception", *illegal_qual)))
   {
      if (seq_feat.CanGetExcept_text() && !(str = seq_feat.GetExcept_text()).empty()
-                           && CSuspectRuleCheck::DoesStringMatchConstraint(str, *str_cons));
+                           && rule_check.DoesStringMatchConstraint(str, *str_cons));
      else str = kEmptyStr;
      return str;
   }
@@ -2706,8 +2833,8 @@ void CBioseqTestAndRepData :: TestOnMRna(const CBioseq& bioseq)
     if (mRNA.Empty())
       thisInfo.test_item_list[GetName_no_mrna()].push_back(GetDiscItemText(**it));
     else {
-      feat_prod = CSuspectRuleCheck :: GetQualFromFeature(**it, *feat_field);
-      mRNA_prod = CSuspectRuleCheck :: GetQualFromFeature(*mRNA, *feat_field);
+      feat_prod = rule_check.GetQualFromFeature(**it, *feat_field);
+      mRNA_prod = rule_check.GetQualFromFeature(*mRNA, *feat_field);
       if (feat_prod != mRNA_prod && !ProductsMatchForRefSeq(feat_prod, mRNA_prod))
          thisInfo.test_item_list[GetName_no_mrna()].push_back(GetDiscItemText(**it));
       if (!has_qual_ids) {
@@ -6735,520 +6862,6 @@ void CBioseq_DUPLICATE_GENE_LOCUS :: GetReport(CRef <CClickableItem>& c_item)
 }; // DUPLICATE_GENE_LOCUS
 
 
-/*
-bool CBioseq_SUSPECT_PRODUCT_NAMES :: IsSearchFuncEmpty(const CSearch_func& func)
-{
-  if (func.IsString_constraint()) {
-     const CString_constraint& str_cons = func.GetString_constraint();
-     if (str_cons.GetIs_all_lower() || str_cons.GetIs_all_lower() || str_cons.GetIs_all_punct())
-           return false;
-     else if (!(str_cons.CanGetMatch_text()) return true;
-     else return false;
-  }
-  else if (func.IsPrefix_and numbers()) {
-      if (func.GetPrefix_and_numbers().empty()) return true;
-      else return false;
-  }
-  else return false;
-};
-
-*/
-
-
-
-/*
-void CBioseq_SUSPECT_PRODUCT_NAMES :: MatchesSearchFunc(const string& str, const CSearch_func& func)
-{
-    if (func.IsString_constrain()) {
-        bool rval = DoesSingleStringMatchConstraint(str, func.GetString_constrain());
-        rval = (func.GetString_constrain().GetNot_present()) ? !rval : rval;
-        return rval;
-    }
-    else if (func.IsContains_plural()) return (StringMayContainPlural (str));
-    else if (func.IsN_or_more_brackets_or_parentheses())
-           return( ContainsNorMoreSetsOfBracketsOrParentheses (str, search->data.intvalue));
-    else if (func.IsThree_numbers()) return(ContainsThreeOrMoreNumbersTogether (str));
-    else if (func.IsUnderscore()) return(StringContainsUnderscore (str));
-    else if (func.IsPrefix_and_numbers()) 
-              return( IsPrefixPlusNumbers (func.Getprefix_and_number(), str));
-    else if (func.IsAll_caps()) return (IsAllCaps (str));
-    else if (func.IsUnbalanced_paren()) return (StringContainsUnbalancedParentheses (str));
-    else if (func.IsToo_long()) {
-      if ((string::npos != str.fin("bifunctional")) 
-             && (string::npos == str.find("multifunctional"))
-             && (str.size() > func.GetToo_long()) ) 
-          return true;
-      else return false;
-    }
-    else if (func.IsHas_term()) return (ProductContainsTerm (search->data.ptrvalue, str));
-    else return false;
-};
-*/
-
-
-
-
-/*
-string CBioseq_SUSPECT_PRODUCT_NAMES :: SummarizeStringConstraint(const CString_constraint& constraint)
-{
-
-   return("not set yet");
-};
-
-
-
-
-string CBioseq_SUSPECT_PRODUCT_NAMES :: SummarizeSuspectRule(const CSuspect_rule& rule)
-{
-   string summ; 
-
-   if (rule.CanGetDescription()) return (rule.GetDescription());
-   else {
-     const CSearch_func& func = rule.GetFind();
-     if (func.IsString_constraint()) 
-            summ = SummarizeStringConstraint(func.GetString_constraint());
-     else if (func.IsContains_plural()) 
-             summ = "May contain plural";
-     else if (func.IsN_or_more_brackets_or_parentheses())
-             summ = "Contains " 
-                     + NStr::IntToString(func.GetN_or_more_brackets_or_parentheses())
-                     + " or more brackets or parentheses";
-     else if (func.IsThree_numbers()) summ = "Three or more numbers together";
-     else if (func.IsUnderscore()) summ = "Contains underscore";
-     else if (func.IsPrefix_and_numbers())
-              summ = "Is '" + func.GetPrefix_and_numbers() + "' followed by numbers";
-     else if (func.IsAll_caps()) summ = "Is all capital letters";
-     else if (func.IsUnbalanced_paren()) summ = "Contains unbalanced brackets or parentheses";
-     else if (func.IsToo_long()) 
-              summ = "Is longer than " + NStr::IntToString(func.GetToo_long()) + " characters";
-     else if (func.IsHas_term())
-              summ = "Contains '" + func.GetHas_term() + "'";
-     else summ = "Unknown search function";
-   } 
-   return summ;
-}
-
-
-
-
-void CBioseq_SUSPECT_PRODUCT_NAMES :: DoesStringMatchConstraint(vector <string>& prot_nm, vector <bool>& match_ls, const CString_constraint& str_cst)
-{
-   if ( (!(str_cst.CanGetMatch_text()) || str_cst.GetMatch_text().empty()) ) {
-
-       NON_CONST_ITERATE(vector <bool>, it, match_ls) *(it) = true;
-       return;
-   }
-
-   unsigned i=0, cnt = 0;
-   ITERATE(vector <string>, it, prot_nm) {
-       if ((*it).empty()) { match_ls[i++] = false; cnt++;};
-   }
-   if (cnt == prot_nm.size()) return;
-
-   if (str_cst.GetIgnore_weasel()) 
-         NON_CONST_ITERATE (vector <string>, it, prot_nm)
-             *it = SkipWeasel(*it);
-   
-   i=0;
-   if (str_cst.GetIs_all_caps()) 
-     NON_CONST_ITERATE (vector <bool>, it, match_ls)
-        if (!(*it)) i++;
-        else if (!IsAllCaps(prot_nm[i++])) { (*it) = false; cnt++;};
-   if (cnt == prot_nm.size()) return;
-
-   i = 0;
-   if (str_cst.GetIs_all_lower()) 
-       NON_CONST_ITERATE (vector <bool>, it, match_ls) 
-          if (!(*it)) i++;
-          else if (!IsAllLowerCase(prot_nm[i++])) { (*it) = false; cnt++; }
-   if (cnt == prot_nm.size()) return;
-
-   if (!(str_cst.CanGetMatch_text())) {
-       NON_CONST_ITERATE (vector <bool>, it, match_ls) {
-            (*it) = true;
-       }
-       return;
-   }
-
-   if (str_cst.GetMatch_location() !=eString_location_inlist 
-                 && !(str_cst.CanGetIgnore_words())){
-//         AdVancedStringMatch(prot_nm, str_cst);
-         return;
-   } 
-
-   string tmp_match = str_cst.GetMatch_text();
-   if (str_cst.GetIgnore_weasel()) {
-       strtmp = SkipWeasel(str_cst.GetMatch_text());
-       str_cst.SetMatch_text("!!!");
-   }
-   
-   string pattern( str_cst.GetMatch_text() ); 
-   if (eString_location_inlist != str_cst.GetMatch_Location()
-        && ( str_cst.GetIgnore_space() || str_cst.GetIgnore_punct()) ) {
-      StripUnimportantCharacters(prot_nm,str_cst.GetIgnore_space(), str_cst.GetIgnore_punct());
-   }
-
-   vector <size_t> pFound;
-   pFound.reserve(prot_nm.size());
-   i=0;
-   if (str_cst.GetMatch_location != eString_location_inlist) {
-     if (str_cst.GetCase_sensitive()) {
-         NON_CONST_ITERATE (vector <size_t>, it, pFound) {
-           if (match_ls[i] < 0) (*it) = prot_nm[i].find(pattern);
-           else (*it) = string::npos; 
-           i++;
-         }
-     }
-     else {
-         NON_CONST_ITERATE (vector <size_t>, it, pFound) {
-           if (match_ls[i] < 0) (*it) = NStr::FindNoCase(prot_nm[i], pattern);
-           else (*it) = string::npos;
-           i++;
-         }
-     }
-   }
-   else {
-     if (str_cst.GetCase_sensitive()) {
-         NON_CONST_ITERATE (vector <size_t>, it, pFound) {
-           if (match_ls[i]) (*it) = pattern.find(prot_nm[i]);
-           else (*it) = string::npos;
-           i++;
-         }
-     }
-     else {
-         NON_CONST_ITERATE (vector <size_t>, it, pFound) {
-           if (match_ls[i]) (*it) = NStr::FindNoCase(pattern, prot_nm[i]);
-           else (*it) = string::npos;
-           i++;
-         }
-     }
-
-   }
- 
-   i=0;
-   bool if_match;
-   switch (str_cst.GetMatch_location()) {
-      case eString_location_contains:
-         NON_CONST_ITERATE (vector <int>, it, match_ls) {
-            if (*it < 0) {
-                if (string::npos == pFound[i])  {
-                      (*it) = 0;
-                      cnt++;
-                }
-            }
-            i++;
-         }
-         if (cnt < prot_nm.size()) {
-             if (str_cst.GetWhole_word()) {
-                i=0;
-                bool if_found, if_match;
-                NON_CONST_ITERATE (vector <int>, it, match_ls) {
-                  if (*it < 0) {
-                    strtmp = prot_nm[i];
-                    if_found = pFound[i];
-                    if_match = IsWholeWordMatch(strtmp, if_found, pattern.size());
-                    while (string::npos != if_found && !if_match) {
-                        if (str_cst.GetCase_sensitive()) if_found = strtmp.find(pattern);
-                        else if_found = NStr::FinNoCase(strtmp, pattern);
-                    } 
-                    *it = if_match ? 1 : 0; 
-                  }
-                  i++;
-                }
-             };
-             else NON_CONST_ITERATE (vector <int>, it, match_ls) if (*it < 0) *it = 1;
-          }
-          break;
-      case eString_location_starts:
-          NON_CONST_ITERATE (vector <bool>, it, match_ls) {
-             if (*it) {
-                if (!pFound[i]) {
-                   if (str_cst.GetWhole_word())
-                        *it = true; //IsWholeWordMatch(prot_nm[i], pFound[i], pattern.size());
-                   else *it = true;
-                }
-             }
-             i++;
-          }; 
-          break;
-      case eString_location_ends:
-          i = 0;
-          string char_after;
-          bool if_found;
-          NON_CONST_ITERATE(vector <bool>, it, match_ls) {
-            if (*it < 0) {
-              bool rval = false;
-              if_found = pFound[i]; 
-              while (string::npos != if_found && !rval) {
-                 if ( (if_found + pattern.size()) > prot_nm.size()) {
-                   if (str_cst.GetWhole_word())
-                      match_ls[i] = (IsWholeWordMatch(prot_nm, if_found, pattern.size()))? 1: 0;
-                   else match_ls[i] = 1;
-                   if_found = string::npos;
-                 }
-                 else {
-                   if (str_cst.GetCase_sensitive())
-                        if_found = prot_nm.substr(if_found+1).find(pattern);
-                   else if_found = NStr::FindNoCase(pro_nm.substr(if_found+1), pattern);
-                 }
-              }
-           }
-           i++;  
-          };
-          break;
-      case eString_location_equals:
-          if (str_cst.GetCase_sensitive()) {
-             NON_CONST_ITERATE (vector <bool>, it, match_ls) {
-                if (*it) {
-                   if (prot_nm[i] == pattern) *it = true;
-                   else *it = false;
-                }
-                i++;
-             }
-          }
-          else {
-             NON_CONST_ITERATE (vector <bool>, it, match_ls) {
-                if (*it) {
-                    if (!NStr::CompareNocase(prot_nm[i], pattern)) *it = true;
-                    else *it = false;
-                }
-                i++;
-             }
-          }
-          break;
-      case eString_location_inlist:
-          i=0; 
-          NON_CONST_ITERATE (vector <bool>, it, match_ls) {
-            if (*it) {
-               if (pFound[i] == string::npos) {
-                   *it = false;
-                   cnt ++;
-               }
-            } 
-          }
-          if (cnt < prot_nm.size()) {
-             i = 0;
-             NON_CONST_ITERATE (vector <bool>, it, match_ls) {
-                if (*it) {
-                   strtmp = prot_nm[i];
-                   is_found = pFound[i];
-                   is_match = IsWholeWordMatch(pattern, is_found, strtmp.size())
-                   while (!is_match && string::npos != is_found) {
-                      if (str_cst.GetCase_sensitive()) 
-                            is_found = pattern.substr(is_found+1,strtmp);
-                      else is_found = NStr::FindNoCase(pattern.substr(is_found+1), strtmp);
-                      if (string::npos != is_found)
-                        is_match = IsWholeWordMatch(pattern, is_found, strtmp.size());
-                   }
-                  if (!is_match) {
-                      match_ls = IsStringInSpanInList(strtmp, pattern);
-                  };
-                }
-                i++; 
-             }
-          }
-          break;
-   }
-
-   str_cst.SetMatch_text(tmp_match);
-
-   if (str_cst.GetNot_present()) 
-        NON_CONST_ITERATE (vector <bool>, it, match_ls) *it = !(*it);
-};
-
-
-
-
-
-
-void CBioseq_SUSPECT_PRODUCT_NAMES :: MatchesSrchFunc(vector <string>& prot_nm, vector <bool>& match_ls, const CSearch_func& func)
-{
-  if (func.IsString_constraint())
-        DoesStringMatchConstraint(prot_nm, func->GetString_constraint());
-  
-};
-
-
-
-void CBioseq_SUSPECT_PRODUCT_NAMES :: DoesObjectMatchStringConstraint (vector <CSeq_feat*> seq_feats, vector <bool> match_ls, const CString_constraint& str_cst)
-{
-};
-
-
-void CBioseq_SUSPECT_PRODUCT_NAMES :: DoesObjectMatchConstraint(const CRef < CConstraint_choice>& cst, vector <const CSeq_feat*> seq_feats, vector <bool> match_ls) 
-{
-  if (cst->IsString()) {
-      DoesObjectMatchStringConstraint(seq_feats, match_ls, cst->GetString());
-  }
-};
-
-
-
-void CBioseq_SUSPECT_PRODUCT_NAMES :: DoesObjectMatchConstraintChoiceSet(const CConstraint_choice_set& feat_cst, vector <const CSeq_feat*>& seq_feats, vector <bool>& match_ls)
-{
-   const list < CRef < CConstraint_choice > >& cst_ls = feat_cst.Get();
-   ITERATE (CConstraint_choice_set::Tdata, it, cst_ls) {
-      DoesObjectMatchConstraint(*it, seq_feats, match_ls);
-   }
-};
-
-
-
-
-
-
-void CBioseq_SUSPECT_PRODUCT_NAMES :: TestOnObj(const CBioseq& bioseq)  // with rules
-{
-  const CSuspect_rule_set::Tdata& rules = thisInfo.suspect_rules->Get();
-  vector < vector <CSeq_feat*> > feature_ls;
-
-  unsigned k=0;
-  CSeq_feat* seq_feat;
-  vector <string> prot_nm;
-  vector <const CSeq_feat*> seq_feat_ls;
-
-  ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
-     seq_feat = const_cast <CSeq_feat*> (*it);
-     const CProt_ref& prot = seq_feat->GetData().GetProt();
-     if (prot.CanGetName()) {
-       if ((*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-          const CSeq_feat* cds = GetCDSForProduct(bioseq, thisInfo.scope);
-          if (cds) seq_feat = const_cast <CSeq_feat*> (cds);
-       }
-       prot_nm.push_back(*(prot.GetName().begin()));
-       seq_feat_ls.push_back(const_cast <const CSeq_feat*>(seq_feat));
-     }
-  }
- 
-  vector <bool> match_ls;
-  match_ls.reserve(prot_nm.size());
-
-  k = 0; 
-  ITERATE (CSuspect_rule_set::Tdata, it, rules) {
-     match_ls.clear();
-     if (!(rule_prop->srch_func_empty[k])) MatchesSrchFunc(prot_nm, match_ls, (*it)->GetFind());
-     else if (!(rule_prop->except_empty[k])) MatchesSrchFunc(prot_nm, match_ls,(*it)->GetExcept());
-     else NON_CONST_ITERATE (vector <bool>, jt, match_ls) *jt = true;
-     
-     if ( (*it)->CanGetFeat_constraint() )
-         DoesObjectMatchConstraintChoiceSet((*it)->GetFeat_constraint(), seq_feat_ls, match_ls);
-
-     //ITERATE (match_ls) -> suspect_prod_name_feat[k]
-  }
-};
-
-*/
-
-
-
-
-/*  previous version
-void CBioseq_SUSPECT_PRODUCT_NAMES :: TestOnObj(const CBioseq& bioseq)  // with rules
-{
-  const CSuspect_rule_set::Tdata& rules = thisInfo.suspect_rules->Get();
-  vector < vector <CSeq_feat*> > feature_ls; 
-  
-  unsigned k;
-  CSeq_feat* seq_feat;
-  CSuspectRuleCheck rule_check(bioseq); 
-  ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
-    seq_feat = const_cast <CSeq_feat*> (*it);
-    const CProt_ref& prot = seq_feat->GetData().GetProt();
-    if (prot.CanGetName()) {
-       if ((*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-          const CSeq_feat* cds = GetCDSForProduct(bioseq, thisInfo.scope);
-          if (cds) seq_feat = const_cast <CSeq_feat*> (cds);
-       }
-       k = 0;
-       ITERATE (CSuspect_rule_set::Tdata, jt, rules) {
-         if (DoesStringMatchSuspectRule ( prot.GetName(), seq_feat, *jt, k)) {
-            strtmp = GetDiscItemText(*seq_feat);
-            thisInfo.test_item_list[GetName()].push_back(strtmp);  // master_list
-            if (!SUSPECT_PROD_NAMES_feat[k]) {
-               CRef <GeneralDiscSubDt> feat (new GeneralDiscSubDt (strtmp, 
-                                                           SummarizeSuspectRule(*(*jt)))); 
-               SUSPECT_PROD_NAMES_feat[k] = feat;
-            }
-            else SUSPECT_PROD_NAMES_feat[k]->seq_feat_text.push_back(strtmp);
-         }
-         k++;
-       }
-    }
-  }
-};
-*/
-
-
-
-/*
-void CBioseq_SUSPECT_PRODUCT_NAMES :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->setting_name = GetName();
-   c_item->item_list = thisInfo.test_item_list[GetName()];
-
-   typedef map <EFix_type, CRef < CClickableItem > > RuleTp2Citem;
-   RuleTp2Citem rule_tp_cate;
-   map <EFix_type, vector < unsigned > > rule_feat_idx;
-
-   unsigned i = 0;
-   ITERATE (CSuspect_rule_set::Tdata, it, thisInfo.suspect_rules->Get()) {
-      CRef <CClickableItem> c_feat (new CClickableItem);
-
-      EFix_type rule_tp = (*it)->GetRule_type();
-      switch ( rule_tp ) {
-         case eFix_type_typo:
-                   strtmp = "DISC_PRODUCT_NAME_TYPO"; break;
-         case eFix_type_quickfix:
-                   strtmp = "DISC_PRODUCT_NAME_QUICKFIX"; break;
-         default:
-                   strtmp = GetName();
-      };        
-      c_feat->setting_name = strtmp;
-      c_feat->item_list = SUSPECT_PROD_NAMES_feat[i]->seq_feat_text;
-      c_feat->description = SUSPECT_PROD_NAMES_feat[i]->str;
-**
-      if ((*it)->replace) {
-...
-      }
-**
-      if (rule_tp_cate.end() == rule_tp_cate.find(rule_tp)) {
-          CRef < CClickableItem > c_rule (new CClickableItem);
-          c_rule->setting_name = GetName();
-          c_rule->description = "!!!";
-          c_rule->item_list.insert(c_rule->item_list.end(), 
-                        c_feat->item_list.begin(), c_feat->item_list.end());
-          c_rule->expanded = true;
-          c_rule->subcategories.push_back(c_feat);
-      }
-      else  {
-          rule_tp_cate[rule_tp]->subcategories.push_back(c_feat);
-          rule_tp_cate[rule_tp]->item_list.insert( rule_tp_cate[rule_tp]->item_list.end(), 
-                       c_feat->item_list.begin(), c_feat->item_list.end());
-      }
-      rule_feat_idx[rule_tp].push_back(i);
-   }
-
-   unsigned tot_cnt;
-   NON_CONST_ITERATE ( RuleTp2Citem, it, rule_tp_cate) {
-      tot_cnt = 0;
-      ITERATE ( vector < unsigned >, jt, rule_feat_idx[it->first])
-            tot_cnt += SUSPECT_PROD_NAMES_feat[*jt]->seq_feat_text.size();
-      it->second->item_list.reserve (tot_cnt);
-      ITERATE ( vector < unsigned >, jt, rule_feat_idx[it->first]) 
-           it->second->item_list.insert(it->second->item_list.end(),
-                     SUSPECT_PROD_NAMES_feat[*jt]->seq_feat_text.begin(), 
-                     SUSPECT_PROD_NAMES_feat[*jt]->seq_feat_text.end());    
-      c_item->subcategories.push_back(it->second);
-   }   
-
-   c_item->expanded = true;
-};
-*/
-
-
-// CSeqFeat
-
-
 // CBioseq_set
 // new comb
 bool CBioseqSet_on_class :: IsMicrosatelliteRepeatRegion (const CSeq_feat& seq_feat)
@@ -7614,7 +7227,7 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
  }
  else ret_str = Get1OrgModValue(biosrc, qual_name);
 
- if (str_cons && !CSuspectRuleCheck :: DoesStringMatchConstraint(ret_str, str_cons)) 
+ if (str_cons && !rule_check.DoesStringMatchConstraint(ret_str, str_cons)) 
        ret_str = kEmptyStr;
  
  return (ret_str);

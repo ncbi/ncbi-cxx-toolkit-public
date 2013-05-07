@@ -288,11 +288,9 @@ bool isInt(const string& str)
  
      unsigned i=0;
      if (str[0] == '+' || str[0] == '-') i=1;
-     for (i; i< str.size(); i++) 
-	 if (!isdigit(str[i])) return false;
+     for (i; i< str.size(); i++) if (!isdigit(str[i])) return false;
 
      return true;
-
 }
 
 

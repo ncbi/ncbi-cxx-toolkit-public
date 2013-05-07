@@ -148,6 +148,7 @@ vector <const CSeq_entry*>  CTestAndRepData :: org_orgmod_seqdesc_seqentry;
 
 static CDiscRepInfo thisInfo;
 static string strtmp;
+static CSuspectRuleCheck rule_check;
 
 // CTestAndRepData
 bool CTestAndRepData :: AllCapitalLetters(const string& pattern, const string& search)
@@ -187,7 +188,7 @@ bool CTestAndRepData :: ContainsDoubleSpace(const string& pattern, const string&
 
 bool CTestAndRepData :: ContainsTwoSetsOfBracketsOrParentheses(const string& pattern, const string& search)
 { 
-   return CSuspectRuleCheck::ContainsNorMoreSetsOfBracketsOrParentheses (search, 2);
+   return rule_check.ContainsNorMoreSetsOfBracketsOrParentheses (search, 2);
 }
 
 bool CTestAndRepData :: ContainsWholeWord(const string& pattern, const string& search)
@@ -204,12 +205,12 @@ bool CTestAndRepData :: ContainsWholeWordCaseSensitive(const string& pattern, co
 
 bool CTestAndRepData :: ContainsUnbalancedParentheses(const string& pattern, const string& search)
 { 
-   return CSuspectRuleCheck :: StringContainsUnbalancedParentheses(search);
+   return rule_check.StringContainsUnbalancedParentheses(search);
 }
 
 bool CTestAndRepData :: ContainsUnderscore(const string& pattern, const string& search)
 { 
-   return CSuspectRuleCheck :: StringContainsUnderscore(search);
+   return rule_check.StringContainsUnderscore(search);
 }
 
 bool CTestAndRepData :: ContainsUnknownName(const string& pattern, const string& search)
@@ -287,7 +288,7 @@ bool CTestAndRepData :: IsTooLong(const string& pattern, const string& search)
 
 bool CTestAndRepData :: MayContainPlural(const string& pattern, const string& search)
 { 
-    return CSuspectRuleCheck :: StringMayContainPlural (search);
+    return rule_check.StringMayContainPlural (search);
 }
 
 bool CTestAndRepData :: NormalSearch(const string& pattern, const string& search)
@@ -298,12 +299,12 @@ bool CTestAndRepData :: NormalSearch(const string& pattern, const string& search
 
 bool CTestAndRepData :: PrefixPlusNumbersOnly(const string& pattern, const string& search)
 {
-   return CSuspectRuleCheck :: IsPrefixPlusNumbers (pattern, search);
+   return rule_check.IsPrefixPlusNumbers (pattern, search);
 }
 
 bool CTestAndRepData :: ProductContainsTerm(const string& pattern, const string& search)
 { 
-   return CSuspectRuleCheck::ProductContainsTerm( pattern, search);
+   return rule_check.ProductContainsTerm( pattern, search);
 }
 
 bool CTestAndRepData :: StartsWithPattern(const string& pattern, const string& search)
@@ -325,7 +326,7 @@ bool CTestAndRepData :: StartsWithPutativeReplacement(const string& pattern, con
 
 bool CTestAndRepData :: ThreeOrMoreNumbersTogether(const string& pattern, const string& search)
 {
-   return CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether (search);
+   return rule_check.ContainsThreeOrMoreNumbersTogether (search);
 }
 
 bool CTestAndRepData :: AllVecElesSame(const vector <string> arr)
@@ -577,7 +578,7 @@ bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& 
       if (has_biosrc) {
          ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) 
              if (IsBiosrcEukaryotic( (*it)->GetSource())) return true;            
-         else return false;
+         return false;
       }
       else {
          for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {

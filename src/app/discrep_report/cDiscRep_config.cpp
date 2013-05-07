@@ -68,7 +68,6 @@ using namespace objects;
 using namespace DiscRepNmSpc;
 
 static CDiscRepInfo thisInfo;
-static CRef <CRuleProperties> rule_prop (new CRuleProperties);
 static string       strtmp;
 
 vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq;
@@ -148,6 +147,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
+   tests_on_Bioseq_CFeat.push_back( 
+                CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE));
    tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_ORGANELLE_PRODUCTS));
    tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_GAPS));
@@ -254,7 +255,6 @@ void CRepConfDiscrepancy :: ConfigRep()
                      CRef <CTestAndRepData>( new CBioseq_GENE_PRODUCT_CONFLICT));
    tests_on_Bioseq_CFeat.push_back( 
                      CRef <CTestAndRepData>( new CBioseq_DISC_CDS_WITHOUT_MRNA));
-   //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_SUSPECT_PRODUCT_NAMES));
 
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(

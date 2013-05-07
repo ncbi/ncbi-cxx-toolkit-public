@@ -160,26 +160,10 @@ namespace DiscRepNmSpc {
      e_OtherComment
   };
 
-  enum ESuspectNameType {
-     eSuspectNameType_None = 0,
-     eSuspectNameType_Typo = 1,
-     eSuspectNameType_QuickFix,
-     eSuspectNameType_NoOrganelleForProkaryote,
-     eSuspectNameType_MightBeNonfunctional,
-     eSuspectNameType_Database,
-     eSuspectNameType_RemoveOrganismName,
-     eSuspectNameType_InappropriateSymbol,
-     eSuspectNameType_EvolutionaryRelationship,
-     eSuspectNameType_UseProtein,
-     eSuspectNameType_Max
-  };
-  typedef bool (*FSuspectProductNameSearchFunc) (const string& str1, const string& str2);
-  typedef void (*FSuspectProductNameReplaceFunc) (const string& str, const string& str2, 
-                                                   const string& str3, const CSeq_feat& feat);
-
   class CSuspectRuleCheck : public CObject
   {
     public:
+      CSuspectRuleCheck () {}; 
       ~CSuspectRuleCheck () {};
 
       class CCGPSetData : public CObject
@@ -203,43 +187,43 @@ namespace DiscRepNmSpc {
       // string ~ rule/constraint
       bool MatchesSuspectProductRule(const string& str, const CSuspect_rule& rule);
       bool IsSearchFuncEmpty(const CSearch_func& func);
-      static bool IsStringConstraintEmpty(const CString_constraint* constraint);
+      bool IsStringConstraintEmpty(const CString_constraint* constraint);
       bool MatchesSearchFunc(const string& str, const CSearch_func& func);
-      static bool DoesStringMatchConstraint(const string& str, 
+      bool DoesStringMatchConstraint(const string& str, 
                                                       const CString_constraint* str_cons=0);
-      static bool DoesSingleStringMatchConstraint(const string& str, 
+      bool DoesSingleStringMatchConstraint(const string& str, 
                                                       const CString_constraint* str_cons=0);
-      static string StripUnimportantCharacters(const string& str, bool strip_space, 
+      string StripUnimportantCharacters(const string& str, bool strip_space, 
                                                                       bool strip_punch);
-      static string SkipWeasel(const string& str);
-      static bool AdvancedStringMatch(const string& str, 
+      string SkipWeasel(const string& str);
+      bool AdvancedStringMatch(const string& str, 
                                                const CString_constraint* str_const = 0);
-      static bool AdvancedStringCompare(const string& str, const string& str_match, 
+      bool AdvancedStringCompare(const string& str, const string& str_match, 
                                             const CString_constraint* str_cons, bool is_start, 
                                             unsigned* ini_target_match_len = 0);
-      static bool CaseNCompare(string str1, string str2, unsigned len1, bool case_sensitive);
-      static bool IsWholeWordMatch(const string& start, const size_t& found, 
+      bool CaseNCompare(string str1, string str2, unsigned len1, bool case_sensitive);
+      bool IsWholeWordMatch(const string& start, const size_t& found, 
                                const unsigned& match_len, bool disallow_slash = false);
-      static bool DisallowCharacter(const char ch, bool disallow_slash);
-      static bool IsStringInSpanInList (const string& str, const string& list);
-      static bool GetSpanFromHyphenInString(const string& str, const size_t& hyphen, 
+      bool DisallowCharacter(const char ch, bool disallow_slash);
+      bool IsStringInSpanInList (const string& str, const string& list);
+      bool GetSpanFromHyphenInString(const string& str, const size_t& hyphen, 
                                                    string& first, string& second);
-      static bool IsStringInSpan(const string& str, const string& first, const string& second);
-      static bool StringIsPositiveAllDigits(const string& str);
-      static bool StringMayContainPlural(const string& str);
-      static bool ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n);
-      static bool SkipBracketOrParen(const unsigned& idx, string& start);
-      static char GetClose(char bp);
-      static bool ContainsThreeOrMoreNumbersTogether(const string& search);
-      static bool PrecededByOkPrefix (const string& search, const size_t& p);
-      static bool PrecededByPrefix (const string& search, const size_t& cp, const string& prefix);
-      static bool InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start);
-      static bool FollowedByFamily(const string& str, size_t& p);
-      static bool StringContainsUnderscore(const string& search);
-      static bool IsPrefixPlusNumbers(const string& prefix, const string& search);
-      static bool IsPropClose(const string& str, char open_p);
-      static bool StringContainsUnbalancedParentheses(const string& search);
-      static bool ProductContainsTerm(const string& pattern, const string& search);
+      bool IsStringInSpan(const string& str, const string& first, const string& second);
+      bool StringIsPositiveAllDigits(const string& str);
+      bool StringMayContainPlural(const string& str);
+      bool ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n);
+      bool SkipBracketOrParen(const unsigned& idx, string& start);
+      char GetClose(char bp);
+      bool ContainsThreeOrMoreNumbersTogether(const string& search);
+      bool PrecededByOkPrefix (const string& search, const size_t& p);
+      bool PrecededByPrefix (const string& search, const size_t& cp, const string& prefix);
+      bool InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start);
+      bool FollowedByFamily(const string& str, size_t& p);
+      bool StringContainsUnderscore(const string& search);
+      bool IsPrefixPlusNumbers(const string& prefix, const string& search);
+      bool IsPropClose(const string& str, char open_p);
+      bool StringContainsUnbalancedParentheses(const string& search);
+      bool ProductContainsTerm(const string& pattern, const string& search);
 
       // object ~ rule/constraint
       bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, 
@@ -274,9 +258,9 @@ namespace DiscRepNmSpc {
       string GetSequenceQualFromBioseq (const CMolinfo_field& mol_field);
       string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, 
                           EDBLink_field_type dblink_tp, const CString_constraint& str_cons);
-      static string GetFirstStringMatch(const list <string>& strs,
+      string GetFirstStringMatch(const list <string>& strs,
                                                    const CString_constraint* str_cons = 0);
-      static string GetFirstStringMatch(const vector <string>& strs,const 
+      string GetFirstStringMatch(const vector <string>& strs,const 
                                                              CString_constraint* str_cons = 0);
       string GetQualName(ESource_qual src_qual);
       bool IsSubsrcQual(ESource_qual src_qual);
@@ -284,16 +268,16 @@ namespace DiscRepNmSpc {
                   const CSource_qual_choice& src_qual, const CString_constraint* constraint);
       bool DoesObjectMatchFeatureFieldConstraint(const CSeq_feat& feat, 
                         const CFeature_field& feat_field, const CString_constraint& str_cons);
-      static string GetIntervalString(const CSeq_interval& seq_int);
-      static string GetAnticodonLocString (const CTrna_ext& trna);
-      static string GetCodeBreakString (const CSeq_feat& seq_feat);
-      static string GetDbxrefString (const vector <CRef <CDbtag> >& dbxref, 
+      string GetIntervalString(const CSeq_interval& seq_int);
+      string GetAnticodonLocString (const CTrna_ext& trna);
+      string GetCodeBreakString (const CSeq_feat& seq_feat);
+      string GetDbxrefString (const vector <CRef <CDbtag> >& dbxref, 
                                                  const CString_constraint* str_cons = 0);
-      static string GettRNACodonsRecognized (const CTrna_ext& trna, 
+      string GettRNACodonsRecognized (const CTrna_ext& trna, 
                                                  const CString_constraint* str_cons = 0);
-      static string GetQualFromFeatureAnyType(const CSeq_feat& seq_feat, 
+      string GetQualFromFeatureAnyType(const CSeq_feat& seq_feat, 
                  const CFeat_qual_choice& feat_qual, const CString_constraint* str_cons = 0);
-      static string GetQualFromFeature(const CSeq_feat& seq_feat, 
+      string GetQualFromFeature(const CSeq_feat& seq_feat, 
                    const CFeature_field& feat_field, const CString_constraint* str_cons = 0);
       bool DoesFeatureMatchRnaType(const CSeq_feat& seq_feat, const CRna_feat_type& rna_type);
       void MakeFeatureField(CRef <CFeature_field>& f, CFeat_qual_choice& f_qual, 
@@ -317,10 +301,10 @@ namespace DiscRepNmSpc {
                                                       const CString_constraint* str_cons = 0);
       bool CanGetFieldString(const CCGPSetData& cgp, const ECDSGeneProt_field field, 
                                                        const CString_constraint& str_cons);
-      static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, 
+      string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, 
                                        const string& qual_name, unsigned subfield = 0, 
                                        const CString_constraint* str_cons = 0);
-      static string GetTwoFieldSubfield(const string& str, unsigned subfield);
+      string GetTwoFieldSubfield(const string& str, unsigned subfield);
       string GetFieldValue(const CCGPSetData& cgp, const CSeq_feat& feat, 
                                 ECDSGeneProt_field val, const CString_constraint* str_cons=0);
       bool DoesFeatureMatchCGPPseudoConstraint (const CSeq_feat& seq_feat, 
@@ -372,32 +356,6 @@ namespace DiscRepNmSpc {
                                                  const CTranslation_constraint& trans_cons);
       bool DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 
                                                   const CLocation_constraint& loc_cons);
-  };
-
-  class CRuleProperties : public CObject
-  {
-    public:
-      CRuleProperties () {};
-      ~CRuleProperties () {};
-
-      static vector <bool>                         srch_func_empty;
-      static vector <bool>                         except_empty;
-
-      bool IsSearchFuncEmpty(const CSearch_func& func);
-      class CSearchFuncMatcher : public CObject 
-      {
-        public:
-          CSearchFuncMatcher () {};
-          virtual ~CSearchFuncMatcher () {};
-
-          //CRef <CSearchFuncMatcher> factory()  { return 0; };
-
-          virtual void MarchFunc(const string& sch_str, 
-                                               const CString_constraint& str_cst) {};
-          virtual void MarchFunc(const string& sch_str, const string& rule_str) {};
-      };
-
-      static vector <CRef < CSearchFuncMatcher > > srch_func_tp;
   };
 
   class CDiscRepUtil
@@ -1908,7 +1866,7 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
        static string GetRNAProductString(const CSeq_feat& seq_feat);
-
+    
     protected:
        bool BioseqHasKeyword(const CBioseq& bioseq, const string& keywd);
        bool StrandOk(ENa_strand strand1, ENa_strand strand2);
@@ -1959,35 +1917,22 @@ namespace DiscRepNmSpc {
   class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData
   {
     public:
-      CBioseq_on_SUSPECT_RULE ();
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("DISC_SUSPECT_PRODUCT_NAME");};
 
-      struct SuspectProductNameData {
-         const char* pattern;
-         FSuspectProductNameSearchFunc search_func;
-         ESuspectNameType fix_type;
-         const char* replace_phrase;
-         FSuspectProductNameReplaceFunc replace_func;
-      };
- 
     protected:
       CBioseq_Handle m_bioseq_hl;
       Str2Strs m_feature_list;
-      SuspectProductNameData suspect_prod_terms[];
 
       bool CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type);
       void FindSuspectProductNamesCallback();
       void FindSuspectProductNamesWithStaticList();
       void FindSuspectProductNamesWithRules();
-      unsigned SusProdTermsLen() 
-          { return sizeof(suspect_prod_terms)/sizeof(SuspectProductNameData); };
-      const SuspectProductNameData& GetSusProdTerm(unsigned i)
-          { return suspect_prod_terms[i]; };
-      string ClickableItemTypeForNameCat (ESuspectNameType k);
+      void GetReportForStaticList (CRef <CClickableItem>& c_item);
+      void GetReportForRules (CRef <CClickableItem>& c_Item);
   };
 
   class CBioseq_on_tax_def :  public CBioseqTestAndRepData
@@ -3668,33 +3613,6 @@ namespace DiscRepNmSpc {
   };
 
 
-/*
-  class CBioseq_SUSPECT_PRODUCT_NAMES : public CBioseqTestAndRepData
-  {
-    public:
-       virtual ~CBioseq_SUSPECT_PRODUCT_NAMES () {};
-
-       virtual void TestOnObj(const CBioseq& Bioseq);
-       virtual void GetReport(CRef <CClickableItem>& c_item);
-       virtual string GetName() const {return string("SUSPECT_PRODUCT_NAMES");}
-
-    protected: 
-       string SummarizeSuspectRule(const CSuspect_rule& rule);
-       string SummarizeStringConstraint(const CString_constraint& constraint);
-
-       void MatchesSrchFunc(vector <string>& str, vector <bool> match_ls, const CSearch_func& func);
-       void DoesStringMatchConstraint(vector <string>& str, vector <bool>& match_ls, const CString_constraint& str_cst);
-       string SkipWeasel(const string& str);
-
-       void DoesObjectMatchConstraint(const CRef < CConstraint_choice>& cst, vector <const CSeq_feat*> seq_feats, vector <bool> match_ls);
-       void DoesObjectMatchStringConstraint (vector <CSeq_feat*> seq_feats, vector <bool> match_ls, const CString_constraint& str_cst);
-       void DoesObjectMatchConstraintChoiceSet(const CConstraint_choice_set& feat_cst, vector <const CSeq_feat*>& seq_feats, vector <bool>& match_ls);
-
-  };
-
-*/
-
-
 // CSeqFeat
   class CSeqFeatTestAndRepData : public CTestAndRepData
   {
@@ -3712,46 +3630,6 @@ namespace DiscRepNmSpc {
 
        virtual string GetName() const  = 0;
   };
-
-
-/*
-  class CSeqFeat_SUSPECT_PRODUCT_NAMES : public CSeqFeatTestAndRepData
-  {
-    public:
-       virtual ~CSeqFeat_SUSPECT_PRODUCT_NAMES () {};
-
-       virtual void TestOnObj(const CSeq_feat& seq_feat);
-       virtual void GetReport(CRef <CClickableItem>& c_item);
-       virtual string GetName() const {return string("SUSPECT_PRODUCT_NAMES");}
-
-    private:
-       bool DoesStringMatchSuspectRule(const string& str, const CSeq_feat* seq_feat, const CRef <CSuspect_rule> rule);
-
-       string SummarizeStringConstraint(const CString_constraint& constraint)
-  };
-*/
-
-
-// CSourceDesc
-/*
-  class CSourceDesc : public CTestAndRepData
-  {
-      friend class CTestAndRepData;
-
-    public:
-       virtual ~CSourceDesc() {};
-
-       virtual void TestOnObj(const CBioseq& bioseq) = 0;
-       virtual void TestOnObj(const CSeq_feat& seq_feat) {};
-
-       virtual void GetReport(CRef <CClickableItem>& c_item)=0;
-
-       virtual string GetName() const = 0;
-
-      
-  };
-*/
-
 };
 
 
