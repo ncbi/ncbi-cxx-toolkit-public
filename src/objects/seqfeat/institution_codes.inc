@@ -6055,6 +6055,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UF:Invertebrate	s	University of Florida Museum of Natural History, Invertebrate Zoology and Malacology Collection",
 "UF:Mammalogy	s	University of Florida Museum of Natural History, Mammalogy Collection",
 "UF:Ornithology	s	University of Florida Museum of Natural History, Ornithology Skins and Skeletons Collection",
+"UF:Porifera	s	University of Florida Museum of Natural History, ",
 "UFA	s	Ufa Scientific Centre, Russian Academy of Sciences",
 "UFC	s	Universidade Federal do Ceara, Departamento de Biologia",
 "UFES	s	Universidade Federal do Espirito Santo",
