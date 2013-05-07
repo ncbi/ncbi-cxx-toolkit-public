@@ -9,7 +9,6 @@
 APP =  multireader
 SRC =  multireader
 LIB =  xalgophytree biotree fastme xalnmgr tables xobjreadex $(OBJREAD_LIBS) xobjutil \
-       creaders \
        $(SOBJMGR_LIBS)
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
