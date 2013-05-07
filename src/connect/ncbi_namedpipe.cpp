@@ -994,7 +994,7 @@ bool CNamedPipeHandle::x_SetSocketBufSize(int sock, size_t bufsize, int dir)
 //
 
 
-CNamedPipe::CNamedPipe()
+CNamedPipe::CNamedPipe(void)
     : m_PipeName(kEmptyStr), m_PipeBufSize(kDefaultPipeBufSize),
       m_OpenTimeout(0), m_ReadTimeout(0), m_WriteTimeout(0)
 {
@@ -1165,7 +1165,7 @@ void CNamedPipe::x_SetName(const string& pipename)
 // CNamedPipeClient
 //
 
-CNamedPipeClient::CNamedPipeClient()
+CNamedPipeClient::CNamedPipeClient(void)
 {
     m_IsClientSide = true;
 }
@@ -1209,7 +1209,7 @@ EIO_Status CNamedPipeClient::Create(const string&, const STimeout*, size_t)
 //
 
 
-CNamedPipeServer::CNamedPipeServer()
+CNamedPipeServer::CNamedPipeServer(void)
 {
     m_IsClientSide = false;
 }
