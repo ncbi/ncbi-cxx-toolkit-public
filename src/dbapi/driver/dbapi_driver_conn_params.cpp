@@ -202,17 +202,6 @@ CDBConnParamsBase::GetParam(const string& key) const
 }
 
 
-void
-CDBConnParamsBase::SetParam(const string& key, const string& value)
-{
-    string tmp_key = key;
-
-    // Use lower-case keys ...
-    NStr::ToLower(tmp_key);
-    m_UnclassifiedParamMap[tmp_key] = value;
-}
-
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -124,7 +124,10 @@ protected:
         m_Validator = validator;
     }
 
-	void SetParam(const string& key, const string& value);
+	void SetParam(const string& key, const string& value)
+    {
+        m_UnclassifiedParamMap[key] = value;
+    }
 
 private:
     // Non-copyable.
@@ -132,7 +135,7 @@ private:
     CDBConnParamsBase& operator =(const CDBConnParamsBase& other);
 
 private:
-	typedef map<string, string> TUnclassifiedParamMap;
+	typedef map<string, string, PNocase> TUnclassifiedParamMap;
 
     string    m_DriverName;
     Uint4     m_ProtocolVersion;
