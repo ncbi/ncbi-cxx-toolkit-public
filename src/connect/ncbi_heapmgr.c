@@ -177,9 +177,9 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
 #define HEAP_FREE             0
 #define HEAP_NEXT(b)          ((SHEAP_HeapBlock*)((char*)(b) + (b)->head.size))
 #define HEAP_INDEX(b, base)   ((TNCBI_Size)((b) - (base)))
+#define HEAP_ISLAST(b)        ( (b)->head.flag &  HEAP_LAST)
 #define HEAP_ISFREE(b)        (((b)->head.flag & ~HEAP_LAST) == HEAP_FREE)
 #define HEAP_ISUSED(b)        (((b)->head.flag & ~HEAP_LAST) == HEAP_USED)
-#define HEAP_ISLAST(b)        ( (b)->head.flag &  HEAP_LAST)
 
 
 HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
@@ -317,7 +317,7 @@ static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size* prev)
             if (!f)
                 f = b;
         } else if (f) {
-            assert(HEAP_ISUSED(b));
+            assert(!HEAP_ISFREE(b));
             *prev = HEAP_INDEX(f, heap->base);
             memmove(f, b, b->head.size);
             f->head.flag &= ~HEAP_LAST;
@@ -520,7 +520,7 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
             heap->last   = 0;
         } else {
             assert(HEAP_ISLAST(b));
-            if (HEAP_ISUSED(b)) {
+            if (!HEAP_ISFREE(b)) {
                 b->head.flag &= ~HEAP_LAST;
                 /* New block is at the very top on the heap */
                 b = base + heap->size;
@@ -575,7 +575,7 @@ static void s_HEAP_Free(HEAP heap,
     char _id[32];
 
     assert(p < b  && (!p  ||  (heap->base <= p  &&  HEAP_NEXT(p) == b)));
-    assert(heap->base <= b  &&  HEAP_ISUSED(b));
+    assert(heap->base <= b  &&  !HEAP_ISFREE(b));
     assert(n <= e);
 
     if (!last != !(n == e)) {
@@ -675,7 +675,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
         SHEAP_HeapBlock* n = HEAP_NEXT(b);
         if (n <= e) {
             if (&b->head == ptr) {
-                if (HEAP_ISUSED(b)) {
+                if (!HEAP_ISFREE(b)) {
                     s_HEAP_Free(heap, p, b, n);
                     return;
                 }
@@ -984,7 +984,7 @@ HEAP HEAP_Trim(HEAP heap)
         hsize = (heap->size << _HEAP_ALIGNSHIFT) - f->head.size;
         if (f != heap->base + prev) {
             f  = heap->base + prev;
-            assert(HEAP_ISUSED(f));
+            assert(!HEAP_ISFREE(f));
         }
     } else {
         assert(HEAP_ISFREE(f));
@@ -1010,7 +1010,7 @@ HEAP HEAP_Trim(HEAP heap)
         if (base  &&  f) {
             f = base + prev;
             f->head.flag |= HEAP_LAST;
-            if (HEAP_ISUSED(f)) {
+            if (!HEAP_ISFREE(f)) {
                 heap->last = prev;
                 heap->free = heap->size;
             } else if (size)
