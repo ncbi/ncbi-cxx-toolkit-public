@@ -69,10 +69,7 @@
 #include "hDiscRep_tests.hpp"
 #include "hUtilib.hpp"
 
-#include <sstream>
-#include <algorithm>  // std::replace_if
-#include <numeric>
-#include <functional>
+#include <sstream> 
 
 USING_NCBI_SCOPE;
 
@@ -328,11 +325,11 @@ string CSuspectRuleCheck :: GetPubclassFromPub(const CPub& the_pub)
          << (the_pub.IsArticle() ? the_pub.GetArticle().GetFrom().Which() :  0);
   
   strtmp = output.str();
-  if (thisInfo.pubclass_qual.find(strtmp) != thisInfo.pubclass_qual.end()) 
-     return thisInfo.pubclass_qual[strtmp];
+  if (thisInfo.pub_class_quals.find(strtmp) != thisInfo.pub_class_quals.end()) 
+     return thisInfo.pub_class_quals[strtmp];
   else {
      string map_str;
-     ITERATE (Str2Str, it, thisInfo.pubclass_qual) {
+     ITERATE (Str2Str, it, thisInfo.pub_class_quals) {
        map_str = it->first;
        if (strtmp[0] == map_str[0]
                 && (strtmp[1] == map_str[1] || strtmp[1] == '0' || map_str[1] == '0')
@@ -2159,7 +2156,7 @@ string CSuspectRuleCheck :: GetDBLinkFieldFromUserObject(const CUser_object& use
   string str(kEmptyStr);
   bool is_str_cons_empty = IsStringConstraintEmpty(&str_cons);
   if (user_obj.GetType().IsStr() && user_obj.GetType().GetStr() == "DBLink") {
-    string field_name = thisInfo.dblink_name[dblink_tp];
+    string field_name = thisInfo.dblink_names[dblink_tp];
     ITERATE (vector <CRef <CUser_field> >, it, user_obj.GetData()) {
        if ( (*it)->GetLabel().IsStr() && ((*it)->GetLabel().GetStr() == field_name) ) {
           if ( (*it)->GetData().IsStrs()) {
