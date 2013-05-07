@@ -42,15 +42,44 @@
 
 USING_NCBI_SCOPE;
 
+const size_t    kReadBufferSize = 1024 * 1024 * 1024;
+const size_t    kWriteBufferSize = 1024 * 1024 * 1024;
+
 
 
 CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
-    : m_Server(server)
-{}
+    : m_Server(server),
+      m_ReadBuffer(NULL),
+      m_ReadMode(CNetStorageHandler::eReadMessages),
+      m_WriteBuffer(NULL),
+      m_JSONWriter(m_UTTPWriter)
+{
+    m_ReadBuffer = new char[ kReadBufferSize ];
+    try {
+        m_WriteBuffer = new char[ kWriteBufferSize ];
+    } catch (...) {
+        delete [] m_ReadBuffer;
+        throw;
+    }
+
+    m_UTTPWriter.Reset(m_WriteBuffer, kWriteBufferSize);
+}
 
 
 CNetStorageHandler::~CNetStorageHandler()
-{}
+{
+    delete [] m_WriteBuffer;
+    delete [] m_ReadBuffer;
+}
+
+
+EIO_Event
+CNetStorageHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) const
+{
+    if (m_OutputQueue.empty())
+       return eIO_Read;
+    return eIO_ReadWrite;
+}
 
 
 void CNetStorageHandler::OnOpen(void)
@@ -67,8 +96,76 @@ void CNetStorageHandler::OnOpen(void)
 }
 
 
+void CNetStorageHandler::OnRead(void)
+{
+    size_t      n_read;
+    EIO_Status  status = GetSocket().Read(m_ReadBuffer,
+                                          kReadBufferSize, &n_read);
+
+    switch (status) {
+    case eIO_Success:
+        break;
+    case eIO_Timeout:
+        this->OnTimeout();
+        return;
+    case eIO_Closed:
+        this->OnClose(IServer_ConnectionHandler::eClientClose);
+        return;
+    default:
+        // eIO_Interrupt, eIO_InvalidArg, eIO_NotSupported, eIO_Unknown
+        // TODO: ??? OnError -- this TODO is a verbatim copy from server.cpp
+        return;
+    }
+
+    m_UTTPReader.SetNewBuffer(m_ReadBuffer, n_read);
+
+    if (m_ReadMode == eReadMessages ||
+            x_ReadRawData(m_UTTPReader.GetNextEvent())) {
+        CJsonOverUTTPReader::EParsingEvent ret_code;
+
+        while ((ret_code = m_JSONReader.ProcessParsingEvents(m_UTTPReader)) ==
+                CJsonOverUTTPReader::eEndOfMessage) {
+            size_t  raw_data_size = 0;
+            x_OnMessage(m_JSONReader.GetMessage(), &raw_data_size);
+            m_JSONReader.Reset();
+            if (raw_data_size > 0 &&
+                    !x_ReadRawData(m_UTTPReader.ReadRawData(raw_data_size)))
+                break;
+        }
+
+        if (ret_code != CJsonOverUTTPReader::eNextBuffer) {
+            // Parsing error
+            ERR_POST("Incoming message parsing error (error code " <<
+                     int(ret_code) << "). The connection will be closed.");
+            // TODO close the reading end
+        }
+    }
+}
+
+
 void CNetStorageHandler::OnWrite(void)
-{}
+{
+    for (;;) {
+        CJsonNode message;
+
+        {
+            CFastMutexGuard guard(m_OutputQueueMutex);
+
+            if (m_OutputQueue.empty())
+                break;
+
+            message = m_OutputQueue.front();
+            m_OutputQueue.erase(m_OutputQueue.begin());
+        }
+
+        m_JSONWriter.SetOutputMessage(message);
+
+        while (m_JSONWriter.ContinueWithReply())
+            x_SendOutputBuffer();
+
+        x_SendOutputBuffer();
+    }
+}
 
 
 void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
@@ -81,7 +178,8 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     {
         case IServer_ConnectionHandler::eOurClose:
             if (m_CmdContext.NotNull()) {
-                m_ConnContext->SetRequestStatus(m_CmdContext->GetRequestStatus());
+                m_ConnContext->SetRequestStatus(
+                            m_CmdContext->GetRequestStatus());
             } else {
                 int status = m_ConnContext->GetRequestStatus();
                 if (status != eStatus_HTTPProbe &&
@@ -142,8 +240,76 @@ void CNetStorageHandler::OnOverflow(EOverflowReason reason)
 }
 
 
-void CNetStorageHandler::OnMessage(BUF buffer)
+bool CNetStorageHandler::x_ReadRawData(
+        CUTTPReader::EStreamParsingEvent  uttp_event)
 {
+    switch (uttp_event) {
+    case CUTTPReader::eChunk:
+        x_OnData(m_UTTPReader.GetChunkPart(), m_UTTPReader.GetChunkPartSize());
+        m_ReadMode = eReadMessages;
+        return true;
+
+    case CUTTPReader::eChunkPart:
+        x_OnData(m_UTTPReader.GetChunkPart(), m_UTTPReader.GetChunkPartSize());
+        /* FALL THROUGH */
+
+    default: /* case CUTTPReader::eEndOfBuffer: */
+        m_ReadMode = eReadRawData;
+        return false;
+    }
+}
+
+
+void CNetStorageHandler::x_OnMessage(const CJsonNode &  message,
+        size_t* raw_data_size)
+{
+    *raw_data_size = 0;
+    x_SendMessage(message);
+}
+
+
+void CNetStorageHandler::x_OnData(
+        const void* /*data*/, size_t /*data_size*/)
+{
+}
+
+
+void CNetStorageHandler::x_SendMessage(const CJsonNode &  message)
+{
+    CJsonNode   output_message(message);
+
+    output_message.PushString("Hi! I'll be your server today.");
+
+    {
+        CFastMutexGuard     guard(m_OutputQueueMutex);
+
+        m_OutputQueue.push_back(output_message);
+    }
+
+    m_Server->WakeUpPollCycle();
+}
+
+
+void CNetStorageHandler::x_SendOutputBuffer()
+{
+    const char *    output_buffer;
+    size_t          output_buffer_size;
+    size_t          bytes_written;
+
+    do {
+        m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
+        for (;;) {
+            if (GetSocket().Write(output_buffer, output_buffer_size,
+                    &bytes_written) != eIO_Success) {
+                NCBI_THROW(CIOException, eWrite,
+                    "Error while writing to the socket");
+            }
+            if (bytes_written == output_buffer_size)
+                break;
+            output_buffer += bytes_written;
+            output_buffer_size -= bytes_written;
+        }
+    } while (m_JSONWriter.NextOutputBuffer());
 }
 
 

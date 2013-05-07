@@ -47,19 +47,20 @@ class CNetStorageServer;
 
 
 
-class CNetStorageHandler : public IServer_LineMessageHandler
+class CNetStorageHandler : public IServer_ConnectionHandler
 {
 public:
     CNetStorageHandler(CNetStorageServer *  server);
     ~CNetStorageHandler();
 
-    // MessageHandler protocol
+    // IServer_ConnectionHandler protocol
+    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
     virtual void      OnOpen(void);
+    virtual void      OnRead(void);
     virtual void      OnWrite(void);
     virtual void      OnClose(IServer_ConnectionHandler::EClosePeer peer);
     virtual void      OnTimeout(void);
     virtual void      OnOverflow(EOverflowReason reason);
-    virtual void      OnMessage(BUF buffer);
 
     // Statuses of commands to be set in diagnostics' request context
     // Additional statuses can be taken from
@@ -81,6 +82,14 @@ public:
         eStatus_ShuttingDown        = 503  //< Server is shutting down
     };
 
+private:
+    // Application specific part
+    bool  x_ReadRawData(CUTTPReader::EStreamParsingEvent  uttp_event);
+    void  x_OnMessage(const CJsonNode &  message, size_t *  raw_data_size);
+    void  x_OnData(const void *  data, size_t  data_size);
+
+    void  x_SendMessage(const CJsonNode &  message);
+    void  x_SendOutputBuffer(void);
 
 private:
     void x_SetQuickAcknowledge(void);
@@ -101,6 +110,24 @@ private:
     CRef<CRequestContext>       m_ConnContext;
     // Diagnostics context for the currently executed command
     CRef<CRequestContext>       m_CmdContext;
+
+private:
+    enum EReadMode {
+        eReadMessages,
+        eReadRawData
+    };
+
+    char *                  m_ReadBuffer;
+    EReadMode               m_ReadMode;
+    CUTTPReader             m_UTTPReader;
+    CJsonOverUTTPReader     m_JSONReader;
+
+    char *                  m_WriteBuffer;
+    CUTTPWriter             m_UTTPWriter;
+    CJsonOverUTTPWriter     m_JSONWriter;
+
+    CFastMutex              m_OutputQueueMutex;
+    vector<CJsonNode>       m_OutputQueue;
 
 }; // CNetStorageHandler
 
