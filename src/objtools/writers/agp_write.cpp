@@ -205,7 +205,10 @@ static void s_AgpWrite(CNcbiOstream& os,
             // col 9; Write an empty column.  The spec says there should
             //        be an empty column, rather than no column (i.e., no tab).
             os << '\t';
-            WriteLinkageEvidence( os, iter );
+            if(!GetLinkage(iter, default_linkage))
+                os << "na";
+            else
+                WriteLinkageEvidence( os, iter );
             break;
 
         case CSeqMap::eSeqRef:
