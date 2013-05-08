@@ -164,6 +164,7 @@
 #  define NCBI_GBSEQ_EXPORTS
 #  define NCBI_INSDSEQ_EXPORTS
 #  define NCBI_MIM_EXPORTS
+#  define NCBI_OBJCOORDS_EXPORTS
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
 #  define NCBI_ENTREZGENE_EXPORTS
@@ -639,6 +640,14 @@
 #  define NCBI_NCBIMIME_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_NCBIMIME_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library objcoords
+ */
+#ifdef NCBI_OBJCOORDS_EXPORTS
+#  define NCBI_OBJCOORDS_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_OBJCOORDS_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library objprt

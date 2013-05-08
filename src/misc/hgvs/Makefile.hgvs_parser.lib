@@ -5,7 +5,7 @@ LIB = hgvs
 SRC = hgvs_parser2 hgvs_writer2 variation_util2 \
       seq_id_resolver objcoords sequtils
 
-ASN_DEP = seq variation
+ASN_DEP = seq variation objcoords
 
 ifneq "" "$(filter GCC_41% GCC_42%,$(signature))"
  ifneq "$(OSTYPE)" "darwin"
@@ -13,10 +13,12 @@ ifneq "" "$(filter GCC_41% GCC_42%,$(signature))"
  endif
 endif
 
-DLL_LIB = objcoords
+DLL_LIB = objcoords xobjmgr
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Spirit
 
 WATCHERS = astashya
+
+PROJ_TAG = gbench
