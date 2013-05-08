@@ -2080,7 +2080,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
     //View Bioassays involving <accession
     if(linkout & eBioAssay && is_na){
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");                        
-        lnk_displ = textLink ? "PubChem Bio Assay" : kBioAssayNucImg;            
+        lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayNucImg;            
         if(!disableLink) {                    
             string linkTitle = " title=\"View Bioassays involving <@label@>\"";
             //gilist contains comma separated gis, change it to the following
@@ -2097,7 +2097,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
     }
     else if (linkout & eBioAssay && !is_na) {
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");                        
-        lnk_displ = textLink ? "PubChem Bio Assay" : kBioAssayProtImg;
+        lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayProtImg;
         if(!disableLink) {        
             lnkTitleInfo ="Bioassay data";
             string linkTitle = " title=\"View Bioassays involving <@label@>\"";
@@ -2322,14 +2322,17 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
             int gi = FindGi(ids);
             if (first_gi == 0) first_gi = gi;
 
-            if(!giList.empty()) giList += ",";
-            giList += NStr::IntToString(gi);
 
             CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
             string label;
             wid->GetLabel(&label, CSeq_id::eContent);        
             if(!labelList.empty()) labelList += ",";
             labelList += label;
+
+            //use only first gi for bioAssay protein
+            if(!giList.empty() && (linkout & eBioAssay) && !is_na) continue;
+            if(!giList.empty()) giList += ",";
+            giList += NStr::IntToString(gi);
         }
 
         string gnl;
