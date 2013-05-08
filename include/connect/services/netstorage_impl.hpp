@@ -172,7 +172,7 @@ enum ENetFileIDFields {
 typedef unsigned char TNetFileIDFields;
 
 /// @internal
-class CNetFileID
+class NCBI_XCONNECT_EXPORT CNetFileID
 {
 public:
     CNetFileID(TNetStorageFlags flags, Uint8 random_number);
