@@ -2662,9 +2662,9 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
           "NP_688815.1",
           "ZP_02223823.1",
           "BAB37428.1",
-          "AAG07133.1",
           "YP_651583.1",
           "XP_645408.1",
+          "AAG07133.1",
           NULL };
     
     CRef<CSeqIdList> ids(new CSeqIdList(str));
@@ -2682,7 +2682,8 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
     CSeqDB db("nr", CSeqDB::eProtein, &*ids);
     
     for(int i = 0; i < ids->GetNumSis(); i++) {
-        BOOST_REQUIRE(ids->GetSiOid(i).oid != -1);
+        BOOST_CHECK_MESSAGE(ids->GetSiOid(i).oid != -1, 
+                    "Seqid " << str[i] << " (index " << i << ") is unresolved");
     }
     
     // Check that the set of returned ids is constrained to the same
