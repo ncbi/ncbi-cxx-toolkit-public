@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(TestNetStorage)
 
     const string test_data("The quick brown fox jumps over the lazy dog.");
 
-    CNetStorage netstorage(icache_client);
+    CNetStorage netstorage(g_CreateNetStorage(icache_client));
 
     string file_id;
 
