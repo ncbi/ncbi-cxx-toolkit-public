@@ -282,11 +282,14 @@ TPid CProcess::GetParentPid(void)
 }
 
 
-TPid CProcess::Fork(void)
+TPid CProcess::Fork(EUpdateDiagFlag flag)
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = ::fork();
-    CDiagContext::UpdatePID();
+    CDiagContext::UpdateOnFork(
+        flag == eUpdateDiag ?
+        (CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart)
+        : 0);
     return pid;
 #else
     NCBI_THROW(CCoreException, eCore,

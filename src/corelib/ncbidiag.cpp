@@ -1328,12 +1328,12 @@ CDiagContext::TPID CDiagContext::GetPID(void)
 }
 
 
-void CDiagContext::UpdatePID(void)
+bool CDiagContext::UpdatePID(void)
 {
     TPID new_pid = CProcess::GetCurrentPid();
     if (sm_PID == new_pid) {
         // Parent process does not need to update pid/guid
-        return;
+        return false;
     }
     sm_PID = new_pid;
     CDiagContext& ctx = GetDiagContext();
@@ -1345,6 +1345,21 @@ void CDiagContext::UpdatePID(void)
         Print("parent_guid", ctx.GetStringUID(old_uid));
     //ctx.PrintExtra("New process created by fork(), "
     //    "parent GUID=" + );
+    return true;
+}
+
+
+void CDiagContext::UpdateOnFork(TOnForkFlags flags)
+{
+    CDiagContext& ctx = GetDiagContext();
+    // Do not perform any actions in the parent process.
+    if ( !UpdatePID() ) return;
+    if (flags && fOnFork_ResetTimer) {
+        ctx.m_StopWatch->Restart();
+    }
+    if (flags && fOnFork_PrintStart) {
+        ctx.PrintStart(kEmptyStr);
+    }
 }
 
 

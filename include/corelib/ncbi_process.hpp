@@ -281,10 +281,16 @@ public:
     int Wait(unsigned long timeout = kInfiniteTimeoutMs,
              CExitInfo* info = 0) const;
 
+    /// Flag indicating if diagnostics should be updated automatically
+    /// in the child process started by Fork().
+    enum EUpdateDiagFlag {
+        eSkipDiag = 0,   ///< Do not update diagnostics.
+        eUpdateDiag = 1  ///< Reset timer and log app-start message.
+    };
 
     /// Fork (throw exception if the platform does not support fork),
     /// update PID and GUID used for logging.
-    static TPid Fork(void);
+    static TPid Fork(EUpdateDiagFlag flag = eUpdateDiag);
 
 
     /// Daemonization flags

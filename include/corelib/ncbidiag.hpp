@@ -1911,10 +1911,24 @@ public:
     ~CDiagContext(void);
 
     typedef Uint8 TPID;
-    // Get cached PID (read real PID if not cached yet).
+    /// Get cached PID (read real PID if not cached yet).
     static TPID GetPID(void);
-    // Reset PID cache (e.g. after fork).
-    static void UpdatePID(void);
+    /// Reset PID cache (e.g. after fork). Return true if PID was updated
+    /// (in the child process).
+    static bool UpdatePID(void);
+
+    /// Actions to perform in UpdateOnFork().
+    enum FOnForkAction {
+        fOnFork_PrintStart = 1 << 0,   ///< Log app-start.
+        fOnFork_ResetTimer = 1 << 1    ///< Reset execution timer.
+    };
+    typedef int TOnForkFlags;
+
+    /// Update diagnostics after fork(). Updates PID if necessary (in the
+    /// child process). If PID has not changed (parent process), no other
+    /// actions are performed. For this reason the method will not do anything
+    /// after the first call, since no PID changes will be detected.
+    static void UpdateOnFork(TOnForkFlags flags);
 
     typedef SDiagMessage::TUID TUID;
 
