@@ -45,7 +45,6 @@
 ///     CCriteria_EST_MOUSE
 ///     CCriteria_EST_OTHERS
 ///     CCriteria_SWISSPROT
-///     CCriteria_MONTH
 ///     CCriteria_PDB
 ///     CCriteria_REFSEQ
 ///     CCriteria_REFSEQ_RNA
@@ -75,7 +74,6 @@ struct SDIRecord {
     int     sat_key;        /// ???
     string  acc;            /// Accession
     int     mol;            /// Molecule type, as in Seq-inst::mol
-    int     gi_threshold;   /// for 'month' subset
 };
 
 
@@ -243,35 +241,6 @@ public:
     /// @inheritDoc
     virtual const int GetMembershipBit(void) const {
         return ICriteria::eSWISSPROT;
-    }
-};
-
-
-/// CCriteria_MONTH
-///
-/// Subclass of ICriteria for MONTH sequences.
-///
-/// The body of method 'is' is ported from the C Toolkit source
-/// file 'readdb.c'.
-class NCBI_XOBJWRITE_EXPORT CCriteria_MONTH : public ICriteria
-{
-public:
-    /// @inheritDoc
-    virtual bool is(const SDIRecord* ptr) const {
-        return (
-            (ptr->gi_threshold != -1)
-            &&  (ptr->gi_threshold < ptr->gi)
-        );
-    }
-
-    /// @inheritDoc
-    virtual const char* GetLabel(void) const {
-        return "month";
-    }
-
-    /// @inheritDoc
-    virtual const int GetMembershipBit(void) const {
-        return ICriteria::eUNASSIGNED;
     }
 };
 
@@ -552,7 +521,6 @@ END_NCBI_SCOPE
  *  is_EST_HUMAN            CCriteria_EST_HUMAN         "est_human"
  *  is_EST_MOUSE            CCriteria_EST_MOUSE         "est_mouse"
  *  is_EST_OTHERS           CCriteria_EST_OTHERS        "est_others"
- *  is_MONTH                CCriteria_MONTH             "month"
  *  is_PDB                  CCriteria_PDB               "pdb"
  *  is_REFSEQ               CCriteria_REFSEQ            "refseq"
  *  is_REFSEQ_GENOMIC       CCriteria_REFSEQ_GENOMIC    "refseq_genomic"

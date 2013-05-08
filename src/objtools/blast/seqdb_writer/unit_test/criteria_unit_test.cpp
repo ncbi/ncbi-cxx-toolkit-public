@@ -138,24 +138,6 @@ BOOST_AUTO_TEST_CASE(Test_Criteria_Subclasses)
     }
 
     {
-        CCriteria_MONTH crit;
-        BOOST_CHECK(crit.GetLabel() == string("month"));
-        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eUNASSIGNED);
-
-        SDIRecord sdiRecord;
-        sdiRecord.gi = 1;
-        sdiRecord.gi_threshold = -1;                // wrong
-        BOOST_CHECK(crit.is(&sdiRecord) == false);
-        sdiRecord.gi_threshold = 5;
-        sdiRecord.gi = 4;                           // wrong
-        BOOST_CHECK(crit.is(&sdiRecord) == false);
-        sdiRecord.gi = 5;                           // wrong
-        BOOST_CHECK(crit.is(&sdiRecord) == false);
-        sdiRecord.gi = 6;                           // ok
-        BOOST_CHECK(crit.is(&sdiRecord) == true);
-    }
-
-    {
         CCriteria_PDB crit;
         BOOST_CHECK(crit.GetLabel() == string("pdb"));
         BOOST_CHECK(crit.GetMembershipBit() == ICriteria::ePDB);

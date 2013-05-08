@@ -70,7 +70,6 @@ static TCriteriaMap& GetAvailableCriteria(void)
             new CCriteria_EST_HUMAN,
             new CCriteria_EST_MOUSE,
             new CCriteria_EST_OTHERS,
-            new CCriteria_MONTH,
             new CCriteria_PDB,
             new CCriteria_REFSEQ,
             new CCriteria_REFSEQ_GENOMIC,
