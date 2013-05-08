@@ -76,6 +76,7 @@
 #include <objects/macro/Rna_feat_type.hpp>
 #include <objects/macro/Rna_field_.hpp>
 #include <objects/macro/Sequence_constraint_rnamol_.hpp>
+#include <objects/macro/Search_func.hpp>
 #include <objects/macro/Source_location_.hpp>
 #include <objects/macro/Source_origin_.hpp>
 #include <objects/macro/Source_qual_.hpp>
@@ -264,6 +265,8 @@ namespace DiscRepNmSpc{
            static map <EMolecule_class_type, string>        molclass_names;
            static map <ETopology_type, string>              topo_names;
            static map <EStrand_type, string>                strand_names;
+           static CRef < CSuspect_rule_set>                 suspect_rna_rules;
+           static vector <string>                           rna_rule_summ;
 
            SuspectProductNameData                    suspect_prod_terms[];
            unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
@@ -279,6 +282,8 @@ namespace DiscRepNmSpc{
          void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
          void GetOrgModSubtpName(unsigned num1, unsigned num2,
                                          map <string, COrgMod::ESubtype>& orgmodnm_subtp);
+         CRef <CSearch_func>& MakeSimpleSearchFunc(const string& match_text, 
+                                                                 bool whole_word = false);
      };
 };
 

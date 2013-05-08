@@ -421,6 +421,54 @@ void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+// SuspectRuleFeatCheckBack
+void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
+{
+   CTSE_Handle tse_hl = (thisInfo.scope->GetBioseqHandle(bioseq)).GetTSE_Handle();
+   string tse_text = GetDiscItemText(*(tse_hl.GetCompleteObject()));
+   string check_val, sf_text;
+   unsigned rule_idx = 0;
+   ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
+      check_val = GetRNAProductString(**it); 
+      sf_text = GetDiscItemText(**it);
+      ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_rna_rules->Get()) {
+         if (rule_check.MatchesSuspectProductRule(check_val, **rit)) {
+            if ((*rit)->CanGetFeat_constraint() 
+                  && rule_check.DoesObjectMatchConstraintChoiceSet(**it, (*rit)->GetFeat_constraint())) {
+                thisInfo.test_item_list[GetName()].push_back(
+                               tse_text + "$" + NStr::UIntToString(rule_idx++) + "#" + sf_text);
+            }
+         }
+      }
+   }
+};
+
+void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs tse2rule_feats, rule2feats;
+   GetTestItemList(c_item->item_list, tse2rule_feats);
+   c_item->item_list.clear();
+   
+   unsigned rule_idx;
+   ITERATE (Str2Strs, sit, tse2rule_feats) {
+      if (sit != tse2rule_feats.begin()) {
+        CRef <CClickableItem> c_item (new CClickableItem);
+        c_item->setting_name = GetName();
+        thisInfo.disc_report_data.push_back(c_item);
+      } 
+      
+      rule2feats.clear();
+      GetTestItemList(sit->second, rule2feats);
+      ITERATE (Str2Strs, rit, rule2feats) {
+         rule_idx = NStr::StringToUInt(rit->first);
+         strtmp = " rRNA product names " + thisInfo.rna_rule_summ[rule_idx];
+         AddSubcategories(c_item, GetName(), rit->second, strtmp, strtmp, e_OtherComment);
+      } 
+      c_item->description = GetContainsComment(c_item->item_list.size(), "rRNA product name")
+                             + "suspect phrase";
+   }
+};
+
 void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
@@ -4878,19 +4926,16 @@ bool CSeqEntryTestAndRepData :: IsBacterialIsolate(const CBioSource& biosrc)
 };
 
 
-
 void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (!thisTest.is_BIOSRC_run) TestOnBiosrc(seq_entry);
 };
-
 
 void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description = GetHasComment(c_item->item_list.size(), "bacterial biosrouce")
                            + "isolate.";
 };
-
 
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SynonymsMatch(const COrg_ref& org1, const COrg_ref& org2)

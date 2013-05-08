@@ -163,6 +163,9 @@ map <EMolecule_class_type, string>      CDiscRepInfo :: molclass_names;
 map <ETopology_type, string>            CDiscRepInfo :: topo_names;
 map <EStrand_type, string>              CDiscRepInfo :: strand_names;
 map <ESource_origin, string>            CDiscRepInfo :: srcori_names;
+CRef < CSuspect_rule_set>               CDiscRepInfo :: suspect_rna_rules;
+vector <string>                         CDiscRepInfo :: rna_rule_summ;
+
 
 const char* fix_type_names[] = {
   "None",
@@ -882,10 +885,39 @@ cerr << "222can get\n";
    for (i = (int)eStrand_type_unknown; i <= (int)eStrand_type_other; i++)
       thisInfo.strand_names[(EStrand_type)i] 
             = ENUM_METHOD_NAME(EStrand_type)()->FindName(i, true);
+   
+   // ini of suspect_rna_rules;
+   strtmp = reg.Get("StringVecIni", "SusRrnaProdNames");
+   arr.clear();
+   arr = NStr::Tokenize(strtmp, ",", arr);
+   ITERATE (vector <string>, it, arr) {
+     CRef <CSearch_func>& sch_func = MakeSimpleSearchFunc(*it);
+     CRef <CSuspect_rule> this_rule ( new CSuspect_rule);
+     this_rule->SetFind(*sch_func);
+     thisInfo.suspect_rna_rules->Set().push_back(this_rule);
+     thisInfo.rna_rule_summ.push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));    
+   }
+   CRef <CSearch_func>& sch_func = MakeSimpleSearchFunc("8S", true);
+   CRef <CSearch_func>& except = MakeSimpleSearchFunc("5.8S", true);
+   CRef <CSuspect_rule> this_rule ( new CSuspect_rule);
+   this_rule->SetFind(*sch_func);
+   this_rule->SetExcept(*except);
+   thisInfo.suspect_rna_rules->Set().push_back(this_rule); 
+   thisInfo.rna_rule_summ.push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));    
 
    strs.clear();
    arr.clear();
 }
+
+CRef <CSearch_func>& CDiscRepApp :: MakeSimpleSearchFunc(const string& match_text, bool whole_word)
+{
+     CRef <CString_constraint> str_cons (new CString_constraint);
+     str_cons->SetMatch_text(match_text);
+     if (whole_word) str_cons->SetWhole_word(whole_word);
+     CRef <CSearch_func> sch_func (new CSearch_func);
+     sch_func->SetString_constraint(*str_cons);
+     return sch_func;
+};
 
 void CDiscRepApp :: GetOrgModSubtpName(unsigned num1, unsigned num2, map <string, COrgMod::ESubtype>& orgmodnm_subtp)
 {

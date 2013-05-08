@@ -1573,6 +1573,18 @@ namespace DiscRepNmSpc {
 // new comb
 
 
+/*
+  class CSeqEntry_DISC_SUSPECT_RRNA_PRODUCTS : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_DISC_SUSPECT_RRNA_PRODUCTS () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_SUSPECT_RRNA_PRODUCTS");}
+  };
+*/
+
   class CFlatfileTextFind: public CFlatFileConfig::CGenbankBlockCallback, CTestAndRepData
   {
     public:
@@ -2888,6 +2900,16 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
+  class CBioseq_DISC_SUSPECT_RRNA_PRODUCTS  : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_SUSPECT_RRNA_PRODUCTS () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_SUSPECT_RRNA_PRODUCTS"); }
+  };
 
   class CBioseq_TEST_ORGANELLE_PRODUCTS : public CBioseqTestAndRepData
   {
