@@ -234,6 +234,7 @@ void CAgpToSeqEntry::x_SetSeqGap( CSeq_gap & out_gap_info )
             // conversion table
             typedef SStaticPair<CAgpRow::ELinkageEvidence, CLinkage_evidence::EType> TEvidTrans;
             static const TEvidTrans sc_EvidTrans[] = {
+                { CAgpRow::fLinkageEvidence_paired_ends, CLinkage_evidence::eType_paired_ends },
                 { CAgpRow::fLinkageEvidence_align_genus, CLinkage_evidence::eType_align_genus },
                 { CAgpRow::fLinkageEvidence_align_xgenus, CLinkage_evidence::eType_align_xgenus },
                 { CAgpRow::fLinkageEvidence_align_trnscpt, CLinkage_evidence::eType_align_trnscpt },
