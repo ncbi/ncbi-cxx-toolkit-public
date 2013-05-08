@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef MISC_NETSTORAGE___PACK_INT__HPP
-#define MISC_NETSTORAGE___PACK_INT__HPP
+#ifndef CONNECT_SERVICES__PACK_INT__HPP
+#define CONNECT_SERVICES__PACK_INT__HPP
 
 #include <connect/connect_export.h>
 
@@ -100,4 +100,4 @@ unsigned g_UnpackInteger(const void* src, size_t src_size, Uint8* number);
 
 END_NCBI_SCOPE
 
-#endif  /* MISC_NETSTORAGE___PACK_INT__HPP */
+#endif  /* CONNECT_SERVICES__PACK_INT__HPP */

@@ -33,9 +33,11 @@
  *
  */
 
-#include <misc/netstorage/netstorage_impl.hpp>
+#include <connect/services/netstorage_impl.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
+
+#include <corelib/reader_writer.hpp>
 
 #include <util/random_gen.hpp>
 

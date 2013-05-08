@@ -36,7 +36,7 @@
 #include "ns_cmd_impl.hpp"
 #include "util.hpp"
 
-#include <misc/netstorage/netstorage_impl.hpp>
+#include <connect/services/netstorage_impl.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -164,8 +164,6 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
                         (unsigned long long) netfile_id.GetRandom());
 
             if (fields & fNFID_NetICache) {
-                CNetICacheClient icache_client(netfile_id.GetNetICacheClient());
-
                 printf(m_Opts.output_format == eJSON ?
 
                         ",\n\t\"ic_service_name\": \"%s\",\n"
@@ -179,12 +177,16 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
                         "ic_server: %s:%hu\n"
                         "ic_server_xsite: %s\n",
 
-                        icache_client.GetService().GetServiceName().c_str(),
-                        icache_client.GetCacheName().c_str(),
+                        netfile_id.GetNCServiceName().c_str(),
+                        netfile_id.GetCacheName().c_str(),
                         g_NetService_gethostnamebyaddr(
                                 netfile_id.GetNetCacheIP()).c_str(),
                         netfile_id.GetNetCachePort(),
-                        fields & fNFID_AllowXSiteConn ? "true" : "false");
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+                        fields & fNFID_AllowXSiteConn ? "true" :
+#endif
+                        "false"
+                        );
             }
 
             if (storage_flags & fNST_Cacheable)

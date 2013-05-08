@@ -48,6 +48,8 @@ NCBI_DEFINE_ERRCODE_X(ConnServ_NetSchedule, 403, 13);
 NCBI_DEFINE_ERRCODE_X(ConnServ_Remote,      404, 18);
 NCBI_DEFINE_ERRCODE_X(ConnServ_Connection,  405, 10);
 NCBI_DEFINE_ERRCODE_X(ConnServ_ReadWrite,   406,  2);
+NCBI_DEFINE_ERRCODE_X(NetStorage_Common,    903, 20);
+NCBI_DEFINE_ERRCODE_X(NetStorage_RPC,       904, 20);
 
 
 END_NCBI_SCOPE

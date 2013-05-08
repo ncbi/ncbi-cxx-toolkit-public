@@ -32,10 +32,12 @@
 
 #include <ncbi_pch.hpp>
 
-#include "filetrack.hpp"
 #include "pack_int.hpp"
 
-#include <misc/netstorage/error_codes.hpp>
+#include <connect/services/netstorage.hpp>
+#include <connect/services/error_codes.hpp>
+
+#include <connect/ncbi_socket.h>
 
 #include <corelib/ncbi_base64.h>
 
@@ -43,7 +45,7 @@
 #include <string.h>
 
 
-#define NCBI_USE_ERRCODE_X  NetStorage
+#define NCBI_USE_ERRCODE_X  NetStorage_Common
 
 #define DEFAULT_CACHE_CHUNK_SIZE (1024 * 1024)
 
@@ -54,7 +56,6 @@ CNetFileID::CNetFileID(TNetStorageFlags flags, Uint8 random_number) :
     m_Fields(0),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
-    m_NetICacheClient(eVoid),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_Dirty(true)
 {
@@ -68,7 +69,6 @@ CNetFileID::CNetFileID(TNetStorageFlags flags,
     m_Fields(fNFID_KeyAndNamespace),
     m_DomainName(domain_name),
     m_Key(unique_key),
-    m_NetICacheClient(eVoid),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_Dirty(true)
 {
@@ -109,7 +109,6 @@ static size_t s_LoadString(string& dst, unsigned char* src, size_t& src_len)
 }
 
 CNetFileID::CNetFileID(const string& packed_id) :
-    m_NetICacheClient(eVoid),
     m_Dirty(false),
     m_PackedID(packed_id)
 {
@@ -176,12 +175,10 @@ CNetFileID::CNetFileID(const string& packed_id) :
 
     // 5. Load NetCache info.
     if (m_Fields & fNFID_NetICache) {
-        string nc_service_name, cache_name;
-
         // 5.1. Load the service name.
-        ptr += s_LoadString(nc_service_name, ptr, binary_id_len);
+        ptr += s_LoadString(m_NCServiceName, ptr, binary_id_len);
         // 5.2. Load the cache name.
-        ptr += s_LoadString(cache_name, ptr, binary_id_len);
+        ptr += s_LoadString(m_CacheName, ptr, binary_id_len);
         // 5.3. Load the primary NetCache server IP.
         if (binary_id_len < sizeof(m_NetCacheIP) + sizeof(m_NetCachePort)) {
             CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
@@ -194,14 +191,6 @@ CNetFileID::CNetFileID(const string& packed_id) :
         memcpy(&port, ptr, sizeof(port));
         m_NetCachePort = SOCK_NetToHostShort(port);
         ptr += sizeof(port);
-
-        m_NetICacheClient = CNetICacheClient(nc_service_name,
-                cache_name, kEmptyStr);
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (m_Fields & fNFID_AllowXSiteConn)
-            m_NetICacheClient.GetService().AllowXSiteConnections();
-#endif
     }
 
     // 6. If this file is cacheable, load the size of cache chunks.
@@ -228,30 +217,35 @@ CNetFileID::CNetFileID(const string& packed_id) :
     delete[] binary_id;
 }
 
-void CNetFileID::SetNetICacheClient(CNetICacheClient::TInstance icache_client)
+void CNetFileID::ClearNetICacheParams()
 {
     m_Dirty = true;
-    m_NetICacheClient = icache_client;
 
-    if (icache_client == NULL)
-        ClearFieldFlags(fNFID_NetICache);
-    else {
-        SetFieldFlags(fNFID_NetICache);
+    ClearFieldFlags(fNFID_NetICache);
+}
 
-        CNetService service(m_NetICacheClient.GetService());
+void CNetFileID::SetNetICacheParams(const string& service_name,
+        const string& cache_name, Uint4 server_ip, unsigned short server_port
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        , bool allow_xsite_conn
+#endif
+        )
+{
+    m_Dirty = true;
+
+    SetFieldFlags(fNFID_NetICache);
+
+    m_NCServiceName = service_name;
+    m_CacheName = cache_name;
+    m_NetCacheIP = server_ip;
+    m_NetCachePort = server_port;
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (service.IsUsingXSiteProxy())
-            SetFieldFlags(fNFID_AllowXSiteConn);
-        else
-            ClearFieldFlags(fNFID_AllowXSiteConn);
+    if (allow_xsite_conn)
+        SetFieldFlags(fNFID_AllowXSiteConn);
+    else
+        ClearFieldFlags(fNFID_AllowXSiteConn);
 #endif
-
-        CNetServer icache_server(service.Iterate().GetServer());
-
-        m_NetCacheIP = icache_server.GetHost();
-        m_NetCachePort = icache_server.GetPort();
-    }
 }
 
 void CNetFileID::x_SetUniqueKeyFromRandom()
@@ -273,16 +267,11 @@ void CNetFileID::Pack()
                     m_Key.length() + m_DomainName.length() :
                     sizeof(Uint8) + sizeof(Uint8)); // Timestamp and random.
 
-    string nc_service_name, cache_name;
-
-    if (m_Fields & fNFID_NetICache) {
-        nc_service_name = m_NetICacheClient.GetService().GetServiceName();
-        cache_name = m_NetICacheClient.GetCacheName();
-        max_binary_id_len += nc_service_name.length() + 1 +
-                cache_name.length() + 1 +
+    if (m_Fields & fNFID_NetICache)
+        max_binary_id_len += m_NCServiceName.length() + 1 +
+                m_CacheName.length() + 1 +
                 sizeof(m_NetCacheIP) +
                 sizeof(m_NetCachePort);
-    }
 
     if (m_StorageFlags & fNST_Cacheable)
         max_binary_id_len += sizeof(Uint8) + 1;
@@ -320,11 +309,11 @@ void CNetFileID::Pack()
     // 5. (Optional) Save NetCache info.
     if (m_Fields & fNFID_NetICache) {
         // 5.1. Save the service name.
-        memcpy(ptr, nc_service_name.c_str(), nc_service_name.length() + 1);
-        ptr += nc_service_name.length() + 1;
+        memcpy(ptr, m_NCServiceName.c_str(), m_NCServiceName.length() + 1);
+        ptr += m_NCServiceName.length() + 1;
         // 5.2. Save the cache name.
-        memcpy(ptr, cache_name.c_str(), cache_name.length() + 1);
-        ptr += cache_name.length() + 1;
+        memcpy(ptr, m_CacheName.c_str(), m_CacheName.length() + 1);
+        ptr += m_CacheName.length() + 1;
         // 5.3. Save the primary NetCache server IP.
         memcpy(ptr, &m_NetCacheIP, sizeof(m_NetCacheIP));
         ptr += sizeof(m_NetCacheIP);

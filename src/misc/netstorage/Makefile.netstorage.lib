@@ -1,6 +1,6 @@
 # $Id$
 
-SRC      = netstorage netfileid filetrack pack_int \
+SRC      = netstorage filetrack \
            netstorage__ netstorage___
 
 LIB      = netstorage

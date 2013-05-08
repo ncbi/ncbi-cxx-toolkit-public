@@ -34,7 +34,8 @@
 
 #include "filetrack.hpp"
 
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
+
 #include <misc/netstorage/error_codes.hpp>
 #include <misc/netstorage/FT_Upload.hpp>
 

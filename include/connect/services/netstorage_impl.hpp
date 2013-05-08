@@ -1,5 +1,5 @@
-#ifndef MISC_NETSTORAGE___NETSTORAGE_IMPL__HPP
-#define MISC_NETSTORAGE___NETSTORAGE_IMPL__HPP
+#ifndef CONNECT_SERVICES___NETSTORAGE_IMPL__HPP
+#define CONNECT_SERVICES___NETSTORAGE_IMPL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -38,10 +38,134 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
+struct NCBI_XCONNECT_EXPORT SNetFileImpl : public CObject
+{
+    virtual string GetID() = 0;
+    virtual size_t Read(void* buffer, size_t buf_size) = 0;
+    virtual void Read(string* data);
+    virtual bool Eof() = 0;
+    virtual void Write(const void* buffer, size_t buf_size) = 0;
+    virtual Uint8 GetSize() = 0;
+    virtual void Close() = 0;
+};
+
+inline string CNetFile::GetID()
+{
+    return m_Impl->GetID();
+}
+
+inline size_t CNetFile::Read(void* buffer, size_t buf_size)
+{
+    return m_Impl->Read(buffer, buf_size);
+}
+
+inline void CNetFile::Read(string* data)
+{
+    m_Impl->Read(data);
+}
+
+inline bool CNetFile::Eof()
+{
+    return m_Impl->Eof();
+}
+
+inline void CNetFile::Write(const void* buffer, size_t buf_size)
+{
+    m_Impl->Write(buffer, buf_size);
+}
+
+inline void CNetFile::Write(const string& data)
+{
+    Write(data.data(), data.length());
+}
+
+inline Uint8 CNetFile::GetSize()
+{
+    return m_Impl->GetSize();
+}
+
+inline void CNetFile::Close()
+{
+    m_Impl->Close();
+}
+
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
+{
+    virtual CNetFile Create(TNetStorageFlags flags = 0) = 0;
+    virtual CNetFile Open(const string& file_id,
+            TNetStorageFlags flags = 0) = 0;
+    virtual string Relocate(const string& file_id, TNetStorageFlags flags) = 0;
+    virtual bool Exists(const string& file_id) = 0;
+    virtual void Remove(const string& file_id) = 0;
+};
+
+inline CNetFile CNetStorage::Create(TNetStorageFlags flags)
+{
+    return m_Impl->Create(flags);
+}
+
+inline CNetFile CNetStorage::Open(const string& file_id, TNetStorageFlags flags)
+{
+    return m_Impl->Open(file_id, flags);
+}
+
+inline string CNetStorage::Relocate(const string& file_id,
+        TNetStorageFlags flags)
+{
+    return m_Impl->Relocate(file_id, flags);
+}
+
+inline bool CNetStorage::Exists(const string& file_id)
+{
+    return m_Impl->Exists(file_id);
+}
+
+inline void CNetStorage::Remove(const string& file_id)
+{
+    m_Impl->Remove(file_id);
+}
+
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
+{
+    virtual CNetFile Open(const string& unique_key,
+            TNetStorageFlags flags = 0) = 0;
+    virtual string Relocate(const string& unique_key,
+            TNetStorageFlags flags, TNetStorageFlags old_flags = 0) = 0;
+    virtual bool Exists(const string& key, TNetStorageFlags flags = 0) = 0;
+    virtual void Remove(const string& key, TNetStorageFlags flags = 0) = 0;
+};
+
+inline CNetFile CNetStorageByKey::Open(const string& unique_key,
+        TNetStorageFlags flags)
+{
+    return m_Impl->Open(unique_key, flags);
+}
+
+inline string CNetStorageByKey::Relocate(const string& unique_key,
+        TNetStorageFlags flags, TNetStorageFlags old_flags)
+{
+    return m_Impl->Relocate(unique_key, flags, old_flags);
+}
+
+inline bool CNetStorageByKey::Exists(const string& key, TNetStorageFlags flags)
+{
+    return m_Impl->Exists(key, flags);
+}
+
+inline void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
+{
+    m_Impl->Remove(key, flags);
+}
+
+/// @internal
 enum ENetFileIDFields {
     fNFID_KeyAndNamespace   = (1 << 0),
     fNFID_NetICache         = (1 << 1),
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     fNFID_AllowXSiteConn    = (1 << 2),
+#endif
     fNFID_TTL               = (1 << 3),
 };
 ///< @internal Bitwise OR of ENetFileIDFields
@@ -73,9 +197,16 @@ public:
 
     string GetUniqueKey() {return m_UniqueKey;}
 
-    void SetNetICacheClient(CNetICacheClient::TInstance icache_client);
+    void ClearNetICacheParams();
+    void SetNetICacheParams(const string& service_name,
+        const string& cache_name, Uint4 server_ip, unsigned short server_port
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        , bool allow_xsite_conn
+#endif
+        );
 
-    CNetICacheClient GetNetICacheClient() const {return m_NetICacheClient;}
+    string GetNCServiceName() const {return m_NCServiceName;}
+    string GetCacheName() const {return m_CacheName;}
     Uint4 GetNetCacheIP() const {return m_NetCacheIP;}
     Uint2 GetNetCachePort() const {return m_NetCachePort;}
 
@@ -126,7 +257,8 @@ private:
 
     string m_UniqueKey;
 
-    CNetICacheClient m_NetICacheClient;
+    string m_NCServiceName;
+    string m_CacheName;
     Uint4 m_NetCacheIP;
     Uint2 m_NetCachePort;
     Uint8 m_CacheChunkSize;
@@ -139,4 +271,4 @@ private:
 
 END_NCBI_SCOPE
 
-#endif  /* MISC_NETSTORAGE___NETSTORAGE_IMPL__HPP */
+#endif  /* CONNECT_SERVICES___NETSTORAGE_IMPL__HPP */

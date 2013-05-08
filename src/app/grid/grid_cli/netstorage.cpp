@@ -31,7 +31,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <misc/netstorage/netstorage_impl.hpp>
+#include <connect/services/netstorage_impl.hpp>
+
+#include <misc/netstorage/netstorage.hpp>
 
 #include "grid_cli.hpp"
 
@@ -65,7 +67,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(m_NetICacheClient);
+    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
 
     CNetFile netfile(IsOptionSet(eOptionalID) ?
             netstorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
@@ -97,7 +99,7 @@ int CGridCommandLineInterfaceApp::Cmd_Download()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(m_NetICacheClient);
+    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
 
     CNetFile netfile(netstorage.Open(m_Opts.id, m_Opts.netstorage_flags));
 
@@ -118,7 +120,7 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(m_NetICacheClient);
+    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
 
     PrintLine(netstorage.Relocate(m_Opts.id, m_Opts.netstorage_flags));
 
@@ -168,7 +170,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkFileID()
     }
 
     if (IsOptionSet(eNetCache))
-        file_id->SetNetICacheClient(m_NetICacheClient);
+        g_SetNetICacheParams(*file_id, m_NetICacheClient);
 
     if (m_Opts.netstorage_flags != 0)
         file_id->SetStorageFlags(m_Opts.netstorage_flags);
