@@ -2503,7 +2503,8 @@ CQuery::CField::AsIStream(void) const
                    "Method is unsupported for this type of data");
     }
     m_ValueForStream = var_val.GetString();
-    m_IStream.reset(new CNcbiIstrstream(m_ValueForStream.c_str()));
+    m_IStream.reset
+      (new CNcbiIstrstream(m_ValueForStream.data(), m_ValueForStream.size()));
     return *m_IStream;
 }
 
