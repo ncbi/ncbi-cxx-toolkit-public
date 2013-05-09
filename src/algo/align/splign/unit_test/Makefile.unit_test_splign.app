@@ -17,8 +17,14 @@ REQUIRES = Boost.Test.Included
 
 # Uncomment if you do not want it to run automatically as part of
 # "make check".
-CHECK_CMD = unit_test_splign -data-in polya.splign_in.asn -data-expected splign_expected.asn
-CHECK_COPY = slign_in.asn splign_expected.asn
+CHECK_CMD = unit_test_splign -mrna-data-in mrna_in.asn -est-data-in est_in.asn -mrna-expected mrna_expected.asn -est-expected est_expected.asn
+CHECK_COPY = mrna_in.asn mrna_expected.asn est_in.asn est_expected.asn
+
+# update of expected results can be produced with
+#
+# unit_test_splign -mrna-data-in mrna_in.asn -mrna-out mrna_expected.asn -mrna-outfmt asn
+#
+# unit_test_splign -est-data-in est_in.asn -est-out est_expected.asn -est-outfmt asn
 
 WATCHERS = kiryutin
 
