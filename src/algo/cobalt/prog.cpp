@@ -1754,6 +1754,18 @@ CMultiAligner::x_FindConservedColumns(
     //------------------------------
 }
 
+
+// remove pointers to constraints from pair-wise lists
+static void s_CleanUpConstraints(CNcbiMatrix<CHitList>& pair_info,
+                                 int num_queries)
+{
+    for (int i = 0; i < num_queries; i++) {
+        for (int j = 0; j < num_queries; j++) {
+            pair_info(i, j).ResetList();
+        }
+    }
+}
+
 /// Main driver for the progressive alignment process
 /// @param edges List of tree edges sorted by decreasing edge length [in]
 /// @param cluster_cutoff The minimum distance a tree edge must have
@@ -1796,143 +1808,148 @@ CMultiAligner::x_BuildAlignmentIterative(
     conserved_cols = 0;
     vector<CSequence> tmp_aligned = m_QueryData;
 
-    // perform the initial progressive alignment
 
-    x_AlignProgressive(GetTree(), tmp_aligned, 
-                       pair_info, iteration, false);
-
-    while (1) {
-
-        // compute the previous alignment score
-
-        double realign_score = x_GetScore(tmp_aligned);
-        if (m_Options->GetVerbose())
-            printf("start score: %f\n", realign_score);
-
-        // repeat the complete bipartition process until
-        // either the best score stops improving or we've done
-        // too many bipartitions
-
-        for (int i = 0; i < 5; i++) {
-            new_score = realign_score;
-
-            // a single bipartition consists of systematically
-            // breaking the largest edges in the tree and realigning
-            // the subtrees to either side of that edge. Repeat 
-            // until the edges get too small
-
-            for (int j = 0; j < (int)edges.size() &&
-                           edges[j].distance >= cluster_cutoff; j++) {
-
-                new_score = x_RealignSequences(edges[j].node,
-                                               tmp_aligned,
-                                               pair_info, 
-                                               new_score, 
-                                               iteration);
-            }
-
-            // quit if the best score from bipartition i improved 
-            // the score of realignment i-1 by less than 2% 
-
-            if (new_score - realign_score <= 0.02 * fabs(realign_score)) {
-                break;
-            }
-            realign_score = new_score;
-        }
-        realign_score = max(realign_score, new_score);
-
-        //-------------------------------------------------
-        if (m_Options->GetVerbose()) {
-            for (int i = 0; i < num_queries; i++) {
-                for (int j = 0; j < (int)tmp_aligned[i].GetLength(); j++) {
-                    printf("%c", tmp_aligned[i].GetPrintableLetter(j));
-                }
-                printf("\n");
-            }
-            printf("score = %f\n", realign_score);
-        }
-        //-------------------------------------------------
-
-        if (realign_score > best_score) {
-
-            // the current iteration has improved the alignment
-
-            if (m_Options->GetVerbose()) {
-                printf("REPLACE ALIGNMENT\n\n");
-            }
-            best_score = realign_score;
-            m_Results = tmp_aligned;    // will always happen at least once
-
-            if (!m_Options->GetIterate())
-                break;
-
-            m_ProgressMonitor.stage = eIterativeAlignment;
-        }
-
-        if (m_ClustAlnMethod == CMultiAlignerOptions::eMulti && iteration >= 1) {
-            break;
-        }
-
-        // if iteration is allowed: recompute the conserved 
-        // columns based on the new alignment first remove 
-        // the last batch of conserved regions
-
-        for (int i = 0; i < num_queries; i++) {
-            for (int j = 0; j < num_queries; j++) {
-                pair_info(i, j).ResetList();
-            }
-        }
-        conserved_regions.PurgeAllHits();
-
-        x_FindConservedColumns(tmp_aligned, conserved_regions);
-
-        // build up the list of conserved columns again, using
-        // phi-pattern constraints, user-defined constraints and
-        // the current collection of columns marked as conserved
-
-        new_conserved_cols = 0;
-        for (int i = 0; i < m_PatternHits.Size(); i++) {
-            CHit *hit = m_PatternHits.GetHit(i);
-            pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
-            pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
-            new_conserved_cols += hit->m_SeqRange1.GetLength();
-        }
-        for (int i = 0; i < m_UserHits.Size(); i++) {
-            CHit *hit = m_UserHits.GetHit(i);
-            pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
-            pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
-            new_conserved_cols += hit->m_SeqRange1.GetLength();
-        }
-        for (int i = 0; i < conserved_regions.Size(); i++) {
-            CHit *hit = conserved_regions.GetHit(i);
-            pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
-            pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
-            new_conserved_cols += hit->m_SeqRange1.GetLength();
-        }
-
-        // only perform another iteration of the number of
-        // columns participating in constraints has increased
-
-        if (new_conserved_cols <= conserved_cols)
-            break;
-
-        iteration++;
-        conserved_cols = new_conserved_cols;
-        tmp_aligned = m_QueryData;
-
-        // do the next progressive alignment
+    try {
+        // perform the initial progressive alignment
 
         x_AlignProgressive(GetTree(), tmp_aligned, 
                            pair_info, iteration, false);
+
+        while (1) {
+
+            // compute the previous alignment score
+
+            double realign_score = x_GetScore(tmp_aligned);
+            if (m_Options->GetVerbose())
+                printf("start score: %f\n", realign_score);
+
+            // repeat the complete bipartition process until
+            // either the best score stops improving or we've done
+            // too many bipartitions
+
+            for (int i = 0; i < 5; i++) {
+                new_score = realign_score;
+
+                // a single bipartition consists of systematically
+                // breaking the largest edges in the tree and realigning
+                // the subtrees to either side of that edge. Repeat 
+                // until the edges get too small
+
+                for (int j = 0; j < (int)edges.size() &&
+                           edges[j].distance >= cluster_cutoff; j++) {
+
+                    new_score = x_RealignSequences(edges[j].node,
+                                                   tmp_aligned,
+                                                   pair_info, 
+                                                   new_score, 
+                                                   iteration);
+                }
+
+                // quit if the best score from bipartition i improved 
+                // the score of realignment i-1 by less than 2% 
+
+                if (new_score - realign_score <= 0.02 * fabs(realign_score)) {
+                    break;
+                }
+                realign_score = new_score;
+            }
+            realign_score = max(realign_score, new_score);
+
+            //-------------------------------------------------
+            if (m_Options->GetVerbose()) {
+                for (int i = 0; i < num_queries; i++) {
+                    for (int j = 0; j < (int)tmp_aligned[i].GetLength(); j++) {
+                        printf("%c", tmp_aligned[i].GetPrintableLetter(j));
+                    }
+                    printf("\n");
+                }
+                printf("score = %f\n", realign_score);
+            }
+            //-------------------------------------------------
+
+            if (realign_score > best_score) {
+
+                // the current iteration has improved the alignment
+
+                if (m_Options->GetVerbose()) {
+                    printf("REPLACE ALIGNMENT\n\n");
+                }
+                best_score = realign_score;
+                m_Results = tmp_aligned;    // will always happen at least once
+
+                if (!m_Options->GetIterate())
+                    break;
+
+                m_ProgressMonitor.stage = eIterativeAlignment;
+            }
+
+            if (m_ClustAlnMethod == CMultiAlignerOptions::eMulti
+                && iteration >= 1) {
+                break;
+            }
+
+            // if iteration is allowed: recompute the conserved 
+            // columns based on the new alignment first remove 
+            // the last batch of conserved regions
+
+            for (int i = 0; i < num_queries; i++) {
+                for (int j = 0; j < num_queries; j++) {
+                    pair_info(i, j).ResetList();
+                }
+            }
+            conserved_regions.PurgeAllHits();
+
+            x_FindConservedColumns(tmp_aligned, conserved_regions);
+
+            // build up the list of conserved columns again, using
+            // phi-pattern constraints, user-defined constraints and
+            // the current collection of columns marked as conserved
+
+            new_conserved_cols = 0;
+            for (int i = 0; i < m_PatternHits.Size(); i++) {
+                CHit *hit = m_PatternHits.GetHit(i);
+                pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+                pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+                new_conserved_cols += hit->m_SeqRange1.GetLength();
+            }
+            for (int i = 0; i < m_UserHits.Size(); i++) {
+                CHit *hit = m_UserHits.GetHit(i);
+                pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+                pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+                new_conserved_cols += hit->m_SeqRange1.GetLength();
+            }
+            for (int i = 0; i < conserved_regions.Size(); i++) {
+                CHit *hit = conserved_regions.GetHit(i);
+                pair_info(hit->m_SeqIndex1, hit->m_SeqIndex2).AddToHitList(hit);
+                pair_info(hit->m_SeqIndex2, hit->m_SeqIndex1).AddToHitList(hit);
+                new_conserved_cols += hit->m_SeqRange1.GetLength();
+            }
+
+            // only perform another iteration of the number of
+            // columns participating in constraints has increased
+
+            if (new_conserved_cols <= conserved_cols)
+                break;
+
+            iteration++;
+            conserved_cols = new_conserved_cols;
+            tmp_aligned = m_QueryData;
+
+            // do the next progressive alignment
+
+            x_AlignProgressive(GetTree(), tmp_aligned, 
+                               pair_info, iteration, false);
+        }
+    }
+    catch (std::bad_alloc ex) {
+        // memory clean up
+        s_CleanUpConstraints(pair_info, (int)m_QueryData.size());
+
+        NCBI_THROW(CMultiAlignerException, eOutOfMemory, "Out of memory error");
     }
 
     // clean up the constraints
-
-    for (int i = 0; i < num_queries; i++) {
-        for (int j = 0; j < num_queries; j++) {
-            pair_info(i, j).ResetList();
-        }
-    }
+    s_CleanUpConstraints(pair_info, num_queries);
 }
 
 

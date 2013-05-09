@@ -706,6 +706,10 @@ CMultiAligner::TStatus CMultiAligner::Run()
             status = eInterrupt;
             break;
 
+        case CMultiAlignerException::eOutOfMemory:
+            status = eOutOfMemory;
+            break;
+
         default:
             status = eInternalError;
         }

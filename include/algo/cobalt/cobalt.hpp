@@ -81,7 +81,7 @@ public:
         eDatabaseError, ///< Error related to RPS database occured
         eInternalError, ///< Unexpected error occured
         eInterrupt,     ///< Alignment interruped through callback function
-        eLimitsExceeded ///< Processing limits exceeded
+        eOutOfMemory    ///< Out of memory error
     };
 
     typedef int TStatus;

@@ -49,7 +49,8 @@ public:
         eInvalidScoreMatrix,
         eInvalidInput,
         eInvalidOptions,
-        eInterrupt
+        eInterrupt,
+        eOutOfMemory
     };
 
     NCBI_EXCEPTION_DEFAULT(CMultiAlignerException, CException);
