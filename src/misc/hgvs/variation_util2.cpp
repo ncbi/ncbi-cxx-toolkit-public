@@ -3331,6 +3331,34 @@ void CVariationUtil::CCdregionIndex::Get(const CSeq_loc& loc, TCdregions& cdregi
 //
 //
 
+//Make a copy of the child and inherit relevant (SNP-5716) fields from parent that are not set in the child
+CRef<CVariation> InheritParentAttributes(const CVariation& child, const CVariation& parent)
+{
+    CRef<CVariation> v(SerialClone(child));
+
+    if(!v->IsSetId() && parent.IsSetId()) {
+        v->SetId().Assign(parent.GetId());
+    }
+
+    if(!v->IsSetParent_id() && parent.IsSetParent_id()) {
+        v->SetParent_id().Assign(parent.GetParent_id());
+    }
+
+    if(!v->IsSetSample_id() && parent.IsSetSample_id()) {
+        ITERATE(CVariation::TSample_id, it, parent.GetSample_id()) {
+            v->SetSample_id().push_back(CRef<CObject_id>(SerialClone(**it)));
+        }
+    }
+
+    if(!v->IsSetOther_ids() && parent.IsSetOther_ids()) {
+        ITERATE(CVariation::TOther_ids, it, parent.GetOther_ids()) {
+            v->SetOther_ids().push_back(CRef<CDbtag>(SerialClone(**it)));
+        }
+    }
+
+    return v;
+}
+
 void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::TFtable& feats)
 {
     if(v.IsSetPlacements()) {
@@ -3355,7 +3383,7 @@ void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::T
         }
     } else if(v.GetData().IsSet()) {
         ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
-            AsVariation_feats(**it, feats);
+            AsVariation_feats(*InheritParentAttributes(**it, v), feats);
         }
     }
 }
