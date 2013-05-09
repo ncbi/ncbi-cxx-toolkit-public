@@ -2222,9 +2222,13 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
 
         // determine if we're linked, and also determine if
         // we need linkage-evidence
-        const bool is_linkage =
+        bool is_linkage =
             pGap->CanGetLinkage() && 
             pGap->GetLinkage() == CSeq_gap::eLinkage_linked;
+
+        if ( pGap->IsSetLinkage_evidence() ) {
+            is_linkage = true; /* do not rely solely on Seq-gap.linkage, which is not always set correctly */
+        }
 
         // For /gap_type qual
         if( pGap->CanGetType() ) {
