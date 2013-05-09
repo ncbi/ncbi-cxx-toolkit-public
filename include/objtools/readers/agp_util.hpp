@@ -52,9 +52,9 @@ BEGIN_NCBI_SCOPE
 
 // As time goes on, we should remove support for older versions.
 enum EAgpVersion {
-    eAgpVersion_auto, // auto-detect using the first gap line
-    eAgpVersion_1_1,  // AGP spec 1.1
-    eAgpVersion_2_0   // AGP spec 2.0
+    eAgpVersion_auto, ///< auto-detect using the first gap line
+    eAgpVersion_1_1,  ///< AGP spec 1.1
+    eAgpVersion_2_0   ///< AGP spec 2.0
 };
 
 class CAgpErr; // full definition below
@@ -289,8 +289,8 @@ public:
     }
 };
 
-/// Detects scaffolds, object boundaries, errors that involve 2 consequitive lines.
-/// Intented as a superclass for more complex readers.
+/// Detects scaffolds, object boundaries, errors that involve 2 consecutive lines,
+/// and is intended as a superclass for more complex readers.
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
@@ -300,22 +300,52 @@ public:
     CAgpReader(EAgpVersion agp_version = eAgpVersion_auto );
     virtual ~CAgpReader();
 
-    virtual int ReadStream(CNcbiIstream& is, bool finalize=true);
+    /// Whether or not the function should call Finalize() when it's done successfully
+    enum EFinalize {
+        eFinalize_No,
+        eFinalize_Yes
+    };
+    /// Read an AGP file from the given input stream.
+    ///
+    /// @param is
+    ///   The input stream we're reading the AGP from
+    /// @param eFinalize
+    ///   If we successfully read the AGP file, this param determines
+    ///   whether or not we call Finalize().
+    /// @return
+    ///   Returns the error code, where 0 means "okay".  Non-zero error
+    ///   codes are usually values from the unnamed enum in CAgpErr
+    ///   that has E_ColumnCount, E_EmptyColumn, etc., but subclasses
+    ///   can have their own custom error codes, so other values
+    ///   can appear.
+    virtual int ReadStream(CNcbiIstream& is, EFinalize eFinalize = eFinalize_Yes );
+
+    /// This is called at the end of the file, usually automatically but can be called manually if
+    /// the automatic call was intentionally disabled.
+    ///
+    /// @return
+    ///  Returns error code on whether the "Finalize" operation succeeded, where 0 means "okay".
     virtual int Finalize(); // by default, invoked automatically at the end of ReadStream()
 
-    // Print one or two source line(s) on which the error occured,
-    // along with error message(s).
-    // Source line are preceded with "filename:", if not empty
-    // (useful when reading several files).
+    /// Return a string with one (or two, depending on error) source line(s)
+    /// on which the error occured, along with the error message(s) themselves.
+    ///
+    /// @param filename
+    ///   If filename is non-empty, each line is preceded with "FILENAME:"
+    ///   (useful when reading several files).
     virtual string GetErrorMessage(const string& filename=NcbiEmptyString);
 
-    /// Invoked from ReadStream(), after the row has been parsed.
-    /// Seldom needs to be invoked by user.
+    /// Invoked from ReadStream(), after the row has been parsed, and
+    /// seldom needs to be invoked by user.
     /// One occassion is in agp_renumber - to force a line NOT to be skipped
     /// it is called from OnError() when m_line_skipped=true
     /// and m_error_code=E_ObjRangeNeGap or E_ObjRangeNeComp.
     bool ProcessThisRow();
 
+    /// Change what AGP version to use for the next input that's read.
+    /// Please prefer setting the version in the CAgpReader constructor instead
+    /// and if SetVersion must be used, it's best to use it at a clean stopping
+    /// point.  (Example: immediately after a Finalize() call)
     virtual void SetVersion(EAgpVersion ver);
 
 protected:

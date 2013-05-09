@@ -304,7 +304,7 @@ int ProcessStream(istream &in, ostream& out)
       buf_lines=0;
 
       CNcbiIstrstream is(static_cast<const char*>(buf->str()), buf->pcount());
-      code=renum.ReadStream(is, false);
+      code=renum.ReadStream(is, CAgpReader::eFinalize_No);
       if(code) break;
 
       delete buf;
@@ -316,7 +316,7 @@ int ProcessStream(istream &in, ostream& out)
 
   if(buf_lines) {
     CNcbiIstrstream is(static_cast<const char*>(buf->str()), buf->pcount());
-    code=renum.ReadStream(is, false);
+    code=renum.ReadStream(is, CAgpReader::eFinalize_No);
   }
 
   if(!code) code=renum.Finalize();

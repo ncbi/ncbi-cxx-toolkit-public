@@ -967,7 +967,7 @@ void CAgpReader::SetVersion(EAgpVersion ver)
 }
 
 
-int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
+int CAgpReader::ReadStream(CNcbiIstream& is, EFinalize eFinalize)
 {
     m_at_end=false;
     m_content_line_seen=false;
@@ -1037,7 +1037,7 @@ int CAgpReader::ReadStream(CNcbiIstream& is, bool finalize)
         return CAgpErr::E_NoValidLines;
     }
 
-    return finalize ? Finalize() : 0;
+    return (eFinalize == eFinalize_Yes) ? Finalize() : 0;
 }
 
 // By default, called at the end of ReadStream
