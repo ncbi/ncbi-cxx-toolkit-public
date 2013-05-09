@@ -8480,16 +8480,6 @@ xgdsapi needs dbapi_driver
 xgdsapi needs ncbi_xdbapi_ftds
 xgdsapi needs tds_ftds64
 xgdsapi needs xncbi
-xgdsdata needs biblio
-xgdsdata needs connect
-xgdsdata needs connext
-xgdsdata needs dbapi
-xgdsdata needs dbapi_driver
-xgdsdata needs general
-xgdsdata needs geodataset
-xgdsdata needs xncbi
-xgdsdata needs xser
-xgdsdata needs xutil
 xgdsdata_misc needs xncbi
 xgencoll needs align-reader
 xgencoll needs aligndb_reader
