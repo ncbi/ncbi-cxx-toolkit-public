@@ -49,6 +49,9 @@
 #include <serial/error_codes.hpp>
 #include <math.h>
 
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
+
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   Serial_IStream
