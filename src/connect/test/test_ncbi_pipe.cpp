@@ -151,6 +151,30 @@ static string s_ReadLine(FILE* fs)
 }
 
 
+// Read a line from pipe
+static string s_ReadLine(CPipe& pipe)
+{
+    string str;
+    for (;;) {
+        char   c;
+        size_t n;
+        EIO_Status status = pipe.Read(&c, 1, &n);
+        if (!n) {
+            _ASSERT(status != eIO_Success);
+            break;
+        }
+        if (c == '\n') {
+            break;
+        }
+        str += c;
+        if (status != eIO_Success) {
+            break;
+        }
+    }
+    return str;
+}
+
+
 // Write to a file stream
 static void s_WriteLine(FILE* fs, const string& str)
 {
@@ -333,9 +357,9 @@ int CTest::Run(void)
                        &n_written) == eIO_Success);
     assert(n_written == str.length());
     str = "Ok.";
-    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
-    assert(n_read >= str.length());  // do not count EOL in
-    assert(memcmp(buf, str.c_str(), str.length()) == 0);
+    string ack = s_ReadLine(pipe);
+    assert(ack.length() == str.length());
+    assert(memcmp(ack.data(), str.data(), str.length()) == 0);
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Closed);
     assert(n_read == 0);
 
