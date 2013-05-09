@@ -2660,7 +2660,6 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
           "P66272",
           "NP_854766.1",
           "NP_688815.1",
-          "ZP_02223823.1",
           "BAB37428.1",
           "YP_651583.1",
           "XP_645408.1",
@@ -2669,7 +2668,7 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
     
     CRef<CSeqIdList> ids(new CSeqIdList(str));
     
-    BOOST_REQUIRE_EQUAL((int)ids->GetNumSis(), 10);
+    BOOST_REQUIRE_EQUAL((int)ids->GetNumSis(), 9);
     
     // Check that all IDs are initially unresolved:
     
