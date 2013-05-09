@@ -1526,6 +1526,9 @@ same id type" } },
    { eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
    { "PeptideFeatureLacksCDS",
 "The peptide feature cannot be assigned to a CDS parent, and thus cannot be mapped to the protein product." } },
+   { eErr_SEQ_FEAT_ShortExon,
+   { "ShortExon",
+ "Internal exon is too short." } } ,
 
 /* SEQ_ALIGN */
 

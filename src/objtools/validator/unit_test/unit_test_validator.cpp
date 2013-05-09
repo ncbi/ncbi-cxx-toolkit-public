@@ -101,6 +101,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/validator/validator.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -17311,3 +17312,72 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     BOOST_CHECK_EQUAL(fixed, "43.098333 N 91.00231 W");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet ();
+    CRef<CSeq_entry> nseq = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> pseq = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat>  cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat>  prot = pseq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+
+    string start = "ATG";
+    string stop = "TAA";
+    string splice_left = "GT";
+    string splice_right = "AG";
+    string fifteen = "CCCAGAAAAACAGGT";
+
+    string first_exon = start + fifteen;
+    string intron = splice_left + fifteen + splice_right;
+    string second_exon = fifteen;
+    string third_exon = fifteen + stop;
+
+    string nuc_str = first_exon + intron + second_exon + intron + third_exon; 
+    nseq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(nuc_str);
+    nseq->SetSeq().SetInst().SetLength(nuc_str.length());
+
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetId().SetLocal().SetStr("nuc");
+    loc1->SetInt().SetFrom(0);
+    TSeqPos offset = first_exon.length();
+    loc1->SetInt().SetTo(offset - 1);
+
+    offset += intron.length();
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetId().SetLocal().SetStr("nuc");
+    loc2->SetInt().SetFrom(offset);
+    offset += second_exon.length();
+    loc2->SetInt().SetTo(offset - 1);
+
+
+    offset += intron.length();
+    CRef<CSeq_loc> loc3(new CSeq_loc());
+    loc3->SetInt().SetId().SetLocal().SetStr("nuc");
+    loc3->SetInt().SetFrom(offset);
+    offset += third_exon.length();
+    loc3->SetInt().SetTo(offset - 1);
+
+    cds->SetLocation().SetMix().Set().push_back(loc1);
+    cds->SetLocation().SetMix().Set().push_back(loc2);
+    cds->SetLocation().SetMix().Set().push_back(loc3);
+
+    string loc_str = first_exon + second_exon + third_exon;
+    string prot_str = "";
+    CSeqTranslator::Translate(loc_str, prot_str);
+    if (NStr::EndsWith(prot_str, "*")) {
+        prot_str = prot_str.substr(0, prot_str.length() - 1);
+    }
+    pseq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set(prot_str);
+    pseq->SetSeq().SetInst().SetLength(prot_str.length());
+
+    prot->SetLocation().SetInt().SetTo(prot_str.length() - 1);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ShortExon", 
+                              "Internal coding region exon is too short"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

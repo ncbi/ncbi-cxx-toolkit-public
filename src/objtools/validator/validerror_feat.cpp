@@ -7264,6 +7264,32 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
             }
         }
     }
+
+    // for coding regions, internal exons should not be 15 or less bp long
+    if (feat.IsSetData() && feat.GetData().IsCdregion()) {
+        int num_short_exons = 0;
+        CSeq_loc_CI it(loc);
+        if (it) {
+            // note - do not want to warn for first or last exon
+            ++it;
+            size_t prev_len = 16;
+            while (it) {
+                if (prev_len <= 15) {
+                    num_short_exons ++;
+                }
+                prev_len = GetLength(*(it.GetRangeAsSeq_loc()), m_Scope);
+                ++it;
+            }            
+        }
+        if (num_short_exons > 1) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortExon, 
+                     "Coding region has multiple internal exons that are too short", feat);
+        } else if (num_short_exons > 0) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortExon, 
+                     "Internal coding region exon is too short", feat);
+        }
+    }
+
 }
 
 

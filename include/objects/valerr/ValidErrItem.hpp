@@ -491,6 +491,7 @@ enum EErrType {
     eErr_SEQ_FEAT_ReplacedEcNumber,
     eErr_SEQ_FEAT_SplitEcNumber,
     eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+    eErr_SEQ_FEAT_ShortExon,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,
