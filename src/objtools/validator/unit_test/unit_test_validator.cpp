@@ -15618,6 +15618,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleProtRefs)
                                "2 full-length protein features present on protein"));
     expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "DuplicateFeat", 
                               "Features have identical intervals, but labels differ"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "ExtraProteinFeature", 
+                              "Protein sequence has multiple unprocessed protein features"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "ExtraProteinFeature", 
+                              "Protein sequence has multiple unprocessed protein features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17376,6 +17380,27 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "ShortExon", 
                               "Internal coding region exon is too short"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExtraProteinFeature)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet ();
+    CRef<CSeq_entry> pseq = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> second_prot = AddProtFeat(pseq);
+    second_prot->SetData().SetProt().SetName().front() = "different name";
+    second_prot->SetLocation().SetInt().SetFrom(1);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "ExtraProteinFeature", 
+                              "Protein sequence has multiple unprocessed protein features"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "ExtraProteinFeature", 
+                              "Protein sequence has multiple unprocessed protein features"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

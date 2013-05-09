@@ -1111,6 +1111,25 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                     "Orphaned stand-alone protein", seq);
         }
     }
+    
+    // look for extra protein features
+    if (seq.IsAa()) {
+        CFeat_CI feat (bsh, SAnnotSelector (CSeqFeatData::eSubtype_prot));
+        int num_feat = 0;
+        while (feat) {
+            num_feat++;
+            ++feat;
+        }
+        if (num_feat > 1) {
+            feat.Rewind();
+            while (feat) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_ExtraProteinFeature,
+                        "Protein sequence has multiple unprocessed protein features", 
+                        feat->GetOriginalFeature());
+                ++feat;
+            }
+        }
+    }
 }
 
 

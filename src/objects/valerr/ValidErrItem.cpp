@@ -1529,6 +1529,10 @@ same id type" } },
    { eErr_SEQ_FEAT_ShortExon,
    { "ShortExon",
  "Internal exon is too short." } } ,
+   { eErr_SEQ_FEAT_ExtraProteinFeature,
+   { "ExtraProteinFeature",
+   "Protein sequence has multiple protein features that are not signal peptides, mature peptides, transit peptides, or preproteins." } } ,
+
 
 /* SEQ_ALIGN */
 
