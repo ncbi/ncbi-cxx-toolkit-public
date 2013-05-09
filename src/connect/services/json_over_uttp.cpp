@@ -272,9 +272,9 @@ bool CJsonNode::GetBoolean() const
         m_Impl.GetPointerOrNull())->m_Boolean;
 }
 
-CJsonOverUTTPReader::CJsonOverUTTPReader() :
+CJsonOverUTTPReader::CJsonOverUTTPReader(CJsonNode::TInstance root_node) :
     m_State(eInitialState),
-    m_CurrentNode(CJsonNode::NewArrayNode()),
+    m_CurrentNode(root_node),
     m_HashValueIsExpected(false)
 {
 }
@@ -485,9 +485,9 @@ CJsonOverUTTPReader::EParsingEvent
         }
 }
 
-void CJsonOverUTTPReader::Reset()
+void CJsonOverUTTPReader::Reset(CJsonNode::TInstance root_node)
 {
-    m_CurrentNode = CJsonNode::NewArrayNode();
+    m_CurrentNode = root_node;
 }
 
 void CJsonOverUTTPWriter::SetOutputMessage(const CJsonNode& root_node)
@@ -495,8 +495,13 @@ void CJsonOverUTTPWriter::SetOutputMessage(const CJsonNode& root_node)
     _ASSERT(m_OutputStack.empty());
 
     m_CurrentOutputNode.m_Node = root_node;
-    m_CurrentOutputNode.m_ArrayIterator =
-        m_CurrentOutputNode.m_Node.GetArray().begin();
+
+    if (root_node.IsArray())
+        m_CurrentOutputNode.m_ArrayIterator = root_node.GetArray().begin();
+    else if (root_node.IsObject())
+        m_CurrentOutputNode.m_ObjectIterator = root_node.GetObject().begin();
+    else
+        _ASSERT(0 && "The root node can be either an array or on object.");
 
     m_SendHashValue = false;
 }
@@ -521,6 +526,10 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
         } else if (m_CurrentOutputNode.m_Node.IsObject()) {
             if (m_CurrentOutputNode.m_ObjectIterator ==
                     m_CurrentOutputNode.m_Node.GetObject().end()) {
+                if (m_OutputStack.empty()) {
+                    m_UTTPWriter.SendControlSymbol('\n');
+                    return false;
+                }
                 m_CurrentOutputNode = m_OutputStack.back();
                 m_OutputStack.pop_back();
                 if (!m_UTTPWriter.SendControlSymbol('}'))

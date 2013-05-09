@@ -612,7 +612,7 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
 
     writer.Reset(write_buf, sizeof(write_buf));
 
-    CJsonOverUTTPReader json_reader;
+    CJsonOverUTTPReader json_reader(CJsonNode::NewArrayNode());
     CJsonOverUTTPWriter json_writer(writer);
 
     CMessageSender message_sender(json_writer, pipe);
@@ -670,7 +670,7 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
                 proc.SendError(e.GetMsg());
             }
 
-            json_reader.Reset();
+            json_reader.Reset(CJsonNode::NewArrayNode());
 
             /* FALL THROUGH */
 

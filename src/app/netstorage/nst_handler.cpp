@@ -51,6 +51,7 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
     : m_Server(server),
       m_ReadBuffer(NULL),
       m_ReadMode(CNetStorageHandler::eReadMessages),
+      m_JSONReader(CJsonNode::NewObjectNode()),
       m_WriteBuffer(NULL),
       m_JSONWriter(m_UTTPWriter)
 {
@@ -127,7 +128,7 @@ void CNetStorageHandler::OnRead(void)
                 CJsonOverUTTPReader::eEndOfMessage) {
             size_t  raw_data_size = 0;
             x_OnMessage(m_JSONReader.GetMessage(), &raw_data_size);
-            m_JSONReader.Reset();
+            m_JSONReader.Reset(CJsonNode::NewObjectNode());
             if (raw_data_size > 0 &&
                     !x_ReadRawData(m_UTTPReader.ReadRawData(raw_data_size)))
                 break;
@@ -278,7 +279,7 @@ void CNetStorageHandler::x_SendMessage(const CJsonNode &  message)
 {
     CJsonNode   output_message(message);
 
-    output_message.PushString("Hi! I'll be your server today.");
+    output_message.SetString("Reply", "Hi! I'll be your server today.");
 
     {
         CFastMutexGuard     guard(m_OutputQueueMutex);

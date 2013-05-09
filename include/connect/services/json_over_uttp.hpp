@@ -129,10 +129,10 @@ public:
         eMessageTooLong = 27,
     };
 
-    CJsonOverUTTPReader();
+    CJsonOverUTTPReader(CJsonNode::TInstance root_node);
     EParsingEvent ProcessParsingEvents(CUTTPReader& reader);
     const CJsonNode GetMessage() const;
-    void Reset();
+    void Reset(CJsonNode::TInstance root_node);
 
 private:
     enum {
