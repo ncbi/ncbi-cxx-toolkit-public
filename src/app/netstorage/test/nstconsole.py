@@ -13,9 +13,24 @@ import sys
 import socket
 import errno
 from optparse import OptionParser
-from ncbi_grid_1_0.ncbi import json_over_uttp
+from ncbi_grid_dev.ncbi import json_over_uttp
 import pprint
+import readline
+import rlcompleter
+import atexit
+import os
 
+historyPath = os.path.expanduser("~/.nstconsole")
+
+readline.parse_and_bind('tab: complete')
+
+def save_rlhistory():
+    readline.write_history_file(historyPath)
+
+if os.path.exists(historyPath):
+    readline.read_history_file(historyPath)
+
+atexit.register(save_rlhistory)
 
 commandMap = None
 commandSN = 0
@@ -72,7 +87,7 @@ def clientMain():
     sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     sock.connect( ( host, port ) )
 
-    nst = json_over_uttp.MessageExchange( sock, sock )
+    nst = json_over_uttp.MessageExchange( sock, sock, 'nstconsole' )
 
     # Main loop
     userInput = ""
@@ -114,8 +129,12 @@ def checkIncomingMessage( sock, nst ):
     except socket.error, e:
         if e.args[0] == errno.EAGAIN:
             return
+        if e.args[0] == errno.ECONNRESET:
+            print "Server socket has been closed"
+            sys.exit( errno.ECONNRESET )
+        raise
 
-    response = nst.receive()
+    response = nst.receive({})
     printMessage( "Message from server", response )
     return
 
@@ -307,7 +326,7 @@ def exchange( nst, message ):
 
     message[ "SN" ] = commandSN
     printMessage( "Message to server", message )
-    response = nst.exchange( message )
+    response = nst.exchange( message, {} )
     printMessage( "Message from server", response )
     return
 
