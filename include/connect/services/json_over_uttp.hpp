@@ -65,6 +65,7 @@ struct NCBI_XCONNECT_EXPORT SJsonIteratorImpl : public CObject
     virtual SJsonNodeImpl* GetNode() const = 0;
     virtual const string& GetKey() const = 0;
     virtual bool Next() = 0;
+    virtual bool IsValid() const = 0;
 };
 
 /// JSON node abstraction.
@@ -252,15 +253,23 @@ class NCBI_XCONNECT_EXPORT CJsonIterator
     const string& GetKey() const;
 
     /// Skip to the next element if there is one, in which
-    /// case TRUE is returned. If the current element is the
-    /// last element, return FALSE and zero out this iterator.
+    /// case TRUE is returned. Otherwise, return FALSE.
     bool Next();
+
+    /// Return true if this iterator is still valid.
+    bool IsValid() const;
 
     /// An alternative way to get the value of the current element.
     CJsonNode operator *() const;
 
-    /// An operator equivalent of the method Next().
+    /// An operator version of Next().
     CJsonIterator& operator ++();
+
+    /// An operator version of IsValid().
+    operator bool() const;
+
+    /// An operator version of IsValid().
+    operator bool();
 };
 
 inline bool CJsonNode::IsObject() const
@@ -330,11 +339,12 @@ inline const string& CJsonIterator::GetKey() const
 
 inline bool CJsonIterator::Next()
 {
-    if (m_Impl->Next())
-        return true;
+    return m_Impl->Next();
+}
 
-    m_Impl.Reset(NULL);
-    return false;
+inline bool CJsonIterator::IsValid() const
+{
+    return m_Impl->IsValid();
 }
 
 inline CJsonNode CJsonIterator::operator *() const
@@ -344,8 +354,18 @@ inline CJsonNode CJsonIterator::operator *() const
 
 inline CJsonIterator& CJsonIterator::operator ++()
 {
-    Next();
+    m_Impl->Next();
     return *this;
+}
+
+inline CJsonIterator::operator bool() const
+{
+    return m_Impl->IsValid();
+}
+
+inline CJsonIterator::operator bool()
+{
+    return m_Impl->IsValid();
 }
 
 class NCBI_XCONNECT_EXPORT CJsonOverUTTPReader

@@ -253,16 +253,16 @@ CJsonNode::ENodeType CJsonNode::GetNodeType() const
 
 struct SJsonObjectIterator : public SJsonIteratorImpl
 {
-    SJsonObjectIterator(SJsonObjectNodeImpl* containter,
-            TJsonNodeMap::iterator it) :
-        m_Containter(containter),
-        m_Iterator(it)
+    SJsonObjectIterator(SJsonObjectNodeImpl* container) :
+        m_Containter(container),
+        m_Iterator(container->m_Object.begin())
     {
     }
 
     virtual SJsonNodeImpl* GetNode() const;
     virtual const string& GetKey() const;
     virtual bool Next();
+    virtual bool IsValid() const;
 
     CRef<SJsonObjectNodeImpl,
             CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Containter;
@@ -281,21 +281,28 @@ const string& SJsonObjectIterator::GetKey() const
 
 bool SJsonObjectIterator::Next()
 {
+    _ASSERT(IsValid());
+
     return ++m_Iterator != m_Containter->m_Object.end();
+}
+
+bool SJsonObjectIterator::IsValid() const
+{
+    return m_Iterator != m_Containter->m_Object.end();
 }
 
 struct SJsonArrayIterator : public SJsonIteratorImpl
 {
-    SJsonArrayIterator(SJsonArrayNodeImpl* containter,
-            TJsonNodeVector::iterator it) :
-        m_Containter(containter),
-        m_Iterator(it)
+    SJsonArrayIterator(SJsonArrayNodeImpl* container) :
+        m_Containter(container),
+        m_Iterator(container->m_Array.begin())
     {
     }
 
     virtual SJsonNodeImpl* GetNode() const;
     virtual const string& GetKey() const;
     virtual bool Next();
+    virtual bool IsValid() const;
 
     CRef<SJsonArrayNodeImpl,
             CNetComponentCounterLocker<SJsonArrayNodeImpl> > m_Containter;
@@ -315,30 +322,27 @@ const string& SJsonArrayIterator::GetKey() const
 
 bool SJsonArrayIterator::Next()
 {
+    _ASSERT(IsValid());
+
     return ++m_Iterator != m_Containter->m_Array.end();
+}
+
+bool SJsonArrayIterator::IsValid() const
+{
+    return m_Iterator != m_Containter->m_Array.end();
 }
 
 SJsonIteratorImpl* CJsonNode::Iterate() const
 {
     switch (m_Impl->m_NodeType) {
     case CJsonNode::eObject:
-        {
-            SJsonObjectNodeImpl* node = const_cast<SJsonObjectNodeImpl*>(
-                    static_cast<const SJsonObjectNodeImpl*>(
-                            m_Impl.GetPointerOrNull()));
-
-            return !node->m_Object.empty() ? new SJsonObjectIterator(node,
-                    node->m_Object.begin()) : NULL;
-        }
+        return new SJsonObjectIterator(const_cast<SJsonObjectNodeImpl*>(
+                static_cast<const SJsonObjectNodeImpl*>(
+                        m_Impl.GetPointerOrNull())));
     case CJsonNode::eArray:
-        {
-            SJsonArrayNodeImpl* node = const_cast<SJsonArrayNodeImpl*>(
+        return new SJsonArrayIterator(const_cast<SJsonArrayNodeImpl*>(
                 static_cast<const SJsonArrayNodeImpl*>(
-                m_Impl.GetPointerOrNull()));
-
-            return !node->m_Array.empty() ? new SJsonArrayIterator(node,
-                node->m_Array.begin()) : NULL;
-        }
+                        m_Impl.GetPointerOrNull())));
     default:
         NCBI_THROW(CJsonException, eInvalidNodeType,
                 "Cannot iterate a scalar type");
@@ -764,11 +768,12 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
                 if (!m_UTTPWriter.SendControlSymbol(']'))
                     return true;
             } else {
-                if (!SendNode(*m_CurrentOutputNode.m_Iterator)) {
-                    m_CurrentOutputNode.m_Iterator.Next();
+                CJsonIterator it(m_CurrentOutputNode.m_Iterator);
+                if (!SendNode(*it)) {
+                    it.Next();
                     return true;
                 }
-                m_CurrentOutputNode.m_Iterator.Next();
+                it.Next();
             }
         } else if (m_CurrentOutputNode.m_Node.IsObject()) {
             if (!m_CurrentOutputNode.m_Iterator) {
@@ -791,11 +796,12 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
                 } else
                     m_SendHashValue = false;
 
-                if (!SendNode(*m_CurrentOutputNode.m_Iterator)) {
-                    m_CurrentOutputNode.m_Iterator.Next();
+                CJsonIterator it(m_CurrentOutputNode.m_Iterator);
+                if (!SendNode(*it)) {
+                    it.Next();
                     return true;
                 }
-                m_CurrentOutputNode.m_Iterator.Next();
+                it.Next();
             }
         } else {
             _ASSERT(m_CurrentOutputNode.m_Node.IsDouble());
