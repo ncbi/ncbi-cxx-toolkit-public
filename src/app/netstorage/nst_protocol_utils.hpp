@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_EXCEPTION__HPP
-#define NETSTORAGE_EXCEPTION__HPP
+#ifndef NETSTORAGE_PROTOCOL_UTILS__HPP
+#define NETSTORAGE_PROTOCOL_UTILS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,36 +26,68 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: Network Storage middleman server exception
+ * File Description: NetStorage communication protocol utils
  *
  */
 
 
-#include <corelib/ncbiexpt.hpp>
+#include <string>
+#include <connect/services/json_over_uttp.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+class CSocket;
 
-class CNetStorageServerException : public CException
+
+const string    kStatusOK = "OK";
+const string    kStatusError = "ERROR";
+const string    kMessageTypeReply = "REPLY";
+
+
+
+// Stores the parsed common fields of the incoming messages
+struct SCommonRequestArguments
 {
-    public:
-        enum EErrCode {
-            eInvalidArgument,
-            eInvalidMessageType,
-            eInvalidIncomingMessage,
-            eInternalError
-        };
-        virtual const char *  GetErrCodeString() const;
-        unsigned int ErrCodeToHTTPStatusCode() const;
-        NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
+    SCommonRequestArguments() :
+        m_SerialNumber(-1)
+    {}
+
+    string      m_MessageType;
+    Int8        m_SerialNumber;
 };
+
+
+void SetSessionAndIP(const CJsonNode &  message,
+                     const CSocket &    peer);
+
+void
+ExtractCommonFields(const CJsonNode &          message,
+                    SCommonRequestArguments *  common_arguments);
+
+CJsonNode
+CreateResponseMessage(Int8  serial_number);
+
+CJsonNode
+CreateErrorResponseMessage(Int8  serial_number,
+                           Int8  error_code,
+                           const string &  error_message);
+
+void
+AppendWarning(CJsonNode &     message,
+              Int8            code,
+              const string &  warning_message);
+
+void
+AppendError(CJsonNode &     message,
+            Int8            code,
+            const string &  error_message);
+
 
 
 END_NCBI_SCOPE
 
-
-#endif /* NETSTORAGE_EXCEPTION__HPP */
+#endif
 

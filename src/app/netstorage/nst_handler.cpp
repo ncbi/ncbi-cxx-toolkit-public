@@ -38,12 +38,37 @@
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
+#include "nst_protocol_utils.hpp"
+#include "nst_exception.hpp"
+#include "nst_error_warning.hpp"
 
 
 USING_NCBI_SCOPE;
 
-const size_t    kReadBufferSize = 1024 * 1024 * 1024;
-const size_t    kWriteBufferSize = 1024 * 1024 * 1024;
+const size_t    kReadBufferSize = 1024 * 1024;
+const size_t    kWriteBufferSize = 1024 * 1024;
+
+
+CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
+{
+    { "BYE",            & CNetStorageHandler::x_ProcessBye },
+    { "HELLO",          & CNetStorageHandler::x_ProcessHello },
+    { "INFO",           & CNetStorageHandler::x_ProcessInfo },
+    { "CONFIGURATION",  & CNetStorageHandler::x_ProcessConfiguration },
+    { "SHUTDOWN",       & CNetStorageHandler::x_ProcessShutdown },
+    { "GETCLIENTSINFO", & CNetStorageHandler::x_ProcessGetClientsInfo },
+    { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
+    { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
+    { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
+    { "CREATE",         & CNetStorageHandler::x_ProcessCreate },
+    { "READ",           & CNetStorageHandler::x_ProcessRead },
+    { "WRITE",          & CNetStorageHandler::x_ProcessWrite },
+    { "DELETE",         & CNetStorageHandler::x_ProcessDelete },
+    { "RELOCATE",       & CNetStorageHandler::x_ProcessRelocate },
+    { "EXISTS",         & CNetStorageHandler::x_ProcessExists },
+    { "GETSIZE",        & CNetStorageHandler::x_ProcessGetSize },
+    { "",               NULL }
+};
 
 
 
@@ -53,7 +78,9 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
       m_ReadMode(CNetStorageHandler::eReadMessages),
       m_JSONReader(CJsonNode::NewObjectNode()),
       m_WriteBuffer(NULL),
-      m_JSONWriter(m_UTTPWriter)
+      m_JSONWriter(m_UTTPWriter),
+      m_ByeReceived(false),
+      m_FirstMessage(true)
 {
     m_ReadBuffer = new char[ kReadBufferSize ];
     try {
@@ -77,6 +104,9 @@ CNetStorageHandler::~CNetStorageHandler()
 EIO_Event
 CNetStorageHandler::GetEventsToPollFor(const CTime** /*alarm_time*/) const
 {
+    // This implementation is left to simplify the transition to
+    // asynchronous replies. Currently the m_OutputQueue is always
+    // empty so the only eIO_Read will be returned.
     if (m_OutputQueue.empty())
        return eIO_Read;
     return eIO_ReadWrite;
@@ -112,9 +142,13 @@ void CNetStorageHandler::OnRead(void)
     case eIO_Closed:
         this->OnClose(IServer_ConnectionHandler::eClientClose);
         return;
+    case eIO_Interrupt:
+        // Will be repeated again later?
+        return;
     default:
-        // eIO_Interrupt, eIO_InvalidArg, eIO_NotSupported, eIO_Unknown
-        // TODO: ??? OnError -- this TODO is a verbatim copy from server.cpp
+        // eIO_InvalidArg, eIO_NotSupported, eIO_Unknown
+        x_SetConnRequestStatus(eStatus_SocketIOError);
+        m_Server->CloseConnection(&GetSocket());
         return;
     }
 
@@ -126,8 +160,17 @@ void CNetStorageHandler::OnRead(void)
 
         while ((ret_code = m_JSONReader.ProcessParsingEvents(m_UTTPReader)) ==
                 CJsonOverUTTPReader::eEndOfMessage) {
+
+            if (!m_JSONReader.GetMessage().IsObject()) {
+                // All the incoming objects must be dictionaries
+                x_SetConnRequestStatus(eStatus_BadRequest);
+                m_Server->CloseConnection(&GetSocket());
+                return;
+            }
+
             size_t  raw_data_size = 0;
             x_OnMessage(m_JSONReader.GetMessage(), &raw_data_size);
+            m_FirstMessage = false;
             m_JSONReader.Reset(CJsonNode::NewObjectNode());
             if (raw_data_size > 0 &&
                     !x_ReadRawData(m_UTTPReader.ReadRawData(raw_data_size)))
@@ -136,9 +179,17 @@ void CNetStorageHandler::OnRead(void)
 
         if (ret_code != CJsonOverUTTPReader::eNextBuffer) {
             // Parsing error
-            ERR_POST("Incoming message parsing error (error code " <<
-                     int(ret_code) << "). The connection will be closed.");
-            // TODO close the reading end
+            if (!m_FirstMessage) {
+                // The systems try to attack all the servers and they send
+                // provocative messages. If the very first unparsable message
+                // received then it does not make sense even to log it to avoid
+                // excessive messages in AppLog.
+                ERR_POST("Incoming message parsing error (error code " <<
+                         int(ret_code) << "). The connection will be closed.");
+            }
+            x_SetConnRequestStatus(eStatus_BadRequest);
+            m_Server->CloseConnection(&GetSocket());
+            return;
         }
     }
 }
@@ -146,6 +197,11 @@ void CNetStorageHandler::OnRead(void)
 
 void CNetStorageHandler::OnWrite(void)
 {
+    // This implementation is left to simplify the transition to
+    // asynchronous replies. Currently this method will never be called
+    // because the GetEventsToPollFor(...) never returns amything but
+    // eIO_Read
+
     for (;;) {
         CJsonNode message;
 
@@ -183,8 +239,7 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
                             m_CmdContext->GetRequestStatus());
             } else {
                 int status = m_ConnContext->GetRequestStatus();
-                if (status != eStatus_HTTPProbe &&
-                    status != eStatus_BadRequest &&
+                if (status != eStatus_BadRequest &&
                     status != eStatus_SocketIOError)
                     m_ConnContext->SetRequestStatus(eStatus_Inactive);
             }
@@ -261,37 +316,167 @@ bool CNetStorageHandler::x_ReadRawData(
 }
 
 
+// x_OnMessage gets control when a command message is received.
 void CNetStorageHandler::x_OnMessage(const CJsonNode &  message,
-        size_t* raw_data_size)
+                                     size_t *           raw_data_size)
 {
+    // It is actually a return value: how many raw bytes are
+    // expected. Set it to 0 here for safety.
     *raw_data_size = 0;
-    x_SendMessage(message);
+
+    if (m_ConnContext.NotNull()) {
+        m_CmdContext.Reset(new CRequestContext());
+        m_CmdContext->SetRequestStatus(eStatus_OK);
+        m_CmdContext->SetRequestID();
+        CDiagContext::SetRequestContext(m_CmdContext);
+
+        // The setting of the client session and IP
+        // must be done before logging.
+        SetSessionAndIP(message, GetSocket());
+    }
+
+    // Log all the message parameters
+    x_PrintMessageRequestStart(message);
+
+    // Extract message type and its serial number
+    SCommonRequestArguments     common_args;
+    try {
+        ExtractCommonFields(message, &common_args);
+    }
+    catch (const CNetStorageServerException &  ex) {
+        ERR_POST("Error extracting mandatory fields: " << ex.what() << ". "
+                 "The connection will be closed.");
+
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidMandatoryHeader,
+                                        "Error extracting mandatory fields");
+
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        if (x_SendSyncMessage(response) == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+    // Shutting down analysis is here because it needs the command serial
+    // number to return it in the reply message.
+    if (m_Server->ShutdownRequested()) {
+        ERR_POST(Warning << "Server is shutting down. "
+                 "The connection will be closed.");
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eShuttingDown,
+                                        "No messages are allowed after BYE");
+
+        x_SetCmdRequestStatus(eStatus_ShuttingDown);
+        if (x_SendSyncMessage(response) == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+
+
+    if (m_ByeReceived) {
+        // BYE message has been received before. Send error responce
+        // and close the connection.
+        ERR_POST(Warning << "Received a message after BYE. "
+                 "The connection will be closed.");
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eMessageAfterBye,
+                                        "No messages are allowed after BYE");
+
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        if (x_SendSyncMessage(response) == eIO_Success)
+            m_Server->CloseConnection(&GetSocket());
+        return;
+    }
+
+
+    bool          error = true;
+    string        error_client_message;
+    unsigned int  error_code;
+
+    try {
+        // TODO: touch registry (if possible and needed)
+
+
+        // Find the processor
+        FProcessor  processor = x_FindProcessor(common_args);
+
+        // Call the processor. It returns the number of bytes to expect
+        // after this message. If 0 then another message is expected.
+        *raw_data_size = (this->*processor)(message, common_args);
+        error = false;
+    }
+    catch (const CNetStorageServerException &  ex) {
+        ERR_POST(ex);
+        error_code = ex.ErrCodeToHTTPStatusCode();
+        error_client_message = ex.what();
+    }
+    catch (const std::exception &  ex) {
+        ERR_POST("STL exception: " << ex.what());
+        error_code = eStatus_ServerError;
+        error_client_message = ex.what();
+    }
+
+    if (error) {
+        x_SetCmdRequestStatus(error_code);
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        error_code,
+                                        error_client_message);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+    }
 }
 
 
+// x_OnData gets control when raw data are received.
 void CNetStorageHandler::x_OnData(
         const void* /*data*/, size_t /*data_size*/)
 {
 }
 
 
-void CNetStorageHandler::x_SendMessage(const CJsonNode &  message)
+EIO_Status CNetStorageHandler::x_SendSyncMessage(const CJsonNode & message)
 {
-    CJsonNode   output_message(message);
+    m_JSONWriter.SetOutputMessage(message);
 
-    output_message.SetString("Reply", "Hi! I'll be your server today.");
+    while (m_JSONWriter.ContinueWithReply()) {
+        EIO_Status      status = x_SendOutputBuffer();
+        if (status != eIO_Success)
+            return status;
+    }
+
+    return x_SendOutputBuffer();
+}
+
+
+
+void CNetStorageHandler::x_SendAsyncMessage(const CJsonNode & par)
+{
+    // The current implementation does not use this.
+    // The code is left here to simplify transition to the asynchronous
+    // way of communicating.
 
     {
         CFastMutexGuard     guard(m_OutputQueueMutex);
 
-        m_OutputQueue.push_back(output_message);
+        m_OutputQueue.push_back(par);
     }
 
     m_Server->WakeUpPollCycle();
 }
 
 
-void CNetStorageHandler::x_SendOutputBuffer()
+EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
 {
     const char *    output_buffer;
     size_t          output_buffer_size;
@@ -300,17 +485,55 @@ void CNetStorageHandler::x_SendOutputBuffer()
     do {
         m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
         for (;;) {
-            if (GetSocket().Write(output_buffer, output_buffer_size,
-                    &bytes_written) != eIO_Success) {
-                NCBI_THROW(CIOException, eWrite,
-                    "Error while writing to the socket");
+            EIO_Status  status = GetSocket().Write(output_buffer,
+                                                   output_buffer_size,
+                                                   &bytes_written);
+            if (status != eIO_Success) {
+                // Error writing to the socket.
+                // Log what we can.
+                string  report = "Error writing message to the client. "
+                                 "Peer: " +  GetSocket().GetPeerAddress() + ". "
+                                 "Socket write error status: " + IO_StatusStr(status) + ". "
+                                 "Written bytes: " + NStr::NumericToString(bytes_written) + ". "
+                                 "Message begins with: ";
+
+                if (output_buffer_size > 32) {
+                    CTempString     buffer_head(output_buffer, 32);
+                    report += NStr::PrintableString(buffer_head) + " (TRUNCATED)";
+                }
+                else {
+                    CTempString     buffer_head(output_buffer, output_buffer_size);
+                    report += NStr::PrintableString(buffer_head);
+                }
+
+                ERR_POST(report);
+
+                if (m_ConnContext.NotNull()) {
+                    if (m_ConnContext->GetRequestStatus() == eStatus_OK)
+                        m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
+                    if (m_CmdContext.NotNull()) {
+                        if (m_CmdContext->GetRequestStatus() == eStatus_OK)
+                            m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
+                    }
+                }
+
+                // TODO: register the socket error with the client
+
+
+                m_Server->CloseConnection(&GetSocket());
+                return status;
             }
+
             if (bytes_written == output_buffer_size)
                 break;
+
             output_buffer += bytes_written;
             output_buffer_size -= bytes_written;
         }
     } while (m_JSONWriter.NextOutputBuffer());
+
+    x_SetQuickAcknowledge();
+    return eIO_Success;
 }
 
 
@@ -351,5 +574,226 @@ unsigned int CNetStorageHandler::x_GetPeerAddress(void)
     if (peer_addr == m_Server->GetHostNetAddr())
         return CSocketAPI::GetLoopbackAddress();
     return peer_addr;
+}
+
+
+
+CNetStorageHandler::FProcessor
+CNetStorageHandler::x_FindProcessor(
+                        const SCommonRequestArguments &  common_args)
+{
+    for (size_t  index = 0; sm_Processors[index].m_Processor != NULL; ++index)
+    {
+        if (sm_Processors[index].m_MessageType == common_args.m_MessageType)
+            return sm_Processors[index].m_Processor;
+    }
+    NCBI_THROW(CNetStorageServerException, eInvalidMessageType,
+               "Message type '" + common_args.m_MessageType +
+               "' is not supported");
+}
+
+
+void
+CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
+{
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
+        CDiagContext_Extra    ctxt_extra =
+            GetDiagContext().PrintRequestStart()
+                            .Print("_type", "message");
+
+        for (CJsonIterator it = message.Iterate(); it; ++it) {
+            // TODO: Value!
+            ctxt_extra.Print(it.GetKey(), "");
+        }
+
+        ctxt_extra.Flush();
+
+        // Workaround:
+        // When extra of the GetDiagContext().PrintRequestStart() is destroyed
+        // or flushed it also resets the status to 0 so I need to set it here
+        // to 200 though it was previously set to 200 when the request context
+        // is created.
+        m_CmdContext->SetRequestStatus(eStatus_OK);
+    }
+}
+
+
+void
+CNetStorageHandler::x_PrintMessageRequestStop(void)
+{
+    if (m_CmdContext.NotNull()) {
+        CDiagContext::SetRequestContext(m_CmdContext);
+        GetDiagContext().PrintRequestStop();
+        CDiagContext::SetRequestContext(m_ConnContext);
+        m_CmdContext.Reset();
+    }
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessBye(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ByeReceived = true;
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessHello(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetString("ServerVersion", "");
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessConfiguration(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessShutdown(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessGetClientsInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessGetObjectInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessGetAttr(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessSetAttr(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessCreate(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessRead(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessWrite(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessDelete(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessRelocate(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessExists(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
+}
+
+
+size_t
+CNetStorageHandler::x_ProcessGetSize(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+
+    return 0;
 }
 

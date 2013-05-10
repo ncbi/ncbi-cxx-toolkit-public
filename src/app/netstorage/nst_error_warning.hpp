@@ -1,3 +1,5 @@
+#ifndef NST_ERROR_WARNING__HPP
+#define NST_ERROR_WARNING__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -23,47 +25,28 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: Network Storage middleman server exception
- *
+ * File Description: Error and warning codes
  */
 
-#include <ncbi_pch.hpp>
-
-#include "nst_exception.hpp"
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 
-const char *  CNetStorageServerException::GetErrCodeString() const
-{
-    switch (GetErrCode()) {
-        case eInvalidArgument:
-            return "eInvalidArgument";
-        case eInvalidMessageType:
-            return "eInvalidMessageType";
-        case eInvalidIncomingMessage:
-            return "eInvalidIncomingMessage";
-        case eInternalError:
-            return "eInternalError";
-        default:
-            return CException::GetErrCodeString();
-    }
-}
+enum ENSTReplyError {
+    eMessageAfterBye = 1,
+    eInvalidMandatoryHeader = 2,
+    eShuttingDown = 3
+};
 
 
-unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode() const
-{
-    switch (GetErrCode()) {
-        case eInvalidArgument:          return 400;
-        case eInvalidMessageType:       return 400;
-        case eInvalidIncomingMessage:   return 400;
-        default:                        break;
-    }
+enum ENSTReplyWarning {
+};
 
-    /* Including eInternalError */
-    return 500;
-}
+
+END_NCBI_SCOPE
+
+#endif /* NST_ERROR_WARNING__HPP */
 
