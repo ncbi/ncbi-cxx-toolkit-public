@@ -223,7 +223,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
             while (isspace(*++m_Ch))
                 ;
 
-        result.SetNode(attr_name, ParseValue());
+        result.SetByKey(attr_name, ParseValue());
 
         if (!MoreNodes()) {
             if (*m_Ch != closing_char)
@@ -249,7 +249,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseArray(char closing_char)
     }
 
     do
-        result.PushNode(ParseValue());
+        result.Append(ParseValue());
     while (MoreNodes());
 
     if (*m_Ch == closing_char) {
@@ -422,14 +422,14 @@ CJsonNode g_GenericStatToJson(CNetServer server,
     while (output.ReadLine(line)) {
         if (NStr::StartsWith(line, prefix)) {
             if (entity_info)
-                entities.PushNode(entity_info);
+                entities.Append(entity_info);
             entity_info = CJsonNode::NewObjectNode();
             entity_info.SetString(entity_name, UnquoteIfQuoted(
                     CTempString(line.data() + prefix.length(),
                     line.length() - prefix.length())));
         } else if (entity_info && NStr::StartsWith(line, "  ")) {
             if (NStr::StartsWith(line, "    ") && array_value) {
-                array_value.PushString(UnquoteIfQuoted(
+                array_value.AppendString(UnquoteIfQuoted(
                         NStr::TruncateSpaces(line, NStr::eTrunc_Begin)));
             } else {
                 if (array_value)
@@ -440,7 +440,7 @@ CJsonNode g_GenericStatToJson(CNetServer server,
                 string key_norm(key);
                 value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
                 if (value.empty())
-                    entity_info.SetNode(key_norm, array_value =
+                    entity_info.SetByKey(key_norm, array_value =
                             CJsonNode::NewArrayNode());
                 else
                     g_DetectTypeAndSet(entity_info, key_norm, value);
@@ -448,7 +448,7 @@ CJsonNode g_GenericStatToJson(CNetServer server,
         }
     }
     if (entity_info)
-        entities.PushNode(entity_info);
+        entities.Append(entity_info);
 
     return entities;
 }
@@ -461,7 +461,7 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
 
     CJsonNode stat_info(CJsonNode::NewObjectNode());
     CJsonNode jobs_by_status(CJsonNode::NewObjectNode());;
-    stat_info.SetNode("JobsByStatus", jobs_by_status);
+    stat_info.SetByKey("JobsByStatus", jobs_by_status);
     CJsonNode section_entries;
 
     string line;
@@ -480,10 +480,10 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
                 ;
             line.erase(0, 1);
             line.resize(section_name_len);
-            stat_info.SetNode(line,
+            stat_info.SetByKey(line,
                     section_entries = CJsonNode::NewArrayNode());
         } else if (section_entries)
-            section_entries.PushString(line);
+            section_entries.AppendString(line);
         else if (NStr::SplitInTwo(line, ":", key, value)) {
             value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
             if (CNetScheduleAPI::StringToStatus(key) ==
@@ -623,7 +623,7 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
 
             for (CNetServiceIterator it =
                     m_NetScheduleAPI.GetService().Iterate(); it; ++it)
-                result.SetNode((*it).GetServerAddress(),
+                result.SetByKey((*it).GetServerAddress(),
                         g_LegacyStatToJson(*it, !IsOptionSet(eBrief)));
 
             g_PrintJSON(stdout, result);
@@ -641,7 +641,7 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
 
         for (CNetServiceIterator it =
                 m_NetScheduleAPI.GetService().Iterate(); it; ++it)
-            result.SetNode((*it).GetServerAddress(),
+            result.SetByKey((*it).GetServerAddress(),
                     g_GenericStatToJson(*it, topic, IsOptionSet(eVerbose)));
 
         g_PrintJSON(stdout, result);
@@ -711,7 +711,7 @@ CJsonNode SQueueInfoToJson::ExecOn(CNetServer server)
     while (output.ReadLine(line))
         if (NStr::StartsWith(line, m_SectionPrefix) &&
                 line.length() > m_SectionPrefix.length())
-            queue_map.SetNode(line.substr(m_SectionPrefix.length(),
+            queue_map.SetByKey(line.substr(m_SectionPrefix.length(),
                     line.length() - m_SectionPrefix.length() - 1),
                     queue_params = CJsonNode::NewObjectNode());
         else if (queue_params && NStr::SplitInTwo(line, ": ",
@@ -894,9 +894,9 @@ void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
 void CJobInfoToJSON::BeginJobEvent(const CTempString& event_header)
 {
     if (!m_JobEvents)
-        m_JobInfo.SetNode("events", m_JobEvents = CJsonNode::NewArrayNode());
+        m_JobInfo.SetByKey("events", m_JobEvents = CJsonNode::NewArrayNode());
 
-    m_JobEvents.PushNode(m_CurrentEvent = CJsonNode::NewObjectNode());
+    m_JobEvents.Append(m_CurrentEvent = CJsonNode::NewObjectNode());
 }
 
 void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name,
@@ -926,7 +926,7 @@ void CJobInfoToJSON::ProcessInputOutput(const string& data,
         node.SetString("raw_data", data);
     }
 
-    m_JobInfo.SetNode(input_or_output, node);
+    m_JobInfo.SetByKey(input_or_output, node);
 }
 
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
@@ -938,10 +938,10 @@ void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
 void CJobInfoToJSON::ProcessRawLine(const string& line)
 {
     if (!m_UnparsableLines)
-        m_JobInfo.SetNode("unparsable_lines",
+        m_JobInfo.SetByKey("unparsable_lines",
                 m_UnparsableLines = CJsonNode::NewArrayNode());
 
-    m_UnparsableLines.PushString(line);
+    m_UnparsableLines.AppendString(line);
 }
 
 void ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,

@@ -33,6 +33,8 @@
 
 #include "automation.hpp"
 
+#include <connect/ncbi_pipe.hpp>
+
 #ifdef WIN32
 #include <io.h>
 #include <fcntl.h>
@@ -203,18 +205,18 @@ bool SNetServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "get_name")
-        reply.PushString(m_Service.GetServiceName());
+        reply.AppendString(m_Service.GetServiceName());
     else if (method == "get_address") {
         SServerAddressToJson server_address_proc(
                 (int) arg_array.NextInteger(0));
 
-        reply.PushNode(g_ExecToJson(server_address_proc,
+        reply.Append(g_ExecToJson(server_address_proc,
                 m_Service, m_ActualServiceType));
     } else if (method == "server_info") {
-        reply.PushNode(g_ServerInfoToJson(m_Service, m_ActualServiceType));
+        reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType));
     } else if (method == "exec") {
         string command(arg_array.NextString());
-        reply.PushNode(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
+        reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
                 command, arg_array.NextBoolean(false)));
     } else
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -234,9 +236,9 @@ bool SNetCacheServiceAutomationObject::Call(const string& method,
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetCacheAPI.GetService().Iterate();
                 it; ++it)
-            object_ids.PushInteger(m_AutomationProc->
+            object_ids.AppendInteger(m_AutomationProc->
                     ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
-        reply.PushNode(object_ids);
+        reply.Append(object_ids);
     } else
         return SNetServiceAutomationObject::Call(method, arg_array, reply);
 
@@ -254,28 +256,27 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
 {
     CJsonNode arg(arg_array.NextNode());
     if (!arg.IsNull())
-        ITERATE(CJsonNode::TArray, it, arg.GetArray()) {
+        for (CJsonIterator it = arg.Iterate(); it; ++it)
             result.push_back(arg_array.GetString(*it));
-        }
 }
 
 bool SNetScheduleServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "server_status")
-        reply.PushNode(g_LegacyStatToJson(m_NetServer,
+        reply.Append(g_LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
     else if (method == "job_group_info")
-        reply.PushNode(g_GenericStatToJson(m_NetServer,
+        reply.Append(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
     else if (method == "client_info")
-        reply.PushNode(g_GenericStatToJson(m_NetServer,
+        reply.Append(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatClients, arg_array.NextBoolean(false)));
     else if (method == "notification_info")
-        reply.PushNode(g_GenericStatToJson(m_NetServer,
+        reply.Append(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatNotifications, arg_array.NextBoolean(false)));
     else if (method == "affinity_info")
-        reply.PushNode(g_GenericStatToJson(m_NetServer,
+        reply.Append(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatAffinities, arg_array.NextBoolean(false)));
     else if (method == "change_preferred_affinities") {
         vector<string> affs_to_add;
@@ -309,24 +310,24 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
     } else if (method == "queue_info")
-        reply.PushNode(g_QueueInfoToJson(m_NetScheduleAPI,
+        reply.Append(g_QueueInfoToJson(m_NetScheduleAPI,
                 arg_array.NextString(kEmptyStr), m_ActualServiceType));
     else if (method == "queue_class_info")
-        reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI,
+        reply.Append(g_QueueClassInfoToJson(m_NetScheduleAPI,
                 m_ActualServiceType));
     else if (method == "reconf")
-        reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI,
+        reply.Append(g_ReconfAndReturnJson(m_NetScheduleAPI,
                 m_ActualServiceType));
     else if (method == "parse_key") {
         CJobInfoToJSON job_key_to_json;
         job_key_to_json.ProcessJobMeta(CNetScheduleKey(arg_array.NextString()));
-        reply.PushNode(job_key_to_json.GetRootNode());
+        reply.Append(job_key_to_json.GetRootNode());
     } else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
         string job_key(arg_array.NextString());
         ProcessJobInfo(m_NetScheduleAPI, job_key,
             &job_info_to_json, arg_array.NextBoolean(true));
-        reply.PushNode(job_info_to_json.GetRootNode());
+        reply.Append(job_info_to_json.GetRootNode());
     } else if (method == "job_counters") {
         CNetScheduleAdmin::TStatusMap status_map;
         string affinity(arg_array.NextString(kEmptyStr));
@@ -337,15 +338,15 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         ITERATE(CNetScheduleAdmin::TStatusMap, it, status_map) {
             jobs_by_status.SetInteger(it->first, it->second);
         }
-        reply.PushNode(jobs_by_status);
+        reply.Append(jobs_by_status);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate();
                 it; ++it)
-            object_ids.PushInteger(m_AutomationProc->
+            object_ids.AppendInteger(m_AutomationProc->
                     ReturnNetScheduleServerObject(m_NetScheduleAPI, *it)->
                     GetID());
-        reply.PushNode(object_ids);
+        reply.Append(object_ids);
     } else
         return SNetServiceAutomationObject::Call(method, arg_array, reply);
 
@@ -416,7 +417,7 @@ TAutomationObjectRef CAutomationProc::CreateObject(const string& class_name,
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
-    CArgArray arg_array(message.GetArray());
+    CArgArray arg_array(message);
 
     string command(arg_array.NextString());
 
@@ -426,7 +427,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         return NULL;
 
     CJsonNode reply(CJsonNode::NewArrayNode());
-    reply.PushNode(m_OKNode);
+    reply.Append(m_OKNode);
 
     if (command == "call") {
         TAutomationObjectRef object_ref(ObjectIdToRef(
@@ -441,7 +442,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     } else if (command == "new") {
         string class_name(arg_array.NextString());
         arg_array.UpdateLocation(class_name);
-        reply.PushInteger(CreateObject(class_name, arg_array)->GetID());
+        reply.AppendInteger(CreateObject(class_name, arg_array)->GetID());
     } else if (command == "del") {
         TAutomationObjectRef& object(ObjectIdToRef(
                 (TObjectID) arg_array.NextInteger()));
@@ -449,7 +450,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         object = NULL;
     } else if (command == "echo") {
         CJsonNode reply(message);
-        reply.GetArray()[0] = CJsonNode::NewBooleanNode(true);
+        reply.SetAtIndex(0, CJsonNode::NewBooleanNode(true));
         return reply;
     } else
         arg_array.Exception("unknown command");
@@ -461,18 +462,18 @@ void CAutomationProc::SendWarning(const string& warn_msg,
         TAutomationObjectRef source)
 {
     CJsonNode warning(CJsonNode::NewArrayNode());
-    warning.PushNode(m_WarnNode);
-    warning.PushString(warn_msg);
-    warning.PushString(source->GetType());
-    warning.PushInteger(source->GetID());
+    warning.Append(m_WarnNode);
+    warning.AppendString(warn_msg);
+    warning.AppendString(source->GetType());
+    warning.AppendInteger(source->GetID());
     m_MessageSender->SendMessage(warning);
 }
 
 void CAutomationProc::SendError(const CTempString& error_message)
 {
     CJsonNode error(CJsonNode::NewArrayNode());
-    error.PushNode(m_ErrNode);
-    error.PushString(error_message);
+    error.Append(m_ErrNode);
+    error.AppendString(error_message);
     m_MessageSender->SendMessage(error);
 }
 
@@ -629,8 +630,8 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
 
     {
         CJsonNode greeting(CJsonNode::NewArrayNode());
-        greeting.PushString(GRID_APP_NAME);
-        greeting.PushInteger(PROTOCOL_VERSION);
+        greeting.AppendString(GRID_APP_NAME);
+        greeting.AppendInteger(PROTOCOL_VERSION);
 
         message_sender.SendMessage(greeting);
     }

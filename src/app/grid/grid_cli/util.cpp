@@ -50,19 +50,17 @@ static void PrintJSONNode(FILE* output_stream, CJsonNode node,
     switch (node.GetNodeType()) {
     case CJsonNode::eObject:
         {
-            CJsonNode::TObject object(node.GetObject());
-
             fputs(struct_prefix, output_stream);
             Indent(output_stream, struct_indent);
             putc('{', output_stream);
             const char* prefix = "\n";
             int indent = struct_indent + 1;
-            ITERATE(CJsonNode::TObject, it, object) {
+            for (CJsonIterator it = node.Iterate(); it; ++it) {
                 fputs(prefix, output_stream);
                 Indent(output_stream, indent);
                 fprintf(output_stream, "\"%s\":",
-                        NStr::PrintableString(it->first).c_str());
-                PrintJSONNode(output_stream, it->second, indent, "\n", 0, " ");
+                        NStr::PrintableString(it.GetKey()).c_str());
+                PrintJSONNode(output_stream, *it, indent, "\n", 0, " ");
                 prefix = ",\n";
             }
             putc('\n', output_stream);
@@ -72,14 +70,12 @@ static void PrintJSONNode(FILE* output_stream, CJsonNode node,
         break;
     case CJsonNode::eArray:
         {
-            CJsonNode::TArray array(node.GetArray());
-
             fputs(struct_prefix, output_stream);
             Indent(output_stream, struct_indent);
             putc('[', output_stream);
             const char* prefix = "\n";
             int indent = struct_indent + 1;
-            ITERATE(CJsonNode::TArray, it, array) {
+            for (CJsonIterator it = node.Iterate(); it; ++it) {
                 fputs(prefix, output_stream);
                 PrintJSONNode(output_stream, *it, indent, "", indent, "");
                 prefix = ",\n";
@@ -93,22 +89,22 @@ static void PrintJSONNode(FILE* output_stream, CJsonNode node,
         fputs(scalar_prefix, output_stream);
         Indent(output_stream, scalar_indent);
         fprintf(output_stream, "\"%s\"",
-                NStr::PrintableString(node.GetString()).c_str());
+                NStr::PrintableString(node.AsString()).c_str());
         break;
     case CJsonNode::eInteger:
         fputs(scalar_prefix, output_stream);
         Indent(output_stream, scalar_indent);
-        fprintf(output_stream, "%lld", (long long) node.GetInteger());
+        fprintf(output_stream, "%lld", (long long) node.AsInteger());
         break;
     case CJsonNode::eDouble:
         fputs(scalar_prefix, output_stream);
         Indent(output_stream, scalar_indent);
-        fprintf(output_stream, "%.10g", node.GetDouble());
+        fprintf(output_stream, "%.10g", node.AsDouble());
         break;
     case CJsonNode::eBoolean:
         fputs(scalar_prefix, output_stream);
         Indent(output_stream, scalar_indent);
-        fputs(node.GetBoolean() ? "true" : "false", output_stream);
+        fputs(node.AsBoolean() ? "true" : "false", output_stream);
         break;
     default: // CJsonNode::eNull
         fputs(scalar_prefix, output_stream);
@@ -132,7 +128,7 @@ CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
     CJsonNode result(CJsonNode::NewObjectNode());
 
     for (CNetServiceIterator it = service.Iterate(); it; ++it)
-        result.SetNode((*it).GetServerAddress(), exec_to_json.ExecOn(*it));
+        result.SetByKey((*it).GetServerAddress(), exec_to_json.ExecOn(*it));
 
     return result;
 }
@@ -161,7 +157,7 @@ CJsonNode SExecAnyCmdToJson::ExecOn(CNetServer server)
     string line;
 
     while (output.ReadLine(line))
-        lines.PushString(line);
+        lines.AppendString(line);
 
     return lines;
 }

@@ -34,22 +34,66 @@
 
 #include "netcomponent.hpp"
 
-#include <connect/ncbi_pipe.hpp>
-
 #include <util/uttp.hpp>
 #include <util/util_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
+/// Exception class for use by CJsonNode.
+class NCBI_XCONNECT_EXPORT CJsonException : public CException
+{
+public:
+    enum EErrCode {
+        eInvalidNodeType,   ///< Operation is not valid for this node type
+        eIndexOutOfRange,   ///< JSON array index exceeds the maximum index
+        eKeyNotFound,       ///< No such key in the object node
+    };
+
+    virtual const char* GetErrCodeString() const;
+
+    NCBI_EXCEPTION_DEFAULT(CJsonException, CException);
+};
+
+///< @internal
 struct SJsonNodeImpl;
 
+/// This interface should not be used directly.
+/// @internal
+/// @see CJsonIterator
+struct NCBI_XCONNECT_EXPORT SJsonIteratorImpl : public CObject
+{
+    virtual SJsonNodeImpl* GetNode() const = 0;
+    virtual const string& GetKey() const = 0;
+    virtual bool Next() = 0;
+};
+
+/// JSON node abstraction.
 class NCBI_XCONNECT_EXPORT CJsonNode
 {
     NCBI_NET_COMPONENT(JsonNode);
 
-    typedef map<string, CJsonNode> TObject;
-    typedef vector<CJsonNode> TArray;
+    /// Create a new JSON object node.
+    static CJsonNode NewObjectNode();
 
+    /// Create a new JSON array node.
+    static CJsonNode NewArrayNode();
+
+    /// Create a new JSON string node.
+    static CJsonNode NewStringNode(const string& value);
+
+    /// Create a new JSON integer node.
+    static CJsonNode NewIntegerNode(Int8 value);
+
+    /// Create a new JSON double node.
+    static CJsonNode NewDoubleNode(double value);
+
+    /// Create a new JSON boolean node.
+    static CJsonNode NewBooleanNode(bool value);
+
+    /// Create a new JSON null node.
+    static CJsonNode NewNullNode();
+
+    /// JSON node type.
     enum ENodeType {
         eObject,
         eArray,
@@ -60,51 +104,249 @@ class NCBI_XCONNECT_EXPORT CJsonNode
         eNull
     };
 
+    /// Return a ENodeType constant identifying the node type.
     ENodeType GetNodeType() const;
 
-    bool IsObject() const {return GetNodeType() == eObject;}
-    bool IsArray() const {return GetNodeType() == eArray;}
-    bool IsString() const {return GetNodeType() == eString;}
-    bool IsInteger() const {return GetNodeType() == eInteger;}
-    bool IsDouble() const {return GetNodeType() == eDouble;}
-    bool IsBoolean() const {return GetNodeType() == eBoolean;}
-    bool IsNull() const {return GetNodeType() == eNull;}
+    /// Return true for a JSON object. Return false otherwise.
+    bool IsObject() const;
 
-    static CJsonNode NewArrayNode();
+    /// Return true for a JSON array. Return false otherwise.
+    bool IsArray() const;
 
-    const TArray& GetArray() const;
-    TArray& GetArray();
+    /// Return true for a string node. Return false otherwise.
+    bool IsString() const;
 
-    void PushNode(CJsonNode::TInstance value);
-    void PushString(const string& value);
-    void PushInteger(Int8 value);
-    void PushDouble(double value);
-    void PushBoolean(bool value);
-    void PushNull();
+    /// Return true for an integer node. Return false otherwise.
+    bool IsInteger() const;
 
-    static CJsonNode NewObjectNode();
+    /// Return true for a double node. Return false otherwise.
+    bool IsDouble() const;
 
-    const CJsonNode::TObject& GetObject() const;
-    CJsonNode::TObject& GetObject();
+    /// Return true for a boolean node. Return false otherwise.
+    bool IsBoolean() const;
 
-    void SetNode(const string& key, CJsonNode::TInstance value);
+    /// Return true for a null node. Return false otherwise.
+    bool IsNull() const;
+
+    /// For a container node (that is, either an array or an object),
+    /// begin iteration over its elements. The returned value must
+    /// be used to initialize a CJsonIterator object.
+    /// @see CJsonIterator
+    SJsonIteratorImpl* Iterate() const;
+
+    /// For a container node (that is, either an array or
+    /// an object), return the number of elements in the container.
+    size_t GetSize() const;
+
+    /// For an array node, add a string node at the end of the array.
+    void AppendString(const string& value);
+
+    /// For an array node, add a integer node at the end of the array.
+    void AppendInteger(Int8 value);
+
+    /// For an array node, add a floating point node at the end of the array.
+    void AppendDouble(double value);
+
+    /// For an array node, add a boolean node at the end of the array.
+    void AppendBoolean(bool value);
+
+    /// For an array node, add a null node at the end of the array.
+    void AppendNull();
+
+    /// For an array node, add a new element at the end of the array.
+    void Append(CJsonNode::TInstance value);
+
+    /// For an array node, set a new value for an existing element.
+    /// Throw an exception if the index is out of range.
+    void SetAtIndex(size_t index, CJsonNode::TInstance value);
+
+    /// Delete an element located at the specified index from a JSON array.
+    /// Throw an exception if the index is out of range.
+    void DeleteAtIndex(size_t index);
+
+    /// Return a JSON array element at the specified index.
+    /// Throw an exception if the index is out of range.
+    CJsonNode GetAtIndex(size_t index) const;
+
+    /// Set a JSON object element to the specified string value.
     void SetString(const string& key, const string& value);
+
+    /// Set a JSON object element to the specified integer value.
     void SetInteger(const string& key, Int8 value);
+
+    /// Set a JSON object element to the specified floating point value.
     void SetDouble(const string& key, double value);
+
+    /// Set a JSON object element to the specified boolean value.
     void SetBoolean(const string& key, bool value);
+
+    /// Set a JSON object element to the specified null value.
     void SetNull(const string& key);
 
-    static CJsonNode NewStringNode(const string& value);
-    static CJsonNode NewIntegerNode(Int8 value);
-    static CJsonNode NewDoubleNode(double value);
-    static CJsonNode NewBooleanNode(bool value);
-    static CJsonNode NewNullNode();
+    /// For a JSON object node, insert a new element or update
+    /// an existing element.
+    void SetByKey(const string& key, CJsonNode::TInstance value);
 
-    const string& GetString() const;
-    Int8 GetInteger() const;
-    double GetDouble() const;
-    bool GetBoolean() const;
+    /// Delete an element referred to by the specified key from a JSON object.
+    void DeleteByKey(const string& key);
+
+    /// Check if an object node has an element accessible by
+    /// the specified key.
+    bool HasKey(const string& key) const;
+
+    /// For a JSON object node, return the value associated with
+    /// the specified key. Throw an exception if there is no
+    /// such key in this object.
+    CJsonNode GetByKey(const string& key) const;
+
+    /// For a JSON object node, return the string referred to
+    /// by the specified key. Throw an exception if the key
+    /// does not exist or refers to a non-string node.
+    string GetString(const string& key) const;
+
+    /// For a JSON object node, return the integer referred to
+    /// by the specified key. Throw an exception if the key
+    /// does not exist or refers to a non-numeric node.
+    Int8 GetInteger(const string& key) const;
+
+    /// For a JSON object node, return the floating point number
+    /// referred to by the specified key. Throw an exception
+    /// if the key does not exist or refers to a non-numeric node.
+    double GetDouble(const string& key) const;
+
+    /// For a JSON object node, return the boolean referred to
+    /// by the specified key. Throw an exception if the key
+    /// does not exist or refers to a non-boolean node.
+    bool GetBoolean(const string& key) const;
+
+    /// Provided that this is a string node, return
+    /// the string value of this node.
+    const string& AsString() const;
+
+    /// Provided that this is a numeric node (that is, either
+    /// an integer or a floating point node), return the value
+    /// of this node as an integer number.
+    Int8 AsInteger() const;
+
+    /// Provided that this is a numeric node (that is, either
+    /// a floating point or an integer node), return the value
+    /// of this node as a floating point number.
+    double AsDouble() const;
+
+    /// Provided that this is a boolean node, return
+    /// the boolean value of this node.
+    bool AsBoolean() const;
 };
+
+/// Iterator for JSON arrays and objects.
+/// @see CJsonNode::Iterate()
+class NCBI_XCONNECT_EXPORT CJsonIterator
+{
+    NCBI_NET_COMPONENT(JsonIterator);
+
+    /// Return the value of the current element.
+    CJsonNode GetNode() const;
+
+    /// When iterating over a JSON object, return
+    /// the key of the current element.
+    const string& GetKey() const;
+
+    /// Skip to the next element if there is one, in which
+    /// case TRUE is returned. If the current element is the
+    /// last element, return FALSE and zero out this iterator.
+    bool Next();
+
+    /// An alternative way to get the value of the current element.
+    CJsonNode operator *() const;
+
+    /// An operator equivalent of the method Next().
+    CJsonIterator& operator ++();
+};
+
+inline bool CJsonNode::IsObject() const
+{
+    return GetNodeType() == eObject;
+}
+
+inline bool CJsonNode::IsArray() const
+{
+    return GetNodeType() == eArray;
+}
+
+inline bool CJsonNode::IsString() const
+{
+    return GetNodeType() == eString;
+}
+
+inline bool CJsonNode::IsInteger() const
+{
+    return GetNodeType() == eInteger;
+}
+
+inline bool CJsonNode::IsDouble() const
+{
+    return GetNodeType() == eDouble;
+}
+
+inline bool CJsonNode::IsBoolean() const
+{
+    return GetNodeType() == eBoolean;
+}
+
+inline bool CJsonNode::IsNull() const
+{
+    return GetNodeType() == eNull;
+}
+
+inline string CJsonNode::GetString(const string& key) const
+{
+    return GetByKey(key).AsString();
+}
+
+inline Int8 CJsonNode::GetInteger(const string& key) const
+{
+    return GetByKey(key).AsInteger();
+}
+
+inline double CJsonNode::GetDouble(const string& key) const
+{
+    return GetByKey(key).AsDouble();
+}
+
+inline bool CJsonNode::GetBoolean(const string& key) const
+{
+    return GetByKey(key).AsBoolean();
+}
+
+inline CJsonNode CJsonIterator::GetNode() const
+{
+    return m_Impl->GetNode();
+}
+
+inline const string& CJsonIterator::GetKey() const
+{
+    return m_Impl->GetKey();
+}
+
+inline bool CJsonIterator::Next()
+{
+    if (m_Impl->Next())
+        return true;
+
+    m_Impl.Reset(NULL);
+    return false;
+}
+
+inline CJsonNode CJsonIterator::operator *() const
+{
+    return GetNode();
+}
+
+inline CJsonIterator& CJsonIterator::operator ++()
+{
+    Next();
+    return *this;
+}
 
 class NCBI_XCONNECT_EXPORT CJsonOverUTTPReader
 {
@@ -177,8 +419,7 @@ public:
 private:
     struct SOutputStackFrame {
         CJsonNode m_Node;
-        CJsonNode::TArray::const_iterator m_ArrayIterator;
-        CJsonNode::TObject::const_iterator m_ObjectIterator;
+        CJsonIterator m_Iterator;
     };
 
     typedef list<SOutputStackFrame> TOutputStack;

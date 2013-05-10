@@ -37,26 +37,137 @@
 
 BEGIN_NCBI_SCOPE
 
+const char* CJsonException::GetErrCodeString() const
+{
+    switch (GetErrCode()) {
+    case eInvalidNodeType:
+        return "eInvalidNodeType";
+    case eIndexOutOfRange:
+        return "eIndexOutOfRange";
+    case eKeyNotFound:
+        return "eKeyNotFound";
+    default:
+        return CException::GetErrCodeString();
+    }
+}
+
+typedef CRef<SJsonNodeImpl,
+    CNetComponentCounterLocker<SJsonNodeImpl> > TJsonNodeRef;
+
+typedef map<string, TJsonNodeRef> TJsonNodeMap;
+typedef vector<TJsonNodeRef> TJsonNodeVector;
+
+struct SJsonObjectNodeImpl;
+struct SJsonArrayNodeImpl;
+
 struct SJsonNodeImpl : public CObject
 {
     SJsonNodeImpl(CJsonNode::ENodeType node_type) : m_NodeType(node_type) {}
 
+    static const char* GetTypeName(CJsonNode::ENodeType node_type);
+    const char* GetTypeName() const {return GetTypeName(m_NodeType);}
+
+    void VerifyType(const char* operation,
+            CJsonNode::ENodeType required_type) const;
+
+    const SJsonObjectNodeImpl* GetObjectNodeImpl(const char* operation) const;
+    SJsonObjectNodeImpl* GetObjectNodeImpl(const char* operation);
+
+    const SJsonArrayNodeImpl* GetArrayNodeImpl(const char* operation) const;
+    SJsonArrayNodeImpl* GetArrayNodeImpl(const char* operation);
+
     CJsonNode::ENodeType m_NodeType;
 };
+
+const char* SJsonNodeImpl::GetTypeName(CJsonNode::ENodeType node_type)
+{
+    switch (node_type) {
+    case CJsonNode::eObject:
+        return "an object";
+    case CJsonNode::eArray:
+        return "an array";
+    case CJsonNode::eString:
+        return "a string";
+    case CJsonNode::eInteger:
+        return "an integer";
+    case CJsonNode::eDouble:
+        return "a floating point";
+    case CJsonNode::eBoolean:
+        return "a boolean";
+    default: /* case CJsonNode::eNull: */
+        return "a null";
+    }
+}
+
+void SJsonNodeImpl::VerifyType(const char* operation,
+        CJsonNode::ENodeType required_type) const
+{
+    if (m_NodeType != required_type) {
+        NCBI_THROW_FMT(CJsonException, eInvalidNodeType,
+                "Cannot apply " << operation <<
+                " to " << GetTypeName() << " node: " <<
+                GetTypeName(required_type) << " node is required");
+    }
+}
 
 struct SJsonObjectNodeImpl : public SJsonNodeImpl
 {
     SJsonObjectNodeImpl() : SJsonNodeImpl(CJsonNode::eObject) {}
 
-    CJsonNode::TObject m_Object;
+    TJsonNodeMap m_Object;
 };
+
+inline const SJsonObjectNodeImpl* SJsonNodeImpl::GetObjectNodeImpl(
+        const char* operation) const
+{
+    VerifyType(operation, CJsonNode::eObject);
+
+    return static_cast<const SJsonObjectNodeImpl*>(this);
+}
+
+inline SJsonObjectNodeImpl* SJsonNodeImpl::GetObjectNodeImpl(
+        const char* operation)
+{
+    VerifyType(operation, CJsonNode::eObject);
+
+    return static_cast<SJsonObjectNodeImpl*>(this);
+}
 
 struct SJsonArrayNodeImpl : public SJsonNodeImpl
 {
     SJsonArrayNodeImpl() : SJsonNodeImpl(CJsonNode::eArray) {}
 
-    CJsonNode::TArray m_Array;
+    void VerifyIndexBounds(const char* operation, size_t index) const;
+
+    TJsonNodeVector m_Array;
 };
+
+inline const SJsonArrayNodeImpl* SJsonNodeImpl::GetArrayNodeImpl(
+        const char* operation) const
+{
+    VerifyType(operation, CJsonNode::eArray);
+
+    return static_cast<const SJsonArrayNodeImpl*>(this);
+}
+
+inline SJsonArrayNodeImpl* SJsonNodeImpl::GetArrayNodeImpl(
+        const char* operation)
+{
+    VerifyType(operation, CJsonNode::eArray);
+
+    return static_cast<SJsonArrayNodeImpl*>(this);
+}
+
+void SJsonArrayNodeImpl::VerifyIndexBounds(
+        const char* operation, size_t index) const
+{
+    if (m_Array.size() <= index) {
+        NCBI_THROW_FMT(CJsonException, eIndexOutOfRange,
+                operation << ": index " << index <<
+                " is out of range (array size is " <<
+                m_Array.size() << ')');
+    }
+}
 
 struct SJsonStringNodeImpl : public SJsonNodeImpl
 {
@@ -100,111 +211,14 @@ struct SJsonFixedSizeNodeImpl : public SJsonNodeImpl
     };
 };
 
-CJsonNode::ENodeType CJsonNode::GetNodeType() const
-{
-    return m_Impl->m_NodeType;
-}
-
-CJsonNode CJsonNode::NewArrayNode()
-{
-    return new SJsonArrayNodeImpl;
-}
-
-const CJsonNode::TArray& CJsonNode::GetArray() const
-{
-    _ASSERT(m_Impl->m_NodeType == eArray);
-
-    return static_cast<const SJsonArrayNodeImpl*>(
-        m_Impl.GetPointerOrNull())->m_Array;
-}
-
-CJsonNode::TArray& CJsonNode::GetArray()
-{
-    _ASSERT(m_Impl->m_NodeType == eArray);
-
-    return static_cast<SJsonArrayNodeImpl*>(
-        m_Impl.GetPointerOrNull())->m_Array;
-}
-
-void CJsonNode::PushNode(CJsonNode::TInstance value)
-{
-    GetArray().push_back(value);
-}
-
-void CJsonNode::PushString(const string& value)
-{
-    PushNode(new SJsonStringNodeImpl(value));
-}
-
-void CJsonNode::PushInteger(Int8 value)
-{
-    PushNode(new SJsonFixedSizeNodeImpl(value));
-}
-
-void CJsonNode::PushDouble(double value)
-{
-    PushNode(new SJsonFixedSizeNodeImpl(value));
-}
-
-void CJsonNode::PushBoolean(bool value)
-{
-    PushNode(new SJsonFixedSizeNodeImpl(value));
-}
-
-void CJsonNode::PushNull()
-{
-    PushNode(new SJsonFixedSizeNodeImpl);
-}
-
 CJsonNode CJsonNode::NewObjectNode()
 {
     return new SJsonObjectNodeImpl;
 }
 
-const CJsonNode::TObject& CJsonNode::GetObject() const
+CJsonNode CJsonNode::NewArrayNode()
 {
-    _ASSERT(m_Impl->m_NodeType == eObject);
-
-    return static_cast<const SJsonObjectNodeImpl*>(
-        m_Impl.GetPointerOrNull())->m_Object;
-}
-
-CJsonNode::TObject& CJsonNode::GetObject()
-{
-    _ASSERT(m_Impl->m_NodeType == eObject);
-
-    return static_cast<SJsonObjectNodeImpl*>(
-        m_Impl.GetPointerOrNull())->m_Object;
-}
-
-void CJsonNode::SetNode(const string& key, CJsonNode::TInstance value)
-{
-    GetObject()[key] = value;
-}
-
-void CJsonNode::SetString(const string& key, const string& value)
-{
-    SetNode(key, new SJsonStringNodeImpl(value));
-}
-
-void CJsonNode::SetInteger(const string& key, Int8 value)
-{
-    SetNode(key, new SJsonFixedSizeNodeImpl(value));
-}
-
-void CJsonNode::SetDouble(const string& key, double value)
-{
-    SetNode(key, new SJsonFixedSizeNodeImpl(value));
-}
-
-void CJsonNode::SetBoolean(const string& key, bool value)
-{
-    SetNode(key, new SJsonFixedSizeNodeImpl(value));
-}
-
-void CJsonNode::SetNull(const string& key)
-{
-    SetNode(key, new SJsonFixedSizeNodeImpl);
+    return new SJsonArrayNodeImpl;
 }
 
 CJsonNode CJsonNode::NewStringNode(const string& value)
@@ -232,41 +246,269 @@ CJsonNode CJsonNode::NewNullNode()
     return new SJsonFixedSizeNodeImpl();
 }
 
-const string& CJsonNode::GetString() const
+CJsonNode::ENodeType CJsonNode::GetNodeType() const
 {
-    _ASSERT(m_Impl->m_NodeType == eString);
+    return m_Impl->m_NodeType;
+}
+
+struct SJsonObjectIterator : public SJsonIteratorImpl
+{
+    SJsonObjectIterator(SJsonObjectNodeImpl* containter,
+            TJsonNodeMap::iterator it) :
+        m_Containter(containter),
+        m_Iterator(it)
+    {
+    }
+
+    virtual SJsonNodeImpl* GetNode() const;
+    virtual const string& GetKey() const;
+    virtual bool Next();
+
+    CRef<SJsonObjectNodeImpl,
+            CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Containter;
+    TJsonNodeMap::iterator m_Iterator;
+};
+
+SJsonNodeImpl* SJsonObjectIterator::GetNode() const
+{
+    return m_Iterator->second;
+}
+
+const string& SJsonObjectIterator::GetKey() const
+{
+    return m_Iterator->first;
+}
+
+bool SJsonObjectIterator::Next()
+{
+    return ++m_Iterator != m_Containter->m_Object.end();
+}
+
+struct SJsonArrayIterator : public SJsonIteratorImpl
+{
+    SJsonArrayIterator(SJsonArrayNodeImpl* containter,
+            TJsonNodeVector::iterator it) :
+        m_Containter(containter),
+        m_Iterator(it)
+    {
+    }
+
+    virtual SJsonNodeImpl* GetNode() const;
+    virtual const string& GetKey() const;
+    virtual bool Next();
+
+    CRef<SJsonArrayNodeImpl,
+            CNetComponentCounterLocker<SJsonArrayNodeImpl> > m_Containter;
+    TJsonNodeVector::iterator m_Iterator;
+};
+
+SJsonNodeImpl* SJsonArrayIterator::GetNode() const
+{
+    return *m_Iterator;
+}
+
+const string& SJsonArrayIterator::GetKey() const
+{
+    NCBI_THROW(CJsonException, eInvalidNodeType,
+            "Cannot get a key for an array iterator.");
+}
+
+bool SJsonArrayIterator::Next()
+{
+    return ++m_Iterator != m_Containter->m_Array.end();
+}
+
+SJsonIteratorImpl* CJsonNode::Iterate() const
+{
+    switch (m_Impl->m_NodeType) {
+    case CJsonNode::eObject:
+        {
+            SJsonObjectNodeImpl* node = const_cast<SJsonObjectNodeImpl*>(
+                    static_cast<const SJsonObjectNodeImpl*>(
+                            m_Impl.GetPointerOrNull()));
+
+            return !node->m_Object.empty() ? new SJsonObjectIterator(node,
+                    node->m_Object.begin()) : NULL;
+        }
+    case CJsonNode::eArray:
+        {
+            SJsonArrayNodeImpl* node = const_cast<SJsonArrayNodeImpl*>(
+                static_cast<const SJsonArrayNodeImpl*>(
+                m_Impl.GetPointerOrNull()));
+
+            return !node->m_Array.empty() ? new SJsonArrayIterator(node,
+                node->m_Array.begin()) : NULL;
+        }
+    default:
+        NCBI_THROW(CJsonException, eInvalidNodeType,
+                "Cannot iterate a scalar type");
+    }
+}
+
+size_t CJsonNode::GetSize() const
+{
+    switch (m_Impl->m_NodeType) {
+    case CJsonNode::eObject:
+        return static_cast<const SJsonObjectNodeImpl*>(
+                m_Impl.GetPointerOrNull())->m_Object.size();
+    case CJsonNode::eArray:
+        return static_cast<const SJsonArrayNodeImpl*>(
+                m_Impl.GetPointerOrNull())->m_Array.size();
+    default:
+        NCBI_THROW(CJsonException, eInvalidNodeType,
+                "GetSize() requires a container type");
+    }
+}
+
+void CJsonNode::AppendString(const string& value)
+{
+    Append(new SJsonStringNodeImpl(value));
+}
+
+void CJsonNode::AppendInteger(Int8 value)
+{
+    Append(new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::AppendDouble(double value)
+{
+    Append(new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::AppendBoolean(bool value)
+{
+    Append(new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::AppendNull()
+{
+    Append(new SJsonFixedSizeNodeImpl);
+}
+
+void CJsonNode::Append(CJsonNode::TInstance value)
+{
+    m_Impl->GetArrayNodeImpl("Append()")->
+            m_Array.push_back(TJsonNodeRef(value));
+}
+
+void CJsonNode::SetAtIndex(size_t index, CJsonNode::TInstance value)
+{
+    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("SetAtIndex()"));
+
+    impl->VerifyIndexBounds("SetAtIndex()", index);
+
+    impl->m_Array[index] = value;
+}
+
+void CJsonNode::DeleteAtIndex(size_t index)
+{
+    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("DeleteAtIndex()"));
+
+    impl->VerifyIndexBounds("DeleteAtIndex()", index);
+
+    impl->m_Array.erase(impl->m_Array.begin() + index);
+}
+
+CJsonNode CJsonNode::GetAtIndex(size_t index) const
+{
+    const SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("GetAtIndex()"));
+
+    impl->VerifyIndexBounds("GetAtIndex()", index);
+
+    return const_cast<SJsonNodeImpl*>(impl->m_Array[index].GetPointerOrNull());
+}
+
+void CJsonNode::SetString(const string& key, const string& value)
+{
+    SetByKey(key, new SJsonStringNodeImpl(value));
+}
+
+void CJsonNode::SetInteger(const string& key, Int8 value)
+{
+    SetByKey(key, new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::SetDouble(const string& key, double value)
+{
+    SetByKey(key, new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::SetBoolean(const string& key, bool value)
+{
+    SetByKey(key, new SJsonFixedSizeNodeImpl(value));
+}
+
+void CJsonNode::SetNull(const string& key)
+{
+    SetByKey(key, new SJsonFixedSizeNodeImpl);
+}
+
+void CJsonNode::SetByKey(const string& key, CJsonNode::TInstance value)
+{
+    m_Impl->GetObjectNodeImpl("SetByKey()")->m_Object[key] = value;
+}
+
+void CJsonNode::DeleteByKey(const string& key)
+{
+    m_Impl->GetObjectNodeImpl("DeleteByKey()")->m_Object.erase(key);
+}
+
+bool CJsonNode::HasKey(const string& key) const
+{
+    const SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("HasKey()"));
+
+    return impl->m_Object.find(key) != impl->m_Object.end();
+}
+
+CJsonNode CJsonNode::GetByKey(const string& key) const
+{
+    const SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("GetByKey()"));
+
+    TJsonNodeMap::const_iterator it(impl->m_Object.find(key));
+
+    if (it == impl->m_Object.end()) {
+        NCBI_THROW_FMT(CJsonException, eKeyNotFound,
+                "GetByKey(): no such key \"" << key << '\"');
+    }
+
+    return const_cast<SJsonNodeImpl*>(it->second.GetPointerOrNull());
+}
+
+const string& CJsonNode::AsString() const
+{
+    m_Impl->VerifyType("AsString()", eString);
 
     return static_cast<const SJsonStringNodeImpl*>(
         m_Impl.GetPointerOrNull())->m_String;
 }
 
-Int8 CJsonNode::GetInteger() const
+Int8 CJsonNode::AsInteger() const
 {
     if (m_Impl->m_NodeType == eDouble)
         return (Int8) static_cast<const SJsonFixedSizeNodeImpl*>(
             m_Impl.GetPointerOrNull())->m_Double;
 
-    _ASSERT(m_Impl->m_NodeType == eInteger);
+    m_Impl->VerifyType("AsInteger()", eInteger);
 
     return static_cast<const SJsonFixedSizeNodeImpl*>(
         m_Impl.GetPointerOrNull())->m_Integer;
 }
 
-double CJsonNode::GetDouble() const
+double CJsonNode::AsDouble() const
 {
     if (m_Impl->m_NodeType == eInteger)
         return (double) static_cast<const SJsonFixedSizeNodeImpl*>(
             m_Impl.GetPointerOrNull())->m_Integer;
 
-    _ASSERT(m_Impl->m_NodeType == eDouble);
+    m_Impl->VerifyType("AsDouble()", eDouble);
 
     return static_cast<const SJsonFixedSizeNodeImpl*>(
         m_Impl.GetPointerOrNull())->m_Double;
 }
 
-bool CJsonNode::GetBoolean() const
+bool CJsonNode::AsBoolean() const
 {
-    _ASSERT(m_Impl->m_NodeType == eBoolean);
+    m_Impl->VerifyType("AsBoolean()", eBoolean);
 
     return static_cast<const SJsonFixedSizeNodeImpl*>(
         m_Impl.GetPointerOrNull())->m_Boolean;
@@ -327,7 +569,7 @@ CJsonOverUTTPReader::EParsingEvent
                     reverse(reinterpret_cast<char*>(&m_Double),
                             reinterpret_cast<char*>(&m_Double + 1));
                 if (m_CurrentNode.IsArray())
-                    m_CurrentNode.PushDouble(m_Double);
+                    m_CurrentNode.AppendDouble(m_Double);
                 else // The current node is eObject.
                     if (m_HashValueIsExpected) {
                         m_HashValueIsExpected = false;
@@ -337,7 +579,7 @@ CJsonOverUTTPReader::EParsingEvent
                 continue;
             }
             if (m_CurrentNode.IsArray())
-                m_CurrentNode.PushString(m_CurrentChunk);
+                m_CurrentNode.AppendString(m_CurrentChunk);
             else // The current node is eObject.
                 if (m_HashValueIsExpected) {
                     m_HashValueIsExpected = false;
@@ -368,11 +610,11 @@ CJsonOverUTTPReader::EParsingEvent
                             CJsonNode::NewArrayNode() :
                             CJsonNode::NewObjectNode());
                         if (m_CurrentNode.IsArray())
-                            m_CurrentNode.PushNode(new_node);
+                            m_CurrentNode.Append(new_node);
                         else // The current node is eObject.
                             if (m_HashValueIsExpected) {
                                 m_HashValueIsExpected = false;
-                                m_CurrentNode.SetNode(m_HashKey, new_node);
+                                m_CurrentNode.SetByKey(m_HashKey, new_node);
                             } else
                                 return eHashKeyMustBeString;
                         m_NodeStack.push_back(m_CurrentNode);
@@ -421,7 +663,7 @@ CJsonOverUTTPReader::EParsingEvent
                         }
 
                         if (m_CurrentNode.IsArray())
-                            m_CurrentNode.PushDouble(m_Double);
+                            m_CurrentNode.AppendDouble(m_Double);
                         else // The current node is eObject.
                             if (m_HashValueIsExpected) {
                                 m_HashValueIsExpected = false;
@@ -437,7 +679,7 @@ CJsonOverUTTPReader::EParsingEvent
                         bool boolean = control_symbol == 'Y';
 
                         if (m_CurrentNode.IsArray())
-                            m_CurrentNode.PushBoolean(boolean);
+                            m_CurrentNode.AppendBoolean(boolean);
                         else // The current node is eObject.
                             if (m_HashValueIsExpected) {
                                 m_HashValueIsExpected = false;
@@ -449,7 +691,7 @@ CJsonOverUTTPReader::EParsingEvent
 
                 case 'U':
                     if (m_CurrentNode.IsArray())
-                        m_CurrentNode.PushNull();
+                        m_CurrentNode.AppendNull();
                     else // The current node is eObject.
                         if (m_HashValueIsExpected) {
                             m_HashValueIsExpected = false;
@@ -468,7 +710,7 @@ CJsonOverUTTPReader::EParsingEvent
             if (m_State != eInitialState)
                 return eChunkContinuationExpected;
             if (m_CurrentNode.IsArray())
-                m_CurrentNode.PushInteger(reader.GetNumber());
+                m_CurrentNode.AppendInteger(reader.GetNumber());
             else // The current node is eObject.
                 if (m_HashValueIsExpected) {
                     m_HashValueIsExpected = false;
@@ -494,14 +736,16 @@ void CJsonOverUTTPWriter::SetOutputMessage(const CJsonNode& root_node)
 {
     _ASSERT(m_OutputStack.empty());
 
-    m_CurrentOutputNode.m_Node = root_node;
+    switch (root_node.GetNodeType()) {
+    case CJsonNode::eObject:
+    case CJsonNode::eArray:
+        m_CurrentOutputNode.m_Node = root_node;
+        m_CurrentOutputNode.m_Iterator = root_node.Iterate();
+        break;
 
-    if (root_node.IsArray())
-        m_CurrentOutputNode.m_ArrayIterator = root_node.GetArray().begin();
-    else if (root_node.IsObject())
-        m_CurrentOutputNode.m_ObjectIterator = root_node.GetObject().begin();
-    else
-        _ASSERT(0 && "The root node can be either an array or on object.");
+    default:
+        _ASSERT(0 && "Must be either an array or an object.");
+    }
 
     m_SendHashValue = false;
 }
@@ -510,8 +754,7 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
 {
     for (;;)
         if (m_CurrentOutputNode.m_Node.IsArray()) {
-            if (m_CurrentOutputNode.m_ArrayIterator ==
-                    m_CurrentOutputNode.m_Node.GetArray().end()) {
+            if (!m_CurrentOutputNode.m_Iterator) {
                 if (m_OutputStack.empty()) {
                     m_UTTPWriter.SendControlSymbol('\n');
                     return false;
@@ -520,12 +763,15 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
                 m_OutputStack.pop_back();
                 if (!m_UTTPWriter.SendControlSymbol(']'))
                     return true;
-            } else
-                if (!SendNode(*m_CurrentOutputNode.m_ArrayIterator++))
+            } else {
+                if (!SendNode(*m_CurrentOutputNode.m_Iterator)) {
+                    m_CurrentOutputNode.m_Iterator.Next();
                     return true;
+                }
+                m_CurrentOutputNode.m_Iterator.Next();
+            }
         } else if (m_CurrentOutputNode.m_Node.IsObject()) {
-            if (m_CurrentOutputNode.m_ObjectIterator ==
-                    m_CurrentOutputNode.m_Node.GetObject().end()) {
+            if (!m_CurrentOutputNode.m_Iterator) {
                 if (m_OutputStack.empty()) {
                     m_UTTPWriter.SendControlSymbol('\n');
                     return false;
@@ -536,18 +782,20 @@ bool CJsonOverUTTPWriter::ContinueWithReply()
                     return true;
             } else {
                 if (!m_SendHashValue) {
-                    string key(m_CurrentOutputNode.m_ObjectIterator->first);
+                    string key(m_CurrentOutputNode.m_Iterator.GetKey());
                     if (!m_UTTPWriter.SendChunk(
                             key.data(), key.length(), false)) {
                         m_SendHashValue = true;
                         return true;
                     }
-                }
+                } else
+                    m_SendHashValue = false;
 
-                m_SendHashValue = false;
-
-                if (!SendNode(m_CurrentOutputNode.m_ObjectIterator++->second))
+                if (!SendNode(*m_CurrentOutputNode.m_Iterator)) {
+                    m_CurrentOutputNode.m_Iterator.Next();
                     return true;
+                }
+                m_CurrentOutputNode.m_Iterator.Next();
             }
         } else {
             _ASSERT(m_CurrentOutputNode.m_Node.IsDouble());
@@ -564,27 +812,27 @@ bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
     case CJsonNode::eObject:
         m_OutputStack.push_back(m_CurrentOutputNode);
         m_CurrentOutputNode.m_Node = node;
-        m_CurrentOutputNode.m_ObjectIterator = node.GetObject().begin();
+        m_CurrentOutputNode.m_Iterator = node.Iterate();
         m_SendHashValue = false;
         return m_UTTPWriter.SendControlSymbol('{');
 
     case CJsonNode::eArray:
         m_OutputStack.push_back(m_CurrentOutputNode);
         m_CurrentOutputNode.m_Node = node;
-        m_CurrentOutputNode.m_ArrayIterator = node.GetArray().begin();
+        m_CurrentOutputNode.m_Iterator = node.Iterate();
         return m_UTTPWriter.SendControlSymbol('[');
 
     case CJsonNode::eString:
         {
-            string str(node.GetString());
+            string str(node.AsString());
             return m_UTTPWriter.SendChunk(str.data(), str.length(), false);
         }
 
     case CJsonNode::eInteger:
-        return m_UTTPWriter.SendNumber(node.GetInteger());
+        return m_UTTPWriter.SendNumber(node.AsInteger());
 
     case CJsonNode::eDouble:
-        m_Double = node.GetDouble();
+        m_Double = node.AsDouble();
         if (!m_UTTPWriter.SendControlSymbol(DOUBLE_PREFIX)) {
             m_OutputStack.push_back(m_CurrentOutputNode);
             m_CurrentOutputNode.m_Node = node;
@@ -593,7 +841,7 @@ bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
         return m_UTTPWriter.SendRawData(&m_Double, sizeof(m_Double));
 
     case CJsonNode::eBoolean:
-        return m_UTTPWriter.SendControlSymbol(node.GetBoolean() ? 'Y' : 'N');
+        return m_UTTPWriter.SendControlSymbol(node.AsBoolean() ? 'Y' : 'N');
 
     default: /* case CJsonNode::eNull: */
         return m_UTTPWriter.SendControlSymbol('U');

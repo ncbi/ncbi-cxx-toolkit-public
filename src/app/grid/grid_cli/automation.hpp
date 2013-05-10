@@ -63,7 +63,7 @@ public:
 class CArgArray
 {
 public:
-    CArgArray(const CJsonNode::TArray& args);
+    CArgArray(const CJsonNode& args);
 
     CJsonNode NextNodeOrNull();
     CJsonNode NextNode();
@@ -80,29 +80,33 @@ public:
     bool NextBoolean() {return GetBoolean(NextNode());}
     bool NextBoolean(bool default_value);
 
-    const CJsonNode::TArray& GetArray(const CJsonNode& node);
-    const CJsonNode::TArray& NextArray() {return GetArray(NextNode());}
+    CJsonNode GetArray(const CJsonNode& node);
+    CJsonNode NextArray() {return GetArray(NextNode());}
 
     void UpdateLocation(const string& location);
     void Exception(const char* what);
 
 private:
-    const CJsonNode::TArray& m_Args;
-    CJsonNode::TArray::const_iterator m_Position;
+    CJsonNode m_Args;
+    CJsonIterator m_Position;
     string m_Location;
 };
 
-inline CArgArray::CArgArray(const CJsonNode::TArray& args) : m_Args(args)
+inline CArgArray::CArgArray(const CJsonNode& args) :
+    m_Args(args),
+    m_Position(args.Iterate())
 {
-    m_Position = args.begin();
 }
 
 inline CJsonNode CArgArray::NextNodeOrNull()
 {
-    if (m_Position != m_Args.end()) {
-        if (!m_Position->IsNull())
-            return *m_Position++;
-        ++m_Position;
+    if (m_Position) {
+        if (!(*m_Position).IsNull()) {
+            CJsonNode result(*m_Position);
+            m_Position.Next();
+            return result;
+        }
+        m_Position.Next();
     }
     return CJsonNode();
 }
@@ -119,7 +123,7 @@ inline string CArgArray::GetString(const CJsonNode& node)
 {
     if (!node.IsString())
         Exception("invalid argument type (expected a string)");
-    return node.GetString();
+    return node.AsString();
 }
 
 inline string CArgArray::NextString(const string& default_value)
@@ -132,7 +136,7 @@ inline Int8 CArgArray::GetInteger(const CJsonNode& node)
 {
     if (!node.IsInteger())
         Exception("invalid argument type (expected an integer)");
-    return node.GetInteger();
+    return node.AsInteger();
 }
 
 inline Int8 CArgArray::NextInteger(Int8 default_value)
@@ -145,7 +149,7 @@ inline bool CArgArray::GetBoolean(const CJsonNode& node)
 {
     if (!node.IsBoolean())
         Exception("invalid argument type (expected a boolean)");
-    return node.GetBoolean();
+    return node.AsBoolean();
 }
 
 inline bool CArgArray::NextBoolean(bool default_value)
@@ -154,11 +158,11 @@ inline bool CArgArray::NextBoolean(bool default_value)
     return next_node ? GetBoolean(next_node) : default_value;
 }
 
-inline const CJsonNode::TArray& CArgArray::GetArray(const CJsonNode& node)
+inline CJsonNode CArgArray::GetArray(const CJsonNode& node)
 {
     if (!node.IsArray())
         Exception("invalid argument type (expected an array)");
-    return node.GetArray();
+    return node;
 }
 
 inline void CArgArray::UpdateLocation(const string& location)
