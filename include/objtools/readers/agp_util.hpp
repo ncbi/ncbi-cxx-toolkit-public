@@ -320,6 +320,14 @@ public:
     ///   can appear.
     virtual int ReadStream(CNcbiIstream& is, EFinalize eFinalize = eFinalize_Yes );
 
+    /// Deprecated backward-compatibility wrapper.
+    /// @deprecated
+    NCBI_DEPRECATED
+    int ReadStream(CNcbiIstream& is, bool bFinalize)
+    {
+        return ReadStream(is, (bFinalize ? eFinalize_Yes : eFinalize_No) );
+    }
+
     /// This is called at the end of the file, usually automatically but can be called manually if
     /// the automatic call was intentionally disabled.
     ///
