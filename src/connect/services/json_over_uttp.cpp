@@ -288,7 +288,8 @@ bool SJsonObjectIterator::Next()
 
 bool SJsonObjectIterator::IsValid() const
 {
-    return m_Iterator != m_Containter->m_Object.end();
+    return m_Iterator
+        != const_cast<TJsonNodeMap&>(m_Containter->m_Object).end();
 }
 
 struct SJsonArrayIterator : public SJsonIteratorImpl
