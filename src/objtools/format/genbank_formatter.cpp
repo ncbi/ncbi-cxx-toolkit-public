@@ -250,7 +250,7 @@ string s_GetAccessionWithoutPeriod(
     return accn;
 }
 
-static string s_get_anchor_html(const string & sAnchorName, int iGi )
+static string s_get_anchor_html(const string & sAnchorName, TGi iGi )
 {
     CNcbiOstrstream result;
 
@@ -464,7 +464,7 @@ void CGenbankFormatter::FormatVersion
         l.push_back("VERSION");
     } else {
         version_line << version.GetAccession();
-        if ( version.GetGi() > 0 ) {
+        if ( version.GetGi() > ZERO_GI ) {
             version_line << "  GI:" << version.GetGi();
         }
         string version_line_str = CNcbiOstrstreamToString(version_line);
@@ -1099,7 +1099,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     }}
 
     // list of links that let us jump to sections
-    const int gi = ctx.GetGI();
+    const TGi gi = ctx.GetGI();
     result << "<div class=\"localnav\"><ul class=\"locals\">";
     if( has_comment ) {
         result << "<li><a href=\"#comment_" << gi << "\" title=\"Jump to the comment section of this record\">Comment</a></li>";
@@ -1118,13 +1118,13 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
         result << "<ul class=\"nextprevlinks\">";
         if( ctx.GetNextHandle() ) {
             // TODO: check for NULL
-            const int gi = ctx.GetNextHandle().GetAccessSeq_id_Handle().GetGi();
+            const TGi gi = ctx.GetNextHandle().GetAccessSeq_id_Handle().GetGi();
             const string accn = sequence::GetId( ctx.GetNextHandle(), sequence::eGetId_Best).GetSeqId()->GetSeqIdString(true);
             result << "<li class=\"next\"><a href=\"#locus_" << gi << "\" title=\"Jump to " << accn << "\">Next</a></li>";
         }
         if( ctx.GetPrevHandle() ) {
             // TODO: check for NULL
-            const int gi = ctx.GetPrevHandle().GetAccessSeq_id_Handle().GetGi();
+            const TGi gi = ctx.GetPrevHandle().GetAccessSeq_id_Handle().GetGi();
             const string accn = sequence::GetId( ctx.GetPrevHandle(), sequence::eGetId_Best).GetSeqId()->GetSeqIdString(true);
             result << "<li class=\"prev\"><a href=\"#locus_" << gi << "\" title=\"Jump to " << accn << "\">Previous</a></li>";
         }
@@ -1319,16 +1319,17 @@ void CGenbankFormatter::FormatFeatHeader
 //  ============================================================================
 bool s_GetFeatureKeyLinkLocation(
     CMappedFeat feat,
-    unsigned int& iGi,
+    TGi& iGi,
     unsigned int& iFrom,                    // one based
     unsigned int& iTo )                     // one based
 //  ============================================================================
 {
-    iGi = iFrom = iTo = 0;
+    iGi = ZERO_GI;
+    iFrom = iTo = 0;
 
     const CSeq_loc& loc = feat.GetLocation();
 
-    if ( ! iGi ) {
+    if (iGi == ZERO_GI) {
         ITERATE( CSeq_loc, loc_iter, loc ) {
             CSeq_id_Handle idh = loc_iter.GetSeq_id_Handle();
             if ( idh && idh.IsGi() ) {
@@ -1359,9 +1360,10 @@ string s_GetLinkFeatureKey(
         return strRawKey;
     }
 
-    unsigned int iGi = 0, iFrom = 0, iTo = 0;
+    TGi iGi = ZERO_GI;
+    unsigned int iFrom = 0, iTo = 0;
     s_GetFeatureKeyLinkLocation( item.GetFeat(), iGi, iFrom, iTo );
-    if( 0 == iGi ) {
+    if(iGi == ZERO_GI) {
         iGi = item.GetContext()->GetGI();
     }
     if ( iFrom == 0 && iFrom == iTo ) {
@@ -1393,7 +1395,7 @@ string s_GetLinkFeatureKey(
     }
 
     // id
-    string strId = NStr::IntToString( iGi );
+    string strId = NStr::NumericToString(iGi);
 
     // location
     string strLocation;
@@ -1666,7 +1668,7 @@ s_FormatRegularSequencePiece
  TSeqPos &base_count )
 {
     const bool bHtml = seq.GetContext()->Config().DoHTML() && seq.GetContext()->Config().ShowSeqSpans();
-    const int gi = seq.GetContext()->GetGI();
+    const TGi gi = seq.GetContext()->GetGI();
 
     // format of sequence position
     const size_t kSeqPosWidth = 9;
@@ -1681,7 +1683,7 @@ s_FormatRegularSequencePiece
     TSeqPos length_of_span_before_base_count = 0;
     if( bHtml ) {
         string kSpan = " <span class=\"ff_line\" id=\"gi_";
-        kSpan += NStr::IntToString(gi);
+        kSpan += NStr::NumericToString(gi);
         kSpan += '_';
         copy( kSpan.begin(), kSpan.end(), line + kSeqPosWidth );
         length_of_span_before_base_count = kSpan.length();

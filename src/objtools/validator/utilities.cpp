@@ -113,9 +113,9 @@ bool IsBlankStringList(const list< string >& str_list)
 }
 
 
-int GetGIForSeqId(const CSeq_id& id)
+TGi GetGIForSeqId(const CSeq_id& id)
 {
-    int gi = 0;
+    TGi gi = ZERO_GI;
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
 
     try {
@@ -129,7 +129,7 @@ int GetGIForSeqId(const CSeq_id& id)
 
 
 
-CScope::TIds GetSeqIdsForGI(int gi)
+CScope::TIds GetSeqIdsForGI(TGi gi)
 {
     CScope::TIds id_list;
     CSeq_id tmp_id;

@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequences)
         const CBioseq::TId& ids = (*bs)->GetId();
         ITERATE(CBioseq::TId, id, ids) {
             if ((*id)->IsGi()) {
-                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
+                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], GI_TO(int, (*id)->GetGi()));
                 break;
             }
         }
@@ -499,7 +499,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesInfo)
         const CBioseq::TId& ids = (*bs)->GetId();
         ITERATE(CBioseq::TId, id, ids) {
             if ((*id)->IsGi()) {
-                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
+                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], GI_TO(int, (*id)->GetGi()));
                 break;
             }
         }
@@ -662,7 +662,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts)
     i = 0;
     ITERATE(CBlastServices::TSeqIdVector, id, ids) {
         if ((*id)->IsGi()) {
-            BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
+            BOOST_REQUIRE_EQUAL(ecoli_gis[i++], GI_TO(int, (*id)->GetGi()));
         }
     }
 }

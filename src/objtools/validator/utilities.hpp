@@ -63,8 +63,8 @@ BEGIN_SCOPE(validator)
 bool IsClassInEntry(const CSeq_entry& se, CBioseq_set::EClass clss);
 bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope);
 bool IsBlankStringList(const list< string >& str_list);
-int GetGIForSeqId(const CSeq_id& id);
-CScope::TIds GetSeqIdsForGI(int gi);
+TGi GetGIForSeqId(const CSeq_id& id);
+CScope::TIds GetSeqIdsForGI(TGi gi);
 
 CSeqVector GetSequenceFromLoc(const CSeq_loc& loc, CScope& scope,
     CBioseq_Handle::EVectorCoding coding = CBioseq_Handle::eCoding_Iupac);

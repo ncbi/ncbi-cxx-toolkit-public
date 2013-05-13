@@ -58,14 +58,14 @@ public:
     CVersionItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
-    int GetGi(void) const;
+    TGi GetGi(void) const;
     const string& GetAccession(void) const;
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
     // data
-    int     m_Gi;
+    TGi     m_Gi;
     string  m_Accession;
 };
 

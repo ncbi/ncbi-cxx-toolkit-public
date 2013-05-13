@@ -1378,7 +1378,7 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
 {
     if (id.IsGi()) {
         match_type = true;
-        return FindGi(id.GetGi());
+        return FindGi(GI_TO(int, id.GetGi()));
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         match_type = true;
         const CObject_id & obj = id.GetGeneral().GetTag();
@@ -1398,7 +1398,7 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
 bool CSeqDBGiList::FindId(const CSeq_id & id)
 {
     if (id.IsGi()) {
-        return FindGi(id.GetGi());
+        return FindGi(GI_TO(int, id.GetGi()));
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         const CObject_id & obj = id.GetGeneral().GetTag();
         

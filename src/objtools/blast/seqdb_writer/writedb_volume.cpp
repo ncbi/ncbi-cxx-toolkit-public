@@ -257,7 +257,7 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
         ITERATE(TIdList, iter, idlist) {
             const CSeq_id & seqid = **iter;
             if (seqid.IsGi()) {
-                gi = seqid.GetGi();
+                gi = GI_TO(Int4, seqid.GetGi());
                 break;
             }
         }

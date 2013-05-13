@@ -110,7 +110,7 @@ public:
 private:
     struct SAlignInfo {
         CConstRef<CSeq_id> id;
-        int gi;
+        TGi gi;
         double bits;
         string info;
         CRange<TSeqPos>* range;

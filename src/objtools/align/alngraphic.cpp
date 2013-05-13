@@ -312,12 +312,12 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
             }
             info += " " + title;   
         } else {
-            aln_info->gi = 0;
+            aln_info->gi = ZERO_GI;
             aln_info->id = &id;
             aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
         }
     } catch (const CException&){
-        aln_info->gi = 0;
+        aln_info->gi = ZERO_GI;
         aln_info->id = &id;
         aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);        
     }
@@ -759,7 +759,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                     string acc;
                     (*iter2)->id->GetLabel(&acc, CSeq_id::eContent, 0);
                     string seqid = (*iter2)->gi == 
-                        0 ? acc : NStr::IntToString((*iter2)->gi);
+                        ZERO_GI ? acc : NStr::NumericToString((*iter2)->gi);
                     ad = new CHTML_a("#" + seqid, image);
                     if(m_View & eAnchorLinkDynamic) {
                         ad->SetAttribute("onclick", m_onClickFunction + "(\"" + seqid + "\",event)");

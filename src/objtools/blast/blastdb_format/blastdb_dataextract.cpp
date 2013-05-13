@@ -143,7 +143,7 @@ void CBlastDBExtractor::x_SetGi() {
     if (m_Gi) return;
     ITERATE(list<CRef<CSeq_id> >, itr, m_Bioseq->GetId()) {
         if ((*itr)->IsGi()) {
-            m_Gi = (*itr)->GetGi();
+            m_Gi = GI_TO(int, (*itr)->GetGi());
             return;
         }
     } 
@@ -177,7 +177,7 @@ string CBlastDBExtractor::ExtractMembershipInteger()
                                                    CSeq_id::BestRank);
         _ASSERT(seqid.NotEmpty());
 
-        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) &&
+        if (seqid->IsGi() && (GI_TO(int, seqid->GetGi()) == m_Gi) &&
             (*itr)->IsSetMemberships()) {
             ITERATE(CBlast_def_line::TMemberships, memb_int, 
                     (*itr)->GetMemberships()) {

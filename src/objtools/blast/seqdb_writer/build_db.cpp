@@ -90,7 +90,7 @@ void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
                     m_LogFile << "Seq-id " << seqid->AsFastaString()
                               << " resolved to "
                               << id->GetGi() << endl;
-                gi = id->GetGi();
+                gi = GI_TO(int, id->GetGi());
                 have_gi = true;
             }
         } else if ((! have_seqid) && (id->Which() == seqid->Which())) {
@@ -450,7 +450,7 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
     vector <int> gis;
     ITERATE(list< CRef<CSeq_id> >, id, ids) {
         if ((*id)->IsGi()) {
-            gis.push_back((*id)->GetGi());
+            gis.push_back(GI_TO(int, (*id)->GetGi()));
         }
     }
     m_OutputDb->SetMaskData(rng, gis);
@@ -565,7 +565,7 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
                 m_LogFile << " not found locally; adding remotely." << endl;
             
             CRef<CSeq_id> id(new CSeq_id);
-            id->SetGi(gi_list.GetKey<int>(i));
+            id->SetGi(GI_FROM(int, gi_list.GetKey<int>(i)));
             
             bool error = false;
             
@@ -932,7 +932,7 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
                     const list< CRef<CSeq_id> > & ids = (*defline)->GetSeqid();
                     ITERATE(list< CRef<CSeq_id> >, id, ids) {
                         if ((*id)->IsGi()) {
-                            gis.push_back((*id)->GetGi());
+                            gis.push_back(GI_TO(int, (*id)->GetGi()));
                         }
                     }
                     if (!m_MaskData.Empty()) {

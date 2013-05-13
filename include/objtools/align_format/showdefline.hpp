@@ -100,7 +100,7 @@ public:
     struct SDeflineInfo {
         CConstRef<objects::CSeq_id> id;         //best accession type id
         string alnIDFasta;
-        int gi;                        //gi 
+        TGi gi;                        //gi 
         string defline;                //defline
         list<string> linkout_list;     //linkout urls
         int linkout;                   //linkout membership
@@ -309,9 +309,9 @@ public:
     ///
     static void
     GetBioseqHandleDeflineAndId(const objects::CBioseq_Handle& handle,
-                                list<int>& use_this_gi, string& seqid, 
+                                list<TGi>& use_this_gi, string& seqid, 
                                 string& defline, bool show_gi=true,
-                                int this_gi_first = -1);
+                                TGi this_gi_first = INVALID_GI);
     
     ///Display defline
     ///@param out: stream to output
@@ -340,7 +340,7 @@ public:
 protected:
     /// Internal data with score information for each defline.
     struct SScoreInfo {
-        list<int> use_this_gi;         // Limit formatting by these GI's.
+        list<TGi> use_this_gi;         // Limit formatting by these GI's.
         string bit_string;             //bit score
         string raw_score_string;       //raw score
         string evalue_string;          //e value
@@ -476,7 +476,7 @@ protected:
     ///@param id: seq-id we are working with [in]
     ///@param use_this_gi: list of GI's to limit formatting by [in]
     ///@return defline info
-    SDeflineInfo* x_GetDeflineInfo(CConstRef<objects::CSeq_id> id, list<int>& use_this_gi, int blast_rank);
+    SDeflineInfo* x_GetDeflineInfo(CConstRef<objects::CSeq_id> id, list<TGi>& use_this_gi, int blast_rank);
    
     ///Internal function to return defline info
     ///@param aln: seqalign we are working on
@@ -497,7 +497,7 @@ protected:
     ///@param sdl: this is where is info is filled to
     void x_FillDeflineAndId(const objects::CBioseq_Handle& handle,
                             const objects::CSeq_id& aln_id,
-                            list<int>& use_this_gi,
+                            list<TGi>& use_this_gi,
                             SDeflineInfo* sdl,
                             int blast_rank);
     

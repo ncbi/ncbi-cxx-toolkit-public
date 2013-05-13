@@ -385,7 +385,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             }
             break;
         case CSeq_id::e_Gi:
-            if (id.GetGi() <= 0) {
+            if (id.GetGi() <= ZERO_GI) {
                 PostErr(eDiag_Critical, eErr_SEQ_INST_ZeroGiNumber,
                          "Invalid GI number", ctx);
             }
@@ -1590,14 +1590,14 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
         return;
     }
     
-    int gi = 0;
+    TGi gi = ZERO_GI;
     FOR_EACH_SEQID_ON_BIOSEQ (id, seq) {
         if ( (*id)->IsGi() ) {
             gi = (*id)->GetGi();
             break;
         }
     }
-    if ( gi == 0 ) {
+    if ( gi == ZERO_GI ) {
         return;
     }
 
@@ -1609,7 +1609,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
                 if ( gi == (*id)->GetGi() ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_HistoryGiCollision,
                         "Replaced by gi (" + 
-                        NStr::IntToString(gi) + ") is same as current Bioseq",
+                        NStr::NumericToString(gi) + ") is same as current Bioseq",
                         seq);
                     break;
                 }
@@ -1624,7 +1624,7 @@ void CValidError_bioseq::ValidateHistory(const CBioseq& seq)
                 if ( gi == (*id)->GetGi() ) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_HistoryGiCollision,
                         "Replaces gi (" + 
-                        NStr::IntToString(gi) + ") is same as current Bioseq",
+                        NStr::NumericToString(gi) + ") is same as current Bioseq",
                         seq);
                     break;
                 }
@@ -2945,7 +2945,7 @@ static bool s_IsSwissProt (const CBioseq& seq)
 
 static bool s_LocSortCompare (const CConstRef<CSeq_loc>& q1, const CConstRef<CSeq_loc>& q2)
 {
-    int cmp = q1->GetId()->CompareOrdered(*(q2->GetId()));
+    TIntId cmp = q1->GetId()->CompareOrdered(*(q2->GetId()));
     if (cmp < 0) {
         return true;
     } else if (cmp > 0) {
@@ -2983,7 +2983,7 @@ void CValidError_bioseq::ValidateDeltaLoc
 
     const CSeq_id *id = loc.GetId();
     if (id) {
-        if (id->IsGi() && loc.GetId()->GetGi() == 0) {
+        if (id->IsGi() && loc.GetId()->GetGi() == ZERO_GI) {
             PostErr (eDiag_Critical, eErr_SEQ_INST_DeltaComponentIsGi0, 
                      "Delta component is gi|0", seq);
         }
@@ -4607,7 +4607,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 break;
             }
         } else if ((*it)->IsGi()) {
-            accession = NStr::IntToString((*it)->GetGi());
+            accession = NStr::NumericToString((*it)->GetGi());
         }
     }
 
@@ -5041,14 +5041,14 @@ unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, c
         return 0;
     }
     
-    int gi = 0;
+    TGi gi = ZERO_GI;
     if (cds.GetProduct().GetId()->IsGi()) {
         gi = cds.GetProduct().GetId()->GetGi();
     } else {
         // TODO: get gi for other kinds of SeqIds
     }
 
-    if (gi == 0) {
+    if (gi == ZERO_GI) {
         return 0;
     }
 
@@ -8135,8 +8135,8 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 {
     const CSeq_id*  gb_id = 0;
     CRef<CSeq_id> db_gb_id;
-    int             gi = 0,
-                    db_gi = 0;
+    TGi             gi = ZERO_GI,
+                    db_gi = ZERO_GI;
     const CDbtag*   general_id = 0,
                 *   db_general_id = 0;
 
@@ -8159,11 +8159,11 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
         }
     }
 
-    if ( gi == 0  &&  gb_id != 0 ) {
+    if ( gi == ZERO_GI  &&  gb_id != 0 ) {
         gi = GetGIForSeqId(*gb_id);
     }
 
-    if ( gi <= 0 ) {
+    if ( gi <= ZERO_GI ) {
         return;
     }
 
@@ -8189,12 +8189,12 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
             }
         }
 
-        string gi_str = NStr::IntToString(gi);
+        string gi_str = NStr::NumericToString(gi);
 
         if ( db_gi != gi ) {
           PostErr(eDiag_Warning, eErr_SEQ_INST_UnexpectedIdentifierChange,
               "New gi number (" + gi_str + ")" +
-              " does not match one in NCBI sequence repository (" + NStr::IntToString(db_gi) + ")", 
+              " does not match one in NCBI sequence repository (" + NStr::NumericToString(db_gi) + ")", 
               seq);
         }
         if ( (gb_id != 0)  &&  (db_gb_id != 0) ) {
@@ -9028,14 +9028,14 @@ unsigned int s_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna
         return 0;
     }
     
-    int gi = 0;
+    TGi gi = ZERO_GI;
     if (cds.GetProduct().GetId()->IsGi()) {
         gi = cds.GetProduct().GetId()->GetGi();
     } else {
         // TODO: get gi for other kinds of SeqIds
     }
 
-    if (gi == 0) {
+    if (gi == ZERO_GI) {
         return 0;
     }
 

@@ -362,7 +362,7 @@ public:
         string database;        ///< name of the database
         string rid;             ///< blast RID
         int queryNumber;        ///< the query number
-        int gi;                 ///< gi to use
+        TGi gi;                 ///< gi to use
         string accession;       ///< accession
         int linkout;            ///< linkout flag
         int blast_rank;         ///< index of the current alignment
@@ -382,7 +382,7 @@ public:
         
         /// Constructor        
         SSeqURLInfo(string usurl,string bt, bool isnuc,string db, string rid,int qn, 
-                    int gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
+                    TGi gi,  string acc, int lnk, int blrk,bool alnLink, bool nw, CRange<TSeqPos> range = CRange<TSeqPos>(0,0),bool flp = false, int txid = -1,bool addCssInf = false,string seqSegs = "",string resUrl = "",bool useTmpl = false, bool advView = false) 
                     : user_url(usurl),blastType(bt), isDbNa(isnuc), database(db),rid(rid), 
                     queryNumber(qn), gi(gi), accession(acc), linkout(lnk),blast_rank(blrk),isAlignLink(alnLink),
                     new_win(nw),seqRange(range),flip(flp),taxid (txid),addCssInfo(addCssInf),segs(seqSegs),
@@ -405,7 +405,7 @@ public:
         Int8 totalLen;                  //total alignment length
 
         int raw_score;                  //raw score, read from the 'score' in first align in Seq Aln Set, not used        
-        list<int> use_this_gi;          //Limit formatting by these GI's, read from the first align in Seq Aln Set        
+        list<TGi> use_this_gi;          //Limit formatting by these GI's, read from the first align in Seq Aln Set        
         int sum_n;                      //sum_n in score block , read from the first align in Seq Aln Set        
 
         int master_covered_length;      //total query length covered by alignment - calculated, used calculate percent_coverage
@@ -586,7 +586,7 @@ public:
                              double& evalue,
                              int& sum_n,
                              int& num_ident,
-                             list<int>& use_this_gi);
+                             list<TGi>& use_this_gi);
     
     ///Extract score info from blast alingment
     /// Second version that fetches compositional adjustment integer
@@ -605,7 +605,7 @@ public:
                              double& evalue,
                              int& sum_n,
                              int& num_ident,
-                             list<int>& use_this_gi,
+                             list<TGi>& use_this_gi,
                              int& comp_adj_method);
 
     
@@ -978,7 +978,7 @@ public:
                                       const string& cdd_rid, 
                                       const string& entrez_term,
                                       bool is_na, 
-                                      int first_gi,
+                                      TGi first_gi,
                                       bool structure_linkout_as_group,
                                       bool for_alignment, 
                                       int cur_align,
@@ -1172,13 +1172,13 @@ public:
     ///@return: CSeq_id object to be used for display
     static CRef<objects::CSeq_id> GetDisplayIds(const objects::CBioseq_Handle& handle,
                                                 const objects::CSeq_id& aln_id,
-                                                list<int>& use_this_gi,
-                                                int& gi);
+                                                list<TGi>& use_this_gi,
+                                                TGi& gi);
 
     ///Get Gene symobol for gi
     ///@param  giForGeneLookup: gi
     ///@return: string gene symbol
-    static string  GetGeneInfo(int giForGeneLookup);
+    static string  GetGeneInfo(TGi giForGeneLookup);
     static CNcbiRegistry *m_Reg;
     static bool   m_geturl_debug_flag;
     static auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;

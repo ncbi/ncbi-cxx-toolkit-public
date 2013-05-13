@@ -1047,7 +1047,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
         ITERATE( vector< CSeq_id_Handle >, it, ids ) {
             CSeq_id_Handle hid = *it;
             if ( hid.IsGi() ) {
-                raw_link_str = NStr::UIntToString( hid.GetGi() );
+                raw_link_str = NStr::NumericToString(hid.GetGi());
                 break;
             }
         }

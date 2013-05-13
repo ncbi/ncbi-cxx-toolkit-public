@@ -60,6 +60,9 @@ public:
     static CRef<CSeq_id> AsSeqId(
         const string& rawId,
         unsigned int flags =0);
+
+    static const TGi kMinNumericGi;
+
 };
 
 END_SCOPE(objects)

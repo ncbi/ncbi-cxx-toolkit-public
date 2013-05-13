@@ -532,7 +532,7 @@ protected:
 	//Info used to display defline information
     struct SAlnDispParams: public CObject {
         CAlignFormatUtil::SSeqURLInfo * seqUrlInfo;
-        int gi;                         ///< gi used in defline
+        TGi gi;                         ///< gi used in defline
         CRef<objects::CSeq_id> seqID;    ///< seqID used in defline
         string label;                   ///< sequence label
         string    id_url;                 ///< entrz, mapview etc id url
@@ -559,7 +559,7 @@ protected:
         int score;
         double bits;
         double evalue;
-        list<int> use_this_gi;
+        list<TGi> use_this_gi;
         int comp_adj_method;
         int sum_n;
         string id_label;
@@ -569,7 +569,7 @@ protected:
         //Features calc params
         vector<objects::SFeatInfo*> feat_list;
         CRange<TSeqPos> actual_range;
-        int subject_gi;        
+        TGi subject_gi;
         objects::SFeatInfo* feat5;
         objects::SFeatInfo* feat3;        
 
@@ -710,10 +710,10 @@ protected:
     ///    
 
 
-    CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(int giToUse,string accession,int linkout,
+    CAlignFormatUtil::SSeqURLInfo *x_InitSeqUrl(TGi giToUse,string accession,int linkout,
         int taxid,const list<CRef<objects::CSeq_id> >& ids);
 
-    string x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,int giToUse);
+    string x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse);
     void x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInfo,const list< CRef<objects::CBlast_def_line > > &bdl_list,CRef<objects::CSeq_id>  &seqID,int lnkDispPrarms);
 
     ///get dumpgnl url to sequence record
@@ -920,7 +920,7 @@ protected:
     string x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_vec_info);
     string x_FormatDynamicFeaturesInfo(string alignInfo, SAlnInfo* aln_vec_info);
     string x_FormatOneDynamicFeature(string viewerURL,
-                                     int subjectGi,                                                    
+                                     TGi subjectGi,                                                    
                                      int fromRange, 
                                      int toRange,
                                      string featText);
@@ -942,8 +942,8 @@ protected:
 	
     SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
                                         const objects::CBioseq_Handle& bsp_handle,
-								        list<int>& use_this_gi,
-								        int firstGi);
+								        list<TGi>& use_this_gi,
+								        TGi firstGi);
 								   
     
 	SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);	
@@ -959,7 +959,7 @@ protected:
     void x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>& retval,
                                      vector<string>& sequence) const; 
 
-    static int x_GetGiForSeqIdList(const list< CRef<objects::CSeq_id> >& ids);
+    static TGi x_GetGiForSeqIdList(const list< CRef<objects::CSeq_id> >& ids);
     void x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);
     void x_DisplaySequenceIDForPairwise(SAlnRowInfo *alnRoInfo, int row, bool has_mismatch, CNcbiOstrstream &out);
     void x_DisplayInsertsForQueryAnchored(SAlnRowInfo *alnRoInfo, int row, CNcbiOstrstream &out);

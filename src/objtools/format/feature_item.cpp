@@ -261,7 +261,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
             id.Reset(NULL);
         }
         if (id) {
-            if ((id->IsGi()  &&  id->GetGi() > 0) ||  id->IsLocal()) {
+            if ((id->IsGi()  &&  id->GetGi() > ZERO_GI) ||  id->IsLocal()) {
                 CBioseq_Handle prod = scope.GetBioseqHandleFromTSE(*id, ctx.GetHandle());
                 if (prod) {
                     ITERATE (CBioseq_Handle::TId, it, prod.GetId()) {
@@ -273,7 +273,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
                             }
                         }
                     }
-                } else if (id->IsGi()  &&  id->GetGi() > 0) {
+                } else if (id->IsGi()  &&  id->GetGi() > ZERO_GI) {
                     // RELEASE_MODE requires that /protein_id is an accession
                     if (ctx.Config().IsModeRelease()) {
                         try {
@@ -1733,7 +1733,8 @@ void CFeatureItem::x_AddQualsRna(
                         if (sip->IsGi()) {
                             string acc = GetAccessionForGi(sip->GetGi(), scope);
                             if( acc.empty() && ! cfg.DropIllegalQuals() ) {
-                                x_AddQual(slot, new CFlatStringQVal( NStr::IntToString(sip->GetGi()) ) );
+                                x_AddQual(slot, new CFlatStringQVal(
+                                    NStr::NumericToString(sip->GetGi()) ) );
                             } else {
                                 if ( !cfg.DropIllegalQuals()  ||  IsValidAccession(acc)) {
                                     CRef<CSeq_id> acc_id(new CSeq_id(acc));
@@ -2149,12 +2150,13 @@ void CFeatureItem::x_AddQualProteinId(
     CScope& scope = ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
 
-    if ( protId->IsGi() && protId->GetGi() > 0 ) {
+    if ( protId->IsGi() && protId->GetGi() > ZERO_GI ) {
         string prot_acc;
         try {
             prot_acc = GetAccessionForGi( protId->GetGi(), scope );
             if( prot_acc.empty() && !cfg.DropIllegalQuals() ) {
-                x_AddQual( eFQ_protein_id, new CFlatStringQVal( NStr::IntToString(protId->GetGi()) ) );
+                x_AddQual( eFQ_protein_id, new CFlatStringQVal(
+                    NStr::NumericToString(protId->GetGi()) ) );
             } else {
                 if ( !cfg.DropIllegalQuals() || IsValidAccession( prot_acc ) ) {
                     CRef<CSeq_id> acc_id( new CSeq_id( prot_acc ) );
@@ -2362,7 +2364,8 @@ void CFeatureItem::x_AddProductIdQuals(
     if( m_Feat.GetData().IsCdregion() || ! GetContext()->IsProt() ) {
         ITERATE( CBioseq_Handle::TId, id_iter, ids ) {
             if( id_iter->IsGi() ) {
-                x_AddQual( eFQ_db_xref, new CFlatStringQVal("GI:" + NStr::IntToString(id_iter->GetGi()) ));
+                x_AddQual( eFQ_db_xref,
+                    new CFlatStringQVal("GI:" + NStr::NumericToString(id_iter->GetGi()) ));
             }
         }
     }

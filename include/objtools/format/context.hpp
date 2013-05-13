@@ -104,7 +104,7 @@ public:
     CSeq_id* GetPrimaryId(void) { return m_PrimaryId; }
     CSeq_id_Handle GetPreferredSynonym(const CSeq_id& id) const;
     const string& GetAccession(void) const { return m_Accession; }
-    int  GetGI(void) const { return m_Gi; }
+    TGi  GetGI(void) const { return m_Gi; }
     
     // molecular type (nucleotide / protein)
     bool IsProt(void) const { return m_IsProt;  }
@@ -304,7 +304,7 @@ private:
     bool m_IsTSA;
     bool m_IsTSAMaster;
     bool m_IsHup;
-    int  m_Gi;
+    TGi  m_Gi;
     bool m_ShowGBBSource;
     int  m_PatSeqid;
     bool m_HasOperon;

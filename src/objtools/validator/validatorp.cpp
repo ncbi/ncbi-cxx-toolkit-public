@@ -2096,7 +2096,7 @@ void CValidError_imp::ValidateSeqLoc
                 num_mix ++;
             }
 
-            if (lit->GetId() != 0 && lit->GetId()->IsGi() && lit->GetId()->GetGi() == 0) {
+            if (lit->GetId() != 0 && lit->GetId()->IsGi() && lit->GetId()->GetGi() == ZERO_GI) {
                 zero_gi ++;
             }
             

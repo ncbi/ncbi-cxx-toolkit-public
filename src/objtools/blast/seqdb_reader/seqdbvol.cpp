@@ -2225,7 +2225,7 @@ bool CSeqDBVol::GetGi(int                    oid,
             
             for(; it2 != it2end;  it2++) {
                 if ((*it2)->IsGi()) {
-                    gi = (*it2)->GetGi();
+                    gi = GI_TO(int, (*it2)->GetGi());
                     return true;
                 }
             }

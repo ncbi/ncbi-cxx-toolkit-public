@@ -494,7 +494,7 @@ Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
     if ( id.IsGi() ) {
         // Try to use integer index
         st = &x_GetStatement(eSt_GetLdsSeqIdForIntId);
-        st->Bind(1, id.GetGi());
+        st->Bind(1, GI_TO(TIntId, id.GetGi()));
     }
     else {
         // Use text index
@@ -511,7 +511,7 @@ Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
     st = &x_GetStatement(eSt_AddLdsSeqId);
     st->Bind(1, id.AsString());
     if ( id.IsGi() ) {
-        st->Bind(2, id.GetGi());
+        st->Bind(2, GI_TO(TIntId, id.GetGi()));
     }
     else {
         // HACK: reset GI to null if not available.
@@ -621,7 +621,7 @@ Int8 CLDS2_Database::GetBioseqId(const CSeq_id_Handle& idh) const
     CSQLITE_Statement* st = NULL;
     if ( idh.IsGi() ) {
         st = &x_GetStatement(eSt_GetBioseqIdForIntId);
-        st->Bind(1, idh.GetGi());
+        st->Bind(1, GI_TO(TIntId, idh.GetGi()));
     }
     else {
         st = &x_GetStatement(eSt_GetBioseqIdForTxtId);
@@ -684,7 +684,7 @@ CLDS2_Database::x_InitGetBioseqsSql(const CSeq_id_Handle& idh) const
     CSQLITE_Statement* st = NULL;
     if ( idh.IsGi() ) {
         st = &x_GetStatement(eSt_GetBioseqForIntId);
-        st->Bind(1, idh.GetGi());
+        st->Bind(1, GI_TO(TIntId, idh.GetGi()));
     }
     else {
         st = &x_GetStatement(eSt_GetBioseqForTxtId);
@@ -803,7 +803,7 @@ void CLDS2_Database::GetAnnotBlobs(const CSeq_id_Handle& idh,
     if ( idh.IsGi() ) {
         st = &x_GetStatement(choice != fAnnot_All
             ? eSt_GetAnnotBlobsByIntId : eSt_GetAnnotBlobsAllByIntId);
-        st->Bind(1, idh.GetGi());
+        st->Bind(1, GI_TO(TIntId, idh.GetGi()));
     }
     else {
         st = &x_GetStatement(choice != fAnnot_All

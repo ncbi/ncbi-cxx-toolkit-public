@@ -139,7 +139,7 @@ bool CheckAccession(const string  & acc,
     }
     
     if (seqid->IsGi()) {
-        gi = seqid->GetGi();
+        gi = GI_TO(int, seqid->GetGi());
         seqid.Reset();
         return true;
     }

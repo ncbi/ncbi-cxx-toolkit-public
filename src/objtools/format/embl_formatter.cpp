@@ -158,7 +158,7 @@ void CEmblFormatter::FormatVersion
     list<string> l;
     CNcbiOstrstream version_line;
 
-    if ( version.GetGi() > 0 ) {
+    if ( version.GetGi() > ZERO_GI ) {
         version_line << "g" << version.GetGi();
     }
 

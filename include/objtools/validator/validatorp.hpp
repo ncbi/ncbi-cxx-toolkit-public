@@ -955,7 +955,7 @@ private:
 
     bool Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc);
 
-    int x_SeqIdToGiNumber(const string& seq_id, const string database_name );
+    TGi x_SeqIdToGiNumber(const string& seq_id, const string database_name );
 
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
 

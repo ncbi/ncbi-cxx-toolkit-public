@@ -1058,7 +1058,7 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
 }
 
 static bool
-s_GiInCSeq_hist_ids( const int gi, const CSeq_hist_rec_Base::TIds & ids )
+s_GiInCSeq_hist_ids( const TGi gi, const CSeq_hist_rec_Base::TIds & ids )
 {
     ITERATE( CSeq_hist_rec_Base::TIds, hist_iter, ids ) {
         if( (*hist_iter) && (*hist_iter)->IsGi() && (*hist_iter)->GetGi() == gi ) {

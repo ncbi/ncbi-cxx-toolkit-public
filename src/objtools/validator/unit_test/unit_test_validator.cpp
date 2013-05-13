@@ -1716,8 +1716,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
 
     // GI
     scope.RemoveTopLevelSeqEntry(seh);
-    id1->SetGi(1);
-    id2->SetGi(2);
+    id1->SetGi(GI_FROM(TIntId, 1));
+    id2->SetGi(GI_FROM(TIntId, 2));
     CRef<CSeq_id> id3(new CSeq_id("gb|AY123456.1"));
     entry->SetSeq().SetId().push_back (id3);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -2408,7 +2408,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ZeroGiNumber)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetId().front()->SetGi(0);
+    entry->SetSeq().SetId().front()->SetGi(ZERO_GI);
 
     STANDARD_SETUP
 
@@ -2427,13 +2427,13 @@ BOOST_AUTO_TEST_CASE(Test_HistoryGiCollision)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     entry->SetSeq().SetId().front()->SetGenbank().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(21914627);
+    gi_id->SetGi(GI_FROM(TIntId, 21914627));
     entry->SetSeq().SetId().push_back(gi_id);
 
     STANDARD_SETUP
 
     CRef<CSeq_id> hist_id(new CSeq_id());
-    hist_id->SetGi(21914627);
+    hist_id->SetGi(GI_FROM(TIntId, 21914627));
     entry->SetSeq().SetInst().SetHist().SetReplaced_by().SetIds().push_back(hist_id);
     entry->SetSeq().SetInst().SetHist().SetReplaced_by().SetDate().SetStd().SetYear(2008);
 
@@ -2468,7 +2468,7 @@ BOOST_AUTO_TEST_CASE(Test_HistoryGiCollision)
 BOOST_AUTO_TEST_CASE(Test_GiWithoutAccession)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetId().front()->SetGi(123456);
+    entry->SetSeq().SetId().front()->SetGi(GI_FROM(TIntId, 123456));
 
     STANDARD_SETUP
 
@@ -2486,7 +2486,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     entry->SetSeq().SetId().front()->SetGenbank().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(21914627);
+    gi_id->SetGi(GI_FROM(TIntId, 21914627));
     entry->SetSeq().SetId().push_back(gi_id);
     CRef<CSeq_id> other_acc(new CSeq_id());
     other_acc->SetGenbank().SetAccession("AY123457");
@@ -2780,7 +2780,7 @@ BOOST_AUTO_TEST_CASE(Test_UnexpectedIdentifierChange)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123457");
     entry->SetSeq().SetId().front()->SetGenbank().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(21914627);
+    gi_id->SetGi(GI_FROM(TIntId, 21914627));
     entry->SetSeq().SetId().push_back(gi_id);
 
     STANDARD_SETUP
@@ -2943,7 +2943,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     member1->SetSeq().SetId().front()->SetTpg().SetAccession("AY123456");
     member1->SetSeq().SetId().front()->SetTpg().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(21914627);
+    gi_id->SetGi(GI_FROM(TIntId, 21914627));
     member1->SetSeq().SetId().push_back(gi_id);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -3383,7 +3383,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetFrom(0);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetTo(11);
-    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGi(0);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLoc().SetInt().SetId().SetGi(ZERO_GI);
 
     STANDARD_SETUP
 
@@ -14223,7 +14223,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureRefersToAccession)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_id> gi(new CSeq_id());
-    gi->SetGi(21914627);
+    gi->SetGi(GI_FROM(TIntId, 21914627));
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     nuc->SetSeq().SetId().push_back (gi);
     CRef<CSeq_id> acc(new CSeq_id());
@@ -14247,7 +14247,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureRefersToAccession)
     acc3->SetGenbank().SetVersion(1);
     entry->SetSet().SetSeq_set().back()->SetSeq().SetId().push_back(acc3);
     CRef<CSeq_id> gi2(new CSeq_id());
-    gi2->SetGi(123456);
+    gi2->SetGi(GI_FROM(TIntId, 123456));
     entry->SetSet().SetSeq_set().back()->SetSeq().SetId().push_back(gi2);
     entry->SetSet().SetAnnot().front()->SetData().SetFtable().back()->SetProduct().SetWhole().Assign (*gi2);
 
@@ -14352,7 +14352,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureSeqIDCaseDifference)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureLocationIsGi0)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetId().front()->SetGi(0);
+    entry->SetSeq().SetId().front()->SetGi(ZERO_GI);
     CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
 
     STANDARD_SETUP

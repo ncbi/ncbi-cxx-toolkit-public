@@ -521,9 +521,9 @@ static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids,
 ///@param ids: the input ids
 ///@return: the gi if found
 ///
-int CDisplaySeqalign::x_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
+TGi CDisplaySeqalign::x_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
 {
-    int gi = 0;
+    TGi gi = ZERO_GI;
     CRef<CSeq_id> id = s_GetSeqIdByType(ids, CSeq_id::e_Gi);
     if (!(id.Empty())){
         return id->GetGi();
@@ -1052,7 +1052,7 @@ void CDisplaySeqalign::x_PrintFeatures(SAlnRowInfo *alnRoInfo,
     
 }
 
-string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,int giToUse)
+string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,TGi giToUse)
 {
     const CBioseq_Handle& bsp_handle = m_AV->GetBioseqHandle(row);
     int linkout = m_LinkoutDB 
@@ -1071,7 +1071,7 @@ string CDisplaySeqalign::x_HTMLSeqIDLink(SAlnRowInfo *alnRoInfo, int row,int giT
     return urlLink;
 }
 
-CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(int giToUse,string accession,int linkout,
+CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string accession,int linkout,
                                   int taxid,const list<CRef<CSeq_id> >& ids)
 {
     string idString = m_AV->GetSeqId(1).GetSeqIdString();	            
@@ -1080,7 +1080,7 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(int giToUse,string
 					CRange<TSeqPos>(0,0);					
     bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;	
 	string user_url= (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "TOOL_URL") : "";        		
-    giToUse = (giToUse == 0) ? x_GetGiForSeqIdList(ids):giToUse;    
+    giToUse = (giToUse == ZERO_GI) ? x_GetGiForSeqIdList(ids):giToUse;    
 	CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = new CAlignFormatUtil::SSeqURLInfo(user_url,m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                              m_QueryNumber,
                                              giToUse,
@@ -1120,7 +1120,7 @@ void CDisplaySeqalign::x_InitAlignLinks(CAlignFormatUtil::SSeqURLInfo *seqUrlInf
         m_AlignedRegionsUrl =  CAlignFormatUtil::GetAlignedRegionsURL(seqUrlInfo,*seqID, m_Scope);
                                           
 
-        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                                
+        if(m_AlignOption&eLinkout && (seqUrlInfo->gi > ZERO_GI)){     			                                
             m_LinkoutList = CAlignFormatUtil::GetFullLinkoutUrl(bdl_list,
                                            m_Rid, 
                                            m_CddRid, 
@@ -1420,12 +1420,12 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
            !(m_AlignOption & eMergeAlign) && m_AV->GetWidth(row) != 3 &&
            !(m_AlignType & eProt)){
             if(m_AlignOption & eShowCdsFeature){
-                int master_gi = FindGi(m_AV->GetBioseqHandle(0).
+                TGi master_gi = FindGi(m_AV->GetBioseqHandle(0).
                                        GetBioseqCore()->GetId());
                 x_GetFeatureInfo(bioseqFeature[row], *m_featScope, 
                                  CSeqFeatData::e_Cdregion, row, sequence[row],
                                  feat_seq_range, feat_seq_strand,
-                                 row == 1 && !(master_gi > 0) ? true : false);
+                                 row == 1 && !(master_gi > ZERO_GI) ? true : false);
                 
                 if(!(feat_seq_range.empty()) && row == 1) {
                     //make a new copy of master bioseq and add the feature from
@@ -1689,12 +1689,12 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
 {
     string urlLink = NcbiEmptyString;
     //setup url link for seqid
-    int gi = 0;
+    TGi gi = ZERO_GI;
     if(m_AlignOption & eHtml){                    
         if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
             gi = m_AV->GetSeqId(row).GetGi();
         }
-        if(!(gi > 0)){
+        if(!(gi > ZERO_GI)){
             gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
                                      GetBioseqCore()->GetId());
         }
@@ -1707,7 +1707,8 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
             if (m_ResultPositionIndex >= 0){
                 anchorTmpl = CAlignFormatUtil::MapTemplate(anchorTmpl,"resultPositionIndex",m_ResultPositionIndex);        
             }            
-            anchorTmpl = CAlignFormatUtil::MapTemplate(anchorTmpl,"id_lbl",gi > 0 ? NStr::IntToString(gi):alnRoInfo->seqidArray[row]);                    
+            anchorTmpl = CAlignFormatUtil::MapTemplate(anchorTmpl,"id_lbl",gi > ZERO_GI ?
+                NStr::NumericToString(gi):alnRoInfo->seqidArray[row]);                    
         }					
         //get sequence checkbox
         if(showCheckbox) {
@@ -1725,7 +1726,7 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
             }
         }        
         if(showCheckbox || showAnchor) {            
-            id_lbl = id_lbl.empty() ? ((gi > 0) ? NStr::IntToString(gi) : alnRoInfo->seqidArray[row]) : id_lbl;
+            id_lbl = id_lbl.empty() ? ((gi > ZERO_GI) ? NStr::NumericToString(gi) : alnRoInfo->seqidArray[row]) : id_lbl;
             string displString = CAlignFormatUtil::MapTemplate(anchorTmpl + checkBoxTmpl,"id_lbl",id_lbl);                        
             out << displString;
         }
@@ -2168,8 +2169,8 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
 
 CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CRef< CBlast_def_line > &bdl,
                                                                         const CBioseq_Handle& bsp_handle,
-								                                        list<int>& use_this_gi,
-								                                        int firstGi)							   
+								                                        list<TGi>& use_this_gi,
+								                                        TGi firstGi)							   
 {
     SAlnDispParams *alnDispParams = NULL;
 
@@ -2177,19 +2178,19 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
     int seqLength = (int)bsp_handle.GetBioseqLength();    
 
 	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
-	int gi =  x_GetGiForSeqIdList(ids);
-    int gi_in_use_this_gi = 0;
+	TGi gi =  x_GetGiForSeqIdList(ids);
+    TGi gi_in_use_this_gi = ZERO_GI;
     
-    ITERATE(list<int>, iter_gi, use_this_gi){
+    ITERATE(list<TGi>, iter_gi, use_this_gi){
         if(gi == *iter_gi){
             gi_in_use_this_gi = *iter_gi;
             break;
         }
     }
-	if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
-        firstGi = (firstGi == 0) ? gi_in_use_this_gi : firstGi;
+	if(use_this_gi.empty() || gi_in_use_this_gi > ZERO_GI) {
+        firstGi = (firstGi == ZERO_GI) ? gi_in_use_this_gi : firstGi;
 		alnDispParams = new SAlnDispParams();
-		alnDispParams->gi =  gi;    		
+		alnDispParams->gi =  gi;
 		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank);		
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
 		if(m_AlignOption&eHtml){
@@ -2279,7 +2280,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             =  CSeqDB::ExtractBlastDefline(bsp_handle);        
         const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
         bool isFirst = true;
-        int firstGi = 0;
+        TGi firstGi = ZERO_GI;
 
         m_cur_align++;
     
@@ -2292,18 +2293,20 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                 && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                 string buf = CAlignFormatUtil::MapTemplate(k_DefaultCheckboxTempl,"queryNumber",NStr::IntToString(m_QueryNumber));       
                 buf = CAlignFormatUtil::MapTemplate(buf,"id_lbl",
-                                        alnDispParams->gi > 0 ?  NStr::IntToString(alnDispParams->gi) : alnDispParams->label);           
+                                        alnDispParams->gi > ZERO_GI ?
+                                        NStr::NumericToString(alnDispParams->gi) : alnDispParams->label);           
                 out << buf;
             }
                 
             if(m_AlignOption&eHtml){               
 		        
-                aln_vec_info->id_label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;                      
+                aln_vec_info->id_label = (alnDispParams->gi != ZERO_GI) ?
+                    NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;                      
 
                 out<<alnDispParams->id_url;
             }
                 
-            if(m_AlignOption&eShowGi && alnDispParams->gi > 0){
+            if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI){
                 out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
             if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") 
@@ -2314,7 +2317,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                 if(alnDispParams->id_url != NcbiEmptyString){
                     out<<"</a>";
                 }
-                if(alnDispParams->gi != 0){
+                if(alnDispParams->gi != ZERO_GI){
                     out<<"<a name="<<alnDispParams->gi<<"></a>";                    
                 } else {
                     out<<"<a name="<<alnDispParams->seqID->GetSeqIdString()<<"></a>";                    
@@ -2366,7 +2369,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                         && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
                         string buf = CAlignFormatUtil::MapTemplate(k_DefaultCheckboxTempl,"queryNumber",NStr::IntToString(m_QueryNumber));       
                         buf = CAlignFormatUtil::MapTemplate(buf,"id_lbl",
-                                        alnDispParams->gi > 0 ?  NStr::IntToString(alnDispParams->gi) : alnDispParams->label);           
+                                        alnDispParams->gi > ZERO_GI ?
+                                        NStr::NumericToString(alnDispParams->gi) : alnDispParams->label);           
                         out << buf;
                     }
                 
@@ -2374,7 +2378,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                         out<< alnDispParams->id_url;
                     }
                 
-                    if(m_AlignOption&eShowGi && alnDispParams->gi > 0){
+                    if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI){
                         out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
                     if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") 
@@ -2385,9 +2389,9 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                         if(alnDispParams->id_url != NcbiEmptyString){
                             out<<"</a>";
                         }
-                        if(alnDispParams->gi != 0){
+                        if(alnDispParams->gi != ZERO_GI){
                             out<<"<a name="<<alnDispParams->gi<<"></a>";
-                            aln_vec_info->id_label = NStr::IntToString(alnDispParams->gi);
+                            aln_vec_info->id_label = NStr::NumericToString(alnDispParams->gi);
                         } else {
                             out<<"<a name="<<alnDispParams->seqID->GetSeqIdString()<<"></a>";
                             aln_vec_info->id_label = alnDispParams->label;
@@ -2546,8 +2550,8 @@ void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
     //Only fetch features for seq that has a gi unless it's master seq
     const CSeq_id& id = m_AV->GetSeqId(row);
     
-    int gi_temp = FindGi(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
-    if(gi_temp > 0 || row == 0){
+    TGi gi_temp = FindGi(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+    if(gi_temp > ZERO_GI || row == 0){
         const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         if(handle){
             TSeqPos seq_start = m_AV->GetSeqPosFromAlnPos(row, 0);
@@ -3298,10 +3302,10 @@ string CDisplaySeqalign::x_DisplayGeneInfo(const CBioseq_Handle& bsp_handle,SAln
                 m_GeneInfoReader.reset(new CGeneInfoFileReader(false));
             }
 
-            int giForGeneLookup = FindGi(bsp_handle.GetBioseqCore()->GetId());
+            TGi giForGeneLookup = FindGi(bsp_handle.GetBioseqCore()->GetId());
 
             CGeneInfoFileReader::TGeneInfoList infoList;
-            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
+            m_GeneInfoReader->GetGeneInfoForGi(GI_TO(int, giForGeneLookup),infoList);
 
             CGeneInfoFileReader::TGeneInfoList::const_iterator
                         itInfo = infoList.begin();
@@ -3435,11 +3439,11 @@ void CDisplaySeqalign::x_DisplayBl2SeqLink(CNcbiOstream& out)
     const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
     CSeq_id_Handle query_seqid = GetId(query_handle, eGetId_Best);
     CSeq_id_Handle subject_seqid = GetId(subject_handle, eGetId_Best);
-    int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
-    int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
+    TGi query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
+    TGi subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
     
-    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",query_gi);        
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject",subject_gi);        
+    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",GI_TO(int, query_gi));        
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject",GI_TO(int, subject_gi));        
     
     out << url_link << "\n";
 }
@@ -3642,7 +3646,8 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	*/
     string alnDefLine = m_AlignTemplates->alnDefLineTmpl;
 
-	string alnGi = (m_AlignOption&eShowGi && alnDispParams->gi > 0) ? "gi|" + NStr::IntToString(alnDispParams->gi) + "|" : "";
+	string alnGi = (m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI) ?
+        "gi|" + NStr::NumericToString(alnDispParams->gi) + "|" : "";
 	string seqid;					
     if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){							 
 		seqid = alnDispParams->seqID->AsFastaString();        
@@ -3674,7 +3679,8 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
     alnDefLine  = CAlignFormatUtil::MapTemplate(alnDefLine,"alnSeqLength", NStr::IntToString(seqLength));
     alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnHspNum",hspNum);
     alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"frstDfl",isFirstDflAttr);
-	string alnIdLbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->seqID->GetSeqIdString();
+	string alnIdLbl = (alnDispParams->gi != ZERO_GI) ?
+        NStr::NumericToString(alnDispParams->gi) : alnDispParams->seqID->GetSeqIdString();
 	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnIdLbl",alnIdLbl);
 	string linkoutStr, dnldLinkStr;
 	if (linkout) {
@@ -3694,12 +3700,12 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 {
     string deflines;	
     string firstDefline;
-	list<int>& use_this_gi = aln_vec_info->use_this_gi;    
+	list<TGi>& use_this_gi = aln_vec_info->use_this_gi;    
     if(bsp_handle){        
         const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);        
         const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
         bool isFirst = true;
-        int firstGi = 0;
+        TGi firstGi = ZERO_GI;
 		m_NumBlastDefLines = 0;
         m_cur_align++;		
 		SAlnDispParams *alnDispParams;
@@ -3710,7 +3716,8 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             //there is no blast defline in such case.
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
-		    m_CurrAlnID_Lbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;			
+		    m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
+                NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;			
             m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
             if(m_AlignTemplates != NULL) {
                 x_InitAlignLinks(alnDispParams->seqUrlInfo,bdl,alnDispParams->seqID,eDisplayResourcesLinks);
@@ -3730,10 +3737,10 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline,seqLength);                    
                     if(isFirst){
                         const CSeq_id& aln_id = m_AV->GetSeqId(1);
-                        int alnGi;
+                        TGi alnGi;
                         CRef<CSeq_id> dispId = CAlignFormatUtil::GetDisplayIds(bsp_handle,aln_id,use_this_gi,alnGi);
-                        m_CurrAlnID_Lbl = (alnGi == 0) ? CAlignFormatUtil::GetLabel(dispId) :  NStr::IntToString(alnGi);
-                        if(alnGi == 0) {
+                        m_CurrAlnID_Lbl = (alnGi == ZERO_GI) ? CAlignFormatUtil::GetLabel(dispId) :  NStr::NumericToString(alnGi);
+                        if(alnGi == ZERO_GI) {
                             dispId->GetLabel(&m_CurrAlnID_DbLbl, CSeq_id::eContent);
                         }
                         else {
@@ -3753,7 +3760,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                             }
                         }						
                     }                    
-                    if( (isFirst && firstGi == 0) || (alnDispParams->gi == firstGi) ) {                    
+                    if( (isFirst && firstGi == ZERO_GI) || (alnDispParams->gi == firstGi) ) {                    
                         //Get custom links only for the first gi                        
                          int linksDisplayOption = eDisplayResourcesLinks;
                          if(seqLength > k_GetSubseqThreshhold) {
@@ -4059,14 +4066,14 @@ void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
 }
 
 static string s_MapFeatureURL(string viewerURL,                           
-                              int subject_gi,  
+                              TGi subject_gi,  
                               string db,                              
                               int fromRange, 
                               int toRange,
                               string rid)
 {    
     string url_link = CAlignFormatUtil::MapTemplate(viewerURL,"db",db);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",subject_gi);    
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",GI_TO(int, subject_gi));    
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid); 
     url_link = CAlignFormatUtil::MapTemplate(url_link,"from",fromRange); 
     url_link = CAlignFormatUtil::MapTemplate(url_link,"to",toRange); 
@@ -4074,13 +4081,13 @@ static string s_MapFeatureURL(string viewerURL,
 }
 
 string CDisplaySeqalign::x_FormatOneDynamicFeature(string viewerURL,
-                                                   int subject_gi,                                                    
+                                                   TGi subject_gi,                                                    
                                                    int fromRange, 
                                                    int toRange,
                                                    string featText)
 {
     string alignFeature = m_AlignTemplates->alignFeatureTmpl;
-    if(subject_gi > 0){                   
+    if(subject_gi > ZERO_GI){                   
         alignFeature = CAlignFormatUtil::MapTemplate(alignFeature,"aln_feat_info",m_AlignTemplates->alignFeatureLinkTmpl);
         
         string url = s_MapFeatureURL(viewerURL,
@@ -4164,7 +4171,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
         out << " Features in this part of subject sequence:" << "\n";
         ITERATE(vector<SFeatInfo*>, iter, aln_vec_info->feat_list){
             out << "   ";
-            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){                
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
                                               aln_vec_info->subject_gi,
                                               m_IsDbNa ? "nucleotide" : "protein",  
@@ -4174,7 +4181,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
                 out << featStr;
             }  
             out << (*iter)->feat_str;
-            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 out << "</a>";
             }  
             out << "\n";
@@ -4185,7 +4192,7 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
         }
         if(aln_vec_info->feat5){
             out << "   ";
-            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){                
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
                                               aln_vec_info->subject_gi,
                                               m_IsDbNa ? "nucleotide" : "protein",  
@@ -4197,14 +4204,14 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out,SAlnInfo* aln_ve
             }  
             out << aln_vec_info->actual_range.GetFrom() - aln_vec_info->feat5->range.GetTo() 
                 << " bp at 5' side: " << aln_vec_info->feat5->feat_str;
-            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 out << "</a>";
             }  
             out << "\n";
         }
         if(aln_vec_info->feat3){
             out << "   ";
-            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > 0){                
+            if(m_AlignOption&eHtml && aln_vec_info->subject_gi > ZERO_GI){
                 string featStr = s_MapFeatureURL(l_EntrezSubseqUrl, 
                                               aln_vec_info->subject_gi,
                                               m_IsDbNa ? "nucleotide" : "protein",  
@@ -4450,16 +4457,16 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                 id=kSubject;
             } else {
                 if(m_AlignOption&eShowGi){
-                    int gi = 0;
+                    TGi gi = ZERO_GI;
                     if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
                         gi = m_AV->GetSeqId(row).GetGi();
                     }
-                    if(!(gi > 0)){
+                    if(!(gi > ZERO_GI)){
                         gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
                                                  GetBioseqCore()->GetId());
                     }
-                    if(gi > 0){
-                        id=NStr::IntToString(gi);
+                    if(gi > ZERO_GI){
+                        id=NStr::NumericToString(gi);
                     } else {
                         const CRef<CSeq_id> wid 
                             = FindBestChoice(m_AV->GetBioseqHandle(row).\
@@ -4478,16 +4485,16 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
         }
     } else {
         if(m_AlignOption&eShowGi){
-            int gi = 0;
+            TGi gi = ZERO_GI;
             if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
                 gi = m_AV->GetSeqId(row).GetGi();
             }
-            if(!(gi > 0)){
+            if(!(gi > ZERO_GI)){
                 gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
                                          GetBioseqCore()->GetId());
             }
-            if(gi > 0){
-                id=NStr::IntToString(gi);
+            if(gi > ZERO_GI){
+                id=NStr::NumericToString(gi);
             } else {
                 const CRef<CSeq_id> wid 
                     = FindBestChoice(m_AV->GetBioseqHandle(row).\
@@ -4642,8 +4649,8 @@ void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <strin
 
          string currID;
          if(subid->Which() == CSeq_id::e_Gi) {               
-            int currGi = subid->GetGi();            
-            currID = NStr::IntToString(currGi);
+            TGi currGi = subid->GetGi();            
+            currID = NStr::NumericToString(currGi);
          }
          else {             
             subid->GetLabel(&currID, CSeq_id::eContent);             

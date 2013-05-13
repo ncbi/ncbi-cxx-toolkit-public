@@ -63,7 +63,7 @@ public:
                            ENa_strand strand = eNa_strand_plus);
     static string GetIupac(const CSeq_id_Handle& id,
                            ENa_strand strand = eNa_strand_plus);
-    static string GetIupac(int gi,
+    static string GetIupac(TGi gi,
                            ENa_strand strand = eNa_strand_plus);
     static string GetIupac(const CSeq_loc& loc,
                            ENa_strand strand = eNa_strand_unknown);
@@ -76,7 +76,7 @@ public:
                          ENa_strand strand = eNa_strand_plus);
     static void GetIupac(string& result, const CSeq_id_Handle& id,
                          ENa_strand strand = eNa_strand_plus);
-    static void GetIupac(string& result, int gi,
+    static void GetIupac(string& result, TGi gi,
                          ENa_strand strand = eNa_strand_plus);
     static void GetIupac(string& result, const CSeq_loc& loc,
                          ENa_strand strand = eNa_strand_unknown);
@@ -88,7 +88,7 @@ public:
                                    ENa_strand strand = eNa_strand_plus);
     static CSeqVector GetSeqVector(const CSeq_id_Handle& id,
                                    ENa_strand strand = eNa_strand_plus);
-    static CSeqVector GetSeqVector(int gi,
+    static CSeqVector GetSeqVector(TGi gi,
                                    ENa_strand strand = eNa_strand_plus);
     static CSeqVector GetSeqVector(const CSeq_loc& loc,
                                    ENa_strand strand = eNa_strand_unknown);
@@ -97,7 +97,7 @@ public:
     static CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
     static CBioseq_Handle GetBioseqHandle(const string& id_string);
     static CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
-    static CBioseq_Handle GetBioseqHandle(int gi);
+    static CBioseq_Handle GetBioseqHandle(TGi gi);
 
     /// Return a new scope, possibly (by default) with default loaders,
     /// which will include the Genbank loader automatically

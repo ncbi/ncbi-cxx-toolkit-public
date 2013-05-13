@@ -453,8 +453,8 @@ BEGIN_TEST_FUNCTION(FullBlobs)
         if (line.empty()  ||  !isdigit((unsigned char) line[0]) ) {
             continue;
         }
-        int gi = NStr::StringToInt(line, NStr::fAllowTrailingSymbols);
-        if (gi <= 0) {
+        TGi gi = NStr::StringToNumeric<TGi>(line, NStr::fAllowTrailingSymbols);
+        if (gi <= ZERO_GI) {
             continue;
         }
         INFOMSG("Trying GI " << gi);
@@ -510,7 +510,7 @@ BEGIN_TEST_FUNCTION(UnsignedInt)
     CRef < CSeq_loc > seqloc(new CSeq_loc());
     seqloc->SetInt().SetFrom(signedInt);
     seqloc->SetInt().SetTo(signedInt);
-    seqloc->SetInt().SetId().SetGi(0);
+    seqloc->SetInt().SetId().SetGi(ZERO_GI);
 
     if (!WriteASNToFile(*seqloc, false, &err))
         ADD_ERR_RETURN("output of seqloc with '-1' failed: " << err);

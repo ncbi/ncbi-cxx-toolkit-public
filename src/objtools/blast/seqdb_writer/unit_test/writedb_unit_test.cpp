@@ -223,7 +223,7 @@ s_DupIdsBioseq(CWriteDB      & w,
         BOOST_REQUIRE_CUTPOINT(5);
         
         if (seqid->IsGi()) {
-            bs = s.GetBioseq(oid, seqid->GetGi());
+            bs = s.GetBioseq(oid, GI_TO(int, seqid->GetGi()));
         } else {
             bs = s.GetBioseq(oid);
         }
@@ -2471,7 +2471,7 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomy)
         tis.FixTaxId(bds);
         blastdb.AddSequence(*bs);
         blastdb.SetDeflines(*bds);
-        gis.insert(FindGi(bs->GetId()));
+        gis.insert(GI_TO(int, FindGi(bs->GetId())));
     }
     blastdb.Close();
 

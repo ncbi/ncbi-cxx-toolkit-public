@@ -953,7 +953,7 @@ string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
 {
     stringstream strm;
     strm << "<a href=\"" << strLinkBaseNuc;
-    if( me.gi > 0 ) {
+    if( me.gi > ZERO_GI ) {
         strm << me.gi;
     } else {
         strm << me.name;
@@ -1542,7 +1542,7 @@ string s_CreateHistCommentString
         hist.GetDate().GetDate(&date, "%{%3N%|???%} %{%D%|??%}, %{%4Y%|????%}");
     }
 
-    vector<int> gis;
+    vector<TGi> gis;
     ITERATE (CSeq_hist_rec::TIds, id, hist.GetIds()) {
         if ( (*id)->IsGi() ) {
             gis.push_back((*id)->GetGi());

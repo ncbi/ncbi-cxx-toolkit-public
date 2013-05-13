@@ -1043,7 +1043,7 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
             if( moduop->HasField("Contig Gi") ) {
                 ufp = &(moduop->GetField("Contig Gi"));
                 if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsInt() ) {
-                    me.gi = ufp->GetData().GetInt();
+                    me.gi = GI_FROM(CUser_field::C_Data::TInt, ufp->GetData().GetInt());
                 }
             }
             if( moduop->HasField("Contig Span") ) {
@@ -1060,7 +1060,7 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
     }
 
     // if me.name is missing version, try to update from me.gi
-    if( me.gi > 0 && me.name.find('.') == string::npos ) {
+    if( me.gi > ZERO_GI && me.name.find('.') == string::npos ) {
         CSeq_id_Handle accver_idh = bsh.GetScope().GetAccVer( CSeq_id_Handle::GetGiHandle(me.gi) );
         if( accver_idh ) {
             CConstRef<CSeq_id> accver_seq_id = accver_idh.GetSeqIdOrNull();

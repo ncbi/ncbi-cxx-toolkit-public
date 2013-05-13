@@ -210,10 +210,10 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
 
 void
 CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
-                                               list<int>& use_this_gi,
+                                               list<TGi>& use_this_gi,
                                                string& seqid, string& defline, 
                                                bool show_gi /* = true */,
-                                               int this_gi_first /* = -1 */)
+                                               TGi this_gi_first /* = -1 */)
 {
     // Retrieve the CBlast_def_line_set object and save in a CRef, preventing
     // its destruction; then extract the list of CBlast_def_line objects.
@@ -232,15 +232,15 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
         bool is_first = true;
         ITERATE(list<CRef<CBlast_def_line> >, iter, bdl) {
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            int cur_gi =  FindGi(cur_id);
-            int gi_in_use_this_gi = 0;
-            ITERATE(list<int>, iter_gi, use_this_gi){
+            TGi cur_gi =  FindGi(cur_id);
+            TGi gi_in_use_this_gi = ZERO_GI;
+            ITERATE(list<TGi>, iter_gi, use_this_gi){
                 if(cur_gi == *iter_gi){
                     gi_in_use_this_gi = *iter_gi;                 
                     break;
                 }
             }
-            if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
+            if(use_this_gi.empty() || gi_in_use_this_gi > ZERO_GI) {
                 if (is_first)
                     seqid = GetSeqIdListString(cur_id, show_gi);
 
@@ -252,9 +252,9 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
                         CConstRef<CSeq_id> wid = 
                             FindBestChoice(cur_id, CSeq_id::WorstRank);
                         wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
-                        if( show_gi && cur_gi > 0){
+                        if( show_gi && cur_gi > ZERO_GI){
                             defline = defline + " >" + "gi|" + 
-                                NStr::IntToString(cur_gi) + "|" + 
+                                NStr::NumericToString(cur_gi) + "|" + 
                                 concat_acc + " " + (*iter)->GetTitle();
                         } else {
                             defline = defline + " >" + concat_acc + " " + 
@@ -270,7 +270,7 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
 
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            const CSeq_id& aln_id,
-                                           list<int>& use_this_gi,
+                                           list<TGi>& use_this_gi,
                                            SDeflineInfo* sdl,
                                            int blast_rank)
 {
@@ -282,7 +282,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     CRef<CSeq_id> wid;    
     sdl->defline = NcbiEmptyString;
  
-    sdl->gi = 0;
+    sdl->gi = ZERO_GI;
     sdl->id_url = NcbiEmptyString;
     sdl->score_url = NcbiEmptyString;	
     sdl->linkout = 0;
@@ -321,7 +321,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            int cur_gi =  FindGi(cur_id);            
+            TGi cur_gi =  FindGi(cur_id);            
             if(use_this_gi.empty()){
                 if(sdl->gi == cur_gi){                 
                     sdl->linkout = m_LinkoutDB
@@ -334,13 +334,13 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            m_CddRid, 
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
-                                           0, true, false,
+                                           ZERO_GI, true, false,
                                            blast_rank,m_PreComputedResID);                    
                     
                     break;
                 }
             } else {
-                ITERATE(list<int>, iter_gi, use_this_gi){
+                ITERATE(list<TGi>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
                         sdl->linkout = m_LinkoutDB
                             ?
@@ -353,7 +353,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            m_CddRid, 
                                            m_EntrezTerm, 
                                            handle.GetBioseqCore()->IsNa(),
-                                           0, true, false,
+                                           ZERO_GI, true, false,
                                            blast_rank,m_PreComputedResID);                        
                         linkout_not_found = false;
                         break;
@@ -376,8 +376,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         if (!useTemplates && m_PositionIndex >= 0) {
             sdl->score_url += "_" + NStr::IntToString(m_PositionIndex) + "_";
         }
-        sdl->score_url += sdl->gi == 0 ? accession : 
-            NStr::IntToString(sdl->gi);
+        sdl->score_url += sdl->gi == ZERO_GI ? accession : 
+            NStr::NumericToString(sdl->gi);
         sdl->score_url += !useTemplates ? ">" : "";
 
 		string user_url = m_Reg.get() ? m_Reg->Get(m_BlastType, "TOOL_URL") : kEmptyStr;        
@@ -409,15 +409,15 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-            int cur_gi =  FindGi(cur_id);
-            int gi_in_use_this_gi = 0;
-            ITERATE(list<int>, iter_gi, use_this_gi){
+            TGi cur_gi =  FindGi(cur_id);
+            TGi gi_in_use_this_gi = ZERO_GI;
+            ITERATE(list<TGi>, iter_gi, use_this_gi){
                 if(cur_gi == *iter_gi){
                     gi_in_use_this_gi = *iter_gi;                 
                     break;
                 }
             }
-            if(use_this_gi.empty() || gi_in_use_this_gi > 0) {
+            if(use_this_gi.empty() || gi_in_use_this_gi > ZERO_GI) {
                 
                 if((*iter)->IsSetTitle()){
                     bool id_used_already = false;
@@ -431,9 +431,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                         string concat_acc;
                         wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
                         wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
-                        if( (m_Option & eShowGi) && cur_gi > 0){
+                        if( (m_Option & eShowGi) && cur_gi > ZERO_GI){
                             sdl->defline =  sdl->defline + " >" + "gi|" + 
-                                NStr::IntToString(cur_gi) + "|" + 
+                                NStr::NumericToString(cur_gi) + "|" + 
                                 concat_acc + " " + (*iter)->GetTitle();
                         } else {
                             sdl->defline = sdl->defline + " >" + concat_acc +
@@ -678,7 +678,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
-        if ((m_Option & eHtml) && (sdl->gi > 0)){
+        if ((m_Option & eHtml) && (sdl->gi > ZERO_GI)){
             if((m_Option & eShowNewSeqGif)) { 
                 if (sdl->is_new) {
                     if (first_new) {
@@ -713,8 +713,8 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             out << sdl->id_url;
         }
         if(m_Option & eShowGi){
-            if(sdl->gi > 0){
-                line_component = "gi|" + NStr::IntToString(sdl->gi) + "|";
+            if(sdl->gi > ZERO_GI){
+                line_component = "gi|" + NStr::NumericToString(sdl->gi) + "|";
                 out << line_component;
                 line_length += line_component.size();
             }
@@ -1100,7 +1100,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
             out << "<tr>\n";
             out << "<td class=\"l\">\n";
         }
-        if ((m_Option & eHtml) && (sdl->gi > 0)){
+        if ((m_Option & eHtml) && (sdl->gi > ZERO_GI)){
             if((m_Option & eShowNewSeqGif)) { 
                 if (sdl->is_new) {
                     if (first_new) {
@@ -1135,8 +1135,8 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
             out << sdl->id_url;
         }
         if(m_Option & eShowGi){
-            if(sdl->gi > 0){
-                line_component = "gi|" + NStr::IntToString(sdl->gi) + "|";
+            if(sdl->gi > ZERO_GI){
+                line_component = "gi|" + NStr::NumericToString(sdl->gi) + "|";
                 out << line_component;
                 line_length += line_component.size();
             }
@@ -1278,7 +1278,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     double evalue = 0;
     int sum_n = 0;
     int num_ident = 0;
-    list<int> use_this_gi; 
+    list<TGi> use_this_gi;
 
     use_this_gi.clear();
 
@@ -1356,7 +1356,7 @@ CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
 {
     vector <CShowBlastDefline::SDeflineInfo*>  sdlVec;
     for(size_t i = 0; i < seqIds.size(); i++) {
-        list<int> use_this_gi;
+        list<TGi> use_this_gi;
         CShowBlastDefline::SDeflineInfo* sdl = x_GetDeflineInfo(seqIds[i], use_this_gi, i + 1 );
         sdlVec.push_back(sdl);        
     }
@@ -1366,7 +1366,7 @@ CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
 
 
 CShowBlastDefline::SDeflineInfo* 
-CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_gi, int blast_rank)
+CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<TGi>& use_this_gi, int blast_rank)
 {
     SDeflineInfo* sdl = NULL;
     sdl = new SDeflineInfo;
@@ -1384,7 +1384,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<int>& use_this_g
         if((*id).Which() == CSeq_id::e_Gi){
             sdl->gi = (*id).GetGi();
         } else {                        
-            sdl->gi = 0;
+            sdl->gi = ZERO_GI;
         }
         sdl->id = id;
         if(m_Option & eHtml){
@@ -1466,8 +1466,8 @@ string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHea
 
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
-    string defLine = ((sdl->gi > 0) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
-    string dflGi = (m_Option & eShowGi) && (sdl->gi > 0) ? "gi|" + NStr::IntToString(sdl->gi) + "|" : "";
+    string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
+    string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
     string seqid;
     if(!sdl->id.Empty()){
         if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){
@@ -1500,15 +1500,15 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     }
     /*****************This block of code is for future use with AJAX begin***************************/ 
     string deflId,deflFrmID,deflFastaSeq,deflAccs; 
-    if(sdl->gi == 0) {
+    if(sdl->gi == ZERO_GI) {
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
         deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
         deflFastaSeq = sdl->id->AsFastaString();        
     }
     else {        
-        deflFrmID = deflId = NStr::IntToString(sdl->gi);        
-        deflFastaSeq = "gi|" + NStr::IntToString(sdl->gi);
+        deflFrmID = deflId = NStr::NumericToString(sdl->gi);        
+        deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
         deflFastaSeq = sdl->alnIDFasta;
         deflAccs = sdl->id->AsFastaString();
     }
@@ -1583,7 +1583,7 @@ string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 
     replaceBy = (m_Option & eCheckboxChecked) ? "checked=\"checked\"" : "";
     defline = CAlignFormatUtil::MapTemplate(defline,"gi_checked",replaceBy);    
-    defline = CAlignFormatUtil::MapTemplate(defline,"psiGi",NStr::IntToString(sdl->gi));
+    defline = CAlignFormatUtil::MapTemplate(defline,"psiGi",NStr::NumericToString(sdl->gi));
     
     return defline;
 }

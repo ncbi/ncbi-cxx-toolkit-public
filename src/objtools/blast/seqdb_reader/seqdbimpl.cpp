@@ -482,7 +482,7 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
                     continue;
                 }
                 
-                gi_to_taxid[(**seqid).GetGi()] = (*defline)->GetTaxid();
+                gi_to_taxid[GI_TO(int, (**seqid).GetGi())] = (*defline)->GetTaxid();
             }
         }
     }
@@ -810,7 +810,7 @@ int CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
             vol->GetSeqIDs(vol_oid, locked);
         ITERATE(list< CRef<CSeq_id> >, id, ids) {
             if ((**id).IsGi()) {
-                return (**id).GetGi();
+                return GI_TO(int, (**id).GetGi());
             }
         }
         // No GI found 

@@ -334,7 +334,7 @@ bool CSourceModParser::SMod::operator <(const SMod& rhs) const
             return false;
         }
 
-        int id_comp = seqid->CompareOrdered(*rhs.seqid);
+        TIntId id_comp = seqid->CompareOrdered(*rhs.seqid);
         if( id_comp != 0 ) {
             return id_comp < 0;
         }

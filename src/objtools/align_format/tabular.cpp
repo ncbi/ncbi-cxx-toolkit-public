@@ -169,7 +169,7 @@ s_GetSeqIdListString(const list<CRef<CSeq_id> >& id,
         break;
     }
     case CBlastTabularInfo::eGi:
-        id_str = NStr::IntToString(FindGi(id));
+        id_str = NStr::NumericToString(FindGi(id));
         break;
     default: break;
     }
@@ -627,7 +627,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(ePercentIdentical)) {
         int score = 0, sum_n = 0;
         double bit_score = .0, evalue = .0;
-        list<int> use_this_gi;
+        list<TGi> use_this_gi;
         CAlignFormatUtil::GetAlnScores(align, score, bit_score, evalue, sum_n, 
                                        num_ident, use_this_gi);
         SetScores(score, bit_score, evalue);

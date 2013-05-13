@@ -308,7 +308,7 @@ class CLDS_Seq_ids : public CObject
 {
 public:
     typedef vector<CRef<CSeq_id> > TIds;
-    typedef vector<int> TGis;
+    typedef vector<TGi> TGis;
     void clear()
         {
             m_Ids.clear();
@@ -323,7 +323,7 @@ public:
                 m_Ids.push_back(Ref(SerialClone(id)));
             }
         }
-    void AddGi(int gi)
+    void AddGi(TGi gi)
         {
             if ( m_Gis.empty() || m_Gis.back() != gi ) {
                 m_Gis.push_back(gi);
@@ -1332,7 +1332,7 @@ void LDS_GetSequenceBase(const CSeq_id&   seq_id,
         }}
         return;
     case CSeq_id::e_Gi:
-        obj_id_int = seq_id.GetGi();
+        obj_id_int = GI_TO(int, seq_id.GetGi());
         break;
     case CSeq_id::e_Ddbj:
         obj_id_txt = &seq_id.GetDdbj();

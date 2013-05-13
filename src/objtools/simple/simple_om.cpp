@@ -70,7 +70,7 @@ string CSimpleOM::GetIupac(const string& id_string, ENa_strand strand)
 }
 
 
-string CSimpleOM::GetIupac(int gi, ENa_strand strand)
+string CSimpleOM::GetIupac(TGi gi, ENa_strand strand)
 {
     string rv;
     GetIupac(rv, gi, strand);
@@ -112,7 +112,7 @@ void CSimpleOM::GetIupac(string& result, const string& id_string, ENa_strand str
 }
 
 
-void CSimpleOM::GetIupac(string& result, int gi, ENa_strand strand)
+void CSimpleOM::GetIupac(string& result, TGi gi, ENa_strand strand)
 {
     CSeqVector vec = GetSeqVector(gi, strand);
     vec.SetIupacCoding();
@@ -150,7 +150,7 @@ CSeqVector CSimpleOM::GetSeqVector(const string& id_string, ENa_strand strand)
 }
 
 
-CSeqVector CSimpleOM::GetSeqVector(int gi, ENa_strand strand)
+CSeqVector CSimpleOM::GetSeqVector(TGi gi, ENa_strand strand)
 {
     return GetBioseqHandle(gi).GetSeqVector(strand);
 }
@@ -183,7 +183,7 @@ CBioseq_Handle CSimpleOM::GetBioseqHandle(const string& id_string)
 }
 
 
-CBioseq_Handle CSimpleOM::GetBioseqHandle(int gi)
+CBioseq_Handle CSimpleOM::GetBioseqHandle(TGi gi)
 {
     CSeq_id id;
     id.SetGi(gi);

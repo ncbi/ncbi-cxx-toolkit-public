@@ -148,7 +148,7 @@ public:
     ///   Output: filtered set of alignments.
     ///
     void FilterByGiList(const objects::CSeq_align_set& full_aln,
-                        const list<int>& list_gis,
+                        const list<TGi>& list_gis,
                         objects::CSeq_align_set& filtered_aln);
 
     /// Filter Seqaligns using a SeqDB object.
@@ -177,7 +177,7 @@ public:
     void WriteSeqalignSet(const string& fname, const objects::CSeq_align_set& aln);
 
     /// Read a gi list from a file and, optionally, sort it.
-    void ReadGiList(const string& fname, list<int>& list_gis, bool sorted = false);
+    void ReadGiList(const string& fname, list<TGi>& list_gis, bool sorted = false);
 
     /// Read a gi vector from a file and, optionally, sort it.
     void ReadGiVector(const string& fname, vector<int>& vec_gis, bool sorted = false);
@@ -187,31 +187,31 @@ private:
 
     /// Create one or more seqalign objects for output, based on the given
     /// input seqalign and the list of gi's to be included in the output.
-    void x_CreateOusputSeqaligns(CConstRef<objects::CSeq_align> in_aln, int in_gi,
-                                objects::CSeq_align_set& out_aln, const vector<int>& out_gi_vec);
+    void x_CreateOusputSeqaligns(CConstRef<objects::CSeq_align> in_aln, TGi in_gi,
+                                objects::CSeq_align_set& out_aln, const vector<TGi>& out_gi_vec);
 
     /// Generate the list of gi's based on the old list and the newly available gi's.
-    void x_GenerateNewGis(int main_old_gi,                        // in: main gi stored before filtering
-                        const vector<int>& vec_old_extra_gis,    // in: extra gi's stored before filtering
-                        const vector<int>& vec_out_gis,            // in: list of all gi's to remain after filtering
-                        int& main_new_gi,                        // out: main gi after filtering
-                        vector<int>& vec_new_extra_gis);        // out: extra gi's after filtering
+    void x_GenerateNewGis(TGi main_old_gi,                        // in: main gi stored before filtering
+                        const vector<TGi>& vec_old_extra_gis,    // in: extra gi's stored before filtering
+                        const vector<TGi>& vec_out_gis,            // in: list of all gi's to remain after filtering
+                        TGi& main_new_gi,                        // out: main gi after filtering
+                        vector<TGi>& vec_new_extra_gis);        // out: extra gi's after filtering
 
     /// Change the gi of one of the sequences referenced in the seqalign object.
     CRef<objects::CSeq_align> x_UpdateGiInSeqalign(CConstRef<objects::CSeq_align> sa, unsigned int n_row,
-                                        int old_gi, int new_gi, bool& success);
+                                        TGi old_gi, TGi new_gi, bool& success);
 
     /// Read the "use_this_gi" entries from a seqalign object.
-    void x_ReadExtraGis(CConstRef<objects::CSeq_align> sa, vector<int>& vec_extra_gis);
+    void x_ReadExtraGis(CConstRef<objects::CSeq_align> sa, vector<TGi>& vec_extra_gis);
 
     // Write new "use_this_gi" entries to a seqalign object.
-    void x_WriteExtraGis(CRef<objects::CSeq_align> sa, const vector<int>& vec_extra_gis);
+    void x_WriteExtraGis(CRef<objects::CSeq_align> sa, const vector<TGi>& vec_extra_gis);
 
     // Remove all the "use_this_gi" entries from a seqalign object.
     void x_RemoveExtraGis(CRef<objects::CSeq_align> sa);
 
     // Add one new "use_this_gi" entry to a seqalign object.
-    bool x_AddUseGiEntryInSeqalign(CRef<objects::CSeq_align> sa, int new_gi);
+    bool x_AddUseGiEntryInSeqalign(CRef<objects::CSeq_align> sa, TGi new_gi);
 
     //--- Internal data ---//
 

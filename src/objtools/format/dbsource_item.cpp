@@ -561,7 +561,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
         }}
     case CSeq_id::e_Gi:
         {{
-            return "gi: " + NStr::IntToString(id->GetGi());
+            return "gi: " + NStr::NumericToString(id->GetGi());
         }}
     case CSeq_id::e_Pdb:
         {{
@@ -610,8 +610,9 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
                 if( is_html ) {
-                    const int gi = GetContext()->GetScope().GetGi(idh);
-                    s += comma + sep + "accession <a href=\"" + strLinkBaseNuc + NStr::IntToString(gi) + "\">" + acc + "</a>";
+                    const TIntId gi = GetContext()->GetScope().GetGi(idh);
+                    s += comma + sep + "accession <a href=\"" + strLinkBaseNuc +
+                        NStr::NumericToString(gi) + "\">" + acc + "</a>";
                 } else {
                     s += comma + sep + "accession " + acc;
                 }

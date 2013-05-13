@@ -108,7 +108,7 @@ s_GetBlastScore(const container&  scoreList,
                 double& evalue, 
                 int& sum_n, 
                 int& num_ident,
-                list<int>& use_this_gi,
+                list<TGi>& use_this_gi,
                 int& comp_adj_method)
 {
     bool hasScore = false;
@@ -125,7 +125,7 @@ s_GetBlastScore(const container&  scoreList,
             } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
                 evalue = (*iter)->GetValue().GetReal();
             } else if (id.GetStr()=="use_this_gi"){
-                use_this_gi.push_back((*iter)->GetValue().GetInt());
+                use_this_gi.push_back(GI_FROM(int, (*iter)->GetValue().GetInt()));
             } else if (id.GetStr()=="sum_n"){
                 sum_n = (*iter)->GetValue().GetInt();          
             } else if (id.GetStr()=="num_ident"){
@@ -443,19 +443,19 @@ CAlignFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
     string all_id_str = NcbiEmptyString;
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
     if (wid && (wid->Which()!= CSeq_id::e_Local || believe_local_id)){
-        int gi = FindGi(ids);
+        TGi gi = FindGi(ids);
         if (strncmp(wid->AsFastaString().c_str(), "lcl|", 4) == 0) {
-            if(gi == 0){
+            if(gi == ZERO_GI){
                 all_id_str =  wid->AsFastaString().substr(4);
             } else {
-                all_id_str = "gi|" + NStr::IntToString(gi) + 
+                all_id_str = "gi|" + NStr::NumericToString(gi) + 
                     "|" + wid->AsFastaString().substr(4);
             }
         } else {
-            if(gi == 0){
+            if(gi == ZERO_GI){
                 all_id_str = wid->AsFastaString();
             } else {
-                all_id_str = "gi|" + NStr::IntToString(gi) + "|" +
+                all_id_str = "gi|" + NStr::NumericToString(gi) + "|" +
                     wid->AsFastaString();
             }
         }
@@ -585,7 +585,7 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     double& evalue,
                                     int& sum_n,
                                     int& num_ident,
-                                    list<int>& use_this_gi)
+                                    list<TGi>& use_this_gi)
 {
     int comp_adj_method = 0; // dummy variable
 
@@ -600,7 +600,7 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     double& evalue,
                                     int& sum_n,
                                     int& num_ident,
-                                    list<int>& use_this_gi,
+                                    list<TGi>& use_this_gi,
                                     int& comp_adj_method)
 {
     bool hasScore = false;
@@ -965,11 +965,11 @@ SortHspByPercentIdentityDescending(const CRef<CSeq_align>& info1,
      
     int score1, sum_n1, num_ident1;
     double bits1, evalue1;
-    list<int> use_this_gi1;
+    list<TGi> use_this_gi1;
     
     int score2, sum_n2, num_ident2;
     double bits2, evalue2;
-    list<int> use_this_gi2;
+    list<TGi> use_this_gi2;
     
     
     GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
@@ -1007,11 +1007,11 @@ SortHitByScoreDescending(const CRef<CSeq_align_set>& info1,
      
     int score1, sum_n1, num_ident1;
     double bits1, evalue1;
-    list<int> use_this_gi1;
+    list<TGi> use_this_gi1;
     
     int score2, sum_n2, num_ident2;
     double bits2, evalue2;
-    list<int> use_this_gi2;
+    list<TGi> use_this_gi2;
     
     GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
     GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
@@ -1031,11 +1031,11 @@ SortHitByMasterCoverageDescending(CRef<CSeq_align_set> const& info1,
     } else if (cov1 == cov2) {
         int score1, sum_n1, num_ident1;
         double bits1, evalue1;
-        list<int> use_this_gi1;
+        list<TGi> use_this_gi1;
     
         int score2, sum_n2, num_ident2;
         double bits2, evalue2;
-        list<int> use_this_gi2;
+        list<TGi> use_this_gi2;
         GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
         GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
         retval = evalue1 < evalue2;
@@ -1063,11 +1063,11 @@ bool CAlignFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1
         //same start then arrange by bits score
         int score1, sum_n1, num_ident1;
         double bits1, evalue1;
-        list<int> use_this_gi1;
+        list<TGi> use_this_gi1;
         
         int score2, sum_n2, num_ident2;
         double bits2, evalue2;
-        list<int> use_this_gi2;
+        list<TGi> use_this_gi2;
         
         
         GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
@@ -1087,11 +1087,11 @@ SortHspByScoreDescending(const CRef<CSeq_align>& info1,
  
     int score1, sum_n1, num_ident1;
     double bits1, evalue1;
-    list<int> use_this_gi1;
+    list<TGi> use_this_gi1;
     
     int score2, sum_n2, num_ident2;
     double bits2, evalue2;
-    list<int> use_this_gi2;
+    list<TGi> use_this_gi2;
     
     
     GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
@@ -1113,11 +1113,11 @@ SortHspByMasterStartAscending(const CRef<CSeq_align>& info1,
         //same start then arrange by bits score
         int score1, sum_n1, num_ident1;
         double bits1, evalue1;
-        list<int> use_this_gi1;
+        list<TGi> use_this_gi1;
         
         int score2, sum_n2, num_ident2;
         double bits2, evalue2;
-        list<int> use_this_gi2;
+        list<TGi> use_this_gi2;
         
         
         GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
@@ -1143,11 +1143,11 @@ SortHspBySubjectStartAscending(const CRef<CSeq_align>& info1,
         //same start then arrange by bits score
         int score1, sum_n1, num_ident1;
         double bits1, evalue1;
-        list<int> use_this_gi1;
+        list<TGi> use_this_gi1;
         
         int score2, sum_n2, num_ident2;
         double bits2, evalue2;
-        list<int> use_this_gi2;
+        list<TGi> use_this_gi2;
         
         
         GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
@@ -1252,11 +1252,11 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
 
     int score1, sum_n1, num_ident1;
     double bits1, evalue1;
-    list<int> use_this_gi1;
+    list<TGi> use_this_gi1;
     
     int score2, sum_n2, num_ident2;
     double bits2, evalue2;
-    list<int> use_this_gi2;
+    list<TGi> use_this_gi2;
     
     GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
     GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
@@ -1286,7 +1286,7 @@ bool CAlignFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const&
 {
     int score1,  score2, sum_n, num_ident;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
     double total_bits1 = 0, total_bits2 = 0;
     
     ITERATE(CSeq_align_set::Tdata, iter, info1->Get()) { 
@@ -1628,7 +1628,7 @@ string CAlignFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
         /* We do need to make security protected link to BLAST gnl */
         return NcbiEmptyString;
     }
-    int gi = FindGi(ids);    
+    TGi gi = FindGi(ids);    
     string bestID = s_GetBestIDForURL((CBioseq::TId &)ids);
     
 
@@ -1698,9 +1698,9 @@ string CAlignFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
         link += "&gnl=";
         link += str;
     }
-    if (gi > 0){
-        link += "&gi=" + NStr::IntToString(gi);
-        link += "&term=" + NStr::IntToString(gi) + NStr::URLEncode("[gi]");
+    if (gi > ZERO_GI){
+        link += "&gi=" + NStr::NumericToString(gi);
+        link += "&term=" + NStr::NumericToString(gi) + NStr::URLEncode("[gi]");
     }
     if(taxid > 0){
         link += "&taxid=" + NStr::IntToString(taxid);
@@ -1922,7 +1922,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
                                     const string& cdd_rid, 
                                     const string& entrez_term,
                                     bool is_na, 
-                                    int first_gi,
+                                    TGi first_gi,
                                     bool structure_linkout_as_group,
                                     bool for_alignment, int cur_align,
                                     string preComputedResID,
@@ -1967,7 +1967,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
             NStr::Tokenize(labelList,",",accs); 
             string firstAcc = (accs.size() > 0)? accs[0] : labelList;
             
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",NStr::IntToString(first_gi));                    
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",
+                NStr::NumericToString(first_gi));                    
             string  mapCDDParams;
             if(NStr::Find(cdd_rid,"data_cache") != NPOS) {
                 mapCDDParams = "query_gi=" + preComputedResID;
@@ -2050,7 +2051,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
                 string queryNumStr = (query_number > 0) ? NStr::IntToString(query_number) : "";
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"query_number",queryNumStr);  //gi,term
         
-                string giStr = (first_gi > 0)? NStr::IntToString(first_gi) : "";        
+                string giStr = (first_gi > ZERO_GI)? NStr::NumericToString(first_gi) : "";        
                 url_link = s_MapLinkoutGenParam(url_link,rid,giStr,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);        
             }
             else {
@@ -2139,19 +2140,19 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
                                              const string& cdd_rid, 
                                              const string& entrez_term,
                                              bool is_na, 
-                                             int first_gi,
+                                             TGi first_gi,
                                              bool structure_linkout_as_group,
                                              bool for_alignment, int cur_align,
                                              string preComputedResID)
                                   
 {
     list<string> linkout_list;
-    int gi = FindGi(ids);
+    TGi gi = FindGi(ids);
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
     string label;
     wid->GetLabel(&label, CSeq_id::eContent);        
-    string giString = NStr::IntToString(gi);
-    first_gi = (first_gi == 0) ? gi : first_gi;
+    string giString = NStr::NumericToString(gi);
+    first_gi = (first_gi == ZERO_GI) ? gi : first_gi;
     linkout_list = s_GetLinkoutUrl(linkout, 
                                   giString,
                                   label,
@@ -2226,7 +2227,7 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
     for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){    
         CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();        
-        int gi = FindGi(cur_id);        
+        TGi gi = FindGi(cur_id);        
         CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
         
 	    int linkout = linkoutdb ? linkoutdb->GetLinkout(gi, mv_build_name) : 0;
@@ -2302,7 +2303,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
     vector<string> linkLetters;
     NStr::Tokenize(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B,R"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
-        int first_gi = 0;
+        TGi first_gi = ZERO_GI;
         vector < CBioseq::TId > idList;
         int linkout = s_LinkLetterToType(linkLetters[i]);        
         string taxName;
@@ -2319,8 +2320,8 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
         string giList,labelList;        
         for (size_t i = 0; i < idList.size(); i++) {
             const CBioseq::TId& ids = idList[i];
-            int gi = FindGi(ids);
-            if (first_gi == 0) first_gi = gi;
+            TGi gi = FindGi(ids);
+            if (first_gi == ZERO_GI) first_gi = gi;
 
 
             CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
@@ -2332,7 +2333,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
             //use only first gi for bioAssay protein
             if(!giList.empty() && (linkout & eBioAssay) && !is_na) continue;
             if(!giList.empty()) giList += ",";
-            giList += NStr::IntToString(gi);
+            giList += NStr::NumericToString(gi);
         }
 
         string gnl;
@@ -2569,7 +2570,7 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByEval(CSeq_align_set& sour
 {
     int score, sum_n, num_ident;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
 
     CRef<CSeq_align_set> new_aln(new CSeq_align_set);
     
@@ -2611,7 +2612,7 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByPercentIdent(CSeq_align_s
 {
     int score, sum_n, num_ident;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
 
     CRef<CSeq_align_set> new_aln(new CSeq_align_set);
     
@@ -2638,7 +2639,7 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByScoreParams(CSeq_align_se
 {
     int score, sum_n, num_ident;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
 
     CRef<CSeq_align_set> new_aln(new CSeq_align_set);
     
@@ -2914,7 +2915,7 @@ static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURL
     }
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string url_link = CAlignFormatUtil::MapTemplate(urlTemplate,"db",db);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",seqUrlInfo->gi);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",GI_TO(int, seqUrlInfo->gi));
     url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);     
@@ -2946,7 +2947,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
     string temp_class_info = kClassInfo; temp_class_info += " ";
-    if (seqUrlInfo->gi > 0) {        
+    if (seqUrlInfo->gi > ZERO_GI) {        
         string entrezTag = (seqUrlInfo->useTemplates) ? "ENTREZ_TM" : "ENTREZ";
         string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
         url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
@@ -3015,7 +3016,7 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
     if (seqUrlInfo->user_url != NcbiEmptyString && 
-        !((seqUrlInfo->user_url.find("dumpgnl.cgi") != string::npos && seqUrlInfo->gi > 0) || 
+        !((seqUrlInfo->user_url.find("dumpgnl.cgi") != string::npos && seqUrlInfo->gi > ZERO_GI) || 
           (seqUrlInfo->user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer))) {
         
         string url_with_parameters,toolURLParams;
@@ -3087,8 +3088,8 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
         seqLink = CAlignFormatUtil::MapTemplate(kGenericLinkTemplate,"url",linkURL);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
-        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi);    
-        string temp_class_info = kClassInfo; temp_class_info += " ";        
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",GI_TO(int, seqUrlInfo->gi));    
+        string temp_class_info = kClassInfo; temp_class_info += " ";
         temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;        
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info : "");        
     }    
@@ -3113,7 +3114,7 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
                                                bool hspRange)
 {
     list<string> customLinksList;
-    if ( seqUrlInfo->gi > 0) {         
+    if ( seqUrlInfo->gi > ZERO_GI) {         
         //First show links to GenBank and FASTA
         string linkUrl,link,linkTiltle = kCustomLinkTitle;
         
@@ -3137,7 +3138,7 @@ string  CAlignFormatUtil::GetGraphiscLink(SSeqURLInfo *seqUrlInfo,
 {
     //seqviewer
     string dbtype = (seqUrlInfo->isDbNa) ? "nuccore" : "protein";
-    string seqViewUrl = (seqUrlInfo->gi > 0)?kSeqViewerUrl:kSeqViewerUrlNonGi;    
+    string seqViewUrl = (seqUrlInfo->gi > ZERO_GI)?kSeqViewerUrl:kSeqViewerUrlNonGi;    
 
 	string linkUrl = CAlignFormatUtil::MapTemplate(seqViewUrl,"rid",seqUrlInfo->rid);
 
@@ -3149,7 +3150,7 @@ string  CAlignFormatUtil::GetGraphiscLink(SSeqURLInfo *seqUrlInfo,
     linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
          
 	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);			
-	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",seqUrlInfo->gi);    
+	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",GI_TO(int, seqUrlInfo->gi));
     string linkTitle = "Show alignment to <@seqid@> in <@custom_report_type@>";	
     string link_loc;
     if(!hspRange) {
@@ -3186,7 +3187,7 @@ list<string>  CAlignFormatUtil::GetSeqLinksList(SSeqURLInfo *seqUrlInfo,
 int CAlignFormatUtil::SetCustomLinksTypes(SSeqURLInfo *seqUrlInfo, int customLinkTypesInp)
 {
     int customLinkTypes = customLinkTypesInp;
-    if ( seqUrlInfo->gi > 0) {
+    if ( seqUrlInfo->gi > ZERO_GI) {
         customLinkTypes +=eLinkTypeGenLinks;
     }     
     //else if(NStr::StartsWith(seqUrlInfo->accession,"ti:")) {//seqUrlInfo->seqUrl has "trace.cgi"
@@ -3325,7 +3326,7 @@ string  CAlignFormatUtil::GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
     return linkUrl;    
 }
 
-string  CAlignFormatUtil::GetGeneInfo(int giForGeneLookup)
+string  CAlignFormatUtil::GetGeneInfo(TGi giForGeneLookup)
 {
     string geneSym;
     try
@@ -3341,7 +3342,7 @@ string  CAlignFormatUtil::GetGeneInfo(int giForGeneLookup)
 
             
             CGeneInfoFileReader::TGeneInfoList infoList;
-            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
+            m_GeneInfoReader->GetGeneInfoForGi(GI_TO(int, giForGeneLookup),infoList);
 
             CGeneInfoFileReader::TGeneInfoList::const_iterator itInfo = infoList.begin();            
             for (; itInfo != infoList.end(); itInfo++)
@@ -3372,8 +3373,8 @@ CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actua
     const CSeq_id& subject_id = first_aln->GetSeq_id(1);
     const CBioseq_Handle& handleTemp  = scope.GetBioseqHandle(subject_id);
     if(handleTemp){
-        int giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
-        if (giTemp >0) { 
+        TGi giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
+        if (giTemp > ZERO_GI) { 
             type = eDbGi;
         } else if (subject_id.Which() == CSeq_id::e_General){
             const CDbtag& dtg = subject_id.GetGeneral();
@@ -3394,7 +3395,7 @@ CAlignFormatUtil::GetSeqAlignCalcParams(const CSeq_align& aln)
     double evalue = 0;
     int sum_n = 0;
     int num_ident = 0;
-    list<int> use_this_gi; 
+    list<TGi> use_this_gi; 
 
     use_this_gi.clear();
     //Gets scores directly from seq align 
@@ -3441,7 +3442,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     int highest_identity = 0;
     double totalLen = 0;
     
-    list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.    
+    list<TGi> use_this_gi;   // Not used here, but needed for GetAlnScores.    
     
     seqSetInfo->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&seqSetInfo->master_covered_length,&seqSetInfo->flip);	
     seqSetInfo->percent_coverage = 100*seqSetInfo->master_covered_length/queryLength;
@@ -3491,7 +3492,7 @@ s_GetBlastScore(const container&  scoreList,
                 double& totalLen,
                 int &rawScore,
                 int& sum_n,                
-                list<int>& use_this_gi)
+                list<TGi>& use_this_gi)
 {
     bool hasScore = false;
     ITERATE (typename container, iter, scoreList) {
@@ -3515,7 +3516,7 @@ s_GetBlastScore(const container&  scoreList,
             } else if (id.GetStr()=="score"){
                 rawScore = (*iter)->GetValue().GetInt();
             } else if (id.GetStr()=="use_this_gi"){
-                use_this_gi.push_back((*iter)->GetValue().GetInt());
+                use_this_gi.push_back(GI_FROM(int, (*iter)->GetValue().GetInt()));
             } else if (id.GetStr()=="sum_n"){
                 sum_n = (*iter)->GetValue().GetInt();          
             }
@@ -3541,7 +3542,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     double totalLen = 0;
     int rawScore = -1;
     int sum_n = -1;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
     
     const CSeq_align& aln = *(alnSet.Get().front()); 
 
@@ -3583,8 +3584,8 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
 
 CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,
-                                list<int>& use_this_gi,
-                                int& gi)
+                                list<TGi>& use_this_gi,
+                                TGi& gi)
                                            
 {
     const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
@@ -3593,7 +3594,7 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     CRef<CSeq_id> wid;    
 
-    gi = 0;
+    gi = ZERO_GI;
     if(bdl.empty()){
         wid = FindBestChoice(*ids, CSeq_id::WorstRank);        
         gi = FindGi(*ids);    
@@ -3602,10 +3603,10 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
             const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
-            int cur_gi =  FindGi(*cur_id);    
+            TGi cur_gi =  FindGi(*cur_id);    
             wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
             if (!use_this_gi.empty()) {
-                ITERATE(list<int>, iter_gi, use_this_gi){
+                ITERATE(list<TGi>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){
                         found = true;
                         break;

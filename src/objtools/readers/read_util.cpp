@@ -103,7 +103,7 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
                 pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
                 return pId;
             }
-            if (pId->GetGi() < 500) {
+            if (pId->GetGi() < TGi(500)) {
                 pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
                 return pId;
             }

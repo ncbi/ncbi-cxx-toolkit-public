@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 
 CVersionItem::CVersionItem(CBioseqContext& ctx) :
     CFlatItem(&ctx),
-    m_Gi(0)
+    m_Gi(ZERO_GI)
 {
     x_GatherInfo(ctx);
 }
@@ -61,7 +61,7 @@ void CVersionItem::Format
 }
 
 
-int CVersionItem::GetGi(void) const
+TGi CVersionItem::GetGi(void) const
 {
     return m_Gi;
 }

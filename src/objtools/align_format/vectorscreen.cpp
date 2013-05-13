@@ -138,7 +138,7 @@ static bool AlnFromRangeAscendingSort(CRef<CSeq_align> const& info1,
 {
     int score1,  score2, sum_n, num_ident;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
     TSeqPos from1, from2;
     
     CAlignFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
@@ -164,7 +164,7 @@ static bool AlnScoreDescendingSort(CRef<CSeq_align> const& info1,
 {
     int score1,  score2, sum_n, num_ident;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
     
     CAlignFormatUtil::GetAlnScores(*info1, score1, bits, evalue,
                                    sum_n, num_ident, use_this_gi);
@@ -180,7 +180,7 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
     int score, sum_n, num_ident;
     TSeqPos aln_start, aln_stop;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
     
     aln_start = min(seqalign.GetSeqRange(0).GetTo(), 
                     seqalign.GetSeqRange(0).GetFrom());

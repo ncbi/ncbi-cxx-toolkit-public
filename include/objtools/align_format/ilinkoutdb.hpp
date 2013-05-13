@@ -46,7 +46,7 @@ public:
     /// @param gi GI of interest [in]
     /// @param mv_build_name MapViewer build name for this GI [in]
     /// @return integer encoding linkout bits or 0 if not found
-    virtual int GetLinkout(int gi, const string& mv_build_name) = 0;
+    virtual int GetLinkout(TGi gi, const string& mv_build_name) = 0;
 
     /// Retrieve the Linkout for a given Seq-id
     /// @param id Seq-id of interest [in]

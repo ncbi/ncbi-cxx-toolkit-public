@@ -938,7 +938,7 @@ CSeqDB::GetGis(int oid, vector<int> & gis, bool append) const
     
     ITERATE(list< CRef<CSeq_id> >, seqid, seqids) {
         if ((**seqid).IsGi()) {
-            gis.push_back((**seqid).GetGi());
+            gis.push_back(GI_TO(int, (**seqid).GetGi()));
         }
     }
     

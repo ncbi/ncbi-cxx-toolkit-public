@@ -107,9 +107,9 @@ void CSeqAlignFilter::FilterByGiListFromFile(const CSeq_align_set& full_aln,
             // process a single alignment
 
             id_aligned_seq = &((*iter)->GetSeq_id(1));
-            int gi = id_aligned_seq->GetGi();
+            TGi gi = id_aligned_seq->GetGi();
 
-            if (seqdb_gis->FindGi(gi)) {
+            if (seqdb_gis->FindGi(GI_TO(int, gi))) {
                 filtered_aln.Set().push_back(*iter);
             }
         }
@@ -131,7 +131,7 @@ void CSeqAlignFilter::FilterByGiListFromFile(const CSeq_align_set& full_aln,
 
 
 void CSeqAlignFilter::FilterByGiList(const CSeq_align_set& full_aln,
-                                        const list<int>& list_gis,
+                                        const list<TGi>& list_gis,
                                         CSeq_align_set& filtered_aln)
 {
     CConstRef<CSeq_id> id_aligned_seq;
@@ -143,7 +143,7 @@ void CSeqAlignFilter::FilterByGiList(const CSeq_align_set& full_aln,
             // process a single alignment
 
             id_aligned_seq = &((*iter)->GetSeq_id(1));
-            int gi = id_aligned_seq->GetGi();
+            TGi gi = id_aligned_seq->GetGi();
 
             if (find(list_gis.begin(), list_gis.end(), gi) != list_gis.end()) {
                 filtered_aln.Set().push_back(*iter);
@@ -167,7 +167,7 @@ void CSeqAlignFilter::FilterByGiList(const CSeq_align_set& full_aln,
 
 static void s_GetFilteredRedundantGis(CRef<CSeqDB> db,
                                       int oid,
-                                      vector<int>& gis)
+                                      vector<TGi>& gis)
 {
     // Note: copied from algo/blast/api to avoid dependencies
 
@@ -202,14 +202,14 @@ void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
             // get the gi of the aligned sequence
             CConstRef<CSeq_id> id_aligned_seq;
             id_aligned_seq = &((*iter_aln)->GetSeq_id(1));
-            int gi_aligned_seq = id_aligned_seq->GetGi();
+            TGi gi_aligned_seq = id_aligned_seq->GetGi();
 
             // get the corresponding oid from the db (!!! can we rely on this? !!!)
             int oid_aligned_seq = -1;
-            db->GiToOid(gi_aligned_seq, oid_aligned_seq);
+            db->GiToOid(GI_TO(int, gi_aligned_seq), oid_aligned_seq);
 
             // retrieve the filtered list of gi's corresponding to this oid
-            vector<int> vec_gis_from_DB;
+            vector<TGi> vec_gis_from_DB;
 
             if (oid_aligned_seq > 0)
                 s_GetFilteredRedundantGis(db, oid_aligned_seq, vec_gis_from_DB);
@@ -238,15 +238,15 @@ void CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& full_aln,
 
 /////////////////////////////////////////////////////////////////////////////
 
-void CSeqAlignFilter::x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, int in_gi,
-                                            CSeq_align_set& out_aln, const vector<int>& out_gi_vec)
+void CSeqAlignFilter::x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, TGi in_gi,
+                                            CSeq_align_set& out_aln, const vector<TGi>& out_gi_vec)
 {
     if (out_gi_vec.size() == 0)
         return;
 
     if (m_eFormat == eMultipleSeqaligns)
     {
-        for (vector<int>::const_iterator it_gi_out = out_gi_vec.begin();
+        for (vector<TGi>::const_iterator it_gi_out = out_gi_vec.begin();
                 it_gi_out != out_gi_vec.end(); it_gi_out++)
         {
             // get a copy of the input seq-align and change the gi of
@@ -270,11 +270,11 @@ void CSeqAlignFilter::x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, int 
     {
         // update the main gi of the aligned sequence & add any extra gi's as "use this gi" entries
 
-        vector<int> vec_old_extra_gis;
+        vector<TGi> vec_old_extra_gis;
         x_ReadExtraGis(in_aln, vec_old_extra_gis);
 
-        int main_new_gi;
-        vector<int> vec_new_extra_gis;
+        TGi main_new_gi;
+        vector<TGi> vec_new_extra_gis;
         x_GenerateNewGis(in_gi, vec_old_extra_gis, out_gi_vec, main_new_gi, vec_new_extra_gis);
 
         bool success = false;
@@ -294,11 +294,11 @@ void CSeqAlignFilter::x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, int 
 /////////////////////////////////////////////////////////////////////////////
 
 void CSeqAlignFilter::x_GenerateNewGis(
-                    int main_old_gi,                        // in: main gi stored before filtering
-                    const vector<int>& vec_old_extra_gis,    // in: extra gi's stored before filtering
-                    const vector<int>& vec_out_gis,            // in: list of all gi's after filtering
-                    int& main_new_gi,                        // out: main gi after filtering
-                    vector<int>& vec_new_extra_gis)            // out: extra gi's after filtering
+                    TGi main_old_gi,                        // in: main gi stored before filtering
+                    const vector<TGi>& vec_old_extra_gis,    // in: extra gi's stored before filtering
+                    const vector<TGi>& vec_out_gis,            // in: list of all gi's after filtering
+                    TGi& main_new_gi,                        // out: main gi after filtering
+                    vector<TGi>& vec_new_extra_gis)            // out: extra gi's after filtering
 {
     if (vec_out_gis.empty())
         return;
@@ -323,14 +323,14 @@ void CSeqAlignFilter::x_GenerateNewGis(
 
         for (; i_old_gi < (int)(vec_old_extra_gis.size()); i_old_gi++)
         {
-            int old_gi = vec_old_extra_gis[i_old_gi];
+            TGi old_gi = vec_old_extra_gis[i_old_gi];
             if (find(vec_out_gis.begin(), vec_out_gis.end(), old_gi) != vec_out_gis.end())
                 vec_new_extra_gis[i_new_gi++] = old_gi;
         }
 
         for (; i_out_gi < (int)(vec_out_gis.size()); i_out_gi++)
         {
-            int out_gi = vec_out_gis[i_out_gi];
+            TGi out_gi = vec_out_gis[i_out_gi];
             if (find(vec_old_extra_gis.begin(), vec_old_extra_gis.end(), out_gi)
                 == vec_old_extra_gis.end())    // not one of the old gis (already copied)
             {
@@ -350,7 +350,7 @@ void CSeqAlignFilter::x_GenerateNewGis(
 /////////////////////////////////////////////////////////////////////////////
 
 CRef<CSeq_align> CSeqAlignFilter::x_UpdateGiInSeqalign(CConstRef<CSeq_align> sa, unsigned int n_row,
-                                                     int old_gi, int new_gi, bool& success)
+                                                     TGi old_gi, TGi new_gi, bool& success)
 {
     // create a copy of the given alignment
 
@@ -432,7 +432,7 @@ CRef<CSeq_align> CSeqAlignFilter::x_UpdateGiInSeqalign(CConstRef<CSeq_align> sa,
     return sa_copy;
 }
 
-void CSeqAlignFilter::x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<int>& vec_extra_gis)
+void CSeqAlignFilter::x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<TGi>& vec_extra_gis)
 {
     vec_extra_gis.clear();
 
@@ -447,14 +447,14 @@ void CSeqAlignFilter::x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<int>& vec_
                 string str_id = score_entry->GetId().GetStr();
                 if (str_id == "use_this_gi")
                 {
-                    int gi = score_entry->GetValue().GetInt();
+                    TGi gi = GI_FROM(CScore::C_Value::TInt, score_entry->GetValue().GetInt());
                     vec_extra_gis.push_back(gi);
                 }
             }
     }
 }
 
-void CSeqAlignFilter::x_WriteExtraGis(CRef<CSeq_align> sa, const vector<int>& vec_extra_gis)
+void CSeqAlignFilter::x_WriteExtraGis(CRef<CSeq_align> sa, const vector<TGi>& vec_extra_gis)
 {
     for (int i_gi = 0; i_gi < (int)(vec_extra_gis.size()); i_gi++)
         x_AddUseGiEntryInSeqalign(sa, vec_extra_gis[i_gi]);
@@ -484,13 +484,13 @@ void CSeqAlignFilter::x_RemoveExtraGis(CRef<CSeq_align> sa)
     }
 }
 
-bool CSeqAlignFilter::x_AddUseGiEntryInSeqalign(CRef<CSeq_align> sa, int new_gi)
+bool CSeqAlignFilter::x_AddUseGiEntryInSeqalign(CRef<CSeq_align> sa, TGi new_gi)
 {
     // add a "use this gi" entry with the new gi to the score section of the alignment
 
     CRef<CScore> score_entry(new CScore);
     score_entry->SetId().SetStr("use_this_gi");
-    score_entry->SetValue().SetInt(new_gi);
+    score_entry->SetValue().SetInt(GI_TO(CScore::C_Value::TInt, new_gi));
 
     sa->SetScore().push_back(score_entry);
 
@@ -522,7 +522,7 @@ void CSeqAlignFilter::WriteSeqalignSet(const string& fname, const CSeq_align_set
     *asn_out << aln;
 }
 
-void CSeqAlignFilter::ReadGiList(const string& fname, list<int>& list_gis, bool sorted)
+void CSeqAlignFilter::ReadGiList(const string& fname, list<TGi>& list_gis, bool sorted)
 {
     CRef<CSeqDBFileGiList> seqdb_gis;
     seqdb_gis = new CSeqDBFileGiList(fname);
@@ -535,7 +535,7 @@ void CSeqAlignFilter::ReadGiList(const string& fname, list<int>& list_gis, bool 
 
     list_gis.clear();
     for (vector<int>::iterator it = vec_gis.begin(); it != vec_gis.end(); it++)
-        list_gis.push_back(*it);
+        list_gis.push_back(GI_FROM(int, *it));
 }
 
 void CSeqAlignFilter::ReadGiVector(const string& fname, vector<int>& vec_gis, bool sorted)

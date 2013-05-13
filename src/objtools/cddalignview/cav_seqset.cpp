@@ -304,7 +304,7 @@ string Sequence::GetTitle(void) const
 
     for (s=seqIDs.begin(); s!=se; ++s)
         if ((*s)->IsGi())
-            return (string("gi ") + NStr::IntToString((*s)->GetGi()));
+            return (string("gi ") + NStr::NumericToString((*s)->GetGi()));
 
     return seqIDs.front()->GetSeqIdString();
 }

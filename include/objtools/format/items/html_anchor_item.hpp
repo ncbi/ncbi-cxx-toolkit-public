@@ -45,14 +45,14 @@ public:
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string &GetLabelCore(void) const { return m_LabelCore; }
-    int           GetGI(void)        const { return m_GI; }
+    TGi           GetGI(void)        const { return m_GI; }
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     const string  m_LabelCore;
-    const int     m_GI;
+    const TGi     m_GI;
 };
 
 END_SCOPE(objects)
