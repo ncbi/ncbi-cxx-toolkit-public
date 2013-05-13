@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 ostream& out = auto_cursor->GetBlobOStream(1,
                                                            clob_value.size(),
                                                            eDisableLog);
-                out.write(clob_value.c_str(), clob_value.size());
+                out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
 
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
     //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
     //                 while ( rs->Next() ) {
     //                     ostream& out = rs->GetBlobOStream(clob_value.size(), eDisableLog);
-    //                     out.write(clob_value.c_str(), clob_value.size());
+    //                     out.write(clob_value.data(), clob_value.size());
     //                     out.flush();
     //                 }
     //             }
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                                 ostream& out = auto_cursor->GetBlobOStream(1,
                                         clob_value.size(),
                                         eDisableLog);
-                                out.write(clob_value.c_str(), clob_value.size());
+                                out.write(clob_value.data(), clob_value.size());
                                 out.flush();
                             }
                         }
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                                 ostream& out = auto_cursor->GetBlobOStream(1,
                                         clob_value.size(),
                                         eDisableLog);
-                                out.write(clob_value.c_str(), clob_value.size());
+                                out.write(clob_value.data(), clob_value.size());
                                 out.flush();
                             }
                         }
@@ -722,7 +722,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                                                         clob_value.size(),
                                                         eDisableLog
                                                         );
-                        out.write(clob_value.c_str(), clob_value.size());
+                        out.write(clob_value.data(), clob_value.size());
                         out.flush();
                         BOOST_CHECK(out.good());
                     }
@@ -979,7 +979,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                     CDB_Image   obj_image;
 
                     obj_text.Append(clob_value);
-                    obj_image.Append(clob_value.c_str(), clob_value.size());
+                    obj_image.Append(clob_value.data(), clob_value.size());
 
                     conn->SendData(*text01, obj_text);
                     obj_text.MoveTo(0);

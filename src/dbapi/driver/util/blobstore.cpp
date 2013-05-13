@@ -555,7 +555,7 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 {
     string s("set TEXTSIZE ");
     s += NStr::NumericToString(textSize);
-    auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s.c_str()));
+    auto_ptr<CDB_LangCmd> lcmd(pConn->LangCmd(s));
 
     if(!lcmd->Send())
     {

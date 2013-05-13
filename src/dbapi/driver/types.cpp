@@ -49,6 +49,22 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+template<>
+CGenericSqlString<char>::operator const char*(void) const
+{
+    return c_str();
+}
+
+#ifdef HAVE_WSTRING
+template<>
+CGenericSqlString<wchar_t>::operator const wchar_t*(void) const
+{
+    return c_str();
+}
+#endif
+
+
+/////////////////////////////////////////////////////////////////////////////
 CWString::CWString(void) :
     m_AvailableValueType(0),
     m_StringEncoding(eEncoding_Unknown),
@@ -176,6 +192,27 @@ CWString& CWString::operator=(const CWString& str)
     }
 
     return *this;
+}
+
+// Deprecated conversions, defined out of line to reduce warnings
+CWString::operator char*(void) const
+{
+    return const_cast<char*>(AsCString());
+}
+
+CWString::operator const char*(void) const
+{
+    return AsCString();
+}
+
+CWString::operator wchar_t*(void) const
+{
+    return const_cast<wchar_t*>(AsCWString());
+}
+
+CWString::operator const wchar_t*(void) const
+{
+    return AsCWString();
 }
 
 
@@ -837,6 +874,20 @@ CDB_String& CDB_String::operator= (const char* s)
 }
 
 
+CDB_String::operator const char*(void) const
+{
+    return m_WString.AsCString();
+}
+
+
+#ifdef HAVE_WSTRING
+const wchar_t* CDB_String::AsUnicode(EEncoding enc) const
+{
+    return IsNULL() ? NULL : m_WString.AsUnicode(enc).c_str();
+}
+#endif
+
+
 void CDB_String::Assign(const CDB_String& other)
 {
     SetNULL(other.IsNULL());
@@ -1049,7 +1100,7 @@ void CDB_Char::SetValue(const char* str, size_t len, EEncoding enc)
     CDB_VarChar vc_value(str, len, enc);
     CheckStringTruncation(vc_value.Size(), m_Size);
 
-    Assign(vc_value.Value(), m_Size, enc);
+    Assign(str, m_Size, enc);
 }
 
 
@@ -1249,7 +1300,7 @@ EDB_Type CDB_VarBinary::GetType() const
 
 CDB_Object* CDB_VarBinary::Clone() const
 {
-    return IsNULL() ? new CDB_VarBinary : new CDB_VarBinary(m_Value.c_str(), m_Value.size());
+    return IsNULL() ? new CDB_VarBinary : new CDB_VarBinary(m_Value.data(), m_Value.size());
 }
 
 
@@ -2033,7 +2084,7 @@ CDB_Numeric::CDB_Numeric(unsigned int precision, unsigned int scale, const strin
     : m_Precision(0), 
     m_Scale(0)
 {
-    x_MakeFromString(precision, scale, val.c_str());
+    x_MakeFromString(precision, scale, val);
 }
 
 
@@ -2077,7 +2128,7 @@ CDB_Numeric& CDB_Numeric::operator= (const char* val)
 
 CDB_Numeric& CDB_Numeric::operator= (const string& val)
 {
-    x_MakeFromString(m_Precision, m_Scale, val.c_str());
+    x_MakeFromString(m_Precision, m_Scale, val);
     return *this;
 }
 
@@ -2222,13 +2273,14 @@ static int s_Div256(const char* value, char* product, int base)
 
 
 void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
-                                   const char* val)
+                                   const CTempString& s)
 {
 
-    if (m_Precision == 0  &&  precision == 0  &&  val) {
-        precision= (unsigned int) strlen(val);
+    if (m_Precision == 0  &&  precision == 0  &&  !s.empty()) {
+        precision = (unsigned int) s.size();
         if (scale == 0) {
-            scale= precision - (Uint1) strcspn(val, ".");
+            SIZE_TYPE dot_pos = s.find('.');
+            scale = (dot_pos == NPOS) ? 0 : precision - dot_pos;
             if (scale > 1)
                 --scale;
         }
@@ -2244,18 +2296,19 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         101 );
 
     bool is_negative= false;
-    if(*val == '-') {
+    CTempString::const_iterator val = s.begin();
+    if (val != s.end()  &&  *val == '-') {
         is_negative= true;
         ++val;
     }
 
-    while (*val == '0') {
+    while (val != s.end()  &&  *val == '0') {
         ++val;
     }
 
     char buff1[kMaxPrecision + 1];
     unsigned int n = 0;
-    while (*val  &&  n < precision) {
+    while (val != s.end()  &&  n < precision) {
         if (*val >= '0'  &&  *val <= '9') {
             buff1[n++] = *val - '0';
         } else if (*val == '.') {
@@ -2272,9 +2325,9 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         103 );
 
     unsigned int dec = 0;
-    if (*val == '.') {
+    if (val != s.end()  &&  *val == '.') {
         ++val;
-        while (*val  &&  dec < scale) {
+        while (val != s.end()  &&  dec < scale) {
             if (*val >= '0'  &&  *val <= '9') {
                 buff1[n++] = *val - '0';
             } else {

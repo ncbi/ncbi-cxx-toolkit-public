@@ -113,7 +113,9 @@ bool CODBC_RPCCmd::Send()
        q_str += ";\nselect " + param_result_query;
    }
 
-    switch(SQLExecDirect(GetHandle(), CODBCString(q_str, GetClientEncoding()), SQL_NTS)) {
+    TSqlString ss = x_MakeTSqlString(q_str, GetClientEncoding());
+    switch (SQLExecDirect(GetHandle(), const_cast<TSqlChar*>(ss.data()),
+                          ss.size())) {
     case SQL_SUCCESS:
         m_HasMoreResults = true;
         break;

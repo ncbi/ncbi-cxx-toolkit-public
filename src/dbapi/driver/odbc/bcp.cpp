@@ -66,7 +66,9 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection& conn,
     string extra_msg = "Table Name: " + table_name;
     SetDbgInfo( extra_msg );
 
-    if (bcp_init(cmd, CODBCString(table_name, GetClientEncoding()), 0, 0, DB_IN) != SUCCEED) {
+    if (bcp_init(cmd,
+                 CODBCString(table_name, GetClientEncoding()).AsCWString(),
+                 0, 0, DB_IN) != SUCCEED) {
         ReportErrors();
         string err_message = "bcp_init failed." + GetDbgInfo();
         DATABASE_DRIVER_ERROR( err_message, 423001 );
@@ -302,74 +304,45 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
-            case eDB_Char: {
-                CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-                BYTE* data = NULL;
-
-                if (val.IsNULL()) {
-                    data = (BYTE*)pb;
-                } else {
-                    if (IsMultibyteClientEncoding()) {
-                        data = (BYTE*)val.AsUnicode(GetClientEncoding());
-                    } else {
-                        data = (BYTE*)val.Value();
-                    }
-                }
-
-                r = bcp_colptr(GetHandle(),
-                               data,
-                               i + 1)
-                    == SUCCEED &&
-                    bcp_collen(GetHandle(),
-                               val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
-                               i + 1)
-                    == SUCCEED ? SUCCEED : FAIL;
-            }
-            break;
-            case eDB_VarChar: {
-                CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-                BYTE* data = NULL;
-
-                if (val.IsNULL()) {
-                    data = (BYTE*)pb;
-                } else {
-                    if (IsMultibyteClientEncoding()) {
-                        data = (BYTE*)val.AsUnicode(GetClientEncoding());
-                    } else {
-                        data = (BYTE*)val.Value();
-                    }
-                }
-
-                r = bcp_colptr(GetHandle(),
-                               data,
-                               i + 1)
-                    == SUCCEED &&
-                    bcp_collen(GetHandle(),
-                               val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
-                               i + 1)
-                    == SUCCEED ? SUCCEED : FAIL;
-            }
-            break;
+            case eDB_Char:
+            case eDB_VarChar:
             case eDB_LongChar: {
-                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-                BYTE* data = NULL;
+                CDB_String& val = dynamic_cast<CDB_String&> (param);
+                CTempString data;
 
                 if (val.IsNULL()) {
-                    data = (BYTE*)pb;
+                    data.assign(static_cast<char*>(pb), 0);
                 } else {
                     if (IsMultibyteClientEncoding()) {
-                        data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                        const wstring& ws = val.AsWString(GetClientEncoding());
+                        // hack
+                        data.assign((const char*)(ws.data()),
+                                    ws.size() * sizeof(wchar_t));
                     } else {
-                        data = (BYTE*)val.Value();
+                        data = val.Value();
                     }
                 }
 
+                DBINT length;
+                INT   dummy; // Can't just supply NULL
+                if (val.IsNULL()) {
+                    length = SQL_NULL_DATA;
+                } else if (bcp_getcolfmt(GetHandle(), i + 1, BCP_FMT_DATA_LEN,
+                                         &length, sizeof(length), &dummy)
+                           == FAIL  ||  length < 0) {
+                    length = SQL_VARLEN_DATA; // Be conservative.
+                } else if (static_cast<SIZE_TYPE>(length) > data.size()) {
+                    // Retain automatic truncation, which blindly supplying
+                    // data.size() could lose.
+                    length = data.size();
+                }
+
                 r = bcp_colptr(GetHandle(),
-                               data,
+                               (BYTE*) data.data(),
                                i + 1)
                     == SUCCEED &&
                     bcp_collen(GetHandle(),
-                               val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                               length,
                                i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }

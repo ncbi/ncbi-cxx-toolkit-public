@@ -50,7 +50,7 @@ CCallableStatement::CCallableStatement(const string& proc,
 , m_status(0)
 , m_StatusIsAvailable(false)
 {
-    SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str()));
+    SetBaseCmd(conn->GetCDB_Connection()->RPC(proc));
     SetIdent("CCallableStatement");
 }
 

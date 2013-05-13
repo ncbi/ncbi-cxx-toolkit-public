@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             auto_stmt->SetParam( CVariant("AlignDbMasterInfo"), "@classname" );
             // LongChar doesn't work.
             // auto_stmt->SetParam( CVariant(new CDB_LongChar(query.length(), query)), "@query" );
-            // auto_stmt->SetParam( CVariant::LongChar(query.c_str(), query.length()), "@query" );
+            // auto_stmt->SetParam( CVariant::LongChar(query.data(), query.length()), "@query" );
             auto_stmt->SetParam( CVariant(query), "@query" );
             auto_stmt->SetParam( CVariant(1), "@max_results" );
 

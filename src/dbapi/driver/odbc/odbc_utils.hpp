@@ -33,14 +33,7 @@
  */
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
-
-#ifdef NCBI_OS_MSWIN
-#include <windows.h>
-#endif
-
-#include <sql.h>
-#include <sqlext.h>
-#include <sqltypes.h>
+#include <dbapi/driver/odbc/interfaces.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -107,6 +100,23 @@ public:
 #else
 #  define _T_NCBI_ODBC(x) x
 #endif
+
+using odbc::TSqlChar;
+typedef CGenericSqlString<TSqlChar> TSqlString;
+inline
+TSqlString x_MakeTSqlString(const CTempString& s, EEncoding enc)
+{
+#if defined(UNICODE)  ||  defined(_UNICODE)  ||  defined(UCS2)
+    return CUtf8::AsBasicString<TSqlChar>(CUtf8::AsUTF8(s, enc));
+#else
+    if (enc == eEncoding_Unknown  ||  enc == eEncoding_UTF8) {
+        return CUtf8::AsSingleByteString(CUtf8::AsUTF8(s, enc),
+                                         eEncoding_ISO8859_1);
+    } else {
+        return CSqlString(s.data(), s.size());
+    }
+#endif
+}
 
 
 #ifdef HAVE_WSTRING

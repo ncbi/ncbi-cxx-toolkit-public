@@ -348,13 +348,9 @@ string CVariant::GetString(void) const
     {
         switch( GetType() ) {
             case eDB_Char:
-                s = ((CDB_Char*)GetData())->Value();
-                break;
             case eDB_VarChar:
-                s = ((CDB_VarChar*)GetData())->Value();
-                break;
             case eDB_LongChar:
-                s = ((CDB_LongChar*)GetData())->Value();
+                s = ((CDB_String*)GetData())->Value();
                 break;
             case eDB_Binary:
                 {

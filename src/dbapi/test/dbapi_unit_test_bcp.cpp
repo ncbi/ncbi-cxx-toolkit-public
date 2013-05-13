@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
                     col3 = im;
                     // col4 = im;
                     col4.Truncate();
-                    col4.Append(im.c_str(), im.size());
+                    col4.Append(im.data(), im.size());
 
                     bi->AddRow();
                 }
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
                         col2 = i;
                         col3 = im;
                         col4.Truncate();
-                        col4.Append(im.c_str(), im.size());
+                        col4.Append(im.data(), im.size());
                         bi->AddRow();
                     }
 
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel)
                     } else {
                         dataTextVal.AssignNULL();
 
-                        dataImageVal.Append((void*)data.c_str(), data.size());
+                        dataImageVal.Append((void*)data.data(), data.size());
                         dataImageVal.MoveTo(0);
                     }
 
@@ -1053,7 +1053,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob_LowLevel2)
                 bcp->Bind(first_ind + 1, &dataImgVal);
 
                 dataTextVal.AssignNULL();
-                dataImgVal.Append(data.c_str(), data.size()); // pretend this data is bi
+                dataImgVal.Append(data.data(), data.size()); // pretend this data is bi
                 dataImgVal.MoveTo(0);
 
                 bcp->SendRow();
@@ -1269,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
             bi->Bind(1, &col1);
 
-            col1 = CVariant::VarBinary(str_data.c_str(), str_data.size());
+            col1 = CVariant::VarBinary(str_data.data(), str_data.size());
 
             // Here either AddRow() or Complete() should throw an exception.
             try
@@ -1384,7 +1384,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                     col1 = int_value;
                     col3 = CVariant::LongBinary(GetMaxVarcharSize(),
-                                                str_val.c_str(),
+                                                str_val.data(),
                                                 str_val.size()
                                                 );
                     bi->AddRow();
@@ -2023,7 +2023,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
 
                 b_trans.Truncate();
                 b_trans.Append(
-                        test_data.c_str(),
+                        test_data.data(),
                         test_data.size()
                         );
 

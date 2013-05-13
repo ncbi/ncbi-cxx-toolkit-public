@@ -100,7 +100,7 @@ public:
         if (db_obj.IsNULL()) {
             NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL to string");
         }
-        return string(db_obj.Value(), db_obj.Size());
+        return string(db_obj.Data(), db_obj.Size());
     }
     operator CTime(void) const
     {
@@ -229,7 +229,7 @@ public:
         if (db_obj.IsNULL()) {
             return string();
         }
-        return string(db_obj.Value(), db_obj.Size());
+        return string(db_obj.Data(), db_obj.Size());
     }
     operator CTime(void) const
     {
@@ -339,7 +339,8 @@ private:
             NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL string");
         }
 
-        return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
+        return Convert(string(static_cast<const char*>(db_obj.Data()),
+                              db_obj.Size()));
     }
 
     template <typename TO, typename FROM>
@@ -352,7 +353,8 @@ private:
             NCBI_REPORT_CONSTANT_CONVERSION_ERROR("NULL fixed-length string");
         }
 
-        return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
+        return Convert(string(static_cast<const char*>(db_obj.Data()),
+                              db_obj.Size()));
     }
 
     template <typename TO, typename FROM>
@@ -367,7 +369,7 @@ private:
         }
 
         result.resize(db_obj.Size());
-        db_obj.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+        db_obj.Read(const_cast<void*>(static_cast<const void*>(result.data())),
                 db_obj.Size()
                 );
 
@@ -514,7 +516,8 @@ private:
             return TO();
         }
 
-        return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
+        return Convert(string(static_cast<const char*>(db_obj.Data()),
+                              db_obj.Size()));
     }
 
     template <typename TO, typename FROM>
@@ -527,7 +530,8 @@ private:
             return TO();
         }
 
-        return Convert(string(static_cast<const char*>(db_obj.Value()), db_obj.Size()));
+        return Convert(string(static_cast<const char*>(db_obj.Data()),
+                              db_obj.Size()));
     }
 
     template <typename TO, typename FROM>
@@ -542,7 +546,7 @@ private:
         }
 
         result.resize(db_obj.Size());
-        db_obj.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+        db_obj.Read(const_cast<void*>(static_cast<const void*>(result.data())),
                 db_obj.Size()
                 );
 

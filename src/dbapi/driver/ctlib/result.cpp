@@ -1479,16 +1479,11 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
         max_size = 8;
         data = static_cast<CDB_BigInt*>(field)->BindVal();
         break;
-    case eDB_VarChar: {
-        CDB_VarChar* vc_field = static_cast<CDB_VarChar*>(field);
-        max_size = vc_field->Size();
-        data = static_cast<const void*>(vc_field->Value());
-        break;
-    }
+    case eDB_VarChar:
     case eDB_Char: {
-        CDB_Char* c_field = static_cast<CDB_Char*>(field);
+        CDB_String* c_field = static_cast<CDB_String*>(field);
         max_size = c_field->Size();
-        data = static_cast<const void*>(c_field->Value());
+        data = static_cast<const void*>(c_field->Data());
         break;
     }
     case eDB_VarBinary: {
@@ -1555,7 +1550,7 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
     case eDB_LongChar: {
         CDB_LongChar* lc_field = static_cast<CDB_LongChar*>(field);
         max_size = lc_field->DataSize();
-        data = static_cast<const void*>(lc_field->Value());
+        data = static_cast<const void*>(lc_field->Data());
         break;
     }
     case eDB_LongBinary: {

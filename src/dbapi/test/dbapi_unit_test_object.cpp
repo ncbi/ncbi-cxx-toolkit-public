@@ -81,9 +81,9 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK_EQUAL(value_SmallInt.Value(), 0);
             BOOST_CHECK_EQUAL(value_TinyInt.Value(), 0);
             BOOST_CHECK_EQUAL(value_BigInt.Value(), 0);
-            BOOST_CHECK(value_VarChar.Value() == NULL);
-            BOOST_CHECK(value_Char.Value() == NULL);
-            BOOST_CHECK(value_LongChar.Value() == NULL);
+            BOOST_CHECK(value_VarChar.Data() == NULL);
+            BOOST_CHECK(value_Char.Data() == NULL);
+            BOOST_CHECK(value_LongChar.Data() == NULL);
             BOOST_CHECK(value_VarBinary.Value() == NULL);
             BOOST_CHECK(value_Binary.Value() == NULL);
             BOOST_CHECK(value_LongBinary.Value() == NULL);
@@ -157,21 +157,21 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK(value_SmallInt.Value() != 0);
             BOOST_CHECK(value_TinyInt.Value() != 0);
             BOOST_CHECK(value_BigInt.Value() != 0);
-            BOOST_CHECK(value_VarChar.Value() != NULL);
-            BOOST_CHECK(value_VarChar2.Value() != NULL);
+            BOOST_CHECK(value_VarChar.Data() != NULL);
+            BOOST_CHECK(value_VarChar2.Data() != NULL);
             // !!!
-            BOOST_CHECK(value_VarChar3.Value() == NULL);
-            BOOST_CHECK(value_VarChar4.Value() != NULL);
-            BOOST_CHECK(value_Char.Value() != NULL);
-            BOOST_CHECK(value_Char2.Value() != NULL);
+            BOOST_CHECK(value_VarChar3.Data() == NULL);
+            BOOST_CHECK(value_VarChar4.Data() != NULL);
+            BOOST_CHECK(value_Char.Data() != NULL);
+            BOOST_CHECK(value_Char2.Data() != NULL);
             // !!!
-            BOOST_CHECK(value_Char3.Value() == NULL);
-            BOOST_CHECK(value_Char4.Value() != NULL);
-            BOOST_CHECK(value_LongChar.Value() != NULL);
-            BOOST_CHECK(value_LongChar2.Value() != NULL);
+            BOOST_CHECK(value_Char3.Data() == NULL);
+            BOOST_CHECK(value_Char4.Data() != NULL);
+            BOOST_CHECK(value_LongChar.Data() != NULL);
+            BOOST_CHECK(value_LongChar2.Data() != NULL);
             // !!!
-            BOOST_CHECK(value_LongChar3.Value() == NULL);
-            BOOST_CHECK(value_LongChar4.Value() != NULL);
+            BOOST_CHECK(value_LongChar3.Data() == NULL);
+            BOOST_CHECK(value_LongChar4.Data() != NULL);
             BOOST_CHECK(value_VarBinary.Value() != NULL);
             BOOST_CHECK(value_Binary.Value() != NULL);
             BOOST_CHECK(value_LongBinary.Value() != NULL);
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         CDB_Char db_obj(32);
 
                         rs->GetItem(&db_obj);
-                        string string_value = string(db_obj.Value(), db_obj.Size());
+                        string string_value = db_obj.Value();
 
                         BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     }
@@ -735,7 +735,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         CDB_Char db_obj(32);
 
                         rs->GetItem(&db_obj);
-                        string string_value = string(db_obj.Value(), db_obj.Size());
+                        string string_value = db_obj.Value();
 
                         BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     }
@@ -846,7 +846,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
 
                         string string_value;
                         string_value.resize(db_obj.Size());
-                        db_obj.Read(const_cast<void*>(static_cast<const void*>(string_value.c_str())),
+                        db_obj.Read(const_cast<void*>(static_cast<const void*>(string_value.data())),
                                 db_obj.Size()
                                 );
 
@@ -878,7 +878,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
 
                         string string_value;
                         string_value.resize(db_obj.Size());
-                        db_obj.Read(const_cast<void*>(static_cast<const void*>(string_value.c_str())),
+                        db_obj.Read(const_cast<void*>(static_cast<const void*>(string_value.data())),
                                 db_obj.Size()
                                 );
 
@@ -2000,7 +2000,7 @@ BOOST_AUTO_TEST_CASE(Test_Variant2)
 
                 auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
                 auto_stmt->SetParam(
-                    CVariant::LongChar(str_val.c_str(), str_val.size()),
+                    CVariant::LongChar(str_val.data(), str_val.size()),
                     "@val"
                     );
                 // Execute a statement with parameters ...
@@ -2674,7 +2674,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
 
                 col1 = 1;
                 // col2 = msg;
-                col2.Append(msg.c_str(), msg.size());
+                col2.Append(msg.data(), msg.size());
 
                 bi->AddRow();
                 bi->Complete();

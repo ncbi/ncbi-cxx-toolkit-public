@@ -234,7 +234,7 @@ CDbapiTestSpeedApp::RunSample(void)
     if (args["m"]) {
         string key_value = args["m"].AsString();
 
-        switch ( *key_value.c_str() ) {
+        switch ( key_value[0] ) {
         case 'r':
             readItems  = true;
             break;

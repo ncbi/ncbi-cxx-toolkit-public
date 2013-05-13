@@ -127,10 +127,10 @@ public:
     }
     string GetName(ENameFormat format) const;
     
-    static string MakePlainName(const char* name);
+    static string MakePlainName(const CTempString& name);
 
 private:
-    static string MakeName(const char* name, ENameFormat& format);
+    static CTempString MakeName(const CTempString& name, ENameFormat& format);
 
 private:
     bool         m_IsPositional;

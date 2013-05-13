@@ -78,7 +78,7 @@ CDBParamVariant::CDBParamVariant(const char* name)
 CDBParamVariant::CDBParamVariant(const string& name)
 : m_IsPositional(false)
 , m_Pos(0)
-, m_Name(MakeName(name.c_str(), m_Format))
+, m_Name(MakeName(name, m_Format))
 {
 }
 
@@ -94,16 +94,16 @@ CDBParamVariant::GetName(CDBParamVariant::ENameFormat format) const
     if (format != GetFormat()) {
         switch (format) {
         case ePlainName:
-            return MakePlainName(m_Name.c_str());
+            return MakePlainName(m_Name);
         case eQMarkName:    // '...WHERE name=?'
             return "?";
         case eNumericName:  // '...WHERE name=:1'
         case eNamedName:    // '...WHERE name=:name'
-            return ':' + MakePlainName(m_Name.c_str());
+            return ':' + MakePlainName(m_Name);
         case eFormatName:   // ANSI C printf format codes, e.g. '...WHERE name=%s'
-            return '%' + MakePlainName(m_Name.c_str());
+            return '%' + MakePlainName(m_Name);
         case eSQLServerName: // '...WHERE name=@name'
-            return '@' + MakePlainName(m_Name.c_str());
+            return '@' + MakePlainName(m_Name);
         }
     }
 
@@ -111,17 +111,17 @@ CDBParamVariant::GetName(CDBParamVariant::ENameFormat format) const
 }
 
 
-string CDBParamVariant::MakeName(const char* name, CDBParamVariant::ENameFormat& format)
+CTempString CDBParamVariant::MakeName(const CTempString& name,
+                                      CDBParamVariant::ENameFormat& format)
 {
     // Do not make copy of name to process it ...
 
-    string new_name;
-    const char* begin_str = NULL;
-    const char* c = name;
+    CTempString new_name;
+    CTempString::const_iterator begin_str = NULL, c = name.data();
 
     format = ePlainName;
 
-    for (; c != NULL && *c != '\0'; ++c) {
+    for (;  c != NULL  &&  c != name.end();  ++c) {
         char ch = *c;
         if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
             if (begin_str == NULL) {
@@ -180,22 +180,21 @@ string CDBParamVariant::MakeName(const char* name, CDBParamVariant::ENameFormat&
     }
 
     if (begin_str != NULL) {
-        new_name = string(begin_str, c);
+        new_name.assign(begin_str, c - begin_str);
     }
 
     return new_name;
 }
 
 
-string CDBParamVariant::MakePlainName(const char* name)
+string CDBParamVariant::MakePlainName(const CTempString& name)
 {
     // Do not make copy of name to process it ...
 
-    string plain_name;
-    const char* begin_str = NULL;
-    const char* c = name;
+    CTempString plain_name;
+    CTempString::const_iterator begin_str = NULL, c = name.data();
 
-    for (; c != NULL; ++c) {
+    for (;  c != NULL  &&  c != name.end();  ++c) {
         char ch = *c;
         if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
             if (begin_str == NULL) {
@@ -231,7 +230,7 @@ string CDBParamVariant::MakePlainName(const char* name)
     }
 
     if (begin_str != NULL) {
-        plain_name = string(begin_str, c);
+        plain_name.assign(begin_str, c - begin_str);
     }
 
     return plain_name;

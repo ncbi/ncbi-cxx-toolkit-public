@@ -90,10 +90,16 @@ ExecuteStr(const char* cmd)
 }
 
 static void
+ExecuteStr(const string& cmd)
+{
+    pythonpp::CEngine::ExecuteStr(cmd.c_str());
+}
+
+static void
 ExecuteSQL(const string& sql)
 {
     string cmd = string("cursor.execute('''") + sql + "''') \n";
-    ExecuteStr(cmd.c_str());
+    ExecuteStr(cmd);
 }
 
 
@@ -204,8 +210,8 @@ NCBITEST_AUTO_INIT()
     ExecuteStr("import python_ncbi_dbapi as dbapi\n");
     ExecuteStr("import datetime\n");
     ExecuteStr("dbapi.release_global_lock(True)");
-    ExecuteStr( connection_str.c_str() );
-    ExecuteStr( conn_simple_str.c_str() );
+    ExecuteStr( connection_str );
+    ExecuteStr( conn_simple_str );
 
     ExecuteStr("cursor_simple = conn_simple.cursor() \n");
     ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
@@ -299,13 +305,13 @@ BOOST_AUTO_TEST_CASE(TestConnection)
 
         // Open and close connection ...
         {
-            ExecuteStr( connection_str.c_str() );
+            ExecuteStr( connection_str );
             ExecuteStr( "tmp_connection.close()\n" );
         }
 
         // Open connection, run a query, close connection ...
         {
-            ExecuteStr( connection_str.c_str() );
+            ExecuteStr( connection_str );
             ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
             ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
             ExecuteStr( "tmp_connection.close()\n" );
@@ -313,15 +319,15 @@ BOOST_AUTO_TEST_CASE(TestConnection)
 
         // Open multiple connection simulteniously ...
         {
-            ExecuteStr( connection_str.c_str() );
+            ExecuteStr( connection_str );
             ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
             ExecuteStr( "tmp_cursor.execute('SELECT @@version')\n" );
 
-            ExecuteStr( connection2_str.c_str() );
+            ExecuteStr( connection2_str );
             ExecuteStr( "tmp_cursor2 = tmp_connection2.cursor()\n");
             ExecuteStr( "tmp_cursor2.execute('SELECT @@version')\n" );
 
-            ExecuteStr( connection3_str.c_str() );
+            ExecuteStr( connection3_str );
             ExecuteStr( "tmp_cursor3 = tmp_connection3.cursor()\n");
             ExecuteStr( "tmp_cursor3.execute('SELECT @@version')\n" );
 
@@ -353,7 +359,7 @@ BOOST_AUTO_TEST_CASE(TestConnection)
 
         // Open connection, run a query, close connection ...
         {
-            ExecuteStr( connection_str.c_str() );
+            ExecuteStr( connection_str );
             ExecuteStr( "tmp_cursor = tmp_connection.cursor()\n");
             ExecuteStr( "tmp_cursor.execute('SET NOCOUNT ON')\n" );
             ExecuteStr( "tmp_connection.close()\n" );
@@ -704,7 +710,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
             "strands { minus, minus, minus, minus, minus, minus } } }";
 
         sql  = "long_str = '"+ long_string + "' \n";
-        ExecuteStr( sql.c_str() );
+        ExecuteStr( sql );
         sql  =
             "INSERT INTO #Overlaps VALUES( \n"
             "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n";
@@ -752,11 +758,11 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             "strands { minus, minus, minus, minus, minus, minus } } }";
 
         sql  = "long_str = '"+ long_string + "' \n";
-        ExecuteStr( sql.c_str() );
+        ExecuteStr( sql );
 
         sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val, image_val) VALUES(@vcv, @tv, @iv)', ";
         sql += " {'@vcv':long_str, '@tv':long_str, '@iv':dbapi.Binary(long_str)} ) \n";
-        ExecuteStr( sql.c_str() );
+        ExecuteStr( sql );
     }
 
     // Check ...

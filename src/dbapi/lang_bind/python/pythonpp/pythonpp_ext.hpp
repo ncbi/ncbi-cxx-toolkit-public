@@ -349,7 +349,7 @@ public:
 public:
     virtual PyObject* Get(void) const
     {
-        return PyString_FromString( m_Value->c_str() );
+        return PyString_FromStringAndSize( m_Value->data(), m_Value->size() );
     }
 
 protected:
@@ -538,6 +538,15 @@ public:
         if (GetMethodHndlList().size() <= GetMethodList().size())
             GetMethodHndlList().resize(GetMethodList().size() + 1);
         type.tp_methods = &GetMethodHndlList().front();
+    }
+
+    static void Declare(
+        const string& name,
+        const char* descr = 0,
+        PyTypeObject* base = &PyBaseObject_Type
+        )
+    {
+        Declare(name.c_str(), descr, base);
     }
 
     static CClass<1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)
@@ -843,7 +852,8 @@ CModuleExt::AddConstValue( const string& name, PyObject* value )
 void
 CModuleExt::AddConst( const string& name, const string& value )
 {
-    PyObject* py_value = PyString_FromString( value.c_str() );
+    PyObject* py_value
+        = PyString_FromStringAndSize( value.data(), value.size() );
     CError::Check( py_value );
     AddConstValue( name, py_value );
 }

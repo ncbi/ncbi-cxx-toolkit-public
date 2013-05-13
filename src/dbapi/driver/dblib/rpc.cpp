@@ -283,28 +283,14 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             param_buff = (char*) (v + 1);
             break;
         }
-        case eDB_Char: {
-            CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
-                           status, SYBCHAR, -1,
-                           is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value()));
-            break;
-        }
-        case eDB_LongChar: {
-            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
-                           status, SYBCHAR, -1,
-                           is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value()));
-            break;
-        }
+        case eDB_Char:
+        case eDB_LongChar:
         case eDB_VarChar: {
-            CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
+            CDB_String& val = dynamic_cast<CDB_String&> (param);
             r = Check(dbrpcparam(GetCmd(), (char*) GetBindParamsImpl().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
-                           (BYTE*) val.Value()));
+                           (BYTE*) val.Data()));
         }
         break;
         case eDB_Binary: {

@@ -75,6 +75,40 @@ enum EDB_Type {
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+/// Convenience extension of basic_string, in part to serve as
+/// CDB_String::Value's return type -- to encourage treating it as a
+/// standard C++ string without breaking code that relied on its
+/// historical behavior of returning a C string.
+template <typename TChar>
+class CGenericSqlString : public basic_string<TChar>
+{
+public:
+    typedef basic_string<TChar>               TBasicString;
+    typedef typename TBasicString::size_type  size_type;
+    typedef typename TBasicString::value_type value_type;
+
+    CGenericSqlString(void) { }
+    CGenericSqlString(const TBasicString& s) : TBasicString(s) { }
+    CGenericSqlString(const value_type* data,
+                      size_type len = TBasicString::npos)
+        : TBasicString(data, len) { }
+
+    size_type byte_count(void) const
+        { return this->size() * sizeof(value_type); }
+
+    NCBI_DEPRECATED NCBI_DBAPIDRIVER_EXPORT
+    operator const value_type*(void) const;
+    // { return this->c_str(); } // defined out-of-line to reduce warnings
+};
+
+typedef CGenericSqlString<char>    CSqlString;
+#ifdef HAVE_WSTRING
+typedef CGenericSqlString<wchar_t> CWSqlString;
+#endif
+
+
+/////////////////////////////////////////////////////////////////////////////
 class NCBI_DBAPIDRIVER_EXPORT CWString
 {
 public:
@@ -97,7 +131,7 @@ public:
     CWString& operator=(const CWString& str);
 
 public:
-    operator const string&(void) const
+    operator const CSqlString&(void) const
     {
         if (!(GetAvailableValueType() & eString)) {
             x_MakeString();
@@ -105,35 +139,31 @@ public:
 
         return m_String;
     }
-    operator char*(void) const
+    NCBI_DEPRECATED operator char*(void) const;
+    NCBI_DEPRECATED operator const char*(void) const;
+    const char* AsCString(EEncoding str_enc = eEncoding_Unknown) const
     {
         if (!(GetAvailableValueType() & eChar)) {
-            x_MakeString();
-        }
-
-        return const_cast<char*>(m_Char);
-    }
-    operator const char*(void) const
-    {
-        if (!(GetAvailableValueType() & eChar)) {
-            x_MakeString();
+            x_MakeString(str_enc);
         }
 
         return m_Char;
     }
 #ifdef HAVE_WSTRING
-    operator wchar_t*(void) const
+    operator const wstring&(void) const
     {
-        if (!(GetAvailableValueType() & eWChar)) {
+        if (!(GetAvailableValueType() & eWString)) {
             x_MakeWString();
         }
 
-        return const_cast<wchar_t*>(m_WChar);
+        return m_WString;
     }
-    operator const wchar_t*(void) const
+    NCBI_DEPRECATED operator wchar_t*(void) const;
+    NCBI_DEPRECATED operator const wchar_t*(void) const;
+    const wchar_t* AsCWString(EEncoding str_enc = eEncoding_Unknown) const
     {
         if (!(GetAvailableValueType() & eWChar)) {
-            x_MakeWString();
+            x_MakeWString(str_enc);
         }
 
         return m_WChar;
@@ -218,13 +248,12 @@ protected:
 #ifdef HAVE_WSTRING
     mutable const wchar_t*  m_WChar;
 #endif
-    mutable string          m_String;
+    mutable CSqlString      m_String;
 #ifdef HAVE_WSTRING
     mutable wstring         m_WString;
 #endif
     mutable CStringUTF8     m_UTF8String;
 };
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -419,10 +448,8 @@ public:
 
 public:
     // Conversion operators
-    operator const char*(void) const
-    {
-        return m_WString;
-    }
+    NCBI_DEPRECATED operator const char*(void) const;
+
     operator const string&(void) const
     {
         return m_WString;
@@ -431,20 +458,35 @@ public:
 public:
 #if defined(HAVE_WSTRING)
     // enc - expected source string encoding.
-    const wchar_t*  AsUnicode(EEncoding enc) const
+    const wstring& AsWString(EEncoding enc) const
     {
-        return IsNULL() ? NULL : m_WString.AsUnicode(enc).c_str();
+        return IsNULL() ? kEmptyWStr : m_WString.AsUnicode(enc);
     }
+
+    NCBI_DEPRECATED const wchar_t* AsUnicode(EEncoding enc) const;
 #endif
 
-    const char* Value(void) const
+    const string& AsString(void) const
     {
-        return IsNULL() ? NULL : static_cast<const char*>(m_WString);
+        return IsNULL() ? kEmptyStr : m_WString;
     }
+
     size_t Size(void) const
     {
         return IsNULL() ? 0 : m_WString.GetSymbolNum();
     }
+
+    const char* Data(void) const
+    {
+        return IsNULL() ? NULL : static_cast<const string&>(m_WString).data();
+    }
+
+    const char* AsCString(void) const
+    {
+        return IsNULL() ? NULL : static_cast<const string&>(m_WString).c_str();
+    }
+
+    const CSqlString& Value(void) const { return m_WString; }
 
 public:
     // set-value methods
@@ -591,7 +633,9 @@ public:
     CDB_VarBinary& operator= (const CDB_VarBinary& v);
    
     //
-    const void* Value() const  { return IsNULL() ? NULL : (void*) m_Value.c_str(); }
+    const void* Value() const
+        { return IsNULL() ? NULL : (void*) m_Value.data(); }
+    const void* Data()  const  { return Value(); }
     size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
 
     virtual EDB_Type    GetType() const;
@@ -619,7 +663,9 @@ public:
     CDB_Binary& operator= (const CDB_Binary& v);
 
     //
-    const void* Value() const  { return IsNULL() ? NULL : (void*) m_Value.c_str(); }
+    const void* Value() const
+        { return IsNULL() ? NULL : (void*) m_Value.data(); }
+    const void* Data()  const  { return Value(); }
     size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
 
     virtual EDB_Type    GetType() const;
@@ -649,7 +695,9 @@ public:
     CDB_LongBinary& operator= (const CDB_LongBinary& v);
 
     //
-    const void* Value() const  { return IsNULL() ? NULL : (void*) m_Value.c_str(); }
+    const void* Value() const
+        { return IsNULL() ? NULL : (void*) m_Value.data(); }
+    const void* Data()  const  { return Value(); }
     size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
     size_t  DataSize()  const  { return m_DataSize; }
 
@@ -911,7 +959,7 @@ public:
 protected:
     void x_MakeFromString(unsigned int precision,
                           unsigned int scale,
-                          const char*  val);
+                          const CTempString& s);
     Uint1         m_Precision;
     Uint1         m_Scale;
     unsigned char m_Body[33];

@@ -301,7 +301,7 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
             f = f / sizeof(wchar_t);
 
             string encoded_value = CODBCString(buffer, f).ConvertTo(GetClientEncoding());
-            val->Append(encoded_value.c_str(), encoded_value.size());
+            val->Append(encoded_value.data(), encoded_value.size());
         }
         return true;
     case SQL_NO_DATA:
@@ -1026,7 +1026,10 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 
 #ifdef HAVE_WSTRING
         if (data_type == SQL_WCHAR  ||  data_type == SQL_WVARCHAR  ||  data_type == SQL_WLONGVARCHAR) {
-            string conv_data = CODBCString((wchar_t*) next_data.c_str(), next_data.size() / sizeof(wchar_t)).ConvertTo(GetClientEncoding());
+            string conv_data
+                = (CODBCString((wchar_t*) next_data.data(),
+                               next_data.size() / sizeof(wchar_t))
+                   .ConvertTo(GetClientEncoding()));
             m_LastReadData += conv_data;
         }
         else
@@ -1040,7 +1043,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
     if (return_len > buffer_size) {
         return_len = buffer_size;
     }
-    memcpy(buffer, m_LastReadData.c_str(), return_len);
+    memcpy(buffer, m_LastReadData.data(), return_len);
     m_LastReadData = m_LastReadData.substr(return_len);
     if (!m_HasMoreData  &&  return_len <= buffer_size) {
         ++m_CurrItem;

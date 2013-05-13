@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             query.PurgeResults();
 
             ostream& out = bm.GetOStream(clob_value.size(), CQuery::eDisableLog);
-            out.write(clob_value.c_str(), clob_value.size());
+            out.write(clob_value.data(), clob_value.size());
             out.flush();
         }
 
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(clob_value.size(),
                                                   CQuery::eDisableLog);
-                    out.write(clob_value.c_str(), clob_value.size());
+                    out.write(clob_value.data(), clob_value.size());
                     out.flush();
                 }
 
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
 
             ITERATE(CQuery, it, query.SingleSet()) {
                 ostream& out = it[1].GetOStream(clob_value.size(), CQuery::eDisableLog);
-                out.write(clob_value.c_str(), clob_value.size());
+                out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
         }
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                         ITERATE(CQuery, it, query.SingleSet()) {
                             ostream& out = it[1].GetOStream(clob_value.size(),
                                                             CQuery::eDisableLog);
-                            out.write(clob_value.c_str(), clob_value.size());
+                            out.write(clob_value.data(), clob_value.size());
                             out.flush();
                         }
                     }
@@ -634,7 +634,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(clob_value.size(),
                                                   CQuery::eDisableLog);
-                    out.write(clob_value.c_str(), clob_value.size());
+                    out.write(clob_value.data(), clob_value.size());
                     out.flush();
                     BOOST_CHECK(out.good());
                 }
@@ -721,7 +721,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
                     for (int pos = 1; pos <= 4; ++pos) {
                         ostream& out = it[pos].GetOStream(clob_value.size(),
                                                           CQuery::eDisableLog);
-                        out.write(clob_value.c_str(), clob_value.size());
+                        out.write(clob_value.data(), clob_value.size());
                         out.flush();
                         BOOST_CHECK(out.good());
                     }

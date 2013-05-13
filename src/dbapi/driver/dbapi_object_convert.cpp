@@ -308,7 +308,7 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
             {
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(m_Value));
                 result.resize(strm.Size());
-                strm.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+                strm.Read(const_cast<void*>(static_cast<const void*>(result.data())),
                         strm.Size()
                         );
             }
@@ -571,7 +571,7 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
             {
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(m_Value));
                 result.resize(strm.Size());
-                strm.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+                strm.Read(const_cast<void*>(static_cast<const void*>(result.data())),
                         strm.Size()
                         );
             }
@@ -667,7 +667,7 @@ TO Convert_CDB_Object(const CDB_Object& value)
                 string result;
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(value));
                 result.resize(strm.Size());
-                strm.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+                strm.Read(const_cast<void*>(static_cast<const void*>(result.data())),
                         strm.Size()
                         );
                 return Convert(result);
@@ -833,7 +833,7 @@ TO Convert_CDB_ObjectSql(const CDB_Object& value)
                 string result;
                 CDB_Stream& strm = const_cast<CDB_Stream&>(static_cast<const CDB_Stream&>(value));
                 result.resize(strm.Size());
-                strm.Read(const_cast<void*>(static_cast<const void*>(result.c_str())),
+                strm.Read(const_cast<void*>(static_cast<const void*>(result.data())),
                         strm.Size()
                         );
                 return Convert(result);

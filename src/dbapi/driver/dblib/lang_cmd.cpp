@@ -323,42 +323,15 @@ bool CDBL_LangCmd::x_AssignParams()
                 val_buffer[s8.size()] = '\0';
                 break;
             }
-            case eDB_Char: {
-                CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-                const char* c = val.Value(); // No more than 255 chars
-                size_t i = 0;
-                val_buffer[i++] = '\'';
-                while (*c) {
-                    if (*c == '\'')
-                        val_buffer[i++] = '\'';
-                    val_buffer[i++] = *c++;
-                }
-                val_buffer[i++] = '\'';
-                val_buffer[i++] = '\n';
-                val_buffer[i] = '\0';
-                break;
-            }
-            case eDB_VarChar: {
-                CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-                const char* c = val.Value();
-                size_t i = 0;
-                val_buffer[i++] = '\'';
-                while (*c) {
-                    if (*c == '\'')
-                        val_buffer[i++] = '\'';
-                    val_buffer[i++] = *c++;
-                }
-                val_buffer[i++] = '\'';
-                val_buffer[i++] = '\n';
-                val_buffer[i] = '\0';
-                break;
-            }
+            case eDB_Char:
+            case eDB_VarChar:
             case eDB_LongChar: {
-                CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-                const char* c = val.Value();
+                CDB_String& val = dynamic_cast<CDB_String&> (param);
+                const string& s = val.Value(); // NB: 255 bytes at most
+                string::const_iterator c = s.begin();
                 size_t i = 0;
                 val_buffer[i++] = '\'';
-                while (*c && (i < (sizeof(val_buffer)-3))) {
+                while (c != s.end()  &&  i < sizeof(val_buffer) - 3) {
                     if (*c == '\'')
                         val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
@@ -366,7 +339,7 @@ bool CDBL_LangCmd::x_AssignParams()
                 val_buffer[i++] = '\'';
                 val_buffer[i++] = '\n';
                 val_buffer[i] = '\0';
-                if(*c != '\0') return false;
+                if (c != s.end()) return false;
                 break;
             }
             case eDB_Binary: {

@@ -441,7 +441,11 @@ CDbapiSampleApp::ShowResults (const string& query)
                     if ( rt == eDB_Char || rt == eDB_VarChar ) {
                         CDB_VarChar v;
                         r->GetItem(&v);
-                        cout << (v.IsNULL()? "{NULL}" : v.Value());
+                        if ( v.IsNULL() ) {
+                            cout << "{NULL}";
+                        } else {
+                            cout << v.Value();
+                        }
                     } else if ( rt == eDB_Int ||
                                 rt == eDB_SmallInt ||
                                 rt == eDB_TinyInt ) {

@@ -984,17 +984,17 @@ void CDriverContext::SetClientCharset(const string& charset)
     m_ClientCharset = charset;
     m_ClientEncoding = eEncoding_Unknown;
 
-    if (NStr::CompareNocase(charset.c_str(), "UTF-8") == 0 ||
-        NStr::CompareNocase(charset.c_str(), "UTF8") == 0) {
+    if (NStr::CompareNocase(charset, "UTF-8") == 0 ||
+        NStr::CompareNocase(charset, "UTF8") == 0) {
         m_ClientEncoding = eEncoding_UTF8;
-    } else if (NStr::CompareNocase(charset.c_str(), "Ascii") == 0) {
+    } else if (NStr::CompareNocase(charset, "Ascii") == 0) {
         m_ClientEncoding = eEncoding_Ascii;
-    } else if (NStr::CompareNocase(charset.c_str(), "ISO8859_1") == 0 ||
-               NStr::CompareNocase(charset.c_str(), "ISO8859-1") == 0
+    } else if (NStr::CompareNocase(charset, "ISO8859_1") == 0 ||
+               NStr::CompareNocase(charset, "ISO8859-1") == 0
                ) {
         m_ClientEncoding = eEncoding_ISO8859_1;
-    } else if (NStr::CompareNocase(charset.c_str(), "Windows_1252") == 0 ||
-               NStr::CompareNocase(charset.c_str(), "Windows-1252") == 0) {
+    } else if (NStr::CompareNocase(charset, "Windows_1252") == 0 ||
+               NStr::CompareNocase(charset, "Windows-1252") == 0) {
         m_ClientEncoding = eEncoding_Windows_1252;
     }
 }

@@ -126,11 +126,12 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
 
                 if (val.IsNULL()) {
-                    r = Check(bcp_bind(GetCmd(), (BYTE*) kEmptyStr.c_str(), 0,
-                                0,
-                                (BYTE*) "", 1, SYBCHAR, i + 1));
+                    r = Check(bcp_bind(GetCmd(), (BYTE*) "", 0, 0,
+                                       NULL, 0, SYBCHAR, i + 1));
                 } else {
-                    r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
+                    // r = Check(bcp_bind(GetCmd(), (BYTE*) val.Data(), 0,
+                    //                   val.Size(), NULL, 0, SYBCHAR, i + 1));
+                    r = Check(bcp_bind(GetCmd(), (BYTE*) val.AsCString(), 0,
                                 -1,
                                 (BYTE*) "", 1, SYBCHAR, i + 1));
                 }
@@ -140,12 +141,11 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
 
                 if (val.IsNULL()) {
-                    r = Check(bcp_bind(GetCmd(), (BYTE*) kEmptyStr.c_str(), 0,
-                                val.IsNULL() ? 0 : -1,
-                                (BYTE*) "", 1, SYBVARCHAR, i + 1));
+                    r = Check(bcp_bind(GetCmd(), (BYTE*) "", 0, 0,
+                                       NULL, 0, SYBVARCHAR, i + 1));
                 } else {
-                    r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
-                                val.IsNULL() ? 0 : -1,
+                    r = Check(bcp_bind(GetCmd(), (BYTE*) val.AsCString(), 0,
+                                -1,
                                 (BYTE*) "", 1, SYBVARCHAR, i + 1));
                 }
             }
@@ -154,11 +154,10 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
 
                 if (val.IsNULL()) {
-                    r = Check(bcp_bind(GetCmd(), (BYTE*) kEmptyStr.c_str(), 0,
-                                0,
-                                (BYTE*) "", 1, SYBCHAR, i + 1));
+                    r = Check(bcp_bind(GetCmd(), (BYTE*) "", 0, 0,
+                                       NULL, 0, SYBCHAR, i + 1));
                 } else {
-                    r = Check(bcp_bind(GetCmd(), (BYTE*) val.Value(), 0,
+                    r = Check(bcp_bind(GetCmd(), (BYTE*) val.AsCString(), 0,
                                 -1,
                                 (BYTE*) "", 1, SYBCHAR, i + 1));
                 }
@@ -313,14 +312,15 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
 
                 if (val.IsNULL()) {
-                    r = Check(bcp_colptr(GetCmd(), (BYTE*) kEmptyStr.c_str(), i + 1))
+                    r = Check(bcp_colptr(GetCmd(), (BYTE*) "", i + 1))
                         == SUCCEED &&
                         Check(bcp_collen(GetCmd(), 0, i + 1))
                         == SUCCEED ? SUCCEED : FAIL;
                 } else {
-                    r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
+                    r = Check(bcp_colptr(GetCmd(), (BYTE*) val.AsCString(),
+                                         i + 1))
                         == SUCCEED &&
-                        Check(bcp_collen(GetCmd(), -1, i + 1))
+                        Check(bcp_collen(GetCmd(), -1 /* val.Size() */, i + 1))
                         == SUCCEED ? SUCCEED : FAIL;
                 }
             }
@@ -329,12 +329,13 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
 
                 if (val.IsNULL()) {
-                    r = Check(bcp_colptr(GetCmd(), (BYTE*) kEmptyStr.c_str(), i + 1))
+                    r = Check(bcp_colptr(GetCmd(), (BYTE*) "", i + 1))
                         == SUCCEED &&
                         Check(bcp_collen(GetCmd(), 0, i + 1))
                         == SUCCEED ? SUCCEED : FAIL;
                 } else {
-                    r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
+                    r = Check(bcp_colptr(GetCmd(), (BYTE*) val.AsCString(),
+                                         i + 1))
                         == SUCCEED &&
                         Check(bcp_collen(GetCmd(), -1, i + 1))
                         == SUCCEED ? SUCCEED : FAIL;
@@ -345,12 +346,13 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
 
                 if (val.IsNULL()) {
-                    r = Check(bcp_colptr(GetCmd(), (BYTE*) kEmptyStr.c_str(), i + 1))
+                    r = Check(bcp_colptr(GetCmd(), (BYTE*) "", i + 1))
                         == SUCCEED &&
                         Check(bcp_collen(GetCmd(), 0, i + 1))
                         == SUCCEED ? SUCCEED : FAIL;
                 } else {
-                    r = Check(bcp_colptr(GetCmd(), (BYTE*) val.Value(), i + 1))
+                    r = Check(bcp_colptr(GetCmd(), (BYTE*) val.AsCString(),
+                                         i + 1))
                         == SUCCEED &&
                         Check(bcp_collen(GetCmd(), -1, i + 1))
                         == SUCCEED ? SUCCEED : FAIL;

@@ -228,7 +228,7 @@ void CODBC_Reporter::ReportErrors(void) const
 
                     CDB_TimeoutEx to(DIAG_COMPILE_INFO,
                                     0,
-                                    err_msg.c_str(),
+                                    err_msg,
                                     NativeError);
 
                     m_HStack->PostMsg(&to);
@@ -237,7 +237,7 @@ void CODBC_Reporter::ReportErrors(void) const
 					// deadlock
                     CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                                     0,
-                                    err_msg.c_str());
+                                    err_msg);
                     m_HStack->PostMsg(&dl);
                 }
                 else if (NativeError == 1708  ||  NativeError == 1771) {
@@ -247,7 +247,7 @@ void CODBC_Reporter::ReportErrors(void) const
                     && NativeError != 5703 ){
                     CDB_SQLEx se(DIAG_COMPILE_INFO,
                                 0,
-                                err_msg.c_str(),
+                                err_msg,
                                 (NativeError == 0 ? eDiag_Info : eDiag_Warning),
                                 NativeError,
                                 CODBCString(SqlState).AsLatin1(),
@@ -266,7 +266,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 {
                     CDB_DSEx dse(DIAG_COMPILE_INFO,
                                 0,
-                                err_msg.c_str(),
+                                err_msg,
                                 eDiag_Warning,
                                 777);
                     m_HStack->PostMsg(&dse);
@@ -281,7 +281,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 {
                     CDB_ClientEx ce(DIAG_COMPILE_INFO,
                                     0,
-                                    err_msg.c_str(),
+                                    err_msg,
                                     eDiag_Warning,
                                     420016);
                     m_HStack->PostMsg(&ce);

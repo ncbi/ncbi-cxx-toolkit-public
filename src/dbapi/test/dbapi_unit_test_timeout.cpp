@@ -319,14 +319,14 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
             auto_stmt->SetParam( CVariant(654.321), "@flt_field" );
             auto_stmt->SetParam( CVariant(CTime(CTime::eCurrent)),
                 "@date_field" );
-            auto_stmt->SetParam( CVariant::VarChar(vc200_val.c_str(),
+            auto_stmt->SetParam( CVariant::VarChar(vc200_val.data(),
                 vc200_val.size()),
                 "@vc200_field" );
-            auto_stmt->SetParam( CVariant::LongChar(vc2000_val.c_str(),
+            auto_stmt->SetParam( CVariant::LongChar(vc2000_val.data(),
                 vc2000_val.size()),
                 "@vc2000_field"
                 );
-            auto_stmt->SetParam( CVariant::VarChar(txt_val.c_str(),
+            auto_stmt->SetParam( CVariant::VarChar(txt_val.data(),
                 txt_val.size()),
                 "@txt_field" );
 

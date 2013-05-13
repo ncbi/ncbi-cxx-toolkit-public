@@ -249,7 +249,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
 
         ret_code = Check(ct_param(x_GetSybaseCmd(),
                                   &param_fmt,
-                                  (CS_VOID*) par.Value(),
+                                  (CS_VOID*) par.Data(),
                                   (CS_INT) par.Size(),
                                   indicator)
                          );
@@ -264,7 +264,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
 
         ret_code = Check(ct_param(x_GetSybaseCmd(),
                                   &param_fmt,
-                                  (CS_VOID*) par.Value(),
+                                  (CS_VOID*) par.Data(),
                                   (CS_INT) par.Size(),
                                   indicator)
                          );
@@ -278,7 +278,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         if (GetConnection().GetCTLibContext().GetClientEncoding() == eEncoding_UTF8
             &&  !par.IsNULL())
         {
-            CStringUTF8 str_check(CUtf8::AsUTF8(CTempString(par.Value(), par.Size()),
+            CStringUTF8 str_check(CUtf8::AsUTF8(par.Value(),
                                   eEncoding_UTF8, CUtf8::eValidate));
             CUtf8::AsBasicString<TCharUCS2>(str_check);
         }
@@ -292,7 +292,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
 
         ret_code = Check(ct_param(x_GetSybaseCmd(),
                                   &param_fmt,
-                                  (CS_VOID*) par.Value(),
+                                  (CS_VOID*) par.Data(),
                                   (CS_INT) par.Size(),
                                   indicator)
                          );
@@ -723,8 +723,8 @@ bool CTL_LangCmd::Send()
     SetHasFailed(false);
 
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
-                        const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
-                        CS_END),
+                        const_cast<char*>(GetQuery().data()),
+                        GetQuery().size(), CS_END),
              "ct_command failed", 120001);
 
 

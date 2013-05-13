@@ -127,6 +127,8 @@ void CODBC_Connection::x_Connect(
         server_name = params.GetServerName();
     }
 
+    EEncoding enc = GetClientEncoding();
+
     if(!cntx.GetUseDSN()) {
         string connect_str;
         string conn_str_suffix;
@@ -164,23 +166,28 @@ void CODBC_Connection::x_Connect(
 
         connect_str += conn_str_suffix;
 
+        TSqlString connect_str_ss = x_MakeTSqlString(connect_str, enc);
+
         rc = SQLDriverConnect(m_Link,
                               0,
-                              CODBCString(connect_str, GetClientEncoding()),
-                              SQL_NTS,
+                              const_cast<TSqlChar*>(connect_str_ss.data()),
+                              connect_str_ss.size(),
                               0,
                               0,
                               0,
                               SQL_DRIVER_NOPROMPT);
     }
     else {
+        TSqlString server_name_ss = x_MakeTSqlString(server_name, enc);
+        TSqlString username_ss = x_MakeTSqlString(params.GetUserName(), enc);
+        TSqlString password_ss = x_MakeTSqlString(params.GetPassword(), enc);
         rc = SQLConnect(m_Link,
-                        CODBCString(server_name, GetClientEncoding()),
-                        SQL_NTS,
-                        CODBCString(params.GetUserName(), GetClientEncoding()),
-                        SQL_NTS,
-                        CODBCString(params.GetPassword(), GetClientEncoding()),
-                        SQL_NTS);
+                        const_cast<TSqlChar*>(server_name_ss.data()),
+                        server_name_ss.size(),
+                        const_cast<TSqlChar*>(username_ss.data()),
+                        username_ss.size(),
+                        const_cast<TSqlChar*>(password_ss.data()),
+                        password_ss.size());
     }
 
     if (!cntx.CheckSIE(rc, m_Link)) {
@@ -616,9 +623,10 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
         return false;
     }
 
+    TSqlString ss = x_MakeTSqlString(q, stmt.GetClientEncoding());
     if (!ODBC_xCheckSIE(SQLPrepare(stmt.GetHandle(),
-                                   CODBCString(q, stmt.GetClientEncoding()),
-                                   SQL_NTS),
+                                   const_cast<TSqlChar*>(ss.data()),
+                                   ss.size()),
                         stmt)) {
         return false;
     }
@@ -671,14 +679,13 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 //         }
 //
 //         {
-//             CODBCString odbc_str(buff, valid_len, stmt.GetClientEncoding());
-//             // Force odbc_str to make conversion to odbc::TChar*.
-//             odbc::TChar* tchar_str = odbc_str;
+//             TSqlString ss = x_MakeTSqlString(CTempString(buff, valid_len),
+//                                              stmt.GetClientEncoding());
+//             odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.data());
 //
 //             rc = SQLPutData(stmt.GetHandle(),
 //                             static_cast<SQLPOINTER>(tchar_str),
-//                             static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
-//                                                     sizeof(odbc::TChar)) // Number of bytes ...
+//                             static_cast<SQLINTEGER>(ss.byte_count())
 //                             );
 //         }
 //
@@ -700,14 +707,13 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
             invalid_len = len - valid_len;
 
             // Encoding is always eEncoding_UTF8 in here.
-            CODBCString odbc_str(buff, valid_len, eEncoding_UTF8);
-            // Force odbc_str to make conversion to odbc::TChar*.
-            odbc::TChar* tchar_str = odbc_str;
+            TSqlString ss = x_MakeTSqlString(CTempString(buff, valid_len),
+                                             eEncoding_UTF8);
+            odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.data());
 
             rc = SQLPutData(stmt.GetHandle(),
                             static_cast<SQLPOINTER>(tchar_str),
-                            static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
-                                                    sizeof(odbc::TChar)) // Number of bytes ...
+                            static_cast<SQLINTEGER>(ss.byte_count())
                             );
 
             if (valid_len < len) {
@@ -717,14 +723,13 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
             // Experimental code ...
 //             size_t valid_len = len;
 //
-//             CODBCString odbc_str(buff, valid_len, stmt.GetClientEncoding());
-//             // Force odbc_str to make conversion to odbc::TChar*.
-//             odbc::TChar* tchar_str = odbc_str;
+//             TSqlString ss = x_MakeTSqlString(CTempString(buff, valid_len),
+//                                              stmt.GetClientEncoding());
+//             odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.data());
 //
 //             rc = SQLPutData(stmt.GetHandle(),
 //                             static_cast<SQLPOINTER>(tchar_str),
-//                             static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
-//                                                     sizeof(odbc::TChar)) // Number of bytes ...
+//                             static_cast<SQLINTEGER>(ss.byte_count())
 //                             );
             rc = SQLPutData(stmt.GetHandle(),
                             static_cast<SQLPOINTER>(buff),
@@ -1306,7 +1311,8 @@ CStatementBase::x_GetIndicator(const CDB_Object& param) const
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
-        return SQL_NTS;
+        return dynamic_cast<const CDB_String&>(param).Size()
+            * sizeof(TSqlChar);
     case eDB_Binary:
         return dynamic_cast<const CDB_Binary&>(param).Size();
     case eDB_VarBinary:
@@ -1348,9 +1354,11 @@ CStatementBase::x_GetData(const CDB_Object& param,
     case eDB_VarChar:
     case eDB_LongChar:
 #ifdef UNICODE
-        data = const_cast<wchar_t *>(dynamic_cast<const CDB_String&>(param).AsUnicode(GetClientEncoding()));
+        data = const_cast<wchar_t *>(dynamic_cast<const CDB_String&>(param)
+                                     .AsWString(GetClientEncoding()).data());
 #else
-        data = const_cast<char *>(dynamic_cast<const CDB_String&>(param).Value());
+        data = const_cast<char *>(dynamic_cast<const CDB_String&>(param)
+                                  .Data());
 #endif
         break;
     case eDB_Binary:
@@ -1500,17 +1508,13 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 //     }
 //
 //     {
-//         CODBCString odbc_str(static_cast<const char*>(chunk_ptr),
-//                                 valid_len,
-//                                 GetClientEncoding());
-//
-//         // Force odbc_str to make conversion to odbc::TChar*.
-//         odbc::TChar* tchar_str = odbc_str;
+//         TSqlString ss = x_MakeTSqlString(CTempString(chunk_ptr, valid_len),
+//                                          GetClientEncoding());
+//         odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.data());
 //
 //         rc = SQLPutData(GetHandle(),
 //                         static_cast<SQLPOINTER>(tchar_str),
-//                         static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
-//                                                 sizeof(odbc::TChar))
+//                         static_cast<SQLINTEGER>(ss.byte_count())
 //                         );
 //     }
     // End of new code ...
@@ -1528,17 +1532,15 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         }
 
         // Encoding is always eEncoding_UTF8 in here.
-        CODBCString odbc_str(static_cast<const char*>(chunk_ptr),
-                             valid_len,
-                             eEncoding_UTF8);
-        // Force odbc_str to make conversion to odbc::TChar*.
-        odbc::TChar* tchar_str = odbc_str;
+        TSqlString ss = x_MakeTSqlString
+            (CTempString(static_cast<const char*>(chunk_ptr), valid_len),
+             eEncoding_UTF8);
+        odbc::TChar* tchar_str = const_cast<odbc::TChar*>(ss.data());
         nof_bytes = valid_len;
 
         rc = SQLPutData(GetHandle(),
                         static_cast<SQLPOINTER>(tchar_str),
-                        static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
-                                                sizeof(odbc::TChar))
+                        static_cast<SQLINTEGER>(ss.byte_count())
                         );
     } else {
         rc = SQLPutData(GetHandle(),

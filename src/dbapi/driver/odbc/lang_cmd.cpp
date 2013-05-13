@@ -97,11 +97,9 @@ bool CODBC_LangCmd::Send(void)
         real_query = &GetQuery();
     }
 
-    // CODBCString odbc_str(*real_query, GetClientEncoding());
-    // Force odbc_str to make conversion to odbc::TChar*.
-    // odbc::TChar* tchar_str = odbc_str;
-
-    switch(SQLExecDirect(GetHandle(), CODBCString(*real_query, GetClientEncoding()), SQL_NTS)) {
+    TSqlString ss = x_MakeTSqlString(*real_query, GetClientEncoding());
+    switch (SQLExecDirect(GetHandle(), const_cast<TSqlChar*>(ss.data()),
+                          ss.size())) {
     // switch(SQLExecDirect(GetHandle(), tchar_str, odbc_str.GetSymbolNum())) {
     case SQL_SUCCESS:
         m_HasMoreResults = true;
@@ -318,7 +316,10 @@ void CODBC_LangCmd::SetCursorName(const string& name) const
     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CURSOR_TYPE, (void*)SQL_CURSOR_FORWARD_ONLY, SQL_NTS),
              "SQLSetStmtAttr(SQL_ATTR_CURSOR_TYPE) failed", 420018);
 
-    CheckSIE(SQLSetCursorName(GetHandle(), CODBCString(name, GetClientEncoding()), static_cast<SQLSMALLINT>(name.size())),
+
+    TSqlString ss = x_MakeTSqlString(name, GetClientEncoding());
+    CheckSIE(SQLSetCursorName(GetHandle(), const_cast<TSqlChar*>(ss.data()),
+                              static_cast<SQLSMALLINT>(ss.size())),
              "SQLSetCursorName failed", 420016);
 }
 

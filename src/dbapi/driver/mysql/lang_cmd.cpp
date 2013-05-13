@@ -53,7 +53,7 @@ CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection& conn,
 bool CMySQL_LangCmd::Send()
 {
     if (mysql_real_query
-        (&m_Connect->m_MySQL, GetQuery().c_str(), GetQuery().length()) != 0) {
+        (&m_Connect->m_MySQL, GetQuery().data(), GetQuery().length()) != 0) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_query", 800003 );
     }
     GetBindParamsImpl().LockBinding();

@@ -42,10 +42,9 @@ BEGIN_NCBI_SCOPE
 //////////////////////////////////////////////////////////////////////////////
 static
 TSvrRef
-make_server(const string& specification, double& preference)
+make_server(const CTempString& specification, double& preference)
 {
-    vector<string> server_attr;
-    string server;
+    CTempString server;
     // string host;
     Uint4 host = 0;
     Uint2 port = 0;
@@ -63,7 +62,7 @@ make_server(const string& specification, double& preference)
                 // Ignore host in order to avoid dependebcy on libconnect.
                 // SOCK_StringToHostPort(specification.c_str() + old_pos, &host, &port);
                 if (specification[pos] == ':') {
-                    port = NStr::StringToUInt(specification.c_str() + pos + 1,
+                    port = NStr::StringToUInt(specification.substr(pos + 1),
                                               NStr::fAllowLeadingSpaces |
                                               NStr::fAllowTrailingSymbols |
                                               NStr::fConvErr_NoThrow);
@@ -71,7 +70,7 @@ make_server(const string& specification, double& preference)
                     if (pos != string::npos) {
                         // preference = NStr::StringToDouble(
                         preference = NStr::StringToUInt(
-                            specification.c_str() + pos + 1,
+                            specification.substr(pos + 1),
                             NStr::fAllowLeadingSpaces |
                             NStr::fAllowTrailingSymbols |
                             NStr::fConvErr_NoThrow);
@@ -79,7 +78,7 @@ make_server(const string& specification, double& preference)
                 } else {
                     // preference = NStr::StringToDouble(
                     preference = NStr::StringToUInt(
-                        specification.c_str() + pos + 1,
+                        specification.substr(pos + 1),
                         NStr::fAllowLeadingSpaces |
                         NStr::fAllowTrailingSymbols |
                         NStr::fConvErr_NoThrow);
@@ -92,7 +91,7 @@ make_server(const string& specification, double& preference)
         } else {
             // preference = NStr::StringToDouble(
             preference = NStr::StringToUInt(
-                specification.c_str() + pos + 1,
+                specification.substr(pos + 1),
                 NStr::fAllowLeadingSpaces |
                 NStr::fAllowTrailingSymbols |
                 NStr::fConvErr_NoThrow);

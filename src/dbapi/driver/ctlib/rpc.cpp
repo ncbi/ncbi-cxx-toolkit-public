@@ -82,7 +82,8 @@ bool CTL_RPCCmd::Send()
     SetHasFailed(false);
 
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
-                        const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
+                        const_cast<char*>(GetQuery().data()),
+                        GetQuery().size(),
                               NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED),
              "ct_command failed", 121001);
 

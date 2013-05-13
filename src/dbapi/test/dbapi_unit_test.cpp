@@ -383,21 +383,21 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
             //
             BOOST_CHECK( utf8_str_utf8.size() > 0 );
             BOOST_CHECK_EQUAL( NStr::PrintableString(str_utf8), NStr::PrintableString(utf8_str_utf8) );
-            auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_utf8.data(),
                                                    utf8_str_utf8.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
 
             //
             BOOST_CHECK( utf8_str_1252_rus.size() > 0 );
-            auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.data(),
                                                    utf8_str_1252_rus.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
 
             //
             BOOST_CHECK( utf8_str_1252_ger.size() > 0 );
-            auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
+            auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.data(),
                                                    utf8_str_1252_ger.size()),
                                  "@nvc_val" );
             auto_stmt->ExecuteUpdate(sql);
@@ -480,23 +480,23 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
                          "(int_field, vc1000_field) VALUES(@id, @vc_val)";
 
             auto_stmt->SetParam( CVariant( Int4(2) ), "@id" );
-            auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(),
+            auto_stmt->SetParam( CVariant::LongChar(test_msg.data(),
                                                     test_msg.size()),
                                  "@vc_val"
                                  );
             auto_stmt->ExecuteUpdate( sql );
 
             auto_stmt->SetParam( CVariant( Int4(3) ), "@id" );
-            auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
+            auto_stmt->SetParam( CVariant::LongChar(small_msg.data(),
                                                     small_msg.size()),
                                  "@vc_val"
                                  );
             auto_stmt->ExecuteUpdate( sql );
 
             CVariant var_value(CVariant::LongChar(NULL, 1024));
-            var_value = CVariant::LongChar(small_msg.c_str(), small_msg.size());
+            var_value = CVariant::LongChar(small_msg.data(), small_msg.size());
             auto_stmt->SetParam( CVariant( Int4(4) ), "@id" );
-            auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
+            auto_stmt->SetParam( CVariant::LongChar(small_msg.data(),
                                                     small_msg.size()),
                                  "@vc_val"
                                  );

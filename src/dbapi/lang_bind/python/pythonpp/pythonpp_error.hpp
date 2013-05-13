@@ -179,7 +179,7 @@ public:
 public:
     static void SetString(const string& msg)
     {
-        SetString(GetPyException(), msg.c_str());
+        SetString(GetPyException(), msg);
     }
     static void SetObject(PyObject* value)
     {

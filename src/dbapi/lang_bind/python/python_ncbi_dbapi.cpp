@@ -2443,7 +2443,7 @@ ConvertCVariant2PCObject(const CVariant& value)
         string tmp_str;
 
         tmp_str.resize(lob_size);
-        value.Read( (void*)tmp_str.c_str(), lob_size );
+        value.Read( (void*)tmp_str.data(), lob_size );
         return pythonpp::CString(tmp_str);
         }
     case eDB_UnsupportedType :
@@ -2887,7 +2887,7 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
 #endif
     } else if (obj == CBinary::GetType()) {
         const string value = static_cast<CBinary*>(obj.Get())->GetValue();
-        return CVariant::VarBinary(value.c_str(), value.size());
+        return CVariant::VarBinary(value.data(), value.size());
     }
 
     return CVariant(eDB_UnsupportedType);
@@ -3298,7 +3298,7 @@ void CError::x_Init(const string& msg, long db_errno, const string& db_msg,
         return;
     }
 
-    msg_ob = PyString_FromString((char*)db_msg.c_str());
+    msg_ob = PyString_FromStringAndSize(db_msg.data(), db_msg.size());
     if (errno_ob == NULL) {
         Py_DECREF(errno_ob);
         return;
@@ -4345,7 +4345,7 @@ void init_common(const string& module_name)
     CFile file(python::RetrieveModuleFileName());
     string module_dir = file.GetDir()
                         + "python_ncbi_dbapi/" NCBI_PACKAGE_VERSION;
-    CDriverManager::GetInstance().AddDllSearchPath(module_dir.c_str());
+    CDriverManager::GetInstance().AddDllSearchPath(module_dir);
 
 
     pythonpp::CModuleExt::Declare(module_name, python_ncbi_dbapi_methods);
@@ -4366,23 +4366,23 @@ void init_common(const string& module_name)
 #endif
 
     // Declare CBinary
-    python::CBinary::Declare(string(module_name + ".BINARY").c_str());
+    python::CBinary::Declare(module_name + ".BINARY");
     python::CBinary::GetType().SetName("BINARY");
 
     // Declare CNumber
-    python::CNumber::Declare(string(module_name + ".NUMBER").c_str());
+    python::CNumber::Declare(module_name + ".NUMBER");
     python::CNumber::GetType().SetName("NUMBER");
 
     // Declare CRowID
-    python::CRowID::Declare(string(module_name + ".ROWID").c_str());
+    python::CRowID::Declare(module_name + ".ROWID");
     python::CRowID::GetType().SetName("ROWID");
 
     // Declare CString
-    python::CStringType::Declare(string(module_name + ".STRING").c_str());
+    python::CStringType::Declare(module_name + ".STRING");
     python::CStringType::GetType().SetName("STRING");
 
     // Declare CString
-    python::CDateTimeType::Declare(string(module_name + ".DATETIME").c_str());
+    python::CDateTimeType::Declare(module_name + ".DATETIME");
     python::CDateTimeType::GetType().SetName("DATETIME");
 
     // Declare CConnection
@@ -4395,7 +4395,7 @@ void init_common(const string& module_name)
         Def("rollback",     &python::CConnection::rollback,     "rollback").
         Def("cursor",       &python::CConnection::cursor,       "cursor").
         Def("transaction",  &python::CConnection::transaction,  "transaction");
-    python::CConnection::Declare(strdup(connection_name.c_str()));
+    python::CConnection::Declare(connection_name);
 
     // Declare CTransaction
     const string transaction_name(module_name + ".Transaction");
@@ -4406,7 +4406,7 @@ void init_common(const string& module_name)
         Def("cursor",       &python::CTransaction::cursor,       "cursor").
         Def("commit",       &python::CTransaction::commit,       "commit").
         Def("rollback",     &python::CTransaction::rollback,     "rollback");
-    python::CTransaction::Declare(strdup(transaction_name.c_str()));
+    python::CTransaction::Declare(transaction_name);
 
     // Declare CCursor
     const string cursor_name(module_name + ".Cursor");
@@ -4424,11 +4424,11 @@ void init_common(const string& module_name)
         Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
         Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize").
         Def("get_proc_return_status", &python::CCursor::get_proc_return_status, "get_proc_return_status");
-    python::CCursor::Declare(strdup(cursor_name.c_str()));
+    python::CCursor::Declare(cursor_name);
 
     // Declare CCursorIter
     const string cursor_iter_name(module_name + ".__CursorIterator__");
-    python::CCursorIter::Declare(strdup(cursor_iter_name.c_str()));
+    python::CCursorIter::Declare(cursor_iter_name);
 
     ///////////////////////////////////
     // Declare types ...
@@ -4562,7 +4562,7 @@ void init_common(const string& module_name)
     /* DO NOT delete this code ...
 
     python::CDatabaseError::Declare(
-        string(module_name + ".DatabaseErrorExt").c_str(),
+        module_name + ".DatabaseErrorExt",
         NULL,
         python::CError::GetPyException()->ob_type
         );

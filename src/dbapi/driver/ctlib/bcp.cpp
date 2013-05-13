@@ -160,7 +160,7 @@ CTL_BCPInCmd::x_GetValue(const CDB_Char& value) const
 //--------------------------------------------------
 
     return const_cast<CS_VOID*>(
-        static_cast<const CS_VOID*>(value.Value()));
+        static_cast<const CS_VOID*>(value.Data()));
 }
 
 
@@ -177,7 +177,7 @@ CTL_BCPInCmd::x_GetValue(const CDB_VarChar& value) const
 //--------------------------------------------------
 
     return const_cast<CS_VOID*>(
-        static_cast<const CS_VOID*>(value.Value()));
+        static_cast<const CS_VOID*>(value.Data()));
 }
 
 
@@ -290,7 +290,7 @@ bool CTL_BCPInCmd::x_AssignParams()
                 (bind.indicator == -1) ? 0 : (CS_INT) par.DataSize();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)bind.buffer :
-                                        (CS_VOID*) par.Value(),
+                                      (CS_VOID*) par.Data(),
                                       &bind.datalen,
                                       &bind.indicator));
             break;
@@ -501,7 +501,7 @@ string MakeUCS2LE(const wstring& str)
         }
     }
 #else
-    result.assign((const char*)str.c_str(), str.size() * sizeof(wchar_t));
+    result.assign((const char*)str.data(), str.size() * sizeof(wchar_t));
 #endif
 
     return result;
@@ -520,7 +520,8 @@ bool CTL_BCPInCmd::Send(void)
 
     if ( !WasSent() ) {
         // we need to init the bcp
-        CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) GetQuery().c_str(), CS_NULLTERM),
+        CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN,
+                          (CS_CHAR*) GetQuery().data(), GetQuery().size()),
                  "blk_init failed", 123001);
 
         SetWasSent();
