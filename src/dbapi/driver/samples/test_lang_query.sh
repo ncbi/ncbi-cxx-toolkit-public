@@ -5,6 +5,9 @@
 # CTLIB does not work on Solaris sparc when this limit is < ~1300
 ulimit -n 1536 > /dev/null 2>&1
 
+# Clear any locale settings that might lead to trouble (observed with
+# ctlib against DBAPI_SYB155_TEST)
+unset LANG LC_ALL LC_CTYPE
 
 driver_list="ctlib dblib ftds odbc"
 
