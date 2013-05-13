@@ -97,6 +97,20 @@ private:
     static const string& FirstGet(void);
     static const string* m_Str;     ///< Null string pointer.
 };
+
+#  if defined(HAVE_WSTRING)
+class NCBI_XNCBI_EXPORT CNcbiEmptyWString
+{
+public:
+    /// Get string.
+    static const wstring& Get(void);
+private:
+    /// Helper method to initialize private data member and return
+    /// null string.
+    static const wstring& FirstGet(void);
+    static const wstring* m_Str;     ///< Null string pointer.
+};
+#  endif
 #endif // NCBI_OS_MSWIN....
 
 
@@ -4357,6 +4371,15 @@ const string& CNcbiEmptyString::Get(void)
     const string* str = m_Str;
     return str ? *str: FirstGet();
 }
+
+#  ifdef HAVE_WSTRING
+inline
+const wstring& CNcbiEmptyWString::Get(void)
+{
+    const wstring* str = m_Str;
+    return str ? *str: FirstGet();
+}
+#  endif
 #endif
 
 

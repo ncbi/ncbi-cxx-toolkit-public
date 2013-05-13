@@ -87,6 +87,14 @@ const string& CNcbiEmptyString::FirstGet(void) {
     m_Str = &s_Str;
     return s_Str;
 }
+#  ifdef HAVE_WSTRING
+const wstring* CNcbiEmptyWString::m_Str = 0;
+const wstring& CNcbiEmptyWString::FirstGet(void) {
+    static const wstring s_Str = L"";
+    m_Str = &s_Str;
+    return s_Str;
+}
+#  endif
 #endif
 
 
