@@ -487,7 +487,7 @@ public:
 };
 
 
-/// CalculateMemberships
+/// CCriteriaSet_CalculateMemberships
 ///
 /// This function uses a predefined subset of the available criteria functions
 /// to create a membership bitmap.
@@ -497,6 +497,15 @@ public:
 NCBI_XOBJWRITE_EXPORT
 objects::CBlast_def_line::TMemberships CCriteriaSet_CalculateMemberships(
         const SDIRecord& direcord       /// DI record data
+);
+
+/// Overloaded version of CCriteriaSet_CalculateMemberships.
+/// @return 0 on success and non-zero on failure
+NCBI_XOBJWRITE_EXPORT
+int
+CCriteriaSet_CalculateMemberships(
+        const SDIRecord& direcord,      /// DI record data
+        objects::CBlast_def_line& defline   /// The 
 );
 
 

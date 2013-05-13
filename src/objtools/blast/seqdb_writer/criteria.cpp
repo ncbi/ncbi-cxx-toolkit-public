@@ -303,5 +303,18 @@ CBlast_def_line::TMemberships CCriteriaSet_CalculateMemberships(
     return bits_list;
 }
 
+int
+CCriteriaSet_CalculateMemberships(const SDIRecord& direcord,
+                                  objects::CBlast_def_line& defline)
+{
+    int retval = 0;
+    try {
+        CBlast_def_line::TMemberships list(CCriteriaSet_CalculateMemberships(direcord));
+        defline.SetMemberships().swap(list);
+    } catch (...) {
+        retval = 1;
+    }
+    return retval;
+}
 
 END_NCBI_SCOPE
