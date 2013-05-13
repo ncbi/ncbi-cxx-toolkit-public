@@ -98,6 +98,9 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
 
+/* Define to 1 if you have the `getgrouplist' function. */
+#undef HAVE_GETGROUPLIST
+
 /* If you have the `gethostbyaddr_r' function, define to the number of
    arguments it takes (normally 7 or 8). */
 #undef HAVE_GETHOSTBYADDR_R

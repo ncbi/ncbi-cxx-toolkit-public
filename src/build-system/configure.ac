@@ -3013,9 +3013,9 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getpagesize \
-               getpass getpassphrase getpwuid getrusage gettimeofday \
-               getuid memrchr readpassphrase readv usleep \
+AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getgrouplist \
+               getpagesize getpass getpassphrase getpwuid getrusage \
+               gettimeofday getuid memrchr readpassphrase readv usleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
                sysmp timegm utimes lutimes writev)
