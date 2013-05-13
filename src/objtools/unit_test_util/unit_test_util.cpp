@@ -80,7 +80,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/misc/sequence_macros.hpp>
 
-#include <objtools/test/unit_test_util/unit_test_util.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 #include <functional>
 

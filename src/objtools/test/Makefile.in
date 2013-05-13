@@ -3,7 +3,7 @@
 # Meta-makefile("objtools/test" project)
 #################################
 
-SUB_PROJ = objmgr unit_test_util
+SUB_PROJ = objmgr
 PROJ_TAG = test
 
 srcdir = @srcdir@

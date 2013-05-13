@@ -46,7 +46,7 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objtools/readers/agpconverter.hpp>
-#include <objtools/test/unit_test_util/unit_test_util.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 #include <map>
 
 // This header must be included before all Boost.Test headers if there are any

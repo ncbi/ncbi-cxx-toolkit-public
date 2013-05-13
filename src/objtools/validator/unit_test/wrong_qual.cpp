@@ -45,7 +45,7 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validator.hpp>
-#include <objtools/test/unit_test_util/unit_test_util.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

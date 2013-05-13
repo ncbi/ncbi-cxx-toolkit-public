@@ -107,7 +107,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <common/ncbi_export.h>
-#include <objtools/test/unit_test_util/unit_test_util.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 
 // for writing out tmp files
