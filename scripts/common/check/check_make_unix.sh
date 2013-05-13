@@ -291,7 +291,8 @@ esac
 
 
 # Set log_site for tests
-export NCBI_LOG_SITE=testcxx
+NCBI_LOG_SITE=testcxx
+export NCBI_LOG_SITE
 
 # Include configuration file
 . \${build_dir}/check.cfg
@@ -524,7 +525,7 @@ RunTest()
                     continue
                 fi
          
-                echo \$x_run | grep '.sh' > /dev/null 2>&1 
+                echo \$x_run | grep '\.sh' > /dev/null 2>&1 
                 if test \$? -eq 0;  then
                     # Run script without any check tools.
                     # It will be applied inside script using \$CHECK_EXEC.
