@@ -146,6 +146,10 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     if ( ctx.IsTPA() ) {
         x_AddKeyword("Third Party Annotation");
         x_AddKeyword("TPA");
+
+    // add RefSeq keyword
+    } else if ( ctx.IsRefSeq() ) {
+        x_AddKeyword("RefSeq");
     }
    
     // add ENV keyword
