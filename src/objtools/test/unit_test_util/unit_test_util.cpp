@@ -82,7 +82,7 @@
 
 #include <objtools/test/unit_test_util/unit_test_util.hpp>
 
-
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1853,6 +1853,166 @@ CRef<objects::CSeq_feat> AddGoodImpFeat (CRef<objects::CSeq_entry> entry, string
     return imp_feat;
 }
 
+// helper classes for TraverseAndRunTestCases
+namespace {
+
+    // This just accumulates all the files in the path
+    struct SFileRememberer 
+    {
+        void operator()( const CDirEntry & dir_entry ) {
+            m_filesFound.push_back(CFile(dir_entry));
+        }
+
+        vector<CFile> m_filesFound;
+    };
+
+    // a simple function object that extracts the
+    // first of a pair. (Unfortunately, "select1st" is not part of
+    // the STL standard so it can't be relied upon to exist)
+    template<typename Pair>
+    struct SFirstOfPair
+    {
+        typename Pair::first_type operator()( const Pair & a_pair ) const
+        {
+            return a_pair.first;
+        }
+    };
+}
+
+void TraverseAndRunTestCases(
+    ITestRunner *pTestRunner,
+    CDir dirWithTestCases,
+    const set<string> & setOfRequiredSuffixes,
+    const set<string> & setOfOptionalSuffixes,
+    const set<string> & setOfIgnoredSuffixes,
+    TTraverseAndRunTestCasesFlags fFlags )
+{
+    if( ! pTestRunner ) {
+        NCBI_USER_THROW_FMT("NULL pTestRunner");
+    }
+    if( ! dirWithTestCases.Exists() ) {
+        pTestRunner->OnError("Top-level test-cases dir not found: " + dirWithTestCases.GetPath() );
+        return;
+    }
+    if( ! dirWithTestCases.IsDir() ) {
+        pTestRunner->OnError("Top-level test-cases dir is actually not a dir: " + dirWithTestCases.GetPath() );
+        return;
+    }
+
+    const vector<string> kEmptyVectorOfStrings;
+
+    SFileRememberer fileRememberer;
+    FindFilesInDir(
+        dirWithTestCases,
+        kEmptyVectorOfStrings,
+        kEmptyVectorOfStrings,
+        fileRememberer,
+        fFF_File | fFF_Recursive );
+
+    // this is what we search for to see if there is a hidden directory
+    // or file anywhere along the path.
+    const string kHiddenSubstring = CDirEntry::GetPathSeparator() + string(".");
+
+    typedef map<string, ITestRunner::TMapSuffixToFile> TMapTestNameToItsFiles;
+    TMapTestNameToItsFiles mapTestNameToItsFiles;
+    // this loop loads mapTestNameToItsFiles
+    ITERATE( vector<CFile>, file_it, fileRememberer.m_filesFound ) {
+        const string sFileName = file_it->GetName();
+        const string sFileAbsPath = CDirEntry::CreateAbsolutePath(file_it->GetPath());
+        
+        // hidden folders or files of any kind are silently ignored
+        if( NStr::Find(sFileAbsPath, kHiddenSubstring) != NPOS ) {
+            continue;
+        }
+
+        if( ! (fFlags & fTraverseAndRunTestCasesFlags_DoNOTIgnoreREADMEFiles) &&
+            NStr::StartsWith(sFileName, "README") ) 
+        {
+            // if requested, silently ignore files starting with README
+            continue;
+        }
+
+        // extract out testname and suffix
+        string sTestName;
+        string sSuffix;
+        NStr::SplitInTwo(sFileName, ".", sTestName, sSuffix);
+        if( sTestName.empty() || sSuffix.empty() ) {
+            pTestRunner->OnError("Bad file name: " + file_it->GetPath());
+            continue;
+        }
+
+        if( setOfIgnoredSuffixes.find(sSuffix) != setOfIgnoredSuffixes.end() ) {
+            // silently ignores suffixes requested to be ignored by the user
+            continue;
+        }
+
+        // load this entry, with error if not inserted
+        const bool bWasInserted =
+            mapTestNameToItsFiles[sTestName].insert(make_pair(sSuffix, *file_it)).second;
+        if( ! bWasInserted ) {
+            pTestRunner->OnError( 
+                "File with same name appears multiple times in different dirs: " +
+                file_it->GetPath() );
+            continue;
+        }
+    }
+
+    // sanity check all tests and remove the unusable ones
+    ERASE_ITERATE(TMapTestNameToItsFiles, test_it, mapTestNameToItsFiles) {
+        const string & sTestName = test_it->first;
+        const ITestRunner::TMapSuffixToFile & mapSuffixToFile =
+            test_it->second;
+
+        // get the keys (that is, the suffixes) of the map
+        set<string> setOfAllSuffixes;
+        transform(mapSuffixToFile.begin(), mapSuffixToFile.end(),
+            inserter(setOfAllSuffixes, setOfAllSuffixes.begin()),
+            SFirstOfPair<ITestRunner::TMapSuffixToFile::value_type>() );
+
+        // get the non-required suffixes that were used
+        set<string> setOfNonRequiredSuffixes;
+        set_difference( setOfAllSuffixes.begin(), setOfAllSuffixes.end(),
+            setOfRequiredSuffixes.begin(), setOfRequiredSuffixes.end(),
+            inserter(setOfNonRequiredSuffixes, setOfNonRequiredSuffixes.begin() ) );
+        
+        // make sure it has all required suffixes
+        // (the set of suffixes should have shrunk by exactly the number of required
+        // suffixes on the set_difference just above)
+        const size_t szNumOfSuffixes = setOfAllSuffixes.size();
+        const size_t szNumOfNonRequiredSuffixes = setOfNonRequiredSuffixes.size();
+        if( (szNumOfSuffixes - szNumOfNonRequiredSuffixes) != setOfRequiredSuffixes.size() ) 
+        {
+            pTestRunner->OnError("Skipping this test because it's missing some files: " + sTestName);
+            mapTestNameToItsFiles.erase(test_it);
+            continue;
+        }
+
+        // all non-required suffixes should be in the optional set
+        if( ! includes( setOfOptionalSuffixes.begin(), setOfOptionalSuffixes.end(),
+            setOfNonRequiredSuffixes.begin(), setOfNonRequiredSuffixes.end() ) ) 
+        {
+            pTestRunner->OnError("Skipping this test because it has unexpected suffix(es): " + sTestName);
+            mapTestNameToItsFiles.erase(test_it);
+            continue;
+        }
+    }
+
+    // there should be at least one test to run
+    if( mapTestNameToItsFiles.empty() ) {
+        pTestRunner->OnError("There are no tests to run");
+        return;
+    }
+
+    // Now, actually run the tests
+    ITERATE(TMapTestNameToItsFiles, test_it, mapTestNameToItsFiles) {
+        const string & sTestName = test_it->first;
+        const ITestRunner::TMapSuffixToFile & mapSuffixToFile =
+            test_it->second;
+
+        cerr << "Running test: " << sTestName << endl;
+        pTestRunner->RunTest(sTestName, mapSuffixToFile);
+    }
+}
 
 END_SCOPE(unit_test_util)
 END_SCOPE(objects)

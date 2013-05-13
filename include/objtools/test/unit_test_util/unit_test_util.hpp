@@ -35,6 +35,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -188,6 +189,74 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodProtSeq(void);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodDeltaSeq(void);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetCDSFromGoodNucProtSet (CRef<objects::CSeq_entry> entry);
 
+class NCBI_UNIT_TEST_UTIL_EXPORT ITestRunner
+{
+public:
+    typedef map<string, CFile> TMapSuffixToFile;
+
+    /// This function is called for each test.
+    /// For example, let's say we have test_cases/foo/bar/baz/
+    /// with BasicTest.input.asn and BasicTest.expected_output.asn
+    /// (and files for other tests, which we'll ignore), then
+    /// this would have a mapping from "input.asn" to the file test_cases/foo/bar/baz/BasicTest.input.asn
+    /// and "expected_output.asn" to the file test_cases/foo/bar/baz/BasicTest.expected_output.asn
+    virtual void RunTest(const string & sTestNAme,
+        const TMapSuffixToFile & mapSuffixToFile ) = 0;
+
+    /// This is called when an error occurs, and if ITestRunner is using boost
+    /// it should indicate that using, for example, BOOST_ERROR.
+    virtual void OnError(const string & sErrorText) = 0;
+};
+
+/// Flags that control TraverseAndRunTestCases, if needed.
+enum ETraverseAndRunTestCasesFlags {
+    /// Overrides default behavior (which is to disregard files whose prefix is "README")
+    fTraverseAndRunTestCasesFlags_DoNOTIgnoreREADMEFiles = (1 << 0) 
+};
+typedef int TTraverseAndRunTestCasesFlags;
+
+/// This is for running data-driven test cases below the given top-level
+/// test directory.  In a given directory,
+/// each file is checked for its prefix and suffix, where the prefix is
+/// the part before the first '.' and the suffix is the part after.
+/// (e.g. "foo.input.asn" has prefix "foo" and suffix "input.asn").
+/// Files with the same prefix are assumed to belong to the same test.
+///
+/// There can be more than one test case in a test-case descendent dir and 
+/// test-cases is even permitted to have zero subdirectories and have all
+/// the files be at the top level (though this could get messy if you
+/// have many test cases)
+///
+/// Any errors are handled through ITestRunner::OnError except for a NULL
+/// ITestRunner which, by necessity, is handled by throwing an exception.
+///
+/// @param pTestRunner
+///   This class's "RunTest" func is called for each test.
+/// @param dirWithTestCases
+///   This is the directory holding the test cases.  Sub-directories of
+///   this are also checked for test-cases, although hidden subdirectories
+///   and files (that is, those starting with a period, such as ".svn") 
+///   are skipped.
+/// @param setOfRequiredSuffixes
+///   Each test must have exactly one file with the given suffix.  If any
+///   test is missing any required suffix, this function will halt before
+///   running any tests.   At least one required suffix must be specified.
+/// @param setOfOptionalSuffixes
+///   These are the suffixes permitted but not required for each test.
+/// @param setOfIgnoredSuffixes
+///   This is the set of suffixes that are just ignored and not passed
+///   to the pTestRunner.  If a file is found whose suffix is not
+///   in one of the "setOf[FOO]Suffixes" parameters, then an error
+///   will occur, except that files with prefix "README" are also ignored.
+/// @param fFlags
+///   This controls the behavior of the function (usually not needed).
+NCBI_UNIT_TEST_UTIL_EXPORT void TraverseAndRunTestCases(
+    ITestRunner *pTestRunner,
+    CDir dirWithTestCases,
+    const set<string> & setOfRequiredSuffixes,
+    const set<string> & setOfOptionalSuffixes = set<string>(),
+    const set<string> & setOfIgnoredSuffixes = set<string>(),
+    TTraverseAndRunTestCasesFlags fFlags = 0 );
 
 END_SCOPE(unit_test_util)
 END_SCOPE(objects);
