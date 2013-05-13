@@ -468,7 +468,7 @@ public:
 
     const string& AsString(void) const
     {
-        return IsNULL() ? kEmptyStr : m_WString;
+        return IsNULL() ? kEmptyStr : static_cast<const string&>(m_WString);
     }
 
     size_t Size(void) const
