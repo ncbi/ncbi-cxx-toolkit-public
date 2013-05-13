@@ -3,6 +3,8 @@
 # Meta-makefile (algo/align/splign)
 #################################
 
+SUB_PROJ = unit_test
+
 LIB_PROJ = xalgoalignsplign
 
 srcdir = @srcdir@
