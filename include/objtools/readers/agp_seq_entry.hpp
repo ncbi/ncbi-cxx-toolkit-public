@@ -30,6 +30,9 @@
  *
  */
 
+#ifndef __OBJTOOLS_READERS_AGP_SEQ_ENTRY__HPP_
+#define __OBJTOOLS_READERS_AGP_SEQ_ENTRY__HPP_
+
 #include <objtools/readers/agp_util.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -118,3 +121,5 @@ private:
 };
 
 END_NCBI_SCOPE
+
+#endif // end of "include-guard"

@@ -29,6 +29,9 @@
  *
  */
 
+#ifndef __OBJTOOLS_WRITERS_AGP_WRITE_HPP__
+#define __OBJTOOLS_WRITERS_AGP_WRITE_HPP__
+
 #include <corelib/ncbistd.hpp>
 
 #include <objmgr/seq_map.hpp>
@@ -119,3 +122,6 @@ AgpWrite(CNcbiOstream& os,
 
 
 END_NCBI_SCOPE
+
+
+#endif // end of "include-guard"
