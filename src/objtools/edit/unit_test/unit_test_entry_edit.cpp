@@ -167,7 +167,7 @@ NCBITEST_AUTO_INIT()
     // initialize the map of which files belong to which test
     CFileSorter file_sorter(&s_mapFunctionToVecOfTests);
 
-    CDir test_cases_dir("./test_cases");
+    CDir test_cases_dir("./entry_edit_test_cases");
     FindFilesInDir(test_cases_dir,
                    kEmptyStringVec, kEmptyStringVec,
                    file_sorter,
