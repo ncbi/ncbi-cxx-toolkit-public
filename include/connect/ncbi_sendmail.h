@@ -110,7 +110,7 @@ typedef struct {
  *  Which username to use when auto-generating (otherwise ignored)
  * @return
  *  Return value equals the argument "info" passed in.
- * @note It is allowed to pre-fill "info->host" (of the "info" being inited)
+ * @note It is allowed to pre-fill "info->from" (of the "info" being inited)
  *       with one of the above patterns, and pass it as the "from" parameter.
  * @note Unlike the username part of the return address, the hostname part is
  *       never truncated but dropped altogether if it does not fit.
@@ -135,7 +135,7 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
  * with sendmail are set using default values as described in
  * SendMailInfo_InitEx().
  * @note  Use of this call in out-of-house applications is discouraged as it is
- *        likely to fail because MTA communication parameters (set to their
+ *        likely to fail because the MTA communication parameters (set to their
  *        defaults, which are NCBI-specific) may not be suitable.
  * @param to
  *  Recipient list
@@ -178,7 +178,7 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * an additional header part  (otherwise, a standard header gets generated as
  * needed).  In this case, even if no additional headers are supplied, the body
  * must provide proper header / message text delimiter (an empty line), which
- * will not be automatically inserted in the no-header (aka "as-is") mode.
+ * will not be automatically inserted in the no-header (aka "as-is" mode).
  *
  * @param to
  *  Recipient list
