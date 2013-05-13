@@ -6,20 +6,20 @@ Bioseq-set ::= {
       },
       descr {
         update-date std {
-          year 2000,
-          month 1,
-          day 1
+          year 2013,
+          month 5,
+          day 13
         },
         create-date std {
-          year 2000,
-          month 1,
-          day 1
+          year 2013,
+          month 5,
+          day 13
         }
       },
       inst {
         repr delta,
         mol dna,
-        length 348,
+        length 458,
         ext delta {
           loc int {
             from 10,
@@ -52,6 +52,18 @@ Bioseq-set ::= {
             strand plus,
             id genbank {
               accession "U54470",
+              version 1
+            }
+          },
+          literal {
+            length 100
+          },
+          loc int {
+            from 5,
+            to 14,
+            strand plus,
+            id genbank {
+              accession "U54471",
               version 1
             }
           }
