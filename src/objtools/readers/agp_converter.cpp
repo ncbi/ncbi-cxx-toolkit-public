@@ -34,7 +34,7 @@
 
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/readers/agpconverter.hpp>
+#include <objtools/readers/agp_converter.hpp>
 
 #include <serial/objostr.hpp>
 #include <serial/objostrasn.hpp>

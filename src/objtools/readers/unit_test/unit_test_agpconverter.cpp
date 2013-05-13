@@ -45,7 +45,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
-#include <objtools/readers/agpconverter.hpp>
+#include <objtools/readers/agp_converter.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <map>
 
