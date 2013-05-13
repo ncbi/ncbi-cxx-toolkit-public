@@ -1,0 +1,10 @@
+Submit-block ::= {
+    contact {
+        name "J. Doe"
+    },
+    cit {
+        authors {
+            names ml { "Jean Doe" }
+        }
+    }
+}

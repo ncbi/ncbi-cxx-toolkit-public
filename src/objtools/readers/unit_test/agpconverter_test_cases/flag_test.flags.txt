@@ -1,0 +1,3 @@
+fOutputFlags_Fuzz100
+fOutputFlags_FastaId
+fOutputFlags_SetGapInfo
