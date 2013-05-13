@@ -181,7 +181,6 @@ void CAgpConverter::OutputAsBioseqSet(
 
     {{
         CObjectOStreamAsn obj_writer(ostrm);
-        obj_writer.SetSeparator(",\n");
 
         // Iterate over AGP files
         bool bFirstEntry = true;
@@ -202,6 +201,14 @@ void CAgpConverter::OutputAsBioseqSet(
                         eError_EntrySkipped,
                         "Entry skipped and reason probably given in a previous error" );
                     continue;
+                }
+
+
+                if( bFirstEntry ) {
+                    bFirstEntry = false;
+                } else {
+                    obj_writer.Flush();
+                    ostrm << "," << endl;
                 }
 
                 obj_writer.WriteObject(new_entry.GetPointer(), new_entry->GetThisTypeInfo());
