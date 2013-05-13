@@ -5,8 +5,7 @@
 
 APP_PROJ = unit_test_idmapper  unit_test_format_guess_ex  \
     unit_test_feature_table_reader unit_test_fasta_reader \
-    unit_test_agp_seq_entry 
-EXPENDABLE_APP_PROJ = unit_test_agpconverter
+    unit_test_agp_seq_entry unit_test_agpconverter
 PROJ_TAG = test
 
 srcdir = @srcdir@
