@@ -339,7 +339,8 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
             if ( result->Fetch() ) {
                 CDB_LongChar v;
                 result->GetItem(&v);
-                LOG_POST_X(5, "Connected to the server '" << v.Value() << "'");
+                LOG_POST_X(5, "Connected to the server '"
+                           << NStr::TruncateSpaces(v.Value()) << "'");
             }
         }
     }
