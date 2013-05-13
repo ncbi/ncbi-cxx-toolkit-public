@@ -133,16 +133,18 @@ static string s_ReadLine(FILE* fs)
     string str;
     for (;;) {
         char   buf[80];
-        char*  res = fgets(buf, sizeof(buf)-1, fs);
+        char*  res = fgets(buf, sizeof(buf) - 1, fs);
         size_t len = res ? strlen(res) : 0;
-        ERR_POST(Info << len << " byte(s) read from file"+string(":"+!len));
+        ERR_POST(Info << len << " byte(s) read from file" + string(":"+!len));
         if (!len) {
             break;
         }
         NcbiCerr.write(res, len);
         NcbiCerr << endl << flush;
         if (res[len - 1] == '\n') {
-            str += string(res, len - 1);
+            if (len-- > 1  &&  res[len - 1] == '\r')
+                len--;
+            str += string(res, len);
             break;
         }
         str += string(res, len);
@@ -151,7 +153,7 @@ static string s_ReadLine(FILE* fs)
 }
 
 
-// Read a line from pipe
+// Read line from a pipe
 static string s_ReadLine(CPipe& pipe)
 {
     string str;
@@ -164,6 +166,9 @@ static string s_ReadLine(CPipe& pipe)
             break;
         }
         if (c == '\n') {
+            SIZE_TYPE len = str.size();
+            if (len-- > 1  &&  str[len] == '\r')
+                str.resize(len);
             break;
         }
         str += c;
