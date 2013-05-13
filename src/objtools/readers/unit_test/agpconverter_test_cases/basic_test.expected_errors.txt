@@ -1,0 +1,1 @@
+eError_SuggestUsingFastaIdOption	** ID gb|U54475.1 contains a '|'; consider using the -fasta_id option

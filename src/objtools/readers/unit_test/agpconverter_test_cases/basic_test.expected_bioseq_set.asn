@@ -2,7 +2,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "BasicObj"
+        local str "gb|U54475.1"
       },
       descr {
         update-date std {

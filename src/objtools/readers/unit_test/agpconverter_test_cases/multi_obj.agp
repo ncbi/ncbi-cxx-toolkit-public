@@ -1,0 +1,14 @@
+BasicObj1	1	78	1	O	lcl|U54469.1	11	88	+
+BasicObj1	79	104	2	N	26	scaffold	yes	strobe
+BasicObj1	105	220	3	O	U54469.1	104	219	-
+BasicObj1	221	320	4	U	100	contig	no	na
+BasicObj1	321	348	5	O	U54470.1	21	48	+
+BasicObj1	349	448	6	N	100	scaffold	yes	map
+BasicObj1	449	458	7	O	U54471.1	6	15	+
+BasicObj2	1	78	1	O	lcl|U54469.1	11	88	+
+BasicObj2	79	104	2	N	26	scaffold	yes	strobe
+BasicObj2	105	220	3	O	U54469.1	104	219	-
+BasicObj2	221	320	4	U	100	contig	no	na
+BasicObj2	321	348	5	O	U54470.1	21	48	+
+BasicObj2	349	448	6	N	100	scaffold	yes	map
+BasicObj2	449	478	7	O	U54472.1	6	35	+
