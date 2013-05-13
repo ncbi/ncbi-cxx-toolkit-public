@@ -53,6 +53,7 @@ public:
         fOutputFlags_Fuzz100              = (1<<0), ///< For gaps of length 100, put an Int-fuzz = unk in the literal
         fOutputFlags_FastaId              = (1<<1), ///< Parse object ids (col. 1) as fasta-style ids if they contain '|'
         fOutputFlags_SetGapInfo           = (1<<2), ///< Set Seq-gap (gap type and linkage) in delta sequence.
+        fOutputFlags_AGPLenMustMatchOrig  = (1<<3), ///< When set, we give an error on AGP objects that don't have the same length as the original template.
         // if you add more, please update OutputFlagStringToEnum
 
         // this must be last
@@ -76,6 +77,7 @@ public:
         eError_SuggestUsingFastaIdOption,
         eError_AGPMessage,
         eError_AGPErrorCode,
+        eError_AGPLengthMismatchWithTemplateLength,
         // if you add more, please update ErrorStringToEnum
 
         // this must be last

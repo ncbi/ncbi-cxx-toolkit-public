@@ -302,13 +302,14 @@ CAgpConverter::TOutputFlags
 CAgpConverter::OutputFlagStringToEnum(const string & sEnumAsString)
 {
     // check if this func has fallen out of date
-    _ASSERT( (fOutputFlags_LAST_PLUS_ONE - 1) == fOutputFlags_SetGapInfo );
+    _ASSERT( (fOutputFlags_LAST_PLUS_ONE - 1) == fOutputFlags_AGPLenMustMatchOrig );
 
     typedef SStaticPair<const char*, CAgpConverter::TOutputFlags> TStrFlagPair;
     static const TStrFlagPair kStrFlagPairs[] = {
+        STRING_AND_VAR_PAIR(fOutputFlags_AGPLenMustMatchOrig),
         STRING_AND_VAR_PAIR(fOutputFlags_FastaId),
         STRING_AND_VAR_PAIR(fOutputFlags_Fuzz100),
-        STRING_AND_VAR_PAIR(fOutputFlags_SetGapInfo)
+        STRING_AND_VAR_PAIR(fOutputFlags_SetGapInfo),
     };
     typedef const CStaticPairArrayMap<const char*, CAgpConverter::TOutputFlags, PNocase_CStr> TStrFlagMap;
     DEFINE_STATIC_ARRAY_MAP(TStrFlagMap, kStrFlagMap, kStrFlagPairs);
@@ -328,11 +329,12 @@ CAgpConverter::EError
 CAgpConverter::ErrorStringToEnum(const string & sEnumAsString)
 {
     // check if this func has fallen out of date
-    _ASSERT( eError_END == (eError_AGPErrorCode + 1) );
+    _ASSERT( eError_END == (eError_AGPLengthMismatchWithTemplateLength + 1) );
 
     typedef SStaticPair<const char*, CAgpConverter::EError> TStrErrorPair;
     static const TStrErrorPair kStrErrorPairs[] = {
         STRING_AND_VAR_PAIR(eError_AGPErrorCode),
+        STRING_AND_VAR_PAIR(eError_AGPLengthMismatchWithTemplateLength),
         STRING_AND_VAR_PAIR(eError_AGPMessage),
         STRING_AND_VAR_PAIR(eError_ChromosomeFileBadFormat),
         STRING_AND_VAR_PAIR(eError_ChromosomeIsInconsistent),
@@ -406,6 +408,32 @@ CAgpConverter::x_InitializeAndCheckCopyOfTemplate(
         x_InitializeCopyOfTemplate(agp_bioseq,
         unparsed_id_str,
         out_id_str );
+
+
+    if( m_fOutputFlags & fOutputFlags_AGPLenMustMatchOrig ) {
+        // calculate the original template's length
+        const TSeqPos uOrigBioseqLen = ( m_pTemplateBioseq->IsSetLength() ?
+            m_pTemplateBioseq->GetLength() :
+            0 );
+
+        // calculate the new bioseq's length
+        const TSeqPos uAGPBioseqLen = (
+            agp_bioseq.IsSetLength() ?
+            agp_bioseq.GetLength() :
+            0 );
+
+        if( uOrigBioseqLen != uAGPBioseqLen ) {
+            m_pErrorHandler->HandleError(
+                eError_AGPLengthMismatchWithTemplateLength,
+                "** Entry " + out_id_str + " has mismatch, but will "
+                "be written anyway: "
+                "fOutputFlags_AGPLenMustMatchOrig was set and the entry's "
+                "length is " +
+                NStr::NumericToString(uAGPBioseqLen) + 
+                " but the original template's length is " + 
+                NStr::NumericToString(uOrigBioseqLen) );
+        }
+    }
 
     // if requested, put an Int-fuzz = unk for
     // all literals of length 100
