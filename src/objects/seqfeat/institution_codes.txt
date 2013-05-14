@@ -3,6 +3,7 @@ AA	s	Ministry of Science, Academy of Sciences
 AAH	s	Arnold Arboretum, Harvard University
 AAPI	s	Plant Industry Laboratory
 AAR	s	Reliquae Aaronsohnianae
+AARI	s	Anatolian Agricultural Research Institute
 AAS	s	British Antarctic Survey
 AAU	s	University of Aarhus, Institute of Biological Sciences
 AAU<ETH>	s	Addis Ababa University, Department of Biology
@@ -701,6 +702,7 @@ CAPM	c	Collection of Animal Pathogenic Microorganisms
 CAR	s	Museo de Historia Natural La Salle, Departamento de Botanica
 CARD	s	Caribbean Agricultural Research Institute
 CARE	s	Caribbean Epidemiology Centre
+CARI	s	Cukurova Agricultural Research Institute
 CARL	s	Carleton College, Biology Department
 CARM	s	Carmarthen County Museum
 CARS	s	University of Surinam, Center for Agricultural Research
@@ -1168,6 +1170,7 @@ CREG	s	Instituto Tecnologico Agropecuario de Jalisco
 CRGF	c	Collection de Recursos Geneticos Fungicos, Instituto de Ecologia y Systematica
 CRH	s	Centre de Recherche en Hydrobiologie
 CRI	s	Universidade do Extremo Sul Catarinense, Bairro Universitario
+CRIFC	s	Central Research Institute for Field Crops in Turkey
 CRK	s	University College, Plant Science Department
 CRL	c	Centro de Referencia Para Lactobacilos
 CRLA	s	Crater Lake National Park, Museum and Archives Collections
@@ -5146,6 +5149,7 @@ SAR	s	Department of Forestry
 SARA	s	Zemaljski Muzej Bosne I. Herzegovine
 SARAT	s	Department of Morphology and Systematic Botany
 SARC	s	Roanoke College, Biology Department
+SARI	s	Sakarya Agricultural Research Institute
 SAS	s	Sammlung Arnhardt des Museums Schloss Wilhelmsburg Schmalkalden
 SASK	s	University of Saskatchewan, Plant Sciences Department
 SASSA	s	Universita di Sassari, Dipartimento di Scienze del Farmaco
@@ -5233,6 +5237,7 @@ SDSU<USA-CA>:Herps	s	San Diego State University, Museum of Biodiversity Amphibia
 SDSU<USA-CA>:Mammals	s	San Diego State University, Museum of Biodiversity Mammal Collection
 SDSU<USA-SD>	s	Severin-McDaniel Insect Collection
 SDU	s	University of South Dakota, Department of Biology
+SEAARI	s	South Eastern Anatolian Agricultural Research Institute
 SEAC	s	Estacion Experimental de Agricolas de la Campara
 SEAMEO	c	Seameo-Biotrop
 SEAN	s	Museo Entomologico
