@@ -35,8 +35,10 @@
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/items/locus_item.hpp>
@@ -91,6 +93,13 @@ bool s_ShowContig(CBioseqContext& ctx)
 }
 
 
+// FOR_EACH_SEQID_ON_BIOSEQ_HANDLE
+// CBioseq_Handle& as input,
+//  dereference with CSeq_id_Handle sid = *Itr;
+
+#define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
+ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
+
 void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
     CConstRef<IFlatItem> item;
@@ -133,7 +142,30 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     GATHER_BLOCK(Project, CGenomeProjectItem);
 
     if ( ctx.IsProt() ) {
-        GATHER_BLOCK(Dbsource, CDBSourceItem);
+        bool show_dbsource = true;
+        CBioseq_Handle& bsh = ctx.GetHandle();
+        FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
+            CSeq_id_Handle sid = *sid_itr;
+            switch (sid.Which()) {
+                case NCBI_SEQID(Other):
+                {
+                    CConstRef<CSeq_id> id = sid.GetSeqId();
+                    const CTextseq_id& tsid = *id->GetTextseq_Id ();
+                    if (tsid.IsSetAccession()) {
+                        const string& acc = tsid.GetAccession ();
+                        if (NStr::StartsWith (acc, "WP_")) {
+                            show_dbsource = false;
+                        }
+                    }
+                    break;
+                }
+                default:
+                    break;
+           }
+        }
+        if (show_dbsource) {
+            GATHER_BLOCK(Dbsource, CDBSourceItem);
+        }
     }
     GATHER_BLOCK(Keywords, CKeywordsItem);
     if ( ctx.IsPart() ) {
