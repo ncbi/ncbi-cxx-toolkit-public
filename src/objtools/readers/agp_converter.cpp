@@ -267,7 +267,7 @@ void CAgpConverter::OutputOneFileForEach(
                 // wrap in seq-submit before writing
                 CRef<CSeq_submit> new_submit( new CSeq_submit );
                 new_submit->SetSub( *SerialClone(*m_pSubmitBlock) );
-                new_submit->SetData().SetEntrys().front().Reset(new_entry.GetPointer());
+                new_submit->SetData().SetEntrys().push_back(new_entry);
                 pObjectToPrint = new_submit;
             } else {
                 // don't need to wrap the seq-entry in a seq-submit

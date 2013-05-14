@@ -1,0 +1,119 @@
+Bioseq-set ::= { seq-set {
+        seq {
+            id {
+                local str "gb|U54475.1"
+            },
+            descr {
+                comment "Some random comment",
+                title "SOME_DEFLINE",
+                source {
+                    org {
+                        taxname "Panthera leo",
+                        common "lion",
+                        db {
+                            {
+                                db "taxon",
+                                tag id 9689
+                            }
+                        },
+                        orgname {
+                            name binomial {
+                                genus "Panthera",
+                                species "leo"
+                            },
+                            mod {
+                                {
+                                    subtype strain,
+                                    subname "Some STRAIN OF LION"
+                                }
+                            },
+                            lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Laurasiatheria; Carnivora; Feliformia;
+ Felidae; Pantherinae; Panthera",
+                            gcode 1,
+                            mgcode 2,
+                            div "MAM",
+                            pgcode 0
+                        }
+                    },
+                    subtype {
+                        {
+                            subtype clone-lib,
+                            name "TEST_ARG_CL"
+                        },
+                        {
+                            subtype chromosome,
+                            name "TEST_ARG_CM"
+                        },
+                        {
+                            subtype clone,
+                            name "TEST_ARG_CN"
+                        },
+                        {
+                            subtype haplotype,
+                            name "TEST_ARG_HT"
+                        },
+                        {
+                            subtype other,
+                            name "TEST_ARG_SC"
+                        },
+                        {
+                            subtype sex,
+                            name "TEST_ARG_SEX"
+                        }
+                    }
+                },
+                update-date std { year 2000 , month 1, day 1 },
+                create-date std { year 2000 , month 1, day 1 }
+            },
+            inst {
+                repr delta,
+                mol dna,
+                length 458,
+                ext delta {
+                    loc int {
+                        from 10,
+                        to 87,
+                        strand plus,
+                        id local str "foo"
+                    },
+                    literal {
+                        length 26
+                    },
+                    loc int {
+                        from 103,
+                        to 218,
+                        strand minus,
+                        id genbank {
+                            accession "U54469",
+                            version 1
+                        }
+                    },
+                    literal {
+                        length 100,
+                        fuzz lim unk
+                    },
+                    loc int {
+                        from 20,
+                        to 47,
+                        strand plus,
+                        id genbank {
+                            accession "U54470",
+                            version 1
+                        }
+                    },
+                    literal {
+                        length 100
+                    },
+                    loc int {
+                        from 5,
+                        to 14,
+                        strand plus,
+                        id genbank {
+                            accession "U54471",
+                            version 1
+                        }
+                    }
+                }
+            }
+        }} }

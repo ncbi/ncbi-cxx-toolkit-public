@@ -1,0 +1,30 @@
+Seq-entry ::= seq {
+    id {
+        local str "foo"
+    },
+    descr {
+        comment "Some random comment"
+    },
+    inst {
+        repr raw,
+        mol dna,
+        length 100,
+        seq-data iupacna "AAAAAAAAAATTTTTTTTTTTTTTTAACCCCCCCCCCCCCCAAAAAAGGGGGGGGGGGGGGGGGGGGGGGGGGAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    annot {
+        {
+            data ftable {
+                {
+                    data gene {
+                        locus "THE_GENE"
+                    },
+                    location int {
+                        from 10,
+                        to   20,
+                        id local str "foo"
+                    }
+                }
+            }
+        }
+    }
+}

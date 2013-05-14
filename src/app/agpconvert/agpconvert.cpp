@@ -76,6 +76,7 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -121,13 +122,25 @@ namespace {
 class CAgpconvertApplication : public CNcbiApplication
 {
 public:
+
+    CAgpconvertApplication(void) ;
+
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
 
 private:
 
-    class CAsnvalRunner : public CAgpConverter::IFileWrittenCallback {
+    class CCustomErrorHandler : public CAgpConverter::CErrorHandler
+    {
+    public:
+        virtual void HandleError(CAgpConverter::EError eError, const string & sMessage ) const;
+    };
+
+    CRef<CCustomErrorHandler> m_pCustomErrorHandler;
+
+    class CAsnvalRunner : public CAgpConverter::IFileWrittenCallback 
+    {
     public:
         // runs asnval on the file
         virtual void Notify(const string & file);
@@ -145,6 +158,13 @@ private:
     void x_HandleTaxArgs( CRef<CSeqdesc> source_desc );
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// Constructor
+
+CAgpconvertApplication::CAgpconvertApplication(void) :
+    m_pCustomErrorHandler( new CCustomErrorHandler )
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
@@ -243,6 +263,8 @@ void CAgpconvertApplication::Init(void)
                              CArgDescriptions::eInputFile);
     arg_desc->AddFlag("gap-info",
                       "Set Seq-gap (gap type and linkage) in delta sequence");
+    arg_desc->AddFlag("len-check",
+        "Die if AGP's length does not match the length of the original template.");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -354,10 +376,14 @@ int CAgpconvertApplication::Run(void)
     if( args["gap-info"] ) {
         fAgpConvertOutputFlags |= CAgpConverter::fOutputFlags_SetGapInfo;
     }
+    if( args["len-check"] ) {
+        fAgpConvertOutputFlags |= CAgpConverter::fOutputFlags_AGPLenMustMatchOrig;
+    }
     CAgpConverter agpConvert(
         CConstRef<CBioseq>( &ent_templ->GetSeq() ),
-        ( submit_templ->IsSetSub() ? &submit_templ->GetSub() : NULL ),
-        fAgpConvertOutputFlags );
+        ( submit_templ->IsEntrys() ? &submit_templ->GetSub() : NULL ),
+        fAgpConvertOutputFlags,
+        CRef<CAgpConverter::CErrorHandler>(m_pCustomErrorHandler.GetPointer()) );
 
     // if validating against a file containing
     // sequence components, load it and make
@@ -388,6 +414,10 @@ int CAgpconvertApplication::Run(void)
             cout,
             vecAgpFileNames );
     } else {
+        if( ! args["outdir"] ) {
+            throw runtime_error("Please specify -stdout or -outdir");
+        }
+
         CAsnvalRunner asnval_runner;
         agpConvert.OutputOneFileForEach(
             args["outdir"].AsString(),
@@ -409,6 +439,7 @@ CAgpconvertApplication::CAsnvalRunner::Notify(const string & file)
     // command and args
     const char * pchCommand = "asnval";
     const char * asnval_argv[] = {
+        pchCommand,
         "-Q", "2",
         "-o", "stdout", 
         "-i", file.c_str(), 
@@ -442,8 +473,8 @@ void CAgpconvertApplication::x_LoadTemplate(
     // consider it some kind of sequence identifier
     if( ! CDirEntry(sTemplateLocation).IsFile() ) {
         // see if this is blatantly not a sequence identifier
-        if( ! CRegexpUtil(sTemplateLocation).Exists("^[A-Za-z0-9_|]+$") ) {
-            throw runtime_error("This is not a valid sequence identifier");
+        if( ! CRegexpUtil(sTemplateLocation).Exists("^[A-Za-z0-9_|]+(\\.[0-9]+)?$") ) {
+            throw runtime_error("This is not a valid sequence identifier: " + sTemplateLocation);
         }
 
         // try to load from genbank
@@ -537,7 +568,7 @@ void CAgpconvertApplication::x_LoadTemplate(
     }
 
     // for submit types, pull out the seq-entry inside and remember it
-    if( out_submit_templ->IsSetData() ) {
+    if( out_submit_templ->IsEntrys() ) {
         out_ent_templ = out_submit_templ->SetData().SetEntrys().front();
     }
 
@@ -580,7 +611,7 @@ void CAgpconvertApplication::x_LoadTemplate(
         }
     }
 
-    if ( out_submit_templ->IsSetData() ) {
+    if ( out_submit_templ->IsEntrys() ) {
         // Take Seq-submit.sub.cit and put it in the Bioseq
         CRef<CPub> pub(new CPub);
         pub->SetSub().Assign(out_submit_templ->GetSub().GetCit());
@@ -721,6 +752,45 @@ void CAgpconvertApplication::x_HandleTaxArgs( CRef<CSeqdesc> source_desc )
         source_desc->SetSource().SetOrg().Assign(*inp_orgref);
     } else {
         source_desc->SetSource().SetOrg().Assign(nt_result->GetOrg());
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// HandleError
+
+void 
+CAgpconvertApplication::CCustomErrorHandler::HandleError(
+    CAgpConverter::EError eError, const string & sMessage ) const
+{
+    // assert that this function includes all possibilities
+    _ASSERT( CAgpConverter::eError_END ==
+        (CAgpConverter::eError_AGPLengthMismatchWithTemplateLength + 1) );
+
+    switch(eError) {
+    // these errors are instantly fatal
+    case CAgpConverter::eError_OutputDirNotFoundOrNotADir:
+    case CAgpConverter::eError_ComponentNotFound:
+    case CAgpConverter::eError_ComponentTooShort:
+    case CAgpConverter::eError_ChromosomeMapIgnoredBecauseChromosomeSubsourceAlreadyInTemplate:
+    case CAgpConverter::eError_ChromosomeFileBadFormat:
+    case CAgpConverter::eError_ChromosomeIsInconsistent:
+    case CAgpConverter::eError_WrongNumberOfSourceDescs:
+    case CAgpConverter::eError_EntrySkippedDueToFailedComponentValidation:
+    case CAgpConverter::eError_EntrySkipped:
+    case CAgpConverter::eError_AGPErrorCode:
+    case CAgpConverter::eError_AGPLengthMismatchWithTemplateLength:
+        NCBI_USER_THROW_FMT("ERROR: " << sMessage);
+        break;
+
+    // these errors are just written and we continue:
+    case CAgpConverter::eError_SubmitBlockIgnoredWhenOneBigBioseqSet:
+    case CAgpConverter::eError_SuggestUsingFastaIdOption:
+    case CAgpConverter::eError_AGPMessage:
+        cerr << sMessage << endl;
+        break;
+    default:
+        _TROUBLE;
+        break;
     }
 }
 

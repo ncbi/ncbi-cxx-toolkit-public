@@ -15,4 +15,8 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 REQUIRES = objects algo
 
-WATCHERS = xiangcha
+CHECK_CMD  = ./test_agpconvert.sh
+CHECK_COPY = test_agpconvert.sh test_data
+CHECK_REQUIRES = unix in-house-resources -Cygwin
+
+WATCHERS = xiangcha kornbluh
