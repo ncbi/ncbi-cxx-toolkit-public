@@ -1075,11 +1075,13 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         bool is_embl = false;
         bool is_ddbj = false;
         bool is_refseq = false;
+        bool is_wp = false;
         bool is_gibbmt = false;
         bool is_gibbsq = false;
         bool is_patent = false;
         FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
-            switch ((*id_it)->Which()) {
+            const CSeq_id& sid = **id_it;
+            switch (sid.Which()) {
                 case CSeq_id::e_Genbank:
                     is_genbank = true;
                     break;
@@ -1090,7 +1092,16 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                     is_ddbj = true;
                     break;
                 case CSeq_id::e_Other:
-                    is_refseq = true;
+                    {
+                        is_refseq = true;
+                        const CTextseq_id* tsid = sid.GetTextseq_Id ();
+                        if (tsid != NULL && tsid->IsSetAccession()) {
+                            const string& acc = tsid->GetAccession ();
+                            if (NStr::StartsWith (acc, "WP_")) {
+                                is_wp = true;
+                            }
+                        }
+                    }
                     break;
                 case CSeq_id::e_Gibbmt:
                     is_gibbmt = true;
@@ -1106,7 +1117,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
             }
         }
         if ((is_genbank || is_embl || is_ddbj || is_refseq)
-            && !is_gibbmt && !is_gibbsq && !is_patent) {
+            && !is_gibbmt && !is_gibbsq && !is_patent && !is_wp) {
             PostErr(eDiag_Error, eErr_SEQ_PKG_OrphanedProtein,
                     "Orphaned stand-alone protein", seq);
         }
