@@ -368,39 +368,43 @@ inline CJsonIterator::operator bool()
     return m_Impl->IsValid();
 }
 
+/// Exception class for use by CJsonNode.
+class NCBI_XCONNECT_EXPORT CJsonOverUTTPException : public CException
+{
+public:
+    enum EErrCode {
+        eUTTPFormatError,
+        eChunkContinuationExpected,
+        eUnexpectedEOM,
+        eUnexpectedTrailingToken,
+        eObjectKeyMustBeString,
+        eUnexpectedClosingBracket,
+        eUnknownControlSymbol,
+    };
+
+    virtual const char* GetErrCodeString() const;
+
+    NCBI_EXCEPTION_DEFAULT(CJsonOverUTTPException, CException);
+};
+
 class NCBI_XCONNECT_EXPORT CJsonOverUTTPReader
 {
 public:
     typedef list<CJsonNode> TNodeStack;
 
-    enum EParsingEvent {
-        // These two constants indicate success and are only
-        // used internally.
-        eEndOfMessage,
-        eNextBuffer,
-
-        // These constants indicate different parsing error
-        // conditions and are used as process return codes.
-        eParsingError = 20,
-        eUTTPFormatError = 21,
-        eChunkContinuationExpected = 22,
-        eUnexpectedEOM = 23,
-        eHashKeyMustBeString = 24,
-        eUnexpectedClosingBracket = 25,
-        eUnknownControlSymbol = 26,
-        eMessageTooLong = 27,
-    };
-
-    CJsonOverUTTPReader(CJsonNode::TInstance root_node);
-    EParsingEvent ProcessParsingEvents(CUTTPReader& reader);
+    CJsonOverUTTPReader();
+    bool ReadMessage(CUTTPReader& reader);
     const CJsonNode GetMessage() const;
-    void Reset(CJsonNode::TInstance root_node);
+    void Reset();
 
 private:
+    bool x_AddNewNode(CJsonNode::TInstance new_node);
+
     enum {
-        eInitialState,
+        eExpectNextToken,
         eReadingString,
-        eReadingDouble
+        eReadingDouble,
+        eMessageComplete
     } m_State;
     TNodeStack m_NodeStack;
     CJsonNode m_CurrentNode;
@@ -420,21 +424,15 @@ inline const CJsonNode CJsonOverUTTPReader::GetMessage() const
 class NCBI_XCONNECT_EXPORT CJsonOverUTTPWriter
 {
 public:
-    CJsonOverUTTPWriter(CUTTPWriter& writer) :
-        m_UTTPWriter(writer)
+    CJsonOverUTTPWriter(CUTTPWriter& writer) : m_UTTPWriter(writer)
     {
     }
 
-    void SetOutputMessage(const CJsonNode& root_node);
-    bool ContinueWithReply();
-    void GetOutputBuffer(const char** output_buffer, size_t* output_buffer_size)
-    {
-        m_UTTPWriter.GetOutputBuffer(output_buffer, output_buffer_size);
-    }
-    bool NextOutputBuffer()
-    {
-        return m_UTTPWriter.NextOutputBuffer();
-    }
+    bool WriteMessage(const CJsonNode& root_node);
+    bool CompleteMessage();
+    void GetOutputBuffer(const char** output_buffer,
+            size_t* output_buffer_size);
+    bool NextOutputBuffer();
 
 private:
     struct SOutputStackFrame {
@@ -444,7 +442,9 @@ private:
 
     typedef list<SOutputStackFrame> TOutputStack;
 
-    bool SendNode(const CJsonNode& node);
+    bool x_SendNode(const CJsonNode& node);
+    void x_PushNode(const CJsonNode& node);
+    void x_PopNode();
 
     CUTTPWriter& m_UTTPWriter;
 
@@ -453,6 +453,17 @@ private:
     double m_Double;
     bool m_SendHashValue;
 };
+
+inline void CJsonOverUTTPWriter::GetOutputBuffer(
+        const char** output_buffer, size_t* output_buffer_size)
+{
+    m_UTTPWriter.GetOutputBuffer(output_buffer, output_buffer_size);
+}
+
+inline bool CJsonOverUTTPWriter::NextOutputBuffer()
+{
+    return m_UTTPWriter.NextOutputBuffer();
+}
 
 END_NCBI_SCOPE
 

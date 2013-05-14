@@ -87,7 +87,7 @@ def clientMain():
     sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
     sock.connect( ( host, port ) )
 
-    nst = json_over_uttp.MessageExchange( sock, sock, 'nstconsole' )
+    nst = json_over_uttp.MessageExchange( sock, sock )
 
     # Main loop
     userInput = ""
@@ -134,7 +134,7 @@ def checkIncomingMessage( sock, nst ):
             sys.exit( errno.ECONNRESET )
         raise
 
-    response = nst.receive({})
+    response = nst.receive()
     printMessage( "Message from server", response )
     return
 
@@ -366,7 +366,7 @@ def exchange( nst, message ):
 
     message[ "SN" ] = commandSN
     printMessage( "Message to server", message )
-    response = nst.exchange( message, {} )
+    response = nst.exchange( message )
     printMessage( "Message from server", response )
     return
 

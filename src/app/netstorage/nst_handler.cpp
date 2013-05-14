@@ -79,7 +79,6 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
     : m_Server(server),
       m_ReadBuffer(NULL),
       m_ReadMode(CNetStorageHandler::eReadMessages),
-      m_JSONReader(CJsonNode::NewObjectNode()),
       m_WriteBuffer(NULL),
       m_JSONWriter(m_UTTPWriter),
       m_ByeReceived(false),
@@ -159,36 +158,34 @@ void CNetStorageHandler::OnRead(void)
 
     if (m_ReadMode == eReadMessages ||
             x_ReadRawData(m_UTTPReader.GetNextEvent())) {
-        CJsonOverUTTPReader::EParsingEvent ret_code;
+        try {
+            while (m_JSONReader.ReadMessage(m_UTTPReader)) {
 
-        while ((ret_code = m_JSONReader.ProcessParsingEvents(m_UTTPReader)) ==
-                CJsonOverUTTPReader::eEndOfMessage) {
+                if (!m_JSONReader.GetMessage().IsObject()) {
+                    // All the incoming objects must be dictionaries
+                    x_SetConnRequestStatus(eStatus_BadRequest);
+                    m_Server->CloseConnection(&GetSocket());
+                    return;
+                }
 
-            if (!m_JSONReader.GetMessage().IsObject()) {
-                // All the incoming objects must be dictionaries
-                x_SetConnRequestStatus(eStatus_BadRequest);
-                m_Server->CloseConnection(&GetSocket());
-                return;
+                size_t  raw_data_size = 0;
+                x_OnMessage(m_JSONReader.GetMessage(), &raw_data_size);
+                m_FirstMessage = false;
+                m_JSONReader.Reset();
+                if (raw_data_size > 0 &&
+                        !x_ReadRawData(m_UTTPReader.ReadRawData(raw_data_size)))
+                    break;
             }
-
-            size_t  raw_data_size = 0;
-            x_OnMessage(m_JSONReader.GetMessage(), &raw_data_size);
-            m_FirstMessage = false;
-            m_JSONReader.Reset(CJsonNode::NewObjectNode());
-            if (raw_data_size > 0 &&
-                    !x_ReadRawData(m_UTTPReader.ReadRawData(raw_data_size)))
-                break;
         }
-
-        if (ret_code != CJsonOverUTTPReader::eNextBuffer) {
+        catch (CJsonOverUTTPException& e) {
             // Parsing error
             if (!m_FirstMessage) {
                 // The systems try to attack all the servers and they send
                 // provocative messages. If the very first unparsable message
                 // received then it does not make sense even to log it to avoid
                 // excessive messages in AppLog.
-                ERR_POST("Incoming message parsing error (error code " <<
-                         int(ret_code) << "). The connection will be closed.");
+                ERR_POST("Incoming message parsing error. " << e <<
+                        " The connection will be closed.");
             }
             x_SetConnRequestStatus(eStatus_BadRequest);
             m_Server->CloseConnection(&GetSocket());
@@ -218,10 +215,10 @@ void CNetStorageHandler::OnWrite(void)
             m_OutputQueue.erase(m_OutputQueue.begin());
         }
 
-        m_JSONWriter.SetOutputMessage(message);
-
-        while (m_JSONWriter.ContinueWithReply())
-            x_SendOutputBuffer();
+        if (!m_JSONWriter.WriteMessage(message))
+            do
+                x_SendOutputBuffer();
+            while (!m_JSONWriter.CompleteMessage());
 
         x_SendOutputBuffer();
     }
@@ -449,13 +446,12 @@ void CNetStorageHandler::x_OnData(
 
 EIO_Status CNetStorageHandler::x_SendSyncMessage(const CJsonNode & message)
 {
-    m_JSONWriter.SetOutputMessage(message);
-
-    while (m_JSONWriter.ContinueWithReply()) {
-        EIO_Status      status = x_SendOutputBuffer();
-        if (status != eIO_Success)
-            return status;
-    }
+    if (!m_JSONWriter.WriteMessage(message))
+        do {
+            EIO_Status      status = x_SendOutputBuffer();
+            if (status != eIO_Success)
+                return status;
+        } while (!m_JSONWriter.CompleteMessage());
 
     return x_SendOutputBuffer();
 }
@@ -486,7 +482,7 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
 
     do {
         m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
-        for (;;) {
+        while (output_buffer_size > 0) {
             EIO_Status  status = GetSocket().Write(output_buffer,
                                                    output_buffer_size,
                                                    &bytes_written);
@@ -525,9 +521,6 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
                 m_Server->CloseConnection(&GetSocket());
                 return status;
             }
-
-            if (bytes_written == output_buffer_size)
-                break;
 
             output_buffer += bytes_written;
             output_buffer_size -= bytes_written;

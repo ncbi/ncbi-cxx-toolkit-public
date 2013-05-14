@@ -254,7 +254,7 @@ CJsonNode::ENodeType CJsonNode::GetNodeType() const
 struct SJsonObjectIterator : public SJsonIteratorImpl
 {
     SJsonObjectIterator(SJsonObjectNodeImpl* container) :
-        m_Containter(container),
+        m_Container(container),
         m_Iterator(container->m_Object.begin())
     {
     }
@@ -265,7 +265,7 @@ struct SJsonObjectIterator : public SJsonIteratorImpl
     virtual bool IsValid() const;
 
     CRef<SJsonObjectNodeImpl,
-            CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Containter;
+            CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Container;
     TJsonNodeMap::iterator m_Iterator;
 };
 
@@ -283,19 +283,18 @@ bool SJsonObjectIterator::Next()
 {
     _ASSERT(IsValid());
 
-    return ++m_Iterator != m_Containter->m_Object.end();
+    return ++m_Iterator != m_Container->m_Object.end();
 }
 
 bool SJsonObjectIterator::IsValid() const
 {
-    return m_Iterator
-        != const_cast<TJsonNodeMap&>(m_Containter->m_Object).end();
+    return m_Iterator != const_cast<TJsonNodeMap&>(m_Container->m_Object).end();
 }
 
 struct SJsonArrayIterator : public SJsonIteratorImpl
 {
     SJsonArrayIterator(SJsonArrayNodeImpl* container) :
-        m_Containter(container),
+        m_Container(container),
         m_Iterator(container->m_Array.begin())
     {
     }
@@ -306,7 +305,7 @@ struct SJsonArrayIterator : public SJsonIteratorImpl
     virtual bool IsValid() const;
 
     CRef<SJsonArrayNodeImpl,
-            CNetComponentCounterLocker<SJsonArrayNodeImpl> > m_Containter;
+            CNetComponentCounterLocker<SJsonArrayNodeImpl> > m_Container;
     TJsonNodeVector::iterator m_Iterator;
 };
 
@@ -318,19 +317,19 @@ SJsonNodeImpl* SJsonArrayIterator::GetNode() const
 const string& SJsonArrayIterator::GetKey() const
 {
     NCBI_THROW(CJsonException, eInvalidNodeType,
-            "Cannot get a key for an array iterator.");
+            "Cannot get a key for an array iterator");
 }
 
 bool SJsonArrayIterator::Next()
 {
     _ASSERT(IsValid());
 
-    return ++m_Iterator != m_Containter->m_Array.end();
+    return ++m_Iterator != m_Container->m_Array.end();
 }
 
 bool SJsonArrayIterator::IsValid() const
 {
-    return m_Iterator != m_Containter->m_Array.end();
+    return m_Iterator != m_Container->m_Array.end();
 }
 
 SJsonIteratorImpl* CJsonNode::Iterate() const
@@ -519,9 +518,30 @@ bool CJsonNode::AsBoolean() const
         m_Impl.GetPointerOrNull())->m_Boolean;
 }
 
-CJsonOverUTTPReader::CJsonOverUTTPReader(CJsonNode::TInstance root_node) :
-    m_State(eInitialState),
-    m_CurrentNode(root_node),
+const char* CJsonOverUTTPException::GetErrCodeString() const
+{
+    switch (GetErrCode()) {
+    case eUTTPFormatError:
+        return "eUTTPFormatError";
+    case eChunkContinuationExpected:
+        return "eChunkContinuationExpected";
+    case eUnexpectedEOM:
+        return "eUnexpectedEOM";
+    case eUnexpectedTrailingToken:
+        return "eUnexpectedTrailingToken";
+    case eObjectKeyMustBeString:
+        return "eObjectKeyMustBeString";
+    case eUnexpectedClosingBracket:
+        return "eUnexpectedClosingBracket";
+    case eUnknownControlSymbol:
+        return "eUnknownControlSymbol";
+    default:
+        return CException::GetErrCodeString();
+    }
+}
+
+CJsonOverUTTPReader::CJsonOverUTTPReader() :
+    m_State(eExpectNextToken),
     m_HashValueIsExpected(false)
 {
 }
@@ -532,14 +552,13 @@ CJsonOverUTTPReader::CJsonOverUTTPReader(CJsonNode::TInstance root_node) :
 #define DOUBLE_PREFIX 'd'
 #endif
 
-CJsonOverUTTPReader::EParsingEvent
-    CJsonOverUTTPReader::ProcessParsingEvents(CUTTPReader& reader)
+bool CJsonOverUTTPReader::ReadMessage(CUTTPReader& reader)
 {
     for (;;)
         switch (reader.GetNextEvent()) {
         case CUTTPReader::eChunkPart:
             switch (m_State) {
-            case eInitialState:
+            case eExpectNextToken:
                 m_State = eReadingString;
                 m_CurrentChunk.assign(reader.GetChunkPart(),
                         reader.GetChunkPartSize());
@@ -548,92 +567,102 @@ CJsonOverUTTPReader::EParsingEvent
                 m_CurrentChunk.append(reader.GetChunkPart(),
                         reader.GetChunkPartSize());
                 break;
-            default: /* case eReadingDouble: */
+            case eReadingDouble:
+                // The underlying transport protocol guarantees
+                // that m_Double boundaries will not be exceeded.
                 memcpy(m_DoublePtr, reader.GetChunkPart(),
                         reader.GetChunkPartSize());
                 m_DoublePtr += reader.GetChunkPartSize();
+                break;
+            default: /* case eMessageComplete: */
+                goto ThrowUnexpectedTrailingToken;
             }
             break;
 
         case CUTTPReader::eChunk:
             switch (m_State) {
-            case eInitialState:
+            case eExpectNextToken:
                 m_CurrentChunk.assign(reader.GetChunkPart(),
                         reader.GetChunkPartSize());
                 break;
             case eReadingString:
-                m_State = eInitialState;
+                m_State = eExpectNextToken;
                 m_CurrentChunk.append(reader.GetChunkPart(),
                         reader.GetChunkPartSize());
                 break;
-            default: /* case eReadingDouble: */
-                m_State = eInitialState;
+            case eReadingDouble:
+                m_State = eExpectNextToken;
                 memcpy(m_DoublePtr, reader.GetChunkPart(),
                         reader.GetChunkPartSize());
                 if (m_DoubleEndianness != DOUBLE_PREFIX)
                     reverse(reinterpret_cast<char*>(&m_Double),
                             reinterpret_cast<char*>(&m_Double + 1));
-                if (m_CurrentNode.IsArray())
-                    m_CurrentNode.AppendDouble(m_Double);
-                else // The current node is eObject.
-                    if (m_HashValueIsExpected) {
-                        m_HashValueIsExpected = false;
-                        m_CurrentNode.SetDouble(m_HashKey, m_Double);
-                    } else
-                        return eHashKeyMustBeString;
+                if (!x_AddNewNode(CJsonNode::NewDoubleNode(m_Double)))
+                    m_State = eMessageComplete;
                 continue;
+            default: /* case eMessageComplete: */
+                goto ThrowUnexpectedTrailingToken;
             }
-            if (m_CurrentNode.IsArray())
-                m_CurrentNode.AppendString(m_CurrentChunk);
-            else // The current node is eObject.
-                if (m_HashValueIsExpected) {
-                    m_HashValueIsExpected = false;
-                    m_CurrentNode.SetString(m_HashKey, m_CurrentChunk);
-                } else {
-                    m_HashValueIsExpected = true;
+            if (!m_CurrentNode) {
+                m_CurrentNode = CJsonNode::NewStringNode(m_CurrentChunk);
+                m_State = eMessageComplete;
+            } else if (m_HashValueIsExpected) {
+                m_HashValueIsExpected = false;
+                m_CurrentNode.SetString(m_HashKey, m_CurrentChunk);
+            } else
+                // The current node is either a JSON object or an array,
+                // because if it was a non-container node, m_State would
+                // be eMessageComplete.
+                if (m_CurrentNode.IsArray())
+                    m_CurrentNode.AppendString(m_CurrentChunk);
+                else {
                     m_HashKey = m_CurrentChunk;
+                    m_HashValueIsExpected = true;
                 }
             break;
 
         case CUTTPReader::eControlSymbol:
             {
-                if (m_State != eInitialState)
-                    return eChunkContinuationExpected;
-
                 char control_symbol = reader.GetControlSymbol();
 
-                switch (control_symbol) {
-                case '\n':
-                    if (m_NodeStack.size() != 0)
-                        return eUnexpectedEOM;
-                    return eEndOfMessage;
+                if (control_symbol == '\n') {
+                    if (m_State != eMessageComplete) {
+                        NCBI_THROW(CJsonOverUTTPException, eUnexpectedEOM,
+                                "JSON-over-UTTP: Unexpected end of message");
+                    }
+                    return true;
+                }
 
+                if (m_State != eExpectNextToken)
+                    goto ThrowChunkContinuationExpected;
+
+                switch (control_symbol) {
                 case '[':
                 case '{':
                     {
                         CJsonNode new_node(control_symbol == '[' ?
                             CJsonNode::NewArrayNode() :
                             CJsonNode::NewObjectNode());
-                        if (m_CurrentNode.IsArray())
-                            m_CurrentNode.Append(new_node);
-                        else // The current node is eObject.
-                            if (m_HashValueIsExpected) {
-                                m_HashValueIsExpected = false;
-                                m_CurrentNode.SetByKey(m_HashKey, new_node);
-                            } else
-                                return eHashKeyMustBeString;
-                        m_NodeStack.push_back(m_CurrentNode);
-                        m_CurrentNode = new_node;
+                        if (x_AddNewNode(new_node)) {
+                            m_NodeStack.push_back(m_CurrentNode);
+                            m_CurrentNode = new_node;
+                        }
                     }
                     break;
 
                 case ']':
                 case '}':
-                    if (m_NodeStack.size() == 0 || (control_symbol == ']') ^
-                            m_CurrentNode.IsArray())
-                        return eUnexpectedClosingBracket;
-                    m_CurrentNode = m_NodeStack.back();
-                    m_NodeStack.pop_back();
+                    if (!m_CurrentNode ||
+                            (control_symbol == ']') ^ m_CurrentNode.IsArray()) {
+                        NCBI_THROW(CJsonOverUTTPException, eUnexpectedClosingBracket,
+                                "JSON-over-UTTP: Unexpected closing bracket");
+                    }
+                    if (m_NodeStack.empty())
+                        m_State = eMessageComplete;
+                    else {
+                        m_CurrentNode = m_NodeStack.back();
+                        m_NodeStack.pop_back();
+                    }
                     break;
 
                 case 'D':
@@ -643,7 +672,7 @@ CJsonOverUTTPReader::EParsingEvent
                         m_State = eReadingDouble;
                         m_DoubleEndianness = control_symbol;
                         m_DoublePtr = reinterpret_cast<char*>(&m_Double);
-                        return eNextBuffer;
+                        return false;
                     case CUTTPReader::eChunkPart:
                         m_State = eReadingDouble;
                         m_DoubleEndianness = control_symbol;
@@ -656,8 +685,11 @@ CJsonOverUTTPReader::EParsingEvent
                         _ASSERT(reader.GetChunkPartSize() == sizeof(double));
 
                         if (control_symbol == DOUBLE_PREFIX)
-                            memcpy(&m_Double, reader.GetChunkPart(), sizeof(double));
+                            memcpy(&m_Double, reader.GetChunkPart(),
+                                    sizeof(double));
                         else {
+                            // Copy the entire chunk to
+                            // m_Double in reverse order.
                             const char* src = reader.GetChunkPart();
                             char* dst = reinterpret_cast<char*>(&m_Double + 1);
                             int count = sizeof(double);
@@ -667,165 +699,169 @@ CJsonOverUTTPReader::EParsingEvent
                             while (--count > 0);
                         }
 
-                        if (m_CurrentNode.IsArray())
-                            m_CurrentNode.AppendDouble(m_Double);
-                        else // The current node is eObject.
-                            if (m_HashValueIsExpected) {
-                                m_HashValueIsExpected = false;
-                                m_CurrentNode.SetDouble(m_HashKey, m_Double);
-                            } else
-                                return eHashKeyMustBeString;
+                        if (!x_AddNewNode(CJsonNode::NewDoubleNode(m_Double)))
+                            m_State = eMessageComplete;
                     }
                     break;
 
                 case 'Y':
-                case 'N':
-                    {
-                        bool boolean = control_symbol == 'Y';
+                    if (!x_AddNewNode(CJsonNode::NewBooleanNode(true)))
+                        m_State = eMessageComplete;
+                    break;
 
-                        if (m_CurrentNode.IsArray())
-                            m_CurrentNode.AppendBoolean(boolean);
-                        else // The current node is eObject.
-                            if (m_HashValueIsExpected) {
-                                m_HashValueIsExpected = false;
-                                m_CurrentNode.SetBoolean(m_HashKey, boolean);
-                            } else
-                                return eHashKeyMustBeString;
-                    }
+                case 'N':
+                    if (!x_AddNewNode(CJsonNode::NewBooleanNode(false)))
+                        m_State = eMessageComplete;
                     break;
 
                 case 'U':
-                    if (m_CurrentNode.IsArray())
-                        m_CurrentNode.AppendNull();
-                    else // The current node is eObject.
-                        if (m_HashValueIsExpected) {
-                            m_HashValueIsExpected = false;
-                            m_CurrentNode.SetNull(m_HashKey);
-                        } else
-                            return eHashKeyMustBeString;
+                    if (!x_AddNewNode(CJsonNode::NewNullNode()))
+                        m_State = eMessageComplete;
                     break;
 
                 default:
-                    return eUnknownControlSymbol;
+                    NCBI_THROW_FMT(CJsonOverUTTPException,
+                            eUnknownControlSymbol,
+                            "JSON-over-UTTP: Unknown control symbol '" <<
+                            NStr::PrintableString(CTempString(&control_symbol,
+                                    1)) << '\'');
                 }
             }
             break;
 
         case CUTTPReader::eNumber:
-            if (m_State != eInitialState)
-                return eChunkContinuationExpected;
-            if (m_CurrentNode.IsArray())
-                m_CurrentNode.AppendInteger(reader.GetNumber());
-            else // The current node is eObject.
-                if (m_HashValueIsExpected) {
-                    m_HashValueIsExpected = false;
-                    m_CurrentNode.SetInteger(m_HashKey, reader.GetNumber());
-                } else
-                    return eHashKeyMustBeString;
+            switch (m_State) {
+            case eExpectNextToken:
+                if (!x_AddNewNode(CJsonNode::NewIntegerNode(reader.GetNumber())))
+                    m_State = eMessageComplete;
+                break;
+            case eMessageComplete:
+                goto ThrowUnexpectedTrailingToken;
+            default:
+                goto ThrowChunkContinuationExpected;
+            }
             break;
 
         case CUTTPReader::eEndOfBuffer:
-            return eNextBuffer;
+            return false;
 
-        default: // case CUTTPReader::eFormatError:
-            return eUTTPFormatError;
+        default: /* case CUTTPReader::eFormatError: */
+            NCBI_THROW(CJsonOverUTTPException, eUTTPFormatError,
+                    "JSON-over-UTTP: UTTP format error");
         }
+
+ThrowUnexpectedTrailingToken:
+    NCBI_THROW(CJsonOverUTTPException, eUnexpectedTrailingToken,
+            "JSON-over-UTTP: Received a token while expected EOM");
+
+ThrowChunkContinuationExpected:
+    NCBI_THROW(CJsonOverUTTPException, eChunkContinuationExpected,
+            "JSON-over-UTTP: Chunk continuation expected");
 }
 
-void CJsonOverUTTPReader::Reset(CJsonNode::TInstance root_node)
+void CJsonOverUTTPReader::Reset()
 {
-    m_CurrentNode = root_node;
+    m_State = eExpectNextToken;
+    m_NodeStack.clear();
+    m_CurrentNode = NULL;
+    m_HashValueIsExpected = false;
 }
 
-void CJsonOverUTTPWriter::SetOutputMessage(const CJsonNode& root_node)
+bool CJsonOverUTTPReader::x_AddNewNode(CJsonNode::TInstance new_node)
 {
-    _ASSERT(m_OutputStack.empty());
+    if (!m_CurrentNode) {
+        m_CurrentNode = new_node;
+        return false;
+    } else if (m_HashValueIsExpected) {
+        m_HashValueIsExpected = false;
+        m_CurrentNode.SetByKey(m_HashKey, new_node);
+    } else
+        // The current node is either a JSON object or an array,
+        // because if it was a non-container node, this method
+        // would not be called.
+        if (m_CurrentNode.IsArray())
+            m_CurrentNode.Append(new_node);
+        else {
+            NCBI_THROW(CJsonOverUTTPException, eObjectKeyMustBeString,
+                    "JSON-over-UTTP: Invalid object key type");
+        }
+    return true;
+}
 
-    switch (root_node.GetNodeType()) {
-    case CJsonNode::eObject:
-    case CJsonNode::eArray:
-        m_CurrentOutputNode.m_Node = root_node;
-        m_CurrentOutputNode.m_Iterator = root_node.Iterate();
-        break;
-
-    default:
-        _ASSERT(0 && "Must be either an array or an object.");
-    }
+bool CJsonOverUTTPWriter::WriteMessage(const CJsonNode& root_node)
+{
+    _ASSERT(!m_CurrentOutputNode.m_Node && m_OutputStack.empty());
 
     m_SendHashValue = false;
+
+    return x_SendNode(root_node) && CompleteMessage();
 }
 
-bool CJsonOverUTTPWriter::ContinueWithReply()
+bool CJsonOverUTTPWriter::CompleteMessage()
 {
-    for (;;)
-        if (m_CurrentOutputNode.m_Node.IsArray()) {
+    while (m_CurrentOutputNode.m_Node) {
+        switch (m_CurrentOutputNode.m_Node.GetNodeType()) {
+        case CJsonNode::eArray:
             if (!m_CurrentOutputNode.m_Iterator) {
-                if (m_OutputStack.empty()) {
-                    m_UTTPWriter.SendControlSymbol('\n');
-                    return false;
-                }
-                m_CurrentOutputNode = m_OutputStack.back();
-                m_OutputStack.pop_back();
+                x_PopNode();
                 if (!m_UTTPWriter.SendControlSymbol(']'))
-                    return true;
+                    return false;
             } else {
                 CJsonIterator it(m_CurrentOutputNode.m_Iterator);
-                if (!SendNode(*it)) {
+                if (!x_SendNode(*it)) {
                     it.Next();
-                    return true;
+                    return false;
                 }
                 it.Next();
             }
-        } else if (m_CurrentOutputNode.m_Node.IsObject()) {
+            break;
+
+        case CJsonNode::eObject:
             if (!m_CurrentOutputNode.m_Iterator) {
-                if (m_OutputStack.empty()) {
-                    m_UTTPWriter.SendControlSymbol('\n');
-                    return false;
-                }
-                m_CurrentOutputNode = m_OutputStack.back();
-                m_OutputStack.pop_back();
+                x_PopNode();
                 if (!m_UTTPWriter.SendControlSymbol('}'))
-                    return true;
+                    return false;
             } else {
                 if (!m_SendHashValue) {
                     string key(m_CurrentOutputNode.m_Iterator.GetKey());
                     if (!m_UTTPWriter.SendChunk(
                             key.data(), key.length(), false)) {
                         m_SendHashValue = true;
-                        return true;
+                        return false;
                     }
                 } else
                     m_SendHashValue = false;
 
                 CJsonIterator it(m_CurrentOutputNode.m_Iterator);
-                if (!SendNode(*it)) {
+                if (!x_SendNode(*it)) {
                     it.Next();
-                    return true;
+                    return false;
                 }
                 it.Next();
             }
-        } else {
-            _ASSERT(m_CurrentOutputNode.m_Node.IsDouble());
+            break;
 
-            m_OutputStack.pop_back();
+        default: /* case CJsonNode::eDouble: */
+            x_PopNode();
             if (!m_UTTPWriter.SendRawData(&m_Double, sizeof(m_Double)))
-                return true;
+                return false;
         }
+    }
+
+    return m_UTTPWriter.SendControlSymbol('\n');
 }
 
-bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
+bool CJsonOverUTTPWriter::x_SendNode(const CJsonNode& node)
 {
     switch (node.GetNodeType()) {
     case CJsonNode::eObject:
-        m_OutputStack.push_back(m_CurrentOutputNode);
-        m_CurrentOutputNode.m_Node = node;
+        x_PushNode(node);
         m_CurrentOutputNode.m_Iterator = node.Iterate();
         m_SendHashValue = false;
         return m_UTTPWriter.SendControlSymbol('{');
 
     case CJsonNode::eArray:
-        m_OutputStack.push_back(m_CurrentOutputNode);
-        m_CurrentOutputNode.m_Node = node;
+        x_PushNode(node);
         m_CurrentOutputNode.m_Iterator = node.Iterate();
         return m_UTTPWriter.SendControlSymbol('[');
 
@@ -841,8 +877,7 @@ bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
     case CJsonNode::eDouble:
         m_Double = node.AsDouble();
         if (!m_UTTPWriter.SendControlSymbol(DOUBLE_PREFIX)) {
-            m_OutputStack.push_back(m_CurrentOutputNode);
-            m_CurrentOutputNode.m_Node = node;
+            x_PushNode(node);
             return false;
         }
         return m_UTTPWriter.SendRawData(&m_Double, sizeof(m_Double));
@@ -852,6 +887,25 @@ bool CJsonOverUTTPWriter::SendNode(const CJsonNode& node)
 
     default: /* case CJsonNode::eNull: */
         return m_UTTPWriter.SendControlSymbol('U');
+    }
+}
+
+void CJsonOverUTTPWriter::x_PushNode(const CJsonNode& node)
+{
+    if (!m_CurrentOutputNode.m_Node);
+        m_OutputStack.push_back(m_CurrentOutputNode);
+    m_CurrentOutputNode.m_Node = node;
+}
+
+void CJsonOverUTTPWriter::x_PopNode()
+{
+    _ASSERT(m_CurrentOutputNode.m_Node);
+
+    if (m_OutputStack.empty())
+        m_CurrentOutputNode.m_Node = NULL;
+    else {
+        m_CurrentOutputNode = m_OutputStack.back();
+        m_OutputStack.pop_back();
     }
 }
 

@@ -42,9 +42,11 @@
 
 USING_NCBI_SCOPE;
 
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
 
 #define AUTOMATION_IO_BUFFER_SIZE 4096
+
+#define PROTOCOL_ERROR_BASE_RETCODE 20
 
 void CArgArray::Exception(const char* what)
 {
@@ -508,10 +510,10 @@ private:
 
 void CMessageSender::SendMessage(const CJsonNode& message)
 {
-    m_JSONWriter.SetOutputMessage(message);
-
-    while (m_JSONWriter.ContinueWithReply())
-        SendOutputBuffer();
+    if (!m_JSONWriter.WriteMessage(message))
+        do
+            SendOutputBuffer();
+        while (!m_JSONWriter.CompleteMessage());
 
     SendOutputBuffer();
 }
@@ -524,14 +526,12 @@ void CMessageSender::SendOutputBuffer()
 
     do {
         m_JSONWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
-        for (;;) {
+        while (output_buffer_size > 0) {
             if (m_Pipe.Write(output_buffer, output_buffer_size,
                     &bytes_written) != eIO_Success) {
                 NCBI_THROW(CIOException, eWrite,
                     "Error while writing to the pipe");
             }
-            if (bytes_written == output_buffer_size)
-                break;
             output_buffer += bytes_written;
             output_buffer_size -= bytes_written;
         }
@@ -613,74 +613,73 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
 
     writer.Reset(write_buf, sizeof(write_buf));
 
-    CJsonOverUTTPReader json_reader(CJsonNode::NewArrayNode());
+    CJsonOverUTTPReader json_reader;
     CJsonOverUTTPWriter json_writer(writer);
 
-    CMessageSender message_sender(json_writer, pipe);
+    CMessageSender actual_message_sender(json_writer, pipe);
+
+    IMessageSender* message_sender;
 
     auto_ptr<CMessageDumperSender> dumper_and_sender;
 
-    if (IsOptionSet(eProtocolDump))
-        dumper_and_sender.reset(new CMessageDumperSender(&message_sender,
+    if (!IsOptionSet(eProtocolDump))
+        message_sender = &actual_message_sender;
+    else {
+        dumper_and_sender.reset(new CMessageDumperSender(&actual_message_sender,
                 m_Opts.protocol_dump));
-
-    CAutomationProc proc(dumper_and_sender.get() != NULL ?
-            static_cast<IMessageSender*>(dumper_and_sender.get()) :
-            static_cast<IMessageSender*>(&message_sender));
+        message_sender = dumper_and_sender.get();
+    }
 
     {
         CJsonNode greeting(CJsonNode::NewArrayNode());
         greeting.AppendString(GRID_APP_NAME);
         greeting.AppendInteger(PROTOCOL_VERSION);
 
-        message_sender.SendMessage(greeting);
+        message_sender->SendMessage(greeting);
     }
+
+    CAutomationProc proc(message_sender);
 
     size_t bytes_read;
 
-    while (pipe.Read(read_buf, sizeof(read_buf), &bytes_read) == eIO_Success) {
-        reader.SetNewBuffer(read_buf, bytes_read);
+    try {
+        while (pipe.Read(read_buf,
+                sizeof(read_buf), &bytes_read) == eIO_Success) {
+            reader.SetNewBuffer(read_buf, bytes_read);
 
-        CJsonOverUTTPReader::EParsingEvent ret_code =
-            json_reader.ProcessParsingEvents(reader);
+            while (json_reader.ReadMessage(reader)) {
+                try {
+                    if (dumper_and_sender.get() != NULL)
+                        dumper_and_sender->DumpInputMessage(
+                                json_reader.GetMessage());
 
-        switch (ret_code) {
-        case CJsonOverUTTPReader::eEndOfMessage:
-            try {
-                if (dumper_and_sender.get() != NULL)
-                    dumper_and_sender->DumpInputMessage(
-                            json_reader.GetMessage());
+                    CJsonNode reply(proc.ProcessMessage(
+                            json_reader.GetMessage()));
 
-                CJsonNode reply(proc.ProcessMessage(json_reader.GetMessage()));
+                    if (!reply)
+                        return 0;
 
-                if (!reply)
-                    return 0;
-
-                message_sender.SendMessage(reply);
-            }
-            catch (CAutomationException& e) {
-                switch (e.GetErrCode()) {
-                case CAutomationException::eInvalidInput:
-                    proc.SendError(e.GetMsg());
-                    return 2;
-                default:
+                    message_sender->SendMessage(reply);
+                }
+                catch (CAutomationException& e) {
+                    switch (e.GetErrCode()) {
+                    case CAutomationException::eInvalidInput:
+                        proc.SendError(e.GetMsg());
+                        return 2;
+                    default:
+                        proc.SendError(e.GetMsg());
+                    }
+                }
+                catch (CException& e) {
                     proc.SendError(e.GetMsg());
                 }
+
+                json_reader.Reset();
             }
-            catch (CException& e) {
-                proc.SendError(e.GetMsg());
-            }
-
-            json_reader.Reset(CJsonNode::NewArrayNode());
-
-            /* FALL THROUGH */
-
-        case CJsonOverUTTPReader::eNextBuffer:
-            break;
-
-        default: // Parsing error
-            return int(ret_code);
         }
+    }
+    catch (CJsonOverUTTPException& e) {
+        return PROTOCOL_ERROR_BASE_RETCODE + e.GetErrCode();
     }
 
     return 0;
