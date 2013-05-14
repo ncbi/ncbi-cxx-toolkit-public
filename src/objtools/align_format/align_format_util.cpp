@@ -2980,7 +2980,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
                       
             string url_holder = CAlignFormatUtil::GetURLFromRegistry("LOCAL_ID");
         
-            string user_url = m_Reg->Get("LOCAL_ID","TOOL_URL");
+            string user_url = (seqUrlInfo->addCssInfo) ? m_Reg->Get("LOCAL_ID","TOOL_URL_ALIGN") : m_Reg->Get("LOCAL_ID","TOOL_URL");
             string id_string;
             wid->GetLabel(&id_string, CSeq_id::eContent);
             url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", NStr::URLEncode(id_string));  
@@ -3079,19 +3079,20 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CSeq_id& id,obje
     return url_link;
 }
 
-//static const char kGenericLinkTemplate[] = "<a href=\"<@url@>\" target=\"lnk<@rid@>\" <@cssInf@> title=\"Show report for <@seqid@>\"><@gi@><@seqid@></a>"; 
+//static const char kGenericLinkTemplate[] = "<a href=\"<@url@>\" target=\"lnk<@rid@>\" title=\"Show report for <@seqid@>\"><@gi@><@seqid@></a>"; 
 string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids)
 {
     string seqLink;
     string linkURL = GetIDUrl(seqUrlInfo,ids);
     if(!linkURL.empty()) {
-        seqLink = CAlignFormatUtil::MapTemplate(kGenericLinkTemplate,"url",linkURL);
+        string linkTmpl = (seqUrlInfo->addCssInfo) ? kGenericLinkMouseoverTmpl : kGenericLinkTemplate;
+        seqLink = CAlignFormatUtil::MapTemplate(linkTmpl,"url",linkURL);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
-        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",GI_TO(int, seqUrlInfo->gi));    
-        string temp_class_info = kClassInfo; temp_class_info += " ";
-        temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;        
-        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info : "");        
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi);            
+        if(seqUrlInfo->addCssInfo) {
+            seqLink = CAlignFormatUtil::MapTemplate(seqLink,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline));            
+        }        
     }    
     return seqLink;
 }

@@ -1760,14 +1760,7 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
         }                
     }    
     if(!urlLink.empty()) {
-        out << urlLink;
-        //mouse over seqid defline            
-        if(m_AlignOption&eHtml &&
-            m_AlignOption&eShowInfoOnMouseOverSeqid) {
-            out << "<span>" <<
-            CDeflineGenerator().GenerateDefline(m_AV->GetBioseqHandle(row)) << "</span>";
-        }            
-        out<<"</a>";   
+        out << urlLink;        
     }
     else {
         out<<alnRoInfo->seqidArray[row]; 
