@@ -32,6 +32,12 @@ if os.path.exists(historyPath):
 
 atexit.register(save_rlhistory)
 
+
+try:
+    hostIP = socket.gethostbyname( socket.gethostname() )
+except:
+    hostIP = "127.0.0.1"
+
 commandMap = None
 commandSN = 0
 
@@ -47,7 +53,9 @@ def getCommandMap():
              'getclientsinfo': sendGetClientsInfo,
              'getobjectinfo':  sendGetObjectInfo,
              'getattr':        sendGetAttr,
-             'setattr':        sendSetAttr
+             'setattr':        sendSetAttr,
+             'no-type':        sendNoType,
+             'no-dict':        sendNoDictionary,
            }
 
 
@@ -270,8 +278,8 @@ def sendHello( nst, arguments ):
         client = arguments[ 0 ]
 
     message = { 'Type':         'HELLO',
-                'SessionID':    'No session',
-                'ClientIP':     'localhost',
+                'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP,
                 'Client':       client,
                 'Application':  'test/nstconsole.py',
                 'Ticket':       'No ticket at all' }
@@ -285,8 +293,8 @@ def sendBye( nst, arguments ):
         return
 
     message = { 'Type':         'BYE',
-                'SessionID':    'No session',
-                'ClientIP':     'localhost' }
+                'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP }
     exchange( nst, message )
     return
 
@@ -297,8 +305,8 @@ def sendInfo( nst, arguments ):
         return
 
     message = { 'Type':         'INFO',
-                'SessionID':    'No session',
-                'ClientIP':     'localhost' }
+                'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP }
     exchange( nst, message )
     return
 
@@ -309,8 +317,8 @@ def sendConfiguration( nst, arguments ):
         return
 
     message = { 'Type':         'CONFIGURATION',
-                'SessionID':    'No session',
-                'ClientIP':     'localhost' }
+                'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP }
     exchange( nst, message )
     return
 
@@ -328,8 +336,8 @@ def sendShutdown( nst, arguments ):
             return
 
     message = { 'Type':         'SHUTDOWN',
-                'SessionID':    'No session',
-                'ClientIP':     'localhost',
+                'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP,
                 'Mode':         mode }
     exchange( nst, message )
     return
@@ -341,9 +349,24 @@ def sendGetClientsInfo( nst, arguments ):
         return
 
     message = { 'Type':         'GETCLIENTSINFO',
-                'SessionID':    'No session',
-                'ClientIP':     'localhost' }
+                'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP }
     exchange( nst, message )
+    return
+
+def sendNoType( nst, arguments ):
+    " Sends a malformed request without a type "
+    message = { 'SessionID':    '1111111111111111_0000SID',
+                'ClientIP':     hostIP }
+    exchange( nst, message )
+    return
+
+def sendNoDictionary( nst, arguments ):
+    " Sends a malformed non-dictionary request "
+    message = [ 'blah', 'blah', 'blah' ]
+    printMessage( "Message to server", message )
+    response = nst.exchange( message, {} )
+    printMessage( "Message from server", response )
     return
 
 def sendGetObjectInfo( nst, arguments ):
