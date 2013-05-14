@@ -180,6 +180,7 @@ align_format needs seqedit
 align_format needs seqset
 align_format needs seqsplit
 align_format needs sequtil
+align_format needs submit
 align_format needs tables
 align_format needs variation
 align_format needs xalnmgr
@@ -503,6 +504,7 @@ blast_app_util needs seqmasks_io
 blast_app_util needs seqset
 blast_app_util needs seqsplit
 blast_app_util needs sequtil
+blast_app_util needs submit
 blast_app_util needs tables
 blast_app_util needs taxon1
 blast_app_util needs variation
@@ -576,6 +578,7 @@ blast_sra needs sradb
 blast_sra needs srapath
 blast_sra needs sraschema
 blast_sra needs sraxf
+blast_sra needs submit
 blast_sra needs tables
 blast_sra needs variation
 blast_sra needs vdb
@@ -710,6 +713,7 @@ blastinput needs seqmasks_io
 blastinput needs seqset
 blastinput needs seqsplit
 blastinput needs sequtil
+blastinput needs submit
 blastinput needs tables
 blastinput needs variation
 blastinput needs xalgoblastdbindex
@@ -812,6 +816,7 @@ cobalt needs seqedit
 cobalt needs seqmasks_io
 cobalt needs seqset
 cobalt needs sequtil
+cobalt needs submit
 cobalt needs tables
 cobalt needs variation
 cobalt needs xalgoalignnw
@@ -3405,6 +3410,7 @@ igblast needs seqedit
 igblast needs seqmasks_io
 igblast needs seqset
 igblast needs sequtil
+igblast needs submit
 igblast needs tables
 igblast needs variation
 igblast needs xalgoblastdbindex
@@ -3549,6 +3555,7 @@ lds needs seqcode
 lds needs seqedit
 lds needs seqset
 lds needs sequtil
+lds needs submit
 lds needs variation
 lds needs xncbi
 lds needs xobjmgr
@@ -4093,6 +4100,7 @@ ncbi_xloader_bam needs seqedit
 ncbi_xloader_bam needs seqset
 ncbi_xloader_bam needs sequtil
 ncbi_xloader_bam needs srapath
+ncbi_xloader_bam needs submit
 ncbi_xloader_bam needs variation
 ncbi_xloader_bam needs vdb
 ncbi_xloader_bam needs vfs
@@ -4232,6 +4240,7 @@ ncbi_xloader_lds needs seqcode
 ncbi_xloader_lds needs seqedit
 ncbi_xloader_lds needs seqset
 ncbi_xloader_lds needs sequtil
+ncbi_xloader_lds needs submit
 ncbi_xloader_lds needs variation
 ncbi_xloader_lds needs xncbi
 ncbi_xloader_lds needs xobjmgr
@@ -4708,6 +4717,7 @@ prosplign needs seqedit
 prosplign needs seqmasks_io
 prosplign needs seqset
 prosplign needs sequtil
+prosplign needs submit
 prosplign needs tables
 prosplign needs taxon1
 prosplign needs variation
@@ -4784,6 +4794,7 @@ refseq_aln_source needs seqedit
 refseq_aln_source needs seqmasks_io
 refseq_aln_source needs seqset
 refseq_aln_source needs sequtil
+refseq_aln_source needs submit
 refseq_aln_source needs tables
 refseq_aln_source needs taxon1
 refseq_aln_source needs tds_ftds64
@@ -4962,6 +4973,7 @@ seqmasks_io needs seqdb
 seqmasks_io needs seqedit
 seqmasks_io needs seqset
 seqmasks_io needs sequtil
+seqmasks_io needs submit
 seqmasks_io needs variation
 seqmasks_io needs xncbi
 seqmasks_io needs xobjmgr
@@ -7668,6 +7680,7 @@ writedb needs seqdb
 writedb needs seqedit
 writedb needs seqset
 writedb needs sequtil
+writedb needs submit
 writedb needs variation
 writedb needs xncbi
 writedb needs xobjmgr
@@ -7820,6 +7833,7 @@ xalgoalignsplign needs seqedit
 xalgoalignsplign needs seqmasks_io
 xalgoalignsplign needs seqset
 xalgoalignsplign needs sequtil
+xalgoalignsplign needs submit
 xalgoalignsplign needs tables
 xalgoalignsplign needs taxon1
 xalgoalignsplign needs variation
@@ -7861,6 +7875,7 @@ xalgoalignutil needs seqedit
 xalgoalignutil needs seqmasks_io
 xalgoalignutil needs seqset
 xalgoalignutil needs sequtil
+xalgoalignutil needs submit
 xalgoalignutil needs tables
 xalgoalignutil needs taxon1
 xalgoalignutil needs variation
@@ -7897,6 +7912,7 @@ xalgoblastdbindex needs seqdb
 xalgoblastdbindex needs seqedit
 xalgoblastdbindex needs seqset
 xalgoblastdbindex needs sequtil
+xalgoblastdbindex needs submit
 xalgoblastdbindex needs tables
 xalgoblastdbindex needs variation
 xalgoblastdbindex needs xncbi
@@ -7938,6 +7954,7 @@ xalgocontig_assembly needs seqedit
 xalgocontig_assembly needs seqmasks_io
 xalgocontig_assembly needs seqset
 xalgocontig_assembly needs sequtil
+xalgocontig_assembly needs submit
 xalgocontig_assembly needs tables
 xalgocontig_assembly needs variation
 xalgocontig_assembly needs xalgoalignnw
@@ -8093,6 +8110,7 @@ xalgowinmask needs seqedit
 xalgowinmask needs seqmasks_io
 xalgowinmask needs seqset
 xalgowinmask needs sequtil
+xalgowinmask needs submit
 xalgowinmask needs variation
 xalgowinmask needs xncbi
 xalgowinmask needs xobjmgr
@@ -8121,6 +8139,7 @@ xaligndb needs seqedit
 xaligndb needs seqmasks_io
 xaligndb needs seqset
 xaligndb needs sequtil
+xaligndb needs submit
 xaligndb needs tables
 xaligndb needs taxon1
 xaligndb needs variation
@@ -8198,6 +8217,7 @@ xblast needs seqedit
 xblast needs seqmasks_io
 xblast needs seqset
 xblast needs sequtil
+xblast needs submit
 xblast needs tables
 xblast needs variation
 xblast needs xalgoblastdbindex
@@ -8245,6 +8265,7 @@ xblastformat needs seqmasks_io
 xblastformat needs seqset
 xblastformat needs seqsplit
 xblastformat needs sequtil
+xblastformat needs submit
 xblastformat needs tables
 xblastformat needs variation
 xblastformat needs xalgoblastdbindex
@@ -8292,6 +8313,7 @@ xbma_refiner needs seqedit
 xbma_refiner needs seqmasks_io
 xbma_refiner needs seqset
 xbma_refiner needs sequtil
+xbma_refiner needs submit
 xbma_refiner needs tables
 xbma_refiner needs taxon1
 xbma_refiner needs variation
@@ -8342,6 +8364,7 @@ xcd_utils needs seqedit
 xcd_utils needs seqmasks_io
 xcd_utils needs seqset
 xcd_utils needs sequtil
+xcd_utils needs submit
 xcd_utils needs tables
 xcd_utils needs taxon1
 xcd_utils needs variation
@@ -9005,6 +9028,7 @@ xngalign needs seqmasks_io
 xngalign needs seqset
 xngalign needs seqsplit
 xngalign needs sequtil
+xngalign needs submit
 xngalign needs tables
 xngalign needs taxon1
 xngalign needs variation
@@ -9073,6 +9097,7 @@ xobjread needs seq
 xobjread needs seqcode
 xobjread needs seqset
 xobjread needs sequtil
+xobjread needs submit
 xobjread needs xncbi
 xobjread needs xser
 xobjread needs xutil
@@ -9087,6 +9112,7 @@ xobjreadex needs seqcode
 xobjreadex needs seqedit
 xobjreadex needs seqset
 xobjreadex needs sequtil
+xobjreadex needs submit
 xobjreadex needs variation
 xobjreadex needs xncbi
 xobjreadex needs xobjmgr
@@ -9417,6 +9443,7 @@ xstruct_util needs seqedit
 xstruct_util needs seqmasks_io
 xstruct_util needs seqset
 xstruct_util needs sequtil
+xstruct_util needs submit
 xstruct_util needs tables
 xstruct_util needs variation
 xstruct_util needs xalgoblastdbindex
