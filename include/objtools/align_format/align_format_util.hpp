@@ -181,7 +181,8 @@ static const char kSeqViewerUrlNonGi[] = "http://www.ncbi.nlm.nih.gov/projects/s
 static const char kCustomLinkTemplate[] = "<a href=\"<@custom_url@>\" class=\"<@custom_cls@>\" target=\"<@custom_trg@>\" title=\"<@custom_title@>\"><@custom_lnk_displ@></a>"; 
 static const char kCustomLinkTitle[]="Show <@custom_report_type@> report for <@seqid@>";
 
-static const char kGenericLinkTemplate[] = "<a title=\"Show report for <@seqid@>\" <@cssInf@>href=\"<@url@>\" ><@seqid@>"; 
+static const char kGenericLinkTemplate[] = "<a title=\"Show report for <@seqid@>\" href=\"<@url@>\" ><@seqid@></a>"; 
+static const char kGenericLinkMouseoverTmpl[] = "<span class=\"jig-ncbipopper\" data-jigconfig=\"destText:'<@defline@>'\"><a title=\"Show report for <@seqid@>\" onclick=\"window.open(this.href)\" href=\"<@url@>\" ><@seqid@></a></span>";
 
 
 ///Sub-sequence
