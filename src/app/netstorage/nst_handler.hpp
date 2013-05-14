@@ -38,6 +38,8 @@
 #include <corelib/request_ctx.hpp>
 #include <connect/server.hpp>
 
+#include "nst_clients.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -67,19 +69,17 @@ public:
     // Additional statuses can be taken from
     // http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     enum EHTTPStatus {
-        eStatus_OK                  = 200, //< Command is ok and execution is good
+        eStatus_OK                  = 200, // Command is ok and execution is good
 
-        eStatus_BadRequest          = 400, //< Command is incorrect
-        eStatus_NotFound            = 404, //< Job is not found
-        eStatus_Inactive            = 408, //< Connection was closed due to inactivity
-                                           //< timeout
-        eStatus_InvalidJobStatus    = 409, //< Invalid job status
-        eStatus_SocketIOError       = 499, //< Error writing to socket
+        eStatus_BadRequest          = 400, // Command is incorrect
+        eStatus_NotFound            = 404, // Job is not found
+        eStatus_Inactive            = 408, // Connection was closed due to inactivity
+                                           // timeout
+        eStatus_SocketIOError       = 499, // Error writing to socket
 
-        eStatus_ServerError         = 500, //< Internal server error
-        eStatus_NotImplemented      = 501, //< Command is not implemented
-        eStatus_SubmitRefused       = 503, //< In refuse submits mode and received SUBMIT
-        eStatus_ShuttingDown        = 503  //< Server is shutting down
+        eStatus_ServerError         = 500, // Internal server error
+        eStatus_NotImplemented      = 501, // Command is not implemented
+        eStatus_ShuttingDown        = 503  // Server is shutting down
     };
 
 private:
@@ -116,6 +116,10 @@ private:
     CRef<CRequestContext>       m_ConnContext;
     // Diagnostics context for the currently executed command
     CRef<CRequestContext>       m_CmdContext;
+
+    // The client identification. It appears after HELLO.
+    string                      m_Client;
+    CNSTClientRegistry          m_ClientRegistry;
 
 private:
     enum EReadMode {

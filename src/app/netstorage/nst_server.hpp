@@ -69,6 +69,10 @@ public:
     { return m_StartTime; }
     string  GetSessionID(void) const
     { return m_SessionID; }
+    void SaveCommandLine(const string &  cmd_line)
+    { m_CommandLine = cmd_line; }
+    string GetCommandLine(void) const
+    { return m_CommandLine; }
 
     bool IsAdminClientName(const string &  name) const;
 
@@ -87,6 +91,7 @@ private:
     unsigned int                m_NetworkTimeout;
     CNSTPreciseTime             m_StartTime;
     vector<string>              m_AdminClientNames;
+    string                      m_CommandLine;
 
     static CNetStorageServer *  sm_netstorage_server;
 

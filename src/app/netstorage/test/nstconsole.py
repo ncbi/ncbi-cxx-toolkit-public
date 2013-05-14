@@ -269,7 +269,7 @@ def sendHello( nst, arguments ):
     if len( arguments ) == 1:
         client = arguments[ 0 ]
 
-    message = { 'Type':         'BYE',
+    message = { 'Type':         'HELLO',
                 'SessionID':    'No session',
                 'ClientIP':     'localhost',
                 'Client':       client,
@@ -291,19 +291,59 @@ def sendBye( nst, arguments ):
     return
 
 def sendInfo( nst, arguments ):
-    print "Not implemented yet"
+    " Sends INFO request "
+    if len( arguments ) != 0:
+        print "The 'info' command does not accept any arguments"
+        return
+
+    message = { 'Type':         'INFO',
+                'SessionID':    'No session',
+                'ClientIP':     'localhost' }
+    exchange( nst, message )
     return
 
 def sendConfiguration( nst, arguments ):
-    print "Not implemented yet"
+    " Sends CONFIGURATION request "
+    if len( arguments ) != 0:
+        print "The 'configuration' command does not accept any arguments"
+        return
+
+    message = { 'Type':         'CONFIGURATION',
+                'SessionID':    'No session',
+                'ClientIP':     'localhost' }
+    exchange( nst, message )
     return
 
 def sendShutdown( nst, arguments ):
-    print "Not implemented yet"
+    " Sends SHUTDOWN request "
+    if len( arguments ) > 1:
+        print "The 'shutdown' commands takes 0 (default: soft) or 1 argument "
+        return
+
+    mode = "soft"
+    if len( arguments ) == 1:
+        mode = arguments[ 0 ].lower()
+        if mode != "soft" and mode != "hard":
+            print "The allowed values of the argument are 'soft' and 'hard'"
+            return
+
+    message = { 'Type':         'SHUTDOWN',
+                'SessionID':    'No session',
+                'ClientIP':     'localhost',
+                'Mode':         mode }
+    exchange( nst, message )
     return
 
 def sendGetClientsInfo( nst, arguments ):
-    print "Not implemented yet"
+    " Sends GETCLIENTSINFO request "
+    if len( arguments ) != 0:
+        print "The 'getclientsinfo' command does not accept any arguments"
+        return
+
+    message = { 'Type':         'GETCLIENTSINFO',
+                'SessionID':    'No session',
+                'ClientIP':     'localhost' }
+    exchange( nst, message )
     return
 
 def sendGetObjectInfo( nst, arguments ):

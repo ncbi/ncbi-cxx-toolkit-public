@@ -36,9 +36,13 @@ BEGIN_NCBI_SCOPE
 
 
 enum ENSTReplyError {
-    eMessageAfterBye = 1,
+    eMessageAfterBye        = 1,
     eInvalidMandatoryHeader = 2,
-    eShuttingDown = 3
+    eShuttingDown           = 3,
+    eMandatoryFieldsMissed  = 4,
+    eInvalidArguments       = 5,
+    eHelloRequired          = 6,
+    ePrivileges             = 7
 };
 
 

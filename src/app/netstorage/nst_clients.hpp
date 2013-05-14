@@ -36,6 +36,7 @@
 #include <string>
 
 #include <corelib/ncbimtx.hpp>
+#include <connect/services/json_over_uttp.hpp>
 
 #include "nst_precise_time.hpp"
 
@@ -74,9 +75,15 @@ class CNSTClient
         { m_Type |= type_to_append; }
         unsigned int  GetPeerAddress(void) const
         { return m_Addr; }
+        void SetApplication(const string &  application)
+        { m_Application = application; }
+        void SetTicket(const string &  ticket)
+        { m_Ticket = ticket; }
+        void SetPeerAddress(unsigned int  peer_address)
+        { m_Addr = peer_address; }
 
-        bool Touch(void);
-        string Print(const string &  client_name) const;
+        void Touch(void);
+        CJsonNode  serialize(void) const;
 
     private:
         string          m_Application;    // Absolute exec path
@@ -109,6 +116,15 @@ class CNSTClientRegistry
         CNSTClientRegistry();
 
         size_t  size(void) const;
+        void  Touch(const string &  client,
+                    const string &  applications,
+                    const string &  ticket,
+                    unsigned int    peer_address);
+        void  Touch(const string &  client);
+        void  RegisterSocketWriteError(const string &  client);
+        void  AppendType(const string &  client,
+                         unsigned int    type_to_append);
+        CJsonNode serialize(void) const;
 
     private:
         map< string, CNSTClient >   m_Clients;  // All the server clients

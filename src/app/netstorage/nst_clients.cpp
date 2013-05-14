@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <connect/ncbi_socket.hpp>
 
 #include "nst_clients.hpp"
 
@@ -55,15 +56,33 @@ CNSTClient::CNSTClient() :
 
 
 
-bool CNSTClient::Touch(void)
+void CNSTClient::Touch(void)
 {
-    return false;
+    // Basically updates the last access time
+    m_LastAccess = CNSTPreciseTime::Current();
 }
 
 
-string CNSTClient::Print(const string &  client_name) const
+CJsonNode  CNSTClient::serialize(void) const
 {
-    return "";
+    CJsonNode       client(CJsonNode::NewObjectNode());
+
+    client.SetString("Application", m_Application);
+    client.SetBoolean("TicketProvided", !m_Ticket.empty());
+    client.SetString("Type", x_TypeAsString());
+    client.SetString("PeerAddress", CSocketAPI::gethostbyaddr(m_Addr));
+    client.SetString("RegistrationTime",
+                     NST_FormatPreciseTime(m_RegistrationTime));
+    client.SetString("LastAccess", NST_FormatPreciseTime(m_LastAccess));
+    client.SetInteger("BytesWritten", m_NumberOfBytesWritten);
+    client.SetInteger("BytesRead", m_NumberOfBytesRead);
+    client.SetInteger("BytesRelocated", m_NumberOfBytesRelocated);
+    client.SetInteger("ObjectsWritten", m_NumberOfObjectsWritten);
+    client.SetInteger("ObjectsRead", m_NumberOfObjectsRead);
+    client.SetInteger("ObjectsRelocated", m_NumberOfObjectsRelocated);
+    client.SetInteger("SocketErrors", m_NumberOfSockErrors);
+
+    return client;
 }
 
 
@@ -103,4 +122,85 @@ size_t CNSTClientRegistry::size(void) const
     return m_Clients.size();
 }
 
+
+void  CNSTClientRegistry::Touch(const string &  client,
+                                const string &  applications,
+                                const string &  ticket,
+                                unsigned int    peer_address)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+
+    if (found != m_Clients.end()) {
+        // Client with this name existed before. Update the information.
+        found->second.Touch();
+        found->second.SetApplication(applications);
+        found->second.SetTicket(ticket);
+        found->second.SetPeerAddress(peer_address);
+        return;
+    }
+
+    CNSTClient      new_client;
+    new_client.SetApplication(applications);
+    new_client.SetTicket(ticket);
+    new_client.SetPeerAddress(peer_address);
+    m_Clients[client] = new_client;
+}
+
+
+void  CNSTClientRegistry::Touch(const string &  client)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.Touch();
+}
+
+
+void  CNSTClientRegistry::RegisterSocketWriteError(const string &  client)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.RegisterSocketWriteError();
+}
+
+
+void  CNSTClientRegistry::AppendType(const string &  client,
+                                     unsigned int    type_to_append)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AppendType(type_to_append);
+}
+
+
+CJsonNode  CNSTClientRegistry::serialize(void) const
+{
+    CJsonNode       clients(CJsonNode::NewArrayNode());
+    CMutexGuard     guard(m_Lock);
+
+    for (map<string, CNSTClient>::const_iterator  k = m_Clients.begin();
+         k != m_Clients.end(); ++k) {
+        CJsonNode   single_client(k->second.serialize());
+
+        single_client.SetString("Name", k->first);
+        clients.Append(single_client);
+    }
+
+    return clients;
+}
 

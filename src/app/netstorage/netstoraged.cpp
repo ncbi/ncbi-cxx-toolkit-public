@@ -100,8 +100,13 @@ public:
     void Init(void);
     int Run(void);
 
+protected:
+    EPreparseArgs PreparseArgs(int                argc,
+                               const char* const* argv);
+
 private:
     STimeout    m_ServerAcceptTimeout;
+    string      m_CommandLine;
 };
 
 
@@ -184,6 +189,7 @@ int CNetStorageDApp::Run(void)
 
     SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
     auto_ptr<CNetStorageServer>     server(new CNetStorageServer());
+    server->SaveCommandLine(m_CommandLine);
     server->SetCustomThreadSuffix("_h");
     server->SetParameters(params);
 
@@ -243,6 +249,20 @@ int CNetStorageDApp::Run(void)
         NcbiCout << "Server stopped" << NcbiEndl;
 
     return 0;
+}
+
+
+CNcbiApplication::EPreparseArgs
+CNetStorageDApp::PreparseArgs(int                argc,
+                              const char* const* argv)
+{
+    for (int index = 0; index < argc; ++index) {
+        if (!m_CommandLine.empty())
+            m_CommandLine += " ";
+        m_CommandLine += argv[index];
+    }
+
+    return CNcbiApplication::PreparseArgs(argc, argv);
 }
 
 

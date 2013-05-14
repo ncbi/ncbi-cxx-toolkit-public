@@ -35,12 +35,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <signal.h>
+
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
 #include "nst_protocol_utils.hpp"
 #include "nst_exception.hpp"
 #include "nst_error_warning.hpp"
+#include "nst_version.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -402,8 +405,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message,
     unsigned int  error_code;
 
     try {
-        // TODO: touch registry (if possible and needed)
-
+        m_ClientRegistry.Touch(m_Client);
 
         // Find the processor
         FProcessor  processor = x_FindProcessor(common_args);
@@ -517,8 +519,8 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
                     }
                 }
 
-                // TODO: register the socket error with the client
-
+                // Register the socket error with the client
+                m_ClientRegistry.RegisterSocketWriteError(m_Client);
 
                 m_Server->CloseConnection(&GetSocket());
                 return status;
@@ -648,7 +650,44 @@ CNetStorageHandler::x_ProcessHello(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    string      application;    // Optional field
+    string      ticket;         // Optional field
 
+    if (!message.HasKey("Client")) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eMandatoryFieldsMissed,
+                                        "Mandatory field 'Client' is missed");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return 0;
+    }
+
+    string  client = NStr::TruncateSpaces(message.GetString("Client"));
+    if (client.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "Mandatory field 'Client' is empty");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return 0;
+    }
+
+    m_Client = client;
+    if (message.HasKey("Application"))
+        application = message.GetString("Application");
+    if (message.HasKey("Ticket"))
+        ticket = message.GetString("Ticket");
+
+    // Memorize the client in the registry
+    m_ClientRegistry.Touch(m_Client, application, ticket, x_GetPeerAddress());
+
+    // Send success response
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
     return 0;
 }
 
@@ -658,9 +697,17 @@ CNetStorageHandler::x_ProcessInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
-    reply.SetString("ServerVersion", "");
+    reply.SetString("ServerVersion", NETSTORAGED_VERSION);
+    reply.SetString("ProtocolVersion", NETSTORAGED_PROTOCOL_VERSION);
+    reply.SetInteger("PID", CDiagContext::GetPID());
+    reply.SetString("BuildDate", NETSTORAGED_BUILD_DATE);
+    reply.SetString("StartDate", NST_FormatPreciseTime(m_Server->GetStartTime()));
+    reply.SetString("ServerSession", m_Server->GetSessionID());
+    reply.SetString("ServerBinaryPath", CNcbiApplication::Instance()->GetProgramExecutablePath());
+    reply.SetString("ServerCommandLine", m_Server->GetCommandLine());
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
@@ -673,7 +720,19 @@ CNetStorageHandler::x_ProcessConfiguration(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
+    CNcbiOstrstream             conf;
+    CNcbiOstrstreamToString     converter(conf);
+
+    CNcbiApplication::Instance()->GetConfig().Write(conf);
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetString("Configuration", string(converter));
+    reply.SetString("ConfigurationFilePath", CNcbiApplication::Instance()->GetConfigPath());
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
     return 0;
 }
 
@@ -683,7 +742,61 @@ CNetStorageHandler::x_ProcessShutdown(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    if (m_Client.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eHelloRequired,
+                                        "Anonymous client cannot shutdown server");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return 0;
+    }
 
+    if (!m_Server->IsAdminClientName(m_Client)) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        ePrivileges,
+                                        "Only administrators can shutdown server");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return 0;
+    }
+
+    if (!message.HasKey("Mode")) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eMandatoryFieldsMissed,
+                                        "Mandatory field 'Mode' is missed");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return 0;
+
+    }
+
+    string  mode;
+    mode = message.GetString("Mode");
+    if (mode != "hard" && mode != "soft") {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "Allowed 'Mode' values are 'soft' and 'hard'");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return 0;
+    }
+
+    if (mode == "hard" )
+        exit(1);
+
+    m_Server->SetShutdownFlag(SIGTERM);
+
+    // Send success response
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
     return 0;
 }
 
@@ -693,7 +806,13 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    reply.SetByKey("Clients", m_ClientRegistry.serialize());
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
     return 0;
 }
 
@@ -703,6 +822,7 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     return 0;
 }
@@ -713,6 +833,7 @@ CNetStorageHandler::x_ProcessGetAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     return 0;
 }
@@ -723,6 +844,7 @@ CNetStorageHandler::x_ProcessSetAttr(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
     return 0;
 }
@@ -733,6 +855,7 @@ CNetStorageHandler::x_ProcessCreate(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
     return 0;
 }
@@ -743,6 +866,7 @@ CNetStorageHandler::x_ProcessRead(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     return 0;
 }
@@ -753,6 +877,7 @@ CNetStorageHandler::x_ProcessWrite(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
     return 0;
 }
@@ -763,6 +888,7 @@ CNetStorageHandler::x_ProcessDelete(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
     return 0;
 }
@@ -773,6 +899,7 @@ CNetStorageHandler::x_ProcessRelocate(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
     return 0;
 }
@@ -783,6 +910,7 @@ CNetStorageHandler::x_ProcessExists(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     return 0;
 }
@@ -793,6 +921,7 @@ CNetStorageHandler::x_ProcessGetSize(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     return 0;
 }
