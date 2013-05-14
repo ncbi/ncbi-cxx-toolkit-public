@@ -3,7 +3,7 @@
 APP = unit_test_agpconverter
 SRC = unit_test_agpconverter
 
-LIB  = xunittestutil $(OBJREAD_LIBS) xobjutil test_boost $(SOBJMGR_LIBS)
+LIB  = xunittestutil $(OBJREAD_LIBS) xobjutil xconnect xxconnect test_boost $(SOBJMGR_LIBS)
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
