@@ -57,7 +57,7 @@ void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_E_ETC( CSe
 
   CSeq_feat &arg0 = *new_feat;
 
-  m_NewSeqEntry.CheckSeqFeat( arg0 );
+  // m_NewSeqEntry.CheckSeqFeat( arg0 );  // no tests at the SeqFeat level
 
   if( efh ) {
     efh.Replace(arg0);

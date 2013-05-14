@@ -78,7 +78,8 @@ static COutputConfig& oc = thisInfo.output_config;
 
 
 //void CRepConfDiscrepancy :: Export()
-void CRepConfig :: Export()
+//void CRepConfig :: Export()
+void CRepConfDiscrepancy :: Export()
 {
   oc.output_f << "Discrepancy Report Results\n\n"
        << "Summary\n";

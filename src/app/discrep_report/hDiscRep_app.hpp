@@ -267,6 +267,8 @@ namespace DiscRepNmSpc{
            static map <EStrand_type, string>                strand_names;
            static CRef < CSuspect_rule_set>                 suspect_rna_rules;
            static vector <string>                           rna_rule_summ;
+           static vector <string>                           tests_enabled;
+           static vector <string>                           tests_disabled;
 
            SuspectProductNameData                    suspect_prod_terms[];
            unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };

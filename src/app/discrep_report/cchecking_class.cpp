@@ -206,24 +206,6 @@ void CCheckingClass :: CheckGbQual (const vector < CRef< CGb_qual > >& gb_quals)
 
 } // CheckGbQual
 
-
-
-void CCheckingClass :: CheckSeqFeat(CSeq_feat& seq_feat)
-{
-num_seq_feats++;
-  GoTests(CRepConfig::tests_on_SeqFeat, seq_feat);
- 
-  CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetLocation(),
-                                                      *thisInfo.scope);
-  CConstRef <CBioseq> bioseq = bioseq_h.GetCompleteBioseq();
-  if (bioseq.GetPointer() 
-       && !(CTestAndRepData::IsmRNASequenceInGenProdSet(*bioseq)) ) {
-     GoTests(CRepConfig::tests_on_GenProdSetFeat, seq_feat);
-  }
-
-} // CheckSeqFeat()
-
-
 bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2)
 {
   return (seqfeat1->GetLocation().GetStart(eExtreme_Positional)
@@ -512,7 +494,6 @@ void CCheckingClass :: CollectRepData()
   GoGetRep(CRepConfig::tests_on_Bioseq_CFeat);
   GoGetRep(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet);
   GoGetRep(CRepConfig::tests_on_Bioseq_NotInGenProdSet);
-  GoGetRep(CRepConfig::tests_on_GenProdSetFeat);
   GoGetRep(CRepConfig::tests_on_SeqEntry);
   GoGetRep(CRepConfig::tests_on_SeqEntry_feat_desc);
   GoGetRep(CRepConfig::tests_4_once);

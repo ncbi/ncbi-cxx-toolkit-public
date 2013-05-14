@@ -70,18 +70,30 @@ using namespace objects;
 BEGIN_NCBI_SCOPE
 
 namespace DiscRepNmSpc {
-   
+
+   enum ETestCategoryFlags {
+      fDiscrepancy = 1 << 0,
+      fOncaller = 1 << 1,
+      fMegaReport = 1 << 2,
+      fTSA = 1 << 3
+   };
+
+   struct s_test_property {
+      string name;
+      int category;
+   };
+
    class CRepConfig 
    {
      public:
-        CRepConfig() {};
         virtual ~CRepConfig() {};
 
-        void Init();
+        void Init(const string& report_type);
 
         static CRepConfig* factory(const string& report_tp);
         virtual void ConfigRep() = 0; 
-        void Export();
+        virtual void Export() = 0;
+        void CollectTests();
   
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq;
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq_na;
@@ -90,8 +102,6 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_NotInGenProdSet; 
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq_NotInGenProdSet;
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_CSeqdesc;
-        static vector < CRef < CTestAndRepData > > tests_on_GenProdSetFeat;
-        static vector < CRef < CTestAndRepData > > tests_on_SeqFeat;
         static vector < CRef < CTestAndRepData > > tests_on_SeqEntry;
         static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
         static vector < CRef < CTestAndRepData > > tests_4_once;
@@ -99,6 +109,8 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
 
      protected:
+        set <string> tests_run;
+
         void WriteDiscRepSummary();
         void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories);
         void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
@@ -116,6 +128,7 @@ namespace DiscRepNmSpc {
       public:
         virtual ~CRepConfDiscrepancy () {};
         virtual void ConfigRep();
+        virtual void Export();
    };
 
    class CRepConfOncaller : public CRepConfig
@@ -125,6 +138,7 @@ namespace DiscRepNmSpc {
       public:
         virtual ~CRepConfOncaller () {};
         virtual void ConfigRep();
+        virtual void Export() { };
    };
 
    class CRepConfAll : public CRepConfig 
@@ -134,13 +148,7 @@ namespace DiscRepNmSpc {
       public:
         virtual ~CRepConfAll () {};
         virtual void ConfigRep();
-   };
-
-   enum ERepTp {
-         eReportTypeDiscrepancy = 1,
-         eReportTypeOnCaller,
-         eReportTypeMegaReport,
-         eReportTypeTSA
+        virtual void Export() { };
    };
 };
 

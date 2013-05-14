@@ -11011,7 +11011,6 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
 
 void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
 {  
-   typedef map <string, int > Str2Int;
    Str2Int feat_count_list;
    Str2Int :: iterator it;
    CSeq_entry_Handle seq_entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);

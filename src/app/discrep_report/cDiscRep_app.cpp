@@ -165,6 +165,8 @@ map <EStrand_type, string>              CDiscRepInfo :: strand_names;
 map <ESource_origin, string>            CDiscRepInfo :: srcori_names;
 CRef < CSuspect_rule_set>               CDiscRepInfo :: suspect_rna_rules;
 vector <string>                         CDiscRepInfo :: rna_rule_summ;
+vector <string>                         CDiscRepInfo :: tests_enabled;
+vector <string>                         CDiscRepInfo :: tests_disabled;
 
 
 const char* fix_type_names[] = {
@@ -199,11 +201,11 @@ void CDiscRepApp::Init(void)
                                                CArgDescriptions::eString);
     // how about report->p?
 /*
-    arg_desc->AddOptionalKey("report", "ReportType", 
+    arg_desc->AddOptionalKey("P", "ReportType", 
                    "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString);
 */
-    arg_desc->AddDefaultKey("report", "ReportType",
+    arg_desc->AddDefaultKey("P", "ReportType",
                    "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString, "Discrepancy");
 
@@ -211,6 +213,11 @@ void CDiscRepApp::Init(void)
                                              CArgDescriptions::eString, "");
 
     arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report?: 'T'=true, 'F' =false", CArgDescriptions::eBoolean, "F");
+
+    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','",
+                            CArgDescriptions::eString); 
+    arg_desc->AddOptionalKey("d", "DisableTests", "List of disabled tests, seperated by ','",
+                              CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
 
@@ -980,7 +987,7 @@ int CDiscRepApp :: Run(void)
     auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, 
                                                             thisInfo.infile));
     // Config discrepancy report
-    thisInfo.report = args["report"].AsString();
+    thisInfo.report = args["P"].AsString();
     string output_f = args["o"].AsString();
     if (output_f.empty()) {
        vector <string> infile_path;
@@ -994,9 +1001,17 @@ int CDiscRepApp :: Run(void)
     thisInfo.output_config.output_f.open(output_f.c_str());
     thisInfo.output_config.summary_report = args["S"].AsBoolean();
 
+    // enabled and disabled tests
+    strtmp = args["e"].AsString();
+    if (!strtmp.empty()) 
+          thisInfo.tests_enabled = NStr::Tokenize(strtmp, ",", thisInfo.tests_enabled);
+    strtmp = args["d"].AsString();
+    if (!strtmp.empty())
+         thisInfo.tests_disabled = NStr::Tokenize(strtmp, ",", thisInfo.tests_disabled);
+
     CRepConfig* rep_config = CRepConfig::factory(thisInfo.report);
-    rep_config->Init();
-    rep_config->ConfigRep();
+    rep_config->Init(thisInfo.report);
+//    rep_config->ConfigRep();
 
     // read input file and go tests
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
