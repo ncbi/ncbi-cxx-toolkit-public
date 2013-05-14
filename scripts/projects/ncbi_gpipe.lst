@@ -20,6 +20,7 @@ internal/asn_cache
 internal/blast
 internal/blast/DistribDbSupport
 internal/eutils
+internal/egene
 internal/sra
 internal/snp
 internal/gnomon
