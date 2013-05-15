@@ -11,15 +11,15 @@ AGPCONVERT=./agpconvert
 
 TEST_DATA=./test_data
 
-AGPCONVERT_CHECKING_TMPFILE1=$(mktemp)
-AGPCONVERT_CHECKING_TMPFILE2=$(mktemp)
+AGPCONVERT_CHECKING_TMPFILE1=`mktemp`
+AGPCONVERT_CHECKING_TMPFILE2=`mktemp`
 
-ASNDIFFFILE1=$(mktemp)
-ASNDIFFFILE2=$(mktemp)
+ASNDIFFFILE1=`mktemp`
+ASNDIFFFILE2=`mktemp`
 
-MULTIFILE_TMP_FILE=$(mktemp)
+MULTIFILE_TMP_FILE=`mktemp`
 
-AGPCONVERT_TMP_OUTDIR=$(mktemp -d)
+AGPCONVERT_TMP_OUTDIR=`mktemp -d`
 
 # Give it exactly 2 ASN.1 files and it normalizes them
 # and diffs them.  If the diffs differ, RETVAL is
@@ -151,7 +151,7 @@ agpconvert_outdir_multifile_test()
     # since it is multi-file, we combine all the files
     cat /dev/null > $MULTIFILE_TMP_FILE
     for file in "${AGPCONVERT_TMP_OUTDIR}"/*.weirdsuffix ; do
-        echo "##### FILE BASENAME:" $(basename $file) >> $MULTIFILE_TMP_FILE
+        echo "##### FILE BASENAME:" `basename $file` >> $MULTIFILE_TMP_FILE
         cat $file >> $MULTIFILE_TMP_FILE
     done
     asn_diff $MULTIFILE_TMP_FILE "$EXPECTED_ASN_RESULT"
