@@ -11,15 +11,20 @@ AGPCONVERT=./agpconvert
 
 TEST_DATA=./test_data
 
-AGPCONVERT_CHECKING_TMPFILE1=`mktemp`
-AGPCONVERT_CHECKING_TMPFILE2=`mktemp`
+mymktemp()
+{
+    mktemp -t test_agpconvert.XXXXXXXX "$@"
+}
 
-ASNDIFFFILE1=`mktemp`
-ASNDIFFFILE2=`mktemp`
+AGPCONVERT_CHECKING_TMPFILE1=`mymktemp`
+AGPCONVERT_CHECKING_TMPFILE2=`mymktemp`
 
-MULTIFILE_TMP_FILE=`mktemp`
+ASNDIFFFILE1=`mymktemp`
+ASNDIFFFILE2=`mymktemp`
 
-AGPCONVERT_TMP_OUTDIR=`mktemp -d`
+MULTIFILE_TMP_FILE=`mymktemp`
+
+AGPCONVERT_TMP_OUTDIR=`mymktemp -d`
 
 # Give it exactly 2 ASN.1 files and it normalizes them
 # and diffs them.  If the diffs differ, RETVAL is
