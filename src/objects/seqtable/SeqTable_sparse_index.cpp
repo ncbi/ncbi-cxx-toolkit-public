@@ -126,7 +126,9 @@ static inline size_t sx_FindFirstNonZeroByte(const char* beg,
 static inline size_t sx_FindFirstNonZeroByte(const vector<char>& bytes,
                                              size_t index)
 {
-    size_t offset = sx_FindFirstNonZeroByte(bytes.data()+index, &*bytes.end());
+    size_t size = bytes.size();
+    const char* ptr = bytes.data();
+    size_t offset = sx_FindFirstNonZeroByte(ptr+index, ptr+size);
     if ( offset == CSeqTable_sparse_index::kInvalidIndex ) {
         return CSeqTable_sparse_index::kInvalidIndex;
     }
