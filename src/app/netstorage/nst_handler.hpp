@@ -84,9 +84,9 @@ public:
 
 private:
     // Application specific part
-    bool  x_ReadRawData(CUTTPReader::EStreamParsingEvent  uttp_event);
-    void  x_OnMessage(const CJsonNode &  message, size_t *  raw_data_size);
-    void  x_OnData(const void *  data, size_t  data_size);
+    bool  x_ReadRawData();
+    void  x_OnMessage(const CJsonNode &  message);
+    void  x_OnData(const void *  data, size_t  data_size, bool last_chunk);
 
     // It closes the connection if there were socket writing errors
     EIO_Status  x_SendSyncMessage(const CJsonNode &  message);
@@ -143,7 +143,7 @@ private:
     bool                    m_ByeReceived;
     bool                    m_FirstMessage;
 
-    typedef size_t (CNetStorageHandler::*FProcessor)(
+    typedef void (CNetStorageHandler::*FProcessor)(
                                 const CJsonNode &,
                                 const SCommonRequestArguments &);
     struct SProcessorMap
@@ -156,37 +156,37 @@ private:
 
     // Individual message processors
     // The return value is how many bytes are expected as raw data
-    size_t x_ProcessBye(const CJsonNode &                message,
+    void x_ProcessBye(const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args);
-    size_t x_ProcessHello(const CJsonNode &                message,
+    void x_ProcessHello(const CJsonNode &                message,
                           const SCommonRequestArguments &  common_args);
-    size_t x_ProcessInfo(const CJsonNode &                message,
+    void x_ProcessInfo(const CJsonNode &                message,
                          const SCommonRequestArguments &  common_args);
-    size_t x_ProcessConfiguration(const CJsonNode &                message,
+    void x_ProcessConfiguration(const CJsonNode &                message,
                                   const SCommonRequestArguments &  common_args);
-    size_t x_ProcessShutdown(const CJsonNode &                message,
+    void x_ProcessShutdown(const CJsonNode &                message,
                              const SCommonRequestArguments &  common_args);
-    size_t x_ProcessGetClientsInfo(const CJsonNode &                message,
+    void x_ProcessGetClientsInfo(const CJsonNode &                message,
                                    const SCommonRequestArguments &  common_args);
-    size_t x_ProcessGetObjectInfo(const CJsonNode &                message,
+    void x_ProcessGetObjectInfo(const CJsonNode &                message,
                                   const SCommonRequestArguments &  common_args);
-    size_t x_ProcessGetAttr(const CJsonNode &                message,
+    void x_ProcessGetAttr(const CJsonNode &                message,
                             const SCommonRequestArguments &  common_args);
-    size_t x_ProcessSetAttr(const CJsonNode &                message,
+    void x_ProcessSetAttr(const CJsonNode &                message,
                             const SCommonRequestArguments &  common_args);
-    size_t x_ProcessCreate(const CJsonNode &                message,
+    void x_ProcessCreate(const CJsonNode &                message,
                            const SCommonRequestArguments &  common_args);
-    size_t x_ProcessRead(const CJsonNode &                message,
+    void x_ProcessRead(const CJsonNode &                message,
                          const SCommonRequestArguments &  common_args);
-    size_t x_ProcessWrite(const CJsonNode &                message,
+    void x_ProcessWrite(const CJsonNode &                message,
                           const SCommonRequestArguments &  common_args);
-    size_t x_ProcessDelete(const CJsonNode &                message,
+    void x_ProcessDelete(const CJsonNode &                message,
                            const SCommonRequestArguments &  common_args);
-    size_t x_ProcessRelocate(const CJsonNode &                message,
+    void x_ProcessRelocate(const CJsonNode &                message,
                              const SCommonRequestArguments &  common_args);
-    size_t x_ProcessExists(const CJsonNode &                message,
+    void x_ProcessExists(const CJsonNode &                message,
                            const SCommonRequestArguments &  common_args);
-    size_t x_ProcessGetSize(const CJsonNode &                 message,
+    void x_ProcessGetSize(const CJsonNode &                 message,
                             const SCommonRequestArguments &  common_args);
 
 }; // CNetStorageHandler
