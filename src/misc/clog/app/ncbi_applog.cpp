@@ -70,7 +70,12 @@
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite]
                                       [-pid] [-rid] [-sid] [-srvport] [-app_start_time] [-req_start_time]
 
- Environment/registry settings:
+Special commands (must be used without <token> parameter):
+    ncbi_applog raw           -file <applog_formatted_logs.txt>
+    ncbi_applog raw           -file -
+
+
+Environment/registry settings:
      1) Logging CGI (used if /log is not accessible on current machine)
             Registry file:
                 [NCBI]
@@ -164,7 +169,7 @@ public:
     virtual int  Run(void);
 
     /// Redirect logging request to to another machine via CGI
-    int Redirect() const;
+    int Redirect();
     /// Generate token on the base of current logging information.
     string GenerateToken(ETokenType type) const;
     /// Parse m_Token and fill logging information in m_Info.
@@ -177,8 +182,14 @@ public:
     void UpdateInfo();
 
 private:
-    SInfo  m_Info;   ///< Logging information
-    string m_Token;  ///< Current token
+    SInfo          m_Info;     ///< Logging information
+    string         m_Token;    ///< Current token
+private:
+    // Variables for raw logfile processing.
+    bool           m_IsRaw;
+    CNcbiIstream*  m_Raw_is;
+    CNcbiIfstream  m_Raw_ifs;
+    string         m_Raw_line;
 };
 
 
@@ -364,10 +375,10 @@ void CNcbiApplogApp::Init(void)
     }}
 
     // parse_token
+    // If more than one flag specified, each field will be printed on separate line.
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
-        arg->SetUsageContext(kEmptyStr, "Parse token information and print requested field to stdout.\n" \
-                                        "If more than one flag specified, each field will be printed on separate line.", false, kUsageWidth);
+        arg->SetUsageContext(kEmptyStr, "Parse token information and print requested field to stdout.", false, kUsageWidth);
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
         arg->AddFlag("appname", "Name of the application.");
@@ -384,96 +395,111 @@ void CNcbiApplogApp::Init(void)
         cmd->AddCommand("parse_token", arg.release());
     }}
 
+    // raw
+    {{
+        auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
+        arg->SetUsageContext(kEmptyStr, "Post already prepared log in applog format.", false, kUsageWidth);
+        arg->AddKey
+            ("file", "filename", "Name of the file with log lines. Use '-' to read from the standard input.",
+            CArgDescriptions::eString);
+        arg->AddDefaultKey
+            ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
+            CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
+        cmd->AddCommand("raw", arg.release());
+    }}
+
     SetupArgDescriptions(cmd.release());
+    m_IsRaw = false;
 }
 
 
-int CNcbiApplogApp::Redirect() const
+int CNcbiApplogApp::Redirect()
 {
     // Get URL of logging CGI (from registry file, env.variable or default value)
     string url = NCBI_PARAM_TYPE(NCBI, NcbiApplogCGI)::GetDefault();
-
-    // We need host name, sid and log_site in the command line for 'start_app' command,
-    // only, all other information it should take from the token.
-    bool is_start_app   = (GetArgs().GetCommand() == "start_app");
-    bool need_hostname  = true;
-    bool need_sid       = true;
-    bool need_logsite   = true;
-    bool skip_next_arg  = false;
-
-    // Create new command line to pass it to CGI
     string s_args;
-    CNcbiArguments raw_args = GetArguments();
-    for (size_t i = 1; i < raw_args.Size(); ++i) {
-        if (skip_next_arg) {
-            skip_next_arg = false;
-            continue;
-        }
-        if (i == 2  &&  !is_start_app  &&  raw_args[i].empty() ) {
-            // The token value is empty. Possible, it has passed via 
-            // env.variable, insert real value into command line.
-            s_args += " \"" + m_Token + "\"";
-        } else {
-            // Check -host, -sid and -logsite parameters
-            if (is_start_app) {
-                if (need_hostname  &&  NStr::StartsWith(raw_args[i], "-host")) {
-                    need_hostname = false;
-                }
-                if (need_sid  &&  NStr::StartsWith(raw_args[i], "-sid")) {
-                    need_sid = false;
-                }
-                if (need_logsite  &&  NStr::StartsWith(raw_args[i], "-logsite")) {
-                    need_logsite = false;
-                }
-            }
-            if (NStr::StartsWith(raw_args[i], "-mode")) {
-                // Mode will be set to 'cgi' in CGI, remove it from the command line now
-            } else 
-            if (NStr::StartsWith(raw_args[i], "-timestamp")) {
-                // Replace original timestamp argument with already parsed
-                // value in time_t format, or use current time if not specified.
-                time_t timer = m_Info.post_time.sec;
-                if ( !timer ) {
-                    CTime::GetCurrentTimeT(&timer);
-                }
-                s_args += string(" \"-timestamp=") + NStr::UInt8ToString(timer) + "\"";
-                if (!NStr::StartsWith(raw_args[i], "-timestamp=")) {
-                    // Skip timestamp value in the next argument
-                    skip_next_arg = true;
-                }
-            } else {
-                s_args += " \"" + raw_args[i] + "\"";
-            }
-        }
-    }
 
-    // Add necessary missing parameters to the command line
-    if (is_start_app) {
-        // Global SID
-        if (need_sid) {
-            string sid = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
-            if (!sid.empty()) {
-                s_args += string(" \"-sid=") + sid + "\"";
+    if ( !m_IsRaw ) {
+        // We need host name, sid and log_site in the command line for 'start_app' command,
+        // only, all other information it should take from the token.
+        bool is_start_app   = (GetArgs().GetCommand() == "start_app");
+        bool need_hostname  = true;
+        bool need_sid       = true;
+        bool need_logsite   = true;
+        bool skip_next_arg  = false;
+
+        // Create new command line to pass it to CGI
+        CNcbiArguments raw_args = GetArguments();
+        for (size_t i = 1; i < raw_args.Size(); ++i) {
+            if (skip_next_arg) {
+                skip_next_arg = false;
+                continue;
+            }
+            if (i == 2  &&  !is_start_app  &&  raw_args[i].empty() ) {
+                // The token value is empty. Possible, it has passed via 
+                // env.variable, insert real value into command line.
+                s_args += " \"" + m_Token + "\"";
+            } else {
+                // Check -host, -sid and -logsite parameters
+                if (is_start_app) {
+                    if (need_hostname  &&  NStr::StartsWith(raw_args[i], "-host")) {
+                        need_hostname = false;
+                    }
+                    if (need_sid  &&  NStr::StartsWith(raw_args[i], "-sid")) {
+                        need_sid = false;
+                    }
+                    if (need_logsite  &&  NStr::StartsWith(raw_args[i], "-logsite")) {
+                        need_logsite = false;
+                    }
+                }
+                if (NStr::StartsWith(raw_args[i], "-mode")) {
+                    // Mode will be set to 'cgi' in CGI, remove it from the command line now
+                } else 
+                if (NStr::StartsWith(raw_args[i], "-timestamp")) {
+                    // Replace original timestamp argument with already parsed
+                    // value in time_t format, or use current time if not specified.
+                    time_t timer = m_Info.post_time.sec;
+                    if ( !timer ) {
+                        CTime::GetCurrentTimeT(&timer);
+                    }
+                    s_args += string(" \"-timestamp=") + NStr::UInt8ToString(timer) + "\"";
+                    if (!NStr::StartsWith(raw_args[i], "-timestamp=")) {
+                        // Skip timestamp value in the next argument
+                        skip_next_arg = true;
+                    }
+                } else {
+                    s_args += " \"" + raw_args[i] + "\"";
+                }
             }
         }
-        // Global log_site information
-        if (need_logsite) {
-            string logsite = GetEnvironment().Get("NCBI_LOG_SITE");
-            if (!logsite.empty()) {
-                s_args += string(" \"-logsite=") + NStr::URLEncode(logsite) + "\"";
+        // Add necessary missing parameters to the command line
+        if (is_start_app) {
+            // Global SID
+            if (need_sid) {
+                string sid = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
+                if (!sid.empty()) {
+                    s_args += string(" \"-sid=") + sid + "\"";
+                }
             }
-        }
-        // Current host name
-        if (need_hostname) {
-            const char* hostname = NcbiLogP_GetHostName();
-            if (hostname) {
-                s_args += string(" \"-host=") + hostname + "\"";
+            // Global log_site information
+            if (need_logsite) {
+                string logsite = GetEnvironment().Get("NCBI_LOG_SITE");
+                if (!logsite.empty()) {
+                    s_args += string(" \"-logsite=") + NStr::URLEncode(logsite) + "\"";
+                }
             }
-        }
-        // $SERVER_PORT on this host
-        string port = GetEnvironment().Get("SERVER_PORT");
-        if (!port.empty()) {
-            s_args += string(" \"-srvport=") + port + "\"";
+            // Current host name
+            if (need_hostname) {
+                const char* hostname = NcbiLogP_GetHostName();
+                if (hostname) {
+                    s_args += string(" \"-host=") + hostname + "\"";
+                }
+            }
+            // $SERVER_PORT on this host
+            string port = GetEnvironment().Get("SERVER_PORT");
+            if (!port.empty()) {
+                s_args += string(" \"-srvport=") + port + "\"";
+            }
         }
     }
 
@@ -485,7 +511,17 @@ int CNcbiApplogApp::Redirect() const
 
     // Send request to another machine via CGI
     CConn_HttpStream cgi(url);
-    cgi << s_args << endl;
+    if ( m_IsRaw ) {
+        cgi << "RAW" << endl;
+        // We already have first line in m_Raw_line,
+        // process it and all remaining lines.
+        do {
+            cgi << m_Raw_line << endl;
+        } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
+    } else {
+        cgi << s_args << endl;
+    }
+
     if (!cgi.good()) {
         throw "Failed to redirect request to CGI";
     }
@@ -742,6 +778,7 @@ int CNcbiApplogApp::Run(void)
 
     // Get command
     string cmd(args.GetCommand());
+
     if (cmd == "start_app") {
         // We need application name first to try initialize the local logging
         m_Info.appname = args["appname"].AsString();
@@ -751,6 +788,31 @@ int CNcbiApplogApp::Run(void)
             m_Info.server_port = NStr::StringToUInt(srvport);
         }
 
+    } else
+    if (cmd == "raw") {
+        m_IsRaw = true;
+        // Open stream with raw data and try to get file name of the application
+        // from the first line, use it for processing all following lines in the stream.
+        string filename = args["file"].AsString();
+        if (filename == "-") {
+            m_Raw_is = &cin;
+        } else {
+            m_Raw_ifs.open(filename.c_str(), IOS_BASE::in);
+            if (!m_Raw_ifs.good()) {
+                throw "Failed to open file '" + filename + "'";
+            }
+            m_Raw_is = &m_Raw_ifs;
+        }
+        // Read first line and hash it for the following processing.
+        if ( !NcbiGetlineEOL(*m_Raw_is, m_Raw_line)  ||  m_Raw_line.length() < 127 ) {
+            throw "Error processing input raw log, cannot read first line";
+        }
+        SIZE_TYPE pos = m_Raw_line.find(' ', 127);
+        if (pos == NPOS) {
+            throw "Error processing input raw log, first line have wrong format";
+        }
+        m_Info.appname = m_Raw_line.substr(126, pos - 126);
+    
     } else {
         // Initialize session from existing token
         m_Token = args["token"].AsString();
@@ -769,19 +831,22 @@ int CNcbiApplogApp::Run(void)
     }
 
     // Get posting time if specified
-    string timestamp = args["timestamp"].AsString();
-    if ( !timestamp.empty() ) {
-        // YYYY-MM-DDThh:mm:ss
-        if (timestamp.length() == 19  &&  timestamp.find("T") != NPOS ) {
-            m_Info.post_time.sec = CTime(timestamp, "Y-M-DTh:m:s").GetTimeT();
-        } 
-        // MM/DD/YY hh:mm:ss
-        else if (timestamp.length() == 17  &&  timestamp.find("/") != NPOS ) {
-            m_Info.post_time.sec = CTime(timestamp, "M/D/y h:m:s").GetTimeT();
-        } 
-        // time_t ?
-        else {
-            m_Info.post_time.sec = NStr::StringToUInt8(timestamp);
+    if (cmd != "raw") {
+        string timestamp;
+        timestamp = args["timestamp"].AsString();
+        if ( !timestamp.empty() ) {
+            // YYYY-MM-DDThh:mm:ss
+            if (timestamp.length() == 19  &&  timestamp.find("T") != NPOS ) {
+                m_Info.post_time.sec = CTime(timestamp, "Y-M-DTh:m:s").GetTimeT();
+            } 
+            // MM/DD/YY hh:mm:ss
+            else if (timestamp.length() == 17  &&  timestamp.find("/") != NPOS ) {
+                m_Info.post_time.sec = CTime(timestamp, "M/D/y h:m:s").GetTimeT();
+            } 
+            // time_t ?
+            else {
+                m_Info.post_time.sec = NStr::StringToUInt8(timestamp);
+            }
         }
     }
 
@@ -789,6 +854,11 @@ int CNcbiApplogApp::Run(void)
     string mode = args["mode"].AsString();
     if (mode == "redirect") {
         return Redirect();
+    }
+    if (mode == "cgi") {
+        // For CGI redirect all diagnostics to stdout to allow the calling
+        // application see it. By default it goes to stderr for eDS_User.
+        SetDiagStream(&NcbiCout);
     }
 
     // Try to set local logging
@@ -964,6 +1034,19 @@ int CNcbiApplogApp::Run(void)
         string params = args["param"].AsString();
         SetInfo();
         NcbiLogP_PerfStr(status, ts, params.c_str());
+    } else  
+
+    // -----  raw  -----------------------------------------------------------
+    // ncbi_applog raw -file <applog_formatted_logs.txt>
+    // ncbi_applog raw -file -
+
+    if (cmd == "raw") {
+        // We already have first line in 'raw_line' variable, 
+        // process it and all remaining lines.
+        do {
+            NcbiLogP_Raw(m_Raw_line.c_str());
+        } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
+
     } else  
 
     _TROUBLE;

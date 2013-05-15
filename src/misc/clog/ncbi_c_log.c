@@ -2581,11 +2581,64 @@ void NcbiLog_Fatal(const char* msg)
 }
 
 
+void NcbiLogP_Raw(const char* line)
+{
+    FILE* f = NULL;
+
+    assert(line);
+    assert(strlen(line) > 127);  /* minimal applog line length (?) */
+
+    MT_LOCK_API;
+    if (sx_Info->destination == eNcbiLog_Disable) {
+        MT_UNLOCK;
+        return;
+    }
+    s_InitDestination(NULL);
+    f = sx_Info->file_log;
+
+    switch (sx_Info->destination) {
+        case eNcbiLog_Default:
+        case eNcbiLog_Stdlog:
+        case eNcbiLog_Cwd:
+            /* Try to get type of the line to redirect output into correct log file */
+            {
+                const char* ptr = line + 127 + strlen((char*)sx_Info->appname);
+                assert(strlen(line) > (size_t)(ptr - line));
+
+                if (strncmp(ptr, "perf", 4) == 0) {
+                    f = sx_Info->file_perf;
+                } else 
+                if (strncmp(ptr, "Trace", 5) == 0  ||
+                    strncmp(ptr, "Info" , 4) == 0) {
+                    f = sx_Info->file_trace;
+                } else 
+                if (strncmp(ptr, "Warning" , 7) == 0  ||
+                    strncmp(ptr, "Error"   , 5) == 0  ||
+                    strncmp(ptr, "Critical", 8) == 0  ||
+                    strncmp(ptr, "Fatal"   , 5) == 0) {
+                    f = sx_Info->file_err;
+                }
+            }
+            break;
+        case eNcbiLog_Stdout:
+        case eNcbiLog_Stderr:
+        case eNcbiLog_Disable:
+            /* Nothing to do here -- all logging going to the same stream sx_Info->file_log */
+            break;
+    }
+    VERIFY(f);
+    fprintf(f, "%s\n", line);
+    fflush(f);
+    MT_UNLOCK;
+}
+
+
+
 /******************************************************************************
  *  Logging setup functions --- for internal use only
  */
 
-TNcbiLog_Info*   NcbiLogP_GetInfoPtr(void)
+TNcbiLog_Info* NcbiLogP_GetInfoPtr(void)
 {
     return (TNcbiLog_Info*)sx_Info;
 }

@@ -212,6 +212,13 @@ extern void NcbiLogP_ExtraStr(const char* params);
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
 
 
+/** Post already prepared line in applog format to the applog.
+ *  It do not perform any additional check and don' change context as well,
+ *  just write specified line to applog as is.
+ */
+extern void NcbiLogP_Raw(const char* line);
+
+
 /** Get host name.
  *  The order is: cached hostname, cached host IP, uname or COMPUTERNAME,
  *  SERVER_ADDR, empty string.
