@@ -10,13 +10,18 @@ NCBI_APPLOG=./ncbi_applog
 NCBI_LOG_SITE=dev
 export NCBI_LOG_SITE
 
-# Write to /log by default
-#NCBI_CONFIG__NCBIAPPLOG_DESTINATION=stdlog
+# uncomment to debug this CGI
+#NCBI_CONFIG__NCBIAPPLOG_DESTINATION=stdout
 #export NCBI_CONFIG__NCBIAPPLOG_DESTINATION
 
 echo Content-type: text/plain
 echo ""
 
 umask 002
+
 read line
-eval $NCBI_APPLOG $line -mode=cgi
+if test "$line" = "RAW"; then
+   eval $NCBI_APPLOG raw -file - -mode=cgi
+else
+   eval $NCBI_APPLOG $line -mode=cgi
+fi
