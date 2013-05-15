@@ -2714,7 +2714,9 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                 string protein_label = "";
                 try {
                     CFeat_CI feat_ci (bsh, SAnnotSelector (CSeqFeatData::e_Prot));
-                    if (feat_ci && feat_ci->GetData().IsProt() && feat_ci->GetData().GetProt().IsSetName()) {
+                    if (feat_ci && feat_ci->GetData().IsProt() 
+                        && feat_ci->GetData().GetProt().IsSetName()
+                        && feat_ci->GetData().GetProt().GetName().size() > 0) {
                         protein_label = feat_ci->GetData().GetProt().GetName().front();
                     }
                 } catch (CException ) {

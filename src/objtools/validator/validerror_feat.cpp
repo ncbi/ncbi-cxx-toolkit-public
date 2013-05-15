@@ -2433,7 +2433,8 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
     if ( processed != CProt_ref::eProcessed_signal_peptide  &&
          processed != CProt_ref::eProcessed_transit_peptide ) {
         if ( prot.IsSetName()  &&
-            (!prot.GetName().empty()  ||  !prot.GetName().front().empty()) ) {
+            !prot.GetName().empty()  &&
+            !prot.GetName().front().empty() ) {
             empty = false;
         }
         if ( prot.CanGetDesc()  &&  !prot.GetDesc().empty() ) {
