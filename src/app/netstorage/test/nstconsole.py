@@ -44,7 +44,8 @@ commandSN = 0
 
 def getCommandMap():
     " Forms the command map "
-    return { 'help':           printCommandList,
+    return { '?':              printCommandList,
+             'help':           printCommandList,
              'hello':          sendHello,
              'bye':            sendBye,
              'info':           sendInfo,
@@ -365,7 +366,7 @@ def sendNoDictionary( nst, arguments ):
     " Sends a malformed non-dictionary request "
     message = [ 'blah', 'blah', 'blah' ]
     printMessage( "Message to server", message )
-    response = nst.exchange( message, {} )
+    response = nst.exchange( message )
     printMessage( "Message from server", response )
     return
 
