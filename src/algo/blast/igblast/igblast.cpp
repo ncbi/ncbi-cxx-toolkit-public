@@ -335,6 +335,33 @@ void CIgBlast::x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annots,
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
 };
 
+// Compare the second seqalign to see if it is as good as the first one
+static bool s_IsSeqAlignAsGood(const CRef<CSeq_align> &x, 
+                               const CRef<CSeq_align> &y)
+{
+    double sx, sy;
+    x->GetNamedScore(CSeq_align::eScore_EValue, sx);
+    y->GetNamedScore(CSeq_align::eScore_EValue, sy);
+    if (sx < 0.999999 * sy || sy < 0.999999 * sx) return false;
+    int ix, iy;
+    x->GetNamedScore(CSeq_align::eScore_Score, ix);
+    y->GetNamedScore(CSeq_align::eScore_Score, iy);
+    if (ix > iy) return false;
+    x->GetNamedScore(CSeq_align::eScore_IdentityCount, ix);
+    y->GetNamedScore(CSeq_align::eScore_IdentityCount, iy);
+    int dx, dy;
+    dx = x->GetAlignLength();
+    dy = y->GetAlignLength();
+    return (ix*dy <= iy*dx);
+}
+
+// Remove lcl| from seqid label
+static string s_RemoveLocalPrefix(const string & sid) 
+{
+    if (sid.substr(0, 4) == "lcl|") return(sid.substr(4, sid.length()));
+    return sid;
+}
+
 void CIgBlast::x_AnnotateV(CRef<CSearchResultSet>        &results, 
                            vector<CRef <CIgAnnotation> > &annots)
 {
@@ -344,10 +371,19 @@ void CIgBlast::x_AnnotateV(CRef<CSearchResultSet>        &results,
         annots.push_back(CRef<CIgAnnotation>(annot));
  
         if ((*result)->HasAlignments()) {
-            CRef<CSeq_align> align = (*result)->GetSeqAlign()->Get().front();
+            const CSeq_align_set::Tdata & align_list = (*result)->GetSeqAlign()->Get();
+            CRef<CSeq_align> align = align_list.front();
             annot->m_GeneInfo[0] = align->GetSeqStart(0);
             annot->m_GeneInfo[1] = align->GetSeqStop(0)+1;
-            annot->m_TopGeneIds[0] = align->GetSeq_id(1).AsFastaString();
+            annot->m_TopGeneIds[0] = "";
+
+            int ii=0;
+            ITERATE(CSeq_align_set::Tdata, it, align_list) {
+                if (ii++ < m_IgOptions->m_NumAlign[0] && s_IsSeqAlignAsGood(align, (*it))) {
+                    if (annot->m_TopGeneIds[0] != "") annot->m_TopGeneIds[0] += ",";
+                    annot->m_TopGeneIds[0] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
+                } else break;
+            }
         } 
     }
 };
@@ -370,11 +406,18 @@ static bool s_CompareSeqAlignByEvalue(const CRef<CSeq_align> &x,
     double sx, sy;
     x->GetNamedScore(CSeq_align::eScore_EValue, sx);
     y->GetNamedScore(CSeq_align::eScore_EValue, sy);
-    if (sx != sy) return (sx < sy);
+    if (sx < 0.999999 * sy) return true;
+    if (sy < 0.999999 * sx) return false;
     int ix, iy;
     x->GetNamedScore(CSeq_align::eScore_Score, ix);
     y->GetNamedScore(CSeq_align::eScore_Score, iy);
-    return (ix >= iy);
+    if (ix != iy) return (ix > iy);
+    x->GetNamedScore(CSeq_align::eScore_IdentityCount, ix);
+    y->GetNamedScore(CSeq_align::eScore_IdentityCount, iy);
+    int dx, dy;
+    dx = x->GetAlignLength();
+    dy = y->GetAlignLength();
+    return (ix*dy >= iy*dx);
 };
 
 // Compare two seqaligns according to their evalue and coverage
@@ -723,27 +766,44 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
        
         /* annotate D */    
         if (align_D.NotEmpty() && !align_D->IsEmpty()) {
-            const CSeq_align & it = **(align_D->Get().begin());
-            (*annot)->m_GeneInfo[2] = it.GetSeqStart(0);
-            (*annot)->m_GeneInfo[3] = it.GetSeqStop(0)+1;
-            (*annot)->m_TopGeneIds[1] = it.GetSeq_id(1).AsFastaString();
+            const CSeq_align_set::Tdata & align_list = align_D->Get();
+            CRef<CSeq_align> align = align_list.front();
+            (*annot)->m_GeneInfo[2] = align->GetSeqStart(0);
+            (*annot)->m_GeneInfo[3] = align->GetSeqStop(0)+1;
+            (*annot)->m_TopGeneIds[1] = "";
+
+            int ii=0;
+            ITERATE(CSeq_align_set::Tdata, it, align_list) {
+                if (ii++ < m_IgOptions->m_NumAlign[1] && s_IsSeqAlignAsGood(align, (*it))) {
+                    if ((*annot)->m_TopGeneIds[1] != "") (*annot)->m_TopGeneIds[1] += ",";
+                    (*annot)->m_TopGeneIds[1] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
+                } else break;
+            }
         }
             
         /* annotate J */    
         if (align_J.NotEmpty() && !align_J->IsEmpty()) {
-            const CSeq_align & it = **(align_J->Get().begin());
-            (*annot)->m_GeneInfo[4] = it.GetSeqStart(0);
-            (*annot)->m_GeneInfo[5] = it.GetSeqStop(0)+1;
-            (*annot)->m_TopGeneIds[2] = it.GetSeq_id(1).AsFastaString();
-            string sid = it.GetSeq_id(1).AsFastaString();
-            if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+            const CSeq_align_set::Tdata & align_list = align_J->Get();
+            CRef<CSeq_align> align = align_list.front();
+            (*annot)->m_GeneInfo[4] = align->GetSeqStart(0);
+            (*annot)->m_GeneInfo[5] = align->GetSeqStop(0)+1;
+            string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());
             int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
             if (frame_offset >= 0) {
-                int frame_adj = (it.GetSeqStart(1) + 3 - frame_offset) % 3;
+                int frame_adj = (align->GetSeqStart(1) + 3 - frame_offset) % 3;
                 (*annot)->m_FrameInfo[2] = (q_ms) ?
-                                           it.GetSeqStop(0)  + frame_adj 
-                                         : it.GetSeqStart(0) - frame_adj;
+                                           align->GetSeqStop(0)  + frame_adj 
+                                         : align->GetSeqStart(0) - frame_adj;
             } 
+            (*annot)->m_TopGeneIds[2] = "";
+
+            int ii=0;
+            ITERATE(CSeq_align_set::Tdata, it, align_list) {
+                if (ii++ < m_IgOptions->m_NumAlign[2] && s_IsSeqAlignAsGood(align, (*it))) {
+                    if ((*annot)->m_TopGeneIds[2] != "") (*annot)->m_TopGeneIds[2] += ",";
+                    (*annot)->m_TopGeneIds[2] += s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
+                } else break;
+            }
         }
      
         /* next set of results */
@@ -808,8 +868,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
 
             ITERATE(CSeq_align_set::Tdata, it, align_list) {
 
-                string sid = (*it)->GetSeq_id(1).AsFastaString();
-                if (sid.substr(0, 4) == "lcl|") sid = sid.substr(4, sid.length());
+                string sid = s_RemoveLocalPrefix((*it)->GetSeq_id(1).AsFastaString());
                 annot->m_ChainType[0] = m_AnnotationInfo.GetDomainChainType(sid);
                 annot->m_ChainTypeToShow = annot->m_ChainType[0];
                 int domain_info[10];
