@@ -201,7 +201,7 @@ void CSeqTable_multi_data::x_Preprocess(void) const
     }
     else if ( IsBit_bvector() && !m_BitVector ) {
         AutoPtr<bm::bvector<> > bv(new bm::bvector<>());
-        bm::deserialize(*bv, (const unsigned char*)GetBit_bvector().data());
+        bm::deserialize(*bv, (const unsigned char*)&GetBit_bvector()[0]);
         m_BitVector = bv;
     }
 }

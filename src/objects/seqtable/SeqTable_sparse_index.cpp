@@ -127,7 +127,7 @@ static inline size_t sx_FindFirstNonZeroByte(const vector<char>& bytes,
                                              size_t index)
 {
     size_t size = bytes.size();
-    const char* ptr = bytes.data();
+    const char* ptr = &bytes[0];
     size_t offset = sx_FindFirstNonZeroByte(ptr+index, ptr+size);
     if ( offset == CSeqTable_sparse_index::kInvalidIndex ) {
         return CSeqTable_sparse_index::kInvalidIndex;
@@ -145,7 +145,7 @@ void CSeqTable_sparse_index::x_Preprocess(void) const
     else if ( IsBit_set_bvector() && !m_BitVector ) {
         const TBit_set& bit_set = GetBit_set_bvector();
         AutoPtr<bm::bvector<> > bv(new bm::bvector<>());
-        bm::deserialize(*bv, (const unsigned char*)bit_set.data());
+        bm::deserialize(*bv, (const unsigned char*)&bit_set[0]);
         m_BitVector.reset(bv.release());
     }
 }
@@ -170,7 +170,7 @@ size_t CSeqTable_sparse_index::x_GetBytesBitCount(size_t byte_count) const
             bc.m_BlockBitCount.reset(new size_t[block_count]);
         }
         size_t bsize = bc.m_BlockBitCountSize;
-        size_t count = sx_CalcBlockBitCount(bytes.data()+bsize*kBlockSize,
+        size_t count = sx_CalcBlockBitCount(&bytes[bsize*kBlockSize],
                                             kBlockSize);
         if ( bsize ) {
             count += bc.m_BlockBitCount[bsize-1];
@@ -188,7 +188,7 @@ size_t CSeqTable_sparse_index::x_GetBytesBitCount(size_t byte_count) const
             size_t count = 0;
             size_t block_pos = block_index*kBlockSize;
             size_t block_size = min(kBlockSize, size-block_pos);
-            const char* block = bytes.data()+block_pos;
+            const char* block = &bytes[block_pos];
             for ( size_t i = 0; i < block_size; ++i ) {
                 count += sx_CalcByteBitCount(Uint1(block[i]));
                 bc.m_CacheBlockBitCount[i] = count;
@@ -209,7 +209,7 @@ void CSeqTable_sparse_index::SetBit_set_bvector(const bm::bvector<>* bv)
     TBit_set_bvector& arr = CSeqTable_sparse_index_Base::SetBit_set_bvector();
     arr.resize(stat.max_serialize_mem);
     bm::word_t* temp_block = bv->allocate_tempblock();
-    size_t size = bm::serialize(*bv, (unsigned char*)arr.data(), temp_block);
+    size_t size = bm::serialize(*bv, (unsigned char*)&arr[0], temp_block);
     free(temp_block);
     arr.resize(size);
 }
