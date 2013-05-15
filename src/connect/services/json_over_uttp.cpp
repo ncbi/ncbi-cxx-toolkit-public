@@ -33,6 +33,8 @@
 
 #include <connect/services/json_over_uttp.hpp>
 
+#include <corelib/ncbistre.hpp>
+
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -516,6 +518,98 @@ bool CJsonNode::AsBoolean() const
 
     return static_cast<const SJsonFixedSizeNodeImpl*>(
         m_Impl.GetPointerOrNull())->m_Boolean;
+}
+
+static void s_Repr_Value(CNcbiOstrstream& oss, const CJsonNode& node);
+
+static void s_Repr_Object(CNcbiOstrstream& oss, const CJsonNode& node)
+{
+    CJsonIterator it = node.Iterate();
+    if (it) {
+        oss << '"' << it.GetKey() << "\": ";
+        s_Repr_Value(oss, *it);
+        while (++it) {
+            oss << ", \"" << it.GetKey() << "\": ";
+            s_Repr_Value(oss, *it);
+        }
+    }
+}
+
+static void s_Repr_Array(CNcbiOstrstream& oss, const CJsonNode& node)
+{
+    CJsonIterator it = node.Iterate();
+    if (it) {
+        s_Repr_Value(oss, *it);
+        while (++it) {
+            oss << ", ";
+            s_Repr_Value(oss, *it);
+        }
+    }
+}
+
+static void s_Repr_Value(CNcbiOstrstream& oss, const CJsonNode& node)
+{
+    switch (node.GetNodeType()) {
+    case CJsonNode::eObject:
+        oss << '{';
+        s_Repr_Object(oss, node);
+        oss << '}';
+        break;
+    case CJsonNode::eArray:
+        oss << '[';
+        s_Repr_Array(oss, node);
+        oss << ']';
+        break;
+    case CJsonNode::eString:
+        oss << '"' << NStr::PrintableString(node.AsString()) << '"';
+        break;
+    case CJsonNode::eInteger:
+        oss << node.AsInteger();
+        break;
+    case CJsonNode::eDouble:
+        oss << node.AsDouble();
+        break;
+    case CJsonNode::eBoolean:
+        oss << (node.AsBoolean() ? "true" : "false");
+        break;
+    default: /* case CJsonNode::eNull: */
+        oss << "null";
+    }
+}
+
+string CJsonNode::Repr(TReprFlags flags) const
+{
+    CNcbiOstrstream oss;
+
+    switch (GetNodeType()) {
+    case CJsonNode::eObject:
+        if (flags & fOmitOutermostBrackets)
+            s_Repr_Object(oss, *this);
+        else {
+            oss << '{';
+            s_Repr_Object(oss, *this);
+            oss << '}';
+        }
+        break;
+    case CJsonNode::eArray:
+        if (flags & fOmitOutermostBrackets)
+            s_Repr_Array(oss, *this);
+        else {
+            oss << '[';
+            s_Repr_Array(oss, *this);
+            oss << ']';
+        }
+        break;
+    case CJsonNode::eString:
+        if (flags & fVerbatimIfString)
+            return (static_cast<const SJsonStringNodeImpl*>(
+                    m_Impl.GetPointerOrNull())->m_String);
+        /* FALL THROUGH */
+    default:
+        s_Repr_Value(oss, *this);
+    }
+
+    return CNcbiOstrstreamToString(oss);
 }
 
 const char* CJsonOverUTTPException::GetErrCodeString() const

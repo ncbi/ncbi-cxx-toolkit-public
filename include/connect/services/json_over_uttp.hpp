@@ -237,6 +237,17 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// Provided that this is a boolean node, return
     /// the boolean value of this node.
     bool AsBoolean() const;
+
+    /// String representation flags.
+    enum EReprFlags {
+        fVerbatimIfString = 1 << 0,
+        fOmitOutermostBrackets = 1 << 1,
+    };
+    /// Binary OR of EReprFlags.
+    typedef int TReprFlags;
+
+    /// Return a string representation of this node.
+    string Repr(TReprFlags flags = 0) const;
 };
 
 /// Iterator for JSON arrays and objects.

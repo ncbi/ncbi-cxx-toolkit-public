@@ -598,8 +598,8 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
                             .Print("_type", "message");
 
         for (CJsonIterator it = message.Iterate(); it; ++it) {
-            // TODO: Value!
-            ctxt_extra.Print(it.GetKey(), "");
+            ctxt_extra.Print(it.GetKey(),
+                    it.GetNode().Repr(CJsonNode::fVerbatimIfString));
         }
 
         ctxt_extra.Flush();
