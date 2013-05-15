@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/seqtable/SeqTable_sparse_index_.hpp>
 
+#include <util/bitset/ncbi_bitset.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -59,110 +61,128 @@ public:
     // destructor
     ~CSeqTable_sparse_index(void);
 
-    static const size_t kSkipped = size_t(~0);
+    enum {
+        kSkipped = ~size_t(0),
+        kInvalidIndex = ~size_t(0)
+    };
 
-    typedef TIndexes::value_type index_type;
-    class CConstIterator {
+    // Overload base setters to reset extra data fields
+    void Reset(void) {
+        m_BitCount.reset();
+        m_BitVector.reset();
+        CSeqTable_sparse_index_Base::Reset();
+    }
+
+    // return index in compacted array of the argument row index
+    // return kSkipped if the row doesn't have value
+    size_t GetIndexAt(size_t index) const;
+
+    // return true if the row has value in compacted array
+    bool IsSelectedAt(size_t index) const;
+
+    // set sparse index from bvector
+    // the ownership of the bvector object is taken,
+    // and the bvector should not be changed outside
+    void SetBit_set_bvector(const bm::bvector<>* bv);
+
+    // const_iterator iterates only set bits
+    class const_iterator {
     public:
-        enum EBegin {
-            eBegin
-        };
-        enum EEnd {
-            eEnd
-        };
-        CConstIterator(const CSeqTable_sparse_index& sparse, EBegin)
-            : m_Index(0),
-              m_IndexesIter(sparse.GetIndexes().begin()),
-              m_IndexesEnd(sparse.GetIndexes().end())
-            {
-            }
-        CConstIterator(const CSeqTable_sparse_index& sparse, EEnd)
-            : m_Index(0),
-              m_IndexesIter(sparse.GetIndexes().end()),
-              m_IndexesEnd(sparse.GetIndexes().end())
-            {
-            }
-        CConstIterator(const CSeqTable_sparse_index& sparse, index_type index)
-            : m_Index(index),
-              m_IndexesIter(lower_bound(sparse.GetIndexes().begin(),
-                                        sparse.GetIndexes().end(),
-                                        index)),
-              m_IndexesEnd(sparse.GetIndexes().end())
+        const_iterator(void)
+            : m_Index(kInvalidIndex),
+              m_SetBitIndex(0)
             {
             }
         
-        index_type GetRow(void) const {
+        DECLARE_OPERATOR_BOOL(m_Index != kInvalidIndex);
+
+        bool operator==(const const_iterator& iter) const {
+            return m_Index == iter.m_Index;
+        }
+
+        bool operator!=(const const_iterator& iter) const {
+            return m_Index != iter.m_Index;
+        }
+
+        // current bit is always set
+        bool operator*(void) const {
+            return true;
+        }
+
+        size_t GetIndex(void) const {
             return m_Index;
         }
 
-        bool NoMoreSelected(void) const {
-            return m_IndexesIter == m_IndexesEnd;
-        }
-
-        bool IsSelected(void) const {
-            return m_IndexesIter != m_IndexesEnd && *m_IndexesIter == m_Index;
-        }
-
-        CConstIterator& operator++(void) {
-            if ( IsSelected() ) {
-                ++m_IndexesIter;
-            }
-            ++m_Index;
+        // go to the next set bit
+        const_iterator& operator++(void) {
+            m_Index = m_Obj->x_GetNextSetBitIndex(m_Index, m_SetBitIndex);
+            ++m_SetBitIndex;
             return *this;
         }
-        
+
+    protected:
+        friend class CSeqTable_sparse_index;
+
+        const_iterator(const CSeqTable_sparse_index* obj,
+                       size_t index,
+                       size_t set_bit_index = 0)
+            : m_Obj(obj),
+              m_Index(index),
+              m_SetBitIndex(set_bit_index)
+            {
+            }
+
     private:
-        index_type m_Index;
-        TIndexes::const_iterator m_IndexesIter, m_IndexesEnd;
+        CConstRef<CSeqTable_sparse_index> m_Obj;
+        size_t m_Index, m_SetBitIndex;
     };
-    typedef CConstIterator const_iterator;
 
-    index_type GetMinSelectedIndex(void) const {
-        const TIndexes& indexes = GetIndexes();
-        return indexes.empty()? 0: indexes.front();
-    }
-
-    index_type GetMaxSelectedIndex(void) const {
-        const TIndexes& indexes = GetIndexes();
-        return indexes.empty()? 0: indexes.back();
-    }
+    // return number of all bits (both 0 and 1)
+    size_t size(void) const;
 
     const_iterator begin(void) const {
-        return CConstIterator(*this, CConstIterator::eBegin);
+        return const_iterator(this, x_GetFirstSetBitIndex());
     }
-
     const_iterator end(void) const {
-        return CConstIterator(*this, CConstIterator::eEnd);
+        return const_iterator();
     }
 
-    const_iterator find(index_type index) const {
-        return CConstIterator(*this, index);
-    }
+    
+    // change the representation of index
+    void ChangeTo(E_Choice type);
+    void ChangeToIndexes(void);
+    void ChangeToIndexes_delta(void);
+    void ChangeToBit_set(void);
+    void ChangeToBit_set_bvector(void);
 
-    size_t GetIndexAt(index_type index) const {
-        const TIndexes& indexes = GetIndexes();
-        TIndexes::const_iterator iter =
-            lower_bound(indexes.begin(), indexes.end(), index);
-        if ( iter != indexes.end() && *iter == index ) {
-            return iter - indexes.begin();
+protected:
+    friend class const_iterator;
+
+    void x_Preprocess(void) const;
+    void x_EnsurePreprocessed(void) const {
+        E_Choice type = Which();
+        if ( (type == e_Indexes_delta) ||
+             (type == e_Bit_set_bvector && !m_BitVector) ) {
+            x_Preprocess();
         }
-        else {
-            return kSkipped;
-        }
     }
+    size_t x_GetBytesBitCount(size_t byte_count) const;
+    struct SBitCount {
+        size_t m_BlockBitCountSize;
+        AutoArray<size_t> m_BlockBitCount;
+        size_t m_CacheBlock;
+        AutoArray<size_t> m_CacheBlockBitCount;
+    };
+    mutable AutoPtr<SBitCount> m_BitCount;
+    mutable AutoPtr<const bm::bvector<> > m_BitVector;
 
-    bool IsSelectedAt(index_type index) const {
-        const TIndexes& indexes = GetIndexes();
-        TIndexes::const_iterator iter =
-            lower_bound(indexes.begin(), indexes.end(), index);
-        return iter != indexes.end() && *iter == index;
-    }
+    size_t x_GetFirstSetBitIndex(void) const;
+    size_t x_GetNextSetBitIndex(size_t index, size_t set_bit_index) const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CSeqTable_sparse_index(const CSeqTable_sparse_index& value);
     CSeqTable_sparse_index& operator=(const CSeqTable_sparse_index& value);
-
 };
 
 /////////////////// CSeqTable_sparse_index inline methods

@@ -63,12 +63,33 @@ public:
 
     size_t GetSize(void) const;
 
+    bool GetRowBit(size_t row_index) const
+        {
+            x_EnsurePreprocessed();
+            return x_GetRowBit(row_index);
+        }
+
     // reserve memory for multi-row data vectors
     class NCBI_SEQ_EXPORT CReserveHook : public CPreReadChoiceVariantHook
     {
         virtual void PreReadChoiceVariant(CObjectIStream& in,
                                           const CObjectInfoCV& variant);
     };
+    
+private:
+    void x_Preprocess(void) const;
+    void x_EnsurePreprocessed(void) const {
+        E_Choice type = Which();
+        if ( (type == e_Int_delta) ||
+             (type == e_Int_scaled) ||
+             (type == e_Real_scaled) ||
+             (type == e_Bit_bvector && !m_BitVector) ) {
+            x_Preprocess();
+        }
+    }
+    bool x_GetRowBit(size_t row_index) const;
+    
+    mutable AutoPtr<bm::bvector<> > m_BitVector;
     
 private:
     // Prohibit copy constructor and assignment operator

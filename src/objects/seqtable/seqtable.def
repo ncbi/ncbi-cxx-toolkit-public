@@ -25,3 +25,5 @@ indexes._type       = vector
 [SeqTable-sparse-index]
 indexes._type       = vector
 indexes.E._type     = unsigned
+indexes-delta._type   = vector
+indexes-delta.E._type = unsigned

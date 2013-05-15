@@ -128,6 +128,22 @@ CommonBytes-table ::= SEQUENCE {
 }
 
 
+Scaled-int-multi-data ::= SEQUENCE {
+    -- output data[i] = data[i]*mul+add
+    mul     INTEGER,
+    add     INTEGER,
+    data    SeqTable-multi-data
+}
+
+
+Scaled-real-multi-data ::= SEQUENCE {
+    -- output data[i] = data[i]*mul+add
+    mul     REAL,
+    add     REAL,
+    data    SeqTable-multi-data
+}
+
+
 SeqTable-multi-data ::= CHOICE {
     -- a set of integers, one per row
     int         SEQUENCE OF INTEGER,
@@ -154,7 +170,20 @@ SeqTable-multi-data ::= CHOICE {
     -- a set of locations, one per row
     loc         SEQUENCE OF Seq-loc,
     id          SEQUENCE OF Seq-id,
-    interval    SEQUENCE OF Seq-interval
+    interval    SEQUENCE OF Seq-interval,
+
+    -- delta-encoded data (int/bit -> int)
+    int-delta   SeqTable-multi-data,
+
+    -- scaled data (int/bit -> int)
+    int-scaled  Scaled-int-multi-data,
+
+    -- scaled data (int/bit -> real)
+    real-scaled Scaled-real-multi-data,
+
+    -- a set of bit, represented as serialized bvector,
+    -- see include/util/bitset/bm.h
+    bit-bvector OCTET STRING
 }
 
 
@@ -182,11 +211,19 @@ SeqTable-single-data ::= CHOICE {
 
 
 SeqTable-sparse-index ::= CHOICE {
-    -- indexes of rows with values
+    -- Indexes of rows with values
     indexes SEQUENCE OF INTEGER,
 
-    -- bitset of rows with values
-    bit-set OCTET STRING
+    -- Bitset of rows with values, set bit means the row has value.
+    -- Most-significant bit in an octet comes first.
+    bit-set OCTET STRING,
+
+    -- Indexes of rows with values, delta-encoded
+    indexes-delta SEQUENCE OF INTEGER,
+    
+    -- Bitset of rows with values, as serialized bvector<>,
+    -- see include/util/bitset/bm.h
+    bit-set-bvector OCTET STRING
 }
 
 

@@ -45,6 +45,8 @@
 #include <serial/objhook.hpp>
 #include <corelib/ncbi_param.hpp>
 
+#include <util/bitset/ncbi_bitset.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -57,8 +59,175 @@ CSeqTable_multi_data::~CSeqTable_multi_data(void)
 }
 
 
+DEFINE_STATIC_MUTEX(sx_PrepareMutex_multi_data);
+
+
+void CSeqTable_multi_data::x_Preprocess(void) const
+{
+    CMutexGuard guard(sx_PrepareMutex_multi_data);
+    if ( IsInt_delta() ) {
+        CSeqTable_multi_data* nc_this =
+            const_cast<CSeqTable_multi_data*>(this);
+        TInt arr;
+        const CSeqTable_multi_data& data = GetInt_delta();
+        size_t size = data.GetSize();
+        E_Choice data_type = data.Which();
+        if ( data_type == e_Bit ) {
+            arr.reserve(size);
+            const TBit& src = data.GetBit();
+            TInt::value_type v = 0;
+            ITERATE ( TBit, it, src ) {
+                Uint1 bb = *it;
+                for ( size_t i = 0; i < 8; ++i, bb <<= 1 ) {
+                    if ( bb&0x80 ) {
+                        ++v;
+                    }
+                    arr.push_back(v);
+                }
+            }
+        }
+        else if ( data_type == e_Bit_bvector ) {
+            arr.reserve(size);
+            const bm::bvector<>& src = *data.m_BitVector;
+            TInt::value_type v = 0;
+            if ( src.any() ) {
+                for ( bm::id_t i = src.get_first(); (i=src.get_next(i)); ) {
+                    arr.resize(i, v);
+                    ++v;
+                    arr.push_back(v);
+                }
+            }
+            arr.resize(size, v);
+        }
+        else {
+            swap(const_cast<TInt&>(data.GetInt()), arr);
+            TInt::value_type v = 0;
+            NON_CONST_ITERATE ( TInt, it, arr ) {
+                v += *it;
+                *it = v;
+            }
+        }
+        swap(nc_this->SetInt(), arr);
+    }
+    else if ( IsInt_scaled() ) {
+        CSeqTable_multi_data* nc_this =
+            const_cast<CSeqTable_multi_data*>(this);
+        TInt arr;
+        const TInt_scaled& scale = GetInt_scaled();
+        TInt::value_type value0 = scale.GetAdd();
+        const CSeqTable_multi_data& data = scale.GetData();
+        size_t size = data.GetSize();
+        E_Choice data_type = data.Which();
+        if ( data_type == e_Bit ) {
+            const TBit& src = data.GetBit();
+            arr.reserve(size);
+            TInt::value_type value1 = value0 + scale.GetMul();
+            ITERATE ( TBit, it, src ) {
+                Uint1 bb = *it;
+                for ( size_t i = 0; i < 8; ++i, bb <<= 1 ) {
+                    arr.push_back((bb&0x80)? value1: value0);
+                }
+            }
+        }
+        else if ( data_type == e_Bit_bvector ) {
+            arr.reserve(size);
+            const bm::bvector<>& src = *data.m_BitVector;
+            if ( src.any() ) {
+                TInt::value_type value1 = value0 + scale.GetMul();
+                for ( bm::id_t i = src.get_first(); (i=src.get_next(i)); ) {
+                    arr.resize(i, value0);
+                    arr.push_back(value1);
+                }
+            }
+            arr.resize(size, value0);
+        }
+        else {
+            swap(const_cast<TInt&>(data.GetInt()), arr);
+            TInt_scaled::TMul mul = scale.GetMul();
+            NON_CONST_ITERATE ( TInt, it, arr ) {
+                *it = *it*mul + value0;
+            }
+        }
+        swap(nc_this->SetInt(), arr);
+    }
+    else if ( IsReal_scaled() ) {
+        CSeqTable_multi_data* nc_this =
+            const_cast<CSeqTable_multi_data*>(this);
+        TReal arr;
+        const TReal_scaled& scale = GetReal_scaled();
+        TReal::value_type value0 = scale.GetAdd();
+        const CSeqTable_multi_data& data = scale.GetData();
+        size_t size = data.GetSize();
+        E_Choice data_type = data.Which();
+        if ( data_type == e_Bit ) {
+            const TBit& src = data.GetBit();
+            arr.reserve(size);
+            TReal::value_type value1 = value0 + scale.GetMul();
+            ITERATE ( TBit, it, src ) {
+                Uint1 bb = *it;
+                for ( size_t i = 0; i < 8; ++i, bb <<= 1 ) {
+                    arr.push_back((bb&0x80)? value1: value0);
+                }
+            }
+        }
+        else if ( data_type == e_Bit_bvector ) {
+            arr.reserve(size);
+            const bm::bvector<>& src = *data.m_BitVector;
+            if ( src.any() ) {
+                TReal::value_type value1 = value0 + scale.GetMul();
+                for ( bm::id_t i = src.get_first(); (i=src.get_next(i)); ) {
+                    arr.resize(i, value0);
+                    arr.push_back(value1);
+                }
+            }
+            arr.resize(size, value0);
+        }
+        else if ( data_type == e_Int ) {
+            const TInt& src = data.GetInt();
+            arr.reserve(size);
+            TReal_scaled::TMul mul = scale.GetMul();
+            ITERATE ( TInt, it, src ) {
+                arr.push_back(*it*mul + value0);
+            }
+        }
+        else {
+            swap(const_cast<TReal&>(data.GetReal()), arr);
+            TReal_scaled::TMul mul = scale.GetMul();
+            NON_CONST_ITERATE ( TReal, it, arr ) {
+                *it = *it*mul + value0;
+            }
+        }
+        swap(nc_this->SetReal(), arr);
+    }
+    else if ( IsBit_bvector() && !m_BitVector ) {
+        AutoPtr<bm::bvector<> > bv(new bm::bvector<>());
+        bm::deserialize(*bv, (const unsigned char*)GetBit_bvector().data());
+        m_BitVector = bv;
+    }
+}
+
+
+bool CSeqTable_multi_data::x_GetRowBit(size_t row_index) const
+{
+    if ( IsBit() ) {
+        const TBit& bits = GetBit();
+        size_t i = row_index/8;
+        if ( i >= bits.size() ) {
+            return 0;
+        }
+        size_t j = row_index%8;
+        Uint1 bb = bits[i];
+        return ((bb<<j)&0x80) != 0;
+    }
+    else {
+        return m_BitVector->get_bit(row_index);
+    }
+}
+
+
 size_t CSeqTable_multi_data::GetSize(void) const
 {
+    x_EnsurePreprocessed();
     switch ( Which() ) {
     case e_Int:
         return GetInt().size();
@@ -80,6 +249,8 @@ size_t CSeqTable_multi_data::GetSize(void) const
         return GetId().size();
     case e_Interval:
         return GetInterval().size();
+    case e_Bit_bvector:
+        return m_BitVector->size();
     default:
         break;
     }
