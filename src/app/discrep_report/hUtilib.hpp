@@ -111,20 +111,16 @@ bool Str2Blob(const string& str, AsnClass& blob, ESerialDataFormat datafm=eSeria
 template <class AsnClass>
 void OutBlob(const AsnClass& blob, ESerialDataFormat datafm, string file_nm)
 {
-
 	auto_ptr <CObjectOStream> oos (CObjectOStream::Open(datafm, file_nm));
 	*oos << blob;
-
 };
 
 
 template <class AsnClass>
 void ReadInBlob(AsnClass& blob, string file_nm, ESerialDataFormat datafm=eSerial_AsnText)
 {
-
         auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, file_nm));
         *ois >> blob;
-
 };
 
 

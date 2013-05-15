@@ -421,6 +421,49 @@ void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+void CBioseq_SUSPECT_PHRASES :: FindSuspectPhrases(const string& check_str, const CSeq_feat& seq_feat)
+{
+   ITERATE (vector <string>, it, thisInfo.suspect_phrases) 
+      if (NStr::FindNoCase(check_str, *it) != string::npos) 
+         thisInfo.test_item_list[GetName()].push_back(*it + "$" + GetDiscItemText(seq_feat));
+};
+
+void CBioseq_SUSPECT_PHRASES :: TestOnObj(const CBioseq& bioseq)
+{
+   string check_str;
+   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+      const CProt_ref& prot_ref = (*it)->GetData().GetProt();
+      if (prot_ref.CanGetDesc()) {
+        check_str = prot_ref.GetDesc();
+        if (!check_str.empty()) FindSuspectPhrases(check_str, **it);
+      }
+   }
+
+   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+       if ( (*it)->CanGetComment()) {
+          check_str = (*it)->GetComment();
+          if (!check_str.empty()) FindSuspectPhrases(check_str, **it);
+       }
+   }
+};
+
+void CBioseq_SUSPECT_PHRASES :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs phrase2feats;
+   GetTestItemList(c_item->item_list, phrase2feats);
+   c_item->item_list.clear();
+   
+   ITERATE (Str2Strs, it, phrase2feats) {
+      AddSubcategories(c_item, GetName(), it->second, "cds comment or protein description", 
+               "cds commentsor protein descriptions", e_OtherComment, true, it->first);
+   }
+   if (!c_item->item_list.empty())
+       c_item->description = GetOtherComment(c_item->item_list.size(), "cds comment or protein description",  
+                                                  "cds commentsor protein descriptions")
+                             + "suspect phrases.";
+};
+
+
 // SuspectRuleFeatCheckBack
 void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {

@@ -2901,6 +2901,19 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+  class CBioseq_SUSPECT_PHRASES : public CBioseqTestAndRepData 
+  {
+    public:
+      virtual ~CBioseq_SUSPECT_PHRASES () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("SUSPECT_PHRASES"); }
+
+    protected:
+      void FindSuspectPhrases(const string& check_str, const CSeq_feat& seq_feat);
+  };
+
   class CBioseq_DISC_SUSPECT_RRNA_PRODUCTS  : public CBioseqTestAndRepData
   {
     public:

@@ -110,6 +110,7 @@ static const s_test_property test_list[] = {
    {"TEST_UNUSUAL_NT", fDiscrepancy},
 
 // tests_on_Bioseq_CFeat
+   {"SUSPECT_PHRASES", fDiscrepancy},
    {"DISC_SUSPECT_RRNA_PRODUCTS", fDiscrepancy},
    {"on_SUSPECT_RULE", fDiscrepancy},
    {"TEST_ORGANELLE_PRODUCTS", fDiscrepancy},
@@ -337,545 +338,547 @@ void CRepConfig :: CollectTests()
                    CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
         tests_on_Bioseq_aa.push_back(
                    CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX));
-    } 
-    else if ( (*it) == "TEST_DEFLINE_PRESENT")
+     } 
+     else if ( (*it) == "TEST_DEFLINE_PRESENT")
          tests_on_Bioseq_na.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_DEFLINE_PRESENT));
-    else if ( (*it) == "N_RUNS") 
+     else if ( (*it) == "N_RUNS") 
         tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_N_RUNS));
-    else if ( (*it) == "N_RUNS_14") 
+     else if ( (*it) == "N_RUNS_14") 
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_N_RUNS_14));
-    else if ( (*it) == "ZERO_BASECOUNT")
+     else if ( (*it) == "ZERO_BASECOUNT")
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_ZERO_BASECOUNT));
-    else if ( (*it) == "TEST_LOW_QUALITY_REGION")
+     else if ( (*it) == "TEST_LOW_QUALITY_REGION")
        tests_on_Bioseq_na.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_LOW_QUALITY_REGION));
-    else if ( (*it) == "DISC_PERCENT_N")
+     else if ( (*it) == "DISC_PERCENT_N")
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_PERCENT_N));
-    else if ( (*it) == "DISC_10_PERCENTN")
+     else if ( (*it) == "DISC_10_PERCENTN")
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_10_PERCENTN));
-    else if ( (*it) == "TEST_UNUSUAL_NT")
+     else if ( (*it) == "TEST_UNUSUAL_NT")
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
-    else if ( (*it) == "DISC_SUSPECT_RRNA_PRODUCTS")
+     else if ( (*it) == "SUSPECT_PHRASES")
+        tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_SUSPECT_PHRASES));
+     else if ( (*it) == "DISC_SUSPECT_RRNA_PRODUCTS")
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_RRNA_PRODUCTS));
-    else if ( (*it) == "SUSPECT_RULE")
+     else if ( (*it) == "SUSPECT_RULE")
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE));
-    else if ( (*it) == "TEST_ORGANELLE_PRODUCTS")
+     else if ( (*it) == "TEST_ORGANELLE_PRODUCTS")
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_ORGANELLE_PRODUCTS));
-    else if ( (*it) == "DISC_GAPS")
+     else if ( (*it) == "DISC_GAPS")
        tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_GAPS));
-    else if ( (*it) == "TEST_MRNA_OVERLAPPING_PSEUDO_GENE")
+     else if ( (*it) == "TEST_MRNA_OVERLAPPING_PSEUDO_GENE")
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE));
-    else if ( (*it) == "ONCALLER_HAS_STANDARD_NAME")
+     else if ( (*it) == "ONCALLER_HAS_STANDARD_NAME")
        tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
-    else if ( (*it) == "ONCALLER_ORDERED_LOCATION")
+     else if ( (*it) == "ONCALLER_ORDERED_LOCATION")
        tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
-    else if ( (*it) == "DISC_FEATURE_LIST")
+     else if ( (*it) == "DISC_FEATURE_LIST")
        tests_on_Bioseq_CFeat.push_back( 
                     CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
-    else if ( (*it) == "TEST_CDS_HAS_CDD_XREF")
+     else if ( (*it) == "TEST_CDS_HAS_CDD_XREF")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TEST_CDS_HAS_CDD_XREF));
-    else if ( (*it) == "DISC_CDS_HAS_NEW_EXCEPTION")
+     else if ( (*it) == "DISC_CDS_HAS_NEW_EXCEPTION")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_CDS_HAS_NEW_EXCEPTION));
-    else if ( (*it) == "DISC_MICROSATELLITE_REPEAT_TYPE")
+     else if ( (*it) == "DISC_MICROSATELLITE_REPEAT_TYPE")
        tests_on_Bioseq_CFeat.push_back(
              CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
-    else if ( (*it) == "DISC_SUSPECT_MISC_FEATURES")
+     else if ( (*it) == "DISC_SUSPECT_MISC_FEATURES")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_MISC_FEATURES));
-    else if ( (*it) == "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS")
+     else if ( (*it) == "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS")
        tests_on_Bioseq_CFeat.push_back(
              CRef <CTestAndRepData> (new CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS));
-    else if ( (*it) == "DISC_FEATURE_MOLTYPE_MISMATCH")
+     else if ( (*it) == "DISC_FEATURE_MOLTYPE_MISMATCH")
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
-    else if ( (*it) == "ADJACENT_PSEUDOGENES")
+     else if ( (*it) == "ADJACENT_PSEUDOGENES")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_ADJACENT_PSEUDOGENES));
-    else if ( (*it) == "MISSING_GENPRODSET_PROTEIN")
+     else if ( (*it) == "MISSING_GENPRODSET_PROTEIN")
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_PROTEIN));
-    else if ( (*it) == "DUP_GENPRODSET_PROTEIN")
+     else if ( (*it) == "DUP_GENPRODSET_PROTEIN")
        tests_on_Bioseq_CFeat.push_back(
                       CRef <CTestAndRepData> (new CBioseq_DUP_GENPRODSET_PROTEIN));
-    else if ( (*it) == "MISSING_GENPRODSET_TRANSCRIPT_ID")
+     else if ( (*it) == "MISSING_GENPRODSET_TRANSCRIPT_ID")
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID));
-    else if ( (*it) == "DISC_DUP_GENPRODSET_TRANSCRIPT_ID")
+     else if ( (*it) == "DISC_DUP_GENPRODSET_TRANSCRIPT_ID")
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID));
-    else if ( (*it) == "DISC_FEAT_OVERLAP_SRCFEAT")
+     else if ( (*it) == "DISC_FEAT_OVERLAP_SRCFEAT")
        tests_on_Bioseq_CFeat.push_back(
                       CRef <CTestAndRepData> (new CBioseq_DISC_FEAT_OVERLAP_SRCFEAT));
-    else if ( (*it) == "CDS_TRNA_OVERLAP")
+     else if ( (*it) == "CDS_TRNA_OVERLAP")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_CDS_TRNA_OVERLAP));
-    else if ( (*it) == "TRANSL_NO_NOTE")
+     else if ( (*it) == "TRANSL_NO_NOTE")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TRANSL_NO_NOTE));
-    else if ( (*it) == "NOTE_NO_TRANSL")
+     else if ( (*it) == "NOTE_NO_TRANSL")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_NOTE_NO_TRANSL));
-    else if ( (*it) == "TRANSL_TOO_LONG")
+     else if ( (*it) == "TRANSL_TOO_LONG")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TRANSL_TOO_LONG));
-    else if ( (*it) == "FIND_STRAND_TRNAS")
+     else if ( (*it) == "FIND_STRAND_TRNAS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_STRAND_TRNAS));
-    else if ( (*it) == "FIND_BADLEN_TRNAS")
+     else if ( (*it) == "FIND_BADLEN_TRNAS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_BADLEN_TRNAS));
-    else if ( (*it) == "COUNT_TRNAS")
+     else if ( (*it) == "COUNT_TRNAS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_COUNT_TRNAS));
-    else if ( (*it) == "FIND_DUP_TRNAS")
+     else if ( (*it) == "FIND_DUP_TRNAS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_DUP_TRNAS));
-    else if ( (*it) == "COUNT_RRNAS")
+     else if ( (*it) == "COUNT_RRNAS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_COUNT_RRNAS));
-    else if ( (*it) == "FIND_DUP_RRNAS")
+     else if ( (*it) == "FIND_DUP_RRNAS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_DUP_RRNAS));
-    else if ( (*it) == "PARTIAL_CDS_COMPLETE_SEQUENCE")
+     else if ( (*it) == "PARTIAL_CDS_COMPLETE_SEQUENCE")
        tests_on_Bioseq_CFeat.push_back(
            CRef <CTestAndRepData> (new CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE));
-    else if ( (*it) == "CONTAINED_CDS")
+     else if ( (*it) == "CONTAINED_CDS")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_CONTAINED_CDS));
-    else if ( (*it) == "PSEUDO_MISMATCH")
+     else if ( (*it) == "PSEUDO_MISMATCH")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_PSEUDO_MISMATCH));
-    else if ( (*it) == "EC_NUMBER_NOTE")
+     else if ( (*it) == "EC_NUMBER_NOTE")
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_EC_NUMBER_NOTE));
-    else if ( (*it) == "NON_GENE_LOCUS_TAG")
+     else if ( (*it) == "NON_GENE_LOCUS_TAG")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_NON_GENE_LOCUS_TAG));
-    else if ( (*it) == "JOINED_FEATURES")
+     else if ( (*it) == "JOINED_FEATURES")
        tests_on_Bioseq_CFeat.push_back(
                         CRef <CTestAndRepData> (new CBioseq_JOINED_FEATURES));
-    else if ( (*it) == "SHOW_TRANSL_EXCEPT")
+     else if ( (*it) == "SHOW_TRANSL_EXCEPT")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>( new CBioseq_SHOW_TRANSL_EXCEPT));
-    else if ( (*it) == "MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS")
+     else if ( (*it) == "MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS")
        tests_on_Bioseq_CFeat.push_back(
           CRef <CTestAndRepData>( new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
-    else if ( (*it) == "RRNA_NAME_CONFLICTS")
+     else if ( (*it) == "RRNA_NAME_CONFLICTS")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));
-    else if ( (*it) == "ONCALLER_GENE_MISSING")
+     else if ( (*it) == "ONCALLER_GENE_MISSING")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_ONCALLER_GENE_MISSING));
-    else if ( (*it) == "ONCALLER_SUPERFLUOUS_GENE")
+     else if ( (*it) == "ONCALLER_SUPERFLUOUS_GENE")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_ONCALLER_SUPERFLUOUS_GENE));
-    else if ( (*it) == "MISSING_GENES")
+     else if ( (*it) == "MISSING_GENES")
        tests_on_Bioseq_CFeat.push_back(
               CRef <CTestAndRepData>(new CBioseq_MISSING_GENES));
-    else if ( (*it) == "EXTRA_GENES") {
+     else if ( (*it) == "EXTRA_GENES") {
        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_GENES));
        //???tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES));
     }
-    else if ( (*it) == "OVERLAPPING_CDS")
+     else if ( (*it) == "OVERLAPPING_CDS")
        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_CDS));
-    else if ( (*it) == "RNA_CDS_OVERLAP")
+     else if ( (*it) == "RNA_CDS_OVERLAP")
        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_CDS_OVERLAP));
-    else if ( (*it) == "FIND_OVERLAPPED_GENES")
+     else if ( (*it) == "FIND_OVERLAPPED_GENES")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_FIND_OVERLAPPED_GENES));
-    else if ( (*it) == "OVERLAPPING_GENES")
+     else if ( (*it) == "OVERLAPPING_GENES")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_GENES));
-    else if ( (*it) == "DISC_PROTEIN_NAMES")
+     else if ( (*it) == "DISC_PROTEIN_NAMES")
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_PROTEIN_NAMES));
-    else if ( (*it) == "DISC_CDS_PRODUCT_FIND")
+     else if ( (*it) == "DISC_CDS_PRODUCT_FIND")
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_CDS_PRODUCT_FIND));
-    else if ( (*it) == "EC_NUMBER_ON_UNKNOWN_PROTEIN")
+     else if ( (*it) == "EC_NUMBER_ON_UNKNOWN_PROTEIN")
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN));
-    else if ( (*it) == "RNA_NO_PRODUCT")
+     else if ( (*it) == "RNA_NO_PRODUCT")
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>(new CBioseq_RNA_NO_PRODUCT));
-    else if ( (*it) == "DISC_SHORT_INTRON")
+     else if ( (*it) == "DISC_SHORT_INTRON")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_INTRON));
-    else if ( (*it) == "DISC_BAD_GENE_STRAND")
+     else if ( (*it) == "DISC_BAD_GENE_STRAND")
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_DISC_BAD_GENE_STRAND));
-    else if ( (*it) == "DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA")
+     else if ( (*it) == "DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA")
        tests_on_Bioseq_CFeat.push_back(
              CRef <CTestAndRepData>(new CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA));
-    else if ( (*it) == "DISC_SHORT_RRNA")
+     else if ( (*it) == "DISC_SHORT_RRNA")
        tests_on_Bioseq_CFeat.push_back(
                         CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_RRNA));
-    else if ( (*it) == "TEST_OVERLAPPING_RRNAS")
+     else if ( (*it) == "TEST_OVERLAPPING_RRNAS")
        tests_on_Bioseq_CFeat.push_back(
                         CRef <CTestAndRepData>(new CBioseq_TEST_OVERLAPPING_RRNAS));
-    else if ( (*it) == "HYPOTHETICAL_CDS_HAVING_GENE_NAME")
+     else if ( (*it) == "HYPOTHETICAL_CDS_HAVING_GENE_NAME")
        tests_on_Bioseq_CFeat.push_back(
                CRef <CTestAndRepData>( new CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME));
-    else if ( (*it) == "DISC_SUSPICIOUS_NOTE_TEXT")
+     else if ( (*it) == "DISC_SUSPICIOUS_NOTE_TEXT")
        tests_on_Bioseq_CFeat.push_back(
                   CRef <CTestAndRepData>( new CBioseq_DISC_SUSPICIOUS_NOTE_TEXT));
-    else if ( (*it) == "NO_ANNOTATION")
+     else if ( (*it) == "NO_ANNOTATION")
        tests_on_Bioseq_CFeat.push_back(
                            CRef <CTestAndRepData>(new CBioseq_NO_ANNOTATION));
-    else if ( (*it) == "DISC_LONG_NO_ANNOTATION")
+     else if ( (*it) == "DISC_LONG_NO_ANNOTATION")
        tests_on_Bioseq_CFeat.push_back( 
               CRef <CTestAndRepData>( new CBioseq_DISC_LONG_NO_ANNOTATION));
-    else if ( (*it) == "DISC_PARTIAL_PROBLEMS")
+     else if ( (*it) == "DISC_PARTIAL_PROBLEMS")
        tests_on_Bioseq_CFeat.push_back( 
               CRef <CTestAndRepData>( new CBioseq_DISC_PARTIAL_PROBLEMS));
-    else if ( (*it) == "TEST_UNUSUAL_MISC_RNA")
+     else if ( (*it) == "TEST_UNUSUAL_MISC_RNA")
        tests_on_Bioseq_CFeat.push_back( 
               CRef <CTestAndRepData>( new CBioseq_TEST_UNUSUAL_MISC_RNA));
-    else if ( (*it) == "GENE_PRODUCT_CONFLICT")
+     else if ( (*it) == "GENE_PRODUCT_CONFLICT")
        tests_on_Bioseq_CFeat.push_back( 
                      CRef <CTestAndRepData>( new CBioseq_GENE_PRODUCT_CONFLICT));
-    else if ( (*it) == "DISC_CDS_WITHOUT_MRNA")
+     else if ( (*it) == "DISC_CDS_WITHOUT_MRNA")
        tests_on_Bioseq_CFeat.push_back( 
                      CRef <CTestAndRepData>( new CBioseq_DISC_CDS_WITHOUT_MRNA));
-    else if ( (*it) == "DUPLICATE_GENE_LOCUS")
+     else if ( (*it) == "DUPLICATE_GENE_LOCUS")
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                           CRef <CTestAndRepData>(new CBioseq_DUPLICATE_GENE_LOCUS));
-    else if ( (*it) == "LOCUS_TAGS")
+     else if ( (*it) == "LOCUS_TAGS")
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                                    CRef <CTestAndRepData>(new CBioseq_LOCUS_TAGS));
-    else if ( (*it) == "FEATURE_LOCATION_CONFLICT")
+     else if ( (*it) == "FEATURE_LOCATION_CONFLICT")
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                           CRef <CTestAndRepData>(new CBioseq_FEATURE_LOCATION_CONFLICT));
-    else if ( (*it) == "DISC_INCONSISTENT_MOLINFO_TECH")
+     else if ( (*it) == "DISC_INCONSISTENT_MOLINFO_TECH")
        tests_on_Bioseq_NotInGenProdSet.push_back(
                      CRef<CTestAndRepData>(new CBioseq_DISC_INCONSISTENT_MOLINFO_TECH));
-    else if ( (*it) == "SHORT_CONTIG")
+     else if ( (*it) == "SHORT_CONTIG")
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                  CRef<CTestAndRepData>(new CBioseq_SHORT_CONTIG));
-    else if ( (*it) == "SHORT_SEQUENCES")
+     else if ( (*it) == "SHORT_SEQUENCES")
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES));
-    else if ( (*it) == "SHORT_SEQUENCES_200")
+     else if ( (*it) == "SHORT_SEQUENCES_200")
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                 CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
-    else if ( (*it) == "TEST_UNWANTED_SPACER")
+     else if ( (*it) == "TEST_UNWANTED_SPACER")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_UNWANTED_SPACER));
-    else if ( (*it) == "TEST_UNNECESSARY_VIRUS_GENE")
+     else if ( (*it) == "TEST_UNNECESSARY_VIRUS_GENE")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                  CRef <CTestAndRepData>(new CBioseq_TEST_UNNECESSARY_VIRUS_GENE));
-    else if ( (*it) == "TEST_ORGANELLE_NOT_GENOMIC")
+     else if ( (*it) == "TEST_ORGANELLE_NOT_GENOMIC")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                  CRef <CTestAndRepData>(new CBioseq_TEST_ORGANELLE_NOT_GENOMIC));
-    else if ( (*it) == "MULTIPLE_CDS_ON_MRNA")
+     else if ( (*it) == "MULTIPLE_CDS_ON_MRNA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData>(new CBioseq_MULTIPLE_CDS_ON_MRNA));
-    else if ( (*it) == "TEST_MRNA_SEQUENCE_MINUS_ST")
+     else if ( (*it) == "TEST_MRNA_SEQUENCE_MINUS_ST")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                         CRef <CTestAndRepData>(new CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST));
-    else if ( (*it) == "TEST_BAD_MRNA_QUAL")
+     else if ( (*it) == "TEST_BAD_MRNA_QUAL")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                             CRef <CTestAndRepData>(new CBioseq_TEST_BAD_MRNA_QUAL));
-    else if ( (*it) == "TEST_EXON_ON_MRNA")
+     else if ( (*it) == "TEST_EXON_ON_MRNA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                           CRef <CTestAndRepData>(new CBioseq_TEST_EXON_ON_MRNA));
-    else if ( (*it) == "ONCALLER_HIV_RNA_INCONSISTENT")
+     else if ( (*it) == "ONCALLER_HIV_RNA_INCONSISTENT")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>( new CBioseq_ONCALLER_HIV_RNA_INCONSISTENT));
-    else if ( (*it) == "DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION")
+     else if ( (*it) == "DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>( 
                            new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION));
-    else if ( (*it) == "DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS")
+     else if ( (*it) == "DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                             new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
-    else if ( (*it) == "DISC_MITOCHONDRION_REQUIRED")
+     else if ( (*it) == "DISC_MITOCHONDRION_REQUIRED")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData>( new CBioseq_DISC_MITOCHONDRION_REQUIRED));
-    else if ( (*it) == "EUKARYOTE_SHOULD_HAVE_MRNA")
+     else if ( (*it) == "EUKARYOTE_SHOULD_HAVE_MRNA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>( new CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA));
-    else if ( (*it) == "RNA_PROVIRAL")
+     else if ( (*it) == "RNA_PROVIRAL")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                          CRef <CTestAndRepData>( new CBioseq_RNA_PROVIRAL));
-    else if ( (*it) == "NON_RETROVIRIDAE_PROVIRAL")
+     else if ( (*it) == "NON_RETROVIRIDAE_PROVIRAL")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData>( new CBioseq_NON_RETROVIRIDAE_PROVIRAL));
-    else if ( (*it) == "DISC_RETROVIRIDAE_DNA")
+     else if ( (*it) == "DISC_RETROVIRIDAE_DNA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                         CRef <CTestAndRepData>( new CBioseq_DISC_RETROVIRIDAE_DNA));
-    else if ( (*it) == "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE")
+     else if ( (*it) == "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
               CRef <CTestAndRepData>( new CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE));
-    else if ( (*it) == "DISC_RBS_WITHOUT_GENE")
+     else if ( (*it) == "DISC_RBS_WITHOUT_GENE")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                          CRef <CTestAndRepData>(new CBioseq_DISC_RBS_WITHOUT_GENE));
-    else if ( (*it) == "DISC_EXON_INTRON_CONFLICT")
+     else if ( (*it) == "DISC_EXON_INTRON_CONFLICT")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                       CRef <CTestAndRepData>(new CBioseq_DISC_EXON_INTRON_CONFLICT));
-    else if ( (*it) == "TEST_TAXNAME_NOT_IN_DEFLINE")
+     else if ( (*it) == "TEST_TAXNAME_NOT_IN_DEFLINE")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_TAXNAME_NOT_IN_DEFLINE));
-    else if ( (*it) == "INCONSISTENT_SOURCE_DEFLINE")
+     else if ( (*it) == "INCONSISTENT_SOURCE_DEFLINE")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
-    else if ( (*it) == "DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA")
+     else if ( (*it) == "DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                CRef <CTestAndRepData>(new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
-    else if ( (*it) == "TEST_BAD_GENE_NAME")
+     else if ( (*it) == "TEST_BAD_GENE_NAME")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                             CRef <CTestAndRepData> (new CBioseq_TEST_BAD_GENE_NAME));
-    else if ( (*it) == "MOLTYPE_NOT_MRNA")
+     else if ( (*it) == "MOLTYPE_NOT_MRNA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                              CRef <CTestAndRepData> (new CBioseq_MOLTYPE_NOT_MRNA));
-    else if ( (*it) == "TECHNIQUE_NOT_TSA")
+     else if ( (*it) == "TECHNIQUE_NOT_TSA")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                              CRef <CTestAndRepData> (new CBioseq_TECHNIQUE_NOT_TSA));
-    else if ( (*it) == "SHORT_PROT_SEQUENCES")
+     else if ( (*it) == "SHORT_PROT_SEQUENCES")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                          CRef <CTestAndRepData> (new CBioseq_SHORT_PROT_SEQUENCES));
-    else if ( (*it) == "TEST_COUNT_UNVERIFIED")
+     else if ( (*it) == "TEST_COUNT_UNVERIFIED")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                    CRef <CTestAndRepData>(new CBioseq_TEST_COUNT_UNVERIFIED));
-    else if ( (*it) == "TEST_DUP_GENES_OPPOSITE_STRANDS")
+     else if ( (*it) == "TEST_DUP_GENES_OPPOSITE_STRANDS")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                 CRef <CTestAndRepData>(new CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS));
-    else if ( (*it) == "DISC_GENE_PARTIAL_CONFLICT")
+     else if ( (*it) == "DISC_GENE_PARTIAL_CONFLICT")
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                CRef <CTestAndRepData>(new CBioseq_DISC_GENE_PARTIAL_CONFLICT));
-    else if ( (*it) == "DISC_FLATFILE_FIND_ONCALLER")
+     else if ( (*it) == "DISC_FLATFILE_FIND_ONCALLER")
        tests_on_SeqEntry.push_back(
              CRef <CTestAndRepData>(new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
-    else if ( (*it) == "DISC_FEATURE_COUNT") // asndisc version   
+     else if ( (*it) == "DISC_FEATURE_COUNT") // asndisc version   
        tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
-    else if ( (*it) == "DISC_INCONSISTENT_STRUCTURED_COMMENTS")
+     else if ( (*it) == "DISC_INCONSISTENT_STRUCTURED_COMMENTS")
        tests_on_SeqEntry_feat_desc.push_back( 
             CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
-    else if ( (*it) == "DISC_INCONSISTENT_DBLINK")
+     else if ( (*it) == "DISC_INCONSISTENT_DBLINK")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_DBLINK));
-    else if ( (*it) == "END_COLON_IN_COUNTRY")
+     else if ( (*it) == "END_COLON_IN_COUNTRY")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_END_COLON_IN_COUNTRY));
-    else if ( (*it) == "ONCALLER_SUSPECTED_ORG_COLLECTED")
+     else if ( (*it) == "ONCALLER_SUSPECTED_ORG_COLLECTED")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED));
-    else if ( (*it) == "ONCALLER_SUSPECTED_ORG_IDENTIFIED")
+     else if ( (*it) == "ONCALLER_SUSPECTED_ORG_IDENTIFIED")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED));
-    else if ( (*it) == "ONCALLER_MORE_NAMES_COLLECTED_BY")
+     else if ( (*it) == "ONCALLER_MORE_NAMES_COLLECTED_BY")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY));
-    else if ( (*it) == "ONCALLER_STRAIN_TAXNAME_CONFLICT")
+     else if ( (*it) == "ONCALLER_STRAIN_TAXNAME_CONFLICT")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT));
-    else if ( (*it) == "TEST_SMALL_GENOME_SET_PROBLEM")
+     else if ( (*it) == "TEST_SMALL_GENOME_SET_PROBLEM")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM));
-    else if ( (*it) == "DISC_INCONSISTENT_MOLTYPES")
+     else if ( (*it) == "DISC_INCONSISTENT_MOLTYPES")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_MOLTYPES));
-    else if ( (*it) == "DISC_BIOMATERIAL_TAXNAME_MISMATCH")
+     else if ( (*it) == "DISC_BIOMATERIAL_TAXNAME_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_BIOMATERIAL_TAXNAME_MISMATCH));
-    else if ( (*it) == "DISC_CULTURE_TAXNAME_MISMATCH")
+     else if ( (*it) == "DISC_CULTURE_TAXNAME_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH));
-    else if ( (*it) == "DISC_STRAIN_TAXNAME_MISMATCH")
+     else if ( (*it) == "DISC_STRAIN_TAXNAME_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_STRAIN_TAXNAME_MISMATCH));
-    else if ( (*it) == "DISC_SPECVOUCHER_TAXNAME_MISMATCH")
+     else if ( (*it) == "DISC_SPECVOUCHER_TAXNAME_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_SPECVOUCHER_TAXNAME_MISMATCH));
-    else if ( (*it) == "DISC_HAPLOTYPE_MISMATCH")
+     else if ( (*it) == "DISC_HAPLOTYPE_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_HAPLOTYPE_MISMATCH));
-    else if ( (*it) == "DISC_MISSING_VIRAL_QUALS")
+     else if ( (*it) == "DISC_MISSING_VIRAL_QUALS")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_VIRAL_QUALS));
-    else if ( (*it) == "DISC_INFLUENZA_DATE_MISMATCH")
+     else if ( (*it) == "DISC_INFLUENZA_DATE_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH));
-    else if ( (*it) == "TAX_LOOKUP_MISSING")
+     else if ( (*it) == "TAX_LOOKUP_MISSING")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISSING));
-    else if ( (*it) == "TAX_LOOKUP_MISMATCH")
+     else if ( (*it) == "TAX_LOOKUP_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISMATCH));
-    else if ( (*it) == "MISSING_STRUCTURED_COMMENT")
+     else if ( (*it) == "MISSING_STRUCTURED_COMMENT")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_MISSING_STRUCTURED_COMMENT));
-    else if ( (*it) == "ONCALLER_MISSING_STRUCTURED_COMMENTS")
+     else if ( (*it) == "ONCALLER_MISSING_STRUCTURED_COMMENTS")
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
-    else if ( (*it) == "DISC_MISSING_AFFIL")
+     else if ( (*it) == "DISC_MISSING_AFFIL")
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_AFFIL));
-    else if ( (*it) == "DISC_CITSUBAFFIL_CONFLICT")
+     else if ( (*it) == "DISC_CITSUBAFFIL_CONFLICT")
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUBAFFIL_CONFLICT));
-    else if ( (*it) == "DISC_TITLE_AUTHOR_CONFLICT")
+     else if ( (*it) == "DISC_TITLE_AUTHOR_CONFLICT")
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT));
-    else if ( (*it) == "DISC_USA_STATE")
+     else if ( (*it) == "DISC_USA_STATE")
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_USA_STATE));
-    else if ( (*it) == "DISC_CITSUB_AFFIL_DUP_TEXT")
+     else if ( (*it) == "DISC_CITSUB_AFFIL_DUP_TEXT")
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT));
-    else if ( (*it) == "DISC_REQUIRED_CLONE")
+     else if ( (*it) == "DISC_REQUIRED_CLONE")
        tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_CLONE));
-    else if ( (*it) == "ONCALLER_MULTISRC")
+     else if ( (*it) == "ONCALLER_MULTISRC")
        tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTISRC));
-    else if ( (*it) == "DISC_SRC_QUAL_PROBLEM")
+     else if ( (*it) == "DISC_SRC_QUAL_PROBLEM")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SRC_QUAL_PROBLEM));
-    else if ( (*it) == "DISC_SOURCE_QUALS_ASNDISC") // asndisc version
+     else if ( (*it) == "DISC_SOURCE_QUALS_ASNDISC") // asndisc version
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
-    else if ( (*it) == "DISC_UNPUB_PUB_WITHOUT_TITLE")
+     else if ( (*it) == "DISC_UNPUB_PUB_WITHOUT_TITLE")
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE));
-    else if ( (*it) == "ONCALLER_CONSORTIUM")
+     else if ( (*it) == "ONCALLER_CONSORTIUM")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CONSORTIUM));
-    else if ( (*it) == "DISC_CHECK_AUTH_NAME")
+     else if ( (*it) == "DISC_CHECK_AUTH_NAME")
        tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_NAME));
-    else if ( (*it) == "DISC_CHECK_AUTH_CAPS")
+     else if ( (*it) == "DISC_CHECK_AUTH_CAPS")
        tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_CAPS));
-    else if ( (*it) == "DISC_MISMATCHED_COMMENTS")
+     else if ( (*it) == "DISC_MISMATCHED_COMMENTS")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_MISMATCHED_COMMENTS));
-    else if ( (*it) == "ONCALLER_COMMENT_PRESENT")
+     else if ( (*it) == "ONCALLER_COMMENT_PRESENT")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COMMENT_PRESENT));
-    else if ( (*it) == "DUP_DISC_ATCC_CULTURE_CONFLICT")
+     else if ( (*it) == "DUP_DISC_ATCC_CULTURE_CONFLICT")
        tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT));
-    else if ( (*it) == "ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH")
+     else if ( (*it) == "ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                           new CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH));
-    else if ( (*it) == "DISC_DUP_DEFLINE")
+     else if ( (*it) == "DISC_DUP_DEFLINE")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_DUP_DEFLINE));
-    else if ( (*it) == "DISC_TITLE_ENDS_WITH_SEQUENCE")
+     else if ( (*it) == "DISC_TITLE_ENDS_WITH_SEQUENCE")
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE));
-    else if ( (*it) == "DISC_MISSING_DEFLINES")
+     else if ( (*it) == "DISC_MISSING_DEFLINES")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_DEFLINES));
-    else if ( (*it) == "ONCALLER_DEFLINE_ON_SET")
+     else if ( (*it) == "ONCALLER_DEFLINE_ON_SET")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_DEFLINE_ON_SET));
-    else if ( (*it) == "DISC_BACTERIAL_TAX_STRAIN_MISMATCH")
+     else if ( (*it) == "DISC_BACTERIAL_TAX_STRAIN_MISMATCH")
        tests_on_SeqEntry_feat_desc.push_back(
               CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH));
-    else if ( (*it) == "DUP_DISC_CBS_CULTURE_CONFLICT")
+     else if ( (*it) == "DUP_DISC_CBS_CULTURE_CONFLICT")
        tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT));
-    else if ( (*it) == "INCONSISTENT_BIOSOURCE")
+     else if ( (*it) == "INCONSISTENT_BIOSOURCE")
        tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_INCONSISTENT_BIOSOURCE));
-    else if ( (*it) == "ONCALLER_BIOPROJECT_ID")
+     else if ( (*it) == "ONCALLER_BIOPROJECT_ID")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_BIOPROJECT_ID));
-    else if ( (*it) == "DISC_INCONSISTENT_STRUCTURED_COMMENTS")
+     else if ( (*it) == "DISC_INCONSISTENT_STRUCTURED_COMMENTS")
        tests_on_SeqEntry_feat_desc.push_back(
             CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
-    else if ( (*it) == "ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX")
+     else if ( (*it) == "ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX")
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                            new CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX));
-    else if ( (*it) == "MISSING_GENOMEASSEMBLY_COMMENTS")
+     else if ( (*it) == "MISSING_GENOMEASSEMBLY_COMMENTS")
        tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS));
-    else if ( (*it) == "TEST_HAS_PROJECT_ID")
+     else if ( (*it) == "TEST_HAS_PROJECT_ID")
        tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_TEST_HAS_PROJECT_ID));
-    else if ( (*it) == "DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER")
+     else if ( (*it) == "DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER")
        tests_on_SeqEntry_feat_desc.push_back(
              CRef <CTestAndRepData>(new CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER));
-    else if ( (*it) == "ONCALLER_DUPLICATE_PRIMER_SET")
+     else if ( (*it) == "ONCALLER_DUPLICATE_PRIMER_SET")
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET));
-    else if ( (*it) == "ONCALLER_COUNTRY_COLON")
+     else if ( (*it) == "ONCALLER_COUNTRY_COLON")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COUNTRY_COLON));
-    else if ( (*it) == "TEST_MISSING_PRIMER")
+     else if ( (*it) == "TEST_MISSING_PRIMER")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_MISSING_PRIMER));
-    else if ( (*it) == "TEST_SP_NOT_UNCULTURED")
+     else if ( (*it) == "TEST_SP_NOT_UNCULTURED")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_SP_NOT_UNCULTURED));
-    else if ( (*it) == "DISC_METAGENOMIC")
+     else if ( (*it) == "DISC_METAGENOMIC")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOMIC));
-    else if ( (*it) == "DISC_MAP_CHROMOSOME_CONFLICT")
+     else if ( (*it) == "DISC_MAP_CHROMOSOME_CONFLICT")
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
-    else if ( (*it) == "DIVISION_CODE_CONFLICTS")
+     else if ( (*it) == "DIVISION_CODE_CONFLICTS")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
-    else if ( (*it) == "TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE")
+     else if ( (*it) == "TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE")
        tests_on_SeqEntry_feat_desc.push_back( CRef <CTestAndRepData>(
                          new CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE));
-    else if ( (*it) == "TEST_UNNECESSARY_ENVIRONMENTAL")
+     else if ( (*it) == "TEST_UNNECESSARY_ENVIRONMENTAL")
        tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL));
-    else if ( (*it) == "DISC_HUMAN_HOST")
+     else if ( (*it) == "DISC_HUMAN_HOST")
        tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DISC_HUMAN_HOST));
-    else if ( (*it) == "ONCALLER_MULTIPLE_CULTURE_COLLECTION")
+     else if ( (*it) == "ONCALLER_MULTIPLE_CULTURE_COLLECTION")
        tests_on_SeqEntry_feat_desc.push_back(
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION));
-    else if ( (*it) == "ONCALLER_CHECK_AUTHORITY")
+     else if ( (*it) == "ONCALLER_CHECK_AUTHORITY")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CHECK_AUTHORITY));
-    else if ( (*it) == "DISC_METAGENOME_SOURCE")
+     else if ( (*it) == "DISC_METAGENOME_SOURCE")
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOME_SOURCE));
-    else if ( (*it) == "DISC_BACTERIA_MISSING_STRAIN")
+     else if ( (*it) == "DISC_BACTERIA_MISSING_STRAIN")
        tests_on_SeqEntry_feat_desc.push_back(
                      CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIA_MISSING_STRAIN));
-    else if ( (*it) == "DISC_REQUIRED_STRAIN")
+     else if ( (*it) == "DISC_REQUIRED_STRAIN")
        tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_STRAIN));
-    else if ( (*it) == "MORE_OR_SPEC_NAMES_IDENTIFIED_BY")
+     else if ( (*it) == "MORE_OR_SPEC_NAMES_IDENTIFIED_BY")
        tests_on_SeqEntry_feat_desc.push_back(
                 CRef <CTestAndRepData>(new CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY));
-    else if ( (*it) == "MORE_NAMES_COLLECTED_BY")
+     else if ( (*it) == "MORE_NAMES_COLLECTED_BY")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_MORE_NAMES_COLLECTED_BY));
-    else if ( (*it) == "MISSING_PROJECT")
+     else if ( (*it) == "MISSING_PROJECT")
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_MISSING_PROJECT));
-    else if ( (*it) == "DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE")
+     else if ( (*it) == "DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE")
        tests_on_SeqEntry_feat_desc.push_back( 
           CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE));
-    else if ( (*it) == "DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE")
-       tests_on_SeqEntry_feat_desc.push_back( 
-          CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1)); // not tested
-    else if ( (*it) == "DISC_SEGSETS_PRESENT")
+     else if ( (*it) == "DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE")
+       tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
+                       new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1)); // not tested
+     else if ( (*it) == "DISC_SEGSETS_PRESENT")
        tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_SEGSETS_PRESENT));
-    else if ( (*it) == "TEST_UNWANTED_SET_WRAPPER")
+     else if ( (*it) == "TEST_UNWANTED_SET_WRAPPER")
        tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_TEST_UNWANTED_SET_WRAPPER));
-    else if ( (*it) == "DISC_NONWGS_SETS_PRESENT")
+     else if ( (*it) == "DISC_NONWGS_SETS_PRESENT")
        tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_NONWGS_SETS_PRESENT));
-    else NCBI_THROW(CException, eUnknown, "The requested test is unrecognizable."); 
+     else NCBI_THROW(CException, eUnknown, "The requested test is unrecognizable."); 
    }
 };
 

@@ -86,7 +86,7 @@ string				        CDiscRepInfo :: infile;
 vector < CRef < CClickableItem > >      CDiscRepInfo :: disc_report_data;
 Str2Strs                                CDiscRepInfo :: test_item_list;
 COutputConfig                           CDiscRepInfo :: output_config;
-CRef < CSuspect_rule_set >              CDiscRepInfo :: suspect_prod_rules;
+CRef < CSuspect_rule_set >              CDiscRepInfo :: suspect_prod_rules (new CSuspect_rule_set);
 vector < vector <string> >              CDiscRepInfo :: susrule_summ;
 vector <string> 	                CDiscRepInfo :: weasels;
 CConstRef <CSeq_submit>                 CDiscRepInfo :: seq_submit = CConstRef <CSeq_submit>();
@@ -120,7 +120,7 @@ vector <string>                         CDiscRepInfo :: strain_tax;
 CRef <CComment_set>                     CDiscRepInfo :: comment_rules;
 Str2UInt                                CDiscRepInfo :: whole_word;
 Str2Str                                 CDiscRepInfo :: fix_data;
-CRef <CSuspect_rule_set>                CDiscRepInfo :: orga_prod_rules;
+CRef <CSuspect_rule_set>                CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
 vector <string>                         CDiscRepInfo :: skip_bracket_paren;
 vector <string>                         CDiscRepInfo :: ok_num_prefix;
 map <EMacro_feature_type, CSeqFeatData::ESubtype> CDiscRepInfo :: feattype_featdef;
@@ -167,6 +167,7 @@ CRef < CSuspect_rule_set>               CDiscRepInfo :: suspect_rna_rules;
 vector <string>                         CDiscRepInfo :: rna_rule_summ;
 vector <string>                         CDiscRepInfo :: tests_enabled;
 vector <string>                         CDiscRepInfo :: tests_disabled;
+vector <string>                         CDiscRepInfo :: suspect_phrases;
 
 
 const char* fix_type_names[] = {
@@ -911,6 +912,10 @@ cerr << "222can get\n";
    this_rule->SetExcept(*except);
    thisInfo.suspect_rna_rules->Set().push_back(this_rule); 
    thisInfo.rna_rule_summ.push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));    
+
+   // ini. of suspect_phrases
+   strtmp = reg.Get("StringVecIni", "SuspectPhrases");
+   thisInfo.suspect_phrases = NStr::Tokenize(strtmp, ",", thisInfo.suspect_phrases); 
 
    strs.clear();
    arr.clear();

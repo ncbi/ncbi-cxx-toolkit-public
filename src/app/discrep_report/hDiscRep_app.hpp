@@ -269,6 +269,7 @@ namespace DiscRepNmSpc{
            static vector <string>                           rna_rule_summ;
            static vector <string>                           tests_enabled;
            static vector <string>                           tests_disabled;
+           static vector <string>                           suspect_phrases;
 
            SuspectProductNameData                    suspect_prod_terms[];
            unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
