@@ -42,7 +42,8 @@ enum ENSTReplyError {
     eMandatoryFieldsMissed  = 4,
     eInvalidArguments       = 5,
     eHelloRequired          = 6,
-    ePrivileges             = 7
+    ePrivileges             = 7,
+    eWriteError             = 8
 };
 
 

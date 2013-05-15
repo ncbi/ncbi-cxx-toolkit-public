@@ -37,6 +37,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/server.hpp>
+#include <connect/services/netstorage.hpp>
 
 #include "nst_clients.hpp"
 
@@ -140,6 +141,10 @@ private:
     vector<CJsonNode>       m_OutputQueue;
 
 private:
+    CNetFile                m_ObjectStream;
+    Int8                    m_DataMessageSN;
+
+private:
     bool                    m_ByeReceived;
     bool                    m_FirstMessage;
 
@@ -174,8 +179,6 @@ private:
                             const SCommonRequestArguments &  common_args);
     void x_ProcessSetAttr(const CJsonNode &                message,
                             const SCommonRequestArguments &  common_args);
-    void x_ProcessCreate(const CJsonNode &                message,
-                           const SCommonRequestArguments &  common_args);
     void x_ProcessRead(const CJsonNode &                message,
                          const SCommonRequestArguments &  common_args);
     void x_ProcessWrite(const CJsonNode &                message,

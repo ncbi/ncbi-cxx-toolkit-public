@@ -37,6 +37,8 @@
 #include <netinet/tcp.h>
 #include <signal.h>
 
+#include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
@@ -63,7 +65,6 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
     { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
     { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
-    { "CREATE",         & CNetStorageHandler::x_ProcessCreate },
     { "READ",           & CNetStorageHandler::x_ProcessRead },
     { "WRITE",          & CNetStorageHandler::x_ProcessWrite },
     { "DELETE",         & CNetStorageHandler::x_ProcessDelete },
@@ -417,6 +418,11 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         error_code = ex.ErrCodeToHTTPStatusCode();
         error_client_message = ex.what();
     }
+    catch (const CNetStorageException &  ex) {
+        ERR_POST(ex);
+        error_code = eStatus_ServerError;
+        error_client_message = ex.what();
+    }
     catch (const std::exception &  ex) {
         ERR_POST("STL exception: " << ex.what());
         error_code = eStatus_ServerError;
@@ -439,8 +445,43 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
 // x_OnData gets control when raw data are received.
 void CNetStorageHandler::x_OnData(
-        const void* /*data*/, size_t /*data_size*/, bool /*last_chunk*/)
+        const void* data, size_t data_size, bool last_chunk)
 {
+    if (!m_ObjectStream) {
+        if (!last_chunk || data_size > 0) {
+            ERR_POST("Received " << data_size << " bytes after "
+                    "an error has been reported to the client");
+        }
+
+        if (last_chunk) {
+            x_SetCmdRequestStatus(eStatus_ServerError);
+            x_PrintMessageRequestStop();
+        }
+        return;
+    }
+
+    try {
+        m_ObjectStream.Write(data, data_size);
+    }
+    catch (const std::exception &  ex) {
+        string  message = "Error writing into " + m_ObjectStream.GetID() +
+                          ": " + ex.what();
+        ERR_POST(message);
+
+        // Send response message with an error
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        m_DataMessageSN,
+                                        eWriteError, message);
+        x_SendSyncMessage(response);
+        m_ObjectStream = NULL;
+        return;
+    }
+
+    if (last_chunk) {
+        x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
+        x_PrintMessageRequestStop();
+        m_ObjectStream = NULL;
+    }
 }
 
 
@@ -832,11 +873,129 @@ CNetStorageHandler::x_ProcessSetAttr(
 
 
 void
-CNetStorageHandler::x_ProcessCreate(
+CNetStorageHandler::x_ProcessWrite(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+
+    if (m_Client.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eHelloRequired,
+                                        "Anonymous client cannot write into objects");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    // Take the command arguments
+    bool    fast_storage_flag(false);
+    bool    persistent_storage_flag(false);
+    bool    movable_blob_flag(false);
+    bool    cacheable_blob_flag(false);
+
+    if (message.HasKey("FastStorageFlag"))
+        fast_storage_flag = message.GetBoolean("FastStorageFlag");
+    if (message.HasKey("PersistentStorageFlag"))
+        persistent_storage_flag = message.GetBoolean("PersistentStorageFlag");
+    if (message.HasKey("MovableBlobFlag"))
+        movable_blob_flag = message.GetBoolean("MovableBlobFlag");
+    if (message.HasKey("CacheableBlobFlag"))
+        cacheable_blob_flag = message.GetBoolean("CacheableBlobFlag");
+
+    string  app_domain;
+    string  cache_name;
+    string  icache_service_name;
+    string  unique_key;
+
+    if (message.HasKey("AppDomain"))
+        app_domain = message.GetString("AppDomain");
+    if (message.HasKey("ICacheServiceName"))
+        icache_service_name = message.GetString("ICacheServiceName");
+    if (message.HasKey("CacheName"))
+        cache_name = message.GetString("CacheName");
+    if (message.HasKey("UniqueKey"))
+        unique_key = message.GetString("UniqueKey");
+
+    // Check the parameters validity
+    if (!icache_service_name.empty()) {
+        // CacheName is mandatory in this case
+        if (cache_name.empty()) {
+            CJsonNode   response = CreateErrorResponseMessage(
+                                            common_args.m_SerialNumber,
+                                            eInvalidArguments,
+                                            "CacheName is required if "
+                                            "ICacheService name is provided");
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            x_SendSyncMessage(response);
+            x_PrintMessageRequestStop();
+            return;
+        }
+    }
+    if (!unique_key.empty()) {
+        // AppDomain is mandatory in this case
+        if (app_domain.empty()) {
+            CJsonNode   response = CreateErrorResponseMessage(
+                                            common_args.m_SerialNumber,
+                                            eInvalidArguments,
+                                            "AppDomain is required if "
+                                            "UniqueKey is provided");
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            x_SendSyncMessage(response);
+            x_PrintMessageRequestStop();
+            return;
+        }
+    }
+
+
+
+    // Convert received flags into TNetStorageFlags
+    TNetStorageFlags    flags = 0;
+    if (fast_storage_flag)
+        flags |= fNST_Fast;
+    if (persistent_storage_flag)
+        flags |= fNST_Persistent;
+    if (movable_blob_flag)
+        flags |= fNST_Movable;
+    if (cacheable_blob_flag)
+        flags |= fNST_Cacheable;
+
+
+    if (unique_key.empty()) {
+        CNetStorage net_storage;
+        if (icache_service_name.empty())
+            net_storage = g_CreateNetStorage(0);
+        else {
+            CNetICacheClient icache_client(icache_service_name,
+                    cache_name, m_Client);
+            net_storage = g_CreateNetStorage(icache_client, 0);
+        }
+        m_ObjectStream = net_storage.Create(flags);
+    } else {
+        CNetStorageByKey net_storage_by_key;
+        if (icache_service_name.empty())
+            net_storage_by_key = g_CreateNetStorageByKey(app_domain, 0);
+        else {
+            CNetICacheClient icache_client(icache_service_name,
+                    cache_name, m_Client);
+            net_storage_by_key = g_CreateNetStorageByKey(icache_client,
+                                                        app_domain, 0);
+        }
+        m_ObjectStream = net_storage_by_key.Open(unique_key, flags);
+    }
+
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    reply.SetString("FileID", m_ObjectStream.GetID());
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+
+    // Inform the message receiving loop that raw data are to follow
+    m_ReadMode = eReadRawData;
+    m_DataMessageSN = common_args.m_SerialNumber;
 }
 
 
@@ -846,15 +1005,6 @@ CNetStorageHandler::x_ProcessRead(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
-}
-
-
-void
-CNetStorageHandler::x_ProcessWrite(
-                        const CJsonNode &                message,
-                        const SCommonRequestArguments &  common_args)
-{
-    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 }
 
 
