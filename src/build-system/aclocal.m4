@@ -65,11 +65,14 @@ m4_define([_AS_LINENO_PREPARE],
   fi
   case $CONFIG_SHELL in
   '')
+    AS_UNSET(ZSH_VERSION)
     for as_base in sh ksh sh5 bash; do
       _AS_PATH_WALK([/bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH],
          [case $as_dir in
          /*)
-           if ("$as_dir/$as_base" -c '_AS_LINENO_WORKS') 2>/dev/null; then
+           if ("$as_dir/$as_base" -c \
+                 'test -z "$ZSH_VERSION" && { _AS_LINENO_WORKS; }') 2>/dev/null
+           then
              AS_UNSET(BASH_ENV)
              AS_UNSET(ENV)
              CONFIG_SHELL=$as_dir/$as_base

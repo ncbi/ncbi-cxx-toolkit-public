@@ -136,6 +136,7 @@ done
   fi
   case $CONFIG_SHELL in
   '')
+    $as_unset ZSH_VERSION || test "${ZSH_VERSION+set}" != set || { ZSH_VERSION=; export ZSH_VERSION; }
     for as_base in sh ksh sh5 bash; do
       as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in /bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH
@@ -144,12 +145,14 @@ do
   test -z "$as_dir" && as_dir=.
   case $as_dir in
          /*)
-           if ("$as_dir/$as_base" -c '
+           if ("$as_dir/$as_base" -c \
+                 'test -z "$ZSH_VERSION" && {
   as_lineno_1=$LINENO
   as_lineno_2=$LINENO
   as_lineno_3=`(expr $as_lineno_1 + 1) 2>/dev/null`
   test "x$as_lineno_1" != "x$as_lineno_2" &&
-  test "x$as_lineno_3"  = "x$as_lineno_2" ') 2>/dev/null; then
+  test "x$as_lineno_3"  = "x$as_lineno_2" ; }') 2>/dev/null
+           then
              $as_unset BASH_ENV || test "${BASH_ENV+set}" != set || { BASH_ENV=; export BASH_ENV; }
              $as_unset ENV || test "${ENV+set}" != set || { ENV=; export ENV; }
              CONFIG_SHELL=$as_dir/$as_base
@@ -35066,6 +35069,7 @@ echo "$as_me: error: cannot find myself; rerun with an absolute path" >&2;}
   fi
   case $CONFIG_SHELL in
   '')
+    $as_unset ZSH_VERSION || test "${ZSH_VERSION+set}" != set || { ZSH_VERSION=; export ZSH_VERSION; }
     for as_base in sh ksh sh5 bash; do
       as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in /bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH
@@ -35074,12 +35078,14 @@ do
   test -z "$as_dir" && as_dir=.
   case $as_dir in
          /*)
-           if ("$as_dir/$as_base" -c '
+           if ("$as_dir/$as_base" -c \
+                 'test -z "$ZSH_VERSION" && {
   as_lineno_1=$LINENO
   as_lineno_2=$LINENO
   as_lineno_3=`(expr $as_lineno_1 + 1) 2>/dev/null`
   test "x$as_lineno_1" != "x$as_lineno_2" &&
-  test "x$as_lineno_3"  = "x$as_lineno_2" ') 2>/dev/null; then
+  test "x$as_lineno_3"  = "x$as_lineno_2" ; }') 2>/dev/null
+           then
              $as_unset BASH_ENV || test "${BASH_ENV+set}" != set || { BASH_ENV=; export BASH_ENV; }
              $as_unset ENV || test "${ENV+set}" != set || { ENV=; export ENV; }
              CONFIG_SHELL=$as_dir/$as_base
