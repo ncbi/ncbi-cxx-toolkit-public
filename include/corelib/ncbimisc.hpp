@@ -939,6 +939,15 @@ BEGIN_NCBI_NAMESPACE;
 #define NON_CONST_REVERSE_ITERATE(Type, Var, Cont) \
     for ( Type::reverse_iterator Var = (Cont).rbegin();  Var != (Cont).rend();  ++Var )
 
+/// The body of the loop will be run with Var equal to false and then true.
+/// The seemlingly excessive complexity of this macro is to get around a couple of limitations:
+/// * A bool only has two states, so it's not possible to represent the complete state space
+///   of (first iteration, second iteration, done) without another variable.
+/// * The variables declared in a for-loop's first part must be of the same type, so
+///   the other variable has to be a bool instead of something more convenient such as
+///   as a loop-counter.
+#define ITERATE_BOTH_BOOL_VALUES(BoolVar) \
+    for( bool BoolVar##BOTH_BOOL_VALUES_DONE##__LINE__ = false, BoolVar = false; ! BoolVar##BOTH_BOOL_VALUES_DONE##__LINE__  ; BoolVar##BOTH_BOOL_VALUES_DONE##__LINE__ = BoolVar, BoolVar = true )
 
 /// Type for sequence locations and lengths.
 ///
