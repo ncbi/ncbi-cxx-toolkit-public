@@ -410,9 +410,10 @@ int CAgpconvertApplication::Run(void)
     }
 
     if( args["stdout"] ) {
-        agpConvert.OutputAsBioseqSet(
+        agpConvert.OutputBioseqs(
             cout,
-            vecAgpFileNames );
+            vecAgpFileNames,
+            CAgpConverter::fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets );
     } else {
         if( ! args["outdir"] ) {
             throw runtime_error("Please specify -stdout or -outdir");

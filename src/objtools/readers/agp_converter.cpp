@@ -165,58 +165,112 @@ CAgpConverter::LoadChromosomeMap(CNcbiIstream & chromosomes_istr )
     SetChromosomesInfo(mapChromosomeNames);
 }
 
-void CAgpConverter::OutputAsBioseqSet(
+void CAgpConverter::OutputBioseqs(
     CNcbiOstream & ostrm,
-    const std::vector<std::string> & vecAgpFileNames ) const
-{
-    if( m_pSubmitBlock ) {
-        // some kind of warning about submit block being ignored
-        m_pErrorHandler->HandleError(
-            eError_SubmitBlockIgnoredWhenOneBigBioseqSet,
-            "The Submit-block is ignored when outputting as one big bioseq-set because "
-            "bioseq-sets cannot contain Submit-blocks.");
-    }
+    const std::vector<std::string> & vecAgpFileNames,
+    TOutputBioseqsFlags fFlags,
+    size_t uMaxBioseqsToWrite ) const
+{/*
+    fOutputBioseqsFlags_OneObjectPerBioseq
+        fOutputBioseqsFlags_WrapInSeqEntry
+        fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets
+        m_pSubmitBlock set?*/
 
-    ostrm << "Bioseq-set ::= { seq-set {" << endl;
+    // put some flags into easier-to-read variables
+    const bool bOneObjectPerBioseq = (fFlags & fOutputBioseqsFlags_OneObjectPerBioseq);
+    const bool bAllowBioseqSetUnwrap = ! ( fFlags & fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets );
+    const bool bWrapInSeqEntry = ( fFlags & fOutputBioseqsFlags_WrapInSeqEntry );
+
+    // we get the first AGP entries to help with
+    // determining whether to use Bioseq-sets
+    CAgpToSeqEntry::TSeqEntryRefVec agp_entries;
+    if( ! vecAgpFileNames.empty() ) {
+        x_ReadAgpEntries( vecAgpFileNames[0], agp_entries );
+    }
+    const bool bOnlyOneBioseqInAllAGPFiles =
+        ( agp_entries.size() == 1 && vecAgpFileNames.size() == 1 );
+
+
+    // Each top-level object we write out is prepended with sObjectOpeningString
+    // and appended with sObjectClosingString.
+    string sObjectOpeningString;
+    string sObjectClosingString;
+    // set up sObjectOpeningString and sObjectClosingString
+    x_SetUpObjectOpeningAndClosingStrings(
+        sObjectOpeningString,
+        sObjectClosingString,
+        fFlags,
+        bOnlyOneBioseqInAllAGPFiles );
+
+    ostrm << sObjectOpeningString << endl;
 
     {{
+
         CObjectOStreamAsn obj_writer(ostrm);
 
         // Iterate over AGP files
         bool bFirstEntry = true;
         ITERATE( std::vector<std::string>, file_name_it, vecAgpFileNames ) {
 
-            CAgpToSeqEntry::TSeqEntryRefVec agp_entries;
-            x_ReadAgpEntries( *file_name_it, agp_entries );
+            // We got entries for the first AGP file earlier in this func
+            if( ! bFirstEntry ) {
+                agp_entries.clear();
+                x_ReadAgpEntries( *file_name_it, agp_entries );
+            }
 
             ITERATE (CAgpToSeqEntry::TSeqEntryRefVec, ent, agp_entries) {
 
                 string id_str;
-                CRef<CSeq_entry> new_entry = 
-                    x_InitializeAndCheckCopyOfTemplate(
-                    (*ent)->GetSeq(),
-                    id_str );
-                if( ! new_entry ) {
-                    m_pErrorHandler->HandleError(
-                        eError_EntrySkipped,
-                        "Entry skipped and reason probably given in a previous error" );
-                    continue;
-                }
 
+                CRef<CBioseq> new_bioseq;
+
+                // set new_bioseq
+                {{
+                    CRef<CSeq_entry> new_entry = 
+                        x_InitializeAndCheckCopyOfTemplate(
+                        (*ent)->GetSeq(),
+                        id_str );
+                    if( ! new_entry ) {
+                        m_pErrorHandler->HandleError(
+                            eError_EntrySkipped,
+                            "Entry skipped and reason probably given in a previous error" );
+                        continue;
+                    }
+                    new_bioseq.Reset( &new_entry->SetSeq() );
+                }}
 
                 if( bFirstEntry ) {
                     bFirstEntry = false;
                 } else {
-                    obj_writer.Flush();
-                    ostrm << "," << endl;
+                    if( bOneObjectPerBioseq ) {
+                        // if one object per bioseq, we close the
+                        // previous one and open up the new one
+                        ostrm << sObjectClosingString << endl;
+                        ostrm << sObjectOpeningString << endl;
+                    } else if( ! sObjectOpeningString.empty() ) {
+                        // all the bioseqs are in one Bioseq-set,
+                        // so just comma-separate them
+                        ostrm << "," << endl;
+                    }
                 }
 
-                obj_writer.WriteObject(new_entry.GetPointer(), new_entry->GetThisTypeInfo());
+                if( sObjectOpeningString.empty() ) {
+                    // Bioseq has to stand on its own
+                    ostrm << "Bioseq ::= " << endl;
+                } else {
+                    // Bioseq is inside some other object
+                    ostrm << "seq " << endl;
+                }
+                obj_writer.WriteObject(new_bioseq.GetPointer(), new_bioseq->GetThisTypeInfo());
+                // flush after every write in case the object writer has its own
+                // buffering that can cause corruption when intermixed with direct 
+                // stringstream "operator<<" calls.
+                obj_writer.Flush();
             }
         }
     }}
 
-    ostrm << "} }"  << endl; // close Bioseq-set
+    ostrm << sObjectClosingString << endl;
 }
 
 void CAgpConverter::OutputOneFileForEach(
@@ -608,6 +662,88 @@ void CAgpConverter::x_SetCreateAndUpdateDatesToToday(
     CRef<CSeqdesc> create_date(new CSeqdesc);
     create_date->SetCreate_date(*date);
     new_entry->SetSeq().SetDescr().Set().push_back(create_date);
+}
+
+void CAgpConverter::x_SetUpObjectOpeningAndClosingStrings(
+    string & out_sObjectOpeningString,
+    string & out_sObjectClosingString,
+    TOutputBioseqsFlags fOutputBioseqsFlags,
+    bool bOnlyOneBioseqInAllAGPFiles ) const
+{
+    out_sObjectOpeningString.clear();
+    out_sObjectClosingString.clear();
+
+    // See if Bioseqs will be in a Bioseq-set or not:
+    bool bUsingBioseqSets = false; // default so we can unwrap where possible
+    if( fOutputBioseqsFlags & fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets ) {
+        // if unwrapping is forbidden, we have no choice but
+        // to use Bioseq-sets
+        bUsingBioseqSets = true;
+    } else if( fOutputBioseqsFlags & fOutputBioseqsFlags_OneObjectPerBioseq ) {
+        // There's only one Bioseq per object, so 
+        // there's no reason to use Bioseq-sets in each one
+        // if we don't have to
+        bUsingBioseqSets = false; // redundant assignment, but clarifies
+    } else if( ! bOnlyOneBioseqInAllAGPFiles ) 
+    {
+        // there's only one big object, so using Bioseq-sets
+        // depends on whether there exists one Bioseq in all the AGP files
+        // (we make the assumption that AGP files will have at least one Bioseq)
+        bUsingBioseqSets = true;
+    }
+
+    // Each subsequent "if" should append to out_sObjectOpeningString
+    // and prepend to out_sObjectClosingString, because we're going from the outside inward.
+
+    // At each step, we check if out_sObjectOpeningString is empty 
+    // to see whether or not to add a ASN.1 text header (example header: "Seq-submit :: ")
+
+    // outermost possible level: is a Seq-submit needed?
+    if( m_pSubmitBlock ) {
+        stringstream seq_sub_header_strm;
+        CObjectOStreamAsn submit_block_writer(seq_sub_header_strm);
+
+        // for consistency we put the header-writing line in an
+        // "if" even though we know the "if" always succeeds
+        if( out_sObjectOpeningString.empty() ) {
+            seq_sub_header_strm << "Seq-submit ::= ";
+        }
+        seq_sub_header_strm << "{" << endl;
+        seq_sub_header_strm << "sub ";
+        submit_block_writer.WriteObject(m_pSubmitBlock.GetPointer(), m_pSubmitBlock->GetThisTypeInfo());
+        submit_block_writer.Flush();
+        seq_sub_header_strm << "," << endl;
+        seq_sub_header_strm << "data entrys {" << endl;
+
+        out_sObjectOpeningString = seq_sub_header_strm.str();
+        out_sObjectClosingString = "} }" + out_sObjectClosingString;
+    } 
+
+    // next level inward: is a Seq-entry needed?
+    const bool bUsingSeqEntry = ( 
+        m_pSubmitBlock || 
+        ( fOutputBioseqsFlags & fOutputBioseqsFlags_WrapInSeqEntry ) );
+    if( bUsingSeqEntry ) {
+        if( out_sObjectOpeningString.empty() ) {
+            // add an ASN.1 text header if we're not wrapped in
+            // something else
+            out_sObjectOpeningString += "Seq-entry ::= ";
+        }
+        if( bUsingBioseqSets ) {
+            out_sObjectOpeningString += "set ";
+        }
+    }
+
+    // next level inward: is a Bioseq-set needed?
+    if( bUsingBioseqSets ) {
+        // add an ASN.1 text header if we're not wrapped in
+        // something else
+        if( out_sObjectOpeningString.empty() ) {
+            out_sObjectOpeningString += "Bioseq-set ::= ";
+        }
+        out_sObjectOpeningString += "{ seq-set { ";
+        out_sObjectClosingString = "} }" + out_sObjectClosingString;
+    }
 }
 
 END_NCBI_SCOPE

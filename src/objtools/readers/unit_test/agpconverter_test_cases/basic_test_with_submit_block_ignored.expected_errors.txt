@@ -1,1 +1,0 @@
-eError_SubmitBlockIgnoredWhenOneBigBioseqSet	The Submit-block is ignored when outputting as one big bioseq-set because bioseq-sets cannot contain Submit-blocks.

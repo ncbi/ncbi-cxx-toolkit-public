@@ -103,9 +103,10 @@ public:
     ///   This holds the template bioseq that the output is built on.
     /// @param pSubmitBlock
     ///   The Seq-submit Submit-block, which can be NULL to just output a Seq-entry.
-    /// @param 
-    /// @param fFlags
+    /// @param fOutputFlags
     ///   Flags to control the behavior of the conversion
+    /// @param pErrorHandler
+    ///   This is called whenever an error occurs.  The default is just to print.
     CAgpConverter( 
         CConstRef<objects::CBioseq> pTemplateBioseq,
         const objects::CSubmit_block * pSubmitBlock = NULL,
@@ -124,11 +125,33 @@ public:
     /// Input has 2 tab-delimited columns: id, then chromosome name
     void LoadChromosomeMap(CNcbiIstream & chromosomes_istr );
 
-    /// Outputs the result from the AGP file names as one big Bioseq-set.  
+    enum EOutputBioseqsFlags {
+        /// If set, each AGP Bioseq is written as its own object.
+        /// * If Submit_block was given, each object is a Seq-submit
+        /// * Otherwise, it's a Bioseq-set, Bioseq or Seq-entry depending on the other flags.
+        fOutputBioseqsFlags_OneObjectPerBioseq = (1 << 0), 
+        /// Bioseqs and Bioseq-sets should always be wrapped in a Seq-entry.
+        /// This has no effect if Submit-block was given because
+        /// Seq-submits must take Seq-entry's.
+        fOutputBioseqsFlags_WrapInSeqEntry    = (1 << 1),
+        /// Specify this if Bioseq-sets with just one Bioseq in them
+        /// should _NOT_ be unwrapped into a Bioseq.
+        fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets = (1 << 2),
+
+
+        // this must be last
+        fOutputBioseqsFlags_LAST_PLUS_ONE
+    };
+    typedef int TOutputBioseqsFlags;
+
+    /// Outputs the result from the AGP file names as one big Bioseq-set 
+    /// (or sequential Bioseqs, if preferred)
     /// Data format can only be ASN.1 text for now, but this may change in the future.
-    void OutputAsBioseqSet(
+    void OutputBioseqs(
         CNcbiOstream & ostrm,
-        const std::vector<std::string> & vecAgpFileNames ) const;
+        const std::vector<std::string> & vecAgpFileNames,
+        TOutputBioseqsFlags fFlags = 0,
+        size_t uMaxBioseqsToWrite = std::numeric_limits<size_t>::max() ) const;
 
     /// This gets called after each file is written, so the caller
     /// can do useful things like run asnval on every file that's output.
@@ -201,6 +224,39 @@ private:
 
     void x_SetCreateAndUpdateDatesToToday(
         CRef<objects::CSeq_entry> new_entry ) const;
+
+    /// Each Bioseq sent out will have the returned
+    /// opening string before it and the closing string
+    /// after it.  You can use the resulting strings as follows:\n
+    /// \n
+    /// * print out_sObjectOpeningString
+    /// * If out_sObjectOpeningString is empty, print "Bioseq ::= "
+    /// * print all Bisoeqs in this object (comma-separated). 
+    ///   (example: "seq { [...snip...] }"
+    /// * print out_sObjectClosingString
+    /// \n
+    /// If callers are printing more than group of Bioseqs
+    /// (or one bioseq per object), they
+    /// can use the openers and closers for each object.
+    ///
+    /// @param out_sObjectOpeningString
+    ///   This will be cleared then set to the string
+    ///   that should appear before each text ASN.1
+    ///   object that is output.
+    /// @param out_sObjectClosingString
+    ///   Obvious closing analog to out_sObjectOpeningString
+    /// @param fOutputBioseqsFlags
+    ///   This function needs to know the flags that will
+    ///   be used to output so it can determine information
+    ///   such as whether or not a Bioseq-set or Bioseq will be used.
+    /// @param bOnlyOneBioseqInAllAGPFiles
+    ///   Caller sets this to true when there is only one Bioseq
+    ///   in all the AGP files being processed for this call.
+    void x_SetUpObjectOpeningAndClosingStrings(
+        string & out_sObjectOpeningString,
+        string & out_sObjectClosingString,
+        TOutputBioseqsFlags fOutputBioseqsFlags,
+        bool bOnlyOneBioseqInAllAGPFiles ) const;
 };
 
 END_NCBI_SCOPE

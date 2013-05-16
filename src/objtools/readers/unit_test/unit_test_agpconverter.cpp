@@ -51,12 +51,18 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <serial/objistrasn.hpp>
+
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 USING_SCOPE(unit_test_util);
 
 namespace {
+
+        bool s_InVerboseMode(void) {
+        return CNcbiApplication::Instance()->GetArgs()["v"];
+    }
 
     typedef pair<CAgpConverter::EError,string> TErrInfo;
     typedef vector<TErrInfo> TErrInfoVec;
@@ -160,7 +166,7 @@ namespace {
         }
     }
 
-    CRef<CBioseq_set> s_RunTests(
+    CRef<CSerialObject> s_RunTests(
         CConstRef<CBioseq> pTemplateBioseq,
         CConstRef<CSubmit_block> pSubmitBlock, // can be NULL
         CAgpConverter::TOutputFlags fOutputFlags,
@@ -177,9 +183,14 @@ namespace {
             pErrorHandler );
 
         stringstream ostrm;
-        agpConvert.OutputAsBioseqSet(
+        agpConvert.OutputBioseqs(
             ostrm,
-            vecAgpFileNames );
+            vecAgpFileNames,
+            CAgpConverter::fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets );
+
+        if( s_InVerboseMode() ) {
+            cerr << "OutputBioseqs output: " << ostrm.str() << endl;
+        }
 
         // check for unexpected errors
         const TErrInfoVec & resultingErrInfoVec = pErrorCollector->GetErrInfoVec();
@@ -210,13 +221,21 @@ namespace {
                 << s_ErrInfoToStr(pResultingErrInfo) );
         }
 
-        CRef<CBioseq_set> pBioseqSetAnswer( new CBioseq_set );
-        ostrm >> MSerial_AsnText >> *pBioseqSetAnswer;
-        return pBioseqSetAnswer;
+        CRef<CSerialObject> pAnswer;
+        if( pSubmitBlock ) {
+            pAnswer.Reset( new CSeq_submit );
+        } else {
+            pAnswer.Reset( new CBioseq_set );
+        }
+        BOOST_CHECK_NO_THROW( ostrm >> MSerial_AsnText >> *pAnswer );
+        if( ! pAnswer ) {
+            BOOST_ERROR("Could not parse this answer: " << ostrm.str() );
+        }
+        return pAnswer;
     }
 
     // wrapper for one AGP file
-    CRef<CBioseq_set> s_RunTests(
+    CRef<CSerialObject> s_RunTests(
         CConstRef<CBioseq> pTemplateBioseq,
         CConstRef<CSubmit_block> pSubmitBlock, // can be NULL
         CAgpConverter::TOutputFlags fOutputFlags,
@@ -248,7 +267,8 @@ namespace {
         const SSerialObjectPtrToAsnText & stream_op )
     {
         if( stream_op.m_pObject ) {
-            return ostrm << MSerial_AsnText << *stream_op.m_pObject;
+            BOOST_CHECK_NO_THROW( ostrm << MSerial_AsnText << *stream_op.m_pObject );
+            return ostrm;
         } else {
             return ostrm << "(NULL)";
         }
@@ -263,6 +283,9 @@ NCBITEST_INIT_CMDLINE(descrs)
         "Use this to change the directory where test cases are sought.",
         CArgDescriptions::eDirectory,
         "agpconverter_test_cases");
+
+    descrs->AddFlag("v",
+        "Set this to print a lot of extra data to help with debugging.");
 }
 
 BOOST_AUTO_TEST_CASE(MasterTest)
@@ -340,15 +363,41 @@ BOOST_AUTO_TEST_CASE(MasterTest)
                         mapSuffixToFile.find("expected_bioseq_set.asn")->second ) );
             if( pExpectedBioseqSetAnswer ) {
                 s_UpdateCreateAndUpdateDate(*pExpectedBioseqSetAnswer);
+            } else {
+                BOOST_ERROR( "could not parse this file: " 
+                    << mapSuffixToFile.find("expected_bioseq_set.asn")->second.GetPath() );
             }
 
-            CRef<CBioseq_set> pBioseqSetAnswer =
+            CRef<CSerialObject> pAnswer =
                 s_RunTests(
                     pTemplateBioseq,
                     pSubmitBlock,
                     fOutputFlags,
                     agpFile.GetPath(),
                     errInfoVec );
+
+            // extract the Bioseq-set inside pAnswer, if possible
+            CRef<CBioseq_set> pBioseqSetAnswer;
+            if( pAnswer ) {
+                if( pAnswer->GetThisTypeInfo() == CBioseq_set::GetTypeInfo() ) {
+                    pBioseqSetAnswer.Reset( 
+                        dynamic_cast<CBioseq_set*>(pAnswer.GetPointer()) );
+                } else if( pAnswer->GetThisTypeInfo() == CSeq_submit::GetTypeInfo() ) {
+                    CRef<CSeq_submit> pSeqSubmit(
+                        dynamic_cast<CSeq_submit*>(pAnswer.GetPointer()) );
+                    if( pSeqSubmit->IsEntrys() ) {
+                        BOOST_CHECK_NO_THROW( 
+                            pBioseqSetAnswer.Reset( 
+                            dynamic_cast<CBioseq_set*>(
+                            &pSeqSubmit->SetData().SetEntrys().front()->SetSet() ) ) );
+                    }
+                } else {
+                    BOOST_ERROR( "Cannot figure out type of s_RunTests response" );
+                    NCBITEST_CHECK_MESSAGE( false, "Best guess for type: " 
+                        << pAnswer->GetThisTypeInfo()->GetName() );
+                }
+            }
+
             if( pBioseqSetAnswer ) {
                 s_UpdateCreateAndUpdateDate(*pBioseqSetAnswer);
             }
@@ -385,6 +434,130 @@ BOOST_AUTO_TEST_CASE(MasterTest)
         args["test-cases-dir"].AsDirectory(),
         requiredSuffixes,
         optionalSuffixes );
+}
+
+// Do a very basic smoke test of every combination of 
+// OutputBioseqs flags and other important factors
+// and just see if it generates something
+// that can be parsed
+BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
+{
+    const CArgs & args = CNcbiApplication::Instance()->GetArgs();
+
+    // prepare some objects
+    CRef<CBioseq> pTemplateBioseq( SerialClone(unit_test_util::BuildGoodSeq()->GetSeq()) );
+    CRef<CSubmit_block> pSubmitBlock( new CSubmit_block );
+    {{
+        string sSubmitBlockFileName = 
+            CDirEntry::ConcatPath( 
+                args["test-cases-dir"].AsString(), "basic_test_with_submit_block_ignored.submit_block.asn");
+        CNcbiIfstream submit_block_strm( sSubmitBlockFileName.c_str() );
+        submit_block_strm >> MSerial_AsnText >> *pSubmitBlock;
+    }}
+
+    // both must have size two
+    vector<string> arrSingleBioseqAGPFileBases;
+    arrSingleBioseqAGPFileBases.push_back("basic_test.agp");
+    arrSingleBioseqAGPFileBases.push_back("basic_test_with_submit_block_ignored.agp");
+
+    vector<string> arrMultiBioseqAGPFileBases;
+    arrMultiBioseqAGPFileBases.push_back("multi_obj.agp");
+    arrMultiBioseqAGPFileBases.push_back("multi_obj_2.agp");
+
+    // this vector holds all the CTypeInfo that we can try
+    typedef vector<const CTypeInfo*> TTypeInfoVec;
+    TTypeInfoVec vecTypeInfos;
+    vecTypeInfos.push_back( CSeq_submit::GetTypeInfo() );
+    vecTypeInfos.push_back( CSeq_entry::GetTypeInfo() );
+    vecTypeInfos.push_back( CBioseq_set::GetTypeInfo() );
+    vecTypeInfos.push_back( CBioseq::GetTypeInfo() );
+    // ends with NULL
+    vecTypeInfos.push_back( NULL );
+
+    // try every combination of each flag
+    // (conveniently, that's just every non-negative
+    // integer up to, but not including, fOutputBioseqsFlags_LAST_PLUS_ONE)
+    for( CAgpConverter::TOutputBioseqsFlags fOutputBioseqsFlags = 0;
+        fOutputBioseqsFlags < CAgpConverter::fOutputBioseqsFlags_LAST_PLUS_ONE;
+        ++fOutputBioseqsFlags ) 
+    {
+        ITERATE_BOTH_BOOL_VALUES(bUseSubmitBlock) {
+
+            CAgpConverter agpConverter(
+                pTemplateBioseq,
+                ( bUseSubmitBlock ? pSubmitBlock.GetPointer() : NULL ) );
+
+            ITERATE_BOTH_BOOL_VALUES(bMultipleBioseqsPerAGPFile) {
+
+                const vector<string> & refPossibleAGPFileBases = (
+                    bMultipleBioseqsPerAGPFile ?
+                    arrMultiBioseqAGPFileBases :
+                    arrSingleBioseqAGPFileBases );
+
+                vector<string> refPossibleAGPFiles;
+                ITERATE(vector<string>, file_base_it, refPossibleAGPFileBases ) {
+                    refPossibleAGPFiles.push_back(
+                        CDirEntry::ConcatPath( 
+                        args["test-cases-dir"].AsString(), *file_base_it ) );
+                }
+
+                ITERATE_BOTH_BOOL_VALUES(bMultipleAGPFiles) {
+
+                    vector<string> vecAgpFileNames;
+                    vecAgpFileNames.push_back( refPossibleAGPFiles[0] );
+                    if( bMultipleAGPFiles ) {
+                        vecAgpFileNames.push_back( refPossibleAGPFiles[1] );
+                    }
+
+                    cout << "Testing with these settings:" << endl;
+                    cout << "\tflags: " << fOutputBioseqsFlags << endl;
+                    cout << "\tSubmit-block: " << NStr::BoolToString(bUseSubmitBlock) << endl;
+                    cout << "\tbMultipleBioseqsPerAGPFile: " 
+                        << NStr::BoolToString(bMultipleBioseqsPerAGPFile) << endl;
+                    cout << "\tbMultipleAGPFiles: " << 
+                        NStr::BoolToString(bMultipleAGPFiles) << endl;
+
+                    // run a test
+                    stringstream obj_strm;
+                    agpConverter.OutputBioseqs(
+                        obj_strm,
+                        vecAgpFileNames,
+                        fOutputBioseqsFlags );
+
+                    if( s_InVerboseMode() ) {
+                        cerr << "agpConverter.OutputBioseqs output: " 
+                            << obj_strm.str() << endl;
+                    }
+
+                    // obj_strm should be one or more valid ASN.1 text objects
+                    CObjectIStreamAsn obj_reader(obj_strm);
+                    BOOST_CHECK( ! obj_reader.EndOfData() ); // there should be at least one object
+                    while( ! obj_reader.EndOfData() ) {
+                        string sFileHeader;
+                        BOOST_CHECK_NO_THROW( sFileHeader = obj_reader.ReadFileHeader() );
+
+                        // find out which type it is
+                        ITERATE( TTypeInfoVec, type_info_it, vecTypeInfos ) {
+                            const CTypeInfo *pTypeInfo = *type_info_it;
+
+                            if( ! pTypeInfo ) {
+                                // we reached the end without finding a suitable type
+                                BOOST_ERROR("Unknown object type or corrupted file: " << ( sFileHeader.empty() ? kEmptyStr : sFileHeader ) );
+                            } else if( sFileHeader == pTypeInfo->GetName() ) {
+                                // we figured out what type this is.
+                                // read _and_ write the object to make sure it's valid
+                                CRef<CSerialObject> pObject( static_cast<CSerialObject*>(pTypeInfo->Create()) );
+                                BOOST_CHECK_NO_THROW(obj_reader.ReadObject(pObject.GetPointer(), pObject->GetThisTypeInfo()));
+                                stringstream dummy_ostrm;
+                                BOOST_CHECK_NO_THROW( dummy_ostrm << MSerial_AsnText << *pObject );
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 END_NCBI_SCOPE
