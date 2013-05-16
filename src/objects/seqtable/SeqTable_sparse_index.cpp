@@ -259,8 +259,12 @@ size_t CSeqTable_sparse_index::x_GetNextSetBitIndex(size_t index,
     // x_EnsurePreprocessed(); no need to call ensure - it's already called
     if ( IsIndexes() ) {
         const TIndexes& indexes = GetIndexes();
-        return ++set_bit_index < indexes.size()?
-            indexes[set_bit_index]: kInvalidIndex;
+        if ( ++set_bit_index < indexes.size() ) {
+            return indexes[set_bit_index];
+        }
+        else {
+            return kInvalidIndex;
+        }
     }
     else if ( IsBit_set() ) {
         const TBit_set& bytes = GetBit_set();
