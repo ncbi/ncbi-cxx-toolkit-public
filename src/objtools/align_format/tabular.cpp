@@ -1486,7 +1486,8 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << "Top D gene match, ";
         m_Ostream << "Top J gene match, Chain type, stop codon, ";
-        m_Ostream << "V-J frame, Productive, Strand):" << endl;
+        m_Ostream << "V-J frame, Productive, Strand).  "; 
+        m_Ostream <<"Multiple equivalent top matches having the same score and percent identity, if present, are separated by a comma." << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
         if (m_ChainType == "VH"|| m_ChainType == "VD" || 
             m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
@@ -1544,7 +1545,7 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
                       << "of a V gene and has been converted to the plus strand. "
                       << "The sequence positions refer to the converted sequence.\n\n";
         }
-        m_Ostream << "<br>V-(D)-J rearrangement summary for query sequence:\n";
+        m_Ostream << "<br>V-(D)-J rearrangement summary for query sequence (multiple equivalent top matches having the same score \nand percent identity, if present, are separated by a comma):\n";
         m_Ostream << "<table border=1>\n";
         m_Ostream << "<tr><td>Top V gene match</td>";
         if (m_ChainType == "VH" || m_ChainType == "VD" || 
