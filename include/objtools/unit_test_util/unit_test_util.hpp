@@ -192,6 +192,8 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> GetCDSFromGoodNucProtSet (CR
 class NCBI_UNIT_TEST_UTIL_EXPORT ITestRunner
 {
 public:
+    virtual ~ITestRunner(void) { }
+
     typedef map<string, CFile> TMapSuffixToFile;
 
     /// This function is called for each test.
