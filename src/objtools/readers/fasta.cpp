@@ -470,7 +470,8 @@ string CFastaReader::CWarning::GetStringOfType(EType eType)
         { eType_TooManyAmbigOnFirstLine, "Too many ambiguous bases on first data line" },
         { eType_InvalidResidue, "Invalid residue(s) found" },
         { eType_AminoAcidsInTitle, "Amino acid bases in title"},
-        { eType_ModsFoundButNotExpected, "FASTA modifiers not expected"}
+        { eType_ModsFoundButNotExpected, "FASTA modifiers not expected"},
+        { eType_ExpectedSeqMissing, "Unexpectedly had no residues."}
     };
     typedef CStaticArrayMap<EType, const char *> TTypeMap;
     DEFINE_STATIC_ARRAY_MAP(TTypeMap, sc_TypeMap, sc_type_map);
@@ -1078,6 +1079,11 @@ void CFastaReader::AssembleSeq(void)
         if (m_SeqData.empty()) {
             inst.SetLength(0);
             inst.SetRepr(CSeq_inst::eRepr_virtual);
+            // empty sequence triggers warning if seq data was expected
+            if( ! TestFlag(fNoSeqData) ) {
+                FASTA_WARNING(LineNumber(), CWarning::eType_ExpectedSeqMissing,
+                    "FASTA-Reader: No residues on " << m_BestID->AsFastaString() );
+            }
         } else if (TestFlag(fNoSplit)) {
             inst.SetLength(GetCurrentPos(eRawPos));
             inst.SetRepr(CSeq_inst::eRepr_raw);

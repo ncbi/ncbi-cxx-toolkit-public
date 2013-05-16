@@ -75,7 +75,7 @@ public:
         fAssumeNuc    = 1<< 0, ///< Assume nucs unless accns indicate otherwise
         fAssumeProt   = 1<< 1, ///< Assume prots unless accns indicate otherwise
         fForceType    = 1<< 2, ///< Force specified type regardless of accession
-        fNoParseID    = 1<< 3, ///< Generate an ID (whole defline -> title)
+        fNoParseID    = 1<< 3, ///< Generate an ID (whole defline -&gt; title)
         fParseGaps    = 1<< 4, ///< Make a delta sequence if gaps found
         fOneSeq       = 1<< 5, ///< Just read the first sequence found
         fAllSeqIds    = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
@@ -160,6 +160,7 @@ public:
             eType_InvalidResidue,
             eType_AminoAcidsInTitle,
             eType_ModsFoundButNotExpected,
+            eType_ExpectedSeqMissing,
 
             // feel free to add more warning types as necessary, but
             // put them before eType_NUM
