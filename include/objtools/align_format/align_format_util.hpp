@@ -182,7 +182,7 @@ static const char kCustomLinkTemplate[] = "<a href=\"<@custom_url@>\" class=\"<@
 static const char kCustomLinkTitle[]="Show <@custom_report_type@> report for <@seqid@>";
 
 static const char kGenericLinkTemplate[] = "<a title=\"Show report for <@seqid@>\" href=\"<@url@>\" ><@seqid@></a>"; 
-static const char kGenericLinkMouseoverTmpl[] = "<span class=\"jig-ncbipopper\" data-jigconfig=\"destText:'<@defline@>'\"><a title=\"Show report for <@seqid@>\" onclick=\"window.open(this.href)\" href=\"<@url@>\" ><@seqid@></a></span>";
+static const char kGenericLinkMouseoverTmpl[] = "<span class=\"jig-ncbipopper\" data-jigconfig=\"destText:'<@defline@>'\"><a title=\"Show report for <@seqid@>\" onclick=\"window.open(this.href,'<@target@>')\" href=\"<@url@>\" ><@seqid@></a></span>";
 
 
 ///Sub-sequence
