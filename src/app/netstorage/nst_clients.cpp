@@ -51,6 +51,7 @@ CNSTClient::CNSTClient() :
     m_NumberOfObjectsWritten(0),
     m_NumberOfObjectsRead(0),
     m_NumberOfObjectsRelocated(0),
+    m_NumberOfObjectsDeleted(0),
     m_NumberOfSockErrors(0)
 {}
 
@@ -80,6 +81,7 @@ CJsonNode  CNSTClient::serialize(void) const
     client.SetInteger("ObjectsWritten", m_NumberOfObjectsWritten);
     client.SetInteger("ObjectsRead", m_NumberOfObjectsRead);
     client.SetInteger("ObjectsRelocated", m_NumberOfObjectsRelocated);
+    client.SetInteger("ObjectsDeleted", m_NumberOfObjectsDeleted);
     client.SetInteger("SocketErrors", m_NumberOfSockErrors);
 
     return client;
@@ -263,6 +265,19 @@ void  CNSTClientRegistry::AddObjectsRelocated(const string &  client,
     map<string, CNSTClient>::iterator   found = m_Clients.find(client);
     if (found != m_Clients.end())
         found->second.AddObjectsRelocated(count);
+}
+
+
+void  CNSTClientRegistry::AddObjectsDeleted(const string &  client,
+                                            size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddObjectsDeleted(count);
 }
 
 

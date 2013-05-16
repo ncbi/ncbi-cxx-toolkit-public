@@ -82,6 +82,7 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
       m_ReadMode(CNetStorageHandler::eReadMessages),
       m_WriteBuffer(NULL),
       m_JSONWriter(m_UTTPWriter),
+      m_DataMessageSN(-1),
       m_ByeReceived(false),
       m_FirstMessage(true)
 {
@@ -450,7 +451,7 @@ void CNetStorageHandler::x_OnData(
     if (!m_ObjectStream) {
         if (!last_chunk || data_size > 0) {
             ERR_POST("Received " << data_size << " bytes after "
-                    "an error has been reported to the client");
+                     "an error has been reported to the client");
         }
 
         if (last_chunk) {
@@ -475,6 +476,7 @@ void CNetStorageHandler::x_OnData(
                                         eWriteError, message);
         x_SendSyncMessage(response);
         m_ObjectStream = NULL;
+        m_DataMessageSN = -1;
         return;
     }
 
@@ -482,6 +484,7 @@ void CNetStorageHandler::x_OnData(
         x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
         x_PrintMessageRequestStop();
         m_ObjectStream = NULL;
+        m_DataMessageSN = -1;
     }
 }
 
@@ -1007,6 +1010,62 @@ CNetStorageHandler::x_ProcessRead(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+
+    if (m_Client.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eHelloRequired,
+                                        "Anonymous client cannot write into objects");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    // Take the argument
+    if (!message.HasKey("FileID")) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "FileID is a mandatory field");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    string  file_id = message.GetString("FileID");
+    if (file_id.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "FileID must not be an empty string");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    // TODO: Create interface
+
+
+    m_ClientRegistry.AddObjectsRead( m_Client, 1 );
+
+
+    // TODO: Loop for writing data into the client socket
+    // TODO: Count bytes written
+    // TODO: Send a final chunk of size 0
+
+
+
+
+
+
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -1016,6 +1075,48 @@ CNetStorageHandler::x_ProcessDelete(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+
+    if (m_Client.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eHelloRequired,
+                                        "Anonymous client cannot write into objects");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    // Take the argument
+    if (!message.HasKey("FileID")) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "FileID is a mandatory field");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    string  file_id = message.GetString("FileID");
+    if (file_id.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "FileID must not be an empty string");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+
+
+    // TODO: Implement deletion
+
+
+    m_ClientRegistry.AddObjectsDeleted(m_Client, 1);
 }
 
 

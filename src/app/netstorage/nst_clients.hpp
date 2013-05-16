@@ -93,6 +93,8 @@ class CNSTClient
         { m_NumberOfObjectsRead += count; }
         void  AddObjectsRelocated(size_t  count)
         { m_NumberOfObjectsRelocated += count; }
+        void  AddObjectsDeleted(size_t  count)
+        { m_NumberOfObjectsDeleted += count; }
 
         void Touch(void);
         CJsonNode  serialize(void) const;
@@ -114,6 +116,7 @@ class CNSTClient
         size_t          m_NumberOfObjectsWritten;
         size_t          m_NumberOfObjectsRead;
         size_t          m_NumberOfObjectsRelocated;
+        size_t          m_NumberOfObjectsDeleted;
 
         size_t          m_NumberOfSockErrors;
 
@@ -142,6 +145,7 @@ class CNSTClientRegistry
         void  AddObjectsWritten(const string &  client, size_t  count);
         void  AddObjectsRead(const string &  client, size_t  count);
         void  AddObjectsRelocated(const string &  client, size_t  count);
+        void  AddObjectsDeleted(const string &  client, size_t  count);
 
         CJsonNode serialize(void) const;
 
