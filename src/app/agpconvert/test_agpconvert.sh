@@ -26,6 +26,13 @@ MULTIFILE_TMP_FILE=`mymktemp`
 
 AGPCONVERT_TMP_OUTDIR=`mymktemp -d`
 
+remove_tmp_outdir_contents() {
+    if [ -d "$AGPCONVERT_TMP_OUTDIR" ] ; then
+        rm -rf $AGPCONVERT_TMP_OUTDIR
+        mkdir -p $AGPCONVERT_TMP_OUTDIR
+    fi
+}
+
 # Give it exactly 2 ASN.1 files and it normalizes them
 # and diffs them.  If the diffs differ, RETVAL is
 # set to non-zero and the two outputs are shown.
@@ -43,7 +50,9 @@ asn_diff()
     echo "FYI:"
     ls -l "$FILE1" "$FILE2"
 
-    if ! test -s "$FILE1" -a -s "$FILE2" ; then
+    if test -s "$FILE1" -a -s "$FILE2" ; then
+        true # good, neither file is empty
+    else
         echo "Error: at least one of these files is empty: $FILE1 $FILE2"
         RETVAL=1
     fi
@@ -53,7 +62,7 @@ asn_diff()
     normalize_ASN1 < "$FILE1" | tr '\n' ' ' > $ASNDIFFFILE1
     normalize_ASN1 < "$FILE2" | tr '\n' ' ' > $ASNDIFFFILE2
 
-    diff --ignore-all-space "$ASNDIFFFILE1" "$ASNDIFFFILE2"
+    diff -w "$ASNDIFFFILE1" "$ASNDIFFFILE2"
     DIFF_RCODE=$?
     if [ $DIFF_RCODE != 0 ] ; then
         RETVAL=1
@@ -115,7 +124,7 @@ agpconvert_failure_expected()
     echo "#################### RUNNING TEST: $ERROR_EGREP_PATTERN $@"
 
     ${AGPCONVERT} "$@" > /dev/null 2> $AGPCONVERT_CHECKING_TMPFILE1
-    if [ $? == 0 ] ; then
+    if [ $? = 0 ] ; then
         RETVAL=1
         echo test failure because agpconvert expected to give non-zero exit code but did not
         return
@@ -136,7 +145,7 @@ agpconvert_outdir_test()
     shift
 
     # clear temporary directory
-    find $AGPCONVERT_TMP_OUTDIR -depth -mindepth 1 -delete
+    remove_tmp_outdir_contents
 
     ${AGPCONVERT} -outdir $AGPCONVERT_TMP_OUTDIR -ofs 'weirdsuffix' "$@" || RETVAL=1
 
@@ -149,7 +158,7 @@ agpconvert_outdir_multifile_test()
     shift
 
     # clear temporary directory
-    find $AGPCONVERT_TMP_OUTDIR -depth -mindepth 1 -delete
+    remove_tmp_outdir_contents
 
     ${AGPCONVERT} -outdir $AGPCONVERT_TMP_OUTDIR -ofs 'weirdsuffix' "$@" || RETVAL=1
 
@@ -202,11 +211,11 @@ agpconvert_outdir_test ${TEST_DATA}/basic_test_sub_outdir.expected_seq_submit.as
 
 # test with multiple AGP files and multiple objects in each file,
 # for -stdout
-agpconvert_check_bioseq_set_output ${TEST_DATA}/multi_agp_stdout.expected_seq_set.asn -stdout -fasta_id -template ${TEST_DATA}/basic_test.seq_entry.asn ${TEST_DATA}/multi_obj_{1,2}.agp
+agpconvert_check_bioseq_set_output ${TEST_DATA}/multi_agp_stdout.expected_seq_set.asn -stdout -fasta_id -template ${TEST_DATA}/basic_test.seq_entry.asn ${TEST_DATA}/multi_obj_1.agp ${TEST_DATA}/multi_obj_2.agp
 
 # test with multiple AGP files and multiple objects in each file,
 # for -outdir
-agpconvert_outdir_multifile_test ${TEST_DATA}/multi_agp_outdir.expected_seq_set.asn -fasta_id -template ${TEST_DATA}/basic_test.seq_entry.asn ${TEST_DATA}/multi_obj_{1,2}.agp
+agpconvert_outdir_multifile_test ${TEST_DATA}/multi_agp_outdir.expected_seq_set.asn -fasta_id -template ${TEST_DATA}/basic_test.seq_entry.asn ${TEST_DATA}/multi_obj_1.agp ${TEST_DATA}/multi_obj_2.agp
 
 # cleanup at the end
 rm -f $AGPCONVERT_CHECKING_TMPFILE1
