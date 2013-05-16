@@ -3089,7 +3089,8 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
         seqLink = CAlignFormatUtil::MapTemplate(linkTmpl,"url",linkURL);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
-        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi);            
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi); 
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"target","EntrezView");    
         if(seqUrlInfo->addCssInfo) {
             seqLink = CAlignFormatUtil::MapTemplate(seqLink,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline));            
         }        
