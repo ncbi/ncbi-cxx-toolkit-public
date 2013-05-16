@@ -31,7 +31,7 @@ AGPCONVERT_TMP_OUTDIR=`mymktemp -d`
 # set to non-zero and the two outputs are shown.
 asn_diff()
 {
-    if [[ $# != 2 ]] ; then
+    if [ $# != 2 ] ; then
         echo "ERROR: asn_diff takes exactly 2 args"
         return 1
     fi
@@ -55,7 +55,7 @@ asn_diff()
 
     diff --ignore-all-space "$ASNDIFFFILE1" "$ASNDIFFFILE2"
     DIFF_RCODE=$?
-    if [[ $DIFF_RCODE != 0 ]] ; then
+    if [ $DIFF_RCODE != 0 ] ; then
         RETVAL=1
         echo "Incorrectly got the following output: "
         cat $ASNDIFFFILE1
@@ -78,7 +78,7 @@ normalize_ASN1()
          -e '$whole_thing = join("",@lines);' \
          -e '$whole_thing =~ s/\b(update|create)-date\s+std\s*{.*?}/\1-date std { year 2000 , month 1, day 1 }/sg;' \
          -e ' print $whole_thing;'
-    if [[ $? != 0 ]] ; then
+    if [ $? != 0 ] ; then
         RETVAL=1
         echo there was a problem running perl
     fi
@@ -96,7 +96,7 @@ agpconvert_check_bioseq_set_output()
 
     ${AGPCONVERT} "$@" > $AGPCONVERT_CHECKING_TMPFILE1
     AGPCONVERT_RCODE=$?
-    if [[ $AGPCONVERT_RCODE != 0 ]] ; then
+    if [ $AGPCONVERT_RCODE != 0 ] ; then
         RETVAL=1
         return
     fi
@@ -115,7 +115,7 @@ agpconvert_failure_expected()
     echo "#################### RUNNING TEST: $ERROR_EGREP_PATTERN $@"
 
     ${AGPCONVERT} "$@" > /dev/null 2> $AGPCONVERT_CHECKING_TMPFILE1
-    if [[ $? == 0 ]] ; then
+    if [ $? == 0 ] ; then
         RETVAL=1
         echo test failure because agpconvert expected to give non-zero exit code but did not
         return
