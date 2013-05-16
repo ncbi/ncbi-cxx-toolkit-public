@@ -106,7 +106,7 @@ public:
     /// @param fOutputFlags
     ///   Flags to control the behavior of the conversion
     /// @param pErrorHandler
-    ///   This is called whenever an error occurs.  The default is just to print.
+    ///   This is called whenever an error occurs.  The caller will want to give a subclass of CErrorHandler if the caller wants differently functionality from the default (which is to just print to stderr)
     CAgpConverter( 
         CConstRef<objects::CBioseq> pTemplateBioseq,
         const objects::CSubmit_block * pSubmitBlock = NULL,
@@ -144,9 +144,9 @@ public:
     };
     typedef int TOutputBioseqsFlags;
 
-    /// Outputs the result from the AGP file names as one big Bioseq-set 
-    /// (or sequential Bioseqs, if preferred)
-    /// Data format can only be ASN.1 text for now, but this may change in the future.
+    /// Outputs the result from the AGP file names as ASN.1.  The output
+    /// could be a Seq-submit, Seq-entry, Bioseq-set or Bioseq, depending
+    /// on the flags and whether a pSubmitBlock was given.
     void OutputBioseqs(
         CNcbiOstream & ostrm,
         const std::vector<std::string> & vecAgpFileNames,
@@ -167,11 +167,14 @@ public:
     /// 
     /// @param sDirName
     ///   The directory to put the output files into.
+    /// @param vecAgpFileNames
+    ///   A list of the AGP filenames to read from.
     /// @param sSuffix
     ///   The suffix for each file.  If empty, it defaults to "sqn" 
     ///   for Seq-submits and "ent" for Seq-entrys.
     /// @param pFileWrittenCallback
-    ///   if set, its Notify function is called after each file is written.
+    ///   If non-NULL, its Notify function is called after each file is
+    ///   written so the caller can perform any required custom logic.
     void OutputOneFileForEach(
         const string & sDirName,
         const std::vector<std::string> & vecAgpFileNames,
@@ -225,8 +228,8 @@ private:
     void x_SetCreateAndUpdateDatesToToday(
         CRef<objects::CSeq_entry> new_entry ) const;
 
-    /// Each Bioseq sent out will have the returned
-    /// opening string before it and the closing string
+    /// Each Bioseq written out will have the out_sObjectOpeningString
+    /// before it and out_sObjectClosingString
     /// after it.  You can use the resulting strings as follows:\n
     /// \n
     /// * print out_sObjectOpeningString
@@ -235,7 +238,7 @@ private:
     ///   (example: "seq { [...snip...] }"
     /// * print out_sObjectClosingString
     /// \n
-    /// If callers are printing more than group of Bioseqs
+    /// If callers are printing more than one group of Bioseqs
     /// (or one bioseq per object), they
     /// can use the openers and closers for each object.
     ///
