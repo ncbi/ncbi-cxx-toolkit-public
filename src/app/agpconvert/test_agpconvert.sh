@@ -13,7 +13,7 @@ TEST_DATA=./test_data
 
 mymktemp()
 {
-    mktemp -t test_agpconvert.XXXXXXXX "$@"
+    mktemp "$@" -t test_agpconvert.XXXXXXXX
 }
 
 AGPCONVERT_CHECKING_TMPFILE1=`mymktemp`
@@ -50,8 +50,8 @@ asn_diff()
 
     cat /dev/null > $ASNDIFFFILE1
     cat /dev/null > $ASNDIFFFILE2
-    normalize_ASN1 < "$FILE1" > $ASNDIFFFILE1
-    normalize_ASN1 < "$FILE2" > $ASNDIFFFILE2
+    normalize_ASN1 < "$FILE1" | tr '\n' ' ' > $ASNDIFFFILE1
+    normalize_ASN1 < "$FILE2" | tr '\n' ' ' > $ASNDIFFFILE2
 
     diff --ignore-all-space "$ASNDIFFFILE1" "$ASNDIFFFILE2"
     DIFF_RCODE=$?
