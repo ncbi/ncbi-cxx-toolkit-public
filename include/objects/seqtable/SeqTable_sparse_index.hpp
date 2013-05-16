@@ -61,8 +61,10 @@ public:
     // destructor
     ~CSeqTable_sparse_index(void);
 
-    static const size_t kSkipped      = size_t(-1);
-    static const size_t kInvalidIndex = size_t(-1);
+    enum {
+        kSkipped = -1,
+        kInvalidIndex = -1
+    };
 
     // Overload base setters to reset extra data fields
     void Reset(void) {
