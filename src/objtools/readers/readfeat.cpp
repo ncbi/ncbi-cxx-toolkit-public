@@ -2057,7 +2057,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                 case eQual_PCR_conditions:
                 case eQual_phenotype:
                 case eQual_product:
-                case eQual_protein_id:
                 case eQual_pseudogene:
                 case eQual_satellite:
                 case eQual_rpt_family:
@@ -2141,6 +2140,18 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         return x_AddGeneOntologyToFeature(sfp, qual, val);
                     }
                     return false;
+                case eQual_protein_id:
+                    try {
+                        CRef<CSeq_id> pProteinId( 
+                            new CSeq_id(
+                                val, 
+                                CSeq_id::fParse_ValidLocal |
+                                CSeq_id::fParse_PartialOK  ) );
+                        sfp->SetProduct().SetWhole( *pProteinId );
+                        return true;
+                    } catch( CSeqIdException & ) {
+                        return false;
+                    }
                 default:
                     break;
             }

@@ -179,11 +179,15 @@ BOOST_AUTO_TEST_CASE(Test_FeatureTableWithGeneAndCodingRegion)
 {
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table1); 
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+
     BOOST_REQUIRE(ftable.size() == 2);
     BOOST_REQUIRE(ftable.front()->IsSetData());
     BOOST_REQUIRE(ftable.front()->GetData().IsGene());
     BOOST_REQUIRE(ftable.back()->IsSetData());
     BOOST_REQUIRE(ftable.back()->GetData().IsCdregion());
+    // must be true AND not throw an exception
+    NCBITEST_REQUIRE(
+        ftable.back()->GetProduct().GetWhole().GetLocal().GetStr() == "seq_1_1" );
 }
 
 
@@ -304,12 +308,19 @@ BOOST_AUTO_TEST_CASE(Test_FlybaseFeatureTableWithMultiIntervalTranslExcept)
     CConstRef<CSeq_feat> cds = ftable.back();
     BOOST_REQUIRE(cds->IsSetData());
     BOOST_REQUIRE(cds->GetData().IsCdregion());
-    BOOST_CHECK_EQUAL(cds->GetQual().size(), 3);
+    BOOST_CHECK_EQUAL(cds->GetQual().size(), 2);
     set<string> expected_quals;
     expected_quals.insert("transcript_id");
-    expected_quals.insert("protein_id");
     expected_quals.insert("transl_except");
     CheckExpectedQuals (cds, expected_quals);
+
+    // check protein_ids
+    CSeq_annot::TData::TFtable::const_iterator ftable_it = ftable.begin();
+    NCBITEST_CHECK( ! (*ftable_it++)->IsSetProduct() );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PA" );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PA" );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PB" );
+    NCBITEST_CHECK_EQUAL( (*ftable_it++)->GetProduct().GetWhole().GetGeneral().GetTag().GetStr(), "CG30334-PB" );
 }
 
 
@@ -486,7 +497,8 @@ BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
             BOOST_REQUIRE (prot.IsSetName());
             BOOST_REQUIRE (prot.GetName().size() == 1);
             set<string> expected_quals;
-            expected_quals.insert("protein_id");
+            NCBITEST_CHECK( NStr::StartsWith( 
+                (*feat)->GetProduct().GetWhole().GetOther().GetAccession(), "YP_0070247") );
             if (NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit II")
                 || NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit III")) {
                 expected_quals.insert("transl_except");
@@ -1154,6 +1166,12 @@ BOOST_AUTO_TEST_CASE(Test_TableWithVariationsAndGoTerms)
                 BOOST_REQUIRE ((*it)->GetData().IsFields());
                 BOOST_CHECK_EQUAL((*it)->GetData().GetFields().size(), 4);
             }
+
+            // since no FASTA tag, becomes a local ID even though it might be
+            // parsed as an accession
+            NCBITEST_CHECK( 
+                NStr::StartsWith( 
+                (*feat)->GetProduct().GetWhole().GetLocal().GetStr(), "NP_") );
         }
     }
     BOOST_CHECK_EQUAL(num_variations, 131);
