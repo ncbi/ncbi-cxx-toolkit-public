@@ -188,6 +188,84 @@ void  CNSTClientRegistry::AppendType(const string &  client,
 }
 
 
+void  CNSTClientRegistry::AddBytesWritten(const string &  client,
+                                          size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddBytesWritten(count);
+}
+
+
+void  CNSTClientRegistry::AddBytesRead(const string &  client,
+                                       size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddBytesRead(count);
+}
+
+
+void  CNSTClientRegistry::AddBytesRelocated(const string &  client,
+                                            size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddBytesRelocated(count);
+}
+
+
+void  CNSTClientRegistry::AddObjectsWritten(const string &  client,
+                                            size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddObjectsWritten(count);
+}
+
+
+void  CNSTClientRegistry::AddObjectsRead(const string &  client,
+                                         size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddObjectsRead(count);
+}
+
+
+void  CNSTClientRegistry::AddObjectsRelocated(const string &  client,
+                                              size_t          count)
+{
+    if (client.empty())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map<string, CNSTClient>::iterator   found = m_Clients.find(client);
+    if (found != m_Clients.end())
+        found->second.AddObjectsRelocated(count);
+}
+
+
 CJsonNode  CNSTClientRegistry::serialize(void) const
 {
     CJsonNode       clients(CJsonNode::NewArrayNode());

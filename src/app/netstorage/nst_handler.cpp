@@ -462,6 +462,7 @@ void CNetStorageHandler::x_OnData(
 
     try {
         m_ObjectStream.Write(data, data_size);
+        m_ClientRegistry.AddBytesWritten(m_Client, data_size);
     }
     catch (const std::exception &  ex) {
         string  message = "Error writing into " + m_ObjectStream.GetID() +
@@ -996,6 +997,7 @@ CNetStorageHandler::x_ProcessWrite(
     // Inform the message receiving loop that raw data are to follow
     m_ReadMode = eReadRawData;
     m_DataMessageSN = common_args.m_SerialNumber;
+    m_ClientRegistry.AddObjectsWritten( m_Client, 1 );
 }
 
 

@@ -81,6 +81,18 @@ class CNSTClient
         { m_Ticket = ticket; }
         void SetPeerAddress(unsigned int  peer_address)
         { m_Addr = peer_address; }
+        void  AddBytesWritten(size_t  count)
+        { m_NumberOfBytesWritten += count; }
+        void  AddBytesRead(size_t  count)
+        { m_NumberOfBytesRead += count; }
+        void  AddBytesRelocated(size_t  count)
+        { m_NumberOfBytesRelocated += count; }
+        void  AddObjectsWritten(size_t  count)
+        { m_NumberOfObjectsWritten += count; }
+        void  AddObjectsRead(size_t  count)
+        { m_NumberOfObjectsRead += count; }
+        void  AddObjectsRelocated(size_t  count)
+        { m_NumberOfObjectsRelocated += count; }
 
         void Touch(void);
         CJsonNode  serialize(void) const;
@@ -124,6 +136,13 @@ class CNSTClientRegistry
         void  RegisterSocketWriteError(const string &  client);
         void  AppendType(const string &  client,
                          unsigned int    type_to_append);
+        void  AddBytesWritten(const string &  client, size_t  count);
+        void  AddBytesRead(const string &  client, size_t  count);
+        void  AddBytesRelocated(const string &  client, size_t  count);
+        void  AddObjectsWritten(const string &  client, size_t  count);
+        void  AddObjectsRead(const string &  client, size_t  count);
+        void  AddObjectsRelocated(const string &  client, size_t  count);
+
         CJsonNode serialize(void) const;
 
     private:
