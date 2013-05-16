@@ -165,8 +165,8 @@ char* CDelta_ext_PackTarget::NewSegment(CSeqUtil::TCoding coding,
     // case CSeqUtil::e_Ncbi4na_expand:
     // CODING_CASE(Ncbi8na, CNCBI8na)
 
-    // CODING_CASE(Iupacaa,   CIUPACaa)
-    // CODING_CASE(Ncbi8aa,   CNCBI8aa)
+    CODING_CASE(Iupacaa,   CIUPACaa)
+    CODING_CASE(Ncbi8aa,   CNCBI8aa)
     CODING_CASE(Ncbieaa,   CNCBIeaa)
     CODING_CASE(Ncbistdaa, CNCBIstdaa)
 #undef CODING_CASE
