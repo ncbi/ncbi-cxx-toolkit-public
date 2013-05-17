@@ -71,8 +71,8 @@ T3RefreshFlags ::= SEQUENCE {
     lineage-changed BOOLEAN ,
     gc-changed BOOLEAN ,
     mgc-changed BOOLEAN ,
-    pgc-changed BOOLEAN ,
-    orgmod-changed BOOLEAN
+    orgmod-changed BOOLEAN ,
+    pgc-changed BOOLEAN OPTIONAL
 }
 
 END
