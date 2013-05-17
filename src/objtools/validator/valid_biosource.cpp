@@ -2621,6 +2621,11 @@ void CValidError_imp::ValidateSpecificHost
                    string host = (*mod_it)->GetSubname();
                 size_t pos = NStr::Find(host, " ");
                 if (pos != string::npos) {
+                    if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {
+                        pos += 7;
+                    } else if (NStr::StartsWith(host.substr(pos + 1), "x ")) {
+                        pos += 2;
+                    }
                     if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
                         && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
                         pos = NStr::Find(host, " ", pos + 1);
