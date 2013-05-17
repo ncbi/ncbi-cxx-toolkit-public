@@ -140,6 +140,20 @@ xml::document::document (const char *               filename,
     xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&sax, filename,
                                                0, temp);
 
+    if (!tmpdoc) {
+        // It is a common case that the file does not exist or cannot be
+        // opened. libxml2 does not recognise it so make a test here to
+        // have a better error message.
+        FILE *test(fopen(filename, "r"));
+        if (test == NULL) {
+            error_message  msg("Cannot open file",
+                               error_message::type_fatal_error);
+            temp->get_messages().push_back(msg);
+            throw parser_exception(*temp);
+        }
+        fclose(test);
+    }
+
     if (is_failure(temp, how) || !tmpdoc) {
         if (tmpdoc) xmlFreeDoc(tmpdoc);
         throw parser_exception(*temp);
