@@ -170,12 +170,7 @@ void CAgpConverter::OutputBioseqs(
     const std::vector<std::string> & vecAgpFileNames,
     TOutputBioseqsFlags fFlags,
     size_t uMaxBioseqsToWrite ) const
-{/*
-    fOutputBioseqsFlags_OneObjectPerBioseq
-        fOutputBioseqsFlags_WrapInSeqEntry
-        fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets
-        m_pSubmitBlock set?*/
-
+{
     // put some flags into easier-to-read variables
     const bool bOneObjectPerBioseq = (fFlags & fOutputBioseqsFlags_OneObjectPerBioseq);
     const bool bAllowBioseqSetUnwrap = ! ( fFlags & fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets );
