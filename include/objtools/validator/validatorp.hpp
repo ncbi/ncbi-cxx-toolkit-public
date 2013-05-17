@@ -856,6 +856,7 @@ public:
         eInferenceValidCode_bad_body,
         eInferenceValidCode_single_field,
         eInferenceValidCode_spaces,
+        eInferenceValidCode_comment,
         eInferenceValidCode_same_species_misused,
         eInferenceValidCode_bad_accession,
         eInferenceValidCode_bad_accession_version,

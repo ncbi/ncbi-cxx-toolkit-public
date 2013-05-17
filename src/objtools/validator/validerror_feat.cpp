@@ -182,6 +182,7 @@ const string kInferenceMessage[] = {
   "bad inference body",
   "single inference field",
   "spaces in inference",
+  "possible comment in inference",
   "same species misused",
   "bad inference accession",
   "bad inference accession version",
@@ -4181,6 +4182,20 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
             if (rsult != eInferenceValidCode_valid) {
                 break;
             }
+        }
+    }
+    if (rsult == eInferenceValidCode_valid) {
+        int num_spaces = 0;
+        FOR_EACH_CHAR_IN_STRING(str_itr, remainder) {
+            const char& ch = *str_itr;
+            if (ch == ' ') {
+                num_spaces++;
+            }
+        }
+        if (num_spaces > 3) {
+            rsult = eInferenceValidCode_comment;
+        } else if (num_spaces > 0){
+            rsult = eInferenceValidCode_spaces;
         }
     }
     return rsult;
