@@ -505,15 +505,18 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
         ">?234\n"
         "MMMMMTMMMMGCMTTMGTMGMMMTTTGTMCMGMMCTGGMMMMGGMMGGMMMMMTTTCMMMMMTTGGGCCT\n";
 
-    CMemoryLineReader line_reader( kFastaWithProtGap.c_str(),
-        kFastaWithProtGap.length() );
-    CFastaReader fasta_reader( line_reader, 
+    CFastaReader::TFlags fFastaReaderFlags =
         CFastaReader::fAddMods | 
-        CFastaReader::fAssumeProt |  // Yes, assume prot even though you see only ACGT above
-        CFastaReader::fUseIupacaa |
-        CFastaReader::fNoSplit
-        );
+        CFastaReader::fAssumeProt |
+        CFastaReader::fUseIupacaa;
 
-    BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
+    // test with and without nosplit
+    ITERATE_BOTH_BOOL_VALUES(bSetNoSplit) {
+        cout << "Trying with" << (bSetNoSplit ? "" : "out") << " CFastaReader::fNoSplit" << endl;
+        CMemoryLineReader line_reader( kFastaWithProtGap.c_str(),
+            kFastaWithProtGap.length() );
+        CFastaReader fasta_reader( line_reader, 
+            fFastaReaderFlags | (bSetNoSplit ? CFastaReader::fNoSplit : 0) );
+        BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
+    }
 }
-
