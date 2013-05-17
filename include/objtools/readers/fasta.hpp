@@ -96,7 +96,7 @@ public:
         fUnknModThrow = 1<<21, ///< Throw if there are any unknown (unused) mods left over
         fLeaveAsText  = 1<<22, ///< Don't reencode at all, just parse
         fQuickIDCheck = 1<<23, ///< Just check local IDs' first characters
-        fUseIupacaa   = 1<<24  ///< If Prot, use iupacaa instead of the default ncbieaa.  fNoSplit is recommended with this, since CDelta_ext does not seem to support iupacaa.
+        fUseIupacaa   = 1<<24  ///< If Prot, use iupacaa instead of the default ncbieaa.
     };
     typedef int TFlags; ///< binary OR of EFlags
 
