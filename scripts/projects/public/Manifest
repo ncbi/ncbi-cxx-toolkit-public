@@ -18,13 +18,16 @@ Win64_10   : MSVC10-64 : static  64  ReleaseDLL
 
 Linux32-Centos : GCC445  : GCC.sh 4.4.5 --without-debug --with-3psw=system
 Linux32-Centos : GCC460  : GCC.sh 4.6.0 --without-debug --with-mt
-Linux32-Centos : ICC     : ICC.sh       --without-debug --with-dll --with-mt
+Linux32-Centos : ICC101  : ICC.sh 10.1  --without-debug --with-dll --with-mt 
+Linux32-Centos : ICC110  : ICC.sh 11.0  --without-debug --with-dll --with-mt
 
 Linux64-Centos : GCC401  : GCC.sh 4.0.1 --without-debug --without-flat-makefile
 Linux64-Centos : GCC442  : GCC.sh 4.4.2 --without-debug --with-mt --with-distcc
 Linux64-Centos : GCC442d : GCC.sh 4.4.2 --with-mt --with-distcc --with-3psw=system
 Linux64-Centos : GCC463  : GCC.sh 4.6.3 --with-distcc
-Linux64-Centos : ICC     : ICC.sh       --with-mt --with-3psw=system
+Linux64-Centos : GCC472  : GCC.sh 4.7.2 --without-debug --with-mt 
+Linux64-Centos : ICC101  : ICC.sh 10.1  --with-mt --with-3psw=system
+Linux64-Centos : ICC130  : ICC.sh 13.0  --without-debug --with-mt
 
 FreeBSD32 : GCC : GCC.sh --without-debug
 
