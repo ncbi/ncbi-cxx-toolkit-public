@@ -2878,6 +2878,32 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
 
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 {
+
+    bool is_insd_patent = false;
+    bool is_insd = false;
+    bool is_patent = false;
+    VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bs_itr, se) {
+        const CBioseq& bs = *bs_itr;
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bs) {
+            const CSeq_id& sid = **sid_itr;
+            SWITCH_ON_SEQID_CHOICE (sid) {
+                case NCBI_SEQID(Genbank):
+                case NCBI_SEQID(Embl):
+                case NCBI_SEQID(Ddbj):
+                    is_insd = true;
+                    break;
+                case NCBI_SEQID(Patent):
+                    is_patent = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if (is_insd && is_patent) {
+        is_insd_patent = true;
+    }
+
     vector<CConstRef<CSeqdesc> > src_descs;
     vector<CConstRef<CSeq_entry> > desc_ctxs;
     vector<CConstRef<CSeq_feat> > src_feats;
@@ -2943,6 +2969,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                     }
                 } else if ((*reply_it)->IsData()) {
                     bool is_species_level = true;
+                    bool is_unidentified = false;
                     bool force_consult = false;
                     bool has_nucleomorphs = false;
                     if ((*reply_it)->GetData().IsSetOrg()) {
@@ -2950,6 +2977,10 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                         const COrg_ref& orp_rep = (*reply_it)->GetData().GetOrg();
                         if (orp_req.IsSetTaxname() && orp_rep.IsSetTaxname()) {
                             const string& taxname_req = orp_req.GetTaxname();
+                            const string& taxname_rep = orp_rep.GetTaxname();
+                            if (NStr::Equal (taxname_rep, "unidentified")) {
+                                is_unidentified = true;
+                            }
                             if (orp_rep.IsSetDb() && orp_req.IsSetDb()) {
                                 int taxid_req = 0;
                                 int taxid_rep = 0;
@@ -2990,6 +3021,11 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                         PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
                                 "Taxonomy lookup reports is_species_level FALSE",
                                 **desc_it, *ctx_it);
+                    }
+                    if (force_consult) {
+                        if (is_insd_patent && is_unidentified) {
+                            force_consult = false;
+                        }
                     }
                     if (force_consult) {
                         PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired, 
