@@ -282,7 +282,7 @@ NCBITEST_INIT_CMDLINE(descrs)
         "DIRECTORY",
         "Use this to change the directory where test cases are sought.",
         CArgDescriptions::eDirectory,
-        "agpconverter_test_cases");
+        "agp_converter_test_cases");
 
     descrs->AddFlag("v",
         "Set this to print a lot of extra data to help with debugging.");
