@@ -71,7 +71,7 @@ NCBI_ALIGN_FORMAT_EXPORT extern const bool kDfltArgProduceHtml;
 /* Formatting options: tabular/comma-separated value output formats */
 
 /// Default value for tabular and comma-separated value output formats
-NCBI_ALIGN_FORMAT_EXPORT extern const string kDfltArgTabularOutputFmt;
+NCBI_ALIGN_FORMAT_EXPORT extern string kDfltArgTabularOutputFmt;
 /// Tag/keyword which is equivalent to using kDfltArgTabularOutputFmt
 NCBI_ALIGN_FORMAT_EXPORT extern const string kDfltArgTabularOutputFmtTag;
 
@@ -149,7 +149,7 @@ NCBI_ALIGN_FORMAT_EXPORT extern const SFormatSpec sc_FormatSpecifiers[];
 NCBI_ALIGN_FORMAT_EXPORT extern const size_t kNumTabularOutputFormatSpecifiers;
 
 /// Returns a string documenting the available format specifiers
-NCBI_ALIGN_FORMAT_EXPORT string DescribeTabularOutputFormatSpecifiers();
+NCBI_ALIGN_FORMAT_EXPORT string DescribeTabularOutputFormatSpecifiers(bool is_igblast=false);
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE

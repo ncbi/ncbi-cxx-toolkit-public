@@ -35,7 +35,7 @@ BEGIN_SCOPE(align_format)
 
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
-const string kDfltArgTabularOutputFmt =
+string kDfltArgTabularOutputFmt =
     "qseqid sseqid pident length mismatch gapopen qstart qend sstart send "
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
@@ -176,8 +176,14 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
                 eQueryCovSeqalign)
 };
 
-string DescribeTabularOutputFormatSpecifiers()
+string DescribeTabularOutputFormatSpecifiers(bool is_igblast)
 {
+    // Igblast needs extra "gaps" column by default
+    if (is_igblast) {
+        kDfltArgTabularOutputFmt =
+        "qseqid sseqid pident length mismatch gapopen gaps qstart qend sstart send "
+        "evalue bitscore";
+    }
     ostringstream os;
     for (size_t i = 0; i < kNumTabularOutputFormatSpecifiers; i++) {
         os << "\t" << setw(10) << sc_FormatSpecifiers[i].name << " means ";

@@ -1851,7 +1851,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "Options 7 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
-        DescribeTabularOutputFormatSpecifiers() + 
+        DescribeTabularOutputFormatSpecifiers(true) + 
         string("\n");
 
     int dft_outfmt = (m_IsIgBlast) ? 3 : kDfltArgOutputFormat;
