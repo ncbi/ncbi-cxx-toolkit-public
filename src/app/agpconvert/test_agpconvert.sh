@@ -7,7 +7,22 @@ set -x
 # assume success until we find an error
 RETVAL=0
 
-AGPCONVERT=./agpconvert
+run_agpconvert()
+{
+    # if no asnval, we try to do the test without it
+    if asnval --help > /dev/null 2>&1 ; then
+        ./agpconvert "$@"
+    else
+        ./agpconvert -no_asnval "$@"
+    fi
+}
+
+fix_whitespace()
+{
+    tr '\n' ' ' | \
+        sed -e 's/\([{},]\)/ \1 /g' | \
+        tr -s ' '
+}
 
 TEST_DATA=./test_data
 
@@ -59,8 +74,8 @@ asn_diff()
 
     cat /dev/null > $ASNDIFFFILE1
     cat /dev/null > $ASNDIFFFILE2
-    normalize_ASN1 < "$FILE1" | tr '\n' ' ' > $ASNDIFFFILE1
-    normalize_ASN1 < "$FILE2" | tr '\n' ' ' > $ASNDIFFFILE2
+    normalize_ASN1 < "$FILE1" | fix_whitespace > $ASNDIFFFILE1
+    normalize_ASN1 < "$FILE2" | fix_whitespace > $ASNDIFFFILE2
 
     diff -w "$ASNDIFFFILE1" "$ASNDIFFFILE2"
     DIFF_RCODE=$?
@@ -103,7 +118,7 @@ agpconvert_check_bioseq_set_output()
 
     echo "#################### RUNNING TEST: $EXPECTED_OUTPUT_ASN_FILE $@"
 
-    ${AGPCONVERT} "$@" > $AGPCONVERT_CHECKING_TMPFILE1
+    run_agpconvert "$@" > $AGPCONVERT_CHECKING_TMPFILE1
     AGPCONVERT_RCODE=$?
     if [ $AGPCONVERT_RCODE != 0 ] ; then
         RETVAL=1
@@ -123,7 +138,7 @@ agpconvert_failure_expected()
 
     echo "#################### RUNNING TEST: $ERROR_EGREP_PATTERN $@"
 
-    ${AGPCONVERT} "$@" > /dev/null 2> $AGPCONVERT_CHECKING_TMPFILE1
+    run_agpconvert "$@" > /dev/null 2> $AGPCONVERT_CHECKING_TMPFILE1
     if [ $? = 0 ] ; then
         RETVAL=1
         echo test failure because agpconvert expected to give non-zero exit code but did not
@@ -147,7 +162,7 @@ agpconvert_outdir_test()
     # clear temporary directory
     remove_tmp_outdir_contents
 
-    ${AGPCONVERT} -outdir $AGPCONVERT_TMP_OUTDIR -ofs 'weirdsuffix' "$@" || RETVAL=1
+    run_agpconvert -outdir $AGPCONVERT_TMP_OUTDIR -ofs 'weirdsuffix' "$@" || RETVAL=1
 
     asn_diff "${AGPCONVERT_TMP_OUTDIR}"/*.weirdsuffix "$EXPECTED_ASN_RESULT"
 }
@@ -160,7 +175,7 @@ agpconvert_outdir_multifile_test()
     # clear temporary directory
     remove_tmp_outdir_contents
 
-    ${AGPCONVERT} -outdir $AGPCONVERT_TMP_OUTDIR -ofs 'weirdsuffix' "$@" || RETVAL=1
+    run_agpconvert -outdir $AGPCONVERT_TMP_OUTDIR -ofs 'weirdsuffix' "$@" || RETVAL=1
 
     # since it is multi-file, we combine all the files
     cat /dev/null > $MULTIFILE_TMP_FILE
