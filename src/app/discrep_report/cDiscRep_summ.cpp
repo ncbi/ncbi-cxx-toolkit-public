@@ -544,7 +544,9 @@ string CSummarizeSusProdRule :: SummarizePubFieldConstraint (const CPub_field_co
 string CSummarizeSusProdRule :: SummarizePubFieldSpecialConstraint(const CPub_field_special_constraint& field)
 {
    string label = thisInfo.pubfield_label[field.GetField()];
-   strtmp = thisInfo.spe_pubfield_label[field.GetConstraint().Which()]; 
+   if (field.GetConstraint().Which() != CPub_field_special_constraint_type::e_not_set)
+              strtmp = thisInfo.spe_pubfield_label[field.GetConstraint().Which()]; 
+   else strtmp = kEmptyStr;
    return (label + " " + strtmp);
 }
 

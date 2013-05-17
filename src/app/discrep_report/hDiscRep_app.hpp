@@ -285,7 +285,7 @@ namespace DiscRepNmSpc{
          void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
          void GetOrgModSubtpName(unsigned num1, unsigned num2,
                                          map <string, COrgMod::ESubtype>& orgmodnm_subtp);
-         CRef <CSearch_func>& MakeSimpleSearchFunc(const string& match_text, 
+         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text, 
                                                                  bool whole_word = false);
      };
 };

@@ -81,93 +81,93 @@ static list <string> strs;
 static vector <string> arr;
 
 // Initialization
-CRef < CScope >                         CDiscRepInfo :: scope;
-string				        CDiscRepInfo :: infile;
-vector < CRef < CClickableItem > >      CDiscRepInfo :: disc_report_data;
-Str2Strs                                CDiscRepInfo :: test_item_list;
-COutputConfig                           CDiscRepInfo :: output_config;
-CRef < CSuspect_rule_set >              CDiscRepInfo :: suspect_prod_rules (new CSuspect_rule_set);
-vector < vector <string> >              CDiscRepInfo :: susrule_summ;
-vector <string> 	                CDiscRepInfo :: weasels;
-CConstRef <CSeq_submit>                 CDiscRepInfo :: seq_submit = CConstRef <CSeq_submit>();
-string                                  CDiscRepInfo :: expand_defline_on_set;
-string                                  CDiscRepInfo :: report_lineage;
-vector <string>                         CDiscRepInfo :: strandsymbol;
-bool                                    CDiscRepInfo :: exclude_dirsub;
-string                                  CDiscRepInfo :: report;
-Str2UInt                                CDiscRepInfo :: rRNATerms;
-Str2UInt                                CDiscRepInfo :: rRNATerms_partial;
-vector <string>                         CDiscRepInfo :: bad_gene_names_contained;
-vector <string>                         CDiscRepInfo :: no_multi_qual;
-vector <string>                         CDiscRepInfo :: short_auth_nms;
-vector <string>                         CDiscRepInfo :: spec_words_biosrc;
-vector <string>                         CDiscRepInfo :: suspicious_notes;
-vector <string>                         CDiscRepInfo :: trna_list;
-vector <string>                         CDiscRepInfo :: rrna_standard_name;
-Str2UInt                                CDiscRepInfo :: desired_aaList;
-CTaxon1                                 CDiscRepInfo :: tax_db_conn;
-list <string>                           CDiscRepInfo :: state_abbrev;
-Str2Str                                 CDiscRepInfo :: cds_prod_find;
-vector <string>                         CDiscRepInfo :: s_pseudoweasels;
-vector <string>                         CDiscRepInfo :: suspect_rna_product_names;
-string                                  CDiscRepInfo :: kNonExtendableException;
-vector <string>                         CDiscRepInfo :: new_exceptions;
-Str2Str	                                CDiscRepInfo :: srcqual_keywords;
-vector <string>                         CDiscRepInfo :: kIntergenicSpacerNames;
-vector <string>                         CDiscRepInfo :: taxnm_env;
-vector <string>                         CDiscRepInfo :: virus_lineage;
-vector <string>                         CDiscRepInfo :: strain_tax;
-CRef <CComment_set>                     CDiscRepInfo :: comment_rules;
-Str2UInt                                CDiscRepInfo :: whole_word;
-Str2Str                                 CDiscRepInfo :: fix_data;
-CRef <CSuspect_rule_set>                CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
-vector <string>                         CDiscRepInfo :: skip_bracket_paren;
-vector <string>                         CDiscRepInfo :: ok_num_prefix;
+CRef < CScope >                        CDiscRepInfo :: scope;
+string				       CDiscRepInfo :: infile;
+vector < CRef < CClickableItem > >     CDiscRepInfo :: disc_report_data;
+Str2Strs                               CDiscRepInfo :: test_item_list;
+COutputConfig                          CDiscRepInfo :: output_config;
+CRef <CSuspect_rule_set >              CDiscRepInfo::suspect_prod_rules(new CSuspect_rule_set);
+vector < vector <string> >             CDiscRepInfo :: susrule_summ;
+vector <string> 	               CDiscRepInfo :: weasels;
+CConstRef <CSeq_submit>                CDiscRepInfo :: seq_submit = CConstRef <CSeq_submit>();
+string                                 CDiscRepInfo :: expand_defline_on_set;
+string                                 CDiscRepInfo :: report_lineage;
+vector <string>                        CDiscRepInfo :: strandsymbol;
+bool                                   CDiscRepInfo :: exclude_dirsub;
+string                                 CDiscRepInfo :: report;
+Str2UInt                               CDiscRepInfo :: rRNATerms;
+Str2UInt                               CDiscRepInfo :: rRNATerms_partial;
+vector <string>                        CDiscRepInfo :: bad_gene_names_contained;
+vector <string>                        CDiscRepInfo :: no_multi_qual;
+vector <string>                        CDiscRepInfo :: short_auth_nms;
+vector <string>                        CDiscRepInfo :: spec_words_biosrc;
+vector <string>                        CDiscRepInfo :: suspicious_notes;
+vector <string>                        CDiscRepInfo :: trna_list;
+vector <string>                        CDiscRepInfo :: rrna_standard_name;
+Str2UInt                               CDiscRepInfo :: desired_aaList;
+CTaxon1                                CDiscRepInfo :: tax_db_conn;
+list <string>                          CDiscRepInfo :: state_abbrev;
+Str2Str                                CDiscRepInfo :: cds_prod_find;
+vector <string>                        CDiscRepInfo :: s_pseudoweasels;
+vector <string>                        CDiscRepInfo :: suspect_rna_product_names;
+string                                 CDiscRepInfo :: kNonExtendableException;
+vector <string>                        CDiscRepInfo :: new_exceptions;
+Str2Str	                               CDiscRepInfo :: srcqual_keywords;
+vector <string>                        CDiscRepInfo :: kIntergenicSpacerNames;
+vector <string>                        CDiscRepInfo :: taxnm_env;
+vector <string>                        CDiscRepInfo :: virus_lineage;
+vector <string>                        CDiscRepInfo :: strain_tax;
+CRef <CComment_set>                    CDiscRepInfo :: comment_rules;
+Str2UInt                               CDiscRepInfo :: whole_word;
+Str2Str                                CDiscRepInfo :: fix_data;
+CRef <CSuspect_rule_set>               CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
+vector <string>                        CDiscRepInfo :: skip_bracket_paren;
+vector <string>                        CDiscRepInfo :: ok_num_prefix;
 map <EMacro_feature_type, CSeqFeatData::ESubtype> CDiscRepInfo :: feattype_featdef;
 map <EMacro_feature_type, string>                 CDiscRepInfo :: feattype_name;
-map <CRna_feat_type::E_Choice, CRNA_ref::EType>  CDiscRepInfo :: rnafeattp_rnareftp;
-map <ERna_field, EFeat_qual_legal>      CDiscRepInfo :: rnafield_featquallegal;
-map <ERna_field, string>                CDiscRepInfo :: rnafield_names;
-vector <string>                         CDiscRepInfo :: rnatype_names;
-map <CSeq_inst::EMol, string>           CDiscRepInfo :: mol_molname;
-map <CSeq_inst::EStrand, string>        CDiscRepInfo :: strand_strname;
-vector <string>                         CDiscRepInfo :: dblink_names;
-map <ESource_qual, COrgMod::ESubtype>   CDiscRepInfo :: srcqual_orgmod;
+map <CRna_feat_type::E_Choice, CRNA_ref::EType>   CDiscRepInfo :: rnafeattp_rnareftp;
+map <ERna_field, EFeat_qual_legal>         CDiscRepInfo :: rnafield_featquallegal;
+map <ERna_field, string>                   CDiscRepInfo :: rnafield_names;
+vector <string>                            CDiscRepInfo :: rnatype_names;
+map <CSeq_inst::EMol, string>              CDiscRepInfo :: mol_molname;
+map <CSeq_inst::EStrand, string>           CDiscRepInfo :: strand_strname;
+vector <string>                            CDiscRepInfo :: dblink_names;
+map <ESource_qual, COrgMod::ESubtype>      CDiscRepInfo :: srcqual_orgmod;
 map <ESource_qual, CSubSource::ESubtype>   CDiscRepInfo :: srcqual_subsrc;
-map <ESource_qual, string>              CDiscRepInfo :: srcqual_names;
-map <EFeat_qual_legal, string>          CDiscRepInfo :: featquallegal_name;
-map <EFeat_qual_legal, unsigned>        CDiscRepInfo :: featquallegal_subfield;
+map <ESource_qual, string>                 CDiscRepInfo :: srcqual_names;
+map <EFeat_qual_legal, string>             CDiscRepInfo :: featquallegal_name;
+map <EFeat_qual_legal, unsigned>           CDiscRepInfo :: featquallegal_subfield;
 map <ESequence_constraint_rnamol, CMolInfo::EBiomol>   CDiscRepInfo :: scrna_mirna;
-map <string, string>                    CDiscRepInfo :: pub_class_quals;
-vector <string>                         CDiscRepInfo :: months;
-map <EMolecule_type, CMolInfo::EBiomol> CDiscRepInfo :: moltp_biomol;
-map <EMolecule_type, string>            CDiscRepInfo :: moltp_name;
-map <ETechnique_type, CMolInfo::ETech>  CDiscRepInfo :: techtp_mitech;
-map <ETechnique_type, string>           CDiscRepInfo :: techtp_name;
-vector <string>                         CDiscRepInfo :: s_putative_replacements;
-vector <string>                         CDiscRepInfo :: suspect_name_category_names;
-map <ECDSGeneProt_field, string>        CDiscRepInfo :: cgp_field_name;
+map <string, string>                       CDiscRepInfo :: pub_class_quals;
+vector <string>                            CDiscRepInfo :: months;
+map <EMolecule_type, CMolInfo::EBiomol>    CDiscRepInfo :: moltp_biomol;
+map <EMolecule_type, string>               CDiscRepInfo :: moltp_name;
+map <ETechnique_type, CMolInfo::ETech>     CDiscRepInfo :: techtp_mitech;
+map <ETechnique_type, string>              CDiscRepInfo :: techtp_name;
+vector <string>                            CDiscRepInfo :: s_putative_replacements;
+vector <string>                            CDiscRepInfo :: suspect_name_category_names;
+map <ECDSGeneProt_field, string>           CDiscRepInfo :: cgp_field_name;
 map <ECDSGeneProt_feature_type_constraint, string>   CDiscRepInfo :: cgp_feat_name;
 vector <vector <string> >                            CDiscRepInfo :: susterm_summ;
 map <EFeature_strandedness_constraint, string>       CDiscRepInfo :: feat_strandedness;
-map <EPublication_field, string>        CDiscRepInfo :: pubfield_label;
+map <EPublication_field, string>           CDiscRepInfo :: pubfield_label;
 map <CPub_field_special_constraint_type::E_Choice,string>  CDiscRepInfo :: spe_pubfield_label;
-map <EFeat_qual_legal, string>          CDiscRepInfo :: featqual_leg_name;
-vector <string>                         CDiscRepInfo :: miscfield_names;
-vector <string>                         CDiscRepInfo :: loctype_names;
-map <EString_location, string>          CDiscRepInfo :: matloc_names;
-map <EString_location, string>          CDiscRepInfo :: matloc_notpresent_names;
-map <ESource_location, string>          CDiscRepInfo :: srcloc_names;
-map <ECompletedness_type, string>       CDiscRepInfo :: compl_names;
-map <EMolecule_class_type, string>      CDiscRepInfo :: molclass_names;
-map <ETopology_type, string>            CDiscRepInfo :: topo_names;
-map <EStrand_type, string>              CDiscRepInfo :: strand_names;
-map <ESource_origin, string>            CDiscRepInfo :: srcori_names;
-CRef < CSuspect_rule_set>               CDiscRepInfo :: suspect_rna_rules;
-vector <string>                         CDiscRepInfo :: rna_rule_summ;
-vector <string>                         CDiscRepInfo :: tests_enabled;
-vector <string>                         CDiscRepInfo :: tests_disabled;
-vector <string>                         CDiscRepInfo :: suspect_phrases;
+map <EFeat_qual_legal, string>       CDiscRepInfo :: featqual_leg_name;
+vector <string>                      CDiscRepInfo :: miscfield_names;
+vector <string>                      CDiscRepInfo :: loctype_names;
+map <EString_location, string>       CDiscRepInfo :: matloc_names;
+map <EString_location, string>       CDiscRepInfo :: matloc_notpresent_names;
+map <ESource_location, string>       CDiscRepInfo :: srcloc_names;
+map <ECompletedness_type, string>    CDiscRepInfo :: compl_names;
+map <EMolecule_class_type, string>   CDiscRepInfo :: molclass_names;
+map <ETopology_type, string>         CDiscRepInfo :: topo_names;
+map <EStrand_type, string>           CDiscRepInfo :: strand_names;
+map <ESource_origin, string>         CDiscRepInfo :: srcori_names;
+CRef < CSuspect_rule_set>            CDiscRepInfo :: suspect_rna_rules (new CSuspect_rule_set);
+vector <string>                      CDiscRepInfo :: rna_rule_summ;
+vector <string>                      CDiscRepInfo :: tests_enabled;
+vector <string>                      CDiscRepInfo :: tests_disabled;
+vector <string>                      CDiscRepInfo :: suspect_phrases;
 
 
 const char* fix_type_names[] = {
@@ -215,10 +215,10 @@ void CDiscRepApp::Init(void)
 
     arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report?: 'T'=true, 'F' =false", CArgDescriptions::eBoolean, "F");
 
-    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','",
-                            CArgDescriptions::eString); 
-    arg_desc->AddOptionalKey("d", "DisableTests", "List of disabled tests, seperated by ','",
-                              CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("e", "EnableTests", "List of enabled tests, seperated by ','",
+                            CArgDescriptions::eString, ""); 
+    arg_desc->AddDefaultKey("d", "DisableTests", "List of disabled tests, seperated by ','",
+                              CArgDescriptions::eString, "");
 
     SetupArgDescriptions(arg_desc.release());
 
@@ -516,6 +516,7 @@ cerr << "222can get\n";
  { eMacro_feature_type_tmRNA , CSeqFeatData::eSubtype_tmRNA , "tmRNA" } ,
  { eMacro_feature_type_mobile_element, CSeqFeatData::eSubtype_mobile_element, "mobile_element" }
 };
+
     for (i = 0; i < (int)(sizeof(feattype_featdef) / sizeof(FeatTypeFeatDefData)); i++) {
        thisInfo.feattype_featdef[feattype_featdef[i].feattype] = feattype_featdef[i].featdef;
        thisInfo.feattype_name[feattype_featdef[i].feattype] = feattype_featdef[i].featname;
@@ -523,21 +524,21 @@ cerr << "222can get\n";
 
     // ini. of rnafeattp_rnareftp
     string rna_feat_tp_nm;
-    for (i = 2; i <= 5; i++) 
+    for (i = CRna_feat_type::e_PreRNA; i <= CRna_feat_type::e_RRNA; i++) 
         thisInfo.rnafeattp_rnareftp[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i-1);
-    for (i = 6; i < 9; i++)
+    for (i = CRna_feat_type::e_NcRNA; i <= CRna_feat_type::e_MiscRNA; i++)
         thisInfo.rnafeattp_rnareftp[(CRna_feat_type::E_Choice)i] = (CRNA_ref::EType)(i+2); 
 
     // ini of rnafield_featquallegal & rnafield_names
     string rnafield_val;
-    for (i = (int)eRna_field_product; i<= eRna_field_tag_peptide; i++) {
-       strtmp = rnafield_val = ENUM_METHOD_NAME(ERna_field)()->FindName(i, false);
+    for (i = eRna_field_product; i<= eRna_field_tag_peptide; i++) {
+       strtmp = rnafield_val = ENUM_METHOD_NAME(ERna_field)()->FindName(i, true);
        if (rnafield_val == "comment") rnafield_val = "note";
        else if (rnafield_val == "ncrna-class") rnafield_val = "ncRNA-class";
        else if (rnafield_val == "gene-locus") rnafield_val = "gene";
        else if (rnafield_val == "gene-maploc") rnafield_val = "map";
-       else if (rnafield_val == "gene_locus_tag") rnafield_val = "locus_tag";
-       else if (rnafield_val == "gene_synonym") rnafield_val = "synonym";
+       else if (rnafield_val == "gene-locus-tag") rnafield_val = "locus-tag";
+       else if (rnafield_val == "gene-synonym") rnafield_val = "synonym";
        thisInfo.rnafield_featquallegal[(ERna_field)i] 
            = (EFeat_qual_legal)(ENUM_METHOD_NAME(EFeat_qual_legal)()->FindValue(rnafield_val));
 
@@ -575,7 +576,7 @@ cerr << "222can get\n";
     // ini of srcqual_orgmod, srcqual_subsrc, srcqual_names
     map <string, ESource_qual> srcnm_qual;
     map <string, COrgMod::ESubtype> orgmodnm_subtp;
-    for (i=(int)eSource_qual_acronym; i<= eSource_qual_altitude; i++) {
+    for (i = eSource_qual_acronym; i<= eSource_qual_altitude; i++) {
        strtmp = ENUM_METHOD_NAME(ESource_qual)()->FindName(i, true);
        if (!strtmp.empty()) srcnm_qual[strtmp] = (ESource_qual)i;
        thisInfo.srcqual_names[(ESource_qual)i] = strtmp;
@@ -597,21 +598,21 @@ cerr << "222can get\n";
     ITERATE (maptp, it, srcnm_qual) {
        if ( orgmodnm_subtp.find(it->first) != orgmodnm_subtp.end() )
          thisInfo.srcqual_orgmod[it->second] = orgmodnm_subtp[it->first];
-       else if (it->first == "bio_material_INST" || it->first == "bio_material_COLL"
-                                                  || it->first == "bio_material_SpecID")
-               thisInfo.srcqual_orgmod[it->second] = orgmodnm_subtp["bio_material"]; 
-       else if (it->first == "culture_collection_INST" 
-                                                || it->first == "culture_collection_COLL" 
-                                                || it->first == "culture_collection_SpecID")
-                thisInfo.srcqual_orgmod[it->second] = orgmodnm_subtp["culture_collection"];
+       else if (it->first == "bio-material-INST" || it->first == "bio-material-COLL"
+                                                  || it->first == "bio-material-SpecID")
+               thisInfo.srcqual_orgmod[it->second] = orgmodnm_subtp["bio-material"]; 
+       else if (it->first == "culture-collection-INST" 
+                                                || it->first == "culture-collection-COLL" 
+                                                || it->first == "culture-collection-SpecID")
+                thisInfo.srcqual_orgmod[it->second] = orgmodnm_subtp["culture-collection"];
        else if (subsrcnm_subtp.find(it->first) != subsrcnm_subtp.end())
                     thisInfo.srcqual_subsrc[it->second] = subsrcnm_subtp[it->first];
-       else if (it->first == "subsource_note")
+       else if (it->first == "subsource-note")
               thisInfo.srcqual_subsrc[it->second] = CSubSource::eSubtype_other;
     } 
 
     // ini featquallegal_name, featquallegal_subfield;
-      for (i= 1; i<= 72; i++) {
+    for (i= eFeat_qual_legal_allele; i<= eFeat_qual_legal_pcr_conditions; i++) {
          strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
          unsigned subfield=0;
          if (strtmp == "mobile-element-type-type") {
@@ -630,19 +631,20 @@ cerr << "222can get\n";
              strtmp = "satellite";
              subfield = 2;
          }
-         else if (strtmp == "ec-number") strtmp = "EC-number"; // ???
-         else if (strtmp == "pcr-conditions") strtmp = "PCR-conditions"; // ???
-         else if (strtmp == "pseudo") strtmp = "pseudogene"; // ???
+         else if (strtmp == "ec-number") strtmp = "EC-number";
+         else if (strtmp == "pcr-conditions") strtmp = "PCR-conditions";
+         else if (strtmp == "pseudo") strtmp = "pseudogene";
          if (!strtmp.empty()) thisInfo.featquallegal_name[(EFeat_qual_legal)i] = strtmp;
          if (subfield) thisInfo.featquallegal_subfield[(EFeat_qual_legal)i] = subfield;
-      };
+    };
 
    // ini of scrna_mirna
-   for (i=0; i<=10; i++) {
+   for (i = eSequence_constraint_rnamol_genomic; 
+                             i <= eSequence_constraint_rnamol_transfer_messenger_RNA; i++) {
      strtmp = ENUM_METHOD_NAME(ESequence_constraint_rnamol)()->FindName(i, true);
-     if (strtmp.empty()) {
-       if (strtmp == "precursor_RNA") strtmp = "pre_RNA";
-       else if (strtmp == "transfer_messenger_RNA") strtmp = "tmRNA";
+     if (!strtmp.empty()) {
+       if (strtmp == "precursor-RNA") strtmp = "pre-RNA";
+       else if (strtmp == "transfer-messenger-RNA") strtmp = "tmRNA";
        thisInfo.scrna_mirna[(ESequence_constraint_rnamol)i]
          = (CMolInfo::EBiomol) CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindValue(strtmp);
      }
@@ -703,7 +705,7 @@ cerr << "222can get\n";
    thisInfo.months = NStr::Tokenize(strtmp, ",", thisInfo.months);
 
    // ini of moltp_biomol: BiomolFromMoleculeType(), and moltp_name
-   for (i=(int)eMolecule_type_unknown; i<= (int)eMolecule_type_macro_other; i++) {
+   for (i = eMolecule_type_unknown; i <= eMolecule_type_macro_other; i++) {
      strtmp = ENUM_METHOD_NAME(EMolecule_type)()->FindName(i, true);
      if (!strtmp.empty()) {
         tmp = strtmp; 
@@ -721,14 +723,14 @@ cerr << "222can get\n";
    }
 
    // ini of techtp_mitech: TechFromTechniqueType(), and techtp_name
-   for (i=0; i<=24; i++) {
+   for (i = eTechnique_type_unknown; i <= eTechnique_type_other; i++) {
      strtmp = ENUM_METHOD_NAME(ETechnique_type)()->FindName(i, true);
      if (!strtmp.empty()) {
           tmp = strtmp;
 
-          if (strtmp == "genetic_map") strtmp = "genemap";
-          else if (strtmp == "physical_map") strtmp = "physmap";
-          else if (strtmp == "fli_cDNA") strtmp = "fil_cdna";
+          if (strtmp == "genetic-map") strtmp = "genemap";
+          else if (strtmp == "physical-map") strtmp = "physmap";
+          else if (strtmp == "fli-cDNA") strtmp = "fli-cdna";
           thisInfo.techtp_mitech[(ETechnique_type)i]
              = (CMolInfo::ETech)CMolInfo::ENUM_METHOD_NAME(ETech)()->FindValue(strtmp);
 
@@ -737,7 +739,7 @@ cerr << "222can get\n";
                         || tmp == "WGS" || tmp == "barcode" || tmp == "tsa") {
              tmp = NStr::ToUpper(tmp);
           }
-          else if (tmp == "composite_wgs_htgs") tmp = "composite_wgs_htgs";
+          else if (tmp == "composite-wgs-htgs") tmp = "composite-wgs-htgs";
           thisInfo.techtp_name[(ETechnique_type)i] = tmp;
      }
    }
@@ -753,7 +755,7 @@ cerr << "222can get\n";
         = NStr::Tokenize(strtmp, ",", thisInfo.suspect_name_category_names);
 
    // ini. of cgp_field_name
-   for (i=1; i< 24; i++) {
+   for (i = eCDSGeneProt_field_cds_comment; i <= eCDSGeneProt_field_codon_start; i++) {
      strtmp = ENUM_METHOD_NAME(ECDSGeneProt_field)()->FindName(i, true);
      arr.clear();
      if (strtmp != "codon-start") {
@@ -777,7 +779,8 @@ cerr << "222can get\n";
    }
 
    // ini. of cgp_feat_name
-   for (i=1; i <=6; i++) {
+   for (i = eCDSGeneProt_feature_type_constraint_gene; 
+                     i <= eCDSGeneProt_feature_type_constraint_mat_peptide; i++) {
      strtmp = ENUM_METHOD_NAME(ECDSGeneProt_feature_type_constraint)()->FindName(i, true);
      if (strtmp == "cds") strtmp = "CDS";
      else if (strtmp == "prot") strtmp = "protein";
@@ -786,7 +789,8 @@ cerr << "222can get\n";
 
    // ini. of feat_strandedness
    thisInfo.feat_strandedness[eFeature_strandedness_constraint_any] = kEmptyStr; 
-   for (i=1; i<=6; i++) {
+   for (i = eFeature_strandedness_constraint_minus_only; 
+                 i <= eFeature_strandedness_constraint_no_plus; i++) {
      strtmp = ENUM_METHOD_NAME(EFeature_strandedness_constraint)()->FindName(i, true);
      arr.clear();
      arr = NStr::Tokenize(strtmp, "-", arr);
@@ -801,7 +805,7 @@ cerr << "222can get\n";
    }
 
    // ini. of pubfield_label;
-   for (i = (int)ePublication_field_cit; i <= (int)ePublication_field_pub_class; i++) {
+   for (i = ePublication_field_cit; i <= ePublication_field_pub_class; i++) {
      strtmp = ENUM_METHOD_NAME(EPublication_field)()->FindName(i, true);
      if (strtmp == "cit") strtmp = "citation";
      else if (strtmp == "sub") strtmp = "state";
@@ -817,11 +821,12 @@ cerr << "222can get\n";
    strtmp = reg.Get("StringVecIni", "SpecPubFieldWords");
    arr.clear();
    arr = NStr::Tokenize(strtmp, ",", arr);
-   for (i = 0; i < CPub_field_special_constraint_type::e_Is_all_punct; i++) 
-     thisInfo.spe_pubfield_label[(CPub_field_special_constraint_type::E_Choice)i] = arr[i];
+   for (i = CPub_field_special_constraint_type::e_Is_present; 
+                        i <= CPub_field_special_constraint_type::e_Is_all_punct; i++) 
+     thisInfo.spe_pubfield_label[(CPub_field_special_constraint_type::E_Choice)i] = arr[i-1];
 
    // ini. of featqual_leg_name
-   for (i = (int)eFeat_qual_legal_allele; i <= (int)eFeat_qual_legal_pcr_conditions; i++){
+   for (i = eFeat_qual_legal_allele; i <= eFeat_qual_legal_pcr_conditions; i++){
       strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
       if (!strtmp.empty()) {
          if (strtmp == "ec-number") strtmp = "EC number";
@@ -840,7 +845,7 @@ cerr << "222can get\n";
    thisInfo.loctype_names = NStr::Tokenize(strtmp, ",", thisInfo.loctype_names);
  
    // ini. of matloc_names & matloc_notpresent_names;
-   for (i = (int)eString_location_contains; i <= (int)eString_location_inlist; i++) {
+   for (i = eString_location_contains; i <= eString_location_inlist; i++) {
       strtmp = ENUM_METHOD_NAME(EString_location)()->FindName(i, true);
       if (strtmp == "inlist") {
               strtmp = "is one of";
@@ -858,39 +863,39 @@ cerr << "222can get\n";
    }
 
    // ini. of srcloc_names;
-   for (i = (int)eSource_location_unknown; i <= (int)eSource_location_chromatophore; i++){
+   for (i = eSource_location_unknown; i <= eSource_location_chromatophore; i++){
       strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
       thisInfo.srcloc_names[(ESource_location)i] = strtmp;
    }
 
    // ini of srcori_names;
-   for (i = (int)eSource_origin_unknown; i<= (int)eSource_origin_synthetic; i++) {
+   for (i = eSource_origin_unknown; i<= eSource_origin_synthetic; i++) {
       strtmp = ENUM_METHOD_NAME(ESource_origin)()->FindName(i, true);
       thisInfo.srcori_names[(ESource_origin)i] = strtmp;
    }
    thisInfo.srcori_names[eSource_origin_other] = "other";
 
    // ini of compl_names
-   for (i = (int)eCompletedness_type_unknown; i <= (int)eCompletedness_type_has_right; i++) {
+   for (i = eCompletedness_type_unknown; i <= eCompletedness_type_has_right; i++) {
       strtmp = ENUM_METHOD_NAME(ECompletedness_type)()->FindName(i, true);
       if (strtmp.find("-") != string::npos) strtmp = NStr::Replace(strtmp, "-", " ");
       thisInfo.compl_names[(ECompletedness_type)i] = strtmp;
    }
   
    // ini of molclass_names
-   for (i = (int)eMolecule_class_type_unknown; i <= (int)eMolecule_class_type_other; i++) {
+   for (i = eMolecule_class_type_unknown; i <= eMolecule_class_type_other; i++) {
      strtmp = ENUM_METHOD_NAME(EMolecule_class_type)()->FindName(i, true);
      if (strtmp == "dna" || strtmp == "rna") strtmp = NStr::ToUpper(strtmp);
      thisInfo.molclass_names[(EMolecule_class_type)i] = strtmp;
    }
 
    // ini of topo_names;
-   for (i = (int)eTopology_type_unknown; i <= (int)eTopology_type_other; i++)
+   for (i = eTopology_type_unknown; i <= eTopology_type_other; i++)
      thisInfo.topo_names[(ETopology_type)i] 
          = ENUM_METHOD_NAME(ETopology_type)()->FindName(i, true);
  
    // ini of strand_names
-   for (i = (int)eStrand_type_unknown; i <= (int)eStrand_type_other; i++)
+   for (i = eStrand_type_unknown; i <= eStrand_type_other; i++)
       thisInfo.strand_names[(EStrand_type)i] 
             = ENUM_METHOD_NAME(EStrand_type)()->FindName(i, true);
    
@@ -899,14 +904,14 @@ cerr << "222can get\n";
    arr.clear();
    arr = NStr::Tokenize(strtmp, ",", arr);
    ITERATE (vector <string>, it, arr) {
-     CRef <CSearch_func>& sch_func = MakeSimpleSearchFunc(*it);
+     CRef <CSearch_func> sch_func = MakeSimpleSearchFunc(*it);
      CRef <CSuspect_rule> this_rule ( new CSuspect_rule);
      this_rule->SetFind(*sch_func);
      thisInfo.suspect_rna_rules->Set().push_back(this_rule);
      thisInfo.rna_rule_summ.push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));    
    }
-   CRef <CSearch_func>& sch_func = MakeSimpleSearchFunc("8S", true);
-   CRef <CSearch_func>& except = MakeSimpleSearchFunc("5.8S", true);
+   CRef <CSearch_func> sch_func = MakeSimpleSearchFunc("8S", true);
+   CRef <CSearch_func> except = MakeSimpleSearchFunc("5.8S", true);
    CRef <CSuspect_rule> this_rule ( new CSuspect_rule);
    this_rule->SetFind(*sch_func);
    this_rule->SetExcept(*except);
@@ -921,7 +926,7 @@ cerr << "222can get\n";
    arr.clear();
 }
 
-CRef <CSearch_func>& CDiscRepApp :: MakeSimpleSearchFunc(const string& match_text, bool whole_word)
+CRef <CSearch_func> CDiscRepApp :: MakeSimpleSearchFunc(const string& match_text, bool whole_word)
 {
      CRef <CString_constraint> str_cons (new CString_constraint);
      str_cons->SetMatch_text(match_text);

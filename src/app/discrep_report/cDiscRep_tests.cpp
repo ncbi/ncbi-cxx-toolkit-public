@@ -1725,7 +1725,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
 
    string lookfor, desc;
    bool add = false;
-   if (!taxnm.empty()) {
+   if (!taxnm.empty() && !bioseq_title.empty()) {
       desc = GetDiscItemText(*(bioseq_title[0]), bioseq);
       if (!bioseq_title.empty()) title = bioseq_title[0]->GetTitle();
 
@@ -6476,7 +6476,9 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <const CSeq_feat*>& feats, bool makes_gene_not_superfluous)
 {
   unsigned i=0, j;
+
   ITERATE (vector <const CSeq_feat*>, it, feats) {
+cerr << " i " << i << endl;
     if ((*it)->GetData().IsGene()) continue;
     const CGene_ref* xref_gene = (*it)->GetGeneXref();
     if (xref_gene && xref_gene->IsSuppressed()) {
@@ -6507,7 +6509,7 @@ void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <co
                                                *thisInfo.scope);
 
           if (gene_olp.Empty()) {
-             if (m_no_genes[i].empty()) m_no_genes[i] = GetDiscItemText(**it);
+             if (m_no_genes[i].empty()) m_no_genes[i] = strtmp = GetDiscItemText(**it);
           }
           else if ( m_super_cnt && makes_gene_not_superfluous) {
              j=0;
@@ -6621,6 +6623,11 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   unsigned i=0;
   m_no_genes.reserve(gene_feat.size());
   m_super_idx.reserve(gene_feat.size());
+  for (i=0; i< gene_feat.size(); i++) {
+           m_no_genes.push_back(kEmptyStr);
+           m_super_idx.push_back(0);
+  }
+  i = 0;
   if (!IsmRNASequenceInGenProdSet(bioseq)) {
      ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
        if ( (*it)->CanGetPseudo() && (*it)->GetPseudo()) m_super_idx[i] = 0;
