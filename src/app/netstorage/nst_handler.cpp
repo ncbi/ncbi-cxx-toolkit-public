@@ -982,11 +982,8 @@ CNetStorageHandler::x_ProcessRead(
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     }
     catch (const CException &  ex) {
-        if (x_SendOverUTTP("", 0, true) != eIO_Success)
-            return;
-
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
-                                           eReadError, string("Object read error: ") + ex.what());
+                       eReadError, string("Object read error: ") + ex.what());
     }
 
     if (x_SendOverUTTP("", 0, true) != eIO_Success)
@@ -1250,13 +1247,14 @@ CNetStorageHandler::x_SendOverUTTP(const char* buffer,
         size_t buffer_size, bool last_chunk)
 {
     const char* output_buffer;
-    size_t output_buffer_size;
-    size_t     written;
+    size_t      output_buffer_size;
+    size_t      written;
 
-    if (!m_UTTPWriter.SendChunk(buffer, buffer_size, !last_chunk))
-        do {
-            m_UTTPWriter.GetOutputBuffer(
-                    &output_buffer, &output_buffer_size);
+    m_UTTPWriter.SendChunk(buffer, buffer_size, !last_chunk);
+
+    do {
+        m_UTTPWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
+        if (output_buffer_size > 0) {
             // Write to the socket as a single transaction
             EIO_Status result =
                 GetSocket().Write(output_buffer, output_buffer_size, &written);
@@ -1266,19 +1264,8 @@ CNetStorageHandler::x_SendOverUTTP(const char* buffer,
                 m_Server->CloseConnection(&GetSocket());
                 return result;
             }
-        } while (m_UTTPWriter.NextOutputBuffer());
-
-    m_UTTPWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);
-    if (output_buffer_size > 0) {
-        // Write to the socket as a single transaction
-        EIO_Status result =
-            GetSocket().Write(output_buffer, output_buffer_size, &written);
-        if (result != eIO_Success) {
-            ERR_POST("Error writing to the client socket. The connection will be closed.");
-            x_SetConnRequestStatus(eStatus_SocketIOError);
-            m_Server->CloseConnection(&GetSocket());
-            return result;
         }
-    }
+    } while (m_UTTPWriter.NextOutputBuffer());
+
     return eIO_Success;
 }

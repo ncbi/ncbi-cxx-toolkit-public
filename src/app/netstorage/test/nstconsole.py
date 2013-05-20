@@ -60,7 +60,7 @@ class NetStorageConsole:
              'no-dict':        self.sendNoDictionary,
              'upload':         self.upload,
              'delete':         self.delete,
-             'read':           self.read,
+             'download':       self.download,
            }
 
         self.__commandSN = 0
@@ -411,7 +411,7 @@ class NetStorageConsole:
             print "Command failed"
         return
 
-    def read( self, arguments ):
+    def download( self, arguments ):
         " Reads the given object "
 
         if len( arguments ) != 1:
@@ -428,6 +428,7 @@ class NetStorageConsole:
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
             print "Command failed"
+            return
 
         uttp_reader = self.__nst.get_uttp_reader()
 
@@ -442,8 +443,7 @@ class NetStorageConsole:
                 if event == uttp.Reader.CHUNK_PART:
                     print uttp_reader.get_chunk(),
                 elif event == uttp.Reader.CHUNK:
-                    print 'Are we there yet?'
-                    print uttp_reader.get_chunk()
+                    print uttp_reader.get_chunk() + '<<EOF'
                     response = self.receive()
                     if "Status" not in response or response[ "Status" ] != "OK":
                         print "Command failed"
