@@ -1280,4 +1280,5 @@ CNetStorageHandler::x_SendOverUTTP(const char* buffer,
             return result;
         }
     }
+    return eIO_Success;
 }
