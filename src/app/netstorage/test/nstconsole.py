@@ -13,12 +13,13 @@ import sys
 import socket
 import errno
 from optparse import OptionParser
-from ncbi_grid_dev.ncbi import json_over_uttp
+from ncbi_grid_dev.ncbi import json_over_uttp, uttp
 import pprint
 import readline
 #import rlcompleter
 import atexit
 import os
+import simplejson as json
 
 historyPath = os.path.expanduser("~/.nstconsole")
 
@@ -58,6 +59,8 @@ class NetStorageConsole:
              'no-type':        self.sendNoType,
              'no-dict':        self.sendNoDictionary,
              'upload':         self.upload,
+             'delete':         self.delete,
+             'read':           self.read,
            }
 
         self.__commandSN = 0
@@ -106,22 +109,26 @@ class NetStorageConsole:
         return 0
 
 
-    def checkIncomingMessage( self ):
-        " Checks if there is something in the socket and if so reads it "
+    def socketHasData( self ):
+        " Checks if the socket has some data in it "
         try:
             data = self.__sock.recv( 8, socket.MSG_PEEK | socket.MSG_DONTWAIT )
             if len( data ) == 0:
-                return
+                return False
         except socket.error, e:
             if e.args[0] == errno.EAGAIN:
-                return
+                return False
             if e.args[0] == errno.ECONNRESET:
                 print "Server socket has been closed"
                 sys.exit( errno.ECONNRESET )
             raise
+        return True
 
-        response = self.__nst.receive()
-        self.printMessage( "Message from server", response )
+    def checkIncomingMessage( self ):
+        " Checks if there is something in the socket and if so reads it "
+        if self.socketHasData():
+            response = self.__nst.receive()
+            self.printMessage( "Message from server", response )
         return
 
 
@@ -349,7 +356,6 @@ class NetStorageConsole:
             return
 
         fileName = arguments[ 0 ]
-        otherArguments = arguments[ 1 : ]
 
         if not os.path.exists( fileName ):
             print "File '" + fileName + "' is not found"
@@ -365,16 +371,8 @@ class NetStorageConsole:
         message = { 'Type':         'WRITE',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP }
-
-        for arg in otherArguments:
-            parts = arg.split( ":" )
-            key = parts[ 0 ]
-            value = parts[ 1 ]
-            if value.lower() in [ "true", "t", 1 ]:
-                value = True
-            elif value.lower() in [ "false", "f", 0 ]:
-                value = False
-            message[ key ] = value
+        if len( arguments ) > 1:
+            message.update( json.loads( ' '.join( arguments[ 1 : ] ) ) )
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -388,10 +386,70 @@ class NetStorageConsole:
         chunk = uttp_writer.flush_buf()
         if chunk:
             self.__sock.send(chunk)
+
+        response = self.receive()
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed, the blob has not been written [completely]"
         return
 
+    def delete( self, arguments ):
+        " Deletes the given object "
 
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
+            return
 
+        fileID = arguments[ 0 ]
+
+        message = { 'Type':         'DELETE',
+                    'SessionID':    '1111111111111111_0000SID',
+                    'ClientIP':     hostIP,
+                    'FileID':       fileID }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
+    def read( self, arguments ):
+        " Reads the given object "
+
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
+            return
+
+        fileID = arguments[ 0 ]
+
+        message = { 'Type':         'READ',
+                    'SessionID':    '1111111111111111_0000SID',
+                    'ClientIP':     hostIP,
+                    'FileID':       fileID }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+
+        uttp_reader = self.__nst.get_uttp_reader()
+
+        while True:
+            buf = self.__sock.recv( 1024 * 1024 )
+            uttp_reader.set_new_buf(buf)
+            while True:
+                event = uttp_reader.next_event()
+                if event == uttp.Reader.END_OF_BUFFER:
+                    break
+
+                if event == uttp.Reader.CHUNK_PART:
+                    print uttp_reader.get_chunk(),
+                elif event == uttp.Reader.CHUNK:
+                    print 'Are we there yet?'
+                    print uttp_reader.get_chunk()
+                    response = self.receive()
+                    if "Status" not in response or response[ "Status" ] != "OK":
+                        print "Command failed"
+                    return
+                else:
+                    raise Exception( "Unexpected UTTP packet type" )
 
     def sendGetObjectInfo( self, arguments ):
         print "Not implemented yet"
@@ -413,6 +471,13 @@ class NetStorageConsole:
         message[ "SN" ] = self.__commandSN
         self.printMessage( "Message to server", message )
         response = self.__nst.exchange( message )
+        self.printMessage( "Message from server", response )
+        return response
+
+
+    def receive( self ):
+        " Receives a single server message "
+        response = self.__nst.receive()
         self.printMessage( "Message from server", response )
         return response
 

@@ -43,7 +43,8 @@ enum ENSTReplyError {
     eInvalidArguments       = 5,
     eHelloRequired          = 6,
     ePrivileges             = 7,
-    eWriteError             = 8
+    eWriteError             = 8,
+    eReadError              = 9
 };
 
 

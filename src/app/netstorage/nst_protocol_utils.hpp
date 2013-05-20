@@ -60,12 +60,53 @@ struct SCommonRequestArguments
 };
 
 
+// Storage flags which may appear in various requests
+struct SStorageFlags
+{
+    SStorageFlags() :
+        m_Fast(false), m_Persistent(false),
+        m_Movable(false), m_Cacheable(false)
+    {}
+
+    bool        m_Fast;
+    bool        m_Persistent;
+    bool        m_Movable;
+    bool        m_Cacheable;
+};
+
+
+// ICache settings which may appear in various requests
+struct SICacheSettings
+{
+    string      m_ServiceName;
+    string      m_CacheName;
+};
+
+
+// User key which may appear in various requests
+struct SUserKey
+{
+    string      m_UniqueID;
+    string      m_AppDomain;
+};
+
+
+
 void SetSessionAndIP(const CJsonNode &  message,
                      const CSocket &    peer);
 
-void
-ExtractCommonFields(const CJsonNode &          message,
-                    SCommonRequestArguments *  common_arguments);
+SCommonRequestArguments
+ExtractCommonFields(const CJsonNode &  message);
+
+SStorageFlags
+ExtractStorageFlags(const CJsonNode &  message);
+
+SICacheSettings
+ExtractICacheSettings(const CJsonNode &  message);
+
+SUserKey
+ExtractUserKey(const CJsonNode &  message);
+
 
 CJsonNode
 CreateResponseMessage(Int8  serial_number);

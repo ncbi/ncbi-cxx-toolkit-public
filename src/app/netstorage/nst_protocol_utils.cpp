@@ -65,13 +65,13 @@ void SetSessionAndIP(const CJsonNode &  message,
 }
 
 
-void
-ExtractCommonFields(const CJsonNode &          message,
-                    SCommonRequestArguments *  common_arguments)
+SCommonRequestArguments
+ExtractCommonFields(const CJsonNode &  message)
 {
+    SCommonRequestArguments     result;
     try {
-        common_arguments->m_SerialNumber = message.GetInteger("SN");
-        common_arguments->m_MessageType = message.GetString("Type");
+        result.m_SerialNumber = message.GetInteger("SN");
+        result.m_MessageType = message.GetString("Type");
     }
     catch (const std::exception & ex) {
         // Converting to the CNetStorageServerException is done to
@@ -79,6 +79,59 @@ ExtractCommonFields(const CJsonNode &          message,
         NCBI_THROW(CNetStorageServerException, eInvalidIncomingMessage,
                    ex.what());
     }
+    return result;
+}
+
+
+SStorageFlags
+ExtractStorageFlags(const CJsonNode &  message)
+{
+    SStorageFlags       result;
+
+    if (message.HasKey("StorageFlags")) {
+        CJsonNode   flags = message.GetByKey("StorageFlags");
+        if (flags.HasKey("Fast"))
+            result.m_Fast = flags.GetBoolean("Fast");
+        if (flags.HasKey("Persistent"))
+            result.m_Persistent = flags.GetBoolean("Persistent");
+        if (flags.HasKey("Movable"))
+            result.m_Movable = flags.GetBoolean("Movable");
+        if (flags.HasKey("Cacheable"))
+            result.m_Cacheable = flags.GetBoolean("Cacheable");
+    }
+    return result;
+}
+
+
+SICacheSettings
+ExtractICacheSettings(const CJsonNode &  message)
+{
+    SICacheSettings     result;
+
+    if (message.HasKey("ICache")) {
+        CJsonNode   settings = message.GetByKey("ICache");
+        if (settings.HasKey("ServiceName"))
+            result.m_ServiceName = settings.GetString("ServiceName");
+        if (settings.HasKey("CacheName"))
+            result.m_CacheName = settings.GetString("CacheName");
+    }
+    return result;
+}
+
+
+SUserKey
+ExtractUserKey(const CJsonNode &  message)
+{
+    SUserKey        result;
+
+    if (message.HasKey("UserKey")) {
+        CJsonNode   user_key = message.GetByKey("UserKey");
+        if (user_key.HasKey("UniqueID"))
+            result.m_UniqueID = user_key.GetString("UniqueID");
+        if (user_key.HasKey("AppDomain"))
+            result.m_AppDomain = user_key.GetString("AppDomain");
+    }
+    return result;
 }
 
 
