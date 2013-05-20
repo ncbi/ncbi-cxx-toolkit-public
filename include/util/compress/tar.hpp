@@ -39,13 +39,14 @@
 ///  Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
 ///  old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
 ///  New archives are created using POSIX (genuine ustar) format, using
-///  GNU extensions for long names/links only when unavoidable.
-///  Can handle no exotics like sparse / contiguous files,
-///  multivolume / incremental archives, etc, but just regular files,
-///  devices (character or block), FIFOs, directories, and limited links:
-///  can extract both hard- and symlinks, but can store symlinks only.
-///  This version is minimally PAX(Portable Archive Interchange)-aware
-///  for file extractions (but cannot use PAX extensions to store files).
+///  GNU extensions for long names/links only when unavoidable.  It cannot,
+///  however, handle all the exotics like sparse / contiguous files (yet still
+///  can work around them gracefully, if needed), multivolume / incremental
+///  archives, etc. but just regular files, devices (character or block),
+///  FIFOs, directories, and limited links:  can extract both hard- and
+///  symlinks, but can store symlinks only.  Also, this implementation is
+///  only minimally PAX(Portable Archive Interchange)-aware for file
+///  extractions (but cannot use PAX extensions to store the files).
 ///
 
 #include <corelib/ncbifile.hpp>
