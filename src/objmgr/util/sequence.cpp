@@ -3672,7 +3672,7 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
 {
     CSeqVector seq(loc, handle.GetScope(), CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, 0, code,
-                loc.IsPartialStart(eExtreme_Biological),
+                !loc.IsPartialStart(eExtreme_Biological),
                 include_stop, remove_trailing_X, alt_start);
 }
 
@@ -3688,7 +3688,7 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
 {
     CSeqVector seq(loc, scope, CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, 0, code,
-                loc.IsPartialStart(eExtreme_Biological),
+                !loc.IsPartialStart(eExtreme_Biological),
                 include_stop, remove_trailing_X, alt_start);
 }
 
