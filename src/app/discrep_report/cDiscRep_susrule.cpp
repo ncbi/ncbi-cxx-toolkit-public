@@ -1448,18 +1448,29 @@ bool CSuspectRuleCheck :: DoesStringMatchConstraint(const string& str, const CSt
 bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
 {
   char    last_letter, second_to_last_letter;
-  unsigned    word_len = 0;
+  size_t  word_len = 0;
   bool may_contain_plural = false;
   string word_skip = " ,";
-  string next_letter;
+  char next_letter;
 
   if (str.empty()) return false;
   string search = str;
   while (!search.empty() && !may_contain_plural) {
     word_len = search.find_first_of(" ,");
-    last_letter = search[word_len -1];
-    second_to_last_letter = search[word_len -2];
-    next_letter = word_len < search.size() ? search.substr(word_len, 1) : kEmptyStr;
+    if (!word_len) {
+           last_letter = second_to_last_letter = next_letter = ' ';
+    }
+    else if (word_len == string::npos) {
+         last_letter = search[search.size()-1];
+         second_to_last_letter = search[search.size()-2];
+         next_letter = ' ';
+    }
+    else {
+      last_letter = search[word_len -1];
+      second_to_last_letter = search[word_len -2];
+      if (word_len < search.size()) next_letter = search[word_len+1];
+      else next_letter = ' ';
+    }
     if (last_letter == 's') {
       if (word_len >=5 && NStr::EqualCase(search.substr(word_len-5), 0, 5, "trans")) {
         /* not plural */
@@ -1469,7 +1480,7 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
                  && second_to_last_letter != 's'
                  && second_to_last_letter != 'i'
                  && second_to_last_letter != 'u'
-                 && (next_letter[0] == ',' || next_letter.empty())) {
+                 && (next_letter == ',' || next_letter == ' ')) {
         may_contain_plural = true;
       } else {
         search = search.substr(word_len);

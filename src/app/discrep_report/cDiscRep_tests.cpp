@@ -6478,12 +6478,9 @@ void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <co
   unsigned i=0, j;
 
   ITERATE (vector <const CSeq_feat*>, it, feats) {
-cerr << " i " << i << endl;
     if ((*it)->GetData().IsGene()) continue;
     const CGene_ref* xref_gene = (*it)->GetGeneXref();
-    if (xref_gene && xref_gene->IsSuppressed()) {
-         if (m_no_genes[i].empty()) m_no_genes[i] = GetDiscItemText(**it);
-    }
+    if (xref_gene && xref_gene->IsSuppressed()) m_no_genes += GetDiscItemText(**it) + "$";
     else {
         if (xref_gene) {
            if (m_super_cnt) {
@@ -6508,9 +6505,7 @@ cerr << " i " << i << endl;
                                                eOverlap_Contained,
                                                *thisInfo.scope);
 
-          if (gene_olp.Empty()) {
-             if (m_no_genes[i].empty()) m_no_genes[i] = strtmp = GetDiscItemText(**it);
-          }
+          if (gene_olp.Empty()) m_no_genes += GetDiscItemText(**it) + "$";
           else if ( m_super_cnt && makes_gene_not_superfluous) {
              j=0;
              ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
@@ -6534,7 +6529,7 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
   if (IsmRNASequenceInGenProdSet(bioseq)) m_super_cnt = 0;
   else {
      m_super_cnt = gene_feat.size();
-     m_no_genes.reserve(m_super_cnt);
+     m_no_genes = kEmptyStr;
      m_super_idx.reserve(m_super_cnt);
      for (i=0; i< m_super_cnt; i++) m_super_idx[i] = 1;
   }
@@ -6544,10 +6539,9 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
   CheckGenesForFeatureType(exon_feat);
   CheckGenesForFeatureType(intron_feat);
 
-  ITERATE (vector <string>, it, m_no_genes) {
-     if (!(*it).empty())
-       thisInfo.test_item_list[GetName_missing()].push_back(*it);
-  } 
+  if (!m_no_genes.empty())
+      thisInfo.test_item_list[GetName_missing()]
+         = NStr::Tokenize(m_no_genes, "$", thisInfo.test_item_list[GetName_missing()]);
 
   //GetPseudoAndNonPseudoGeneList;
   if (!m_super_cnt) return;
@@ -6621,17 +6615,13 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   if (bioseq.IsAa()) return;
   m_super_cnt = 0;
   unsigned i=0;
-  m_no_genes.reserve(gene_feat.size());
+  m_no_genes = kEmptyStr;
   m_super_idx.reserve(gene_feat.size());
-  for (i=0; i< gene_feat.size(); i++) {
-           m_no_genes.push_back(kEmptyStr);
-           m_super_idx.push_back(0);
-  }
+  for (i=0; i< gene_feat.size(); i++) m_super_idx.push_back(0);
   i = 0;
   if (!IsmRNASequenceInGenProdSet(bioseq)) {
      ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
-       if ( (*it)->CanGetPseudo() && (*it)->GetPseudo()) m_super_idx[i] = 0;
-       else {
+       if ( !((*it)->CanGetPseudo()) || !((*it)->GetPseudo()) ) {
           m_super_cnt ++;
           m_super_idx[i] = 1;
        }
@@ -6643,13 +6633,13 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   CheckGenesForFeatureType(mrna_feat, true);
   CheckGenesForFeatureType(trna_feat, true);
 
-  ITERATE (vector <string>, it, m_no_genes) 
-    if ( !(*it).empty())
-        thisInfo.test_item_list[GetName_missing()].push_back(*it);
+  if (!m_no_genes.empty())
+    thisInfo.test_item_list[GetName_missing()]
+       = NStr::Tokenize(m_no_genes, "$", thisInfo.test_item_list[GetName_missing()]);
 
-  m_no_genes.clear();
+  m_no_genes = kEmptyStr;
   CheckGenesForFeatureType(all_feat, true);
-  m_no_genes.clear();
+  m_no_genes = kEmptyStr;
   if (!m_super_cnt) return;
   i=0;
   ITERATE (vector <const CSeq_feat*>, it, gene_feat) {

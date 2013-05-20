@@ -977,7 +977,7 @@ void CDiscRepApp :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
     // collect disc report
     myChecker.CollectRepData();
-    cout << "Number of seq-feats: " << myChecker.GetNumSeqFeats() << endl;
+    // cout << "Number of seq-feats: " << myChecker.GetNumSeqFeats() << endl;
 
 };  // CheckThisSeqEntry()
 

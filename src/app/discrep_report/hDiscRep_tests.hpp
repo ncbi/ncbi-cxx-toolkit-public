@@ -1929,6 +1929,13 @@ namespace DiscRepNmSpc {
   class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData
   {
     public:
+      enum ESusTestFlags {
+          fProdName = 1 << 0,
+          fNameTypo = 1 << 1,
+          fNameQuickfix = 1 << 2
+      };
+
+      CBioseq_on_SUSPECT_RULE (ESusTestFlags enabled_tests) : m_tests(enabled_tests) {};
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
@@ -1938,6 +1945,7 @@ namespace DiscRepNmSpc {
     protected:
       CBioseq_Handle m_bioseq_hl;
       Str2Strs m_feature_list;
+      ESusTestFlags m_tests;
 
       bool CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type);
       void FindSuspectProductNamesCallback();
@@ -2265,7 +2273,7 @@ namespace DiscRepNmSpc {
 
     protected:
       vector <int> m_super_idx;
-      vector <string> m_no_genes;
+      string m_no_genes;
       unsigned m_super_cnt;
 
       void CheckGenesForFeatureType(const vector <const CSeq_feat*>& feats, 

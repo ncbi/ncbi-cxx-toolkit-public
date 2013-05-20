@@ -97,7 +97,7 @@ static const s_test_property test_list[] = {
    {"MISSING_PROTEIN_ID1", fDiscrepancy},
    {"MISSING_PROTEIN_ID", fDiscrepancy},
    {"INCONSISTENT_PROTEIN_ID_PREFIX1", fDiscrepancy},
-   {"INCONSISTENT_PROTEIN_ID_PREFIX", fDiscrepancy},
+//   {"INCONSISTENT_PROTEIN_ID_PREFIX", fDiscrepancy},
 
 // tests_on_Bioseq_na
    {"TEST_DEFLINE_PRESENT", fDiscrepancy},
@@ -112,7 +112,9 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq_CFeat
    {"SUSPECT_PHRASES", fDiscrepancy},
    {"DISC_SUSPECT_RRNA_PRODUCTS", fDiscrepancy},
-   {"on_SUSPECT_RULE", fDiscrepancy},
+   {"DISC_SUSPECT_PRODUCT_NAME", fDiscrepancy},
+   {"DISC_PRODUCT_NAME_TYPO", fDiscrepancy},
+   {"DISC_PRODUCT_NAME_QUICKFIX", fDiscrepancy},
    {"TEST_ORGANELLE_PRODUCTS", fDiscrepancy},
    {"DISC_GAPS", fDiscrepancy},
    {"TEST_MRNA_OVERLAPPING_PSEUDO_GENE", fDiscrepancy},
@@ -314,6 +316,7 @@ CRepConfig* CRepConfig :: factory(const string& report_tp)
 void CRepConfig :: CollectTests() 
 {
    unsigned sz = tests_run.size(), i=0;
+   int my_tests;
    if (i >= sz) return;
    if (tests_run.find("DISC_SUBMITBLOCK_CONFLICT") != tests_run.end()) {
         tests_on_SubmitBlk.push_back(
@@ -348,11 +351,13 @@ if (i > sz) return;
    if ( tests_run.find("INCONSISTENT_PROTEIN_ID_PREFIX") != tests_run.end()) {
         tests_on_Bioseq_aa.push_back(
                    CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
+/*
         tests_on_Bioseq_aa.push_back(
                    CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX));
 i += 2;
 if (i > sz) return;
-//        if (++i >= sz) return;
+*/
+        if (++i >= sz) return;
    }
    if ( tests_run.find("TEST_DEFLINE_PRESENT") != tests_run.end()) {
          tests_on_Bioseq_na.push_back(
@@ -397,10 +402,26 @@ if (i > sz) return;
                 CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_RRNA_PRODUCTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SUSPECT_RULE") != tests_run.end()) {
-       tests_on_Bioseq_CFeat.push_back( 
-                CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE));
-        if (++i >= sz) return;
+   if ( tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != tests_run.end()
+        || tests_run.find("DISC_PRODUCT_NAME_TYPO") != tests_run.end()
+        || tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != tests_run.end()) {
+        
+        my_tests = 0; 
+        if (tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != tests_run.end()) {
+             i++;
+             my_tests = my_tests | CBioseq_on_SUSPECT_RULE::fProdName;
+        }
+        if (tests_run.find("DISC_PRODUCT_NAME_TYPO") != tests_run.end()) {
+             i++;
+             my_tests = my_tests | CBioseq_on_SUSPECT_RULE::fNameTypo;
+        }
+        if (tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != tests_run.end()) {
+             i++;
+             my_tests = my_tests | CBioseq_on_SUSPECT_RULE::fNameQuickfix;
+        }
+        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (
+               new CBioseq_on_SUSPECT_RULE((CBioseq_on_SUSPECT_RULE::ESusTestFlags)my_tests)));
+        if (i >= sz) return;
    }
    if ( tests_run.find("TEST_ORGANELLE_PRODUCTS") != tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
@@ -1343,7 +1364,7 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_RRNA_PRODUCTS));
    tests_on_Bioseq_CFeat.push_back( 
-                CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE));
+                CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE(CBioseq_on_SUSPECT_RULE::fProdName)));
    tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_ORGANELLE_PRODUCTS));
    tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_GAPS));
