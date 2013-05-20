@@ -228,7 +228,8 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     }
 
 
-    if (dynamic_cast<CSeqIdListSet*>(QuerySet) &&
+    if (m_UseNegativeGiList &&
+        dynamic_cast<CSeqIdListSet*>(QuerySet) &&
         dynamic_cast<CBlastDbSet*>(SubjectSet) ) {
         CSeqIdListSet* SeqIdListQuerySet = dynamic_cast<CSeqIdListSet*>(QuerySet);
         CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
@@ -250,6 +251,8 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
     CRef<CSearchResultSet> BlastResults;
     try {
         CLocalBlast Blast(Querys, m_BlastOptions, Subjects);
+        if(m_InterruptFunc != NULL)
+            Blast.SetInterruptCallback(m_InterruptFunc, m_InterruptData);
         BlastResults = Blast.Run();
     } catch(CException& e) {
         ERR_POST(Error << "Blast.Run() error: " << e.ReportAll());
@@ -270,6 +273,7 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         }
     }
 
+	list<int> scores;
     TSeqPos AlignCount = 0;
     NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
         CSearchResults& Results = **SetIter;
@@ -278,13 +282,23 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
             ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
                 CRef<CSeq_align> Align = *AlignIter;
                 Align->SetNamedScore(GetName(), 1);
-                AlignCount++;
+				AlignCount++;
+            	int Score;
+				Align->GetNamedScore(CSeq_align::eScore_Score, Score);
+				scores.push_back(Score);
+			//cerr << "blast " << MSerial_AsnText << *Align << endl;
             }
         }
     }
 
+    //ERR_POST(Info << "blast_alignments: " << AlignCount);
     GetDiagContext().Extra().Print("blast_alignments",
                                    NStr::IntToString(AlignCount));
+	//string score_msg = "scores:";
+	//ITERATE(list<int>, scoreiter, scores) {
+	//	score_msg += " " + NStr::IntToString(*scoreiter);
+	//}
+	//ERR_POST(Info << score_msg);
 
     if(AlignCount == 0) {
         ERR_POST(Warning << "CBlastAligner found no hits this run.");
@@ -349,6 +363,7 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
         BlastSubjectSet->SetNegativeGiList(GiList);
     }
 */
+    while(true) {
     Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
     Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
 
@@ -401,6 +416,7 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
     }
 
     Results->Insert(*BlastResults);
+}
 
     return Results;
 }

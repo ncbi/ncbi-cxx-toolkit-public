@@ -86,11 +86,14 @@ class CBlastAligner : public IAlignmentFactory
 {
 public:
     CBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)
-        : m_BlastOptions(&Options), m_Threshold(Threshold), m_Filter(0) { ; }
+        : m_BlastOptions(&Options), m_Threshold(Threshold), m_Filter(0),
+          m_UseNegativeGiList(true), m_InterruptFunc(NULL), m_InterruptData(NULL) { ; }
 
     CBlastAligner(const string& Params, int Threshold)
         : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
-        , m_Threshold(Threshold), m_Filter(0) { ; }
+        , m_Threshold(Threshold), m_Filter(0)
+        , m_UseNegativeGiList(true)
+        , m_InterruptFunc(NULL), m_InterruptData(NULL) { ; }
 
     string GetName() const { return "blast_aligner"; }
 
@@ -100,18 +103,28 @@ public:
                                         TAlignResultsRef AccumResults);
 
     void SetSoftFiltering(int Filter) { m_Filter = Filter; }
+    void SetUseNegativeGiList(bool Use) { m_UseNegativeGiList = Use; }
 
     typedef CRef<blast::CBlastOptionsHandle> TBlastOptionsRef;
     typedef CRef<CBlastAligner> TBlastAlignerRef;
 
     static list<TBlastAlignerRef> CreateBlastAligners(list<TBlastOptionsRef>& Options, int Threshold);
     static list<TBlastAlignerRef> CreateBlastAligners(const list<string>& Params, int Threshold);
+    
+    void SetInterruptCallback(TInterruptFnPtr fnptr=NULL, void *user_data=NULL) {
+        m_InterruptFunc = fnptr;
+        m_InterruptData = user_data;
+    }
 
 private:
 
     CRef<blast::CBlastOptionsHandle> m_BlastOptions;
     int m_Threshold;
     int m_Filter;
+    bool m_UseNegativeGiList;
+    
+    TInterruptFnPtr m_InterruptFunc;
+    void* m_InterruptData;
 };
 
 
