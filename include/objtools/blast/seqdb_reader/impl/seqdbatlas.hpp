@@ -1017,17 +1017,9 @@ public:
     }
 
     /// Set the slice size for mmap requests.
-    void SetSliceSize(int n_threads, TIndx size)
+    void SetSliceSize(TIndx size)
     {
-        if (n_threads > 1) {
-            Uint8 max_slice = (sizeof(int*) == 8) ?
-                              e_MaxSlice64 : e_MaxSlice32;
-            m_SliceSize = x_Pick(e_MinSlice,
-                                 max_slice/n_threads,
-                                 size/n_threads);
-        } else {
-            m_SliceSize = m_DefaultSliceSize;
-        }
+        m_SliceSize = min(m_SliceSize, size);
     }
     
     /// Return the total memory bound.
@@ -1110,9 +1102,6 @@ private:
     /// Atlas will try to map files in blocks this size.
     Int8 m_SliceSize;
 
-    /// The saved slice size.
-    Int8 m_DefaultSliceSize;
-    
     /// Mapped areas of files should overlap this much.
     Int8 m_Overhang;
     
@@ -1623,9 +1612,9 @@ public:
     
     /// Set the MT slice size.
     /// This sets the current slice size used for mmap() allocations.
-    void SetMTSliceSize(int n_threads)
+    void SetSliceSize()
     {
-        m_Strategy.SetSliceSize(n_threads, m_MaxFileSize);
+        m_Strategy.SetSliceSize(m_MaxFileSize);
     }
 
     /// Return the current number of bytes allocated.
@@ -1646,8 +1635,10 @@ public:
     ///   The lock hold object for this thread. [in]
     void Verify(CSeqDBLockHold & locked)
     {
+#ifdef _DEBUG
         Lock(locked);
         Verify(true);
+#endif
     }
     
     /// Verify the integrity of this object and subobjects.

@@ -1321,6 +1321,13 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
     return dbfinder.m_DBs;
 }
 
+Int8 CSeqDB::GetSliceSize() const
+{
+    m_Impl->Verify();
+
+    return m_Impl->GetSliceSize();
+}
+
 Int8 CSeqDB::GetDiskUsage() const
 {
     vector<string> paths;

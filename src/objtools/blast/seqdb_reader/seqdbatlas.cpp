@@ -1586,8 +1586,6 @@ void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
                          max_slice,
                          m_MaxBound / slice_ratio);
 
-    m_DefaultSliceSize = m_SliceSize;
-    
     m_RetBound = x_Pick(e_MinMemory,
                         m_MaxBound-((m_SliceSize*3)/2),
                         (m_MaxBound*8)/10);

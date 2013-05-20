@@ -114,6 +114,11 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
     // To allow for empty volumes, we must tolerate the absence of all
     // files other than the index file.
 }
+
+void
+CSeqDBVol::OpenSeqFile(CSeqDBLockHold & locked) const{
+    if (!m_SeqFileOpened) x_OpenSeqFile(locked);
+}
     
 void
 CSeqDBVol::x_OpenSeqFile(CSeqDBLockHold & locked) const {

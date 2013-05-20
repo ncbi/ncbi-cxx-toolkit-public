@@ -1372,6 +1372,9 @@ public:
     /// @param num_threads   Number of threads
     void SetNumberOfThreads(int num_threads);
 
+    /// Retrieve the current slice size used for mmap
+    Int8 GetSliceSize() const;
+
     /// Retrieve the disk usage in bytes for this BLAST database
     Int8 GetDiskUsage() const;
 protected:

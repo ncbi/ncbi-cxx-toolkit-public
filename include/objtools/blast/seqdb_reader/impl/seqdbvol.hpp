@@ -217,6 +217,15 @@ public:
               int                  vol_start,
               CSeqDBLockHold     & locked);
 
+    /// Open sequence file
+    /// 
+    /// By default, sequence file is opened on a "lazy" schedule.
+    /// This method will force the sequence file to be opened.
+    ///
+    /// @param locked
+    ///     The lock holder object for this thread. [in]
+    void OpenSeqFile(CSeqDBLockHold &locked) const;
+
     /// Sequence length for protein databases.
     /// 
     /// This method returns the length of the sequence in bases, and

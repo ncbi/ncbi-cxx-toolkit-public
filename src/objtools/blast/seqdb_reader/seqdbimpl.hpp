@@ -1049,6 +1049,11 @@ public:
     /// Set number of threads
     void SetNumberOfThreads(int num_threads);
 
+    /// Retrieve the slice size used in internal mmap
+    Int8 GetSliceSize() const{
+        return m_Atlas.GetSliceSize();
+    }
+
 private:
     CLASS_MARKER_FIELD("IMPL")
     

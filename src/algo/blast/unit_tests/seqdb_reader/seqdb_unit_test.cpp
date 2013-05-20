@@ -2235,14 +2235,33 @@ BOOST_AUTO_TEST_CASE(ResolveDbPath)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestMTSliceSize)
+{
+    const Int8 kSliceDefaultSize = 1073741824L;
+    const Int8 kSliceNTSize = 900000000L;
+
+    CSeqDB db("nt", CSeqDB::eNucleotide);
+    BOOST_REQUIRE_EQUAL(kSliceDefaultSize, db.GetSliceSize());
+    
+    db.SetNumberOfThreads(4);
+    Int8 new_size = db.GetSliceSize();
+    BOOST_REQUIRE(kSliceDefaultSize >= new_size);
+    BOOST_REQUIRE(kSliceNTSize < new_size);
+
+    db.SetNumberOfThreads(1);
+    BOOST_REQUIRE_EQUAL(new_size, db.GetSliceSize());
+}
+
 BOOST_AUTO_TEST_CASE(GlobalMemoryBound)
 {
         
     // No real way to test what this does, so I just check that I can
     // call the method and build a SeqDB object.
+    const Int8 kSliceSmallerSize =  134217728L;
     
     CSeqDB::SetDefaultMemoryBound(512 << 20);
     CSeqDB db("wgs", CSeqDB::eNucleotide);
+    BOOST_REQUIRE_EQUAL(kSliceSmallerSize, db.GetSliceSize());
 }
 
 class CSimpleGiList : public CSeqDBGiList {

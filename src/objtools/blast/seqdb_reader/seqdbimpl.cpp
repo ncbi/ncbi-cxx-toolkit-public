@@ -628,7 +628,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         SSeqRes res;
         const char * seq;
-        Int8 tot_length = m_Atlas.GetSliceSize();
+        Int8 tot_length = m_Atlas.GetSliceSize() / (4*m_NumThreads) + 1;
 
         res.length = vol->GetSequence(vol_oid++, &seq, locked);
         if (res.length < 0) return;
@@ -2337,10 +2337,18 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads)
     if (num_threads <= 1) num_threads = 0;
 
     if (num_threads > m_NumThreads ) {
+
         for (int thread = m_NumThreads; thread < num_threads; ++thread) {
             m_CachedSeqs.push_back(new SSeqResBuffer());
         }
+
+        for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+            m_VolSet.GetVol(vol_idx)->OpenSeqFile(locked);
+        }
+        m_Atlas.SetSliceSize();
+    
     } else if (num_threads < m_NumThreads) {
+
         for (int thread = num_threads; thread < m_NumThreads; ++thread) {
             SSeqResBuffer * buffer = m_CachedSeqs.back();
             x_RetSeqBuffer(buffer, locked);
@@ -2352,7 +2360,7 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads)
     m_CacheID.clear();
     m_NextCacheID = 0;
     m_NumThreads = num_threads;
-    m_Atlas.SetMTSliceSize(num_threads);
+
 }
 
 END_NCBI_SCOPE
