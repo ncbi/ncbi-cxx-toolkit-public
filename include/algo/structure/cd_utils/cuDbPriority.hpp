@@ -87,7 +87,8 @@ public:
         eDPRefSeqAutomated = 15,  //  any refseq between this value and eDPLocal
         eDPRefSeqXP = 16,
         eDPRefSeqYP = 17,
-        eDPRefSeqZP = 18,    
+        eDPRefSeqWP = 18,    
+        eDPRefSeqZP = 19,    //  these became obsolete in May 2013, replaced by WP
         //  end refseqs
 
         eDPLocal = 20,

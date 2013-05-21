@@ -72,7 +72,7 @@ void CCdDbPriority::Initialize()
         m_sourcePriorityMap[eDPRefSeqAutomated] = eTier3;
         m_sourcePriorityMap[eDPRefSeqXP] = eTier3;
         m_sourcePriorityMap[eDPRefSeqYP] = eTier3;
-        m_sourcePriorityMap[eDPRefSeqZP] = eTier3;
+        m_sourcePriorityMap[eDPRefSeqWP] = eTier3;
         m_sourcePriorityMap[eDPLocal] = eTier3;
         m_sourcePriorityMap[eDPGibbsq] = eTier3;
         m_sourcePriorityMap[eDPGibbmt] = eTier3;
@@ -86,6 +86,7 @@ void CCdDbPriority::Initialize()
         m_sourcePriorityMap[eDPUnsupported] = eTier3;   //  not unknown, but may not know what to do w/ it
 
         //  Tier 4 
+        m_sourcePriorityMap[eDPRefSeqZP] = eTier4;   //  ZP sequences obsoleted as of May 2013
 
         //  Bottom Tier
         m_sourcePriorityMap[eDPGi] = eBottomTier;   //  this is here since this doesn't specify a database source
@@ -110,7 +111,8 @@ void CCdDbPriority::Initialize()
         m_nameSourceMap["automated refseq"] = eDPRefSeqAutomated;
         m_nameSourceMap["refseq: automated"] = eDPRefSeqXP;
         m_nameSourceMap["refseq: automated/no transcript"] = eDPRefSeqYP;
-        m_nameSourceMap["refseq: automated/shotgun"] = eDPRefSeqZP;
+        m_nameSourceMap["refseq: automated/shotgun"] = eDPRefSeqWP;
+        m_nameSourceMap["refseq: automated/shotgun [obsolete]"] = eDPRefSeqZP;
         m_nameSourceMap["local"] = eDPLocal;
         m_nameSourceMap["gibbsq"] = eDPGibbsq;
         m_nameSourceMap["gibbmt"] = eDPGibbmt;
@@ -203,6 +205,8 @@ CCdDbPriority::EDbSource CCdDbPriority::SeqIdTypeToSourceCode(unsigned int seqId
                     p = eDPRefSeqXP;
                 } else if (NStr::CompareNocase(refseqPrefix, "YP") == 0) {
                     p = eDPRefSeqYP;
+                } else if (NStr::CompareNocase(refseqPrefix, "WP") == 0) {
+                    p = eDPRefSeqWP;
                 } else if (NStr::CompareNocase(refseqPrefix, "ZP") == 0) {
                     p = eDPRefSeqZP;
                 } else {
