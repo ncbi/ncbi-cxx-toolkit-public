@@ -949,6 +949,16 @@ BEGIN_NCBI_NAMESPACE;
 #define ITERATE_BOTH_BOOL_VALUES(BoolVar) \
     for( bool BoolVar##BOTH_BOOL_VALUES_DONE##__LINE__ = false, BoolVar = false; ! BoolVar##BOTH_BOOL_VALUES_DONE##__LINE__  ; BoolVar##BOTH_BOOL_VALUES_DONE##__LINE__ = BoolVar, BoolVar = true )
 
+/// idx loops from 0 (inclusive) to up_to (exclusive)
+#define ITERATE_0_IDX(idx, up_to) \
+    for( TSeqPos idx = 0; idx < up_to; ++idx )
+
+/// Just repeat the body of the loop num_iters times
+#define ITERATE_SIMPLE(num_iters) \
+    ITERATE_0_IDX( _dummy_idx_94768308_##__LINE__, num_iters ) // the number has no significance; it is entirely random.
+
+/// ITERATE_IDX, with the assumption of starting at 
+
 /// Type for sequence locations and lengths.
 ///
 /// Use this typedef rather than its expansion, which may change.
