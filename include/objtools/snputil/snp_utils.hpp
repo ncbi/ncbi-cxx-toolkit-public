@@ -1,5 +1,5 @@
-#ifndef SNP_OBJUTILS___SNP_UTILS__HPP
-#define SNP_OBJUTILS___SNP_UTILS__HPP
+#ifndef SNP_UTIL___SNP_UTILS__HPP
+#define SNP_UTIL___SNP_UTILS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -44,6 +44,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Phenotype.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
@@ -59,6 +60,12 @@ BEGIN_SCOPE(objects)
 class NCBI_SNPUTIL_EXPORT NSnp
 {
 public:
+	// clinical significance
+	// values are taken from [human_9606].[dbo].[ClinSigCode] on 05/26/2011
+	// and later coordinated with CPhenotype::EClinical_significance (05/14/2013)
+	// hopefully they will stay stable
+	typedef CPhenotype::EClinical_significance EClinSigID;
+	typedef int TClinSigID;
 
     /// Determine if feature is a SNP
     ///
@@ -161,6 +168,10 @@ public:
     ///   - false otherwise
     static bool             IsSnpKnown( CScope &scope, const CSeq_loc& loc, const string &allele=kEmptyStr);
 
+	// human-readable text for various clinical significance types
+	static string ClinSigAsString(const CVariation_ref& var);
+	static string ClinSigAsString(TClinSigID ClinSigID);
+
 ///////////////////////////////////////////////////////////////////////////////
 // Private Methods
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,7 +208,7 @@ public:
         eSNPPropName_FreqValidation,// prop.frequence-based-validation
         eSNPPropName_QualityCheck,  // prop.quality-check
         eSNPPropName_ResourceLink,  // prop.resource-link
-        
+
         // this will generate URL templates, with one of sResourceLink_ substrings potentially inside
         // the user should perform correct substitution for the actual value
         // an empty string will be returned when the resource URL is not known
@@ -344,5 +355,5 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif // SNP_OBJUTILS___SNP_UTILS__HPP
+#endif // SNP_UTIL___SNP_UTILS__HPP
 
