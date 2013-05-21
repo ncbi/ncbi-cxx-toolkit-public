@@ -409,6 +409,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BCWL	s	Biological Control of Weeds Laboratory-Europe",
 "BDD	s	University of Bradford, Biology Department",
 "BDI	s	Putnam Museum of History and Natural Science, Natural History Department",
+"BDIARI	sc	Bahri Dagdas International Agricultural Research Institute",
 "BDK	s	North Hertfordshire Museums Service, Natural History Department",
 "BDLU	s	Laurentian University",
 "BDMU	s	McMaster University",
