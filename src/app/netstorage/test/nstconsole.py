@@ -61,6 +61,7 @@ class NetStorageConsole:
              'upload':         self.upload,
              'delete':         self.delete,
              'download':       self.download,
+             'exists':         self.exists,
            }
 
         self.__commandSN = 0
@@ -450,6 +451,24 @@ class NetStorageConsole:
                     return
                 else:
                     raise Exception( "Unexpected UTTP packet type" )
+
+    def exists( self, arguments ):
+        " Tells if an object exists "
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
+            return
+
+        fileID = arguments[ 0 ]
+        message = { 'Type':         'EXISTS',
+                    'SessionID':    '1111111111111111_0000SID',
+                    'ClientIP':     hostIP,
+                    'FileID':       fileID }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
 
     def sendGetObjectInfo( self, arguments ):
         print "Not implemented yet"

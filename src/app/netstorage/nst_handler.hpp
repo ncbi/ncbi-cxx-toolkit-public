@@ -197,6 +197,8 @@ private:
 private:
     TNetStorageFlags  x_ConvertStorageFlags(const SStorageFlags &  flags);
     bool x_CheckNonAnonymousClient(const SCommonRequestArguments &  common_args);
+    bool x_CheckFileID(const string &                   file_id,
+                       const SCommonRequestArguments &  common_args);
     bool x_CheckICacheSettings(const SICacheSettings &          icache_settings,
                                const SCommonRequestArguments &  common_args);
     bool x_CheckUserKey(const SUserKey &                 user_key,

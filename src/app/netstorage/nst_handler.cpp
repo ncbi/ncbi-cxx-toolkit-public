@@ -931,16 +931,8 @@ CNetStorageHandler::x_ProcessRead(
     CNetFile    net_file;
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");
-        if (file_id.empty()) {
-            CJsonNode   response = CreateErrorResponseMessage(
-                                            common_args.m_SerialNumber,
-                                            eInvalidArguments,
-                                            "FileID must not be an empty string");
-            x_SetCmdRequestStatus(eStatus_BadRequest);
-            x_SendSyncMessage(response);
-            x_PrintMessageRequestStop();
+        if (!x_CheckFileID(file_id, common_args))
             return;
-        }
 
         net_file = g_CreateNetStorage(0).Open(file_id, 0);
     } else {
@@ -1007,16 +999,8 @@ CNetStorageHandler::x_ProcessDelete(
     // Take the argument
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");
-        if (file_id.empty()) {
-            CJsonNode   response = CreateErrorResponseMessage(
-                                            common_args.m_SerialNumber,
-                                            eInvalidArguments,
-                                            "FileID must not be an empty string");
-            x_SetCmdRequestStatus(eStatus_BadRequest);
-            x_SendSyncMessage(response);
-            x_PrintMessageRequestStop();
+        if (!x_CheckFileID(file_id, common_args))
             return;
-        }
 
         CNetStorage net_storage(g_CreateNetStorage(0));
         net_storage.Remove(file_id);
@@ -1061,16 +1045,8 @@ CNetStorageHandler::x_ProcessRelocate(
     // Take the argument
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");
-        if (file_id.empty()) {
-            CJsonNode   response = CreateErrorResponseMessage(
-                                            common_args.m_SerialNumber,
-                                            eInvalidArguments,
-                                            "FileID must not be an empty string");
-            x_SetCmdRequestStatus(eStatus_BadRequest);
-            x_SendSyncMessage(response);
-            x_PrintMessageRequestStop();
+        if (!x_CheckFileID(file_id, common_args))
             return;
-        }
 
         // TODO: What to do with this FileID?
 
@@ -1114,6 +1090,44 @@ CNetStorageHandler::x_ProcessExists(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+
+    if (!x_CheckNonAnonymousClient(common_args))
+        return;
+
+    bool        exists = false;
+
+    // Take the argument
+    if (message.HasKey("FileID")) {
+        string  file_id = message.GetString("FileID");
+        if (!x_CheckFileID(file_id, common_args))
+            return;
+
+        CNetStorage net_storage(g_CreateNetStorage(0));
+        exists = net_storage.Exists(file_id);
+    } else {
+        SStorageFlags       storage_flags = ExtractStorageFlags(message);
+        SICacheSettings     icache_settings = ExtractICacheSettings(message);
+        SUserKey            user_key = ExtractUserKey(message);
+
+        // Check the parameters validity
+        if (!x_CheckICacheSettings(icache_settings, common_args))
+            return;
+        if (!x_CheckUserKey(user_key, common_args))
+            return;
+
+        // Convert received flags into TNetStorageFlags
+        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
+
+        // Create the object stream depending on settings
+        exists = x_CreateNetStorageByKey(icache_settings, user_key).Exists(
+                                                    user_key.m_UniqueID, flags);
+    }
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    reply.SetBoolean("Exists", exists);
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -1151,6 +1165,24 @@ CNetStorageHandler::x_CheckNonAnonymousClient(
                                         eHelloRequired,
                                         "Anonymous client cannot perform "
                                         "I/O operations with objects");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return false;
+    }
+    return true;
+}
+
+
+bool
+CNetStorageHandler::x_CheckFileID(const string &                   file_id,
+                                  const SCommonRequestArguments &  common_args)
+{
+    if (file_id.empty()) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "FileID must not be an empty string");
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_SendSyncMessage(response);
         x_PrintMessageRequestStop();
