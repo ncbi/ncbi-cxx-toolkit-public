@@ -927,7 +927,7 @@ CNetStorageHandler::x_ProcessRead(
     if (!x_CheckNonAnonymousClient(common_args))
         return;
 
-    // Take the argument
+    // Take the arguments
     CNetFile    net_file;
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");
@@ -1137,6 +1137,41 @@ CNetStorageHandler::x_ProcessGetSize(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+
+    if (!x_CheckNonAnonymousClient(common_args))
+        return;
+
+    // Take the arguments
+    CNetFile    net_file;
+    if (message.HasKey("FileID")) {
+        string  file_id = message.GetString("FileID");
+        if (!x_CheckFileID(file_id, common_args))
+            return;
+
+        net_file = g_CreateNetStorage(0).Open(file_id, 0);
+    } else {
+        SStorageFlags       storage_flags = ExtractStorageFlags(message);
+        SICacheSettings     icache_settings = ExtractICacheSettings(message);
+        SUserKey            user_key = ExtractUserKey(message);
+
+        // Check the parameters validity
+        if (!x_CheckICacheSettings(icache_settings, common_args))
+            return;
+        if (!x_CheckUserKey(user_key, common_args))
+            return;
+
+        // Convert received flags into TNetStorageFlags
+        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
+
+        // Create the object stream depending on settings
+        net_file = x_CreateObjectStream(icache_settings, user_key, flags);
+    }
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    reply.SetInteger("Size", net_file.GetSize());
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 

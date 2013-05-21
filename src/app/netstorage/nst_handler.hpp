@@ -75,7 +75,7 @@ public:
         eStatus_OK                  = 200, // Command is ok and execution is good
 
         eStatus_BadRequest          = 400, // Command is incorrect
-        eStatus_NotFound            = 404, // Job is not found
+        eStatus_NotFound            = 404, // Object is not found
         eStatus_Inactive            = 408, // Connection was closed due to inactivity
                                            // timeout
         eStatus_SocketIOError       = 499, // Error writing to socket
@@ -164,35 +164,35 @@ private:
     // Individual message processors
     // The return value is how many bytes are expected as raw data
     void x_ProcessBye(const CJsonNode &                message,
-                        const SCommonRequestArguments &  common_args);
+                      const SCommonRequestArguments &  common_args);
     void x_ProcessHello(const CJsonNode &                message,
-                          const SCommonRequestArguments &  common_args);
+                        const SCommonRequestArguments &  common_args);
     void x_ProcessInfo(const CJsonNode &                message,
-                         const SCommonRequestArguments &  common_args);
+                       const SCommonRequestArguments &  common_args);
     void x_ProcessConfiguration(const CJsonNode &                message,
-                                  const SCommonRequestArguments &  common_args);
+                                const SCommonRequestArguments &  common_args);
     void x_ProcessShutdown(const CJsonNode &                message,
-                             const SCommonRequestArguments &  common_args);
+                           const SCommonRequestArguments &  common_args);
     void x_ProcessGetClientsInfo(const CJsonNode &                message,
-                                   const SCommonRequestArguments &  common_args);
+                                 const SCommonRequestArguments &  common_args);
     void x_ProcessGetObjectInfo(const CJsonNode &                message,
-                                  const SCommonRequestArguments &  common_args);
+                                const SCommonRequestArguments &  common_args);
     void x_ProcessGetAttr(const CJsonNode &                message,
-                            const SCommonRequestArguments &  common_args);
-    void x_ProcessSetAttr(const CJsonNode &                message,
-                            const SCommonRequestArguments &  common_args);
-    void x_ProcessRead(const CJsonNode &                message,
-                         const SCommonRequestArguments &  common_args);
-    void x_ProcessWrite(const CJsonNode &                message,
                           const SCommonRequestArguments &  common_args);
+    void x_ProcessSetAttr(const CJsonNode &                message,
+                          const SCommonRequestArguments &  common_args);
+    void x_ProcessRead(const CJsonNode &                message,
+                       const SCommonRequestArguments &  common_args);
+    void x_ProcessWrite(const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args);
     void x_ProcessDelete(const CJsonNode &                message,
-                           const SCommonRequestArguments &  common_args);
+                         const SCommonRequestArguments &  common_args);
     void x_ProcessRelocate(const CJsonNode &                message,
-                             const SCommonRequestArguments &  common_args);
-    void x_ProcessExists(const CJsonNode &                message,
                            const SCommonRequestArguments &  common_args);
+    void x_ProcessExists(const CJsonNode &                message,
+                         const SCommonRequestArguments &  common_args);
     void x_ProcessGetSize(const CJsonNode &                 message,
-                            const SCommonRequestArguments &  common_args);
+                          const SCommonRequestArguments &  common_args);
 
 private:
     TNetStorageFlags  x_ConvertStorageFlags(const SStorageFlags &  flags);
