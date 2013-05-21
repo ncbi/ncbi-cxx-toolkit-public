@@ -668,6 +668,11 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
 
     if(line[0]=='>') {
       if( acc.size() ) {
+        // close off the previous acc
+
+        // warn if acc could also be an accession
+        OverrideLenIfAccession(acc, len);
+
         prev_len =  m_comp2len.AddCompLen(acc, len);
         if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len, false);
         if(prev_len) goto LengthRedefinedFa;
@@ -746,6 +751,7 @@ void CAgpValidateApplication::x_LoadLenFa(CNcbiIstream& istr, const string& file
   }
 
   if( acc.size() ) {
+    // close off the last acc
     prev_len =  m_comp2len.AddCompLen(acc, len);
     if(acc_long!=acc) prev_len =  m_comp2len.AddCompLen(acc_long, len, false);
     if(prev_len) goto LengthRedefinedFa;

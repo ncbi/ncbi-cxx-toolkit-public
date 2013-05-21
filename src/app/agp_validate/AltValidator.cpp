@@ -28,6 +28,7 @@
  *
  * File Description:
  *      Check component Accession, Length and Taxid using info from GenBank.
+ *      "Alt" does NOT stand for "alternative", but "Accession, Length and Taxid".
  *
  */
 
@@ -576,7 +577,38 @@ string ExtractAccession(const string& long_acc)
   }
 }
 
+void OverrideLenIfAccession(const string & acc, int & in_out_len)
+{
+    // if the acc is in Genbank, we override it as necessary
 
+    try {
+        CRef<CSeq_id> temp_seq_id( new CSeq_id(acc) );
+        if( temp_seq_id->IsLocal() ) {
+            return;
+        }
+
+        CSeq_id::EAccessionInfo fAccnInfo = temp_seq_id->IdentifyAccession();
+        const bool bAccnIsProtOnly = ( 
+            (fAccnInfo & CSeq_id::fAcc_prot) &&
+            ! (fAccnInfo & CSeq_id::fAcc_nuc));
+        if ( bAccnIsProtOnly ) {
+            return;
+        }
+
+        if( ! m_Scope ) {
+            return;
+        }
+
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*temp_seq_id);
+        if( bsh ) {
+            in_out_len = bsh.GetInst_Length();
+            cerr << "WARNING: '" << acc << "' was found in component files but Genbank version overrides it." << endl;
+        }
+
+    } catch(CSeqIdException & ) {
+        // it's not an accession, so just continue
+    }
+}
 
 END_NCBI_SCOPE
 

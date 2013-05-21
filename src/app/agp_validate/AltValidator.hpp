@@ -144,9 +144,10 @@ public:
   void QueryAccessions();
 };
 
-// This really should be in agp_validate.cpp, but gcc inexplicably balks, saying:
+// These really should be in agp_validate.cpp, but gcc inexplicably balks, saying:
 //   `CSeq_id' undeclared! `CBioseq' has not been declared!
 string ExtractAccession(const string& long_acc);
+void OverrideLenIfAccession(const string & acc, int & in_out_len);
 
 END_NCBI_SCOPE
 
