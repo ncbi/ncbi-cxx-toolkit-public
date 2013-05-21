@@ -1113,7 +1113,7 @@ void s_HtmlizeLatLon( string &subname ) {
         } else if( lat_num > 90.0 ) {
             lat = "90";
         }
-    } catch( ... ) {
+    } catch( CStringException & ) {
         // error parsing numbers
         return;
     }
