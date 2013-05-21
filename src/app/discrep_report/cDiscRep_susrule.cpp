@@ -1445,6 +1445,21 @@ bool CSuspectRuleCheck :: DoesStringMatchConstraint(const string& str, const CSt
   else return rval;
 };
 
+bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_letter, char second_to_last_letter)
+{
+   unsigned len = word.size();
+   if (last_letter == 's') {
+      if (len >= 5) 
+        if (word.substr(len-5) == "trans") return false; // not plural;
+      else if (len > 3) {
+        if (second_to_last_letter != 's' && second_to_last_letter != 'i'
+                                               && second_to_last_letter != 'u')
+           return true;
+      }
+   }
+   else return false;
+};
+
 bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
 {
   char    last_letter, second_to_last_letter;
@@ -1455,40 +1470,23 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
 
   if (str.empty()) return false;
   string search = str;
-  while (!search.empty() && !may_contain_plural) {
-    word_len = search.find_first_of(" ,");
-    if (!word_len) {
-           last_letter = second_to_last_letter = next_letter = ' ';
-    }
-    else if (word_len == string::npos) {
-         last_letter = search[search.size()-1];
-         second_to_last_letter = search[search.size()-2];
-         next_letter = ' ';
-    }
-    else {
-      last_letter = search[word_len -1];
-      second_to_last_letter = search[word_len -2];
-      if (word_len < search.size()) next_letter = search[word_len+1];
-      else next_letter = ' ';
-    }
-    if (last_letter == 's') {
-      if (word_len >=5 && NStr::EqualCase(search.substr(word_len-5), 0, 5, "trans")) {
-        /* not plural */
-        search = search.substr(word_len);
-        search = search.substr(search.find_first_not_of(word_skip));
-      } else if (word_len > 3
-                 && second_to_last_letter != 's'
-                 && second_to_last_letter != 'i'
-                 && second_to_last_letter != 'u'
-                 && (next_letter == ',' || next_letter == ' ')) {
-        may_contain_plural = true;
-      } else {
-        search = search.substr(word_len);
-        search = search.substr(search.find_first_not_of(word_skip));
-      }
-    } else {
-      search = search.substr(word_len);
-      search = search.substr(search.find_first_not_of(word_skip));
+  vector <string> arr;
+  arr = NStr::Tokenize(str, " ,", arr);
+  if (arr.size() == 1) { // doesn't have ',', or the last char is ','
+     strtmp = arr[0];
+     last_letter = strtmp[strtmp.size()-1];
+     second_to_last_letter = strtmp[strtmp.size()-2]; 
+     may_contain_plural 
+         = x_DoesStrContainPlural(strtmp, last_letter, second_to_last_letter);
+  }
+  else {
+    ITERATE (vector <string>, it, arr) {
+       strtmp = *it;
+       last_letter = strtmp[strtmp.size()-1];
+       second_to_last_letter = strtmp[strtmp.size()-2];
+       may_contain_plural 
+         = x_DoesStrContainPlural(strtmp, last_letter, second_to_last_letter);
+       if (may_contain_plural) break;
     }
   }
   return may_contain_plural;
@@ -3703,9 +3701,9 @@ bool CSuspectRuleCheck :: DoesObjectMatchConstraintChoiceSet(const CSeq_feat& fe
   return true;
 };
 
-bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const string& str, const CSeq_feat& feat, const CSuspect_rule& rule)
+bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& bioseq_hl, const string& str, const CSeq_feat& feat, const CSuspect_rule& rule)
 {
-  m_bioseq_hl = GetBioseqFromSeqLoc(feat.GetLocation(), *thisInfo.scope);
+  m_bioseq_hl = bioseq_hl;
   if (MatchesSuspectProductRule(str, rule)) {
     const CSeq_feat* feat_pnt = const_cast <CSeq_feat*>(&feat);
     /* we want to list the coding region, rather than the protein feature, if we can */

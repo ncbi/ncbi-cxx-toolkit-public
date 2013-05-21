@@ -114,9 +114,9 @@ namespace DiscRepNmSpc{
          {
             NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category)
 {
-//cerr << "GetNAme " << (*it)->GetName() << endl;
+cerr << "GetNAme " << (*it)->GetName() << endl;
                   (*it)->TestOnObj(obj);
-//cerr << "done\n";
+cerr << "done\n";
 }
          };
 

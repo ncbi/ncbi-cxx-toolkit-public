@@ -182,8 +182,8 @@ namespace DiscRepNmSpc {
 
       static CBioseq_Handle m_bioseq_hl;  // ?? how about reference?
 
-      bool DoesStringMatchSuspectRule(const string& str, const CSeq_feat& feat,
-                                                          const CSuspect_rule& rule);
+      bool DoesStringMatchSuspectRule(const CBioseq_Handle& bioseq_hl, const string& str, 
+                                             const CSeq_feat& feat, const CSuspect_rule& rule);
       // string ~ rule/constraint
       bool MatchesSuspectProductRule(const string& str, const CSuspect_rule& rule);
       bool IsSearchFuncEmpty(const CSearch_func& func);
@@ -356,6 +356,9 @@ namespace DiscRepNmSpc {
                                                  const CTranslation_constraint& trans_cons);
       bool DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 
                                                   const CLocation_constraint& loc_cons);
+    protected:
+      bool x_DoesStrContainPlural(const string& word, char last_letter, 
+                                                         char second_to_last_letter);
   };
 
   class CDiscRepUtil
@@ -1934,8 +1937,9 @@ namespace DiscRepNmSpc {
           fNameTypo = 1 << 1,
           fNameQuickfix = 1 << 2
       };
+      typedef int TSusTestFlags;
 
-      CBioseq_on_SUSPECT_RULE (ESusTestFlags enabled_tests) : m_tests(enabled_tests) {};
+      CBioseq_on_SUSPECT_RULE (TSusTestFlags enabled_tests) : m_tests(enabled_tests) {};
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
@@ -1945,7 +1949,7 @@ namespace DiscRepNmSpc {
     protected:
       CBioseq_Handle m_bioseq_hl;
       Str2Strs m_feature_list;
-      ESusTestFlags m_tests;
+      TSusTestFlags m_tests;
 
       bool CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type);
       void FindSuspectProductNamesCallback();

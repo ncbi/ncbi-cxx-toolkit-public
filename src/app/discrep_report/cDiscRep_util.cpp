@@ -612,7 +612,8 @@ bool CTestAndRepData :: HasTaxonomyID(const CBioSource& biosrc)
 
 bool CDiscRepUtil :: IsAllCaps(const string& str)  // may include # etc non-character
 {
-  string up_str = NStr::ToUpper(const_cast <string&> (str));
+  string up_str = str;
+  up_str = NStr::ToUpper(up_str);
   if (up_str == str) return true;
   else return false;
 };
