@@ -986,7 +986,7 @@ bool CJsonOverUTTPWriter::x_SendNode(const CJsonNode& node)
 
 void CJsonOverUTTPWriter::x_PushNode(const CJsonNode& node)
 {
-    if (!m_CurrentOutputNode.m_Node);
+    if (m_CurrentOutputNode.m_Node)
         m_OutputStack.push_back(m_CurrentOutputNode);
     m_CurrentOutputNode.m_Node = node;
 }
