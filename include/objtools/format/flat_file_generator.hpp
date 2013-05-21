@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
+#include <objtools/format/item_ostream.hpp>
 #include <objtools/format/context.hpp>
 
 
@@ -92,6 +93,27 @@ public:
     //void Reset(void);
 protected:
     CRef<CFlatFileContext>    m_Ctx;
+
+    /// Use this class to wrap CFlatItemOStream instances so that they
+    /// check if canceled for every item added
+    class CCancelableFlatItemOStreamWrapper : public CFlatItemOStream
+    {
+    public:
+        CCancelableFlatItemOStreamWrapper( 
+            CFlatItemOStream & underlying, 
+            const ICanceled* pCanceledCallback )
+            : m_pUnderlying(&underlying),
+              m_pCanceledCallback(pCanceledCallback)
+        { }
+
+        virtual void SetFormatter(IFormatter* formatter);
+        virtual void AddItem (CConstRef<IFlatItem> item);
+
+    private:
+        CRef<CFlatItemOStream> m_pUnderlying;
+        // Raw pointer because we do NOT own it
+        const ICanceled * m_pCanceledCallback;
+    };
 
     // forbidden
     CFlatFileGenerator(const CFlatFileGenerator&);

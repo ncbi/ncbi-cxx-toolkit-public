@@ -56,6 +56,7 @@
 #include <objtools/format/items/tsa_item.hpp>
 #include <objtools/format/items/version_item.hpp>
 #include <objtools/format/items/wgs_item.hpp>
+#include <objtools/format/flat_expt.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -302,11 +303,13 @@ CFlatFileConfig::CFlatFileConfig(
     TView view,
     TGffOptions gff_options,
     TGenbankBlocks genbank_blocks,
-    CGenbankBlockCallback* pGenbankBlockCallback ) :
+    CGenbankBlockCallback* pGenbankBlockCallback,
+    const ICanceled * pCanceledCallback ) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
     m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options),
     m_fGenbankBlocks(genbank_blocks),
-    m_GenbankBlockCallback(pGenbankBlockCallback)
+    m_GenbankBlockCallback(pGenbankBlockCallback),
+    m_pCanceledCallback(pCanceledCallback)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
@@ -474,6 +477,13 @@ CFlatFileConfig::GetAllGenbankStrings(void)
     }
 
     return s_vecOfGenbankStrings;
+}
+
+void
+CFlatFileConfig::x_ThrowHaltNow(void) const
+{
+    NCBI_THROW(CFlatException, eHaltRequested,
+        "FlatFile Generation canceled" );
 }
 
 END_SCOPE(objects)

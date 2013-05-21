@@ -32,6 +32,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_signal.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -103,12 +104,14 @@ private:
     void x_GetLocation(const CSeq_entry_Handle& entry,
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
+    void x_CreateCancelBenchmarkCallback(void);
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
     CNcbiOstream*               m_Os;           // Output stream
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
+    auto_ptr<ICanceled>         m_pCanceledCallback;
 };
 
 
@@ -283,9 +286,22 @@ void CAsn2FlatApp::Init(void)
                            "Do not perform data cleanup prior to formatting");
          // remote
          arg_desc->AddFlag("gbload", "Use GenBank data loader");
-
      }}
-    SetupArgDescriptions(arg_desc.release());
+
+     // debugging options
+     {{
+         arg_desc->SetCurrentGroup("Debugging Options - Subject to change or removal without warning");
+
+         // benchmark cancel-checking
+         arg_desc->AddFlag(
+             "benchmark-cancel-checking",
+             "Check statistics on how often the flatfile generator checks if "
+             "it should be canceled.  This also sets up SIGUSR1 to trigger "
+             "cancellation." );
+     }}
+
+     arg_desc->SetCurrentGroup(kEmptyStr);
+     SetupArgDescriptions(arg_desc.release());
 }
 
 
@@ -295,6 +311,8 @@ int CAsn2FlatApp::Run(void)
     CONNECT_Init(&GetConfig());
 
     const CArgs&   args = GetArgs();
+
+    CSignal::TrapSignals(CSignal::eSignal_USR1);
 
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
@@ -637,7 +655,13 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
-    CFlatFileConfig cfg(format, mode, style, flags, view, gff_options, genbank_blocks, genbank_callback.GetPointerOrNull() );
+    if( args["benchmark-cancel-checking"] ) {
+        x_CreateCancelBenchmarkCallback();
+    }
+
+    CFlatFileConfig cfg(
+        format, mode, style, flags, view, gff_options, genbank_blocks, 
+        genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get() );
     return new CFlatFileGenerator(cfg);
 }
 
@@ -1046,6 +1070,161 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
             "Cannot deduce target bioseq.");
 }
 
+void
+CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
+{
+    // This ICanceled interface always says "keep going"
+    // unless SIGUSR1 is received,
+    // and it keeps statistics on how often it is checked
+    class CCancelBenchmarking : public ICanceled {
+    public:
+        CCancelBenchmarking(void)
+            : m_TimeOfLastCheck(CTime::eCurrent)
+        {
+        }
+
+
+        ~CCancelBenchmarking(void)
+        {
+            // On destruction, we call "IsCanceled" one more time to make
+            // sure there wasn't a point where we stopped
+            // checking IsCanceled.
+            IsCanceled();
+
+            // print statistics
+            cerr << "##### Cancel-checking benchmarks:" << endl;
+            cerr << endl;
+
+            // maybe cancelation was never checked:
+            if( m_GapSizeMap.empty() ) {
+                cerr << "NO DATA" << endl;
+                return;
+            }
+
+            cerr << "(all times in milliseconds)" << endl;
+            cerr << endl;
+            // easy stats
+            cerr << "Min: " << m_GapSizeMap.begin()->first << endl;
+            cerr << "Max: " << m_GapSizeMap.rbegin()->first << endl;
+
+            // find average
+            Int8   iTotalMsecs = 0;
+            size_t uTotalCalls = 0;
+            ITERATE( TGapSizeMap, gap_size_it, m_GapSizeMap ) {
+                iTotalMsecs += gap_size_it->first * gap_size_it->second;
+                uTotalCalls += gap_size_it->second;
+            }
+            cerr << "Avg: " << (iTotalMsecs / uTotalCalls) << endl;
+
+            // find median
+            const size_t uIdxWithMedian = (uTotalCalls / 2);
+            size_t uCurrentIdx = 0;
+            ITERATE( TGapSizeMap, gap_size_it, m_GapSizeMap ) {
+                uCurrentIdx += gap_size_it->second;
+                if( uCurrentIdx >= uIdxWithMedian ) {
+                    cerr << "Median: " << gap_size_it->first << endl;
+                    break;
+                }
+            }
+
+            // first few
+            cerr << "Chronologically first few check times: " << endl;
+            copy( m_FirstFewGaps.begin(),
+                m_FirstFewGaps.end(),
+                ostream_iterator<Int8>(cerr, "\n") );
+
+            // last few
+            cerr << "Chronologically last few check times: " << endl;
+            TGapSizeMap::const_iterator gap_size_it =
+                m_GapSizeMap.begin();
+            copy( m_LastFewGaps.begin(),
+                m_LastFewGaps.end(),
+                ostream_iterator<Int8>(cerr, "\n") );
+
+            // slowest few and fastest few
+            cerr << "Frequency distribution of slowest and fastest lookup times: " << endl;
+            cerr << "\t" << "Time" << "\t" << "Count" << endl;
+            if( m_GapSizeMap.size() <= (2 * x_kGetNumToSaveAtStartAndEnd()) ) {
+                // if small enough, show the whole table at once
+                ITERATE( TGapSizeMap, gap_size_it, m_GapSizeMap ) {
+                    cerr << "\t" << gap_size_it ->first << "\t" << gap_size_it->second << endl;
+                }
+            } else {
+                // table is big so only show the first few and the last few
+                TGapSizeMap::const_iterator gap_size_it = m_GapSizeMap.begin();
+                ITERATE_SIMPLE(x_kGetNumToSaveAtStartAndEnd()) {
+                    cerr << "\t" << gap_size_it ->first << "\t" << gap_size_it->second << endl;
+                    ++gap_size_it;
+                }
+
+                cout << "\t...\t..." << endl;
+
+                TGapSizeMap::reverse_iterator gap_size_rit = m_GapSizeMap.rbegin();
+                ITERATE_SIMPLE(x_kGetNumToSaveAtStartAndEnd()) {
+                    cerr << "\t" << gap_size_it ->first << "\t" << gap_size_it->second << endl;
+                    ++gap_size_rit;
+                }
+            }
+
+            // total checks
+            cerr << "Num checks: " << uTotalCalls << endl;
+        }
+
+
+        virtual bool IsCanceled(void) const 
+        {
+            // getting the current time should be the first
+            // command in this function.
+            CTime timeOfThisCheck(CTime::eCurrent);
+
+            const double dDiffInNsecs = 
+                timeOfThisCheck.DiffNanoSecond(m_TimeOfLastCheck);
+            const Int8 iDiffInMsecs = static_cast<Int8>(dDiffInNsecs / 1000000.0);
+
+            ++m_GapSizeMap[iDiffInMsecs];
+
+            if( m_FirstFewGaps.size() < x_kGetNumToSaveAtStartAndEnd() ) {
+                m_FirstFewGaps.push_back(iDiffInMsecs);
+            }
+
+            m_LastFewGaps.push_back(iDiffInMsecs);
+            if( m_LastFewGaps.size() > x_kGetNumToSaveAtStartAndEnd() ) {
+                m_LastFewGaps.pop_front();
+            }
+
+            if( iDiffInMsecs > 100 ) {
+                int ii = 42; // just for putting a breakpoint here
+            }
+
+            const bool bIsCanceled = 
+                CSignal::IsSignaled(CSignal::eSignal_USR1);
+            if( bIsCanceled ) {
+                cerr << "Canceled by SIGUSR1" << endl;
+            }
+
+            // resetting m_TimeOfLastCheck should be the last command
+            // in this function
+            m_TimeOfLastCheck.SetCurrent();
+            return bIsCanceled;
+        }
+
+    private:
+        // local classes do not allow static fields
+        size_t x_kGetNumToSaveAtStartAndEnd(void) const { return 10; }
+
+        mutable CTime m_TimeOfLastCheck;
+        // The key is the gap between checks in milliseconds,
+        // (which is more than enough resolution for a human-level action)
+        // and the value is the number of times a gap of that size occurred.
+        typedef map<Int8, size_t> TGapSizeMap;
+        mutable TGapSizeMap m_GapSizeMap;
+
+        mutable vector<Int8> m_FirstFewGaps;
+        mutable list<Int8>   m_LastFewGaps;
+    };
+
+    m_pCanceledCallback.reset( new CCancelBenchmarking );
+}
 
 END_NCBI_SCOPE
 

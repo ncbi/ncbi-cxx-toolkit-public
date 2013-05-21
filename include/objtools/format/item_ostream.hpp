@@ -52,7 +52,9 @@ public:
     // NB: formatter must be allocated on the heap!
     CFlatItemOStream(IFormatter* formatter = 0);
 
-    void SetFormatter(IFormatter* formatter);
+    /// If a subclass overrides this, it must call the parent
+    /// class's version as its first action.
+    virtual void SetFormatter(IFormatter* formatter);
 
     // NB: item must be allocated on the heap!
     virtual void AddItem(CConstRef<IFlatItem> item) = 0;

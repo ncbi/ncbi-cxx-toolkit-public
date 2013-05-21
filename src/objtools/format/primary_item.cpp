@@ -248,6 +248,8 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
             str += '\n';
             str += s;
             s.erase();
+
+            ctx.ThrowIfCanceled();
         }
         last_stop = this_stop;
 

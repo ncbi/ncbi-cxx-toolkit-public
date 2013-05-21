@@ -230,6 +230,10 @@ public:
     bool HasOperon(void) const;
     bool HasMultiIntervalGenes(void) const;
 
+    /// Checks if CFlatFileConfig has an ICanceled, and throws
+    /// if it indicates cancellation.
+    void ThrowIfCanceled(void) const;
+
     // Empty string if unavailable
     const string & GetTaxname(void) const { return m_Taxname; }
 
@@ -643,6 +647,12 @@ inline
 bool CBioseqContext::HasMultiIntervalGenes(void) const
 {
     return m_HasMultiIntervalGenes;
+}
+
+inline
+void CBioseqContext::ThrowIfCanceled(void) const
+{
+    Config().ThrowIfCanceled();
 }
 
 // -------- CFlatFileContext

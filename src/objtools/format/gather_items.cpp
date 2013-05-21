@@ -340,6 +340,11 @@ void CFlatGatherer::x_GatherBioseq(
         return;
     }
 
+    if( m_pCanceledCallback && m_pCanceledCallback->IsCanceled() ) {
+        NCBI_THROW(CFlatException, eHaltRequested, 
+                   "FlatFileGeneration canceled by ICancel callback");
+    }
+
     // Do multiple sections (segmented style) if:
     // a. the bioseq is segmented and has near parts
     // b. style is normal or segmented (not master)

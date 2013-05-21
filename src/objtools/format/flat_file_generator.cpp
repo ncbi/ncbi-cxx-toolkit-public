@@ -102,11 +102,24 @@ SAnnotSelector& CFlatFileGenerator::SetAnnotSelector(void)
 
 
 // Generate a flat-file report for a Seq-entry
+// (the other CFlatFileGenerator::Generate functions ultimately
+// call this)
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CFlatItemOStream& item_os)
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
+
+    CRef<CFlatItemOStream> pItemOS( & item_os );
+    // If there is a ICancel callback, wrap the item_os so
+    // that every call checks it.
+    const ICanceled * pCanceled = 
+        m_Ctx->GetConfig().GetCanceledCallback();
+    if( pCanceled ) {
+        pItemOS.Reset( 
+            new CCancelableFlatItemOStreamWrapper(
+            item_os, pCanceled) );
+    }
 
     /// archive a copy of the annot selector before we generate!
     SAnnotSelector sel = m_Ctx->SetAnnotSelector();
@@ -118,13 +131,13 @@ void CFlatFileGenerator::Generate
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
     }
     formatter->SetContext(*m_Ctx);
-    item_os.SetFormatter(formatter);
+    pItemOS->SetFormatter(formatter);
 
     CRef<CFlatGatherer> gatherer(CFlatGatherer::New(format));
     if ( !gatherer ) {
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
     }
-    gatherer->Gather(*m_Ctx, item_os);
+    gatherer->Gather(*m_Ctx, *pItemOS);
 
     /// reset the context, but preserve our selector
     /// we do this a bit oddly since resetting the context erases the selector;
@@ -299,6 +312,24 @@ string CFlatFileGenerator::GetSeqFeatText
     return text;
 }
 
+void 
+CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::SetFormatter(
+    IFormatter* formatter)
+{
+    CFlatItemOStream::SetFormatter(formatter);
+    m_pUnderlying->SetFormatter(formatter);
+}
+
+void
+CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::AddItem(
+    CConstRef<IFlatItem> item) 
+{
+    if( m_pCanceledCallback && m_pCanceledCallback->IsCanceled() ) {
+        NCBI_THROW(CFlatException, eHaltRequested, 
+            "FlatFileGeneration canceled by ICancel callback");
+    }
+    m_pUnderlying->AddItem(item);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

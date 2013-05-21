@@ -77,14 +77,22 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
     CSeqVector v(ctx.GetLocation(), ctx.GetHandle().GetScope(),
                  CBioseq_Handle::eCoding_Iupac);
     const size_t COUNT = kMax_UChar+1;
-    TSeqPos counters[COUNT];
-    for ( size_t i = 0; i < COUNT; ++i) {
-        counters[i] = 0;
-    }
+    TSeqPos counters[COUNT] = {}; // "{}" will set all counters to zero
+
+    // every how many bases do we check if the flatfile generator is canceled?
+    // (feel free to adjust this number if it makes things faster)
+    const static TSeqPos kCancelCheckBases = 4096;
 
     CSeqVector_CI it(v, 0, CSeqVector_CI::eCaseConversion_lower);
-    for ( TSeqPos count = v.size(); count; --count, ++it ) {
-        ++counters[*it];
+    TSeqPos count = v.size();
+    while ( count > 0 ) {
+        const TSeqPos uBasesToCopyRightNow = min( kCancelCheckBases, count );
+        ITERATE_SIMPLE(uBasesToCopyRightNow) {
+            ++counters[*it];
+            ++it;
+        }
+        count -= uBasesToCopyRightNow;
+        ctx.ThrowIfCanceled();
     }
     m_A = counters[Uchar('a')];
     m_C = counters[Uchar('c')];

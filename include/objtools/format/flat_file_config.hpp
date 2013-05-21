@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <util/icanceled.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -329,7 +330,8 @@ public:
                     TView   view = fViewNucleotides,
                     TGffOptions gff_options = fGffGTFCompat,
                     TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
-                    CGenbankBlockCallback* pGenbankBlockCallback = NULL );
+                    CGenbankBlockCallback* pGenbankBlockCallback = NULL,
+                    const ICanceled * pCanceledCallback = NULL );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -577,12 +579,27 @@ public:
     // return non-const callback even if the CFlatFileConfig is const
     CRef<CGenbankBlockCallback> GetGenbankBlockCallback(void) const { return m_GenbankBlockCallback; }
 
+    const ICanceled * GetCanceledCallback(void) const {
+        return m_pCanceledCallback;
+    }
+
+    /// This throws a CFlatException if 
+    /// flatfile generation cancellation has been requested via ICanceled.
+    void ThrowIfCanceled(void) const {
+        if( m_pCanceledCallback && m_pCanceledCallback->IsCanceled() ) {
+            // halt requested, so throw the appropriate exception
+            x_ThrowHaltNow();
+        }
+    }
+
 public:
     static const size_t SMARTFEATLIMIT = 1000000;
 
 private:
     // mode specific flags
     static const bool sm_ModeFlags[4][32];
+
+    void x_ThrowHaltNow(void) const;
 
     // data
     TFormat     m_Format;
@@ -594,6 +611,7 @@ private:
     TGffOptions m_GffOptions;
     TGenbankBlocks m_fGenbankBlocks;
     CRef<CGenbankBlockCallback> m_GenbankBlockCallback;
+    const ICanceled * m_pCanceledCallback; // instance does NOT own it
 };
 
 

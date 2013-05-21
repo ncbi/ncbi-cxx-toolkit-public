@@ -42,6 +42,9 @@
 #include <deque>
 
 BEGIN_NCBI_SCOPE
+
+class ICanceled;
+
 BEGIN_SCOPE(objects)
 
 
@@ -59,12 +62,16 @@ public:
 
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const;
 
+    virtual void SetCanceledCallback(const ICanceled* pCanceledCallback) {
+        m_pCanceledCallback = pCanceledCallback;
+    }
+
     virtual ~CFlatGatherer(void);
 
 protected:
     typedef CRange<TSeqPos> TRange;
 
-    CFlatGatherer(void) {}
+    CFlatGatherer(void) : m_pCanceledCallback(NULL) {}
 
     CFlatItemOStream& ItemOS     (void) const { return *m_ItemOS;  }
     CBioseqContext& Context      (void) const { return *m_Current; }
@@ -169,6 +176,9 @@ protected:
     mutable CRef<CFlatFileContext>   m_Context;
     mutable CRef<CBioseqContext>     m_Current;
     mutable TCommentVec              m_Comments;
+
+    // Raw pointer because we do NOT own it
+    const ICanceled * m_pCanceledCallback;
 
 private:
     CFlatGatherer(const CFlatGatherer&);
