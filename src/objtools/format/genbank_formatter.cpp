@@ -1703,6 +1703,8 @@ s_FormatRegularSequencePiece
     while ( total > 0 ) {
         char* linep = line + kSeqPosWidth;
 
+        // each seqpos is a bigger number than the last, so we
+        // don't have to worry about clearing out the old one
         s_FormatSeqPosBack(linep, base_count, kSeqPosWidth);
         if( bHtml ) {
             linep += length_of_span_before_base_count;
@@ -1770,7 +1772,9 @@ s_FormatRegularSequencePiece
         }
 
         *linep = 0;
-        text_os.AddLine( line, seq.GetObject() );
+        // CTempString avoids the cost of scanning "line"
+        CTempString tempStrLine(line, linep-line);
+        text_os.AddLine( tempStrLine, seq.GetObject() );
     }
 }
 
