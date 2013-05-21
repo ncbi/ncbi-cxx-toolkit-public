@@ -101,16 +101,28 @@ namespace {
                 return seq_id;
             }
 
+            // build what this would look like as a local ID
+            CRef<CSeq_id> pLocalSeqId( new CSeq_id );
+            pLocalSeqId->SetLocal().SetStr( str );
+
             // reject prot-only accessions, or accessions that aren't found
             CSeq_id::EAccessionInfo fAccnInfo = seq_id->IdentifyAccession();
-            const bool bAccnIsProtOnly = ( (fAccnInfo & CSeq_id::fAcc_prot) && ! (fAccnInfo & CSeq_id::fAcc_nuc));
-            if( bAccnIsProtOnly ||
-                ! m_pScope->GetBioseqHandle(*seq_id) ) 
+            const bool bAccnIsProtOnly = ( 
+                (fAccnInfo & CSeq_id::fAcc_prot) &&
+                ! (fAccnInfo & CSeq_id::fAcc_nuc));
+            const bool bSeqIdIsFound = ( m_pScope->GetBioseqHandle(*seq_id) );
+            if( bAccnIsProtOnly || ! bSeqIdIsFound ) 
             {
                 // fall back on local ID
-                CRef<CSeq_id> pLocalSeqId( new CSeq_id );
-                pLocalSeqId->SetLocal().SetStr( str );
                 return pLocalSeqId;
+            }
+
+            const bool bLocalSeqIdIsfound = ( 
+                m_pScope->GetBioseqHandle(*pLocalSeqId) );
+            if( bLocalSeqIdIsfound ) {
+                // print a warning that a local ID was overridden
+                cerr << "Warning: '" << str << "' was used as an accession, "
+                    "so the local component was ignored." << endl;
             }
 
             // everything looks fine, so return it
