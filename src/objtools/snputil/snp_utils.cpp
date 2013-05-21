@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Melvin Quintos
+ * Authors:  Melvin Quintos, Dmitry Rudnev
  *
  * File Description:
  *  Provides implementation of NSnp class. See snp_extra.hpp
@@ -141,6 +141,41 @@ int NSnp::GetLength(const CSeq_feat &feat)
     return length;
 }
 
+string NSnp::ClinSigAsString(const CVariation_ref& var)
+{
+    ITERATE (CVariation_ref::TPhenotype, pnt_iter, var.GetPhenotype()) {
+        if ((*pnt_iter)->CanGetClinical_significance()) {
+            return ClinSigAsString((*pnt_iter)->GetClinical_significance());
+        }
+    }
+}
+
+string NSnp::ClinSigAsString(TClinSigID ClinSigID)
+{
+    switch(ClinSigID)
+    {
+		case CPhenotype::eClinical_significance_non_pathogenic:
+			return "Benign";
+		case CPhenotype::eClinical_significance_probable_non_pathogenic:
+			return "Uncertain - likely benign";
+		case CPhenotype::eClinical_significance_probable_pathogenic:
+			return "Uncertain - likely pathogenic";
+		case CPhenotype::eClinical_significance_pathogenic:
+			return "Pathogenic";
+		case CPhenotype::eClinical_significance_drug_response:
+			return "Drug Rresponse";
+		case CPhenotype::eClinical_significance_histocompatibility:
+			return "Histocompatibility";
+		case CPhenotype::eClinical_significance_unknown:
+		case CPhenotype::eClinical_significance_untested:
+		case CPhenotype::eClinical_significance_other:
+		default:
+			return "Uncertain";
+    }
+    return "";
+}
+
+
 CSnpBitfield NSnp::GetBitfield(const CMappedFeat &mapped_feat)
 {
     return GetBitfield(mapped_feat.GetOriginalFeature());
@@ -225,7 +260,7 @@ bool NSNPVariationHelper::ConvertFeat(CVariation& Variation, const CSeq_feat& Sr
     pPlacement->SetLoc().Assign(SrcFeat.GetLocation());
     Variation.SetPlacements().push_back(pPlacement);
 
-    // save a copy of the bitfield since not every bit 
+    // save a copy of the bitfield since not every bit
     // currently is adequately represented in Variation
     CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
     if(bf.GetVersion() > 0) {
@@ -244,7 +279,7 @@ bool NSNPVariationHelper::ConvertFeat(CVariation_ref& Variation, const CSeq_feat
     if(!x_CommonConvertFeat(&Variation, SrcFeat))
         return false;
 
-    // save a copy of the bitfield since not every bit 
+    // save a copy of the bitfield since not every bit
     // currently is adequately represented in Variation
     CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
     if(bf.GetVersion() > 0) {
