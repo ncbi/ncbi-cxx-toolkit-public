@@ -90,8 +90,8 @@ public:
 
     CGenericSqlString(void) { }
     CGenericSqlString(const TBasicString& s) : TBasicString(s) { }
-    CGenericSqlString(const value_type* data,
-                      size_type len = TBasicString::npos)
+    CGenericSqlString(const value_type* data) : TBasicString(data) { }
+    CGenericSqlString(const value_type* data, size_type len)
         : TBasicString(data, len) { }
 
     size_type byte_count(void) const
