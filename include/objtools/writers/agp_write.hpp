@@ -56,7 +56,8 @@ AgpWrite(CNcbiOstream& os,
          const string& object_id,
          objects::CScope& scope,
          const vector<char>& component_types = vector<char>(),
-         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL,
+         int agp_version = 2);
 
 ///
 /// Write a bioseq in AGP format.
@@ -66,7 +67,8 @@ AgpWrite(CNcbiOstream& os,
          const objects::CBioseq_Handle& handle,
          const string& object_id,
          const vector<char>& component_types = vector<char>(),
-         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL,
+         int agp_version = 2);
 
 ///
 /// Write a location in AGP format
@@ -77,7 +79,8 @@ AgpWrite(CNcbiOstream& os,
          TSeqPos from, TSeqPos to,
          const string& object_id,
          const vector<char>& component_types = vector<char>(),
-         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL,
+         int agp_version = 2);
 
 ///
 /// Write a SeqMap in AGP format, using provided scope.
@@ -91,7 +94,8 @@ AgpWrite(CNcbiOstream& os,
          bool default_linkage,
          objects::CScope& scope,
          const vector<char>& component_types = vector<char>(),
-         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL,
+         int agp_version = 2);
 
 ///
 /// Write a bioseq in AGP format
@@ -104,7 +108,8 @@ AgpWrite(CNcbiOstream& os,
          const string& default_gap_type,
          bool default_linkage,
          const vector<char>& component_types = vector<char>(),
-         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL,
+         int agp_version = 2);
 
 ///
 /// Write a location in AGP format
@@ -118,7 +123,8 @@ AgpWrite(CNcbiOstream& os,
          const string& default_gap_type,
          bool default_linkage,
          const vector<char>& component_types = vector<char>(),
-         CAgpWriteComponentIdMapper * comp_id_mapper = NULL );
+         CAgpWriteComponentIdMapper * comp_id_mapper = NULL,
+         int agp_version = 2);
 
 
 END_NCBI_SCOPE
