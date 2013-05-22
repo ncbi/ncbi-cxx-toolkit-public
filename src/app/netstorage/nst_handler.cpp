@@ -996,7 +996,7 @@ CNetStorageHandler::x_ProcessDelete(
     if (!x_CheckNonAnonymousClient(common_args))
         return;
 
-    // Take the argument
+    // Take the arguments
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");
         if (!x_CheckFileID(file_id, common_args))
@@ -1042,14 +1042,34 @@ CNetStorageHandler::x_ProcessRelocate(
     if (!x_CheckNonAnonymousClient(common_args))
         return;
 
-    // Take the argument
+    // Take the arguments
+    if (!message.HasKey("NewLocation")) {
+        CJsonNode   response = CreateErrorResponseMessage(
+                                        common_args.m_SerialNumber,
+                                        eInvalidArguments,
+                                        "NewLocation argument is not found");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_SendSyncMessage(response);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    CJsonNode           new_location = message.GetByKey("NewLocation");
+    SStorageFlags       new_location_flags = ExtractStorageFlags(new_location);
+    TNetStorageFlags    new_loc_flags = x_ConvertStorageFlags(new_location_flags);
+    SICacheSettings new_location_icache_settings = ExtractICacheSettings(new_location);
+
+    if (!x_CheckICacheSettings(new_location_icache_settings, common_args))
+        return;
+
+
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");
         if (!x_CheckFileID(file_id, common_args))
             return;
 
-        // TODO: What to do with this FileID?
-
+        CNetStorage net_storage(g_CreateNetStorage(0));
+        net_storage.Relocate(file_id, new_loc_flags);
     } else {
         SStorageFlags       storage_flags = ExtractStorageFlags(message);
         SICacheSettings     icache_settings = ExtractICacheSettings(message);
@@ -1065,17 +1085,11 @@ CNetStorageHandler::x_ProcessRelocate(
         TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
 
         // Create the object stream depending on settings
-        m_ObjectStream = x_CreateObjectStream(icache_settings, user_key, flags);
+        x_CreateNetStorageByKey(icache_settings, user_key).Relocate(
+                user_key.m_UniqueID, new_loc_flags, flags);
     }
 
-
-    m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
-
-
-    // TODO: Implement relocate
-
-
-
+    m_ClientRegistry.AddObjectsRelocated(m_Client, 1 );
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
