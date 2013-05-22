@@ -65,6 +65,8 @@
 #undef NCBI_USE_ERRCODE_X
 #ifdef NCBI_OS_LINUX
 # include "../../corelib/ncbi_system.cpp"
+#undef NCBI_USE_ERRCODE_X
+#include "../../corelib/ncbi_os_unix.cpp"
 #elif defined(NCBI_OS_MSWIN)
 # undef NCBI_OS_MSWIN
 # include "../../corelib/ncbi_system.cpp"

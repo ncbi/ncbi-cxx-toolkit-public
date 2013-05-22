@@ -260,6 +260,13 @@ public:
     static bool IsCtxRunning(CRequestContext* ctx);
 
 public:
+    enum FOnForkAction {
+        fOnFork_PrintStart = 1 << 0,   ///< Log app-start.
+        fOnFork_ResetTimer = 1 << 1    ///< Reset execution timer.
+    };
+    typedef int TOnForkFlags;
+    static void UpdateOnFork(TOnForkFlags flags);
+
     static void UpdatePID(void);
 
     static const string& GetDefaultSessionID(void);

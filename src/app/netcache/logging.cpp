@@ -743,6 +743,10 @@ GetDiagContext(void)
     return ctx;
 }
 
+void CDiagContext::UpdateOnFork(TOnForkFlags /*flags*/)
+{
+    CDiagContext::UpdatePID();
+}
 
 void
 CDiagContext::UpdatePID(void)
