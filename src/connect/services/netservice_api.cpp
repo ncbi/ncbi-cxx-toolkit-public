@@ -1120,4 +1120,18 @@ CNetServiceIterator CNetService::FindServer(INetServerFinder* finder,
     return it;
 }
 
+CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
+        CNetService::EServiceType service_type)
+{
+    if (service_type == CNetService::eSingleServerService)
+        return exec_to_json.ExecOn(service.Iterate().GetServer());
+
+    CJsonNode result(CJsonNode::NewObjectNode());
+
+    for (CNetServiceIterator it = service.Iterate(); it; ++it)
+        result.SetByKey((*it).GetServerAddress(), exec_to_json.ExecOn(*it));
+
+    return result;
+}
+
 END_NCBI_SCOPE
