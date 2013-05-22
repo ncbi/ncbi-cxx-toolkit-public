@@ -1,7 +1,6 @@
 # $Id$
 
-SRC      = netstorage filetrack \
-           netstorage__ netstorage___
+SRC      = netstorage filetrack
 
 LIB      = netstorage
 LIBS     = $(NETWORK_LIBS)
