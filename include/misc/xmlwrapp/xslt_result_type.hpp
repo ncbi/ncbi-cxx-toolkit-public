@@ -43,11 +43,12 @@ namespace xslt {
     /// to a string
     enum result_treat_type {
         type_treat_as_doc,      ///< treat the XSLT result as a document;
-                                ///< output will be affected by local and
-                                ///< global formatting flags.
+                                ///< subsequent output will be affected by
+                                ///< local and global formatting flags.
         type_no_treat           ///< no treatment;
                                 ///< libxslt is responsible for output
-                                ///< formatting, no formatting flags.
+                                ///< formatting, and formatting flags
+                                ///< will not affect subsequent output.
     };
 
 } // xslt namespace
