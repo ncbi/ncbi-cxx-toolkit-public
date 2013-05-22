@@ -178,7 +178,7 @@ public:
      * Apply this stylesheet to the given XML document. The result document
      * is placed in the second document parameter.
      *
-     * Note: The result_treat_type parameter must be xslt::type_treat_as_doc if
+     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
      * you wish to use non-default output formatting control later - e.g. to
      * suppress the XML declaration when saving to a string or stream, as in:
      *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
@@ -201,7 +201,7 @@ public:
      * Apply this stylesheet to the given XML document. The result document
      * is placed in the second document parameter.
      *
-     * Note: The result_treat_type parameter must be xslt::type_treat_as_doc if
+     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
      * you wish to use non-default output formatting control later - e.g. to
      * suppress the XML declaration when saving to a string or stream, as in:
      *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
@@ -228,7 +228,7 @@ public:
      * is returned. If there is an error during transformation, this
      * function will throw an xml::exception exception.
      *
-     * Note: The result_treat_type parameter must be xslt::type_treat_as_doc if
+     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
      * you wish to use non-default output formatting control later - e.g. to
      * suppress the XML declaration when saving to a string or stream, as in:
      *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
@@ -248,7 +248,7 @@ public:
      * is returned. If there is an error during transformation, this
      * function will throw an xml::exception exception.
      *
-     * Note: The result_treat_type parameter must be xslt::type_treat_as_doc if
+     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
      * you wish to use non-default output formatting control later - e.g. to
      * suppress the XML declaration when saving to a string or stream, as in:
      *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
