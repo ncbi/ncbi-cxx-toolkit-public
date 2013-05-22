@@ -198,7 +198,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
     case eJSON:
         {
             CJobInfoToJSON job_info_to_json;
-            ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
+            g_ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
                     &job_info_to_json, !IsOptionSet(eBrief));
             g_PrintJSON(stdout, job_info_to_json.GetRootNode());
         }
@@ -207,7 +207,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
     default:
         {
             CPrintJobInfo print_job_info;
-            ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
+            g_ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
                     &print_job_info, !IsOptionSet(eBrief));
         }
     }

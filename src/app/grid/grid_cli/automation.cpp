@@ -327,7 +327,7 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
     } else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
         string job_key(arg_array.NextString());
-        ProcessJobInfo(m_NetScheduleAPI, job_key,
+        g_ProcessJobInfo(m_NetScheduleAPI, job_key,
             &job_info_to_json, arg_array.NextBoolean(true));
         reply.Append(job_info_to_json.GetRootNode());
     } else if (method == "job_counters") {

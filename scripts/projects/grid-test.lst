@@ -21,6 +21,7 @@ db/sqlite
 app/netschedule
 app/netcache
 app/grid
+app/netstorage
 sample/app/netschedule
 sample/app/netcache
 sample/app/cgi

@@ -37,6 +37,7 @@
 #include <corelib/ncbiapp.hpp>
 
 #include <connect/services/grid_client.hpp>
+#include <connect/services/ns_output_parser.hpp>
 #include <misc/netstorage/netstorage.hpp>
 
 
@@ -227,14 +228,6 @@ enum EOutputFormat {
     eRaw,
     eJSON,
     eNumberOfOutputFormats
-};
-
-enum ENetScheduleStatTopic {
-    eNetScheduleStatJobGroups,
-    eNetScheduleStatClients,
-    eNetScheduleStatNotifications,
-    eNetScheduleStatAffinities,
-    eNumberOfStatTopics
 };
 
 #define OPTION_ACCEPTED 1

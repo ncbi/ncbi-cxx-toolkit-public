@@ -1,7 +1,7 @@
 # $Id$
 # Author:  Dmitry Kazimirov
 
-XSD_PROJ = netstorage
+LIB_PROJ = netstorage
 SUB_PROJ = test
 
 srcdir = @srcdir@

@@ -35,6 +35,7 @@
  */
 
 #include "srv_connections.hpp"
+#include "json_over_uttp.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -157,6 +158,21 @@ class NCBI_XCONNECT_EXPORT INetEventHandler : public CObject
 public:
     virtual void OnWarning(const string& warn_msg, CNetServer server) = 0;
 };
+
+/// This class is for use by the grid_cli utility only.
+/// @internal
+class NCBI_XCONNECT_EXPORT IExecToJson
+{
+public:
+    virtual CJsonNode ExecOn(CNetServer server) = 0;
+
+    virtual ~IExecToJson() {}
+};
+
+extern NCBI_XCONNECT_EXPORT
+CJsonNode g_ExecToJson(IExecToJson& exec_to_json,
+        CNetService service,
+        CNetService::EServiceType service_type);
 
 END_NCBI_SCOPE
 

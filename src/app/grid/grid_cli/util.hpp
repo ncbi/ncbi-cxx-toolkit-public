@@ -32,24 +32,11 @@
 #ifndef UTIL__HPP
 #define UTIL__HPP
 
-#include <connect/services/json_over_uttp.hpp>
 #include <connect/services/netservice_api.hpp>
 
 BEGIN_NCBI_SCOPE
 
 void g_PrintJSON(FILE* output_stream, CJsonNode node);
-
-class IExecToJson
-{
-public:
-    virtual CJsonNode ExecOn(CNetServer server) = 0;
-
-    virtual ~IExecToJson() {}
-};
-
-CJsonNode g_ExecToJson(IExecToJson& exec_to_json,
-        CNetService service,
-        CNetService::EServiceType service_type);
 
 CJsonNode g_ExecAnyCmdToJson(CNetService service,
         CNetService::EServiceType service_type,

@@ -35,9 +35,9 @@
 #include "filetrack.hpp"
 
 #include <connect/services/netstorage.hpp>
+#include <connect/services/ns_output_parser.hpp>
 
 #include <misc/netstorage/error_codes.hpp>
-#include <misc/netstorage/FT_Upload.hpp>
 
 #include <connect/ncbi_gnutls.h>
 
@@ -257,7 +257,7 @@ void SFileTrackRequest::FinishUpload()
     SendFormInput("file_id", m_FileID->GetUniqueKey());
     SendEndOfFormData();
 
-    objects::CFT_Upload obj;
+    string http_response;
 
     try {
         EIO_Status status = CONN_Wait(m_HTTPStream.GetCONN(),
@@ -270,19 +270,28 @@ void SFileTrackRequest::FinishUpload()
                         m_URL << ": ", status);
             }
         }
-        auto_ptr<CObjectIStream> is(
-                CObjectIStream::Open(eSerial_Json, m_HTTPStream));
-        is->ReadObject(&obj, obj.GetThisTypeInfo());
+        CNcbiOstrstream sstr;
+        NcbiStreamCopy(sstr, m_HTTPStream);
+        http_response = sstr.str();
     }
-    catch (CSerialException& e) {
+    catch (CException& e) {
+        NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
+                "Error while uploading \"" << m_FileID->GetID() <<
+                "\" (storage key \"" << m_FileID->GetUniqueKey() <<
+                "\"); HTTP status " << m_HTTPStatus);
+    }
+
+    try {
+        CNetScheduleStructuredOutputParser json_parser;
+        json_parser.ParseJSON(http_response);
+    }
+    catch (CStringException& e) {
         string error;
-        char err_buf[1024];
 
         while (m_HTTPStream.good()) {
-            m_HTTPStream.getline(err_buf, sizeof(err_buf));
-            if (NStr::Find(err_buf, "error", 0, NPOS,
+            if (NStr::Find(http_response, "error", 0, NPOS,
                     NStr::eFirst, NStr::eCase) != NPOS) {
-                error = s_RemoveHTMLTags(err_buf);
+                error = s_RemoveHTMLTags(http_response.c_str());
                 break;
             }
         }
@@ -294,12 +303,6 @@ void SFileTrackRequest::FinishUpload()
                 "Error while uploading \"" << m_FileID->GetID() <<
                 "\" (storage key \"" << m_FileID->GetUniqueKey() << "\"): " <<
                 error << " (HTTP status " << m_HTTPStatus << ')');
-    }
-    catch (CException& e) {
-        NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << m_FileID->GetID() <<
-                "\" (storage key \"" << m_FileID->GetUniqueKey() <<
-                "\"); HTTP status " << m_HTTPStatus);
     }
 
     CheckIOStatus();
