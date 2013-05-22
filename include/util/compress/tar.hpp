@@ -45,8 +45,8 @@
 ///  archives, etc. but just regular files, devices (character or block),
 ///  FIFOs, directories, and limited links:  can extract both hard- and
 ///  symlinks, but can store symlinks only.  Also, this implementation is
-///  only minimally PAX(Portable Archive Interchange)-aware for file
-///  extractions (but cannot use PAX extensions to store the files).
+///  only minimally PAX(Portable Archive eXchange)-aware for file extractions
+///  (but cannot use PAX extensions to store the files).
 ///
 
 #include <corelib/ncbifile.hpp>
