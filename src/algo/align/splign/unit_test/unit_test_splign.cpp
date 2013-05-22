@@ -129,11 +129,22 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         
         CSplign splign;
         CRef<CSplicedAligner> aligner = CSplign::s_CreateDefaultAligner();//default is mrna 
-        aligner->SetSpaceLimit(2 * 1024 * 1024);
         splign.SetAligner() = aligner;
         splign.SetScope().Reset(scope);
         splign.PreserveScope();
+
+        aligner->SetSpaceLimit(numeric_limits<Uint4>::max());//That's what you get when 4096 is passed as "max_space" parameter as of today.
         
+        splign.SetMinExonIdentity(0.75);
+        splign.SetMinCompartmentIdentity(0.5);
+        splign.SetCompartmentPenalty(0.55);
+        splign.SetMinSingletonIdentity(0.2);
+        splign.SetMinSingletonIdentityBps(250);
+        splign.SetMaxIntron(1200000);
+        splign.SetPolyaExtIdentity(1.0);
+        splign.SetMinPolyaLen(1);
+        
+
         CSplignFormatter sf (splign);
         
         /*MRNA*/
