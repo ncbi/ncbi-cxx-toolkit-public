@@ -622,7 +622,8 @@ bool CDiscRepUtil :: IsAllCaps(const string& str)  // may include # etc non-char
 
 bool CDiscRepUtil :: IsAllLowerCase(const string& str)
 {
-  string& low_str = NStr::ToLower(const_cast <string&> (str));
+  string low_str = str;
+  low_str = NStr::ToLower(low_str);
   if (low_str == str) return true;
   else return false;
 }

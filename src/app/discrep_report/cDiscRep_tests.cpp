@@ -347,7 +347,6 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
    const CBioSource* biosrc_p = 0;
    string prot_nm;
    unsigned rule_idx;
-unsigned i=0;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
@@ -364,14 +363,18 @@ unsigned i=0;
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
+/*
+cerr << "rule_idx " << rule_idx ;
 cerr << " prot_nm " << prot_nm << endl;
 cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
 cerr << "**rit " << Blob2Str(**rit) << endl;
+*/
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
-                   + NStr::UIntToString(rule_idx++) + "@" + GetDiscItemText(*feat_in_use));
+                   + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use));
          }
+         rule_idx ++;
        }
      }
    }

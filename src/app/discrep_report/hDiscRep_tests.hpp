@@ -201,7 +201,7 @@ namespace DiscRepNmSpc {
       bool AdvancedStringCompare(const string& str, const string& str_match, 
                                             const CString_constraint* str_cons, bool is_start, 
                                             unsigned* ini_target_match_len = 0);
-      bool CaseNCompare(string str1, string str2, unsigned len1, bool case_sensitive);
+      bool CaseNCompareEqual(string str1, string str2, unsigned len1, bool case_sensitive);
       bool IsWholeWordMatch(const string& start, const size_t& found, 
                                const unsigned& match_len, bool disallow_slash = false);
       bool DisallowCharacter(const char ch, bool disallow_slash);
@@ -1939,7 +1939,7 @@ namespace DiscRepNmSpc {
       };
       typedef int TSusTestFlags;
 
-      CBioseq_on_SUSPECT_RULE (TSusTestFlags enabled_tests) : m_tests(enabled_tests) {};
+      CBioseq_on_SUSPECT_RULE (TSusTestFlags test_flag) : m_tests(test_flag) {};
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);

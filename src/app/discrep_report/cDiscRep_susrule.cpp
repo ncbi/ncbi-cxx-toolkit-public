@@ -1003,82 +1003,94 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
   return (ret_str);
 };
 
-bool CSuspectRuleCheck :: CaseNCompare(string str1, string str2, unsigned len1, bool case_sensitive)
+// c CaseNCompare()
+bool CSuspectRuleCheck :: CaseNCompareEqual(string str1, string str2, unsigned len1, bool case_sensitive)
 {
+   if (!len1) return true;
    if (case_sensitive) return (NStr::EqualCase(str1, 0, len1, str2));
    else return (NStr::EqualNocase(str1, 0, len1, str2));
 };
 
 bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string& str_match, const CString_constraint* str_cons, bool is_start, unsigned* ini_target_match_len)
 {
-  size_t pos_m=0, pos_s = 0;
-  bool ig_case, word_start_m, word_start_s, word_end_m, word_end_s;
+  if (str.empty()) return false;
+  if (!str_cons || str_match.empty()) return true;
+
+  size_t pos_match = 0, pos_str = 0;
+  bool case_sensitive, whole_wd, word_start_m, word_start_s;
   bool match = true, recursive_match = false;
-  unsigned len_m = str_match.size(), len_s = str.size(), end_s, end_m, target_match_len=0;
-  string w_sub, s_sub;
+  unsigned len_m = str_match.size(), len_s = str.size(), target_match_len=0;
+  string cp_m, cp_s;
   bool ig_space = str_cons->GetIgnore_space();
   bool ig_punct = str_cons->GetIgnore_punct();
   EString_location loc = str_cons->GetMatch_location();
-  while (match && pos_m < str_match.size() && !recursive_match) {
+  unsigned len1, len2;
+  char ch1, ch2;
+  vector <string> word_word;
+  ITERATE (list <CRef <CWord_substitution> >, it, str_cons->GetIgnore_words().Get()) {
+      strtmp = ((*it)->CanGetWord()) ? (*it)->GetWord() : kEmptyStr;
+      word_word.push_back(strtmp);
+  }
+
+  unsigned i=0;
+  while (match && pos_match < len_m && pos_str < len_s && !recursive_match) {
+    cp_m = str_match.substr(pos_match);
+    cp_s = str.substr(pos_str);
+
     /* first, check to see if we're skipping synonyms */
     ITERATE (list <CRef <CWord_substitution> >, it, str_cons->GetIgnore_words().Get()) {
-      ig_case = (*it)->GetCase_sensitive();
-      if ( (*it)->CanGetWord() && !((*it)->GetWord().empty()) ) {
-        w_sub = (*it)->GetWord();
-        // simple text match
-        if (!CaseNCompare(w_sub, str_match.substr(pos_m), w_sub.size(), ig_case)) {
-           word_start_m = (!pos_m && is_start) || !isalpha(str_match[pos_m-1]);
-           end_m = pos_m + w_sub.size();
-           word_end_m = (end_m == len_m) || (end_m < len_m && !isalpha(str[end_m]));
-           // if don't care or is a whole word match
-           if (!str_cons->GetWhole_word() || ( word_end_m && word_start_m) ) {
-             if ( (*it)->CanGetSynonyms()) {
-                ITERATE (list <string>, sit, (*it)->GetSynonyms()) {
-                  s_sub = *sit;
-                  if ( !s_sub.empty() ) {
-                     if (!CaseNCompare(s_sub, str.substr(pos_s), s_sub.size(), ig_case)){
-                        word_start_s = (!pos_s && is_start) || !isalpha(str[pos_s-1]);
-                        end_s = pos_s + s_sub.size();
-                        word_end_s = (end_s == len_s) 
-                                          || (end_s < len_s && !isalpha(str[pos_s-1]));
-                        if (!str_cons->GetWhole_word() || (word_end_s && word_start_s)){
-                           if (AdvancedStringCompare(str.substr(end_s), 
-                                           str_match.substr(end_m), str_cons, 
-                                           word_start_m && word_start_s, &target_match_len)) {
-                              recursive_match = true;
-                           }
+      case_sensitive = (*it)->GetCase_sensitive();
+      whole_wd = (*it)->GetWhole_word();
+      len1 = word_word[i].size();
+      if (CaseNCompareEqual(word_word[i], cp_m, len1, case_sensitive)) { //text match
+           word_start_m = (!pos_match && is_start) || !isalpha(str_match[pos_match-1]);
+           ch1 = (cp_m.size() < len1) ? ' ' : cp_m[len1];
+           if (!whole_wd || (!isalpha(ch1) && word_start_m)) { // whole word mch
+              if ( !(*it)->CanGetSynonyms() ) { 
+                 if (AdvancedStringCompare(cp_s, cp_m.substr(len1), str_cons, word_start_m, 
+                                                                    &target_match_len))
+                    recursive_match = true;
+              }
+              else {
+                 ITERATE (list <string>, sit, (*it)->GetSynonyms()) {
+                    len2 = (*sit).size();
+
+                    // text match
+                    if (CaseNCompareEqual(*sit, cp_s, len2, case_sensitive)) {
+                      word_start_s = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
+                      ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
+                      // whole word match
+                      if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
+                        if (AdvancedStringCompare(cp_s.substr(len2), cp_m.substr(len1),
+                                    str_cons, word_start_m & word_start_s, &target_match_len)){
+
+                            recursive_match = true;
                         }
-                     }
-                  }
-                }
-             }
-             else {
-                if (AdvancedStringCompare(str, str_match.substr(end_m), str_cons, 
-                                                   word_start_m, &target_match_len) ) 
-                         recursive_match = true;
-             }
+                      }
+                    }
+                 }
+              }
            }
-        }
       }
     }
 
     if (!recursive_match) {
-      if (!CaseNCompare(str_match.substr(pos_m), str.substr(pos_s), 1, ig_case)) {
-           pos_m++;
-           pos_s++;
+      if (CaseNCompareEqual(cp_m, cp_s, 1, case_sensitive)) {
+           pos_match++;
+           pos_str++;
            target_match_len++;
       } 
-      else if (ig_space && (isspace (str_match[pos_m]) || isspace (str[pos_s]))) {
-        if (isspace (str_match[pos_m])) pos_m++;
-        if (isspace (str[pos_s])) {
-             pos_s++;
+      else if ( ig_space && (isspace(cp_m[0]) || isspace(cp_s[0])) ) {
+        if ( isspace(cp_m[0]) ) pos_match++;
+        if ( isspace(cp_s[0]) ) {
+             pos_str++;
              target_match_len++;
         }
       }
-      else if (ig_punct && (ispunct (str_match[pos_m]) || ispunct (str[pos_s]))) {
-        if (ispunct (str_match[pos_m])) pos_m++;
-        if (ispunct (str[pos_s])) {
-             pos_s++;
+      else if (ig_punct && ( ispunct(cp_m[0]) || ispunct(cp_s[0]) )) {
+        if ( ispunct(cp_m[0]) ) pos_match++;
+        if ( ispunct(cp_s[0]) ) {
+             pos_str++;
              target_match_len++;
         }
       }
@@ -1087,18 +1099,22 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
   }
 
   if (match && !recursive_match) {
-    while ((ig_space && isspace (str[pos_s])) || (ig_punct && ispunct (str[pos_s]))) {
-         pos_s++;
-         target_match_len++;
+    while ( pos_str < str.size() 
+             && ((ig_space && isspace(str[pos_str])) || (ig_punct && ispunct(str[pos_str]))) ){
+       pos_str++;
+       target_match_len++;
     }
-    while ((ig_space && isspace (str_match[pos_m])) 
-                                     || (ig_punct && ispunct (str_match[pos_m]))) 
-         pos_m++;
+    while ( pos_match < str_match.size()
+              && ((ig_space && isspace(str_match[pos_match])) 
+                                     || (ig_punct && ispunct(str_match[pos_match])) ) )
+         pos_match++;
 
-    if (pos_m < str_match.size()) match = false;
-    else if ( (loc == eString_location_ends || loc == eString_location_equals) && pos_s <len_s)
-             match = false;
-    else if (str_cons->GetWhole_word() && (!is_start || isalpha (str[pos_s]))) 
+    if (pos_match < str_match.size()) match = false;
+    else if ( (loc == eString_location_ends || loc == eString_location_equals) 
+               && pos_str < len_s)
+         match = false;
+    else if (str_cons->GetWhole_word() 
+                           && (!is_start || (pos_str < len_s && isalpha (str[pos_str]))) )
              match = false;
   }
   if (match && ini_target_match_len) *ini_target_match_len += target_match_len;
@@ -1449,8 +1465,9 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
 {
    unsigned len = word.size();
    if (last_letter == 's') {
-      if (len >= 5) 
+      if (len >= 5) { 
         if (word.substr(len-5) == "trans") return false; // not plural;
+      }
       else if (len > 3) {
         if (second_to_last_letter != 's' && second_to_last_letter != 'i'
                                                && second_to_last_letter != 'u')
@@ -1463,10 +1480,8 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
 bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
 {
   char    last_letter, second_to_last_letter;
-  size_t  word_len = 0;
   bool may_contain_plural = false;
   string word_skip = " ,";
-  char next_letter;
 
   if (str.empty()) return false;
   string search = str;
@@ -1764,7 +1779,8 @@ bool CSuspectRuleCheck :: IsSearchFuncEmpty(const CSearch_func& func)
 
 bool CSuspectRuleCheck :: MatchesSuspectProductRule(const string& str, const CSuspect_rule& rule)
 {
-   if (!IsSearchFuncEmpty(rule.GetFind()) && !MatchesSearchFunc(str, rule.GetFind()))
+   if (!IsSearchFuncEmpty(rule.GetFind())
+            && !MatchesSearchFunc(str, rule.GetFind()))
         return false;
    else if ( rule.CanGetExcept() && !IsSearchFuncEmpty(rule.GetExcept())
                  && MatchesSearchFunc (str, rule.GetExcept()))

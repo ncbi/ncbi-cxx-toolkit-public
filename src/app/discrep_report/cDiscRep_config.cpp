@@ -315,6 +315,9 @@ CRepConfig* CRepConfig :: factory(const string& report_tp)
 
 void CRepConfig :: CollectTests() 
 {
+for (unsigned i=0; i < sizeof(test_list)/sizeof(s_test_property); i++)
+   cerr << test_list[i].name << endl;
+
    unsigned sz = tests_run.size(), i=0;
    int my_tests;
    if (i >= sz) return;
@@ -340,7 +343,7 @@ void CRepConfig :: CollectTests()
         tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_COUNT_PROTEINS));
         if (++i >= sz) return;
    } 
-   if ( tests_run.find("CBioseq_MISSING_PROTEIN_ID") != tests_run.end()) {
+   if ( tests_run.find("MISSING_PROTEIN_ID1") != tests_run.end()) {
         tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID1));
         tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID));
 i += 2;
@@ -1306,9 +1309,11 @@ void CRepConfig :: Init(const string& report_type)
    else if(report_type ==  "Oncaller") cate_flag = fOncaller;
    else NCBI_THROW(CException, eUnknown, "Unrecognized report type.");
 
+unsigned i=0;
    for (unsigned i=0; i< sizeof(test_list)/sizeof(s_test_property); i++) {
       if (test_list[i].category & cate_flag) 
                 tests_run.insert(test_list[i].name);
+else cerr << "not run " << test_list[i].name << endl;
    }
    
    ITERATE (vector <string>, it, thisInfo.tests_enabled) {
