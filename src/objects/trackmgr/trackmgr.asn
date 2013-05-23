@@ -15,6 +15,7 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-TrackAttrValueReply, TMgr-AttrReply, TMgr-TrackAttributes,
         TMgr-AttrValueReply, TMgr-MessageLevel, TMgr-Message;
 
+IMPORTS Seq-id FROM NCBI-Seqloc;
 ---
 --- Top-level request/reply
 ---
@@ -32,10 +33,7 @@ TMgr-Reply ::= CHOICE {
 
 TMgr-GenomeContext ::= CHOICE {
     assembly TMgr-AssemblySpec,
-    locality CHOICE {
-        chromosome VisibleString
-        --scaffold, sequence
-    }
+    sequence Seq-id
 }
 
 TMgr-ClientInfo ::= SEQUENCE {
