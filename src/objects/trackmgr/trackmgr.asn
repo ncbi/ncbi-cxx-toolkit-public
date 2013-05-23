@@ -45,13 +45,13 @@ TMgr-ClientInfo ::= SEQUENCE {
 
 TMgr-DisplayTrackRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
-    genome-contexts SEQUENCE OF TMgr-GenomeContext OPTIONAL,
-    attrs SEQUENCE OF TMgr-AttrSpec OPTIONAL
+    genome-contexts SET OF TMgr-GenomeContext OPTIONAL,
+    attrs SET OF TMgr-AttrSpec OPTIONAL
 }
 
 TMgr-DisplayTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
-    display-tracks SEQUENCE OF TMgr-DisplayTrack OPTIONAL
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL
     --tracks TMgr-DisplayTracks OPTIONAL
 }
 
@@ -145,14 +145,14 @@ TMgr-Attribute ::= SEQUENCE {
 TMgr-DisplayTrack ::= SEQUENCE {
     dtrack-id INTEGER,
     name UTF8String,
-    attrs SEQUENCE OF TMgr-Attribute OPTIONAL,
-    data SEQUENCE OF TMgr-DatasetItem
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    data SET OF TMgr-DatasetItem
     -- display settings
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
     name UTF8String,
-    attrs SEQUENCE OF TMgr-Attribute OPTIONAL
+    attrs SET OF TMgr-Attribute OPTIONAL
 }
 
 TMgr-DisplayTrackChoice ::= CHOICE {
