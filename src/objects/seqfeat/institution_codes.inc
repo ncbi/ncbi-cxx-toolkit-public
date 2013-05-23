@@ -5702,6 +5702,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TAR	s	Consiglio Nazionale delle Ricerche",
 "TARI<CHN>	s	Taiwan Agricultural Research Institute",
 "TARI<IRN>	s	Research Institute of Forests and Rangelands, Botanical Department",
+"TARI<TUR>	s	Trakya  Agricultural Research Institute",
 "TASH	s	National Academy of Science, Uzbekistan",
 "TASM	s	Uzbek Academy of Sciences, Laboratory of Mycology",
 "TAU<GRC>	s	Aristotle University of Thessaloniki, Biology Department",
