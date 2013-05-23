@@ -1135,8 +1135,6 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
 
             // last few
             cerr << "Chronologically last few check times: " << endl;
-            TGapSizeMap::const_iterator gap_size_it =
-                m_GapSizeMap.begin();
             copy( m_LastFewGaps.begin(),
                 m_LastFewGaps.end(),
                 ostream_iterator<Int8>(cerr, "\n") );
@@ -1190,10 +1188,6 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
             m_LastFewGaps.push_back(iDiffInMsecs);
             if( m_LastFewGaps.size() > x_kGetNumToSaveAtStartAndEnd() ) {
                 m_LastFewGaps.pop_front();
-            }
-
-            if( iDiffInMsecs > 100 ) {
-                int ii = 42; // just for putting a breakpoint here
             }
 
             const bool bIsCanceled = 

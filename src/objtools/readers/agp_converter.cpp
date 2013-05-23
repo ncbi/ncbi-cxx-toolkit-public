@@ -173,8 +173,6 @@ void CAgpConverter::OutputBioseqs(
 {
     // put some flags into easier-to-read variables
     const bool bOneObjectPerBioseq = (fFlags & fOutputBioseqsFlags_OneObjectPerBioseq);
-    const bool bAllowBioseqSetUnwrap = ! ( fFlags & fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets );
-    const bool bWrapInSeqEntry = ( fFlags & fOutputBioseqsFlags_WrapInSeqEntry );
 
     // we get the first AGP entries to help with
     // determining whether to use Bioseq-sets
