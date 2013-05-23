@@ -2100,6 +2100,53 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
         mapped_loc = FixOrderOfCrossTheOriginSeqloc(*mapped_loc,
                                                     (loc->GetStart(eExtreme_Positional) + loc->GetStop(eExtreme_Positional))/2);
     }
+
+    if (mapped_loc && feature_on_mrna->GetData().IsCdregion()) {
+        /// For CDS features, trip not to begin/end in gaps
+        /// Trim beginning
+        CSeqVector vec(*mapped_loc, *m_scope);
+        TSeqPos start_gap = 0;
+        for (; vec.IsInGap(start_gap); ++start_gap);
+        if (start_gap > 0) {
+            offset += start_gap;
+            while (mapped_loc->SetPacked_int().Set().front()->GetLength()
+                        <= start_gap)
+            {
+                start_gap -= mapped_loc->SetPacked_int().Set().front()->GetLength();
+                mapped_loc->SetPacked_int().Set().pop_front();
+            }
+            if (start_gap) {
+                CSeq_interval &first_exon =
+                    *mapped_loc->SetPacked_int().Set().front();
+                if (first_exon.GetStrand() == eNa_strand_minus) {
+                    first_exon.SetTo() -= start_gap;
+                } else {
+                    first_exon.SetFrom() += start_gap;
+                }
+            }
+            mapped_loc->SetPartialStart(true, eExtreme_Biological);
+        }
+        TSeqPos end_gap = 0;
+        for (; vec.IsInGap(vec.size() - 1 - end_gap); ++end_gap);
+        if (end_gap > 0) {
+            while (mapped_loc->SetPacked_int().Set().back()->GetLength() <= end_gap)
+            {
+                end_gap -= mapped_loc->SetPacked_int().Set().back()->GetLength();
+                mapped_loc->SetPacked_int().Set().pop_back();
+            }
+            if (end_gap) {
+                CSeq_interval &last_exon =
+                    *mapped_loc->SetPacked_int().Set().back();
+                if (last_exon.GetStrand() == eNa_strand_minus) {
+                    last_exon.SetFrom() += end_gap;
+                } else {
+                    last_exon.SetTo() -= end_gap;
+                }
+            }
+            mapped_loc->SetPartialStop(true, eExtreme_Biological);
+        }
+    }
+
     return mapped_loc;
 }
 
