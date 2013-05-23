@@ -56,6 +56,7 @@
 #endif
 
 #include <png.h>
+#include <zlib.h>
 
 #include "remove_header_conflicts.hpp"
 
@@ -672,7 +673,10 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         if (!png_ptr) throw "can't create PNG write structure";
         info_ptr = png_create_info_struct(png_ptr);
         if (!info_ptr) throw "can't create PNG info structure";
-        if (setjmp(png_ptr->jmpbuf)) throw "setjmp failed";
+        if (setjmp(png_jmpbuf(png_ptr))) {
+            png_destroy_write_struct(&png_ptr, &info_ptr);
+            throw "png error encountered, jump point activated";
+        }
         png_init_io(png_ptr, out);
 
         // sets callback that's called by PNG after each written row
