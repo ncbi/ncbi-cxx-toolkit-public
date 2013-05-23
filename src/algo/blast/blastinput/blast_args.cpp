@@ -1351,6 +1351,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddDefaultKey(kArgDPenalty, "D_penalty",
                                 "Penalty for a nucleotide mismatch in D gene",
                                 CArgDescriptions::eInteger, "-4");
+
         arg_desc.SetConstraint(kArgDPenalty, 
                                new CArgAllowValuesBetween(-6, 0));
     }
@@ -1364,6 +1365,12 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             "Domain system to be used for segment annotation",
                             CArgDescriptions::eString, "kabat");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
+
+    arg_desc.AddDefaultKey(kArgIgSeqType, "sequence_type",
+                            "Specify Ig or T cell receptor sequence",
+                            CArgDescriptions::eString, "Ig");
+    arg_desc.SetConstraint(kArgIgSeqType, &(*new CArgAllow_Strings, "Ig", "TCR"));
+
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the search only be for V segment (effective only for non-germline database search using -db option)?", true);
 
@@ -1447,10 +1454,16 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             break;
         }
     }
-  
+
+    m_IgOptions->m_SequenceType = "Ig";
+    if (args.Exist(kArgIgSeqType) && args[kArgIgSeqType]) {
+        m_IgOptions->m_SequenceType = args[kArgIgSeqType].AsString();
+    }
+
     string df_db_name = CDirEntry::ConcatPath(
                         CDirEntry::ConcatPath(m_IgOptions->m_IgDataPath, 
-                           m_IgOptions->m_Origin), m_IgOptions->m_Origin + "_V");
+                           m_IgOptions->m_Origin), m_IgOptions->m_Origin + 
+                        ((m_IgOptions->m_SequenceType == "TCR")?"_TR":"") + "_V");
     CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
     m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
     try {
@@ -1468,6 +1481,7 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args.Exist(kArgDPenalty) && args[kArgDPenalty]) {
         m_IgOptions->m_D_penalty = args[kArgDPenalty].AsInteger();
     }
+
 
     CRef<CBlastOptionsHandle> opts_hndl;
     if (m_IgOptions->m_IsProtein) {

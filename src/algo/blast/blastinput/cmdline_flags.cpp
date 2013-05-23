@@ -185,7 +185,7 @@ const string kArgGLFocusV("focus_on_V_segment");
 const string kArgTranslate("show_translation");
 const string kArgMinDMatch("min_D_match");
 const string kArgDPenalty("D_penalty");
-
+const string kArgIgSeqType("ig_seqtype");
 const string kArgMaxHSPsPerSubject("max_hsps_per_subject");
 const int    kDfltArgMaxHSPsPerSubject = 0;
 const string kArgPercentIdentity("perc_identity");

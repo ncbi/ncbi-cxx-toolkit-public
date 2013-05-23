@@ -784,9 +784,11 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
         ce->Select(CGenetic_code::C_E::e_Id);
         ce->SetId(genetic_code);
         gc.Set().push_back(ce);
+        isolated_loc.SetPartialStart(true, eExtreme_Biological);
+        isolated_loc.SetPartialStop (true, eExtreme_Biological);
         CSeqTranslator::Translate(isolated_loc, handle.GetScope(),
                                   raw_cdr_product, &gc);
-      
+
     }
     return raw_cdr_product;
 }
@@ -1208,6 +1210,8 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
         CRef<CSeq_loc> master_loc(new CSeq_loc((CSeq_loc::TId &) m_AV->GetSeqId(0),
                                                master_frame_start,
                                                m_AV->GetSeqStop(0)));
+        master_loc->SetPartialStart(true, eExtreme_Biological);
+        master_loc->SetPartialStop (true, eExtreme_Biological);
         string master_translation;
         CSeqTranslator::Translate(*master_loc,
                                   m_Scope,
@@ -1233,6 +1237,8 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
         CRef<CSeq_loc> subject_loc(new CSeq_loc((CSeq_loc::TId &) m_AV->GetSeqId(1),
                                            (CSeq_loc::TPoint) subject_frame_start,
                                            (CSeq_loc::TPoint) m_AV->GetSeqStop(1)));
+        subject_loc->SetPartialStart(true, eExtreme_Biological);
+        subject_loc->SetPartialStop (true, eExtreme_Biological);
         string subject_translation;
         CSeqTranslator::Translate(*subject_loc,
                                   m_Scope,
