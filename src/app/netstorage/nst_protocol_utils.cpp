@@ -83,21 +83,25 @@ ExtractCommonFields(const CJsonNode &  message)
 }
 
 
-SStorageFlags
+TNetStorageFlags
 ExtractStorageFlags(const CJsonNode &  message)
 {
-    SStorageFlags       result;
+    TNetStorageFlags    result = 0;
 
     if (message.HasKey("StorageFlags")) {
         CJsonNode   flags = message.GetByKey("StorageFlags");
         if (flags.HasKey("Fast"))
-            result.m_Fast = flags.GetBoolean("Fast");
+            if (flags.GetBoolean("Fast"))
+                result |= fNST_Fast;
         if (flags.HasKey("Persistent"))
-            result.m_Persistent = flags.GetBoolean("Persistent");
+            if (flags.GetBoolean("Persistent"))
+                result |= fNST_Persistent;
         if (flags.HasKey("Movable"))
-            result.m_Movable = flags.GetBoolean("Movable");
+            if (flags.GetBoolean("Movable"))
+                result |= fNST_Movable;
         if (flags.HasKey("Cacheable"))
-            result.m_Cacheable = flags.GetBoolean("Cacheable");
+            if (flags.GetBoolean("Cacheable"))
+                result |= fNST_Cacheable;
     }
     return result;
 }

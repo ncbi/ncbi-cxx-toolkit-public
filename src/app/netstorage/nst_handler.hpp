@@ -195,24 +195,22 @@ private:
                           const SCommonRequestArguments &  common_args);
 
 private:
-    TNetStorageFlags  x_ConvertStorageFlags(const SStorageFlags &  flags);
-    bool x_CheckNonAnonymousClient(const SCommonRequestArguments &  common_args);
-    bool x_CheckFileID(const string &                   file_id,
-                       const SCommonRequestArguments &  common_args);
-    bool x_CheckICacheSettings(const SICacheSettings &          icache_settings,
-                               const SCommonRequestArguments &  common_args);
-    bool x_CheckUserKey(const SUserKey &                 user_key,
-                        const SCommonRequestArguments &  common_args);
+    string
+    x_GetFileID(const CJsonNode &  message);
+    void x_CheckNonAnonymousClient(void);
+    void x_CheckFileID(const string &  file_id);
+    void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
+    void x_CheckUserKey(const SUserKey &  user_key);
+    void x_GetStorageParams(const CJsonNode &   message,
+                            SICacheSettings *   icache_settings,
+                            SUserKey *          user_key,
+                            TNetStorageFlags *  flags);
     CNetFile x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
-                    const SUserKey &         user_key,
                     TNetStorageFlags         flags);
-    CNetStorageByKey x_CreateNetStorageByKey(
-                    const SICacheSettings &  icache_settings,
-                    const SUserKey &         user_key);
 
-    EIO_Status x_SendOverUTTP(const char* buffer,
-            size_t buffer_size, bool last_chunk);
+    EIO_Status x_SendOverUTTP(const char *  buffer,
+                              size_t        buffer_size, bool  last_chunk);
 }; // CNetStorageHandler
 
 

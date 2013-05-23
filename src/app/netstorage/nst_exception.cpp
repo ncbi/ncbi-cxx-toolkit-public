@@ -37,15 +37,33 @@
 USING_NCBI_SCOPE;
 
 
-const char *  CNetStorageServerException::GetErrCodeString() const
+const char *  CNetStorageServerException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
         case eInvalidArgument:
             return "eInvalidArgument";
+        case eMandatoryFieldsMissed:
+            return "eMandatoryFieldsMissed";
+        case eHelloRequired:
+            return "eHelloRequired";
         case eInvalidMessageType:
             return "eInvalidMessageType";
         case eInvalidIncomingMessage:
             return "eInvalidIncomingMessage";
+        case ePrivileges:
+            return "ePrivileges";
+        case eInvalidMessageHeader:
+            return "eInvalidMessageHeader";
+        case eShuttingDown:
+            return "eShuttingDown";
+        case eMessageAfterBye:
+            return "eMessageAfterBye";
+        case eStorageError:
+            return "eStorageError";
+        case eWriteError:
+            return "eWriteError";
+        case eReadError:
+            return "eReadError";
         case eInternalError:
             return "eInternalError";
         default:
@@ -54,12 +72,21 @@ const char *  CNetStorageServerException::GetErrCodeString() const
 }
 
 
-unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode() const
+unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode(void) const
 {
     switch (GetErrCode()) {
         case eInvalidArgument:          return 400;
+        case eMandatoryFieldsMissed:    return 400;
+        case eHelloRequired:            return 400;
         case eInvalidMessageType:       return 400;
         case eInvalidIncomingMessage:   return 400;
+        case ePrivileges:               return 400;
+        case eInvalidMessageHeader:     return 400;
+        case eShuttingDown:             return 503;
+        case eMessageAfterBye:          return 400;
+        case eStorageError:             return 500;
+        case eWriteError:               return 500;
+        case eReadError:                return 500;
         default:                        break;
     }
 

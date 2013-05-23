@@ -21,17 +21,19 @@ import atexit
 import os
 import simplejson as json
 
-historyPath = os.path.expanduser("~/.nstconsole")
+historyPath = os.path.expanduser( "~/.nstconsole" )
 
-readline.parse_and_bind('tab: complete')
+readline.parse_and_bind( 'tab: complete' )
 
 def save_rlhistory():
-    readline.write_history_file(historyPath)
+    " Saves the commands history to use it in the future sessions "
+    readline.write_history_file( historyPath )
+    return
 
-if os.path.exists(historyPath):
-    readline.read_history_file(historyPath)
+if os.path.exists( historyPath ):
+    readline.read_history_file( historyPath )
 
-atexit.register(save_rlhistory)
+atexit.register( save_rlhistory )
 
 
 try:
@@ -42,6 +44,8 @@ except:
 
 
 class NetStorageConsole:
+    " NetStorage debug console implementation "
+
     def __init__( self, host_, port_ ):
         # Initialize the command map
         self.__commandMap = {
@@ -92,8 +96,8 @@ class NetStorageConsole:
             # Split the input
             try:
                 arguments = self.splitArguments( userInput )
-            except:
-                print "Error splitting command into parts"
+            except Exception, exc:
+                print "Error splitting command into parts: " + str( exc )
                 continue
 
             # There is at least one argument which is a command name
@@ -488,14 +492,42 @@ class NetStorageConsole:
         return
 
     def sendGetObjectInfo( self, arguments ):
-        print "Not implemented yet"
+        " Sends the getobjectinfo request "
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
+            return
+
+        fileID = arguments[ 0 ]
+        message = { 'Type':         'GETOBJECTINFO',
+                    'SessionID':    '1111111111111111_0000SID',
+                    'ClientIP':     hostIP,
+                    'FileID':       fileID }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
         return
 
     def sendGetAttr( self, arguments ):
-        print "Not implemented yet"
+        " Sends GETATTR message "
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
+            return
+
+        fileID = arguments[ 0 ]
+
+        message = { 'Type':         'GETATTR',
+                    'SessionID':    '1111111111111111_0000SID',
+                    'ClientIP':     hostIP,
+                    'FileID':       fileID }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
         return
 
     def sendSetAttr( self, arguments ):
+        " Sends SETATTR message "
         print "Not implemented yet"
         return
 
@@ -518,11 +550,12 @@ class NetStorageConsole:
         return response
 
 
-    def printMessage( self, prefix, response ):
+    @staticmethod
+    def printMessage( prefix, response ):
         " Prints the server response "
         print prefix + ":"
-        pp = pprint.PrettyPrinter( indent = 4 )
-        pp.pprint( response )
+        prettyPrinter = pprint.PrettyPrinter( indent = 4 )
+        prettyPrinter.pprint( response )
         return
 
 

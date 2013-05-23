@@ -38,13 +38,13 @@
 #include <signal.h>
 
 #include <connect/services/netstorage.hpp>
+#include <connect/services/netstorage_impl.hpp>
 #include <misc/netstorage/netstorage.hpp>
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
 #include "nst_protocol_utils.hpp"
 #include "nst_exception.hpp"
-#include "nst_error_warning.hpp"
 #include "nst_version.hpp"
 
 
@@ -350,9 +350,9 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
                  "The connection will be closed.");
 
         CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eInvalidMandatoryHeader,
-                                        "Error extracting mandatory fields");
+                            common_args.m_SerialNumber,
+                            CNetStorageServerException::eInvalidMessageHeader,
+                            "Error extracting mandatory fields");
 
         x_SetCmdRequestStatus(eStatus_BadRequest);
         if (x_SendSyncMessage(response) == eIO_Success)
@@ -368,9 +368,9 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eShuttingDown,
-                                        "No messages are allowed after BYE");
+                            common_args.m_SerialNumber,
+                            CNetStorageServerException::eShuttingDown,
+                            "Server is shutting down");
 
         x_SetCmdRequestStatus(eStatus_ShuttingDown);
         if (x_SendSyncMessage(response) == eIO_Success)
@@ -388,9 +388,9 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eMessageAfterBye,
-                                        "No messages are allowed after BYE");
+                            common_args.m_SerialNumber,
+                            CNetStorageServerException::eMessageAfterBye,
+                            "No messages are allowed after BYE");
 
         x_SetCmdRequestStatus(eStatus_BadRequest);
         if (x_SendSyncMessage(response) == eIO_Success)
@@ -402,6 +402,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     bool          error = true;
     string        error_client_message;
     unsigned int  error_code;
+    unsigned int  http_error_code;
 
     try {
         m_ClientRegistry.Touch(m_Client);
@@ -416,22 +417,25 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     }
     catch (const CNetStorageServerException &  ex) {
         ERR_POST(ex);
-        error_code = ex.ErrCodeToHTTPStatusCode();
+        http_error_code = ex.ErrCodeToHTTPStatusCode();
+        error_code = ex.GetErrCode();
         error_client_message = ex.what();
     }
     catch (const CNetStorageException &  ex) {
         ERR_POST(ex);
-        error_code = eStatus_ServerError;
+        http_error_code = eStatus_ServerError;
+        error_code = CNetStorageServerException::eStorageError;
         error_client_message = ex.what();
     }
     catch (const std::exception &  ex) {
         ERR_POST("STL exception: " << ex.what());
-        error_code = eStatus_ServerError;
+        http_error_code = eStatus_ServerError;
+        error_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
     }
 
     if (error) {
-        x_SetCmdRequestStatus(error_code);
+        x_SetCmdRequestStatus(http_error_code);
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
@@ -472,8 +476,9 @@ void CNetStorageHandler::x_OnData(
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
-                                        m_DataMessageSN,
-                                        eWriteError, message);
+                                    m_DataMessageSN,
+                                    CNetStorageServerException::eWriteError,
+                                    message);
         x_SendSyncMessage(response);
         m_ObjectStream = NULL;
         m_DataMessageSN = -1;
@@ -691,26 +696,14 @@ CNetStorageHandler::x_ProcessHello(
     string      ticket;         // Optional field
 
     if (!message.HasKey("Client")) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eMandatoryFieldsMissed,
-                                        "Mandatory field 'Client' is missed");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'Client' is missed");
     }
 
     string  client = NStr::TruncateSpaces(message.GetString("Client"));
     if (client.empty()) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eInvalidArguments,
-                                        "Mandatory field 'Client' is empty");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Mandatory field 'Client' is empty");
     }
 
     m_Client = client;
@@ -740,9 +733,11 @@ CNetStorageHandler::x_ProcessInfo(
     reply.SetString("ProtocolVersion", NETSTORAGED_PROTOCOL_VERSION);
     reply.SetInteger("PID", CDiagContext::GetPID());
     reply.SetString("BuildDate", NETSTORAGED_BUILD_DATE);
-    reply.SetString("StartDate", NST_FormatPreciseTime(m_Server->GetStartTime()));
+    reply.SetString("StartDate",
+                    NST_FormatPreciseTime(m_Server->GetStartTime()));
     reply.SetString("ServerSession", m_Server->GetSessionID());
-    reply.SetString("ServerBinaryPath", CNcbiApplication::Instance()->GetProgramExecutablePath());
+    reply.SetString("ServerBinaryPath",
+                    CNcbiApplication::Instance()->GetProgramExecutablePath());
     reply.SetString("ServerCommandLine", m_Server->GetCommandLine());
 
     x_SendSyncMessage(reply);
@@ -764,7 +759,8 @@ CNetStorageHandler::x_ProcessConfiguration(
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     reply.SetString("Configuration", string(converter));
-    reply.SetString("ConfigurationFilePath", CNcbiApplication::Instance()->GetConfigPath());
+    reply.SetString("ConfigurationFilePath",
+                    CNcbiApplication::Instance()->GetConfigPath());
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
@@ -777,50 +773,25 @@ CNetStorageHandler::x_ProcessShutdown(
                         const SCommonRequestArguments &  common_args)
 {
     if (m_Client.empty()) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eHelloRequired,
-                                        "Anonymous client cannot shutdown server");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot shutdown server");
     }
 
     if (!m_Server->IsAdminClientName(m_Client)) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        ePrivileges,
-                                        "Only administrators can shutdown server");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
+        NCBI_THROW(CNetStorageServerException, ePrivileges,
+                   "Only administrators can shutdown server");
     }
 
     if (!message.HasKey("Mode")) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eMandatoryFieldsMissed,
-                                        "Mandatory field 'Mode' is missed");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
-
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'Mode' is missed");
     }
 
     string  mode;
     mode = message.GetString("Mode");
     if (mode != "hard" && mode != "soft") {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eInvalidArguments,
-                                        "Allowed 'Mode' values are 'soft' and 'hard'");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Allowed 'Mode' values are 'soft' and 'hard'");
     }
 
     if (mode == "hard" )
@@ -855,6 +826,22 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+
+    string          file_id = x_GetFileID(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetFile        net_file = net_storage.Open(file_id, 0);
+
+
+    // TODO: Get the object info
+
+
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    // TODO: Add the response keys
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -873,6 +860,10 @@ CNetStorageHandler::x_ProcessSetAttr(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+
+    x_CheckNonAnonymousClient();
+
+
 }
 
 
@@ -883,37 +874,44 @@ CNetStorageHandler::x_ProcessWrite(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
-    if (!x_CheckNonAnonymousClient(common_args))
-        return;
+    x_CheckNonAnonymousClient();
 
-    // Take the command arguments
-    SStorageFlags       storage_flags = ExtractStorageFlags(message);
-    SICacheSettings     icache_settings = ExtractICacheSettings(message);
-    SUserKey            user_key = ExtractUserKey(message);
+    bool        created(false);
+    if (message.HasKey("FileID") || message.HasKey("UserKey")) {
+        // Some kind of identification is given
+        string          file_id = x_GetFileID(message);
+        CNetStorage     net_storage(g_CreateNetStorage(0));
 
-    // Check the parameters validity
-    if (!x_CheckICacheSettings(icache_settings, common_args))
-        return;
-    if (!x_CheckUserKey(user_key, common_args))
-        return;
+        m_ObjectStream = net_storage.Open(file_id, 0);
+    } else {
+        // No identification - create a stream
+        TNetStorageFlags    flags = ExtractStorageFlags(message);
+        SICacheSettings     icache_settings = ExtractICacheSettings(message);
 
-    // Convert received flags into TNetStorageFlags
-    TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
+        x_CheckICacheSettings(icache_settings);
 
-    // Create the object stream depending on settings
-    m_ObjectStream = x_CreateObjectStream(icache_settings, user_key, flags);
-
+        // Create the object stream depending on settings
+        m_ObjectStream = x_CreateObjectStream(icache_settings, flags);
+        created = true;
+    }
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    string          file_id = m_ObjectStream.GetID();
 
-    reply.SetString("FileID", m_ObjectStream.GetID());
+    reply.SetString("FileID", file_id);
     x_SendSyncMessage(reply);
-    x_PrintMessageRequestStop();
+
+    if (m_ConnContext.NotNull() && created) {
+        CNetFileID      file_id_struct(file_id);
+        GetDiagContext().Extra()
+            .Print("FileID", file_id)
+            .Print("FileKey", file_id_struct.GetUniqueKey());
+    }
 
     // Inform the message receiving loop that raw data are to follow
     m_ReadMode = eReadRawData;
     m_DataMessageSN = common_args.m_SerialNumber;
-    m_ClientRegistry.AddObjectsWritten( m_Client, 1 );
+    m_ClientRegistry.AddObjectsWritten(m_Client, 1);
 }
 
 
@@ -924,42 +922,20 @@ CNetStorageHandler::x_ProcessRead(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    if (!x_CheckNonAnonymousClient(common_args))
-        return;
+    x_CheckNonAnonymousClient();
 
-    // Take the arguments
-    CNetFile    net_file;
-    if (message.HasKey("FileID")) {
-        string  file_id = message.GetString("FileID");
-        if (!x_CheckFileID(file_id, common_args))
-            return;
+    string          file_id = x_GetFileID(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetFile        net_file = net_storage.Open(file_id, 0);
 
-        net_file = g_CreateNetStorage(0).Open(file_id, 0);
-    } else {
-        SStorageFlags       storage_flags = ExtractStorageFlags(message);
-        SICacheSettings     icache_settings = ExtractICacheSettings(message);
-        SUserKey            user_key = ExtractUserKey(message);
-
-        // Check the parameters validity
-        if (!x_CheckICacheSettings(icache_settings, common_args))
-            return;
-        if (!x_CheckUserKey(user_key, common_args))
-            return;
-
-        // Convert received flags into TNetStorageFlags
-        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
-
-        // Create the object stream depending on settings
-        net_file = x_CreateObjectStream(icache_settings, user_key, flags);
-    }
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     x_SendSyncMessage(reply);
  
-    m_ClientRegistry.AddObjectsRead( m_Client, 1 );
+    m_ClientRegistry.AddObjectsRead(m_Client, 1);
 
-    char buffer[kReadBufferSize];
-    size_t bytes_read;
+    char            buffer[kReadBufferSize];
+    size_t          bytes_read;
 
     try {
         while (!net_file.Eof()) {
@@ -975,7 +951,8 @@ CNetStorageHandler::x_ProcessRead(
     }
     catch (const CException &  ex) {
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
-                       eReadError, string("Object read error: ") + ex.what());
+                       CNetStorageServerException::eReadError,
+                       string("Object read error: ") + ex.what());
     }
 
     if (x_SendOverUTTP("", 0, true) != eIO_Success)
@@ -993,36 +970,12 @@ CNetStorageHandler::x_ProcessDelete(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
-    if (!x_CheckNonAnonymousClient(common_args))
-        return;
+    x_CheckNonAnonymousClient();
 
-    // Take the arguments
-    if (message.HasKey("FileID")) {
-        string  file_id = message.GetString("FileID");
-        if (!x_CheckFileID(file_id, common_args))
-            return;
+    string          file_id = x_GetFileID(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
 
-        CNetStorage net_storage(g_CreateNetStorage(0));
-        net_storage.Remove(file_id);
-    } else {
-        SStorageFlags       storage_flags = ExtractStorageFlags(message);
-        SICacheSettings     icache_settings = ExtractICacheSettings(message);
-        SUserKey            user_key = ExtractUserKey(message);
-
-        // Check the parameters validity
-        if (!x_CheckICacheSettings(icache_settings, common_args))
-            return;
-        if (!x_CheckUserKey(user_key, common_args))
-            return;
-
-        // Convert received flags into TNetStorageFlags
-        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
-
-        // Create the object stream depending on settings
-        x_CreateNetStorageByKey(icache_settings, user_key).Remove(
-                user_key.m_UniqueID, flags);
-    }
-
+    net_storage.Remove(file_id);
     m_ClientRegistry.AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1039,61 +992,39 @@ CNetStorageHandler::x_ProcessRelocate(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
 
-    if (!x_CheckNonAnonymousClient(common_args))
-        return;
+    x_CheckNonAnonymousClient();
 
     // Take the arguments
     if (!message.HasKey("NewLocation")) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eInvalidArguments,
-                                        "NewLocation argument is not found");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return;
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "NewLocation argument is not found");
     }
 
     CJsonNode           new_location = message.GetByKey("NewLocation");
-    SStorageFlags       new_location_flags = ExtractStorageFlags(new_location);
-    TNetStorageFlags    new_loc_flags = x_ConvertStorageFlags(new_location_flags);
-    SICacheSettings new_location_icache_settings = ExtractICacheSettings(new_location);
+    TNetStorageFlags    new_location_flags = ExtractStorageFlags(new_location);
+    SICacheSettings     new_location_icache_settings =
+                                ExtractICacheSettings(new_location);
 
-    if (!x_CheckICacheSettings(new_location_icache_settings, common_args))
-        return;
+    x_CheckICacheSettings(new_location_icache_settings);
 
 
-    if (message.HasKey("FileID")) {
-        string  file_id = message.GetString("FileID");
-        if (!x_CheckFileID(file_id, common_args))
-            return;
+    string          file_id = x_GetFileID(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
+    string          new_file_id = net_storage.Relocate(file_id,
+                                                       new_location_flags);
 
-        CNetStorage net_storage(g_CreateNetStorage(0));
-        net_storage.Relocate(file_id, new_loc_flags);
-    } else {
-        SStorageFlags       storage_flags = ExtractStorageFlags(message);
-        SICacheSettings     icache_settings = ExtractICacheSettings(message);
-        SUserKey            user_key = ExtractUserKey(message);
-
-        // Check the parameters validity
-        if (!x_CheckICacheSettings(icache_settings, common_args))
-            return;
-        if (!x_CheckUserKey(user_key, common_args))
-            return;
-
-        // Convert received flags into TNetStorageFlags
-        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
-
-        // Create the object stream depending on settings
-        x_CreateNetStorageByKey(icache_settings, user_key).Relocate(
-                user_key.m_UniqueID, new_loc_flags, flags);
-    }
-
-    m_ClientRegistry.AddObjectsRelocated(m_Client, 1 );
+    m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
+    reply.SetString("FileID", new_file_id);
     x_SendSyncMessage(reply);
+
+    if (m_ConnContext.NotNull()) {
+        GetDiagContext().Extra()
+            .Print("NewFileID", new_file_id);
+    }
+
     x_PrintMessageRequestStop();
 }
 
@@ -1105,38 +1036,9 @@ CNetStorageHandler::x_ProcessExists(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    if (!x_CheckNonAnonymousClient(common_args))
-        return;
-
-    bool        exists = false;
-
-    // Take the argument
-    if (message.HasKey("FileID")) {
-        string  file_id = message.GetString("FileID");
-        if (!x_CheckFileID(file_id, common_args))
-            return;
-
-        CNetStorage net_storage(g_CreateNetStorage(0));
-        exists = net_storage.Exists(file_id);
-    } else {
-        SStorageFlags       storage_flags = ExtractStorageFlags(message);
-        SICacheSettings     icache_settings = ExtractICacheSettings(message);
-        SUserKey            user_key = ExtractUserKey(message);
-
-        // Check the parameters validity
-        if (!x_CheckICacheSettings(icache_settings, common_args))
-            return;
-        if (!x_CheckUserKey(user_key, common_args))
-            return;
-
-        // Convert received flags into TNetStorageFlags
-        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
-
-        // Create the object stream depending on settings
-        exists = x_CreateNetStorageByKey(icache_settings, user_key).Exists(
-                                                    user_key.m_UniqueID, flags);
-    }
-
+    string          file_id = x_GetFileID(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
+    bool            exists = net_storage.Exists(file_id);
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     reply.SetBoolean("Exists", exists);
@@ -1152,184 +1054,153 @@ CNetStorageHandler::x_ProcessGetSize(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    if (!x_CheckNonAnonymousClient(common_args))
-        return;
-
-    // Take the arguments
-    CNetFile    net_file;
-    if (message.HasKey("FileID")) {
-        string  file_id = message.GetString("FileID");
-        if (!x_CheckFileID(file_id, common_args))
-            return;
-
-        net_file = g_CreateNetStorage(0).Open(file_id, 0);
-    } else {
-        SStorageFlags       storage_flags = ExtractStorageFlags(message);
-        SICacheSettings     icache_settings = ExtractICacheSettings(message);
-        SUserKey            user_key = ExtractUserKey(message);
-
-        // Check the parameters validity
-        if (!x_CheckICacheSettings(icache_settings, common_args))
-            return;
-        if (!x_CheckUserKey(user_key, common_args))
-            return;
-
-        // Convert received flags into TNetStorageFlags
-        TNetStorageFlags    flags = x_ConvertStorageFlags(storage_flags);
-
-        // Create the object stream depending on settings
-        net_file = x_CreateObjectStream(icache_settings, user_key, flags);
-    }
-
+    string          file_id = x_GetFileID(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetFile        net_file = net_storage.Open(file_id, 0);
+    Uint8           object_size = net_file.GetSize();
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    reply.SetInteger("Size", net_file.GetSize());
+    reply.SetInteger("Size", object_size);
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
 
 
-TNetStorageFlags
-CNetStorageHandler::x_ConvertStorageFlags(const SStorageFlags &  storage_flags)
+string
+CNetStorageHandler::x_GetFileID(const CJsonNode &  message)
 {
-    TNetStorageFlags    flags = 0;
-    if (storage_flags.m_Fast)
-        flags |= fNST_Fast;
-    if (storage_flags.m_Persistent)
-        flags |= fNST_Persistent;
-    if (storage_flags.m_Movable)
-        flags |= fNST_Movable;
-    if (storage_flags.m_Cacheable)
-        flags |= fNST_Cacheable;
-    return flags;
+    if (message.HasKey("FileID")) {
+        string  file_id = message.GetString("FileID");
+        x_CheckFileID(file_id);
+
+        if (m_ConnContext.NotNull()) {
+            CNetFileID      file_id_struct(file_id);
+            GetDiagContext().Extra()
+                .Print("FileKey", file_id_struct.GetUniqueKey());
+        }
+        return file_id;
+    }
+
+    // Take the arguments
+    SICacheSettings     icache_settings;
+    SUserKey            user_key;
+    TNetStorageFlags    flags;
+
+    x_GetStorageParams(message, &icache_settings, &user_key, &flags);
+
+
+    string      client_name(m_Client);
+    if (client_name.empty())
+        client_name = "anonymous";
+
+    CNetICacheClient    icache_client(icache_settings.m_ServiceName,
+                                      icache_settings.m_CacheName, client_name);
+    CNetFileID          file_id_struct(flags, user_key.m_AppDomain,
+                                       user_key.m_UniqueID);
+    g_SetNetICacheParams(file_id_struct, icache_client);
+
+    string              file_id = file_id_struct.GetID();
+
+    // Log if needed
+    if (m_ConnContext.NotNull()) {
+        GetDiagContext().Extra()
+            .Print("FileID", file_id)
+            .Print("FileKey", file_id_struct.GetUniqueKey());
+    }
+
+    return file_id;
 }
 
-bool
-CNetStorageHandler::x_CheckNonAnonymousClient(
-                            const SCommonRequestArguments &  common_args)
+
+void
+CNetStorageHandler::x_CheckNonAnonymousClient(void)
 {
     if (m_Client.empty()) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eHelloRequired,
-                                        "Anonymous client cannot perform "
-                                        "I/O operations with objects");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return false;
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot perform "
+                   "I/O operations with objects");
     }
-    return true;
 }
 
 
-bool
-CNetStorageHandler::x_CheckFileID(const string &                   file_id,
-                                  const SCommonRequestArguments &  common_args)
+void
+CNetStorageHandler::x_CheckFileID(const string &  file_id)
 {
     if (file_id.empty()) {
-        CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        eInvalidArguments,
-                                        "FileID must not be an empty string");
-        x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_SendSyncMessage(response);
-        x_PrintMessageRequestStop();
-        return false;
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "FileID must not be an empty string");
     }
-    return true;
 }
 
 
-bool
+void
 CNetStorageHandler::x_CheckICacheSettings(
-                            const SICacheSettings &          icache_settings,
-                            const SCommonRequestArguments &  common_args)
+                            const SICacheSettings &  icache_settings)
 {
     if (!icache_settings.m_ServiceName.empty()) {
         // CacheName is mandatory in this case
         if (icache_settings.m_CacheName.empty()) {
-            CJsonNode   response = CreateErrorResponseMessage(
-                                            common_args.m_SerialNumber,
-                                            eInvalidArguments,
-                                            "CacheName is required if "
-                                            "ServiceName is provided");
-            x_SetCmdRequestStatus(eStatus_BadRequest);
-            x_SendSyncMessage(response);
-            x_PrintMessageRequestStop();
-            return false;
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "CacheName is required if ServiceName is provided");
         }
     }
-    return true;
 }
 
 
-bool
-CNetStorageHandler::x_CheckUserKey(
-                            const SUserKey &                 user_key,
-                            const SCommonRequestArguments &  common_args)
+void
+CNetStorageHandler::x_CheckUserKey(const SUserKey &  user_key)
 {
     if (!user_key.m_UniqueID.empty()) {
         // AppDomain is mandatory in this case
         if (user_key.m_AppDomain.empty()) {
-            CJsonNode   response = CreateErrorResponseMessage(
-                                            common_args.m_SerialNumber,
-                                            eInvalidArguments,
-                                            "AppDomain is required if "
-                                            "UniqueKey is provided");
-            x_SetCmdRequestStatus(eStatus_BadRequest);
-            x_SendSyncMessage(response);
-            x_PrintMessageRequestStop();
-            return false;
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "AppDomain is required if UniqueKey is provided");
         }
     }
-    return true;
+}
+
+
+void
+CNetStorageHandler::x_GetStorageParams(
+                        const CJsonNode &   message,
+                        SICacheSettings *   icache_settings,
+                        SUserKey *          user_key,
+                        TNetStorageFlags *  flags)
+{
+    *icache_settings = ExtractICacheSettings(message);
+    *user_key = ExtractUserKey(message);
+
+    // Check the parameters validity
+    x_CheckICacheSettings(*icache_settings);
+    x_CheckUserKey(*user_key);
+
+    *flags = ExtractStorageFlags(message);
 }
 
 
 CNetFile CNetStorageHandler::x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
-                    const SUserKey &         user_key,
                     TNetStorageFlags         flags)
 {
-    if (user_key.m_UniqueID.empty()) {
-        CNetStorage     net_storage;
-        if (icache_settings.m_ServiceName.empty())
-            net_storage = g_CreateNetStorage(0);
-        else {
-            CNetICacheClient icache_client(icache_settings.m_ServiceName,
-                    icache_settings.m_CacheName, m_Client);
-            net_storage = g_CreateNetStorage(icache_client, 0);
-        }
-        return net_storage.Create(flags);
-    }
-
-    return x_CreateNetStorageByKey(
-                icache_settings, user_key).Open(user_key.m_UniqueID, flags);
-}
-
-
-CNetStorageByKey
-CNetStorageHandler::x_CreateNetStorageByKey(
-                          const SICacheSettings &  icache_settings,
-                          const SUserKey &         user_key)
-{
-    CNetStorageByKey    net_storage_by_key;
+    CNetStorage     net_storage;
     if (icache_settings.m_ServiceName.empty())
-        return g_CreateNetStorageByKey(user_key.m_AppDomain, 0);
-
-    CNetICacheClient icache_client(icache_settings.m_ServiceName,
-            icache_settings.m_CacheName, m_Client);
-    return g_CreateNetStorageByKey(icache_client, user_key.m_AppDomain, 0);
+        net_storage = g_CreateNetStorage(0);
+    else {
+        CNetICacheClient icache_client(icache_settings.m_ServiceName,
+                icache_settings.m_CacheName, m_Client);
+        net_storage = g_CreateNetStorage(icache_client, 0);
+    }
+    return net_storage.Create(flags);
 }
+
 
 EIO_Status
-CNetStorageHandler::x_SendOverUTTP(const char* buffer,
-        size_t buffer_size, bool last_chunk)
+CNetStorageHandler::x_SendOverUTTP(const char *  buffer,
+                                   size_t  buffer_size, bool  last_chunk)
 {
-    const char* output_buffer;
-    size_t      output_buffer_size;
-    size_t      written;
+    const char *    output_buffer;
+    size_t          output_buffer_size;
+    size_t          written;
 
     m_UTTPWriter.SendChunk(buffer, buffer_size, !last_chunk);
 
@@ -1340,7 +1211,8 @@ CNetStorageHandler::x_SendOverUTTP(const char* buffer,
             EIO_Status result =
                 GetSocket().Write(output_buffer, output_buffer_size, &written);
             if (result != eIO_Success) {
-                ERR_POST("Error writing to the client socket. The connection will be closed.");
+                ERR_POST("Error writing to the client socket. "
+                         "The connection will be closed.");
                 x_SetConnRequestStatus(eStatus_SocketIOError);
                 m_Server->CloseConnection(&GetSocket());
                 return result;

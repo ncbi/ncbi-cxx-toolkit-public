@@ -43,13 +43,22 @@ class CNetStorageServerException : public CException
 {
     public:
         enum EErrCode {
-            eInvalidArgument,
-            eInvalidMessageType,
-            eInvalidIncomingMessage,
-            eInternalError
+            eInvalidArgument        = 1,
+            eMandatoryFieldsMissed  = 2,
+            eHelloRequired          = 3,
+            eInvalidMessageType     = 4,
+            eInvalidIncomingMessage = 5,
+            ePrivileges             = 6,
+            eInvalidMessageHeader   = 7,
+            eShuttingDown           = 8,
+            eMessageAfterBye        = 9,
+            eStorageError           = 10,
+            eWriteError             = 11,
+            eReadError              = 12,
+            eInternalError          = 13
         };
-        virtual const char *  GetErrCodeString() const;
-        unsigned int ErrCodeToHTTPStatusCode() const;
+        virtual const char *  GetErrCodeString(void) const;
+        unsigned int ErrCodeToHTTPStatusCode(void) const;
         NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
 };
 

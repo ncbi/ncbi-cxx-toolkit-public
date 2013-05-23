@@ -35,6 +35,7 @@
 
 #include <string>
 #include <connect/services/json_over_uttp.hpp>
+#include <connect/services/netstorage.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -57,21 +58,6 @@ struct SCommonRequestArguments
 
     string      m_MessageType;
     Int8        m_SerialNumber;
-};
-
-
-// Storage flags which may appear in various requests
-struct SStorageFlags
-{
-    SStorageFlags() :
-        m_Fast(false), m_Persistent(false),
-        m_Movable(false), m_Cacheable(false)
-    {}
-
-    bool        m_Fast;
-    bool        m_Persistent;
-    bool        m_Movable;
-    bool        m_Cacheable;
 };
 
 
@@ -98,7 +84,7 @@ void SetSessionAndIP(const CJsonNode &  message,
 SCommonRequestArguments
 ExtractCommonFields(const CJsonNode &  message);
 
-SStorageFlags
+TNetStorageFlags
 ExtractStorageFlags(const CJsonNode &  message);
 
 SICacheSettings
