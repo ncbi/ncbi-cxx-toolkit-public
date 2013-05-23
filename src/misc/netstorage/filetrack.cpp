@@ -44,8 +44,6 @@
 #include <util/random_gen.hpp>
 #include <util/util_exception.hpp>
 
-#include <serial/objistr.hpp>
-
 #include <corelib/rwstream.hpp>
 
 #include <time.h>
