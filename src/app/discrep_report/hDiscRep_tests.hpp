@@ -1281,8 +1281,10 @@ namespace DiscRepNmSpc {
       string GetName_scomm() const {return string("MISSING_STRUCTURED_COMMENT"); }
       string GetName_mproj() const {return string("MISSING_PROJECT"); }
       string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
+/*
       string GetName_iscomm() const {
                             return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS"); }
+*/
       string GetName_prefix() const {
                        return string("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX"); }
 
@@ -1799,7 +1801,7 @@ namespace DiscRepNmSpc {
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_FEATURE_COUNT");}
+      virtual string GetName() const {return string("DISC_FEATURE_COUNT_oncaller");}
   };
 
 

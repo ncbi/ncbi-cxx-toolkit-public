@@ -90,7 +90,7 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq
    {"DISC_COUNT_NUCLEOTIDES", fDiscrepancy | fOncaller},
    {"DISC_QUALITY_SCORES", fDiscrepancy},
-   {"DISC_FEATURE_COUNT", fOncaller},  // oncaller tool version
+   {"DISC_FEATURE_COUNT_oncaller", fOncaller},  // oncaller tool version
    
 // tests_on_Bioseq_aa
    {"COUNT_PROTEINS", fDiscrepancy},
@@ -268,7 +268,6 @@ static const s_test_property test_list[] = {
    {"DUP_DISC_CBS_CULTURE_CONFLICT", fDiscrepancy},
    {"INCONSISTENT_BIOSOURCE", fDiscrepancy},
    {"ONCALLER_BIOPROJECT_ID", fDiscrepancy},
-   {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", fDiscrepancy},
    {"ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX", fDiscrepancy},
    {"MISSING_GENOMEASSEMBLY_COMMENTS", fDiscrepancy},
    {"TEST_HAS_PROJECT_ID", fDiscrepancy},
@@ -315,9 +314,6 @@ CRepConfig* CRepConfig :: factory(const string& report_tp)
 
 void CRepConfig :: CollectTests() 
 {
-for (unsigned i=0; i < sizeof(test_list)/sizeof(s_test_property); i++)
-   cerr << test_list[i].name << endl;
-
    unsigned sz = tests_run.size(), i=0;
    int my_tests;
    if (i >= sz) return;
@@ -335,7 +331,7 @@ for (unsigned i=0; i < sizeof(test_list)/sizeof(s_test_property); i++)
         thisInfo.test_item_list["DISC_QUALITY_SCORES"].clear();
         if (++i >= sz) return;
    }
-   if (tests_run.find("DISC_FEATURE_COUNT") != tests_run.end()) {
+   if (tests_run.find("DISC_FEATURE_COUNT_oncaller") != tests_run.end()) {
         tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_FEATURE_COUNT)); 
         if (++i >= sz) return;
    } 
@@ -351,7 +347,7 @@ if (i > sz) return;
 
 //        if (++i >= sz) return;
    }
-   if ( tests_run.find("INCONSISTENT_PROTEIN_ID_PREFIX") != tests_run.end()) {
+   if ( tests_run.find("INCONSISTENT_PROTEIN_ID_PREFIX1") != tests_run.end()) {
         tests_on_Bioseq_aa.push_back(
                    CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
 /*
@@ -1142,11 +1138,6 @@ if (i > sz) return;
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_BIOPROJECT_ID));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INCONSISTENT_STRUCTURED_COMMENTS") != tests_run.end()) {
-       tests_on_SeqEntry_feat_desc.push_back(
-            CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
-        if (++i >= sz) return;
-   }
    if ( tests_run.find("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX") != tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                            new CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX));
@@ -1258,12 +1249,7 @@ if (i > sz) return;
                        CRef <CTestAndRepData>(new CSeqEntry_MISSING_PROJECT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE") != tests_run.end()) {
-       tests_on_SeqEntry_feat_desc.push_back( 
-          CRef <CTestAndRepData>( new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE));
-        if (++i >= sz) return;
-   }
-   if ( tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE") != tests_run.end()) {
+   if ( tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1") != tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                        new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE)); // not tested
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
@@ -1309,11 +1295,9 @@ void CRepConfig :: Init(const string& report_type)
    else if(report_type ==  "Oncaller") cate_flag = fOncaller;
    else NCBI_THROW(CException, eUnknown, "Unrecognized report type.");
 
-unsigned i=0;
    for (unsigned i=0; i< sizeof(test_list)/sizeof(s_test_property); i++) {
       if (test_list[i].category & cate_flag) 
                 tests_run.insert(test_list[i].name);
-else cerr << "not run " << test_list[i].name << endl;
    }
    
    ITERATE (vector <string>, it, thisInfo.tests_enabled) {

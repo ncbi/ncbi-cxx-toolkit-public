@@ -130,6 +130,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   thisTest.is_Subsrc_run = false;
   thisTest.is_TaxCflts_run = false;
 
+cerr << "on_SubmitBlk " << CRepConfig :: tests_on_SubmitBlk.size() << endl;
   GoTests(CRepConfig :: tests_on_SubmitBlk, *seq_entry);
 
   if (!CRepConfig::tests_on_SeqEntry_feat_desc.empty()) {

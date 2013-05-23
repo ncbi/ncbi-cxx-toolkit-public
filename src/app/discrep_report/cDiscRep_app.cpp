@@ -89,7 +89,7 @@ COutputConfig                          CDiscRepInfo :: output_config;
 CRef <CSuspect_rule_set >              CDiscRepInfo::suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >             CDiscRepInfo :: susrule_summ;
 vector <string> 	               CDiscRepInfo :: weasels;
-CConstRef <CSeq_submit>                CDiscRepInfo :: seq_submit = CConstRef <CSeq_submit>();
+CRef <CSeq_submit>                     CDiscRepInfo :: seq_submit(new CSeq_submit);
 string                                 CDiscRepInfo :: expand_defline_on_set;
 string                                 CDiscRepInfo :: report_lineage;
 vector <string>                        CDiscRepInfo :: strandsymbol;
@@ -415,12 +415,13 @@ cerr << "222can get\n";
         = NStr::Tokenize(strtmp, ",", thisInfo.ok_num_prefix);
 
     // ini of feattype_featdef & feattype_name
-    struct FeatTypeFeatDefData {
+    struct s_FeatTypeFeatDefData {
              EMacro_feature_type feattype;
              CSeqFeatData::ESubtype featdef;
              const char* featname;
     };
-    FeatTypeFeatDefData feattype_featdef[] = {
+
+    s_FeatTypeFeatDefData feattype_featdef[] = {
  { eMacro_feature_type_any , CSeqFeatData::eSubtype_any , "any" } , 
  { eMacro_feature_type_gene , CSeqFeatData::eSubtype_gene , "gene" } , 
  { eMacro_feature_type_org , CSeqFeatData::eSubtype_org , "org" } , 
@@ -516,8 +517,7 @@ cerr << "222can get\n";
  { eMacro_feature_type_tmRNA , CSeqFeatData::eSubtype_tmRNA , "tmRNA" } ,
  { eMacro_feature_type_mobile_element, CSeqFeatData::eSubtype_mobile_element, "mobile_element" }
 };
-
-    for (i = 0; i < (int)(sizeof(feattype_featdef) / sizeof(FeatTypeFeatDefData)); i++) {
+    for (i = 0; i < (int)(sizeof(feattype_featdef) / sizeof(s_FeatTypeFeatDefData)); i++) {
        thisInfo.feattype_featdef[feattype_featdef[i].feattype] = feattype_featdef[i].featdef;
        thisInfo.feattype_name[feattype_featdef[i].feattype] = feattype_featdef[i].featname;
     }
@@ -1021,7 +1021,6 @@ int CDiscRepApp :: Run(void)
 
     CRepConfig* rep_config = CRepConfig::factory(thisInfo.report);
     rep_config->Init(thisInfo.report);
-//    rep_config->ConfigRep();
 
     // read input file and go tests
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
@@ -1030,8 +1029,7 @@ int CDiscRepApp :: Run(void)
     known_tp.insert(CSeq_submit::GetTypeInfo());
     set <const CTypeInfo*> matching_tp = ois->GuessDataType(known_tp);
     if (matching_tp.size() == 1 && *(matching_tp.begin()) == CSeq_submit :: GetTypeInfo()) {
-         *ois >> tmp_seq_submit;
-         thisInfo.seq_submit = CConstRef <CSeq_submit> (&tmp_seq_submit);
+         *ois >> *thisInfo.seq_submit;
          if (thisInfo.seq_submit->IsEntrys()) {
              ITERATE (list <CRef <CSeq_entry> >,it,thisInfo.seq_submit->GetData().GetEntrys())
                 CheckThisSeqEntry(*it);

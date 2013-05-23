@@ -181,15 +181,15 @@ namespace DiscRepNmSpc{
           CDiscRepInfo ();
           ~CDiscRepInfo () {};
 
-           static CRef < CScope >                   scope;
-           static string                            infile;
+           static CRef < CScope >                    scope;
+           static string                             infile;
            static COutputConfig                      output_config;
            static vector < CRef < CClickableItem > > disc_report_data;
            static Str2Strs                           test_item_list;
            static CRef < CSuspect_rule_set>          suspect_prod_rules;
            static vector < vector <string> >         susrule_summ;
            static vector <string> 		     weasels;
-           static CConstRef <CSeq_submit>            seq_submit;
+           static CRef <CSeq_submit>                 seq_submit;
            static string                             expand_defline_on_set;
            static string                             report_lineage;
            static vector <string>                    strandsymbol;
