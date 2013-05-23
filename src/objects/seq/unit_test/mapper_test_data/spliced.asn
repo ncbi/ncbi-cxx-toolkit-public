@@ -76,10 +76,9 @@ Seq-align ::= {
       {
         product-start nucpos 110,
         product-end nucpos 199,
-        genomic-start 0,
+        genomic-start 10,
         genomic-end 99,
         parts {
-          genomic-ins 10,
           match 40,
           mismatch 50
         },
@@ -169,10 +168,9 @@ Seq-align ::= {
           amin 139,
           frame 3
         },
-        genomic-start 0,
+        genomic-start 10,
         genomic-end 99,
         parts {
-          genomic-ins 10,
           match 40,
           mismatch 50
         }
@@ -243,11 +241,10 @@ Seq-align ::= {
           frame 3
         },
         genomic-start 0,
-        genomic-end 99,
+        genomic-end 89,
         parts {
           match 50,
-          mismatch 40,
-          genomic-ins 10
+          mismatch 40
         }
       }
     },
@@ -337,10 +334,9 @@ Seq-align ::= {
       {
         product-start nucpos 100,
         product-end nucpos 314,
-        genomic-start 0,
-        genomic-end 99,
+        genomic-start 10,
+        genomic-end 79,
         parts {
-          genomic-ins 10,
           match 10,
           genomic-ins 10,
           product-ins 90,
@@ -351,8 +347,7 @@ Seq-align ::= {
           product-ins 85,
           mismatch 5,
           genomic-ins 10,
-          mismatch 10,
-          genomic-ins 20
+          mismatch 10
         }
       }
     },

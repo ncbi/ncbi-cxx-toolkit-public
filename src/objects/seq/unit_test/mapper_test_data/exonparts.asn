@@ -69,12 +69,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 200,
-        product-end nucpos 779,
+        product-start nucpos 220,
+        product-end nucpos 769,
         genomic-start 1200,
         genomic-end 1789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -83,8 +82,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -104,12 +102,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 200,
-        product-end nucpos 779,
+        product-start nucpos 220,
+        product-end nucpos 769,
         genomic-start 1211,
         genomic-end 1800,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -118,8 +115,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -174,12 +170,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 1200,
-        product-end nucpos 1779,
+        product-start nucpos 1220,
+        product-end nucpos 1769,
         genomic-start 200,
         genomic-end 789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -188,8 +183,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -209,12 +203,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 1221,
-        product-end nucpos 1800,
+        product-start nucpos 1231,
+        product-end nucpos 1780,
         genomic-start 200,
         genomic-end 789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -223,8 +216,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -279,12 +271,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 200,
-        product-end nucpos 779,
+        product-start nucpos 220,
+        product-end nucpos 769,
         genomic-start 1200,
         genomic-end 1789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -293,8 +284,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -314,12 +304,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 200,
-        product-end nucpos 779,
+        product-start nucpos 220,
+        product-end nucpos 769,
         genomic-start 1211,
         genomic-end 1800,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -328,8 +317,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -384,12 +372,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 1200,
-        product-end nucpos 1779,
+        product-start nucpos 1220,
+        product-end nucpos 1769,
         genomic-start 200,
         genomic-end 789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -398,8 +385,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -419,12 +405,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 1221,
-        product-end nucpos 1800,
+        product-start nucpos 1231,
+        product-end nucpos 1780,
         genomic-start 200,
         genomic-end 789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -433,8 +418,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -489,12 +473,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 200,
-        product-end nucpos 779,
+        product-start nucpos 210,
+        product-end nucpos 759,
         genomic-start 1200,
         genomic-end 1789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -503,8 +486,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -524,12 +506,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 200,
-        product-end nucpos 779,
+        product-start nucpos 210,
+        product-end nucpos 759,
         genomic-start 1211,
         genomic-end 1800,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -538,8 +519,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -594,12 +574,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 1200,
-        product-end nucpos 1779,
+        product-start nucpos 1210,
+        product-end nucpos 1759,
         genomic-start 200,
         genomic-end 789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -608,8 +587,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },
@@ -629,12 +607,11 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 1221,
-        product-end nucpos 1800,
+        product-start nucpos 1241,
+        product-end nucpos 1790,
         genomic-start 200,
         genomic-end 789,
         parts {
-          product-ins 20,
           match 100,
           genomic-ins 30,
           match 110,
@@ -643,8 +620,7 @@ Seq-align ::= {
           match 90,
           genomic-ins 50,
           match 100,
-          mismatch 60,
-          product-ins 10
+          mismatch 60
         }
       }
     },

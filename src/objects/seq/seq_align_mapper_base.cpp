@@ -1515,7 +1515,7 @@ void CSeq_align_Mapper_Base::x_GetDstDisc(CRef<CSeq_align>& dst) const
 }
 
 
-// Creating exot parts - helper function to set part length
+// Creating exon parts - helper function to set part length
 // depending on its type.
 void SetPartLength(CSpliced_exon_chunk&          part,
                    CSpliced_exon_chunk::E_Choice ptype,
@@ -1563,6 +1563,13 @@ void CSeq_align_Mapper_Base::x_PushExonPart(
         // Parts order does not depend on strands - preserve the original one.
         exon.SetParts().push_back(last_part);
     }
+}
+
+
+inline bool IsExonGap(CSpliced_exon_chunk::E_Choice chunk_type)
+{
+    return chunk_type == CSpliced_exon_chunk::e_Genomic_ins  ||
+        chunk_type == CSpliced_exon_chunk::e_Product_ins;
 }
 
 
@@ -1817,22 +1824,65 @@ x_GetDstExon(CSpliced_seg&              spliced,
             }
         }
 
+        bool is_first = exon->GetParts().empty();
         // Add genomic or product insertions if any.
         if (gins_len > 0) {
-            x_PushExonPart(last_part, CSpliced_exon_chunk::e_Genomic_ins,
-                gins_len, *exon);
+            if ( !is_first ) {
+                x_PushExonPart(last_part, CSpliced_exon_chunk::e_Genomic_ins,
+                    gins_len, *exon);
+            }
+            else {
+                // Ignore gaps at exon start.
+                if ( !gen_reverse ) {
+                    gen_start += gins_len;
+                }
+                else {
+                    gen_end -= gins_len;
+                }
+            }
         }
         if (pins_len > 0) {
-            x_PushExonPart(last_part, CSpliced_exon_chunk::e_Product_ins,
-                pins_len, *exon);
+            if ( !is_first ) {
+                x_PushExonPart(last_part, CSpliced_exon_chunk::e_Product_ins,
+                    pins_len, *exon);
+            }
+            else {
+                // Ignore gaps at exon start.
+                if ( !prod_reverse ) {
+                    prod_start += pins_len;
+                }
+                else {
+                    prod_end -= pins_len;
+                }
+            }
         }
-        // Add the mapped part.
-        x_PushExonPart(last_part, ptype, seg->m_Len, *exon);
 
         // Remember if there are any non-gap parts.
-        if (ptype != CSpliced_exon_chunk::e_Genomic_ins  &&
-            ptype != CSpliced_exon_chunk::e_Product_ins) {
+        if ( !IsExonGap(ptype) ) {
             have_non_gaps = true;
+        }
+
+        // Add the mapped part except if it's a gap in the first position.
+        if ( !is_first  ||  have_non_gaps) {
+            x_PushExonPart(last_part, ptype, seg->m_Len, *exon);
+        }
+        else {
+            if (ptype == CSpliced_exon_chunk::e_Genomic_ins) {
+                if ( !gen_reverse ) {
+                    gen_start += seg->m_Len;
+                }
+                else {
+                    gen_end -= seg->m_Len;
+                }
+            }
+            else if (ptype == CSpliced_exon_chunk::e_Product_ins) {
+                if ( !prod_reverse ) {
+                    prod_start += seg->m_Len;
+                }
+                else {
+                    prod_end -= seg->m_Len;
+                }
+            }
         }
     }
 
@@ -1855,6 +1905,28 @@ x_GetDstExon(CSpliced_seg&              spliced,
             }
         }
         return;
+    }
+
+    // Make sure the last part is not a gap.
+    while ( IsExonGap(exon->GetParts().back()->Which()) ) {
+        const CSpliced_exon_chunk& chunk = *exon->GetParts().back();
+        if ( chunk.IsGenomic_ins() ) {
+            if ( !IsReverse(gen_strand) ) {
+                gen_end -= chunk.GetGenomic_ins();
+            }
+            else {
+                gen_start += chunk.GetGenomic_ins();
+            }
+        }
+        else if ( chunk.IsProduct_ins() ) {
+            if ( !IsReverse(prod_strand) ) {
+                prod_end -= chunk.GetProduct_ins();
+            }
+            else {
+                prod_start += chunk.GetProduct_ins();
+            }
+        }
+        exon->SetParts().pop_back();
     }
 
     if ( IsReverse(gen_strand) ) {
