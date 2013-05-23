@@ -47,3 +47,5 @@ internal/sra
 -ctools/test
 -objects/seq/unit_test/Makefile.seq_c_compat_unit_test.app 
 -objects/seq/unit_test/seq_c_compat_unit_test.cpp 
+-objects/general/test/Makefile.test_userfield.app
+-objects/general/test/test_userfield.cpp
