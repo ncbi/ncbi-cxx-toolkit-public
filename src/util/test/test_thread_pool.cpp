@@ -91,6 +91,53 @@ protected:
 };
 
 
+// For the one-off test for using exclusive task to wait for termination of
+// previously run regular tasks
+class CTerminator_Task : public CThreadPool_Task
+{
+public:
+    CTerminator_Task() : m_Semaphore(0,1) {}
+    virtual EStatus Execute()
+    {    
+        MSG_POST("Executing terminator");
+        m_Semaphore.Post();
+        return eCompleted;
+    }    
+    void Wait(void) 
+    {    
+        m_Semaphore.Wait();
+    }    
+
+    static void Wait(CThreadPool&                 thread_pool,
+                     CThreadPool::TExclusiveFlags flags)
+    {    
+        CRef<CTerminator_Task> terminator(new CTerminator_Task());
+        thread_pool.RequestExclusiveExecution(terminator, flags);
+        terminator->Wait();
+    }    
+private:
+    CSemaphore m_Semaphore;
+};
+
+
+// For the one-off test for using exclusive task to wait for termination of
+// previously run regular tasks
+class CSentinelThreadPool_Task : public CThreadPool_Task
+{
+public:
+    CSentinelThreadPool_Task(unsigned id) : m_Id(id) {}
+    virtual EStatus Execute()
+    {    
+        MSG_POST("Started " << m_Id);
+        SleepMicroSec(10000);
+        MSG_POST("Completed " << m_Id);
+        return eCompleted;
+    }    
+private:
+    unsigned m_Id;
+};
+
+
 bool CThreadPoolTester::TestApp_Init(void)
 {
     s_Pool = new CThreadPool(kQueueSize, kMaxThreads);
@@ -144,6 +191,32 @@ bool CThreadPoolTester::TestApp_Init(void)
     MSG_POST("Starting test for CThreadPool");
 
     s_Timer.Start();
+
+
+    // One-off test for using exclusive task to wait for termination of
+    // previously run regular tasks
+    CThreadPool tp(100, 4);
+
+    for (unsigned i = 0;  i < 50;  i++) {
+         tp.AddTask(new CSentinelThreadPool_Task(i));
+    }
+    MSG_POST("(1) Attaching terminator");
+    CTerminator_Task::Wait
+        (tp, CThreadPool::fExecuteQueuedTasks | CThreadPool::fFlushThreads);
+    _ASSERT(!tp.GetQueuedTasksCount());
+    _ASSERT(!tp.GetExecutingTasksCount());
+    MSG_POST("(1) Finished");
+
+    for (unsigned i = 51;  i < 100;  i++) {
+         tp.AddTask(new CSentinelThreadPool_Task(i));
+    }
+    MSG_POST("(2) Attaching terminator");
+    CTerminator_Task::Wait
+        (tp, CThreadPool::fExecuteQueuedTasks);
+    _ASSERT(!tp.GetQueuedTasksCount());
+    _ASSERT(!tp.GetExecutingTasksCount());
+    MSG_POST("(2) Finished");
+   
 
     return true;
 }

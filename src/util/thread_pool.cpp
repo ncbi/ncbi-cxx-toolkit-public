@@ -193,11 +193,15 @@ public:
     unsigned int GetExecutingTasksCount(void) const;
 
     /// Type for storing information about exclusive task launching
-    typedef pair< TExclusiveFlags,
-                  CRef<CThreadPool_Task> > TExclusiveTaskInfo;
+    struct SExclusiveTaskInfo {
+        TExclusiveFlags         flags;
+        CRef<CThreadPool_Task>  task;
+        SExclusiveTaskInfo(TExclusiveFlags f, CRef<CThreadPool_Task> t)
+            : flags(f), task(t) {}
+    };
 
-    /// Get information about next exclusive task to execute
-    TExclusiveTaskInfo TryGetExclusiveTask(void);
+    /// Get the next exclusive task to execute
+    SExclusiveTaskInfo TryGetExclusiveTask(void);
 
     /// Request suspension of the pool
     /// @param flags
@@ -251,7 +255,7 @@ private:
                                              SThreadPool_TaskCompare > >
             TQueue;
     /// Type of queue used for storing information about exclusive tasks
-    typedef CSyncQueue<TExclusiveTaskInfo>                 TExclusiveQueue;
+    typedef CSyncQueue<SExclusiveTaskInfo>                 TExclusiveQueue;
     /// Type of list of all poolled threads
     typedef set<CThreadPool_ThreadImpl*> TThreadsList;
 
@@ -294,10 +298,10 @@ private:
     /// @sa x_WaitForPredicate
     typedef bool (CThreadPool_Impl::*TWaitPredicate)(void) const;
 
-    /// Check if new task can be added to the pool
-    bool x_IsNewTaskAllowed(void) const;
+    /// Check if addeding new tasks to the pool is prohibited
+    bool x_NoNewTaskAllowed(void) const;
 
-    /// Check if new task can be added to the pool when queuing is disabled
+    /// Check if new task can be added to the pool when queueiing is disabled
     bool x_CanAddImmediateTask(void) const;
 
     /// Check if all threads in pool finished their work
@@ -824,7 +828,7 @@ CThreadPool_Impl::ThreadStopped(CThreadPool_ThreadImpl* thread)
 inline CRef<CThreadPool_Task>
 CThreadPool_Impl::TryGetNextTask(void)
 {
-    if (!m_Suspended  ||  (m_SuspendFlags & CThreadPool::fExecuteQueuedTasks)) {
+    if ( !m_Suspended ) {
         TQueue::TAccessGuard guard(m_Queue);
 
         if (m_Queue.GetSize() != 0) {
@@ -835,32 +839,31 @@ CThreadPool_Impl::TryGetNextTask(void)
     return CRef<CThreadPool_Task>();
 }
 
-inline CThreadPool_Impl::TExclusiveTaskInfo
+
+inline CThreadPool_Impl::SExclusiveTaskInfo
 CThreadPool_Impl::TryGetExclusiveTask(void)
 {
     TExclusiveQueue::TAccessGuard guard(m_ExclusiveQueue);
 
-    if (m_ExclusiveQueue.GetSize() != 0) {
-        CThreadPool_Impl::TExclusiveTaskInfo info = m_ExclusiveQueue.Pop();
-        if (m_FlushRequested) {
-            info.first |= CThreadPool::fFlushThreads;
-            m_FlushRequested = false;
-        }
-        return info;
+    if (m_ExclusiveQueue.GetSize() == 0
+        || ((guard.Begin()->flags & CThreadPool::fExecuteQueuedTasks) != 0
+            &&  GetQueuedTasksCount() != 0)) {
+        return SExclusiveTaskInfo(0, CRef<CThreadPool_Task>());
     }
 
-    return TExclusiveTaskInfo(0, CRef<CThreadPool_Task>());
+    CThreadPool_Impl::SExclusiveTaskInfo info = m_ExclusiveQueue.Pop();
+
+    if (m_FlushRequested) {
+        info.flags |= CThreadPool::fFlushThreads;
+        m_FlushRequested = false;
+    }
+    return info;
 }
+
 
 inline bool
 CThreadPool_Impl::CanDoExclusiveTask(void) const
 {
-    if ((m_SuspendFlags & CThreadPool::fExecuteQueuedTasks)
-        &&  GetQueuedTasksCount() != 0)
-    {
-        return false;
-    }
-
     if ((m_SuspendFlags & CThreadPool::fFlushThreads)
         &&  GetThreadsCount() != 0)
     {
@@ -1087,16 +1090,6 @@ CThreadPool_ServiceThread::x_Idle(void)
 }
 
 inline void
-CThreadPool_ServiceThread::x_WaitForPoolStop(CThreadPool_Guard* pool_guard)
-{
-    while (! m_Pool->IsAborted()  &&  ! m_Pool->CanDoExclusiveTask()) {
-        pool_guard->Release();
-        m_IdleTrigger.Wait();
-        pool_guard->Guard();
-    }
-}
-
-inline void
 CThreadPool_ServiceThread::RequestToFinish(void)
 {
     m_Finishing = true;
@@ -1112,62 +1105,60 @@ void*
 CThreadPool_ServiceThread::Main(void)
 {
     while (! m_Finishing) {
-        CThreadPool_Impl::TExclusiveTaskInfo task_info =
+        CThreadPool_Impl::SExclusiveTaskInfo task_info =
                                               m_Pool->TryGetExclusiveTask();
-        m_CurrentTask = task_info.second;
+        m_CurrentTask = task_info.task;
 
-        if (m_CurrentTask.IsNull()) {
+        if ( m_CurrentTask.IsNull() ) {
             x_Idle();
+            continue;
         }
-        else {
-            CThreadPool_Guard guard(m_Pool);
 
-            if (m_Finishing) {
-                if (! m_CurrentTask->IsCancelRequested()) {
-                    CThreadPool_Impl::sx_RequestToCancel(m_CurrentTask);
-                }
-                CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
-                                                 CThreadPool_Task::eCanceled);
-                break;
+        CThreadPool_Guard guard(m_Pool);
+
+        if (m_Finishing) {
+            if (! m_CurrentTask->IsCancelRequested()) {
+                CThreadPool_Impl::sx_RequestToCancel(m_CurrentTask);
             }
-
-            m_Pool->RequestSuspend(task_info.first);
-            x_WaitForPoolStop(&guard);
-
-            if (m_Finishing) {
-                if (!m_CurrentTask->IsCancelRequested()) {
-                    CThreadPool_Impl::sx_RequestToCancel(m_CurrentTask);
-                }
-                CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
-                                                 CThreadPool_Task::eCanceled);
-                break;
-            }
-
-            guard.Release();
-
             CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
-                                               CThreadPool_Task::eExecuting);
-            try {
-                CThreadPool_Task::EStatus status =
-                                s_ConvertTaskResult(m_CurrentTask->Execute());
-                CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask, status);
-            }
-            catch (exception& e) {
-                ERR_POST_X(11, "Exception from exclusive task in ThreadPool: "
-                               << e.what());
-                CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
-                                                   CThreadPool_Task::eFailed);
-            }
-            catch (...) {
-                ERR_POST_X(12, "Unknown exception from exclusive task "
-                               "in ThreadPool.");
-                CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
-                                                   CThreadPool_Task::eFailed);
-            }
-
-            guard.Guard();
-            m_Pool->ResumeWork();
+                                               CThreadPool_Task::eCanceled);
+            break;
         }
+
+
+        // Signal to suspend the threads for the execution of exclusive task
+        m_Pool->RequestSuspend(task_info.flags
+                               & ~CThreadPool::fExecuteQueuedTasks);
+
+        // Wait until pool is ready for execution of the exclusive task
+        while (! m_Pool->IsAborted()  &&  ! m_Pool->CanDoExclusiveTask()) {
+            guard.Release();
+            m_IdleTrigger.Wait();
+            guard.Guard();
+        }
+
+        if (m_Finishing) {
+            if (!m_CurrentTask->IsCancelRequested()) {
+                CThreadPool_Impl::sx_RequestToCancel(m_CurrentTask);
+            }
+            CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
+                                               CThreadPool_Task::eCanceled);
+            break;
+        }
+
+        guard.Release();
+
+        CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
+                                           CThreadPool_Task::eExecuting);
+        try {
+            CThreadPool_Task::EStatus status =
+                s_ConvertTaskResult(m_CurrentTask->Execute());
+            CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask, status);
+        }
+        NCBI_CATCH_ALL_X(11, "Exception from exclusive task in ThreadPool");
+
+        guard.Guard();
+        m_Pool->ResumeWork();
     }
 
     m_Finished = true;
@@ -1546,21 +1537,26 @@ CThreadPool_Impl::SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle)
 }
 
 inline bool
-CThreadPool_Impl::x_IsNewTaskAllowed(void) const
+CThreadPool_Impl::x_NoNewTaskAllowed(void) const
 {
-    return !m_Aborted
-            &&  (!m_Suspended
-                  ||  !(m_SuspendFlags & CThreadPool::fDoNotAllowNewTasks));
+    return
+        m_Aborted  ||
+        (m_Suspended  &&  (m_SuspendFlags & CThreadPool::fDoNotAllowNewTasks));
 }
 
 bool
 CThreadPool_Impl::x_CanAddImmediateTask(void) const
 {
-    // If pool aborts at some point in waiting it has to stop waiting
-    // immediately
-    return !x_IsNewTaskAllowed()
-           ||  (!m_Suspended  &&  (unsigned int)m_TotalTasks.Get()
-                                              < m_Controller->GetMaxThreads());
+    if ( x_NoNewTaskAllowed() ) {
+        // A very special kludge -- to allow immediately breaking the wait
+        // loop when adding new tasks to the pool has been explicitly
+        // prohibited (including if Abort() was called)
+        return true;
+    }
+
+    return
+        !m_Suspended  &&
+        (unsigned int) m_TotalTasks.Get() < m_Controller->GetMaxThreads();
 }
 
 bool
@@ -1568,7 +1564,7 @@ CThreadPool_Impl::x_HasNoThreads(void) const
 {
     CThreadPool_ServiceThread* thread = m_ServiceThread.GetNCPointerOrNull();
     return m_IdleThreads.size() + m_WorkingThreads.size() == 0
-           &&  (! thread  ||  thread->IsFinished());
+           &&  (!thread  ||  thread->IsFinished());
 }
 
 bool
@@ -1582,8 +1578,8 @@ CThreadPool_Impl::x_WaitForPredicate(TWaitPredicate      wait_func,
         pool_guard->Release();
 
         if (timeout) {
-            CTimeSpan next_tm = CTimeSpan(timeout->GetAsDouble()
-                                              - timer->Elapsed());
+            CTimeSpan next_tm =
+                CTimeSpan(timeout->GetAsDouble() - timer->Elapsed());
             if (next_tm.GetSign() == eNegative) {
                 return false;
             }
@@ -1614,7 +1610,7 @@ ThrowAddProhibited(void)
                "Adding of new tasks is prohibited");
 }
 
- inline void
+inline void
 CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
 {
     _ASSERT(task);
@@ -1623,7 +1619,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
     // will still be referenced even if some exception happen in this method
     CRef<CThreadPool_Task> task_ref(task);
 
-    if (!x_IsNewTaskAllowed()) {
+    if ( x_NoNewTaskAllowed() ) {
         ThrowAddProhibited();
     }
 
@@ -1641,7 +1637,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
                        "Cannot add task - all threads are busy");
         }
 
-        if (!x_IsNewTaskAllowed()) {
+        if ( x_NoNewTaskAllowed() ) {
             ThrowAddProhibited();
         }
 
@@ -1668,11 +1664,11 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
         guard.Guard();
     }
 
-    // Check if someone aborted the pool or suspended it with cacelation of
+    // Check if someone aborted the pool or suspended it with cancelation of
     // queued tasks after we added this task to the queue but before we were
     // able to acquire the mutex
     CThreadPool::TExclusiveFlags check_flags
-        = CThreadPool::fDoNotAllowNewTasks + CThreadPool::fCancelQueuedTasks;
+        = CThreadPool::fDoNotAllowNewTasks | CThreadPool::fCancelQueuedTasks;
     if (m_Aborted  ||  (m_Suspended
                         &&  (m_SuspendFlags & check_flags)  == check_flags))
     {
@@ -1682,7 +1678,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
         return;
     }
 
-    unsigned int cnt_req = (unsigned int)m_TotalTasks.Add(1);
+    unsigned int cnt_req = (unsigned int) m_TotalTasks.Add(1);
 
     if (!m_IsQueueAllowed  &&  cnt_req > GetThreadsCount()) {
         LaunchThreads(cnt_req - GetThreadsCount());
@@ -1735,7 +1731,7 @@ CThreadPool_Impl::RequestExclusiveExecution(CThreadPool_Task*  task,
 
     task->x_SetOwner(this);
     task->x_SetStatus(CThreadPool_Task::eQueued);
-    m_ExclusiveQueue.Push(TExclusiveTaskInfo(flags, Ref(task)));
+    m_ExclusiveQueue.Push(SExclusiveTaskInfo(flags, Ref(task)));
 
     CThreadPool_ServiceThread* thread = m_ServiceThread;
     if (thread) {
@@ -1869,21 +1865,41 @@ CThreadPool_Impl::Abort(const CTimeSpan* timeout)
     // to wait for threads to finish operation
     m_Aborted = true;
 
+    // Cancel queued tasks
+    unsigned int n_queued_tasks = GetQueuedTasksCount();
+    if ( n_queued_tasks ) {
+        ERR_POST_X(14, Warning <<
+                   "CThreadPool is being aborted or destroyed while still "
+                   "having " << n_queued_tasks << " regular tasks "
+                   "waiting to be executed; they are now canceled");
+    }
     x_CancelQueuedTasks();
+
+    // Cancel currently executing tasks
     x_CancelExecutingTasks();
 
+    // Cancel exclusive tasks
     {{
         TExclusiveQueue::TAccessGuard q_guard(m_ExclusiveQueue);
+
+        TExclusiveQueue::TSize n_exclusive_tasks = m_ExclusiveQueue.GetSize();
+        if ( n_exclusive_tasks ) {
+            ERR_POST_X(15, Warning <<
+                       "CThreadPool is being aborted or destroyed while still "
+                       "having " << n_exclusive_tasks << " exclusive tasks "
+                       "waiting to be executed; they are now canceled");
+        }
 
         for (TExclusiveQueue::TAccessGuard::TIterator it = q_guard.Begin();
                                                 it != q_guard.End(); ++it)
         {
-            it->second->x_RequestToCancel();
+            it->task->x_RequestToCancel();
         }
 
         m_ExclusiveQueue.Clear();
     }}
 
+    // Stop threads
     if (m_ServiceThread.NotNull()) {
         m_ServiceThread->RequestToFinish();
     }
@@ -1897,6 +1913,20 @@ CThreadPool_Impl::Abort(const CTimeSpan* timeout)
     CStopWatch timer(CStopWatch::eStart);
     x_WaitForPredicate(&CThreadPool_Impl::x_HasNoThreads,
                        &guard, &m_AbortWait, timeout, &timer);
+
+    if ( !CThreadPool_Impl::x_HasNoThreads() ) {
+        if ( timeout )
+            ERR_POST_X(16, Warning <<
+                       "CThreadPool::Abort() was unable to terminate "
+                       "all of its threads within the specified timeout: "
+                       << timeout->AsSmartString());
+        else
+            ERR_POST_X(17, Critical <<
+                       "CThreadPool::Abort() was not able to terminate"
+                       "all of its threads despite being given an infinite "
+                       "time for doing so");
+    }
+
     m_AbortWait.Post();
 
     // This assigning can destroy the controller. If some threads are not

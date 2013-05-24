@@ -200,19 +200,9 @@ private:
 
 /// Main class implementing functionality of pool of threads.
 ///
-/// This class can be safely used as a member of some other class or as
-/// a scoped variable. In the destructor it will wait for all its threads
-/// to finish with the timeout set by CThreadPool::SetDestroyTimeout().
-/// If this timeout is not enough for threads to terminate CThreadPool
-/// will be destroyed but all threads will finish later without any
-/// "segmentation fault" errors because CThreadPool_Impl object will remain
-/// in memory until last thread is finished. So if this CThreadPool object
-/// is destroyed at the end of the application and it will fail to finish
-/// all threads in destructor then all memory allocated by CThreadPool_Impl
-/// can be shown as leakage in different tools like valgrind. To avoid these
-/// leakages or for some other reasons to make sure that ThreadPool finished
-/// all its operations before the destructor you can call method Abort() at
-/// any place in your application.
+/// @note This class can be safely used as a member of some other class or as
+/// a scoped variable; for more details see the destructor comments.
+/// @sa ~CThreadPool()
 
 class NCBI_XUTIL_EXPORT CThreadPool
 {
@@ -241,9 +231,6 @@ public:
                 unsigned int      min_threads = 2,
                 CThread::TRunMode threads_mode = CThread::fRunDefault);
 
-    /// Destructor
-    virtual ~CThreadPool(void);
-
     /// Add task to the pool for execution.
     /// @note
     ///   The pool will acquire a CRef ownership to the task which it will
@@ -252,24 +239,52 @@ public:
     ///   Task to add
     /// @param timeout
     ///   Time to wait if the tasks queue has reached its maximum length.
-    ///   If NULL, then wait infinitely.
+    ///   If NULL, then wait indefinitely.
     void AddTask(CThreadPool_Task* task, const CTimeSpan* timeout = NULL);
 
-    /// Request to cancel the task and remove it from queue if it is there
+    /// Request to cancel the task and remove it from queue if it is there.
     ///
     /// @sa CThreadPool_Task::RequestToCancel() 
     void CancelTask(CThreadPool_Task* task);
 
-    /// Abort all functions of the pool.
+    /// Destructor -- will wait for all its threads to finish with the timeout
+    /// set by CThreadPool::SetDestroyTimeout(); current default is 10 seconds.
+    /// If this timeout is not enough for threads to terminate CThreadPool
+    /// will be destroyed but all threads will finish later without any
+    /// "segmentation fault" errors because CThreadPool_Impl object will remain
+    /// in memory until all its threads finish.
     /// @note
+    ///   If this CThreadPool object is destroyed at the end of the
+    ///   application and it will fail to finish all threads in destructor,
+    ///   then all memory allocated by CThreadPool_Impl can be shown as leakage
+    ///   in the memory checking tools (like Valgrind). To avoid these
+    ///   leakages or for some other reasons to make sure that ThreadPool
+    ///   finishes all its operations before the destructor you can call
+    ///   method Abort() at any place in your application.
+    /// @sa Abort(), SetDestroyTimeout()
+    virtual ~CThreadPool(void);
+
+
+    //
+    // Extended functionality:
+    //
+
+
+    /// Abort all functions of the pool -- cancel all queued tasks, send
+    /// cancellation notifications to all currently executing tasks.
+    /// @note
+    ///   The already executing tasks may take some time to actually finish
+    ///   execution -- see CancelTasks() and
+    ///   CThreadPool_Task::RequestToCancel()for details
+    /// @attention
     ///   This call renders the pool unusable in the sense that you must not
     ///   call any of its methods after that!
     /// @param timeout
     ///   Maximum time to wait for the termination of the pooled threads.
     ///   If this time is not enough for all threads to terminate, the Abort()
     ///   method returns, and all threads are terminated in the background.
+    ///   If NULL, then wait for as long as it takes for all threads to finish.
     void Abort(const CTimeSpan* timeout = NULL);
-
 
 
     /// Constructor with custom controller
@@ -353,8 +368,8 @@ public:
     void RequestExclusiveExecution(CThreadPool_Task*  task,
                                    TExclusiveFlags    flags = 0);
 
-    /// Cancel the selected groups of tasks in the pool
-    /// 
+    /// Cancel the selected groups of tasks in the pool.
+    ///
     /// @param tasks_group
     ///   Must be a combination of fCancelQueuedTasks and/or
     ///   fCancelExecutingTasks. Cannot be zero.
