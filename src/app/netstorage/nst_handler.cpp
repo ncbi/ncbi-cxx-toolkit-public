@@ -876,7 +876,6 @@ CNetStorageHandler::x_ProcessWrite(
 
     x_CheckNonAnonymousClient();
 
-    bool        created(false);
     if (message.HasKey("FileID") || message.HasKey("UserKey")) {
         // Some kind of identification is given
         string          file_id = x_GetFileID(message);
@@ -892,7 +891,6 @@ CNetStorageHandler::x_ProcessWrite(
 
         // Create the object stream depending on settings
         m_ObjectStream = x_CreateObjectStream(icache_settings, flags);
-        created = true;
     }
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -901,7 +899,7 @@ CNetStorageHandler::x_ProcessWrite(
     reply.SetString("FileID", file_id);
     x_SendSyncMessage(reply);
 
-    if (m_ConnContext.NotNull() && created) {
+    if (m_ConnContext.NotNull() && !message.HasKey("FileID")) {
         CNetFileID      file_id_struct(file_id);
         GetDiagContext().Extra()
             .Print("FileID", file_id)
