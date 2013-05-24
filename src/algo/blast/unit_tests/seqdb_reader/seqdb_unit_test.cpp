@@ -2239,12 +2239,11 @@ BOOST_AUTO_TEST_CASE(TestMTSliceSize)
 {
     const Int8 kSliceDefaultSize = 1073741824L;
     const Int8 kSliceNTSize = 900000000L;
-
-    // skip this test for 32 bit machines
-    if (sizeof(int *) == 4) return;
     CSeqDB db("nt", CSeqDB::eNucleotide);
-    BOOST_REQUIRE_EQUAL(kSliceDefaultSize, db.GetSliceSize());
-    
+
+    // skip this test for 32 bit or low-memory machines
+    if (kSliceDefaultSize > db.GetSliceSize()) return;
+
     db.SetNumberOfThreads(4);
     Int8 new_size = db.GetSliceSize();
     BOOST_REQUIRE(kSliceDefaultSize >= new_size);
