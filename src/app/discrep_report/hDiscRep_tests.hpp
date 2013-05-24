@@ -86,6 +86,8 @@ namespace DiscRepNmSpc {
   class CDiscTestInfo 
   {
     public:
+      static set <string> tests_run;
+
       static bool   is_Aa_run;
       static bool   is_AllAnnot_run;  // checked
       static bool   is_BacPartial_run;
@@ -378,6 +380,7 @@ namespace DiscRepNmSpc {
   class CTestAndRepData : public CObject
   {
     public:
+
       CTestAndRepData() {};
       virtual ~CTestAndRepData() {};
 
@@ -718,8 +721,8 @@ namespace DiscRepNmSpc {
 
     protected:
       string GetName_col() const {return string("ONCALLER_MORE_NAMES_COLLECTED_BY"); }
-      string GetName_itax() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
-      string GetName_ctax() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
+      string GetName_orgi() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
+      string GetName_orgc() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
       string GetName_end() const {return string("END_COLON_IN_COUNTRY"); }
 
       bool Has3Names(const vector <string> arr);
@@ -741,7 +744,7 @@ namespace DiscRepNmSpc {
       virtual ~CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_ctax();}
+      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_orgc();}
   };
 
   class CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED : public CSeqEntry_on_biosrc_subsrc
@@ -750,7 +753,7 @@ namespace DiscRepNmSpc {
       virtual ~CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_itax();}
+      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_orgi();}
   };
 
   class CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY : public CSeqEntry_on_biosrc_subsrc
@@ -1934,24 +1937,19 @@ namespace DiscRepNmSpc {
   class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData
   {
     public:
-      enum ESusTestFlags {
-          fProdName = 1 << 0,
-          fNameTypo = 1 << 1,
-          fNameQuickfix = 1 << 2
-      };
-      typedef int TSusTestFlags;
-
-      CBioseq_on_SUSPECT_RULE (TSusTestFlags test_flag) : m_tests(test_flag) {};
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("DISC_SUSPECT_PRODUCT_NAME");};
 
+      static string GetName_typo() { return string("DISC_PRODUCT_NAME_TYPO");};
+      static string GetName_qfix() { return string("DISC_PRODUCT_NAME_QUICKFIX");};
+      static string GetName_name() { return string("DISC_SUSPECT_PRODUCT_NAME");};
+
     protected:
       CBioseq_Handle m_bioseq_hl;
       Str2Strs m_feature_list;
-      TSusTestFlags m_tests;
 
       bool CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type);
       void FindSuspectProductNamesCallback();

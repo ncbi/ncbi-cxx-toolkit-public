@@ -62,6 +62,7 @@
 #include "hchecking_class.hpp"
 #include "hauto_disc_class.hpp"
 #include "hDiscRep_config.hpp"
+#include "hDiscRep_tests.hpp"
 
 using namespace ncbi;
 using namespace objects;
@@ -82,6 +83,9 @@ vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SeqEntry_feat_desc;
 vector < CRef <CTestAndRepData> > CRepConfig :: tests_4_once;
 vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_BioseqSet;
 vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SubmitBlk;
+set <string> CDiscTestInfo :: tests_run;
+
+static CDiscTestInfo thisTest;
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
@@ -314,32 +318,31 @@ CRepConfig* CRepConfig :: factory(const string& report_tp)
 
 void CRepConfig :: CollectTests() 
 {
-   unsigned sz = tests_run.size(), i=0;
-   int my_tests;
+   unsigned sz = thisTest.tests_run.size(), i=0;
    if (i >= sz) return;
-   if (tests_run.find("DISC_SUBMITBLOCK_CONFLICT") != tests_run.end()) {
+   if (thisTest.tests_run.find("DISC_SUBMITBLOCK_CONFLICT") != thisTest.tests_run.end()) {
         tests_on_SubmitBlk.push_back(
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_SUBMITBLOCK_CONFLICT));
         if (++i >= sz) return;
    }
-   if (tests_run.find("DISC_COUNT_NUCLEOTIDES") != tests_run.end()) {
+   if (thisTest.tests_run.find("DISC_COUNT_NUCLEOTIDES") != thisTest.tests_run.end()) {
         tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_COUNT_NUCLEOTIDES));
         if (++i >= sz) return;
    }
-   if (tests_run.find("DISC_QUALITY_SCORES") != tests_run.end()) {
+   if (thisTest.tests_run.find("DISC_QUALITY_SCORES") != thisTest.tests_run.end()) {
         tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_QUALITY_SCORES));
         thisInfo.test_item_list["DISC_QUALITY_SCORES"].clear();
         if (++i >= sz) return;
    }
-   if (tests_run.find("DISC_FEATURE_COUNT_oncaller") != tests_run.end()) {
+   if (thisTest.tests_run.find("DISC_FEATURE_COUNT_oncaller") != thisTest.tests_run.end()) {
         tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_FEATURE_COUNT)); 
         if (++i >= sz) return;
    } 
-   if ( tests_run.find("COUNT_PROTEINS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("COUNT_PROTEINS") != thisTest.tests_run.end()) {
         tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_COUNT_PROTEINS));
         if (++i >= sz) return;
    } 
-   if ( tests_run.find("MISSING_PROTEIN_ID1") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_PROTEIN_ID1") != thisTest.tests_run.end()) {
         tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID1));
         tests_on_Bioseq_aa.push_back(CRef <CTestAndRepData>(new CBioseq_MISSING_PROTEIN_ID));
 i += 2;
@@ -347,7 +350,7 @@ if (i > sz) return;
 
 //        if (++i >= sz) return;
    }
-   if ( tests_run.find("INCONSISTENT_PROTEIN_ID_PREFIX1") != tests_run.end()) {
+   if ( thisTest.tests_run.find("INCONSISTENT_PROTEIN_ID_PREFIX1") != thisTest.tests_run.end()) {
         tests_on_Bioseq_aa.push_back(
                    CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1));
 /*
@@ -358,898 +361,896 @@ if (i > sz) return;
 */
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_DEFLINE_PRESENT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_DEFLINE_PRESENT") != thisTest.tests_run.end()) {
          tests_on_Bioseq_na.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_DEFLINE_PRESENT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("N_RUNS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("N_RUNS") != thisTest.tests_run.end()) {
         tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_N_RUNS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("N_RUNS_14") != tests_run.end()) {
+   if ( thisTest.tests_run.find("N_RUNS_14") != thisTest.tests_run.end()) {
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_N_RUNS_14));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ZERO_BASECOUNT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ZERO_BASECOUNT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_ZERO_BASECOUNT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_LOW_QUALITY_REGION") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_LOW_QUALITY_REGION") != thisTest.tests_run.end()) {
        tests_on_Bioseq_na.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_LOW_QUALITY_REGION));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_PERCENT_N") != tests_run.end()) { 
+   if ( thisTest.tests_run.find("DISC_PERCENT_N") != thisTest.tests_run.end()) { 
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_PERCENT_N));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_10_PERCENTN") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_10_PERCENTN") != thisTest.tests_run.end()) {
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_10_PERCENTN));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_UNUSUAL_NT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_UNUSUAL_NT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SUSPECT_PHRASES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("SUSPECT_PHRASES") != thisTest.tests_run.end()) {
         tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_SUSPECT_PHRASES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SUSPECT_RRNA_PRODUCTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SUSPECT_RRNA_PRODUCTS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_RRNA_PRODUCTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != tests_run.end()
-        || tests_run.find("DISC_PRODUCT_NAME_TYPO") != tests_run.end()
-        || tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != thisTest.tests_run.end()
+        || thisTest.tests_run.find("DISC_PRODUCT_NAME_TYPO") != thisTest.tests_run.end()
+        || thisTest.tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != thisTest.tests_run.end()) {
         
-        my_tests = 0; 
-        if (tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != tests_run.end()) {
+        if (thisTest.tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != thisTest.tests_run.end()) {
              i++;
-             my_tests = my_tests | CBioseq_on_SUSPECT_RULE::fProdName;
         }
-        if (tests_run.find("DISC_PRODUCT_NAME_TYPO") != tests_run.end()) {
+        if (thisTest.tests_run.find("DISC_PRODUCT_NAME_TYPO") != thisTest.tests_run.end()) {
              i++;
-             my_tests = my_tests | CBioseq_on_SUSPECT_RULE::fNameTypo;
         }
-        if (tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != tests_run.end()) {
+        if (thisTest.tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != thisTest.tests_run.end()) {
              i++;
-             my_tests = my_tests | CBioseq_on_SUSPECT_RULE::fNameQuickfix;
         }
-        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (
-               new CBioseq_on_SUSPECT_RULE((CBioseq_on_SUSPECT_RULE::ESusTestFlags)my_tests)));
+        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_on_SUSPECT_RULE()));
         if (i >= sz) return;
    }
-   if ( tests_run.find("TEST_ORGANELLE_PRODUCTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_ORGANELLE_PRODUCTS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_ORGANELLE_PRODUCTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_GAPS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_GAPS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_GAPS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_MRNA_OVERLAPPING_PSEUDO_GENE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_MRNA_OVERLAPPING_PSEUDO_GENE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_HAS_STANDARD_NAME") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_HAS_STANDARD_NAME") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_HAS_STANDARD_NAME));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_ORDERED_LOCATION") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_ORDERED_LOCATION") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                    CRef <CTestAndRepData> (new CBioseq_ONCALLER_ORDERED_LOCATION));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_FEATURE_LIST") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_FEATURE_LIST") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                     CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_LIST));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_CDS_HAS_CDD_XREF") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_CDS_HAS_CDD_XREF") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TEST_CDS_HAS_CDD_XREF));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CDS_HAS_NEW_EXCEPTION") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CDS_HAS_NEW_EXCEPTION") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_CDS_HAS_NEW_EXCEPTION));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MICROSATELLITE_REPEAT_TYPE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MICROSATELLITE_REPEAT_TYPE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
              CRef <CTestAndRepData> (new CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SUSPECT_MISC_FEATURES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SUSPECT_MISC_FEATURES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_MISC_FEATURES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
              CRef <CTestAndRepData> (new CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_FEATURE_MOLTYPE_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_FEATURE_MOLTYPE_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ADJACENT_PSEUDOGENES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ADJACENT_PSEUDOGENES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_ADJACENT_PSEUDOGENES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MISSING_GENPRODSET_PROTEIN") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_GENPRODSET_PROTEIN") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_PROTEIN));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DUP_GENPRODSET_PROTEIN") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DUP_GENPRODSET_PROTEIN") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                       CRef <CTestAndRepData> (new CBioseq_DUP_GENPRODSET_PROTEIN));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MISSING_GENPRODSET_TRANSCRIPT_ID") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_GENPRODSET_TRANSCRIPT_ID") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_DUP_GENPRODSET_TRANSCRIPT_ID") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_DUP_GENPRODSET_TRANSCRIPT_ID") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                 CRef <CTestAndRepData> (new CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_FEAT_OVERLAP_SRCFEAT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_FEAT_OVERLAP_SRCFEAT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                       CRef <CTestAndRepData> (new CBioseq_DISC_FEAT_OVERLAP_SRCFEAT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("CDS_TRNA_OVERLAP") != tests_run.end()) {
+   if ( thisTest.tests_run.find("CDS_TRNA_OVERLAP") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_CDS_TRNA_OVERLAP));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TRANSL_NO_NOTE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TRANSL_NO_NOTE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TRANSL_NO_NOTE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("NOTE_NO_TRANSL") != tests_run.end()) {
+   if ( thisTest.tests_run.find("NOTE_NO_TRANSL") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_NOTE_NO_TRANSL));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TRANSL_TOO_LONG") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TRANSL_TOO_LONG") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_TRANSL_TOO_LONG));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("FIND_STRAND_TRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("FIND_STRAND_TRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_STRAND_TRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("FIND_BADLEN_TRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("FIND_BADLEN_TRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_BADLEN_TRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("COUNT_TRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("COUNT_TRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_COUNT_TRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("FIND_DUP_TRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("FIND_DUP_TRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_DUP_TRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("COUNT_RRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("COUNT_RRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_COUNT_RRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("FIND_DUP_RRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("FIND_DUP_RRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_DUP_RRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("PARTIAL_CDS_COMPLETE_SEQUENCE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("PARTIAL_CDS_COMPLETE_SEQUENCE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
            CRef <CTestAndRepData> (new CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("CONTAINED_CDS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("CONTAINED_CDS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_CONTAINED_CDS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("PSEUDO_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("PSEUDO_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_PSEUDO_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("EC_NUMBER_NOTE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("EC_NUMBER_NOTE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_EC_NUMBER_NOTE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("NON_GENE_LOCUS_TAG") != tests_run.end()) {
+   if ( thisTest.tests_run.find("NON_GENE_LOCUS_TAG") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData> (new CBioseq_NON_GENE_LOCUS_TAG));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("JOINED_FEATURES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("JOINED_FEATURES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                         CRef <CTestAndRepData> (new CBioseq_JOINED_FEATURES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SHOW_TRANSL_EXCEPT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("SHOW_TRANSL_EXCEPT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>( new CBioseq_SHOW_TRANSL_EXCEPT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
           CRef <CTestAndRepData>( new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("RRNA_NAME_CONFLICTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("RRNA_NAME_CONFLICTS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_GENE_MISSING") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_GENE_MISSING") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_ONCALLER_GENE_MISSING));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_SUPERFLUOUS_GENE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_SUPERFLUOUS_GENE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_ONCALLER_SUPERFLUOUS_GENE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MISSING_GENES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_GENES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
               CRef <CTestAndRepData>(new CBioseq_MISSING_GENES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("EXTRA_GENES") != tests_run.end()) { 
+   if ( thisTest.tests_run.find("EXTRA_GENES") != thisTest.tests_run.end()) { 
        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_GENES));
        //???tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("OVERLAPPING_CDS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("OVERLAPPING_CDS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_CDS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("RNA_CDS_OVERLAP") != tests_run.end()) {
+   if ( thisTest.tests_run.find("RNA_CDS_OVERLAP") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_CDS_OVERLAP));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("FIND_OVERLAPPED_GENES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("FIND_OVERLAPPED_GENES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_FIND_OVERLAPPED_GENES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("OVERLAPPING_GENES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("OVERLAPPING_GENES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_GENES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_PROTEIN_NAMES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_PROTEIN_NAMES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_PROTEIN_NAMES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CDS_PRODUCT_FIND") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CDS_PRODUCT_FIND") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_CDS_PRODUCT_FIND));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("EC_NUMBER_ON_UNKNOWN_PROTEIN") != tests_run.end()) {
+   if ( thisTest.tests_run.find("EC_NUMBER_ON_UNKNOWN_PROTEIN") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("RNA_NO_PRODUCT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("RNA_NO_PRODUCT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>(new CBioseq_RNA_NO_PRODUCT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SHORT_INTRON") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SHORT_INTRON") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_INTRON));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BAD_GENE_STRAND") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BAD_GENE_STRAND") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                          CRef <CTestAndRepData>(new CBioseq_DISC_BAD_GENE_STRAND));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
              CRef <CTestAndRepData>(new CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SHORT_RRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SHORT_RRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                         CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_RRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_OVERLAPPING_RRNAS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_OVERLAPPING_RRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                         CRef <CTestAndRepData>(new CBioseq_TEST_OVERLAPPING_RRNAS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("HYPOTHETICAL_CDS_HAVING_GENE_NAME") != tests_run.end()) {
+   if ( thisTest.tests_run.find("HYPOTHETICAL_CDS_HAVING_GENE_NAME") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                CRef <CTestAndRepData>( new CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SUSPICIOUS_NOTE_TEXT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SUSPICIOUS_NOTE_TEXT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                   CRef <CTestAndRepData>( new CBioseq_DISC_SUSPICIOUS_NOTE_TEXT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("NO_ANNOTATION") != tests_run.end()) {
+   if ( thisTest.tests_run.find("NO_ANNOTATION") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                            CRef <CTestAndRepData>(new CBioseq_NO_ANNOTATION));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_LONG_NO_ANNOTATION") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_LONG_NO_ANNOTATION") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
               CRef <CTestAndRepData>( new CBioseq_DISC_LONG_NO_ANNOTATION));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_PARTIAL_PROBLEMS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_PARTIAL_PROBLEMS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
               CRef <CTestAndRepData>( new CBioseq_DISC_PARTIAL_PROBLEMS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_UNUSUAL_MISC_RNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_UNUSUAL_MISC_RNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
               CRef <CTestAndRepData>( new CBioseq_TEST_UNUSUAL_MISC_RNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("GENE_PRODUCT_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("GENE_PRODUCT_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                      CRef <CTestAndRepData>( new CBioseq_GENE_PRODUCT_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CDS_WITHOUT_MRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CDS_WITHOUT_MRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back( 
                      CRef <CTestAndRepData>( new CBioseq_DISC_CDS_WITHOUT_MRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DUPLICATE_GENE_LOCUS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DUPLICATE_GENE_LOCUS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                           CRef <CTestAndRepData>(new CBioseq_DUPLICATE_GENE_LOCUS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("LOCUS_TAGS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("LOCUS_TAGS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                                    CRef <CTestAndRepData>(new CBioseq_LOCUS_TAGS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("FEATURE_LOCATION_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("FEATURE_LOCATION_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
                           CRef <CTestAndRepData>(new CBioseq_FEATURE_LOCATION_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INCONSISTENT_MOLINFO_TECH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_INCONSISTENT_MOLINFO_TECH") != thisTest.tests_run.end()) {
        tests_on_Bioseq_NotInGenProdSet.push_back(
                      CRef<CTestAndRepData>(new CBioseq_DISC_INCONSISTENT_MOLINFO_TECH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SHORT_CONTIG") != tests_run.end()) {
+   if ( thisTest.tests_run.find("SHORT_CONTIG") != thisTest.tests_run.end()) {
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                  CRef<CTestAndRepData>(new CBioseq_SHORT_CONTIG));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SHORT_SEQUENCES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("SHORT_SEQUENCES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SHORT_SEQUENCES_200") != tests_run.end()) {
+   if ( thisTest.tests_run.find("SHORT_SEQUENCES_200") != thisTest.tests_run.end()) {
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                 CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_UNWANTED_SPACER") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_UNWANTED_SPACER") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_UNWANTED_SPACER));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_UNNECESSARY_VIRUS_GENE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_UNNECESSARY_VIRUS_GENE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                  CRef <CTestAndRepData>(new CBioseq_TEST_UNNECESSARY_VIRUS_GENE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_ORGANELLE_NOT_GENOMIC") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_ORGANELLE_NOT_GENOMIC") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                  CRef <CTestAndRepData>(new CBioseq_TEST_ORGANELLE_NOT_GENOMIC));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MULTIPLE_CDS_ON_MRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MULTIPLE_CDS_ON_MRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData>(new CBioseq_MULTIPLE_CDS_ON_MRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_MRNA_SEQUENCE_MINUS_ST") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_MRNA_SEQUENCE_MINUS_ST") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                         CRef <CTestAndRepData>(new CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_BAD_MRNA_QUAL") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_BAD_MRNA_QUAL") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                             CRef <CTestAndRepData>(new CBioseq_TEST_BAD_MRNA_QUAL));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_EXON_ON_MRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_EXON_ON_MRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                           CRef <CTestAndRepData>(new CBioseq_TEST_EXON_ON_MRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_HIV_RNA_INCONSISTENT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_HIV_RNA_INCONSISTENT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>( new CBioseq_ONCALLER_HIV_RNA_INCONSISTENT));
         if (++i >= sz) return;
    }
-   if(tests_run.find("DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION")!=tests_run.end()) {
+   if(thisTest.tests_run.find("DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION")
+                                                             != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>( 
                            new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION));
         if (++i >= sz) return;
    }
-   if (tests_run.find("DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS")!=tests_run.end()) {
+   if (thisTest.tests_run.find("DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS")
+                                                             != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>(
                             new CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MITOCHONDRION_REQUIRED") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MITOCHONDRION_REQUIRED") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData>( new CBioseq_DISC_MITOCHONDRION_REQUIRED));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("EUKARYOTE_SHOULD_HAVE_MRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("EUKARYOTE_SHOULD_HAVE_MRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>( new CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("RNA_PROVIRAL") != tests_run.end()) {
+   if ( thisTest.tests_run.find("RNA_PROVIRAL") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                          CRef <CTestAndRepData>( new CBioseq_RNA_PROVIRAL));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("NON_RETROVIRIDAE_PROVIRAL") != tests_run.end()) {
+   if ( thisTest.tests_run.find("NON_RETROVIRIDAE_PROVIRAL") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData>( new CBioseq_NON_RETROVIRIDAE_PROVIRAL));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_RETROVIRIDAE_DNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_RETROVIRIDAE_DNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                         CRef <CTestAndRepData>( new CBioseq_DISC_RETROVIRIDAE_DNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_mRNA_ON_WRONG_SEQUENCE_TYPE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_mRNA_ON_WRONG_SEQUENCE_TYPE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
               CRef <CTestAndRepData>( new CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_RBS_WITHOUT_GENE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_RBS_WITHOUT_GENE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                          CRef <CTestAndRepData>(new CBioseq_DISC_RBS_WITHOUT_GENE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_EXON_INTRON_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_EXON_INTRON_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                       CRef <CTestAndRepData>(new CBioseq_DISC_EXON_INTRON_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_TAXNAME_NOT_IN_DEFLINE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_TAXNAME_NOT_IN_DEFLINE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>(new CBioseq_TEST_TAXNAME_NOT_IN_DEFLINE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("INCONSISTENT_SOURCE_DEFLINE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("INCONSISTENT_SOURCE_DEFLINE") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                      CRef <CTestAndRepData>(new CBioseq_INCONSISTENT_SOURCE_DEFLINE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                CRef <CTestAndRepData>(new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_BAD_GENE_NAME") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_BAD_GENE_NAME") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                             CRef <CTestAndRepData> (new CBioseq_TEST_BAD_GENE_NAME));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MOLTYPE_NOT_MRNA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MOLTYPE_NOT_MRNA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                              CRef <CTestAndRepData> (new CBioseq_MOLTYPE_NOT_MRNA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TECHNIQUE_NOT_TSA") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TECHNIQUE_NOT_TSA") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                              CRef <CTestAndRepData> (new CBioseq_TECHNIQUE_NOT_TSA));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("SHORT_PROT_SEQUENCES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("SHORT_PROT_SEQUENCES") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                          CRef <CTestAndRepData> (new CBioseq_SHORT_PROT_SEQUENCES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_COUNT_UNVERIFIED") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_COUNT_UNVERIFIED") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                    CRef <CTestAndRepData>(new CBioseq_TEST_COUNT_UNVERIFIED));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_DUP_GENES_OPPOSITE_STRANDS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_DUP_GENES_OPPOSITE_STRANDS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                 CRef <CTestAndRepData>(new CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_GENE_PARTIAL_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_GENE_PARTIAL_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                CRef <CTestAndRepData>(new CBioseq_DISC_GENE_PARTIAL_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_FLATFILE_FIND_ONCALLER") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_FLATFILE_FIND_ONCALLER") != thisTest.tests_run.end()) {
        tests_on_SeqEntry.push_back(
              CRef <CTestAndRepData>(new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_FEATURE_COUNT") != tests_run.end()) { // asndisc version   
+   if ( thisTest.tests_run.find("DISC_FEATURE_COUNT") != thisTest.tests_run.end()) { // asndisc version   
        tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INCONSISTENT_STRUCTURED_COMMENTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_INCONSISTENT_STRUCTURED_COMMENTS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
             CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INCONSISTENT_DBLINK") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_INCONSISTENT_DBLINK") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_DBLINK));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("END_COLON_IN_COUNTRY") != tests_run.end()) {
+   if ( thisTest.tests_run.find("END_COLON_IN_COUNTRY") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_END_COLON_IN_COUNTRY));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_SUSPECTED_ORG_COLLECTED") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_SUSPECTED_ORG_COLLECTED") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_SUSPECTED_ORG_IDENTIFIED") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_SUSPECTED_ORG_IDENTIFIED") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_MORE_NAMES_COLLECTED_BY") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_MORE_NAMES_COLLECTED_BY") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_STRAIN_TAXNAME_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_STRAIN_TAXNAME_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_SMALL_GENOME_SET_PROBLEM") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_SMALL_GENOME_SET_PROBLEM") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INCONSISTENT_MOLTYPES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_INCONSISTENT_MOLTYPES") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INCONSISTENT_MOLTYPES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BIOMATERIAL_TAXNAME_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BIOMATERIAL_TAXNAME_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_BIOMATERIAL_TAXNAME_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CULTURE_TAXNAME_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CULTURE_TAXNAME_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_STRAIN_TAXNAME_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_STRAIN_TAXNAME_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_STRAIN_TAXNAME_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SPECVOUCHER_TAXNAME_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SPECVOUCHER_TAXNAME_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_SPECVOUCHER_TAXNAME_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_HAPLOTYPE_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_HAPLOTYPE_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_HAPLOTYPE_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MISSING_VIRAL_QUALS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MISSING_VIRAL_QUALS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_VIRAL_QUALS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_INFLUENZA_DATE_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_INFLUENZA_DATE_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TAX_LOOKUP_MISSING") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TAX_LOOKUP_MISSING") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISSING));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TAX_LOOKUP_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TAX_LOOKUP_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_TAX_LOOKUP_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MISSING_STRUCTURED_COMMENT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_STRUCTURED_COMMENT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_MISSING_STRUCTURED_COMMENT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_MISSING_STRUCTURED_COMMENTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_MISSING_STRUCTURED_COMMENTS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MISSING_AFFIL") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MISSING_AFFIL") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_AFFIL));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CITSUBAFFIL_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CITSUBAFFIL_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUBAFFIL_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_TITLE_AUTHOR_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_TITLE_AUTHOR_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_USA_STATE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_USA_STATE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_USA_STATE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CITSUB_AFFIL_DUP_TEXT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CITSUB_AFFIL_DUP_TEXT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_REQUIRED_CLONE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_REQUIRED_CLONE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_CLONE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_MULTISRC") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_MULTISRC") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( 
                             CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTISRC));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SRC_QUAL_PROBLEM") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SRC_QUAL_PROBLEM") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SRC_QUAL_PROBLEM));
         if (++i >= sz) return;
    }
-   if (tests_run.find("DISC_SOURCE_QUALS_ASNDISC") != tests_run.end()) { //asndisc version
+   if (thisTest.tests_run.find("DISC_SOURCE_QUALS_ASNDISC") != thisTest.tests_run.end()) { //asndisc version
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_UNPUB_PUB_WITHOUT_TITLE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_UNPUB_PUB_WITHOUT_TITLE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_CONSORTIUM") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_CONSORTIUM") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CONSORTIUM));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CHECK_AUTH_NAME") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CHECK_AUTH_NAME") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_NAME));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_CHECK_AUTH_CAPS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_CHECK_AUTH_CAPS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_DISC_CHECK_AUTH_CAPS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MISMATCHED_COMMENTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MISMATCHED_COMMENTS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_DISC_MISMATCHED_COMMENTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_COMMENT_PRESENT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_COMMENT_PRESENT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COMMENT_PRESENT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DUP_DISC_ATCC_CULTURE_CONFLICT") != tests_run.end()) {
+   if (thisTest.tests_run.find("DUP_DISC_ATCC_CULTURE_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH") !=tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH") 
+                                                           != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                           new CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_DUP_DEFLINE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_DUP_DEFLINE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_DUP_DEFLINE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_TITLE_ENDS_WITH_SEQUENCE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_TITLE_ENDS_WITH_SEQUENCE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MISSING_DEFLINES") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MISSING_DEFLINES") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_DEFLINES));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_DEFLINE_ON_SET") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_DEFLINE_ON_SET") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_DEFLINE_ON_SET));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BACTERIAL_TAX_STRAIN_MISMATCH") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BACTERIAL_TAX_STRAIN_MISMATCH") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
               CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DUP_DISC_CBS_CULTURE_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DUP_DISC_CBS_CULTURE_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("INCONSISTENT_BIOSOURCE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("INCONSISTENT_BIOSOURCE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                           CRef <CTestAndRepData>(new CSeqEntry_INCONSISTENT_BIOSOURCE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_BIOPROJECT_ID") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_BIOPROJECT_ID") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_BIOPROJECT_ID));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                            new CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MISSING_GENOMEASSEMBLY_COMMENTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_GENOMEASSEMBLY_COMMENTS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                  CRef <CTestAndRepData>(new CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_HAS_PROJECT_ID") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_HAS_PROJECT_ID") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_TEST_HAS_PROJECT_ID));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
              CRef <CTestAndRepData>(new CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_DUPLICATE_PRIMER_SET") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_DUPLICATE_PRIMER_SET") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_COUNTRY_COLON") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_COUNTRY_COLON") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_COUNTRY_COLON));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_MISSING_PRIMER") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_MISSING_PRIMER") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_MISSING_PRIMER));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_SP_NOT_UNCULTURED") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_SP_NOT_UNCULTURED") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_TEST_SP_NOT_UNCULTURED));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_METAGENOMIC") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_METAGENOMIC") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOMIC));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_MAP_CHROMOSOME_CONFLICT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_MAP_CHROMOSOME_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DIVISION_CODE_CONFLICTS") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DIVISION_CODE_CONFLICTS") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DIVISION_CODE_CONFLICTS));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE") 
-                                                             != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE") 
+                                                             != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back( CRef <CTestAndRepData>(
                          new CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_UNNECESSARY_ENVIRONMENTAL") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_UNNECESSARY_ENVIRONMENTAL") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_HUMAN_HOST") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_HUMAN_HOST") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                    CRef <CTestAndRepData>(new CSeqEntry_DISC_HUMAN_HOST));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_MULTIPLE_CULTURE_COLLECTION") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_MULTIPLE_CULTURE_COLLECTION") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("ONCALLER_CHECK_AUTHORITY") != tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_CHECK_AUTHORITY") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_CHECK_AUTHORITY));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_METAGENOME_SOURCE") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_METAGENOME_SOURCE") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                          CRef <CTestAndRepData>(new CSeqEntry_DISC_METAGENOME_SOURCE));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BACTERIA_MISSING_STRAIN") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BACTERIA_MISSING_STRAIN") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                      CRef <CTestAndRepData>(new CSeqEntry_DISC_BACTERIA_MISSING_STRAIN));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_REQUIRED_STRAIN") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_REQUIRED_STRAIN") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                             CRef <CTestAndRepData>(new CSeqEntry_DISC_REQUIRED_STRAIN));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MORE_OR_SPEC_NAMES_IDENTIFIED_BY") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MORE_OR_SPEC_NAMES_IDENTIFIED_BY") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                 CRef <CTestAndRepData>(new CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MORE_NAMES_COLLECTED_BY") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MORE_NAMES_COLLECTED_BY") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_MORE_NAMES_COLLECTED_BY));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("MISSING_PROJECT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_PROJECT") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(
                        CRef <CTestAndRepData>(new CSeqEntry_MISSING_PROJECT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1") != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                        new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE)); // not tested
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
@@ -1258,17 +1259,17 @@ i += 2;
 if (i >= sz) return;
       //  if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_SEGSETS_PRESENT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_SEGSETS_PRESENT") != thisTest.tests_run.end()) {
        tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_SEGSETS_PRESENT));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("TEST_UNWANTED_SET_WRAPPER") != tests_run.end()) {
+   if ( thisTest.tests_run.find("TEST_UNWANTED_SET_WRAPPER") != thisTest.tests_run.end()) {
        tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_TEST_UNWANTED_SET_WRAPPER));
         if (++i >= sz) return;
    }
-   if ( tests_run.find("DISC_NONWGS_SETS_PRESENT") != tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_NONWGS_SETS_PRESENT") != thisTest.tests_run.end()) {
        tests_on_BioseqSet.push_back(
                        CRef <CTestAndRepData>(new CBioseqSet_DISC_NONWGS_SETS_PRESENT));
         if (++i >= sz) return;
@@ -1297,16 +1298,16 @@ void CRepConfig :: Init(const string& report_type)
 
    for (unsigned i=0; i< sizeof(test_list)/sizeof(s_test_property); i++) {
       if (test_list[i].category & cate_flag) 
-                tests_run.insert(test_list[i].name);
+                thisTest.tests_run.insert(test_list[i].name);
    }
    
    ITERATE (vector <string>, it, thisInfo.tests_enabled) {
-      if (tests_run.find(*it) == tests_run.end()) 
-            tests_run.insert(*it);
+      if (thisTest.tests_run.find(*it) == thisTest.tests_run.end()) 
+            thisTest.tests_run.insert(*it);
    }
    ITERATE (vector <string>, it, thisInfo.tests_disabled) {
-      if (tests_run.find(*it) != tests_run.end())
-           tests_run.erase(*it);
+      if (thisTest.tests_run.find(*it) != thisTest.tests_run.end())
+           thisTest.tests_run.erase(*it);
    }
   
    CollectTests();
@@ -1352,8 +1353,7 @@ void CRepConfDiscrepancy :: ConfigRep()
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_RRNA_PRODUCTS));
-   tests_on_Bioseq_CFeat.push_back( 
-                CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE(CBioseq_on_SUSPECT_RULE::fProdName)));
+   tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_on_SUSPECT_RULE));
    tests_on_Bioseq_CFeat.push_back( 
                 CRef <CTestAndRepData> (new CBioseq_TEST_ORGANELLE_PRODUCTS));
    tests_on_Bioseq_CFeat.push_back( CRef <CTestAndRepData> (new CBioseq_DISC_GAPS));

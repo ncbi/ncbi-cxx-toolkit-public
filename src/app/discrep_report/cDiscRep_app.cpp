@@ -366,9 +366,9 @@ void CDiscRepApp::Init(void)
     ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
        EFix_type fixtp = (*rit)->GetRule_type();
-       if (fixtp == eFix_type_typo) strtmp = "DISC_PRODUCT_NAME_TYPO";
-       else if (fixtp == eFix_type_quickfix) strtmp = "DISC_PRODUCT_NAME_QUICKFIX";
-       else strtmp = "DISC_SUSPECT_PRODUCT_NAME";
+       if (fixtp == eFix_type_typo) strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
+       else if (fixtp == eFix_type_quickfix) strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
+       else strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));

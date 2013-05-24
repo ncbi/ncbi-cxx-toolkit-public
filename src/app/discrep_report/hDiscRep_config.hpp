@@ -109,8 +109,6 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
 
      protected:
-        set <string> tests_run;
-
         void WriteDiscRepSummary();
         void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories);
         void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
