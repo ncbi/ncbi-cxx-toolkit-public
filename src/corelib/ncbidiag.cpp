@@ -2047,16 +2047,28 @@ CDiagContext_Extra::Print(const string& name, const char* value)
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, int value)
 {
-    return Print(name, NStr::Int8ToString(value));
+    return Print(name, NStr::IntToString(value));
 }
 
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, unsigned int value)
 {
-    return Print(name, NStr::UInt8ToString(value));
+    return Print(name, NStr::UIntToString(value));
 }
 
-#if (SIZEOF_INT < 8)
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, long value)
+{
+    return Print(name, NStr::LongToString(value));
+}
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, unsigned long value)
+{
+    return Print(name, NStr::ULongToString(value));
+}
+
+#if !NCBI_INT8_IS_LONG
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, Int8 value)
 {
@@ -2064,6 +2076,18 @@ CDiagContext_Extra::Print(const string& name, Int8 value)
 }
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, Uint8 value)
+{
+    return Print(name, NStr::UInt8ToString(value));
+}
+#elif SIZEOF_LONG_LONG
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, long long value)
+{
+    return Print(name, NStr::Int8ToString(value));
+}
+
+CDiagContext_Extra&
+CDiagContext_Extra::Print(const string& name, unsigned long long value)
 {
     return Print(name, NStr::UInt8ToString(value));
 }

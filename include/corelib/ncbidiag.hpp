@@ -1834,9 +1834,14 @@ public:
     CDiagContext_Extra& Print(const string& name, const char* value);
     CDiagContext_Extra& Print(const string& name, int value);
     CDiagContext_Extra& Print(const string& name, unsigned int value);
-#if (SIZEOF_INT < 8)
+    CDiagContext_Extra& Print(const string& name, long value);
+    CDiagContext_Extra& Print(const string& name, unsigned long value);
+#if !NCBI_INT8_IS_LONG
     CDiagContext_Extra& Print(const string& name, Int8 value);
     CDiagContext_Extra& Print(const string& name, Uint8 value);
+#elif SIZEOF_LONG_LONG
+    CDiagContext_Extra& Print(const string& name, long long value);
+    CDiagContext_Extra& Print(const string& name, unsigned long long value);
 #endif
     CDiagContext_Extra& Print(const string& name, char value);
     CDiagContext_Extra& Print(const string& name, signed char value);
