@@ -508,7 +508,10 @@ void CFlatSiteQVal::Format
     if (m_Value != "transit peptide" && m_Value != "signal peptide" &&
         m_Value != "transmembrane region" && s_IsNote(flags, ctx)) 
     {
-        m_Value += " site";
+        const static char *pchSiteSuffix = " site";
+        if( ! NStr::EndsWith(m_Value, pchSiteSuffix) ) {
+            m_Value += pchSiteSuffix;
+        }
     }
     CFlatStringQVal::Format(quals, name, ctx, flags);
 }
