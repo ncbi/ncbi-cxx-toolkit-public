@@ -193,7 +193,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
     ref->Set().push_back(result);
 
     CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
-    int gi = sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
+    TGi gi = sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
     int taxid = s_GetTaxId(hand);
     if (taxid == 0) {
         throw runtime_error("CTestProtProd_EntrezNeighbors::RunTest: "
@@ -202,7 +202,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
     const unsigned int kChunkSize = 50;
     CEntrez2Client e2c;
     vector<int> neigh;
-    e2c.GetNeighbors(gi, "protein", "protein", neigh);
+    e2c.GetNeighbors(GI_TO(int, gi), "protein", "protein", neigh);
     vector<int> sp_neigh;
     vector<int> neigh_subset;
     neigh_subset.reserve(kChunkSize);
@@ -230,11 +230,11 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
             index[neigh_subset[i]] = i;
         }
         unsigned int lowest_index = neigh_subset.size();
-        int first_gi = 0;  // initialize to avoid compiler warning
+        TGi first_gi = ZERO_GI;  // initialize to avoid compiler warning
         for (unsigned int i = 0;  i < sp_neigh.size();  ++i) {
             if (index[sp_neigh[i]] < lowest_index) {
                 lowest_index = index[sp_neigh[i]];
-                first_gi = sp_neigh[i];
+                first_gi = GI_FROM(int, sp_neigh[i]);
             }
         }
         CSeq_id neigh_id;

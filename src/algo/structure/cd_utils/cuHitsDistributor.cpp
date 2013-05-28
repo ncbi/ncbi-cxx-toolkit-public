@@ -42,7 +42,7 @@ BEGIN_SCOPE(cd_utils)
 GiFootPrint::GiFootPrint(CRef<CSeq_align> seqAlign)
 {
 	const CSeq_id& seqId = seqAlign->GetSeq_id(1);
-	gi = 0;
+	gi = ZERO_GI;
 	if (seqId.IsGi())
 		gi = seqId.GetGi();
 	from = seqAlign->GetSeqStart(1);
@@ -71,7 +71,7 @@ void HitDistributor::addBatch(CRef<CSeq_align_set> seqAlignSet)
 			for(; lit != seqAlignList.end(); lit++)
 			{
 				GiFootPrint gfp(*lit);
-				if (gfp.gi > 0)
+				if (gfp.gi > ZERO_GI)
 					m_hitTable[gfp].push_back(&(*lit));
 				else
 					ERR_POST("A SeqAlign without a GI is detected.");  //should not happen normally for BLAST hits

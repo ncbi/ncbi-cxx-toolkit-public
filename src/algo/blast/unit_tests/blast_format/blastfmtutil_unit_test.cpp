@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_SUITE(blastfmtutil)
 
 BOOST_AUTO_TEST_CASE(GetBlastDeflineFromGenbank)
 {
-    const int gi = 555;
+    const TIntId gi = 555;
     const bool is_prot = false;
     SDataLoaderConfig config(is_prot, SDataLoaderConfig::eUseGenbankDataLoader);
 
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
     DataLoaderRevoker revoker(obj, name);
     
     scope->AddDataLoader(name);
-    int gi = sequence::GetGiForAccession("NM_001256", *scope);
+    TGi gi = sequence::GetGiForAccession("NM_001256", *scope);
     CSeq_id id;
     id.SetGi(gi);
     const CBioseq_Handle& handle = scope->GetBioseqHandle(id);
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
     const list< CRef< CBlast_def_line > >& bdl = bdls->Get();
     ITERATE(list< CRef< CBlast_def_line > >, iter, bdl){
         const CBioseq::TId& cur_id = (*iter)->GetSeqid();
-        int cur_gi =  FindGi(cur_id);
+        TGi cur_gi =  FindGi(cur_id);
         BOOST_REQUIRE (gi==cur_gi);
 
         if ((*iter)->IsSetLinks()){
@@ -167,14 +167,14 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
     
     int score, sum_n;
     double bits, evalue;
-    list<int> use_this_gi;
+    list<TGi> use_this_gi;
     int num_ident;
     
     CBlastFormatUtil::GetAlnScores(*(align.front()), score, bits, evalue,
                                    sum_n, num_ident, use_this_gi);
     BOOST_REQUIRE(score == 1296); 
     BOOST_REQUIRE(sum_n == -1);
-    BOOST_REQUIRE(use_this_gi.front() == 18426812);
+    BOOST_REQUIRE(use_this_gi.front() == GI_FROM(TIntId, 18426812));
     BOOST_REQUIRE_CLOSE(evalue, 217774e-146, kMaxDoubleDiff);
     BOOST_REQUIRE_CLOSE(bits, 503.263, 0.0001);
     BOOST_REQUIRE(num_ident == 331);

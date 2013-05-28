@@ -565,14 +565,14 @@ bool CopyGiSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& giSeqId, unsigned i
     return result;
 }
 
-bool ExtractGi(const CRef<CBioseq>& bioseq, unsigned int& gi, unsigned int nth)
+bool ExtractGi(const CRef<CBioseq>& bioseq, TGi& gi, unsigned int nth)
 {
     bool result = false;
     CRef< CSeq_id > giSeqId(new CSeq_id());
 
-    gi = 0;
+    gi = ZERO_GI;
     if (CopyGiSeqId(bioseq, giSeqId, nth)) {
-        gi = (unsigned int) giSeqId->GetGi();
+        gi = giSeqId->GetGi();
         result = true;
     }
     return result;
@@ -878,7 +878,7 @@ void GetAccessionAndDatabaseSource(const CRef< CSeq_id >& seqID, string& accessi
     dbSource = CCdDbPriority::SeqIdTypeToSource((unsigned int) seqID->Which());
 
 	if (seqID->IsGi()) {
-        accession = NStr::IntToString(seqID->GetGi());
+        accession = NStr::NumericToString(seqID->GetGi());
 	} 
     else if (seqID->IsPdb()) {
 		const CPDB_seq_id& pPDB_ID = seqID->GetPdb();

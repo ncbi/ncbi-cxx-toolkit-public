@@ -156,14 +156,14 @@ struct CDeltaBlastTestFixture {
     int x_CountNumberUniqueIds(CConstRef<CSeq_align_set> sas)
     {
         int num_ids = 0;
-        int last_id = -1;
+        TGi last_id = INVALID_GI;
         ITERATE(CSeq_align_set::Tdata, itr, sas->Get()){
             const CSeq_id& seqid = (*itr)->GetSeq_id(1);
 
             BOOST_REQUIRE(seqid.IsGi() || seqid.IsGeneral());
 
             if (seqid.IsGi()) {
-                int new_gi = seqid.GetGi();
+                TGi new_gi = seqid.GetGi();
             
                 if (new_gi != last_id) {
                         num_ids++;
@@ -174,9 +174,9 @@ struct CDeltaBlastTestFixture {
                 BOOST_REQUIRE(seqid.GetGeneral().IsSetTag());
                 int new_tag = seqid.GetGeneral().GetTag().GetId();
 
-                if (new_tag != last_id) {
+                if (new_tag != GI_TO(int, last_id)) {
                     num_ids++;
-                    last_id = new_tag;
+                    last_id = GI_FROM(int, new_tag);
                 }
             }
             
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     BOOST_REQUIRE(pssm->HasQuery());
     BOOST_REQUIRE(pssm->GetQuery().GetSeq().IsSetInst());
     BOOST_REQUIRE_EQUAL(pssm->GetQuery().GetSeq().GetFirstId()->GetGi(),
-                        129295);
+                        GI_FROM(TIntId, 129295));
 
     // check alignments from sequence search results
 
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     BOOST_REQUIRE_EQUAL(
                 results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
-                129295);
+                GI_FROM(TIntId, 129295));
 
     const int kNumExpectedMatchingSeqs = 8;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
@@ -540,7 +540,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     BOOST_REQUIRE(pssm->HasQuery());
     BOOST_REQUIRE(pssm->GetQuery().GetSeq().IsSetInst());
     BOOST_REQUIRE_EQUAL(pssm->GetQuery().GetSeq().GetFirstId()->GetGi(),
-                        129295);
+                        GI_FROM(TIntId, 129295));
 
     // check alignments from sequence search results
 
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
 
     BOOST_REQUIRE_EQUAL(
                 results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
-                129295);
+                GI_FROM(TIntId, 129295));
 
     const int kNumExpectedMatchingSeqs = 5;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
@@ -678,7 +678,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleQueries)
     // verify query id in Seq_aligns
     BOOST_REQUIRE_EQUAL(
                  results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
-                 129295);
+                 GI_FROM(TIntId, 129295));
 
     BOOST_REQUIRE_EQUAL(
      results[1].GetSeqAlign()->Get().front()->GetSeq_id(0).GetPir().GetName(),
@@ -688,7 +688,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleQueries)
     // verify query id in PSSMs
     BOOST_REQUIRE_EQUAL(
            deltablast.GetPssm(0)->GetQuery().GetSeq().GetFirstId()->GetGi(),
-           129295);
+           GI_FROM(TIntId, 129295));
     
     BOOST_REQUIRE_EQUAL(
      deltablast.GetPssm(1)->GetQuery().GetSeq().GetFirstId()->GetPir().GetName(),

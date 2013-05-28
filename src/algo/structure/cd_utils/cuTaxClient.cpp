@@ -98,7 +98,7 @@ bool TaxClient::IsAlive() {
 // try to get "official" tax info from seq_id's gi
 int TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
 {
-	int gi = 0;
+	TGi gi = ZERO_GI;
     if (sid->IsGi()) 
 	{
         gi = sid->GetGi();  
@@ -114,7 +114,7 @@ int TaxClient::GetTaxIDForSeqId(CConstRef< CSeq_id > sid)
 }
 
 
-int TaxClient::GetTaxIDForGI(int gi) {
+int TaxClient::GetTaxIDForGI(TGi gi) {
     int taxid = 0;
     if (IsAlive()) {
         return (m_taxonomyClient->GetTaxId4GI(gi, taxid)) ? taxid : 0;

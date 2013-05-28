@@ -103,7 +103,7 @@ public:
 
 
     /*  Access CD info via alignment row number  */
-    bool   GetGI(int Row, int& GI, bool ignorePDBs = true); // get GI of Row (if ignorePDBs = true, don't look @PDBs for the GI)
+    bool   GetGI(int Row, TGi& GI, bool ignorePDBs = true); // get GI of Row (if ignorePDBs = true, don't look @PDBs for the GI)
     bool   GetPDB(int Row, const CPDB_seq_id*& pPDB); // get PDB ID of Row
     int    GetLowerBound(int Row) const;              // get Row lower alignment bound; return INVALID_MAPPED_POSITION on failure
     int    GetUpperBound(int Row) const;              // get Row upper alignment bound; return INVALID_MAPPED_POSITION on failure
@@ -116,7 +116,7 @@ public:
 
 
     /*  Access CD info via sequence list index  */
-    int    GetGIFromSequenceList(int SeqIndex) const;       // get GI from sequence list
+    TGi    GetGIFromSequenceList(int SeqIndex) const;       // get GI from sequence list
     string GetDefline(int SeqIndex);                  // get description from sequence list
     /* ADDED */ 
     string GetSequenceStringByIndex(int SeqIndex);    // return the full sequence for index SeqIndex

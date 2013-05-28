@@ -452,7 +452,7 @@ int CCdCore::GetAllRowIndicesForSeqId(const CRef<CSeq_id>& SeqID, list<int>& row
 /*  Access CD info via alignment row number   */
 /* ========================================== */
 
-bool CCdCore::GetGI(int Row, int& GI, bool ignorePDBs) {
+bool CCdCore::GetGI(int Row, TGi& GI, bool ignorePDBs) {
 //-------------------------------------------------------------------------
 // get the GI for Row
 //-------------------------------------------------------------------------
@@ -611,7 +611,7 @@ string CCdCore::GetSequenceStringByRow(int rowId) {
 /*  Access CD info via a sequence list index  */
 /* ========================================== */
 
-int CCdCore::GetGIFromSequenceList(int SeqIndex) const {
+TGi CCdCore::GetGIFromSequenceList(int SeqIndex) const {
 //-------------------------------------------------------------------------
 // get GI from the list of sequences.
 // return -1 if no GI is found.
@@ -644,7 +644,7 @@ int CCdCore::GetGIFromSequenceList(int SeqIndex) const {
       }
     }
   }
-  return(-1);
+  return INVALID_GI;
 }
   
 

@@ -89,7 +89,7 @@ struct BlastEngineTestFixture {
         m_vSubject.clear();
     }
 
-    void setupQueryAndSubject(int query_gi, int subject_gi) 
+    void setupQueryAndSubject(TGi query_gi, TGi subject_gi) 
     {
         CRef<CSeq_loc> query_loc(new CSeq_loc());
         query_loc->SetWhole().SetGi(query_gi);
@@ -148,8 +148,8 @@ void testShortMatchDiagnostics(BlastDiagnostics* diagnostics)
 BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
     const Int4 kNumHspsEnd=23;
     const Int8 kEffectiveSearchSpace = 1050668186940LL;
-    const int kQueryGi = 9790067;
-    const int kSubjectGi = 30698605;
+    const TGi kQueryGi = GI_FROM(TIntId, 9790067);
+    const TGi kSubjectGi = GI_FROM(TIntId, 30698605);
     const EBlastProgramType kProgramType = eBlastTypeTblastn;
     const EProgram kProgram = eTblastn;
 
@@ -220,8 +220,8 @@ BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
 BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
     const Int4 kNumHspsEnd=8;
     const Int8 kEffectiveSearchSpace = 1050668186940LL;
-    const int kQueryGi = 9790067;
-    const int kSubjectGi = 38547463;
+    const TGi kQueryGi = GI_FROM(TIntId, 9790067);
+    const TGi kSubjectGi = GI_FROM(TIntId, 38547463);
     const EBlastProgramType kProgramType = eBlastTypeTblastn;
     const EProgram kProgram = eTblastn;
     
@@ -282,8 +282,8 @@ BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
 // and hence has a large number of hits, even with an increased word size.
 BOOST_AUTO_TEST_CASE(testBlastnWithLargeWordSize)
 {
-    const int kQueryGi = 186279; // Short human sequence with repeats
-    const int kSubjectGi = 29791382; // Contig from human chromosome 1
+    const TGi kQueryGi = GI_FROM(TIntId, 186279); // Short human sequence with repeats
+    const TGi kSubjectGi = GI_FROM(TIntId, 29791382); // Contig from human chromosome 1
     const int kNumHsps = 330;
     const EBlastProgramType kProgramType = eBlastTypeBlastn;
 
@@ -316,8 +316,8 @@ BOOST_AUTO_TEST_CASE(testBlastnWithLargeWordSize)
 // only 1 HSP is left. 
 BOOST_AUTO_TEST_CASE(testBlastnWithRepeatsFiltering)
 {
-    const int kQueryGi = 186279; // Short human sequence with repeats
-    const int kSubjectGi = 29791382; // Contig from human chromosome 1
+    const TGi kQueryGi = GI_FROM(TIntId, 186279); // Short human sequence with repeats
+    const TGi kSubjectGi = GI_FROM(TIntId, 29791382); // Contig from human chromosome 1
     const int kNumHsps = 3;
     const int kMaskedLength = 389;
     const EBlastProgramType kProgramType = eBlastTypeBlastn;
@@ -355,10 +355,10 @@ BOOST_AUTO_TEST_CASE(testBlastnWithRepeatsFiltering)
 
 BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun) 
 {
-    const int kQueryGi = 14702146; 
+    const TGi kQueryGi = GI_FROM(TIntId, 14702146); 
     const string kDbName("data/seqn");
     const size_t kNumHits = 2;
-    const int kGis[kNumHits] = { 46071158, 46072400 };
+    const TIntId kGis[kNumHits] = { 46071158, 46072400 };
     const int kScores[kNumHits] = { 1024, 944 };
     const int kNumIdent[kNumHits] = { 458, 423 };
 
@@ -404,16 +404,16 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
     BOOST_REQUIRE(second_hit->GetNamedScore("num_ident", num_ident));
     BOOST_REQUIRE_EQUAL(kNumIdent[1], num_ident);
 
-    BOOST_REQUIRE_EQUAL(kGis[0], first_hit->GetSeq_id(1).GetGi());
-    BOOST_REQUIRE_EQUAL(kGis[1], second_hit->GetSeq_id(1).GetGi());
+    BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[0]), first_hit->GetSeq_id(1).GetGi());
+    BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGis[1]), second_hit->GetSeq_id(1).GetGi());
 
 }
 
 BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch) 
 {
     const string kDbName("data/seqp");
-    const int kQueryGi1 = 21282798;
-    const int kQueryGi2 = 129295;
+    const TGi kQueryGi1 = GI_FROM(TIntId, 21282798);
+    const TGi kQueryGi2 = GI_FROM(TIntId, 129295);
     const int kNumHits = 12;
     const int kNumHitsToCheck = 3;
     const int kIndices[kNumHitsToCheck] = { 1, 4, 8 };

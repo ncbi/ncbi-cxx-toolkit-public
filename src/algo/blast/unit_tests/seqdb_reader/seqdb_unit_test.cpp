@@ -1634,7 +1634,7 @@ BOOST_AUTO_TEST_CASE(GiListOidRange)
                 
                 ITERATE(list< CRef<CSeq_id> >, seqid, ids) {
                     if ((**seqid).IsGi()) {
-                        int gi = (**seqid).GetGi();
+                        int gi = GI_TO(int, (**seqid).GetGi());
                         
                         if ((gi > low_gi) && (gi < high_gi)) {
                             gi_in_range = true;

@@ -271,8 +271,8 @@ void SeqTreeAsnizer::fillAsnSeqTreeNode(const SeqTreeIterator& cursor, CSeqTree_
 		CSeqTree_node::C_Children::C_Footprint& fp = child.SetFootprint();
 		CSeq_interval& range = fp.SetSeqRange(); //to be filled up later
 		CSeq_id& seqId = range.SetId();
-        int gi = NStr::StringToInt(cursor->name, NStr::fConvErr_NoThrow);
-        if (gi > 0) {
+        TGi gi = NStr::StringToNumeric<TGi>(cursor->name, NStr::fConvErr_NoThrow);
+        if (gi > ZERO_GI) {
             seqId.SetGi(gi);
         } else {
             seqId.SetLocal().SetStr(cursor->name);

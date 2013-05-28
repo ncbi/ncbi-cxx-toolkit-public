@@ -411,11 +411,11 @@ BOOST_AUTO_TEST_CASE(TSeqLocVector2Packed_seqint_TestIntervals) {
 }
 
 BOOST_AUTO_TEST_CASE(TSeqLocVector2Packed_seqint_TestNoIntervals) {
-    typedef pair<int, TSeqPos> TGiLength;
+    typedef pair<TGi, TSeqPos> TGiLength;
     vector<TGiLength> gis;
-    gis.push_back(make_pair(6, 342U));
-    gis.push_back(make_pair(129295, 232U));
-    gis.push_back(make_pair(15606659, 443U));
+    gis.push_back(make_pair(GI_FROM(TIntId, 6), 342U));
+    gis.push_back(make_pair(GI_FROM(TIntId, 129295), 232U));
+    gis.push_back(make_pair(GI_FROM(TIntId, 15606659), 443U));
 
     TSeqLocVector input;
     input.reserve(gis.size());
@@ -1552,14 +1552,14 @@ BOOST_AUTO_TEST_CASE(MaskRestrictToInterval)
 void setupQueryInfoForOffsetTranslation(CBlastQueryInfo &query_info)
 {
     const int kNumQueries = 3;
-    const int kQueryGis[kNumQueries] = { 215041, 441158, 214981 };
+    const TIntId kQueryGis[kNumQueries] = { 215041, 441158, 214981 };
     const int kQueryLengths[kNumQueries] = { 1639, 1151, 1164 };
 
     TSeqLocVector query_v;
 
     for (int index = 0; index < kNumQueries; ++index) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(kQueryGis[index]);
+        loc->SetWhole().SetGi(GI_FROM(TIntId, kQueryGis[index]));
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
         query_v.push_back(SSeqLoc(loc, scope));

@@ -133,10 +133,10 @@ struct CPsiBlastTestFixture {
     int s_CountNumberUniqueGIs(CConstRef<CSeq_align_set> sas)
     {
         int num_gis = 0;
-        int last_gi = -1;
+        TGi last_gi = INVALID_GI;
         ITERATE(CSeq_align_set::Tdata, itr, sas->Get()){
             const CSeq_id& seqid = (*itr)->GetSeq_id(1);
-            int new_gi = seqid.GetGi();
+            TGi new_gi = seqid.GetGi();
             if (new_gi != last_gi)
             {
                  num_gis++;

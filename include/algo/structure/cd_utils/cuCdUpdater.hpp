@@ -58,7 +58,7 @@ public:
 	CDRefresher (CCdCore* cd);
 
 	//return the gi that's replaced; return -1 if none is replaced
-	int refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry);
+	TGi refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry);
 	//bool hasBioseq(CRef< CBioseq > bioseq);
 	bool hasOlderVersion(CRef< CBioseq > bioseq);
 
@@ -75,14 +75,14 @@ private:
 struct NCBI_CDUTILS_EXPORT CDUpdateStats
 {
 	int numBlastHits;
-	vector<int> envSeq;
-	vector<int> fragmented;
-	vector<int> overlap;
-	vector<int> noSeq;
-	vector<int> badAlign;
-	vector<int> redundant;
+	vector<TGi> envSeq;
+	vector<TGi> fragmented;
+	vector<TGi> overlap;
+	vector<TGi> noSeq;
+	vector<TGi> badAlign;
+	vector<TGi> redundant;
 	int numRedundant;
-	typedef pair<int, int> OldNewGiPair;
+	typedef pair<TGi, TGi> OldNewGiPair;
 	vector<OldNewGiPair> oldNewPairs;
 	int numObsolete;
 	int numFilteredByOverlap;
@@ -91,8 +91,8 @@ public:
 	CDUpdateStats();
 	string toString(bool detailed=true);
 private:
-	string toString(vector<int>& gis, string type);
-	string toString(vector<int>& gis);
+	string toString(vector<TGi>& gis, string type);
+	string toString(vector<TGi>& gis);
 	string toString(int num);
 	string toString(vector<OldNewGiPair>& giPairs, string type);
 };
@@ -166,8 +166,8 @@ public:
 		vector< CRef< CSeq_id > >& slaveIds, bool pdbOnly=false);
 	static bool GetOneBioseqFromSeqEntry(CRef< CSeq_entry > seqEntry, 
 		CRef< CBioseq >& bioseq, const CSeq_id* seqId=0);
-	static int getGi(CRef< CSeq_entry > seqEntry);
-	static int getGi(CRef<CBioseq> bioseq);
+	static TGi getGi(CRef< CSeq_entry > seqEntry);
+	static TGi getGi(CRef<CBioseq> bioseq);
 	static bool SeqEntryHasSeqId(CRef< CSeq_entry > seqEntry, const CSeq_id& seqId);
 	static bool BioseqHasSeqId(const CBioseq& bioseq, const CSeq_id& seqId);
 

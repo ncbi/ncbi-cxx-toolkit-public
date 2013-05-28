@@ -75,7 +75,7 @@ static void s_CalculateMaxLength(BlastQueryInfo* query_info)
 }
 
 /// Pair for gis and their length (in that order)
-typedef pair<int, size_t> TGiLenPair;
+typedef pair<TIntId, size_t> TGiLenPair;
 /// Vector containing pairs of gis and their length
 typedef vector<TGiLenPair> TGiLengthVector;
 
@@ -189,7 +189,7 @@ public:
     /// @param seq_blk BLAST_SequenceBlk structure to populate [out]
     /// @param qinfo BlastQueryInfo structure to populate [out]
     /// @param strand strand to use (optional) [in]
-    void x_PrepareBlastQueryStructures(int gis[],
+    void x_PrepareBlastQueryStructures(TIntId gis[],
                                        EProgram program,
                                        BLAST_SequenceBlk** seq_blk,
                                        BlastQueryInfo** qinfo,

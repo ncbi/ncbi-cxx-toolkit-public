@@ -845,7 +845,7 @@ string SequenceIdToString(const Sequence& sequence) {
         char chain = id.GetPdb().GetChain();
         s = "PDB " + id.GetPdb().GetMol().Get() + '_' + chain;
     } else if (id.IsGi()) {
-        s = "GI " + NStr::IntToString(id.GetGi());
+        s = "GI " + NStr::NumericToString(id.GetGi());
     }
     return s;
 }

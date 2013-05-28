@@ -385,7 +385,7 @@ int TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowI
     int taxid = 0;
     std::string err = "no gi or source info";
 	// try to get "official" tax info from gi
-	int gi = 0;
+	TGi gi = ZERO_GI;
 	bool gotGI = aligns.GetGI(rowID, gi, false);
 	if (gotGI)
 	{

@@ -105,7 +105,7 @@ string CDUpdateStats::toString(bool detailed)
 	return result;
 }
 
-string CDUpdateStats::toString(vector<int>& gis, string type)
+string CDUpdateStats::toString(vector<TGi>& gis, string type)
 {
 	if (gis.size() <= 0)
 		return "";
@@ -117,12 +117,12 @@ string CDUpdateStats::toString(vector<int>& gis, string type)
 	return result;
 }
 
-string CDUpdateStats::toString(vector<int>& gis)
+string CDUpdateStats::toString(vector<TGi>& gis)
 {
 	string result;
 	for(unsigned int i = 0; i < gis.size(); i++)
 	{
-		result += toString(gis[i]);
+		result += toString(GI_TO(int, gis[i]));
 		result += ",";
 	}
 	return result;
@@ -144,9 +144,9 @@ string CDUpdateStats::toString(vector<OldNewGiPair>& giPairs, string type)
 	result += ":\n";
 	for (unsigned int i = 0 ; i < giPairs.size(); i++)
 	{
-		result += toString(giPairs[i].second);
+		result += toString(GI_TO(int, giPairs[i].second));
 		result += "(";
-		result += toString(giPairs[i].first);
+		result += toString(GI_TO(int, giPairs[i].first));
 		result += ")";
 		result += ",";
 	}
@@ -780,7 +780,7 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 			seqID = denseg.GetIds()[1];
 		else
 			break; //should not be here
-        int gi  = seqID->GetGi();
+        TGi gi  = seqID->GetGi();
 		//if (gi == 50302132)
 		//	int ttt = 1;
 		//if(retrieveSeq(id1Client, seqID, seqEntry)) 
@@ -845,10 +845,10 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 						(*it) = saRef;
 				}
 				//check to see if it is necessary to replace old sequences
-				int replacedGi = -1;
+				TGi replacedGi = INVALID_GI;
 				if (m_config.replaceOldAcc)
 					replacedGi = refresher->refresh(seqAlignRef, seqEntry);
-				if (replacedGi > 0)
+				if (replacedGi > ZERO_GI)
 				{
 					m_stats.oldNewPairs.push_back(CDUpdateStats::OldNewGiPair(replacedGi, gi));
 				}
@@ -1100,7 +1100,7 @@ bool CDUpdater::findRowsWithOldSeq(CCdCore* cd, CBioseq& bioseq)
 		WriteASNToFile("bioseq.dat", bioseq, false,&err);
 	}*/
 	CRef< CBioseq > bioseqRef(&bioseq);
-	int giNew = getGi(bioseqRef);
+	TGi giNew = getGi(bioseqRef);
 	int num = cd->GetNumRows();
 	vector<int> rows;
 	string nAcc;
@@ -1116,7 +1116,7 @@ bool CDUpdater::findRowsWithOldSeq(CCdCore* cd, CBioseq& bioseq)
 		int oVer=0;
 		if (GetAccAndVersion(bioseqRef, oAcc, oVer,seqId))
 		{
-			int giOld = getGi(bioseqRef);
+			TGi giOld = getGi(bioseqRef);
 			if ((oAcc == nAcc) && (giNew != giOld))
 			{
 				rows.push_back(i);
@@ -1133,7 +1133,7 @@ bool CDUpdater::passedFilters(CCdCore* cd, CRef< CSeq_align > seqAlign,
 {
 	//filter environmental seq
 	CRef< CBioseq > bioseq;
-	int gi =  getGi(seqEntry);
+	TGi gi =  getGi(seqEntry);
 	if (!GetOneBioseqFromSeqEntry(seqEntry, bioseq))
 	{
 		m_stats.noSeq.push_back(gi);
@@ -1332,24 +1332,24 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 	}
 }
 
-int CDUpdater::getGi(CRef< CSeq_entry > seqEntry)
+TGi CDUpdater::getGi(CRef< CSeq_entry > seqEntry)
 {
 	vector< CRef< CSeq_id > > seqIds;
 	GetAllIdsFromSeqEntry(seqEntry, seqIds);
 	for (unsigned int i = 0; i < seqIds.size(); i++)
 		if (seqIds[i]->IsGi())
 			return seqIds[i]->GetGi();
-	return 0;
+	return ZERO_GI;
 }
 
-int CDUpdater::getGi(CRef<CBioseq> bioseq)
+TGi CDUpdater::getGi(CRef<CBioseq> bioseq)
 {
 	const list< CRef< CSeq_id > >& seqIds = bioseq->GetId();
 	list< CRef< CSeq_id > >::const_iterator cit = seqIds.begin();
 	for (; cit != seqIds.end(); cit++)
 		if ((*cit)->IsGi())
 			return (*cit)->GetGi();
-	return 0;
+	return ZERO_GI;
 }
 
 //change seqAlign from denseg to dendiag
@@ -1884,8 +1884,8 @@ bool CDRefresher::hasOlderVersion(CRef< CBioseq > bioseq)
 	AccessionBioseqMap::iterator it = m_accSeqMap.find(nAcc);
 	if (it != m_accSeqMap.end())
 	{
-		int newgi = CDUpdater::getGi(bioseq);
-		int oldgi = CDUpdater::getGi(it->second);
+		TGi newgi = CDUpdater::getGi(bioseq);
+		TGi oldgi = CDUpdater::getGi(it->second);
 		return newgi != oldgi;
 	}
 	else
@@ -1893,24 +1893,24 @@ bool CDRefresher::hasOlderVersion(CRef< CBioseq > bioseq)
 }
 
 	//return the gi that's replaced; return -1 if none is replaced
-int CDRefresher::refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry)
+TGi CDRefresher::refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry)
 {
 	CRef< CBioseq > bioseqRef;
 	if (!CDUpdater::GetOneBioseqFromSeqEntry(seqEntry, bioseqRef))
-		return -1;
+		return INVALID_GI;
 	if (!hasOlderVersion(bioseqRef))
-		return -1;
+		return INVALID_GI;
 	string nAcc;
 	int nVer=0;	
 	CRef< CSeq_id > textId;
 	if (!GetAccAndVersion(bioseqRef, nAcc, nVer, textId))
-		return -1;
+		return INVALID_GI;
 	CRef< CBioseq > oldBioseq = m_accSeqMap[nAcc];
 	string newStr, oldStr;
 	GetNcbieaaString(*bioseqRef, newStr);
 	GetNcbieaaString(*oldBioseq, oldStr);
 	if (newStr.size() != oldStr.size())
-		return -1;
+		return INVALID_GI;
 	//proceed to do the placement
 	vector< CRef< CSeq_id > > newIds;
 	CDUpdater::GetAllIdsFromSeqEntry(seqEntry, newIds);
@@ -1953,7 +1953,7 @@ int CDRefresher::refresh(CRef< CSeq_align> seqAlign, CRef< CSeq_entry > seqEntry
 		return CDUpdater::getGi(oldBioseq);
 	}
 	else
-		return -1;
+		return INVALID_GI;
 }
 
 END_SCOPE(cd_utils)

@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(NuclSearchBothStrands) {
 
 BOOST_AUTO_TEST_CASE(testPreliminarySearch)
 {
-    const int kQueryGi = 129295;
+    const TIntId kQueryGi = 129295;
     const int kNumHits = 2;
     const int kOids[kNumHits] = { 3, 1 };
     const int kNumHsps[kNumHits] = { 2, 3 };

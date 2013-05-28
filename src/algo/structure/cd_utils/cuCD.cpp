@@ -651,10 +651,10 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd, bool useRootWhenNoTaxInfo)
 
 	for (int i = 0; i < num; i++)
 	{
-		int gi = -1;
+		TGi gi = INVALID_GI;
 		cd->GetGI(i,gi,false);
 		int taxid = 0;
-		if (gi > 0)
+		if (gi > ZERO_GI)
 			taxServer.GetTaxId4GI(gi, taxid);
 		if (taxid == 0)
 		{

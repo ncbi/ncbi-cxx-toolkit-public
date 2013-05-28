@@ -108,12 +108,12 @@ void DensegConvert(const objects::CDense_seg& denseg, SeqAlign& retval)
 
     CRef<CSeq_id> query_id = ids.front();
     if (query_id->IsGi()) {
-        retval.sequence_gis.SetQuery(query_id->GetGi());
+        retval.sequence_gis.SetQuery(GI_TO(int, query_id->GetGi()));
     }
 
     CRef<CSeq_id> subj_id = ids.back();
     if (subj_id->IsGi()) {
-        retval.sequence_gis.SetSubject(subj_id->GetGi());
+        retval.sequence_gis.SetSubject(GI_TO(int, subj_id->GetGi()));
     }
 
 }

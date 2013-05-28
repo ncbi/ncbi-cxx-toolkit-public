@@ -259,7 +259,7 @@ int COMSSA::Run()
 		for(iPephit = (*iHit)->GetPephits().begin();
 		    iPephit != (*iHit)->GetPephits().end();
 		    iPephit++) {
-		    ERR_POST(Info << ((*iPephit)->CanGetGi()?(*iPephit)->GetGi():0) << 
+		    ERR_POST(Info << ((*iPephit)->CanGetGi()?(*iPephit)->GetGi():ZERO_GI) << 
                      ": " << (*iPephit)->GetStart() << "-" << (*iPephit)->GetStop() << 
                      ":" << (*iPephit)->GetDefline());
 		}

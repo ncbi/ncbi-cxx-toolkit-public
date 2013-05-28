@@ -78,7 +78,7 @@ void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 //-------------------------------------------------------------------
 // make a string for a seq-id
 //-------------------------------------------------------------------
-  int   GI;
+  TGi   GI;
   const CPDB_seq_id*  pPDB_ID;
   char buf[1024];
 
@@ -92,7 +92,7 @@ void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 
   if (SeqID->IsGi()) {
     GI = SeqID->GetGi();
-    sprintf(buf,"gi %d", GI);
+    sprintf(buf,"gi %d", GI_TO(int, GI));
   }
   if (SeqID->IsPdb()) {
     pPDB_ID = &(SeqID->GetPdb());
@@ -110,7 +110,7 @@ string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
 //-------------------------------------------------------------------
 // make a string for a seq-id
 //-------------------------------------------------------------------
-  int   GI;
+  TGi   GI;
   const CPDB_seq_id*  pPDB_ID;
   char buf[1024];
   string Str;
@@ -124,7 +124,7 @@ string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
   //  Custom string construction for Gi, PDB, Other, or Local types
   if (SeqID->IsGi()) {
       GI = SeqID->GetGi();
-      sprintf(buf,"%d", GI);
+      sprintf(buf,"%d", GI_TO(int, GI));
   }
   if (SeqID->IsPdb()) {
       pPDB_ID = &(SeqID->GetPdb());

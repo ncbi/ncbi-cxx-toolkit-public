@@ -38,7 +38,7 @@ public:
 	bool GetSeqIDForRow(int row, CRef< CSeq_id >& SeqID) const ;
 	bool GetSeqEntryForRow(int row, CRef<CSeq_entry>& seqEntry)const;
 	string GetDefline(int row) const;
-	bool GetGI(int row, int& gi, bool ignorePDBs = true) const;
+	bool GetGI(int row, TGi& gi, bool ignorePDBs = true) const;
     int GetLowerBound(int row) const;
 	int GetUpperBound(int row) const;
 	int FindSeqInterval (const CSeq_interval& seqLoc) const;

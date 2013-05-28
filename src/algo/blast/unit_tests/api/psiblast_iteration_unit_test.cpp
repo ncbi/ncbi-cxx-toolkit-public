@@ -45,20 +45,20 @@ BOOST_AUTO_TEST_SUITE(psiblast_iteration);
 
 BOOST_AUTO_TEST_CASE(TestAsLoopCounter) {
         const unsigned int kNumIterations = 10;
-        unsigned int gi = 0;
+        TGi gi = ZERO_GI;
 
         CPsiBlastIterationState itr(kNumIterations);
         while (itr) {
             BOOST_REQUIRE_EQUAL(true, itr.HasMoreIterations());
             BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
-            BOOST_REQUIRE_EQUAL(++gi, itr.GetIterationNumber());
+            BOOST_REQUIRE_EQUAL(++gi, GI_FROM(unsigned int, itr.GetIterationNumber()));
 
             CPsiBlastIterationState::TSeqIds ids;
             ids.insert(CSeq_id_Handle::GetHandle(gi));
             itr.Advance(ids);
         }
 
-        BOOST_REQUIRE_EQUAL(gi, kNumIterations);
+        BOOST_REQUIRE_EQUAL(gi, GI_FROM(unsigned int, kNumIterations));
         BOOST_REQUIRE_EQUAL(kNumIterations+1, itr.GetIterationNumber());
         BOOST_REQUIRE_EQUAL(false, itr.HasMoreIterations());
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -70,8 +70,8 @@ BOOST_AUTO_TEST_CASE(TestConvergence) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
         BOOST_REQUIRE_EQUAL(1U, itr.GetIterationNumber());
         CPsiBlastIterationState::TSeqIds ids, ids_plus_1;
-        ids.insert(CSeq_id_Handle::GetHandle(555));
-        ids_plus_1.insert(CSeq_id_Handle::GetHandle(556));
+        ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
+        ids_plus_1.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 556)));
 
         itr.Advance(ids);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -97,9 +97,9 @@ BOOST_AUTO_TEST_CASE(TestConvergence2) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
         BOOST_REQUIRE_EQUAL(1U, itr.GetIterationNumber());
         CPsiBlastIterationState::TSeqIds ids_itr1, ids_itr2;
-        ids_itr1.insert(CSeq_id_Handle::GetHandle(555));
-        ids_itr1.insert(CSeq_id_Handle::GetHandle(556));
-        ids_itr2.insert(CSeq_id_Handle::GetHandle(555));
+        ids_itr1.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
+        ids_itr1.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 556)));
+        ids_itr2.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
 
         itr.Advance(ids_itr1);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(TestModifyingConvergedIterationState) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
 
         CPsiBlastIterationState::TSeqIds ids;
-        ids.insert(CSeq_id_Handle::GetHandle(555));
-        ids.insert(CSeq_id_Handle::GetHandle(555));
+        ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
+        ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
         itr.Advance(ids);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
 
@@ -130,11 +130,11 @@ BOOST_AUTO_TEST_CASE(TestModifyingConvergedIterationState) {
 
     // Ensure that at every iteration the list of seqids passed in is different
 void RunNIterationsWithoutConverging(CPsiBlastIterationState& itr,
-                                         unsigned int n_iterations) {
+                                         TIntId n_iterations) {
 
-        for (unsigned int i = 0; i < n_iterations; i++) {
+        for (TIntId i = 0; i < n_iterations; i++) {
             CPsiBlastIterationState::TSeqIds ids;
-            ids.insert(CSeq_id_Handle::GetHandle(i+1));
+            ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, i+1)));
             itr.Advance(ids);
         }
 }
@@ -142,7 +142,7 @@ void RunNIterationsWithoutConverging(CPsiBlastIterationState& itr,
     // Functionally similar to TestAsLoopCounter, but it forces an exception
     // to be thrown 
 BOOST_AUTO_TEST_CASE(TestModifyingExhaustedIterationState) {
-        const unsigned int kNumIterations = 10;
+        const TIntId kNumIterations = 10;
         CPsiBlastIterationState itr(kNumIterations);
 
         RunNIterationsWithoutConverging(itr, kNumIterations);

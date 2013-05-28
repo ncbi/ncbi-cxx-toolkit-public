@@ -125,7 +125,7 @@ bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq);
 //  Return 'false' if the bioseq doesn't have a gi-typed seq-id.
 //  Last arg tells which id to use if there are multiple gis.
 NCBI_CDUTILS_EXPORT 
-bool ExtractGi(const CRef<CBioseq>& bioseq, unsigned int& gi, unsigned int nth = 1);
+bool ExtractGi(const CRef<CBioseq>& bioseq, TGi& gi, unsigned int nth = 1);
 NCBI_CDUTILS_EXPORT 
 bool CopyGiSeqId(const CRef<CBioseq>& bioseq, CRef<CSeq_id>& giSeqId, unsigned int nth = 1);
 

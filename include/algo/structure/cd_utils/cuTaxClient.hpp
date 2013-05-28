@@ -61,7 +61,7 @@ public:
 
     //  return 0 if Get*TaxID*(...) fails
     virtual int GetTaxIDForSeqId(CConstRef< CSeq_id > sid);  // was GetTaxIDForSequence
-    virtual int GetTaxIDForGI(int gi);
+    virtual int GetTaxIDForGI(TGi gi);
 
     virtual bool GetOrgRef(int taxId, CRef< COrg_ref >& orgRef);
 

@@ -46,7 +46,7 @@ struct GiFootPrint
 {
 	GiFootPrint(CRef<CSeq_align> seqAlign);
 
-	int gi;
+	TGi gi;
 	int from;
 	int to;
 };

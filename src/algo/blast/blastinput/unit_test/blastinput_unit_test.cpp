@@ -840,7 +840,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
 {
     CNcbiIfstream infile("data/accession.txt");
     const bool is_protein(false);
-    const int kGi = 224589800;
+    const TIntId kGi = 224589800;
     const TSeqPos kStart = 0;
     const TSeqPos kStop(249250620);
     SDataLoaderConfig dlconfig("chromosome", is_protein);
@@ -871,7 +871,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-    BOOST_REQUIRE_EQUAL(kGi, ssl.seqloc->GetInt().GetId().GetGi());
+    BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGi), ssl.seqloc->GetInt().GetId().GetGi());
 
     BOOST_REQUIRE(!ssl.mask);
 
@@ -886,7 +886,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
     bool found_gi = false, found_accession = false;
     ITERATE(CBioseq::TId, id, b.GetId()) {
         if ((*id)->Which() == CSeq_id::e_Gi) {
-            BOOST_REQUIRE_EQUAL(kGi, (*id)->GetGi());
+            BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, kGi), (*id)->GetGi());
             found_gi = true;
         } else if ((*id)->Which() == CSeq_id::e_Other) {
             CNcbiOstrstream os;
@@ -1122,7 +1122,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleGi)
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-    const int gi = 89161185;
+    const TGi gi = GI_FROM(TIntId, 89161185);
     BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
 
     BOOST_REQUIRE(!ssl.mask);
@@ -1148,10 +1148,10 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis)
     iconfig.SetRetrieveSeqData(false);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
-    vector< pair<long, long> > gi_length;
-    gi_length.push_back(make_pair(89161185L, 247249719L));
-    gi_length.push_back(make_pair(555L, 624L));
-    gi_length.push_back(make_pair(557L, 489L));
+    vector< pair<TIntId, long> > gi_length;
+    gi_length.push_back(make_pair(89161185, 247249719L));
+    gi_length.push_back(make_pair(555, 624L));
+    gi_length.push_back(make_pair(557, 489L));
 
     const size_t kNumQueries(gi_length.size());
     CScope scope(*CObjectManager::GetInstance());
@@ -1176,8 +1176,8 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis)
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
         BOOST_REQUIRE(blast::IsLocalId(ssl.seqloc->GetId()) == false);
         BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-        const int gi = gi_length[i].first;
-        BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
+        const TIntId gi = gi_length[i].first;
+        BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, gi), ssl.seqloc->GetInt().GetId().GetGi());
 
         BOOST_REQUIRE(!ssl.mask);
     }
@@ -1194,7 +1194,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleGis)
         const CBioseq& b = (*itr)->GetSeq();
         BOOST_REQUIRE(b.IsNa());
         BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
-        BOOST_REQUIRE_EQUAL(gi_length[i].first, b.GetId().front()->GetGi());
+        BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, gi_length[i].first), b.GetId().front()->GetGi());
         BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
         BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
         BOOST_REQUIRE_EQUAL((long)gi_length[i].second, (long)b.GetInst().GetLength());
@@ -1403,8 +1403,8 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
 
         BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
         BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
-        int gi(0);
-        if ( (gi = NStr::StringToLong(id, NStr::fConvErr_NoThrow)) != 0) {
+        TGi gi = ZERO_GI;
+        if ( (gi = NStr::StringToNumeric<TGi>(id, NStr::fConvErr_NoThrow)) != ZERO_GI) {
             BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
             BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
         } else if (i == 5) {
@@ -1545,7 +1545,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
-    const int gi(1945386);
+    const TGi gi = GI_FROM(TIntId, 1945386);
     BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetInt().GetId().GetGi());
 
     BOOST_REQUIRE(!ssl.mask);
@@ -1596,7 +1596,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE( !blast::IsLocalId(ssl.seqloc->GetId()) );
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
     const string accession("X65215.1");
-    BOOST_REQUIRE_EQUAL(555, ssl.seqloc->GetInt().GetId().GetGi());
+    BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, 555), ssl.seqloc->GetInt().GetId().GetGi());
 
     BOOST_REQUIRE(!ssl.mask);
 
@@ -1609,7 +1609,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
     bool found_gi = false, found_accession = false;
     ITERATE(CBioseq::TId, id, b.GetId()) {
         if ((*id)->Which() == CSeq_id::e_Gi) {
-            BOOST_REQUIRE_EQUAL(555, (*id)->GetGi());
+            BOOST_REQUIRE_EQUAL(GI_FROM(TIntId, 555), (*id)->GetGi());
             found_gi = true;
         } else if ((*id)->Which() == CSeq_id::e_Embl) {
             CNcbiOstrstream os;
@@ -1810,7 +1810,7 @@ BOOST_AUTO_TEST_CASE(ParseDefline)
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
 
-    const int gi(129295);
+    const TGi gi = GI_FROM(TIntId, 129295);
     blast::SSeqLoc ssl = source->GetNextSeqLocBatch(scope).front();
     BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetId()->Which());
     BOOST_REQUIRE_EQUAL(gi, ssl.seqloc->GetId()->GetGi());
@@ -2051,13 +2051,13 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig, 5000));
     CScope scope(*CObjectManager::GetInstance());
 
-    int gi;
+    TGi gi;
     blast::TSeqLocVector v;
 
     v = source->GetNextSeqLocBatch(scope);
     BOOST_REQUIRE_EQUAL((size_t)7, v.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
-    gi = 1346057;
+    gi = GI_FROM(TIntId, 1346057);
     BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
     BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
@@ -2065,7 +2065,7 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     v = source->GetNextSeqLocBatch(scope);
     BOOST_REQUIRE_EQUAL((size_t)8, v.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
-    gi = 1170625;
+    gi = GI_FROM(TIntId, 1170625);
     BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
     BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());
@@ -2073,7 +2073,7 @@ BOOST_AUTO_TEST_CASE(MultiBatch)
     v = source->GetNextSeqLocBatch(scope);
     BOOST_REQUIRE_EQUAL((size_t)4, v.size());
     BOOST_REQUIRE_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
-    gi = 114152;
+    gi = GI_FROM(TIntId, 114152);
     BOOST_REQUIRE( !blast::IsLocalId(v[0].seqloc->GetId()) );
     BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetInt().GetId().GetGi());
     BOOST_REQUIRE_EQUAL(gi, v[0].seqloc->GetId()->GetGi());

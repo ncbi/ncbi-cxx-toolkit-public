@@ -89,7 +89,7 @@ CRef<ASNOBJ> s_Duplicate(const ASNOBJ & a)
 /////////////////////////////////////////////////////////////////////////////
 // List-based static helper functions
 
-static void s_GetUseThisGiEntries(CRef<CSeq_align> sa, list<int>& list_gis)
+static void s_GetUseThisGiEntries(CRef<CSeq_align> sa, list<TGi>& list_gis)
 {
     list_gis.clear();
 
@@ -106,13 +106,13 @@ static void s_GetUseThisGiEntries(CRef<CSeq_align> sa, list<int>& list_gis)
                 bool bIsLegalGiEntry = score_entry->CanGetValue() && score_entry->GetValue().IsInt();
                 BOOST_REQUIRE(bIsLegalGiEntry);
 
-                list_gis.push_back(score_entry->GetValue().GetInt());
+                list_gis.push_back(GI_FROM(int, score_entry->GetValue().GetInt()));
             }
         }
     }
 }
 
-static int s_GetAlignedSeqGi(CRef<CSeq_align> sa)
+static TGi s_GetAlignedSeqGi(CRef<CSeq_align> sa)
 {
     CConstRef<CSeq_id> id(&(sa->GetSeq_id(1)));
 
@@ -120,22 +120,22 @@ static int s_GetAlignedSeqGi(CRef<CSeq_align> sa)
     return id->GetGi();
 }
 
-static void s_GetFullGiList(CRef<CSeq_align> sa, list<int>& list_gis)
+static void s_GetFullGiList(CRef<CSeq_align> sa, list<TGi>& list_gis)
 {
     s_GetUseThisGiEntries(sa, list_gis);
     list_gis.push_back(s_GetAlignedSeqGi(sa));
 }
 
-static bool s_IsGiInList(int gi, list<int>& list_gis)
+static bool s_IsGiInList(TGi gi, list<TGi>& list_gis)
 {
     return find(list_gis.begin(), list_gis.end(), gi) != list_gis.end();
 }
 
-static bool s_IsListSubset(list<int>& list_all, list<int>& list_sub)
+static bool s_IsListSubset(list<TGi>& list_all, list<TGi>& list_sub)
 {
     bool is_missing = false;
 
-    list<int>::iterator it;
+    list<TGi>::iterator it;
     for (it = list_sub.begin(); it != list_sub.end() && !is_missing; it++)
     {
         is_missing = !s_IsGiInList(*it, list_all);
@@ -144,7 +144,7 @@ static bool s_IsListSubset(list<int>& list_all, list<int>& list_sub)
     return !is_missing;
 }
 
-static bool s_AreListsEqual(list<int>& list1, list<int>& list2)
+static bool s_AreListsEqual(list<TGi>& list1, list<TGi>& list2)
 {
     return s_IsListSubset(list1, list2) && s_IsListSubset(list2, list1);
 }
@@ -152,18 +152,18 @@ static bool s_AreListsEqual(list<int>& list1, list<int>& list2)
 /////////////////////////////////////////////////////////////////////////////
 // Vector-based static helper functions
 
-static bool s_IsGiInVector(int gi, vector<int>& vec_gis)
+static bool s_IsGiInVector(TGi gi, vector<int>& vec_gis)
 {
-    return binary_search(vec_gis.begin(), vec_gis.end(), gi);
+    return binary_search(vec_gis.begin(), vec_gis.end(), GI_TO(int, gi));
 }
 
 static bool s_GetFilteredGiList(CRef<CSeq_align> sa, vector<int>& vec_all_gis,
-                               list<int>& list_sa_filtered)
+                               list<TGi>& list_sa_filtered)
 {
-    list<int> list_sa_full;
+    list<TGi> list_sa_full;
     s_GetFullGiList(sa, list_sa_full);
 
-    for (list<int>::iterator it = list_sa_full.begin();
+    for (list<TGi>::iterator it = list_sa_full.begin();
          it != list_sa_full.end(); it++)
     {
         if (s_IsGiInVector(*it, vec_all_gis))
@@ -181,10 +181,10 @@ static bool s_GetFilteredGiList(CRef<CSeq_align> sa, vector<int>& vec_all_gis,
 static void 
 s_Check_GiListConsistency(CRef<CSeq_align> /*sa_orig*/, 
                           CRef<CSeq_align> sa_new,
-                          list<int>& list_orig_filtered, 
-                          list<int>& list_new_filtered)
+                          list<TGi>& list_orig_filtered, 
+                          list<TGi>& list_new_filtered)
 {
-    list<int> list_new;
+    list<TGi> list_new;
     s_GetFullGiList(sa_new, list_new);
 
     BOOST_REQUIRE(s_AreListsEqual(list_new, list_new_filtered));    // new list is indeed filtered
@@ -192,11 +192,11 @@ s_Check_GiListConsistency(CRef<CSeq_align> /*sa_orig*/,
                                                             // are included in the new list
 }
 
-static void s_Check_GiEquivalenceInDB(int gi1, int gi2, CRef<CSeqDB> db)
+static void s_Check_GiEquivalenceInDB(TGi gi1, TGi gi2, CRef<CSeqDB> db)
 {
     int oid1 = -1, oid2 = -1;
-    db->GiToOid(gi1, oid1);
-    db->GiToOid(gi2, oid2);
+    db->GiToOid(GI_TO(int, gi1), oid1);
+    db->GiToOid(GI_TO(int, gi2), oid2);
 
     BOOST_REQUIRE(oid1 > 0);
     BOOST_REQUIRE(oid2 > 0);
@@ -209,8 +209,8 @@ static void s_Check_GiEquivalenceInDB(int gi1, int gi2, CRef<CSeqDB> db)
 static void s_DoConsistencyCheck(CRef<CSeq_align> sa_orig, CRef<CSeq_align> sa_new,
                                         vector<int>& vec_all_gis)
 {
-    list<int> list_orig_filtered;
-    list<int> list_new, list_new_filtered;
+    list<TGi> list_orig_filtered;
+    list<TGi> list_new, list_new_filtered;
 
     s_GetFilteredGiList(sa_orig, vec_all_gis, list_orig_filtered);
     s_GetFilteredGiList(sa_new, vec_all_gis, list_new_filtered);
@@ -221,12 +221,12 @@ static void s_DoConsistencyCheck(CRef<CSeq_align> sa_orig, CRef<CSeq_align> sa_n
 
 static void s_DoEquivalenceCheck(CRef<CSeq_align> sa_new, CRef<CSeqDB> db)
 {
-    int main_gi = s_GetAlignedSeqGi(sa_new);
+    TGi main_gi = s_GetAlignedSeqGi(sa_new);
 
-    list<int> list_extra_gis;
+    list<TGi> list_extra_gis;
     s_GetUseThisGiEntries(sa_new, list_extra_gis);
 
-    for (list<int>::iterator it_extra_gi = list_extra_gis.begin();
+    for (list<TGi>::iterator it_extra_gi = list_extra_gis.begin();
          it_extra_gi != list_extra_gis.end(); it_extra_gi++)
     {
         s_Check_GiEquivalenceInDB(main_gi, *it_extra_gi, db);
@@ -262,18 +262,18 @@ BOOST_AUTO_TEST_CASE(s_TestSimpleFiltering)
     CSeq_align_set aln_filtered;
     s_LoadSeqAlignsFromFile(aln_filtered, fname_out);
 
-    list<int> list_gis;
+    list<TGi> list_gis;
     filter.ReadGiList(fname_gis, list_gis);
 
     ITERATE(CSeq_align_set::Tdata, iter, aln_all.Get())
     {
-        int gi = s_GetAlignedSeqGi(*iter);
+        TGi gi = s_GetAlignedSeqGi(*iter);
         if (s_IsGiInList(gi, list_gis))
         {
             bool found_gi = false;
             ITERATE(CSeq_align_set::Tdata, iter_filtered, aln_filtered.Get())
             {
-                int gi_filtered = s_GetAlignedSeqGi(*iter_filtered);
+                TGi gi_filtered = s_GetAlignedSeqGi(*iter_filtered);
                 if (gi == gi_filtered)
                 {
                     found_gi = true;
@@ -313,10 +313,10 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
 
     ITERATE(CSeq_align_set::Tdata, iter, aln_all.Get())
     {
-        int gi = s_GetAlignedSeqGi(*iter);
+        TGi gi = s_GetAlignedSeqGi(*iter);
         ITERATE(CSeq_align_set::Tdata, iter_filtered, aln_filtered.Get())
         {
-            int gi_filtered = s_GetAlignedSeqGi(*iter_filtered);
+            TGi gi_filtered = s_GetAlignedSeqGi(*iter_filtered);
             if (gi == gi_filtered)
             {
                 // main gi's coincide - check the concistency of all the gi's

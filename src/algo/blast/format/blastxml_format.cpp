@@ -129,7 +129,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         double bit_score;
         double evalue;
         int sum_n;
-        list<int> use_this_gi;
+        list<TGi> use_this_gi;
         CBlastFormatUtil::GetAlnScores(kAlign, score, bit_score, evalue, sum_n, 
                                        num_ident, use_this_gi);
 
@@ -380,7 +380,7 @@ s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
         const CBioseq_Handle& kSubjBioseqHandle = scope->GetBioseqHandle(kSeqId);
         /// @todo FIXME Should this be passed somehow? For now the following
         /// list is empty.
-        list<int> use_this_gi; 
+        list<TGi> use_this_gi; 
         string seqid;
         string defline;
         /// @todo FIXME Should the "show gi" option be passed to the XML 

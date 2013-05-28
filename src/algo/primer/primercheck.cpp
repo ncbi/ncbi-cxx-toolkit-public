@@ -950,8 +950,8 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     info.index = index;
     info.self_forward_primer = is_self_forward_primer;
     info.self_reverse_primer = is_self_reverse_primer;
-    int master_gi = 0;
-    int subj_gi = 0;
+    TGi master_gi = ZERO_GI;
+    TGi subj_gi = ZERO_GI;
     
     if (left_align.GetSeq_id(0).Which() == CSeq_id::e_Gi) {
         master_gi = left_align.GetSeq_id(0).GetGi();
@@ -1017,11 +1017,11 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
         
         //transcript variants
         
-        if (m_AllowTranscriptVariants && !hit_assigned && master_gi != 0 && subj_gi != 0) {
+        if (m_AllowTranscriptVariants && !hit_assigned && master_gi != ZERO_GI && subj_gi != ZERO_GI) {
             IGeneInfoInput::TGeneIdList master_gene_id_list;
             IGeneInfoInput::TGeneIdList subj_gene_id_list;
-            if (m_FileReader.GetGeneIdsForGi(master_gi, master_gene_id_list) 
-                && m_FileReader.GetGeneIdsForGi(subj_gi, subj_gene_id_list)){
+            if (m_FileReader.GetGeneIdsForGi(GI_TO(int, master_gi), master_gene_id_list) 
+                && m_FileReader.GetGeneIdsForGi(GI_TO(int, subj_gi), subj_gene_id_list)){
                 
                 ITERATE(IGeneInfoInput::TGeneIdList, iter1, master_gene_id_list) {
                     ITERATE(IGeneInfoInput::TGeneIdList, iter2, subj_gene_id_list) {

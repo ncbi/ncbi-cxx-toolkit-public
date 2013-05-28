@@ -220,7 +220,7 @@ bool  AlignmentCollection::Get_GI_or_PDB_String_FromAlignment(int  row, std::str
 }
 
 
-bool AlignmentCollection::GetGI(int row, int& gi, bool ignorePDBs) const
+bool AlignmentCollection::GetGI(int row, TGi& gi, bool ignorePDBs) const
 {
 	CRef< CSeq_id >  SeqID;
 	GetSeqIDForRow(row, SeqID);
@@ -642,7 +642,7 @@ void AlignmentCollection::GetAlignedResiduesForRow(int row, char*& aseq)
 	{
 		bool isMaster = (row==0) && !IsPending(row);
         RowSource rs = GetRowSource(row);
-        int gi; GetGI(row, gi, false);
+        TGi gi; GetGI(row, gi, false);
         string s = rs.cd->GetAccession();
         //int r = rs.rowInSrc;
         //bool n = rs.normal;

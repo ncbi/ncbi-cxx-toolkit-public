@@ -81,7 +81,7 @@ void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
     
     ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
         if ((**id).IsGi()) {
-            gis.push_back((**id).GetGi());
+            gis.push_back(GI_TO(int, (**id).GetGi()));
         }
     }
 

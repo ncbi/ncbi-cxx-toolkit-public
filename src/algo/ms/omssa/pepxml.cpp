@@ -299,7 +299,7 @@ string CPepXML::GetProteinName(CRef<CMSPepHit> pHit) {
     if (pHit->CanGetAccession()) {
         return pHit->GetAccession();
     } else if (pHit->CanGetGi()) {
-        return "gi:" + NStr::IntToString(pHit->GetGi());
+        return "gi:" + NStr::NumericToString(pHit->GetGi());
     }
     return pHit->GetDefline();
 }

@@ -176,10 +176,10 @@ void CSeqIdListSet::GetGiList(vector<int>& GiList, CScope& Scope,
             }
         }
 
-        int Gi;
+        TGi Gi;
         Gi = sequence::GetGiForId(**IdIter, Scope);
-        if(Gi != 0 && Gi != -1) {
-			GiList.push_back(Gi);
+        if(Gi != ZERO_GI && Gi != INVALID_GI) {
+			GiList.push_back(GI_TO(int, Gi));
         }
     }
 }
@@ -511,12 +511,12 @@ void CSeqLocListSet::GetGiList(vector<int>& GiList, CScope& Scope,
             }
         }
 
-        int Gi = -1;
+        TGi Gi = INVALID_GI;
         try {
             Gi = sequence::GetGiForId(*Id, Scope);
-        } catch(...) { Gi = -1; }
-        if(Gi != 0 && Gi != -1) {
-			GiList.push_back(Gi);
+        } catch(...) { Gi = INVALID_GI; }
+        if(Gi != ZERO_GI && Gi != INVALID_GI) {
+			GiList.push_back(GI_TO(int, Gi));
         }
     }
 }

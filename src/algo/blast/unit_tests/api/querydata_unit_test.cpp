@@ -68,10 +68,10 @@ class CSequenceDataTester
 {
 public:
     CSequenceDataTester(CRef<IQueryFactory> query_factory, 
-                        int gi);
+                        TGi gi);
 
     CSequenceDataTester(CRef<IQueryFactory> query_factory, 
-                        const vector<int>& gis);
+                        const vector<TGi>& gis);
 
     CSequenceDataTester(CRef<IQueryFactory> query_factory,
                         const IRemoteQueryData::TSeqLocs& seqlocs);
@@ -80,7 +80,7 @@ public:
 
 private:
     CRef<IQueryFactory> m_QueryFactory;
-    vector<int> m_Gis;
+    vector<TGi> m_Gis;
     vector<ENa_strand> m_Strands;
     CConstRef<CBlastOptions> m_Options;
     CRef<CScope> m_Scope;
@@ -115,14 +115,14 @@ private:
 };
 
 CSequenceDataTester::CSequenceDataTester(CRef<IQueryFactory> query_factory, 
-                                         int gi)
+                                         TGi gi)
     : m_QueryFactory(query_factory), m_Gis(1, gi)
 {
     x_Init();
 }
 
 CSequenceDataTester::CSequenceDataTester(CRef<IQueryFactory> query_factory, 
-                                         const vector<int>& gis)
+                                         const vector<TGi>& gis)
     : m_QueryFactory(query_factory), m_Gis(gis)
 {
     BOOST_REQUIRE(!gis.empty());
@@ -172,7 +172,7 @@ CSequenceDataTester::x_Init(const IRemoteQueryData::TSeqLocs* seqlocs)
             const CSeq_id& id = sequence::GetId(**itr, &*m_Scope);
             m_Gis[index] = sequence::GetGiForAccession(id.AsFastaString(),
                                                        *m_Scope);
-            BOOST_REQUIRE(m_Gis[index] != 0);
+            BOOST_REQUIRE(m_Gis[index] != ZERO_GI);
 
             // Get the strand
             m_Strands[index] = (*itr)->GetStrand();
@@ -488,7 +488,7 @@ struct CQueryDataTestFixture
     ~CQueryDataTestFixture() {}
 
     static void
-        s_ObjMgrFree_QueryFactory_LocalDataFromBioseq(int kGi)
+        s_ObjMgrFree_QueryFactory_LocalDataFromBioseq(TGi kGi)
     {
         CBioseq_Handle bh = CSimpleOM::GetBioseqHandle(kGi);
         CConstRef<CBioseq> bs(bh.GetBioseqCore());
@@ -497,10 +497,10 @@ struct CQueryDataTestFixture
     }
 
     static void
-        s_ObjMgrFree_QueryFactory_LocalDataFromBioseq_set(const vector<int>& gis)
+        s_ObjMgrFree_QueryFactory_LocalDataFromBioseq_set(const vector<TGi>& gis)
     {
         CRef<CBioseq_set> bs(new CBioseq_set);
-        ITERATE(vector<int>, itr, gis) {
+        ITERATE(vector<TGi>, itr, gis) {
             CBioseq_Handle bh = CSimpleOM::GetBioseqHandle(*itr);
             CRef<CSeq_entry> seq_entry(new CSeq_entry);
             seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
@@ -512,10 +512,10 @@ struct CQueryDataTestFixture
     }
     
     static void
-        s_ObjMgr_QueryFactory_LocalDataFromTSeqLocVector(const vector<int>& gis)
+        s_ObjMgr_QueryFactory_LocalDataFromTSeqLocVector(const vector<TGi>& gis)
     {
         TSeqLocVector queries;
-        ITERATE(vector<int>, itr, gis) {
+        ITERATE(vector<TGi>, itr, gis) {
             CSeq_id qid(CSeq_id::e_Gi, *itr);
             auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
             queries.push_back(*sl);
@@ -527,11 +527,11 @@ struct CQueryDataTestFixture
     }
 
     static void
-        s_ObjMgr_QueryFactory_LocalDataFromBlastQueryVector(const vector<int>& gis)
+        s_ObjMgr_QueryFactory_LocalDataFromBlastQueryVector(const vector<TGi>& gis)
     {
         CRef<CBlastQueryVector> queries(new CBlastQueryVector);
         
-        ITERATE(vector<int>, itr, gis) {
+        ITERATE(vector<TGi>, itr, gis) {
             CSeq_id qid(CSeq_id::e_Gi, *itr);
             
             CRef<CBlastSearchQuery>
@@ -566,12 +566,12 @@ BOOST_FIXTURE_TEST_SUITE(QueryData, CQueryDataTestFixture)
 //
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalData_GetSumOfSequenceLengths) {
-    vector<int> gis;
-    gis.push_back(26);
-    gis.push_back(555);
-    gis.push_back(556);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 26));
+    gis.push_back(GI_FROM(TIntId, 555));
+    gis.push_back(GI_FROM(TIntId, 556));
     CRef<CBioseq_set> bs(new CBioseq_set);
-    ITERATE(vector<int>, itr, gis) {
+    ITERATE(vector<TGi>, itr, gis) {
         CBioseq_Handle bh = CSimpleOM::GetBioseqHandle(*itr);
         CRef<CSeq_entry> seq_entry(new CSeq_entry);
         seq_entry->SetSeq(const_cast<CBioseq&>(*bh.GetBioseqCore()));
@@ -598,32 +598,32 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalData_GetSumOfSequenceLengths) {
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalDataFromTSeqLocVector_Protein) {
-    vector<int> gis;
-    gis.push_back(38092615);
-    gis.push_back(4506509);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 38092615));
+    gis.push_back(GI_FROM(TIntId, 4506509));
     s_ObjMgr_QueryFactory_LocalDataFromTSeqLocVector(gis);
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalDataFromTSeqLocVector_Nucleotide) {
-    vector<int> gis;
-    gis.push_back(555);
-    gis.push_back(556);
-    gis.push_back(26);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 555));
+    gis.push_back(GI_FROM(TIntId, 556));
+    gis.push_back(GI_FROM(TIntId, 26));
     s_ObjMgr_QueryFactory_LocalDataFromTSeqLocVector(gis);
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalDataFromBlastQueryVector_Protein) {
-    vector<int> gis;
-    gis.push_back(38092615);
-    gis.push_back(4506509);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 38092615));
+    gis.push_back(GI_FROM(TIntId, 4506509));
     s_ObjMgr_QueryFactory_LocalDataFromBlastQueryVector(gis);
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_LocalDataFromBlastQueryVector_Nucleotide) {
-    vector<int> gis;
-    gis.push_back(555);
-    gis.push_back(556);
-    gis.push_back(26);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 555));
+    gis.push_back(GI_FROM(TIntId, 556));
+    gis.push_back(GI_FROM(TIntId, 26));
     s_ObjMgr_QueryFactory_LocalDataFromBlastQueryVector(gis);
 }
 
@@ -634,11 +634,11 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromTSeqLocVecto
     auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     queries.push_back(*sl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
-    CSequenceDataTester(query_factory, kGi)();
+    CSequenceDataTester(query_factory, GI_FROM(int, kGi))();
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromBlastQueryVector) {
-    const int kGi = 129295;
+    const TIntId kGi = 129295;
 
     CRef<CBlastQueryVector> queries(new CBlastQueryVector);
     CSeq_id qid(CSeq_id::e_Gi, kGi);
@@ -649,7 +649,7 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromBlastQueryVe
     queries->AddQuery(sq);
     
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
-    CSequenceDataTester(query_factory, kGi)();
+    CSequenceDataTester(query_factory, GI_FROM(TIntId, kGi))();
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_EmptyTSeqLocVector) {
@@ -665,28 +665,28 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_EmptyBlastQueryVector) {
 //
 
 BOOST_AUTO_TEST_CASE(ObjMgrFree_QueryFactory_LocalDataFromBioseq_Protein) {
-    const int kGi = 129295;
+    const TGi kGi = GI_FROM(TIntId, 129295);
     s_ObjMgrFree_QueryFactory_LocalDataFromBioseq(kGi);
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgrFree_QueryFactory_LocalDataFromBioseq_Nucleotide) {
-    const int kGi = 555;
+    const TGi kGi = GI_FROM(TIntId, 555);
     s_ObjMgrFree_QueryFactory_LocalDataFromBioseq(kGi);
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgrFree_QueryFactory_LocalDataFromBioseq_set_Protein) {
-    vector<int> gis;
-    gis.push_back(129295);
-    gis.push_back(87);
-    gis.push_back(1900);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 129295));
+    gis.push_back(GI_FROM(TIntId, 87));
+    gis.push_back(GI_FROM(TIntId, 1900));
     s_ObjMgrFree_QueryFactory_LocalDataFromBioseq_set(gis);
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgrFree_QueryFactory_LocalDataFromBioseq_set_Nucleotide) {
-    vector<int> gis;
-    gis.push_back(26);
-    gis.push_back(555);
-    gis.push_back(556);
+    vector<TGi> gis;
+    gis.push_back(GI_FROM(TIntId, 26));
+    gis.push_back(GI_FROM(TIntId, 555));
+    gis.push_back(GI_FROM(TIntId, 556));
     s_ObjMgrFree_QueryFactory_LocalDataFromBioseq_set(gis);
 }
 

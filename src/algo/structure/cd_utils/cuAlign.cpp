@@ -1304,7 +1304,7 @@ bool sscanSeqId (const char * & ptr,CSeq_id & seqid)
 	}id[iid]=0;
 	int gi;
 	if( !strcmp(typ,"gi") && sscanf(id,"%d",&gi)==1 ){
-		seqid.SetGi(gi);
+		seqid.SetGi(GI_FROM(int, gi));
 	}
 	else if( !strcmp(typ,"pdb") ){
 		char * ss=strrchr(id,'_');
@@ -1594,9 +1594,9 @@ int GetPssmIdFromSeqAlign(const CRef<CSeq_align >& seqAlign, string& err) {
 
 //  Return the GI of the master sequence of the Seq_align.  If not a GI, 
 //  or for other error, return 0.
-int GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err) {
+TGi GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err) {
 
-    int gi = 0;
+    TGi gi = ZERO_GI;
 
     err.erase();
     if (seqAlign.Empty()) {
@@ -1618,7 +1618,7 @@ int GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err) {
     } else {
         err.append("GetMasterGIFromSeqAlign:  Seq_align is an unsupported type (%d).\n", seqAlign->GetType());
     }
-    return gi;    
+    return gi;
 }
 
 

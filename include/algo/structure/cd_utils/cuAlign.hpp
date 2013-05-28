@@ -248,7 +248,7 @@ int  GetPssmIdFromSeqAlign(const CRef<CSeq_align >& seqAlign, string& err);
 //  Return the GI of the master (i.e. first) sequence of the Seq_align.  If not a GI, 
 //  or for other error, return 0.
 NCBI_CDUTILS_EXPORT 
-int GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err);
+TGi GetMasterGIFromSeqAlign(const CRef< CSeq_align >& seqAlign, string& err);
 
 //class CCd;
 NCBI_CDUTILS_EXPORT 
