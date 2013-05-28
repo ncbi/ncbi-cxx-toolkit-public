@@ -6,6 +6,7 @@ internal/aligndb
 internal/gbench
 misc/hgvs$
 misc/third_party
+-algo/blast/unit_tests
 -[^gi].*/app
 -[^g].*/unit_test
 -algo/ms
