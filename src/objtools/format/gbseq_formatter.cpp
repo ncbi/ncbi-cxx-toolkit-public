@@ -141,7 +141,10 @@ void CGBSeqFormatter::End(IFlatTextOStream& text_os)
 //
 
 
-CGBSeq::TStrandedness s_GBSeqStrandedness(CSeq_inst::TStrand strand)
+CGBSeq::TStrandedness s_GBSeqStrandedness(
+    CSeq_inst::TStrand strand,
+    CMolInfo::TBiomol eBiomol // moltype needed to determine defaults if unset
+    )
 {
     switch ( strand ) {
     case CSeq_inst::eStrand_ss:
@@ -156,7 +159,38 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(CSeq_inst::TStrand strand)
         break;
     }
 
+    // not set, so try to use eBiomol to figure it out
+    switch( eBiomol ) {
+    case CMolInfo::eBiomol_genomic:
+        return "double"; // DNA defaults to double-stranded
+    case CMolInfo::eBiomol_peptide:
+        // peptides default to single-stranded
+        return "single";
+    default: {
+        // we're not sure about the enum type, so we check if
+        // it's text name gives us something to work with
+
+        const CEnumeratedTypeValues * pBiomolEnumInfo = 
+            CMolInfo::GetTypeInfo_enum_EBiomol();
+        if( pBiomolEnumInfo ) {
+            CEnumeratedTypeValues::TValueToName::const_iterator find_iter =
+                pBiomolEnumInfo->ValueToName().find(eBiomol);
+            if( find_iter != pBiomolEnumInfo->ValueToName().end() ) {
+                const string *psBiomolName = find_iter->second;
+
+                // RNA types default to single-strand
+                if( NStr::Find(*psBiomolName, "RNA") != NPOS ) {
+                    return "single";
+                }
+            }
+        }
+
+        break;
+    }
+    }
+
     return "?";  // eStrandedness_not_set;
+    
 }
 
 
@@ -231,8 +265,8 @@ void CGBSeqFormatter::FormatLocus
 
     m_GBSeq->SetLocus(locus.GetName());
     m_GBSeq->SetLength(locus.GetLength());
-    m_GBSeq->SetStrandedness(s_GBSeqStrandedness(locus.GetStrand()));
     m_GBSeq->SetMoltype(s_GBSeqMoltype(locus.GetBiomol()));
+    m_GBSeq->SetStrandedness(s_GBSeqStrandedness(locus.GetStrand(), locus.GetBiomol()));
     m_GBSeq->SetTopology(s_GBSeqTopology(locus.GetTopology()));
     m_GBSeq->SetDivision(locus.GetDivision());
     m_GBSeq->SetUpdate_date(s_GetDate(ctx.GetHandle(), CSeqdesc::e_Update_date));
