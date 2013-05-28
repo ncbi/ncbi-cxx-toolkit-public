@@ -5,6 +5,7 @@ util/cache$
 util/bitset$
 util/compress$
 util/compress/api$
+util/compress/api/miniz$
 util/compress/zlib$
 util/regexp$
 util/xregexp$
