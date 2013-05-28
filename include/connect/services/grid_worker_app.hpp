@@ -199,6 +199,18 @@ inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
     }
 
+#define NCBI_WORKERNODE_MAIN_WITH_LISTENER(TWorkerNodeJob, Version,         \
+                                           ListenerClass)                   \
+    NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
+    int main(int argc, const char* argv[])                                  \
+    {                                                                       \
+        GetDiagContext().SetOldPostFormat(false);                           \
+        CGridWorkerApp app(new TWorkerNodeJob##Factory,                     \
+            CVersionInfo(#Version));                                        \
+        app.SetListener(new ListenerClass);                                 \
+        return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
+    }
+
 #define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob,                             \
         TWorkerNodeIdleTask, Version)                                       \
     NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,                      \
