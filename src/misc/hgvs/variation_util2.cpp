@@ -1511,11 +1511,6 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
 void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* target_id, bool ignore_genomic)
 {
     v.Index();
-    const CVariation::TPlacements* placements = s_GetPlacements(v);
-
-    if(!placements || placements->size() == 0) {
-        return;
-    }
 
     if(v.GetData().IsSet()) {
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
@@ -1525,6 +1520,13 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
     }
 
     if(!v.GetData().IsInstance()) {
+        return;
+    }
+
+
+    const CVariation::TPlacements* placements = s_GetPlacements(v);
+
+    if(!placements || placements->size() == 0) {
         return;
     }
 
