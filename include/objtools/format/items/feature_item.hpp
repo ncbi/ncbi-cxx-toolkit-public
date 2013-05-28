@@ -224,7 +224,6 @@ protected:
     void x_AddQuals( CBioseqContext& ctx ) { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }
     void x_AddQuals(const CProt_ref& prot);
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot);
-    void x_AddQualsProductId( CBioseq_Handle& );
     void x_AddQualsGene(const CGene_ref*, CConstRef<CSeq_feat>&,
         bool from_overlap);
     void x_AddGoQuals(const CUser_object& uo);

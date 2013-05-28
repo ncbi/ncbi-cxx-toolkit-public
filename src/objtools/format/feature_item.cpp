@@ -1679,6 +1679,7 @@ static const string s_TrnaList[] = {
 
 static const string& s_AaName(int aa)
 {
+    // TODO: can this be replaced by a call to CSeqportUtil?
     int idx = 255;
 
     if (aa != '*') {
@@ -2280,7 +2281,6 @@ void CFeatureItem::x_AddQualsCdregion(
         x_AddQualProtComment( prot );
         x_AddQualProtMethod( prot );
         x_AddQualProtNote( protRef, protFeat );
-        //x_AddQualsProductId( prot );
         x_AddQualProteinId( ctx, prot, prot_id );
         x_AddQualTranslation( prot, ctx, pseudo );
     }
@@ -2370,45 +2370,6 @@ void CFeatureItem::x_AddProductIdQuals(
         }
     }
 }
-
-//  ---------------------------------------------------------------------------
-void CFeatureItem::x_AddQualsProductId(
-    CBioseq_Handle& protHandle )
-//  ---------------------------------------------------------------------------
-{
-    //
-    //  Objective (according to the C toolkit):
-    //  We need one (and only one) /xxx_id tag. If there are multiple ids 
-    //  available, try and pick the "best" one.
-    //  In addition, if an id of type GI is available, turn it into a /db_xref 
-    //  tag, regardless of whether we already used it for the /xxx_id tag
-    //  or not.
-    //
-
-    if ( !protHandle ) {
-        return;
-    }
-    const CBioseq_Handle::TId& ids = protHandle.GetId();
-    if ( ids.empty() ) {
-        return;
-    }
-
-    CSeq_id_Handle best = s_FindBestIdChoice( ids );
-    if ( !best ) {
-        return;
-    }
-    x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *best.GetSeqId() ) );
-    
-/*    ITERATE (CBioseq_Handle::TId, it, ids) {
-        if ( it->Which() != CSeq_id::e_Gi ) {
-            continue;
-        }
-        CConstRef<CSeq_id> id = it->GetSeqId();
-        if (!id->IsGeneral()) {
-            x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( *id, id->IsGi() ) );
-        }
-    }
-*/}
 
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddQualsRegion(
@@ -3020,7 +2981,7 @@ void CFeatureItem::x_AddQualsProt(
     ///
     /// report molecular weights
     ///
-    if (ctx.IsProt() && ctx.IsRefSeq() && ! IsMappedFromProt() && 
+    if (ctx.IsProt() && ( ctx.IsRefSeq() || ctx.Config().IsFormatGBSeq() ) && ! IsMappedFromProt() && 
         ! ( m_Feat.IsSetPartial() && m_Feat.GetPartial() ) && 
         ! ( m_Feat.GetLocation().IsPartialStart(eExtreme_Biological) || 
             m_Feat.GetLocation().IsPartialStop(eExtreme_Biological)) && 
@@ -5033,27 +4994,18 @@ static string s_GetSpecimenVoucherText(
         return strRawName;
     }
     
-    // extract "inst" and "id".  e.g. For "ATCC:27305", inst becomes "ATCC" and "id" becomes "27305"
+    // doesn't COrgMod already have the code for this?
     string inst;
     string id;
-    {{
-        // if one colon, split there.  If two colons, split on the second one
-        NStr::SplitInTwo( strRawName, ":", inst, id );
-        if( id.empty() ) {
-            // no colon at all, so we can't parse it
+    {
+        string coll;
+        if( ! COrgMod::ParseStructuredVoucher(strRawName, inst, coll, id) ) {
             return strRawName;
         }
-
-        // if id contains another colon, we should actually split there
-        if( NStr::Find(id, ":") != NPOS ) {
-            string rest_of_inst;
-            string real_id;
-            NStr::SplitInTwo(id, ":", rest_of_inst, real_id);
-            inst = inst + ":" + rest_of_inst;
-            id = real_id;
+        if( ! coll.empty() ) {
+            inst += ':' + coll;
         }
-    }}
-
+    }
     
     CInstInfoMap::TVoucherInfoRef voucher_info_ref = CInstInfoMap::GetInstitutionVoucherInfo( inst );
     if( voucher_info_ref ) {
@@ -5115,38 +5067,33 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
         x_AddQual(eSQ_common_name, new CFlatStringQVal(common));
     }
     if ( org.IsSetOrgname() ) {
-        list<string> ecotypes;
+        set<string> ecotypesSeen;  // holds the ones we've seen so don't show them again
+        ecotypesSeen.insert(kEmptyStr); // empty string is always considered seen so we hide it
         ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+            
+            const COrgMod& mod = **it;
+            const string & sSubname = ( 
+                mod.CanGetSubname() ? mod.GetSubname() : kEmptyStr );
+
             ESourceQualifier slot = s_OrgModToSlot(**it);
             switch( slot ) {
-            case eSQ_ecotype: {
-                const COrgMod& mod = **it;
-                if ( ! mod.IsSetSubname() ) {
-                    break;
+            case eSQ_ecotype:
+                if( ecotypesSeen.find(sSubname) != ecotypesSeen.end() ) {
+                    break; // already seen
                 }
-                string strSubName = mod.GetSubname();
-                list<string>::iterator it = std::find( 
-                    ecotypes.begin(), ecotypes.end(), strSubName );
-                if ( it != ecotypes.end() ) {
-                    break;
-                }
-                ecotypes.push_back( strSubName );
+                ecotypesSeen.insert( sSubname );
                 x_AddQual(slot, new CFlatOrgModQVal(mod));
-                break;
-                }
-            case eSQ_bio_material:
-            case eSQ_culture_collection:
-            case eSQ_specimen_voucher:
-                {{
-                    CRef<COrgMod> mod( new COrgMod((*it)->GetSubtype(), 
-                        ( (*it)->CanGetSubname() ? s_GetSpecimenVoucherText(ctx, (*it)->GetSubname()) : kEmptyStr ) ));
-                    x_AddQual(slot, new CFlatOrgModQVal(*mod));
-                }}
                 break;
             case eSQ_none:
                 break;
             default:
-                x_AddQual(slot, new CFlatOrgModQVal(**it));
+                if( COrgMod::HoldsInstitutionCode(mod.GetSubtype()) ) {
+                    CRef<COrgMod> new_mod( new COrgMod(mod.GetSubtype(), 
+                        (  sSubname.empty() ? kEmptyStr : s_GetSpecimenVoucherText(ctx, sSubname) ) ));
+                    x_AddQual(slot, new CFlatOrgModQVal(*new_mod));
+                } else {
+                    x_AddQual(slot, new CFlatOrgModQVal(**it));
+                }
                 break;
             }
         }
