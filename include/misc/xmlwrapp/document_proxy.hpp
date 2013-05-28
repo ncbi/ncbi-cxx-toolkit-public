@@ -61,10 +61,11 @@ class document_proxy
 public:
     ~document_proxy ();
 
-// Some compilers (MSVC and GCC 4.4.2) are clever enough to avoid using the
-// copy constructor, so for those compilers it is private
-#if defined(NCBI_COMPILER_MSVC) || \
-    (defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 442)
+// Some compilers (GCC 4.4.2 and up) are clever enough to avoid using the
+// copy constructor, so for those compilers it is private.
+// MSVC behaves different depending on a case. E.g. in case of the '?'
+// operator MSVC needs a copy constructor.
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 442
 private:
 #else
 public:
