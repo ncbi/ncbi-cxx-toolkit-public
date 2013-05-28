@@ -75,7 +75,11 @@ public:
 
     static bool IsDiscouraged(const TSubtype stype);
 
-	static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
+    /// This indicates if the given Org-mod subtype is supposed to hold an 
+    /// institution code (Example: "ATCC:27305")
+    static bool HoldsInstitutionCode(const TSubtype stype);
+
+    static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
     static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country);
 
     //e.g. "DMNS:Bird" to "Denver Museum of Nature and Science, Ornithology Collections"
@@ -83,7 +87,7 @@ public:
     static const string &GetInstitutionFullName( const string &short_name );
     static const string &GetInstitutionShortName( const string &full_name );
 
-	private:
+    private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);
     COrgMod& operator=(const COrgMod& value);

@@ -112,6 +112,19 @@ bool COrgMod::IsDiscouraged(const TSubtype subtype)
 }
 
 
+bool COrgMod::HoldsInstitutionCode(const TSubtype stype)
+{
+    switch(stype) {
+    case eSubtype_specimen_voucher:
+    case eSubtype_culture_collection:
+    case eSubtype_bio_material:
+        return true;
+    default:
+        return false;
+    }
+}
+
+
 bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id)
 {
 	if (NStr::IsBlank(str) || str.length() < 3) {
