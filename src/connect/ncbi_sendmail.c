@@ -37,6 +37,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Sendmail
 
@@ -518,26 +519,62 @@ extern const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN2(16, "Protocol error in DATA command", buffer);
 
     if (!(info->mx_options & fSendMail_NoMxHeader)) {
-        /* Follow RFC822 to compose message headers.
-         * NB: Both 'Date:'and 'From:' get added by sendmail automagically.
-         */ 
-        if (!s_SockWrite(sock, "Subject: ", 9)             ||
-            (subject  &&  !s_SockWrite(sock, subject, 0))  ||
-            !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
-            SENDMAIL_RETURN(17, "Write error in sending subject");
-
-        if (to  &&  *to) {
-            if (!s_SockWrite(sock, "To: ", 4)              ||
-                !s_SockWrite(sock, to, 0)                  ||
-                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
-                SENDMAIL_RETURN(18, "Write error in sending To");
+        if (!(info->mx_options & fSendMail_Old822Headers)) {
+            /* Locale-independent month names per RFC5322 and older */
+            static const char* kMonth[] = { "Jan", "Feb", "Mar", "Apr",
+                                            "May", "Jun", "Jul", "Aug",
+                                            "Sep", "Oct", "Nov", "Dec" };
+            /* Skip DoW: it's optional yet must also be locale-independent */
+            static const char  kDateFmt[] = "%d %%s %Y %H:%M:%S %z" MX_CRLF;
+            time_t now = time(0);
+            char datefmt[80];
+            struct tm* tm;
+#if   defined(NCBI_OS_SOLARIS)
+            /* MT safe */
+            tm = localtime(&now);
+#elif defined(HAVE_LOCALTIME_R)
+            localtime_r(&now, &tm);
+#else
+            struct tm tmp;
+            CORE_LOCK_WRITE;
+            tm = (struct tm*) memcpy(&tmp, localtime(&now), sizeof(tmp));
+            CORE_UNLOCK;
+#endif /*NCBI_OS_SOLARIS*/
+            if (strftime(datefmt, sizeof(datefmt), kDateFmt, tm)) {
+                sprintf(buffer, datefmt, kMonth[tm->tm_mon]);
+                if (!s_SockWrite(sock, "Date: ", 6)  ||
+                    !s_SockWrite(sock, buffer, 0)) {
+                    SENDMAIL_RETURN(32, "Write error in sending Date");
+                }
+            }
+            if (*info->from) {
+                if (!s_SockWrite(sock, "From: ", 6)    ||
+                    !s_SockWrite(sock, info->from, 0)  ||
+                    !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1)) {
+                    SENDMAIL_RETURN(33, "Write error in sending From");
+                }
+            }
         }
-
+        if (subject) {
+            if (!s_SockWrite(sock, "Subject: ", 9)              ||
+                (*subject  &&  !s_SockWrite(sock, subject, 0))  ||
+                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1)) {
+                SENDMAIL_RETURN(17, "Write error in sending Subject");
+            }
+        }
+        if (to  &&  *to) {
+            if (!s_SockWrite(sock, "To: ", 4)  ||
+                !s_SockWrite(sock, to, 0)      ||
+                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1)) {
+                SENDMAIL_RETURN(18, "Write error in sending To");
+            }
+        }
         if (info->cc  &&  *info->cc) {
-            if (!s_SockWrite(sock, "Cc: ", 4)              ||
-                !s_SockWrite(sock, info->cc, 0)            ||
-                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
+            if (!s_SockWrite(sock, "Cc: ", 4)    ||
+                !s_SockWrite(sock, info->cc, 0)  ||
+                !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1)) {
                 SENDMAIL_RETURN(19, "Write error in sending Cc");
+            }
         }
     } else if (subject  &&  *subject) {
         CORE_LOG_X(2, eLOG_Warning,

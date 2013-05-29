@@ -54,9 +54,11 @@ extern "C" {
 enum ESendMailOption {
     fSendMail_NoMxHeader       = (1 << 0), /**< Don't add standard mail header,
                                                 just use what user provided */
-    fSendMail_StripNonFQDNHost = (1 << 8)  /**< Strip host part in "from" field
-                                                if it does not look like an
-                                                FQDN (i.e. does not have at
+    fSendMail_Old822Headers    = (1 << 7), /**< Do not form "Date:" and "From:"
+                                                but let them be defaulted */
+    fSendMail_StripNonFQDNHost = (1 << 8), /**< Strip host part off the "from"
+                                                field if it does not look like
+                                                an FQDN (i.e. does not have at
                                                 least two domain name labels
                                                 separated by a dot); leave only
                                                 the username part */
@@ -100,7 +102,7 @@ typedef struct {
  * @param info
  *  A pointer to the structure to initialize
  * @param from
- *  Return address pattern to use in "info->from" as the following:
+ *  Return address pattern to use in 'info->from' as the following:
  *  * "user@host" or "user" is copied verbatim;
  *  * "user@" is appended with the local host name;
  *  * "@host" is prepended with the user name according to the "user" argument;
@@ -109,9 +111,9 @@ typedef struct {
  * @param user
  *  Which username to use when auto-generating (otherwise ignored)
  * @return
- *  Return value equals the argument "info" passed in.
- * @note It is allowed to pre-fill "info->from" (of the "info" being inited)
- *       with one of the above patterns, and pass it as the "from" parameter.
+ *  Return value equals the argument 'info' passed in.
+ * @note It is allowed to pre-fill "'nfo->from' (of the 'info' being inited)
+ *       with one of the above patterns, and pass it as the 'from' parameter.
  * @note Unlike the username part of the return address, the hostname part is
  *       never truncated but dropped altogether if it does not fit.
  * @note If the username is unobtainable, then it is be replaced with the word
@@ -155,10 +157,10 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  );
 
 /** Send a message as in CORE_SendMail() but by explicitly specifying all
- * additional parameters of the message and the communication via argument
+ * additional parameters of the message and communication via the argument
  * 'info'. In case of 'info' == NULL, the call is completely equivalent to
  * CORE_SendMail().
- * @note Body may not neccessarily be '\0'-terminated if 'info->body_size'
+ * @note Body may not necessarily be '\0'-terminated if 'info->body_size'
  * specifies non-zero message body size (see SSendMailInfo::body_size above).
  *
  * @note
@@ -168,17 +170,17 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * part above), angle brackets around the address may be omitted.
  *
  * @note
- * If not specified (0), and by default, the message body size is calculated
- * as strlen() of passed body argument, which thus must be '\0'-terminated.
- * Otherwise, exactly "body_size" bytes are read from the location pointed to
- * by "body" parameter, and are sent in the message.
+ * If not specified (0), and by default, the message body size is calculated as
+ * strlen() of the passed 'body' argument, which thus must be '\0'-terminated.
+ * Otherwise, exactly 'info->body_size' bytes are read from the location
+ * pointed to by the 'body' parameter, and are then sent in the message.
  *
  * @note
  * If fSendMail_NoMxHeader is set in 'info->mx_options', the body can have
  * an additional header part  (otherwise, a standard header gets generated as
  * needed).  In this case, even if no additional headers are supplied, the body
- * must provide proper header / message text delimiter (an empty line), which
- * will not be automatically inserted in the no-header (aka "as-is" mode).
+ * must provide the proper header / message text delimiter (an empty line),
+ * which will not be automatically inserted (aka "as-is" message mode).
  *
  * @param to
  *  Recipient list
