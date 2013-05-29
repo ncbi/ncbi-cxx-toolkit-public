@@ -1,0 +1,7 @@
+# $Id$
+
+LIB_PROJ = id_mapper
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

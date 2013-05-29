@@ -1,0 +1,8 @@
+# $Id$
+
+LIB = xid_mapper
+SRC = id_mapper
+
+ASN_DEP = genome_collection seqset
+
+WATCHERS = boukn meric
