@@ -4320,6 +4320,15 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 }
             }
         }
+        if( FIELD_IS_SET_AND_IS(rna, Ext, Gen) ) {
+            CRNA_gen & rna_gen = rna.SetExt().SetGen();
+            if( RAW_FIELD_IS_EMPTY_OR_UNSET(rna_gen, Product) ) {
+                rna_gen.SetProduct(gb_qual_val);
+                ChangeMade(CCleanupChange::eChangeRNAref);
+                return eAction_Erase;
+            }
+            return eAction_Nothing;
+        }
         if ( rna.IsSetExt() && ! rna.GetExt().IsName() ) return eAction_Nothing;
         const string &name = ( rna.IsSetExt() ? rna.GetExt().GetName() : kEmptyStr );
         if (! name.empty() ) {
