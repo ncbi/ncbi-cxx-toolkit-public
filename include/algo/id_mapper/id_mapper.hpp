@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -34,24 +34,20 @@
 
 
 #include <objmgr/scope.hpp>
-
 #include <objects/seq/seq_id_handle.hpp>
-
 #include <objects/genomecoll/genome_collection__.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-
 BEGIN_SCOPE(objects)
-    class CScope;
-    class CSeq_loc;
-    class CSeq_id;
-    class CSeq_id_Handle;
-    class CGC_Assembly;
-    class CGC_AssemblyUnit;
-    class CGC_Sequence;
-//    class CGC_TypedSeqId;
-//    class CGC_TypedSeqId::E_Choice;
+class CScope;
+class CSeq_loc;
+class CSeq_id;
+class CSeq_id_Handle;
+class CGC_Assembly;
+class CGC_AssemblyUnit;
+class CGC_Sequence;
 END_SCOPE(objects)
 
 
@@ -80,79 +76,111 @@ public:
         int Role;
         int Top;
 
-        SIdSpec() : TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
-                    Alias(e_NotSet), External(""), Pattern(""), 
-                    Role(e_Role_NotSet), Top(e_Top_NotSet) { ; }
+        SIdSpec()
+            : TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
+              Alias(e_NotSet),
+              External(kEmptyStr),
+              Pattern(kEmptyStr), 
+              Role(e_Role_NotSet),
+              Top(e_Top_NotSet)
+        {
+        }
 
-        string ToString() const {
+        string ToString() const
+        {
             string Result;
             Result.reserve(64);
             
-            if(TypedChoice == 0)
+            switch (TypedChoice) {
+            case 0:
                 Result += "NotSet";
-            else if(TypedChoice == 1)
+                break;
+            case 1:
                 Result += "GenBank";
-            else if(TypedChoice == 2)
+                break;
+            case 2:
                 Result += "RefSeq";
-            else if(TypedChoice == 3)
+                break;
+            case 3:
                 Result += "Private";
-            else if(TypedChoice == 4)
+                break;
+            case 4:
                 Result += "External";
+                break;
+            }
             Result += ":";
             
-            if(Alias == 0)
+            switch (Alias) {
+            case 0:
                 Result += "NotSet";
-            else if(Alias == 1)
+                break;
+            case 1:
                 Result += "Public";
-            else if(Alias == 2)
+                break;
+            case 2:
                 Result += "Gpipe";
-            else if(Alias == 3)
+                break;
+            case 3:
                 Result += "Gi";
+                break;
+            }
             Result += ":";
             
             Result += External + ":" + Pattern;
             Result += ":";
             
-            if(Role == objects::eGC_SequenceRole_chromosome)
+            switch (Role) {
+            case objects::eGC_SequenceRole_chromosome:
                 Result += "CHRO";
-            else if(Role == objects::eGC_SequenceRole_scaffold)
+                break;
+            case objects::eGC_SequenceRole_scaffold:
                 Result += "SCAF";
-            else if(Role == objects::eGC_SequenceRole_component)
+                break;
+            case objects::eGC_SequenceRole_component:
                 Result += "COMP";
-            else if(Role != e_Role_NotSet)
+                break;
+            case e_Role_NotSet:
+                break;
+            default:
                 Result += NStr::IntToString(Role);
+            }
             Result += ":";
         
-            if(Top == e_Top_NotSet)
+            switch (Top) {
+            case e_Top_NotSet:
                 Result += "NotSet";
-            else if(Top == e_Top_NotTop)
+                break;
+            case e_Top_NotTop:
                 Result += "NotTop";
-            else if(Top == e_Top_Public)
+                break;
+            case e_Top_Public:
                 Result += "Public";
-            else if(Top == e_Top_Gpipe)
+                break;
+            case e_Top_Gpipe:
                 Result += "Gpipe";
-
+                break;
+            }
 
             return Result;
         }
 
-        bool operator<(const SIdSpec& Other) const {
+        bool operator<(const SIdSpec& Other) const
+        {
             return !(TypedChoice < Other.TypedChoice);
         }
 
-        bool operator==(const SIdSpec& Other) const {
-            if(TypedChoice != Other.TypedChoice)
+        bool operator==(const SIdSpec& Other) const
+        {
+            if (!(TypedChoice == Other.TypedChoice &&
+                  Alias == Other.Alias &&
+                  External == Other.External &&
+                  Pattern == Other.Pattern &&
+                  Role == Other.Role &&
+                  Top == Other.Top
+                 )
+               ) {
                 return false;
-            else if(Alias != Other.Alias)
-                return false;
-            else if(External != Other.External)
-                return false;
-            else if(Pattern != Other.Pattern)
-                return false;
-            else if(Role != Other.Role)
-                return false;
-            else if(Top != Other.Top)
-                return false;
+            }
             return true;
         }
     };
@@ -173,7 +201,10 @@ public:
     };
     E_Gap IsLocInAGap(const objects::CSeq_loc& Loc) const;
 
-    CConstRef<objects::CGC_Assembly> GetInternalGencoll() const { return m_Assembly; }
+    CConstRef<objects::CGC_Assembly> GetInternalGencoll() const
+    {
+        return m_Assembly;
+    }
 
 private:
 
