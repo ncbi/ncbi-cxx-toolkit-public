@@ -128,7 +128,7 @@ CGencollIdMapper::Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const
     if (Found == m_IdToSeqMap.end()) {
         const string IdStr = Id->GetSeqIdString(true);
         ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
-            if (IdStr.find(*ChromoIter) != NPOS) {
+            if (NStr::Find(IdStr, *ChromoIter) != NPOS) {
                 CSeq_id Temp;
                 Temp.SetLocal().SetStr() = *ChromoIter;
                 Idh = CSeq_id_Handle::GetHandle(Temp);
@@ -462,7 +462,7 @@ CGencollIdMapper::x_Init()
     CTypeConstIterator<CGC_Replicon> ReplIter(*m_Assembly);
     for ( ; ReplIter; ++ReplIter) {
         if (ReplIter->CanGetName() &&
-            ReplIter->GetName().find("_random") == NPOS
+            NStr::Find(ReplIter->GetName(), "_random") == NPOS
            ) {
             m_Chromosomes.push_back(ReplIter->GetName());
         }
@@ -1287,33 +1287,43 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
     // If we didn't find it normally, try again, looking for Pattern matches
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
-               switch ((*it)->Which()) {
-            case CGC_TypedSeqId::e_External: {
+            switch ((*it)->Which()) {
+            case CGC_TypedSeqId::e_External:
+            {
                 const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
-                if (ExternalId.GetExternal() != CHROMO_EXT)
+                if (ExternalId.GetExternal() != CHROMO_EXT) {
                     continue;
-                size_t Start;
-                Start = Id.GetSeqIdString().find(ExternalId.GetId().GetSeqIdString());
+                }
+                const size_t Start(
+                    NStr::Find(Id.GetSeqIdString(),
+                               ExternalId.GetId().GetSeqIdString()
+                              )
+                );
                 if (Start != NPOS) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_External;
                     Spec.External = ExternalId.GetExternal();
                     //Spec.Pattern = NStr::Replace(Id.GetSeqIdString(), Private.GetSeqIdString(), DELIM);
                     Spec.Pattern = Id.GetSeqIdString().substr(0, Start) + DELIM;
                     return true;
-                }}
+                }
                 break;
-            case CGC_TypedSeqId::e_Private: {
+            }
+            case CGC_TypedSeqId::e_Private:
+            {
                 const CSeq_id& Private = (*it)->GetPrivate();
-                size_t Start;
-                Start = Id.GetSeqIdString().find(Private.GetSeqIdString());
+                const size_t Start(
+                    NStr::Find(Id.GetSeqIdString(),
+                               Private.GetSeqIdString()
+                              )
+                );
                 if (Start != NPOS) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_Private;
                     //Spec.Pattern = NStr::Replace(Id.GetSeqIdString(), Private.GetSeqIdString(), DELIM);
                     Spec.Pattern = Id.GetSeqIdString().substr(0, Start) + DELIM;
                     return true;
-                }}
+                }
                 break;
-
+            }
             default:
                 break;
             }
@@ -1434,7 +1444,7 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
     const string IdStr = Id.GetSeqIdString(true);
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.end();
     ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
-        if (IdStr.find(*ChromoIter) != NPOS) {
+        if (NStr::Find(IdStr, *ChromoIter) != NPOS) {
             CRef<CSeq_id> Temp(new CSeq_id());
             Temp->SetLocal().SetStr() = *ChromoIter;
             // If we have a pattern, double check it.
