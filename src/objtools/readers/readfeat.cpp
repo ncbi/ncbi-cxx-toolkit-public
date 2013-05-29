@@ -345,111 +345,6 @@ void CFeature_table_reader::x_InitImplementation()
 }
 
 
-typedef SStaticPair<const char *, CSeqFeatData::ESubtype> TFeatKey;
-
-static const TFeatKey feat_key_to_subtype [] = {
-    {  "-10_signal",         CSeqFeatData::eSubtype_10_signal           },
-    {  "-35_signal",         CSeqFeatData::eSubtype_35_signal           },
-    {  "3'UTR",              CSeqFeatData::eSubtype_3UTR                },
-    {  "3'clip",             CSeqFeatData::eSubtype_3clip               },
-    {  "5'UTR",              CSeqFeatData::eSubtype_5UTR                },
-    {  "5'clip",             CSeqFeatData::eSubtype_5clip               },
-    {  "Bond",               CSeqFeatData::eSubtype_bond                },
-    {  "CAAT_signal",        CSeqFeatData::eSubtype_CAAT_signal         },
-    {  "CDS",                CSeqFeatData::eSubtype_cdregion            },
-    {  "C_region",           CSeqFeatData::eSubtype_C_region            },
-    {  "Cit",                CSeqFeatData::eSubtype_pub                 },
-    {  "CloneRef",           CSeqFeatData::eSubtype_clone               },
-    {  "Comment",            CSeqFeatData::eSubtype_comment             },
-    {  "D-loop",             CSeqFeatData::eSubtype_D_loop              },
-    {  "D_segment",          CSeqFeatData::eSubtype_D_segment           },
-    {  "GC_signal",          CSeqFeatData::eSubtype_GC_signal           },
-    {  "Het",                CSeqFeatData::eSubtype_het                 },
-    {  "J_segment",          CSeqFeatData::eSubtype_J_segment           },
-    {  "LTR",                CSeqFeatData::eSubtype_LTR                 },
-    {  "N_region",           CSeqFeatData::eSubtype_N_region            },
-    {  "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue     },
-    {  "Num",                CSeqFeatData::eSubtype_num                 },
-    {  "Protein",            CSeqFeatData::eSubtype_prot                },
-    {  "RBS",                CSeqFeatData::eSubtype_RBS                 },
-    {  "REFERENCE",          CSeqFeatData::eSubtype_pub                 },
-    {  "Region",             CSeqFeatData::eSubtype_region              },
-    {  "Rsite",              CSeqFeatData::eSubtype_rsite               },
-    {  "STS",                CSeqFeatData::eSubtype_STS                 },
-    {  "S_region",           CSeqFeatData::eSubtype_S_region            },
-    {  "SecStr",             CSeqFeatData::eSubtype_psec_str            },
-    {  "Site",               CSeqFeatData::eSubtype_site                },
-    {  "Site-ref",           CSeqFeatData::eSubtype_site_ref            },
-    {  "Src",                CSeqFeatData::eSubtype_biosrc              },
-    {  "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal         },
-    {  "TxInit",             CSeqFeatData::eSubtype_txinit              },
-    {  "User",               CSeqFeatData::eSubtype_user                },
-    {  "V_region",           CSeqFeatData::eSubtype_V_region            },
-    {  "V_segment",          CSeqFeatData::eSubtype_V_segment           },
-    {  "VariationRef",       CSeqFeatData::eSubtype_variation_ref       },
-    {  "Xref",               CSeqFeatData::eSubtype_seq                 },
-    {  "assembly_gap",       CSeqFeatData::eSubtype_assembly_gap        },
-    {  "attenuator",         CSeqFeatData::eSubtype_attenuator          },
-    {  "centromere",         CSeqFeatData::eSubtype_centromere          },
-    {  "conflict",           CSeqFeatData::eSubtype_conflict            },
-    {  "enhancer",           CSeqFeatData::eSubtype_enhancer            },
-    {  "exon",               CSeqFeatData::eSubtype_exon                },
-    {  "gap",                CSeqFeatData::eSubtype_gap                 },
-    {  "gene",               CSeqFeatData::eSubtype_gene                },
-    {  "iDNA",               CSeqFeatData::eSubtype_iDNA                },
-    {  "intron",             CSeqFeatData::eSubtype_intron              },
-    {  "mRNA",               CSeqFeatData::eSubtype_mRNA                },
-    {  "mat_peptide",        CSeqFeatData::eSubtype_mat_peptide_aa      },
-    {  "mat_peptide_nt",     CSeqFeatData::eSubtype_mat_peptide         },
-    {  "misc_RNA",           CSeqFeatData::eSubtype_otherRNA            },
-    {  "misc_binding",       CSeqFeatData::eSubtype_misc_binding        },
-    {  "misc_difference",    CSeqFeatData::eSubtype_misc_difference     },
-    {  "misc_feature",       CSeqFeatData::eSubtype_misc_feature        },
-    {  "misc_recomb",        CSeqFeatData::eSubtype_misc_recomb         },
-    {  "misc_signal",        CSeqFeatData::eSubtype_misc_signal         },
-    {  "misc_structure",     CSeqFeatData::eSubtype_misc_structure      },
-    {  "mobile_element",     CSeqFeatData::eSubtype_mobile_element      },
-    {  "modified_base",      CSeqFeatData::eSubtype_modified_base       },
-    {  "ncRNA",              CSeqFeatData::eSubtype_ncRNA               },
-    {  "old_sequence",       CSeqFeatData::eSubtype_old_sequence        },
-    {  "operon",             CSeqFeatData::eSubtype_operon              },
-    {  "oriT",               CSeqFeatData::eSubtype_oriT                },
-    {  "polyA_signal",       CSeqFeatData::eSubtype_polyA_signal        },
-    {  "polyA_site",         CSeqFeatData::eSubtype_polyA_site          },
-    {  "pre_RNA",            CSeqFeatData::eSubtype_preRNA              },
-    {  "precursor_RNA",      CSeqFeatData::eSubtype_preRNA              },
-    {  "preprotein",         CSeqFeatData::eSubtype_preprotein          },
-    {  "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript     },
-    {  "primer_bind",        CSeqFeatData::eSubtype_primer_bind         },
-    {  "promoter",           CSeqFeatData::eSubtype_promoter            },
-    {  "protein_bind",       CSeqFeatData::eSubtype_protein_bind        },
-    {  "rRNA",               CSeqFeatData::eSubtype_rRNA                },
-    {  "rep_origin",         CSeqFeatData::eSubtype_rep_origin          },
-    {  "repeat_region",      CSeqFeatData::eSubtype_repeat_region       },
-    {  "repeat_unit",        CSeqFeatData::eSubtype_repeat_unit         },
-    {  "satellite",          CSeqFeatData::eSubtype_satellite           },
-    {  "scRNA",              CSeqFeatData::eSubtype_scRNA               },
-    {  "sig_peptide",        CSeqFeatData::eSubtype_sig_peptide_aa      },
-    {  "sig_peptide_nt",     CSeqFeatData::eSubtype_sig_peptide         },
-    {  "snRNA",              CSeqFeatData::eSubtype_snRNA               },
-    {  "snoRNA",             CSeqFeatData::eSubtype_snoRNA              },
-    {  "source",             CSeqFeatData::eSubtype_biosrc              },
-    {  "stem_loop",          CSeqFeatData::eSubtype_stem_loop           },
-    {  "tRNA",               CSeqFeatData::eSubtype_tRNA                },
-    {  "telomere",           CSeqFeatData::eSubtype_telomere            },
-    {  "terminator",         CSeqFeatData::eSubtype_terminator          },
-    {  "tmRNA",              CSeqFeatData::eSubtype_tmRNA               },
-    {  "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa  },
-    {  "transit_peptide_nt", CSeqFeatData::eSubtype_transit_peptide     },
-    {  "unsure",             CSeqFeatData::eSubtype_unsure              },
-    {  "variation",          CSeqFeatData::eSubtype_variation           },
-    {  "virion",             CSeqFeatData::eSubtype_virion              }
-};
-
-typedef CStaticPairArrayMap <const char*, CSeqFeatData::ESubtype, PCase_CStr> TFeatMap;
-DEFINE_STATIC_ARRAY_MAP(TFeatMap, sm_FeatKeys, feat_key_to_subtype);
-
-
 typedef SStaticPair<const char *, CFeature_table_reader_imp::EQual> TQualKey;
 
 static const TQualKey qual_key_to_subtype [] = {
@@ -2314,81 +2209,77 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
         }
     }
 
-    TFeatMap::const_iterator f_iter = sm_FeatKeys.find (feat.c_str ());
-    if (f_iter != sm_FeatKeys.end ()) {
+    CSeqFeatData::ESubtype sbtyp = CSeqFeatData::SubtypeNameToValue(feat);
+    if (sbtyp != CSeqFeatData::eSubtype_bad) {
 
-        CSeqFeatData::ESubtype sbtyp = f_iter->second;
-        if (sbtyp != CSeqFeatData::eSubtype_bad) {
+        // populate *sfp here...
 
-            // populate *sfp here...
+        CSeqFeatData::E_Choice typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
+        sfp->SetData ().Select (typ);
+        CSeqFeatData& sfdata = sfp->SetData ();
 
-            CSeqFeatData::E_Choice typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
-            sfp->SetData ().Select (typ);
-            CSeqFeatData& sfdata = sfp->SetData ();
-    
-            if (typ == CSeqFeatData::e_Rna) {
-                CRNA_ref& rrp = sfdata.SetRna ();
-                CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
-                switch (sbtyp) {
-                    case CSeqFeatData::eSubtype_preRNA :
-                        rnatyp = CRNA_ref::eType_premsg;
-                        break;
-                    case CSeqFeatData::eSubtype_mRNA :
-                        rnatyp = CRNA_ref::eType_mRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_tRNA :
-                        rnatyp = CRNA_ref::eType_tRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_rRNA :
-                        rnatyp = CRNA_ref::eType_rRNA;
-                        break;
-                    case CSeqFeatData::eSubtype_snRNA :
-                        rnatyp = CRNA_ref::eType_ncRNA;
-                        rrp.SetExt().SetGen().SetClass("snRNA");
-                        break;
-                    case CSeqFeatData::eSubtype_scRNA :
-                        rnatyp = CRNA_ref::eType_ncRNA;
-                        rrp.SetExt().SetGen().SetClass("scRNA");
-                        break;
-                    case CSeqFeatData::eSubtype_snoRNA :
-                        rnatyp = CRNA_ref::eType_ncRNA;
-                        rrp.SetExt().SetGen().SetClass("snoRNA");
-                        break;
-                    case CSeqFeatData::eSubtype_ncRNA :
-                        rnatyp = CRNA_ref::eType_ncRNA;
-                        rrp.SetExt().SetGen();
-                        break;
-                    case CSeqFeatData::eSubtype_tmRNA :
-                        rnatyp = CRNA_ref::eType_tmRNA;
-                        rrp.SetExt().SetGen();
-                        break;
-                    case CSeqFeatData::eSubtype_otherRNA :
-                        rrp.SetExt().SetName("misc_RNA");
-                        rnatyp = CRNA_ref::eType_other;
-                        break;
-                    default :
-                        break;
-                }
-                rrp.SetType (rnatyp);
-   
-            } else if (typ == CSeqFeatData::e_Imp) {
-                CImp_feat_Base& imp = sfdata.SetImp ();
-                imp.SetKey (feat);
-    
-            } else if (typ == CSeqFeatData::e_Bond) {
-                sfdata.SetBond (CSeqFeatData::eBond_other);
-                
-            } else if (typ == CSeqFeatData::e_Site) {
-                sfdata.SetSite (CSeqFeatData::eSite_other);
-            } else if (typ == CSeqFeatData::e_Prot ) {
-                CProt_ref &prot_ref = sfdata.SetProt();
-                if( sbtyp == CSeqFeatData::eSubtype_mat_peptide_aa ) {
-                    prot_ref.SetProcessed( CProt_ref::eProcessed_mature );
-                }
+        if (typ == CSeqFeatData::e_Rna) {
+            CRNA_ref& rrp = sfdata.SetRna ();
+            CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
+            switch (sbtyp) {
+            case CSeqFeatData::eSubtype_preRNA :
+                rnatyp = CRNA_ref::eType_premsg;
+                break;
+            case CSeqFeatData::eSubtype_mRNA :
+                rnatyp = CRNA_ref::eType_mRNA;
+                break;
+            case CSeqFeatData::eSubtype_tRNA :
+                rnatyp = CRNA_ref::eType_tRNA;
+                break;
+            case CSeqFeatData::eSubtype_rRNA :
+                rnatyp = CRNA_ref::eType_rRNA;
+                break;
+            case CSeqFeatData::eSubtype_snRNA :
+                rnatyp = CRNA_ref::eType_ncRNA;
+                rrp.SetExt().SetGen().SetClass("snRNA");
+                break;
+            case CSeqFeatData::eSubtype_scRNA :
+                rnatyp = CRNA_ref::eType_ncRNA;
+                rrp.SetExt().SetGen().SetClass("scRNA");
+                break;
+            case CSeqFeatData::eSubtype_snoRNA :
+                rnatyp = CRNA_ref::eType_ncRNA;
+                rrp.SetExt().SetGen().SetClass("snoRNA");
+                break;
+            case CSeqFeatData::eSubtype_ncRNA :
+                rnatyp = CRNA_ref::eType_ncRNA;
+                rrp.SetExt().SetGen();
+                break;
+            case CSeqFeatData::eSubtype_tmRNA :
+                rnatyp = CRNA_ref::eType_tmRNA;
+                rrp.SetExt().SetGen();
+                break;
+            case CSeqFeatData::eSubtype_otherRNA :
+                rrp.SetExt().SetName("misc_RNA");
+                rnatyp = CRNA_ref::eType_other;
+                break;
+            default :
+                break;
             }
+            rrp.SetType (rnatyp);
 
-            return true;
+        } else if (typ == CSeqFeatData::e_Imp) {
+            CImp_feat_Base& imp = sfdata.SetImp ();
+            imp.SetKey (feat);
+
+        } else if (typ == CSeqFeatData::e_Bond) {
+            sfdata.SetBond (CSeqFeatData::eBond_other);
+
+        } else if (typ == CSeqFeatData::e_Site) {
+            sfdata.SetSite (CSeqFeatData::eSite_other);
+        } else if (typ == CSeqFeatData::e_Prot ) {
+            CProt_ref &prot_ref = sfdata.SetProt();
+            if( sbtyp == CSeqFeatData::eSubtype_mat_peptide_aa ) {
+                prot_ref.SetProcessed( CProt_ref::eProcessed_mature );
+            }
         }
+
+        return true;
     }
 
     // unrecognized feature key

@@ -296,6 +296,18 @@ public:
     void PostRead(void) const;
 
     static E_Choice GetTypeFromSubtype (ESubtype subtype);
+    /// Turns a ESubtype into its string value which is NOT necessarily
+    /// related to the identifier of the enum.
+    ///
+    /// @return
+    ///   empty string on bad input
+    static const string & SubtypeValueToName(ESubtype eSubtype);
+    /// Turn a string into its ESubtype which is NOT necessarily
+    /// related to the identifier of the enum.
+    ///
+    /// @return
+    ///   eSubtype_bad on bad input
+    static ESubtype SubtypeNameToValue(const string & sName);
 
     /// List of available qualifiers for feature keys.
     /// For more information see: 

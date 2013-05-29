@@ -397,6 +397,164 @@ CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype(ESubtype subtype)
     return (*sx_SubtypesTable)[subtype];
 }
 
+typedef SStaticPair<const char *, CSeqFeatData::ESubtype> TFeatKey;
+
+static const TFeatKey feat_key_to_subtype [] = {
+    {  "-10_signal",         CSeqFeatData::eSubtype_10_signal           },
+    {  "-35_signal",         CSeqFeatData::eSubtype_35_signal           },
+    {  "3'UTR",              CSeqFeatData::eSubtype_3UTR                },
+    {  "3'clip",             CSeqFeatData::eSubtype_3clip               },
+    {  "5'UTR",              CSeqFeatData::eSubtype_5UTR                },
+    {  "5'clip",             CSeqFeatData::eSubtype_5clip               },
+    {  "Bond",               CSeqFeatData::eSubtype_bond                },
+    {  "CAAT_signal",        CSeqFeatData::eSubtype_CAAT_signal         },
+    {  "CDS",                CSeqFeatData::eSubtype_cdregion            },
+    {  "C_region",           CSeqFeatData::eSubtype_C_region            },
+    {  "Cit",                CSeqFeatData::eSubtype_pub                 },
+    {  "CloneRef",           CSeqFeatData::eSubtype_clone               },
+    {  "Comment",            CSeqFeatData::eSubtype_comment             },
+    {  "D-loop",             CSeqFeatData::eSubtype_D_loop              },
+    {  "D_segment",          CSeqFeatData::eSubtype_D_segment           },
+    {  "GC_signal",          CSeqFeatData::eSubtype_GC_signal           },
+    {  "Het",                CSeqFeatData::eSubtype_het                 },
+    {  "J_segment",          CSeqFeatData::eSubtype_J_segment           },
+    {  "LTR",                CSeqFeatData::eSubtype_LTR                 },
+    {  "N_region",           CSeqFeatData::eSubtype_N_region            },
+    {  "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue     },
+    {  "Num",                CSeqFeatData::eSubtype_num                 },
+    {  "Protein",            CSeqFeatData::eSubtype_prot                },
+    {  "RBS",                CSeqFeatData::eSubtype_RBS                 },
+    {  "REFERENCE",          CSeqFeatData::eSubtype_pub                 },
+    {  "Region",             CSeqFeatData::eSubtype_region              },
+    {  "Rsite",              CSeqFeatData::eSubtype_rsite               },
+    {  "STS",                CSeqFeatData::eSubtype_STS                 },
+    {  "S_region",           CSeqFeatData::eSubtype_S_region            },
+    {  "SecStr",             CSeqFeatData::eSubtype_psec_str            },
+    {  "Site",               CSeqFeatData::eSubtype_site                },
+    {  "Site-ref",           CSeqFeatData::eSubtype_site_ref            },
+    {  "Src",                CSeqFeatData::eSubtype_biosrc              },
+    {  "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal         },
+    {  "TxInit",             CSeqFeatData::eSubtype_txinit              },
+    {  "User",               CSeqFeatData::eSubtype_user                },
+    {  "V_region",           CSeqFeatData::eSubtype_V_region            },
+    {  "V_segment",          CSeqFeatData::eSubtype_V_segment           },
+    {  "VariationRef",       CSeqFeatData::eSubtype_variation_ref       },
+    {  "Xref",               CSeqFeatData::eSubtype_seq                 },
+    {  "assembly_gap",       CSeqFeatData::eSubtype_assembly_gap        },
+    {  "attenuator",         CSeqFeatData::eSubtype_attenuator          },
+    {  "centromere",         CSeqFeatData::eSubtype_centromere          },
+    {  "conflict",           CSeqFeatData::eSubtype_conflict            },
+    {  "enhancer",           CSeqFeatData::eSubtype_enhancer            },
+    {  "exon",               CSeqFeatData::eSubtype_exon                },
+    {  "gap",                CSeqFeatData::eSubtype_gap                 },
+    {  "gene",               CSeqFeatData::eSubtype_gene                },
+    {  "iDNA",               CSeqFeatData::eSubtype_iDNA                },
+    {  "intron",             CSeqFeatData::eSubtype_intron              },
+    {  "mRNA",               CSeqFeatData::eSubtype_mRNA                },
+    {  "mat_peptide",        CSeqFeatData::eSubtype_mat_peptide_aa      },
+    {  "mat_peptide_nt",     CSeqFeatData::eSubtype_mat_peptide         },
+    {  "misc_RNA",           CSeqFeatData::eSubtype_otherRNA            },
+    {  "misc_binding",       CSeqFeatData::eSubtype_misc_binding        },
+    {  "misc_difference",    CSeqFeatData::eSubtype_misc_difference     },
+    {  "misc_feature",       CSeqFeatData::eSubtype_misc_feature        },
+    {  "misc_recomb",        CSeqFeatData::eSubtype_misc_recomb         },
+    {  "misc_signal",        CSeqFeatData::eSubtype_misc_signal         },
+    {  "misc_structure",     CSeqFeatData::eSubtype_misc_structure      },
+    {  "mobile_element",     CSeqFeatData::eSubtype_mobile_element      },
+    {  "modified_base",      CSeqFeatData::eSubtype_modified_base       },
+    {  "ncRNA",              CSeqFeatData::eSubtype_ncRNA               },
+    {  "old_sequence",       CSeqFeatData::eSubtype_old_sequence        },
+    {  "operon",             CSeqFeatData::eSubtype_operon              },
+    {  "oriT",               CSeqFeatData::eSubtype_oriT                },
+    {  "polyA_signal",       CSeqFeatData::eSubtype_polyA_signal        },
+    {  "polyA_site",         CSeqFeatData::eSubtype_polyA_site          },
+    {  "pre_RNA",            CSeqFeatData::eSubtype_preRNA              },
+    {  "precursor_RNA",      CSeqFeatData::eSubtype_preRNA              },
+    {  "preprotein",         CSeqFeatData::eSubtype_preprotein          },
+    {  "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript     },
+    {  "primer_bind",        CSeqFeatData::eSubtype_primer_bind         },
+    {  "promoter",           CSeqFeatData::eSubtype_promoter            },
+    {  "protein_bind",       CSeqFeatData::eSubtype_protein_bind        },
+    {  "rRNA",               CSeqFeatData::eSubtype_rRNA                },
+    {  "rep_origin",         CSeqFeatData::eSubtype_rep_origin          },
+    {  "repeat_region",      CSeqFeatData::eSubtype_repeat_region       },
+    {  "repeat_unit",        CSeqFeatData::eSubtype_repeat_unit         },
+    {  "satellite",          CSeqFeatData::eSubtype_satellite           },
+    {  "scRNA",              CSeqFeatData::eSubtype_scRNA               },
+    {  "sig_peptide",        CSeqFeatData::eSubtype_sig_peptide_aa      },
+    {  "sig_peptide_nt",     CSeqFeatData::eSubtype_sig_peptide         },
+    {  "snRNA",              CSeqFeatData::eSubtype_snRNA               },
+    {  "snoRNA",             CSeqFeatData::eSubtype_snoRNA              },
+    {  "source",             CSeqFeatData::eSubtype_biosrc              },
+    {  "stem_loop",          CSeqFeatData::eSubtype_stem_loop           },
+    {  "tRNA",               CSeqFeatData::eSubtype_tRNA                },
+    {  "telomere",           CSeqFeatData::eSubtype_telomere            },
+    {  "terminator",         CSeqFeatData::eSubtype_terminator          },
+    {  "tmRNA",              CSeqFeatData::eSubtype_tmRNA               },
+    {  "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa  },
+    {  "transit_peptide_nt", CSeqFeatData::eSubtype_transit_peptide     },
+    {  "unsure",             CSeqFeatData::eSubtype_unsure              },
+    {  "variation",          CSeqFeatData::eSubtype_variation           },
+    {  "virion",             CSeqFeatData::eSubtype_virion              }
+};
+
+typedef CStaticPairArrayMap <const char*, CSeqFeatData::ESubtype, PCase_CStr> TFeatMap;
+DEFINE_STATIC_ARRAY_MAP(TFeatMap, sm_FeatKeys, feat_key_to_subtype);
+
+// static
+CSeqFeatData::ESubtype
+CSeqFeatData::SubtypeNameToValue(const string & sName)
+{
+    // if this assertion fails, it means this function might be out
+    // of date.  Don't just fix the assert, make sure the function is
+    // up to date.
+    _ASSERT( 103 == CSeqFeatData::eSubtype_max );
+
+    TFeatMap::const_iterator find_iter =
+        sm_FeatKeys.find(sName.c_str());
+    if( find_iter == sm_FeatKeys.end() ) {
+        return eSubtype_bad;
+    }
+    return find_iter->second;
+}
+
+typedef map<CSeqFeatData::ESubtype, string> TSubtypeValueToNameMap;
+static TSubtypeValueToNameMap * s_CreateSubtypeValueToNameMap(void)
+{
+    // if this assertion fails, it means this function might be out
+    // of date.  Don't just fix the assert, make sure the function is
+    // up to date.
+    _ASSERT( 103 == CSeqFeatData::eSubtype_max );
+
+    auto_ptr<TSubtypeValueToNameMap> pAnswerMap( new TSubtypeValueToNameMap );
+    // created from inverse of sm_FeatKeys
+    ITERATE(TFeatMap, feat_key_ci, sm_FeatKeys) {
+        const char *pchName = feat_key_ci->first;
+        const CSeqFeatData::ESubtype eSubtype = feat_key_ci->second;
+
+        // there may be dupes, so we end up with the last one
+        (*pAnswerMap)[eSubtype] = pchName;
+    }
+    return pAnswerMap.release();
+}
+
+// static
+const string & 
+CSeqFeatData::SubtypeValueToName(ESubtype eSubtype)
+{
+    static CSafeStaticPtr<TSubtypeValueToNameMap> pSubtypeValueToNameMap;
+    const TSubtypeValueToNameMap & subtypeValueToNameMap =
+        pSubtypeValueToNameMap.Get(s_CreateSubtypeValueToNameMap);
+    
+    TSubtypeValueToNameMap::const_iterator find_iter =
+        subtypeValueToNameMap.find(eSubtype);
+    if( find_iter == subtypeValueToNameMap.end() ) {
+        return kEmptyStr;
+    }
+    
+    return find_iter->second;
+}
+
 bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 {
     if ( !sx_LegalQuals ) {
