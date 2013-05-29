@@ -153,7 +153,7 @@ class CSegmentedRangeCollection : public CRangeCollection<CPairwiseAln::TPos>
 public:
     typedef ncbi::CRangeCollection<CPairwiseAln::TPos> TParent;
 
-    const_iterator CutAtPosition(position_type pos) {
+    iterator CutAtPosition(position_type pos) {
         iterator ret_it = TParent::m_vRanges.end();
         iterator it = find_nc(pos);
         if (it != TParent::end()  &&  it->GetFrom() < pos) {
