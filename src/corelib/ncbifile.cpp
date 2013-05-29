@@ -5124,37 +5124,10 @@ void CMemoryFileMap::x_Close()
 }
 
 
-// Write 'length' zero bytes into the file starting from current position.
+// Extend/truncate file size to 'new_size' bytes.
+// Do not change position in the file.
 // Return 0 on success, or errno value.
-int s_AppendZeros(int fd, Uint8 length)
-{    
-    char* buf  = new char[kDefaultBufferSize];
-    memset(buf, '\0', kDefaultBufferSize);
-    int errcode = 0;
-    do {
-        int x_written = (int)write(fd, (void*) buf, 
-            length > kDefaultBufferSize ? kDefaultBufferSize :
-                                          (unsigned int)length);
-        if ( x_written < 0 ) {
-            if (errno != EINTR) {
-                errcode = errno;
-                break;
-            }
-            continue;
-        }
-        length -= x_written;
-    }
-    while (length);
-
-    // Cleanup
-    delete[] buf;
-    return errcode;
-}
-
-
-// Extend file size from to 'new_size' bytes.
-// Return 0 on success, or errno value.
-// NOTE: UNIX only.
+// NOTE: Unix only.
 #if defined(NCBI_OS_UNIX)
 int s_FTruncate(int fd, Uint8 new_size)
 {
@@ -5169,6 +5142,44 @@ int s_FTruncate(int fd, Uint8 new_size)
     return errcode;
 }
 #endif
+
+// Extend file size to 'new_size' bytes,
+// 'new_size' should be > current file size.
+// Do not change position in the file.
+// Return 0 on success, or errno value.
+// Similar to s_FTruncate() but can extend file size only. 
+// NOTE: 
+//   Works on both Windows and Unix, but file should not be
+//   opened in append mode, or write() will ignore current
+//   position in the file and start with EOF.
+int s_FExtend(int fd, Uint8 new_size)
+{
+    if (!new_size) {
+        return 0;
+    }
+    // Save current position
+    off_t current_pos = lseek(fd, 0, SEEK_CUR);
+    if (current_pos < 0) {
+        return errno;
+    }
+    // Set position beyond EOF, one byte less than necessary,
+    // and write single zero byte.
+    off_t pos = lseek(fd, (off_t)new_size - 1, SEEK_SET);
+    if (pos < 0) {
+        return errno;
+    }
+    while (write(fd, "\0", 1) < 0) {
+        if (errno != EINTR) {
+            return errno;
+        }
+    }
+    // Restore current position
+    pos = lseek(fd, current_pos, SEEK_SET);
+    if (pos < 0) {
+        return errno;
+    }
+    return 0;
+}
 
 
 void CMemoryFileMap::x_Create(Uint8 size)
@@ -5188,11 +5199,7 @@ void CMemoryFileMap::x_Create(Uint8 size)
                    " Cannot create file \"" + m_FileName + '"');
     }
     // and fill it with zeros
-#if defined(_POSIX_MAPPED_FILES)
-    int errcode = s_FTruncate(fd, size);
-#else
-    int errcode = s_AppendZeros(fd, size);
-#endif
+    int errcode = s_FExtend(fd, size);
     close(fd);
     if (errcode) {
        string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
@@ -5204,24 +5211,19 @@ void CMemoryFileMap::x_Create(Uint8 size)
 
 void CMemoryFileMap::x_Extend(Uint8 size, Uint8 new_size)
 {
-    // Open file for append
-#if defined(NCBI_OS_MSWIN)
-    int oflags = O_APPEND | O_WRONLY | O_BINARY;
-#else
-    int oflags = O_APPEND | O_WRONLY;
-#endif
-    int fd = NcbiSys_open(_T_XCSTRING(m_FileName), oflags, 0);
+    if (size >= new_size) {
+        return;
+    }
+    // Open file for writing.
+    // Note: do not use append mode, or s_FExtend() will work incorrectly.
+    int fd = NcbiSys_open(_T_XCSTRING(m_FileName), O_WRONLY, 0);
     if ( fd < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot open file \"" + m_FileName +
                    "\" to change its size");
     }
     // and extend it with zeros
-#if defined(_POSIX_MAPPED_FILES)
-    int errcode = s_FTruncate(fd, new_size);
-#else
-    int errcode = s_AppendZeros(fd, new_size - size);
-#endif
+    int errcode = s_FExtend(fd, new_size);
     close(fd);
     if (errcode) {
        string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
@@ -5941,27 +5943,13 @@ void CFileIO::SetFileSize(Uint8 length, EPositionMoveMethod pos) const
     Uint8 current_size = GetFileSize();
     
     if (length < current_size) {
-        // We always can use ftruncate() to reduce file size
         errcode = s_FTruncate(m_Handle, length);
     } else if (length > current_size) {
         // Extending file size
-#  if defined(_POSIX_MAPPED_FILES)
-        // It is safe use ftruncate()
-        errcode = s_FTruncate(m_Handle, length);
-#  else
-        // Otherwise -- use slow method to increase file size
-        Uint8 saved_pos = GetFilePos();
-        SetFilePos(current);
-        errcode = s_AppendZeros(m_Handle, length - current);
-        if (!errcode  &&  (pos == eCurrent)) {
-            SetFilePos(saved_pos);
-        }
-        // else -- file position will be set below.
-#  endif
+        errcode = s_FExtend(m_Handle, length);
     } 
-
-    // POSIX ftruncate() doesn't move file pointer
     if (!errcode  &&  (pos != eCurrent)) {
+        // Move file offset to the start/end of the file.
         SetFilePos(0, pos);
     }
     if (errcode) {

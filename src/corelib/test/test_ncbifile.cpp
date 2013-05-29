@@ -1624,6 +1624,7 @@ int CTest::Run(void)
     return 0;
 }
 
+
 int main(int argc, const char* argv[])
 {
     // Enable FileAPI logging, if necessary

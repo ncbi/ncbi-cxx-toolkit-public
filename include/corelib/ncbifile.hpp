@@ -2434,6 +2434,7 @@ protected:
     /// Create new file or rewrite existent with zeros.
     void x_Create(Uint8 size);
     /// Extend file size from 'size' to 'new_size' with zero bytes.
+    /// Note, that 'new_size' should be greater that current file size 'size'.
     void x_Extend(Uint8 size, Uint8 new_size);
 
     /// Get pointer to memory mapped file segment by pointer to data.
@@ -3139,7 +3140,8 @@ public:
     ///   from OS.
     /// @param pos
     ///   Defines how to set current file position after changing file size.
-    ///   eCurrent means that file position does not change.
+    ///   eCurrent means that file position does not change, eBegin and eEnd
+    ///   move it to the start or the end of the file accordingly.
     void SetFileSize(Uint8 length, EPositionMoveMethod pos = eCurrent) const;
 
     /// Define whether the open file handle needs to be closed
