@@ -85,9 +85,9 @@ CLocalBlastDbAdapter::GetSeqIDs(int oid)
 }
 
 CRef<CBioseq> 
-CLocalBlastDbAdapter::GetBioseqNoData(int oid, int target_gi /* = 0 */)
+CLocalBlastDbAdapter::GetBioseqNoData(int oid, int target_gi /* = 0 */, const CSeq_id * target_id /* = NULL */)
 {
-    return m_SeqDB->GetBioseqNoData(oid, target_gi);
+    return m_SeqDB->GetBioseqNoData(oid, target_gi, target_id);
 }
 
 /// Assigns a buffer of nucleotide sequence data as retrieved from CSeqDB into

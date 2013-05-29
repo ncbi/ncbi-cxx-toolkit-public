@@ -42,9 +42,12 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
@@ -230,6 +233,23 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      BOOST_REQUIRE(!handle2);
      BOOST_REQUIRE(handle2.State_NoData());
      BOOST_REQUIRE_EQUAL(-1, scope.GetTaxId(seqid2));
+
+     CSeq_id seqid3(CSeq_id::e_Genbank, "EGA25625.1"); // by accession 
+     CBioseq_Handle handle3 = scope.GetBioseqHandle(seqid3);
+     BOOST_REQUIRE(handle3);
+     BOOST_REQUIRE_EQUAL("EGA25625", handle3.GetSeqId()->GetSeqIdString());
+     CConstRef<CBioseq> bioseq3 = handle3.GetCompleteBioseq();
+     string defline = "";
+     if (bioseq3->IsSetDescr()) {
+          const CBioseq::TDescr::Tdata& data = bioseq3->GetDescr().Get();
+          ITERATE(CBioseq::TDescr::Tdata, iter, data) {
+             if((*iter)->IsTitle()) {
+                 defline += (*iter)->GetTitle();
+             }
+          }
+     }
+     // Finds beginning of EGA25625 title.
+     BOOST_REQUIRE(defline.find("iron transport protein") == 0);
 }
 
 END_SCOPE(blast)

@@ -97,10 +97,12 @@ public:
     ///
     /// @param oid An ID for this sequence in this db.
     /// @param target_gi If non-zero, the target GI to filter the header
-    /// information by
+    /// information.
+    /// @param target_id if non-NULL, the target ID is used to filter
+    /// the header information.
     /// @return object corresponding to the sequence, but without
     ///   sequence data.
-    virtual CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0) = 0;
+    virtual CRef<CBioseq> GetBioseqNoData(int oid, int target_gi = 0, const CSeq_id * target_id = NULL) = 0;
     
     /// Get all or part of the sequence data as a Seq-data object.
     /// @param oid    Identifies which sequence to get.
