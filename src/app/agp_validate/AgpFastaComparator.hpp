@@ -150,9 +150,6 @@ private:
         eFileType_Unknown
     };
     EFileType x_GuessFileType( const string & filename );
-
-    CRef<objects::CSeq_id> x_SeqIdFromStr(const string & sStr);
-
 };
 
 END_NCBI_SCOPE

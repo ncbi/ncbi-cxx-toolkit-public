@@ -72,6 +72,44 @@ USING_SCOPE(objects);
 
 namespace {
 
+    // pScope can be NULL
+    CRef<CSeq_id> s_CustomGetSeqIdFromStr( const string & str, CScope * pScope )
+    {
+        // start with parent class's default parsing
+        CRef<CSeq_id> seq_id = CAgpToSeqEntry::s_DefaultSeqIdFromStr(str);
+
+        // optimize for the (hopefully common) fast case of local IDs
+        if( seq_id->IsLocal() ) {
+            return seq_id;
+        }
+
+        // build what this would look like as a local ID
+        CRef<CSeq_id> pLocalSeqId = CAgpToSeqEntry::s_LocalSeqIdFromStr(str);
+
+        // reject prot-only accessions, or accessions that aren't found
+        CSeq_id::EAccessionInfo fAccnInfo = seq_id->IdentifyAccession();
+        const bool bAccnIsProtOnly = ( 
+            (fAccnInfo & CSeq_id::fAcc_prot) &&
+            ! (fAccnInfo & CSeq_id::fAcc_nuc));
+        const bool bSeqIdIsFound = ( pScope ? pScope->GetBioseqHandle(*seq_id) : false );
+        if( bAccnIsProtOnly || ! bSeqIdIsFound ) 
+        {
+            // fall back on local ID
+            return pLocalSeqId;
+        }
+
+        const bool bLocalSeqIdIsfound = ( 
+            pScope ? pScope->GetBioseqHandle(*pLocalSeqId) : false );
+        if( bLocalSeqIdIsfound ) {
+            // print a warning that a local ID was overridden
+            cerr << "Warning: '" << str << "' was used as an accession, "
+                "so the local component was ignored." << endl;
+        }
+
+        // everything looks fine, so return it
+        return seq_id;
+    }
+
     // slight customization to CAgpToSeqEntry:
     // if an ID can be found in GenBank, use that
     // and otherwise fall back on local ID
@@ -84,49 +122,9 @@ namespace {
         }
 
     protected:
-        virtual CRef<CSeq_id> x_GetSeqIdFromStr( const std::string & str_arg )
+        virtual CRef<CSeq_id> x_GetSeqIdFromStr( const std::string & str )
         {
-            // trim "lcl|" from beginning
-            const char * const pchPrefixToTrim = "lcl|";
-            string str = str_arg;
-            if( NStr::StartsWith(str, pchPrefixToTrim) ) {
-                str = str.substr( strlen(pchPrefixToTrim) );
-            }
-            
-            // start with parent class's default parsing
-            CRef<CSeq_id> seq_id = CAgpToSeqEntry::x_GetSeqIdFromStr(str);
-
-            // optimize for the (hopefully common) fast case of local IDs
-            if( seq_id->IsLocal() ) {
-                return seq_id;
-            }
-
-            // build what this would look like as a local ID
-            CRef<CSeq_id> pLocalSeqId( new CSeq_id );
-            pLocalSeqId->SetLocal().SetStr( str );
-
-            // reject prot-only accessions, or accessions that aren't found
-            CSeq_id::EAccessionInfo fAccnInfo = seq_id->IdentifyAccession();
-            const bool bAccnIsProtOnly = ( 
-                (fAccnInfo & CSeq_id::fAcc_prot) &&
-                ! (fAccnInfo & CSeq_id::fAcc_nuc));
-            const bool bSeqIdIsFound = ( m_pScope->GetBioseqHandle(*seq_id) );
-            if( bAccnIsProtOnly || ! bSeqIdIsFound ) 
-            {
-                // fall back on local ID
-                return pLocalSeqId;
-            }
-
-            const bool bLocalSeqIdIsfound = ( 
-                m_pScope->GetBioseqHandle(*pLocalSeqId) );
-            if( bLocalSeqIdIsfound ) {
-                // print a warning that a local ID was overridden
-                cerr << "Warning: '" << str << "' was used as an accession, "
-                    "so the local component was ignored." << endl;
-            }
-
-            // everything looks fine, so return it
-            return seq_id;
+            return s_CustomGetSeqIdFromStr(str, m_pScope.GetPointer());
         }
 
     private:
@@ -229,7 +227,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
             if(pos1>0 && line[pos1]=='|') pos1--;
         }
         string acc_long = line.substr(1, pos1);
-        CRef<CSeq_id> comp_id = x_SeqIdFromStr( acc_long );
+        CRef<CSeq_id> comp_id = s_CustomGetSeqIdFromStr( acc_long, NULL );
         CSeq_id_Handle acc_h = CSeq_id_Handle::GetHandle(*comp_id);
         if( compSeqIds.find(acc_h) != compSeqIds.end() ) {
             // component files go into the component object
@@ -642,29 +640,44 @@ void CAgpFastaComparator::x_GetCompSeqIds(
                 continue;
             }
 
-            // find 6th column (tab-separated)
+            // find 5th column (tab-separated)
             SIZE_TYPE pos = 0;
             for( int  ii = 0;
-                 pos != NPOS && pos < (line.length() - 1) && ii < 5 ;
+                 pos != NPOS && pos < (line.length() - 1) && ii < 4 ;
                  ++ii )
             {
                 pos = line.find('\t', pos + 1);
             }
-            if( pos != NPOS ) {
-                // pos points to tab just before the column we want
-                // find the tab that's after the column we want
-                SIZE_TYPE close_tab_pos = line.find('\t', pos + 1 );
-                if( close_tab_pos != NPOS ) {
-                    // we have the column we want.  Make sure it's
-                    // not numeric (which would indicate it's just
-                    // a gap)
-                    if( ! isdigit(line[pos+1]) ) {
-                        CRef<CSeq_id> seq_id =
-                            x_SeqIdFromStr( line.substr(pos+1, close_tab_pos - pos - 1 ) );
-                        out_compSeqIds.insert(
-                            CSeq_id_Handle::GetHandle(*seq_id) );
-                    }
-                }
+            if( pos == NPOS ) {
+                continue;
+            }
+
+            // check if it's a gap
+            const char chCompType = toupper(line[pos+1]);
+            if( chCompType == 'N' || chCompType == 'U' ) 
+            {
+                // skip gaps
+                continue;
+            }
+
+            // find the 6th column (tab-separated)
+            pos = line.find('\t', pos + 1);
+            if( pos == NPOS ) {
+                continue;
+            }
+
+            // pos points to tab just before the column we want
+            // find the tab that's after the column we want
+            SIZE_TYPE close_tab_pos = line.find('\t', pos + 1 );
+            if( close_tab_pos != NPOS ) {
+                // we have the column we want.  Make sure it's
+                // not numeric (which would indicate it's just
+                // a gap)
+                CRef<CSeq_id> seq_id =
+                    s_CustomGetSeqIdFromStr( 
+                    line.substr(pos+1, close_tab_pos - pos - 1 ), NULL );
+                out_compSeqIds.insert(
+                    CSeq_id_Handle::GetHandle(*seq_id) );
             }
         }
     }
@@ -1001,10 +1014,4 @@ CAgpFastaComparator::EFileType CAgpFastaComparator::x_GuessFileType( const strin
     }
 
     return eFileType_Unknown;
-}
-
-CRef<CSeq_id> 
-CAgpFastaComparator::x_SeqIdFromStr(const string & sStr)
-{
-    return CAgpToSeqEntry::s_DefaultSeqIdFromStr(sStr);
 }

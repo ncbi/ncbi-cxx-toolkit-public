@@ -28,10 +28,7 @@ Bioseq-set ::= {
             from 10,
             to 87,
             strand plus,
-            id genbank {
-              accession "U54469",
-              version 1
-            }
+            id local str "U54469.1"
           },
           literal {
             length 26,

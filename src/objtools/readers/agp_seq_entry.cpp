@@ -71,8 +71,34 @@ CRef<CSeq_id> CAgpToSeqEntry::s_DefaultSeqIdFromStr( const string & str )
         seq_id.Reset( new CSeq_id( str ) );
     } catch(...) {
         // couldn't create real seq-id.  fall back on local seq-id
-        seq_id.Reset( new CSeq_id );
-        seq_id->SetLocal().SetStr( str );
+        return s_LocalSeqIdFromStr(str);
+    }
+    return seq_id;
+}
+
+// static
+CRef<objects::CSeq_id> 
+    CAgpToSeqEntry::s_LocalSeqIdFromStr( const std::string & str )
+{
+    CTempString sLocalID(str);
+
+    // (trim off the lcl|, if any)
+    CTempString sPrefixToRemove("lcl|");
+    if( NStr::StartsWith(sLocalID, sPrefixToRemove, NStr::eNocase) ) {
+        sLocalID = sLocalID.substr(sPrefixToRemove.length());
+    }
+
+    CRef<CSeq_id> seq_id( new CSeq_id );
+
+    // check if it's a number or string
+    const int id_as_num = NStr::StringToInt(sLocalID,
+        NStr::fConvErr_NoThrow |
+        NStr::fAllowLeadingSpaces |
+        NStr::fAllowTrailingSpaces );
+    if( id_as_num > 0 ) {
+        seq_id->SetLocal().SetId( id_as_num );
+    } else {
+        seq_id->SetLocal().SetStr( sLocalID );
     }
     return seq_id;
 }
@@ -93,9 +119,8 @@ void CAgpToSeqEntry::OnGapOrComponent(void)
         m_bioseq.Reset( new CBioseq );
         m_bioseq->SetInst(*seq_inst);
 
-        CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Local,
-            m_this_row->GetObject(), m_this_row->GetObject() ));
-        m_bioseq->SetId().push_back(id);
+        m_bioseq->SetId().push_back( 
+            s_LocalSeqIdFromStr(m_this_row->GetObject()) );
     }
 
     CRef<CSeq_inst> seq_inst( & m_bioseq->SetInst() );
@@ -166,19 +191,10 @@ void CAgpToSeqEntry::x_FinishedBioseq(void)
 }
 
 CRef<CSeq_id> 
-CAgpToSeqEntry::x_GetSeqIdFromStr( const std::string & str_arg )
+CAgpToSeqEntry::x_GetSeqIdFromStr( const std::string & str )
 {
-    const char * const pchPrefixToTrim = "lcl|";
-
-    string str = str_arg;
-    if( NStr::StartsWith(str, pchPrefixToTrim) ) {
-        str = str.substr( strlen(pchPrefixToTrim) );
-    }
-
     if( m_fFlags & fForceLocalId ) {
-        CRef<CSeq_id> seq_id( new CSeq_id );
-        seq_id->SetLocal().SetStr( str );
-        return seq_id;
+        return s_LocalSeqIdFromStr(str);
     } else {
         return s_DefaultSeqIdFromStr(str);
     }

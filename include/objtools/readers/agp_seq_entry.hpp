@@ -86,6 +86,9 @@ public:
     /// @sa x_GetSeqIdFromStr
     static CRef<objects::CSeq_id> s_DefaultSeqIdFromStr( const std::string & str );
 
+    /// Turn a string into a local Seq-id (removing "lcl|" from the beginning if needed)
+    static CRef<objects::CSeq_id> s_LocalSeqIdFromStr( const std::string & str );
+
 protected:
 
     const TFlags m_fFlags;
