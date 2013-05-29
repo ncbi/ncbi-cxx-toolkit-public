@@ -533,7 +533,7 @@ extern const char* CORE_SendMailEx(const char*          to,
             /* MT safe */
             tm = localtime(&now);
 #elif defined(HAVE_LOCALTIME_R)
-            localtime_r(&now, &tm);
+            localtime_r(&now, tm);
 #else
             struct tm tmp;
             CORE_LOCK_WRITE;
