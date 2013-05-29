@@ -5270,7 +5270,7 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
         return;
 
     CAlignMap alignmap(a.GetAlignMap());
-    if(a.Exons().size() == 1 && min(a.Limits().GetLength(),alignmap.FShiftedLen(alignmap.ShrinkToRealPoints(a.Limits()),false)) < minex) {
+    if(a.Exons().size() == 1 && min(a.Limits().GetLength(),alignmap.FShiftedLen(alignmap.ShrinkToRealPoints(a.Limits()),false)) < 2*minex) {
         // one exon and it is short
         a.CutExons(a.Limits());
         return;
@@ -5308,13 +5308,18 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
     }
 
     TSignedSeqRange newlimits(left,right);
-    newlimits = alignmap.ShrinkToRealPoints(newlimits,snap_to_codons);
-    if(newlimits != a.Limits()) {
-        if(newlimits.Empty() || newlimits.GetLength() < minex || alignmap.FShiftedLen(newlimits,false) < minex) {
-            a.CutExons(a.Limits());
-            return;
+    if(newlimits.NotEmpty()) {
+        newlimits = alignmap.ShrinkToRealPoints(newlimits,snap_to_codons);
+        if(newlimits != a.Limits()) {
+            if(newlimits.GetLength() < 2*minex || alignmap.FShiftedLen(newlimits,false) < 2*minex) {
+                a.CutExons(a.Limits());
+                return;
+            }
+            a.Clip(newlimits,CAlignModel::eRemoveExons);
         }
-        a.Clip(newlimits,CAlignModel::eRemoveExons);
+    } else {
+        a.CutExons(a.Limits());
+        return;
     }
     
 
