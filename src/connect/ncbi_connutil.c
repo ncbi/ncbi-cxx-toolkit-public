@@ -1384,7 +1384,6 @@ extern EIO_Status URL_ConnectEx
  TSOCK_Flags     flags,
  SOCK*           sock)
 {
-    static const char kQMark     = '?';
     static const char kHostTag[] = "Host: ";
     static const char kHttpVer[] = " HTTP/1.0\r\n";
 
@@ -1416,7 +1415,7 @@ extern EIO_Status URL_ConnectEx
 
     /* select request method and its verbal representation */
     if (req_method == eReqMethod_Any)
-        req_method =  content_length ? eReqMethod_Post : eReqMethod_Get;
+        req_method  = content_length ? eReqMethod_Post : eReqMethod_Get;
     else if (req_method == eReqMethod_Get  &&  content_length) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("[URL_Connect]  Content length ignored with method GET"));
@@ -1491,7 +1490,7 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write(&buf, x_req_method,   strlen(x_req_method))  ||
         !BUF_Write(&buf, path,           strlen(path))          ||
         (args_len
-         &&  (!BUF_Write(&buf, &kQMark,  1)                     ||
+         &&  (!BUF_Write(&buf, "?",      1)                     ||
               !BUF_Write(&buf, temp,     args_len)))            ||
         !BUF_Write      (&buf, kHttpVer, sizeof(kHttpVer) - 1)  ||
 
