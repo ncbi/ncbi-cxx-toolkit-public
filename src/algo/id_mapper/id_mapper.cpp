@@ -60,7 +60,7 @@
 #include <objtools/format/ostream_text_ostream.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
-#include <internal/algo/id_mapper/id_mapper.hpp>
+#include <algo/id_mapper/id_mapper.hpp>
 
 #include <objects/genomecoll/genome_collection__.hpp>
 
