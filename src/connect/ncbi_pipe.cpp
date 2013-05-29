@@ -105,7 +105,7 @@ static EIO_Status s_Close(const CProcess& process, CPipe::TCreateFlags flags,
             if ( exitinfo.IsSignaled() ) {
                 x_exitcode = -(exitinfo.GetSignal() + 1000);
             }
-#endif //NCBI_OS_UNIX
+#endif // NCBI_OS_UNIX
         } else {
             status = eIO_Timeout;
             if ( !IS_SET(flags, CPipe::fKeepOnClose) ) {
@@ -303,8 +303,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Convert environment array to block form
         AutoPtr< TXChar, ArrayDeleter<TXChar> > env_block;
         if ( env ) {
-            // Count block size
-            // It should have one zero byte at least.
+            // Count block size:
+            // it should have one zero char at least
             size_t size = 1; 
             int    count = 0;
             while ( env[count] ) {
@@ -408,14 +408,17 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         sinfo.hStdError  = child_stderr;
         sinfo.hStdOutput = child_stdout;
         sinfo.hStdInput  = child_stdin;
-        sinfo.dwFlags   |= STARTF_USESTDHANDLES;
+        sinfo.dwFlags    = STARTF_USESTDHANDLES;
 #  if defined(_UNICODE)
-        sinfo.dwFlags   |= CREATE_UNICODE_ENVIRONMENT;
-#  endif
+        DWORD dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
+#  else
+        DWORD dwCreationFlags = 0;
+#  endif // _UNICODE
         if ( !::CreateProcess(NULL,
                               (LPTSTR)(_T_XCSTRING(cmd_line)),
-                              NULL, NULL, TRUE, 0,
-                              env_block.get(), current_dir.empty()
+                              NULL, NULL, TRUE,
+                              dwCreationFlags, env_block.get(),
+                              current_dir.empty()
                               ? 0 : _T_XCSTRING(current_dir),
                               &sinfo, &pinfo) ) {
             status = eIO_Closed;
@@ -1636,7 +1639,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 }
 
 
-#endif  /* NCBI_OS_UNIX | NCBI_OS_MSWIN */
+#endif // NCBI_OS_UNIX | NCBI_OS_MSWIN
 
 
 //////////////////////////////////////////////////////////////////////////////
