@@ -84,16 +84,17 @@ const string DELIM = "%s";
 const string CHROMO_EXT = "<CHROMOSOME_EXTERNAL>";
 
 
-bool s_RevStrLenSort(const string& A, const string& B)
+bool
+s_RevStrLenSort(const string& A, const string& B)
 {
     return (B.length() < A.length());
 }
 
-
 CGencollIdMapper::CGencollIdMapper(CRef<CGC_Assembly> SourceAsm)
 {
-    if (SourceAsm.IsNull())
+    if (SourceAsm.IsNull()) {
         return;
+    }
 
     m_Assembly.Reset(new CGC_Assembly);
     m_Assembly->Assign(*SourceAsm);
@@ -105,29 +106,29 @@ CGencollIdMapper::CGencollIdMapper(CRef<CGC_Assembly> SourceAsm)
     x_Init();
 }
 
-
-bool CGencollIdMapper::Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const
+bool
+CGencollIdMapper::Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const
 {
     // FIXME: If it returns null, deeply examine the Loc
-    if (Loc.GetId() == NULL)
+    if (Loc.GetId() == NULL) {
         return false;
-    
-    if (m_Assembly.IsNull())
+    }
+    if (m_Assembly.IsNull()) {
         return CRef<CSeq_loc>();
+    }
 
     CConstRef<CSeq_id> Id(Loc.GetId());
-
     Id = x_FixImperfectId(Id, Spec); // But not apply Pattern. This derives Pattern
-
-    if (x_NCBI34_Guess(*Id, Spec))
+    if (x_NCBI34_Guess(*Id, Spec)) {
         return true;
+    }
 
     CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
-    if (Found == m_IdToSeqMap.end()){
+    if (Found == m_IdToSeqMap.end()) {
         const string IdStr = Id->GetSeqIdString(true);
         ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
-            if (IdStr.find(*ChromoIter) != string::npos) {
+            if (IdStr.find(*ChromoIter) != NPOS) {
                 CSeq_id Temp;
                 Temp.SetLocal().SetStr() = *ChromoIter;
                 Idh = CSeq_id_Handle::GetHandle(Temp);
@@ -461,7 +462,8 @@ CGencollIdMapper::x_Init()
     CTypeConstIterator<CGC_Replicon> ReplIter(*m_Assembly);
     for ( ; ReplIter; ++ReplIter) {
         if (ReplIter->CanGetName() &&
-            ReplIter->GetName().find("_random") == string::npos) {
+            ReplIter->GetName().find("_random") == NPOS
+           ) {
             m_Chromosomes.push_back(ReplIter->GetName());
         }
     }
@@ -761,7 +763,7 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
     if (Id->GetTextseq_Id() &&
         Id->GetTextseq_Id()->IsSetAccession() &&
         !Id->GetTextseq_Id()->IsSetVersion()) {
-        int Ver = m_AccToVerMap.find(Id->GetTextseq_Id()->GetAccession())->second;
+        const int Ver = m_AccToVerMap.find(Id->GetTextseq_Id()->GetAccession())->second;
         CRef<CSeq_id> NewId(new CSeq_id);
         NewId->Set(Id->Which(), Id->GetTextseq_Id()->GetAccession(), "", Ver);
         Id = NewId;
@@ -776,7 +778,7 @@ CGencollIdMapper::x_ApplyPatternToId(CConstRef<CSeq_id> Id,
                                     ) const
 {
     if (Id->GetTextseq_Id() == NULL && !Id->IsGi() && !Spec.Pattern.empty() /* &&
-        Id->GetLocal().GetStr().find(Spec.Pattern) != string::npos */) {
+        Id->GetLocal().GetStr().find(Spec.Pattern) != NPOS */) {
         CRef<CSeq_id> NewId(new CSeq_id);
         NewId->SetLocal().SetStr() = Id->GetSeqIdString();
         string Pre, Post;
@@ -790,7 +792,6 @@ CGencollIdMapper::x_ApplyPatternToId(CConstRef<CSeq_id> Id,
             Id = NewId;
         }
     }
-
     return Id;
 }
 
@@ -809,30 +810,30 @@ CGencollIdMapper::x_GetRole(const objects::CGC_Sequence& Seq) const
     return SeqRole;
 }
 
-
 bool
 CGencollIdMapper::x_HasTop(const objects::CGC_Sequence& Seq, int Top) const
 {
-    if (Top == SIdSpec::e_Top_NotSet)
+    if (Top == SIdSpec::e_Top_NotSet) {
         return true;
-
+    }
     bool NotTop = true;
-
     if (Seq.CanGetRoles()) {
         ITERATE (CGC_Sequence::TRoles, RoleIter, Seq.GetRoles()) {
-            if (*RoleIter == SIdSpec::e_Role_Gpipe_Top ||
-                 *RoleIter == eGC_SequenceRole_top_level)
+            const bool role_is_gpipe_top = (*RoleIter == SIdSpec::e_Role_Gpipe_Top);
+            const bool role_is_GC_top = (*RoleIter == eGC_SequenceRole_top_level);
+            if (role_is_gpipe_top || role_is_GC_top) {
                 NotTop = false;
-            if (Top == SIdSpec::e_Top_Gpipe && *RoleIter == SIdSpec::e_Role_Gpipe_Top)
-                return true;
-            else if (Top == SIdSpec::e_Top_Public && *RoleIter == eGC_SequenceRole_top_level)
-                return true;
+                if ((Top == SIdSpec::e_Top_Gpipe && role_is_gpipe_top) ||
+                    (Top == SIdSpec::e_Top_Public && role_is_GC_top)
+                   ) {
+                    return true;
+                }
+            }
         }
     }
-
-    if (Top == SIdSpec::e_Top_NotTop && NotTop)
+    if (Top == SIdSpec::e_Top_NotTop && NotTop) {
         return true;
-    
+    }
     return false;
 }
 
@@ -1293,7 +1294,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                     continue;
                 size_t Start;
                 Start = Id.GetSeqIdString().find(ExternalId.GetId().GetSeqIdString());
-                if (Start != string::npos) {
+                if (Start != NPOS) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_External;
                     Spec.External = ExternalId.GetExternal();
                     //Spec.Pattern = NStr::Replace(Id.GetSeqIdString(), Private.GetSeqIdString(), DELIM);
@@ -1305,7 +1306,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                 const CSeq_id& Private = (*it)->GetPrivate();
                 size_t Start;
                 Start = Id.GetSeqIdString().find(Private.GetSeqIdString());
-                if (Start != string::npos) {
+                if (Start != NPOS) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_Private;
                     //Spec.Pattern = NStr::Replace(Id.GetSeqIdString(), Private.GetSeqIdString(), DELIM);
                     Spec.Pattern = Id.GetSeqIdString().substr(0, Start) + DELIM;
@@ -1433,7 +1434,7 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
     const string IdStr = Id.GetSeqIdString(true);
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.end();
     ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
-        if (IdStr.find(*ChromoIter) != string::npos) {
+        if (IdStr.find(*ChromoIter) != NPOS) {
             CRef<CSeq_id> Temp(new CSeq_id());
             Temp->SetLocal().SetStr() = *ChromoIter;
             // If we have a pattern, double check it.
