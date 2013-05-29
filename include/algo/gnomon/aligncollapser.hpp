@@ -52,13 +52,33 @@ struct SAlignIndividual {
     int m_target_id;   // shift in deque<char> for 0 terminated string; deque is maintained by CAlignCollapser
 };
 
+
+struct SIntron {
+    SIntron(int a, int b, int strand, bool oriented, const string& sig) : m_range(a,b), m_strand(strand), m_oriented(oriented), m_sig(sig) {}
+    bool operator<(const SIntron& i) const {
+        if(m_oriented != i.m_oriented)
+            return m_oriented < i.m_oriented;
+        else if(m_oriented && m_strand != i.m_strand)
+            return m_strand < i.m_strand;
+        else
+            return m_range < i.m_range;
+            
+    }
+    TSignedSeqRange m_range;
+    int m_strand;
+    bool m_oriented;
+    string m_sig;
+};
+
+
 class CAlignCommon {
 public:
+    typedef vector<SIntron> Tintrons;
     CAlignCommon() : m_flags(0) {}
     CAlignCommon(const CGeneModel& align);
-    typedef vector<TSignedSeqRange> Tintrons;
     const Tintrons& GetIntrons() const { return m_introns; }
     CAlignModel GetAlignment(const SAlignIndividual& ali, const deque<char>& target_id_pool) const;
+    int GetFlags() const { return m_flags; }
     bool isSR() const { return (m_flags&esr); }
     bool isEST() const { return (m_flags&eest); }
     bool isPolyA() const { return (m_flags&epolya); }
@@ -90,20 +110,36 @@ private:
     int m_flags;
 };
 
+
 class CAlignCollapser {
 public:
-    CAlignCollapser() : m_count(0) {}
+    CAlignCollapser();
     void AddAlignment(const CAlignModel& align, bool includeincollaps);
-    void GetCollapsedAlgnmnets(TAlignModelClusterSet& clsset, int oep, int max_extend);
+    void FilterESTandSR();
+    void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
+
+    static void SetupArgDescriptions(CArgDescriptions* arg_desc);
+
+    struct SIntronData {
+        SIntronData() : m_weight(0.), m_ident(0.), m_est_support(0), m_keep_anyway(false) {}
+        double m_weight;
+        double m_ident;
+        int m_est_support;
+        bool m_keep_anyway;
+    };
 
 private:
     void CollapsIdentical();
     typedef map< CAlignCommon,deque<SAlignIndividual> > Tdata;
     Tdata m_aligns;
-    int m_count;
     typedef map< CAlignCommon,deque<char> > Tidpool;
     Tidpool m_target_id_pool;
-    set<int> m_left_exon_ends, m_right_exon_ends;
+    typedef map<SIntron,SIntronData> TAlignIntrons;
+    TAlignIntrons m_align_introns;
+
+    int m_count;
+    bool m_filtersr;
+    bool m_filterest;
 };
 
 END_SCOPE(gnomon)
