@@ -1,3 +1,6 @@
+#ifndef ALGO_ID_MAPPER___ID_MAPPER__HPP
+#define ALGO_ID_MAPPER___ID_MAPPER__HPP
+
 /* $Id$
  * ===========================================================================
  *
@@ -28,9 +31,6 @@
  * File Description:
  *
  */
-
-#ifndef ID_MAPPER_DEF__HPP
-#define ID_MAPPER_DEF__HPP
 
 
 #include <objmgr/scope.hpp>
@@ -290,5 +290,5 @@ private:
 
 END_NCBI_SCOPE
 
-#endif // ID_MAPPER_DEF__HPP
+#endif // ALGO_ID_MAPPER___ID_MAPPER__HPP
 
