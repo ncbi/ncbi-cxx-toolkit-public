@@ -328,6 +328,12 @@ void CAgpValidateReader::OnGapOrComponent()
       else if( div == CSeq_id::eAcc_htgs ) {
         if(m_this_row->component_type == 'W') m_AgpErr->Msg(CAgpErr::W_CompIsNotWgsTypeIs);
       }
+      else {
+        if( string("ADF").find(m_this_row->component_type)!=NPOS ) m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
+      }
+    }
+    else {
+      if( string("ADF").find(m_this_row->component_type)!=NPOS ) m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
     }
 
     if( m_comp2len->size() ) {
@@ -920,7 +926,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       out, use_xml
     );
     if(!m_CheckCompNames && hasSuspicious ) {
-      xprint.line("Use -g or -a to print lines with suspicious accessions.");
+      xprint.line("Use -g or \"-show all\" to print lines with suspicious accessions.");
     }
 
     const int MAX_objname_eq_comp=3;

@@ -559,6 +559,7 @@ public:
         W_AGPVersionCommentInvalid,
         W_AGPVersionCommentUnnecessary,
         W_DuplicateEvidence,    // CAgpRow (v. >= 2.0 )
+        W_CompIsNotHtgTypeIs,
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence
@@ -605,7 +606,7 @@ public:
         CODE_First = E_First,
         /// Reserve space for some user errors (to count, or to skip).
         /// The strange value of this enum is meant to give a separation
-        /// of 10 or 20 between the last built-in error 
+        /// of 10 or 20 between the last built-in error
         /// (currently G_Last) and the first user errors.
         CODE_Extended = ((((G_Last / 10 ) + 2) * 10) + 1),
         /// This is one past the last code allowed, after built-in and user errors.

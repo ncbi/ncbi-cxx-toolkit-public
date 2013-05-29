@@ -139,7 +139,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0",
     "ignoring AGP version comment - version already set to X",
     "linkage evidence term X appears more than once",
-    kEmptyCStr,
+    "component_id X is not an HTG accession, but is used with component_type A, D, or F",
     kEmptyCStr,
 
     kEmptyCStr,
@@ -1306,6 +1306,7 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml) : m_use_xml(use_xml), m_ou
         m_MustSkip[W_ExtraTab          ]=true;
         m_MustSkip[W_CompIsWgsTypeIsNot]=true;
         m_MustSkip[W_CompIsNotWgsTypeIs]=true;
+        m_MustSkip[W_CompIsNotHtgTypeIs]=true;
         m_MustSkip[W_ShortGap          ]=true;
     }
 
