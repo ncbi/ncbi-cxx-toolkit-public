@@ -498,22 +498,19 @@ CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
 CConstRef<CSeq_id>
 CGencollIdMapper::x_NCBI34_Map_IdFix(CConstRef<CSeq_id> SourceId) const
 {
-    if (m_Assembly->GetTaxId() != 9606 || m_Assembly->GetName() != "NCBI34") {
+    if (!(m_Assembly->GetTaxId() == 9606 &&
+          NStr::Equal(m_Assembly->GetName(), "NCBI34")
+         )
+       ) {
         return SourceId;
     }
-
-    if (SourceId->GetSeqIdString(true) == "NC_000002" ||
-        SourceId->GetSeqIdString(true) == "NC_000002.8"
-       ) {
+    const string seqidstr = SourceId->GetSeqIdString(true);
+    if (NStr::Equal(seqidstr, "NC_000002") || NStr::Equal(seqidstr, "NC_000002.8")) {
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->SetLocal().SetStr("2");
         return NewId;
     }
-
-
-    if (SourceId->GetSeqIdString(true) == "NC_000009" ||
-        SourceId->GetSeqIdString(true) == "NC_000009.8"
-       ) {
+    if (NStr::Equal(seqidstr, "NC_000009") || NStr::Equal(seqidstr, "NC_000009.8")) {
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->SetLocal().SetStr("9");
         return NewId;
@@ -531,8 +528,9 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
         ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.GetSeq_id_synonyms()) {
             CTypeConstIterator<CSeq_id> IdIter(**SynIter);
             for ( ; IdIter; ++IdIter) {
-                if (IdIter->IsGi())
+                if (IdIter->IsGi()) {
                     continue;
+                }
                 TopSyn.Assign(*IdIter);
                 break;
             }
@@ -545,7 +543,7 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
         bool DoesRecurse = false;
         CTypeConstIterator<CSeq_id> StructIdIter(Seq.GetStructure());
         for ( ; StructIdIter; ++StructIdIter) {
-            if ( StructIdIter->Equals(TopId) ) {
+            if (StructIdIter->Equals(TopId)) {
                 DoesRecurse = true;
                 break;
             }
@@ -563,7 +561,7 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
         ITERATE (CGC_Sequence::TSequences, TagIter, Seq.GetSequences()) {
             CTypeConstIterator<CSeq_id> SubSeqIdIter(**TagIter);
             for ( ; SubSeqIdIter; ++SubSeqIdIter) {
-                if ( SubSeqIdIter->Equals(TopId) ) {
+                if (SubSeqIdIter->Equals(TopId)) {
                     DoesRecurse = true;
                     break;
                 }
