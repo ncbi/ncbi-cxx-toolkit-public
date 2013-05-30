@@ -47,7 +47,6 @@
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
-#include <objmgr/util/sequence.hpp>
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
