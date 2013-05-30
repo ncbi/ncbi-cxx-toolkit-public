@@ -359,8 +359,9 @@ bool CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& 
     bool Result = false;
 
     // FIXME: If it returns null, deeply examine the Loc
-    if (Loc.GetId() == NULL)
+    if (Loc.GetId() == NULL) {
         return CRef<CSeq_loc>();
+    }
 
     CConstRef<CSeq_id> Id(Loc.GetId());
 
@@ -404,10 +405,6 @@ bool CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& 
         }
     }}
 
-    if (Seq.IsNull()) {
-        return false;
-    }
-
     return false;
 }
 
@@ -445,8 +442,9 @@ CGencollIdMapper::x_Init()
         if (IdIter->GetTextseq_Id() != 0) {
             const string& Acc = IdIter->GetTextseq_Id()->GetAccession();
             int Ver = 1;
-            if (IdIter->GetTextseq_Id()->CanGetVersion())
+            if (IdIter->GetTextseq_Id()->CanGetVersion()) {
                 Ver = IdIter->GetTextseq_Id()->GetVersion();
+            }
             m_AccToVerMap[Acc] = Ver;
         }
     }
