@@ -580,8 +580,7 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
         CTypeConstIterator<CSeq_id> IdIter(Seq);
         bool IsRandom = false;
         for ( ; IdIter; ++IdIter) {
-            string IdStr = IdIter->GetSeqIdString();
-            if (IdStr.find("_random") == IdStr.length()-7) {
+            if (NStr::EndsWith(IdIter->GetSeqIdString(), "_random")) {
                 IsRandom = true;
                 break;
             }
