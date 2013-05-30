@@ -819,8 +819,7 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
                                 CConstRef<CGC_Sequence> Seq
                                )
 {
-    int Role = x_GetRole(*Seq);
-    if (Role == SIdSpec::e_Role_NotSet) {
+    if (x_GetRole(*Seq) == SIdSpec::e_Role_NotSet) {
         return;
     }
 
