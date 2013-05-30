@@ -67,6 +67,7 @@ class NetStorageConsole:
              'download':       self.download,
              'exists':         self.exists,
              'getsize':        self.getsize,
+             'relocate':       self.relocate,
            }
 
         self.__commandSN = 0
@@ -520,6 +521,24 @@ class NetStorageConsole:
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
                     'FileID':       fileID }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
+    def relocate( self, arguments ):
+        " Sends RELOCATE message "
+        if len( arguments ) < 2:
+            print "At least two arguments are required "
+            return
+
+        srcID = arguments[ 0 ]
+        message = { 'Type':         'RELOCATE',
+                    'SessionID':    '1111111111111111_0000SID',
+                    'ClientIP':     hostIP,
+                    'FileID':       srcID,
+                    'NewLocation':  json.loads( ' '.join( arguments[ 1 : ] ) ) }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
