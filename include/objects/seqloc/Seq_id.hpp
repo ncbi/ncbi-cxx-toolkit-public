@@ -184,7 +184,8 @@ public:
         fAcc_predicted = 0x20000000, // only for refseq
         fAcc_specials  = 0x10000000, // has special cases; only used internally
         fAcc_master    = 0x08000000,
-        eAcc_flag_mask = 0xf8000000,
+        fAcc_ncbo      = 0x04000000, // for refseq pathogen detection pipeline
+        eAcc_flag_mask = 0xfc000000,
 
         // Divisions and categories (multiples of 1 << 8; always
         // globally unique nowadays, no matter how specialized)
@@ -200,6 +201,7 @@ public:
         eAcc_tsa           =   9 << 8, // transcriptome shotgun assembly
         eAcc_segset        =  10 << 8, // seg-set header; might not be genomic
         eAcc_gss           =  11 << 8, // genome survey sequence (may be mRNA)
+        eAcc_unique        =  12 << 8, // sequence data shared across records
         eAcc_ambig         = 112 << 8, // multiply assigned (!)
         eAcc_ambig_g       = 113 << 8, // assigned in GenBank
         eAcc_ambig_e       = 114 << 8, // assigned in EMBL
@@ -299,9 +301,10 @@ public:
         eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot,      // P
         eAcc_patent    = e_Patent    | eAcc_div_patent,
 
-        eAcc_refseq_prot        = e_Other | eAcc_other | fAcc_prot,       //NP_
+        eAcc_refseq_prot        = e_Other | eAcc_other        | fAcc_prot,//NP_
         eAcc_refseq_mrna        = e_Other | eAcc_mrna         | fAcc_nuc, //NM_
         eAcc_refseq_ncrna       = e_Other | eAcc_ncrna        | fAcc_nuc, //NR_
+        eAcc_refseq_unique_prot = e_Other | eAcc_unique       | fAcc_prot,//WP_
         eAcc_refseq_unreserved  = e_Other | eAcc_unreserved,              //AA_
         eAcc_refseq_genome      = e_Other | eAcc_genome       | fAcc_nuc, //NS_
         eAcc_refseq_contig      = e_Other | eAcc_con          | fAcc_nuc, //NT_
@@ -316,6 +319,8 @@ public:
         eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted, //XP_
         eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted, //XM_
         eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted, //XR_
+        eAcc_refseq_chromosome_ncbo = eAcc_refseq_chromosome | fAcc_ncbo, //WC_
+        eAcc_refseq_contig_ncbo     = eAcc_refseq_contig     | fAcc_ncbo, //WT_
 
         eAcc_general      = e_General | eAcc_other,
         eAcc_general_nuc  = e_General | eAcc_other | fAcc_nuc, // TRACE_ASSM
