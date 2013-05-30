@@ -831,14 +831,12 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     CNetStorage     net_storage(g_CreateNetStorage(0));
     CNetFile        net_file = net_storage.Open(file_id, 0);
 
-
-    // TODO: Get the object info
-
-
+    CJsonNode       file_info = net_file.GetInfo().ToJSON();
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    // TODO: Add the response keys
+    for (CJsonIterator it = file_info.Iterate(); it; ++it)
+        reply.SetByKey(it.GetKey(), it.GetNode());
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
