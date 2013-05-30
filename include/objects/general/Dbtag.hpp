@@ -144,6 +144,8 @@ public:
         eDbtagType_PseudoCap,
         eDbtagType_RAP_DB,
         eDbtagType_RATMAP,
+        eDbtagType_RBGE_garden,
+        eDbtagType_RBGE_herbarium,
         eDbtagType_REBASE,
         eDbtagType_RFAM,
         eDbtagType_RGD,
