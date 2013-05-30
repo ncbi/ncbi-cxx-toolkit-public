@@ -475,15 +475,15 @@ CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
     if (NStr::Equal(seqidstr, "NC_000002") || NStr::Equal(seqidstr, "NC_000002.8")) {
         Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
         Spec.Alias = SIdSpec::e_Public;
-        Spec.External = kEmptyStr
-        Spec.Pattern = kEmptyStr
+        Spec.External = kEmptyStr;
+        Spec.Pattern = kEmptyStr;
         return true;
     }
     if (NStr::Equal(seqidstr, "NC_000009") || NStr::Equal(seqidstr, "NC_000009.8")) {
         Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
         Spec.Alias = SIdSpec::e_Public;
-        Spec.External = kEmptyStr
-        Spec.Pattern = kEmptyStr
+        Spec.External = kEmptyStr;
+        Spec.Pattern = kEmptyStr;
         return true;
     }
     return false;
