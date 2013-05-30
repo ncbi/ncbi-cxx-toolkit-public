@@ -651,14 +651,8 @@ CGencollIdMapper::x_FillChromosomeIds(void)
             CGC_Sequence& Seq = ReplIter->SetSequence().SetSingle();
             bool NameFound = false;
             ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
-                switch ((*it)->Which()) {
-                case CGC_TypedSeqId::e_Private: {
-                    if ( (*it)->GetPrivate().GetSeqIdString() == ReplIter->GetName()) {
-                        NameFound = true;
-                    }
-                } break;
-                default:
-                    break;
+                if ((*it)->Which() == CGC_TypedSeqId::e_Private) {
+                    NameFound = NStr::Equal((*it)->GetPrivate().GetSeqIdString(), ReplIter->GetName());
                 }
             }
             if (!NameFound) {
