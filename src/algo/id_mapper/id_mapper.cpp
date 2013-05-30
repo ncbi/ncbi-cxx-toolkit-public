@@ -469,7 +469,7 @@ CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
           NStr::Equal(m_Assembly->GetName(), "NCBI34")
          )
        ) {
-        return SourceId;
+        return false;
     }
     const string seqidstr = Id.GetSeqIdString(true);
     if (NStr::Equal(seqidstr, "NC_000002") || NStr::Equal(seqidstr, "NC_000002.8")) {
