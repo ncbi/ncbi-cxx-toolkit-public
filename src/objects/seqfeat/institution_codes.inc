@@ -2405,7 +2405,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IBLP	s	Instytut Badawczy Lesnictwa",
 "IBMUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal",
 "IBP	s	Instituto de Biologia do Parana",
-"IBRC	c	Iranian Biological Resources Center",
+"IBRC	sc	Iranian Biological Resources Center",
 "IBRP<BRA>	s	Instituto Biologico de Ribeirao Preto",
 "IBRP<JPN>	s	Institute for Breeding Research, Tokyo University of Agriculture",
 "IBS	s	Irish Biogeographical Society",
