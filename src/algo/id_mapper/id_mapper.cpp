@@ -618,13 +618,10 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
         }
     }
 
-    if (SeqQualifies && !ParentQualifies) {
-        ITERATE (CGC_Sequence::TRoles, RoleIter, Seq.GetRoles()) {
-            if (*RoleIter == SIdSpec::e_Role_Gpipe_Top) {
-                return;
-            }
-        }
-
+    if (SeqQualifies &&
+        !ParentQualifies &&
+        !Seq.HasRole(SIdSpec::e_Role_Gpipe_Top)
+       ) {
         Seq.SetRoles().push_back(SIdSpec::e_Role_Gpipe_Top);
     }
 }
@@ -993,57 +990,69 @@ CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
 {
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
-            if ((*it)->Which() != Spec.TypedChoice)
+            if ((*it)->Which() != Spec.TypedChoice) {
                 continue;
+            }
             switch ((*it)->Which()) {
-            case CGC_TypedSeqId::e_Genbank: {
+            case CGC_TypedSeqId::e_Genbank:
+            {
                 const CGC_SeqIdAlias& Genbank = (*it)->GetGenbank();
                 if (Genbank.CanGetPublic() && Spec.Alias == SIdSpec::e_Public) {
                     return CConstRef<CSeq_id>(&Genbank.GetPublic());
                 }
-                else if (Genbank.CanGetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
+                if (Genbank.CanGetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
                     return CConstRef<CSeq_id>(&Genbank.GetGpipe());
                 }
-                else if (Genbank.CanGetGi() && Spec.Alias == SIdSpec::e_Gi) {
+                if (Genbank.CanGetGi() && Spec.Alias == SIdSpec::e_Gi) {
                     return CConstRef<CSeq_id>(&Genbank.GetGi());
-                }}
+                }
                 break;
-            case CGC_TypedSeqId::e_Refseq: {
+            }
+            case CGC_TypedSeqId::e_Refseq:
+            {
                 const CGC_SeqIdAlias& Refseq = (*it)->GetRefseq();
                 if (Refseq.CanGetPublic() && Spec.Alias == SIdSpec::e_Public) {
                     return CConstRef<CSeq_id>(&Refseq.GetPublic());
                 }
-                else if (Refseq.CanGetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
+                if (Refseq.CanGetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
                     return CConstRef<CSeq_id>(&Refseq.GetGpipe());
                 }
-                else if (Refseq.CanGetGi() && Spec.Alias == SIdSpec::e_Gi) {
+                if (Refseq.CanGetGi() && Spec.Alias == SIdSpec::e_Gi) {
                     return CConstRef<CSeq_id>(&Refseq.GetGi());
-                }}
+                }
                 break;
-            case CGC_TypedSeqId::e_External: {
+            }
+            case CGC_TypedSeqId::e_External:
+            {
                 const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
                 if (ExternalId.GetExternal() == Spec.External) {
                     if (Spec.Pattern.empty()) {
                         return CConstRef<CSeq_id>(&ExternalId.GetId());
-                    } else {
-                        CRef<CSeq_id> NewId(new CSeq_id());
-                        NewId->SetLocal().SetStr() = NStr::Replace(Spec.Pattern, DELIM, ExternalId.GetId().GetSeqIdString());
-                        //NewId->SetLocal().SetStr() = Spec.Pattern + ExternalId.GetId().GetSeqIdString();
-                        return NewId;
                     }
-                }}
+                    CRef<CSeq_id> NewId(new CSeq_id());
+                    NewId->SetLocal().SetStr(
+                        NStr::Replace(Spec.Pattern,
+                                      DELIM,
+                                      ExternalId.GetId().GetSeqIdString()
+                                     )
+                    );
+                    //NewId->SetLocal().SetStr() = Spec.Pattern + ExternalId.GetId().GetSeqIdString();
+                    return NewId;
+                }
                 break;
-            case CGC_TypedSeqId::e_Private: {
+            }
+            case CGC_TypedSeqId::e_Private:
+            {
                 const CSeq_id& Private = (*it)->GetPrivate();
                 if (Spec.Pattern.empty()) {
                     return CConstRef<CSeq_id>(&Private);
-                } else {
-                    CRef<CSeq_id> NewId(new CSeq_id());
-                    NewId->SetLocal().SetStr() = NStr::Replace(Spec.Pattern, DELIM, Private.GetSeqIdString());
-                    //NewId->SetLocal().SetStr() = Spec.Pattern + Private.GetSeqIdString();
-                    return NewId;
-                }}
+                }
+                CRef<CSeq_id> NewId(new CSeq_id());
+                NewId->SetLocal().SetStr(NStr::Replace(Spec.Pattern, DELIM, Private.GetSeqIdString()));
+                //NewId->SetLocal().SetStr() = Spec.Pattern + Private.GetSeqIdString();
+                return NewId;
                 break;
+            }
 
             default:
                 break;
