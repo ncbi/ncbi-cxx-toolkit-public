@@ -150,72 +150,89 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         /*MRNA*/
         
         if(args["mrna-data-in"]) {
+
             splign.SetStartModelId(1);
             splign.SetAlignerScores();
             
-            //READ BLAST HITS   
-            
             CNcbiIstream& istr = args["mrna-data-in"].AsInputFile();        
-            auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));                
+            auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));  
+            string ofmt;
+            if(args["mrna-out"]) {                    
+                ofmt = args["mrna-outfmt"].AsString();
+            }
+
+            //READ BLAST HITS; GROUP BY QUERY/SUBJECT PAIR
+
             CRef<CSeq_annot> blast_align(new CSeq_annot);
-            while( istr ) {             
+            while( istr ) {     // one Seq-annot -> one Seq-align-set
                 try {
                     *is >> *blast_align;
                 }
                 catch (CEofException&) {
                     break;
                 }
+
+                typedef map<pair<CSeq_id_Handle, CSeq_id_Handle>, CSplign::THitRefs> TAllHits;
+                TAllHits one_seq_annot_hits_in;            
+                 
+                CRef<CSeq_align_set> splign_out(new CSeq_align_set);
                 
-                
-                CSplign::THitRefs hits_in;
                 ITERATE(CSeq_align_set::Tdata, AlignIter, blast_align->GetData().GetAlign()) {
                     CSplign::THitRef tr(new CBlastTabular(**AlignIter));
-                    hits_in.push_back(tr);
+                    CConstRef<objects::CSeq_id> query_id =  tr->GetQueryId();      
+                    CConstRef<objects::CSeq_id> subj_id = tr->GetSubjId();
+                    CSeq_id_Handle idh1 = CSeq_id_Handle::GetHandle(*query_id);
+                    CSeq_id_Handle idh2 = CSeq_id_Handle::GetHandle(*subj_id);
+                    one_seq_annot_hits_in[make_pair(idh1, idh2)].push_back(tr);
                 }
-                
-                CConstRef<objects::CSeq_id> query_id;       
-                CConstRef<objects::CSeq_id> subj_id;
-                query_id = hits_in.front()->GetQueryId();
-                subj_id = hits_in.front()->GetSubjId();
-                sf.SetSeqIds(query_id, subj_id);
-                
-                splign.Run(&hits_in);//note that this call spoils hits_in data      
-                
-                //OUTPUT ALIGNMENTS 
-                
-                if(args["mrna-out"]) {//output alignments   
-                    
-                    CNcbiOstream& ostr = args["mrna-out"].AsOutputFile();                                       
-                    string ofmt = args["mrna-outfmt"].AsString();
-                    
-                    if(ofmt == "asn") {
-                        auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));
-                        CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(&splign.GetResult(), CSplignFormatter::eAF_SplicedSegWithParts));
-                        ostr << MSerial_AsnText << *sas;
-                        
-                    } else if(ofmt == "text") {
-                        ostr<<sf. AsAlignmentText(scope, &splign.GetResult())<<endl;
-                        
-                    } else {// splign format    
-                        ostr<<sf.AsExonTable(&splign.GetResult())<<endl;;
+
+                //iterate by query/subject pair
+
+           /* DEBUG OUTPUT 
+                NON_CONST_ITERATE(TAllHits, qsit, one_seq_annot_hits_in) {
+                    cout<<"*****************"<<endl;
+                    cout<<"PAIR: "<<qsit->first.first.AsString()<<"\t"<<qsit->first.second.AsString()<<endl;
+                    cout<<"*****************"<<endl;
+                    ITERATE( CSplign::THitRefs, it, qsit->second) {
+                        cout<<**it<<endl;
                     }
+                }
+
+            END OF DEBUG OUTPUT   */
+
+                NON_CONST_ITERATE(TAllHits, qsit, one_seq_annot_hits_in) {
+                    sf.SetSeqIds(qsit->first.first.GetSeqId(), qsit->first.second.GetSeqId());
+                    splign.Run(&(qsit->second));//note that this call spoils hits_in data      
+                    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(&splign.GetResult(), CSplignFormatter::eAF_SplicedSegWithParts));
+                    splign_out->Set().insert(splign_out->Set().end(), sas->Get().begin(), sas->Get().end());
+                    if(args["mrna-out"]) {//output alignments   
+                        if(ofmt == "text") {
+                            CNcbiOstream& ostr = args["mrna-out"].AsOutputFile();                                       
+                            ostr<<sf. AsAlignmentText(scope, &splign.GetResult())<<endl;
+                        } else if(ofmt == "splign") {
+                            CNcbiOstream& ostr = args["mrna-out"].AsOutputFile();                                       
+                            ostr<<sf.AsExonTable(&splign.GetResult())<<endl;;
+                        }
+                    }
+                }
+                if(args["mrna-out"] && ofmt == "asn") {//output asn   
+                    CNcbiOstream& ostr = args["mrna-out"].AsOutputFile();                                       
+                    ostr << MSerial_AsnText << *splign_out;                        
                 }
                 
                 //CHECK IF SPLIGN RESULT IS THE SAME AS EXPECTED    
+
                 if(args["mrna-expected"]) {
                     CNcbiIstream& estr = args["mrna-expected"].AsInputFile();        
                     auto_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
                     CRef<CSeq_align_set> expected_out(new CSeq_align_set);
                     *es >> *expected_out;
-                    
-                    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(&splign.GetResult(), CSplignFormatter::eAF_SplicedSegWithParts));
-
 
                     //BOOST_CHECK ( sas->Equals(*expected_out) ); 
                     // check above fails on real number comparison, workaround:
 
                     CNcbiOstrstream s1;
-                    s1 << MSerial_AsnText << *sas;
+                    s1 << MSerial_AsnText << *splign_out;
                     string mrna1 = CNcbiOstrstreamToString(s1);
                     
                     CNcbiOstrstream s2;
@@ -232,16 +249,22 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         /*EST*/
         
         if(args["est-data-in"]) {
+
             splign.SetStartModelId(1);
             splign.SetScoringType(CSplign::eEstScoring);
             splign.SetAlignerScores();
             
-            //READ BLAST HITS   
-            
             CNcbiIstream& istr = args["est-data-in"].AsInputFile();        
-            auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));                
+            auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));   
+            string ofmt;
+            if(args["est-out"]) {                    
+                ofmt = args["est-outfmt"].AsString();
+            }
+
+            //READ BLAST HITS; GROUP BY QUERY/SUBJECT PAIR
+             
             CRef<CSeq_annot> blast_align(new CSeq_annot);
-            while( istr ) {             
+            while( istr ) {      // one Seq-annot -> one Seq-align-set           
                 try {
                     *is >> *blast_align;
                 }
@@ -249,42 +272,44 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     break;
                 }
                 
+                typedef map<pair<CSeq_id_Handle, CSeq_id_Handle>, CSplign::THitRefs> TAllHits;
+                TAllHits one_seq_annot_hits_in;            
+                 
+                CRef<CSeq_align_set> splign_out(new CSeq_align_set);
                 
-                CSplign::THitRefs hits_in;
                 ITERATE(CSeq_align_set::Tdata, AlignIter, blast_align->GetData().GetAlign()) {
                     CSplign::THitRef tr(new CBlastTabular(**AlignIter));
-                    hits_in.push_back(tr);
+                    CConstRef<objects::CSeq_id> query_id =  tr->GetQueryId();      
+                    CConstRef<objects::CSeq_id> subj_id = tr->GetSubjId();
+                    CSeq_id_Handle idh1 = CSeq_id_Handle::GetHandle(*query_id);
+                    CSeq_id_Handle idh2 = CSeq_id_Handle::GetHandle(*subj_id);
+                    one_seq_annot_hits_in[make_pair(idh1, idh2)].push_back(tr);
                 }
+
+                //iterate by query/subject pair                
                 
-                CConstRef<objects::CSeq_id> query_id;       
-                CConstRef<objects::CSeq_id> subj_id;
-                query_id = hits_in.front()->GetQueryId();
-                subj_id = hits_in.front()->GetSubjId();
-                sf.SetSeqIds(query_id, subj_id);
-                
-                splign.Run(&hits_in);//note that this call spoils hits_in data      
-                
-                //OUTPUT ALIGNMENTS 
-                
-                if(args["est-out"]) {//output alignments   
-                    
-                    CNcbiOstream& ostr = args["est-out"].AsOutputFile();                                       
-                    string ofmt = args["est-outfmt"].AsString();
-                    
-                    if(ofmt == "asn") {
-                        auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));
-                        CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(&splign.GetResult(), CSplignFormatter::eAF_SplicedSegWithParts));
-                        ostr << MSerial_AsnText << *sas;
-                        
-                    } else if(ofmt == "text") {
-                        ostr<<sf. AsAlignmentText(scope, &splign.GetResult())<<endl;
-                        
-                    } else {// splign format    
-                        ostr<<sf.AsExonTable(&splign.GetResult())<<endl;;
+                NON_CONST_ITERATE(TAllHits, qsit, one_seq_annot_hits_in) {
+                    sf.SetSeqIds(qsit->first.first.GetSeqId(), qsit->first.second.GetSeqId());
+                    splign.Run(&(qsit->second));//note that this call spoils hits_in data      
+                    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(&splign.GetResult(), CSplignFormatter::eAF_SplicedSegWithParts));
+                    splign_out->Set().insert(splign_out->Set().end(), sas->Get().begin(), sas->Get().end());
+                    if(args["est-out"]) {//output alignments   
+                        if(ofmt == "text") {
+                            CNcbiOstream& ostr = args["est-out"].AsOutputFile();                                       
+                            ostr<<sf. AsAlignmentText(scope, &splign.GetResult())<<endl;
+                        } else if(ofmt == "splign") {
+                            CNcbiOstream& ostr = args["est-out"].AsOutputFile();                                       
+                            ostr<<sf.AsExonTable(&splign.GetResult())<<endl;;
+                        }
                     }
                 }
-                
+                if(args["est-out"] && ofmt == "asn") {//output asn   
+                    CNcbiOstream& ostr = args["est-out"].AsOutputFile();                                       
+                    ostr << MSerial_AsnText << *splign_out;                        
+                }
+
                 //CHECK IF SPLIGN RESULT IS THE SAME AS EXPECTED    
+
                 if(args["est-expected"]) {
                     CNcbiIstream& estr = args["est-expected"].AsInputFile();        
                     auto_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
@@ -298,7 +323,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     // check above fails on real number comparison, workaround:
 
                     CNcbiOstrstream s1;
-                    s1 << MSerial_AsnText << *sas;
+                    s1 << MSerial_AsnText << *splign_out;
                     string est1 = CNcbiOstrstreamToString(s1);
                     
                     CNcbiOstrstream s2;
