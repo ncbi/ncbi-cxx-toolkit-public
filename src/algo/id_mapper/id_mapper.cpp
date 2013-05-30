@@ -604,8 +604,7 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
 
     bool SeqQualifies = false;
     bool ParentQualifies = false;
-    if (x_HasTop(Seq, SIdSpec::e_Top_Public) &&
-        SeqHasGi) {
+    if (x_HasTop(Seq, SIdSpec::e_Top_Public) && SeqHasGi) {
         SeqQualifies = true;
     }
 
@@ -617,20 +616,22 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
     if (!Parent.IsNull()) {
         GenGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi);
         RefGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi);
-        bool ParentHasGi = bool(GenGi) || bool(RefGi);
-
+        const bool ParentHasGi = bool(GenGi) || bool(RefGi);
         Relation = Seq.GetParentRelation();
 
         if (x_HasTop(*Parent, SIdSpec::e_Top_Public) &&
-               Relation == CGC_TaggedSequences::eState_placed &&
-            ParentHasGi)
+            Relation == CGC_TaggedSequences::eState_placed &&
+            ParentHasGi
+           ) {
             ParentQualifies = true;
+        }
     }
 
     if (SeqQualifies && !ParentQualifies) {
         ITERATE (CGC_Sequence::TRoles, RoleIter, Seq.GetRoles()) {
-            if (*RoleIter == SIdSpec::e_Role_Gpipe_Top)
+            if (*RoleIter == SIdSpec::e_Role_Gpipe_Top) {
                 return;
+            }
         }
 
         Seq.SetRoles().push_back(SIdSpec::e_Role_Gpipe_Top);
