@@ -193,6 +193,7 @@ public:
     bool IsRSPredictedProtein (void) const;  // XP_
     bool IsRSWGSNuc           (void) const;  // NZ_
     bool IsRSWGSProt          (void) const;  // ZP_
+    bool IsRSUniqueProt       (void) const;  // WP_
     
     bool IsEncode             (void) const;  // provided by the ENCODE project
     const CUser_object& GetEncode(void) const;
@@ -298,6 +299,7 @@ private:
     bool m_IsJournalScan;  // scanned from journal
     bool m_IsRefSeq;
     unsigned int m_RefseqInfo;
+    bool m_IsRSUniqueProt; // TODO: remove this variable when possible, it's a kludge for info currently missing from m_RefseqInfo
     bool m_IsGbGenomeProject;  // GenBank Genome project data
     bool m_IsNcbiCONDiv;       // NCBI CON division
     bool m_IsNcbiGenomes;      // NCBI_GENOMES
@@ -538,6 +540,15 @@ inline
 bool CBioseqContext::IsRSWGSProt(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_prot;  // ZP_
+}
+
+inline
+bool CBioseqContext::IsRSUniqueProt(void) const  // WP
+{
+    // TODO: this is a kludge.  Eventually replace with something
+    // like this:
+    // return m_RefseqInfo == CSeq_id::eAcc_refseq_prot_unique;  // WP_
+    return m_IsRSUniqueProt;
 }
 
 inline

@@ -969,6 +969,12 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
                         }
                     }
                 }
+                if( ctx.IsRSUniqueProt() ) {
+                    string str = CCommentItem::GetStringForUnique(ctx);
+                    if( ! str.empty() ) {
+                        x_AddComment(new CCommentItem(str, ctx));
+                    }
+                }
             }}
             break;
         case CSeq_id::e_General:

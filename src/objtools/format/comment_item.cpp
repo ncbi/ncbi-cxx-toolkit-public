@@ -1098,6 +1098,24 @@ string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(str);
 }
 
+string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
+{
+    if( ! ctx.IsRSUniqueProt() ) {
+        return kEmptyStr;
+    }
+
+    CNcbiOstrstream str;
+
+    // this will be more complex if HTML links ever need to be added
+    // or we have to cover nucs or whatever
+
+    str << "REFSEQ: This record represents a single, non-redundant, protein "
+        << "sequence which may be annotated on many different RefSeq "
+        << "genomes from the same, or different, species.";
+
+    return CNcbiOstrstreamToString(str);
+}
+
 /***************************************************************************/
 /*                                 PROTECTED                               */
 /***************************************************************************/

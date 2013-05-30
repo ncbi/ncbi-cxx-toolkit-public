@@ -140,6 +140,7 @@ public:
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
     static string GetStringForEncode(CBioseqContext& ctx);
+    static string GetStringForUnique(CBioseqContext& ctx);
 
     static void ResetFirst(void) { sm_FirstComment = true; }
 
