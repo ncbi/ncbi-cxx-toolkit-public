@@ -126,7 +126,7 @@ dd if=$test_base.tar bs=123 2>/dev/null | $test_tar -T -f -                     
 sleep 1
 mkdir             $test_base.1/newdir 2>/dev/null
 chmod g+s,o+t,o-x $test_base.1/newdir 2>/dev/null
-date 2>/dev/null | tee -a $test_base.1/testdir.$$/datefile $test_base.1/newdir/datefile >$test_base.1/datefile 2>/dev/null
+date 2>/dev/null | tee -a $test_base.1/testdir/datefile $test_base.1/newdir/datefile >$test_base.1/datefile 2>/dev/null
 cp -fp $test_base.1/newdir/datefile $test_base.1/newdir/dummyfile 2>/dev/null
 
 echo
