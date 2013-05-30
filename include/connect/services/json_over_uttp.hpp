@@ -63,7 +63,7 @@ struct SJsonNodeImpl;
 struct NCBI_XCONNECT_EXPORT SJsonIteratorImpl : public CObject
 {
     virtual SJsonNodeImpl* GetNode() const = 0;
-    virtual const string& GetKey() const = 0;
+    virtual string GetKey() const = 0;
     virtual bool Next() = 0;
     virtual bool IsValid() const = 0;
 };
@@ -134,11 +134,28 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// Return true for a null node. Return false otherwise.
     bool IsNull() const;
 
+    /// Return true if the node is either an object or an array.
+    bool IsContainer() const;
+
+    /// Return true if the node is any of the JSON scalar types.
+    bool IsScalar() const;
+
+    /// Different modes of array and object iteration.
+    enum EIterationMode {
+        eNatural,   ///< Iterate array elements in ascending order
+                    ///< of their indices; iterate object elements
+                    ///< in the order they were added.
+        eOrdered,   ///< Iterate object elements in lexicographic
+                    ///< order of their keys.
+        eFlatten,   ///< Iterate nested containers as if it were a
+                    ///< single JSON object.
+    };
+
     /// For a container node (that is, either an array or an object),
     /// begin iteration over its elements. The returned value must
     /// be used to initialize a CJsonIterator object.
     /// @see CJsonIterator
-    SJsonIteratorImpl* Iterate() const;
+    SJsonIteratorImpl* Iterate(EIterationMode mode = eNatural) const;
 
     /// For a container node (that is, either an array or
     /// an object), return the number of elements in the container.
@@ -274,7 +291,7 @@ class NCBI_XCONNECT_EXPORT CJsonIterator
 
     /// When iterating over a JSON object, return
     /// the key of the current element.
-    const string& GetKey() const;
+    string GetKey() const;
 
     /// Skip to the next element if there is one, in which
     /// case TRUE is returned. Otherwise, return FALSE.
@@ -331,6 +348,16 @@ inline bool CJsonNode::IsNull() const
     return GetNodeType() == eNull;
 }
 
+inline bool CJsonNode::IsContainer() const
+{
+    return GetNodeType() <= eArray;
+}
+
+inline bool CJsonNode::IsScalar() const
+{
+    return GetNodeType() > eArray;
+}
+
 inline CJsonNode CJsonNode::GetByKey(const string& key) const
 {
     CJsonNode node(GetByKeyOrNull(key));
@@ -367,7 +394,7 @@ inline CJsonNode CJsonIterator::GetNode() const
     return m_Impl->GetNode();
 }
 
-inline const string& CJsonIterator::GetKey() const
+inline string CJsonIterator::GetKey() const
 {
     return m_Impl->GetKey();
 }

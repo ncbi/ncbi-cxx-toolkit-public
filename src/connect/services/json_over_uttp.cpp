@@ -36,6 +36,7 @@
 #include <corelib/ncbistre.hpp>
 
 #include <algorithm>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -56,7 +57,34 @@ const char* CJsonException::GetErrCodeString() const
 typedef CRef<SJsonNodeImpl,
     CNetComponentCounterLocker<SJsonNodeImpl> > TJsonNodeRef;
 
-typedef map<string, TJsonNodeRef> TJsonNodeMap;
+struct SJsonObjectElement {
+    SJsonObjectElement(const string& key, SJsonNodeImpl* node_impl) :
+        m_Key(key),
+        m_Node(node_impl)
+    {
+    }
+
+    bool operator <(const SJsonObjectElement& right_hand) const
+    {
+        return m_Key < right_hand.m_Key;
+    }
+
+    string m_Key;
+    TJsonNodeRef m_Node;
+    size_t m_Order;
+};
+
+struct SObjectElementLessOrder {
+    bool operator ()(const SJsonObjectElement* left_hand,
+            const SJsonObjectElement* right_hand)
+    {
+        return left_hand->m_Order < right_hand->m_Order;
+    }
+};
+
+typedef set<SJsonObjectElement> TJsonObjectElements;
+typedef set<SJsonObjectElement*,
+        SObjectElementLessOrder> TJsonObjectElementOrder;
 typedef vector<TJsonNodeRef> TJsonNodeVector;
 
 struct SJsonObjectNodeImpl;
@@ -114,9 +142,15 @@ void SJsonNodeImpl::VerifyType(const char* operation,
 
 struct SJsonObjectNodeImpl : public SJsonNodeImpl
 {
-    SJsonObjectNodeImpl() : SJsonNodeImpl(CJsonNode::eObject) {}
+    SJsonObjectNodeImpl() :
+        SJsonNodeImpl(CJsonNode::eObject),
+        m_NextElementOrder(0)
+    {
+    }
 
-    TJsonNodeMap m_Object;
+    TJsonObjectElements m_Elements;
+    TJsonObjectElementOrder m_ElementOrder;
+    size_t m_NextElementOrder;
 };
 
 inline const SJsonObjectNodeImpl* SJsonNodeImpl::GetObjectNodeImpl(
@@ -312,44 +346,86 @@ CJsonNode::ENodeType CJsonNode::GetNodeType() const
     return m_Impl->m_NodeType;
 }
 
-struct SJsonObjectIterator : public SJsonIteratorImpl
+struct SJsonObjectKeyIterator : public SJsonIteratorImpl
 {
-    SJsonObjectIterator(SJsonObjectNodeImpl* container) :
+    SJsonObjectKeyIterator(SJsonObjectNodeImpl* container) :
         m_Container(container),
-        m_Iterator(container->m_Object.begin())
+        m_Iterator(container->m_Elements.begin())
     {
     }
 
     virtual SJsonNodeImpl* GetNode() const;
-    virtual const string& GetKey() const;
+    virtual string GetKey() const;
     virtual bool Next();
     virtual bool IsValid() const;
 
     CRef<SJsonObjectNodeImpl,
             CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Container;
-    TJsonNodeMap::iterator m_Iterator;
+    TJsonObjectElements::iterator m_Iterator;
 };
 
-SJsonNodeImpl* SJsonObjectIterator::GetNode() const
+SJsonNodeImpl* SJsonObjectKeyIterator::GetNode() const
 {
-    return m_Iterator->second;
+    return const_cast<SJsonNodeImpl*>(m_Iterator->m_Node.GetPointerOrNull());
 }
 
-const string& SJsonObjectIterator::GetKey() const
+string SJsonObjectKeyIterator::GetKey() const
 {
-    return m_Iterator->first;
+    return m_Iterator->m_Key;
 }
 
-bool SJsonObjectIterator::Next()
+bool SJsonObjectKeyIterator::Next()
 {
     _ASSERT(IsValid());
 
-    return ++m_Iterator != m_Container->m_Object.end();
+    return ++m_Iterator != m_Container->m_Elements.end();
 }
 
-bool SJsonObjectIterator::IsValid() const
+bool SJsonObjectKeyIterator::IsValid() const
 {
-    return m_Iterator != const_cast<TJsonNodeMap&>(m_Container->m_Object).end();
+    return m_Iterator != const_cast<TJsonObjectElements&>(
+            m_Container->m_Elements).end();
+}
+
+struct SJsonObjectElementOrderIterator : public SJsonIteratorImpl
+{
+    SJsonObjectElementOrderIterator(SJsonObjectNodeImpl* container) :
+        m_Container(container),
+        m_Iterator(container->m_ElementOrder.begin())
+    {
+    }
+
+    virtual SJsonNodeImpl* GetNode() const;
+    virtual string GetKey() const;
+    virtual bool Next();
+    virtual bool IsValid() const;
+
+    CRef<SJsonObjectNodeImpl,
+            CNetComponentCounterLocker<SJsonObjectNodeImpl> > m_Container;
+    TJsonObjectElementOrder::iterator m_Iterator;
+};
+
+SJsonNodeImpl* SJsonObjectElementOrderIterator::GetNode() const
+{
+    return (*m_Iterator)->m_Node;
+}
+
+string SJsonObjectElementOrderIterator::GetKey() const
+{
+    return (*m_Iterator)->m_Key;
+}
+
+bool SJsonObjectElementOrderIterator::Next()
+{
+    _ASSERT(IsValid());
+
+    return ++m_Iterator != m_Container->m_ElementOrder.end();
+}
+
+bool SJsonObjectElementOrderIterator::IsValid() const
+{
+    return m_Iterator != const_cast<TJsonObjectElementOrder&>(
+            m_Container->m_ElementOrder).end();
 }
 
 struct SJsonArrayIterator : public SJsonIteratorImpl
@@ -361,7 +437,7 @@ struct SJsonArrayIterator : public SJsonIteratorImpl
     }
 
     virtual SJsonNodeImpl* GetNode() const;
-    virtual const string& GetKey() const;
+    virtual string GetKey() const;
     virtual bool Next();
     virtual bool IsValid() const;
 
@@ -375,7 +451,7 @@ SJsonNodeImpl* SJsonArrayIterator::GetNode() const
     return *m_Iterator;
 }
 
-const string& SJsonArrayIterator::GetKey() const
+string SJsonArrayIterator::GetKey() const
 {
     NCBI_THROW(CJsonException, eInvalidNodeType,
             "Cannot get a key for an array iterator");
@@ -393,20 +469,154 @@ bool SJsonArrayIterator::IsValid() const
     return m_Iterator != m_Container->m_Array.end();
 }
 
-SJsonIteratorImpl* CJsonNode::Iterate() const
+struct SFlattenIterator : public SJsonIteratorImpl
+{
+    struct SFrame {
+        CJsonIterator m_Iterator;
+        string m_Path;
+        size_t m_Index;
+
+        void Advance()
+        {
+            m_Iterator.Next();
+            if (m_Index != (size_t) -1)
+                ++m_Index;
+        }
+
+        string MakePath() const;
+    };
+
+    SFlattenIterator(const CJsonNode& container)
+    {
+        m_CurrentFrame.m_Iterator = container.Iterate();
+        m_CurrentFrame.m_Index = container.IsObject() ? (size_t) -1 : 0;
+        x_DepthFirstSearchForScalar();
+    }
+
+    virtual SJsonNodeImpl* GetNode() const;
+    virtual string GetKey() const;
+    virtual bool Next();
+    virtual bool IsValid() const;
+
+    bool x_DepthFirstSearchForScalar();
+
+    SFrame m_CurrentFrame;
+    vector<SFrame> m_IteratorStack;
+};
+
+string SFlattenIterator::SFrame::MakePath() const
+{
+    if (m_Index == (size_t) -1) {
+        if (m_Path.empty())
+            return m_Iterator.GetKey();
+
+        string path(m_Path + '.');
+        path += m_Iterator.GetKey();
+        return path;
+    } else {
+        string index_str(NStr::NumericToString(m_Index));
+
+        if (m_Path.empty())
+            return index_str;
+
+        string path(m_Path + '.');
+        path += index_str;
+        return path;
+    }
+}
+
+SJsonNodeImpl* SFlattenIterator::GetNode() const
+{
+    return m_CurrentFrame.m_Iterator.GetNode();
+}
+
+string SFlattenIterator::GetKey() const
+{
+    return m_CurrentFrame.MakePath();
+}
+
+bool SFlattenIterator::Next()
+{
+    _ASSERT(m_CurrentFrame.m_Iterator.IsValid());
+
+    m_CurrentFrame.Advance();
+
+    return x_DepthFirstSearchForScalar();
+}
+
+bool SFlattenIterator::IsValid() const
+{
+    return m_CurrentFrame.m_Iterator.IsValid();
+}
+
+bool SFlattenIterator::x_DepthFirstSearchForScalar()
+{
+    for (;;) {
+        while (m_CurrentFrame.m_Iterator.IsValid()) {
+            CJsonNode node(m_CurrentFrame.m_Iterator.GetNode());
+
+            switch (node.GetNodeType()) {
+            case CJsonNode::eObject:
+                m_IteratorStack.push_back(m_CurrentFrame);
+
+                m_CurrentFrame.m_Path = m_CurrentFrame.MakePath();
+                m_CurrentFrame.m_Index = (size_t) -1;
+                break;
+
+            case CJsonNode::eArray:
+                m_IteratorStack.push_back(m_CurrentFrame);
+
+                m_CurrentFrame.m_Path = m_CurrentFrame.MakePath();
+                m_CurrentFrame.m_Index = 0;
+                break;
+
+            default: /* Scalar type */
+                return true;
+            }
+
+            m_CurrentFrame.m_Iterator = node.Iterate();
+        }
+
+        if (m_IteratorStack.empty())
+            return false;
+
+        m_CurrentFrame = m_IteratorStack.back();
+        m_IteratorStack.pop_back();
+
+        m_CurrentFrame.Advance();
+    }
+}
+
+SJsonIteratorImpl* CJsonNode::Iterate(EIterationMode mode) const
 {
     switch (m_Impl->m_NodeType) {
     case CJsonNode::eObject:
-        return new SJsonObjectIterator(const_cast<SJsonObjectNodeImpl*>(
-                static_cast<const SJsonObjectNodeImpl*>(
-                        m_Impl.GetPointerOrNull())));
+        switch (mode) {
+        default: /* case eNatural: */
+            return new SJsonObjectElementOrderIterator(
+                    const_cast<SJsonObjectNodeImpl*>(
+                            static_cast<const SJsonObjectNodeImpl*>(
+                                    m_Impl.GetPointerOrNull())));
+
+        case eOrdered:
+            return new SJsonObjectKeyIterator(const_cast<SJsonObjectNodeImpl*>(
+                    static_cast<const SJsonObjectNodeImpl*>(
+                            m_Impl.GetPointerOrNull())));
+        case eFlatten:
+            return new SFlattenIterator(*this);
+        }
+
     case CJsonNode::eArray:
-        return new SJsonArrayIterator(const_cast<SJsonArrayNodeImpl*>(
-                static_cast<const SJsonArrayNodeImpl*>(
-                        m_Impl.GetPointerOrNull())));
+        if (mode == eFlatten)
+            return new SFlattenIterator(*this);
+        else
+            return new SJsonArrayIterator(const_cast<SJsonArrayNodeImpl*>(
+                    static_cast<const SJsonArrayNodeImpl*>(
+                            m_Impl.GetPointerOrNull())));
+
     default:
         NCBI_THROW(CJsonException, eInvalidNodeType,
-                "Cannot iterate a scalar type");
+                "Cannot iterate a non-container type");
     }
 }
 
@@ -415,7 +625,7 @@ size_t CJsonNode::GetSize() const
     switch (m_Impl->m_NodeType) {
     case CJsonNode::eObject:
         return static_cast<const SJsonObjectNodeImpl*>(
-                m_Impl.GetPointerOrNull())->m_Object.size();
+                m_Impl.GetPointerOrNull())->m_Elements.size();
     case CJsonNode::eArray:
         return static_cast<const SJsonArrayNodeImpl*>(
                 m_Impl.GetPointerOrNull())->m_Array.size();
@@ -519,31 +729,54 @@ void CJsonNode::SetNull(const string& key)
 
 void CJsonNode::SetByKey(const string& key, CJsonNode::TInstance value)
 {
-    m_Impl->GetObjectNodeImpl("SetByKey()")->m_Object[key] = value;
+    SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("SetByKey()"));
+
+    pair<TJsonObjectElements::iterator, bool> insertion =
+            impl->m_Elements.insert(SJsonObjectElement(key, value));
+
+    SJsonObjectElement* element =
+            &const_cast<SJsonObjectElement&>(*insertion.first);
+
+    if (!insertion.second)
+        element->m_Node = value;
+    else {
+        element->m_Order = impl->m_NextElementOrder++;
+        impl->m_ElementOrder.insert(element);
+    }
 }
 
 void CJsonNode::DeleteByKey(const string& key)
 {
-    m_Impl->GetObjectNodeImpl("DeleteByKey()")->m_Object.erase(key);
+    SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("SetByKey()"));
+
+    TJsonObjectElements::iterator it =
+            impl->m_Elements.find(SJsonObjectElement(key, NULL));
+
+    if (it != impl->m_Elements.end()) {
+        impl->m_ElementOrder.erase(&const_cast<SJsonObjectElement&>(*it));
+        impl->m_Elements.erase(it);
+    }
 }
 
 bool CJsonNode::HasKey(const string& key) const
 {
     const SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("HasKey()"));
 
-    return impl->m_Object.find(key) != impl->m_Object.end();
+    return impl->m_Elements.find(SJsonObjectElement(key, NULL)) !=
+            impl->m_Elements.end();
 }
 
 CJsonNode CJsonNode::GetByKeyOrNull(const string& key) const
 {
     const SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("GetByKey()"));
 
-    TJsonNodeMap::const_iterator it(impl->m_Object.find(key));
+    TJsonObjectElements::const_iterator it =
+            impl->m_Elements.find(SJsonObjectElement(key, NULL));
 
-    if (it == impl->m_Object.end())
+    if (it == impl->m_Elements.end())
         return CJsonNode();
 
-    return const_cast<SJsonNodeImpl*>(it->second.GetPointerOrNull());
+    return const_cast<SJsonNodeImpl*>(it->m_Node.GetPointerOrNull());
 }
 
 const string& CJsonNode::AsString() const
