@@ -762,7 +762,7 @@ CGencollIdMapper::x_ApplyPatternToId(CConstRef<CSeq_id> Id,
                                     ) const
 {
     if (Id->GetTextseq_Id() == NULL && !Id->IsGi() && !Spec.Pattern.empty()) {
-        /* && Id->GetLocal().GetStr().find(Spec.Pattern) != NPOS */
+        // && Id->GetLocal().GetStr().find(Spec.Pattern) != NPOS
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->SetLocal().SetStr() = Id->GetSeqIdString();
         string Pre, Post;
