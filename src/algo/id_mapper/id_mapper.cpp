@@ -766,7 +766,7 @@ CGencollIdMapper::x_ApplyPatternToId(CConstRef<CSeq_id> Id,
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->SetLocal().SetStr() = Id->GetSeqIdString();
         string Pre, Post;
-        size_t DelimPos = Spec.Pattern.find(DELIM);
+        const size_t DelimPos = Spec.Pattern.find(DELIM);
         Pre.assign(Spec.Pattern.data(), 0, DelimPos);
         //Post.assign(Spec.Pattern.data(), DelimPos+DELIM.length(),
         //            Spec.Pattern.length()-DelimPos-DELIM.length());
