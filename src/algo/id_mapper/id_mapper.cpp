@@ -653,15 +653,16 @@ CGencollIdMapper::x_FillChromosomeIds(void)
             ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
                 switch ((*it)->Which()) {
                 case CGC_TypedSeqId::e_Private: {
-                    if ( (*it)->GetPrivate().GetSeqIdString() == ReplIter->GetName())
+                    if ( (*it)->GetPrivate().GetSeqIdString() == ReplIter->GetName()) {
                         NameFound = true;
+                    }
                 } break;
                 default:
                     break;
                 }
             }
-            if (true || !NameFound) {
-                CRef<CGC_TypedSeqId> ChromoId(new CGC_TypedSeqId);
+            if (!NameFound) {
+                CRef<CGC_TypedSeqId> ChromoId(new CGC_TypedSeqId());
                 ChromoId->SetExternal().SetExternal() = CHROMO_EXT;
                 ChromoId->SetExternal().SetId().SetLocal().SetStr() = ReplIter->GetName();
                 //ChromoId->SetPrivate().SetLocal().SetStr() = ReplIter->GetName();
