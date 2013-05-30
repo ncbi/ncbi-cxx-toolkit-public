@@ -465,30 +465,27 @@ CGencollIdMapper::x_Init()
 bool
 CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
 {
-    if (m_Assembly->GetTaxId() != 9606 || m_Assembly->GetName() != "NCBI34") {
-        return false;
-    }
-
-    if (Id.GetSeqIdString(true) == "NC_000002" ||
-        Id.GetSeqIdString(true) == "NC_000002.8"
+    if (!(m_Assembly->GetTaxId() == 9606 &&
+          NStr::Equal(m_Assembly->GetName(), "NCBI34")
+         )
        ) {
+        return SourceId;
+    }
+    const string seqidstr = Id.GetSeqIdString(true);
+    if (NStr::Equal(seqidstr, "NC_000002") || NStr::Equal(seqidstr, "NC_000002.8")) {
         Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
         Spec.Alias = SIdSpec::e_Public;
-        Spec.External = "";
-        Spec.Pattern = "";
+        Spec.External = kEmptyStr
+        Spec.Pattern = kEmptyStr
         return true;
     }
-
-    if (Id.GetSeqIdString(true) == "NC_000009" ||
-        Id.GetSeqIdString(true) == "NC_000009.8"
-       ) {
+    if (NStr::Equal(seqidstr, "NC_000009") || NStr::Equal(seqidstr, "NC_000009.8")) {
         Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
         Spec.Alias = SIdSpec::e_Public;
-        Spec.External = "";
-        Spec.Pattern = "";
+        Spec.External = kEmptyStr
+        Spec.Pattern = kEmptyStr
         return true;
     }
-
     return false;
 }
 
@@ -513,7 +510,6 @@ CGencollIdMapper::x_NCBI34_Map_IdFix(CConstRef<CSeq_id> SourceId) const
         NewId->SetLocal().SetStr("9");
         return NewId;
     }
-
     return SourceId;
 }
 
@@ -749,7 +745,7 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
         !Id->GetTextseq_Id()->IsSetVersion()) {
         const int Ver = m_AccToVerMap.find(Id->GetTextseq_Id()->GetAccession())->second;
         CRef<CSeq_id> NewId(new CSeq_id());
-        NewId->Set(Id->Which(), Id->GetTextseq_Id()->GetAccession(), "", Ver);
+        NewId->Set(Id->Which(), Id->GetTextseq_Id()->GetAccession(), kEmptyStr, Ver);
         Id = NewId;
     }
 
@@ -771,8 +767,8 @@ CGencollIdMapper::x_ApplyPatternToId(CConstRef<CSeq_id> Id,
         //Post.assign(Spec.Pattern.data(), DelimPos+DELIM.length(),
         //            Spec.Pattern.length()-DelimPos-DELIM.length());
         if (!Pre.empty() || !Post.empty()) {
-            NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Pre, "");
-            //NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Post, "");
+            NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Pre, kEmptyStr
+            //NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Post, kEmptyStr
             Id = NewId;
         }
     }
