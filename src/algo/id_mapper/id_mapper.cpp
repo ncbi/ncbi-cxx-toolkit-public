@@ -835,8 +835,9 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
                                )
 {
     int Role = x_GetRole(*Seq);
-    if (Role == SIdSpec::e_Role_NotSet)
+    if (Role == SIdSpec::e_Role_NotSet) {
         return;
+    }
 
     CSeq_id_Handle Handle;
     Handle = CSeq_id_Handle::GetHandle(Id);
@@ -881,8 +882,9 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
         int IdCount = 0;
         CTypeConstIterator<CSeq_id> IdIter(Seq);
         for ( ; IdIter; ++IdIter) {
-            if (IdIter->Equals(Seq.GetSeq_id()))
+            if (IdIter->Equals(Seq.GetSeq_id())) {
                 IdCount++;
+            }
         }
         if (IdCount <= 2) {
             CConstRef<CGC_Sequence> SeqRef(&Seq);
@@ -890,38 +892,34 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
         }
     }
 
+#warning unsure why condition includes Seq.CanGetStructure()
     if (Seq.CanGetSeq_id_synonyms() &&
-        (Seq.GetSeq_id_synonyms().size() >= 1 || Seq.CanGetStructure()) ) {
-
+        (!Seq.GetSeq_id_synonyms().empty() || Seq.CanGetStructure())
+       ) {
         CConstRef<CGC_Sequence> SeqRef(&Seq);
-
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
-            switch ((*it)->Which()) {
-            case CGC_TypedSeqId::e_Genbank:
-                if ((*it)->GetGenbank().CanGetPublic())
-                    x_AddSeqToMap((*it)->GetGenbank().GetPublic(), SeqRef);
-                if ((*it)->GetGenbank().CanGetGpipe())
-                    x_AddSeqToMap((*it)->GetGenbank().GetGpipe(), SeqRef);
-                if ((*it)->GetGenbank().CanGetGi())
-                    x_AddSeqToMap((*it)->GetGenbank().GetGi(), SeqRef);
-                break;
-            case CGC_TypedSeqId::e_Refseq:
-                if ((*it)->GetRefseq().CanGetPublic())
-                    x_AddSeqToMap((*it)->GetRefseq().GetPublic(), SeqRef);
-                if ((*it)->GetRefseq().CanGetGpipe())
-                    x_AddSeqToMap((*it)->GetRefseq().GetGpipe(), SeqRef);
-                if ((*it)->GetRefseq().CanGetGi())
-                    x_AddSeqToMap((*it)->GetRefseq().GetGi(), SeqRef);
-                break;
-            case CGC_TypedSeqId::e_External:
+            const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
+            const bool is_gb = (syn_type == CGC_TypedSeqId::e_Genbank);
+            if (is_gb || syn_type == CGC_TypedSeqId::e_Refseq) {
+                CConstRef<CGC_SeqIdAlias> seq_id_alias(
+                    is_gb ? &(*it)->GetGenbank()
+                          : &(*it)->GetRefseq()
+                );
+                if (seq_id_alias->IsSetPublic()) {
+                    x_AddSeqToMap(seq_id_alias->GetPublic(), SeqRef);
+                }
+                if (seq_id_alias->IsSetGpipe()) {
+                    x_AddSeqToMap(seq_id_alias->GetGpipe(), SeqRef);
+                }
+                if (seq_id_alias->IsSetGi()) {
+                    x_AddSeqToMap(seq_id_alias->GetGi(), SeqRef);
+                }
+            }
+            else if (syn_type == CGC_TypedSeqId::e_External) {
                 x_AddSeqToMap((*it)->GetExternal().GetId(), SeqRef);
-                break;
-            case CGC_TypedSeqId::e_Private:
+            }
+            else if (syn_type == CGC_TypedSeqId::e_Private) {
                 x_AddSeqToMap((*it)->GetPrivate(), SeqRef);
-                break;
-
-            default:
-                break;
             }
         }
     }
@@ -929,9 +927,9 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
     // child sequences
     if (Seq.CanGetSequences()) {
         ITERATE (CGC_Sequence::TSequences, TagIter, Seq.GetSequences()) {
-            if (!(*TagIter)->CanGetSeqs())
+            if (!(*TagIter)->CanGetSeqs()) {
                 continue;
-
+            }
             ITERATE (CGC_TaggedSequences::TSeqs, SeqIter, (*TagIter)->GetSeqs()) {
                 x_BuildSeqMap(**SeqIter);
             }
@@ -946,12 +944,14 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_AssemblyUnit& assm)
     if (assm.IsSetMols()) {
         ITERATE (CGC_AssemblyUnit::TMols, iter, assm.GetMols()) {
             const CGC_Replicon& mol = **iter;
-
             if (mol.GetSequence().IsSingle()) {
                 x_BuildSeqMap(mol.GetSequence().GetSingle());
-            } else {
-                ITERATE (CGC_Replicon::TSequence::TSet, it,
-                         mol.GetSequence().GetSet()) {
+            }
+            else {
+                ITERATE (CGC_Replicon::TSequence::TSet,
+                         it,
+                         mol.GetSequence().GetSet()
+                        ) {
                     x_BuildSeqMap(**it);
                 }
             }
@@ -963,8 +963,9 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_AssemblyUnit& assm)
         //if( (*TagIter)->GetState() != CGC_TaggedSequences::eState_placed ||
         //    !(*TagIter)->CanGetSeqs())
         //    continue;
-        if (!(*TagIter)->CanGetSeqs())
+        if (!(*TagIter)->CanGetSeqs()) {
             continue;
+        }
 
         ITERATE (CGC_TaggedSequences::TSeqs, SeqIter, (*TagIter)->GetSeqs()) {
             x_BuildSeqMap(**SeqIter);
@@ -983,11 +984,14 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Assembly& assm)
 {
     if (assm.IsUnit()) {
         x_BuildSeqMap(assm.GetUnit());
-    } else if (assm.IsAssembly_set()) {
+    }
+    else if (assm.IsAssembly_set()) {
         x_BuildSeqMap(assm.GetAssembly_set().GetPrimary_assembly());
         if (assm.GetAssembly_set().IsSetMore_assemblies()) {
             ITERATE (CGC_Assembly::TAssembly_set::TMore_assemblies,
-                     iter, assm.GetAssembly_set().GetMore_assemblies()) {
+                     iter,
+                     assm.GetAssembly_set().GetMore_assemblies()
+                    ) {
                 x_BuildSeqMap(**iter);
             }
         }
@@ -1098,68 +1102,73 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
         return e_No;
     }
 
-       int SeqRole = SIdSpec::e_Role_NotSet;
-    SeqRole = x_GetRole(Seq);
-
-
-    bool HasId=false;
-
+    //int SeqRole = x_GetRole(Seq);
+    bool HasId = false;
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
 
-            if ((*it)->Which() != Spec.TypedChoice)
+            if ((*it)->Which() != Spec.TypedChoice) {
                 continue;
+            }
+
+            const bool alias_is_public = (Spec.Alias == SIdSpec::e_Public);
+            const bool alias_is_gpipe = (Spec.Alias == SIdSpec::e_Gpipe);
+            const bool alias_is_gi = (Spec.Alias == SIdSpec::e_Gi);
 
             switch ((*it)->Which()) {
             case CGC_TypedSeqId::e_Genbank: {
                 const CGC_SeqIdAlias& Genbank = (*it)->GetGenbank();
-                if (Genbank.CanGetPublic() && Spec.Alias == SIdSpec::e_Public) {
+                if (Genbank.CanGetPublic() && alias_is_public) {
                     HasId = true;
                 }
-                else if (Genbank.CanGetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
+                else if (Genbank.CanGetGpipe() && alias_is_gpipe) {
                     HasId = true;
                 }
-                else if (Genbank.CanGetGi() && Spec.Alias == SIdSpec::e_Gi) {
+                else if (Genbank.CanGetGi() && alias_is_gi) {
                     HasId = true;
                 }}
                 break;
-            case CGC_TypedSeqId::e_Refseq: {
+            case CGC_TypedSeqId::e_Refseq:
+            {
                 const CGC_SeqIdAlias& Refseq = (*it)->GetRefseq();
-                if (Refseq.CanGetPublic() && Spec.Alias == SIdSpec::e_Public) {
+                if (Refseq.CanGetPublic() && alias_is_public) {
                     HasId = true;
                 }
-                else if (Refseq.CanGetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
+                else if (Refseq.CanGetGpipe() && alias_is_gpipe) {
                     HasId = true;
                 }
-                else if (Refseq.CanGetGi() && Spec.Alias == SIdSpec::e_Gi) {
-                    HasId =true;
-                }}
+                else if (Refseq.CanGetGi() && alias_is_gi) {
+                    HasId = true;
+                }
                 break;
-            case CGC_TypedSeqId::e_External: {
+            }
+            case CGC_TypedSeqId::e_External:
+            {
                 const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
                 if (ExternalId.GetExternal() == Spec.External) {
-                    HasId =true;
-                }}
+                    HasId = true;
+                }
                 break;
+            }
             case CGC_TypedSeqId::e_Private:
                 HasId = true;
                 break;
-
             default:
                 break;
             }
         }
     }
 
-
     if (HasId) {
         if (Spec.Top != SIdSpec::e_Top_NotSet) {
-            if (x_HasTop(Seq, Spec.Top))
+            if (x_HasTop(Seq, Spec.Top)) {
                 return e_Yes;
+            }
         }
         else if (Spec.Role != SIdSpec::e_Role_NotSet) {
-            if (Seq.HasRole(Spec.Role))
+            if (Seq.HasRole(Spec.Role)) {
                 return e_Yes;
+            }
         }
     }
 
@@ -1168,22 +1177,23 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
     if (ParentSeq) {
         if (Spec.Top != SIdSpec::e_Top_NotTop ||
           (Spec.Role != SIdSpec::e_Role_NotSet && Spec.Role <= x_GetRole(*ParentSeq)) ) {
-            int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level+1);
+            const int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level + 1);
             if (Parent == e_Yes) {
                 return e_Up;
             }
         }
     }
 
-
     if (Seq.CanGetSequences() && Spec.Top != true) {
         ITERATE (CGC_Sequence::TSequences, TagIter, Seq.GetSequences()) {
-            if ((*TagIter)->GetState() != CGC_TaggedSequences::eState_placed)
+            if ((*TagIter)->GetState() != CGC_TaggedSequences::eState_placed) {
                 continue;
+            }
             ITERATE (CGC_TaggedSequences::TSeqs, SeqIter, (*TagIter)->GetSeqs()) {
-                int Child = x_CanSeqMeetSpec(**SeqIter, Spec, Level+1);
-                if (Child == e_Yes)
+                const int Child = x_CanSeqMeetSpec(**SeqIter, Spec, Level + 1);
+                if (Child == e_Yes) {
                     return e_Down;
+                }
             }
         }
     }
@@ -1217,7 +1227,8 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             switch ((*it)->Which()) {
-            case CGC_TypedSeqId::e_Genbank: {
+            case CGC_TypedSeqId::e_Genbank:
+            {
                 const CGC_SeqIdAlias& Genbank = (*it)->GetGenbank();
                 if (Genbank.CanGetPublic() && Genbank.GetPublic().Equals(Id)) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_Genbank;
@@ -1233,9 +1244,11 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                     Spec.TypedChoice = CGC_TypedSeqId::e_Genbank;
                     Spec.Alias = SIdSpec::e_Gi;
                     return true;
-                }}
+                }
                 break;
-            case CGC_TypedSeqId::e_Refseq: {
+            }
+            case CGC_TypedSeqId::e_Refseq:
+            {
                 const CGC_SeqIdAlias& Refseq = (*it)->GetRefseq();
                 if (Refseq.CanGetPublic() && Refseq.GetPublic().Equals(Id)) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
@@ -1251,24 +1264,28 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                     Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
                     Spec.Alias = SIdSpec::e_Gi;
                     return true;
-                }}
+                }
                 break;
-            case CGC_TypedSeqId::e_External: {
+            }
+            case CGC_TypedSeqId::e_External:
+            {
                 const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
                 if (ExternalId.GetId().Equals(Id)) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_External;
                     Spec.External = ExternalId.GetExternal();
                     return true;
-                }}
+                }
                 break;
-            case CGC_TypedSeqId::e_Private: {
+            }
+            case CGC_TypedSeqId::e_Private:
+            {
                 const CSeq_id& Private = (*it)->GetPrivate();
                 if (Private.Equals(Id)) {
                     Spec.TypedChoice = CGC_TypedSeqId::e_Private;
                     return true;
-                }}
+                }
                 break;
-
+            }
             default:
                 break;
             }
