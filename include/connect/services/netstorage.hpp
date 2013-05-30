@@ -36,6 +36,7 @@
 /// @file netstorage_api.hpp
 ///
 
+#include "json_over_uttp.hpp"
 #include "srv_connections.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -44,6 +45,7 @@ BEGIN_NCBI_SCOPE
 struct SNetFileImpl;            ///< @internal
 struct SNetStorageImpl;         ///< @internal
 struct SNetStorageByKeyImpl;    ///< @internal
+struct SNetFileInfoImpl;        ///< @internal
 
 
 /** @addtogroup NetStorage
@@ -58,7 +60,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageException : public CException
 public:
     enum EErrCode {
         eInvalidArg,    ///< Caller passed invalid arguments to the API
-        eNotExist,      ///< Illegal op applied to non-existent file
+        eNotExists,     ///< Illegal op applied to non-existent file
         eIOError,       ///< I/O error encountered while performing an op
         eTimeout        ///< Timeout encountered while performing an op
     };
@@ -66,6 +68,48 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetStorageException, CException);
 };
 
+/// Enumeration that 
+enum ENetFileLocation {
+    eNFL_Unknown,
+    eNFL_NotFound,
+    eNFL_NetCache,
+    eNFL_FileTrack
+};
+
+/// Detailed information about a CNetStorage file.
+/// This structure is returned by CNetFile::GetInfo().
+class NCBI_XCONNECT_EXPORT CNetFileInfo
+{
+    NCBI_NET_COMPONENT(NetFileInfo);
+
+    /// Return a ENetFileLocation constant that corresponds to the
+    /// storage back-end where the file currently resides. If the
+    /// file cannot be found in any of the predictable locations,
+    /// eNFL_NotFound is returned.  If the file is found, the
+    /// returned value reflects the storage back-end that supplied
+    /// the rest of information about the file.
+    ENetFileLocation GetLocation() const;
+
+    /// Return a JSON object containing the fields of the file ID.
+    /// A valid value is returned even if GetLocation() == eNFL_NotFound.
+    CJsonNode GetFileIDInfo() const;
+
+    /// Return file creation time reported by the storage back-end.
+    /// @note Valid only if GetLocation() != eNFL_NotFound.
+    CTime GetCreationTime() const;
+
+    /// Return file size in bytes.
+    /// @note Valid only if GetLocation() != eNFL_NotFound.
+    Uint8 GetSize();
+
+    /// Return a JSON object containing storage-specific information
+    /// about the file.
+    /// @note Valid only if GetLocation() != eNFL_NotFound.
+    CJsonNode GetStorageSpecificInfo() const;
+
+    /// Pack the whole structure in a single JSON object.
+    CJsonNode ToJSON();
+};
 
 /// Blob storage allocation and access strategy
 enum ENetStorageFlags {
@@ -153,6 +197,16 @@ class NCBI_XCONNECT_EXPORT CNetFile
     ///
     void Write(const string& data);
 
+    /// Finalize and close the current file stream.
+    /// If the operation is successful, then the state (including the current
+    /// position, if applicable) of the 'CNetFile' is reset, and you can start
+    /// reading from (or writing to) the file all anew, as if the 'CNetFile'
+    /// object had just been created by 'CNetStorage'.
+    ///
+    /// @throw CNetStorageException
+    ///  If cannot finalize writing operations
+    void Close(void);
+
     /// Return size of the file
     ///
     /// @return
@@ -163,15 +217,16 @@ class NCBI_XCONNECT_EXPORT CNetFile
     ///
     Uint8 GetSize(void);
 
-    /// Finalize and close the current file stream.
-    /// If the operation is successful, then the state (including the current
-    /// position, if applicable) of the 'CNetFile' is reset, and you can start
-    /// reading from (or writing to) the file all anew, as if the 'CNetFile'
-    /// object had just been created by 'CNetStorage'.
+    /// Return detailed information about the file.
     ///
-    /// @throw CNetStorageException
-    ///  If cannot finalize writing operations
-    void Close(void);
+    /// @return
+    ///  A CNetFileInfo object. If the file is not found, a
+    ///  valid object is returned, which returns eNFL_NotFound for
+    ///  GetLocation().
+    ///
+    /// @see CNetFileInfo
+    ///
+    CNetFileInfo GetInfo(void);
 };
 
 

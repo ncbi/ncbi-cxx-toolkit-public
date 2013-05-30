@@ -124,6 +124,7 @@ SFileTrackRequest::SFileTrackRequest(
         const string& boundary,
         const string& user_header,
         FHTTP_ParseHeader parse_header) :
+    m_FileTrackAPI(storage_impl),
     m_FileID(file_id),
     m_URL(url),
     m_Boundary(boundary),
@@ -167,16 +168,17 @@ void SFileTrackRequest::SendEndOfFormData()
     }
 }
 
-void SFileTrackRequest::CheckIOStatus()
+void SFileTrackAPI::CheckIOStatus(CConn_HttpStream& http_stream,
+        const string& url)
 {
-    EIO_Status status = m_HTTPStream.Status();
+    EIO_Status status = http_stream.Status();
 
     if ((status != eIO_Success && status != eIO_Closed) ||
-                ((status = m_HTTPStream.Status(eIO_Read)) != eIO_Success &&
+                ((status = http_stream.Status(eIO_Read)) != eIO_Success &&
                         status != eIO_Closed)) {
         THROW_IO_EXCEPTION(eRead,
                 "Error while retrieving HTTP response from " <<
-                m_URL << ": ", status);
+                url << ": ", status);
     }
 }
 
@@ -244,18 +246,18 @@ void SFileTrackRequest::Write(const void* buf,
         *bytes_written = count;
 }
 
+static const STimeout kZeroTimeout = {0};
+
 void SFileTrackRequest::FinishUpload()
 {
-    static const STimeout kZeroTimeout = {0};
-
     m_HTTPStream << "\r\n";
+
+    string unique_key = m_FileID->GetUniqueKey();
 
     SendFormInput("expires", kEmptyStr);
     SendFormInput("owner_id", kEmptyStr);
-    SendFormInput("file_id", m_FileID->GetUniqueKey());
+    SendFormInput("file_id", unique_key);
     SendEndOfFormData();
-
-    string http_response;
 
     try {
         EIO_Status status = CONN_Wait(m_HTTPStream.GetCONN(),
@@ -268,9 +270,6 @@ void SFileTrackRequest::FinishUpload()
                         m_URL << ": ", status);
             }
         }
-        CNcbiOstrstream sstr;
-        NcbiStreamCopy(sstr, m_HTTPStream);
-        http_response = sstr.str();
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
@@ -279,31 +278,61 @@ void SFileTrackRequest::FinishUpload()
                 "\"); HTTP status " << m_HTTPStatus);
     }
 
+    CJsonNode upload_result = m_FileTrackAPI->ReadJsonResponse(m_HTTPStream,
+            m_FileID, m_URL, m_HTTPStatus);
+
+    string filetrack_file_id = upload_result.GetAt(0).GetString("file_id");
+
+    if (filetrack_file_id != unique_key) {
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
+                "Error while uploading \"" << m_FileID->GetID() <<
+                "\" to FileTrack: the file has been stored as \"" <<
+                filetrack_file_id << "\" instead of "
+                "\"" << unique_key << "\" as requested.");
+    }
+}
+
+CJsonNode SFileTrackAPI::ReadJsonResponse(CConn_HttpStream& http_stream,
+        CNetFileID* file_id, const string& url, int http_status)
+{
+    string http_response;
+
+    try {
+        CNcbiOstrstream sstr;
+        NcbiStreamCopy(sstr, http_stream);
+        sstr << NcbiEnds;
+        http_response = sstr.str();
+    }
+    catch (CException& e) {
+        NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
+                "Error while uploading \"" << file_id->GetID() <<
+                "\" (storage key \"" << file_id->GetUniqueKey() <<
+                "\"); HTTP status " << http_status);
+    }
+
+    CJsonNode root;
+
     try {
         CNetScheduleStructuredOutputParser json_parser;
-        json_parser.ParseJSON(http_response);
+        root = json_parser.ParseJSON(http_response);
     }
     catch (CStringException& e) {
         string error;
 
-        while (m_HTTPStream.good()) {
-            if (NStr::Find(http_response, "error", 0, NPOS,
-                    NStr::eFirst, NStr::eCase) != NPOS) {
-                error = s_RemoveHTMLTags(http_response.c_str());
-                break;
-            }
+        if (NStr::Find(http_response, "error", 0, NPOS,
+                NStr::eFirst, NStr::eCase) != NPOS) {
+            error = s_RemoveHTMLTags(http_response.c_str());
         }
 
-        CWStream null(new CNullWriter, 0, 0, CRWStreambuf::fOwnWriter);
-        NcbiStreamCopy(null, m_HTTPStream);
-
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << m_FileID->GetID() <<
-                "\" (storage key \"" << m_FileID->GetUniqueKey() << "\"): " <<
-                error << " (HTTP status " << m_HTTPStatus << ')');
+                "Error while uploading \"" << file_id->GetID() <<
+                "\" (storage key \"" << file_id->GetUniqueKey() << "\"): " <<
+                error << " (HTTP status " << http_status << ')');
     }
 
-    CheckIOStatus();
+    CheckIOStatus(http_stream, url);
+
+    return root;
 }
 
 CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(CNetFileID* file_id)
@@ -328,7 +357,7 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 
     if (m_FirstRead) {
         if (m_HTTPStatus >= 400) {
-            NCBI_THROW_FMT(CNetStorageException, eNotExist,
+            NCBI_THROW_FMT(CNetStorageException, eNotExists,
                     "Cannot open \"" << m_FileID->GetID() <<
                     "\" for reading (HTTP status " << m_HTTPStatus << ").");
         }
@@ -343,7 +372,7 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 
 void SFileTrackRequest::FinishDownload()
 {
-    CheckIOStatus();
+    m_FileTrackAPI->CheckIOStatus(m_HTTPStream, m_URL);
 }
 
 SFileTrackAPI::SFileTrackAPI() : m_Random((Uint4) time(NULL))
@@ -402,6 +431,19 @@ string SFileTrackAPI::LoginAndGetSessionKey()
     http_stream >> dummy;
 
     return session_key;
+}
+
+CJsonNode SFileTrackAPI::GetFileInfo(CNetFileID* file_id)
+{
+    string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
+
+    url += '/';
+
+    SFileTrackRequest request(this, file_id, url, kEmptyStr,
+        kEmptyStr, s_HTTPParseHeader_SaveStatus);
+
+    return ReadJsonResponse(request.m_HTTPStream,
+            file_id, url, request.m_HTTPStatus);
 }
 
 void SFileTrackAPI::SetFileTrackAttribute(CNetFileID* file_id,

@@ -46,6 +46,7 @@ struct NCBI_XCONNECT_EXPORT SNetFileImpl : public CObject
     virtual bool Eof() = 0;
     virtual void Write(const void* buffer, size_t buf_size) = 0;
     virtual Uint8 GetSize() = 0;
+    virtual CNetFileInfo GetInfo() = 0;
     virtual void Close() = 0;
 };
 
@@ -76,12 +77,17 @@ inline void CNetFile::Write(const void* buffer, size_t buf_size)
 
 inline void CNetFile::Write(const string& data)
 {
-    Write(data.data(), data.length());
+    m_Impl->Write(data.data(), data.length());
 }
 
 inline Uint8 CNetFile::GetSize()
 {
     return m_Impl->GetSize();
+}
+
+inline CNetFileInfo CNetFile::GetInfo()
+{
+    return m_Impl->GetInfo();
 }
 
 inline void CNetFile::Close()
@@ -177,7 +183,7 @@ class NCBI_XCONNECT_EXPORT CNetFileID
 public:
     CNetFileID(TNetStorageFlags flags, Uint8 random_number);
     CNetFileID(TNetStorageFlags flags,
-            const string& domain_name, const string& unique_key);
+            const string& app_domain, const string& unique_key);
     CNetFileID(const string& packed_id);
 
     void SetStorageFlags(TNetStorageFlags storage_flags)
@@ -192,10 +198,11 @@ public:
     Uint8 GetTimestamp() const {return m_Timestamp;}
     Uint8 GetRandom() const {return m_Random;}
 
-    string GetDomainName() const {return m_DomainName;}
-    string GetKey() const {return m_Key;}
+    string GetAppDomain() const {return m_AppDomain;}
+    string GetUserKey() const {return m_UserKey;}
 
-    string GetUniqueKey() {return m_UniqueKey;}
+    // A combination of either timestamp+random or app_domain+user_key.
+    string GetUniqueKey() const {return m_UniqueKey;}
 
     void ClearNetICacheParams();
     void SetNetICacheParams(const string& service_name,
@@ -238,6 +245,9 @@ public:
         return m_PackedID;
     }
 
+    // Serialize to a JSON object.
+    CJsonNode ToJSON() const;
+
 private:
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();
@@ -252,8 +262,8 @@ private:
     Uint8 m_Timestamp;
     Uint8 m_Random;
 
-    string m_DomainName;
-    string m_Key;
+    string m_AppDomain;
+    string m_UserKey;
 
     string m_UniqueKey;
 

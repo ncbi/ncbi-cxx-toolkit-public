@@ -46,7 +46,7 @@ const char* CNetStorageException::GetErrCodeString() const
     switch (GetErrCode()) {
     case eInvalidArg:
         return "eInvalidArg";
-    case eNotExist:
+    case eNotExists:
         return "eNotExist";
     case eIOError:
         return "eIOError";
@@ -111,6 +111,7 @@ struct SNetFileRPC : public SNetFileImpl
     virtual bool Eof();
     virtual void Write(const void* buffer, size_t buf_size);
     virtual Uint8 GetSize();
+    virtual CNetFileInfo GetInfo();
     virtual void Close();
 };
 
@@ -135,6 +136,11 @@ void SNetFileRPC::Write(const void* /*buffer*/, size_t /*buf_size*/)
 }
 
 Uint8 SNetFileRPC::GetSize()
+{
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Method not implemented");
+}
+
+CNetFileInfo SNetFileRPC::GetInfo()
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Method not implemented");
 }
@@ -174,11 +180,10 @@ void SNetFileImpl::Read(string* data)
     *data = NStr::Join(chunks, kEmptyStr);
 }
 
-struct SNetStorageByKeyRPC : public SNetStorageRPC
+struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
 {
     SNetStorageByKeyRPC(const string& init_string,
-            TNetStorageFlags default_flags) :
-        SNetStorageRPC(init_string, default_flags)
+            TNetStorageFlags default_flags)
     {
     }
 

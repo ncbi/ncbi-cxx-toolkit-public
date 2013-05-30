@@ -55,7 +55,6 @@ struct SFileTrackRequest : public CObject
     void SendContentDisposition(const char* input_name);
     void SendFormInput(const char* input_name, const string& value);
     void SendEndOfFormData();
-    void CheckIOStatus();
 
     void Write(const void* buf, size_t count, size_t* bytes_written);
     void FinishUpload();
@@ -63,6 +62,7 @@ struct SFileTrackRequest : public CObject
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
     void FinishDownload();
 
+    SFileTrackAPI* m_FileTrackAPI;
     CNetFileID* m_FileID;
     string m_URL;
     string m_Boundary;
@@ -78,11 +78,18 @@ struct SFileTrackAPI
 
     string LoginAndGetSessionKey();
 
+    CJsonNode GetFileInfo(CNetFileID* file_id);
+
     void SetFileTrackAttribute(CNetFileID* file_id,
             const string& attr_name, const string& attr_value);
 
     CRef<SFileTrackRequest> StartUpload(CNetFileID* file_id);
     CRef<SFileTrackRequest> StartDownload(CNetFileID* file_id);
+
+    void CheckIOStatus(CConn_HttpStream& http_stream,
+            const string& url);
+    CJsonNode ReadJsonResponse(CConn_HttpStream& http_stream,
+            CNetFileID* file_id, const string& url, int http_status);
 
     Uint8 GetRandom();
     string GenerateUniqueBoundary();

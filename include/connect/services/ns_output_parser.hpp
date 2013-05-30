@@ -39,10 +39,6 @@ BEGIN_NCBI_SCOPE
 
 #define TEMP_STRING_CTOR(str) CTempString(str, sizeof(str) - 1)
 
-extern NCBI_XCONNECT_EXPORT
-void g_DetectTypeAndSet(CJsonNode& node,
-        const CTempString& key, const CTempString& value);
-
 class NCBI_XCONNECT_EXPORT CNetScheduleStructuredOutputParser
 {
 public:

@@ -97,112 +97,11 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
         try {
             CNetFileID netfile_id(m_Opts.id);
 
-            TNetStorageFlags storage_flags = netfile_id.GetStorageFlags();
+            CJsonNode file_id_info(netfile_id.ToJSON());
 
-            if (m_Opts.output_format == eJSON) {
-                puts("{\n\t\"type\": \"" TOKEN_TYPE__NETFILE_ID
-                        "\",\n\t\"version\": 1,");
+            file_id_info.SetString("type", TOKEN_TYPE__NETFILE_ID);
 
-                puts(storage_flags & fNST_Fast ?
-                        "\t\"fast\": true," :
-                        "\t\"fast\": false,");
-                puts(storage_flags & fNST_Persistent ?
-                        "\t\"persistent\": true," :
-                        "\t\"persistent\": false,");
-                puts(storage_flags & fNST_Movable ?
-                        "\t\"movable\": true," :
-                        "\t\"movable\": false,");
-                puts(storage_flags & fNST_Cacheable ?
-                        "\t\"cacheable\": true," :
-                        "\t\"cacheable\": false,");
-            } else {
-                printf("type: " TOKEN_TYPE__NETFILE_ID "\nversion: 1");
-
-                const char* sep = "\nstorage_flags: ";
-
-                if (storage_flags & fNST_Fast) {
-                    printf("%sfast", sep);
-                    sep = " | ";
-                }
-                if (storage_flags & fNST_Persistent) {
-                    printf("%spersistent", sep);
-                    sep = " | ";
-                }
-                if (storage_flags & fNST_Movable) {
-                    printf("%smovable", sep);
-                    sep = " | ";
-                }
-                if (storage_flags & fNST_Cacheable)
-                    printf("%scacheable", sep);
-
-                puts("");
-            }
-
-            TNetFileIDFields fields = netfile_id.GetFields();
-
-            if (fields & fNFID_KeyAndNamespace)
-                printf(m_Opts.output_format == eJSON ?
-
-                        "\t\"domain_name\": \"%s\",\n"
-                        "\t\"key\": \"%s\"" :
-
-                        "domain_name: %s\n"
-                        "key: %s\n",
-
-                        netfile_id.GetDomainName().c_str(),
-                        netfile_id.GetKey().c_str());
-            else
-                printf(m_Opts.output_format == eJSON ?
-
-                        "\t\"timestamp\": %llu,\n"
-                        "\t\"random\": %llu" :
-
-                        "timestamp: %llu\n"
-                        "random: %llu\n",
-
-                        (unsigned long long) netfile_id.GetTimestamp(),
-                        (unsigned long long) netfile_id.GetRandom());
-
-            if (fields & fNFID_NetICache) {
-                printf(m_Opts.output_format == eJSON ?
-
-                        ",\n\t\"ic_service_name\": \"%s\",\n"
-                        "\t\"ic_cache_name\": \"%s\",\n"
-                        "\t\"ic_server_host\": \"%s\",\n"
-                        "\t\"ic_server_port\": %hu,\n"
-                        "\t\"ic_server_xsite\": %s" :
-
-                        "ic_service_name: %s\n"
-                        "ic_cache_name: %s\n"
-                        "ic_server: %s:%hu\n"
-                        "ic_server_xsite: %s\n",
-
-                        netfile_id.GetNCServiceName().c_str(),
-                        netfile_id.GetCacheName().c_str(),
-                        g_NetService_gethostnamebyaddr(
-                                netfile_id.GetNetCacheIP()).c_str(),
-                        netfile_id.GetNetCachePort(),
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-                        fields & fNFID_AllowXSiteConn ? "true" :
-#endif
-                        "false"
-                        );
-            }
-
-            if (storage_flags & fNST_Cacheable)
-                printf(m_Opts.output_format == eJSON ?
-                        ",\n\t\"cache_chunk_size\": %llu" :
-                        "cache_chunk_size: %llu\n",
-                        (unsigned long long) netfile_id.GetCacheChunkSize());
-
-            if (fields & fNFID_TTL)
-                printf(m_Opts.output_format == eJSON ?
-                        ",\n\t\"ttl\": %llu" :
-                        "ttl: %llu\n",
-                        (unsigned long long) netfile_id.GetTTL());
-
-            if (m_Opts.output_format == eJSON)
-                puts("\n}");
+            g_PrintJSON(stdout, file_id_info);
         }
         catch (CNetStorageException&) {
             fprintf(stderr, "Unable to recognize the specified token.\n");

@@ -69,83 +69,6 @@ static inline string UnquoteIfQuoted(const CTempString& str)
     }
 }
 
-void g_DetectTypeAndSet(CJsonNode& node,
-        const CTempString& key, const CTempString& value)
-{
-    const char* ch = value.begin();
-    const char* end = value.end();
-
-    switch (*ch) {
-    case '"':
-    case '\'':
-        node.SetString(key, NStr::ParseQuoted(value));
-        return;
-
-    case '-':
-        if (++ch >= end || !isdigit(*ch)) {
-            node.SetString(key, value);
-            return;
-        }
-
-    case '0': case '1': case '2': case '3': case '4':
-    case '5': case '6': case '7': case '8': case '9':
-        do
-            if (++ch >= end) {
-                node.SetInteger(key, NStr::StringToInt8(value));
-                return;
-            }
-        while (isdigit(*ch));
-
-        switch (*ch) {
-        case '.':
-            if (++ch == end || !isdigit(*ch)) {
-                node.SetString(key, value);
-                return;
-            }
-            for (;;) {
-                if (++ch == end) {
-                    node.SetDouble(key, NStr::StringToDouble(value));
-                    return;
-                }
-
-                if (!isdigit(*ch)) {
-                    if (*ch == 'E' || *ch == 'e')
-                        break;
-
-                    node.SetString(key, value);
-                    return;
-                }
-            }
-            /* FALL THROUGH */
-
-        case 'E':
-        case 'e':
-            if (++ch < end && (*ch == '-' || *ch == '+' ?
-                    ++ch < end && isdigit(*ch) : isdigit(*ch)))
-                do
-                    if (++ch == end) {
-                        node.SetDouble(key, NStr::StringToDouble(value));
-                        return;
-                    }
-                while (isdigit(*ch));
-            /* FALL THROUGH */
-
-        default:
-            node.SetString(key, value);
-            return;
-        }
-    }
-
-    if (NStr::CompareNocase(value, "FALSE") == 0)
-        node.SetBoolean(key, false);
-    else if (NStr::CompareNocase(value, "TRUE") == 0)
-        node.SetBoolean(key, true);
-    else if (NStr::CompareNocase(value, "NONE") == 0)
-        node.SetNull(key);
-    else
-        node.SetString(key, value);
-}
-
 #define INVALID_FORMAT_ERROR() \
     NCBI_THROW2(CStringException, eFormat, \
             (*m_Ch == '\0' ? "Unexpected end of NetSchedule output" : \
@@ -159,17 +82,31 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseJSON(const string& json)
     while (isspace(*m_Ch))
         ++m_Ch;
 
+    CJsonNode root;
+
     switch (*m_Ch) {
     case '[':
         ++m_Ch;
-        return ParseArray(']');
+        root = ParseArray(']');
+        break;
 
     case '{':
         ++m_Ch;
-        return ParseObject('}');
+        root = ParseObject('}');
+        break;
+
+    default:
+        INVALID_FORMAT_ERROR();
     }
 
-    INVALID_FORMAT_ERROR();
+    while (isspace(*m_Ch))
+        ++m_Ch;
+
+    if (*m_Ch != '\0') {
+        INVALID_FORMAT_ERROR();
+    }
+
+    return root;
 }
 
 string CNetScheduleStructuredOutputParser::ParseString(size_t max_len)
@@ -465,7 +402,7 @@ CJsonNode g_GenericStatToJson(CNetServer server,
                     entity_info.SetByKey(key_norm, array_value =
                             CJsonNode::NewArrayNode());
                 else
-                    g_DetectTypeAndSet(entity_info, key_norm, value);
+                    entity_info.SetByKey(key_norm, CJsonNode::GuessType(value));
             }
         }
     }
@@ -541,7 +478,7 @@ CJsonNode SSingleQueueInfoToJson::ExecOn(CNetServer server)
     CJsonNode queue_info_node(CJsonNode::NewObjectNode());
 
     ITERATE(CNetScheduleAdmin::TQueueInfo, qi, queue_info) {
-        g_DetectTypeAndSet(queue_info_node, qi->first, qi->second);
+        queue_info_node.SetByKey(qi->first, CJsonNode::GuessType(qi->second));
     }
 
     return queue_info_node;
@@ -578,8 +515,9 @@ CJsonNode SQueueInfoToJson::ExecOn(CNetServer server)
                     line.length() - m_SectionPrefix.length() - 1),
                     queue_params = CJsonNode::NewObjectNode());
         else if (queue_params && NStr::SplitInTwo(line, ": ",
-                    param_name, param_value, NStr::eMergeDelims))
-            g_DetectTypeAndSet(queue_params, param_name, param_value);
+                param_name, param_value, NStr::eMergeDelims))
+            queue_params.SetByKey(param_name,
+                    CJsonNode::GuessType(param_value));
 
     return queue_map;
 }
@@ -692,7 +630,7 @@ void CJobInfoToJSON::BeginJobEvent(const CTempString& event_header)
 void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name,
         const string& attr_value)
 {
-    g_DetectTypeAndSet(m_CurrentEvent, attr_name, attr_value);
+    m_CurrentEvent.SetByKey(attr_name, CJsonNode::GuessType(attr_value));
 }
 
 void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
@@ -722,7 +660,7 @@ void CJobInfoToJSON::ProcessInputOutput(const string& data,
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
         const CTempString& field_value)
 {
-    g_DetectTypeAndSet(m_JobInfo, field_name, field_value);
+    m_JobInfo.SetByKey(field_name, CJsonNode::GuessType(field_value));
 }
 
 void CJobInfoToJSON::ProcessRawLine(const string& line)

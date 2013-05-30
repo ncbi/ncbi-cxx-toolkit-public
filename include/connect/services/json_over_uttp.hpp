@@ -94,6 +94,11 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// Create a new JSON null node.
     static CJsonNode NewNullNode();
 
+    /// Guess the type of a JSON scalar from the string
+    /// representation of its value and initialize a new
+    /// node with this value.
+    static CJsonNode GuessType(const CTempString& value);
+
     /// JSON node type.
     enum ENodeType {
         eObject,
@@ -157,17 +162,20 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// For an array node, add a new element at the end of the array.
     void Append(CJsonNode::TInstance value);
 
+    /// For an array node, insert a new element at the specified position.
+    void InsertAt(size_t index, CJsonNode::TInstance value);
+
     /// For an array node, set a new value for an existing element.
     /// Throw an exception if the index is out of range.
-    void SetAtIndex(size_t index, CJsonNode::TInstance value);
+    void SetAt(size_t index, CJsonNode::TInstance value);
 
     /// Delete an element located at the specified index from a JSON array.
     /// Throw an exception if the index is out of range.
-    void DeleteAtIndex(size_t index);
+    void DeleteAt(size_t index);
 
     /// Return a JSON array element at the specified index.
     /// Throw an exception if the index is out of range.
-    CJsonNode GetAtIndex(size_t index) const;
+    CJsonNode GetAt(size_t index) const;
 
     /// Set a JSON object element to the specified string value.
     void SetString(const string& key, const string& value);
@@ -199,6 +207,11 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// the specified key. Throw an exception if there is no
     /// such key in this object.
     CJsonNode GetByKey(const string& key) const;
+
+    /// For a JSON object node, return the value associated with
+    /// the specified key. Return NULL if there is no such key
+    /// in this object.
+    CJsonNode GetByKeyOrNull(const string& key) const;
 
     /// For a JSON object node, return the string referred to
     /// by the specified key. Throw an exception if the key
@@ -316,6 +329,17 @@ inline bool CJsonNode::IsBoolean() const
 inline bool CJsonNode::IsNull() const
 {
     return GetNodeType() == eNull;
+}
+
+inline CJsonNode CJsonNode::GetByKey(const string& key) const
+{
+    CJsonNode node(GetByKeyOrNull(key));
+
+    if (node)
+        return node;
+
+    NCBI_THROW_FMT(CJsonException, eKeyNotFound,
+            "GetByKey(): no such key \"" << key << '\"');
 }
 
 inline string CJsonNode::GetString(const string& key) const

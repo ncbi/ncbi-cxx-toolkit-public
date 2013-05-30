@@ -63,12 +63,12 @@ CNetFileID::CNetFileID(TNetStorageFlags flags, Uint8 random_number) :
 }
 
 CNetFileID::CNetFileID(TNetStorageFlags flags,
-            const string& domain_name,
+            const string& app_domain,
             const string& unique_key) :
     m_StorageFlags(flags),
     m_Fields(fNFID_KeyAndNamespace),
-    m_DomainName(domain_name),
-    m_Key(unique_key),
+    m_AppDomain(app_domain),
+    m_UserKey(unique_key),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_Dirty(true)
 {
@@ -149,9 +149,9 @@ CNetFileID::CNetFileID(const string& packed_id) :
     // 4. Load file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
         // 4.1. Load the unique file key.
-        ptr += s_LoadString(m_Key, ptr, binary_id_len);
+        ptr += s_LoadString(m_UserKey, ptr, binary_id_len);
         // 4.2. Load the domain name.
-        ptr += s_LoadString(m_DomainName, ptr, binary_id_len);
+        ptr += s_LoadString(m_AppDomain, ptr, binary_id_len);
 
         x_SetUniqueKeyFromUserDefinedKey();
     } else {
@@ -256,15 +256,15 @@ void CNetFileID::x_SetUniqueKeyFromRandom()
 
 void CNetFileID::x_SetUniqueKeyFromUserDefinedKey()
 {
-    m_UniqueKey = m_DomainName + '_';
-    m_UniqueKey.append(m_Key);
+    m_UniqueKey = m_AppDomain + '_';
+    m_UniqueKey.append(m_UserKey);
 }
 
 void CNetFileID::Pack()
 {
     size_t max_binary_id_len = MIN_BINARY_ID_LEN +
             (m_Fields & fNFID_KeyAndNamespace ?
-                    m_Key.length() + m_DomainName.length() :
+                    m_UserKey.length() + m_AppDomain.length() :
                     sizeof(Uint8) + sizeof(Uint8)); // Timestamp and random.
 
     if (m_Fields & fNFID_NetICache)
@@ -294,11 +294,11 @@ void CNetFileID::Pack()
     // 4. Save file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
         // 4.1. Save the unique file key.
-        memcpy(ptr, m_Key.c_str(), m_Key.length() + 1);
-        ptr += m_Key.length() + 1;
+        memcpy(ptr, m_UserKey.c_str(), m_UserKey.length() + 1);
+        ptr += m_UserKey.length() + 1;
         // 4.2. Save the domain name.
-        memcpy(ptr, m_DomainName.c_str(), m_DomainName.length() + 1);
-        ptr += m_DomainName.length() + 1;
+        memcpy(ptr, m_AppDomain.c_str(), m_AppDomain.length() + 1);
+        ptr += m_AppDomain.length() + 1;
     } else {
         // 4.1. Save file creation timestamp.
         ptr += g_PackInteger(ptr, 9, m_Timestamp);
@@ -348,6 +348,59 @@ void CNetFileID::Pack()
     delete[] binary_id;
 
     m_Dirty = false;
+}
+
+CJsonNode CNetFileID::ToJSON() const
+{
+    CJsonNode root(CJsonNode::NewObjectNode());
+
+    root.SetInteger("Version", 1);
+
+    CJsonNode storage_flags(CJsonNode::NewObjectNode());
+
+    storage_flags.SetBoolean("Fast",
+            (m_StorageFlags & fNST_Fast) != 0);
+    storage_flags.SetBoolean("Persistent",
+            (m_StorageFlags & fNST_Persistent) != 0);
+    storage_flags.SetBoolean("Movable",
+            (m_StorageFlags & fNST_Movable) != 0);
+    storage_flags.SetBoolean("Cacheable",
+            (m_StorageFlags & fNST_Cacheable) != 0);
+
+    root.SetByKey("StorageFlags", storage_flags);
+
+    if (m_Fields & fNFID_KeyAndNamespace) {
+        root.SetString("AppDomain", m_AppDomain);
+        root.SetString("UserKey", m_UserKey);
+    } else {
+        root.SetInteger("Timestamp", (Int8) m_Timestamp);
+        root.SetInteger("Random", (Int8) m_Random);
+    }
+
+    if (m_Fields & fNFID_NetICache) {
+        CJsonNode icache_params(CJsonNode::NewObjectNode());
+
+        icache_params.SetString("ServiceName", m_NCServiceName);
+        icache_params.SetString("CacheName", m_CacheName);
+        icache_params.SetString("ServerHost",
+                g_NetService_gethostnamebyaddr(m_NetCacheIP));
+        icache_params.SetInteger("ServerPort", m_NetCachePort);
+        icache_params.SetBoolean("AllowXSiteConn",
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+                m_Fields & fNFID_AllowXSiteConn ? true :
+#endif
+                false);
+
+        root.SetByKey("ICache", icache_params);
+    }
+
+    if (m_StorageFlags & fNST_Cacheable)
+        root.SetInteger("CacheChunkSize", (Int8) m_CacheChunkSize);
+
+    if (m_Fields & fNFID_TTL)
+        root.SetInteger("TTL", (Int8) m_TTL);
+
+    return root;
 }
 
 END_NCBI_SCOPE

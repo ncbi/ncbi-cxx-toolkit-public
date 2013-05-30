@@ -106,8 +106,8 @@ void SJsonNodeImpl::VerifyType(const char* operation,
 {
     if (m_NodeType != required_type) {
         NCBI_THROW_FMT(CJsonException, eInvalidNodeType,
-                "Cannot apply " << operation <<
-                " to " << GetTypeName() << " node: " <<
+                "Cannot call the " << operation <<
+                " method for " << GetTypeName() << " node; " <<
                 GetTypeName(required_type) << " node is required");
     }
 }
@@ -246,6 +246,65 @@ CJsonNode CJsonNode::NewBooleanNode(bool value)
 CJsonNode CJsonNode::NewNullNode()
 {
     return new SJsonFixedSizeNodeImpl();
+}
+
+CJsonNode CJsonNode::GuessType(const CTempString& value)
+{
+    const char* ch = value.begin();
+    const char* end = value.end();
+
+    switch (*ch) {
+    case '"':
+    case '\'':
+        return NewStringNode(NStr::ParseQuoted(value));
+
+    case '-':
+        if (++ch >= end || !isdigit(*ch))
+            return NewStringNode(value);
+
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+        do
+            if (++ch >= end)
+                return NewIntegerNode(NStr::StringToInt8(value));
+        while (isdigit(*ch));
+
+        switch (*ch) {
+        case '.':
+            if (++ch == end || !isdigit(*ch))
+                return NewStringNode(value);
+            for (;;) {
+                if (++ch == end)
+                    return NewDoubleNode(NStr::StringToDouble(value));
+
+                if (!isdigit(*ch)) {
+                    if (*ch == 'E' || *ch == 'e')
+                        break;
+
+                    return NewStringNode(value);
+                }
+            }
+            /* FALL THROUGH */
+
+        case 'E':
+        case 'e':
+            if (++ch < end && (*ch == '-' || *ch == '+' ?
+                    ++ch < end && isdigit(*ch) : isdigit(*ch)))
+                do
+                    if (++ch == end)
+                        return NewDoubleNode(NStr::StringToDouble(value));
+                while (isdigit(*ch));
+            /* FALL THROUGH */
+
+        default:
+            return NewStringNode(value);
+        }
+    }
+
+    return NStr::CompareNocase(value, "false") == 0 ? NewBooleanNode(false) :
+            NStr::CompareNocase(value, "true") == 0 ? NewBooleanNode(true) :
+            NStr::CompareNocase(value, "none") == 0 ? NewNullNode() :
+            NewStringNode(value);
 }
 
 CJsonNode::ENodeType CJsonNode::GetNodeType() const
@@ -397,29 +456,38 @@ void CJsonNode::Append(CJsonNode::TInstance value)
             m_Array.push_back(TJsonNodeRef(value));
 }
 
-void CJsonNode::SetAtIndex(size_t index, CJsonNode::TInstance value)
+void CJsonNode::InsertAt(size_t index, CJsonNode::TInstance value)
 {
-    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("SetAtIndex()"));
+    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("SetAt()"));
 
-    impl->VerifyIndexBounds("SetAtIndex()", index);
+    impl->VerifyIndexBounds("InsertAt()", index);
+
+    impl->m_Array.insert(impl->m_Array.begin() + index, TJsonNodeRef(value));
+}
+
+void CJsonNode::SetAt(size_t index, CJsonNode::TInstance value)
+{
+    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("SetAt()"));
+
+    impl->VerifyIndexBounds("SetAt()", index);
 
     impl->m_Array[index] = value;
 }
 
-void CJsonNode::DeleteAtIndex(size_t index)
+void CJsonNode::DeleteAt(size_t index)
 {
-    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("DeleteAtIndex()"));
+    SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("DeleteAt()"));
 
-    impl->VerifyIndexBounds("DeleteAtIndex()", index);
+    impl->VerifyIndexBounds("DeleteAt()", index);
 
     impl->m_Array.erase(impl->m_Array.begin() + index);
 }
 
-CJsonNode CJsonNode::GetAtIndex(size_t index) const
+CJsonNode CJsonNode::GetAt(size_t index) const
 {
-    const SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("GetAtIndex()"));
+    const SJsonArrayNodeImpl* impl(m_Impl->GetArrayNodeImpl("GetAt()"));
 
-    impl->VerifyIndexBounds("GetAtIndex()", index);
+    impl->VerifyIndexBounds("GetAt()", index);
 
     return const_cast<SJsonNodeImpl*>(impl->m_Array[index].GetPointerOrNull());
 }
@@ -466,16 +534,14 @@ bool CJsonNode::HasKey(const string& key) const
     return impl->m_Object.find(key) != impl->m_Object.end();
 }
 
-CJsonNode CJsonNode::GetByKey(const string& key) const
+CJsonNode CJsonNode::GetByKeyOrNull(const string& key) const
 {
     const SJsonObjectNodeImpl* impl(m_Impl->GetObjectNodeImpl("GetByKey()"));
 
     TJsonNodeMap::const_iterator it(impl->m_Object.find(key));
 
-    if (it == impl->m_Object.end()) {
-        NCBI_THROW_FMT(CJsonException, eKeyNotFound,
-                "GetByKey(): no such key \"" << key << '\"');
-    }
+    if (it == impl->m_Object.end())
+        return CJsonNode();
 
     return const_cast<SJsonNodeImpl*>(it->second.GetPointerOrNull());
 }

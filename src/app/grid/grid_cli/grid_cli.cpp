@@ -574,6 +574,13 @@ struct SCommandDefinition {
             eNetCache, eCache, eTTL, eMovable, eCacheable, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_NetFileInfo,
+        "netfileinfo", "Print information about a NetFile ID.",
+        "Some file IDs may require additional options "
+        "to hint at the current file location.",
+        {eID, eNetCache, eCache, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
         JOBINFO_COMMAND "|ji", "Print information about a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "
@@ -1364,6 +1371,14 @@ int CGridCommandLineInterfaceApp::Run()
         fprintf(stderr, GRID_APP_NAME " %s: %s\n",
                 cmd_def->name_variants, e.GetMsg().c_str());
         return 2;
+    }
+    catch (CNetServiceException& e) {
+        fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
+        return 3;
+    }
+    catch (CNetStorageException& e) {
+        fprintf(stderr, GRID_APP_NAME ": %s\n", e.GetMsg().c_str());
+        return 3;
     }
     catch (CException& e) {
         fprintf(stderr, "%s\n", e.what());

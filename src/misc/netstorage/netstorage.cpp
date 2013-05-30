@@ -90,12 +90,96 @@ SNetStorageAPIImpl::SNetStorageAPIImpl(
 {
 }
 
-enum ENetFileLocation {
-    eNFL_Unknown,
-    eNFL_NetCache,
-    eNFL_FileTrack,
-    eNFL_NotFound
+struct SNetFileInfoImpl : public CObject
+{
+    SNetFileInfoImpl(ENetFileLocation location, const CNetFileID& file_id,
+            Uint8 file_size, CJsonNode::TInstance storage_specific_info);
+
+    ENetFileLocation m_Location;
+    CJsonNode m_FileIDInfo;
+    Uint8 m_FileSize;
+    CJsonNode m_StorageSpecificInfo;
 };
+
+static const char* s_NCTimeFormat = "M/D/Y h:m:s.r";
+static const char* s_ISO8601TimeFormat = "Y-M-DTh:m:s.r";
+
+SNetFileInfoImpl::SNetFileInfoImpl(ENetFileLocation location,
+        const CNetFileID& file_id, Uint8 file_size,
+        CJsonNode::TInstance storage_specific_info) :
+    m_Location(location),
+    m_FileIDInfo(file_id.ToJSON()),
+    m_FileSize(file_size),
+    m_StorageSpecificInfo(storage_specific_info)
+{
+}
+
+ENetFileLocation CNetFileInfo::GetLocation() const
+{
+    return m_Impl->m_Location;
+}
+
+CJsonNode CNetFileInfo::GetFileIDInfo() const
+{
+    return m_Impl->m_FileIDInfo;
+}
+
+CTime CNetFileInfo::GetCreationTime() const
+{
+    // TODO return a valid creation time
+    return CTime();
+}
+
+Uint8 CNetFileInfo::GetSize()
+{
+    return m_Impl->m_FileSize;
+}
+
+CJsonNode CNetFileInfo::GetStorageSpecificInfo() const
+{
+    return m_Impl->m_StorageSpecificInfo;
+}
+
+CJsonNode CNetFileInfo::ToJSON()
+{
+    CJsonNode root(CJsonNode::NewObjectNode());
+
+    CJsonNode ctime;
+
+    switch (m_Impl->m_Location) {
+    case eNFL_Unknown:
+    case eNFL_NotFound:
+        root.SetString("Location", "NotFound");
+        break;
+    case eNFL_NetCache:
+        root.SetString("Location", "NetCache");
+        root.SetInteger("Size", (Int8) m_Impl->m_FileSize);
+        if (m_Impl->m_StorageSpecificInfo) {
+            ctime = m_Impl->m_StorageSpecificInfo.GetByKeyOrNull("Write time");
+            if (ctime)
+                ctime = CJsonNode::NewStringNode(CTime(ctime.AsString(),
+                        s_NCTimeFormat).AsString(s_ISO8601TimeFormat));
+        }
+        break;
+    case eNFL_FileTrack:
+        root.SetString("Location", "FileTrack");
+        root.SetInteger("Size", (Int8) m_Impl->m_FileSize);
+        if (m_Impl->m_StorageSpecificInfo)
+            // No time format conversion required for FileTrack.
+            ctime = m_Impl->m_StorageSpecificInfo.GetByKeyOrNull("ctime");
+    }
+
+    if (ctime)
+        root.SetByKey("CreationTime", ctime);
+
+    if (m_Impl->m_FileIDInfo)
+        root.SetByKey("FileIDInfo", m_Impl->m_FileIDInfo);
+
+    if (m_Impl->m_StorageSpecificInfo)
+        root.SetByKey("StorageSpecificInfo", m_Impl->m_StorageSpecificInfo);
+
+    return root;
+}
 
 enum ENetFileIOStatus {
     eNFS_Closed,
@@ -158,6 +242,7 @@ struct SNetFileAPIImpl : public SNetFileImpl
     virtual bool Eof();
     virtual void Write(const void* buffer, size_t buf_size);
     virtual Uint8 GetSize();
+    virtual CNetFileInfo GetInfo();
     virtual void Close();
 
     bool SetNetICacheClient();
@@ -171,10 +256,13 @@ struct SNetFileAPIImpl : public SNetFileImpl
     bool s_TryReadLocation(ENetFileLocation location, ERW_Result* rw_res,
             char* buf, size_t count, size_t* bytes_read);
 
-    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
 
-    virtual ERW_Result Write(const void* buf,
+    ERW_Result Write(const void* buf,
             size_t count, size_t* bytes_written = 0);
+
+    bool s_TryGetInfoFromLocation(ENetFileLocation location,
+            CNetFileInfo* file_info);
 
     virtual ~SNetFileAPIImpl();
 
@@ -353,7 +441,7 @@ bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
         catch (CNetStorageException& e) {
             m_FileTrackRequest.Reset();
 
-            if (e.GetErrCode() != CNetStorageException::eNotExist)
+            if (e.GetErrCode() != CNetStorageException::eNotExists)
                 throw;
         }
     }
@@ -365,10 +453,10 @@ ERW_Result SNetFileAPIImpl::Read(void* buf, size_t count, size_t* bytes_read)
 {
     switch (m_IOStatus) {
     case eNFS_Closed:
-        {
-            ERW_Result rw_res = eRW_Success;
-
-            if (m_CurrentLocation == eNFL_Unknown) {
+        switch (m_CurrentLocation) {
+        case eNFL_Unknown:
+            {
+                ERW_Result rw_res = eRW_Success;
                 const ENetFileLocation* location = GetPossibleFileLocations();
 
                 do
@@ -376,12 +464,22 @@ ERW_Result SNetFileAPIImpl::Read(void* buf, size_t count, size_t* bytes_read)
                             reinterpret_cast<char*>(buf), count, bytes_read))
                         return rw_res;
                 while (*++location != eNFL_NotFound);
-            } else if (s_TryReadLocation(m_CurrentLocation, &rw_res,
-                    reinterpret_cast<char*>(buf), count, bytes_read))
-                return rw_res;
+            }
+            m_CurrentLocation = eNFL_NotFound;
+
+        case eNFL_NotFound:
+            break;
+
+        default:
+            {
+                ERW_Result rw_res = eRW_Success;
+                if (s_TryReadLocation(m_CurrentLocation, &rw_res,
+                        reinterpret_cast<char*>(buf), count, bytes_read))
+                    return rw_res;
+            }
         }
 
-        NCBI_THROW_FMT(CNetStorageException, eNotExist,
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,
                 "Cannot open \"" << m_FileID.GetID() << "\" for reading.");
 
     case eNFS_ReadingFromNetCache:
@@ -467,6 +565,123 @@ Uint8 SNetFileAPIImpl::GetSize()
     return 0;
 }
 
+bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
+        CNetFileInfo* file_info)
+{
+    if (location == eNFL_NetCache) {
+        CNetServer ic_server;
+
+        if (m_FileID.GetFields() & fNFID_NetICache)
+            ic_server = m_NetICacheClient.GetService().GetServer(
+                    m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
+
+        try {
+            CNetServerMultilineCmdOutput output = m_NetICacheClient.GetBlobInfo(
+                    m_FileID.GetUniqueKey(), 0, kEmptyStr);
+
+            CJsonNode blob_info = CJsonNode::NewObjectNode();
+            string line;
+            string key, val;
+            Uint8 blob_size = 0;
+            bool got_blob_size = false;
+
+            while (output.ReadLine(line)) {
+                if (!NStr::SplitInTwo(line, ": ",
+                        key, val, NStr::fSplit_ByPattern))
+                    continue;
+
+                blob_info.SetByKey(key, CJsonNode::GuessType(val));
+
+                if (key == "Size") {
+                    blob_size = NStr::StringToUInt8(val,
+                            NStr::fConvErr_NoThrow);
+                    got_blob_size = blob_size != 0 || errno == 0;
+                }
+            }
+
+            if (!got_blob_size)
+                blob_size = m_NetICacheClient.GetSize(
+                        m_FileID.GetUniqueKey(), 0, kEmptyStr);
+
+            *file_info = new SNetFileInfoImpl(eNFL_NetCache,
+                    m_FileID, blob_size, blob_info);
+
+            m_CurrentLocation = eNFL_NetCache;
+            return true;
+        }
+        catch (CException&) {
+            return false;
+        }
+    } else { /* location == eNFL_FileTrack */
+        try {
+            CJsonNode file_info_node =
+                    m_NetStorage->m_FileTrackAPI.GetFileInfo(&m_FileID);
+
+            Uint8 file_size = 0;
+
+            CJsonNode size_node = file_info_node.GetByKeyOrNull("size");
+
+            if (size_node)
+                file_size = (Uint8) size_node.AsInteger();
+
+            *file_info = new SNetFileInfoImpl(eNFL_FileTrack,
+                    m_FileID, file_size, file_info_node);
+
+            m_CurrentLocation = eNFL_FileTrack;
+            return true;
+        }
+        catch (CException&) {
+            return false;
+        }
+        /*m_FileTrackRequest =
+                m_NetStorage->m_FileTrackAPI.StartDownload(&m_FileID);
+
+        try {
+            *rw_res = m_FileTrackRequest->Read(buf, count, bytes_read);
+            m_CurrentLocation = eNFL_FileTrack;
+            m_IOStatus = eNFS_ReadingFromFileTrack;
+            return true;
+        }
+        catch (CNetStorageException& e) {
+            m_FileTrackRequest.Reset();
+
+            if (e.GetErrCode() != CNetStorageException::eNotExists)
+                throw;
+        }*/
+    }
+
+    return false;
+}
+
+CNetFileInfo SNetFileAPIImpl::GetInfo()
+{
+    switch (m_CurrentLocation) {
+    case eNFL_Unknown:
+        {
+            CNetFileInfo file_info;
+            const ENetFileLocation* location = GetPossibleFileLocations();
+
+            do
+                if (s_TryGetInfoFromLocation(*location, &file_info))
+                    return file_info;
+            while (*++location != eNFL_NotFound);
+        }
+        m_CurrentLocation = eNFL_NotFound;
+
+    case eNFL_NotFound:
+        break;
+
+    default:
+        {
+            CNetFileInfo file_info;
+            if (s_TryGetInfoFromLocation(m_CurrentLocation, &file_info))
+                return file_info;
+        }
+    }
+
+    return new SNetFileInfoImpl(eNFL_NotFound, m_FileID, 0, NULL);
+}
+
 void SNetFileAPIImpl::Close()
 {
     switch (m_IOStatus) {
@@ -526,7 +741,7 @@ void SNetFileAPIImpl::Write(const void* buffer, size_t buf_size)
 
 CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 {
-    Uint8 random_number;
+    Uint8 random_number = 0;
 
 #ifndef NCBI_OS_MSWIN
     int urandom_fd = open("/dev/urandom", O_RDONLY);
@@ -535,9 +750,9 @@ CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
                 strerror(errno));
     }
 
-    char* read_buffer = reinterpret_cast<char*>(&random_number);
+    char* read_buffer = reinterpret_cast<char*>(&random_number) + 1;
     ssize_t bytes_read;
-    ssize_t bytes_remain = sizeof(random_number);
+    ssize_t bytes_remain = sizeof(random_number) - 2;
     do {
         bytes_read = read(urandom_fd, read_buffer, bytes_remain);
         if (bytes_read < 0 && errno != EINTR) {
@@ -548,6 +763,8 @@ CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
     } while ((bytes_remain -= bytes_read) > 0);
 
     close(urandom_fd);
+
+    random_number >>= 8;
 #else
     random_number = m_FileTrackAPI.GetRandom();
 #endif // NCBI_OS_MSWIN

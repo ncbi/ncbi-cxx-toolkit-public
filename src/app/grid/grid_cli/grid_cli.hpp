@@ -404,6 +404,7 @@ public:
     int Cmd_Download();
     int Cmd_Relocate();
     int Cmd_MkFileID();
+    int Cmd_NetFileInfo();
 
 // NetSchedule commands.
 public:

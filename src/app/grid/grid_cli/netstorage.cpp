@@ -36,6 +36,7 @@
 #include <misc/netstorage/netstorage.hpp>
 
 #include "grid_cli.hpp"
+#include "util.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -179,6 +180,19 @@ int CGridCommandLineInterfaceApp::Cmd_MkFileID()
         file_id->SetTTL(m_Opts.ttl);
 
     PrintLine(file_id->GetID());
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_NetFileInfo()
+{
+    SetUp_NetStorageCmd();
+
+    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
+
+    CNetFile netfile(netstorage.Open(m_Opts.id, m_Opts.netstorage_flags));
+
+    g_PrintJSON(stdout, netfile.GetInfo().ToJSON());
 
     return 0;
 }
