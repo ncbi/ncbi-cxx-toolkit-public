@@ -767,8 +767,8 @@ CGencollIdMapper::x_ApplyPatternToId(CConstRef<CSeq_id> Id,
         //Post.assign(Spec.Pattern.data(), DelimPos+DELIM.length(),
         //            Spec.Pattern.length()-DelimPos-DELIM.length());
         if (!Pre.empty() || !Post.empty()) {
-            NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Pre, kEmptyStr
-            //NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Post, kEmptyStr
+            NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Pre, kEmptyStr);
+            //NStr::ReplaceInPlace(NewId->SetLocal().SetStr(), Post, kEmptyStr);
             Id = NewId;
         }
     }
