@@ -820,6 +820,17 @@ void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope
     seq_align.SetNamedScore("product_gap_length", pgap);
     seq_align.SetNamedScore("genomic_gap_length", ngap);
     seq_align.SetNamedScore("align_length", len);
+    //internal protein gap length for full alignment quality measure
+    int ipgap = 0; 
+    string::size_type ibeg, iend;
+    for(ibeg = 0; ibeg<prot.size() && ( (prot[ibeg] == '.') || (match[ibeg] == 'X') || (prot[ibeg] == '-' ) ); ++ibeg) {}
+    for(iend = prot.size() - 1; iend >=0 && ( (prot[iend] == '.') || (match[iend] == 'X') || (prot[iend] == '-' ) ); --iend) {}
+    for(string::size_type i=ibeg;i<=iend; ++i) {
+        if(prot[i] == '-') {
+            ++ipgap;
+        }
+    }
+    seq_align.SetNamedScore("product_internal_gap_length", ipgap);
 }
 
 void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list<CNPiece>& good_parts)
