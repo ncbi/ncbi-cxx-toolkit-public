@@ -175,6 +175,47 @@ public:
 
     //####################################################################
     /**
+     * Apply this stylesheet to the given XML document. The results document
+     * is returned. If there is an error during transformation, this
+     * function will throw an xml::exception exception.
+     *
+     * @note The xslt output method is taken into account when the result
+     * document is saved later into a string or a stream as in (e.g. to
+     * suppress XML declaration):
+     *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
+     * The formatting flags are taken into consideration only if the xslt
+     * output method is xml. (The xslt default output method is xml).
+     *
+     * @param doc The XML document to transform.
+     * @return The result tree.
+    **/
+    //####################################################################
+    xml::document_proxy apply (const xml::document &doc);
+
+    //####################################################################
+    /**
+     * Apply this stylesheet to the given XML document. The results document
+     * is returned. If there is an error during transformation, this
+     * function will throw an xml::exception exception.
+     *
+     * @note The xslt output method is taken into account when the result
+     * document is saved later into a string or a stream as in (e.g. to
+     * suppress XML declaration):
+     *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
+     * The formatting flags are taken into consideration only if the xslt
+     * output method is xml. (The xslt default output method is xml).
+     *
+     * @param doc The XML document to transform.
+     * @param with_params Override xsl:param elements using the given key/value map
+     * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
+     * @return The result tree.
+     **/
+    //####################################################################
+    xml::document_proxy apply (const xml::document &doc,
+                               const param_type &with_params);
+
+    //####################################################################
+    /**
      * Apply this stylesheet to the given XML document. The result document
      * is placed in the second document parameter.
      *
@@ -188,7 +229,7 @@ public:
      * @param treat How to treat XSLT result
      * @return True if the transformation was successful and the results placed in result.
      * @return False if there was an error, result is not modified.
-     * @deprecated use apply(const xml::document&, result_treat_type)
+     * @deprecated use apply(const xml::document&)
      * @author Peter Jones
     **/
     //####################################################################
@@ -213,7 +254,7 @@ public:
      * @param treat How to treat XSLT result
      * @return True if the transformation was successful and the results placed in result.
      * @return False if there was an error, result is not modified.
-     * @deprecated use apply(const xml::document&, const param_type&, result_treat_type)
+     * @deprecated use apply(const xml::document&, const param_type&)
      * @author Peter Jones
     **/
     //####################################################################
@@ -236,11 +277,13 @@ public:
      * @param doc The XML document to transform.
      * @param treat How to treat XSLT result
      * @return The result tree.
+     * @deprecated use apply(const xml::document&)
      * @author Denis Vakatov
     **/
     //####################################################################
+    NCBI_DEPRECATED
     xml::document_proxy apply (const xml::document &doc,
-                               result_treat_type  treat=type_no_treat);
+                               result_treat_type  treat);
 
     //####################################################################
     /**
@@ -258,12 +301,14 @@ public:
      * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
      * @param treat How to treat XSLT result
      * @return The result tree.
+     * @deprecated use apply(const xml::document&, const param_type&)
      * @author Denis Vakatov
      **/
     //####################################################################
+    NCBI_DEPRECATED
     xml::document_proxy apply (const xml::document &doc,
                                const param_type &with_params,
-                               result_treat_type  treat=type_no_treat);
+                               result_treat_type  treat);
 
     //####################################################################
     /**

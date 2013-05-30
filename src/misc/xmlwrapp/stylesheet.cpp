@@ -67,6 +67,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <string.h>
 
 // temporary
 #include <misc/xmlwrapp/impl/_raw_xslt.hpp>
@@ -262,6 +263,13 @@ public:
     save_to_file(const char *filename, int /* compression_level */) const
     {
         return xsltSaveResultToFilename(filename, doc_, ss_, 0) >= 0;
+    }
+
+    bool is_xml_output_method(void) const
+    {
+        if (ss_->method == NULL)
+            return true;
+        return strcmp(reinterpret_cast<const char *>(ss_->method), "xml") == 0;
     }
 
 private:
@@ -677,6 +685,45 @@ xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
 
     xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
                                   treat);
+    return proxy;
+}
+
+
+xml::document_proxy xslt::stylesheet::apply (const xml::document &doc)
+{
+    xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
+    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
+
+    if ( !xmldoc )
+        throw xslt::exception(pimpl_->error_);
+
+    result_impl *   result_impl_ = new result_impl(xmldoc, pimpl_->ss_);
+
+    result_treat_type  treat = type_no_treat;
+    if (result_impl_->is_xml_output_method())
+        treat = type_treat_as_doc;
+
+    xml::document_proxy     proxy(result_impl_, treat);
+    return proxy;
+}
+
+
+xml::document_proxy xslt::stylesheet::apply (const xml::document &doc,
+                                             const param_type &with_params)
+{
+    xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
+    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
+
+    if ( !xmldoc )
+        throw xslt::exception(pimpl_->error_);
+
+    result_impl *   result_impl_ = new result_impl(xmldoc, pimpl_->ss_);
+
+    result_treat_type  treat = type_no_treat;
+    if (result_impl_->is_xml_output_method())
+        treat = type_treat_as_doc;
+
+    xml::document_proxy     proxy(result_impl_, treat);
     return proxy;
 }
 
