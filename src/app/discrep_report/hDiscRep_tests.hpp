@@ -397,9 +397,11 @@ namespace DiscRepNmSpc {
       static bool BeginsWithPunct(const string& pattern, const string& search);
       static bool BeginsOrEndsWithQuotes(const string& pattern, const string& search);
       static bool ContainsDoubleSpace(const string& pattern, const string& search);
+      static bool ContainsPseudo(const string& pattern, const list <string>& strs);
       static bool ContainsTwoSetsOfBracketsOrParentheses(const string& pattern, 
                                                                      const string& search);
       static bool ContainsWholeWord(const string& pattern, const string& search);
+      static bool ContainsWholeWord(const string& pattern, const list <string>& strs);
       static bool ContainsWholeWordCaseSensitive(const string& pattern, const string& search);
       static bool ContainsUnbalancedParentheses(const string& pattern, const string& search);
       static bool ContainsUnderscore(const string& pattern, const string& search);
@@ -724,6 +726,7 @@ namespace DiscRepNmSpc {
       string GetName_orgi() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
       string GetName_orgc() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
       string GetName_end() const {return string("END_COLON_IN_COUNTRY"); }
+      bool m_run_col, m_run_orgi, m_run_orgc, m_run_end;
 
       bool Has3Names(const vector <string> arr);
       void RunTests(const CBioSource& biosrc, const string& desc);
@@ -785,7 +788,8 @@ namespace DiscRepNmSpc {
         e_submitter_block
       };
 
-      bool m_has_cit;
+      bool m_has_cit, m_run_dup, m_run_cap, m_run_usa, m_run_tlt, m_run_aff, m_run_unp;
+      bool m_run_noaff, m_run_cons, m_run_missing;
       string GetName_dup() const {return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
       string GetName_cap() const {return string("DISC_CHECK_AUTH_CAPS"); }
       string GetName_usa() const {return string("DISC_USA_STATE"); }
@@ -920,15 +924,12 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
    protected:
-      list <string> m_bioseqs;
+      set <string> m_aa_bioseqs;
 
       string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
       string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
-      string GetName_notlt() const {return string("DISC_MISSING_DEFLINES"); }
+      string GetName_no_tlt() const {return string("DISC_MISSING_DEFLINES"); }
       string GetName_seqch() const {return string("DISC_TITLE_ENDS_WITH_SEQUENCE"); }
-
-      void AddBioseqsOfSet(const CBioseq_set& set);
-      void RmvBioseqsOfSet(const CBioseq_set& set);
   };
 
   class CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE : public CSeqEntry_test_on_defline
@@ -946,7 +947,7 @@ namespace DiscRepNmSpc {
       virtual ~CSeqEntry_DISC_MISSING_DEFLINES () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_notlt();}
+      virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_no_tlt();}
   };
 
   
@@ -985,6 +986,8 @@ namespace DiscRepNmSpc {
       string GetName_cul() const {return string("DISC_CULTURE_TAXNAME_MISMATCH"); }
       string GetName_biom() const {return string("DISC_BIOMATERIAL_TAXNAME_MISMATCH"); }
 
+      bool m_run_vou, m_run_str, m_run_cul, m_run_biom;
+ 
       bool s_StringHasVoucherSN(const string& vou_nm);
       void RunTests(const CBioSource& biosrc, const string& desc);
       void GetReport_cflts(CRef <CClickableItem>& c_item, const string& setting_name, 
@@ -1127,6 +1130,9 @@ namespace DiscRepNmSpc {
       string GetName_env() const {return string("TEST_UNNECESSARY_ENVIRONMENTAL");}
       string GetName_amp() const {
                            return string("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE");}
+
+      bool m_run_mism, m_run_cul, m_run_cbs, m_run_atcc, m_run_strain, m_run_sp, m_run_meta;
+      bool m_run_auth, m_run_mcul, m_run_human, m_run_env, m_run_amp;
 
       bool AmpPrimersNoEnvSample(const CBioSource& biosrc);
       bool HasUnnecessaryEnvironmental(const CBioSource& biosrc);
@@ -1379,6 +1385,10 @@ namespace DiscRepNmSpc {
 
     protected:
       vector <string> m_submit_text;
+      bool m_run_trin, m_run_iso, m_run_mult, m_run_tmiss, m_run_tbad, m_run_flu, m_run_quals;
+      bool m_run_iden, m_run_col, m_run_div, m_run_map, m_run_clone, m_run_meta, m_run_sp;
+      bool m_run_prim, m_run_cty, m_run_pcr;
+
       string GetName_trin() const {
                       return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
       string GetName_iso() const {
@@ -1934,7 +1944,7 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
-  class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData
+  class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData  // how to deal enable/disable?
   {
     public:
       virtual ~CBioseq_on_SUSPECT_RULE () {};
@@ -2503,8 +2513,6 @@ namespace DiscRepNmSpc {
       string GetName_pnm() const {return string("DISC_PROTEIN_NAMES"); }
 
       bool EndsWithPattern(const string& pattern, const list <string>& strs);
-      bool ContainsPseudo(const string& pattern, const list <string>& strs);
-      bool ContainsWholeWord(const string& pattern, const list <string>& strs);
   };
 
   class CBioseq_DISC_PROTEIN_NAMES : public CBioseq_test_on_protfeat
@@ -2704,7 +2712,7 @@ namespace DiscRepNmSpc {
       string GetName_tcnt() const {return string("COUNT_TRNAS"); }
       string GetName_rcnt() const {return string("COUNT_RRNAS"); }
       string GetName_rdup() const {return string("FIND_DUP_RRNAS"); }
-      string GetName_tdup() const {return string("FIND_DUP_TRNAS"); }
+      string GetName_tdup() const {return string("FIND_DUP_TRNAS"); }  // launches COUNT_TRNAS
       string GetName_len() const {return string("FIND_BADLEN_TRNAS"); }
       string GetName_strand() const {return string("FIND_STRAND_TRNAS"); }
 

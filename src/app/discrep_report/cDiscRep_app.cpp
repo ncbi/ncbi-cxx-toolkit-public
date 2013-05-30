@@ -110,7 +110,6 @@ list <string>                          CDiscRepInfo :: state_abbrev;
 Str2Str                                CDiscRepInfo :: cds_prod_find;
 vector <string>                        CDiscRepInfo :: s_pseudoweasels;
 vector <string>                        CDiscRepInfo :: suspect_rna_product_names;
-string                                 CDiscRepInfo :: kNonExtendableException;
 vector <string>                        CDiscRepInfo :: new_exceptions;
 Str2Str	                               CDiscRepInfo :: srcqual_keywords;
 vector <string>                        CDiscRepInfo :: kIntergenicSpacerNames;
@@ -245,9 +244,6 @@ void CDiscRepApp::Init(void)
     strtmp = reg.Get("StringVecIni", "SuspectRnaProdNms");
     thisInfo.suspect_rna_product_names 
         = NStr::Tokenize(strtmp, ",", thisInfo.suspect_rna_product_names);
-
-    // ini. of kNonExtendableException
-    thisInfo.kNonExtendableException = reg.Get("SingleDataIni", "KNonExtExc");
 
     // ini. of new_exceptions
     strtmp = reg.Get("StringVecIni", "NewExceptions");
@@ -1014,10 +1010,12 @@ int CDiscRepApp :: Run(void)
     // enabled and disabled tests
     strtmp = args["e"].AsString();
     if (!strtmp.empty()) 
-          thisInfo.tests_enabled = NStr::Tokenize(strtmp, ",", thisInfo.tests_enabled);
+          thisInfo.tests_enabled 
+              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_enabled, NStr::eMergeDelims);
     strtmp = args["d"].AsString();
     if (!strtmp.empty())
-         thisInfo.tests_disabled = NStr::Tokenize(strtmp, ",", thisInfo.tests_disabled);
+         thisInfo.tests_disabled 
+              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
 
     CRepConfig* rep_config = CRepConfig::factory(thisInfo.report);
     rep_config->Init(thisInfo.report);

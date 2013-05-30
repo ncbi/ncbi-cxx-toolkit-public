@@ -186,6 +186,28 @@ bool CTestAndRepData :: ContainsDoubleSpace(const string& pattern, const string&
   else return false;
 }
 
+bool CTestAndRepData :: ContainsPseudo(const string& pattern, const list <string>& strs)
+{
+  bool right_pseudo;
+  size_t pos;
+  ITERATE (list <string>, it, strs) {
+    strtmp = *it;
+    while ( !strtmp.empty() && (pos = strtmp.find("pseudo")) != string::npos) {
+        right_pseudo = true;
+        ITERATE (vector <string>, jt, thisInfo.s_pseudoweasels) {
+           if ( strtmp.substr(pos, (*jt).size()) == *jt) {
+               right_pseudo = false;
+               strtmp = strtmp.substr(pos + (*jt).size());
+               break;
+           }
+        }
+        if (right_pseudo) return true;
+    }
+  };
+  return false;
+};
+
+
 bool CTestAndRepData :: ContainsTwoSetsOfBracketsOrParentheses(const string& pattern, const string& search)
 { 
    return rule_check.ContainsNorMoreSetsOfBracketsOrParentheses (search, 2);
@@ -196,6 +218,12 @@ bool CTestAndRepData :: ContainsWholeWord(const string& pattern, const string& s
   if (DoesStringContainPhrase(search, pattern, false, true)) return true;
   else return false;
 }
+
+bool CTestAndRepData :: ContainsWholeWord(const string& pattern, const list <string>& strs)
+{
+   ITERATE (list <string>, it, strs) if (ContainsWholeWord(pattern, *it)) return true;
+   return false;
+};
 
 bool CTestAndRepData :: ContainsWholeWordCaseSensitive(const string& pattern, const string& search)
 { 
@@ -241,10 +269,21 @@ bool CTestAndRepData :: EndsWithPattern(const string& pattern, const string& sea
   unsigned phrase_len = pattern.size();
   unsigned len = search.size();
 
-  if (len >= phrase_len && NStr::EqualNocase(search.substr(len - phrase_len-1), pattern))
+  if (len >= phrase_len && NStr::EqualNocase(search.substr(len - phrase_len), pattern))
       return true;
   else return false;
 }
+
+/*
+bool CTestAndRepData :: EndsWithPattern(const string& pattern, const list <string>& strs)
+{
+  ITERATE (list <string>, it, strs) {
+     if (EndsWithPattern(pattern, *it)) return true; 
+  }
+  return false;
+};
+*/
+
 
 bool CTestAndRepData :: EndsWithPunct(const string& pattern, const string& search)
 {

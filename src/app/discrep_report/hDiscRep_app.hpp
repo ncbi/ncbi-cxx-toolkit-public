@@ -211,7 +211,6 @@ namespace DiscRepNmSpc{
            static Str2Str                            cds_prod_find;
            static vector <string>                    s_pseudoweasels;
            static vector <string>                    suspect_rna_product_names;
-           static string                             kNonExtendableException;
            static vector <string>                    new_exceptions;
            static Str2Str		             srcqual_keywords;
            static vector <string>                    kIntergenicSpacerNames;
