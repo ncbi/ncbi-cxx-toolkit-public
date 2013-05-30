@@ -86,7 +86,12 @@ public:
         {
         }
 
-        string ToString() const
+        operator string() const
+        {
+            return ToString();
+        }
+
+        string ToString(void) const
         {
             string Result;
             Result.reserve(64);
