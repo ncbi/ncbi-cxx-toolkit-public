@@ -638,7 +638,7 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
 }
 
 void
-CGencollIdMapper::x_FillChromosomeIds()
+CGencollIdMapper::x_FillChromosomeIds(void)
 {
     // For animals like Cow, whom's private ID is 'Chr1', create an extra
     // private ID that is identical to the chromosome name.
@@ -672,7 +672,7 @@ CGencollIdMapper::x_FillChromosomeIds()
 }
 
 void
-CGencollIdMapper::x_PrioritizeIds()
+CGencollIdMapper::x_PrioritizeIds(void)
 {
     CTypeIterator<CGC_Sequence> SeqIter(*m_Assembly);
     while (SeqIter) {
