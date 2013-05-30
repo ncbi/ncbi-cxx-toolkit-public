@@ -123,7 +123,7 @@ echo
 
 dd if=$test_base.tar bs=123 2>/dev/null | $test_tar -T -f -                              ||  exit 1
 
-sleep 1
+sleep 2
 mkdir             $test_base.1/newdir 2>/dev/null
 chmod g+s,o+t,o-x $test_base.1/newdir 2>/dev/null
 date 2>/dev/null | tee -a $test_base.1/testdir/datefile $test_base.1/newdir/datefile >$test_base.1/datefile 2>/dev/null
@@ -138,7 +138,7 @@ $test_tar -C $test_base.1 -u -v -f $test_base.tar ./datefile ./newdir           
 mv -f $test_base.1/datefile $test_base.1/phonyfile 2>/dev/null
 mkdir $test_base.1/datefile 2>/dev/null
 
-sleep 1
+sleep 2
 date >>$test_base.1/newdir/datefile 2>/dev/null
 
 echo
