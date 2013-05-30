@@ -678,9 +678,9 @@ CGencollIdMapper::x_PrioritizeIds(void)
     while (SeqIter) {
         x_PrioritizeIds(*SeqIter);
         NON_CONST_ITERATE (CGC_Sequence::TSequences,
-                          ChildIter,
-                          SeqIter->SetSequences()
-                         ) {
+                           ChildIter,
+                           SeqIter->SetSequences()
+                          ) {
             CGC_TaggedSequences& Tagged = **ChildIter;
             CTypeIterator<CGC_Sequence> SeqIter(Tagged);
             while (SeqIter) {
@@ -703,14 +703,15 @@ CGencollIdMapper::x_PrioritizeIds(CGC_Sequence& Sequence)
     for (IdIter  = Sequence.SetSeq_id_synonyms().begin();
         IdIter != Sequence.SetSeq_id_synonyms().end(); ) {
 
-        if ( (*IdIter)->IsExternal() &&
+        if ((*IdIter)->IsExternal() &&
             (*IdIter)->GetExternal().IsSetExternal() &&
-            (*IdIter)->GetExternal().GetExternal() == "UCSC" ) {
-
+            NStr::Equal((*IdIter)->GetExternal().GetExternal(), "UCSC")
+           ) {
             CRef<CGC_TypedSeqId> CopyId = *IdIter;
             IdIter = Sequence.SetSeq_id_synonyms().erase(IdIter);
             Sequence.SetSeq_id_synonyms().push_front(CopyId);
-        } else {
+        }
+        else {
             ++IdIter;
         }
     }
