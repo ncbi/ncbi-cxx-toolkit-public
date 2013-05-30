@@ -76,7 +76,7 @@ struct SJsonObjectElement {
 
 struct SObjectElementLessOrder {
     bool operator ()(const SJsonObjectElement* left_hand,
-            const SJsonObjectElement* right_hand)
+            const SJsonObjectElement* right_hand) const
     {
         return left_hand->m_Order < right_hand->m_Order;
     }
