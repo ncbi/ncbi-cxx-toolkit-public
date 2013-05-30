@@ -218,7 +218,8 @@ private:
 
     CRef<objects::CScope> m_Scope;
 
-    typedef map<objects::CSeq_id_Handle, CConstRef<objects::CGC_Sequence> > TIdToSeqMap;
+    typedef CConstRef<objects::CGC_Sequence> TGC_SequenceCRef;
+    typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TIdToSeqMap;
     TIdToSeqMap m_IdToSeqMap;
 
     typedef map<string, int> TAccToVerMap;
@@ -227,64 +228,88 @@ private:
     vector<string> m_Chromosomes;
 
     // All component IDs to the Parent CGC_Sequence
-    typedef map<objects::CSeq_id_Handle, CConstRef<objects::CGC_Sequence> > TChildToParentMap;
+    typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TChildToParentMap;
     TChildToParentMap m_ChildToParentMap;
 
     void x_Init();
 
     bool x_NCBI34_Guess(const objects::CSeq_id& Id, SIdSpec& Spec) const;
-    CConstRef<objects::CSeq_id> x_NCBI34_Map_IdFix(CConstRef<objects::CSeq_id> SourceId) const;
+    CConstRef<objects::CSeq_id>
+    x_NCBI34_Map_IdFix(CConstRef<objects::CSeq_id> SourceId) const;
 
     void x_RecursiveSeqFix(objects::CGC_Sequence& Seq);
     void x_FillGpipeTopRole(objects::CGC_Sequence& Seq);
-    void x_FillChromosomeIds();
-    void x_PrioritizeIds();
+    void x_FillChromosomeIds(void);
+    void x_PrioritizeIds(void);
     void x_PrioritizeIds(objects::CGC_Sequence& Sequence);
 
 
     // Fixes locals that should be accessions, and versionless accessions
     CConstRef<objects::CSeq_id> x_FixImperfectId(CConstRef<objects::CSeq_id> Id,
-                                                 const SIdSpec& Spec) const;
+                                                 const SIdSpec& Spec
+                                                ) const;
     CConstRef<objects::CSeq_id> x_ApplyPatternToId(CConstRef<objects::CSeq_id> Id,
-                                                 const SIdSpec& Spec) const;
+                                                   const SIdSpec& Spec
+                                                  ) const;
     
     int x_GetRole(const objects::CGC_Sequence& Seq) const;
     bool x_HasTop(const objects::CGC_Sequence& Seq, int Top) const;
 
-    void x_AddSeqToMap(const objects::CSeq_id& Id, CConstRef<objects::CGC_Sequence> Seq);
+    void x_AddSeqToMap(const objects::CSeq_id& Id,
+                       CConstRef<objects::CGC_Sequence> Seq
+                      );
 
     void x_BuildSeqMap(const objects::CGC_Assembly& assm);
     void x_BuildSeqMap(const objects::CGC_AssemblyUnit& assm);
     void x_BuildSeqMap(const objects::CGC_Sequence& Seq);
 
     CConstRef<objects::CSeq_id>
-    x_GetIdFromSeqAndSpec(const objects::CGC_Sequence& Seq, const SIdSpec& Spec) const;
+    x_GetIdFromSeqAndSpec(const objects::CGC_Sequence& Seq,
+                          const SIdSpec& Spec
+                         ) const;
 
     enum { e_No, e_Yes, e_Up, e_Down };
 
-    int x_CanSeqMeetSpec(const objects::CGC_Sequence& Seq, const SIdSpec& Spec, int Level=0) const;
+    int x_CanSeqMeetSpec(const objects::CGC_Sequence& Seq,
+                         const SIdSpec& Spec,
+                         int Level = 0
+                        ) const;
 
-    bool x_MakeSpecForSeq(const objects::CSeq_id& Id, const objects::CGC_Sequence& Seq, SIdSpec& Spec) const;
-
-    CConstRef<objects::CGC_Sequence> x_FindChromosomeSequence(const objects::CSeq_id& Id, const SIdSpec& Spec) const;
+    bool x_MakeSpecForSeq(const objects::CSeq_id& Id,
+                          const objects::CGC_Sequence& Seq,
+                          SIdSpec& Spec
+                         ) const;
 
     CConstRef<objects::CGC_Sequence>
-    x_FindParentSequence(const objects::CSeq_id& Id, const objects::CGC_Assembly& Assembly, int Depth = 0) const;
+    x_FindChromosomeSequence(const objects::CSeq_id& Id,
+                             const SIdSpec& Spec
+                            ) const;
 
-    bool x_IsParentSequence(const objects::CSeq_id& Id, const objects::CGC_Sequence& Parent) const;
+    CConstRef<objects::CGC_Sequence>
+    x_FindParentSequence(const objects::CSeq_id& Id,
+                         const objects::CGC_Assembly& Assembly,
+                         int Depth = 0
+                        ) const;
+
+    bool x_IsParentSequence(const objects::CSeq_id& Id,
+                            const objects::CGC_Sequence& Parent
+                           ) const;
 
 
     CRef<objects::CSeq_loc> x_Map_OneToOne(const objects::CSeq_loc& SourceLoc,
                                            const objects::CGC_Sequence& Seq,
-                                           const SIdSpec& Spec) const;
+                                           const SIdSpec& Spec
+                                          ) const;
 
     CRef<objects::CSeq_loc> x_Map_Up(const objects::CSeq_loc& SourceLoc,
                                      const objects::CGC_Sequence& Seq,
-                                     const SIdSpec& Spec) const;
+                                     const SIdSpec& Spec
+                                    ) const;
     
     CRef<objects::CSeq_loc> x_Map_Down(const objects::CSeq_loc& SourceLoc,
                                        const objects::CGC_Sequence& Seq,
-                                       const SIdSpec& Spec) const;
+                                       const SIdSpec& Spec
+                                      ) const;
 
 
     //bool x_IsLocInGap(const objects::CSeq_loc& Loc) const;
