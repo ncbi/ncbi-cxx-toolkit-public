@@ -30,9 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
-
-#include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -40,29 +37,25 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
 #include <objects/seqset/gb_release_file.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
-
-#include <serial/objistr.hpp>
 #include <objmgr/util/obj_sniff.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/format/ostream_text_ostream.hpp>
 #include <serial/iterator.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <algo/id_mapper/id_mapper.hpp>
-
+#include <serial/objistr.hpp>
 #include <objects/genomecoll/genome_collection__.hpp>
+#include <algo/id_mapper/id_mapper.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -412,9 +405,6 @@ CGencollIdMapper::x_Init(void)
     x_PrioritizeIds();
 
 //cout << MSerial_AsnText << *m_Assembly;
-
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    m_Scope.Reset(new CScope(*object_manager));
 
     x_BuildSeqMap(*m_Assembly);
 

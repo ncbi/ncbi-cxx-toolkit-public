@@ -33,18 +33,14 @@
  */
 
 
-#include <objmgr/scope.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objects/genomecoll/genome_collection__.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
-class CScope;
 class CSeq_loc;
 class CSeq_id;
-class CSeq_id_Handle;
 class CGC_Assembly;
 class CGC_AssemblyUnit;
 class CGC_Sequence;
@@ -67,12 +63,14 @@ public:
         E_Alias Alias;
         string External;
         string Pattern;
-        enum { e_Role_Gpipe_Top = objects::eGC_SequenceRole_top_level+1, // Fake role for Gpipe top
-               e_Role_NotSet = 10000  };
+        enum { e_Role_Gpipe_Top = objects::eGC_SequenceRole_top_level + 1, // Fake role for Gpipe top
+               e_Role_NotSet = 10000
+        };
         enum { e_Top_NotSet,  // Unknown, don't care
                e_Top_NotTop,  // Specifically not any top
                e_Top_Public,  // Public ID top
-               e_Top_Gpipe }; // Gpipe top
+               e_Top_Gpipe    // Gpipe top
+        };
         int Role;
         int Top;
 
@@ -215,8 +213,6 @@ private:
 
     CRef<objects::CGC_Assembly> m_Assembly;
     string m_SourceAsm;
-
-    CRef<objects::CScope> m_Scope;
 
     typedef CConstRef<objects::CGC_Sequence> TGC_SequenceCRef;
     typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TIdToSeqMap;
