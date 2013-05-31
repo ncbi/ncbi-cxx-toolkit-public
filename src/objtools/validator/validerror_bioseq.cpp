@@ -3140,7 +3140,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             any_tech_ok = true;
         }
     }
-    if (!any_tech_ok 
+    if (!any_tech_ok && seq.IsNa()
         && tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1 
         && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3 
         && tech != CMolInfo::eTech_wgs && tech != CMolInfo::eTech_composite_wgs_htgs 
