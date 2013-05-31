@@ -336,7 +336,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
 bool
 CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
 {
-    // FIXME: If it returns null, deeply examine the Loc
+#warning FIXME: If it returns null, deeply examine the Loc
     if (Loc.GetId() == NULL) {
         return false;
     }
