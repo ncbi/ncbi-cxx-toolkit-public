@@ -1275,9 +1275,9 @@ CGencollIdMapper::x_FindParentSequence(const objects::CSeq_id& Id,
         const CGC_AssemblySet& AssemblySet = Assembly.GetAssembly_set();
         if (AssemblySet.CanGetPrimary_assembly()) {
             Result = x_FindParentSequence(Id, AssemblySet.GetPrimary_assembly(), Depth + 1);
-        }
-        if (Result.NotNull()) {
-            return Result;
+            if (Result.NotNull()) {
+                return Result;
+            }
         }
         if (AssemblySet.CanGetMore_assemblies()) {
             ITERATE (CGC_AssemblySet::TMore_assemblies, AssemIter, AssemblySet.GetMore_assemblies()) {
@@ -1296,14 +1296,12 @@ CGencollIdMapper::x_FindParentSequence(const objects::CSeq_id& Id,
                     const CGC_Sequence& Parent = (*MolIter)->GetSequence().GetSingle();
 
                     if (x_IsParentSequence(Id, Parent)) {
-                        Result.Reset(&Parent);
-                        return Result;
+                        return ConstRef(&Parent);
                     } // end IsParent if
                 } // end Seq Single
             } // end Mols Loop
         } // end Mols
     } // end AsmUnit
-
     return Result;
 }
 
