@@ -62,10 +62,9 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping)
 
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
-    CSeq_loc OrigLoc;
-    OrigLoc.SetWhole().SetLocal().SetStr("chr1");
-
-    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetWhole().SetLocal().SetStr("chr1");
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
     
     // Check that Map results meet expectations
     BOOST_CHECK_EQUAL(Result->GetId()->GetSeqIdString(true), "NC_000001.10");
@@ -86,23 +85,23 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqToUcscMapping)
 
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
-    CSeq_loc OrigLoc;
-    OrigLoc.SetWhole().SetLocal().SetStr("chr1");
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetWhole().SetLocal().SetStr("chr1");
 
-    CRef<CSeq_loc> Mapped = Mapper.Map(OrigLoc, MapSpec);
+    CRef<CSeq_loc> Mapped = Mapper.Map(*OrigLoc, MapSpec);
     
     // Check that Map results meet expectations
     BOOST_CHECK_EQUAL(Mapped->GetId()->GetSeqIdString(true), "NC_000001.10");
 
     // Guess the original ID's spec
     CGencollIdMapper::SIdSpec GuessSpec;
-    Mapper.Guess(OrigLoc, GuessSpec);
+    Mapper.Guess(*OrigLoc, GuessSpec);
 
     // Map back with the guessed spec
     CRef<CSeq_loc> RoundTripped = Mapper.Map(*Mapped, GuessSpec);
 
     // Check that Round tripped is equal to original
-    BOOST_CHECK(RoundTripped->Equals(OrigLoc));
+    BOOST_CHECK(RoundTripped->Equals(*OrigLoc));
 }
 
 
@@ -120,10 +119,10 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest)
 
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
-    CSeq_loc OrigLoc;
-    OrigLoc.SetWhole().SetLocal().SetStr("chrUn.004.10843");
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetWhole().SetLocal().SetStr("chrUn.004.10843");
 
-    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
     
     // Check that Map results meet expectations
     BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986);
@@ -145,12 +144,12 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest)
 
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
-    CSeq_loc OrigLoc;
-    OrigLoc.SetInt().SetId().SetLocal().SetStr("chr1_random");
-    OrigLoc.SetInt().SetFrom(500000);
-    OrigLoc.SetInt().SetTo(510000);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetInt().SetId().SetLocal().SetStr("chr1_random");
+    OrigLoc->SetInt().SetFrom(500000);
+    OrigLoc->SetInt().SetTo(510000);
 
-    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
     
     CSeq_loc Expected;
     Expected.SetInt().SetId().Set("NT_113872.1");
