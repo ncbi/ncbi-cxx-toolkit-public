@@ -1630,7 +1630,7 @@ CGencollIdMapper::x_IsLoc_Int_InAGap(const CSeq_interval& Int) const
 }
 
 CGencollIdMapper::E_Gap
-CGencollIdMapper::x_Merge_E_Gaps(E_Gap First, E_Gap Second) const
+CGencollIdMapper::x_Merge_E_Gaps(const E_Gap First, const E_Gap Second) const
 {
     if (First == e_None) {
         return Second;
