@@ -141,12 +141,10 @@ CGencollIdMapper::Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const
     return x_MakeSpecForSeq(*Id, Seq, Spec);
 }
 
-
-CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
+CRef<CSeq_loc>
+CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
 {
     CRef<CSeq_loc_Mapper> Mapper;
-    CRef<CSeq_loc> Result;
-
     if (m_Assembly.IsNull()) {
         return CRef<CSeq_loc>();
     }
@@ -154,7 +152,7 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
     // Recurse down Mixes
     if (Loc.GetId() == NULL) {
         if (Loc.IsMix()) {
-            Result.Reset(new CSeq_loc());
+            CRef<CSeq_loc> Result(new CSeq_loc());
             CTypeConstIterator<CSeq_loc> LocIter(Loc);
             for ( ; LocIter; ++LocIter) {
                 if (LocIter->Equals(Loc)) {
@@ -175,10 +173,8 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
             MixLoc.ChangeToMix();
             return Map(MixLoc, Spec);
         }
-
         return CRef<CSeq_loc>();
     }
-
 
     CConstRef<CSeq_id> Id(Loc.GetId());
     Id = x_FixImperfectId(Id, Spec);
@@ -188,20 +184,20 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
     SIdSpec GuessSpec;
     Guess(Loc, GuessSpec);
     if (GuessSpec == Spec) {
-        Result.Reset(new CSeq_loc());
+        CRef<CSeq_loc> Result(new CSeq_loc());
         Result->Assign(Loc);
         return Result;
     }
 
     CConstRef<CGC_Sequence> Seq;
     {{
-        CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
+        const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
         TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
         if (Found != m_IdToSeqMap.end()) {
             Seq = Found->second;
             if (Seq.NotNull()) {
                 if (x_CanSeqMeetSpec(*Seq, Spec) == e_Yes) {
-                    Result = x_Map_OneToOne(Loc, *Seq, Spec);
+                    CRef<CSeq_loc> Result = x_Map_OneToOne(Loc, *Seq, Spec);
                     if (Result.NotNull() && !Result->IsNull()) {
                         return Result;
                     }
@@ -211,13 +207,13 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
     }}
 
     {{
-        CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
+        const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
         TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
         if (Found != m_IdToSeqMap.end()) {
             Seq = Found->second;
             if (Seq.NotNull()) {
                 if (x_CanSeqMeetSpec(*Seq, Spec) == e_Down) {
-                    Result = x_Map_Down(Loc, *Seq, Spec);
+                    CRef<CSeq_loc> Result = x_Map_Down(Loc, *Seq, Spec);
                     if (Result.NotNull() && !Result->IsNull()) {
                         return Result;
                     }
@@ -227,7 +223,7 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
     }}
 
     {{
-        CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
+        const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
         TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
         if (Found != m_IdToSeqMap.end()) {
             /*Seq = Found->second;
@@ -251,7 +247,7 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
                 }
                 GuessSpec.Alias = SIdSpec::e_Gi;
                 CRef<CSeq_loc> GiLoc = Map(Loc, GuessSpec);
-                Result = x_Map_Up(GiLoc ? *GiLoc : Loc, *Seq, Spec);
+                CRef<CSeq_loc> Result = x_Map_Up(GiLoc ? *GiLoc : Loc, *Seq, Spec);
                 if (Result.NotNull() && !Result->IsNull()) {
                     return Result;
                 }
@@ -262,10 +258,10 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
     {{
         Seq = x_FindChromosomeSequence(*Id, Spec);
         if (Seq.NotNull()) {
-            Result = x_Map_OneToOne(Loc, *Seq, Spec);
-        }
-        if (Result.NotNull() && !Result->IsNull()) {
-            return Result;
+            CRef<CSeq_loc> Result = x_Map_OneToOne(Loc, *Seq, Spec);
+            if (Result.NotNull() && !Result->IsNull()) {
+                return Result;
+            }
         }
     }}
 
@@ -340,40 +336,29 @@ CRef<CSeq_loc> CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec
         MARKLINE;
         }
     }}
+    return CRef<CSeq_loc>();
     */
-
-    if (Seq.IsNull()) {
-        return CRef<CSeq_loc>();
-    }
-
-    return Result;
 }
 
-
-bool CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
+bool
+CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
 {
-    bool Result = false;
-
     // FIXME: If it returns null, deeply examine the Loc
     if (Loc.GetId() == NULL) {
-        return CRef<CSeq_loc>();
+        return false;
     }
 
     CConstRef<CSeq_id> Id(Loc.GetId());
-
     Id = x_FixImperfectId(Id, Spec);
     Id = x_ApplyPatternToId(Id, Spec);
-
     Id = x_NCBI34_Map_IdFix(Id);
 
-    CConstRef<CGC_Sequence> Seq;
-
     {{
-        CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
+        const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
         TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
         if (Found != m_IdToSeqMap.end()) {
-            Seq = Found->second;
-            Result = x_CanSeqMeetSpec(*Seq, Spec);
+            CConstRef<CGC_Sequence> Seq = Found->second;
+            const bool Result = x_CanSeqMeetSpec(*Seq, Spec);
             if (Result != e_No) {
                 return true;
             }
@@ -382,9 +367,9 @@ bool CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& 
 
     {{
         // Look for Parent seq
-        Seq = x_FindParentSequence(*Id, *m_Assembly);
+        CConstRef<CGC_Sequence> Seq = x_FindParentSequence(*Id, *m_Assembly);
         if (Seq.NotNull()) {
-            Result = x_CanSeqMeetSpec(*Seq, Spec);
+            const bool Result = x_CanSeqMeetSpec(*Seq, Spec);
             if (Result != e_No) {
                 return true;
             }
@@ -392,9 +377,9 @@ bool CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& 
     }}
 
     {{
-        Seq = x_FindChromosomeSequence(*Id, Spec);
+        CConstRef<CGC_Sequence> Seq = x_FindChromosomeSequence(*Id, Spec);
         if (Seq.NotNull()) {
-            Result = x_CanSeqMeetSpec(*Seq, Spec);
+            const bool Result = x_CanSeqMeetSpec(*Seq, Spec);
             if (Result != e_No) {
                 return true;
             }
@@ -405,7 +390,7 @@ bool CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& 
 }
 
 void
-CGencollIdMapper::x_Init()
+CGencollIdMapper::x_Init(void)
 {
     CTypeIterator<CGC_Sequence> SeqIter(*m_Assembly);
     for ( ; SeqIter; ++SeqIter) {
@@ -784,7 +769,7 @@ CGencollIdMapper::x_GetRole(const objects::CGC_Sequence& Seq) const
 }
 
 bool
-CGencollIdMapper::x_HasTop(const objects::CGC_Sequence& Seq, int Top) const
+CGencollIdMapper::x_HasTop(const objects::CGC_Sequence& Seq, const int Top) const
 {
     if (Top == SIdSpec::e_Top_NotSet) {
         return true;
@@ -1064,13 +1049,12 @@ CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
 int
 CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
                                    const SIdSpec& Spec,
-                                   int Level
+                                   const int Level
                                   ) const
 {
     if (Level == 3) {
         return e_No;
     }
-
     //int SeqRole = x_GetRole(Seq);
     bool HasId = false;
     if (Seq.CanGetSeq_id_synonyms()) {
@@ -1250,11 +1234,10 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
 CConstRef<objects::CGC_Sequence>
 CGencollIdMapper::x_FindParentSequence(const objects::CSeq_id& Id,
                                        const objects::CGC_Assembly& Assembly,
-                                       int Depth
+                                       const int Depth
                                       ) const
 {
     CConstRef<CGC_Sequence> Result;
-
     const CSeq_id_Handle IdH = CSeq_id_Handle::GetHandle(Id);
     TChildToParentMap::const_iterator Found = m_ChildToParentMap.find(IdH);
     if (Found != m_ChildToParentMap.end()) {
