@@ -397,9 +397,9 @@ static char* s_HostPort(const char* host, unsigned short nport)
  * so the longer multi-step sequence was introduced below, instead.
  * Cf. ncbi_conn_stream.cpp: s_SocketConnectorBuilder().
  */
-static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
-                                          const void*         data,
-                                          size_t              size)
+static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
+                                          const void*   data,
+                                          size_t        size)
 {
     CONNECTOR   c;
     EIO_Status  status;
@@ -408,6 +408,8 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
     int/*bool*/ proxy = 0/*false*/;
     TSOCK_Flags flags = (net_info->debug_printout == eDebugPrintout_Data
                          ? fSOCK_LogOn : fSOCK_LogDefault);
+    net_info->path[0] = '\0';
+    net_info->args[0] = '\0';
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(status != eIO_Success));
@@ -737,9 +739,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         ("[%s]  Fallback port :%hu is not in the set",
                          uuu->service, uuu->port));
         }
-        net_info->port    = uuu->port;
-        net_info->path[0] = '\0';
-        net_info->args[0] = '\0';
+        net_info->port = uuu->port;
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         return s_SocketConnectorBuilder(net_info, &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0);
