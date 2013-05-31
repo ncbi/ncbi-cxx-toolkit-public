@@ -109,12 +109,12 @@ echo
 
 ( cd $test_base.1  &&  $tar cvf $test_base.tar . )
 
-rm -rf $test_base.1
-mkdir  $test_base.1                                                                      ||  exit 1
-
 echo
 echo "`date` *** Sanitizing test archive from unsupported features"
 echo
+
+rm -rf $test_base.1
+mkdir  $test_base.1                                                                      ||  exit 1
 
 ( cd $test_base.1  &&  $tar  xf $test_base.tar )
 
@@ -123,17 +123,21 @@ echo
 
 dd if=$test_base.tar bs=123 2>/dev/null | $test_tar -T -f -                              ||  exit 1
 
-sleep 2
-mkdir             $test_base.1/newdir 2>/dev/null
-chmod g+s,o+t,o-x $test_base.1/newdir 2>/dev/null
-date 2>/dev/null | tee -a $test_base.1/testdir/datefile $test_base.1/newdir/datefile >$test_base.1/datefile 2>/dev/null
-cp -fp $test_base.1/newdir/datefile $test_base.1/newdir/dummyfile 2>/dev/null
-
 echo
 echo "`date` *** Checking simple update"
 echo
 
+sleep 2
+mkdir             $test_base.1/newdir 2>/dev/null
+chmod g+s,o+t,o-x $test_base.1/newdir 2>/dev/null
+date 2>/dev/null | tee -a $test_base.1/newdir/datefile >$test_base.1/datefile 2>/dev/null
+cp -fp $test_base.1/datefile $test_base.1/newdir/dummyfile 2>/dev/null
+
 $test_tar -C $test_base.1 -u -v -f $test_base.tar ./datefile ./newdir                    ||  exit 1
+
+echo
+echo "`date` *** Checking incremental update"
+echo
 
 mv -f $test_base.1/datefile $test_base.1/phonyfile 2>/dev/null
 mkdir $test_base.1/datefile 2>/dev/null
@@ -141,21 +145,16 @@ mkdir $test_base.1/datefile 2>/dev/null
 sleep 2
 date >>$test_base.1/newdir/datefile 2>/dev/null
 
-echo
-echo "`date` *** Checking incremental update"
-echo
-
 $test_tar -C $test_base.1 -u -U -v -E -f $test_base.tar ./newdir ./datefile ./phonyfile  ||  exit 1
 
 rmdir $test_base.1/datefile 2>/dev/null
 mv -f $test_base.1/phonyfile $test_base.1/datefile 2>/dev/null
 
-mkdir $test_base.2                                                                       ||  exit 1
-
 echo
 echo "`date` *** Checking piping in and extraction"
 echo
 
+mkdir $test_base.2                                                                       ||  exit 1
 dd if=$test_base.tar bs=4567 | $test_tar -C $test_base.2 -v -x -f -                      ||  exit 1
 rm -f $test_base.1/.testfifo $test_base.2/.testfifo
 diff -r $test_base.1 $test_base.2 2>/dev/null                                            ||  exit 1
