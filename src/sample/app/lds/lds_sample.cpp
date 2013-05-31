@@ -51,7 +51,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
 
@@ -173,7 +173,8 @@ int CSampleLdsApplication::Run(void)
     if ( !bioseq_handle ) {
         ERR_POST(Fatal << "Bioseq not found, with id=" << id);
     }
-    string object_title = sequence::GetTitle(bioseq_handle);
+    string object_title = sequence::CDeflineGenerator().
+                                        GenerateDefline(bioseq_handle);
     NcbiCout << "Title: " << object_title << NcbiEndl;
 
 
