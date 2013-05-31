@@ -1398,7 +1398,7 @@ CGencollIdMapper::x_Map_Up(const CSeq_loc& SourceLoc,
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.GetSeq_id_synonyms()) {
             CTypeConstIterator<CSeq_id> SynIdIter(**SynIter);
-            while(SynIdIter) {
+            while (SynIdIter) {
                 CRef<CSeq_id> SynId(new CSeq_id());
                 SynId->Assign(*SynIdIter);
                 Bioseq->SetId().push_back(SynId);
@@ -1416,21 +1416,18 @@ CGencollIdMapper::x_Map_Up(const CSeq_loc& SourceLoc,
 
     CRef<CSeqMap> SeqMap = CSeqMap::CreateSeqMapForBioseq(*Bioseq);
     CRef<CSeq_id> MapId(new CSeq_id());
-
-    // Direction
-    CSeq_loc_Mapper::ESeqMapDirection Direction = CSeq_loc_Mapper::eSeqMap_Down;
-    Direction = CSeq_loc_Mapper::eSeqMap_Up;
-
     MapId->Assign(*Id);
+    // Direction
+    const CSeq_loc_Mapper::ESeqMapDirection Direction = CSeq_loc_Mapper::eSeqMap_Up;
 
     CConstRef<CSeq_id> SpecId = x_GetIdFromSeqAndSpec(Seq, Spec);
     if (SpecId) {
         MapId->Assign(*SpecId);
     }
 
-    CRef<CSeq_loc_Mapper> Mapper;
-    Mapper.Reset(new CSeq_loc_Mapper(1, *SeqMap, Direction, MapId));
-
+    CRef<CSeq_loc_Mapper> Mapper(
+        new CSeq_loc_Mapper(1, *SeqMap, Direction, MapId)
+    );
     CRef<CSeq_loc> Result = Mapper->Map(SourceLoc);
     /*if(Result && Result->IsPacked_int()) {
         cerr << "UP BECAME PACKED INT" << endl;
@@ -1488,12 +1485,9 @@ CGencollIdMapper::x_Map_Down(const CSeq_loc& SourceLoc,
 
     CRef<CSeqMap> SeqMap = CSeqMap::CreateSeqMapForBioseq(*Bioseq);
     CRef<CSeq_id> MapId(new CSeq_id());
-
+    MapId->Assign(*SourceLoc.GetId()); // Parent seq id for the Mapper
     // Direction
-    CSeq_loc_Mapper::ESeqMapDirection Direction = CSeq_loc_Mapper::eSeqMap_Down;
-
-    // Parent seq id for the Mapper
-    MapId->Assign(*SourceLoc.GetId());
+    const CSeq_loc_Mapper::ESeqMapDirection Direction = CSeq_loc_Mapper::eSeqMap_Down;
 
     //CConstRef<CSeq_id> SpecId = x_GetIdFromSeqAndSpec(Seq, Spec);
     //if(SpecId)
