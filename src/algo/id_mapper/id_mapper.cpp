@@ -923,7 +923,6 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
             }
         }
     }
-
 }
 
 void
@@ -942,8 +941,6 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_AssemblyUnit& assm)
             }
         }
     }
-
-
     ITERATE (CGC_Sequence::TSequences, TagIter, assm.GetOther_sequences()) {
         //if( (*TagIter)->GetState() != CGC_TaggedSequences::eState_placed ||
         //    !(*TagIter)->CanGetSeqs())
@@ -1106,7 +1103,6 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             }
         }
     }
-
     if (HasId) {
         if (Spec.Top != SIdSpec::e_Top_NotSet) {
             if (x_HasTop(Seq, Spec.Top)) {
@@ -1117,7 +1113,6 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             return e_Yes;
         }
     }
-
     CConstRef<CGC_Sequence> ParentSeq;
     ParentSeq = Seq.GetParent();
     if (ParentSeq) {
@@ -1129,7 +1124,6 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             }
         }
     }
-
     if (Seq.CanGetSequences() && Spec.Top != true) {
         ITERATE (CGC_Sequence::TSequences, TagIter, Seq.GetSequences()) {
             if ((*TagIter)->GetState() != CGC_TaggedSequences::eState_placed) {
@@ -1143,7 +1137,6 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             }
         }
     }
-
     return e_No;
 }
 
@@ -1169,7 +1162,6 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
             Spec.Top = SIdSpec::e_Top_Gpipe;
         }
     }
-
     // Loop over the IDs, find which matches the given ID
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
@@ -1206,12 +1198,11 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
             }
         }
     }
-
-
     // If we didn't find it normally, try again, looking for Pattern matches
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
-            switch ((*it)->Which()) {
+            const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
+            switch (syn_type) {
             case CGC_TypedSeqId::e_External:
             {
                 const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
@@ -1224,7 +1215,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                               )
                 );
                 if (Start != NPOS) {
-                    Spec.TypedChoice = CGC_TypedSeqId::e_External;
+                    Spec.TypedChoice = syn_type;
                     Spec.External = ExternalId.GetExternal();
                     //Spec.Pattern = NStr::Replace(Id.GetSeqIdString(), Private.GetSeqIdString(), DELIM);
                     Spec.Pattern = Id.GetSeqIdString().substr(0, Start) + DELIM;
@@ -1241,7 +1232,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                               )
                 );
                 if (Start != NPOS) {
-                    Spec.TypedChoice = CGC_TypedSeqId::e_Private;
+                    Spec.TypedChoice = syn_type;
                     //Spec.Pattern = NStr::Replace(Id.GetSeqIdString(), Private.GetSeqIdString(), DELIM);
                     Spec.Pattern = Id.GetSeqIdString().substr(0, Start) + DELIM;
                     return true;
@@ -1253,7 +1244,6 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
             }
         }
     }
-
     return false;
 }
 
@@ -1265,6 +1255,7 @@ CGencollIdMapper::x_FindParentSequence(const objects::CSeq_id& Id,
 {
     CConstRef<CGC_Sequence> Result;
 
+#warning premature return from x_FindParentSequence?
     {{
         //CSeq_id_Handle ParentIdH;
         CSeq_id_Handle IdH = CSeq_id_Handle::GetHandle(Id);
