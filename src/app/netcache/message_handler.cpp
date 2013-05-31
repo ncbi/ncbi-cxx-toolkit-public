@@ -2689,7 +2689,11 @@ CNCMessageHandler::State
 CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
 {
     LOG_CURRENT_FUNCTION
-    if (m_BlobAccess->IsPurged(m_ClientParams["cache"])) {
+    if (!m_PrevCache.empty() && m_BlobAccess->IsPurged(m_PrevCache)) {
+        if (x_IsFlagSet(fPeerFindExistsOnly)) {
+            m_LatestExist = false;
+            return m_CmdProcessor;
+        }
         return &Me::x_ReportBlobNotFound;
     }
     if (x_IsFlagSet(fPeerFindExistsOnly))
@@ -2800,7 +2804,7 @@ CNCMessageHandler::x_SendPurgeToPeerCmd(void)
     if (NeedEarlyClose())
         return &Me::x_FinishCommand;
 
-    m_ActiveHub->GetHandler()->CopyPurge(GetDiagCtx(), m_ClientParams["cache"], m_CmdStartTime);
+    m_ActiveHub->GetHandler()->CopyPurge(GetDiagCtx(), m_PrevCache, m_CmdStartTime);
     return &Me::x_ReadPurgeResults;
 }
 
@@ -3569,7 +3573,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Purge(void)
 {
     LOG_CURRENT_FUNCTION
-    if (CNCBlobAccessor::Purge( m_ClientParams["cache"], m_CmdStartTime.AsUSec())) {
+    if (CNCBlobAccessor::Purge( m_PrevCache, m_CmdStartTime.AsUSec())) {
         CNCBlobStorage::SavePurgeData();
     }
     m_CheckSrvs = CNCDistributionConf::GetPeerServers();
@@ -3580,7 +3584,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyPurge(void)
 {
     LOG_CURRENT_FUNCTION
-    if (CNCBlobAccessor::Purge( m_ClientParams["cache"], m_CopyBlobInfo->create_time)) {
+    if (CNCBlobAccessor::Purge( m_PrevCache, m_CopyBlobInfo->create_time)) {
         CNCBlobStorage::SavePurgeData();
     }
     return &Me::x_FinishCommand;
