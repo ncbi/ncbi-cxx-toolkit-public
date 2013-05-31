@@ -68,23 +68,19 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
             }
             aln_len += lens[i];
         }
-        
-        double score;
-        if(seq_align.GetNamedScore("bit_score", score) == false) {
-            score = 2.f * aln_len;
-        }
-        SetScore(float(score));
     }
     else if (seq_align_segs.IsStd()) {
+
+        const CSeq_align::TSegs::TStd & stdsegs (seq_align_segs.GetStd());
 
         /// Std-seg allow different coordinate scales
         /// such as in prot-nuc or nuc-prot alignments.
         /// We assume that the scale ratio is const for all segments.
 
         /// Find the coordinate scale ratios
-
+        size_t scale [2];
+        {{
         TSeqPos len [2] = {0, 0};
-        const CSeq_align::TSegs::TStd & stdsegs (seq_align_segs.GetStd());
         if(stdsegs.empty()) {
             NCBI_THROW(CAlgoAlignUtilException, eInternal,
                        "CBlastTabular(): Cannot init off of an empty seq-align.");
@@ -107,26 +103,18 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
             }
         }
 
-        size_t scale [2];
-        if(len[0] == 3 * len[1]) {
+        int ratio = (6*len[0])/len[1]; // ideally 6*(1/3, 1, or 3), i.e. 2, 6, or 18
+
+        if (ratio < 4) {
+            scale[0] = 1;
+            scale[1] = 3;
+        } else if (ratio < 12) {
+            scale[0] = scale[1] = 1;
+        } else {
             scale[0] = 3;
             scale[1] = 1;
         }
-        else if (3 * len[0] == len[1]) {
-            scale[0] = 1;
-            scale[1] = 3;
-        }
-        else if (len[0] == len[1]) {
-            scale[0] = scale[1] = 1;
-        }
-        else {
-            CNcbiOstrstream ostr;
-            ostr << "Unexpected coordinate scale ratio: "
-                << len[0] << '(' << GetId(0)->GetSeqIdString(true) << ")\t" 
-                << len[1] << '(' << GetId(1)->GetSeqIdString(true) << ")";
-            const string errmsg = CNcbiOstrstreamToString(ostr);
-            NCBI_THROW(CAlgoAlignUtilException, eInternal, errmsg);
-        }
+        }}
 
         /// Parse the segments to collect basic alignment stats
 
@@ -162,18 +150,18 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
                 aln_len += delta[0] / scale[0];
             }
         }
-
-        double score;
-        if(seq_align.GetNamedScore("bit_score", score) == false) {
-            score = 0;
-        }
-        SetScore(float(score));
     }
     else {
         NCBI_THROW(CAlgoAlignUtilException, eInternal, "Unsupported seq-align type");
     }
 
     /// Assign the scores
+
+    double score;
+    if(seq_align.GetNamedScore("bit_score", score) == false) {
+        score = 2.f * aln_len;
+    }
+    SetScore(float(score));
 
     double matches;
     if(seq_align.GetNamedScore("num_ident", matches) == false) {
