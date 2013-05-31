@@ -1530,6 +1530,7 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
         return;
     }
 
+
     if(v.GetData().GetInstance().IsSetObservation()
        && !(v.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_variant))
     {
@@ -1595,6 +1596,8 @@ CVariation_inst::EType CalcInstTypeForAA(const string& prot_ref_str, const strin
     CVariation_inst::EType inst_type;
     if(prot_delta_str.size() == 0 && prot_ref_str.size() > 0) {
         inst_type = CVariation_inst::eType_del;
+    } else if(prot_delta_str.size() > 0 && prot_ref_str.size() == 0) {
+        inst_type = CVariation_inst::eType_ins;
     } else if(prot_delta_str.size() != prot_ref_str.size()) {
         inst_type = CVariation_inst::eType_prot_other;
     } else if(prot_ref_str == prot_delta_str) {
@@ -1873,6 +1876,14 @@ size_t GetCommonPrefixLen(const string& a, const string& b)
     return i;
 }
 
+void TruncateCommonSuffix(string& a, string& b)
+{
+    while(a.size() > 0 && b.size() > 0 && a[a.size() - 1] == b[b.size() - 1]) {
+        a.resize(a.size() - 1);
+        b.resize(b.size() - 1);
+    }
+}
+
 CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         const CVariation_inst& nuc_inst,
         const CVariantPlacement& nuc_p,
@@ -2007,6 +2018,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     int num_ref_codons = (nuc_ref_prefix.size() + 2) / 3;
     int num_var_codons = (nuc_var_prefix.size() + 2) / 3;
 
+    if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << "\n"
+                         << "prot_var_str: " << prot_var_str << "\n";
+
 
     int common_prot_prefix_len(0); //will calculate length of unchanged leading AAs in translations (starting with codons of interest)
 
@@ -2040,23 +2054,35 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
         prot_ref_str = prot_ref_str.substr(common_prot_prefix_len);
         prot_var_str = prot_var_str.substr(common_prot_prefix_len);
-
-        if(prot_loc->IsPnt()) {
-            prot_loc->SetPnt().SetPoint() += common_prot_prefix_len;
-        } else if(prot_loc->IsInt()) {
-            prot_loc->SetInt().SetFrom() += common_prot_prefix_len;
-            prot_loc->SetInt().SetTo() = max(prot_loc->GetInt().GetTo(), prot_loc->GetInt().GetFrom());
-            prot_loc = sequence::Seq_loc_Merge(*prot_loc, 0, NULL); //to convert single-pos int to point, as appropriate
+      
+        if(frameshift_phase == 0) {
+            TruncateCommonSuffix(prot_ref_str, prot_var_str);
+        } else {
+            //Keep the frst AA in case of frameshifts
+            //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  instead of NP_000483.3:p.Lys1177delfs 
+            prot_ref_str.resize(min(1UL, prot_ref_str.size()));
+            prot_var_str.resize(min(1UL, prot_ref_str.size()));
         }
+
+        //adjust the protein location. 
+        prot_loc = sequence::Seq_loc_Merge(*prot_loc, CSeq_loc::fMerge_SingleRange, NULL); //to convert point to interval
+        if(prot_ref_str.size() == 0) {
+            //After truncating common prefix and suffix the reference is reduced to nothing - we have pure insertion.
+            //We need 2-AA location describing the point of insertion
+            prot_loc->SetInt().SetFrom() += common_prot_prefix_len - 1;
+            prot_loc->SetInt().SetTo(prot_loc->SetInt().SetFrom() + 1);
+        } else {
+            //the location describes the sequence that's being changed
+            prot_loc->SetInt().SetFrom() += common_prot_prefix_len;
+            prot_loc->SetInt().SetTo(prot_loc->SetInt().SetFrom() + prot_ref_str.size() - 1);
+        }
+        prot_loc = sequence::Seq_loc_Merge(*prot_loc, 0, NULL); //to convert single-pos int to point, as appropriate
+
         codons_loc = prot2nuc_mapper->Map(*prot_loc); 
         codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL));
 
-        prot_ref_str.resize(max(1, num_ref_codons - common_prot_prefix_len));
-
-        //Keep the frst AA in case of frameshifts
-        //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  NP_000483.3:p.Lys1177delfs 
-        prot_var_str.resize(max(frameshift_phase == 0 ? 0 : 1, num_var_codons - common_prot_prefix_len));
-
+        if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << "\n"
+                             << "prot_var_str: " << prot_var_str << "\n";
     }
 
 
@@ -2134,6 +2160,10 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
             string adjusted_codons_str = nuc_var_str.substr(common_prot_prefix_len * 3, prot_var_str.size() * 3);
             di->SetSeq().SetLiteral().SetLength(adjusted_codons_str.size());
             di->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set() = adjusted_codons_str;
+        }
+
+        if(prot_ref_str.size() == 0) {
+            di->SetAction(CDelta_item::eAction_ins_before);
         }
     } else {
         di->SetSeq().SetThis();
