@@ -53,13 +53,9 @@ public:
     CGencollIdMapper(CRef<objects::CGC_Assembly> SourceAsm);
 
     struct SIdSpec {
-        enum E_Alias {
-            e_NotSet,
-            e_Public,
-            e_Gpipe,
-            e_Gi
-        };
-        objects::CGC_TypedSeqId::E_Choice TypedChoice;
+        typedef objects::CGC_TypedSeqId::E_Choice E_Choice;
+        typedef objects::CGC_SeqIdAlias::E_AliasTypes E_Alias;
+        E_Choice TypedChoice;
         E_Alias Alias;
         string External;
         string Pattern;
@@ -76,7 +72,7 @@ public:
 
         SIdSpec()
             : TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
-              Alias(e_NotSet),
+              Alias(objects::CGC_SeqIdAlias::e_None),
               External(kEmptyStr),
               Pattern(kEmptyStr), 
               Role(e_Role_NotSet),

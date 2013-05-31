@@ -238,7 +238,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
                 else if (m_Assembly->IsGenBank()) {
                     GuessSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
                 }
-                GuessSpec.Alias = SIdSpec::e_Gi;
+                GuessSpec.Alias = CGC_SeqIdAlias::e_Gi;
                 CRef<CSeq_loc> GiLoc = Map(Loc, GuessSpec);
                 CRef<CSeq_loc> Result = x_Map_Up(GiLoc ? *GiLoc : Loc, *Seq, Spec);
                 if (Result.NotNull() && !Result->IsNull()) {
@@ -445,14 +445,14 @@ CGencollIdMapper::x_NCBI34_Guess(const CSeq_id& Id, SIdSpec& Spec) const
     const string seqidstr = Id.GetSeqIdString(true);
     if (NStr::Equal(seqidstr, "NC_000002") || NStr::Equal(seqidstr, "NC_000002.8")) {
         Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-        Spec.Alias = SIdSpec::e_Public;
+        Spec.Alias = CGC_SeqIdAlias::e_Public;
         Spec.External = kEmptyStr;
         Spec.Pattern = kEmptyStr;
         return true;
     }
     if (NStr::Equal(seqidstr, "NC_000009") || NStr::Equal(seqidstr, "NC_000009.8")) {
         Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-        Spec.Alias = SIdSpec::e_Public;
+        Spec.Alias = CGC_SeqIdAlias::e_Public;
         Spec.External = kEmptyStr;
         Spec.Pattern = kEmptyStr;
         return true;
@@ -958,13 +958,13 @@ CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
             }
             CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
-                if (seq_id_alias->IsSetPublic() && Spec.Alias == SIdSpec::e_Public) {
+                if (seq_id_alias->IsSetPublic() && Spec.Alias == CGC_SeqIdAlias::e_Public) {
                     return ConstRef(&seq_id_alias->GetPublic());
                 }
-                if (seq_id_alias->IsSetGpipe() && Spec.Alias == SIdSpec::e_Gpipe) {
+                if (seq_id_alias->IsSetGpipe() && Spec.Alias == CGC_SeqIdAlias::e_Gpipe) {
                     return ConstRef(&seq_id_alias->GetGpipe());
                 }
-                if (seq_id_alias->IsSetGi() && Spec.Alias == SIdSpec::e_Gi) {
+                if (seq_id_alias->IsSetGi() && Spec.Alias == CGC_SeqIdAlias::e_Gi) {
                     return ConstRef(&seq_id_alias->GetGi());
                 }
             }
@@ -1045,9 +1045,9 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
                 continue;
             }
 
-            const bool alias_is_public = (Spec.Alias == SIdSpec::e_Public);
-            const bool alias_is_gpipe = (Spec.Alias == SIdSpec::e_Gpipe);
-            const bool alias_is_gi = (Spec.Alias == SIdSpec::e_Gi);
+            const bool alias_is_public = (Spec.Alias == CGC_SeqIdAlias::e_Public);
+            const bool alias_is_gpipe = (Spec.Alias == CGC_SeqIdAlias::e_Gpipe);
+            const bool alias_is_gi = (Spec.Alias == CGC_SeqIdAlias::e_Gi);
 
             CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
@@ -1113,7 +1113,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                                   ) const
 {
     Spec.TypedChoice = CGC_TypedSeqId::e_not_set;
-    Spec.Alias = SIdSpec::e_NotSet;
+    Spec.Alias = CGC_SeqIdAlias::e_None;
     Spec.Role = SIdSpec::e_Role_NotSet;
     Spec.Top = SIdSpec::e_Top_NotSet;
     Spec.External.clear();
@@ -1136,15 +1136,15 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
             if (seq_id_alias.NotNull()) {
                 Spec.TypedChoice = syn_type;
                 if (seq_id_alias->IsSetPublic() && seq_id_alias->GetPublic().Equals(Id)) {
-                    Spec.Alias = SIdSpec::e_Public;
+                    Spec.Alias = CGC_SeqIdAlias::e_Public;
                     return true;
                 }
                 if (seq_id_alias->IsSetGpipe() && seq_id_alias->GetGpipe().Equals(Id)) {
-                    Spec.Alias = SIdSpec::e_Gpipe;
+                    Spec.Alias = CGC_SeqIdAlias::e_Gpipe;
                     return true;
                 }
                 if (seq_id_alias->IsSetGi() && seq_id_alias->GetGi().Equals(Id)) {
-                    Spec.Alias = SIdSpec::e_Gi;
+                    Spec.Alias = CGC_SeqIdAlias::e_Gi;
                     return true;
                 }
             }
