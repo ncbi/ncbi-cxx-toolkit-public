@@ -248,7 +248,5 @@ void CSampleLdsApplication::x_InitLDS()
 
 int main(int argc, const char* argv[])
 {
-    return 
-        CSampleLdsApplication().AppMain(
-                    argc, argv, 0, eDS_Default, "lds_sample.ini");
+    return CSampleLdsApplication().AppMain(argc, argv);
 }
