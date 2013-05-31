@@ -826,8 +826,10 @@ void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope
     for(ibeg = 0; ibeg<prot.size() && ( (prot[ibeg] == '.') || (match[ibeg] == 'X') || (prot[ibeg] == '-' ) ); ++ibeg) {}
     for(iend = prot.size() - 1; iend >=0 && ( (prot[iend] == '.') || (match[iend] == 'X') || (prot[iend] == '-' ) ); --iend) {}
     for(string::size_type i=ibeg;i<=iend; ++i) {
-        if(prot[i] == '-') {
-            ++ipgap;
+        if( (prot[i] != '.') && (match[i] != 'X') ) {//skip introns and bad parts
+            if(prot[i] == '-') {
+                ++ipgap;
+            }
         }
     }
     seq_align.SetNamedScore("product_internal_gap_length", ipgap);
