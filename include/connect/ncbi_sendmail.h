@@ -164,10 +164,13 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * specifies non-zero message body size (see SSendMailInfo::body_size above).
  *
  * @note
- * Recipient lists are not parsed;  valid recipient (according to the standard)
- * can be specified in the form '"Name" \<address\>';  recipients should be
- * separated by commas.  In case of address-only recipients (with no "Name"
- * part above), angle brackets around the address may be omitted.
+ * Recipient lists are not validated;  a valid recipient (according to the
+ * standard) can be specified in the form '"Name" \<address\>' (excluding all
+ * comment fields, which are discouraged from appearance in the addresses);
+ * recipients must be separated by commas.  In case of address-only recipients
+ * (with no "Name" part above), the angle brackets around the address should
+ * be omitted.  Group syntax for recipients 'groupname ":" [mailbox-list] ";"'
+ * is not currently supported.
  *
  * @note
  * If not specified (0), and by default, the message body size is calculated as
