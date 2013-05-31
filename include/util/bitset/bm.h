@@ -2516,11 +2516,6 @@ void bvector<Alloc>::combine_operation(
                                   const bm::bvector<Alloc>& bvect, 
                                   bm::operation             opcode)
 {
-    typedef void (*block_bit_op)(bm::word_t*, const bm::word_t*);
-    typedef void (*block_bit_op_next)(bm::word_t*, 
-                                      const bm::word_t*, 
-                                      bm::word_t*, 
-                                      const bm::word_t*);
 
     unsigned top_blocks = blockman_.top_block_size();
     unsigned bvect_top_blocks = bvect.blockman_.top_block_size();

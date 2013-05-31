@@ -1318,7 +1318,6 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
                                        unsigned i,
                                        bm::word_t* blk)
 {
-    typedef bit_in<DEC> bit_in_type;
     gap_word_t gap_head; 
     gap_word_t gap_len = 0;
 
