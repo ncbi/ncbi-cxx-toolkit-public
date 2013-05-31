@@ -1255,19 +1255,13 @@ CGencollIdMapper::x_FindParentSequence(const objects::CSeq_id& Id,
 {
     CConstRef<CGC_Sequence> Result;
 
-#warning premature return from x_FindParentSequence?
-    {{
-        //CSeq_id_Handle ParentIdH;
-        CSeq_id_Handle IdH = CSeq_id_Handle::GetHandle(Id);
-        TChildToParentMap::const_iterator Found = m_ChildToParentMap.find(IdH);
-        if (Found != m_ChildToParentMap.end()) {
-            Result = Found->second;
-        }
-        return Result;
-    }}
-
+    const CSeq_id_Handle IdH = CSeq_id_Handle::GetHandle(Id);
+    TChildToParentMap::const_iterator Found = m_ChildToParentMap.find(IdH);
+    if (Found != m_ChildToParentMap.end()) {
+        return Found->second;
+    }
     if (Depth > 5) {
-    cerr << "x_FindParentSequence: Depth Bounce " << Id.AsFastaString() << endl;
+        LOG_POST(Warning << "x_FindParentSequence: Depth Bounce " << Id.AsFastaString());
         return Result;
     }
 
