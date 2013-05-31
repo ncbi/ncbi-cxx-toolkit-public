@@ -31,19 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/test_boost.hpp>
-
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
-
-#include <algo/id_mapper/id_mapper.hpp>
-
 #include <objects/genomecoll/genome_collection__.hpp>
 #include <objects/genomecoll/genomic_collections_cli.hpp>
+#include <algo/id_mapper/id_mapper.hpp>
 
 
 #include <boost/test/output_test_stream.hpp> 
