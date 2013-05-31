@@ -1075,18 +1075,13 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
                 return e_Yes;
             }
         }
-        else if (Spec.Role != SIdSpec::e_Role_NotSet && Seq.HasRole(Spec.Role)) {
-            return e_Yes;
-        }
-        // Has the ID match, and the Top and Role both don't matter
-        else if(Spec.Top == SIdSpec::e_Top_NotSet && 
-                Spec.Role == SIdSpec::e_Role_NotSet) {
+        else if (Spec.Role == SIdSpec::e_Role_NotSet || Seq.HasRole(Spec.Role)) {
+            // Has the ID match, and the Top and Role both don't matter
             return e_Yes;
         }
     }
-    CConstRef<CGC_Sequence> ParentSeq;
-    ParentSeq = Seq.GetParent();
-    if (ParentSeq) {
+    CConstRef<CGC_Sequence> ParentSeq = Seq.GetParent();
+    if (ParentSeq.NotNull()) {
         if (Spec.Top != SIdSpec::e_Top_NotTop ||
             (Spec.Role != SIdSpec::e_Role_NotSet && Spec.Role <= x_GetRole(*ParentSeq))
            ) {
