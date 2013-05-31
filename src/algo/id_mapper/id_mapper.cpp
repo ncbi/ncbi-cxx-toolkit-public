@@ -310,7 +310,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
             Chrom_Spec.Role = eGC_SequenceRole_chromosome;
             Public_Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
             Public_Spec.Alias = SIdSpec::e_Public;
-            Public_Spec.Top = SIdSpec::e_Top_Public;
+            Public_Spec.Top = SIdSpec::e_Top_All;
        MARKLINE;
             if (x_CanSeqMeetSpec(*Seq, RefSeq_Spec))
                 return Map(Loc, RefSeq_Spec);
@@ -568,7 +568,7 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
 
     bool SeqQualifies = false;
     bool ParentQualifies = false;
-    if (x_HasTop(Seq, SIdSpec::e_Top_Public) && SeqHasGi) {
+    if (x_HasTop(Seq, SIdSpec::e_Top_All) && SeqHasGi) {
         SeqQualifies = true;
     }
 
@@ -577,7 +577,7 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
         GenGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi);
         RefGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi);
         const bool ParentHasGi = bool(GenGi) || bool(RefGi);
-        if (x_HasTop(*Parent, SIdSpec::e_Top_Public) &&
+        if (x_HasTop(*Parent, SIdSpec::e_Top_All) &&
             Seq.GetParentRelation() == CGC_TaggedSequences::eState_placed &&
             ParentHasGi
            ) {
@@ -586,9 +586,9 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
     }
     if (SeqQualifies &&
         !ParentQualifies &&
-        !Seq.HasRole(SIdSpec::e_Role_Gpipe_Top)
+        !Seq.HasRole(SIdSpec::e_Role_ExcludePseudo_Top)
        ) {
-        Seq.SetRoles().push_back(SIdSpec::e_Role_Gpipe_Top);
+        Seq.SetRoles().push_back(SIdSpec::e_Role_ExcludePseudo_Top);
     }
 }
 
@@ -764,12 +764,12 @@ CGencollIdMapper::x_HasTop(const objects::CGC_Sequence& Seq, const int Top) cons
     bool NotTop = true;
     if (Seq.CanGetRoles()) {
         ITERATE (CGC_Sequence::TRoles, RoleIter, Seq.GetRoles()) {
-            const bool role_is_gpipe_top = (*RoleIter == SIdSpec::e_Role_Gpipe_Top);
+            const bool role_is_no_pseudo_top = (*RoleIter == SIdSpec::e_Role_ExcludePseudo_Top);
             const bool role_is_GC_top = (*RoleIter == eGC_SequenceRole_top_level);
-            if (role_is_gpipe_top || role_is_GC_top) {
+            if (role_is_no_pseudo_top || role_is_GC_top) {
                 NotTop = false;
-                if ((Top == SIdSpec::e_Top_Gpipe && role_is_gpipe_top) ||
-                    (Top == SIdSpec::e_Top_Public && role_is_GC_top)
+                if ((Top == SIdSpec::e_Top_ExcludePseudo && role_is_no_pseudo_top) ||
+                    (Top == SIdSpec::e_Top_All && role_is_GC_top)
                    ) {
                     return true;
                 }
@@ -1121,11 +1121,11 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
 
     if (Seq.CanGetRoles()) {
         Spec.Role = x_GetRole(Seq);
-        if (x_HasTop(Seq, SIdSpec::e_Top_Public)) {
-            Spec.Top = SIdSpec::e_Top_Public;
+        if (x_HasTop(Seq, SIdSpec::e_Top_All)) {
+            Spec.Top = SIdSpec::e_Top_All;
         }
-        else if (x_HasTop(Seq, SIdSpec::e_Top_Gpipe)) {
-            Spec.Top = SIdSpec::e_Top_Gpipe;
+        else if (x_HasTop(Seq, SIdSpec::e_Top_ExcludePseudo)) {
+            Spec.Top = SIdSpec::e_Top_ExcludePseudo;
         }
     }
     // Loop over the IDs, find which matches the given ID

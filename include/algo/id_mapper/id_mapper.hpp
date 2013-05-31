@@ -34,7 +34,7 @@
 
 
 #include <objects/seq/seq_id_handle.hpp>
-
+#include <objects/genomecoll/genome_collection__.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +44,10 @@ class CSeq_id;
 class CGC_Assembly;
 class CGC_AssemblyUnit;
 class CGC_Sequence;
+class CGC_TypedSeqId;
+enum CGC_TypedSeqId::E_Choice;
+class CGC_SeqIdAlias;
+enum CGC_SeqIdAlias::E_AliasTypes;
 END_SCOPE(objects)
 
 
@@ -59,13 +63,13 @@ public:
         E_Alias Alias;
         string External;
         string Pattern;
-        enum { e_Role_Gpipe_Top = objects::eGC_SequenceRole_top_level + 1, // Fake role for Gpipe top
+        enum { e_Role_ExcludePseudo_Top = objects::eGC_SequenceRole_top_level + 1, // Fake role for Non-Pseudo top
                e_Role_NotSet = 10000
         };
         enum { e_Top_NotSet,  // Unknown, don't care
                e_Top_NotTop,  // Specifically not any top
-               e_Top_Public,  // Public ID top
-               e_Top_Gpipe    // Gpipe top
+               e_Top_All,     // All Top-Level IDs
+               e_Top_ExcludePseudo  // Top, but excluding anything gencoll calls pseudo
         };
         int Role;
         int Top;
@@ -152,11 +156,11 @@ public:
             case e_Top_NotTop:
                 Result += "NotTop";
                 break;
-            case e_Top_Public:
-                Result += "Public";
+            case e_Top_All:
+                Result += "TopAll";
                 break;
-            case e_Top_Gpipe:
-                Result += "Gpipe";
+            case e_Top_ExcludePseudo:
+                Result += "TopExcludePseudo";
                 break;
             }
 
