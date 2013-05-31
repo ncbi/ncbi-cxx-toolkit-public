@@ -1294,7 +1294,6 @@ CGencollIdMapper::x_FindParentSequence(const objects::CSeq_id& Id,
             ITERATE (CGC_AssemblyUnit::TMols, MolIter, AsmUnit.GetMols()) {
                 if ((*MolIter)->GetSequence().IsSingle()) {
                     const CGC_Sequence& Parent = (*MolIter)->GetSequence().GetSingle();
-
                     if (x_IsParentSequence(Id, Parent)) {
                         return ConstRef(&Parent);
                     } // end IsParent if
@@ -1313,7 +1312,6 @@ CGencollIdMapper::x_IsParentSequence(const CSeq_id& Id,
     if (!Parent.CanGetSequences()) {
         return false;
     }
-
     ITERATE (CGC_Sequence::TSequences, ChildIter, Parent.GetSequences()) {
         if ((*ChildIter)->GetState() != CGC_TaggedSequences::eState_placed ||
             !(*ChildIter)->CanGetSeqs()
@@ -1341,7 +1339,6 @@ CGencollIdMapper::x_IsParentSequence(const CSeq_id& Id,
             }
         }
     }
-
     return false;
 }
 
@@ -1376,7 +1373,6 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
             }
         }
     }
-
     if (Found != m_IdToSeqMap.end()) {
         return Found->second;
     }
@@ -1391,7 +1387,6 @@ CGencollIdMapper::x_Map_OneToOne(const CSeq_loc& SourceLoc,
 {
     //if(!x_CanSeqMeetSpec(Seq, Spec))
     //    return CRef<CSeq_loc>();
-
     CConstRef<CSeq_id> DestId = x_GetIdFromSeqAndSpec(Seq, Spec);
     if (DestId.IsNull()) {
         return CRef<CSeq_loc>();
@@ -1404,7 +1399,6 @@ CGencollIdMapper::x_Map_OneToOne(const CSeq_loc& SourceLoc,
     for ( ; IdIter; ++IdIter) {
         IdIter->Assign(*DestId);
     }
-
     return Result;
 }
 
