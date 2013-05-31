@@ -231,7 +231,7 @@ private:
     typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TChildToParentMap;
     TChildToParentMap m_ChildToParentMap;
 
-    void x_Init();
+    void x_Init(void);
 
     bool x_NCBI34_Guess(const objects::CSeq_id& Id, SIdSpec& Spec) const;
     CConstRef<objects::CSeq_id>
