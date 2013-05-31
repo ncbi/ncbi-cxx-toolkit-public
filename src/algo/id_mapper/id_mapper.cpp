@@ -803,9 +803,7 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
     if (x_GetRole(*Seq) == SIdSpec::e_Role_NotSet) {
         return;
     }
-
-    CSeq_id_Handle Handle;
-    Handle = CSeq_id_Handle::GetHandle(Id);
+    const CSeq_id_Handle Handle = CSeq_id_Handle::GetHandle(Id);
 
     TIdToSeqMap::iterator Found;
     Found = m_IdToSeqMap.find(Handle);
@@ -822,22 +820,18 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
         //    return;
         m_IdToSeqMap.erase(Found);
     }
-    TIdToSeqMap::value_type Pair(Handle, Seq);
-    m_IdToSeqMap.insert(Pair);
+    m_IdToSeqMap.insert(make_pair(Handle, Seq));
 
     {{
-        CConstRef<CGC_Sequence> ParentSeq;
-        CGC_TaggedSequences_Base::TState ParentState;
-        ParentSeq = Seq->GetParent();
-        ParentState = Seq->GetParentRelation();
-
+        CConstRef<CGC_Sequence> ParentSeq = Seq->GetParent();
+        CGC_TaggedSequences_Base::TState ParentState = Seq->GetParentRelation();
         if (ParentSeq &&
-            ParentState == CGC_TaggedSequences_Base::eState_placed) {
-            CSeq_id_Handle ParentIdH(
+            ParentState == CGC_TaggedSequences_Base::eState_placed
+           ) {
+            const CSeq_id_Handle ParentIdH(
                 CSeq_id_Handle::GetHandle(ParentSeq->GetSeq_id())
             );
-            TChildToParentMap::value_type ParentPair(Handle, ParentSeq);
-            m_ChildToParentMap.insert(ParentPair);
+            m_ChildToParentMap.insert(make_pair(Handle, ParentSeq));
         }
     }}
 }
