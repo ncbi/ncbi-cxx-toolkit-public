@@ -858,7 +858,7 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
 }
 
 CConstRef<CGC_SeqIdAlias>
-GetSeqIdAlias_GenBankRefSeq(CConstRef<CGC_TypedSeqId> tsid)
+s_GetSeqIdAlias_GenBankRefSeq(CConstRef<CGC_TypedSeqId> tsid)
 {
     const CGC_TypedSeqId::E_Choice syn_type = tsid->Which();
     const bool is_gb = (syn_type == CGC_TypedSeqId::e_Genbank);
@@ -891,7 +891,7 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
         CConstRef<CGC_Sequence> SeqRef(&Seq);
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
-            CConstRef<CGC_SeqIdAlias> seq_id_alias = GetSeqIdAlias_GenBankRefSeq(*it);
+            CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
                 if (seq_id_alias->IsSetPublic()) {
                     x_AddSeqToMap(seq_id_alias->GetPublic(), SeqRef);
@@ -990,7 +990,7 @@ CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
             if (syn_type != Spec.TypedChoice) {
                 continue;
             }
-            CConstRef<CGC_SeqIdAlias> seq_id_alias = GetSeqIdAlias_GenBankRefSeq(*it);
+            CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
                 if (seq_id_alias->IsSetPublic() && Spec.Alias == SIdSpec::e_Public) {
                     return ConstRef(&seq_id_alias->GetPublic());
@@ -1084,7 +1084,7 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             const bool alias_is_gpipe = (Spec.Alias == SIdSpec::e_Gpipe);
             const bool alias_is_gi = (Spec.Alias == SIdSpec::e_Gi);
 
-            CConstRef<CGC_SeqIdAlias> seq_id_alias = GetSeqIdAlias_GenBankRefSeq(*it);
+            CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
                 if ((seq_id_alias->CanGetPublic() && alias_is_public) ||
                     (seq_id_alias->CanGetGpipe() && alias_is_gpipe) ||
@@ -1166,7 +1166,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
-            CConstRef<CGC_SeqIdAlias> seq_id_alias = GetSeqIdAlias_GenBankRefSeq(*it);
+            CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
             if (seq_id_alias.NotNull()) {
                 Spec.TypedChoice = syn_type;
                 if (seq_id_alias->IsSetPublic() && seq_id_alias->GetPublic().Equals(Id)) {
