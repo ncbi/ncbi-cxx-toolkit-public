@@ -475,8 +475,7 @@ void CCheckingClass :: GoGetRep(vector <CRef <CTestAndRepData> >& test_category)
             strtmp = (*it)->GetName();
             if ( strtmp != "DISC_SOURCE_QUALS_ASNDISC"
                         && strtmp != "LOCUS_TAGS"
-                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX"
-               )
+                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX")
                   thisInfo.disc_report_data.push_back(c_item);
             (*it)->GetReport(c_item); 
        }

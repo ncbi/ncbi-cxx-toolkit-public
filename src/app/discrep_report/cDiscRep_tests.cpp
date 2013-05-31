@@ -278,10 +278,10 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForStaticList(CRef <CClickableItem>& c_
         else strtmp = GetNoun(cnt, "protein name") + " "
                       + GetOtherComment(cnt, test_desc + 's', test_desc) + " with " + pattern;
 
-        AddSubcategories(name_cat_citem, test_name, tit->second, strtmp,strtmp,e_OtherComment);
+        AddSubcategory(name_cat_citem, test_name, &(tit->second),strtmp,strtmp,e_OtherComment);
       }
 
-      AddSubcategories(c_item, test_name, name_cat_citem->item_list, 
+      AddSubcategory(c_item, test_name, &(name_cat_citem->item_list), 
        suspect_name_category_names[fixtp], suspect_name_category_names[fixtp], e_OtherComment);
    }
 
@@ -322,11 +322,11 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForStaticList(CRef <CClickableItem>& c_
             else desc = GetNoun(dit->second.size(), "protein name") + " "
                               + GetOtherComment(dit->second.size(), desc, desc + 's')
                               + " with " + pattern;
-            AddSubcategories(name_cat_citem, test_name, dit->second, desc, kEmptyStr);
+            AddSubcategory(name_cat_citem, test_name, &(dit->second), desc, kEmptyStr);
           } 
        }
      } 
-     AddSubcategories(c_item, test_name, name_cat_citem->item_list,
+     AddSubcategory(c_item, test_name, &(name_cat_citem->item_list),
          thisInfo.suspect_name_category_names[(unsigned)name_type], kEmptyStr); 
    }
    c_item->description = GetContainsComment(c_item->item_list.size(), "protein name")
@@ -393,11 +393,11 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
        test_name = thisInfo.susrule_summ[rule_idx][0];
        fixtp_name = thisInfo.susrule_summ[rule_idx][1];
        summ = thisInfo.susrule_summ[rule_idx][2];
-       AddSubcategories(name_cat_citem, test_name, rit->second, "feature" + summ, 
+       AddSubcategory(name_cat_citem, test_name, &(rit->second), "feature" + summ, 
                                                  "features " + summ,  e_OtherComment);
      } 
  
-     AddSubcategories(c_item, GetName(), name_cat_citem->item_list,fixtp_name, 
+     AddSubcategory(c_item, GetName(), &(name_cat_citem->item_list), fixtp_name, 
                           fixtp_name, e_OtherComment);
    }   
 
@@ -455,7 +455,7 @@ void CBioseq_SUSPECT_PHRASES :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
    
    ITERATE (Str2Strs, it, phrase2feats) {
-      AddSubcategories(c_item, GetName(), it->second, "cds comment or protein description", 
+      AddSubcategory(c_item, GetName(), &(it->second), "cds comment or protein description", 
                "cds commentsor protein descriptions", e_OtherComment, true, it->first);
    }
    if (!c_item->item_list.empty())
@@ -506,7 +506,7 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: GetReport(CRef <CClickableItem>& c_it
       ITERATE (Str2Strs, rit, rule2feats) {
          rule_idx = NStr::StringToUInt(rit->first);
          strtmp = " rRNA product names " + thisInfo.rna_rule_summ[rule_idx];
-         AddSubcategories(c_item, GetName(), rit->second, strtmp, strtmp, e_OtherComment);
+         AddSubcategory(c_item, GetName(), &(rit->second), strtmp, strtmp, e_OtherComment);
       } 
       c_item->description = GetContainsComment(c_item->item_list.size(), "rRNA product name")
                              + "suspect phrase";
@@ -623,7 +623,7 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
   bool has_missing = false;
   if (tech2seqs.find("unknown") != tech2seqs.end()) {
     has_missing = true;
-    AddSubcategories(c_item, GetName(), tech2seqs["unknown"], "Molinfo", 
+    AddSubcategory(c_item, GetName(), &(tech2seqs["unknown"]), "Molinfo", 
                                                       "missing field technique");
   }
   unsigned cnt = tech2seqs.size();
@@ -631,7 +631,7 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
      if (has_missing) strtmp = "(all missing)";
      else {
         Str2Strs::iterator it = tech2seqs.begin();
-        AddSubcategories(c_item, GetName(), it->second, "All Molinfo",
+        AddSubcategory(c_item, GetName(), &(it->second), "All Molinfo",
               "field technique value '" + it->first, e_HasComment);
         strtmp = "(all present, all same)";
      }
@@ -640,14 +640,14 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
       strtmp = "(some missing, all same)";
       ITERATE (Str2Strs, it, tech2seqs) {
          if (it->first != "unknowns")
-             AddSubcategories(c_item, GetName(), it->second, "Molinfo", 
+             AddSubcategory(c_item, GetName(), &(it->second), "Molinfo", 
                "field technique value '" + it->first, e_HasComment);
       }
   }
   else {
     strtmp = "(all present, inconsistent)";
     ITERATE (Str2Strs, it, tech2seqs) {
-       AddSubcategories(c_item, GetName(), it->second, "Molinfo",
+       AddSubcategory(c_item, GetName(), &(it->second), "Molinfo",
                "field technique value '" + it->first, e_HasComment); 
     }
   }
@@ -1050,7 +1050,7 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
     if (it->first.find("coding region") != string::npos) strtmp = "coding region";
     else if (it->first.find("misc_feature") != string::npos) strtmp = "misc_feature";
     if (!strtmp.empty()) {
-        AddSubcategories(c_item, GetName(), it->second, strtmp + " location conflicts ",
+        AddSubcategory(c_item, GetName(), &(it->second), strtmp + " location conflicts ",
                    strtmp + " locations conflict ", e_OtherComment, true,
                    "with partialness of overlapping gene.", true);
     }
@@ -1060,10 +1060,10 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
         ITERATE (Str2Strs, jt, label2lists) {
            if (jt->first.find("coding region") == string::npos
                 && jt->first.find("misc_feature") == string::npos)
-              AddSubcategories(citem_other, GetName(), jt->second, jt->first, jt->first,
+              AddSubcategory(citem_other, GetName(), &(jt->second), jt->first, jt->first,
                        e_OtherComment, true, "", true);
         }
-        AddSubcategories(c_item, GetName(), citem_other->item_list,
+        AddSubcategory(c_item, GetName(), &(citem_other->item_list),
               "feature that is not coding regions or misc_feature conflicts",
               "features that are not coding regions or misc_features conflict", e_OtherComment,
               true, " with partialness of overlapping gene.", true);
@@ -1084,7 +1084,7 @@ void CBioseq_DISC_EXON_INTRON_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
    GetTestItemList(c_item->item_list, seq2cflts);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, seq2cflts) {
-     AddSubcategories(c_item, GetName(), it->second, "introns and exon",
+     AddSubcategory(c_item, GetName(), &(it->second), "introns and exon",
                       "location conflicts on " + it->first, e_HasComment);
    }
    c_item->description = GetIsComment(c_item->item_list.size(), "introns and exon")
@@ -1379,7 +1379,7 @@ void CBioseq_test_on_suspect_phrase :: GetRepOfSuspPhrase(CRef <CClickableItem>&
    c_item->item_list.clear();
    string s_desc(phrase_loc_4_1 + " contains "), p_desc(phrase_loc_4_mul + " contain ");
    ITERATE (Str2Strs, it, tp2feats) {
-     AddSubcategories(c_item, setting_name, it->second, s_desc, p_desc,
+     AddSubcategory(c_item, setting_name, &(it->second), s_desc, p_desc,
          e_OtherComment, true, "'" + it->first + "'");
    }
    c_item->description
@@ -1644,7 +1644,7 @@ void CBioseq_ADJACENT_PSEUDOGENES :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, txt2feats) {
      strtmp = "genes: Adjacent pseudogenes have the same text: " + it->first;
-     AddSubcategories(c_item, GetName(), it->second, strtmp, strtmp, e_OtherComment);
+     AddSubcategory(c_item, GetName(), &(it->second), strtmp, strtmp, e_OtherComment);
    }
    c_item->description
      = NStr::UIntToString((unsigned)c_item->item_list.size()) + " pseudogenes match an adjacent pseudogene's text.";
@@ -1731,7 +1731,7 @@ void CBioseq_CDS_TRNA_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
       GetTestItemList(it->second, cd2trnas, "#");
       ITERATE (Str2Strs, jt, cd2trnas) {
           c_sub->item_list.push_back(jt->first);
-          AddSubcategories(c_sub, GetName(), jt->second, "Coding region overlaps tRNAs", 
+          AddSubcategory(c_sub, GetName(), &(jt->second), "Coding region overlaps tRNAs", 
                                     "Coding region overlaps tRNAs", e_OtherComment); 
       }
       c_sub->description 
@@ -1841,7 +1841,7 @@ void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem>& c_i
    }
    else {
       ITERATE (Str2Strs, it, tax2list) {
-         AddSubcategories(c_item, GetName(), it->second,
+         AddSubcategory(c_item, GetName(), &(it->second),
               "Organism description not found in definition line: " + it->first, "",
               e_OtherComment, false);
       }
@@ -1920,7 +1920,7 @@ void CBioseq_CONTAINED_CDS :: GetReport(CRef <CClickableItem>& c_item)
    }
    else {
       ITERATE (Str2Strs, it, list_tp2items) {
-        AddSubcategories(c_item, GetName(), it->second, "coding region", 
+        AddSubcategory(c_item, GetName(), &(it->second), "coding region", 
   "completely contained in another coding region on the " + it->first + " strand.");
            
       }
@@ -3425,7 +3425,7 @@ void CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: GetReport(CRef <CClickableItem>& c_ite
   GetTestItemList(c_item->item_list, sus_str2list);
   c_item->item_list.clear();
   ITERATE (Str2Strs, it, sus_str2list) {
-    AddSubcategories(c_item, GetName(), it->second, "note text", it->first, e_ContainsComment);
+    AddSubcategory(c_item, GetName(), &(it->second),"note text", it->first, e_ContainsComment);
   }
 
   c_item->description 
@@ -4353,7 +4353,7 @@ void CBioseq_DISC_PROTEIN_NAMES :: GetReport(CRef <CClickableItem>& c_item)
    ITERATE (Str2Strs, it, pnm2feats) {
      if (it->second.size() < min_num) continue;
      if (cnt >1 ) {
-        AddSubcategories(c_item, GetName(), it->second, 
+        AddSubcategory(c_item, GetName(), &(it->second), 
                       "protein", "name '" + it->first + "'.", e_HasComment, false);
      }
      else {
@@ -4375,7 +4375,7 @@ void CBioseq_DISC_CDS_PRODUCT_FIND :: GetReport(CRef <CClickableItem>& c_item)
    ITERATE (Str2Strs, it, cd2feats) {
       arr.clear();
       arr = NStr::Tokenize(it->first, "#", arr);
-      AddSubcategories(c_item, GetName(), it->second, "coding region product " + arr[0] + "s", 
+      AddSubcategory(c_item, GetName(), &(it->second), "coding region product " + arr[0] + "s",
          "coding region products " + arr[0], e_OtherComment, true, arr[1]); 
    } 
    c_item->description = GetContainsComment(c_item->item_list.size(), "coding region product")
@@ -5441,7 +5441,7 @@ void CBioseq_test_on_genprod_set :: GetReport_dup(CRef <CClickableItem>& c_item,
    else {
       ITERATE (Str2Strs, it, label2feats) {
          if (it->second.size() > 1) {
-            AddSubcategories(c_item, setting_name, it->second, desc1,
+            AddSubcategory(c_item, setting_name, &(it->second), desc1,
                               desc2 + it->first, e_HasComment); 
          } 
       }
@@ -6196,7 +6196,8 @@ void CBioseq_DISC_FEATURE_LIST :: GetReport(CRef <CClickableItem>& c_item)
   c_item->item_list.clear();
   ITERATE (Str2Strs, it, feat2ls) {
      strtmp = it->first + " feature";
-     AddSubcategories(c_item,GetName(),it->second,strtmp, strtmp + "s", e_OtherComment, false);
+     AddSubcategory(c_item, GetName(), &(it->second), strtmp, strtmp + "s", e_OtherComment, 
+                                                                                      false);
   }
   c_item->description = "Feature List";
 };
@@ -6419,7 +6420,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
          desc2 = "coding regions completely contain";
          desc3 = " RNAs";
        }
-       AddSubcategories(c_item, GetName(), it->second, desc1, desc2, e_OtherComment, true, 
+       AddSubcategory(c_item, GetName(), &(it->second), desc1, desc2, e_OtherComment, true, 
                            desc3, true); 
      }
      else {
@@ -6428,7 +6429,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
        if (it->first == "overlap_opp_strand") 
              desc3 = " RNAs on the opposite strand (no containment)";
        else desc3 = " RNAs on the same strand (no containment)";
-       AddSubcategories(ovp_subcat, GetName(), it->second, desc1, desc2, e_OtherComment, true,
+       AddSubcategory(ovp_subcat, GetName(), &(it->second), desc1, desc2, e_OtherComment, true,
                         desc3, true); 
      } 
    }
@@ -6572,7 +6573,7 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
        desc2 = "coding regions overlap";
        desc3 = " another coding region with a similar or identical name but have the appropriate note text";
      }
-     AddSubcategories(c_item, GetName(), it->second, desc1, desc2, e_OtherComment, true,desc3);
+     AddSubcategory(c_item, GetName(), &(it->second),desc1, desc2, e_OtherComment, true,desc3);
    }
    c_item->description 
      = GetOtherComment(c_item->item_list.size(), "coding region overlapps", 
@@ -6716,7 +6717,7 @@ void CBioseq_EXTRA_GENES :: GetReport(CRef <CClickableItem>& c_item)
             desc2 = "not associated with a CDS or RNA feature and "
                               + strtmp + " not have frameshift in the comment.";
       }
-      AddSubcategories(c_item,  GetName(), it->second, desc1, desc2, e_IsComment, false);
+      AddSubcategory(c_item,  GetName(), &(it->second), desc1, desc2, e_IsComment, false);
     }
   };
   c_item->description = GetIsComment(c_item->item_list.size(), "gene feature") 
@@ -6944,20 +6945,20 @@ void CBioseq_EXTRA_MISSING_GENES :: GetReport(CRef <CClickableItem>& c_item)
         if (it->first.find("pseudodp") != string::npos) {
           desc1 = "pseudo gene feature"; 
           desc2 = "not associated with a CDS or RNA feature.";
-          AddSubcategories(c_extra,  GetName(), it->second, desc1, desc2);
+          AddSubcategory(c_extra,  GetName(), &(it->second), desc1, desc2);
         }
         else if (it->first.find("frameshift") != string::npos) {
             desc1 = "non-pseudo gene feature";
             desc2
          ="not associated with a CDS or RNA feature and have frameshift in the comment.";
-            AddSubcategories(c_extra,  GetName(), it->second, desc1, desc2);
+            AddSubcategory(c_extra,  GetName(), &(it->second), desc1, desc2);
         }
         else if (it->first.find("nonshift") != string::npos) {
             desc1 = "non-pseudo gene feature";
             strtmp = (it->second.size() > 1) ? "do" : "does";
             desc2 = "not associated with a CDS or RNA feature and " 
                               + strtmp + " not have frameshift in the comment.";
-            AddSubcategories(c_extra,  GetName(), it->second, desc1, desc2);
+            AddSubcategory(c_extra,  GetName(), &(it->second), desc1, desc2);
         }
         else c_extra->item_list.insert(c_extra->item_list.end(), 
                                                       it->second.begin(), it->second.end());
@@ -7381,8 +7382,10 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
 {
  string ret_str(kEmptyStr);
  if (is_subsrc) ret_str = Get1SubSrcValue(biosrc, qual_name);
- else if (qual_name == "location") 
-            ret_str = biosrc.GetOrganelleByGenome(biosrc.GetGenome());
+ else if (qual_name == "location") {
+            ret_str = thisInfo.genome_names[biosrc.GetGenome()];
+cerr << "GetGenome " << biosrc.GetGenome() << "  " << ret_str << endl;
+ }
  else if (qual_name == "taxname") 
             ret_str = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
  else if (qual_name == "common_name") 
@@ -7457,8 +7460,10 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
   bool is_subsrc;
   size_t pos;
 
+cerr << "qual2src_idx.size() " << qual2src_idx.size() << endl;
   ITERATE (Str2Ints, it, qual2src_idx) {
      qual_name = it->first;
+cerr << "GetQualDistribute qual_name " << qual_name << endl;
      is_subsrc = false;
      if ( (pos = qual_name.find("$subsrc")) != string::npos) {
         is_subsrc = true;
@@ -7478,6 +7483,7 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
        src_txt = desc_ls[cur_idx];
        thisInfo.test_item_list[setting_name].push_back(
                                           qual_name+"$"+ src_qual_vlu + "#" + src_txt);
+ cerr << "qualname + '$' ...  " << qual_name+"$"+ src_qual_vlu + "#" + src_txt << endl;
        //qual_nm2qual_vlus[qual_name].qual_vlu2src[src_qual_vlu].push_back(src_txt);
 
        // have multiple qualifiers? 
@@ -7518,6 +7524,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
    bool multi_same, multi_dup, multi_all_dif;
    unsigned multi_type_cnt;
    string qual_nm;
+   const vector <string>* vstr_p = 0;
 
    Str2Strs qvlu2src;
    CRef <CClickableItem> c_main (new CClickableItem);
@@ -7566,6 +7573,10 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
          c_item->description += " (all present, ";
          if (all_same) {
             c_item->description += "all same";
+            AddSubcategory(c_item, setting_name, 0, "source",
+               + " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment, 
+               true, kEmptyStr, false, (qvlu2src.begin()->second).size());
+/*
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->setting_name = setting_name;
             c_sub->description 
@@ -7574,6 +7585,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
             c_item->subcategories.push_back(c_sub);
             if (setting_name == GetName_asn1_oncall()) 
                     c_sub->item_list = qvlu2src.begin()->second;
+*/
          }
          else if (all_unique) {
                  c_item->description += "all_unique";
@@ -7583,6 +7595,18 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                                    && jt->first != "multi_dup" && jt->first != "multi_all_dif")
                            c_item->item_list.push_back((jt->second)[0]);
                     }
+                 }
+                 else {
+                    AddSubcategory(c_item, setting_name, 0, "source", 
+                      (string)"unique " +(qvlu2src.size() >1?"values":"value")+" for "+qual_nm,
+                          e_HasComment, true, kEmptyStr, false, qvlu2src.size());
+/*
+                    CRef <CClickableItem> c_sub (new CClickableItem);
+                    c_sub->setting_name = setting_name;
+                    c_sub->description = GetHasComment(qvlu2src.size(), "source") + "unique "
+                              + (qvlu2src.size() >1 ? "values" : "value") + " for " + qual_nm;
+                    c_item->subcategories.push_back(c_sub);
+*/
                  }
          }
          else {
@@ -7595,12 +7619,18 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                     continue;
              unsigned sz = (jt->second).size();
              if (sz > 1) {
+                 vstr_p = (setting_name == GetName_asn1_oncall()) ? &(jt->second) : 0;
+                 AddSubcategory(c_item, setting_name, vstr_p, "source", 
+                     (string)"'" + jt->first + "' for " + qual_nm, e_HasComment, false,
+                      kEmptyStr, false, sz);
+/*
                CRef <CClickableItem> c_sub (new CClickableItem);
                c_sub->setting_name = setting_name;
                c_sub->description =
                   GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_nm;
                c_item->subcategories.push_back(c_sub);
-               if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second; 
+                 if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second; 
+*/
              }
              else  {
                uni_cnt ++;
@@ -7608,26 +7638,41 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
              }
            }
            if (uni_cnt) {
+              vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0;
+              AddSubcategory(c_item, setting_name, vstr_p, "source", 
+                  (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
+                   e_HasComment, false, kEmptyStr, false, uni_cnt); 
+/*
              CRef <CClickableItem> c_sub (new CClickableItem);
              c_sub->setting_name = GetName();
              c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
                                     + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
              c_item->subcategories.push_back(c_sub);
-             if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
+               if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
+*/
           }
          }
      }
      else {
         c_item->description += " (some missing, ";
+        vstr_p = (setting_name == GetName_asn1_oncall()) ? &qvlu2src["missing"] : 0;
+        AddSubcategory(c_item, setting_name, 0, "source", "missing " + qual_nm, e_IsComment,
+           true, kEmptyStr, false, qvlu2src["missing"].size());
+/*
         CRef <CClickableItem> c_sub (new CClickableItem);
         c_sub->setting_name = setting_name;
         c_sub->description = 
              GetIsComment(qvlu2src["missing"].size(), "source") + "missing " + qual_nm;
         c_item->subcategories.push_back(c_sub);
         if (setting_name == GetName_asn1_oncall()) c_sub->item_list = qvlu2src["missing"];
+*/
 
         if (all_same) {
             c_item->description += "all same";
+            vstr_p = (setting_name == GetName_asn1_oncall()) ? &(qvlu2src.begin()->second):0;
+            AddSubcategory(c_item, setting_name, 0, "source", 
+                 " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment);
+/*
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->setting_name = GetName();
             c_sub->description 
@@ -7636,10 +7681,13 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
             c_item->subcategories.push_back(c_sub);
             if (setting_name == GetName_asn1_oncall()) 
                      c_sub->item_list = qvlu2src.begin()->second;
+*/
         }
         else if (all_unique) {
            c_item->description += "all unique"; 
-           CRef <CClickableItem> c_sub (new CClickableItem);
+           vector <string> arr;
+           
+//           CRef <CClickableItem> c_sub (new CClickableItem);
            unsigned uni_cnt = 0;
            ITERATE (Str2Strs, jt, qvlu2src) {
               if ( jt->first == "missing" || jt->first == "multi_same"
@@ -7647,14 +7695,21 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                     continue;
               if (jt->second.size() == 1) {
                  uni_cnt ++;
-                 if (setting_name == GetName_asn1_oncall()) 
-                                     c_sub->item_list.push_back((jt->second)[0]);
+                 if (setting_name == GetName_asn1_oncall()) arr.push_back((jt->second)[0]);
+    //                                 c_sub->item_list.push_back((jt->second)[0]);
               }
            }
+           vstr_p = (setting_name == GetName_asn1_oncall()) ? &arr : 0;
+           AddSubcategory(c_item, setting_name, vstr_p, "source", 
+                  (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
+                   e_HasComment, false);
+           arr.clear();
+/*
            c_sub->setting_name = setting_name;
            c_sub->description = GetHasComment(uni_cnt, "source") + "unique " 
                                     + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
            c_item->subcategories.push_back(c_sub);
+*/
         }
         else {
            c_item->description += "some duplicate";
@@ -7666,12 +7721,18 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                     continue;
              sz = (jt->second).size();
              if (sz > 1) {
+                 vstr_p = (setting_name == GetName_asn1_oncall()) ? &jt->second : 0;
+                 AddSubcategory(c_item, setting_name, vstr_p, "source", 
+                             "'" + jt->first + "' for " + qual_nm, e_HasComment, false);
+                               
+/*
                CRef <CClickableItem> c_sub (new CClickableItem);
                c_sub->setting_name = GetName();
                c_sub->description =
                   GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_nm;
                c_item->subcategories.push_back(c_sub);
                if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second;
+*/
              }
              else  {
                  uni_cnt ++;
@@ -7679,12 +7740,18 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
              }
            }
            if (uni_cnt) {
+             vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0; 
+             AddSubcategory(c_item, setting_name, vstr_p, "source", 
+                   (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
+                    e_HasComment, false);
+/*
              CRef <CClickableItem> c_sub (new CClickableItem);
-             c_sub->setting_name = GetName();
+             c_sub->setting_name = setting_name;
              c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
                                     + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
              c_item->subcategories.push_back(c_sub);
              if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
+*/
           }
         }
      }
@@ -7719,12 +7786,11 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
      }
      
      c_item->description += ")";
-     if (setting_name == GetName_asn1_oncall()) 
-           c_main->subcategories.push_back(c_item);
+     if (setting_name == GetName_asn1_oncall()) c_main->subcategories.push_back(c_item);
      else {
         c_item->item_list.clear();
-        if (i) thisInfo.disc_report_data.push_back(c_item);
-        if (i < qnm2qvlu_src.size() - 1 ) {
+        thisInfo.disc_report_data.push_back(c_item);
+        if (i < qnm2qvlu_src.size() ) {
              c_item.Reset(new CClickableItem);
              c_item->setting_name = setting_name;
         }
@@ -7849,15 +7915,15 @@ void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
 };
 
 
-static vector <string> comb_desc_ls;
-static vector <CConstRef <CBioSource> > comb_src_ls;
+static vector <string> comb_desc_ls;  // global in C
+static vector <CConstRef <CBioSource> > comb_src_ls;  // global in C
 static Str2Ints comb_qual2src_idx;
 void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Quals_run) return;
    vector <string> this_desc_ls;
-   vector <CConstRef <CBioSource> > this_src_ls;
-   Str2Ints this_qual2src_idx;
+   vector <CConstRef <CBioSource> > this_src_ls;  // local in C
+   Str2Ints this_qual2src_idx;  // local in C
  
    bool run_asn1 = (thisTest.tests_run.find(GetName_asn1()) != thisTest.tests_run.end());
    bool run_oncall= (thisTest.tests_run.find(GetName_asn1_oncall())!=thisTest.tests_run.end());
@@ -7865,6 +7931,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
+cerr << Blob2Str(**it) << endl;
      desc = GetDiscItemText(**it);
      comb_desc_ls.push_back(desc); // for combine_seqentry_reports
      const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
@@ -7875,6 +7942,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
+cerr << Blob2Str(**it) << endl;
       desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
       comb_desc_ls.push_back(desc);
       this_desc_ls.push_back(desc);
@@ -7885,8 +7953,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
    }
 
    GetQual2SrcIdx(this_src_ls, this_desc_ls, this_qual2src_idx);
-   if (run_bad) 
-       GetQualDistribute(this_qual2src_idx, this_desc_ls, this_src_ls, GetName_bad());
+   if (run_bad) GetQualDistribute(this_qual2src_idx, this_desc_ls, this_src_ls, GetName_bad());
 
    if (!this_qual2src_idx.empty()
          && thisInfo.test_item_list.find(GetName_asn1()) == thisInfo.test_item_list.end()) {
@@ -8909,7 +8976,7 @@ void CSeqEntry_DIVISION_CODE_CONFLICTS :: GetReport(CRef <CClickableItem>& c_ite
 
    if (div2item.size() > 1) {
      ITERATE (Str2Strs, it, div2item) {
-       AddSubcategories(c_item, GetName(), it->second, "bioseq", "division code " + it->first,
+       AddSubcategory(c_item, GetName(), &(it->second), "bioseq", "division code " + it->first,
                            e_HasComment, false);
      }
      c_item->description = "Division code conflicts found.";
@@ -8938,7 +9005,7 @@ void CSeqEntry_DISC_MISSING_VIRAL_QUALS :: GetReport(CRef <CClickableItem>& c_it
    GetTestItemList(c_item->item_list, qual2src);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, qual2src) {
-      AddSubcategories(c_item, GetName(), it->second, "virus organism", 
+      AddSubcategory(c_item, GetName(), &(it->second), "virus organism", 
                          "missing suggested qualifier " + it->first);
    } 
    RmvRedundancy(c_item->item_list);
@@ -9025,18 +9092,18 @@ void CSeqEntryTestAndRepData :: GetIncnstTestReport (CRef <CClickableItem>& c_it
            if (vlu2ls.find("missing") != vlu2ls.end())
               missing_ls.insert(missing_ls.end(), 
                             vlu2ls["missing"].begin(), vlu2ls["missing"].end());
-           AddSubcategories(c_field, setting_name, missing_ls, key_str,
+           AddSubcategory(c_field, setting_name, &missing_ls, key_str,
                  " missing field " + fid->first);
         } 
         if (has_missing || vlu2ls.size() > 1) {
             ITERATE (Str2Strs, vid, vlu2ls) {
               if (vid->first != "missing")
-                  AddSubcategories(c_field, setting_name, vid->second, key_str,
+                  AddSubcategory(c_field, setting_name, &(vid->second), key_str,
                     "field " + fid->first + " value '" + vid->first + "'", e_HasComment);
             }
         }
         else if (!has_missing) {
-           AddSubcategories(c_field, setting_name, vlu2ls.begin()->second,
+           AddSubcategory(c_field, setting_name, &(vlu2ls.begin()->second),
               "All " + key_str, 
               "field " + fid->first + " value '" + vlu2ls.begin()->first + "'", 
               e_HasComment); 
@@ -9581,7 +9648,7 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
     ITERATE (Str2Strs, it, bioseq2cnt) {
        desc =
          (it->first=="1"||it->first=="0")? " structured comment":" structured comments";
-       AddSubcategories(c_item,  GetName(), it->second, "sequence", it->first + desc,
+       AddSubcategory(c_item,  GetName(), &(it->second), "sequence", it->first + desc,
                           e_HasComment, false);
     }
     c_item->description = "Sequences have different numbers of structured comments.";
@@ -9640,10 +9707,10 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
        c_item->description 
                = GetOtherComment(prot_cnt + nuc_cnt, "sequence has project ID ",
                                 "sequencs have project IDs " + tot_add_desc);
-       AddSubcategories(c_item, GetName(), mol2list["nuc"],
+       AddSubcategory(c_item, GetName(), &mol2list["nuc"],
            "nucleotide sequence has project ID", "nucleotide sequences have project IDs",
            e_OtherComment, false);
-       AddSubcategories(c_item, GetName(), mol2list["prot"], "protein sequence has project ID",
+       AddSubcategory(c_item, GetName(), &mol2list["prot"], "protein sequence has project ID",
                        "protein sequences have project IDs", e_OtherComment, false);
 
        //c_item->expanded = true;  what does the expanded work for?
@@ -10053,7 +10120,7 @@ void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
    if (blk2ords.size() > 1) {
       ITERATE (Str2Strs, it, blk2ords) {
         strtmp = (it->first == "0") ? "no submit-block" : "identical submit-blocks";
-        AddSubcategories(c_item, GetName(), it->second, "record", strtmp, e_HasComment, false);
+        AddSubcategory(c_item, GetName(), &(it->second),"record", strtmp, e_HasComment, false);
       }
       c_item->description = "SubmitBlock Conflicts";
    }
@@ -10119,7 +10186,7 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: GetReport(CRef <CClickableItem>& c_
     GetTestItemList(it->second, moltp2seqs);
     if (moltp2seqs.size() > 1) {
        ITERATE (Str2Strs, jt, moltp2seqs) {
-         AddSubcategories(c_item, GetName(), jt->second, "sequence", "moltype" + jt->first,
+         AddSubcategory(c_item, GetName(), &(jt->second), "sequence", "moltype" + jt->first,
                           e_HasComment); 
        } 
     }
@@ -10412,7 +10479,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableIte
       strtmp = "organism " + tax_nm + " haplotype " + hap_tp 
           + " but the sequences do not match " 
           + (Ndiff ? "(allowing N to match any)." : "(strict match).");
-      AddSubcategories(c_item, GetName(), it->second, "sequence", strtmp, e_HasComment);
+      AddSubcategory(c_item, GetName(), &(it->second), "sequence", strtmp, e_HasComment);
    }
 
 };
@@ -10425,7 +10492,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4SameSeqs(CRef <CClickableIte
    strtmp = (string)"identical " + (Ndiff ? "(allowing N to match any)" : "(strict match)")
             + " but have different haplotypes.";
    ITERATE (Str2Strs, it, idx2seqs)
-      AddSubcategories(c_item, GetName(), it->second, "sequences", strtmp);
+      AddSubcategory(c_item, GetName(), &(it->second), "sequences", strtmp);
 
 };
 
@@ -10843,7 +10910,7 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
          }
       }
       if (!no_affil_pubs.empty()) 
-          AddSubcategories(c_item,GetName(),no_affil_pubs,"Cit-sub", "no affiliation", 
+          AddSubcategory(c_item, GetName(), &no_affil_pubs, "Cit-sub", "no affiliation", 
                                                                           e_HasComment, false);
       Str2Strs subcat2pubs, subvlu2pubs;
       GetTestItemList(subcat_pub, subcat2pubs, "@");
@@ -10855,7 +10922,7 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->setting_name = GetName();
             ITERATE (Str2Strs, jt, subvlu2pubs)
-               AddSubcategories(c_sub, GetName(), jt->second, "affiliation", 
+               AddSubcategory(c_sub, GetName(), &(jt->second), "affiliation", 
                                        it->first + " value '" + jt->first + "'", e_HasComment);
             c_sub->description = "Affiliations have different values for " + it->first;
             c_item->subcategories.push_back(c_sub);
@@ -11011,7 +11078,7 @@ void CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT :: GetReport(CRef <CClickableItem>& c_
          CRef <CClickableItem> c_tlt (new CClickableItem);
          c_tlt->setting_name = GetName();
          ITERATE (Str2Strs, jt, auth2feats) {
-           AddSubcategories(c_tlt, GetName(), jt->second, "article", 
+           AddSubcategory(c_tlt, GetName(), &(jt->second), "article", 
                          "title '" + it->first + "' and author list '" + jt->first + "'", 
                           e_HasComment, true);
          }
@@ -11311,9 +11378,9 @@ void CSeqEntry_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
                       + "identical";
           }
           else {
-              AddSubcategories(c_item, GetName(), iit->second, "definition line",
+              AddSubcategory(c_item, GetName(), &(iit->second), "definition line",
                                                     "identical", e_IsComment, false);
-              AddSubcategories(c_item, GetName(), unique, "definition line", 
+              AddSubcategory(c_item, GetName(), &unique, "definition line", 
                                                     "unique", e_IsComment, false);
               c_item->description = "Defline Problem Report";
           }
@@ -11321,10 +11388,10 @@ void CSeqEntry_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
       else {
          ITERATE (Str2Strs, it, def2ls) {
             if (it->second.size() > 1)
-              AddSubcategories(c_item, GetName(), it->second, "definition line",
+              AddSubcategory(c_item, GetName(), &(it->second), "definition line",
                                                     "identical", e_IsComment, false);
          }
-         AddSubcategories(c_item, GetName(), unique, "definition line",
+         AddSubcategory(c_item, GetName(), &unique, "definition line",
                                                     "unique", e_IsComment, false);
          c_item->description = "Defline Problem Report";
       }
@@ -11433,7 +11500,7 @@ void CSeqEntry_DISC_MISMATCHED_COMMENTS :: GetReport(CRef <CClickableItem>& c_it
   c_item->item_list.clear();
   if (comm2ls.size() > 1) {
      ITERATE (Str2Strs, it, comm2ls) 
-        AddSubcategories(c_item,GetName(), it->second, "comment", it->first,e_ContainsComment);
+        AddSubcategory(c_item, GetName(), &(it->second),"comment",it->first,e_ContainsComment);
      c_item->description = "Mismatched comments were found";
   }
 };

@@ -1249,12 +1249,12 @@ void CTestAndRepData :: GetTestItemList(const vector <string>& itemlist, Str2Str
    }
 };
 
-void CTestAndRepData :: AddSubcategories(CRef <CClickableItem>& c_item, const string& setting_name, const vector <string>& itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize)
+void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const string& setting_name, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt)
 {    
      CRef <CClickableItem> c_sub (new CClickableItem);
      c_sub->setting_name = setting_name;
-     c_sub->item_list = itemlist;
-     unsigned cnt = c_sub->item_list.size();
+     if (itemlist) c_sub->item_list = *itemlist;
+     unsigned cnt = itemlist ? c_sub->item_list.size() : input_cnt;
      cnt = halfsize ? cnt/2 : cnt; 
      switch ( comm ) {
        case e_IsComment:
@@ -1276,7 +1276,7 @@ void CTestAndRepData :: AddSubcategories(CRef <CClickableItem>& c_item, const st
            NCBI_THROW(CException, eUnknown, "Bad comment type.");
      }  
                                        
-     if (copy2parent)
+     if (itemlist && copy2parent)
         c_item->item_list.insert(c_item->item_list.end(),
                                        c_sub->item_list.begin(), c_sub->item_list.end());
      c_item->subcategories.push_back(c_sub);

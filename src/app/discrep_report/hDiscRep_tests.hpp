@@ -512,10 +512,10 @@ namespace DiscRepNmSpc {
       bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc=true);
       bool HasTaxonomyID(const CBioSource& biosec);
       void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
-      void AddSubcategories(CRef <CClickableItem>& c_item, const string& setting_name, 
-           const vector <string>& itemlist, const string& desc1, const string& desc2, 
+      void AddSubcategory(CRef <CClickableItem>& c_item, const string& setting_name, 
+           const vector <string>* itemlist, const string& desc1, const string& desc2, 
            ECommentTp comm=e_IsComment, bool copy2parent = true, const string& desc3="",
-           bool halfsize = false);
+           bool halfsize = false, unsigned input_cnt = 0);
       void GetTestItemList(const vector <string>& itemlist, Str2Strs& setting2list, 
                                                                    const string& delim = "$");
       void RmvRedundancy(vector <string>& item_list); //all CSeqEntry_Feat_desc tests need this

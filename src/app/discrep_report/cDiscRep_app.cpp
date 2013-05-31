@@ -157,6 +157,7 @@ vector <string>                      CDiscRepInfo :: loctype_names;
 map <EString_location, string>       CDiscRepInfo :: matloc_names;
 map <EString_location, string>       CDiscRepInfo :: matloc_notpresent_names;
 map <ESource_location, string>       CDiscRepInfo :: srcloc_names;
+map <int, string>                    CDiscRepInfo :: genome_names;
 map <ECompletedness_type, string>    CDiscRepInfo :: compl_names;
 map <EMolecule_class_type, string>   CDiscRepInfo :: molclass_names;
 map <ETopology_type, string>         CDiscRepInfo :: topo_names;
@@ -858,10 +859,13 @@ cerr << "222can get\n";
       thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
    }
 
-   // ini. of srcloc_names;
+   // ini. of srcloc_names & genome_names;
    for (i = eSource_location_unknown; i <= eSource_location_chromatophore; i++){
       strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
+      if (strtmp == "unknown") strtmp = kEmptyStr;
+      else if (strtmp == "extrachrom") strtmp = "extrachromosomal";
       thisInfo.srcloc_names[(ESource_location)i] = strtmp;
+      thisInfo.genome_names[i] = strtmp;
    }
 
    // ini of srcori_names;
