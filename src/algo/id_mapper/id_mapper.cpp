@@ -558,11 +558,13 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
 void
 CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
 {
-    bool SeqHasGi;
-    CConstRef<CSeq_id> GenGi, RefGi;
-    GenGi = Seq.GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi);
-    RefGi = Seq.GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi);
-    SeqHasGi = bool(GenGi) || bool(RefGi);
+    CConstRef<CSeq_id> GenGi(
+        Seq.GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi)
+    );
+    CConstRef<CSeq_id> RefGi(
+        Seq.GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi)
+    );
+    const bool SeqHasGi = bool(GenGi) || bool(RefGi);
 
     bool SeqQualifies = false;
     bool ParentQualifies = false;
@@ -570,17 +572,12 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
         SeqQualifies = true;
     }
 
-    CConstRef<CGC_Sequence> Parent;
-    Parent = Seq.GetParent();
-
-    CGC_TaggedSequences::TState Relation;
-
+    CConstRef<CGC_Sequence> Parent = Seq.GetParent();
     if (Parent.NotNull()) {
         GenGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi);
         RefGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi);
         const bool ParentHasGi = bool(GenGi) || bool(RefGi);
-        Relation = Seq.GetParentRelation();
-
+        const CGC_TaggedSequences::TState Relation = Seq.GetParentRelation();
         if (x_HasTop(*Parent, SIdSpec::e_Top_Public) &&
             Relation == CGC_TaggedSequences::eState_placed &&
             ParentHasGi
@@ -588,7 +585,6 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
             ParentQualifies = true;
         }
     }
-
     if (SeqQualifies &&
         !ParentQualifies &&
         !Seq.HasRole(SIdSpec::e_Role_Gpipe_Top)
@@ -1087,7 +1083,8 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
     ParentSeq = Seq.GetParent();
     if (ParentSeq) {
         if (Spec.Top != SIdSpec::e_Top_NotTop ||
-          (Spec.Role != SIdSpec::e_Role_NotSet && Spec.Role <= x_GetRole(*ParentSeq)) ) {
+            (Spec.Role != SIdSpec::e_Role_NotSet && Spec.Role <= x_GetRole(*ParentSeq))
+           ) {
             const int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level + 1);
             if (Parent == e_Yes) {
                 return e_Up;
