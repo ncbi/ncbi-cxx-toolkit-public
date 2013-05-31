@@ -577,9 +577,8 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
         GenGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi);
         RefGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi);
         const bool ParentHasGi = bool(GenGi) || bool(RefGi);
-        const CGC_TaggedSequences::TState Relation = Seq.GetParentRelation();
         if (x_HasTop(*Parent, SIdSpec::e_Top_Public) &&
-            Relation == CGC_TaggedSequences::eState_placed &&
+            Seq.GetParentRelation() == CGC_TaggedSequences::eState_placed &&
             ParentHasGi
            ) {
             ParentQualifies = true;
