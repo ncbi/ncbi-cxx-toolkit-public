@@ -24,7 +24,7 @@ CHECK_COPY = mrna_in.asn mrna_expected.asn est_in.asn est_expected.asn
 #
 # unit_test_splign -mrna-data-in mrna_in.asn -mrna-out -
 #
-# unit_test_splign -est-data-in mrna_in.asn -est-out -
+# unit_test_splign -est-data-in est_in.asn -est-out -
 #
 ### update of expected results can be produced with
 #
