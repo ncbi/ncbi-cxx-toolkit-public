@@ -420,12 +420,12 @@ CGencollIdMapper::x_Init(void)
 
     CTypeConstIterator<CSeq_id> IdIter(*m_Assembly);
     for ( ; IdIter; ++IdIter) {
-        if (IdIter->GetTextseq_Id() != 0) {
-            const string& Acc = IdIter->GetTextseq_Id()->GetAccession();
-            int Ver = 1;
-            if (IdIter->GetTextseq_Id()->CanGetVersion()) {
-                Ver = IdIter->GetTextseq_Id()->GetVersion();
-            }
+        const CTextseq_id* textseqid = IdIter->GetTextseq_Id();
+        if (textseqid != 0) {
+            const string& Acc = textseqid->GetAccession();
+            const int Ver(
+                textseqid->CanGetVersion() ? textseqid->GetVersion() : 1
+            );
             m_AccToVerMap[Acc] = Ver;
         }
     }
@@ -433,7 +433,7 @@ CGencollIdMapper::x_Init(void)
     CTypeConstIterator<CGC_Replicon> ReplIter(*m_Assembly);
     for ( ; ReplIter; ++ReplIter) {
         if (ReplIter->CanGetName() &&
-            NStr::Find(ReplIter->GetName(), "_random") == NPOS
+            !NStr::EndsWith(ReplIter->GetName(), "_random")
            ) {
             m_Chromosomes.push_back(ReplIter->GetName());
         }
