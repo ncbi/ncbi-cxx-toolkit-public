@@ -33,6 +33,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
+#include "ncbi_servicep.h"
 #include <connect/ncbi_connutil.h>
 #include <ctype.h>
 #include <errno.h>
@@ -77,12 +78,14 @@ static char* x_StrcatCRLF(char* dst, const char* src)
 
 static const char* x_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
-                              const char* def_value)
+                              const char* def_value, int*/*bool*/ specific)
 {
     char        buf[128];
     const char* val;
     char*       s;
 
+    assert(specific);
+    *specific = 1/*true,safer*/;
     if (!value  ||  value_size <= 0)
         return 0;
     *value = '\0';
@@ -147,6 +150,7 @@ static const char* x_GetValue(const char* service, const char* param,
         s = strupr(buf);
     }
 
+    specific = 0/*false*/;
     /* Environment search for 'CONN_param' */
     if ((val = getenv(s)) != 0)
         return strncpy0(value, val, value_size - 1);
@@ -158,12 +162,12 @@ static const char* x_GetValue(const char* service, const char* param,
 }
 
 
-extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
-                                        char* value, size_t value_size,
-                                        const char* def_value)
+static const char* s_GetValue(const char* service, const char* param,
+                              char* value, size_t value_size,
+                              const char* def_value, int*/*bool*/ specific)
 {
     const char* retval = x_GetValue(service, param,
-                                    value, value_size, def_value);
+                                    value, value_size, def_value, specific);
     if (retval) {
         /*strip enveloping quotes*/
         size_t len = strlen(value);
@@ -176,6 +180,15 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         assert(retval == value);
     }
     return retval;
+}
+
+
+extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
+                                        char* value, size_t value_size,
+                                        const char* def_value)
+{
+    int/*bool*/ dummy;
+    return x_GetValue(service, param, value, value_size, def_value, &dummy);
 }
 
 
@@ -230,6 +243,31 @@ static const char* x_Scheme(EURLScheme scheme, char buf[])
 }
 
 
+static EFWMode x_ParseFirewall(const char* str, int/*bool*/ specific)
+{
+    if (!*str) /*NB: not actually necessary but faster*/
+        return eFWMode_Legacy;
+    if (strcasecmp(str, "adaptive") == 0  ||  ConnNetInfo_Boolean(str))
+        return eFWMode_Adaptive;
+    if (strcasecmp(str, "firewall") == 0)
+        return eFWMode_Firewall;
+    if (strcasecmp(str, "fallback") == 0)
+        return eFWMode_Fallback;
+    for (;;) {
+        int n;
+        unsigned short port;
+        if (sscanf(str, "%hu%n", &port, &n) < 1  ||  !port)
+            break;
+        str += n;
+        if (!specific)
+            SERV_AddFirewallPort(port);
+        if (!*(str += strspn(str, " \t")))
+            return eFWMode_Fallback;
+    }
+    return eFWMode_Legacy;
+}
+
+
 /****************************************************************************
  * ConnNetInfo API
  */
@@ -238,8 +276,9 @@ static const char* x_Scheme(EURLScheme scheme, char buf[])
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
-    ConnNetInfo_GetValue(service, name, value, sizeof(value), def_value)
+    s_GetValue(service, name, value, sizeof(value), def_value, &specific)
 
+    int/*bool*/ specific;
     SConnNetInfo* info;
     /* aux. storage */
     char   str[1024];
@@ -312,7 +351,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         /* HTTP proxy password */
         REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                   DEF_CONN_HTTP_PROXY_PASS);
-        /* HTTP proxy bypass */
+        /* HTTP proxy leakout */
         REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
         info->http_proxy_leak    =   ConnNetInfo_Boolean(str);
     } else {
@@ -346,16 +385,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* firewall mode */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    if (!*str) /*NB: not actually necessary but faster*/
-        info->firewall = eFWMode_Legacy;
-    else if (strcasecmp(str, "adaptive") == 0  ||  ConnNetInfo_Boolean(str))
-        info->firewall = eFWMode_Adaptive;
-    else if (strcasecmp(str, "firewall") == 0)
-        info->firewall = eFWMode_Firewall;
-    else if (strcasecmp(str, "fallback") == 0)
-        info->firewall = eFWMode_Fallback;
-    else
-        info->firewall = eFWMode_Legacy;
+    info->firewall = x_ParseFirewall(str, specific);
 
     /* stateless client? */
     REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
