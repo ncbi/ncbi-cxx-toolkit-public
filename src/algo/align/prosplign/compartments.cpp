@@ -86,17 +86,22 @@ void RestoreOriginalHits(THitRefs& hitrefs,
         if (!is_protein_subject) {
             qry_start /=3;
             qry_stop /=3;
+
+            (*h)->SetQueryStart(qry_start);
+            (*h)->SetQueryStop(qry_stop);
         }
 
         //find hit with same boundaries and max score
         double score = 0;
+        bool undef_score;
         ITERATE(THitRefs, oh, orig_hitrefs) {
             if ((*oh)->GetSubjStart() == subj_start &&
                 subj_stop == (*oh)->GetSubjStop() &&
                 (*oh)->GetQueryStart() == qry_start &&
                 qry_stop == (*oh)->GetQueryStop() &&
-                score < (*oh)->GetScore()) {
+                (undef_score || score < (*oh)->GetScore())) {
                 score = (*oh)->GetScore();
+                undef_score = false;
                 **h = **oh;
             }
         }
