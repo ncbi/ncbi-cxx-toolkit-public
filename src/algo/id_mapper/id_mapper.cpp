@@ -718,12 +718,14 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
 
     // Second, if the Acc is versionless, see if we can find a version for it
     // in this assembly.
-    if (Id->GetTextseq_Id() &&
-        Id->GetTextseq_Id()->IsSetAccession() &&
-        !Id->GetTextseq_Id()->IsSetVersion()) {
-        const int Ver = m_AccToVerMap.find(Id->GetTextseq_Id()->GetAccession())->second;
+    const CTextseq_id* textseqid = Id->GetTextseq_Id();
+    if (textseqid != 0 &&
+        textseqid->IsSetAccession() &&
+        !textseqid->IsSetVersion()
+       ) {
+        const int Ver = m_AccToVerMap.find(textseqid->GetAccession())->second;
         CRef<CSeq_id> NewId(new CSeq_id());
-        NewId->Set(Id->Which(), Id->GetTextseq_Id()->GetAccession(), kEmptyStr, Ver);
+        NewId->Set(Id->Which(), textseqid->GetAccession(), kEmptyStr, Ver);
         Id = NewId;
     }
 
