@@ -173,7 +173,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
     Id = x_FixImperfectId(Id, Spec);
     Id = x_ApplyPatternToId(Id, Spec);
     Id = x_NCBI34_Map_IdFix(Id);
-
+    
     SIdSpec GuessSpec;
     Guess(Loc, GuessSpec);
     if (GuessSpec == Spec) {
@@ -181,7 +181,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
         Result->Assign(Loc);
         return Result;
     }
-
+    
     CConstRef<CGC_Sequence> Seq;
     {{
         const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
@@ -257,7 +257,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
             }
         }
     }}
-
+    
     return CRef<CSeq_loc>();
     // Nothing found, total fallback
     /*
@@ -746,7 +746,8 @@ CGencollIdMapper::x_GetRole(const objects::CGC_Sequence& Seq) const
     int SeqRole = SIdSpec::e_Role_NotSet;
     if (Seq.CanGetRoles()) {
         ITERATE (CGC_Sequence::TRoles, RoleIter, Seq.GetRoles()) {
-            if ((*RoleIter) >= eGC_SequenceRole_top_level) {
+            //if ((*RoleIter) >= eGC_SequenceRole_top_level) {
+            if ((*RoleIter) >= eGC_SequenceRole_submitter_pseudo_scaffold) {
                 continue;
             }
             SeqRole = min(SeqRole, *RoleIter);
@@ -1075,6 +1076,11 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             }
         }
         else if (Spec.Role != SIdSpec::e_Role_NotSet && Seq.HasRole(Spec.Role)) {
+            return e_Yes;
+        }
+        // Has the ID match, and the Top and Role both don't matter
+        else if(Spec.Top == SIdSpec::e_Top_NotSet && 
+                Spec.Role == SIdSpec::e_Role_NotSet) {
             return e_Yes;
         }
     }

@@ -45,9 +45,7 @@ class CGC_Assembly;
 class CGC_AssemblyUnit;
 class CGC_Sequence;
 class CGC_TypedSeqId;
-enum CGC_TypedSeqId::E_Choice;
 class CGC_SeqIdAlias;
-enum CGC_SeqIdAlias::E_AliasTypes;
 END_SCOPE(objects)
 
 
