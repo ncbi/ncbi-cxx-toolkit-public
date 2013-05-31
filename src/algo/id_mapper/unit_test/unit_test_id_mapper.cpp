@@ -151,13 +151,13 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest)
 
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
     
-    CSeq_loc Expected;
-    Expected.SetInt().SetId().Set("NT_113872.1");
-    Expected.SetInt().SetFrom(57066);
-    Expected.SetInt().SetTo(67066);
+    CRef<CSeq_loc> Expected(new CSeq_loc());
+    Expected->SetInt().SetId().Set("NT_113872.1");
+    Expected->SetInt().SetFrom(57066);
+    Expected->SetInt().SetTo(67066);
 
     // Check that Map results meet expectations
-    BOOST_CHECK(Result->Equals(Expected));
+    BOOST_CHECK(Result->Equals(*Expected));
 }
 
 BOOST_AUTO_TEST_SUITE_END();
