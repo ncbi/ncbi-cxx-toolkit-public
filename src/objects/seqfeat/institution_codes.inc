@@ -2767,7 +2767,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IZPAN	s	Zoological Institute, Polish Academy of Sciences",
 "IZPC	s	Universidade do Porto",
 "IZSI	s	Istituto di Zoologia",
-"IZSSA	c	Collection of Experimental Zooprophylactic Institute of Sardinia (Istituto Zooprofilattico Sperimentale della Sardegna \"G.Pegreffi\")",
+"IZSSA	c	Collection of Experimental Zooprophylactic Institute of Sardinia (Istituto Zooprofilattico Sperimentale della Sardegna \"G.Pegreffi\", Sassari))",
 "IZTA	s	Universidad Nacional Autonoma de Mexico, Iztacala, Jefatura de Biologia",
 "IZUA	s	Universidad Austral de Chile, Instituto de Zoologia",
 "IZUC	s	Universidad de Concepcion, Instituto de Zoologia",
