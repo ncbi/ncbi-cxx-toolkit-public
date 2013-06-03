@@ -552,7 +552,13 @@ bool CNetCacheAPI::HasBlob(const string& blob_id,
     try {
         return m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("HASB ",
                 key, &parameters), &parameters).response[0] == '1';
-    } catch (CNetServiceException& e) {
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
+            return false;
+        throw;
+    }
+    catch (CNetServiceException& e) {
         if (!TCGI_NetCacheUseHasbFallback::GetDefault() ||
                 e.GetErrCode() != CNetServiceException::eCommunicationError ||
                 e.GetMsg() != "Unknown request")

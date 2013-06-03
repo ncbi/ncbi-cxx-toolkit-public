@@ -562,7 +562,14 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
 bool CNetICacheClient::HasBlobs(const string&  key,
                                 const string&  subkey)
 {
-    return m_Impl->ExecStdCmd("HASB", key, 0, subkey) == "1";
+    try {
+        return m_Impl->ExecStdCmd("HASB", key, 0, subkey)[0] == '1';
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
+            return false;
+        throw;
+    }
 }
 
 
