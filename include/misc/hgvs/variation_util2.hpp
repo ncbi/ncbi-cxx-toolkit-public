@@ -286,6 +286,8 @@ public:
     /// If neither is annotated, return normal length
     TSeqPos GetEffectiveTranscriptLength(const CBioseq_Handle& bsh);
 
+
+    CRef<CSeq_literal> GetLiteralAtLoc(const CSeq_loc& loc);
 private:
 
 

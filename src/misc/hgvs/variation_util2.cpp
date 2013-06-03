@@ -1282,7 +1282,10 @@ CRef<CVariation> CVariationUtil::InferNAfromAA(const CVariation& v, TAA2NAFlags 
 }
 
 
-
+CRef<CSeq_literal> CVariationUtil::GetLiteralAtLoc(const CSeq_loc& loc)
+{
+    return x_GetLiteralAtLoc(loc);
+}
 
 
 CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
@@ -2057,6 +2060,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
       
         if(frameshift_phase == 0) {
             TruncateCommonSuffix(prot_ref_str, prot_var_str);
+            if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
+                prot_ref_str.resize(prot_var_str.size());
+            }
         } else {
             //Keep the frst AA in case of frameshifts
             //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  instead of NP_000483.3:p.Lys1177delfs 
