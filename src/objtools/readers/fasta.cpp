@@ -118,13 +118,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-NCBI_PARAM_DEF(bool, READ_FASTA, USE_NEW_IMPLEMENTATION, true);
-
-static
-CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
-                                 int* counter,
-                                 vector<CConstRef<CSeq_loc> >* lcv);
-
 template <typename TStack>
 class CTempPusher
 {
@@ -626,7 +619,6 @@ void CFastaReader::ParseDefLine(const TStr& s)
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
 
     if (range_len) {
-#if 1
         // generate a new ID, and record its relation to the given one(s).
         SetIDs().clear();
         GenerateID();
@@ -652,14 +644,6 @@ void CFastaReader::ParseDefLine(const TStr& s)
                 ||  m_CurrentSeq->GetNonLocalId() == &*m_BestID);
         m_BestID = GetIDs().front();
         m_ExpectedEnd = range_end - range_start;
-#else
-        // somewhat confusing, and arguably incorrect
-        if (range_start > 0) {
-            SGap gap = { 0, range_start };
-            m_Gaps.push_back(gap);
-        }
-        m_ExpectedEnd = range_end;
-#endif   
     }
 
     if ( !TestFlag(fNoUserObjs) ) {
@@ -918,9 +902,9 @@ void CFastaReader::ParseDataLine(const TStr& s)
     
     if( ! bad_pos_vec.empty() ) {
         if (TestFlag(fValidate)) {
-        NCBI_THROW2(CBadResiduesException, eBadResidues,
-            "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
-            CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
+            NCBI_THROW2(CBadResiduesException, eBadResidues,
+                "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
+                CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
         } else {
             stringstream warn_strm;
             warn_strm << "FASTA-Reader: Ignoring invalid " << x_NucOrProt() 
@@ -1426,21 +1410,13 @@ private:
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                            int* counter, vector<CConstRef<CSeq_loc> >* lcv)
 {
-    typedef NCBI_PARAM_TYPE(READ_FASTA, USE_NEW_IMPLEMENTATION) TParam_NewImpl;
-
-    TParam_NewImpl new_impl;
-
-    if (new_impl.Get()) {
-        CRef<ILineReader> lr(ILineReader::New(in));
-        CFastaReader      reader(*lr, flags);
-        CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
-        if (lcv) {
-            reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
-        }
-        return reader.ReadSet();
-    } else {
-        return s_ReadFasta_OLD(in, flags, counter, lcv);
+    CRef<ILineReader> lr(ILineReader::New(in));
+    CFastaReader      reader(*lr, flags);
+    CCounterManager   counter_manager(reader.SetIDGenerator(), counter);
+    if (lcv) {
+        reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
     }
+    return reader.ReadSet();
 }
 
 
@@ -1553,7 +1529,6 @@ static SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
     CSeq_id::E_Choice choice =
         CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str());
 
-#if 1
     if (choice != CSeq_id::e_not_set) {
         SIZE_TYPE vbar_prev = vbar;
         int count;
@@ -1572,42 +1547,6 @@ static SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
     } else {
         return NPOS; // bad
     }
-#else
-    switch (choice) {
-    case CSeq_id::e_Patent: case CSeq_id::e_Other: // 3 args
-        vbar = str.find('|', vbar + 1);
-        // intentional fall-through - this allows us to correctly
-        // calculate the number of '|' separations for FastA IDs
-
-    case CSeq_id::e_Genbank:   case CSeq_id::e_Embl:    case CSeq_id::e_Pir:
-    case CSeq_id::e_Swissprot: case CSeq_id::e_General: case CSeq_id::e_Ddbj:
-    case CSeq_id::e_Prf:       case CSeq_id::e_Pdb:     case CSeq_id::e_Tpg:
-    case CSeq_id::e_Tpe:       case CSeq_id::e_Tpd:
-        // 2 args
-        if (vbar == NPOS) {
-            return NPOS; // bad
-        }
-        vbar = str.find('|', vbar + 1);
-        // intentional fall-through - this allows us to correctly
-        // calculate the number of '|' separations for FastA IDs
-
-    case CSeq_id::e_Local: case CSeq_id::e_Gibbsq: case CSeq_id::e_Gibbmt:
-    case CSeq_id::e_Giim:  case CSeq_id::e_Gi:
-        // 1 arg
-        if (vbar == NPOS) {
-            if (choice == CSeq_id::e_Other) {
-                // this is acceptable - member is optional
-                break;
-            }
-            return NPOS; // bad
-        }
-        vbar = str.find('|', vbar + 1);
-        break;
-
-    default: // unrecognized or not set
-        return NPOS; // bad
-    }
-#endif
 
     return (vbar == NPOS) ? str.size() : vbar;
 }
@@ -1811,211 +1750,6 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
                     " from IDs, flags, or sequence",
                     in.tellg() - CT_POS_TYPE(0));
     }
-}
-
-
-static
-CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
-                                 int* counter,
-                                 vector<CConstRef<CSeq_loc> >* lcv)
-{
-    if ( !in ) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "ReadFasta: Unexpected end of input",
-                    in.tellg() - CT_POS_TYPE(0));
-    } else {
-        CT_INT_TYPE c = in.peek();
-        if ( !strchr(">#!\n\r", CT_TO_CHAR_TYPE(c)) ) {
-            NCBI_THROW2
-                (CObjReaderParseException, eFormat,
-                 "ReadFasta: Input doesn't start with a defline or comment",
-                 in.tellg() - CT_POS_TYPE(0));
-        }
-    }
-
-    CRef<CSeq_entry>       entry(new CSeq_entry);
-    CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
-    CRef<CBioseq>          seq(0); // current Bioseq
-    string                 line;
-    TSeqPos                pos = 0, lc_start = 0;
-    bool                   was_lc = false, in_gap = false;
-    CRef<CSeq_id>          best_id;
-    CRef<CSeq_loc>         lowercase(0);
-    int                    defcounter = 1;
-
-    if ( !counter ) {
-        counter = &defcounter;
-    }
-
-    while ( !in.eof() ) {
-        if ((flags & fReadFasta_OneSeq)  &&  seq.NotEmpty()
-            &&  (in.peek() == '>')) {
-            break;
-        }
-        NcbiGetlineEOL(in, line);
-        if (NStr::EndsWith(line, "\r")) {
-            line.resize(line.size() - 1);
-        }
-        if (in.eof()  &&  line.empty()) {
-            break;
-        } else if (line.empty()) {
-            continue;
-        }
-        if (line[0] == '>') {
-            // new sequence
-            if (seq) {
-                s_FixSeqData(seq);
-                if (was_lc) {
-                    lowercase->SetPacked_int().AddInterval
-                        (*best_id, lc_start, pos - 1);
-                }
-            }
-            seq = new CBioseq;
-            if (flags & fReadFasta_NoSeqData) {
-                seq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
-            } else {
-                seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            }
-            {{
-                CRef<CSeq_entry> entry2(new CSeq_entry);
-                entry2->SetSeq(*seq);
-                sset.push_back(entry2);
-            }}
-            string          title;
-            CSeq_inst::EMol mol = s_ParseFastaDefline(seq->SetId(), title,
-                                                      line, flags, counter);
-            if (mol == CSeq_inst::eMol_not_set
-                &&  (flags & fReadFasta_NoSeqData)) {
-                if (flags & fReadFasta_AssumeNuc) {
-                    _ASSERT(!(flags & fReadFasta_AssumeProt));
-                    mol = CSeq_inst::eMol_na;
-                } else if (flags & fReadFasta_AssumeProt) {
-                    mol = CSeq_inst::eMol_aa;
-                }
-            }
-            seq->SetInst().SetMol(mol);
-
-            if ( !title.empty() ) {
-                CRef<CSeqdesc> desc(new CSeqdesc);
-                desc->SetTitle(title);
-                seq->SetDescr().Set().push_back(desc);
-            }
-
-            if (lcv) {
-                pos       = 0;
-                was_lc    = false;
-                best_id   = FindBestChoice(seq->GetId(), CSeq_id::Score);
-                lowercase = new CSeq_loc;
-                lowercase->SetNull();
-                lcv->push_back(lowercase);
-            }
-            in_gap = false;
-        } else if (line[0] == '#'  ||  line[0] == '!') {
-            continue; // comment
-        } else if ( !seq ) {
-            NCBI_THROW2
-                (CObjReaderParseException, eFormat,
-                 "ReadFasta: No defline preceding data",
-                 in.tellg() - CT_POS_TYPE(0));
-        } else if ( !(flags & fReadFasta_NoSeqData) ) {
-            // These don't change, but the calls may be relatively expensive,
-            // esp. with ref-counted implementations.
-            SIZE_TYPE   line_size = line.size();
-            const char* line_data = line.data();
-            // actual data; may contain embedded junk
-            CSeq_inst&  inst      = seq->SetInst();
-            string      residues(line_size + 1, '\0');
-            char*       res_data  = const_cast<char*>(residues.data());
-            SIZE_TYPE   res_count = 0;
-            for (SIZE_TYPE i = 0;  i < line_size;  ++i) {
-                char c = line_data[i];
-                if (isalpha((unsigned char) c)) {
-                    in_gap = false;
-                    if (lowercase) {
-                        bool is_lc = islower((unsigned char) c) ? true : false;
-                        if (is_lc && !was_lc) {
-                            lc_start = pos;
-                        } else if (was_lc && !is_lc) {
-                            lowercase->SetPacked_int().AddInterval
-                                (*best_id, lc_start, pos - 1);
-                        }
-                        was_lc = is_lc;
-                        ++pos;
-                    }
-                    res_data[res_count++] = toupper((unsigned char) c);
-                } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
-                    CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
-                    if (in_gap) {
-                        ++d.back()->SetLiteral().SetLength();
-                        continue; // count long gaps
-                    }
-                    if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
-                        CRef<CDelta_seq> ds(new CDelta_seq);
-                        inst.SetRepr(CSeq_inst::eRepr_delta);
-                        if (inst.IsSetSeq_data()) {
-                            ds->SetLiteral().SetSeq_data(inst.SetSeq_data());
-                            d.push_back(ds);
-                            inst.ResetSeq_data();
-                        }
-                    }
-                    if ( res_count ) {
-                        residues.resize(res_count);
-                        if (inst.GetMol() == CSeq_inst::eMol_not_set) {
-                            s_GuessMol(inst.SetMol(), residues, flags, in);
-                        }
-                        s_AddData(inst, residues);
-                    }
-                    in_gap    = true;
-                    res_count = 0;
-                    CRef<CDelta_seq> gap(new CDelta_seq);
-                    if (line.find_first_not_of(" \t\r\n", i + 1) == NPOS) {
-                        // consider a single - at the end of a line as
-                        // a gap of unknown length, as we sometimes format
-                        // them that way
-                        gap->SetLoc().SetNull();
-                    } else {
-                        gap->SetLiteral().SetLength(1);
-                    }
-                    d.push_back(gap);
-                } else if (c == '-'  ||  c == '*') {
-                    in_gap = false;
-                    // valid, at least for proteins
-                    res_data[res_count++] = c;
-                } else if (c == ';') {
-                    i = line_size;
-                    continue; // skip rest of line
-                } else if ( !isspace((unsigned char) c) ) {
-                    // can't use FASTA_WARNING here because this
-                    // function is not inside a CFastaReader.
-                    // This function is deprecated, anyway.
-                    ERR_POST_X(2, Warning << "ReadFasta: Ignoring invalid residue "
-                               << c << " at position "
-                               << (in.tellg() - CT_POS_TYPE(0)));
-                }
-            }
-
-            if (res_count) {
-                // Add the accumulated data...
-                residues.resize(res_count);
-                if (inst.GetMol() == CSeq_inst::eMol_not_set) {
-                    s_GuessMol(inst.SetMol(), residues, flags, in);
-                }            
-                s_AddData(inst, residues);
-            }
-        }
-    }
-
-    if (seq) {
-        s_FixSeqData(seq);
-        if (was_lc) {
-            lowercase->SetPacked_int().AddInterval(*best_id, lc_start, pos - 1);
-        }
-    }
-    // simplify if possible
-    if (sset.size() == 1) {
-        entry->SetSeq(*seq);
-    }
-    return entry;
 }
 
 void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )

@@ -379,9 +379,7 @@ enum EReadFastaFlags {
 typedef CFastaReader::TFlags TReadFastaFlags;
 
 
-/// Traditional interface for reading FASTA files.  The
-/// USE_NEW_IMPLEMENTATION parameter governs whether to use
-/// CFastaReader or the traditional implementation.
+/// Traditional interface for reading FASTA files.
 /// @deprecated
 /// @sa CFastaReader
 NCBI_DEPRECATED
@@ -389,9 +387,6 @@ NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            int* counter = 0,
                            vector<CConstRef<CSeq_loc> >* lcv = 0);
-
-NCBI_PARAM_DECL(bool, READ_FASTA, USE_NEW_IMPLEMENTATION);
-
 
 //////////////////////////////////////////////////////////////////
 //
