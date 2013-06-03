@@ -57,7 +57,7 @@
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <objtools/readers/agp_read.hpp>
+#include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/readers/rm_reader.hpp>
 
 
@@ -73,6 +73,7 @@ using namespace std;
 CFormatGuessEx::CFormatGuessEx() 
     : m_Guesser(new CFormatGuess) 
 {
+
     ;
 }
 
@@ -239,9 +240,13 @@ bool CFormatGuessEx::x_TryAgp()
     m_LocalBuffer.clear();
     m_LocalBuffer.seekg(0);
 	
-    vector<CRef<CBioseq> > Bioseqs;
+    CAgpToSeqEntry::TSeqEntryRefVec Bioseqs;
     try {
-        AgpRead(m_LocalBuffer, Bioseqs);
+        CAgpToSeqEntry agp_reader;
+        if( 0 != agp_reader.ReadStream(m_LocalBuffer) ) {
+            return false;
+        }
+        Bioseqs.swap( agp_reader.GetResult() );
     } catch(CException&) {
     } catch(...) {
     }
