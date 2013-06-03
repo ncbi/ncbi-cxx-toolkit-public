@@ -301,36 +301,34 @@ BOOST_AUTO_TEST_CASE(Test_CalculateMemberships_Function)
     }
 
     {
-        // Create a DI record that will set SWISSPROT and REFSEQ_GENOMIC
+        // Create a DI record that will set SWISSPROT and REFSEQ
         // membership bits.
-        // Hint: REFSEQ_GENOMIC's membership bit is unassigned, so
-        // only the SWISSPROT bit should be set.
         SDIRecord sdiRecord;
         sdiRecord.owner = 6;            // is SWISSPROT
         sdiRecord.acc = "CC_456789";    // is REFSEQ
-        sdiRecord.mol = 1;              // is REFSEQ_GENOMIC
+        sdiRecord.mol = 1;              // just because we can
         CBlast_def_line::TMemberships memberships =
                 CCriteriaSet_CalculateMemberships(sdiRecord);
         BOOST_CHECK(memberships.size() == 1);
         BOOST_CHECK(
-                memberships.front() == (0x1 << (ICriteria::eSWISSPROT - 1))
+                (memberships.front() & (0x1 << (ICriteria::eSWISSPROT - 1)) &&
+                (memberships.front() & (0x1 << (ICriteria::eREFSEQ - 1))))
         );
     }
 
     {
-        // Create a DI record that will set PDB and REFSEQ_RNA
+        // Create a DI record that will set PDB and REFSEQ
         // membership bits.
-        // Hint: REFSEQ_RNA's membership bit is unassigned, so
-        // only the PDB bit should be set.
         SDIRecord sdiRecord;
         sdiRecord.owner = 10;           // is PDB
         sdiRecord.acc = "CC_456789";    // is REFSEQ
-        sdiRecord.mol = 2;              // is REFSEQ_RNA
+        sdiRecord.mol = 2;              // just because we can
         CBlast_def_line::TMemberships memberships =
                 CCriteriaSet_CalculateMemberships(sdiRecord);
         BOOST_CHECK(memberships.size() == 1);
         BOOST_CHECK(
-                memberships.front() == (0x1 << (ICriteria::ePDB - 1))
+                (memberships.front() & (0x1 << (ICriteria::ePDB - 1)) &&
+                (memberships.front() & (0x1 << (ICriteria::eREFSEQ - 1))))
         );
     }
 }

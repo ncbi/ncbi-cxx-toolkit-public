@@ -214,9 +214,8 @@ CBlast_def_line::TMemberships CCriteriaSet_CalculateMemberships(
         // Verify that all succeed.
         critSet_ptr = new CCriteriaSet;
         _VERIFY(critSet_ptr->AddCriteria("swissprot"));
-        _VERIFY(critSet_ptr->AddCriteria("pdb"));
-        _VERIFY(critSet_ptr->AddCriteria("refseq_genomic"));
-        _VERIFY(critSet_ptr->AddCriteria("refseq_rna"));
+        _VERIFY(critSet_ptr->AddCriteria("pdb"));      
+        _VERIFY(critSet_ptr->AddCriteria("refseq"));    
     }
 
     // Need number of bits per mask word (i.e. an int).
