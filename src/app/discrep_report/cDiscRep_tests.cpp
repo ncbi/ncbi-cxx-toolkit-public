@@ -7382,10 +7382,7 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
 {
  string ret_str(kEmptyStr);
  if (is_subsrc) ret_str = Get1SubSrcValue(biosrc, qual_name);
- else if (qual_name == "location") {
-            ret_str = thisInfo.genome_names[biosrc.GetGenome()];
-cerr << "GetGenome " << biosrc.GetGenome() << "  " << ret_str << endl;
- }
+ else if (qual_name == "location") ret_str = thisInfo.genome_names[biosrc.GetGenome()];
  else if (qual_name == "taxname") 
             ret_str = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
  else if (qual_name == "common_name") 
@@ -7453,17 +7450,16 @@ cerr << "GetGenome " << biosrc.GetGenome() << "  " << ret_str << endl;
 
 
 
-void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name)
+void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name, unsigned pre_cnt, unsigned tot_cnt)
 {
   int pre_idx, cur_idx, i;
   string qual_name, src_qual_vlu, src_txt;
   bool is_subsrc;
   size_t pos;
 
-cerr << "qual2src_idx.size() " << qual2src_idx.size() << endl;
+  pre_idx = (int)pre_cnt - 1;
   ITERATE (Str2Ints, it, qual2src_idx) {
      qual_name = it->first;
-cerr << "GetQualDistribute qual_name " << qual_name << endl;
      is_subsrc = false;
      if ( (pos = qual_name.find("$subsrc")) != string::npos) {
         is_subsrc = true;
@@ -7472,6 +7468,7 @@ cerr << "GetQualDistribute qual_name " << qual_name << endl;
      pre_idx = -1;
      ITERATE (vector <int>, jt, it->second) {
        cur_idx = *jt;
+       if (cur_idx < pre_idx || cur_idx > (int)tot_cnt -1) continue; 
        if (pre_idx +1 != cur_idx) {  // have missing
     //      strtmp = (qual_name == "location") ? "$genomic#" : "$missing#";
           strtmp = "$missing#";
@@ -7483,7 +7480,6 @@ cerr << "GetQualDistribute qual_name " << qual_name << endl;
        src_txt = desc_ls[cur_idx];
        thisInfo.test_item_list[setting_name].push_back(
                                           qual_name+"$"+ src_qual_vlu + "#" + src_txt);
- cerr << "qualname + '$' ...  " << qual_name+"$"+ src_qual_vlu + "#" + src_txt << endl;
        //qual_nm2qual_vlus[qual_name].qual_vlu2src[src_qual_vlu].push_back(src_txt);
 
        // have multiple qualifiers? 
@@ -7508,7 +7504,8 @@ cerr << "GetQualDistribute qual_name " << qual_name << endl;
 
    //  strtmp = (qual_name == "location") ? "$genomic#" : "$missing#";
      strtmp = "$missing#";
-     for (i = cur_idx +1; i < (int)src_ls.size(); i++)
+     //for (i = cur_idx +1; i < (int)src_ls.size(); i++)
+     for (i = cur_idx + 1; i < (int)tot_cnt; i++)
            thisInfo.test_item_list[setting_name].push_back(qual_name + strtmp +desc_ls[i]);
   }
 };
@@ -7576,16 +7573,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
             AddSubcategory(c_item, setting_name, 0, "source",
                + " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment, 
                true, kEmptyStr, false, (qvlu2src.begin()->second).size());
-/*
-            CRef <CClickableItem> c_sub (new CClickableItem);
-            c_sub->setting_name = setting_name;
-            c_sub->description 
-                = GetHasComment( (qvlu2src.begin()->second).size(), "source")
-                   + " '" + qvlu2src.begin()->first + "' for " + qual_nm;
-            c_item->subcategories.push_back(c_sub);
-            if (setting_name == GetName_asn1_oncall()) 
-                    c_sub->item_list = qvlu2src.begin()->second;
-*/
          }
          else if (all_unique) {
                  c_item->description += "all_unique";
@@ -7600,13 +7587,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                     AddSubcategory(c_item, setting_name, 0, "source", 
                       (string)"unique " +(qvlu2src.size() >1?"values":"value")+" for "+qual_nm,
                           e_HasComment, true, kEmptyStr, false, qvlu2src.size());
-/*
-                    CRef <CClickableItem> c_sub (new CClickableItem);
-                    c_sub->setting_name = setting_name;
-                    c_sub->description = GetHasComment(qvlu2src.size(), "source") + "unique "
-                              + (qvlu2src.size() >1 ? "values" : "value") + " for " + qual_nm;
-                    c_item->subcategories.push_back(c_sub);
-*/
                  }
          }
          else {
@@ -7623,14 +7603,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                  AddSubcategory(c_item, setting_name, vstr_p, "source", 
                      (string)"'" + jt->first + "' for " + qual_nm, e_HasComment, false,
                       kEmptyStr, false, sz);
-/*
-               CRef <CClickableItem> c_sub (new CClickableItem);
-               c_sub->setting_name = setting_name;
-               c_sub->description =
-                  GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_nm;
-               c_item->subcategories.push_back(c_sub);
-                 if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second; 
-*/
              }
              else  {
                uni_cnt ++;
@@ -7642,14 +7614,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
               AddSubcategory(c_item, setting_name, vstr_p, "source", 
                   (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
                    e_HasComment, false, kEmptyStr, false, uni_cnt); 
-/*
-             CRef <CClickableItem> c_sub (new CClickableItem);
-             c_sub->setting_name = GetName();
-             c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
-                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
-             c_item->subcategories.push_back(c_sub);
-               if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
-*/
           }
          }
      }
@@ -7658,36 +7622,16 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
         vstr_p = (setting_name == GetName_asn1_oncall()) ? &qvlu2src["missing"] : 0;
         AddSubcategory(c_item, setting_name, 0, "source", "missing " + qual_nm, e_IsComment,
            true, kEmptyStr, false, qvlu2src["missing"].size());
-/*
-        CRef <CClickableItem> c_sub (new CClickableItem);
-        c_sub->setting_name = setting_name;
-        c_sub->description = 
-             GetIsComment(qvlu2src["missing"].size(), "source") + "missing " + qual_nm;
-        c_item->subcategories.push_back(c_sub);
-        if (setting_name == GetName_asn1_oncall()) c_sub->item_list = qvlu2src["missing"];
-*/
-
         if (all_same) {
             c_item->description += "all same";
             vstr_p = (setting_name == GetName_asn1_oncall()) ? &(qvlu2src.begin()->second):0;
             AddSubcategory(c_item, setting_name, 0, "source", 
-                 " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment);
-/*
-            CRef <CClickableItem> c_sub (new CClickableItem);
-            c_sub->setting_name = GetName();
-            c_sub->description 
-                = GetHasComment( (qvlu2src.begin()->second).size(), "source")
-                   + " '" + qvlu2src.begin()->first + "' for " + qual_nm;
-            c_item->subcategories.push_back(c_sub);
-            if (setting_name == GetName_asn1_oncall()) 
-                     c_sub->item_list = qvlu2src.begin()->second;
-*/
+                 " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment, true,
+                 kEmptyStr, false, (qvlu2src.begin()->second).size());
         }
         else if (all_unique) {
            c_item->description += "all unique"; 
            vector <string> arr;
-           
-//           CRef <CClickableItem> c_sub (new CClickableItem);
            unsigned uni_cnt = 0;
            ITERATE (Str2Strs, jt, qvlu2src) {
               if ( jt->first == "missing" || jt->first == "multi_same"
@@ -7696,20 +7640,13 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
               if (jt->second.size() == 1) {
                  uni_cnt ++;
                  if (setting_name == GetName_asn1_oncall()) arr.push_back((jt->second)[0]);
-    //                                 c_sub->item_list.push_back((jt->second)[0]);
               }
            }
            vstr_p = (setting_name == GetName_asn1_oncall()) ? &arr : 0;
            AddSubcategory(c_item, setting_name, vstr_p, "source", 
                   (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
-                   e_HasComment, false);
+                   e_HasComment, false, kEmptyStr, false, uni_cnt);
            arr.clear();
-/*
-           c_sub->setting_name = setting_name;
-           c_sub->description = GetHasComment(uni_cnt, "source") + "unique " 
-                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
-           c_item->subcategories.push_back(c_sub);
-*/
         }
         else {
            c_item->description += "some duplicate";
@@ -7723,16 +7660,8 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
              if (sz > 1) {
                  vstr_p = (setting_name == GetName_asn1_oncall()) ? &jt->second : 0;
                  AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                             "'" + jt->first + "' for " + qual_nm, e_HasComment, false);
-                               
-/*
-               CRef <CClickableItem> c_sub (new CClickableItem);
-               c_sub->setting_name = GetName();
-               c_sub->description =
-                  GetHasComment(sz, "source") + "'" + jt->first + "' for " + qual_nm;
-               c_item->subcategories.push_back(c_sub);
-               if (setting_name == GetName_asn1_oncall()) c_sub->item_list = jt->second;
-*/
+                     "'" + jt->first + "' for " + qual_nm, e_HasComment, false, kEmptyStr,
+                     false, sz);
              }
              else  {
                  uni_cnt ++;
@@ -7743,15 +7672,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
              vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0; 
              AddSubcategory(c_item, setting_name, vstr_p, "source", 
                    (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
-                    e_HasComment, false);
-/*
-             CRef <CClickableItem> c_sub (new CClickableItem);
-             c_sub->setting_name = setting_name;
-             c_sub->description = GetHasComment(uni_cnt, "source") + "unique "
-                                    + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
-             c_item->subcategories.push_back(c_sub);
-             if (setting_name == GetName_asn1_oncall()) c_sub->item_list = uni_sub;
-*/
+                    e_HasComment, false, kEmptyStr, false, uni_cnt);
           }
         }
      }
@@ -7835,16 +7756,26 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
 };
 
 
-void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, const vector <string>& desc_ls, Str2Ints& qual2src_idx)
+bool CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, const vector <string>& desc_ls, Str2Ints& qual2src_idx, unsigned pre_cnt, unsigned tot_cnt)
 {
    bool fwd_nm, fwd_seq, rev_nm, rev_seq;
    unsigned i=0;
-   ITERATE (vector <CConstRef <CBioSource> >, it, src_ls) {
-    if ( (*it)->IsSetTaxname() ) qual2src_idx["taxname"].push_back(i);
-    if ( (*it)->GetOrg().GetTaxId() ) qual2src_idx["taxid"].push_back(i);
+   bool has_newqual = false;
+//   ITERATE (vector <CConstRef <CBioSource> >, it, src_ls) {
+   for (i= (pre_cnt? pre_cnt-1:0); i < tot_cnt; i++) { 
+    const CConstRef <CBioSource>* it = &(src_ls[i]);
+    if ( (*it)->IsSetTaxname() ) {
+           has_newqual = true;
+           qual2src_idx["taxname"].push_back(i);
+    }
+    if ( (*it)->GetOrg().GetTaxId() ) {
+          has_newqual = true;
+          qual2src_idx["taxid"].push_back(i);
+    }
 
     // add subtypes & orgmods
     if ( (*it)->CanGetSubtype() ) {
+       has_newqual = true;
        ITERATE (list <CRef <CSubSource> >, jt, (*it)->GetSubtype()) {
          strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), CSubSource::eVocabulary_insdc);
          qual2src_idx[strtmp + "$subsrc"].push_back(i);
@@ -7852,6 +7783,7 @@ void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
     }
 
     if ( (*it)->IsSetOrgname() && (*it)->GetOrgname().CanGetMod() ) {
+       has_newqual = true;
        ITERATE (list <CRef <COrgMod> >, jt, (*it)->GetOrgname().GetMod() ) {
           strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), COrgMod::eVocabulary_insdc);
           if (strtmp != "old_name" && strtmp != "old_lineage" && strtmp != "gb_acronym"
@@ -7870,17 +7802,17 @@ void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
                   strtmp = (*kt)->GetName();
                   if (!strtmp.empty()) {
                       qual2src_idx["fwd_primer_name"].push_back(i);
-                      fwd_nm = true;
+                      has_newqual = fwd_nm = true;
                   }
                }
                if ( !fwd_seq && (*kt)->CanGetSeq() ) {
                   strtmp = (*kt)->GetSeq();
                   if (!strtmp.empty()) {
-                     fwd_seq = true;
+                     has_newqual = fwd_seq = true;
                      qual2src_idx["fwd_primer_seq"].push_back(i);
                   }
                }
-               if (fwd_nm && fwd_seq) break;
+               if (fwd_nm && fwd_seq) break; 
             }
           }
           if ( !rev_nm && !rev_seq && (*jt)->CanGetReverse() ) {
@@ -7888,14 +7820,14 @@ void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
                if (!rev_nm && (*kt)->CanGetName() ) {
                   strtmp = (*kt)->GetName();
                   if (!strtmp.empty()) {
-                      rev_nm = true;
+                      has_newqual = rev_nm = true;
                       qual2src_idx["rev_primer_name"].push_back(i);
                   }
                }
                if (!rev_seq && (*kt)->CanGetSeq() ) {
                   strtmp = (*kt)->GetSeq();
                   if (!strtmp.empty()) {
-                      rev_seq = true;
+                      has_newqual = rev_seq = true;
                       qual2src_idx["rev_primer_seq"].push_back(i);
                   }
                }
@@ -7907,11 +7839,12 @@ void CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
     }
     
     // genomic
-    if ((*it)->GetGenome() != CBioSource::eGenome_unknown) 
-             qual2src_idx["location"].push_back(i);
-    
-    i++;
+    if ((*it)->GetGenome() != CBioSource::eGenome_unknown) {
+         has_newqual = true;
+         qual2src_idx["location"].push_back(i);
+    }
   } 
+  return has_newqual;
 };
 
 
@@ -7929,9 +7862,9 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
    bool run_oncall= (thisTest.tests_run.find(GetName_asn1_oncall())!=thisTest.tests_run.end());
    bool run_bad = (thisTest.tests_run.find(GetName_bad()) != thisTest.tests_run.end());
 
+   unsigned pre_cnt = comb_src_ls.size(); 
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
-cerr << Blob2Str(**it) << endl;
      desc = GetDiscItemText(**it);
      comb_desc_ls.push_back(desc); // for combine_seqentry_reports
      const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
@@ -7942,7 +7875,6 @@ cerr << Blob2Str(**it) << endl;
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
-cerr << Blob2Str(**it) << endl;
       desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
       comb_desc_ls.push_back(desc);
       this_desc_ls.push_back(desc);
@@ -7951,12 +7883,20 @@ cerr << Blob2Str(**it) << endl;
       this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
       i++;
    }
+   unsigned tot_cnt = comb_src_ls.size();
 
+   bool has_newqual =
+         GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx, pre_cnt, tot_cnt);
+   if (run_bad) 
+        GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName_bad(), pre_cnt, tot_cnt);
+/*
    GetQual2SrcIdx(this_src_ls, this_desc_ls, this_qual2src_idx);
    if (run_bad) GetQualDistribute(this_qual2src_idx, this_desc_ls, this_src_ls, GetName_bad());
+*/
 
-   if (!this_qual2src_idx.empty()
-         && thisInfo.test_item_list.find(GetName_asn1()) == thisInfo.test_item_list.end()) {
+   strtmp = run_asn1? GetName_asn1() : GetName_asn1_oncall();
+   if (has_newqual && (run_asn1 || run_oncall)
+         && thisInfo.test_item_list.find(strtmp)== thisInfo.test_item_list.end()) {
        if (run_asn1) thisInfo.test_item_list[GetName_asn1()].push_back("yes");
        if (run_oncall) thisInfo.test_item_list[GetName_asn1_oncall()].push_back("yes");
    }
@@ -7974,8 +7914,9 @@ void CSeqEntry_DISC_SRC_QUAL_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
 void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC :: GetReport(CRef <CClickableItem>& c_item)
 {
    thisInfo.test_item_list[GetName()].clear();
-   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
-   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName());
+//   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
+   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName(), 
+                                                              0, comb_src_ls.size());
    c_item->item_list = thisInfo.test_item_list[GetName()];
    GetReport_quals(c_item, GetName());
 };
@@ -7984,8 +7925,9 @@ void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC :: GetReport(CRef <CClickableItem>& c_i
 void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller :: GetReport(CRef <CClickableItem>& c_item)
 {
    thisInfo.test_item_list.clear();
-   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
-   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName());
+//   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
+   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName(),
+              0, comb_src_ls.size());
    c_item->item_list = thisInfo.test_item_list[GetName()];
    GetReport_quals(c_item, GetName());
 };
@@ -9823,6 +9765,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
    CFlatfileTextFind flatfile_find(GetName());
    unsigned blocks = CFlatFileConfig::fGenbankBlocks_All 
                              & ~CFlatFileConfig::fGenbankBlocks_Sequence;
+cerr << "111\n";
    CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank,
                        CFlatFileConfig::eMode_GBench,
                        CFlatFileConfig::eStyle_Normal,
@@ -9833,7 +9776,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
                        &flatfile_find);
    CFlatFileGenerator gen(cfg);
    CSeq_entry_Handle entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
-   gen.Generate( entry_hl, cout);
+   gen.Generate( entry_hl, cout); // slow
    
 cerr << "block_text " << flatfile_find.m_block_text << endl;
 };

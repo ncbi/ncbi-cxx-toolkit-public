@@ -1579,81 +1579,83 @@ bool CSuspectRuleCheck :: ContainsNorMoreSetsOfBracketsOrParentheses(string sear
   else return false;
 };
 
-bool CSuspectRuleCheck :: PrecededByPrefix (const string& search, const size_t& cp, const string& prefix)
-{
-  if (search.empty() || cp == string::npos || prefix.empty()) return false;
-  unsigned len = prefix.size();
-  if (cp >= len && search.substr(cp-len, len) == prefix) return true;
-  else return false;
-}
-
-bool CSuspectRuleCheck :: PrecededByOkPrefix (const string& search, const size_t& p)
+bool CSuspectRuleCheck :: PrecededByOkPrefix (const string& start_str)
 {
   ITERATE (vector <string>, it, thisInfo.ok_num_prefix) {
-    if (PrecededByPrefix(search, p, *it)) return true;
+    if (start_str == (*it)) return true;
   }
   return false;
 };
 
-bool CSuspectRuleCheck :: InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start)
+bool CSuspectRuleCheck :: InWordBeforeCytochromeOrCoenzyme(const string& start_str)
 {
-  if (cp == string::npos) return false;
-  size_t pos = cp;
-  strtmp = start.substr(0, cp+1);
-  pos = strtmp.find_last_of(' ');
-  if (!pos) return false;
-  strtmp = strtmp.substr(0, pos);
-  pos = strtmp.find_last_not_of(' ');
-  if (pos >= 9 && start.substr(pos-9, 10) == "cytochrome") return true;
-  else if (pos >= 7 && start.substr(pos-7, 8) == "coenzyme") return true;
+  if (start_str.empty()) return false;
+  size_t pos = start_str.find_last_of(' ');
+  if (pos != string::npos) {
+      strtmp = start_str.substr(0, pos);
+      pos = strtmp.find_last_not_of(' ');
+      if (pos != string::npos) {
+         unsigned len = strtmp.size();
+         if ( (len >= 10 && NStr::EqualNocase(strtmp.substr(len-10), 0, 10, "cytochrome"))
+                 || (len >= 8 && NStr::EqualNocase(strtmp.substr(len-8), 0, 8, "coenzyme")) )
+             return true;
+      }
+  }
+  return false;
+};
+
+bool CSuspectRuleCheck :: FollowedByFamily(string& after_str)
+{
+  size_t pos = after_str.find_first_of(' ');
+  if (pos != string::npos) {
+     after_str = after_str.substr(pos+1);
+     if (NStr::EqualNocase(after_str, 0, 6, "family")) {
+           after_str  = after_str.substr(6);
+           return true;
+     }
+  } 
   else return false;
-};
-
-bool CSuspectRuleCheck :: FollowedByFamily(const string& str, size_t& p)
-{
-  Int4 word_len;
-
-  if (p == string::npos || p >= str.size()) return false;
-
-  word_len = str.substr(p+1).find_first_of (" ");
-  if (p + word_len + 1 < str.size() && str.substr(p+word_len+2, 6) == "family") {
-     p = p + word_len + 7;
-     return true;
-  }
-  return false;
 };
 
 bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& search)
 {
-  size_t p=0;
+  size_t p=0, p2;
   unsigned num_digits = 0;
-
-  while (p < search.size()) {
-    if (isdigit (search[p])) {
-      if (PrecededByOkPrefix(search, p)
-             || InWordBeforeCytochromeOrCoenzyme (p, search)) {
-        p += search.substr(p).find_first_not_of(CDiscRepUtil::digit_str) - 1;
-        num_digits = 0;
+  string sch_str = search;
+  
+  while (!sch_str.empty()) {
+      p = sch_str.find_first_of(CDiscRepUtil::digit_str);
+      if (p == string::npos) break;
+      if (PrecededByOkPrefix(sch_str.substr(0, p)) 
+                            || InWordBeforeCytochromeOrCoenzyme (sch_str.substr(0, p))) {
+        p2 = sch_str.substr(p).find_first_not_of(CDiscRepUtil::digit_str);
+        if (p2 != string::npos) {
+            sch_str = sch_str.substr(p+p2);
+            num_digits = 0;
+        }
+        else break;
       }
       else {
         num_digits ++;
         if (num_digits == 3) {
-          if (FollowedByFamily (search, p)) num_digits = 0;
+          sch_str = sch_str.substr(p);
+          if (FollowedByFamily(sch_str)) num_digits = 0;
           else return true;
         }
+        if (sch_str.size() > 1) sch_str = sch_str.substr(1);
+        else break;
       }
-    }
-    else num_digits = 0;
-    p++;
   }
   return false;
 };
 
 bool CSuspectRuleCheck :: StringContainsUnderscore(const string& search)
-{
+{ // modify!!!
   size_t cp = search.find('_');
+  string sch_str = search;
   while (cp != string::npos) {
-    if (FollowedByFamily (search, cp))
+    sch_str = sch_str.substr(cp);
+    if (FollowedByFamily (sch_str))
                cp = search.find('_', cp); /* search again */
     else if (cp < 3 || cp == search.size() - 1) return true;
     else {

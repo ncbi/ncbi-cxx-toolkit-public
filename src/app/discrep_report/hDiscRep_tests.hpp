@@ -217,10 +217,9 @@ namespace DiscRepNmSpc {
       bool SkipBracketOrParen(const unsigned& idx, string& start);
       char GetClose(char bp);
       bool ContainsThreeOrMoreNumbersTogether(const string& search);
-      bool PrecededByOkPrefix (const string& search, const size_t& p);
-      bool PrecededByPrefix (const string& search, const size_t& cp, const string& prefix);
-      bool InWordBeforeCytochromeOrCoenzyme(const size_t& cp, const string& start);
-      bool FollowedByFamily(const string& str, size_t& p);
+      bool PrecededByOkPrefix (const string& start_str);
+      bool InWordBeforeCytochromeOrCoenzyme(const string& start_str);
+      bool FollowedByFamily(string& after_str);
       bool StringContainsUnderscore(const string& search);
       bool IsPrefixPlusNumbers(const string& prefix, const string& search);
       bool IsPropClose(const string& str, char open_p);
@@ -1057,12 +1056,14 @@ namespace DiscRepNmSpc {
       string GetName_bad() const {return string("DISC_SRC_QUAL_PROBLEM"); }
 
       void GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, 
-             const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name);
+             const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name,
+             unsigned pre_cnt, unsigned tot_cnt);
       void GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name);
-      void GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, 
-                                     const vector <string>& desc_ls, Str2Ints& qual2src_idx);
+      bool GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, 
+              const vector <string>& desc_ls, Str2Ints& qual2src_idx, unsigned pre_cnt, 
+              unsigned tot_cnt);
       void GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name,
-                                                                  vector <string>& multi_vlus);
+             vector <string>& multi_vlus);
       void GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name,
                                                                   vector <string>& multi_vlus);
       void GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name,
