@@ -1100,7 +1100,7 @@ void CDB_Char::SetValue(const char* str, size_t len, EEncoding enc)
     CDB_VarChar vc_value(str, len, enc);
     CheckStringTruncation(vc_value.Size(), m_Size);
 
-    Assign(str, m_Size, enc);
+    Assign(vc_value.AsCString(), m_Size, enc);
 }
 
 
