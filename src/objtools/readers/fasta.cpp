@@ -100,11 +100,15 @@
                                             (_eWarningType),            \
                                             iLineNum,                   \
                                             msg_strm.str() ) );         \
-            m_pWarningRefVec->GetData().push_back( pNewWarning );       \
+            if( m_pWarningRefVec->GetData().empty() ||                  \
+                *m_pWarningRefVec->GetData().back() != *pNewWarning )   \
+            {                                                           \
+                m_pWarningRefVec->GetData().push_back( pNewWarning );   \
+            }                                                           \
         } else {                                                        \
             if( iLineNum > 0 ) {                                        \
                 ERR_POST_X(1, Warning << _MsgStreamOperators            \
-                           << " at line " << iLineNum );        \
+                           << " at line " << iLineNum );                \
             } else {                                                    \
                 ERR_POST_X(1, Warning << _MsgStreamOperators );         \
             }                                                           \
@@ -706,6 +710,14 @@ bool CFastaReader::ParseIDs(const TStr& s)
     }
     // check if ID was too long
     if( count == 1 && s.length() > m_MaxIDLength ) {
+
+        // before throwing an ID-too-long error, check if what we
+        // think is a "sequence ID" is actually sequence data
+        if( CreateWarningsForSeqDataInTitle(s) ) {
+            // it's actually seq data
+            return false;
+        }
+
         NCBI_THROW2(CObjReaderParseException, eIDTooLong,
             "CFastaReader: Near line " + NStr::NumericToString(LineNumber()) +
             ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length()) +
@@ -762,51 +774,7 @@ void CFastaReader::ParseTitle(const TStr& s)
             << " characters (max is " << kWarnTitleLength << ")");
     }
 
-    // check for nuc or aa sequences at the end of the title
-    const static size_t kWarnNumNucCharsAtEnd = 20;
-    const static size_t kWarnAminoAcidCharsAtEnd = 50;
-    if( s.length() > kWarnNumNucCharsAtEnd ) {
-
-        // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
-        SIZE_TYPE pos_to_check = (s.length() - 1);
-        const SIZE_TYPE last_pos_to_check_for_nuc = (s.length() - kWarnNumNucCharsAtEnd);
-        for( ; pos_to_check >= last_pos_to_check_for_nuc; --pos_to_check ) {
-            if( ! s_ASCII_IsUnAmbigNuc(s[pos_to_check]) ) {
-                // found a character which is not an unambiguous nucleotide
-                break;
-            }
-        }
-        if( pos_to_check < last_pos_to_check_for_nuc ) {
-            FASTA_WARNING(LineNumber(), CWarning::eType_NucsInTitle,
-                "FASTA-Reader: Title ends with at least " << kWarnNumNucCharsAtEnd 
-                << " valid nucleotide characters.  Was the sequence "
-                << "accidentally put in the title line?");
-        } else if( s.length() > kWarnAminoAcidCharsAtEnd ) {
-            // check for aa's at the end of the title
-            // for efficiency, continue where the nuc search left off, since
-            // we know that nucs can be amino acids, also
-            const SIZE_TYPE last_pos_to_check_for_amino_acid =
-                ( s.length() - kWarnAminoAcidCharsAtEnd );
-            for( ; pos_to_check >= last_pos_to_check_for_amino_acid; --pos_to_check ) {
-                // can't just use "isalpha" in case it includes characters
-                // with diacritics (an accent, tilde, umlaut, etc.)
-                const char ch = s[pos_to_check];
-                if( ( ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') ) {
-                    // potential amino acid, so keep going
-                } else {
-                    // non-amino-acid found
-                    break;
-                }
-            }
-
-            if( pos_to_check < last_pos_to_check_for_amino_acid ) {
-                FASTA_WARNING(LineNumber(), CWarning::eType_AminoAcidsInTitle,
-                    "FASTA-Reader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
-                    << " valid amino acid characters.  Was the sequence "
-                    << "accidentally put in the title line?");
-            }
-        }
-    }
+    CreateWarningsForSeqDataInTitle(s);
 
     CRef<CSeqdesc> desc(new CSeqdesc);
     desc->SetTitle().assign(s.data(), s.length());
@@ -1197,6 +1165,62 @@ void CFastaReader::AssignMolType(void)
             inst.SetMol(default_mol);
         }
     }
+}
+
+bool
+CFastaReader::CreateWarningsForSeqDataInTitle(const TStr& s)
+{
+    bool bFoundProblem = false;
+
+    // check for nuc or aa sequences at the end of the title
+    const static size_t kWarnNumNucCharsAtEnd = 20;
+    const static size_t kWarnAminoAcidCharsAtEnd = 50;
+    if( s.length() > kWarnNumNucCharsAtEnd ) {
+
+        // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
+        SIZE_TYPE pos_to_check = (s.length() - 1);
+        const SIZE_TYPE last_pos_to_check_for_nuc = (s.length() - kWarnNumNucCharsAtEnd);
+        for( ; pos_to_check >= last_pos_to_check_for_nuc; --pos_to_check ) {
+            if( ! s_ASCII_IsUnAmbigNuc(s[pos_to_check]) ) {
+                // found a character which is not an unambiguous nucleotide
+                break;
+            }
+        }
+        if( pos_to_check < last_pos_to_check_for_nuc ) {
+            FASTA_WARNING(LineNumber(), CWarning::eType_NucsInTitle,
+                "FASTA-Reader: Title ends with at least " << kWarnNumNucCharsAtEnd 
+                << " valid nucleotide characters.  Was the sequence "
+                << "accidentally put in the title line?");
+            bFoundProblem = true;
+        } else if( s.length() > kWarnAminoAcidCharsAtEnd ) {
+            // check for aa's at the end of the title
+            // for efficiency, continue where the nuc search left off, since
+            // we know that nucs can be amino acids, also
+            const SIZE_TYPE last_pos_to_check_for_amino_acid =
+                ( s.length() - kWarnAminoAcidCharsAtEnd );
+            for( ; pos_to_check >= last_pos_to_check_for_amino_acid; --pos_to_check ) {
+                // can't just use "isalpha" in case it includes characters
+                // with diacritics (an accent, tilde, umlaut, etc.)
+                const char ch = s[pos_to_check];
+                if( ( ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') ) {
+                    // potential amino acid, so keep going
+                } else {
+                    // non-amino-acid found
+                    break;
+                }
+            }
+
+            if( pos_to_check < last_pos_to_check_for_amino_acid ) {
+                FASTA_WARNING(LineNumber(), CWarning::eType_AminoAcidsInTitle,
+                    "FASTA-Reader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
+                    << " valid amino acid characters.  Was the sequence "
+                    << "accidentally put in the title line?");
+                bFoundProblem = true;
+            }
+        }
+    }
+
+    return bFoundProblem;
 }
 
 CRef<CSeq_entry> CFastaReader::ReadAlignedSet(int reference_row)

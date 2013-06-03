@@ -181,6 +181,16 @@ public:
 
         static string GetStringOfType(EType eType);
 
+        bool operator == (const CWarning & rhs ) const {
+            return m_eType == rhs.m_eType &&
+                m_iLineNum == rhs.m_iLineNum &&
+                m_sMsg == rhs.m_sMsg;
+        }
+
+        bool operator != (const CWarning & rhs ) const {
+            return ! (*this == rhs);
+        }
+
     private:
         EType  m_eType;
         int    m_iLineNum;
@@ -246,6 +256,7 @@ protected:
     virtual bool   ParseGapLine  (const TStr& s);
     virtual void   AssembleSeq   (void);
     virtual void   AssignMolType (void);
+    virtual bool   CreateWarningsForSeqDataInTitle(const TStr& s);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
