@@ -55,136 +55,38 @@ class NCBI_XALGOID_MAPPER_EXPORT CGencollIdMapper : public CObject
 public:
     CGencollIdMapper(CRef<objects::CGC_Assembly> SourceAsm);
 
-    struct SIdSpec {
+    struct SIdSpec
+    {
         typedef objects::CGC_TypedSeqId::E_Choice E_Choice;
         typedef objects::CGC_SeqIdAlias::E_AliasTypes E_Alias;
+
         E_Choice TypedChoice;
         E_Alias Alias;
         string External;
         string Pattern;
-        enum { e_Role_ExcludePseudo_Top = objects::eGC_SequenceRole_top_level + 1, // Fake role for Non-Pseudo top
-               e_Role_NotSet = 10000
-        };
-        enum { e_Top_NotSet,  // Unknown, don't care
-               e_Top_NotTop,  // Specifically not any top
-               e_Top_All,     // All Top-Level IDs
-               e_Top_ExcludePseudo  // Top, but excluding anything gencoll calls pseudo
-        };
         int Role;
         int Top;
 
-        SIdSpec()
-            : TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
-              Alias(objects::CGC_SeqIdAlias::e_None),
-              External(kEmptyStr),
-              Pattern(kEmptyStr), 
-              Role(e_Role_NotSet),
-              Top(e_Top_NotSet)
+        enum
         {
-        }
-
-        operator string() const
+            // e_Role_ExcludePseudo_Top -- Fake role for Non-Pseudo top
+            e_Role_ExcludePseudo_Top = objects::eGC_SequenceRole_top_level + 1,
+            e_Role_NotSet = 10000
+        };
+        enum
         {
-            return ToString();
-        }
+            e_Top_NotSet,  // Unknown, don't care
+            e_Top_NotTop,  // Specifically not any top
+            e_Top_All,     // All Top-Level IDs
+            e_Top_ExcludePseudo  // Top, but excluding anything gencoll calls pseudo
+        };
 
-        string ToString(void) const
-        {
-            string Result;
-            Result.reserve(64);
-            
-            switch (TypedChoice) {
-            case 0:
-                Result += "NotSet";
-                break;
-            case 1:
-                Result += "GenBank";
-                break;
-            case 2:
-                Result += "RefSeq";
-                break;
-            case 3:
-                Result += "Private";
-                break;
-            case 4:
-                Result += "External";
-                break;
-            }
-            Result += ":";
-            
-            switch (Alias) {
-            case 0:
-                Result += "NotSet";
-                break;
-            case 1:
-                Result += "Public";
-                break;
-            case 2:
-                Result += "Gpipe";
-                break;
-            case 3:
-                Result += "Gi";
-                break;
-            }
-            Result += ":";
-            
-            Result += External + ":" + Pattern;
-            Result += ":";
-            
-            switch (Role) {
-            case objects::eGC_SequenceRole_chromosome:
-                Result += "CHRO";
-                break;
-            case objects::eGC_SequenceRole_scaffold:
-                Result += "SCAF";
-                break;
-            case objects::eGC_SequenceRole_component:
-                Result += "COMP";
-                break;
-            case e_Role_NotSet:
-                break;
-            default:
-                Result += NStr::IntToString(Role);
-            }
-            Result += ":";
-        
-            switch (Top) {
-            case e_Top_NotSet:
-                Result += "NotSet";
-                break;
-            case e_Top_NotTop:
-                Result += "NotTop";
-                break;
-            case e_Top_All:
-                Result += "TopAll";
-                break;
-            case e_Top_ExcludePseudo:
-                Result += "TopExcludePseudo";
-                break;
-            }
+        SIdSpec();
 
-            return Result;
-        }
-
-        bool operator<(const SIdSpec& Other) const
-        {
-            return !(TypedChoice < Other.TypedChoice);
-        }
-
-        bool operator==(const SIdSpec& Other) const
-        {
-            if (!(TypedChoice == Other.TypedChoice &&
-                  Alias == Other.Alias &&
-                  External == Other.External &&
-                  Pattern == Other.Pattern &&
-                  Role == Other.Role &&
-                  Top == Other.Top
-                 )
-               ) {
-                return false;
-            }
-            return true;
-        }
+        operator string() const;
+        string ToString(void) const;
+        bool operator<(const SIdSpec& Other) const;
+        bool operator==(const SIdSpec& Other) const;
     };
 
     bool Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const;
@@ -194,7 +96,8 @@ public:
 
     bool CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const;
 
-    enum E_Gap {
+    enum E_Gap
+    {
         e_None = 0,
         e_Spans,
         e_Overlaps,
@@ -203,29 +106,9 @@ public:
     };
     E_Gap IsLocInAGap(const objects::CSeq_loc& Loc) const;
 
-    CConstRef<objects::CGC_Assembly> GetInternalGencoll() const
-    {
-        return m_Assembly;
-    }
+    CConstRef<objects::CGC_Assembly> GetInternalGencoll(void) const;
 
-private:
-
-    CRef<objects::CGC_Assembly> m_Assembly;
-    string m_SourceAsm;
-
-    typedef CConstRef<objects::CGC_Sequence> TGC_SequenceCRef;
-    typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TIdToSeqMap;
-    TIdToSeqMap m_IdToSeqMap;
-
-    typedef map<string, int> TAccToVerMap;
-    TAccToVerMap m_AccToVerMap;
-
-    vector<string> m_Chromosomes;
-
-    // All component IDs to the Parent CGC_Sequence
-    typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TChildToParentMap;
-    TChildToParentMap m_ChildToParentMap;
-
+protected:
     void x_Init(void);
 
     bool x_NCBI34_Guess(const objects::CSeq_id& Id, SIdSpec& Spec) const;
@@ -237,7 +120,6 @@ private:
     void x_FillChromosomeIds(void);
     void x_PrioritizeIds(void);
     void x_PrioritizeIds(objects::CGC_Sequence& Sequence);
-
 
     // Fixes locals that should be accessions, and versionless accessions
     CConstRef<objects::CSeq_id> x_FixImperfectId(CConstRef<objects::CSeq_id> Id,
@@ -310,6 +192,23 @@ private:
     //bool x_IsLocInGap(const objects::CSeq_loc& Loc) const;
     E_Gap x_Merge_E_Gaps(E_Gap First, E_Gap Second) const;
     E_Gap x_IsLoc_Int_InAGap(const objects::CSeq_interval& Int) const;
+
+private:
+    CRef<objects::CGC_Assembly> m_Assembly;
+    string m_SourceAsm;
+
+    typedef CConstRef<objects::CGC_Sequence> TGC_SequenceCRef;
+    typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TIdToSeqMap;
+    TIdToSeqMap m_IdToSeqMap;
+
+    typedef map<string, int> TAccToVerMap;
+    TAccToVerMap m_AccToVerMap;
+
+    vector<string> m_Chromosomes;
+
+    // All component IDs to the Parent CGC_Sequence
+    typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TChildToParentMap;
+    TChildToParentMap m_ChildToParentMap;
 };
 
 

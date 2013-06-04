@@ -1576,6 +1576,12 @@ CGencollIdMapper::IsLocInAGap(const CSeq_loc& Loc) const
     return e_None;
 }
 
+CConstRef<CGC_Assembly>
+CGencollIdMapper::GetInternalGencoll(void) const
+{
+    return m_Assembly;
+}
+
 CGencollIdMapper::E_Gap
 CGencollIdMapper::x_IsLoc_Int_InAGap(const CSeq_interval& Int) const
 {
@@ -1644,6 +1650,123 @@ CGencollIdMapper::x_Merge_E_Gaps(const E_Gap First, const E_Gap Second) const
     // First == e_Complicated || First == Second || any other case
     return First;
 }
+
+CGencollIdMapper::SIdSpec::SIdSpec()
+    : TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
+      Alias(objects::CGC_SeqIdAlias::e_None),
+      External(kEmptyStr),
+      Pattern(kEmptyStr), 
+      Role(e_Role_NotSet),
+      Top(e_Top_NotSet)
+{
+}
+
+CGencollIdMapper::SIdSpec::operator string() const
+{
+    return ToString();
+}
+
+bool
+CGencollIdMapper::SIdSpec::operator<(const SIdSpec& Other) const
+{
+    return !(TypedChoice < Other.TypedChoice);
+}
+
+bool
+CGencollIdMapper::SIdSpec::operator==(const SIdSpec& Other) const
+{
+    if (!(TypedChoice == Other.TypedChoice &&
+          Alias == Other.Alias &&
+          External == Other.External &&
+          Pattern == Other.Pattern &&
+          Role == Other.Role &&
+          Top == Other.Top
+         )
+       ) {
+        return false;
+    }
+    return true;
+}
+
+string
+CGencollIdMapper::SIdSpec::ToString(void) const
+{
+    string Result;
+    Result.reserve(64);
+    
+    switch (TypedChoice) {
+    case 0:
+        Result += "NotSet";
+        break;
+    case 1:
+        Result += "GenBank";
+        break;
+    case 2:
+        Result += "RefSeq";
+        break;
+    case 3:
+        Result += "Private";
+        break;
+    case 4:
+        Result += "External";
+        break;
+    }
+    Result += ":";
+    
+    switch (Alias) {
+    case 0:
+        Result += "NotSet";
+        break;
+    case 1:
+        Result += "Public";
+        break;
+    case 2:
+        Result += "Gpipe";
+        break;
+    case 3:
+        Result += "Gi";
+        break;
+    }
+    Result += ":";
+    
+    Result += External + ":" + Pattern;
+    Result += ":";
+    
+    switch (Role) {
+    case objects::eGC_SequenceRole_chromosome:
+        Result += "CHRO";
+        break;
+    case objects::eGC_SequenceRole_scaffold:
+        Result += "SCAF";
+        break;
+    case objects::eGC_SequenceRole_component:
+        Result += "COMP";
+        break;
+    case e_Role_NotSet:
+        break;
+    default:
+        Result += NStr::IntToString(Role);
+    }
+    Result += ":";
+
+    switch (Top) {
+    case e_Top_NotSet:
+        Result += "NotSet";
+        break;
+    case e_Top_NotTop:
+        Result += "NotTop";
+        break;
+    case e_Top_All:
+        Result += "TopAll";
+        break;
+    case e_Top_ExcludePseudo:
+        Result += "TopExcludePseudo";
+        break;
+    }
+
+    return Result;
+}
+
 
 END_NCBI_SCOPE
 
