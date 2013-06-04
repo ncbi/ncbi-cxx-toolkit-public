@@ -99,7 +99,7 @@ CGencollIdMapper::CGencollIdMapper(CRef<CGC_Assembly> SourceAsm)
 bool
 CGencollIdMapper::Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const
 {
-#warning FIXME: If it returns null, deeply examine the Loc
+//#warning FIXME: If it returns null, deeply examine the Loc
     if (Loc.GetId() == NULL) {
         return false;
     }
@@ -340,7 +340,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
 bool
 CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
 {
-#warning FIXME: If it returns null, deeply examine the Loc
+//#warning FIXME: If it returns null, deeply examine the Loc
     if (Loc.GetId() == NULL) {
         return false;
     }
@@ -859,7 +859,7 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
         }
     }
 
-#warning FIXME: unsure why condition includes Seq.CanGetStructure()
+//#warning FIXME: unsure why condition includes Seq.CanGetStructure()
     if (Seq.CanGetSeq_id_synonyms() &&
         (!Seq.GetSeq_id_synonyms().empty() || Seq.CanGetStructure())
        ) {
