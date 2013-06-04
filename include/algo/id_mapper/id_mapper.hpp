@@ -39,17 +39,18 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
-class CSeq_loc;
-class CSeq_id;
 class CGC_Assembly;
 class CGC_AssemblyUnit;
+class CGC_SeqIdAlias;
 class CGC_Sequence;
 class CGC_TypedSeqId;
-class CGC_SeqIdAlias;
+class CSeq_id;
+class CSeq_interval;
+class CSeq_loc;
 END_SCOPE(objects)
 
 
-class CGencollIdMapper : public CObject
+class NCBI_XALGOID_MAPPER_EXPORT CGencollIdMapper : public CObject
 {
 public:
     CGencollIdMapper(CRef<objects::CGC_Assembly> SourceAsm);
