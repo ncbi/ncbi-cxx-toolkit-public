@@ -6356,7 +6356,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals",
 "USNTC	s	U.S. National Tick Collection",
 "USON	s	Universidad de Sonora, Departamento de Investigaciones Cientificas y Technologicas",
-"USP<ESP>	s	Universidad San Pablo-CEU, Departamento de Biologia Vegetal (seccion Botanica)",
+"USP<ESP>	s	Universidad San Pablo-CEU (Departamento de Biologia Vegetal (seccion Botanica)",
 "USP<FJI>	s	University of the South Pacific",
 "USPIY	s	K. D. Ushinsky Yaroslavl State Pedagogical University, Department of Botany",
 "USRC	s	University of Regina",
