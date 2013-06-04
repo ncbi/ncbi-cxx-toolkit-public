@@ -200,11 +200,29 @@ int CTestApp::RunSelfTest()
     try {
         {{
             CNcbiOfstream out(filename.c_str(), ios::binary);
+            bool bLastShowR = true;
+            bool bLastShowN = true;
             ITERATE ( vector<string>, i, lines ) {
                 positions.push_back(out.tellp());
                 out << *i;
-                if ( r.GetRand()&1 ) out << '\r';
-                out << '\n';
+                // we test LF, CRLF, and (just in case) CR
+                CRandom::TValue rand_value = r.GetRand();
+                bool bShowR = (rand_value & 1);
+                bool bShowN = (rand_value & 2);
+                if( i->empty() && bLastShowR && ! bLastShowN && ! bShowR ) {
+                    // this line is blank, so if last line is just
+                    // an '\r', this can't be just an '\n' or
+                    // we'll throw off our line counts.
+                    bShowR = true;
+                }
+                if( ! bShowR && ! bShowN ) {
+                    // have to have at least one endline char
+                    bShowN = true;
+                }
+                if ( bShowR ) out << '\r';
+                if( bShowN ) out << '\n';
+                bLastShowR = bShowR;
+                bLastShowN = bShowN;
             }
             positions.push_back(out.tellp());
         }}
@@ -218,6 +236,7 @@ int CTestApp::RunSelfTest()
             case 1:
                 rdr =new CStreamLineReader(*new CNcbiIfstream(filename.c_str(),
                                                               ios::binary),
+                                                              CStreamLineReader::eEOL_mixed,
                                            eTakeOwnership);
                 break;
             case 2:

@@ -416,7 +416,8 @@ CBufferedLineReader& CBufferedLineReader::operator++(void)
         else if ( *p == '\r' ) {
             m_Line = CTempString(start, p - start);
             m_LastReadSize = p + 1 - start;
-            if ( ++p == end ) {
+            m_Pos = ++p;
+            if ( p == end ) {
                 m_String = m_Line;
                 m_Line = m_String;
                 if ( x_ReadBuffer() ) {
