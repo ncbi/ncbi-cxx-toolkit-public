@@ -92,6 +92,24 @@ result=$?
 
 if test -n "$NCBI_AUTOMATED_BUILD"; then
    $CHECK_RUN_FILE load_to_db
+   # Report test_stat_load errors if any
+   if [ -f "$build_dir/test_stat_load.log" ]; then
+      grep "test_stat_load Error" $build_dir/test_stat_load.log > /tmp/$$.mail_stat
+      if [ $? -eq 0 ] ; then
+         cat <<-EOF >> /tmp/$$.mail_stat
+
+	
+------------------------------------------------------------------------
+ test_stat_load.log
+------------------------------------------------------------------------
+
+	EOF
+         cat $build_dir/test_stat_load.log >> /tmp/$$.mail_stat
+         cat /tmp/$$.mail_stat | tr -d '\015' | \
+            mailx -s "[WATCHERS][test_stat_load] C++ build: $signature" ivanov vakatov satskyse >/dev/null 2>&1
+      fi
+      rm -f /tmp/$$.mail_stat >/dev/null 2>&1
+   fi
 fi
 
 
