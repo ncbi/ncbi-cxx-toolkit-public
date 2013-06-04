@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_scaffold
                              )
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqToUcscMapping)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_scaffold
                              )
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000003205.2",
                               CGCClient_GetAssemblyRequest::eLevel_scaffold
                              )
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.12",
                               CGCClient_GetAssemblyRequest::eLevel_component,
                               0,
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_component,
                               0,
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_component,
                               0,
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_component,
                               0,
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_component,
                               0,
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(TestCasePatternMapping)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_scaffold
                              )
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
-    CRef<CGC_Assembly> GenColl(
+    CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
                               CGCClient_GetAssemblyRequest::eLevel_scaffold
                              )
