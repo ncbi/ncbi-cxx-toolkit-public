@@ -81,7 +81,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(2,10,0) );
+    SetVersion( CVersionInfo(2,11,0) );
 }
 
 void CDataTool::Init(void)
@@ -402,9 +402,27 @@ bool CDataTool::ProcessData(void)
 
     bool type_guessed = false;
     if (typeName != "?") {
-        typeInfo =
-            generator.GetMainModules().ResolveInAnyModule(typeName, true)->
-            GetTypeInfo().Get();
+        typeInfo = NULL;
+        if (inFormat == eSerial_Json) {
+            string alt_name(typeName);
+            while (!typeInfo) {
+                try {
+                    typeInfo =
+                        generator.GetMainModules().ResolveInAnyModule(alt_name, true)->
+                        GetTypeInfo().Get();
+                } catch (...) {
+                }
+                if (alt_name.find('_') == string::npos) {
+                    break;
+                }
+                NStr::ReplaceInPlace(alt_name, "_", "-", 0, 1);
+            }
+        }
+        if (!typeInfo) {
+            typeInfo =
+                generator.GetMainModules().ResolveInAnyModule(typeName, true)->
+                GetTypeInfo().Get();
+        }
     } else {
         type_guessed = true;
         set<TTypeInfo> known_types;
