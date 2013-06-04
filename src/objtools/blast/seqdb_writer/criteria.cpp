@@ -66,7 +66,6 @@ static TCriteriaMap& GetAvailableCriteria(void)
     // Custom subclasses may contain state information, in which case they
     // probably will NOT be used as singletons.
     static ICriteria* allCriteria[] = {
-            new CCriteria_CONTIG,
             new CCriteria_EST_HUMAN,
             new CCriteria_EST_MOUSE,
             new CCriteria_EST_OTHERS,
@@ -216,6 +215,8 @@ CBlast_def_line::TMemberships CCriteriaSet_CalculateMemberships(
         _VERIFY(critSet_ptr->AddCriteria("swissprot"));
         _VERIFY(critSet_ptr->AddCriteria("pdb"));      
         _VERIFY(critSet_ptr->AddCriteria("refseq"));    
+        _VERIFY(critSet_ptr->AddCriteria("refseq_rna"));    
+        _VERIFY(critSet_ptr->AddCriteria("refseq_genomic"));    
     }
 
     // Need number of bits per mask word (i.e. an int).

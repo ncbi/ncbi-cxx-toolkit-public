@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(Test_Criteria_Subclasses)
     {
         CCriteria_REFSEQ_RNA crit;
         BOOST_CHECK(crit.GetLabel() == string("refseq_rna"));
-        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eUNASSIGNED);
+        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eREFSEQ);
 
         SDIRecord sdiRecord;
         sdiRecord.mol = 2;                          // ok
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(Test_Criteria_Subclasses)
     {
         CCriteria_REFSEQ_GENOMIC crit;
         BOOST_CHECK(crit.GetLabel() == string("refseq_genomic"));
-        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eUNASSIGNED);
+        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eREFSEQ);
 
         SDIRecord sdiRecord;
         sdiRecord.acc = "AB_123456";                // ok
@@ -203,17 +203,6 @@ BOOST_AUTO_TEST_CASE(Test_Criteria_Subclasses)
         BOOST_CHECK(crit.is(&sdiRecord) == true);
     }
 
-    {
-        CCriteria_CONTIG crit;
-        BOOST_CHECK(crit.GetLabel() == string("contig"));
-        BOOST_CHECK(crit.GetMembershipBit() == ICriteria::eUNASSIGNED);
-
-        SDIRecord sdiRecord;
-        sdiRecord.owner = 28;                       // ok
-        BOOST_CHECK(crit.is(&sdiRecord) == true);
-        sdiRecord.owner = 29;                       // wrong
-        BOOST_CHECK(crit.is(&sdiRecord) == false);
-    }
 }
 
 
@@ -306,7 +295,7 @@ BOOST_AUTO_TEST_CASE(Test_CalculateMemberships_Function)
         SDIRecord sdiRecord;
         sdiRecord.owner = 6;            // is SWISSPROT
         sdiRecord.acc = "CC_456789";    // is REFSEQ
-        sdiRecord.mol = 1;              // just because we can
+        sdiRecord.mol = 1;              // is REFSEQ_GENOMIC
         CBlast_def_line::TMemberships memberships =
                 CCriteriaSet_CalculateMemberships(sdiRecord);
         BOOST_CHECK(memberships.size() == 1);
@@ -314,6 +303,11 @@ BOOST_AUTO_TEST_CASE(Test_CalculateMemberships_Function)
                 (memberships.front() & (0x1 << (ICriteria::eSWISSPROT - 1)) &&
                 (memberships.front() & (0x1 << (ICriteria::eREFSEQ - 1))))
         );
+        
+        // even though a membership bit is not set, this SDIRecord should still
+        // be identified as refseq_genomic
+        CCriteria_REFSEQ_GENOMIC criteria;
+        BOOST_CHECK(criteria.is(&sdiRecord));
     }
 
     {
@@ -322,7 +316,7 @@ BOOST_AUTO_TEST_CASE(Test_CalculateMemberships_Function)
         SDIRecord sdiRecord;
         sdiRecord.owner = 10;           // is PDB
         sdiRecord.acc = "CC_456789";    // is REFSEQ
-        sdiRecord.mol = 2;              // just because we can
+        sdiRecord.mol = 2;              // is REFSEQ_RNA
         CBlast_def_line::TMemberships memberships =
                 CCriteriaSet_CalculateMemberships(sdiRecord);
         BOOST_CHECK(memberships.size() == 1);
@@ -330,6 +324,11 @@ BOOST_AUTO_TEST_CASE(Test_CalculateMemberships_Function)
                 (memberships.front() & (0x1 << (ICriteria::ePDB - 1)) &&
                 (memberships.front() & (0x1 << (ICriteria::eREFSEQ - 1))))
         );
+
+        // even though a membership bit is not set, this SDIRecord should still
+        // be identified as refseq_rna
+        CCriteria_REFSEQ_RNA criteria;
+        BOOST_CHECK(criteria.is(&sdiRecord));
     }
 }
 

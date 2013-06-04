@@ -49,7 +49,6 @@
 ///     CCriteria_REFSEQ
 ///     CCriteria_REFSEQ_RNA
 ///     CCriteria_REFSEQ_GENOMIC
-///     CCriteria_CONTIG
 ///     CCriteriaSet
 ///
 /// Implemented for: Linux, MS-Windows
@@ -74,6 +73,10 @@ struct SDIRecord {
     int     sat_key;        /// ???
     string  acc;            /// Accession
     int     mol;            /// Molecule type, as in Seq-inst::mol
+
+    SDIRecord() {
+        oid = gi = taxid = owner = len = hash = sat_key = mol = 0;
+    }
 };
 
 
@@ -104,8 +107,7 @@ public:
         eDO_NOT_USE         =  0,   // under threat of torture
         eSWISSPROT          =  1,
         ePDB                =  2,
-        eREFSEQ             =  3,
-        eREFSEQ_CHROMOSOME  =  4
+        eREFSEQ             =  3
     };
 
     /// Virtual destructor.
@@ -341,7 +343,7 @@ public:
 
     /// @inheritDoc
     virtual const int GetMembershipBit(void) const {
-        return ICriteria::eUNASSIGNED;
+        return ICriteria::eREFSEQ;
     }
 };
 
@@ -374,33 +376,7 @@ public:
 
     /// @inheritDoc
     virtual const int GetMembershipBit(void) const {
-        return ICriteria::eUNASSIGNED;
-    }
-};
-
-
-/// CCriteria_CONTIG
-///
-/// Subclass of ICriteria for CONTIG sequences.
-///
-/// The body of method 'is' is ported from the C Toolkit source
-/// file 'readdb.c'.
-class NCBI_XOBJWRITE_EXPORT CCriteria_CONTIG : public ICriteria
-{
-public:
-    /// @inheritDoc
-    virtual bool is(const SDIRecord* ptr) const {
-        return (ptr->owner == 28);
-    }
-
-    /// @inheritDoc
-    virtual const char* GetLabel(void) const {
-        return "contig";
-    }
-
-    /// @inheritDoc
-    virtual const int GetMembershipBit(void) const {
-        return ICriteria::eUNASSIGNED;
+        return ICriteria::eREFSEQ;
     }
 };
 
@@ -526,7 +502,6 @@ END_NCBI_SCOPE
  *  @code
  *  C Toolkit function      C++ Toolkit class           Class label
  *  --------------------    --------------------        ------------
- *  is_CONTIG               CCriteria_CONTIG            "contig"
  *  is_EST_HUMAN            CCriteria_EST_HUMAN         "est_human"
  *  is_EST_MOUSE            CCriteria_EST_MOUSE         "est_mouse"
  *  is_EST_OTHERS           CCriteria_EST_OTHERS        "est_others"
