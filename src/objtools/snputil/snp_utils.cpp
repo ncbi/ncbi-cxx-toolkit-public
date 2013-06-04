@@ -141,38 +141,47 @@ int NSnp::GetLength(const CSeq_feat &feat)
     return length;
 }
 
-string NSnp::ClinSigAsString(const CVariation_ref& var)
+string NSnp::ClinSigAsString(const CVariation_ref& var, ELetterCase LetterCase)
 {
     ITERATE (CVariation_ref::TPhenotype, pnt_iter, var.GetPhenotype()) {
         if ((*pnt_iter)->CanGetClinical_significance()) {
-            return ClinSigAsString((*pnt_iter)->GetClinical_significance());
+            return ClinSigAsString((*pnt_iter)->GetClinical_significance(), LetterCase);
         }
     }
+	return "";
 }
 
-string NSnp::ClinSigAsString(TClinSigID ClinSigID)
+string NSnp::ClinSigAsString(TClinSigID ClinSigID, ELetterCase LetterCase)
 {
+	string sResult;
     switch(ClinSigID)
     {
 		case CPhenotype::eClinical_significance_non_pathogenic:
-			return "Benign";
+			sResult = "Benign";
+			break;
 		case CPhenotype::eClinical_significance_probable_non_pathogenic:
-			return "Uncertain - likely benign";
+			sResult = "Uncertain - likely benign";
+			break;
 		case CPhenotype::eClinical_significance_probable_pathogenic:
-			return "Uncertain - likely pathogenic";
+			sResult = "Uncertain - likely pathogenic";
+			break;
 		case CPhenotype::eClinical_significance_pathogenic:
-			return "Pathogenic";
+			sResult = "Pathogenic";
+			break;
 		case CPhenotype::eClinical_significance_drug_response:
-			return "Drug Rresponse";
+			sResult = "Drug Rresponse";
+			break;
 		case CPhenotype::eClinical_significance_histocompatibility:
-			return "Histocompatibility";
+			sResult = "Histocompatibility";
+			break;
 		case CPhenotype::eClinical_significance_unknown:
 		case CPhenotype::eClinical_significance_untested:
 		case CPhenotype::eClinical_significance_other:
 		default:
-			return "Uncertain";
+			sResult = "Uncertain";
+			break;
     }
-    return "";
+    return LetterCase == eLetterCase_ForceLower ? NStr::ToLower(sResult) : sResult;
 }
 
 

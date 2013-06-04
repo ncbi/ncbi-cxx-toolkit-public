@@ -212,7 +212,8 @@ CRef<NSnpBins::SBinEntry> NSnpBins::GetEntry(const objects::CSeq_annot_Handle& a
     string  title, comment;
     string  sHGVS;
 	int		source;
-    string  dbgaptext, context;
+    string  dbgaptext;
+	string  context;
 
     CRef<NSnpBins::SBinEntry> entry;
     if(col_pos.TryGet(annot, row, pos)) {
