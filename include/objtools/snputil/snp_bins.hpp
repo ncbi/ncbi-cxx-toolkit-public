@@ -40,20 +40,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/// objects and functions for dealing with variation (historically called SNP) bins
+///
+/// a bin is a group of all entries of a certain type covering a range of positions on a
+/// sequence object
+/// see also https://sp.ncbi.nlm.nih.gov/IEB/pdas/dbsnp/SNP Named Annotation/BinTrackRequirements.docx
 class NCBI_SNPUTIL_EXPORT NSnpBins
 {
 public:
+	/// types of supported data in bins
     enum EBinType {
         eUnknown = -1,
-        eGAP = 0,   // dbGaP analysis files
-        eGCAT= 1,   // NHGRI GWAS Catalog Track (AKA Association Results)
-        eCLIN= 2,   // Clinical Variations
-        eCITED=3,   // Cited Variations
-        eIND = 4    // individual tracks (Venter, Watson, etc)
+        eGAP = 0,   ///< dbGaP analysis files
+        eGCAT= 1,   ///< NHGRI GWAS Catalog Track (AKA Association Results)
+        eCLIN= 2,   ///< Clinical Variations
+        eCITED=3,   ///< Cited Variations
+        eIND = 4    ///< individual tracks (Venter, Watson, etc), data same as in eCLIN
     };
 	typedef int TBinType;
 
-	// association result source
+	/// association result source
 	enum ESource {
 		eSource_dbGAP		= 1,
 		eSource_NHGRI_GWAS	= 2,
@@ -61,19 +67,23 @@ public:
 	};
 	typedef int TSource;
 
+	/// a single bin entry
+	///
+	/// some of the fields are specially formatted, descriptions are in 
+	/// https://sp.ncbi.nlm.nih.gov/IEB/pdas/dbsnp/SNP Named Annotation/BinTrackRequirements.docx
 	struct SBinEntry : public CObject
 	{
 		//!! arrange member names as in the dumped file
 		TSeqPos pos;
 		unsigned int snpid;
 		double  pvalue;
-		string  pmids;
+		string  pmids;			///< comma-delimited list of PubMed IDs
 		string  trait;
-		string  genes_reported;
-		string  genes_mapped;
-		int     ClinSigID;
+		string  genes_reported;	///< specially formatted, see document
+		string  genes_mapped;	///< specially formatted, see document
+		int     ClinSigID;		///< clinical significance ID, @sa NSnp::EClinSigID
 		string  sHGVS;
-		string  dbgaptext;
+		string  dbgaptext;	///< specially formatted, see document
 		string  context;
 		TSource source;
 	};
@@ -81,34 +91,40 @@ public:
 	typedef list<CRef<SBinEntry> >  TBinEntryList;
 	typedef set<string>        TListNaas;
 
+	/// representation of a bin
 	struct SBin : public CObject
 	{
 		TBinType type;
-		int    count;
+		int    count;	///< number of entries in this bin
 		string title;
 		TSeqRange range;
 
-		CRef<SBinEntry>  m_SigEntry;  // most significant entry in bin region
+		CRef<SBinEntry>  m_SigEntry;  ///< most significant entry in this bin
 		TBinEntryList m_EntryList;
 		string signature;
 	};
 
-	// storage for gene maps as  in strings in SBinEntry::genes_reported and SBinEntry::genes_mapped
+	/// storage for gene maps as seen in strings in SBinEntry::genes_reported and SBinEntry::genes_mapped
 	class NCBI_SNPUTIL_EXPORT CGeneMap
 	{
 	public:
-		// expects a string like "GeneSym1^GeneID1:GeneSym2^geneID2:etc"
+		/// expects a string like "GeneSym1^GeneID1:GeneSym2^geneID2:etc"
 		CGeneMap(const string& sSrc = "") { x_Init(sSrc); }
 		void Set(const string& sSrc) { x_Init(sSrc); }
 
-		// recreate the string (sorting of genes may be different compared to the original; duplicates will be culled)
+		/// recreate the string that was used for creation
+		///
+		/// - sorting of genes may be different compared to the original
+		/// - duplicates will be removed
 		string AsString() const;
 
-		// key is gene symbol, value is gene id
+		/// maps of gene symbols to gene ids
+		///
+		/// key is gene symbol, value is gene id
 		typedef map<string, string> TGeneMap;
+		
+		/// masquerading as container
 		typedef TGeneMap::const_iterator const_iterator;
-
-		// const iterators
 		const_iterator begin() const { return m_GeneMap.begin(); }
 		const_iterator end() const { return m_GeneMap.end(); }
 
@@ -121,49 +137,87 @@ public:
 
 
 public:
-	// get a selector for a bin given a NA track accession with some selector parameters
+	/// get a selector for a bin from a NA track accession
 	static void GetBinSelector(const string& sTrackAccession,
 	                           bool isAdaptive,
 	                           int depth,
 	                           objects::SAnnotSelector& sel);
 
-    // get an annotation handle that is needed to load a bin from an existing selector and loc and bioseq handle
-	// returns false if a handle cannot be obtained
+    /// get an annotation handle that is needed to load a singlular bin on range
+	///
+	/// @param scope
+	///    active scope
+	/// @param sel
+	///    selector obtained by GetBinSelector()
+	/// @param loc
+	///   range that the bin will cover
+	/// @param annot
+	///   will be filled if a handle can be obtained
+	/// @return 
+	///   false if a handle cannot be obtained
     static bool GetBinHandle(objects::CScope& scope,
                              const objects::SAnnotSelector& sel,
                              const objects::CSeq_loc &loc,
                              objects::CSeq_annot_Handle& annot);
 
-	// get a singular bin corresponding to a position range
+	/// get a singular bin corresponding to a position range
+	///
+	/// @param annot
+	///   annotation handle obtained by GetBinHandle()
+	/// @param range
+	///   range this bin will cover
     static CRef<SBin> GetBin(const objects::CSeq_annot_Handle& annot, TSeqRange range);
 
-    // get a bin entry corresponding to a row position in the table presumed contained within the handle
-	// the reference will be null if there is no valid entry for this row
+    /// get a bin entry corresponding to a row position in the table presumed contained within the handle
+	///
+	/// @param annot
+	///   annotation handle obtained by GetBinHandle()
+	/// @param row
+	///   row in the annotation table
+	/// @return 
+	///   null if there is no valid entry for this row
 	static CRef<SBinEntry> GetEntry(const objects::CSeq_annot_Handle& annot, int row);
 
-	// choose a more significant entry of the two offered
-	// returns 1 of entry1 is more significant or 2 if entry2 is more
+	/// choose a more significant entry of the two offered
+	/// @return 
+	///   - 1 of entry1 is more significant
+	///   - 2 if entry2 is more significant
 	static int ChooseSignificant(const SBinEntry* entry1, const SBinEntry* entry2, TBinType type);
 
+	/// get title and comment out of annot.desc
+	///
+	/// @note
+	///   if the annotation has several descriptions, will get the last one
 	static void ReadAnnotDesc(const objects::CSeq_annot_Handle& handle,
 						 string& title,
 						 string& comment);
 
-	// human-readable text for various source types
+	/// get human-readable text for various source types
 	static string SourceAsString(TSource Source);
 
-	// Performs iterative binary search to find table indexes 'pos_index_begin' and 'pos_index_end' in a table with
-	// "pos" values.
-    // pos_index_end points at one index greater than the last item found in range.
-	// annot is supposed to contain a table with a sorted "pos" column (may contain
-	// duplicate entries), otherwise
-    // an exception will be thrown or the algorithm will fail
+	/// Perform iterative binary search to find table indexes (rows) 'pos_index_begin' and 'pos_index_end' in a table with
+	/// values in "pos" column
+	///
+	/// @param annot
+	///   annotation handle obtained by GetBinHandle()
+	/// @param pos_value_from
+	///   lower boundary for the "pos" value (inclusive)
+	/// @param pos_value_to
+	///   upper boundary for the "pos" value (exclusive)
+	/// @param pos_index_begin
+	///   first index (row) which contains the indicated "pos" values
+    /// @param pos_index_end 
+	///   points at one row greater than the last item found (exclusive)
+	/// @note
+	///   annot is supposed to contain a table with a sorted "pos" column (but may contain
+	///   duplicate entries), otherwise
+    ///   an exception will be thrown or the algorithm will fail
     static void FindPosIndexRange(const objects::CSeq_annot_Handle& annot,
                           int pos_value_from, int pos_value_to,
                           int& pos_index_begin, int& pos_index_end);
 };
 
-// compare two GeneMaps, return true if they have the same set of elements
+/// compare two GeneMaps, return true if they have the same set of elements
 inline bool operator==(const NSnpBins::CGeneMap& GeneMap1, const NSnpBins::CGeneMap& GeneMap2)
 	{
     if(GeneMap1.m_GeneMap.size() != GeneMap2.m_GeneMap.size())
@@ -172,6 +226,7 @@ inline bool operator==(const NSnpBins::CGeneMap& GeneMap1, const NSnpBins::CGene
     return equal(GeneMap1.m_GeneMap.begin(), GeneMap1.m_GeneMap.end(), GeneMap2.m_GeneMap.begin());
 }
 
+/// compare two GeneMaps, return true if they do not have the same set of elements
 inline bool operator!=(const NSnpBins::CGeneMap& GeneMap1, const NSnpBins::CGeneMap& GeneMap2)
 {
     return !(GeneMap1 == GeneMap2);

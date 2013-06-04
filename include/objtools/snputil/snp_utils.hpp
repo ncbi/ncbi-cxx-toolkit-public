@@ -168,9 +168,33 @@ public:
     ///   - false otherwise
     static bool             IsSnpKnown( CScope &scope, const CSeq_loc& loc, const string &allele=kEmptyStr);
 
-	// human-readable text for various clinical significance types
-	static string ClinSigAsString(const CVariation_ref& var);
-	static string ClinSigAsString(TClinSigID ClinSigID);
+	/// controls the case of strings returned from ClinSigAsString()
+	enum ELetterCase {
+		eLetterCase_ForceLower,		///< always use lower case only
+		eLetterCase_Mixed			///< return strings in mixes case
+	};
+
+	/// get a human-readable text for various clinical significance types
+	///
+	/// @param var
+	///   the clinical significance will be taken from var.phenotype.clinical-significance
+	///   if it is defined
+	/// @param LetterCase
+	///   controls the letter case of the result
+	/// @return
+	///   string describing the first clinical significance in the first phenotype
+	///   - will be empty if clinical-significance is not present 
+	static string ClinSigAsString(const CVariation_ref& var, ELetterCase LetterCase = eLetterCase_Mixed);
+	
+	/// get a human-readable text for various clinical significance types
+	///
+	/// @param ClinSigID
+	///   clinical significance ID
+	/// @param LetterCase
+	///   controls the letter case of the result
+	/// @return
+	///   string describing the given clinical significance ID
+	static string ClinSigAsString(TClinSigID ClinSigID,  ELetterCase LetterCase = eLetterCase_Mixed);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private Methods
@@ -182,42 +206,79 @@ private:
 #define SNP_VAR_EXT_CLASS "SNPData"
 #define SNP_VAR_EXT_BITFIELD "Bitfield"
 
+/// set of functions for dealing with SNP represented as variation objects
 class NCBI_SNPUTIL_EXPORT NSNPVariationHelper
 {
 public:
-    // reads a feature that supposedly contains a SNP record (old, up-to-2012, style,
-    // with SNP data encoded as "qual" (alleles) and "ext.data" (bitfield))
-    // and resets pVariation to content
-    // found in the feature
-    // returns false if a given feature is not a correctly formed SNP feature
+    /// legacy SNP feature conversion into a variation object
+	///
+	/// reads a feature that supposedly contains a SNP record (old, up-to-2012, style,
+    /// with SNP data encoded as "qual" (alleles) and "ext.data" (bitfield))
+    /// and sets Variation to content found in the feature
+	/// @param Variation
+	///   conversion result will be put here, old contents are destroyed upon conversion success
+	/// @param SrcFeat
+	///   old format feature
+    /// @return 
+	///   false if a given feature is not a correctly formed SNP feature
     static bool ConvertFeat(CVariation& Variation, const CSeq_feat& SrcFeat);
+
+	/// @sa
+	///   same as the other ConvertFeat(), but result put into variation-ref, placement is lost
     static bool ConvertFeat(CVariation_ref& Variation, const CSeq_feat& SrcFeat);
 
-    // convert SNP bitfield data to fields in CVariantProperties
+    /// convert SNP bitfield data to respective fields in CVariantProperties
+	///
+	/// @param prop
+	///   The result will be put here
+	/// @param bf
+	///   Bitfield that will be decoded
+	/// @note
+	///   Not all of the bitfield bit currently have direct correspondencies within CVariantProperties
+	///   so they will be lost during the conversion
     static void DecodeBitfield(CVariantProperties& prop, const CSnpBitfield& bf);
 
     // list of all possible substitutions in eSNPPropName_ResourceLinkURL
     static const string sResourceLink_RsID;
 
-    // get a string list representation of various CVariantProperties
+    /// enums to control getting a string list representation of various CVariantProperties
+	/// @sa VariantPropAsStrings
     enum ESNPPropTypes {
         eSNPPropName_Undef,
-        eSNPPropName_GeneLocation,  // prop.gene-location
-        eSNPPropName_Effect,        // prop.effect
-        eSNPPropName_Mapping,       // prop.mapping
-        eSNPPropName_FreqValidation,// prop.frequence-based-validation
-        eSNPPropName_QualityCheck,  // prop.quality-check
-        eSNPPropName_ResourceLink,  // prop.resource-link
+        eSNPPropName_GeneLocation,  ///< prop.gene-location
+        eSNPPropName_Effect,        ///< prop.effect
+        eSNPPropName_Mapping,       ///< prop.mapping
+        eSNPPropName_FreqValidation,///< prop.frequence-based-validation
+        eSNPPropName_QualityCheck,  ///< prop.quality-check
+        eSNPPropName_ResourceLink,  ///< prop.resource-link
 
-        // this will generate URL templates, with one of sResourceLink_ substrings potentially inside
-        // the user should perform correct substitution for the actual value
-        // an empty string will be returned when the resource URL is not known
-        // the order is guaranteed to be exactly the same as for _ResourceLink for the same prop
-        eSNPPropName_ResourceLinkURL// prop.resource-link
+        /// generate URL templates, with one of sResourceLink_ substrings potentially inside
+		///
+        /// the user should perform correct substitution of sResourceLink_ substring for the actual value
+        /// an empty string will be inserted into the list when the resource URL is not known
+        /// the order is guaranteed to be exactly the same as for _ResourceLink for the same prop
+        eSNPPropName_ResourceLinkURL///< prop.resource-link
     };
+
+	/// get lists of strings corresponding to a given property type
+	///
+	/// @param ResList
+	///   will be reset to the resulting list of strings
+	/// @param prop
+	///   property based upon values within which the result will be generated
+	/// @param ePropType
+	///   type of property requested
+	/// @sa ESNPPropTypes
     static void VariantPropAsStrings(list<string>& ResList, const CVariantProperties& prop, ESNPPropTypes ePropType);
 
-    // add alleles to a list<string> from deltas in variation data
+    /// add alleles to a list of strings from deltas in variation data
+	///
+	/// empty deltas are converted to dashes "-"
+	/// @param Alleles
+	///   list of strings to the end of which the found deltas will be added,
+	///   alleles already present in the list are retained
+	/// @param pVariation
+	///   variation object from which the deltas are read
     template <class TVariation> static void GetDeltas(list<string>& Alleles, const TVariation* pVariation);
 
 private:
@@ -298,6 +359,8 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
             const CGb_qual& qual = **it;
             if (qual.GetQual() == "replace") {
                 alleles.push_back(qual.GetVal());
+//				string sQualVal(qual.GetVal());
+//				alleles.push_back(sQualVal.empty() ? "-" : sQualVal);
             }
         }
     }
