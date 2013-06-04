@@ -84,7 +84,7 @@ s_RevStrLenSort(const string& A, const string& B)
     return (B.length() < A.length());
 }
 
-CGencollIdMapper::CGencollIdMapper(CRef<CGC_Assembly> SourceAsm)
+CGencollIdMapper::CGencollIdMapper(CConstRef<CGC_Assembly> SourceAsm)
 {
     if (SourceAsm.IsNull()) {
         return;

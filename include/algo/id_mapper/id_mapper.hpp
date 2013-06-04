@@ -53,7 +53,7 @@ END_SCOPE(objects)
 class NCBI_XALGOID_MAPPER_EXPORT CGencollIdMapper : public CObject
 {
 public:
-    CGencollIdMapper(CRef<objects::CGC_Assembly> SourceAsm);
+    CGencollIdMapper(CConstRef<objects::CGC_Assembly> SourceAsm);
 
     struct SIdSpec
     {
