@@ -1911,7 +1911,7 @@ void TraverseAndRunTestCases(
 
     // this is what we search for to see if there is a hidden directory
     // or file anywhere along the path.
-    const string kHiddenSubstring = CDirEntry::GetPathSeparator() + string(".");
+    const string kHiddenSubstring = CDirEntry::GetPathSeparator() + string(".svn") + CDirEntry::GetPathSeparator();
 
     typedef map<string, ITestRunner::TMapSuffixToFile> TMapTestNameToItsFiles;
     TMapTestNameToItsFiles mapTestNameToItsFiles;
