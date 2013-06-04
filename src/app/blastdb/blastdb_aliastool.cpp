@@ -96,6 +96,7 @@ private:
         }
         return retval;
     }
+    vector<string> x_GetDbsToAggregate() const;
 };
 
 const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
@@ -191,11 +192,19 @@ void CBlastDBAliasApp::Init()
                              "A space separated list of BLAST database names to"
                              " aggregate",
                              CArgDescriptions::eString);
-    arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, kArgDb);
-    arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "num_volumes");
-    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kOutput);
-    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kArgDbType);
-    arg_desc->SetDependency("dblist", CArgDescriptions::eRequires, kArgDbTitle);
+    arg_desc->AddOptionalKey("dblist_file", "file_name", 
+                             "A file containing a list of BLAST database names"
+                             " to aggregate, one per line",
+                             CArgDescriptions::eInputFile);
+    const char* key[] = { "dblist", "dblist_file" };
+    for (size_t i = 0; i < sizeof(key)/sizeof(*key); i++) {
+        arg_desc->SetDependency(key[i], CArgDescriptions::eExcludes, kArgDb);
+        arg_desc->SetDependency(key[i], CArgDescriptions::eExcludes, "num_volumes");
+        arg_desc->SetDependency(key[i], CArgDescriptions::eRequires, kOutput);
+        arg_desc->SetDependency(key[i], CArgDescriptions::eRequires, kArgDbType);
+        arg_desc->SetDependency(key[i], CArgDescriptions::eRequires, kArgDbTitle);
+    }
+    arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "dblist_file");
 
     CNcbiOstrstream msg;
     msg << "Number of volumes to aggregate, in which case the "
@@ -206,7 +215,6 @@ void CBlastDBAliasApp::Init()
                              CArgDescriptions::eInteger);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgDb);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgGiList);
-    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, "dblist");
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kOutput);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbType);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbTitle);
@@ -298,10 +306,8 @@ CBlastDBAliasApp::CreateAliasFile() const
     }
 
     const EAliasFileFilterType alias_type = (isTiList ? eTiList : eGiList);
-    if (args["dblist"].HasValue()) {
-        const string dblist = args["dblist"].AsString();
-        vector<string> dbs2aggregate;
-        NStr::Tokenize(dblist, " ", dbs2aggregate);
+    if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
+        vector<string> dbs2aggregate = x_GetDbsToAggregate();
         CWriteDB_CreateAliasFile(args[kOutput].AsString(), dbs2aggregate,
                                  seq_type, gilist, title, alias_type);
     } else if (args["num_volumes"].HasValue()) {
@@ -315,6 +321,29 @@ CBlastDBAliasApp::CreateAliasFile() const
                                  seq_type, gilist,
                                  title, alias_type);
     }
+}
+
+vector<string> CBlastDBAliasApp::x_GetDbsToAggregate() const 
+{
+    vector<string> retval;
+    const CArgs& args = GetArgs();
+    if (args["dblist"].HasValue()) {
+        const string dblist = args["dblist"].AsString();
+        NStr::Tokenize(dblist, " ", retval);
+    } else if (args["dblist_file"].HasValue()) {
+        CNcbiIstream& in(args["dblist_file"].AsInputFile());
+        string line;
+        while (getline(in, line)) {
+            line = NStr::TruncateSpaces(line);
+            if (line.empty()) {
+                continue;
+            }
+            retval.push_back(line);
+        }
+    } else {
+        abort();
+    }
+    return retval;
 }
 
 int CBlastDBAliasApp::Run(void)
