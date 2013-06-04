@@ -13,6 +13,7 @@ HOSTED_LIBS    = \
                  xalgotext              \
                  xalgosegmask           \
                  xalgowinmask           \
+                 xid_mapper             \
                  \
                  prosplign              \
                  xalgoalignnw           \
