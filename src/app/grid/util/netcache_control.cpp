@@ -297,26 +297,28 @@ int CNetCacheControl::Run()
                 reader.reset(version_is_defined ?
                     icache_client.GetReadStream(blob_address.key,
                         blob_address.version, blob_address.subkey, NULL,
-                        CNetCacheAPI::eCaching_Disable) :
+                        nc_caching_mode = CNetCacheAPI::eCaching_Disable) :
                     icache_client.GetReadStream(blob_address.key,
                         blob_address.subkey, &blob_address.version, &validity));
                 break;
             case 1: /* use offset */
                 reader.reset(icache_client.GetReadStreamPart(blob_address.key,
                     blob_address.version, blob_address.subkey, offset,
-                    part_size, NULL, CNetCacheAPI::eCaching_Disable));
+                    part_size, NULL,
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
                 break;
             case 2: /* use password */
                 reader.reset(CNetICachePasswordGuard(icache_client,
                     password_arg.AsString())->GetReadStream(blob_address.key,
                     blob_address.version, blob_address.subkey, NULL,
-                    CNetCacheAPI::eCaching_Disable));
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
                 break;
             case 3: /* use password and offset */
                 reader.reset(CNetICachePasswordGuard(icache_client,
                     password_arg.AsString())->GetReadStreamPart(
                     blob_address.key, blob_address.version, blob_address.subkey,
-                    offset, part_size, NULL, CNetCacheAPI::eCaching_Disable));
+                    offset, part_size, NULL,
+                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
             }
             if (!version_is_defined)
                 NcbiCerr << "Blob version: " <<

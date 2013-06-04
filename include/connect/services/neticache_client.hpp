@@ -123,9 +123,13 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                        size_t         size,
                        unsigned int   time_to_live = 0,
                        const string&  owner = kEmptyStr);
+
     virtual size_t GetSize(const string&  key,
                            int            version,
                            const string&  subkey);
+    size_t GetBlobSize(const string& key, int version, const string& subkey,
+            const CNamedParameterList* optional = NULL);
+
     virtual void GetBlobOwner(const string&  key,
                               int            version,
                               const string&  subkey,
@@ -144,6 +148,21 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         void* buf,
         size_t buf_size);
 
+    /// @deprecated Use GetReadStream() variant with optional argument list.
+    ///
+    /// Read a lengthy blob via the IReader interface. The Read() method
+    /// of the returned implementation is not blocking. The caller
+    /// must provide a reading completion loop for the Read() call.
+    /// @see CNetCacheAPI::GetReader() for an example.
+    NCBI_DEPRECATED
+    IReader* GetReadStream(
+        const string& key,
+        int version,
+        const string& subkey,
+        size_t* blob_size_ptr,
+        CNetCacheAPI::ECachingMode caching_mode,
+        CNetServer::TInstance server_to_use = NULL);
+
     /// Read a lengthy blob via the IReader interface. The Read() method
     /// of the returned implementation is not blocking. The caller
     /// must provide a reading completion loop for the Read() call.
@@ -153,8 +172,7 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         int version,
         const string& subkey,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode,
-        CNetServer::TInstance server_to_use = NULL);
+        const CNamedParameterList* optional = NULL);
 
     /// Read a lengthy blob via the IReader interface. The Read() method
     /// of the returned implementation is not blocking. The caller
@@ -204,8 +222,7 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         size_t offset,
         size_t part_size,
         size_t* blob_size_ptr,
-        CNetCacheAPI::ECachingMode caching_mode,
-        CNetServer::TInstance server_to_use = NULL);
+        const CNamedParameterList* optional = NULL);
 
     /// Read a lengthy blob via the IReader interface. The Read() method
     /// of the returned implementation is not blocking. The caller
@@ -243,10 +260,7 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
         const string& key,
         int version,
         const string& subkey,
-        unsigned int time_to_live = 0,
-        const string& owner = kEmptyStr,
-        CNetCacheAPI::ECachingMode caching_mode =
-            CNetCacheAPI::eCaching_AppDefault);
+        const CNamedParameterList* optional = NULL);
 
     virtual IWriter* GetWriteStream(
         const string& key,
@@ -258,11 +272,18 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     virtual void Remove(const string&    key,
                         int              version,
                         const string&    subkey);
+    void RemoveBlob(const string& key, int version, const string& subkey,
+            const CNamedParameterList* optional = NULL);
+
     virtual time_t GetAccessTime(const string&  key,
                                  int            version,
                                  const string&  subkey);
+
     virtual bool HasBlobs(const string&  key,
                           const string&  subkey);
+    bool HasBlob(const string& key, const string& subkey,
+            const CNamedParameterList* optional = NULL);
+
     virtual void Purge(time_t           access_timeout,
                        EKeepVersions    keep_last_version = eDropAll);
 

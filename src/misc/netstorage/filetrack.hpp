@@ -48,6 +48,29 @@ struct SFileTrackAPI;
 struct SFileTrackRequest : public CObject
 {
     SFileTrackRequest(SFileTrackAPI* storage_impl, CNetFileID* file_id,
+            const string& url,
+            const string& user_header = kEmptyStr,
+            FHTTP_ParseHeader parse_header = 0);
+
+    CJsonNode ReadJsonResponse();
+
+    ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+    void FinishDownload();
+
+    void CheckIOStatus();
+
+    SFileTrackAPI* m_FileTrackAPI;
+    CNetFileID* m_FileID;
+    string m_URL;
+    CConn_HttpStream m_HTTPStream;
+    int m_HTTPStatus;
+    size_t m_ContentLength;
+    bool m_FirstRead;
+};
+
+struct SFileTrackPostRequest : public SFileTrackRequest
+{
+    SFileTrackPostRequest(SFileTrackAPI* storage_impl, CNetFileID* file_id,
             const string& url, const string& boundary,
             const string& user_header = kEmptyStr,
             FHTTP_ParseHeader parse_header = 0);
@@ -59,17 +82,7 @@ struct SFileTrackRequest : public CObject
     void Write(const void* buf, size_t count, size_t* bytes_written);
     void FinishUpload();
 
-    ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
-    void FinishDownload();
-
-    SFileTrackAPI* m_FileTrackAPI;
-    CNetFileID* m_FileID;
-    string m_URL;
     string m_Boundary;
-    int m_HTTPStatus;
-    size_t m_ContentLength;
-    CConn_HttpStream m_HTTPStream;
-    bool m_FirstRead;
 };
 
 struct SFileTrackAPI
@@ -83,13 +96,8 @@ struct SFileTrackAPI
     void SetFileTrackAttribute(CNetFileID* file_id,
             const string& attr_name, const string& attr_value);
 
-    CRef<SFileTrackRequest> StartUpload(CNetFileID* file_id);
+    CRef<SFileTrackPostRequest> StartUpload(CNetFileID* file_id);
     CRef<SFileTrackRequest> StartDownload(CNetFileID* file_id);
-
-    void CheckIOStatus(CConn_HttpStream& http_stream,
-            const string& url);
-    CJsonNode ReadJsonResponse(CConn_HttpStream& http_stream,
-            CNetFileID* file_id, const string& url, int http_status);
 
     Uint8 GetRandom();
     string GenerateUniqueBoundary();

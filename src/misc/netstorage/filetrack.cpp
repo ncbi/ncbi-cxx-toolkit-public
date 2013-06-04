@@ -90,7 +90,8 @@ ERW_Result CNullWriter::Flush()
 static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
         const char* /*http_header*/, void* user_data, int server_error)
 {
-    reinterpret_cast<SFileTrackRequest*>(user_data)->m_HTTPStatus = server_error;
+    reinterpret_cast<SFileTrackRequest*>(
+            user_data)->m_HTTPStatus = server_error;
 
     return eHTTP_HeaderComplete;
 }
@@ -99,7 +100,7 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetContentLength(
         const char* http_header, void* user_data, int server_error)
 {
     SFileTrackRequest* http_request =
-            reinterpret_cast<SFileTrackRequest*>(user_data);
+            reinterpret_cast<SFileTrackPostRequest*>(user_data);
 
     http_request->m_HTTPStatus = server_error;
 
@@ -121,13 +122,11 @@ SFileTrackRequest::SFileTrackRequest(
         SFileTrackAPI* storage_impl,
         CNetFileID* file_id,
         const string& url,
-        const string& boundary,
         const string& user_header,
         FHTTP_ParseHeader parse_header) :
     m_FileTrackAPI(storage_impl),
     m_FileID(file_id),
     m_URL(url),
-    m_Boundary(boundary),
     m_HTTPStatus(0),
     m_ContentLength((size_t) -1),
     m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
@@ -137,21 +136,34 @@ SFileTrackRequest::SFileTrackRequest(
     m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->m_ReadTimeout);
 }
 
-void SFileTrackRequest::SendContentDisposition(const char* input_name)
+SFileTrackPostRequest::SFileTrackPostRequest(
+        SFileTrackAPI* storage_impl,
+        CNetFileID* file_id,
+        const string& url,
+        const string& boundary,
+        const string& user_header,
+        FHTTP_ParseHeader parse_header) :
+    SFileTrackRequest(storage_impl, file_id, url, user_header, parse_header),
+    m_Boundary(boundary)
+{
+}
+
+void SFileTrackPostRequest::SendContentDisposition(const char* input_name)
 {
     m_HTTPStream << "--" << m_Boundary << "\r\n"
         "Content-Disposition: form-data; name=\"" << input_name << "\"\r\n"
         "\r\n";
 }
 
-void SFileTrackRequest::SendFormInput(const char* input_name, const string& value)
+void SFileTrackPostRequest::SendFormInput(
+        const char* input_name, const string& value)
 {
     SendContentDisposition(input_name);
 
     m_HTTPStream << value << "\r\n";
 }
 
-void SFileTrackRequest::SendEndOfFormData()
+void SFileTrackPostRequest::SendEndOfFormData()
 {
     m_HTTPStream << "--" << m_Boundary << "--\r\n" << NcbiFlush;
 
@@ -168,17 +180,16 @@ void SFileTrackRequest::SendEndOfFormData()
     }
 }
 
-void SFileTrackAPI::CheckIOStatus(CConn_HttpStream& http_stream,
-        const string& url)
+void SFileTrackRequest::CheckIOStatus()
 {
-    EIO_Status status = http_stream.Status();
+    EIO_Status status = m_HTTPStream.Status();
 
     if ((status != eIO_Success && status != eIO_Closed) ||
-                ((status = http_stream.Status(eIO_Read)) != eIO_Success &&
+                ((status = m_HTTPStream.Status(eIO_Read)) != eIO_Success &&
                         status != eIO_Closed)) {
         THROW_IO_EXCEPTION(eRead,
                 "Error while retrieving HTTP response from " <<
-                url << ": ", status);
+                m_URL << ": ", status);
     }
 }
 
@@ -213,7 +224,7 @@ static string s_RemoveHTMLTags(const char* text)
     return result;
 }
 
-CRef<SFileTrackRequest> SFileTrackAPI::StartUpload(CNetFileID* file_id)
+CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(CNetFileID* file_id)
 {
     string session_key(LoginAndGetSessionKey());
 
@@ -225,7 +236,8 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartUpload(CNetFileID* file_id)
     user_header.append(session_key);
     user_header.append("\r\n", 2);
 
-    CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, file_id,
+    CRef<SFileTrackPostRequest> new_request(
+            new SFileTrackPostRequest(this, file_id,
             FILETRACK_BASEURL "/ft/upload/", boundary, user_header,
             s_HTTPParseHeader_SaveStatus));
 
@@ -234,7 +246,7 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartUpload(CNetFileID* file_id)
     return new_request;
 }
 
-void SFileTrackRequest::Write(const void* buf,
+void SFileTrackPostRequest::Write(const void* buf,
         size_t count, size_t* bytes_written)
 {
     if (m_HTTPStream.write(reinterpret_cast<const char*>(buf), count).bad()) {
@@ -248,7 +260,7 @@ void SFileTrackRequest::Write(const void* buf,
 
 static const STimeout kZeroTimeout = {0};
 
-void SFileTrackRequest::FinishUpload()
+void SFileTrackPostRequest::FinishUpload()
 {
     m_HTTPStream << "\r\n";
 
@@ -278,8 +290,7 @@ void SFileTrackRequest::FinishUpload()
                 "\"); HTTP status " << m_HTTPStatus);
     }
 
-    CJsonNode upload_result = m_FileTrackAPI->ReadJsonResponse(m_HTTPStream,
-            m_FileID, m_URL, m_HTTPStatus);
+    CJsonNode upload_result = ReadJsonResponse();
 
     string filetrack_file_id = upload_result.GetAt(0).GetString("file_id");
 
@@ -292,22 +303,21 @@ void SFileTrackRequest::FinishUpload()
     }
 }
 
-CJsonNode SFileTrackAPI::ReadJsonResponse(CConn_HttpStream& http_stream,
-        CNetFileID* file_id, const string& url, int http_status)
+CJsonNode SFileTrackRequest::ReadJsonResponse()
 {
     string http_response;
 
     try {
         CNcbiOstrstream sstr;
-        NcbiStreamCopy(sstr, http_stream);
+        NcbiStreamCopy(sstr, m_HTTPStream);
         sstr << NcbiEnds;
         http_response = sstr.str();
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << file_id->GetID() <<
-                "\" (storage key \"" << file_id->GetUniqueKey() <<
-                "\"); HTTP status " << http_status);
+                "Error while uploading \"" << m_FileID->GetID() <<
+                "\" (storage key \"" << m_FileID->GetUniqueKey() <<
+                "\"); HTTP status " << m_HTTPStatus);
     }
 
     CJsonNode root;
@@ -325,12 +335,12 @@ CJsonNode SFileTrackAPI::ReadJsonResponse(CConn_HttpStream& http_stream,
         }
 
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << file_id->GetID() <<
-                "\" (storage key \"" << file_id->GetUniqueKey() << "\"): " <<
-                error << " (HTTP status " << http_status << ')');
+                "Error while uploading \"" << m_FileID->GetID() <<
+                "\" (storage key \"" << m_FileID->GetUniqueKey() << "\"): " <<
+                error << " (HTTP status " << m_HTTPStatus << ')');
     }
 
-    CheckIOStatus(http_stream, url);
+    CheckIOStatus();
 
     return root;
 }
@@ -341,7 +351,7 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(CNetFileID* file_id)
     url += "/contents";
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, file_id,
-            url, kEmptyStr, kEmptyStr, s_HTTPParseHeader_GetContentLength));
+            url, kEmptyStr, s_HTTPParseHeader_GetContentLength));
 
     new_request->m_FirstRead = true;
 
@@ -372,12 +382,12 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 
 void SFileTrackRequest::FinishDownload()
 {
-    m_FileTrackAPI->CheckIOStatus(m_HTTPStream, m_URL);
+    CheckIOStatus();
 }
 
-SFileTrackAPI::SFileTrackAPI() : m_Random((Uint4) time(NULL))
+SFileTrackAPI::SFileTrackAPI()
 {
-    // TODO: m_Random.Randomize();
+    m_Random.Randomize();
 
     m_WriteTimeout.sec = m_ReadTimeout.sec = 5;
     m_WriteTimeout.usec = m_ReadTimeout.usec = 0;
@@ -439,11 +449,10 @@ CJsonNode SFileTrackAPI::GetFileInfo(CNetFileID* file_id)
 
     url += '/';
 
-    SFileTrackRequest request(this, file_id, url, kEmptyStr,
-        kEmptyStr, s_HTTPParseHeader_SaveStatus);
+    SFileTrackRequest request(this, file_id, url,
+            kEmptyStr, s_HTTPParseHeader_SaveStatus);
 
-    return ReadJsonResponse(request.m_HTTPStream,
-            file_id, url, request.m_HTTPStatus);
+    return request.ReadJsonResponse();
 }
 
 void SFileTrackAPI::SetFileTrackAttribute(CNetFileID* file_id,
@@ -452,7 +461,7 @@ void SFileTrackAPI::SetFileTrackAttribute(CNetFileID* file_id,
     string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
     url += "/attribs/";
 
-    SFileTrackRequest request(this, file_id, url, kEmptyStr,
+    SFileTrackPostRequest request(this, file_id, url, kEmptyStr,
             kEmptyStr, s_HTTPParseHeader_SaveStatus);
 
     request.SendFormInput("cmd", "set");

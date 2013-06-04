@@ -61,6 +61,8 @@ void CNetCacheAPIParameters::LoadNamedParameters(
             SetServerCheck(Get<ESwitch>(optional));
         else if (optional->Is(eNetCacheNPT_ServerCheckHint))
             SetServerCheckHint(Get<bool>(optional));
+        else if (optional->Is(eNetCacheNPT_ServerToUse))
+            SetServerToUse(Get<CNetServer::TInstance>(optional));
 }
 
 void CNetCacheAPIParameters::SetTTL(unsigned blob_ttl)
@@ -133,6 +135,11 @@ bool CNetCacheAPIParameters::GetServerCheckHint(bool* server_check_hint) const
 std::string CNetCacheAPIParameters::GetPassword() const
 {
     NETCACHE_API_GET_PARAM_IMPL(Password);
+}
+
+CNetServer CNetCacheAPIParameters::GetServerToUse() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(ServerToUse);
 }
 
 END_NCBI_SCOPE

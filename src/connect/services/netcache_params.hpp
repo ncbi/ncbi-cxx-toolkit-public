@@ -56,7 +56,8 @@ public:
         eDP_MirroringMode = 1 << 2,
         eDP_ServerCheck = 1 << 3,
         eDP_ServerCheckHint = 1 << 4,
-        eDP_Password = 1 << 5
+        eDP_Password = 1 << 5,
+        eDP_ServerToUse = 1 << 6,
     };
     typedef unsigned TDefinedParameters;
 
@@ -108,12 +109,19 @@ public:
 
     void SetPassword(const string& password);
 
+    void SetServerToUse(CNetServer::TInstance server_to_use)
+    {
+        m_DefinedParameters |= eDP_ServerToUse;
+        m_ServerToUse = server_to_use;
+    }
+
     unsigned GetTTL() const;
     CNetCacheAPI::ECachingMode GetCachingMode() const;
     CNetCacheAPI::EMirroringMode GetMirroringMode() const;
     bool GetServerCheck(ESwitch* server_check) const;
     bool GetServerCheckHint(bool* server_check_hint) const;
     std::string GetPassword() const;
+    CNetServer GetServerToUse() const;
 
 private:
     TDefinedParameters m_DefinedParameters;
@@ -125,6 +133,7 @@ private:
     ESwitch m_ServerCheck;
     bool m_ServerCheckHint;
     std::string m_Password;
+    CNetServer m_ServerToUse;
 };
 
 /* @} */

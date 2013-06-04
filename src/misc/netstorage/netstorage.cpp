@@ -261,8 +261,15 @@ struct SNetFileAPIImpl : public SNetFileImpl
     ERW_Result Write(const void* buf,
             size_t count, size_t* bytes_written = 0);
 
+    bool s_TryGetFileSizeFromLocation(ENetFileLocation location,
+            Uint8* file_size);
+
     bool s_TryGetInfoFromLocation(ENetFileLocation location,
             CNetFileInfo* file_info);
+
+    bool s_ExistsAtLocation(ENetFileLocation location);
+
+    bool Exists();
 
     virtual ~SNetFileAPIImpl();
 
@@ -280,6 +287,7 @@ struct SNetFileAPIImpl : public SNetFileImpl
     size_t m_NetCache_BytesRead;
 
     CRef<SFileTrackRequest> m_FileTrackRequest;
+    CRef<SFileTrackPostRequest> m_FileTrackPostRequest;
 };
 
 void g_SetNetICacheParams(CNetFileID& file_id, CNetICacheClient icache_client)
@@ -418,8 +426,9 @@ bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
 
         m_NetCacheReader.reset(m_NetICacheClient.GetReadStream(
                 m_FileID.GetUniqueKey(), 0, kEmptyStr,
-                &m_NetCache_BlobSize, CNetCacheAPI::eCaching_Disable,
-                ic_server));
+                &m_NetCache_BlobSize,
+                (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                nc_server_to_use = ic_server)));
 
         if (m_NetCacheReader.get() != NULL) {
             m_NetCache_BytesRead = 0;
@@ -529,19 +538,19 @@ ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
         if (m_CurrentLocation == eNFL_NetCache) {
             m_NetCacheWriter.reset(m_NetICacheClient.GetNetCacheWriter(
                     m_FileID.GetUniqueKey(), 0, kEmptyStr,
-                            m_FileID.GetFields() & fNFID_TTL ?
-                                    (unsigned) m_FileID.GetTTL() : 0));
+                            nc_blob_ttl = (m_FileID.GetFields() & fNFID_TTL ?
+                                    (unsigned) m_FileID.GetTTL() : 0)));
 
             m_IOStatus = eNFS_WritingToNetCache;
 
             return m_NetCacheWriter->Write(buf, count, bytes_written);
         } else {
-            m_FileTrackRequest =
+            m_FileTrackPostRequest =
                     m_NetStorage->m_FileTrackAPI.StartUpload(&m_FileID);
 
             m_IOStatus = eNFS_WritingToFileTrack;
 
-            m_FileTrackRequest->Write(buf, count, bytes_written);
+            m_FileTrackPostRequest->Write(buf, count, bytes_written);
         }
         break;
 
@@ -549,7 +558,7 @@ ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
         return m_NetCacheWriter->Write(buf, count, bytes_written);
 
     case eNFS_WritingToFileTrack:
-        m_FileTrackRequest->Write(buf, count, bytes_written);
+        m_FileTrackPostRequest->Write(buf, count, bytes_written);
         break;
 
     default: /* eNFS_ReadingToNetCache or eNFS_ReadingFromFileTrack */
@@ -560,9 +569,68 @@ ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
     return eRW_Success;
 }
 
+bool SNetFileAPIImpl::s_TryGetFileSizeFromLocation(ENetFileLocation location,
+        Uint8* file_size)
+{
+    try {
+        if (location == eNFL_NetCache) {
+            CNetServer ic_server;
+
+            if (m_FileID.GetFields() & fNFID_NetICache)
+                ic_server = m_NetICacheClient.GetService().GetServer(
+                        m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
+
+            *file_size = m_NetICacheClient.GetBlobSize(
+                    m_FileID.GetUniqueKey(), 0, kEmptyStr,
+                            nc_server_to_use = ic_server);
+
+            m_CurrentLocation = eNFL_NetCache;
+            return true;
+        } else { /* location == eNFL_FileTrack */
+            *file_size = (Uint8) m_NetStorage->m_FileTrackAPI.GetFileInfo(
+                    &m_FileID).GetInteger("size");
+
+            m_CurrentLocation = eNFL_FileTrack;
+            return true;
+        }
+    }
+    catch (CException& e) {
+        LOG_POST(Trace << e);
+    }
+
+    return false;
+}
+
 Uint8 SNetFileAPIImpl::GetSize()
 {
-    return 0;
+    switch (m_CurrentLocation) {
+    case eNFL_Unknown:
+        {
+            Uint8 file_size;
+            const ENetFileLocation* location = GetPossibleFileLocations();
+
+            do
+                if (s_TryGetFileSizeFromLocation(*location, &file_size))
+                    return file_size;
+            while (*++location != eNFL_NotFound);
+        }
+        m_CurrentLocation = eNFL_NotFound;
+
+    case eNFL_NotFound:
+        break;
+
+    default:
+        {
+            Uint8 file_size;
+
+            if (s_TryGetFileSizeFromLocation(m_CurrentLocation, &file_size))
+                return file_size;
+        }
+    }
+
+    NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            "NetFile \"" << m_FileID.GetID() <<
+            "\" could not be found in any of the designated locations.");
 }
 
 bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
@@ -609,8 +677,8 @@ bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
             m_CurrentLocation = eNFL_NetCache;
             return true;
         }
-        catch (CException&) {
-            return false;
+        catch (CException& e) {
+            LOG_POST(Trace << e);
         }
     } else { /* location == eNFL_FileTrack */
         try {
@@ -630,24 +698,9 @@ bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
             m_CurrentLocation = eNFL_FileTrack;
             return true;
         }
-        catch (CException&) {
-            return false;
+        catch (CException& e) {
+            LOG_POST(Trace << e);
         }
-        /*m_FileTrackRequest =
-                m_NetStorage->m_FileTrackAPI.StartDownload(&m_FileID);
-
-        try {
-            *rw_res = m_FileTrackRequest->Read(buf, count, bytes_read);
-            m_CurrentLocation = eNFL_FileTrack;
-            m_IOStatus = eNFS_ReadingFromFileTrack;
-            return true;
-        }
-        catch (CNetStorageException& e) {
-            m_FileTrackRequest.Reset();
-
-            if (e.GetErrCode() != CNetStorageException::eNotExists)
-                throw;
-        }*/
     }
 
     return false;
@@ -682,6 +735,67 @@ CNetFileInfo SNetFileAPIImpl::GetInfo()
     return new SNetFileInfoImpl(eNFL_NotFound, m_FileID, 0, NULL);
 }
 
+bool SNetFileAPIImpl::s_ExistsAtLocation(ENetFileLocation location)
+{
+    if (location == eNFL_NetCache) {
+        CNetServer ic_server;
+
+        if (m_FileID.GetFields() & fNFID_NetICache)
+            ic_server = m_NetICacheClient.GetService().GetServer(
+                    m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
+
+        try {
+            if (!m_NetICacheClient.HasBlob(m_FileID.GetUniqueKey(),
+                    kEmptyStr, nc_server_to_use = ic_server))
+                return false;
+
+            m_CurrentLocation = eNFL_NetCache;
+            return true;
+        }
+        catch (CException& e) {
+            LOG_POST(Trace << e);
+        }
+    } else { /* location == eNFL_FileTrack */
+        try {
+            if (m_NetStorage->m_FileTrackAPI.GetFileInfo(
+                    &m_FileID).GetBoolean("deleted"))
+                return false;
+
+            m_CurrentLocation = eNFL_FileTrack;
+            return true;
+        }
+        catch (CException& e) {
+            LOG_POST(Trace << e);
+        }
+    }
+
+    return false;
+}
+
+bool SNetFileAPIImpl::Exists()
+{
+    switch (m_CurrentLocation) {
+    case eNFL_Unknown:
+        {
+            const ENetFileLocation* location = GetPossibleFileLocations();
+
+            do
+                if (s_ExistsAtLocation(*location))
+                    return true;
+            while (*++location != eNFL_NotFound);
+        }
+        m_CurrentLocation = eNFL_NotFound;
+
+    case eNFL_NotFound:
+        break;
+
+    default:
+        return s_ExistsAtLocation(m_CurrentLocation);
+    }
+
+    return false;
+}
+
 void SNetFileAPIImpl::Close()
 {
     switch (m_IOStatus) {
@@ -701,8 +815,8 @@ void SNetFileAPIImpl::Close()
 
     case eNFS_WritingToFileTrack:
         m_IOStatus = eNFS_Closed;
-        m_FileTrackRequest->FinishUpload();
-        m_FileTrackRequest.Reset();
+        m_FileTrackPostRequest->FinishUpload();
+        m_FileTrackPostRequest.Reset();
         break;
 
     case eNFS_ReadingFromFileTrack:
@@ -844,13 +958,17 @@ string SNetStorageAPIImpl::Relocate(const string& file_id,
     return MoveFile(orig_file, new_file);
 }
 
-bool SNetStorageAPIImpl::Exists(const string& /*key*/)
+bool SNetStorageAPIImpl::Exists(const string& file_id)
 {
-    return false;
+    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
+            net_file(new SNetFileAPIImpl(this, file_id));
+
+    return net_file->Exists();
 }
 
 void SNetStorageAPIImpl::Remove(const string& /*key*/)
 {
+    NCBI_THROW(CNetStorageException, eInvalidArg, "Method not implemented");
 }
 
 struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
@@ -906,11 +1024,17 @@ string SNetStorageByKeyAPIImpl::Relocate(const string& unique_key,
 
 bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 {
-    return false;
+    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
+            net_file(new SNetFileAPIImpl(m_APIImpl,
+                    m_APIImpl->GetDefaultFlags(flags),
+                            m_DomainName, key, m_APIImpl->m_NetICacheClient));
+
+    return net_file->Exists();
 }
 
 void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 {
+    NCBI_THROW(CNetStorageException, eInvalidArg, "Method not implemented");
 }
 
 CNetStorage g_CreateNetStorage(CNetICacheClient::TInstance icache_client,

@@ -65,7 +65,8 @@ enum ENetCacheNamedParameterTag {
     eNetCacheNPT_MirroringMode,
     eNetCacheNPT_ServerCheck,
     eNetCacheNPT_ServerCheckHint,
-    eNetCacheNPT_Password
+    eNetCacheNPT_Password,
+    eNetCacheNPT_ServerToUse,
 };
 
 /// Blob life span in seconds. If zero or greater than the
@@ -94,6 +95,11 @@ enum ENetCacheNamedParameterTag {
 /// Blob password. Used to protect the blob when writing;
 /// required for reading a password-protected blob.
 #define nc_blob_password CNamedParameter<string, eNetCacheNPT_Password>()
+
+/// The server to use for the operation. Overrides whatever is
+/// defined in the constructor or the configuration file.
+#define nc_server_to_use CNamedParameter<CNetServer::TInstance, \
+        eNetCacheNPT_ServerToUse>()
 
 /* @} */
 
