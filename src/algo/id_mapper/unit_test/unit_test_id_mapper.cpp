@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest)
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
 
     // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986);
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986); // AAFC03080232.1
 }
 
 
@@ -259,12 +259,55 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
 }
 
 // upmap test
-BOOST_AUTO_TEST_CASE(TestCaseUpMapTest)
+BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_RefSeqAssm)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
+                              CGCClient_GetAssemblyRequest::eLevel_component,
+                              0,
+                              0,
+                              2048, // pseudo
+                              0
+                             )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    CSeq_loc OrigLoc;
+    CSeq_interval& orig_ival = OrigLoc.SetInt();
+    orig_ival.SetId().Set(CSeq_id::e_Local, "AL451051.6");
+    orig_ival.SetFrom(5000);
+    orig_ival.SetTo(5001);
+
+    CConstRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+
+    // Expected component level result
+    CSeq_loc Expected;
+    CSeq_interval& exp_ival = Expected.SetInt();
+    exp_ival.SetId().Set("CM000663.1");
+    exp_ival.SetFrom(100236283);
+    exp_ival.SetTo(100236284);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK(Result->Equals(Expected));
+}
+
+
+// upmap test
+BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GenBankAssm)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCA_000001405.1",
                               CGCClient_GetAssemblyRequest::eLevel_component,
                               0,
                               0,
@@ -426,5 +469,7 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
     // Check that Map results meet expectations
     BOOST_CHECK(RoundTrip->Equals(*OrigLoc));
 }
+
+
 BOOST_AUTO_TEST_SUITE_END();
 
