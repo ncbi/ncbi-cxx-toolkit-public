@@ -2061,6 +2061,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // number of threads
     arg_desc.SetCurrentGroup("Miscellaneous options");
+#ifdef NCBI_THREADS
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads (CPUs) to use in the BLAST search",
                            CArgDescriptions::eInteger, 
@@ -2075,6 +2076,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            CArgDescriptions::eExcludes,
                            kArgUseIndex);
     */
+#endif
     arg_desc.SetCurrentGroup("");
 }
 
@@ -2083,6 +2085,7 @@ CMTArgs::x_SetArgumentDescriptionsRpsBlast(CArgDescriptions& arg_desc)
 {
     // number of threads
     arg_desc.SetCurrentGroup("Miscellaneous options");
+#ifdef NCBI_THREADS
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads to use in RPS BLAST search:\n "
                            "0 (auto = num of databases)\n "
@@ -2099,6 +2102,7 @@ CMTArgs::x_SetArgumentDescriptionsRpsBlast(CArgDescriptions& arg_desc)
                            CArgDescriptions::eExcludes,
                            kArgUseIndex);
     */
+#endif
     arg_desc.SetCurrentGroup("");
 }
 

@@ -955,7 +955,12 @@ public:
     /// Default Constructor
     CMTArgs(bool isRpsBlast = false) :
     	m_NumThreads(isRpsBlast? 0:CThreadable::kMinNumThreads),
-    	m_IsRpsBlast(isRpsBlast){}
+    	m_IsRpsBlast(isRpsBlast) {
+#ifdef NCBI_NO_THREADS
+        // No threads can be set in NON-MT mode
+        m_NumThreads = CThreadable::kMinNumThreads;
+#endif
+    }
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
