@@ -55,7 +55,7 @@ class NCBI_XALGOID_MAPPER_EXPORT CGencollIdMapper : public CObject
 public:
     CGencollIdMapper(CConstRef<objects::CGC_Assembly> SourceAsm);
 
-    struct SIdSpec
+    struct NCBI_XALGOID_MAPPER_EXPORT SIdSpec
     {
         typedef objects::CGC_TypedSeqId::E_Choice E_Choice;
         typedef objects::CGC_SeqIdAlias::E_AliasTypes E_Alias;
