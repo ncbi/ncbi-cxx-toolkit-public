@@ -297,7 +297,7 @@ void CAsnvalApp::ValidateOneFile(string fname)
     if (need_to_close) {
         if (m_StartXML) {
             // close XML
-            *m_ValidErrorStream << "</asnval>" << endl;
+            *m_ValidErrorStream << "</asnvalidate>" << endl;
             m_StartXML = false;
         }
         m_ValidErrorStream = 0;
@@ -376,7 +376,7 @@ int CAsnvalApp::Run(void)
 
     if (m_StartXML) {
         // close XML
-        *m_ValidErrorStream << "</asnval>" << endl;
+        *m_ValidErrorStream << "</asnvalidate>" << endl;
         m_StartXML = false;
     }
 
@@ -739,7 +739,7 @@ void CAsnvalApp::PrintValidErrItem
             {
                 string msg = NStr::XmlEncode(item.GetMsg());
                 if (!m_StartXML) {
-                    os << "<asnval version=\"" << ASNVAL_APP_VER << "\" severity cutoff=\""
+                    os << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity cutoff=\""
                     << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
                     m_StartXML = true;
                 }
