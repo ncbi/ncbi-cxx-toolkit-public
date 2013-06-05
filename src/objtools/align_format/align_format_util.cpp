@@ -115,15 +115,13 @@ s_GetBlastScore(const container&  scoreList,
     ITERATE (typename container, iter, scoreList) {
         const CObject_id& id=(*iter)->GetId();
         if (id.IsStr()) {
-            hasScore = true;
             if (id.GetStr()=="score"){
                 score = (*iter)->GetValue().GetInt();
-                
             } else if (id.GetStr()=="bit_score"){
                 bits = (*iter)->GetValue().GetReal();
-                
             } else if (id.GetStr()=="e_value" || id.GetStr()=="sum_e") {
                 evalue = (*iter)->GetValue().GetReal();
+                hasScore = true;
             } else if (id.GetStr()=="use_this_gi"){
                 use_this_gi.push_back(GI_FROM(int, (*iter)->GetValue().GetInt()));
             } else if (id.GetStr()=="sum_n"){
@@ -135,6 +133,7 @@ s_GetBlastScore(const container&  scoreList,
             }
         }
     }
+
     return hasScore;
 }
 
