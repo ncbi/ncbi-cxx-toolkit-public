@@ -175,6 +175,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
     Id = x_ApplyPatternToId(Id, Spec);
     Id = x_NCBI34_Map_IdFix(Id);
     
+    
     SIdSpec GuessSpec;
     Guess(Loc, GuessSpec);
     if (GuessSpec == Spec) {
@@ -221,7 +222,11 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
                         GiSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
                         GiLoc = Map(Loc, GiSpec);
                     }
-                    CRef<CSeq_loc> Result = x_Map_Down(Loc, *Seq, Spec);
+                    CRef<CSeq_loc> Result;
+                    if(GiLoc.NotNull() && !GiLoc->IsNull()) 
+                        Result = x_Map_Down(*GiLoc, *Seq, Spec);
+                    else
+                        Result = x_Map_Down(Loc, *Seq, Spec);
                     if (Result.NotNull() && !Result->IsNull()) {
                         return Result;
                     }
@@ -251,9 +256,11 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
                         GiSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
                         GiLoc = Map(Loc, GiSpec);
                     }
-                    CRef<CSeq_loc> Result = x_Map_Up(*GiLoc, *Seq->GetParent(), Spec);
-                    if (Result.NotNull() && !Result->IsNull()) {
-                        return Result;
+                    if(GiLoc.NotNull() && !GiLoc->IsNull()) {
+                        CRef<CSeq_loc> Result = x_Map_Up(*GiLoc, *Seq->GetParent(), Spec);
+                        if (Result.NotNull() && !Result->IsNull()) {
+                            return Result;
+                        }
                     }
                 }
             }
@@ -271,70 +278,6 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
     }}
     
     return CRef<CSeq_loc>();
-    // Nothing found, total fallback
-    /*
-    {{
-        CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
-        TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
-        if (Found != m_IdToSeqMap.end()) {
-            Seq = Found->second;
-            if (Spec.TypedChoice == CGC_TypedSeqId::e_External) {
-                SIdSpec Submitter_Spec;
-                Submitter_Spec.TypedChoice = CGC_TypedSeqId::e_External;
-                Submitter_Spec.Role = eGC_SequenceRole_chromosome;
-                Submitter_Spec.External = "SUBMITTER";
-                Submitter_Spec.Pattern = DELIM;
-                if (x_CanSeqMeetSpec(*Seq, Submitter_Spec)) {
-                    return Map(Loc, Submitter_Spec);
-                } else {
-                    if (Seq->CanGetSeq_id_synonyms()) {
-                        ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq->GetSeq_id_synonyms()) {
-                            if ((*it)->Which() != Spec.TypedChoice)
-                                continue;
-                            switch ((*it)->Which()) {
-                            case CGC_TypedSeqId::e_External: {
-                                const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
-                                Submitter_Spec.External = ExternalId.GetExternal();
-                                if (x_CanSeqMeetSpec(*Seq, Submitter_Spec)) {
-                                    return Map(Loc, Submitter_Spec);
-                                }
-                                break;
-                            }}
-                        }
-                    }
-                }
-            }
-            SIdSpec RefSeq_Spec, GenBank_Spec, Gpipe_Spec, Chrom_Spec, Public_Spec;
-            RefSeq_Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-            RefSeq_Spec.Alias = SIdSpec::e_Public;
-            RefSeq_Spec.Role = eGC_SequenceRole_chromosome;
-            GenBank_Spec.TypedChoice = CGC_TypedSeqId::e_Genbank;
-            GenBank_Spec.Alias = SIdSpec::e_Public;
-            GenBank_Spec.Role = eGC_SequenceRole_chromosome;
-            Gpipe_Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-            Gpipe_Spec.Alias = SIdSpec::e_Gpipe;
-            Gpipe_Spec.Role = eGC_SequenceRole_chromosome;
-            Chrom_Spec.TypedChoice = CGC_TypedSeqId::e_Private;
-            Chrom_Spec.Alias = SIdSpec::e_NotSet;
-            Chrom_Spec.Pattern = DELIM;
-            Chrom_Spec.Role = eGC_SequenceRole_chromosome;
-            Public_Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-            Public_Spec.Alias = SIdSpec::e_Public;
-            Public_Spec.Top = SIdSpec::e_Top_All;
-            if (x_CanSeqMeetSpec(*Seq, RefSeq_Spec))
-                return Map(Loc, RefSeq_Spec);
-            if (x_CanSeqMeetSpec(*Seq, GenBank_Spec))
-                return Map(Loc, GenBank_Spec);
-            if (x_CanSeqMeetSpec(*Seq, Gpipe_Spec))
-                return Map(Loc, Gpipe_Spec);
-            if (x_CanSeqMeetSpec(*Seq, Chrom_Spec))
-                return Map(Loc, Chrom_Spec);
-            if (x_CanSeqMeetSpec(*Seq, Public_Spec))
-                return Map(Loc, Public_Spec);
-        }
-    }}
-    return CRef<CSeq_loc>();
-    */
 }
 
 bool
@@ -576,7 +519,7 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
 
     bool SeqQualifies = false;
     bool ParentQualifies = false;
-    if (x_HasTop(Seq, SIdSpec::e_Top_All) && SeqHasGi) {
+    if (Seq.HasRole(eGC_SequenceRole_top_level) && SeqHasGi) {
         SeqQualifies = true;
     }
 
@@ -585,7 +528,7 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
         GenGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Genbank, CGC_SeqIdAlias::e_Gi);
         RefGi = Parent->GetSynonymSeq_id(CGC_TypedSeqId::e_Refseq, CGC_SeqIdAlias::e_Gi);
         const bool ParentHasGi = bool(GenGi) || bool(RefGi);
-        if (x_HasTop(*Parent, SIdSpec::e_Top_All) &&
+        if (Parent->HasRole(eGC_SequenceRole_top_level) &&
             Seq.GetParentRelation() == CGC_TaggedSequences::eState_placed &&
             ParentHasGi
            ) {
@@ -762,33 +705,6 @@ CGencollIdMapper::x_GetRole(const objects::CGC_Sequence& Seq) const
         }
     }
     return SeqRole;
-}
-
-bool
-CGencollIdMapper::x_HasTop(const objects::CGC_Sequence& Seq, const int Top) const
-{
-    if (Top == SIdSpec::e_Top_NotSet) {
-        return true;
-    }
-    bool NotTop = true;
-    if (Seq.CanGetRoles()) {
-        ITERATE (CGC_Sequence::TRoles, RoleIter, Seq.GetRoles()) {
-            const bool role_is_no_pseudo_top = (*RoleIter == SIdSpec::e_Role_ExcludePseudo_Top);
-            const bool role_is_GC_top = (*RoleIter == eGC_SequenceRole_top_level);
-            if (role_is_no_pseudo_top || role_is_GC_top) {
-                NotTop = false;
-                if ((Top == SIdSpec::e_Top_ExcludePseudo && role_is_no_pseudo_top) ||
-                    (Top == SIdSpec::e_Top_All && role_is_GC_top)
-                   ) {
-                    return true;
-                }
-            }
-        }
-    }
-    if (Top == SIdSpec::e_Top_NotTop && NotTop) {
-        return true;
-    }
-    return false;
 }
 
 void
@@ -1007,32 +923,7 @@ CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
         }
     }
 
-   /* // Exact Spec not found, Fall back!
-
-    SIdSpec RefSeq_Spec, GenBank_Spec, Gpipe_Spec, Chrom_Spec;
-    RefSeq_Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-    RefSeq_Spec.Alias = SIdSpec::e_Public;
-    GenBank_Spec.TypedChoice = CGC_TypedSeqId::e_Genbank;
-    GenBank_Spec.Alias = SIdSpec::e_Public;
-    Gpipe_Spec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-    Gpipe_Spec.Alias = SIdSpec::e_Gpipe;
-    Chrom_Spec.TypedChoice = CGC_TypedSeqId::e_Private;
-    Chrom_Spec.Alias = SIdSpec::e_NotSet;
-    Chrom_Spec.Pattern = DELIM;
-
-    if (x_CanSeqMeetSpec(Seq, RefSeq_Spec))
-        return x_GetIdFromSeqAndSpec(Seq, RefSeq_Spec);
-
-    if (x_CanSeqMeetSpec(Seq, GenBank_Spec))
-        return x_GetIdFromSeqAndSpec(Seq, GenBank_Spec);
-
-    if (x_CanSeqMeetSpec(Seq, Gpipe_Spec))
-        return x_GetIdFromSeqAndSpec(Seq, Gpipe_Spec);
-
-    if (x_CanSeqMeetSpec(Seq, Chrom_Spec))
-        return x_GetIdFromSeqAndSpec(Seq, Chrom_Spec);
-*/
-
+   
     return CConstRef<CSeq_id>();
 }
 
@@ -1078,20 +969,15 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
         }
     }
     if (HasId) {
-        if (Spec.Top != SIdSpec::e_Top_NotSet) {
-            if (x_HasTop(Seq, Spec.Top)) {
-                return e_Yes;
-            }
-        }
-        else if (Spec.Role == SIdSpec::e_Role_NotSet || Seq.HasRole(Spec.Role)) {
-            // Has the ID match, and the Top and Role both don't matter
+        if (Spec.Role == SIdSpec::e_Role_NotSet || Seq.HasRole(Spec.Role)) {
+            // Has the ID match, and the Role either doesn't matter, or is matched
             return e_Yes;
         }
     }
     CConstRef<CGC_Sequence> ParentSeq = Seq.GetParent();
     if (ParentSeq.NotNull()) {
-        if (Spec.Top != SIdSpec::e_Top_NotTop ||
-            (Spec.Role != SIdSpec::e_Role_NotSet && Spec.Role <= x_GetRole(*ParentSeq))
+        if ((Spec.Role != SIdSpec::e_Role_NotSet && 
+            (Spec.Role >= eGC_SequenceRole_top_level || Spec.Role <= x_GetRole(*ParentSeq)))
            ) {
             const int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level + 1);
             if (Parent == e_Yes || Parent == e_Up) {
@@ -1099,7 +985,7 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
             }
         }
     }
-    if (Seq.CanGetSequences() && Spec.Top != true) {
+    if (Seq.CanGetSequences() ) { 
         ITERATE (CGC_Sequence::TSequences, TagIter, Seq.GetSequences()) {
             if ((*TagIter)->GetState() != CGC_TaggedSequences::eState_placed) {
                 continue;
@@ -1124,18 +1010,11 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
     Spec.TypedChoice = CGC_TypedSeqId::e_not_set;
     Spec.Alias = CGC_SeqIdAlias::e_None;
     Spec.Role = SIdSpec::e_Role_NotSet;
-    Spec.Top = SIdSpec::e_Top_NotSet;
     Spec.External.clear();
     Spec.Pattern.clear();
 
     if (Seq.CanGetRoles()) {
         Spec.Role = x_GetRole(Seq);
-        if (x_HasTop(Seq, SIdSpec::e_Top_All)) {
-            Spec.Top = SIdSpec::e_Top_All;
-        }
-        else if (x_HasTop(Seq, SIdSpec::e_Top_ExcludePseudo)) {
-            Spec.Top = SIdSpec::e_Top_ExcludePseudo;
-        }
     }
     // Loop over the IDs, find which matches the given ID
     if (Seq.CanGetSeq_id_synonyms()) {
@@ -1656,8 +1535,7 @@ CGencollIdMapper::SIdSpec::SIdSpec()
       Alias(objects::CGC_SeqIdAlias::e_None),
       External(kEmptyStr),
       Pattern(kEmptyStr), 
-      Role(e_Role_NotSet),
-      Top(e_Top_NotSet)
+      Role(e_Role_NotSet)
 {
 }
 
@@ -1679,8 +1557,7 @@ CGencollIdMapper::SIdSpec::operator==(const SIdSpec& Other) const
           Alias == Other.Alias &&
           External == Other.External &&
           Pattern == Other.Pattern &&
-          Role == Other.Role &&
-          Top == Other.Top
+          Role == Other.Role 
          )
        ) {
         return false;
@@ -1742,26 +1619,13 @@ CGencollIdMapper::SIdSpec::ToString(void) const
     case objects::eGC_SequenceRole_component:
         Result += "COMP";
         break;
+    case objects::eGC_SequenceRole_top_level:
+        Result += "TOP";
+        break;
     case e_Role_NotSet:
         break;
     default:
         Result += NStr::IntToString(Role);
-    }
-    Result += ":";
-
-    switch (Top) {
-    case e_Top_NotSet:
-        Result += "NotSet";
-        break;
-    case e_Top_NotTop:
-        Result += "NotTop";
-        break;
-    case e_Top_All:
-        Result += "TopAll";
-        break;
-    case e_Top_ExcludePseudo:
-        Result += "TopExcludePseudo";
-        break;
     }
 
     return Result;

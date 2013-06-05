@@ -157,7 +157,8 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest)
     CGencollIdMapper::SIdSpec MapSpec;
     MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
-
+    MapSpec.Role = eGC_SequenceRole_top_level;
+    
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
     CRef<CSeq_loc> OrigLoc(new CSeq_loc());
@@ -462,7 +463,7 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
 
     CGencollIdMapper::SIdSpec GuessSpec;
     Mapper.Guess(*OrigLoc, GuessSpec);
-    BOOST_CHECK_EQUAL(GuessSpec.ToString(), "Private:NotSet::LG%s:CHRO:TopAll");
+    BOOST_CHECK_EQUAL(GuessSpec.ToString(), "Private:NotSet::LG%s:CHRO");
 
     CRef<CSeq_loc> RoundTrip = Mapper.Map(*Result, GuessSpec);
 

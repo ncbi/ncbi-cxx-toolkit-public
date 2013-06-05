@@ -50,6 +50,25 @@ class CSeq_loc;
 END_SCOPE(objects)
 
 
+// Common use case: Going from outside-of-NCBI ids to RefSeq GIs,
+//  then back again
+//
+//   CRef<CGC_Assembly> GenCollAssembly = ... 
+//   CSeq_loc GivenLoc = ...
+//
+//   CGencollIdMapper Mapper(GenCollAssembly)
+//   CGencollIdMapper::SIdSpec RsSpec;
+//   RsSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+//   RsSpec.Alias = CGC_SeqIdAlias::e_Gi;
+//   CRef<CSeq_loc> RefSeqLoc = Mapper.Map(GivenLoc, RsSpec);
+//   
+//   ... process RefSeqLoc somehow ...
+//
+//   CGencollIdMapper::SIdSpec OrigSpec;
+//   Mapper.Guess(GivenLoc, OrigSpec);
+//   CRef<CSeq_loc> BackAgain = Mapper.Map(*RefSeqLoc, OrigSpec);
+//
+
 class NCBI_XALGOID_MAPPER_EXPORT CGencollIdMapper : public CObject
 {
 public:
@@ -64,21 +83,13 @@ public:
         E_Alias Alias;
         string External;
         string Pattern;
-        int Role;
-        int Top;
+        int Role;  // EGC_SequenceRole
 
         enum
         {
             // e_Role_ExcludePseudo_Top -- Fake role for Non-Pseudo top
             e_Role_ExcludePseudo_Top = objects::eGC_SequenceRole_top_level + 1,
             e_Role_NotSet = 10000
-        };
-        enum
-        {
-            e_Top_NotSet,  // Unknown, don't care
-            e_Top_NotTop,  // Specifically not any top
-            e_Top_All,     // All Top-Level IDs
-            e_Top_ExcludePseudo  // Top, but excluding anything gencoll calls pseudo
         };
 
         SIdSpec();
@@ -89,9 +100,11 @@ public:
         bool operator==(const SIdSpec& Other) const;
     };
 
+    // Derives the spec from a given loc
     bool Guess(const objects::CSeq_loc& Loc, SIdSpec& Spec) const;
 
-    // Returning NULL means the given ID is fine, do nothing.
+    // Returning NULL means requested spec could not be met.
+    // If the given loc already meets the spec, it returns a copy of itself
     CRef<objects::CSeq_loc> Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const;
 
     bool CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const;
@@ -130,7 +143,6 @@ protected:
                                                   ) const;
     
     int x_GetRole(const objects::CGC_Sequence& Seq) const;
-    bool x_HasTop(const objects::CGC_Sequence& Seq, int Top) const;
 
     void x_AddSeqToMap(const objects::CSeq_id& Id,
                        CConstRef<objects::CGC_Sequence> Seq
