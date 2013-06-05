@@ -51,9 +51,9 @@
 USING_NCBI_SCOPE;
 
 
-const int kTasksPerThread     = 120;
-const unsigned int kQueueSize = 20;
-const int kMaxThreads         = 20;
+const int          kTasksPerThread  = 120;
+const unsigned int kQueueSize       = 20;
+const int          kMaxThreads      = 20;
 
 enum EActionType {
     eAddTask,
@@ -69,18 +69,18 @@ enum ECheckCancelType {
     eCheckCancel
 };
 
-CRandom                           s_RNG;
-CAtomicCounter                    s_SerialNum;
-CThreadPool*                      s_Pool;
-CStopWatch                        s_Timer;
+static CRandom                           s_RNG;
+static CAtomicCounter                    s_SerialNum;
+static CThreadPool*                      s_Pool;
+static CStopWatch                        s_Timer;
 
-vector<EActionType>               s_Actions;
-vector<int>                       s_ActionTasks;
-vector<ECheckCancelType>          s_CancelTypes;
-vector<int>                       s_WaitPeriods;
-vector<int>                       s_PostTimes;
-vector< CRef<CThreadPool_Task> >  s_Tasks;
-
+static vector<EActionType>               s_Actions;
+static vector<int>                       s_ActionTasks;
+static vector<ECheckCancelType>          s_CancelTypes;
+static vector<int>                       s_WaitPeriods;
+static vector<int>                       s_PostTimes;
+static vector< CRef<CThreadPool_Task> >  s_Tasks;
+static bool                              s_ZeroSleep = false;
 
 class CThreadPoolTester : public CThreadedApp
 {
@@ -88,32 +88,42 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
     virtual bool Thread_Run(int idx);
+private:
+    void GetMinMaxThreads(unsigned* min_threads, unsigned* max_threads);
 };
+
 
 
 // For the one-off test for using exclusive task to wait for termination of
 // previously run regular tasks
+
+static CAtomicCounter s_TaskCounter;
+
+
 class CTerminator_Task : public CThreadPool_Task
 {
 public:
-    CTerminator_Task() : m_Semaphore(0,1) {}
+    CTerminator_Task() : m_Semaphore(0,1)  { s_TaskCounter.Add(1); }
     virtual EStatus Execute()
-    {    
-        MSG_POST("Executing terminator");
+    {
+        _ASSERT(s_TaskCounter.Get() == 1);
+        s_TaskCounter.Add(-1);
         m_Semaphore.Post();
         return eCompleted;
     }    
-    void Wait(void) 
-    {    
-        m_Semaphore.Wait();
-    }    
-
     static void Wait(CThreadPool&                 thread_pool,
                      CThreadPool::TExclusiveFlags flags)
-    {    
+    {
+        // Flush threads every other time
+        static bool flush_threads = false;
+        if ( flush_threads )
+            thread_pool.FlushThreads(CThreadPool::eWaitToFinish);
+        flush_threads = !flush_threads;
+
+        // Schedule terminator task
         CRef<CTerminator_Task> terminator(new CTerminator_Task());
         thread_pool.RequestExclusiveExecution(terminator, flags);
-        terminator->Wait();
+        terminator->m_Semaphore.Wait();
     }    
 private:
     CSemaphore m_Semaphore;
@@ -125,24 +135,45 @@ private:
 class CSentinelThreadPool_Task : public CThreadPool_Task
 {
 public:
-    CSentinelThreadPool_Task(unsigned id) : m_Id(id) {}
+    CSentinelThreadPool_Task(unsigned id)
+        : m_Id(id), m_SleepTime(s_RNG.GetRand(0, 50000))
+    {s_TaskCounter.Add(1);}
     virtual EStatus Execute()
-    {    
-        MSG_POST("Started " << m_Id);
-        SleepMicroSec(10000);
-        MSG_POST("Completed " << m_Id);
+    {
+        if (!s_ZeroSleep  &&  10 < m_Id  &&  m_Id < 90) {
+            SleepMicroSec(m_SleepTime);
+        }
+        s_TaskCounter.Add(-1);
         return eCompleted;
     }    
 private:
     unsigned m_Id;
+    unsigned m_SleepTime;
 };
+
+inline
+void CThreadPoolTester::GetMinMaxThreads
+(unsigned* min_threads, unsigned* max_threads)
+{
+    *min_threads = s_RNG.GetRand(1, 7);
+    *max_threads = s_RNG.GetRand(1, 7);
+    if (*min_threads > *max_threads) {
+        unsigned tmp = *min_threads;
+        *min_threads = *max_threads;
+        *max_threads = tmp;
+    }
+}
 
 
 bool CThreadPoolTester::TestApp_Init(void)
 {
     s_Pool = new CThreadPool(kQueueSize, kMaxThreads);
 
-    s_RNG.SetSeed(CProcess::GetCurrentPid());
+    {{
+            TPid pid = CProcess::GetCurrentPid();
+            s_RNG.SetSeed(pid);
+            MSG_POST("One-off test randomization seed value: " << pid);
+    }}
 
     if (s_NumThreads > kQueueSize) {
         s_NumThreads = kQueueSize;
@@ -192,31 +223,57 @@ bool CThreadPoolTester::TestApp_Init(void)
 
     s_Timer.Start();
 
-
     // One-off test for using exclusive task to wait for termination of
     // previously run regular tasks
-    CThreadPool tp(100, 4);
 
+    for (unsigned j = 0; j < 300; j++) {
+        unsigned min_threads, max_threads;
+        GetMinMaxThreads(&min_threads, &max_threads);
+        MSG_POST("Terminator task test. Round: " << j <<
+                 ", min/max threads: " << min_threads << "/" << max_threads);
+        CThreadPool tp(100, max_threads, min_threads);
+        _ASSERT(s_TaskCounter.Get() == 0);
+        for (unsigned i = 0;  i < 98;  i++) {
+            tp.AddTask(new CSentinelThreadPool_Task(i));
+        }
+        CTerminator_Task::Wait(tp, CThreadPool::fExecuteQueuedTasks);
+        _ASSERT(s_TaskCounter.Get() == 0);
+
+        if (j > 50)
+            s_ZeroSleep = true;
+    }
+
+    unsigned min_threads, max_threads;
+    GetMinMaxThreads(&min_threads, &max_threads);
+
+    MSG_POST("One-off exclusive task test, with min/max threads: "
+             << min_threads << "/" << max_threads);
+
+    CThreadPool tp(100, max_threads, min_threads);
+
+    _ASSERT(s_TaskCounter.Get() == 0);
     for (unsigned i = 0;  i < 50;  i++) {
          tp.AddTask(new CSentinelThreadPool_Task(i));
     }
     MSG_POST("(1) Attaching terminator");
     CTerminator_Task::Wait
         (tp, CThreadPool::fExecuteQueuedTasks | CThreadPool::fFlushThreads);
+    _ASSERT(s_TaskCounter.Get() == 0);
     _ASSERT(!tp.GetQueuedTasksCount());
     _ASSERT(!tp.GetExecutingTasksCount());
     MSG_POST("(1) Finished");
 
+    _ASSERT(s_TaskCounter.Get() == 0);
     for (unsigned i = 51;  i < 100;  i++) {
          tp.AddTask(new CSentinelThreadPool_Task(i));
     }
     MSG_POST("(2) Attaching terminator");
     CTerminator_Task::Wait
         (tp, CThreadPool::fExecuteQueuedTasks);
+    _ASSERT(s_TaskCounter.Get() == 0);
     _ASSERT(!tp.GetQueuedTasksCount());
     _ASSERT(!tp.GetExecutingTasksCount());
     MSG_POST("(2) Finished");
-   
 
     return true;
 }
@@ -225,6 +282,9 @@ bool CThreadPoolTester::TestApp_Init(void)
 bool CThreadPoolTester::TestApp_Exit(void)
 {
     MSG_POST("Destroying pool");
+    MSG_POST("ATTENTION: Can have warnings about the yet unprocessed tasks"
+             " being canceled. It's a part of the test; making sure here that"
+             " it is handled reasonably gracefully");
     delete s_Pool;
     s_Pool = NULL;
     MSG_POST("Exiting from app");

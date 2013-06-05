@@ -810,9 +810,9 @@ CThreadPool_Impl::ThreadStateChanged(void)
 inline void
 CThreadPool_Impl::ThreadStopped(CThreadPool_ThreadImpl* thread)
 {
-    m_ThreadsCount.Add(-1);
-
     CThreadPool_Guard guard(this);
+
+    m_ThreadsCount.Add(-1);
 
     m_IdleThreads.erase(thread);
     m_WorkingThreads.erase(thread);
