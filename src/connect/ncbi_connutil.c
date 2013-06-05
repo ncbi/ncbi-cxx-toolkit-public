@@ -78,7 +78,7 @@ static char* x_StrcatCRLF(char* dst, const char* src)
 
 static const char* x_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
-                              const char* def_value, int*/*bool*/ specific)
+                              const char* def_value, int* /*bool*/ specific)
 {
     char        buf[128];
     const char* val;
@@ -164,7 +164,7 @@ static const char* x_GetValue(const char* service, const char* param,
 
 static const char* s_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
-                              const char* def_value, int*/*bool*/ specific)
+                              const char* def_value, int* /*bool*/ specific)
 {
     const char* retval = x_GetValue(service, param,
                                     value, value_size, def_value, specific);
