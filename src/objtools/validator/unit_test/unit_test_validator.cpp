@@ -284,14 +284,17 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
     
     STANDARD_SETUP
 
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
                               "Latitude should be set to N (northern hemisphere)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    */
 
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "35 N 80 E");
-    expected_errors[0]->SetErrMsg("Longitude should be set to W (western hemisphere)");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "LatLonValue",
+                              "Longitude should be set to W (western hemisphere)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -303,11 +306,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    /*
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "25 S 47 W");
     expected_errors[0]->SetErrMsg("Longitude should be set to E (eastern hemisphere)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    */
 
     CLEAR_ERRORS
 

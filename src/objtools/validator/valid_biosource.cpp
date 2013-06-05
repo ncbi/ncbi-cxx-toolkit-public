@@ -475,6 +475,98 @@ CLatLonCountryId *CValidError_imp::x_CalculateLatLonId(float lat_value, float lo
     return id;
 }
 
+typedef SStaticPair<const char*, const char*>  TWaterPairElem;
+static const TWaterPairElem k_water_pair_map[] = {
+    {"Adriatic Sea",         "Mediterranean Sea"},
+    {"Aegean Sea",           "Mediterranean Sea"},
+    {"Alboran Sea",          "Mediterranean Sea"},
+    {"Andaman Sea",          "Indian Ocean"},
+    {"Arabian Sea",          "Indian Ocean"},
+    {"Argentine Sea",        "Atlantic Ocean"},
+    {"Ariake Sea",           "Pacific Ocean"},
+    {"Baffin Bay",           "Atlantic Ocean"},
+    {"Balearic Sea",         "Mediterranean Sea"},
+    {"Baltic Sea",           "Atlantic Ocean"},
+    {"Barents Sea",          "Arctic Ocean"},
+    {"Bay of Bengal",        "Indian Ocean"},
+    {"Beaufort Sea",         "Arctic Ocean"},
+    {"Bering Sea",           "Pacific Ocean"},
+    {"Bismarck Sea",         "Pacific Ocean"},
+    {"Black Sea",            "Mediterranean Sea"},
+    {"Bohai Sea",            "Pacific Ocean"},
+    {"Caribbean Sea",        "Atlantic Ocean"},
+    {"Celebes Sea",          "Pacific Ocean"},
+    {"Champlain Sea",        "Atlantic Ocean"},
+    {"Chilean Sea",          "Pacific Ocean"},
+    {"China Seas",           "Pacific Ocean"},
+    {"Chukchi Sea",          "Arctic Ocean"},
+    {"Coral Sea",            "Pacific Ocean"},
+    {"Davis Strait",         "Atlantic Ocean"},
+    {"East China Sea",       "Pacific Ocean"},
+    {"East Siberian Sea",    "Arctic Ocean"},
+    {"English Channel",      "Atlantic Ocean"},
+    {"Erythraean Sea",       "Indian Ocean"},
+    {"Greenland Sea",        "Arctic Ocean"},
+    {"Gulf of Mexico",       "Atlantic Ocean"},
+    {"Gulf of Thailand",     "Pacific Ocean"},
+    {"Gulf of Tonkin",       "Pacific Ocean"},
+    {"Hudson Bay",           "Arctic Ocean"},
+    {"Ionian Sea",           "Mediterranean Sea"},
+    {"Irish Sea",            "Atlantic Ocean"},
+    {"Irminger Sea",         "Atlantic Ocean"},
+    {"James Bay",            "Atlantic Ocean"},
+    {"Java Sea",             "Indian Ocean"},
+    {"Kara Sea",             "Arctic Ocean"},
+    {"Koro Sea",             "Pacific Ocean"},
+    {"Labrador Sea",         "Atlantic Ocean"},
+    {"Laccadive Sea",        "Indian Ocean"},
+    {"Laptev Sea",           "Arctic Ocean"},
+    {"Ligurian Sea",         "Mediterranean Sea"},
+    {"Lincoln Sea",          "Arctic Ocean"},
+    {"Myrtoan Sea",          "Mediterranean Sea"},
+    {"North Sea",            "Atlantic Ocean"},
+    {"Norwegian Sea",        "Atlantic Ocean"},
+    {"Pechora Sea",          "Arctic Ocean"},
+    {"Persian Gulf",         "Indian Ocean"},
+    {"Philippine Sea",       "Pacific Ocean"},
+    {"Red Sea",              "Indian Ocean"},
+    {"Salish Sea",           "Pacific Ocean"},
+    {"Sargasso Sea",         "Atlantic Ocean"},
+    {"Scotia Sea",           "Southern Ocean"},
+    {"Sea of Azov",          "Black Sea"},
+    {"Sea of Chiloe",        "Pacific Ocean"},
+    {"Sea of Crete",         "Mediterranean Sea"},
+    {"Sea of Japan",         "Pacific Ocean"},
+    {"Sea of Okhotsk",       "Pacific Ocean"},
+    {"Sea of the Hebrides",  "Atlantic Ocean"},
+    {"Sea of Zanj",          "Indian Ocean"},
+    {"Seas of Greenland",    "Atlantic Ocean"},
+    {"Sethusamudram",        "Indian Ocean"},
+    {"Sibutu Passage",       "Pacific Ocean"},
+    {"Solomon Sea",          "Pacific Ocean"},
+    {"South China Sea",      "Pacific Ocean"},
+    {"Sulu Sea",             "Pacific Ocean"},
+    {"Tasman Sea",           "Pacific Ocean"},
+    {"Thracian Sea",         "Mediterranean Sea"},
+    {"Timor Sea",            "Indian Ocean"},
+    {"Tyrrhenian Sea",       "Mediterranean Sea"},
+    {"Wandel Sea",           "Arctic Ocean"},
+    {"White Sea",            "Arctic Ocean"},
+    {"Yellow Sea",           "Pacific Ocean"}
+};
+typedef CStaticArrayMap<const char*, const char*, PNocase_CStr> TWaterPairMap;
+DEFINE_STATIC_ARRAY_MAP(TWaterPairMap, sc_WaterPairMap, k_water_pair_map);
+
+static string x_FindSurroundingOcean (string& water)
+
+{
+    TWaterPairMap::const_iterator new_water_pair_iter = sc_WaterPairMap.find(water.c_str());
+    if( new_water_pair_iter != sc_WaterPairMap.end() ) {
+        return new_water_pair_iter->second;
+    }
+    return "";
+}
+
 
 CLatLonCountryId::TClassificationFlags CValidError_imp::x_ClassifyLatLonId(CLatLonCountryId *id, string country, string province)
 {
@@ -614,24 +706,38 @@ void CValidError_imp::ValidateLatLonCountry
         return;
     }
 
-    if (!m_LatLonCountryMap->HaveLatLonForRegion(country)) {
-        if (! m_LatLonWaterMap->HaveLatLonForRegion(country)) {
-            // report unrecognized country elsewhere
+    if (! NStr::IsBlank(province)) {
+        // do not attempt quick exit
+    } else if (m_LatLonCountryMap->HaveLatLonForRegion(country)) {
+        if (m_LatLonCountryMap->IsCountryInLatLon(country, lat_value, lon_value)) {
             return;
-        } else {
-            // continue to look for nearby country for proximity report
-            // (do not return)
         }
+    } else if (m_LatLonWaterMap->HaveLatLonForRegion(country)) {
+        if (m_LatLonWaterMap->IsCountryInLatLon(country, lat_value, lon_value)) {
+            return;
+        }
+    } else {
+        // report unrecognized country
+        return;
     }
 
     CLatLonCountryId *id = x_CalculateLatLonId(lat_value, lon_value, country, province);
 
     CLatLonCountryId::TClassificationFlags flags = x_ClassifyLatLonId(id, country, province);
+
+    string wguess = id->GetGuessWater();
+    string cguess = id->GetGuessCountry();
+    if (NStr::IsBlank (cguess) && (! NStr::IsBlank (wguess))) {
+        string parent = x_FindSurroundingOcean (wguess);
+        if ((! NStr::IsBlank (parent)) && NStr::EqualNocase (country, parent)) return;
+    }
+
     double neardist = 0.0;
     CLatLonCountryMap::TLatLonAdjustFlags adjustment = CLatLonCountryMap::fNone;
     CLatLonCountryId::TClassificationFlags adjusted_flags = 0;
     if (!flags && !m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
-        && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)) {
+        && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
+        && (! NStr::IsBlank (cguess)) && NStr::IsBlank (wguess)) {
         CLatLonCountryId *adjust_id = x_CalculateLatLonId(lon_value, lat_value, country, province);
         adjusted_flags = x_ClassifyLatLonId(adjust_id, country, province);
         if (adjusted_flags) {
