@@ -86,8 +86,11 @@ vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SubmitBlk;
 set <string> CDiscTestInfo :: tests_run;
 
 static CDiscTestInfo thisTest;
-
 static const s_test_property test_list[] = {
+  {"SUSPECT_PRODUCT_NAMES", fDiscrepancy}
+};
+
+static const s_test_property test1_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
@@ -116,7 +119,7 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq_CFeat
    {"SUSPECT_PHRASES", fDiscrepancy},
    {"DISC_SUSPECT_RRNA_PRODUCTS", fDiscrepancy},
-   {"DISC_SUSPECT_PRODUCT_NAME", fDiscrepancy},
+   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy},
    {"DISC_PRODUCT_NAME_TYPO", fDiscrepancy},
    {"DISC_PRODUCT_NAME_QUICKFIX", fDiscrepancy},
    {"TEST_ORGANELLE_PRODUCTS", fDiscrepancy},
@@ -404,20 +407,16 @@ if (i > sz) return;
                 CRef <CTestAndRepData> (new CBioseq_DISC_SUSPECT_RRNA_PRODUCTS));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != thisTest.tests_run.end()
+   if ( thisTest.tests_run.find("SUSPECT_PRODUCT_NAMES") != thisTest.tests_run.end()
         || thisTest.tests_run.find("DISC_PRODUCT_NAME_TYPO") != thisTest.tests_run.end()
         || thisTest.tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != thisTest.tests_run.end()) {
         
-        if (thisTest.tests_run.find("DISC_SUSPECT_PRODUCT_NAME") != thisTest.tests_run.end()) {
+        if (thisTest.tests_run.find("SUSPECT_PRODUCT_NAMES") != thisTest.tests_run.end()) i++;
+        if (thisTest.tests_run.find("DISC_PRODUCT_NAME_TYPO") != thisTest.tests_run.end()) i++;
+        if (thisTest.tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != thisTest.tests_run.end()) 
              i++;
-        }
-        if (thisTest.tests_run.find("DISC_PRODUCT_NAME_TYPO") != thisTest.tests_run.end()) {
-             i++;
-        }
-        if (thisTest.tests_run.find("DISC_PRODUCT_NAME_QUICKFIX") != thisTest.tests_run.end()) {
-             i++;
-        }
-        tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_on_SUSPECT_RULE()));
+        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
+                                CRef <CTestAndRepData>(new CBioseq_on_SUSPECT_RULE()));
         if (i >= sz) return;
    }
    if ( thisTest.tests_run.find("TEST_ORGANELLE_PRODUCTS") != thisTest.tests_run.end()) {

@@ -334,6 +334,8 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForStaticList(CRef <CClickableItem>& c_
 */
 };
 
+static set <string> prot_set_nm;
+
 // FindSuspectProductNamesWithRulesCallback
 void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
 {
@@ -355,15 +357,22 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
      
      if (prot.CanGetName()) {
        prot_nm = *(prot.GetName().begin()); 
+cerr << " prot_nm " << prot_nm << endl;
        rule_idx = 0;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
+cerr << "rule_idx " << rule_idx << endl;
 /*
-cerr << "rule_idx " << rule_idx ;
-cerr << " prot_nm " << prot_nm << endl;
 cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
-cerr << "**rit " << Blob2Str(**rit) << endl;
 */
+if (rule_idx == 436) cerr << "**rit " << Blob2Str(**rit) << endl;
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
+if (prot_set_nm.find(prot_nm) == prot_set_nm.end())
+prot_set_nm.insert(prot_nm);
+cerr << "item_list " << GetName() << "  " << thisInfo.test_item_list[GetName()].size() << endl;
+cerr << "rule_idx  " << rule_idx << "  " 
+ << NStr::UIntToString((int)(*rit)->GetRule_type()) + "$"
+                   + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use)
+<< endl;
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
                    + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use));
@@ -372,12 +381,14 @@ cerr << "**rit " << Blob2Str(**rit) << endl;
        }
      }
    }
+cerr << "prot_set_nm.size() " << prot_set_nm.size() << endl;
 };
 
 void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
 {
    Str2Strs fixtp2rule_feats, rule2feats;
    GetTestItemList(c_item->item_list, fixtp2rule_feats);
+cerr << "fixtp2rule_feats.size() " << fixtp2rule_feats.size();
    c_item->item_list.clear();
 
    string test_name, fixtp_name, summ;
@@ -388,6 +399,7 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
 
      rule2feats.clear();
      GetTestItemList(fit->second, rule2feats, "@");
+cerr << "rule2feats.size() " << rule2feats.size() << endl;
      ITERATE (Str2Strs, rit, rule2feats) {
        rule_idx = NStr::StringToUInt(rit->first);
        test_name = thisInfo.susrule_summ[rule_idx][0];
@@ -9765,7 +9777,6 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
    CFlatfileTextFind flatfile_find(GetName());
    unsigned blocks = CFlatFileConfig::fGenbankBlocks_All 
                              & ~CFlatFileConfig::fGenbankBlocks_Sequence;
-cerr << "111\n";
    CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank,
                        CFlatFileConfig::eMode_GBench,
                        CFlatFileConfig::eStyle_Normal,

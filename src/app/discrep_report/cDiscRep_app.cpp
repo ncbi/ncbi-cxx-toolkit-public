@@ -379,10 +379,11 @@ void CDiscRepApp::Init(void)
           arr.clear();
           arr.push_back(this_term.pattern);
 
-          if (this_term.fix_type  ==  eSuspectNameType_Typo) strtmp = "DISC_PRODUCT_NAME_TYPO";
+          if (this_term.fix_type  ==  eSuspectNameType_Typo) 
+                         strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
           else if (this_term.fix_type == eSuspectNameType_QuickFix) 
-                                        strtmp = "DISC_PRODUCT_NAME_QUICKFIX";
-          else strtmp = "DISC_SUSPECT_PRODUCT_NAME";
+                         strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
+          else strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
           arr.push_back(strtmp); // test_name
 
           if (this_term.search_func == CTestAndRepData :: EndsWithPattern)

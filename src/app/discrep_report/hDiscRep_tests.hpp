@@ -128,6 +128,15 @@ namespace DiscRepNmSpc {
      }
   };
 
+  template <class T>
+  void GetStringsFromObject(const T& obj, vector <string>& strs)
+  {
+     CTypesConstIterator it(CStdTypeInfo<string>::GetTypeInfo(),
+                          CStdTypeInfo<utf8_string_type>::GetTypeInfo());
+     for (it = ConstBegin(obj);  it;  ++it)
+        strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
+  };
+
   struct qualvlu_distribute {
          Str2Strs qual_vlu2src;
          vector <string> missing_item, multi_same, multi_dup, multi_all_dif;
@@ -227,12 +236,13 @@ namespace DiscRepNmSpc {
       bool ProductContainsTerm(const string& pattern, const string& search);
 
       // object ~ rule/constraint
-      bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, 
+      bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat,
                                                     const CConstraint_choice_set& c_set);
       bool DoesObjectMatchMolinfoFieldConstraint (const CSeq_feat& seq_feat, 
                                                  const CMolinfo_field_constraint& mol_cons);
-      bool DoesObjectMatchConstraint(const CSeq_feat& data, const CConstraint_choice& cons);
-      bool DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
+      bool DoesObjectMatchConstraint(const CSeq_feat& data, const vector <string>& strs,
+                                                         const CConstraint_choice& cons);
+      bool DoesObjectMatchStringConstraint(const CSeq_feat& feat, const vector <string>& strs, 
                                                         const CString_constraint& str_cons);
       bool DoesObjectMatchStringConstraint(const CBioSource& biosrc, 
                                                         const CString_constraint& str_cons);
@@ -1952,11 +1962,11 @@ namespace DiscRepNmSpc {
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("DISC_SUSPECT_PRODUCT_NAME");};
+      virtual string GetName() const { return string("SUSPECT_PRODUCT_NAMES");};
 
       static string GetName_typo() { return string("DISC_PRODUCT_NAME_TYPO");};
       static string GetName_qfix() { return string("DISC_PRODUCT_NAME_QUICKFIX");};
-      static string GetName_name() { return string("DISC_SUSPECT_PRODUCT_NAME");};
+      static string GetName_name() { return string("SUSPECT_PRODUCT_NAMES");};
 
     protected:
       CBioseq_Handle m_bioseq_hl;
