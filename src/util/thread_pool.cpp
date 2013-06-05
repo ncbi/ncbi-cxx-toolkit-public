@@ -167,7 +167,7 @@ public:
     ///   Thread to mark
     /// @param is_idle
     ///   If thread should be marked as idle or not
-    void SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle);
+    bool SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle);
 
     /// Callback from working thread when it finished its Main() method
     void ThreadStopped(CThreadPool_ThreadImpl* thread);
@@ -360,8 +360,8 @@ private:
     /// start and finish events
     CAtomicCounter                   m_ExecutingTasks;
     /// Total number of tasks acquired by pool
-    /// Includes queued tasks and executing tasks. Introduced for
-    /// maintaining atomicity of this number changing
+    /// Includes queued tasks and executing (but not exclusive!) tasks.
+    /// Introduced for maintaining atomicity of this number changing
     CAtomicCounter                   m_TotalTasks;
     /// Flag about working with special case:
     /// FALSE - queue_size == 0, TRUE - queue_size > 0
@@ -473,7 +473,7 @@ private:
     void x_Idle(void);
 
     /// Mark the thread idle or non-idle
-    void x_SetIdleState(bool is_idle);
+    bool x_SetIdleState(bool is_idle);
 
     /// Do finalizing when task finished its execution
     /// @param status
@@ -534,9 +534,6 @@ private:
 
     /// Do "idle" work when thread is not busy executing exclusive tasks
     void x_Idle(void);
-
-    /// Wait until pool is ready for execution of exclusive task
-    void x_WaitForPoolStop(CThreadPool_Guard* pool_guard);
 
     /// Pool owning this thread
     CRef<CThreadPool_Impl>  m_Pool;
@@ -847,7 +844,7 @@ CThreadPool_Impl::TryGetExclusiveTask(void)
 
     if (m_ExclusiveQueue.GetSize() == 0
         || ((guard.Begin()->flags & CThreadPool::fExecuteQueuedTasks) != 0
-            &&  GetQueuedTasksCount() != 0)) {
+            &&  (m_TotalTasks.Get() != 0))) {
         return SExclusiveTaskInfo(0, CRef<CThreadPool_Task>());
     }
 
@@ -1217,13 +1214,17 @@ CThreadPool_ThreadImpl::GetCurrentTask(void) const
     return m_CurrentTask;
 }
 
-inline void
+inline bool
 CThreadPool_ThreadImpl::x_SetIdleState(bool is_idle)
 {
-    if (m_IsIdle != is_idle) {
-        m_IsIdle = is_idle;
-        m_Pool->SetThreadIdle(this, is_idle);
-    }
+    if (m_IsIdle == is_idle)
+        return true;
+
+    if ( !m_Pool->SetThreadIdle(this, is_idle) )
+        return false;
+
+    m_IsIdle = is_idle;
+    return true;
 }
 
 inline void
@@ -1240,9 +1241,8 @@ CThreadPool_ThreadImpl::x_TaskFinished(CThreadPool_Task::EStatus status)
 inline void
 CThreadPool_ThreadImpl::x_Idle(void)
 {
-    x_SetIdleState(true);
-
-    m_IdleTrigger.Wait();
+    if ( x_SetIdleState(true) )
+        m_IdleTrigger.Wait();
 }
 
 inline void
@@ -1500,14 +1500,15 @@ CThreadPool_Impl::FinishThreads(unsigned int count)
     }
 }
 
-void
+
+bool
 CThreadPool_Impl::SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle)
 {
     CThreadPool_Guard guard(this);
 
     if (is_idle  &&  !m_Suspended  &&  m_Queue.GetSize() != 0) {
         thread->WakeUp();
-        return;
+        return false;
     }
 
     TThreadsList* to_del;
@@ -1534,6 +1535,7 @@ CThreadPool_Impl::SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle)
     }
 
     ThreadStateChanged();
+    return true;
 }
 
 inline bool
