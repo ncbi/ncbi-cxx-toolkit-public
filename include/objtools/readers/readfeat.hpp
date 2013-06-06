@@ -56,11 +56,16 @@ class CSeq_entry;
 class NCBI_XOBJREAD_EXPORT CFeature_table_reader
 {
 public:
+    /// Some flags that control feature table generation.
+    /// Note that "bad key" could mean many different conditions, from 
+    /// unrecognized feature name to qualifier without a feature, and so on.
     enum EFlags {
-        fReportBadKey      = 0x1,
-        fKeepBadKey        = 0x2,
-        fTranslateBadKey   = 0x4, // yields misc_feature /standard_name="..."
-        fIgnoreWebComments = 0x8
+        fReportBadKey           = (1<<0), ///< = 0x01 (Report bad keys into the error container)
+        fKeepBadKey             = (1<<1), ///< = 0x02 (As much as possible, try to use bad keys as if they were acceptable)
+        fTranslateBadKey        = (1<<2), ///< = 0x04 (yields misc_feature /standard_name="...")
+        fIgnoreWebComments      = (1<<3), ///< = 0x08 (ignore web comment lines such as lines that start with " INFO:", or consist of many equals signs)
+        fCreateGenesFromCDSs    = (1<<4), ///< = 0x10 (If a CDS has a gene xref, create a gene with the same intervals if one doesn't already exist.)
+        fCDSsMustBeInTheirGenes = (1<<5), ///< = 0x20 (If a CDS has a gene xref, it *must* be inside of that gene)
     };
     typedef int TFlags;
 

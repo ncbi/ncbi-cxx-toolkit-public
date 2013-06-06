@@ -57,6 +57,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/readers/readfeat.hpp>
@@ -86,16 +87,44 @@ static bool s_IgnoreError(const ILineError& line_error)
     return false;
 }
 
+static void s_ListLinesWithPattern(
+    const CTempString & str,
+    const CTempString & pattern,
+    vector<size_t> & out_vecOfLinesThatMatch )
+{
+    out_vecOfLinesThatMatch.clear();
+
+    vector<CTempString> vecOfLineContents;
+    NStr::Tokenize(str, "\n", vecOfLineContents);
+    ITERATE_0_IDX(ii, vecOfLineContents.size()) {
+        if( NPOS != NStr::Find(vecOfLineContents[ii], pattern)) {
+            out_vecOfLinesThatMatch.push_back(ii + 1); // line nums are 1-based
+        }
+    }
+}
+
+static size_t s_CountOccurrences(const CTempString & str, const CTempString & pattern )
+{
+    vector<CTempString> vecPiecesBetweenTheWordError;
+    NStr::TokenizePattern(
+        str, pattern, vecPiecesBetweenTheWordError );
+    size_t iNumErrsExpected = ( vecPiecesBetweenTheWordError.size() - 1 );
+    BOOST_REQUIRE(iNumErrsExpected > 0);
+    return iNumErrsExpected;
+}
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
     // no errors expected by default
-     list<string> expected_errors = list<string>() );
+     list<ILineError::EProblem> expected_errors = list<ILineError::EProblem>(),
+     CFeature_table_reader::TFlags additional_flags = 0,
+     IErrorContainer * pErrorContainer = NULL );
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
-     list<string> expected_errors
-    )
+     list<ILineError::EProblem> expected_errors,
+     CFeature_table_reader::TFlags additional_flags,
+     IErrorContainer * pErrorContainer )
 {
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
@@ -103,17 +132,21 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     CSimpleTableFilter tbl_filter;
     tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
 
-    CErrorContainerLenient err_container;
+    auto_ptr<IErrorContainer> p_temp_err_container;
+    if( ! pErrorContainer ) {
+        p_temp_err_container.reset( new CErrorContainerLenient );
+        pErrorContainer = p_temp_err_container.get();
+    }
         
     CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable
                    (*reader, // of type ILineReader, which is like istream but line-oriented
-                    CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=…)
-                    &err_container, // holds errors found during reading
+                    additional_flags | CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=…)
+                    pErrorContainer, // holds errors found during reading
                     &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider “source” and “REFERENCE” to be disallowed
                     );
 
-    for (size_t i = 0; i < err_container.Count(); i++) {
-        const ILineError& line_error = err_container.GetError(i);
+    for (size_t i = 0; i < pErrorContainer->Count(); i++) {
+        const ILineError& line_error = pErrorContainer->GetError(i);
         string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
         if( s_IgnoreError(line_error) ) {
             // certain error types may be ignored
@@ -122,7 +155,8 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
         } else {
             BOOST_CHECK_EQUAL(
                 line_error.ProblemStr() + "(" + error_text + ")", 
-                expected_errors.front() + "(" + error_text + ")" );
+                ILineError::ProblemStr(expected_errors.front()) +
+                    "(" + error_text + ")" );
             expected_errors.pop_front();
         }
     }
@@ -309,6 +343,7 @@ BOOST_AUTO_TEST_CASE(Test_FlybaseFeatureTableWithMultiIntervalTranslExcept)
     BOOST_REQUIRE(cds->IsSetData());
     BOOST_REQUIRE(cds->GetData().IsCdregion());
     BOOST_CHECK_EQUAL(cds->GetQual().size(), 2);
+    NCBITEST_CHECK( cds->GetXref()[0]->GetData().IsGene() );
     set<string> expected_quals;
     expected_quals.insert("transcript_id");
     expected_quals.insert("transl_except");
@@ -1272,8 +1307,8 @@ static const char * sc_Table9 = "\
 
 BOOST_AUTO_TEST_CASE(Test_ForbidMixedStrandAnticodonQualifier)
 {
-    list<string> expected_errors;
-    expected_errors.push_back("Qualifier had bad value");
+    list<ILineError::EProblem> expected_errors;
+    expected_errors.push_back(ILineError::eProblem_QualifierBadValue);
 
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (
         sc_Table9,
@@ -1293,3 +1328,230 @@ BOOST_AUTO_TEST_CASE(Test_ForbidMixedStrandAnticodonQualifier)
     BOOST_CHECK( ! trna_ext.IsSetAnticodon() );
 }
 
+// each CDS has a note on it indicating
+// whether or not it should have an
+// error if fCDSsMustBeInTheirGenes is set.
+static const char * sc_Table10 = "\
+>Feature lcl|seq1\n\
+1\t100\tgene\n\
+\t\t\tgene\tSOME_GENE\n\
+50\t200\tgene\n\
+\t\t\tgene\tANOTHER_GENE\n\
+1\t100\tCDS\n\
+\t\t\tgene\tSOME_GENE\n\
+\t\t\tnote\tshould be okay\n\
+20\t70\tCDS\n\
+\t\t\tgene\tSOME_GENE\n\
+\t\t\tnote\tshould be okay\n\
+70\t150\tCDS\n\
+\t\t\tgene\tSOME_GENE\n\
+\t\t\tnote\tshould have error\n\
+2\t100\tCDS\n\
+\t\t\tgene\tANOTHER_GENE\n\
+\t\t\tnote\tshould have error\n\
+21\t70\tCDS\n\
+\t\t\tgene\tANOTHER_GENE\n\
+\t\t\tnote\tshould have error\n\
+71\t150\tCDS\n\
+\t\t\tgene\tANOTHER_GENE\n\
+\t\t\tnote\tshould be okay\n\
+60\t80\tCDS\n\
+\t\t\tgene\tSOME_GENE\n\
+\t\t\tnote\tshould be okay\n\
+61\t80\tCDS\n\
+\t\t\tgene\tANOTHER_GENE\n\
+\t\t\tnote\tshould be okay\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestCDSInGenesCheck)
+{
+    // count how many times the word "error" appears in sc_Table10
+    // to determine how many errors we expect
+    vector<size_t> linesWithError;
+    s_ListLinesWithPattern(sc_Table10, "error", linesWithError);
+    BOOST_REQUIRE( ! linesWithError.empty() );
+
+    list<ILineError::EProblem> expected_errors;
+    fill_n( back_inserter(expected_errors), 
+        linesWithError.size(), ILineError::eProblem_FeatMustBeInXrefdGene);
+
+    CErrorContainerLenient err_container;
+
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (
+        sc_Table10,
+        expected_errors,
+        CFeature_table_reader::fCDSsMustBeInTheirGenes,
+        &err_container );
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(ftable.size(), 
+        s_CountOccurrences(sc_Table10, "gene\n") +
+            s_CountOccurrences(sc_Table10, "CDS\n") );
+
+    BOOST_REQUIRE_EQUAL(err_container.Count(), linesWithError.size());
+    ITERATE_0_IDX(ii, err_container.Count()) {
+        const ILineError& line_error = err_container.GetError(ii);
+        // (The "2" is because the error line is 2 lines down from the CDS's start line)
+        BOOST_CHECK_EQUAL( line_error.Line(), linesWithError[ii] - 2 );
+        BOOST_CHECK( ! line_error.OtherLines().empty());
+    }
+}
+
+static const char * sc_Table11 = "\
+>Feature lcl|seq1\n\
+1\t100\tgene\n\
+\t\t\tgene\tSOME_GENE\n\
+20\t70\tCDS\n\
+\t\t\tnote\tokay\n\
+150\t200\tCDS\n\
+\t\t\tnote\tokay\n\
+30\t80\tCDS\n\
+\t\t\tgene\tSOME_GENE\n\
+\t\t\tnote\tokay\n\
+75\t400\tCDS\n\
+\t\t\tgene\tSOME_GENE\n\
+\t\t\tnote\terror_if_checking_bounds\n\
+40\t90\tCDS\n\
+\t\t\tgene\tCREATED_GENE_1\n\
+\t\t\tnote\tokay\n\
+80\t300\tCDS\n\
+\t\t\tgene\tCREATED_GENE_2\n\
+\t\t\tnote\tokay\n\
+200\t250\tCDS\n\
+\t\t\tgene\tCREATED_GENE_2\n\
+\t\t\tnote\tokay\n\
+50\t300\tCDS\n\
+\t\t\tgene\tCREATED_GENE_2\n\
+\t\t\tnote\terror_if_checking_bounds\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
+{
+    set<string> geneNamesExpected;
+    geneNamesExpected.insert("SOME_GENE");
+    geneNamesExpected.insert("CREATED_GENE_1");
+    geneNamesExpected.insert("CREATED_GENE_2");
+
+    vector<string> geneXrefExpectedOnEachCDS; //empty str if no xref
+    // the code in these braces just sets geneExpectedOnEachCDS
+    {{
+        vector<CTempString> cdsSplitPieces;
+        NStr::TokenizePattern(sc_Table11, "CDS", cdsSplitPieces);
+
+        CTempString kStartOfGene("gene\t");
+
+        ITERATE_0_IDX(ii, cdsSplitPieces.size() ) {
+            if( 0 == ii ) {
+                continue; // the first part is not CDS info
+            }
+            CTempString sCDSInfo = cdsSplitPieces[ii];
+            NStr::TruncateSpacesInPlace(sCDSInfo, NStr::eTrunc_Begin);
+
+            // extract sGeneLocus (if any) from the
+            // sCDSInfo
+            CTempString sGeneLocus;
+            if( NStr::StartsWith(sCDSInfo, kStartOfGene) ) {
+                sGeneLocus = sCDSInfo.substr(
+                    kStartOfGene.length());
+                SIZE_TYPE sz1stEndlinePos = sGeneLocus.find_first_of("\r\n");
+                if( sz1stEndlinePos != NPOS ) {
+                    sGeneLocus = sGeneLocus.substr(0, sz1stEndlinePos);
+                }
+                NStr::TruncateSpacesInPlace(sGeneLocus);
+                BOOST_CHECK( ! sGeneLocus.empty() );
+                // make sure no spaces
+                BOOST_CHECK( sGeneLocus.end() == 
+                    find_if(sGeneLocus.begin(), sGeneLocus.end(), ::isspace ) );
+            }
+            geneXrefExpectedOnEachCDS.push_back(sGeneLocus);
+        }
+    }}
+
+    ITERATE_BOTH_BOOL_VALUES(bCheckIfCDSInItsGene) {
+        cout << "Testing with bCheckIfCDSInItsGene = " 
+             << NStr::BoolToString(bCheckIfCDSInItsGene) << endl;
+
+        list<ILineError::EProblem> expected_errors;
+        vector<size_t> linesWithError;
+        CFeature_table_reader::TFlags readfeat_flags = 
+            CFeature_table_reader::fCreateGenesFromCDSs;
+
+        if( bCheckIfCDSInItsGene ) {
+            expected_errors.push_back(
+                ILineError::eProblem_FeatMustBeInXrefdGene );
+            linesWithError.push_back(11);
+
+            readfeat_flags |= CFeature_table_reader::fCDSsMustBeInTheirGenes;
+        }
+        expected_errors.push_back(
+            ILineError::eProblem_CreatedGeneFromMultipleFeats );
+        linesWithError.push_back(20);
+        expected_errors.push_back(
+            ILineError::eProblem_CreatedGeneFromMultipleFeats );
+        linesWithError.push_back(23);
+        if( bCheckIfCDSInItsGene ) {
+            expected_errors.push_back(
+                ILineError::eProblem_FeatMustBeInXrefdGene);
+            linesWithError.push_back(23);
+        }
+
+        CErrorContainerLenient err_container;
+
+        CRef<CSeq_annot> annot = s_ReadOneTableFromString (
+            sc_Table11,
+            expected_errors,
+            readfeat_flags,
+            &err_container );
+        typedef CSeq_annot::TData::TFtable TFtable;
+        const TFtable& ftable = annot->GetData().GetFtable();
+        BOOST_CHECK_EQUAL(ftable.size(), 
+            geneNamesExpected.size() +
+            s_CountOccurrences(sc_Table11, "CDS\n") );
+
+        BOOST_REQUIRE_EQUAL(err_container.Count(), linesWithError.size());
+        ITERATE_0_IDX(ii, err_container.Count()) {
+            const ILineError& line_error = err_container.GetError(ii);
+            // (The "2" is because the error line is 2 lines down from the CDS's start line)
+            BOOST_CHECK_EQUAL( line_error.Line(), linesWithError[ii] );
+            // Other lines expected only for "CDS not in xref'd gene" error
+            const size_t iNumOtherLinesExpected = ( 
+                line_error.Line() != 23 &&
+                line_error.Problem() == 
+                ILineError::eProblem_FeatMustBeInXrefdGene ? 1 : 0 );
+            BOOST_CHECK_EQUAL( line_error.OtherLines().size(), 
+                iNumOtherLinesExpected );
+        }
+
+        // check that all genes were created
+        vector<string> vecOfGenesInResult; // use a vector so we err on dupes
+        vector<string> vecOfCDSXrefsInResult;
+        ITERATE(TFtable, feat_it, ftable) {
+            const CSeq_feat & feat = **feat_it;
+            if( FIELD_IS_SET_AND_IS(feat, Data, Gene) ) {
+                BOOST_CHECK_NO_THROW( vecOfGenesInResult.push_back(
+                    feat.GetData().GetGene().GetLocus() ) );
+                NCBITEST_CHECK( 
+                    RAW_FIELD_IS_EMPTY_OR_UNSET(
+                        feat.GetData().GetGene(), Locus_tag));
+            } else if( FIELD_IS_SET_AND_IS(feat, Data, Cdregion) ) {
+                const CGene_ref * pCDSGeneXref = feat.GetGeneXref();
+                if( pCDSGeneXref ) {
+                    BOOST_CHECK_NO_THROW( vecOfCDSXrefsInResult.push_back(
+                        pCDSGeneXref->GetLocus() ) );
+                } else {
+                    vecOfCDSXrefsInResult.push_back(kEmptyStr);
+                }
+            }
+        }
+        // sort, but don't remove dupes so we can detect them
+        sort( vecOfGenesInResult.begin(), vecOfGenesInResult.end() );
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            vecOfGenesInResult.begin(), vecOfGenesInResult.end(),
+            geneNamesExpected.begin(), geneNamesExpected.end() );
+
+        // check that each CDS references the correct gene
+        // (do NOT sort or unique, because order matters)
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            vecOfCDSXrefsInResult.begin(), vecOfCDSXrefsInResult.end(),
+            geneXrefExpectedOnEachCDS.begin(),geneXrefExpectedOnEachCDS.end());
+    }
+}

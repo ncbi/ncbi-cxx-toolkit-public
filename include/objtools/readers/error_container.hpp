@@ -136,7 +136,10 @@ public:
     {
         m_Errors.push_back( 
             CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
+                err.FeatureName(), err.QualifierName(), err.QualifierValue()) );
+        ITERATE( ILineError::TVecOfLines, line_it, err.OtherLines() ) {
+            m_Errors.back().AddOtherLine(*line_it);
+        }
         return true;
     };
 };        

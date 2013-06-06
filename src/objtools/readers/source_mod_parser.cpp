@@ -174,7 +174,8 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
                 }
             }
 
-            {{
+            // CGene_ref only on nucleotide seqs
+            if( ! FIELD_CHAIN_OF_2_IS_SET(seq, Inst, Mol) || seq.IsNa() ) {
                 CAutoInitRef<CGene_ref> gene;
                 x_ApplyMods(gene);
                 if (&gene.Get(LeaveAsIs<CGene_ref>) != NULL) {
@@ -183,7 +184,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
                     feat->SetLocation().SetWhole(*id);
                     ftable->SetData().SetFtable().push_back(feat);
                 }
-            }}
+            }
 
             // only add Prot_ref if amino acid (or at least not nucleic acid)
             // (Yes, the FIELD_CHAIN_OF_2_IS_SET is necessary because IsAa()

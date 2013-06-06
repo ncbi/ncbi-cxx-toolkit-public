@@ -92,13 +92,13 @@
 //
 #define FASTA_WARNING(_iFastaLineNum, _eWarningType, _MsgStreamOperators) \
     do {                                                                \
-        const int iLineNum = (_iFastaLineNum);                          \
+        const int iLineNum_IN_FASTA_WARNING = (_iFastaLineNum);         \
         if( m_pWarningRefVec ) {                                        \
             stringstream msg_strm;                                      \
             msg_strm << _MsgStreamOperators;                            \
             CRef<CWarning> pNewWarning( new CWarning(                   \
                                             (_eWarningType),            \
-                                            iLineNum,                   \
+                                            iLineNum_IN_FASTA_WARNING,  \
                                             msg_strm.str() ) );         \
             if( m_pWarningRefVec->GetData().empty() ||                  \
                 *m_pWarningRefVec->GetData().back() != *pNewWarning )   \
@@ -106,9 +106,9 @@
                 m_pWarningRefVec->GetData().push_back( pNewWarning );   \
             }                                                           \
         } else {                                                        \
-            if( iLineNum > 0 ) {                                        \
+            if( iLineNum_IN_FASTA_WARNING > 0 ) {                       \
                 ERR_POST_X(1, Warning << _MsgStreamOperators            \
-                           << " at line " << iLineNum );                \
+                           << " at line " << iLineNum_IN_FASTA_WARNING ); \
             } else {                                                    \
                 ERR_POST_X(1, Warning << _MsgStreamOperators );         \
             }                                                           \
@@ -266,6 +266,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         m_Offset = 0;
     }
     m_CurrentGapLength = m_TotalGapLength = 0;
+    m_CurrentSeqTitles.clear();
 
     bool need_defline = true;
     CBadResiduesException::SBadResiduePositions bad_residue_positions;
@@ -586,7 +587,10 @@ void CFastaReader::ParseDefLine(const TStr& s)
             title_start = start;
         }
         if (title_start < min(pos, len)) {
-            ParseTitle(s.substr(title_start, pos - title_start));
+            // we parse the titles after we know what molecule this is
+            m_CurrentSeqTitles.push_back(
+                SLineTextAndLoc(
+                s.substr(title_start, pos - title_start), LineNumber()));
         }
         start = pos + 1;
     } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1'
@@ -697,7 +701,7 @@ bool CFastaReader::ParseIDs(const TStr& s)
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
-        if( CreateWarningsForSeqDataInTitle(s) ) {
+        if( CreateWarningsForSeqDataInTitle(s, LineNumber()) ) {
             // it's actually seq data
             return false;
         }
@@ -749,22 +753,23 @@ size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
     return s.length() - pos;
 }
 
-void CFastaReader::ParseTitle(const TStr& s)
+void CFastaReader::ParseTitle(const SLineTextAndLoc & lineInfo)
 {
     const static size_t kWarnTitleLength = 1000;
-    if( s.length() > kWarnTitleLength ) {
-        FASTA_WARNING(LineNumber(), CWarning::eType_TitleTooLong,
-            "FASTA-Reader: Title is very long: " << s.length() 
+    if( lineInfo.m_sLineText.length() > kWarnTitleLength ) {
+        FASTA_WARNING(lineInfo.m_iLineNum, CWarning::eType_TitleTooLong,
+            "FASTA-Reader: Title is very long: " << lineInfo.m_sLineText.length() 
             << " characters (max is " << kWarnTitleLength << ")");
     }
 
-    CreateWarningsForSeqDataInTitle(s);
+    CreateWarningsForSeqDataInTitle(lineInfo.m_sLineText,lineInfo.m_iLineNum);
 
     CRef<CSeqdesc> desc(new CSeqdesc);
-    desc->SetTitle().assign(s.data(), s.length());
+    desc->SetTitle().assign(
+        lineInfo.m_sLineText.data(), lineInfo.m_sLineText.length());
     m_CurrentSeq->SetDescr().Set().push_back(desc);
 
-    x_ApplyAllMods(*m_CurrentSeq);
+    x_ApplyAllMods(*m_CurrentSeq, lineInfo.m_iLineNum);
 }
 
 bool CFastaReader::IsValidLocalID(const TStr& s)
@@ -988,7 +993,10 @@ void CFastaReader::AssembleSeq(void)
     AssignMolType();
 
     // apply source mods *after* figuring out mol type
-    // TODO
+    ITERATE(vector<SLineTextAndLoc>, title_ci, m_CurrentSeqTitles) {
+        ParseTitle(*title_ci);
+    }
+    m_CurrentSeqTitles.clear();
 
     CSeq_data::E_Choice format
         = ( inst.IsAa() ?
@@ -1151,44 +1159,46 @@ void CFastaReader::AssignMolType(void)
         } else {
             inst.SetMol(default_mol);
         }
-    }
+    } 
 }
 
 bool
-CFastaReader::CreateWarningsForSeqDataInTitle(const TStr& s)
+CFastaReader::CreateWarningsForSeqDataInTitle(
+    const TStr& sLineText, 
+    TSeqPos iLineNum)
 {
     bool bFoundProblem = false;
 
     // check for nuc or aa sequences at the end of the title
     const static size_t kWarnNumNucCharsAtEnd = 20;
     const static size_t kWarnAminoAcidCharsAtEnd = 50;
-    if( s.length() > kWarnNumNucCharsAtEnd ) {
+    if( sLineText.length() > kWarnNumNucCharsAtEnd ) {
 
         // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
-        SIZE_TYPE pos_to_check = (s.length() - 1);
-        const SIZE_TYPE last_pos_to_check_for_nuc = (s.length() - kWarnNumNucCharsAtEnd);
+        SIZE_TYPE pos_to_check = (sLineText.length() - 1);
+        const SIZE_TYPE last_pos_to_check_for_nuc = (sLineText.length() - kWarnNumNucCharsAtEnd);
         for( ; pos_to_check >= last_pos_to_check_for_nuc; --pos_to_check ) {
-            if( ! s_ASCII_IsUnAmbigNuc(s[pos_to_check]) ) {
+            if( ! s_ASCII_IsUnAmbigNuc(sLineText[pos_to_check]) ) {
                 // found a character which is not an unambiguous nucleotide
                 break;
             }
         }
         if( pos_to_check < last_pos_to_check_for_nuc ) {
-            FASTA_WARNING(LineNumber(), CWarning::eType_NucsInTitle,
+            FASTA_WARNING(iLineNum, CWarning::eType_NucsInTitle,
                 "FASTA-Reader: Title ends with at least " << kWarnNumNucCharsAtEnd 
                 << " valid nucleotide characters.  Was the sequence "
                 << "accidentally put in the title line?");
             bFoundProblem = true;
-        } else if( s.length() > kWarnAminoAcidCharsAtEnd ) {
+        } else if( sLineText.length() > kWarnAminoAcidCharsAtEnd ) {
             // check for aa's at the end of the title
             // for efficiency, continue where the nuc search left off, since
             // we know that nucs can be amino acids, also
             const SIZE_TYPE last_pos_to_check_for_amino_acid =
-                ( s.length() - kWarnAminoAcidCharsAtEnd );
+                ( sLineText.length() - kWarnAminoAcidCharsAtEnd );
             for( ; pos_to_check >= last_pos_to_check_for_amino_acid; --pos_to_check ) {
                 // can't just use "isalpha" in case it includes characters
                 // with diacritics (an accent, tilde, umlaut, etc.)
-                const char ch = s[pos_to_check];
+                const char ch = sLineText[pos_to_check];
                 if( ( ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') ) {
                     // potential amino acid, so keep going
                 } else {
@@ -1198,7 +1208,7 @@ CFastaReader::CreateWarningsForSeqDataInTitle(const TStr& s)
             }
 
             if( pos_to_check < last_pos_to_check_for_amino_acid ) {
-                FASTA_WARNING(LineNumber(), CWarning::eType_AminoAcidsInTitle,
+                FASTA_WARNING(iLineNum, CWarning::eType_AminoAcidsInTitle,
                     "FASTA-Reader: Title ends with at least " << kWarnAminoAcidCharsAtEnd
                     << " valid amino acid characters.  Was the sequence "
                     << "accidentally put in the title line?");
@@ -1437,7 +1447,7 @@ public:
 
 protected:
     void ParseDefLine(const TStr& s);
-    void ParseTitle(const TStr& s);
+    void ParseTitle(const SLineTextAndLoc & lineInfo);
     void AssembleSeq(void);
 
 private:
@@ -1464,10 +1474,10 @@ void CFastaMapper::ParseDefLine(const TStr& s)
     m_MapEntry.stream_offset = StreamPosition() - s.length();
 }
 
-void CFastaMapper::ParseTitle(const TStr& s)
+void CFastaMapper::ParseTitle(const SLineTextAndLoc & s)
 {
     TParent::ParseTitle(s);
-    m_MapEntry.description = s;
+    m_MapEntry.description = s.m_sLineText;
 }
 
 void CFastaMapper::AssembleSeq(void)
@@ -1519,7 +1529,9 @@ void ScanFastaFile(IFastaEntryScan* scanner,
     }
 }
 
-void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )
+void CFastaReader::x_ApplyAllMods( 
+    CBioseq & bioseq,
+    TSeqPos iLineNum )
 {
     // this is called even if there the user did not request
     // mods to be added because we want to give a warning if there
@@ -1579,10 +1591,10 @@ void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )
                 ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
                     err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
                 }
-                err << " around line " + NStr::NumericToString(LineNumber());
+                err << " around line " + NStr::NumericToString(iLineNum);
                 NCBI_THROW2(CObjReaderParseException, eUnusedMods,
                     (string)CNcbiOstrstreamToString(err),
-                    LineNumber());
+                    iLineNum);
             }
         }
 
@@ -1604,7 +1616,7 @@ void CFastaReader::x_ApplyAllMods( CBioseq & bioseq )
             );
         CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
         if( ! unused_mods.empty() ) {
-            FASTA_WARNING(LineNumber(), CWarning::eType_ModsFoundButNotExpected,
+            FASTA_WARNING(iLineNum, CWarning::eType_ModsFoundButNotExpected,
                 "FASTA-Reader: Ignoring FASTA modifier(s) found because "
                 "the input was not expected to have any.");
         }

@@ -66,6 +66,8 @@ public:
         eProblem_MissingContext,
         eProblem_BadTrackLine,
         eProblem_InternalPartialsInFeatLocation,
+        eProblem_FeatMustBeInXrefdGene,
+        eProblem_CreatedGeneFromMultipleFeats,
 
         eProblem_GeneralParsingError
     };
@@ -83,6 +85,10 @@ public:
 
     virtual unsigned int
     Line(void) const =0;
+
+    typedef vector<unsigned int> TVecOfLines;
+    virtual const TVecOfLines &
+    OtherLines(void) const = 0;
 
     virtual const std::string &
     FeatureName(void) const = 0;
@@ -109,6 +115,12 @@ public:
         if( ! QualifierValue().empty() ) {
             result << ", with qualifier value '" << QualifierValue() << "'";
         }
+        if( ! OtherLines().empty() ) {
+            result << ", with other possibly relevant line(s):";
+            ITERATE( TVecOfLines, line_it, OtherLines() ) {
+                result << ' ' << *line_it;
+            }
+        }
         return (string)CNcbiOstrstreamToString(result);
     }
 
@@ -134,7 +146,14 @@ public:
     std::string
     ProblemStr(void) const
     {
-        switch(Problem()) {
+        return ProblemStr(Problem());
+    }
+
+    static
+    std::string
+    ProblemStr(EProblem eProblem)
+    {
+        switch(eProblem) {
         case eProblem_Unset:
             return "Unset";
         case eProblem_UnrecognizedFeatureName:
@@ -167,6 +186,10 @@ public:
             return "Bad track line: Expected \"track key1=value1 key2=value2 ...\"";
         case eProblem_InternalPartialsInFeatLocation:
             return "Feature's location has internal partials";
+        case eProblem_FeatMustBeInXrefdGene:
+            return "Feature has xref to a gene, but that gene does NOT contain the feature.";
+        case eProblem_CreatedGeneFromMultipleFeats:
+            return "Feature is trying to create a gene that conflicts with the gene created by another feature.";
         default:
             return "Unknown problem";
         }
@@ -196,6 +219,12 @@ public:
        
     void PatchLineNumber(
         unsigned int uLine) { m_uLine = uLine; };
+
+    // "OtherLines" not set in ctor because it's
+    // use should be somewhat rare
+    void AddOtherLine(unsigned int uOtherLine) {
+        m_vecOfOtherLines.push_back(uOtherLine);
+    }
  
     EProblem
     Problem(void) const { return m_eProblem; }
@@ -208,6 +237,9 @@ public:
 
     unsigned int
     Line(void) const { return m_uLine; }
+
+    const TVecOfLines &
+    OtherLines(void) const { return m_vecOfOtherLines; }
 
     const std::string &
     FeatureName(void) const { return m_strFeatureName; }
@@ -240,6 +272,14 @@ public:
         if (!qualval.empty()) {
             out << "QualifierValue: " << qualval << endl;
         }
+        const TVecOfLines & vecOfLines = OtherLines();
+        if( ! vecOfLines.empty() ) {
+            out << "OtherLines:";
+            ITERATE(TVecOfLines, line_it, vecOfLines) {
+                out << ' ' << *line_it;
+            }
+            out << endl;
+        }
         out << endl;
     };
         
@@ -251,6 +291,7 @@ protected:
     std::string m_strFeatureName;
     std::string m_strQualifierName;
     std::string m_strQualifierValue;
+    TVecOfLines m_vecOfOtherLines;
 };
 
 //  ============================================================================
@@ -283,6 +324,7 @@ public:
     const std::string &SeqId(void) const { return m_strSeqId; }
     EDiagSev Severity(void) const { return GetSeverity(); }
     unsigned int Line(void) const { return m_uLineNumber; }
+    const TVecOfLines & OtherLines(void) const { return m_vecOfOtherLines; }
     const std::string &FeatureName(void) const { return m_strFeatureName; }
     const std::string &QualifierName(void) const { return m_strQualifierName; }
     const std::string &QualifierValue(void) const { return m_strQualifierValue; }
@@ -297,6 +339,12 @@ public:
     void 
     SetLineNumber(
         unsigned int uLineNumber ) { m_uLineNumber = uLineNumber; }
+
+    // "OtherLines" not set in ctor because it's
+    // use should be somewhat rare
+    void AddOtherLine(unsigned int uOtherLine) {
+        m_vecOfOtherLines.push_back(uOtherLine);
+    }
         
 protected:
     EProblem m_eProblem;
@@ -305,6 +353,7 @@ protected:
     std::string m_strFeatureName;
     std::string m_strQualifierName;
     std::string m_strQualifierValue;
+    TVecOfLines m_vecOfOtherLines;
 };
 
     

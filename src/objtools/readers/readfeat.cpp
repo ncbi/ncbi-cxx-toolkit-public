@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Jonathan Kans
+ * Author:  Jonathan Kans, Michael Kornbluh
  *
  * File Description:
  *   Feature table reader
@@ -79,6 +79,8 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -97,6 +99,10 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+namespace {
+    static const char * const kCdsFeatName = "CDS";
+}
 
 class /* NCBI_XOBJREAD_EXPORT */ CFeature_table_reader_imp
 {
@@ -292,6 +298,40 @@ private:
     bool x_AddGeneOntologyToFeature (CRef<CSeq_feat> sfp, 
                                      const string& qual, const string& val);
 
+    typedef CConstRef<CSeq_feat> TFeatConstRef;
+    struct SFeatAndLineNum {
+        SFeatAndLineNum(
+            TFeatConstRef pFeat,
+            TSeqPos       uLineNum ) :
+        m_pFeat(pFeat), m_uLineNum(uLineNum) { 
+            _ASSERT(pFeat);
+        }
+
+        bool operator==(const SFeatAndLineNum & rhs) const { 
+            return Compare(rhs) == 0; }
+        bool operator!=(const SFeatAndLineNum & rhs) const {
+            return Compare(rhs) != 0; }
+        bool operator<(const SFeatAndLineNum & rhs) const {
+            return Compare(rhs) < 0; }
+
+        int Compare(const SFeatAndLineNum & rhs) const {
+            if( m_uLineNum != rhs.m_uLineNum ) {
+                return ( m_uLineNum < rhs.m_uLineNum ? -1 : 1 );
+            }
+            return (m_pFeat.GetPointerOrNull() < rhs.m_pFeat.GetPointerOrNull() ? -1 : 1 );
+        }
+
+        TFeatConstRef m_pFeat; // must be non-NULL
+        TSeqPos       m_uLineNum; // the line where this feature was created (or zero if programmatically created)
+    };
+    typedef multimap<CSeqFeatData::E_Choice, SFeatAndLineNum> TChoiceToFeatMap;
+    void x_CreateGenesFromCDSs(
+        CRef<CSeq_annot> sap,
+        TChoiceToFeatMap & choiceToFeatMap, // an input param, but might get more items added
+        const CFeature_table_reader::TFlags flags,
+        IErrorContainer *container,
+        const string& seqid );
+
     bool x_StringIsJustQuotes (const string& str);
 
     int x_ParseTrnaString (const string& val);
@@ -324,9 +364,11 @@ private:
         EDiagSev eSeverity,
         const std::string& strSeqId,
         unsigned int uLine,
-        const std::string & strFeatureName = string(""),
-        const std::string & strQualifierName = string(""),
-        const std::string & strQualifierValue = string("")  );
+        const std::string & strFeatureName = kEmptyStr,
+        const std::string & strQualifierName = kEmptyStr,
+        const std::string & strQualifierValue = kEmptyStr,
+        const ILineError::TVecOfLines & vecOfOtherLines =
+            ILineError::TVecOfLines() );
 
     void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
     void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
@@ -996,7 +1038,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     switch (qtype) {
         case eQual_codon_start:
             {
-                int frame = x_StringToLongNoThrow (val, container, seq_id, line, "CDS", "codon_start");
+                int frame = x_StringToLongNoThrow (val, container, seq_id, line, kCdsFeatName, "codon_start");
                 switch (frame) {
                     case 0:
                         crp.SetFrame (CCdregion::eFrame_not_set);
@@ -1735,6 +1777,189 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     return true;
 }
 
+void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
+    CRef<CSeq_annot> sap,
+    TChoiceToFeatMap & choiceToFeatMap,
+    const CFeature_table_reader::TFlags flags,
+    IErrorContainer *container,
+    const string& seq_id )
+{
+    // load cds_equal_range to hold the CDSs
+    typedef TChoiceToFeatMap::iterator TChoiceCI;
+    typedef pair<TChoiceCI, TChoiceCI> TChoiceEqualRange;
+    TChoiceEqualRange cds_equal_range = 
+        choiceToFeatMap.equal_range(CSeqFeatData::e_Cdregion);
+    if( cds_equal_range.first == cds_equal_range.second )
+    {
+        // nothing to do if there are no CDSs
+        return;
+    }
+
+    // load mappings from locus or locus-tag to gene
+    typedef multimap<string, SFeatAndLineNum> TStringToGeneAndLineMap;
+    TStringToGeneAndLineMap locusToGeneAndLineMap;
+    TStringToGeneAndLineMap locusTagToGeneAndLineMap;
+    const TChoiceEqualRange gene_equal_range =
+        choiceToFeatMap.equal_range(CSeqFeatData::e_Gene);
+    for( TChoiceCI gene_choice_ci = gene_equal_range.first; 
+        gene_choice_ci != gene_equal_range.second;
+        ++gene_choice_ci ) 
+    {
+        SFeatAndLineNum gene_feat_ref_and_line = gene_choice_ci->second;
+        const CGene_ref & gene_ref = gene_feat_ref_and_line.m_pFeat->GetData().GetGene();
+        if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(gene_ref, Locus) ) {
+            locusToGeneAndLineMap.insert(
+                TStringToGeneAndLineMap::value_type(
+                    gene_ref.GetLocus(), gene_feat_ref_and_line));
+        }
+        if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(gene_ref, Locus_tag) ) {
+            locusTagToGeneAndLineMap.insert(
+                TStringToGeneAndLineMap::value_type(
+                    gene_ref.GetLocus_tag(), gene_feat_ref_and_line));
+        }
+    }
+
+    // for each CDS, check for gene conflicts or create genes,
+    // depending on various flags
+    for( TChoiceCI cds_choice_ci = cds_equal_range.first;
+        cds_choice_ci != cds_equal_range.second ; ++cds_choice_ci) 
+    {
+        TFeatConstRef cds_feat_ref = cds_choice_ci->second.m_pFeat;
+        const TSeqPos cds_line_num = cds_choice_ci->second.m_uLineNum;
+
+        const CSeq_loc & cds_loc = cds_feat_ref->GetLocation();
+
+        const CGene_ref * pGeneXrefOnCDS = cds_feat_ref->GetGeneXref();
+        if( ! pGeneXrefOnCDS ) {
+            // no xref, so can't do anything for this CDS
+            // (this is NOT an error)
+            continue;
+        }
+
+        // get all the already-existing genes that
+        // this CDS xrefs.  It should be somewhat uncommon for there
+        // to be more than one matching gene.
+        set<SFeatAndLineNum> matchingGenes;
+        {{
+            // all the code in this scope is all just for setting up matchingGenes
+
+            typedef TStringToGeneAndLineMap::iterator TStrToGeneCI;
+            typedef pair<TStrToGeneCI, TStrToGeneCI> TStrToGeneEqualRange;
+            set<SFeatAndLineNum> locusGeneMatches;
+            // add the locus matches (if any) to genesAlreadyCreated
+            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus) ) {
+                TStrToGeneEqualRange locus_equal_range =
+                    locusToGeneAndLineMap.equal_range(pGeneXrefOnCDS->GetLocus());
+                for( TStrToGeneCI locus_gene_ci = locus_equal_range.first;
+                    locus_gene_ci != locus_equal_range.second;
+                    ++locus_gene_ci  ) 
+                {
+                    locusGeneMatches.insert(locus_gene_ci->second);
+                }
+            }
+            // remove any that don't also match the locus-tag (if any)
+            set<SFeatAndLineNum> locusTagGeneMatches;
+            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus_tag) ) {
+                TStrToGeneEqualRange locus_tag_equal_range =
+                    locusTagToGeneAndLineMap.equal_range(pGeneXrefOnCDS->GetLocus());
+                for( TStrToGeneCI locus_tag_gene_ci = locus_tag_equal_range.first;
+                     locus_tag_gene_ci != locus_tag_equal_range.second;
+                     ++locus_tag_gene_ci )
+                {
+                    locusTagGeneMatches.insert(locus_tag_gene_ci->second);
+                }
+            }
+            // analyze locusGeneMatches and locusTagGeneMatches to find matchingGenes.
+            if( locusGeneMatches.empty() ) {
+                // swap is faster than assignment
+                matchingGenes.swap(locusTagGeneMatches);
+            } else if( locusTagGeneMatches.empty() ) {
+                // swap is faster than assignment
+                matchingGenes.swap(locusGeneMatches);
+            } else {
+                // get only the genes that match both (that is, the intersection)
+                set_intersection(
+                    locusGeneMatches.begin(), locusGeneMatches.end(),
+                    locusTagGeneMatches.begin(), locusTagGeneMatches.end(),
+                    inserter(matchingGenes, matchingGenes.begin()));
+            }
+        }}
+
+        // if requested, check that the genes really do contain the CDS
+        // (also check if we're trying to create a gene that already exists)
+        
+            ITERATE(set<SFeatAndLineNum>, gene_feat_and_line_ci, matchingGenes) {
+                const CSeq_loc & gene_loc = gene_feat_and_line_ci->m_pFeat->GetLocation();
+                const TSeqPos gene_line_num = gene_feat_and_line_ci->m_uLineNum;
+
+                // check if we're attempting to create a gene we've already created
+                if( (flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 &&
+                    gene_line_num < 1 )
+                {
+                    x_ProcessMsg( container, 
+                        ILineError::eProblem_CreatedGeneFromMultipleFeats, eDiag_Error,
+                        seq_id, cds_line_num,
+                        kCdsFeatName );
+                }
+
+                if ((flags & CFeature_table_reader::fCDSsMustBeInTheirGenes) != 0) {
+
+                    // CDS's loc minus gene's loc should be an empty location
+                    // because the CDS should be entirely on the gene
+                    CRef<CSeq_loc> pCdsMinusGeneLoc = cds_loc.Subtract(
+                        gene_loc, CSeq_loc::fSortAndMerge_All, NULL, NULL);
+                    if( pCdsMinusGeneLoc &&
+                        ! pCdsMinusGeneLoc->IsNull() &&
+                        ! pCdsMinusGeneLoc->IsEmpty() )
+                    {
+                        ILineError::TVecOfLines gene_lines;
+                        if( gene_line_num > 0 ) {
+                            gene_lines.push_back(gene_line_num);
+                        }
+                        x_ProcessMsg( container, 
+                            ILineError::eProblem_FeatMustBeInXrefdGene, eDiag_Error,
+                            seq_id, cds_line_num,
+                            kCdsFeatName, 
+                            kEmptyStr, kEmptyStr,
+                            gene_lines );
+                    }
+                }
+            }
+
+        // if requested, create genes for the CDS if there isn't already one
+        // (it is NOT an error if the gene is already created)
+        if ( (flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 && 
+            matchingGenes.empty() )
+        {
+            // create the gene
+            CRef<CSeq_feat> pNewGene( new CSeq_feat );
+            pNewGene->SetData().SetGene().Assign( *pGeneXrefOnCDS );
+            if( FIELD_EQUALS(*cds_feat_ref, Partial, true) ) pNewGene->SetPartial(true);
+            pNewGene->SetLocation().Assign( cds_feat_ref->GetLocation() );
+
+            // add gene the annot
+            _ASSERT( sap->IsFtable() );
+            CSeq_annot::C_Data::TFtable & the_ftable = sap->SetData().SetFtable();
+            the_ftable.push_back(pNewGene);
+
+            // add it to our local information for later CDSs
+            SFeatAndLineNum  gene_feat_and_line(pNewGene, 0);
+            choiceToFeatMap.insert(
+                TChoiceToFeatMap::value_type(
+                    pNewGene->GetData().Which(), gene_feat_and_line ) );
+            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus) ) {
+                locusToGeneAndLineMap.insert(
+                    TStringToGeneAndLineMap::value_type(
+                        pGeneXrefOnCDS->GetLocus(), gene_feat_and_line));
+            }
+            if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus_tag) ) {
+                locusTagToGeneAndLineMap.insert(
+                    TStringToGeneAndLineMap::value_type(
+                        pGeneXrefOnCDS->GetLocus_tag(), gene_feat_and_line));
+            }
+        }
+    } // end of iteration through the CDS's
+}
 
 static const string s_QualsWithCaps[] = {
   "EC_number",
@@ -2320,9 +2545,13 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     unsigned int uLine,
     const std::string & strFeatureName,
     const std::string & strQualifierName,
-    const std::string & strQualifierValue )
+    const std::string & strQualifierValue,
+    const ILineError::TVecOfLines & vecOfOtherLines )
 {
     CObjReaderLineException err (eSeverity, uLine, "", eProblem, strSeqId, strFeatureName, strQualifierName, strQualifierValue);
+    ITERATE( ILineError::TVecOfLines, line_it, vecOfOtherLines ) {
+        err.AddOtherLine(*line_it);
+    }
     if (container == 0) {
         throw (err);
     }
@@ -2368,6 +2597,9 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     // Use this to efficiently find the best CDS for a prot feature
     // (only add CDS's for it to work right)
     CBestFeatFinder best_CDS_finder;
+
+    // map feature types to features
+    TChoiceToFeatMap choiceToFeatMap;
 
     CRef<CSeq_feat> sfp;
 
@@ -2424,8 +2656,18 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         CRef<CSeq_loc> location (new CSeq_loc);
                         sfp->SetLocation (*location);
 
+                        // figure out type of feat, and store in map for later use
+                        CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
+                        if( sfp->CanGetData() ) {
+                            eChoice = sfp->GetData().Which();
+                        }
+                        choiceToFeatMap.insert(
+                            TChoiceToFeatMap::value_type(
+                            eChoice, 
+                            SFeatAndLineNum(sfp, reader.GetLineNumber())));
+
                         // if new feature is a CDS, remember it for later lookups
-                        if( sfp->CanGetData() && sfp->GetData().IsCdregion() ) {
+                        if( eChoice == CSeqFeatData::e_Cdregion ) {
                             best_CDS_finder.AddFeat( *sfp );
                         }
 
@@ -2523,6 +2765,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 }
             }
         }
+    }
+
+    if ((flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 ||
+        (flags & CFeature_table_reader::fCDSsMustBeInTheirGenes) != 0 ) 
+    {
+        x_CreateGenesFromCDSs(sap, choiceToFeatMap, flags, container, seqid);
     }
 
     return sap;

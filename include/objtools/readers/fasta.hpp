@@ -239,13 +239,23 @@ protected:
     };
 
     typedef CTempString TStr;
+    struct SLineTextAndLoc {
+        SLineTextAndLoc(
+            const string & sLineText,
+            TSeqPos iLineNum ) 
+            : m_sLineText(sLineText),
+              m_iLineNum(iLineNum) { }
+
+        string  m_sLineText;
+        TSeqPos m_iLineNum;
+    };
 
     virtual CRef<CSeq_entry> x_ReadSegSet(void);
 
     virtual void   ParseDefLine  (const TStr& s);
     virtual bool   ParseIDs      (const TStr& s);
     virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end);
-    virtual void   ParseTitle    (const TStr& s);
+    virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo);
     virtual bool   IsValidLocalID(const TStr& s);
     virtual void   GenerateID    (void);
     virtual void   ParseDataLine (const TStr& s);
@@ -256,7 +266,9 @@ protected:
     virtual bool   ParseGapLine  (const TStr& s);
     virtual void   AssembleSeq   (void);
     virtual void   AssignMolType (void);
-    virtual bool   CreateWarningsForSeqDataInTitle(const TStr& s);
+    virtual bool   CreateWarningsForSeqDataInTitle(
+        const TStr& sLineText, 
+        TSeqPos iLineNum);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
@@ -296,7 +308,7 @@ protected:
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
 
-    void x_ApplyAllMods( CBioseq & bioseq );
+    void x_ApplyAllMods( CBioseq & bioseq, TSeqPos iLineNum );
 
     std::string x_NucOrProt(void) const;
     
@@ -333,6 +345,7 @@ private:
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
+    vector<SLineTextAndLoc> m_CurrentSeqTitles;
 };
 
 

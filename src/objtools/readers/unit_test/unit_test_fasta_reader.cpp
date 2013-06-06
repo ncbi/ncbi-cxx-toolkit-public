@@ -520,3 +520,63 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
         BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
     }
 }
+
+// Make sure [protein=whatever] doesn't work
+// on nuc sequences but does work on prots.
+// Also, "[gene=...]" becomes a feature on a nuc,
+// but is an xref on a prot
+BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
+{
+    {{
+        static const string kFastaNuc = 
+            ">Seq1 [gene=some_gene] [protein=foo]\n"
+            "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC\n";
+
+        CMemoryLineReader line_reader( kFastaNuc.c_str(),
+            kFastaNuc.length() );
+        CFastaReader fasta_reader( line_reader,
+            CFastaReader::fAddMods );
+        CRef<CSeq_entry> pEntry;
+        BOOST_CHECK_NO_THROW(pEntry = fasta_reader.ReadOneSeq());
+        BOOST_REQUIRE(pEntry);
+
+        bool bFoundGene = false;
+
+        CTypeConstIterator<CSeqFeatData> seqfeatdat_ci(Begin(*pEntry));
+        for( ; seqfeatdat_ci; ++seqfeatdat_ci ) {
+            BOOST_REQUIRE( ! seqfeatdat_ci->IsProt() );
+            if( FIELD_IS_AND_IS_SET(*seqfeatdat_ci, Gene, Locus) && 
+                seqfeatdat_ci->GetGene().GetLocus() == "some_gene" )
+            {
+                bFoundGene = true;
+            }
+        }
+
+        BOOST_CHECK(bFoundGene);
+    }}
+
+    {{
+        static const string kFastaProt =
+            ">Seq1 [gene=some_gene] [protein=foo]\n"
+            "MALWMHLLTVLALLALWGPNTNQAFVSRHLCGSNLVETLYSVCQDDGFFYIPKDRRELED\n";
+
+        CMemoryLineReader line_reader( kFastaProt.c_str(),
+            kFastaProt.length() );
+        CFastaReader fasta_reader( line_reader,
+            CFastaReader::fAddMods );
+        CRef<CSeq_entry> pEntry;
+        BOOST_CHECK_NO_THROW(pEntry = fasta_reader.ReadOneSeq());
+        BOOST_REQUIRE(pEntry);
+
+        bool bHasProt = false;
+        CTypeConstIterator<CSeq_feat> seqfeat_ci(Begin(*pEntry));
+        for( ; seqfeat_ci; ++seqfeat_ci ) {
+            BOOST_CHECK( ! FIELD_IS_SET_AND_IS(*seqfeat_ci, Data, Gene) );
+            if( FIELD_IS_SET_AND_IS(*seqfeat_ci, Data, Prot) ) {
+                bHasProt = true;
+                NCBITEST_CHECK( RAW_FIELD_IS_EMPTY_OR_UNSET(*seqfeat_ci, Xref) );
+            }
+        }
+        BOOST_CHECK(bHasProt);
+    }}
+}
