@@ -162,9 +162,15 @@ done
 # Compiler dir (other common stuff)
 makedir "$cldir"/$compiler/static -p
 makedir "$cldir"/$compiler/dll -p
-cp -p "$builddir"/compilers/$compiler/*        "$cldir"/$compiler
-cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
-cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
+cp -p  "$builddir"/compilers/$compiler/*          "$cldir"/$compiler
+cp -p  "$builddir"/compilers/$compiler/static/*   "$cldir"/$compiler/static
+cp -p  "$builddir"/compilers/$compiler/dll/*      "$cldir"/$compiler/dll
+for b in 'static' 'dll' ; do
+  cp -pr "$builddir"/compilers/$compiler/$b/inc "$cldir"/$compiler/$b
+  for c in 'DebugMT' 'ReleaseMT' 'DebugDLL' 'ReleaseDLL'; do
+    cp -pr "$builddir"/compilers/$compiler/$b/$c "$cldir"/$compiler/$b
+  done 
+done 
 
 # Makefile.*.mk files
 find "$builddir/src" -type f -name 'Makefile.*.mk' -exec cp -pr {} "$srcdir"/build-system/ \;
