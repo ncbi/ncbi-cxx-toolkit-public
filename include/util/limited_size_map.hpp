@@ -171,7 +171,7 @@ public:
         {
         }
 
-    void get_size_limit(void) const {
+    size_t get_size_limit(void) const {
         return m_SizeLimit;
     }
     void set_size_limit(size_t size_limit) {
