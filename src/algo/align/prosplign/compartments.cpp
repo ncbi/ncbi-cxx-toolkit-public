@@ -93,7 +93,7 @@ void RestoreOriginalHits(THitRefs& hitrefs,
 
         //find hit with same boundaries and max score
         double score = 0;
-        bool undef_score;
+        bool undef_score = true;
         ITERATE(THitRefs, oh, orig_hitrefs) {
             if ((*oh)->GetSubjStart() == subj_start &&
                 subj_stop == (*oh)->GetSubjStop() &&
