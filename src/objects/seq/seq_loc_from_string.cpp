@@ -49,7 +49,7 @@ BEGIN_SCOPE(objects)
 // privately used by GetSeqLocFromString
 namespace {
 
-    class CLexToken 
+    class CLexToken : public CObject
     {
     public:
         CLexToken(unsigned int token_type) { m_TokenType = token_type; m_HasError = false; }
@@ -80,7 +80,7 @@ namespace {
         bool m_HasError;
     };
 
-    typedef vector<CLexToken *>  TLexTokenArray;
+    typedef vector< CRef<CLexToken> >  TLexTokenArray;
 
     bool s_ParseLex (string text, TLexTokenArray &token_list);
 
@@ -395,7 +395,7 @@ namespace {
                     if (end_pos == string::npos) {
                         retval = false;
                     } else {
-                        token_list.push_back (new CLexTokenString (text.substr (offset, end_pos - offset + 1)));
+                        token_list.push_back( CRef<CLexToken>(new CLexTokenString (text.substr (offset, end_pos - offset + 1))));
                         offset = end_pos + 1;
                     }
                     break;
@@ -408,7 +408,7 @@ namespace {
 			        while (end_pos < text.length() && isdigit (text.c_str()[end_pos])) {
 			            end_pos ++;
 			        }
-				    token_list.push_back (new CLexTokenInt (NStr::StringToInt(text.substr(offset, end_pos - offset))));
+				    token_list.push_back (CRef<CLexToken>(new CLexTokenInt (NStr::StringToInt(text.substr(offset, end_pos - offset)))));
 				    offset = end_pos;
 				    break;
     // parentheses
@@ -417,7 +417,7 @@ namespace {
                     if (paren_len == 0) {
                         retval = false;
                     } else {
-                        token_list.push_back (new CLexTokenParenPair (CLexToken::e_ParenPair, text.substr(offset + 1, paren_len - 2)));
+                        token_list.push_back (CRef<CLexToken>(new CLexTokenParenPair (CLexToken::e_ParenPair, text.substr(offset + 1, paren_len - 2))));
                         if (token_list[token_list.size() - 1]->HasError()) {
                             retval = false;
                         }
@@ -434,7 +434,7 @@ namespace {
 				        if (paren_len == 0) {
 				            retval = false;
 				        } else {
-				            token_list.push_back (new CLexTokenParenPair (CLexToken::e_Join, text.substr(offset + 1, paren_len - 2)));
+				            token_list.push_back (CRef<CLexToken>(new CLexTokenParenPair (CLexToken::e_Join, text.substr(offset + 1, paren_len - 2))));
 				        }				    
                         offset += paren_len;
 				    } else {
@@ -452,7 +452,7 @@ namespace {
 				        if (paren_len == 0) {
 				            retval = false;
 				        } else {
-				            token_list.push_back (new CLexTokenParenPair (CLexToken::e_Order, text.substr(offset + 1, paren_len - 2)));
+				            token_list.push_back (CRef<CLexToken>(new CLexTokenParenPair (CLexToken::e_Order, text.substr(offset + 1, paren_len - 2))));
 				        }				    
 				    } else {
 				        retval = false;
@@ -468,7 +468,7 @@ namespace {
 				        if (paren_len == 0) {
 				            retval = false;
 				        } else {
-				            token_list.push_back (new CLexTokenParenPair (CLexToken::e_Complement, text.substr(offset + 1, paren_len - 2)));
+				            token_list.push_back (CRef<CLexToken>(new CLexTokenParenPair (CLexToken::e_Complement, text.substr(offset + 1, paren_len - 2))));
 				        }	
                         offset += paren_len;
 				    } else {
@@ -476,33 +476,33 @@ namespace {
 				    }
 				    break;
                 case '-':
-                    token_list.push_back (new CLexToken (CLexToken::e_DotDot));
+                    token_list.push_back (CRef<CLexToken>(new CLexToken (CLexToken::e_DotDot)));
                     offset++;
 				    break;
 			    case '.':
 				    if (NStr::Equal(text.substr(offset, 2), "..")) {
-				        token_list.push_back (new CLexToken (CLexToken::e_DotDot));
+				        token_list.push_back (CRef<CLexToken>(new CLexToken (CLexToken::e_DotDot)));
 				        offset += 2;
 				    } else {
 				        retval = false;
 				    }
 				    break;
                 case '>':
-                    token_list.push_back (new CLexToken (CLexToken::e_RightPartial));
+                    token_list.push_back (CRef<CLexToken>(new CLexToken (CLexToken::e_RightPartial)));
                     offset ++;
 				    break;
                 case '<':
-                    token_list.push_back (new CLexToken (CLexToken::e_LeftPartial));
+                    token_list.push_back (CRef<CLexToken>(new CLexToken (CLexToken::e_LeftPartial)));
                     offset ++;
 				    break;
                 case ';':
                 case ',':
-                    token_list.push_back (new CLexToken (CLexToken::e_Comma));
+                    token_list.push_back (CRef<CLexToken>(new CLexToken (CLexToken::e_Comma)));
                     offset ++;
 				    break;	
                 case 't' :
 				    if (NStr::Equal(text.substr(offset, 2), "to")) {
-				        token_list.push_back (new CLexToken (CLexToken::e_DotDot));
+				        token_list.push_back (CRef<CLexToken>(new CLexToken (CLexToken::e_DotDot)));
 				        offset += 2;
 				    } else {
 				        retval = false;
@@ -530,7 +530,7 @@ namespace {
                             retval = false;
                         }
                         ++end_pos;
-                        token_list.push_back (new CLexTokenAccession (text.substr(offset, end_pos - offset - 1))); // "- 1" to ignore colon
+                        token_list.push_back (CRef<CLexToken>(new CLexTokenAccession (text.substr(offset, end_pos - offset - 1)))); // "- 1" to ignore colon
                         offset = end_pos;
                     } else {
                         retval = false;
