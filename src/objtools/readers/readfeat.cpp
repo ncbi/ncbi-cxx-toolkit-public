@@ -2666,7 +2666,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
             if( s_IsFeatureLineAndFix(line) ) {
                 // if next feature table, return current sap
                 reader.UngetLine(); // we'll get this feature line the next time around
-                return sap;
+                break;
             } if (line [0] == '[') {
 
                 // try to parse it as an offset
