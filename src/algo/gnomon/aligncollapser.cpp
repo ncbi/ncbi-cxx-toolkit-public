@@ -295,7 +295,7 @@ void CAlignCollapser::FilterESTandSR() {
 
     //initial intron filtering
     int minconsensussupport = args["min-consensus-support"].AsInteger();
-    int minnonconsensussupport = args["min-nonconsensus-support"].AsInteger();
+    int minnonconsensussupport = args["min-non-consensussupport"].AsInteger();
     double minident = args["high-identity"].AsDouble();
     int minest = args["minest"].AsInteger();
     for(TAlignIntrons::iterator it = m_align_introns.begin(); it != m_align_introns.end(); ) {
