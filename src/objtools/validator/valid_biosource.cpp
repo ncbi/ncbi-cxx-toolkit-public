@@ -738,13 +738,18 @@ void CValidError_imp::ValidateLatLonCountry
     if (!flags && !m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
         && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
         && (! NStr::IsBlank (cguess)) && NStr::IsBlank (wguess)) {
+        /* do not flip from water */
         CLatLonCountryId *adjust_id = x_CalculateLatLonId(lon_value, lat_value, country, province);
         adjusted_flags = x_ClassifyLatLonId(adjust_id, country, province);
         if (adjusted_flags) {
-            delete id;
-            id = adjust_id;
-            flags = adjusted_flags;
-            adjustment = CLatLonCountryMap::fFlip;
+            string awguess = adjust_id->GetGuessWater();
+            string acguess = adjust_id->GetGuessCountry();
+            if (NStr::IsBlank (awguess) && (! NStr::IsBlank (acguess))) {
+                delete id;
+                id = adjust_id;
+                flags = adjusted_flags;
+                adjustment = CLatLonCountryMap::fFlip;
+            }
         } else {
             if (adjust_id) {
                 delete adjust_id;
@@ -752,10 +757,14 @@ void CValidError_imp::ValidateLatLonCountry
             adjust_id = x_CalculateLatLonId(-lat_value, lon_value, country, province);
             adjusted_flags = x_ClassifyLatLonId(adjust_id, country, province);
             if (adjusted_flags) {
-                delete id;
-                id = adjust_id;
-                flags = adjusted_flags;
-                adjustment = CLatLonCountryMap::fNegateLat;
+                string awguess = adjust_id->GetGuessWater();
+                string acguess = adjust_id->GetGuessCountry();
+                if (NStr::IsBlank (awguess) && (! NStr::IsBlank (acguess))) {
+                    delete id;
+                    id = adjust_id;
+                    flags = adjusted_flags;
+                    adjustment = CLatLonCountryMap::fNegateLat;
+                }
             } else {
                 if (adjust_id) {
                     delete adjust_id;
@@ -763,10 +772,14 @@ void CValidError_imp::ValidateLatLonCountry
                 adjust_id = x_CalculateLatLonId(lat_value, -lon_value, country, province);
                 adjusted_flags = x_ClassifyLatLonId(adjust_id, country, province);
                 if (adjusted_flags) {
-                    delete id;
-                    id = adjust_id;
-                    flags = adjusted_flags;
-                    adjustment = CLatLonCountryMap::fNegateLon;
+                    string awguess = adjust_id->GetGuessWater();
+                    string acguess = adjust_id->GetGuessCountry();
+                    if (NStr::IsBlank (awguess) && (! NStr::IsBlank (acguess))) {
+                        delete id;
+                        id = adjust_id;
+                        flags = adjusted_flags;
+                        adjustment = CLatLonCountryMap::fNegateLon;
+                    }
                 } else {
                     if (adjust_id) {
                         delete adjust_id;
