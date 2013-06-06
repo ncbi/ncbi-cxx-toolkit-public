@@ -2659,6 +2659,7 @@ ISC<FRA>	c	International Salmonella Centre (W.H.O.)
 ISC<USA-IA>	s	Iowa State University, Botany Department
 ISCM	s	Institut Scientifique Cheripen
 ISEAK	s	Instytut Systematyki i Ewolucji Zwierz
+ISEM	s	Institut des Sciences de l'Evolution Montpellier 	
 ISER	s	Institutul Speologie Emil G. Racovita
 ISH	s	Institut fuer Seefischerei
 ISI	s	Geological Museum, Indian Statistical Institute
@@ -5587,6 +5588,7 @@ SUM<ZAF>	s	Stellenbosch University
 SUN	s	Sunderland Museum
 SUND	s	Sunderland Natural History and Antiquarian Society
 SUNIV	s	University of Stockholm
+SUNY	s	State University of New York
 SUNYO	s	State University of New York at Oneonta
 SUVA	s	University of the South Pacific
 SUVM	s	Shippensburg University, Vertebrate Museum
