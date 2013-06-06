@@ -27,6 +27,7 @@ COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir
 
+DEFAULT_CONFIGURE_FLAGS = --without-debug --with-strip --with-mt --with-build-root=ReleaseMT
 
 # Each line describes a single configuration
 # The format is as follows:
