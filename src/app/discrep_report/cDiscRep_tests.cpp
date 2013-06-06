@@ -343,7 +343,9 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
    const CBioSource* biosrc_p = 0;
    string prot_nm;
    unsigned rule_idx;
+unsigned i=0;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+cerr << "i " << ++i << endl;
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
 
@@ -360,11 +362,11 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
 cerr << " prot_nm " << prot_nm << endl;
        rule_idx = 0;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
-cerr << "rule_idx " << rule_idx << endl;
+cerr << " i rule_idx " << i << "  " << rule_idx << endl;
 /*
 cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
 */
-if (rule_idx == 436) cerr << "**rit " << Blob2Str(**rit) << endl;
+if (rule_idx == 682) cerr << "**rit " << Blob2Str(**rit) << endl;
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
 if (prot_set_nm.find(prot_nm) == prot_set_nm.end())
 prot_set_nm.insert(prot_nm);

@@ -994,7 +994,7 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
   arr = NStr::Tokenize(str, " ", arr);
   unsigned i, len, len_w;
   bool find_w;
-  for (i=0; i< arr.size(); i++) {
+  for (i=0; i< arr.size() - 1; i++) {
     len = arr[i].size();
     find_w = false;
     ITERATE (vector <string>, it, thisInfo.weasels) {
@@ -1007,12 +1007,9 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
     }
     if (!find_w) break;
   }
-  if (i == arr.size()) ret_str = kEmptyStr;
-  else {
-    for (i; i< arr.size()-1; i++) ret_str += arr[i] + ' ';
-    ret_str += arr[arr.size()-1];
+  for (i; i< arr.size()-1; i++) ret_str += arr[i] + ' ';
+  ret_str += arr[arr.size()-1];
 // cerr << "ret_str " << ret_str << endl;
-  }
   arr.clear();
   return (ret_str);
 
@@ -1418,10 +1415,11 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
                 while (!rval && pFound != string::npos) 
                 {
 	           if (str_cons->GetCase_sensitive()) 
-                           pFound = search.substr(pFound+1).find(pattern);
-	           else pFound = NStr::FindNoCase(search.substr(pFound+1), pattern);
+                           pFound = search.find(pattern, pFound+1);
+	           else pFound = NStr::FindNoCase(search, pattern, pFound+1);
                    if (pFound != string::npos)
                        rval = IsWholeWordMatch (search, pFound, pattern.size());
+                   else rval = false;
                 }
             }
             else rval = true;
@@ -1655,8 +1653,8 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
   while (!sch_str.empty()) {
       p = sch_str.find_first_of(CDiscRepUtil::digit_str);
       if (p == string::npos) break;
-      if (PrecededByOkPrefix(sch_str.substr(0, p)) 
-                            || InWordBeforeCytochromeOrCoenzyme (sch_str.substr(0, p))) {
+      if (p && (PrecededByOkPrefix(sch_str.substr(0, p)) 
+             || InWordBeforeCytochromeOrCoenzyme (sch_str.substr(0, p)))) {
         p2 = sch_str.substr(p).find_first_not_of(CDiscRepUtil::digit_str);
         if (p2 != string::npos) {
             sch_str = sch_str.substr(p+p2);
@@ -1671,7 +1669,10 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
           if (FollowedByFamily(sch_str)) num_digits = 0;
           else return true;
         }
-        if (sch_str.size() > 1) sch_str = sch_str.substr(1);
+        if (p < sch_str.size() - 1) {
+             sch_str = sch_str.substr(p+1);
+             if (!isdigit(sch_str[0])) num_digits = 0;
+        }
         else break;
       }
   }
@@ -1823,14 +1824,15 @@ bool CSuspectRuleCheck :: MatchesSuspectProductRule(const string& str, const CSu
 
 bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CBioSource& biosrc, const CString_constraint& str_cons)
 {
-   GetStringsFromObject(biosrc, arr);
-   ITERATE (vector <string>, it, arr) {
+   vector <string> strs; 
+   GetStringsFromObject(biosrc, strs);
+   ITERATE (vector <string>, it, strs) {
       if (DoesSingleStringMatchConstraint(*it, &str_cons)) {
           arr.clear();
           return true;
       }
    }
-   arr.clear();
+   strs.clear();
    return false;
 };
 
@@ -1840,41 +1842,46 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CCGPSetData& cgp
 
   /* CDS-Gene-Prot set */
   bool all_match = true, any_match = false;
+  vector <string> strs;
   if (cgp.gene) {
        m_bioseq_hl = GetBioseqFromSeqLoc(cgp.gene->GetLocation(), *thisInfo.scope);
-       GetStringsFromObject(*cgp.gene, arr);
-       if (DoesObjectMatchStringConstraint ( *cgp.gene, arr, str_cons)) any_match = true;
+       GetStringsFromObject(*cgp.gene, strs);
+       if (DoesObjectMatchStringConstraint ( *cgp.gene, strs, str_cons)) any_match = true;
        else any_match = false;
-       arr.clear();
+       strs.clear();
   }
   if (cgp.cds && (!any_match || all_match)) {
       m_bioseq_hl = GetBioseqFromSeqLoc(cgp.cds->GetLocation(), *thisInfo.scope);
-      GetStringsFromObject(*cgp.cds, arr);
-      if (DoesObjectMatchStringConstraint( *cgp.cds, arr, str_cons)) any_match = true;
+      strs.clear();
+      GetStringsFromObject(*cgp.cds, strs);
+      if (DoesObjectMatchStringConstraint( *cgp.cds, strs, str_cons)) any_match = true;
       else all_match = false;
-      arr.clear();
+      strs.clear();
   }
   if (cgp.mrna && (!any_match || all_match)) {
       m_bioseq_hl = GetBioseqFromSeqLoc(cgp.mrna->GetLocation(), *thisInfo.scope);
-      GetStringsFromObject(*cgp.mrna, arr);
-      if (DoesObjectMatchStringConstraint( *cgp.mrna, arr, str_cons)) any_match = true;
+      strs.clear();
+      GetStringsFromObject(*cgp.mrna, strs);
+      if (DoesObjectMatchStringConstraint( *cgp.mrna, strs, str_cons)) any_match = true;
       else all_match = false;
-      arr.clear();
+      strs.clear();
   }
   if (cgp.prot  && (!any_match || all_match)) {
       m_bioseq_hl = GetBioseqFromSeqLoc(cgp.prot->GetLocation(), *thisInfo.scope);
-      GetStringsFromObject(*cgp.prot, arr);
-      if (DoesObjectMatchStringConstraint( *cgp.prot, arr, str_cons)) any_match = true;
+      strs.clear();
+      GetStringsFromObject(*cgp.prot, strs);
+      if (DoesObjectMatchStringConstraint( *cgp.prot, strs, str_cons)) any_match = true;
       else all_match = false;
-      arr.clear();
+      strs.clear();
   }
   if (!any_match || all_match) {
      ITERATE (vector <const CSeq_feat*>, it, cgp.mat_peptide_list) {
         m_bioseq_hl = GetBioseqFromSeqLoc((*it)->GetLocation(), *thisInfo.scope);
-        GetStringsFromObject(**it, arr);
-        if (DoesObjectMatchStringConstraint( **it, arr, str_cons)) any_match = true;
+        strs.clear();
+        GetStringsFromObject(**it, strs);
+        if (DoesObjectMatchStringConstraint( **it, strs, str_cons)) any_match = true;
         else all_match = false;
-        arr.clear();
+        strs.clear();
         if (any_match && !all_match) break;
      }
   }
@@ -1887,7 +1894,6 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CSeq_feat& feat,
 {
    bool rval = false;
    ITERATE (vector <string>, it, strs) { 
-cerr << " it " << *it << endl;
        rval = DoesSingleStringMatchConstraint(*it, &str_cons); 
        if (rval) break;
    }
@@ -1897,11 +1903,12 @@ cerr << " it " << *it << endl;
        case CSeqFeatData::e_Cdregion: 
          {
             if (feat.CanGetProduct()) {
-                const CSeq_feat* 
-                     prot_feat = GetPROTForProduct(
-                                GetBioseqFromSeqLoc(feat.GetProduct(), *thisInfo.scope));
-                if (prot_feat) {
-                   GetStringsFromObject(*prot_feat, arr);
+               CBioseq_Handle 
+                     bioseq_hl = GetBioseqFromSeqLoc(feat.GetProduct(), *thisInfo.scope);
+               CFeat_CI ci(bioseq_hl, SAnnotSelector(CSeqFeatData::eSubtype_prot)); 
+                if (ci) {
+                   vector <string> arr;
+                   GetStringsFromObject(ci->GetOriginalFeature(), arr);
                    ITERATE (vector <string>, it, arr) {
                        rval = DoesSingleStringMatchConstraint(*it, &str_cons);
                        if (rval) break;
