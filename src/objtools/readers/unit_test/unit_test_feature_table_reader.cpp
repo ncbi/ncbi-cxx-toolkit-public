@@ -113,18 +113,47 @@ static size_t s_CountOccurrences(const CTempString & str, const CTempString & pa
     return iNumErrsExpected;
 }
 
+typedef list<ILineError::EProblem> TErrList;
+
+static void 
+s_CheckErrorsVersusExpected( 
+    IErrorContainer * pErrorContainer, 
+    TErrList expected_errors // yes, *copy* the container
+    )
+{
+    for (size_t i = 0; i < pErrorContainer->Count(); i++) {
+        const ILineError& line_error = pErrorContainer->GetError(i);
+        string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
+        if( s_IgnoreError(line_error) ) {
+            // certain error types may be ignored
+        } else if( expected_errors.empty() ) {
+            BOOST_ERROR("More errors occurred than expected at " << error_text);
+        } else {
+            BOOST_CHECK_EQUAL(
+                line_error.ProblemStr() + "(" + error_text + ")", 
+                ILineError::ProblemStr(expected_errors.front()) +
+                    "(" + error_text + ")" );
+            expected_errors.pop_front();
+        }
+    }
+
+    BOOST_CHECK_MESSAGE( expected_errors.empty(),
+        "There were " << expected_errors.size() 
+        << " expected errors which did not occur." );
+}
+
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
     // no errors expected by default
-     list<ILineError::EProblem> expected_errors = list<ILineError::EProblem>(),
+     const TErrList & expected_errors = TErrList(),
      CFeature_table_reader::TFlags additional_flags = 0,
      IErrorContainer * pErrorContainer = NULL );
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
-     list<ILineError::EProblem> expected_errors,
-     CFeature_table_reader::TFlags additional_flags,
-     IErrorContainer * pErrorContainer )
+    const TErrList & expected_errors,
+    CFeature_table_reader::TFlags additional_flags,
+    IErrorContainer * pErrorContainer )
 {
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
@@ -145,25 +174,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
                     &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider “source” and “REFERENCE” to be disallowed
                     );
 
-    for (size_t i = 0; i < pErrorContainer->Count(); i++) {
-        const ILineError& line_error = pErrorContainer->GetError(i);
-        string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
-        if( s_IgnoreError(line_error) ) {
-            // certain error types may be ignored
-        } else if( expected_errors.empty() ) {
-            BOOST_ERROR("More errors occurred than expected at " << error_text);
-        } else {
-            BOOST_CHECK_EQUAL(
-                line_error.ProblemStr() + "(" + error_text + ")", 
-                ILineError::ProblemStr(expected_errors.front()) +
-                    "(" + error_text + ")" );
-            expected_errors.pop_front();
-        }
-    }
-
-    BOOST_CHECK_MESSAGE( expected_errors.empty(),
-        "There were " << expected_errors.size() 
-        << " expected errors which did not occur." );
+    s_CheckErrorsVersusExpected( pErrorContainer, expected_errors );
         
     BOOST_REQUIRE(annot != NULL);
     BOOST_REQUIRE(annot->IsFtable());
@@ -171,6 +182,57 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     return annot;
 }
 
+typedef list< CRef<CSeq_annot> > TAnnotRefList;
+typedef auto_ptr<TAnnotRefList> TAnnotRefListPtr;
+
+static TAnnotRefListPtr
+s_ReadMultipleTablesFromString(
+    const char * str,
+    // no errors expected by default
+    const TErrList & expected_errors = TErrList(),
+    CFeature_table_reader::TFlags additional_flags = 0,
+    IErrorContainer * pErrorContainer = NULL );
+
+static TAnnotRefListPtr
+s_ReadMultipleTablesFromString(
+    const char * str,
+    const TErrList & expected_errors,
+    CFeature_table_reader::TFlags additional_flags,
+    IErrorContainer * pErrorContainer )
+{
+    TAnnotRefListPtr pAnnotRefList( new TAnnotRefList );
+
+    CNcbiIstrstream istr(str);
+    CRef<ILineReader> reader = ILineReader::New(istr);
+
+    CSimpleTableFilter tbl_filter;
+    tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
+
+    auto_ptr<IErrorContainer> p_temp_err_container;
+    if( ! pErrorContainer ) {
+        p_temp_err_container.reset( new CErrorContainerLenient );
+        pErrorContainer = p_temp_err_container.get();
+    }
+
+    CRef<CSeq_annot> annot;
+    while ((annot = CFeature_table_reader::ReadSequinFeatureTable
+        (*reader,
+        additional_flags | CFeature_table_reader::fReportBadKey, 
+        pErrorContainer, 
+        &tbl_filter 
+        )) != NULL) 
+    {
+            BOOST_REQUIRE(annot->IsFtable());
+            if( annot->GetData().GetFtable().empty() ) {
+                break;
+            }
+            pAnnotRefList->push_back( CRef<CSeq_annot>(annot) );
+    }
+
+    s_CheckErrorsVersusExpected( pErrorContainer, expected_errors );
+
+    return pAnnotRefList;
+}
 
 static void CheckExpectedQuals (CConstRef<CSeq_feat> feat, 
     const set<string> & expected_quals)
@@ -252,34 +314,19 @@ static const char * sc_Table2 = "\
 ///
 BOOST_AUTO_TEST_CASE(Test_MultipleFeatureTables)
 {
-    CNcbiIstrstream istr(sc_Table2);
-    CRef<ILineReader> reader = ILineReader::New(istr);
+    TAnnotRefListPtr pAnnotRefList = s_ReadMultipleTablesFromString(sc_Table2);
+    BOOST_REQUIRE_EQUAL( pAnnotRefList->size(), 2 );
 
-    CSimpleTableFilter tbl_filter;
-    tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
-        
-    CErrorContainerLenient err_container;
+    ITERATE(TAnnotRefList, annot_ref_it, *pAnnotRefList ) {
+        const CSeq_annot::TData::TFtable& ftable = 
+            (*annot_ref_it)->GetData().GetFtable();
+        BOOST_REQUIRE_EQUAL( ftable.size(), 2 );
 
-    CRef<CSeq_annot> annot;
-    while ((annot = CFeature_table_reader::ReadSequinFeatureTable
-                   (*reader, // of type ILineReader, which is like istream but line-oriented
-                    CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=…)
-                    &err_container, // holds errors found during reading
-                    &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider “source” and “REFERENCE” to be disallowed
-                    )) != NULL) {
-        BOOST_REQUIRE(err_container.Count() == 0);
-        BOOST_REQUIRE(annot->IsFtable());
-        const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
-        if (ftable.size() == 0) {
-            break;
-        }
-        if (ftable.size() != 0) {
-            BOOST_REQUIRE(ftable.size() == 2);
-            BOOST_REQUIRE(ftable.front()->IsSetData());
-            BOOST_REQUIRE(ftable.front()->GetData().IsGene());
-            BOOST_REQUIRE(ftable.back()->IsSetData());
-            BOOST_REQUIRE(ftable.back()->GetData().IsCdregion());
-        }
+        BOOST_REQUIRE_EQUAL(ftable.size(), 2);
+        BOOST_REQUIRE(ftable.front()->IsSetData());
+        BOOST_REQUIRE(ftable.front()->GetData().IsGene());
+        BOOST_REQUIRE(ftable.back()->IsSetData());
+        BOOST_REQUIRE(ftable.back()->GetData().IsCdregion());
     }
 }
 
@@ -1307,7 +1354,7 @@ static const char * sc_Table9 = "\
 
 BOOST_AUTO_TEST_CASE(Test_ForbidMixedStrandAnticodonQualifier)
 {
-    list<ILineError::EProblem> expected_errors;
+    TErrList expected_errors;
     expected_errors.push_back(ILineError::eProblem_QualifierBadValue);
 
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (
@@ -1371,7 +1418,7 @@ BOOST_AUTO_TEST_CASE(TestCDSInGenesCheck)
     s_ListLinesWithPattern(sc_Table10, "error", linesWithError);
     BOOST_REQUIRE( ! linesWithError.empty() );
 
-    list<ILineError::EProblem> expected_errors;
+    TErrList expected_errors;
     fill_n( back_inserter(expected_errors), 
         linesWithError.size(), ILineError::eProblem_FeatMustBeInXrefdGene);
 
@@ -1470,7 +1517,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
         cout << "Testing with bCheckIfCDSInItsGene = " 
              << NStr::BoolToString(bCheckIfCDSInItsGene) << endl;
 
-        list<ILineError::EProblem> expected_errors;
+        TErrList expected_errors;
         vector<size_t> linesWithError;
         CFeature_table_reader::TFlags readfeat_flags = 
             CFeature_table_reader::fCreateGenesFromCDSs;
@@ -1553,5 +1600,85 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
         BOOST_CHECK_EQUAL_COLLECTIONS(
             vecOfCDSXrefsInResult.begin(), vecOfCDSXrefsInResult.end(),
             geneXrefExpectedOnEachCDS.begin(),geneXrefExpectedOnEachCDS.end());
+    }
+}
+
+static const char * sc_Table12 = "\
+>Feature lcl|Seq1\n\
+1\t20\tgene\n\
+\t\t\tgene g0\n\
+[offset=7]\n\
+1\t20\tgene\n\
+31\t41\n\
+\t\t\tgene g1\n\
+>Feature lcl|Seq2\n\
+1\t20\tgene\n\
+\t\t\tgene g2\n\
+30\t40\tgene\n\
+\t\t\tgene g3\n\
+[offset=0]\n\
+40\t50\tgene\n\
+\t\t\tgene g4\n\
+[offset=-30]\n\
+40\t50\tgene\n\
+\t\t\tgene g5\n\
+[offset=abc]\n\
+55\t45\tgene\n\
+\t\t\tgene g6\n\
+[nonsense=foo]\n\
+55\t65\tgene\n\
+\t\t\tgene g7\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestOffsetCommand)
+{
+    TErrList expected_errors;
+    fill_n( back_inserter(expected_errors),
+        3, ILineError::eProblem_UnrecognizedSquareBracketCommand);
+
+    TAnnotRefListPtr pAnnotRefList =
+        s_ReadMultipleTablesFromString(
+        sc_Table12,
+        expected_errors );
+    BOOST_REQUIRE_EQUAL(pAnnotRefList->size(), 2);
+
+    // merge ftables to simplify logic below
+    CSeq_annot::TData::TFtable merged_ftables;
+    ITERATE( TAnnotRefList, annot_ref_it, *pAnnotRefList ) {
+        const CSeq_annot::TData::TFtable& an_ftable =
+            (*annot_ref_it)->GetData().GetFtable();
+        copy( an_ftable.begin(), an_ftable.end(),
+            back_inserter(merged_ftables) );
+    }
+    
+    // check that gene offsets are correct
+    typedef SStaticPair<TSeqPos, TSeqPos> TGeneExtremes;
+    TGeneExtremes gene_extremes_arr[] = { // 1-based, biological extremes
+        {1, 20},
+        {8, 48}, // Note: multi-interval
+        {1, 20},
+        {30, 40},
+        {40, 50},
+        {40, 50},
+        {55, 45}, // Note: complement
+        {55, 65}
+    };
+    BOOST_REQUIRE_EQUAL( 
+        ArraySize(gene_extremes_arr), merged_ftables.size() );
+
+    CSeq_annot::TData::TFtable::const_iterator merged_ftables_it = 
+        merged_ftables.begin();
+    ITERATE_0_IDX(ii, merged_ftables.size() ) {
+        BOOST_CHECK( FIELD_IS_SET_AND_IS(**merged_ftables_it, Data, Gene) );
+
+        const CSeq_loc & gene_loc = (*merged_ftables_it)->GetLocation();
+        BOOST_CHECK_EQUAL( 
+            gene_loc.GetStart(eExtreme_Biological), 
+            (gene_extremes_arr[ii].first - 1) );
+        BOOST_CHECK_EQUAL( 
+            gene_loc.GetStop(eExtreme_Biological), 
+            (gene_extremes_arr[ii].second - 1) );
+
+        ++merged_ftables_it;
     }
 }

@@ -256,6 +256,9 @@ private:
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
 
+    // returns true if parsed (otherwise, out_offset is left unchanged)
+    bool x_TryToParseOffset(const CTempString & sLine, Int4 & out_offset );
+
     bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
                                   bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
                                   string& featP, string& qualP, string& valP, Int4 offset,
@@ -738,6 +741,51 @@ CFeature_table_reader_imp::~CFeature_table_reader_imp(void)
 {
 }
 
+bool CFeature_table_reader_imp::x_TryToParseOffset(
+    const CTempString & sLine, Int4 & out_offset )
+{
+    // offset strings are of the form [offset=SOME_NUMBER], but here we try 
+    // to be as forgiving of whitespace as possible.
+
+    CTempString sKey;
+    CTempString sValue;
+    if( ! NStr::SplitInTwo(sLine, "=", sKey, sValue) ) {
+        // "=" not found
+        return false;
+    }
+    
+    // check key
+    NStr::TruncateSpacesInPlace(sKey);
+    if( NStr::StartsWith(sKey, "[") ) {
+        sKey = sKey.substr(1); // remove initial "["
+    }
+    NStr::TruncateSpacesInPlace(sKey, NStr::eTrunc_Begin);
+    if( ! NStr::EqualNocase(sKey, "offset") ) {
+        // key is not offset
+        return false;
+    }
+
+    // check value
+    NStr::TruncateSpacesInPlace(sValue);
+    if( ! NStr::EndsWith(sValue, "]") ) {
+        // no closing bracket
+        return false;
+    }
+    // remove closing bracket
+    sValue = sValue.substr(0, (sValue.length() - 1) );
+    NStr::TruncateSpacesInPlace(sValue, NStr::eTrunc_End);
+    // is it a number?
+    try {
+        Int4 new_offset = NStr::StringToInt(sValue);
+        if( new_offset < 0 ) {
+            return false;
+        }
+        out_offset = new_offset;
+        return true;
+    } catch ( CStringException & ) {
+        return false;
+    }
+}
 
 bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     const string& line,
@@ -2621,7 +2669,16 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 return sap;
             } if (line [0] == '[') {
 
-                // set offset !!!!!!!!
+                // try to parse it as an offset
+                if( x_TryToParseOffset(line, offset) ) {
+                    // okay, known command
+                } else {
+                    // warn for unknown square-bracket commands
+                    x_ProcessMsg( container,
+                        ILineError::eProblem_UnrecognizedSquareBracketCommand,
+                        eDiag_Warning,
+                        seqid, reader.GetLineNumber() );
+                }
 
             } else if ( s_LineIndicatesOrder(line) ) {
 

@@ -68,6 +68,7 @@ public:
         eProblem_InternalPartialsInFeatLocation,
         eProblem_FeatMustBeInXrefdGene,
         eProblem_CreatedGeneFromMultipleFeats,
+        eProblem_UnrecognizedSquareBracketCommand,
 
         eProblem_GeneralParsingError
     };
@@ -190,6 +191,8 @@ public:
             return "Feature has xref to a gene, but that gene does NOT contain the feature.";
         case eProblem_CreatedGeneFromMultipleFeats:
             return "Feature is trying to create a gene that conflicts with the gene created by another feature.";
+        case eProblem_UnrecognizedSquareBracketCommand:
+            return "Unrecognized square bracket command";
         default:
             return "Unknown problem";
         }
