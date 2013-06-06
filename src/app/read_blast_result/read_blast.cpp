@@ -449,7 +449,7 @@ int CReadBlastApp::StoreBlast(map<string, blastStr>& blastMap)
        id_vector.push_back(qid);
        CRef < CSeq_id > sid ( new CSeq_id ) ; //
          {
-         sid->SetGi(1);
+         sid->SetGi(GI_FROM(TIntId, 1));
          }
        id_vector.push_back(sid);
        }
@@ -471,10 +471,10 @@ int CReadBlastApp::StoreBlast(map<string, blastStr>& blastMap)
      bounds.push_back(sbjBounds);
      qBounds->SetInt().SetFrom(blastMap[qname].hits[ihit].q_start); //++++
      qBounds->SetInt().SetTo  (blastMap[qname].hits[ihit].q_end);    //++++
-     qBounds->SetInt().SetId().SetGi(1);
+     qBounds->SetInt().SetId().SetGi(GI_FROM(TIntId, 1));
      sbjBounds->SetInt().SetFrom(blastMap[qname].hits[ihit].sbjstart); //++++
      sbjBounds->SetInt().SetTo  (blastMap[qname].hits[ihit].sbjend); //++++
-     sbjBounds->SetInt().SetId().SetGi(1);
+     sbjBounds->SetInt().SetId().SetGi(GI_FROM(TIntId, 1));
 
      CSeq_align::TScore& scores  = align->SetScore();
 

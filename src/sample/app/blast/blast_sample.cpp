@@ -78,7 +78,7 @@ CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
     }
 
     CRef<CSeq_loc> seqloc(new CSeq_loc);
-    seqloc->SetWhole().SetGi(gi);
+    seqloc->SetWhole().SetGi(GI_FROM(int, gi));
 
     // Setup the scope
     CRef<CScope> scope(CSimpleOM::NewScope());

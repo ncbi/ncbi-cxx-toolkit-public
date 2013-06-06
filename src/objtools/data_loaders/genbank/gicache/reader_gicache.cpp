@@ -145,7 +145,7 @@ bool CGICacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
         int got;
         {{
             CMutexGuard guard(m_Mutex);
-            got = GICache_GetAccession(seq_id.GetGi(), buffer, sizeof(buffer));
+            got = GICache_GetAccession(GI_TO(int, seq_id.GetGi()), buffer, sizeof(buffer));
         }}
         if ( got ) {
             if ( buffer[0] ) {

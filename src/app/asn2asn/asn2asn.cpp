@@ -496,10 +496,10 @@ BEGIN_SCOPE(merge_annot)
 class CInsertAnnotManager
 {
 public:
-    CInsertAnnotManager(int target_gi, CConstRef<CSeq_annot> annot)
+    CInsertAnnotManager(TGi target_gi, CConstRef<CSeq_annot> annot)
         : target_gi(target_gi), do_insert(false), annot(annot), annot_in(0) {
     }
-    CInsertAnnotManager(int target_gi, CObjectIStream& annot_in)
+    CInsertAnnotManager(TGi target_gi, CObjectIStream& annot_in)
         : target_gi(target_gi), do_insert(false), annot_in(&annot_in) {
     }
 
@@ -526,7 +526,7 @@ public:
         }
     }
 
-    int target_gi; // GI of the sequence to insert annots in.
+    TGi target_gi; // GI of the sequence to insert annots in.
     bool do_insert; // Flag is true if currently sequence is the target.
     CConstRef<CSeq_annot> annot; // Explicit annot object to insert.
     CObjectIStream* annot_in; // Input object stream source of annot to insert.
@@ -661,7 +661,7 @@ public:
 // CObjectOStream& out - object stream of main output for modified Seq-entry.
 // int gi - GI of target sequence.
 // CObjectIStream& annot_in - external object stream input with Seq-entry
-void MergeAnnot(CObjectIStream& in, CObjectOStream& out, int gi,
+void MergeAnnot(CObjectIStream& in, CObjectOStream& out, TGi gi,
                 CObjectIStream& annot_in)
 {
     // Merge manager.
@@ -700,7 +700,7 @@ void MergeAnnot(CObjectIStream& in, CObjectOStream& out, int gi,
 // CObjectOStream& out - object stream of main output for modified Seq-entry.
 // int gi - GI of target sequence.
 // const string& in_file - the name of file with ANS.1 binary Seq-entry.
-void MergeFromFile(CObjectIStream& in, CObjectOStream& out, int gi,
+void MergeFromFile(CObjectIStream& in, CObjectOStream& out, TGi gi,
                    const string& in_file)
 {
     auto_ptr<CObjectIStream> annot_in(CObjectIStream::Open(eSerial_AsnBinary,
@@ -752,7 +752,7 @@ END_SCOPE(PubSeqOS)
 // CObjectOStream& out - object stream of main output for modified Seq-entry.
 // int gi - GI of target sequence.
 // int add_ext_feat - bit mask of external annots to be read from PubSeqOS.
-void MergeExternal(CObjectIStream& in, CObjectOStream& out, int gi,
+void MergeExternal(CObjectIStream& in, CObjectOStream& out, TGi gi,
                    int add_ext_feat)
 {
     DBAPI_RegisterDriver_FTDS();
@@ -783,7 +783,7 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, int gi,
     // external annotations sat is 26 (all except CDD).
     int sat = add_ext_feat == 8? 10: 26;
     CDB_SmallInt satIn(sat); 
-    CDB_Int satKeyIn(gi); // sat_key is equal to GI.
+    CDB_Int satKeyIn(GI_TO(int, gi)); // sat_key is equal to GI.
     CDB_Int ext_feat(add_ext_feat); // ext_feat mask.
 
     cmd->SetParam("@sat_key", &satKeyIn);
@@ -990,12 +990,12 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
 
                     if ( args["Min"] ) {
                         merge_annot::MergeFromFile(*in, *out,
-                                                   args["Mgi"].AsInteger(),
+                                                   GI_FROM(int, args["Mgi"].AsInteger()),
                                                    args["Min"].AsString());
                     }
                     else {
                         merge_annot::MergeExternal(*in, *out,
-                                                   args["Mgi"].AsInteger(),
+                                                   GI_FROM(int, args["Mgi"].AsInteger()),
                                                    args["Mext"].AsInteger());
                     }
                 }

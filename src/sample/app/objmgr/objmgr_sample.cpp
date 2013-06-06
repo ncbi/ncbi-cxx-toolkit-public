@@ -106,7 +106,7 @@ int CSampleObjmgrApplication::Run(void)
 
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
-    int gi = args["gi"].AsInteger();
+    TGi gi = GI_FROM(int, args["gi"].AsInteger());
 
     /////////////////////////////////////////////////////////////////////////
     // Create object manager

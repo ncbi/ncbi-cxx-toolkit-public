@@ -88,7 +88,7 @@ private:
         return CNcbiOstrstreamToString(oss);
     }
 
-    int m_gi;
+    TGi m_gi;
     int m_range_from;
     int m_range_to;
 };
@@ -124,7 +124,7 @@ void CFeatTreeSampleApp::Init(void)
     const CArgs& args = GetArgs();
 
     // Get configuration.
-    m_gi = args["gi"].AsInteger();
+    m_gi = GI_FROM(int, args["gi"].AsInteger());
     m_range_from = args["from"].AsInteger();
     m_range_to = args["to"].AsInteger();
 }

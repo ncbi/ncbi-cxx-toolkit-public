@@ -117,9 +117,9 @@ int CGi2TaxIdApp::Run()
         }
 
         // resolve the id to a gi
-        int gi = 0;
+        TGi gi = ZERO_GI;
         try {
-            gi = NStr::StringToInt(id_str);
+            gi = NStr::StringToNumeric<TGi>(id_str);
         }
         catch (...) {
             try {
@@ -131,7 +131,7 @@ int CGi2TaxIdApp::Run()
             }
         }
 
-        if (gi == 0) {
+        if (gi == ZERO_GI) {
             LOG_POST(Error << "don't know anything about accession/id: "
                 << id_str);
             continue;

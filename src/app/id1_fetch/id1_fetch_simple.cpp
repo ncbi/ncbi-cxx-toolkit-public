@@ -156,7 +156,7 @@ int CId1FetchApp::Run(void)
     typedef vector<CRef<CID1server_request> > TReqs;
     TReqs reqs;
     if ( args["gi"] ) {
-        int gi = args["gi"].AsInteger();
+        TGi gi = GI_FROM(int, args["gi"].AsInteger());
         //    id1_request.SetGetsefromgi().SetGi() = gi;
         CRef<CID1server_request> req(new CID1server_request);
         req->SetGetseqidsfromgi(gi);

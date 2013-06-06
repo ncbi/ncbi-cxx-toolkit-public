@@ -701,12 +701,12 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
             CConstRef<CSeq_id> id0 (hit->GetId(where)); 
             string accver;
             if(id0->IsGi()) {
-                const int gi = id0->GetGi();
+                TGi gi = id0->GetGi();
                 accver = sequence::GetAccessionForGi(gi, *scope);
             }
             else {
                 const string seqidstr = id0->AsFastaString();
-                const int gi = sequence::GetGiForAccession(seqidstr, *scope);
+                TGi gi = sequence::GetGiForAccession(seqidstr, *scope);
                 accver = sequence::GetAccessionForGi(gi, *scope);
             }
 

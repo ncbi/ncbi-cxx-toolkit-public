@@ -204,8 +204,8 @@ CIdMapperApp::GetSourceHandle(
     const string& strSource )
 //  ============================================================================
 {
-    int iGi = NStr::StringToInt( strSource, NStr::fConvErr_NoThrow );
-    if ( iGi ) {
+    TGi iGi = NStr::StringToNumeric<TGi>( strSource, NStr::fConvErr_NoThrow );
+    if ( iGi != ZERO_GI ) {
         return CSeq_id_Handle::GetGiHandle( iGi );
     }
         

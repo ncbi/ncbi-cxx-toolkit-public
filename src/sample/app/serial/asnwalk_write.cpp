@@ -144,6 +144,11 @@ void CDemoApp::SetPrimitive(int depth, size_t offset, CObjectInfo& info)
     case ePrimitiveValueAny:
         cout << "any" << endl;
         break;
+#ifdef NCBI_STRICT_GI
+    case ePrimitiveValueGi:
+        cout << "TGi" << endl;
+        break;
+#endif
     case ePrimitiveValueOther:
         cout << "other" << endl;
         break;

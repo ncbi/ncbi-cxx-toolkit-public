@@ -98,9 +98,9 @@ class CId1FetchApp : public CNcbiApplication
     virtual void Exit(void);
 
 private:
-    bool LookUpGI(int gi);
-    int  LookUpFastaSeqID(const string& s);
-    int  LookUpFlatSeqID(const string& s);
+    bool LookUpGI(TGi gi);
+    TGi  LookUpFastaSeqID(const string& s);
+    TGi  LookUpFlatSeqID(const string& s);
 
     void WriteFastaIDs     (const list< CRef< CSeq_id > >& ids);
 
@@ -333,20 +333,20 @@ int CId1FetchApp::Run(void)
     int repeat = args["repeat"].AsInteger();
     for ( int pass = 0; pass < repeat; ++pass ) {
     if (args["gi"]) {
-        if ( !LookUpGI(args["gi"].AsInteger()) )
+        if ( !LookUpGI(GI_FROM(int, args["gi"].AsInteger())) )
             return -1;
     }
 
     if (args["fasta"]) {
-        int gi = LookUpFastaSeqID(args["fasta"].AsString());
-        if (gi <= 0  ||  !LookUpGI(gi)) {
+        TGi gi = LookUpFastaSeqID(args["fasta"].AsString());
+        if (gi <= ZERO_GI  ||  !LookUpGI(gi)) {
             return -1;
         }
     }
 
     if (args["flat"]) {
-        int gi = LookUpFlatSeqID(args["flat"].AsString());
-        if (gi <= 0  ||  !LookUpGI(gi)) {
+        TGi gi = LookUpFlatSeqID(args["flat"].AsString());
+        if (gi <= ZERO_GI  ||  !LookUpGI(gi)) {
             return -1;
         }
     }
@@ -355,7 +355,7 @@ int CId1FetchApp::Run(void)
         CNcbiIstream& is = args["in"].AsInputFile();
         while (is  &&  !is.eof()) {
             string id;
-            int    gi;
+            TGi    gi;
 
             is >> id;
             if (id.empty()) {
@@ -366,10 +366,10 @@ int CId1FetchApp::Run(void)
             } else if (id.find_first_of(":=(") != NPOS) {
                 gi = LookUpFlatSeqID(id);
             } else {
-                gi = NStr::StringToInt(id);
+                gi = NStr::StringToNumeric<TGi>(id);
             }
 
-            if (gi <= 0  ||  !LookUpGI(gi)) {
+            if (gi <= ZERO_GI  ||  !LookUpGI(gi)) {
                 return -1;
             }
         }
@@ -409,9 +409,9 @@ int CId1FetchApp::Run(void)
 
         // Query succeeded; proceed to next stage of lookup
         for (CEntrez2_id_list::TConstUidIterator it
-                 = reply->GetUids().GetConstUidIterator();
-             !it.AtEnd();  ++it) {
-            if ( !LookUpGI(*it) ) {
+            = reply->GetUids().GetConstUidIterator();
+            !it.AtEnd();  ++it) {
+            if ( !LookUpGI(GI_FROM(CEntrez2_id_list::TConstUidIterator::value_type, *it)) ) {
                 return -1;
             }
         }
@@ -421,7 +421,7 @@ int CId1FetchApp::Run(void)
 }
 
 
-bool CId1FetchApp::LookUpGI(int gi)
+bool CId1FetchApp::LookUpGI(TGi gi)
 {    
     const CArgs&             args       = GetArgs();
     const string&            fmt        = args["fmt"].AsString();
@@ -441,7 +441,7 @@ bool CId1FetchApp::LookUpGI(int gi)
         uids.SetUids().resize(uids.sm_UidSize);
         {{
             CEntrez2_id_list::TUidIterator it = uids.GetUidIterator();
-            *it = gi;
+            *it = GI_TO(CEntrez2_id_list::TConstUidIterator::value_type, gi);
         }}
         CRef<CEntrez2_docsum_list> docs = m_E2Client.AskGet_docsum(uids);
         if ( !docs->GetCount() ) {
@@ -672,14 +672,14 @@ void CId1FetchApp::Exit(void)
 }
 
 
-int CId1FetchApp::LookUpFastaSeqID(const string& s)
+TGi CId1FetchApp::LookUpFastaSeqID(const string& s)
 {
     CSeq_id id(s);
     return m_ID1Client.AskGetgi(id);
 }
 
 
-int CId1FetchApp::LookUpFlatSeqID(const string& s)
+TGi CId1FetchApp::LookUpFlatSeqID(const string& s)
 {
     CSeq_id::E_Choice type = static_cast<CSeq_id::E_Choice>(atoi(s.c_str()));
     SIZE_TYPE pos = s.find_first_of(":=(");
@@ -708,7 +708,7 @@ int CId1FetchApp::LookUpFlatSeqID(const string& s)
         return m_ID1Client.AskGetgi(id);
     }
     default: // can't happen, but shut the compiler up
-        return -1;
+        return GI_FROM(TIntGi, -1);
     }
 }
 
@@ -757,7 +757,7 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
     numbers.Add("Retrieval No.").Add("-------------");
     for (CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply);
          it;  ++it) {
-        int    gi = 0;
+        TGi    gi = ZERO_GI;
         string dbname, number;
 
         if ( it->GetDate().IsStr() ) {
@@ -784,7 +784,7 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
             }
         }
 
-        gis.Add(NStr::IntToString(gi));
+        gis.Add(NStr::NumericToString(gi));
         dbs.Add(dbname);
         numbers.Add(number);
     }

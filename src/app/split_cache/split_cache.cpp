@@ -606,7 +606,7 @@ void CSplitCacheApp::Process(void)
 void CSplitCacheApp::ProcessGi(int gi)
 {
     CSeq_id id;
-    id.SetGi(gi);
+    id.SetGi(GI_FROM(int, gi));
     ProcessSeqId(id);
 }
 

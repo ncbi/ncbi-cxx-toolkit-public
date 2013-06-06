@@ -101,7 +101,7 @@ void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
 
 static const CSeq_id_Handle& s_GetNewIdHandle()
 {
-    static CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(2122545143);
+    static CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, 2122545143));
     return id;
 }
 
@@ -603,7 +603,7 @@ int CEditBioseqSampleApp::Run(void)
 
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
-    int gi = args["gi"].AsInteger();
+    TGi gi = GI_FROM(int, args["gi"].AsInteger());
 
     // Create Seq-id, set it to the GI specified on the command line
     CSeq_id_Handle seq_id(CSeq_id_Handle::GetGiHandle(gi));

@@ -885,7 +885,7 @@ int CId2FetchApp::Run(void)
     TReqs reqs;
 
     if ( args["gi"] ) {
-        int gi = args["gi"].AsInteger();
+        TGi gi = GI_FROM(int, args["gi"].AsInteger());
         CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
         reqs.push_back(packet);
         CRef<CID2_Request> req(new CID2_Request);

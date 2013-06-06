@@ -103,7 +103,7 @@ int CTestApplication::Run(void)
         for ( int gi = gi_from; gi <= gi_to; gi++ ) {
             ++all_count;
             NcbiCout << "gi: " << gi << ": " << NcbiFlush;
-            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
+            CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(GI_FROM(int, gi));
             CStandaloneRequestResult request(seq_id);
             try {
                 dispatcher->LoadSeq_idAccVer(request, seq_id);

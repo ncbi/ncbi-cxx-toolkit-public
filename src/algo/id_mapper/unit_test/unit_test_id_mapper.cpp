@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest)
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
 
     // Check that Map results meet expectations
-    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986); // AAFC03080232.1
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(TIntId, 112070986)); // AAFC03080232.1
 }
 
 

@@ -111,14 +111,16 @@ protected:
   set<string> accessions; // with or without versions (as given in the AGP file)
   struct SGiVerLenTaxid
   {
-    int gi, ver, len, taxid;
+    TGi gi;
+    int ver, len, taxid;
     SGiVerLenTaxid()
     {
-      gi=ver=len=taxid=0;
+      gi=ZERO_GI;
+      ver=len=taxid=0;
     }
     bool MatchesVersion_HasAllData(int ver1, bool check_len_taxid) const
     {
-      if(gi==0 || (ver1!=0 && ver1!=ver)) return false;
+      if(gi==ZERO_GI || (ver1!=0 && ver1!=ver)) return false;
       if(check_len_taxid && len<=0 && taxid<=0) return false;
       return true;
     }

@@ -126,7 +126,7 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
       return 0;
     }
 
-    if(acc_data.gi<=0) {
+    if(acc_data.gi<=ZERO_GI) {
       try {
         CSeq_id_Handle seq_id_handle = sequence::GetId(
           bioseq_handle, sequence::eGetId_ForceGi
@@ -163,7 +163,7 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
     return 0;
   }
 
-  return acc_data.gi;
+  return GI_TO(int, acc_data.gi);
 }
 
 /*
@@ -422,7 +422,7 @@ void CAltValidator::QueryAccessions()
       string acc  = (*it_docsum)->GetValue("Caption"); // accession, no version
       SGiVerLenTaxid& gvt = mapAccData[acc];
 
-      gvt.gi=(*it_docsum)->GetUid();
+      gvt.gi= GI_FROM(CEntrez2_docsum::TUid, (*it_docsum)->GetUid());
 
       string s = (*it_docsum)->GetValue("Extra");   // gi|...|accession.ver...
       SIZE_TYPE pos=s.find("|"+acc+".");
@@ -505,7 +505,7 @@ void CAltValidator::ProcessQueue()
             if(acc_data.ver) {
               *m_out << "#current version " << acc << "." << acc_data.ver;
             }
-            else if(acc_data.gi==0){
+            else if(acc_data.gi==ZERO_GI){
               *m_out << "#component_id not in GenBank";
             }
           }
@@ -513,7 +513,7 @@ void CAltValidator::ProcessQueue()
         *m_out << "\n";
       }
 
-      if(acc_data.gi) {
+      if(acc_data.gi != ZERO_GI) {
         // component_id is a valid GenBank accession
         m_GenBankCompLineCount++;
 

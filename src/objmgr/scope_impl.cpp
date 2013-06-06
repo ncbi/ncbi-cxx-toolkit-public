@@ -2845,7 +2845,7 @@ void CScope_Impl::GetGis(TGIs& ret,
                          bool force_load)
 {
     int count = ids.size(), remaining = count;
-    ret.assign(count, 0);
+    ret.assign(count, ZERO_GI);
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
