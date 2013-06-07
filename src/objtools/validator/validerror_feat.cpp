@@ -2686,12 +2686,14 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         }
     }
 
+    /*
     if ( rna_type == CRNA_ref::eType_miscRNA ) {
         if ( rna.CanGetExt() && rna.GetExt().IsGen() ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
                 "RNA-gen data structure on miscRNA feature", feat);
         }
     }
+    */
 
     bool feat_pseudo = feat.IsSetPseudo() && feat.GetPseudo();
     bool gene_pseudo = IsOverlappingGenePseudo(feat);
