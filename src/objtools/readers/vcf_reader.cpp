@@ -1316,7 +1316,7 @@ CVcfReader::xAssignVariantProps(
 
     //byte F4
     it = infos.find("OTH");
-    if (infos.end() != infos.find("G5")) {
+    if (infos.end() != it) {
         props.SetMapping() |= VP::eFrequency_based_validation_above_5pct_all; 
         infos.erase(it);
     }
