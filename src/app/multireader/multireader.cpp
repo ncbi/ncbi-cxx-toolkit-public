@@ -49,6 +49,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqfeat/Variation_ref.hpp>
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>

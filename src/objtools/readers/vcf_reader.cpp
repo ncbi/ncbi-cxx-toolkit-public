@@ -530,7 +530,6 @@ CVcfReader::x_ProcessDataLine(
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
-    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
     CSeq_feat::TExt& ext = pFeat->SetExt();
     ext.SetType().SetStr( "VcfAttributes" );
 
@@ -550,7 +549,7 @@ CVcfReader::x_ProcessDataLine(
     if ( ! x_ProcessFilter( data, pFeat ) ) {
         return false;
     }
-    if ( ! x_ProcessInfo( data, pFeat ) ) {
+    if ( ! xProcessInfo( data, pFeat ) ) {
         return false;
     }
     if ( ! x_ProcessFormat( data, pFeat ) ) {
@@ -567,7 +566,7 @@ CVcfReader::x_ProcessDataLine(
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xProcessVariant(
-    const CVcfData& data,
+    CVcfData& data,
     unsigned int index,
     CRef<CSeq_annot> pAnnot)
 //  ----------------------------------------------------------------------------
@@ -575,7 +574,7 @@ CVcfReader::xProcessVariant(
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
-    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
+    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion() = 5;
     CSeq_feat::TExt& ext = pFeat->SetExt();
     ext.SetType().SetStr( "VcfAttributes" );
 
@@ -595,7 +594,7 @@ CVcfReader::xProcessVariant(
     if ( ! x_ProcessFilter( data, pFeat ) ) {
         return false;
     }
-    if ( ! x_ProcessInfo( data, pFeat ) ) {
+    if ( ! xProcessInfo( data, pFeat ) ) {
         return false;
     }
     if ( ! x_ProcessFormat( data, pFeat ) ) {
@@ -996,29 +995,33 @@ CVcfReader::x_ProcessFilter(
 
 //  ----------------------------------------------------------------------------
 bool 
-CVcfReader::x_ProcessInfo(
-    const CVcfData& data,
+CVcfReader::xProcessInfo(
+    CVcfData& data,
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CSeq_feat::TExt& ext = pFeature->SetExt();
-    if ( ! data.m_Info.empty() ) {
-        vector<string> infos;
-        for ( map<string,vector<string> >::const_iterator cit = data.m_Info.begin();
-            cit != data.m_Info.end(); cit++ )
-        {
-            const string& key = cit->first;
-            vector<string> value = cit->second;
-            if ( value.empty() ) {
-                infos.push_back( key );
-            }
-            else {
-                string joined = NStr::Join( list<string>( value.begin(), value.end() ), ";" );
-                infos.push_back( key + "=" + joined );
-            }
-        }
-        ext.AddField( "info", NStr::Join( infos, ";" ) );
+    if (!xAssignVariantProps(data, pFeature)) {
+        return false;
     }
+    CSeq_feat::TExt& ext = pFeature->SetExt();
+    if (data.m_Info.empty()) {
+        return true;
+    }
+    vector<string> infos;
+    for ( map<string,vector<string> >::const_iterator cit = data.m_Info.begin();
+        cit != data.m_Info.end(); cit++ )
+    {
+        const string& key = cit->first;
+        vector<string> value = cit->second;
+        if ( value.empty() ) {
+            infos.push_back( key );
+        }
+        else {
+            string joined = NStr::Join( list<string>( value.begin(), value.end() ), ";" );
+            infos.push_back( key + "=" + joined );
+        }
+    }
+    ext.AddField( "info", NStr::Join( infos, ";" ) );
     return true;
 }
 
@@ -1154,6 +1157,247 @@ CVcfReader::x_AssignVariationAlleles(
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariantProps(
+    CVcfData& data,
+    CRef<CSeq_feat> pFeat )
+//  ----------------------------------------------------------------------------
+{
+    typedef CVariantProperties VP;
+
+    CVcfData::INFOS infos = data.m_Info;
+    VP& props = pFeat->SetData().SetVariation().SetVariant_prop(); 
+    CVcfData::INFOS::iterator it;
+
+    props.SetResource_link() = 0;
+    props.SetGene_location() = 0;
+    props.SetEffect() = 0;
+    props.SetMapping() = 0;
+    props.SetFrequency_based_validation() = 0;
+    props.SetGenotype() = 0;
+    props.SetQuality_check() = 0;
+
+    //byte F0
+    props.SetVersion() = 5;
+
+    //superbyte F1
+    it = infos.find("SLO");
+    if (infos.end() != it) {
+        props.SetResource_link() |= VP::eResource_link_submitterLinkout; 
+        infos.erase(it);
+    }
+    it = infos.find("S3D");
+    if (infos.end() != it) {
+        props.SetResource_link() |= VP::eResource_link_has3D; 
+        infos.erase(it);
+    }
+    it = infos.find("TPA");
+    if (infos.end() != it) {
+        props.SetResource_link() |= VP::eResource_link_provisional; 
+        infos.erase(it);
+    }
+    it = infos.find("PM");
+    if (infos.end() != it) {
+        props.SetResource_link() |= VP::eResource_link_preserved; 
+        infos.erase(it);
+    }
+    it = infos.find("CLN");
+    if (infos.end() != it) {
+        props.SetResource_link() |= VP::eResource_link_clinical; 
+        infos.erase(it);
+    }
+    //todo: INFO ID=PMC
+
+    //superbyte F2
+    it = infos.find("R5");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eGene_location_near_gene_5; 
+        infos.erase(it);
+    }
+    it = infos.find("R3");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eGene_location_near_gene_3; 
+        infos.erase(it);
+    }
+    it = infos.find("INT");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eGene_location_intron; 
+        infos.erase(it);
+    }
+    it = infos.find("DSS");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eGene_location_donor; 
+        infos.erase(it);
+    }
+    it = infos.find("ASS");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eGene_location_acceptor; 
+        infos.erase(it);
+    }
+    it = infos.find("U5");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eGene_location_utr_5; 
+        infos.erase(it);
+    }
+    it = infos.find("U3");
+    if (infos.end() != it) {
+        props.SetGene_location() |= CVariantProperties::eGene_location_utr_3; 
+        infos.erase(it);
+    }
+
+    it = infos.find("SYN");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eEffect_synonymous; 
+        infos.erase(it);
+    }
+    it = infos.find("NSN");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eEffect_stop_gain; 
+        infos.erase(it);
+    }
+    it = infos.find("NSM");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eEffect_missense; 
+        infos.erase(it);
+    }
+    it = infos.find("NSF");
+    if (infos.end() != it) {
+        props.SetGene_location() |= VP::eEffect_frameshift; 
+        infos.erase(it);
+    }
+
+    //byte F3
+    it = infos.find("WGT");
+    if (infos.end() != it) {
+        int weight = NStr::StringToInt( infos["WGT"][0] ); 
+        switch(weight) {
+        default:
+            break;
+        case 1:
+            props.SetMap_weight() = VP::eMap_weight_is_uniquely_placed;
+            infos.erase(it);
+            break;
+        case 2:
+            props.SetMap_weight() = VP::eMap_weight_placed_twice_on_same_chrom;
+            infos.erase(it);
+            break;
+        case 3:
+            props.SetMap_weight() = VP::eMap_weight_placed_twice_on_diff_chrom;
+            infos.erase(it);
+            break;
+        case 10:
+            props.SetMap_weight() = VP::eMap_weight_many_placements;
+            break;
+        }
+    }
+
+    it = infos.find("WGT");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eMapping_is_assembly_specific; 
+        infos.erase(it);
+    }
+    it = infos.find("ASP");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eMapping_has_assembly_conflict; 
+        infos.erase(it);
+    }
+    it = infos.find("CFL");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eMapping_has_assembly_conflict; 
+        infos.erase(it);
+    }
+    it = infos.find("OTH");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eMapping_has_other_snp; 
+        infos.erase(it);
+    }
+
+    //byte F4
+    it = infos.find("OTH");
+    if (infos.end() != infos.find("G5")) {
+        props.SetMapping() |= VP::eFrequency_based_validation_above_5pct_all; 
+        infos.erase(it);
+    }
+    it = infos.find("G5A");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eFrequency_based_validation_above_5pct_1plus; 
+        infos.erase(it);
+    }
+    it = infos.find("VLD");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eFrequency_based_validation_validated; 
+        infos.erase(it);
+    }
+    it = infos.find("MUT");
+    if (infos.end() != it) {
+        props.SetMapping() |= VP::eFrequency_based_validation_is_mutation; 
+        infos.erase(it);
+    }
+    it = infos.find("GMAF");
+    if (infos.end() != it) {
+        props.SetAllele_frequency() = NStr::StringToDouble(infos["GMAF"][0]);
+        infos.erase(it);
+    }
+
+    //byte F5
+    it = infos.find("GNO");
+    if (infos.end() != it) {
+        props.SetGenotype() |= VP::eGenotype_has_genotypes; 
+        infos.erase(it);
+    }
+    it = infos.find("HD");
+    if (infos.end() != it) {
+        props.SetResource_link() |= VP::eResource_link_genotypeKit; 
+        infos.erase(it);
+    }
+
+    //byte F6
+    if (infos.end() != infos.find("PH3")) {
+        CRef<CDbtag> pDbtag(new CDbtag);
+        pDbtag->SetDb("BioProject");
+        pDbtag->SetTag().SetId(60835);
+        pFeat->SetData().SetVariation().SetOther_ids().push_back(pDbtag);
+    }
+    if (infos.end() != infos.find("KGPhase1")) {
+        CRef<CDbtag> pDbtag(new CDbtag);
+        pDbtag->SetDb("BioProject");
+        pDbtag->SetTag().SetId(28889);
+        pFeat->SetData().SetVariation().SetOther_ids().push_back(pDbtag);
+    }
+
+    //byte F7
+
+    //byte F8
+    //no relevant information found in VCF
+
+    //byte F9
+    it = infos.find("GCF");
+    if (infos.end() != it) {
+        props.SetQuality_check() |= VP::eQuality_check_genotype_conflict;
+        infos.erase(it);
+    }
+    it = infos.find("NOV");
+    if (infos.end() != it) {
+        props.SetQuality_check() |= VP::eQuality_check_non_overlapping_alleles;
+        infos.erase(it);
+    }
+    it = infos.find("WTD");
+    if (infos.end() != it) {
+        props.SetQuality_check() |= VP::eQuality_check_withdrawn_by_submitter;
+        infos.erase(it);
+    }
+    it = infos.find("NOC");
+    if (infos.end() != it) {
+        props.SetQuality_check() |= VP::eQuality_check_contig_allele_missing;
+        infos.erase(it);
+    }
+
+    return true;
+}
+
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

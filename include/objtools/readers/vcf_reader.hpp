@@ -215,7 +215,7 @@ protected:
         
     virtual bool
     xProcessVariant(
-        const CVcfData&,
+        CVcfData&,
         unsigned int,
         CRef<CSeq_annot> );
 
@@ -271,6 +271,11 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
+    xAssignVariantProps(
+        CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
     x_ProcessScore(
         const CVcfData&,
         CRef<CSeq_feat> );
@@ -281,8 +286,8 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
-    x_ProcessInfo(
-        const CVcfData&,
+    xProcessInfo(
+        CVcfData&,
         CRef<CSeq_feat> );
 
     virtual bool
