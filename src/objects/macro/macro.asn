@@ -1383,6 +1383,22 @@ Retranslate-cds-action ::= SEQUENCE {
 }
 
 
+Truncated-ends-partial-type ::= ENUMERATED {
+  always (1) ,
+  unless-pseudo (2) ,
+  never (3) }
+
+Adjust-features-for-gaps-action ::= SEQUENCE {
+  type Macro-feature-type ,
+  adjust-for-unknown-length-gaps BOOLEAN ,
+  adjust-for-known-length-gaps BOOLEAN ,
+  make-truncated-ends-partial Truncated-ends-partial-type ,
+  trim-ends-in-gaps BOOLEAN ,
+  split-for-internal-gaps BOOLEAN ,
+  even-when-gaps-are-in-introns BOOLEAN
+}
+
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1432,7 +1448,8 @@ Macro-action-choice ::= CHOICE {
   instantiate-protein-titles NULL ,
   retranslate-cds Retranslate-cds-action ,
   add-selenocysteine-except NULL ,
-  join-short-trnas NULL }
+  join-short-trnas NULL ,
+  adjust-features-for-gaps Adjust-features-for-gaps-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
