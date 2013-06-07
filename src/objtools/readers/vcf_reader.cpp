@@ -1167,7 +1167,7 @@ CVcfReader::xAssignVariantProps(
 {
     typedef CVariantProperties VP;
 
-    CVcfData::INFOS infos = data.m_Info;
+    CVcfData::INFOS& infos = data.m_Info;
     VP& props = pFeat->SetData().SetVariation().SetVariant_prop(); 
     CVcfData::INFOS::iterator it;
 
@@ -1293,14 +1293,9 @@ CVcfReader::xAssignVariantProps(
         }
     }
 
-    it = infos.find("WGT");
-    if (infos.end() != it) {
-        props.SetMapping() |= VP::eMapping_is_assembly_specific; 
-        infos.erase(it);
-    }
     it = infos.find("ASP");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eMapping_has_assembly_conflict; 
+        props.SetMapping() |= VP::eMapping_is_assembly_specific; 
         infos.erase(it);
     }
     it = infos.find("CFL");
