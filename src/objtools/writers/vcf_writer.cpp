@@ -243,10 +243,16 @@ bool CVcfWriter::x_WriteData(
 
     CFeat_CI mf(sah, sel);
     CGffFeatureContext fc(mf);
+
+    size_t count = 0;
     for ( ; mf; ++mf ) {
         if ( ! x_WriteFeature( fc, *mf ) ) {
             return false;
         }
+        if (0 == (count % 100)) {
+            cerr << count << endl;
+        }
+        count++;
     }
     return true;
 }
@@ -516,7 +522,6 @@ bool CVcfWriter::x_WriteFeatureFilter(
 {
     m_Os << "\t";
 
-    feature::CFeatTree ftree = context.FeatTree();
     vector<string> filters;
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
