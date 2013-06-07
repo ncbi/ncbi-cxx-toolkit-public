@@ -363,10 +363,6 @@ cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
 if (rule_idx == 2) cerr << "**rit " << Blob2Str(**rit) << endl;
 */
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
-cerr << "rule_idx  " << rule_idx << "  " 
- << NStr::UIntToString((int)(*rit)->GetRule_type()) + "$"
-                   + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use)
-<< endl;
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
                    + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use));

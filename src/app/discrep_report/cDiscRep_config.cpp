@@ -1291,7 +1291,10 @@ void CRepConfig :: Init(const string& report_type)
    tests_on_SubmitBlk.reserve(1);
   
    ETestCategoryFlags cate_flag;
-   if (report_type == "Discrepancy") cate_flag = fDiscrepancy;
+   if (report_type == "Discrepancy") {
+            cate_flag = fDiscrepancy;
+            thisInfo.output_config.use_flag = true;
+   }
    else if(report_type ==  "Oncaller") cate_flag = fOncaller;
    else NCBI_THROW(CException, eUnknown, "Unrecognized report type.");
 
