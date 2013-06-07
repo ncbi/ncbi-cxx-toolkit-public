@@ -907,9 +907,8 @@ string CSummarizeSusProdRule :: SummarizeReplaceRule (const CReplace_rule& repla
 extern const char* fix_type_names[];
 string CSummarizeSusProdRule :: SummarizeSuspectRuleEx(const CSuspect_rule& rule, bool short_version)
 {
-  string fixtp;
-  // no matter if short_version true or false (different from the C version)
-  if (rule.GetRule_type() != eFix_type_none) fixtp = fix_type_names[rule.GetRule_type()];
+  string fixtp = (!short_version && rule.GetRule_type() != eFix_type_none) ?
+                   fix_type_names[rule.GetRule_type()] : kEmptyStr;
 
   string rule_desc = rule.CanGetDescription() ? rule.GetDescription() : kEmptyStr;
   if (short_version && !rule_desc.empty()) {

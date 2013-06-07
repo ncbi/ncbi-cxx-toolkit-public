@@ -110,7 +110,7 @@ namespace DiscRepNmSpc {
 
      protected:
         void WriteDiscRepSummary();
-        void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories);
+        void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
         void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
                                  bool use_flag, bool IsSubcategory=false);
         void WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix);

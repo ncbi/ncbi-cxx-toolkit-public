@@ -354,6 +354,26 @@ void CDiscRepApp::Init(void)
     strtmp = reg.Get("RuleFiles", "OrganelleProductRuleFile");
     if (CFile(strtmp).Exists()) ReadInBlob(*thisInfo.orga_prod_rules, strtmp);
 
+    // ini. of matloc_names & matloc_notpresent_names;
+    for (i = eString_location_contains; i <= eString_location_inlist; i++) {
+       strtmp = ENUM_METHOD_NAME(EString_location)()->FindName(i, true);
+       if (strtmp == "inlist") {
+              strtmp = "is one of";
+              tmp = "is not one of";
+       }
+       else if (strtmp == "starts" || strtmp == "ends") {
+           tmp = strtmp.substr(0, strtmp.size()-1) + " with";
+           strtmp = "with";
+           tmp = "does not " + tmp;
+       }
+       else if (strtmp == "contains") {
+           tmp = "does not contain";
+           strtmp = "contains";
+       }
+       thisInfo.matloc_names[(EString_location)i] = strtmp;
+       thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
+    }
+
     // ini. suspect rule file && susrule_fixtp_summ
     strtmp = reg.Get("RuleFiles", "SuspectRuleFile");
     if (!CFile(strtmp).Exists()) strtmp = "/ncbi/data/product_rules.prt";
@@ -842,24 +862,6 @@ cerr << "222can get\n";
    strtmp = reg.Get("StringVecIni", "LocationType");
    thisInfo.loctype_names = NStr::Tokenize(strtmp, ",", thisInfo.loctype_names);
  
-   // ini. of matloc_names & matloc_notpresent_names;
-   for (i = eString_location_contains; i <= eString_location_inlist; i++) {
-      strtmp = ENUM_METHOD_NAME(EString_location)()->FindName(i, true);
-      if (strtmp == "inlist") {
-              strtmp = "is one of";
-              tmp = "is not one of";
-      }
-      else { 
-        if (strtmp == "starts" || strtmp == "ends") {
-               tmp = strtmp.substr(0, strtmp.size()-1) + " with"; 
-               strtmp = " with";
-        }
-        tmp = "does not " + tmp;
-      }
-      thisInfo.matloc_names[(EString_location)i] = strtmp;
-      thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
-   }
-
    // ini. of srcloc_names & genome_names;
    for (i = eSource_location_unknown; i <= eSource_location_chromatophore; i++){
       strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);

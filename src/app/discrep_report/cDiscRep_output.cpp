@@ -114,14 +114,20 @@ void CRepConfig :: WriteDiscRepSummary()
       oc.output_f 
          << (*it)->setting_name << ": " << (*it)->description << endl;
       if ("SUSPECT_PRODUCT_NAMES" == (*it)->setting_name)
-                            WriteDiscRepSubcategories((*it)->subcategories);
+            WriteDiscRepSubcategories((*it)->subcategories);
   }
   
 } // WriteDiscrepancyReportSummary
 
 
-void CRepConfig :: WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories)
+void CRepConfig :: WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident)
 {
+   unsigned i;
+   ITERATE (vector <CRef <CClickableItem> >, it, subcategories) {
+      for (i=0; i< ident; i++) oc.output_f << "\t"; 
+      oc.output_f << (*it)->description  << endl; 
+      WriteDiscRepSubcategories( (*it)->subcategories, ident+1);
+   }
 } // WriteDiscRepSubcategories
 
 

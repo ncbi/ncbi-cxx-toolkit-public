@@ -1442,15 +1442,14 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
               }
               else {
   	        if (str_cons->GetCase_sensitive()) 
-                             pFound = search.substr(pFound+1).find(pattern);
-	        else pFound = NStr::FindNoCase(search.substr(pFound + 1), pattern);
+                             pFound = search.find(pattern, pFound+1);
+	        else pFound = NStr::FindNoCase(search, pattern, pFound+1);
               }
             }
             break;
           case eString_location_equals:
             if (str_cons->GetCase_sensitive() && (search==pattern) ) rval= true; 
-            else if (!str_cons->GetCase_sensitive() 
-                            && NStr::EqualNocase(search, 0, pattern.size(), pattern) ) 
+            else if (!str_cons->GetCase_sensitive() && NStr::EqualNocase(search, pattern) ) 
                   rval = true;
             break;
           case eString_location_inlist:
@@ -1608,8 +1607,11 @@ bool CSuspectRuleCheck :: ContainsNorMoreSetsOfBracketsOrParentheses(string sear
 
 bool CSuspectRuleCheck :: PrecededByOkPrefix (const string& start_str)
 {
+  unsigned len_str = start_str.size();
+  unsigned len_it;
   ITERATE (vector <string>, it, thisInfo.ok_num_prefix) {
-    if (start_str == (*it)) return true;
+    len_it = (*it).size();
+    if (len_str >= len_it && start_str.substr(len_str-len_it) == (*it)) return true;
   }
   return false;
 };
@@ -1637,7 +1639,7 @@ bool CSuspectRuleCheck :: FollowedByFamily(string& after_str)
   if (pos != string::npos) {
      after_str = after_str.substr(pos+1);
      if (NStr::EqualNocase(after_str, 0, 6, "family")) {
-           after_str  = after_str.substr(6);
+           after_str  = after_str.substr(7);
            return true;
      }
   } 
@@ -1653,11 +1655,11 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
   while (!sch_str.empty()) {
       p = sch_str.find_first_of(CDiscRepUtil::digit_str);
       if (p == string::npos) break;
-      if (p && (PrecededByOkPrefix(sch_str.substr(0, p)) 
-             || InWordBeforeCytochromeOrCoenzyme (sch_str.substr(0, p)))) {
-        p2 = sch_str.substr(p).find_first_not_of(CDiscRepUtil::digit_str);
+      if (p && ( PrecededByOkPrefix(sch_str.substr(0, p)) 
+                   || InWordBeforeCytochromeOrCoenzyme (sch_str.substr(0, p)) ) ) {
+        p2 = sch_str.find_first_not_of(CDiscRepUtil::digit_str, p+1);
         if (p2 != string::npos) {
-            sch_str = sch_str.substr(p+p2);
+            sch_str = sch_str.substr(p2);
             num_digits = 0;
         }
         else break;
@@ -1665,7 +1667,7 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
       else {
         num_digits ++;
         if (num_digits == 3) {
-          sch_str = sch_str.substr(p);
+          sch_str = sch_str.substr(p+1);
           if (FollowedByFamily(sch_str)) num_digits = 0;
           else return true;
         }
@@ -3844,7 +3846,6 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
 
     if (!rule.CanGetFeat_constraint()) return true;
     else {
-cerr << "Cd " << Blob2Str(*feat_pnt) << endl;
         if (!feat_pnt) return false;
         else return DoesObjectMatchConstraintChoiceSet (*feat_pnt, rule.GetFeat_constraint());
     }

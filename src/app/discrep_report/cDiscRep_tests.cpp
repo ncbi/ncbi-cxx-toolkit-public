@@ -334,8 +334,6 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForStaticList(CRef <CClickableItem>& c_
 */
 };
 
-static set <string> prot_set_nm;
-
 // FindSuspectProductNamesWithRulesCallback
 void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
 {
@@ -343,9 +341,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
    const CBioSource* biosrc_p = 0;
    string prot_nm;
    unsigned rule_idx;
-unsigned i=0;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
-cerr << "i " << ++i << endl;
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
 
@@ -359,18 +355,14 @@ cerr << "i " << ++i << endl;
      
      if (prot.CanGetName()) {
        prot_nm = *(prot.GetName().begin()); 
-cerr << " prot_nm " << prot_nm << endl;
        rule_idx = 0;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
-cerr << " i rule_idx " << i << "  " << rule_idx << endl;
 /*
+cerr << " rule_idx " << rule_idx << endl;
 cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
+if (rule_idx == 2) cerr << "**rit " << Blob2Str(**rit) << endl;
 */
-if (rule_idx == 682) cerr << "**rit " << Blob2Str(**rit) << endl;
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
-if (prot_set_nm.find(prot_nm) == prot_set_nm.end())
-prot_set_nm.insert(prot_nm);
-cerr << "item_list " << GetName() << "  " << thisInfo.test_item_list[GetName()].size() << endl;
 cerr << "rule_idx  " << rule_idx << "  " 
  << NStr::UIntToString((int)(*rit)->GetRule_type()) + "$"
                    + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use)
@@ -383,14 +375,12 @@ cerr << "rule_idx  " << rule_idx << "  "
        }
      }
    }
-cerr << "prot_set_nm.size() " << prot_set_nm.size() << endl;
 };
 
 void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
 {
    Str2Strs fixtp2rule_feats, rule2feats;
    GetTestItemList(c_item->item_list, fixtp2rule_feats);
-cerr << "fixtp2rule_feats.size() " << fixtp2rule_feats.size();
    c_item->item_list.clear();
 
    string test_name, fixtp_name, summ;
@@ -401,18 +391,20 @@ cerr << "fixtp2rule_feats.size() " << fixtp2rule_feats.size();
 
      rule2feats.clear();
      GetTestItemList(fit->second, rule2feats, "@");
-cerr << "rule2feats.size() " << rule2feats.size() << endl;
      ITERATE (Str2Strs, rit, rule2feats) {
        rule_idx = NStr::StringToUInt(rit->first);
        test_name = thisInfo.susrule_summ[rule_idx][0];
        fixtp_name = thisInfo.susrule_summ[rule_idx][1];
        summ = thisInfo.susrule_summ[rule_idx][2];
-       AddSubcategory(name_cat_citem, test_name, &(rit->second), "feature" + summ, 
+       AddSubcategory(name_cat_citem, test_name, &(rit->second), "feature " + summ, 
                                                  "features " + summ,  e_OtherComment);
      } 
- 
-     AddSubcategory(c_item, GetName(), &(name_cat_citem->item_list), fixtp_name, 
-                          fixtp_name, e_OtherComment);
+     name_cat_citem->setting_name = GetName();
+     name_cat_citem->description = fixtp_name;
+     c_item->item_list.insert(c_item->item_list.end(), 
+                          name_cat_citem->item_list.begin(), name_cat_citem->item_list.end());
+     c_item->subcategories.push_back(name_cat_citem);
+     
    }   
 
    c_item->description = GetContainsComment(c_item->item_list.size(), "product_name") 
@@ -553,7 +545,7 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) { 
      if ( (*it)->CanGetComment()) {
        comment = (*it)->GetComment();
-       if (NStr::EqualNocase( comment.substr(0, 9), "contains ") ) {
+       if (NStr::EqualNocase( comment, 0, 9, "contains ") ) {
           ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.orga_prod_rules->Get()) {
              if (!comment.empty() 
                     && rule_check.DoesStringMatchSuspectRule(bioseq_hl, comment, **it, **rit)){
