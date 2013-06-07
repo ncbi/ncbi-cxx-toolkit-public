@@ -433,7 +433,7 @@ TExitCode CExec::System(const char *cmdline)
     int status;
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_system(_T_XCSTRING(cmdline)); 
+    status = NcbiSys_system(cmdline ? _T_XCSTRING(cmdline) : NULL); 
 #elif defined(NCBI_OS_UNIX)
     status = system(cmdline);
 #endif
