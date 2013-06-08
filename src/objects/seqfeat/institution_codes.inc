@@ -548,6 +548,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BNL	s	Bundesamt fuer Naturschutz",
 "BNP	s	Banff Park Museum",
 "BNPL	s	Brighton Public Library",
+"BNRH	s	Buffelskloof Nature Reserve",
 "BNS	s	Bristol Museum and Art Gallery",
 "BNU	s	Beijing Normal University, Biology Department",
 "BO	s	Herbarium Bogoriense",
