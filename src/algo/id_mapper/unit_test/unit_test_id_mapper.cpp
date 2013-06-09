@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqToUcscMapping)
 }
 
 
-BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest)
+BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Scaffold)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
@@ -139,7 +139,73 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest)
 }
 
 
-BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest)
+BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Comp)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000003205.2",
+                              CGCClient_GetAssemblyRequest::eLevel_component
+                             )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Gi;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetWhole().SetLocal().SetStr("chrUn.004.10843");
+
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 112070986); // AAFC03080232.1
+}
+
+
+BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000001405.12",
+                              CGCClient_GetAssemblyRequest::eLevel_scaffold,
+                              0,
+                              0,
+                              2048, // pseudo
+                              0
+                             )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+    
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetInt().SetId().SetLocal().SetStr("chr1_random");
+    OrigLoc->SetInt().SetFrom(500000);
+    OrigLoc->SetInt().SetTo(510000);
+
+    CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
+
+    CRef<CSeq_loc> Expected(new CSeq_loc());
+    Expected->SetInt().SetId().Set("NT_113872.1");
+    Expected->SetInt().SetFrom(57066);
+    Expected->SetInt().SetTo(67066);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK(Result->Equals(*Expected));
+}
+
+
+BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Comp)
 {
     // Fetch Gencoll
     CGenomicCollectionsService GCService;
