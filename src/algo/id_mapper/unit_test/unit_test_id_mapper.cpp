@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
                               CGCClient_GetAssemblyRequest::eLevel_scaffold,
                               0,
                               0,
-                              2048, // pseudo
+                              2048, // CGencollAccess::fAttribute_include_UCSC_pseudo_scaffolds
                               0
                              )
     );
