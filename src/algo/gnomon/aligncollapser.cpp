@@ -233,8 +233,6 @@ bool AlignmentMarkedForDeletion(const SAlignIndividual& ali) {
 
 void CAlignCollapser::FilterESTandSR() {
 
-    cerr << "Added " << m_count << " alignments to collapser" << endl;
-
     if(!m_filtersr && !m_filterest)
         return;
 
@@ -547,6 +545,11 @@ void CAlignCollapser::FilterESTandSR() {
 }
 
 void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
+
+    cerr << "Added " << m_count << " alignments to collapser" << endl;
+
+    if(m_count == 0)
+        return;
 
     FilterESTandSR();
 
