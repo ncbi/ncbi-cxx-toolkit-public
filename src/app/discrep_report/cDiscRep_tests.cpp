@@ -9090,13 +9090,17 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
    ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
      desc = GetDiscItemText(**it, *(user_seqdesc_seqentry[i]));
      const CUser_object& user_obj = (*it)->GetUser();
+     CBioseq_CI b_ci(*thisInfo.scope, *(user_seqdesc_seqentry[i]), CSeq_inst::eMol_aa);
+/*
      entry_is_seq = user_seqdesc_seqentry[i]->IsSeq() ? true : false;
 
      if (entry_is_seq) {
          seq_ref = CConstRef <CBioseq> (&(user_seqdesc_seqentry[i]->GetSeq()));
+cerr << "seq_ref " << Blob2Str(user_seqdesc_seqentry[i]->GetSeq());
          seq_desc = GetDiscItemText(*seq_ref);
      }
      else set_ref = CConstRef <CBioseq_set> (&(user_seqdesc_seqentry[i]->GetSet()));
+*/
     
      type_str = user_obj.GetType().IsStr() ? user_obj.GetType().GetStr() : kEmptyStr;
      
@@ -9113,6 +9117,11 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
         }
         else prefix = "unnamed";
         if (m_prefix_set.find(prefix) == m_prefix_set.end()) m_prefix_set.insert(prefix);
+        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
+           m_seq2prefix[GetDiscItemText(*bb_ci->GetCompleteBioseq())] += ("$" + prefix);
+           not_empty_fields = true; 
+        }
+/*
         if (entry_is_seq) {
            if (!seq_ref->IsAa()) {
               m_seq2prefix[seq_desc] += ("$" + prefix);
@@ -9120,10 +9129,16 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
            }
         }
         else not_empty_fields = SetHasStrCommFields(*set_ref, prefix);
+*/
         if (not_empty_fields) AddStrCommFieldValues(user_obj, prefix, desc);
         else AddStrCommFieldEmptyValues(user_obj, prefix, desc);
      } 
      else if (type_str == "DBLink" && run_test_db) { // DISC_INCONSISTENT_DBLINK
+        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
+             m_seq_has_dblink.insert(GetDiscItemText(*bb_ci->GetCompleteBioseq()));
+             not_empty_fields = true;
+        }
+/*
         if (entry_is_seq) {
            if (!seq_ref->IsAa()) {
                m_seq_has_dblink.insert(seq_desc);
@@ -9131,6 +9146,7 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
            }
         } 
         else not_empty_fields = SetHasDbLinkFields(*set_ref);
+*/
         if (not_empty_fields) AddDbLinkFieldValues(user_obj, desc);
         else AddDbLinkFieldEmptyValues(user_obj, desc);
      }
@@ -10045,7 +10061,7 @@ string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const C
 void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
 {
    string desc;
-   if (thisInfo.seq_submit.Empty()) desc = "0$";
+   if (!thisInfo.seq_submit->IsEntrys()) desc = "0$";
    else {
      if (SUBMIT_BLKs.empty()) SUBMIT_BLKs.push_back(Blob2Str(thisInfo.seq_submit->GetSub()));
      else desc = SubmitBlockMatchExceptDate(thisInfo.seq_submit->GetSub());

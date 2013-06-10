@@ -1029,7 +1029,6 @@ int CDiscRepApp :: Run(void)
 
     // read input file and go tests
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
-    CSeq_submit tmp_seq_submit;
     set <const CTypeInfo*> known_tp;
     known_tp.insert(CSeq_submit::GetTypeInfo());
     set <const CTypeInfo*> matching_tp = ois->GuessDataType(known_tp);

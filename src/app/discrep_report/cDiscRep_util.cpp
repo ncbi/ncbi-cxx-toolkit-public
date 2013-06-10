@@ -987,13 +987,15 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
       CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
       unsigned ambigs_cnt = 0, gap_cnt = 0;
       SSeqMapSelector sel(CSeqMap::fDefaultFlags);
-      for (CSeqMap_CI seqmap_ci(bioseq_handle, sel); seqmap_ci;  ++seqmap_ci) {
+      if (bioseq.GetInst().CanGetSeq_data()) {
+        for (CSeqMap_CI seqmap_ci(bioseq_handle, sel); seqmap_ci;  ++seqmap_ci) {
             if (seqmap_ci.GetType() == CSeqMap::eSeqGap) gap_cnt += seqmap_ci.GetLength();
             else ambigs_cnt += CSeqportUtil::GetAmbigs(seqmap_ci.GetRefData(),
                                                     &out_seq, &idx,
                                                     CSeq_data::e_Ncbi2na,
                                                     seqmap_ci.GetRefPosition(),
                                                     seqmap_ci.GetLength());
+        }
       }
       if (bioseq.IsNa()) {
           if (ambigs_cnt >0)

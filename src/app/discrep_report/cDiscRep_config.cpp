@@ -86,11 +86,11 @@ vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SubmitBlk;
 set <string> CDiscTestInfo :: tests_run;
 
 static CDiscTestInfo thisTest;
-static const s_test_property test_list[] = {
+static const s_test_property test1_list[] = {
   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy}
 };
 
-static const s_test_property test1_list[] = {
+static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
