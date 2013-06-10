@@ -953,11 +953,11 @@ CTLibContext::x_Close(bool delete_conn)
 
 bool CTLibContext::x_SafeToFinalize(void) const
 {
+#if defined(NCBI_OS_MSWIN) && defined(NCBI_DLL_BUILD)
     if (m_Registry) {
-#if defined(NCBI_OS_MSWIN)
         return m_Registry->ExitProcessIsPatched();
-#endif
     }
+#endif
 
     return true;
 }
