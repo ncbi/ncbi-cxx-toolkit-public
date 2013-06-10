@@ -1664,30 +1664,25 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.SetCurrentGroup("Restrict search or results");
     // GI list
-    arg_desc.AddOptionalKey(kArgGiList, "filename", 
-                            "Restrict search of database to list of GI's",
-                            CArgDescriptions::eString);
-    // SeqId list
-    arg_desc.AddOptionalKey(kArgSeqIdList, "filename", 
-                            "Restrict search of database to list of SeqId's",
-                            CArgDescriptions::eString);
-    // Negative GI list
-    arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
-        "Restrict search of database to everything except the listed GIs",
-        CArgDescriptions::eString);
-    arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
-                           kArgNegativeGiList);
-    arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
-                           kArgSeqIdList);
-    arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
-                           kArgNegativeGiList);
-    // Entrez Query
-    // Deltablast does not support remote blast
-    if (!m_IsDeltaBlast) {
-        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
-                                "Restrict search with the given Entrez query",
+    if (!m_IsRpsBlast) {
+        arg_desc.AddOptionalKey(kArgGiList, "filename", 
+                                "Restrict search of database to list of GI's",
                                 CArgDescriptions::eString);
-
+        // SeqId list
+        arg_desc.AddOptionalKey(kArgSeqIdList, "filename", 
+                                "Restrict search of database to list of SeqId's",
+                                CArgDescriptions::eString);
+        // Negative GI list
+        arg_desc.AddOptionalKey(kArgNegativeGiList, "filename", 
+                                "Restrict search of database to everything"
+                                " except the listed GIs",
+                                CArgDescriptions::eString);
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                               kArgNegativeGiList);
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                               kArgSeqIdList);
+        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
+                               kArgNegativeGiList);
 
         // For now, disable pairing -remote with either -gilist or
         // -negative_gilist as this is not implemented in the BLAST server
@@ -1695,8 +1690,16 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                kArgRemote);
         arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
                                kArgRemote);
-        arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes, 
+        arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes,
                                kArgRemote);
+    }
+
+    // Entrez Query
+    // Deltablast does not support remote blast
+    if (!m_IsDeltaBlast) {
+        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
+                                "Restrict search with the given Entrez query",
+                                CArgDescriptions::eString);
 
         // Entrez query currently requires the -remote option
         arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
