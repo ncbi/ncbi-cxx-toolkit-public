@@ -424,7 +424,10 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     catch (const CNetStorageException &  ex) {
         ERR_POST(ex);
         http_error_code = eStatus_ServerError;
-        error_code = CNetStorageServerException::eStorageError;
+        if (ex.GetErrCode() == CNetStorageException::eNotExists)
+            error_code = CNetStorageServerException::eObjectNotFound;
+        else
+            error_code = CNetStorageServerException::eStorageError;
         error_client_message = ex.what();
     }
     catch (const std::exception &  ex) {
@@ -794,7 +797,7 @@ CNetStorageHandler::x_ProcessShutdown(
                    "Allowed 'Mode' values are 'soft' and 'hard'");
     }
 
-    if (mode == "hard" )
+    if (mode == "hard")
         exit(1);
 
     m_Server->SetShutdownFlag(SIGTERM);
@@ -927,7 +930,7 @@ CNetStorageHandler::x_ProcessRead(
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     x_SendSyncMessage(reply);
- 
+
     m_ClientRegistry.AddObjectsRead(m_Client, 1);
 
     char            buffer[kReadBufferSize];

@@ -55,7 +55,8 @@ class CNetStorageServerException : public CException
             eStorageError           = 10,
             eWriteError             = 11,
             eReadError              = 12,
-            eInternalError          = 13
+            eInternalError          = 13,
+            eObjectNotFound         = 14
         };
         virtual const char *  GetErrCodeString(void) const;
         unsigned int ErrCodeToHTTPStatusCode(void) const;
