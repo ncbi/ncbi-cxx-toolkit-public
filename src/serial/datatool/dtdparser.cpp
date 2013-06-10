@@ -1227,7 +1227,7 @@ CDataType* DTDParser::TypesBlock(
         if (refNode.IsEmbedded() && !refNode.IsNamed()) {
             member->SetNotag();
         }
-        if (!refNode.GetDefault().empty()) {
+        if (!refNode.GetDefault().empty() && !refNode.HasAttributes()) {
             member->SetDefault(Value(refNode));
         }
         member->SetNoPrefix();
@@ -1263,6 +1263,9 @@ CDataType* DTDParser::CompositeNode(
         member->SetOptional();
     }
     member->SetNotag();
+    if (!node.GetDefault().empty()) {
+        member->SetDefault(Value(node));
+    }
     member->SetNoPrefix();
     if (!uniseq) {
         member->SetSimpleType();
