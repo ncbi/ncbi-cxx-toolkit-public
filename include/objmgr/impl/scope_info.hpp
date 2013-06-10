@@ -94,6 +94,7 @@ class CDeleteQueue
 public:
     typedef Key key_type;
     typedef Value value_type;
+    typedef vector<value_type> TUnlockSet;
 
     explicit CDeleteQueue(size_t max_size = 0)
         : m_MaxSize(max_size)
@@ -131,7 +132,32 @@ public:
                 _ASSERT(m_Queue.size() == m_Index.size());
             }
         }
-    void Put(const key_type& key, const value_type& value)
+    void Put(const key_type& key, const value_type& value,
+             value_type* unlock_ptr)
+        {
+            _ASSERT(m_Queue.size() == m_Index.size());
+            _ASSERT(m_Index.find(key) == m_Index.end());
+
+            TQueueIter queue_iter =
+                m_Queue.insert(m_Queue.end(), TQueueValue(key, value));
+                               
+            typedef typename TIndex::value_type insert_type;
+            
+            _VERIFY(m_Index.insert(TIndexValue(key, queue_iter)).second);
+
+            _ASSERT(m_Queue.size() == m_Index.size());
+
+            if ( m_Index.size() > m_MaxSize ) {
+                _VERIFY(m_Index.erase(m_Queue.front().first) == 1);
+                if ( unlock_ptr ) {
+                    *unlock_ptr = m_Queue.front().second;
+                }
+                m_Queue.pop_front();
+                _ASSERT(m_Queue.size() == m_Index.size());
+            }
+        }
+    void Put(const key_type& key, const value_type& value,
+             TUnlockSet* unlock_set = 0)
         {
             _ASSERT(m_Queue.size() == m_Index.size());
             _ASSERT(m_Index.find(key) == m_Index.end());
@@ -147,13 +173,21 @@ public:
 
             while ( m_Index.size() > m_MaxSize ) {
                 _VERIFY(m_Index.erase(m_Queue.front().first) == 1);
+                if ( unlock_set ) {
+                    unlock_set->push_back(m_Queue.front().second);
+                }
                 m_Queue.pop_front();
                 _ASSERT(m_Queue.size() == m_Index.size());
             }
         }
 
-    void Clear(void)
+    void Clear(TUnlockSet* unlock_set = 0)
         {
+            if ( unlock_set ) {
+                ITERATE ( typename TQueue, it, m_Queue ) {
+                    unlock_set->push_back(it->second);
+                }
+            }
             m_Queue.clear();
             m_Index.clear();
         }

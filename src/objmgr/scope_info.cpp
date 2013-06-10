@@ -314,6 +314,7 @@ void CDataSource_ScopeInfo::UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock)
 void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
 {
     {{
+        CTSE_ScopeInternalLock unlocked;
         TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_UnlockQueueMutex);
         if ( tse.m_TSE_LockCounter.Get() > 0 ) {
             // relocked already
@@ -323,7 +324,7 @@ void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
             // already unlocked
             return;
         }
-        m_TSE_UnlockQueue.Put(&tse, CTSE_ScopeInternalLock(&tse));
+        m_TSE_UnlockQueue.Put(&tse, CTSE_ScopeInternalLock(&tse), &unlocked);
     }}
 }
 
@@ -348,8 +349,9 @@ void CDataSource_ScopeInfo::ResetDS(void)
 {
     TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
     {{
+        TTSE_UnlockQueue::TUnlockSet unlocked;
         TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
-        m_TSE_UnlockQueue.Clear();
+        m_TSE_UnlockQueue.Clear(&unlocked);
     }}
     NON_CONST_ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
         it->second->DropTSE_Lock();
