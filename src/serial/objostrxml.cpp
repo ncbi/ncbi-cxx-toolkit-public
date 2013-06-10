@@ -1485,11 +1485,17 @@ void CObjectOStreamXml::WriteClassMemberDefault(
     if (m_Attlist) {
         return;
     }
-    BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
-    OpenStackTag(0);
-    x_WriteAsDefault();
-    CloseStackTag(0);
-    END_OBJECT_FRAME();
+    if (memberId.HasNotag()) {
+        x_WriteAsDefault();
+        TopFrame().SetNotag();
+        m_LastTagAction = eTagClose;
+    } else {
+        BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+        OpenStackTag(0);
+        x_WriteAsDefault();
+        CloseStackTag(0);
+        END_OBJECT_FRAME();
+    }
 }
 #endif
 
