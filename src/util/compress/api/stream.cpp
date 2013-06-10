@@ -166,7 +166,9 @@ CCompressionStream::~CCompressionStream(void)
 void CCompressionStream::Finalize(CCompressionStream::EDirection dir) 
 {
     if ( m_StreamBuf ) {
-        m_StreamBuf->Finalize(dir);
+        if ( m_StreamBuf->Finalize(dir) != 0 ) {
+            setstate(badbit);
+        }
     }
 }
 

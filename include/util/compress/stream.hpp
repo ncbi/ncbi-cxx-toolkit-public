@@ -69,7 +69,6 @@ BEGIN_NCBI_SCOPE
 //
 // Note:
 //   CCompression[IO]Stream class objects must be finalized after use.
-//   At least one IO operation should be accomplished before finalization.
 //   Only after finalization all data put into stream will be processed
 //   for sure. By default finalization called in the class destructor, however
 //   it can be done in any time by call Finalize(). After finalization you

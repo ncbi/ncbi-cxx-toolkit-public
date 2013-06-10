@@ -1117,7 +1117,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Process(
         if ( !CompressCache() ) {
             return eStatus_Error;
         }
-        // else: the block compressed successfuly
+        // else: the block compressed successfully
     }
     // If we have some data in the output cache buffer -- return it
     if ( m_OutEndPtr != m_OutBegPtr ) {
@@ -1428,7 +1428,7 @@ CCompressionProcessor::EStatus CLZODecompressor::Process(
                 if ( !DecompressCache() ) {
                     return eStatus_Error;
                 }
-                // else: the block decompressed successfuly
+                // else: the block decompressed successfully
             }
         }
 
@@ -1486,6 +1486,9 @@ CCompressionProcessor::EStatus CLZODecompressor::Finish(
 
     if ( m_DecompressMode == eMode_Unknown ) {
         if (m_Cache.size() < kMinHeaderSize) {
+            if ( !m_Cache.size()  &&  F_ISSET(fAllowEmptyData) ) {
+                return eStatus_EndOfData;
+            }
             return eStatus_Error;
         } else {
             // Try to process one more time

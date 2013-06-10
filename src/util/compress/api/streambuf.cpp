@@ -180,16 +180,16 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
     if ( !IsStreamProcessorOkay(dir) ) {
         return -1;
     }
+    CSP* sp = GetStreamProcessor(dir);
+    // Check processor's status
+    if ( sp->m_LastStatus == CP::eStatus_Error ) {
+        return -1;
+    }
     // Check that we have some data to process, before calling 
     // any compression/decompression methods, or we can get 
     // a garbage on the output.
-    if ( !IsStreamProcessorHaveData(dir) ) {
+    if ( !IsStreamProcessorHaveData(dir)  &&  sp->m_LastStatus != CP::eStatus_Overflow ) {
         return 0;
-    }
-    CSP* sp = GetStreamProcessor(dir);
-    // Check processor's status
-    if ( sp->m_LastStatus == CP::eStatus_Error) {
-        return -1;
     }
     // Process remaining data in the preprocessing buffer
     if ( !Process(dir) ) {
@@ -271,7 +271,7 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
             _VERIFY(sp->m_State == CSP::eActive);
             sp->m_LastStatus = 
                 sp->m_Processor->Flush(buf, out_size, &out_avail);
-            // No more data -- automaticaly finalize stream
+            // No more data -- automatically finalize stream
             if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
                 sp->m_State = CSP::eFinalize;
             }
@@ -418,7 +418,7 @@ bool CCompressionStreambuf::ProcessStreamRead()
         if ( m_Reader->m_LastStatus == CP::eStatus_Error ) {
             return false;
         }
-        // No more data -- automaticaly finalize stream
+        // No more data -- automatically finalize stream
         if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
             m_Reader->m_State = CSP::eFinalize;
         }
@@ -474,7 +474,7 @@ bool CCompressionStreambuf::ProcessStreamWrite()
         if ( m_Writer->m_LastStatus == CP::eStatus_Error ) {
             return false;
         }
-        // No more data -- automaticaly finalize stream
+        // No more data -- automatically finalize stream
         if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
             m_Writer->m_State = CSP::eFinalize;
         }
@@ -504,6 +504,9 @@ bool CCompressionStreambuf::WriteOutBufToStream(bool force_write)
 
         streamsize to_write = m_Writer->m_End - m_Writer->m_Begin;
         if ( to_write ) {
+            if ( !m_Stream->good() ) {
+                return false;
+            }
             streamsize n_write = m_Stream->rdbuf()->sputn(m_Writer->m_Begin, to_write);
             if ( n_write != to_write ) {
                 m_Writer->m_Begin += n_write;

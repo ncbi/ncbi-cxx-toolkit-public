@@ -1386,6 +1386,10 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
     CCompressionProcessor::EStatus status = eStatus_Success;
     if ( GetProcessedSize() || m_Cache.size() ) {
         status = Process(0, 0, out_buf, out_size, &in_avail, out_avail);
+    } else {
+        if ( !F_ISSET(fAllowEmptyData) ) {
+            return eStatus_Error;
+        }
     }
     if (status == eStatus_Success  &&  *out_avail == 0) {
         // Possible case with .gz files only (check on concatenated files)

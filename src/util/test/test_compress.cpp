@@ -251,8 +251,8 @@ struct SEmptyInputDataTest
     CCompressStream::EMethod method;
     unsigned int flags;
     // Result of CompressBuffer()/DecompressBuffer() methods for specified
-    // set of flags.
-    bool buffer_method_result;
+    // set of flags. Stream's Finalize() also should set badbit if FALSE.
+    bool result;
     // An expected output size for compression with specified set of 'flags'.
     // Usually this is a sum of sizes for header and footer, if selected
     // format have it. Decompression output size should be always 0.
@@ -331,24 +331,28 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
         // Buffer compression/decompression test
         {{
             bool res = compression->CompressBuffer(src_buf, 0, dst_buf, kLen, &n);
-            assert(res == test.buffer_method_result);
+            assert(res == test.result);
             assert(n == test.buffer_output_size);
             res = compression->DecompressBuffer(dst_buf, n, cmp_buf, kLen, &n);
-            assert(res == test.buffer_method_result);
+            assert(res == test.result);
             assert(n == 0);
         }}
 
         // Input stream tests
         {{
             CCompressionIStream ics(is_str, stream_compressor.get());
+            assert(ics.good());
             ics.read(dst_buf, kLen);
+            assert(ics.eof());
             n = (size_t)ics.gcount();
             assert(n == test.stream_output_size);
             assert(ics.GetProcessedSize() == 0);
             assert(ics.GetOutputSize() == n);
 
             CCompressionIStream ids(is_str, stream_decompressor.get());
+            assert(ids.good());
             ids.read(dst_buf, kLen);
+            assert(ids.eof());
             n = (size_t)ids.gcount();
             assert(n == 0);
             assert(ids.GetProcessedSize() == 0);
@@ -360,7 +364,9 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ocs(os_str, stream_compressor.get());
+                assert(ocs.good());
                 ocs.Finalize();
+                assert(ocs.good());
                 n = (size_t)os_str.pcount();
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
@@ -369,7 +375,9 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ods(os_str, stream_decompressor.get());
+                assert(ods.good());
                 ods.Finalize();
+                assert(test.result ? ods.good() : !ods.good());
                 n = (size_t)os_str.pcount();
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
@@ -382,8 +390,11 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ocs(os_str, stream_compressor.get());
+                assert(ocs.good());
                 ocs.flush();
+                assert(ocs.good());
                 ocs.Finalize();
+                assert(ocs.good());
                 n = (size_t)os_str.pcount();
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
@@ -392,8 +403,11 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             {{
                 CNcbiOstrstream os_str;
                 CCompressionOStream ods(os_str, stream_decompressor.get());
+                assert(ods.good());
                 ods.flush();
+                assert(ods.good());
                 ods.Finalize();
+                assert(test.result ? ods.good() : !ods.good());
                 n = (size_t)os_str.pcount();
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);

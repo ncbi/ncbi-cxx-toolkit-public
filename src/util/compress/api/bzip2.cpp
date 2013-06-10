@@ -746,7 +746,9 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
 {
     switch (m_DecompressMode) {
         case eMode_Unknown:
-            return eStatus_Error;
+            if ( !F_ISSET(fAllowEmptyData) ) {
+                return eStatus_Error;
+            }
         default:
             ;
     }
@@ -759,7 +761,10 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
 {
     switch (m_DecompressMode) {
         case eMode_Unknown:
-            return eStatus_Error;
+            if ( !F_ISSET(fAllowEmptyData) ) {
+                return eStatus_Error;
+            }
+            return eStatus_EndOfData;
         case eMode_TransparentRead:
             return eStatus_EndOfData;
         default:

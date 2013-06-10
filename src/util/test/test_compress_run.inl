@@ -309,12 +309,14 @@
         CNcbiIstrstream is_str(src_buf, kDataLen);
         CCompressionIStream ics_zip(is_str, new TStreamCompressor(),
                                     CCompressionStream::fOwnProcessor);
+        assert(ics_zip.good());
         
         // Read compressed data from stream
         ics_zip.read(dst_buf, kReadMax);
+        assert(ics_zip.eof());
         dst_len = (size_t)ics_zip.gcount();
         // We should have all packed data here, because compressor
-        // finalization for input streams accomplishes automaticaly.
+        // finalization for input streams accomplishes automatically.
         PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, dst_len);
         assert(ics_zip.GetProcessedSize() == kDataLen);
         assert(ics_zip.GetOutputSize() == dst_len);
@@ -365,7 +367,9 @@
         // Read decompressed data from stream
         CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),
                                     CCompressionStream::fOwnReader);
+        assert(ids_zip.good());
         ids_zip.read(cmp_buf, kReadMax);
+        assert(ids_zip.eof());
         out_len = (size_t)ids_zip.gcount();
         // We should have all packed data here, because compressor
         // finalization for input streams accomplishes automatically.
@@ -391,11 +395,15 @@
         {{
             CCompressionOStream os_zip(os_str, new TStreamCompressor(),
                                        CCompressionStream::fOwnWriter);
+            assert(os_zip.good());
             os_zip.write(src_buf, kDataLen);
+            assert(os_zip.good());
             // Finalize compression stream in the destructor.
             // The output stream os_str will receive all data only after
-            // finalization.
-            // You can also call os_zip.Finalize() directly at any time.
+            // finalization. But we do not recommend to do this in real 
+            // applications, because you cannot check stream status 
+            // after finalization. It is better to call Finalize()
+            // directly, when you finished writing to stream.
         }}
         // Get compressed size
         const char* str = os_str.str();
@@ -450,7 +458,7 @@
         CNcbiOstrstream os_str;
         CCompressionOStream os_zip(os_str, new TStreamDecompressor(),
                                    CCompressionStream::fOwnProcessor);
-
+        assert(os_zip.good());
 #if defined(HAVE_LIBLZO)
         // The blocksize and flags stored in the header should be used
         // instead of the value passed in the parameters for decompressor.
@@ -458,8 +466,10 @@
 #endif
 
         os_zip.write(dst_buf, out_len);
+        assert(os_zip.good());
         // Finalize a compression stream via direct call Finalize().
         os_zip.Finalize();
+        assert(os_zip.good());
 
         // Get decompressed size
         const char*  str = os_str.str();
@@ -492,8 +502,9 @@
 
         // Read uncompressed data from stream
         CCompressionIStream ids_zip(is_str, &decompressor);
-
+        assert(ids_zip.good());
         ids_zip.read(dst_buf, kReadMax);
+        assert(ids_zip.eof());
         out_len = (size_t)ids_zip.gcount();
         PrintResult(eDecompress, kUnknownErr, kDataLen, kBufLen, out_len);
         assert(ids_zip.GetProcessedSize() == out_len);
@@ -563,12 +574,14 @@
                                          new TStreamDecompressor(),
                                          new TStreamCompressor(),
                                          CCompressionStream::fOwnProcessor);
+                assert(zip.good());
                 int v;
                 for (int i = 0; i < n; i++) {
                     v = i * 2;
                     zip << v << endl;
                 }
                 zip.Finalize(CCompressionStream::eWrite);
+                assert(zip.good());
                 zip.clear();
 
                 for (int i = 0; i < n; i++) {
@@ -603,6 +616,7 @@
             int n = 1000;
             {{
                 CCompressionOStream ocs_zip(os_str, &compressor);
+                assert(ocs_zip.good());
                 for (int i = 0; i < n; i++) {
                     v = i * 2;
                     ocs_zip << v << endl;
@@ -615,6 +629,7 @@
             // Decompress data from input stream
             CNcbiIstrstream is_str(str, os_str_len);
             CCompressionIStream ids_zip(is_str, &decompressor);
+            assert(ids_zip.good());
             for (int i = 0; i < n; i++) {
                 ids_zip >> v;
                 assert(!ids_zip.eof());

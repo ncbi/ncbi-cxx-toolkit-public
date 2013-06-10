@@ -68,7 +68,8 @@ public:
 
     // Finalize stream's compression/decompression process for read/write.
     // This function calls a processor's Finish() function.
-    void Finalize(CCompressionStream::EDirection dir =
+    // Return 0 if no error; otherwise, returns -1.
+    int Finalize(CCompressionStream::EDirection dir =
                                      CCompressionStream::eReadWrite);
 
 protected:
@@ -148,15 +149,16 @@ protected:
 //
 
 inline 
-void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
+int CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
 {
     // Finalize read and write processors
     if (dir == CCompressionStream::eReadWrite ) {
-        Finish(CCompressionStream::eRead);
-        Finish(CCompressionStream::eWrite);
-        return;
+        int status = 0;
+        status += Finish(CCompressionStream::eRead);
+        status += Finish(CCompressionStream::eWrite);
+        return (status < 0 ? -1 : 0);
     }
-    Finish(dir);
+    return Finish(dir);
 }
 
 inline CCompressionProcessor*
