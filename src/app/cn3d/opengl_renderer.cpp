@@ -109,7 +109,7 @@ static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 
 const unsigned int OpenGLRenderer::NO_LIST = 0;
 const unsigned int OpenGLRenderer::FIRST_LIST = 1;
-const unsigned int OpenGLRenderer::FONT_BASE = 1000;
+const unsigned int OpenGLRenderer::FONT_BASE = 100000;
 
 static const unsigned int ALL_FRAMES = kMax_UInt;
 
