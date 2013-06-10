@@ -582,6 +582,27 @@ bool CVcfWriter::x_WriteFeatureInfo(
         }
     }
 
+    if (mf.IsSetDbxref()) {
+        const vector<CRef<CDbtag> >& refs = mf.GetDbxref();
+        string pmids;
+        for ( vector<CRef<CDbtag> >::const_iterator cit = refs.begin();
+            cit != refs.end(); ++cit) 
+        {
+            const CDbtag& ref = **cit;
+            if (ref.IsSetDb()  &&  ref.IsSetTag()  &&  ref.GetDb() == "PM") {
+                if (!pmids.empty()) {
+                    pmids += ",";
+                }
+                pmids += "PM:";
+                pmids += NStr::IntToString(ref.GetTag().GetId());
+            }
+        }
+        if (!pmids.empty()) {
+            //infos.push_back("PMC");
+            infos.push_back(string("PMID=")+pmids);
+        }
+    }
+
     if (var.IsSetVariant_prop()) {
         const CVariantProperties& props = var.GetVariant_prop();
         if ( props.IsSetAllele_frequency()) {

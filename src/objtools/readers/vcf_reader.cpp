@@ -1212,30 +1212,31 @@ CVcfReader::xAssignVariantProps(
     it = infos.find("PMC");
     if (infos.end() != it) {
         infos.erase(it);
-        it = infos.find("PMID");
-        if (infos.end() == it) {
-            CRef<CDbtag> pDbtag(new CDbtag);
-            pDbtag->SetDb("PM");
-            pDbtag->SetTag().SetId(-1);
-            pFeat->SetDbxref().push_back(pDbtag);
-        }
-        else {
-            vector<string> pmids = it->second;
-            for (vector<string>::const_iterator cit = pmids.begin();
-                cit != pmids.end(); ++cit)
-            {
-                try {
-                    string db, tag;
-                    NStr::SplitInTwo(*cit, ":", db, tag);
-                    CRef<CDbtag> pDbtag(new CDbtag);
-                    pDbtag->SetDb(db);
-                    pDbtag->SetTag().SetId(
-                        NStr::StringToInt(tag));
-                    pFeat->SetDbxref().push_back(pDbtag);
+    }
+    it = infos.find("PMID");
+    if (infos.end() != it) {
+        vector<string> pmids = it->second;
+        for (vector<string>::const_iterator cit = pmids.begin();
+            cit != pmids.end(); ++cit)
+        {
+            try {
+                string db, tag;
+                NStr::SplitInTwo(*cit, ":", db, tag);
+                if (db != "PM") {
+                    string msg = 
+                        "VCF.PMID import: Ignored ID with invalid database " + db + ".";
+                    ERR_POST(msg);
+                    continue;
                 }
-                catch(...) {}
+                CRef<CDbtag> pDbtag(new CDbtag);
+                pDbtag->SetDb(db);
+                pDbtag->SetTag().SetId(
+                    NStr::StringToInt(tag));
+                pFeat->SetDbxref().push_back(pDbtag);
             }
+            catch(...) {}
         }
+        infos.erase(it);
     }
 
     //superbyte F2
