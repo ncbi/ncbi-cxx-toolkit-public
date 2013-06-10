@@ -183,7 +183,9 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     }
 
     _ASSERT(options->GetCompositionBasedStats() < eNumCompoAdjustModes);
-    if ((options->GetCompositionBasedStats() != eNoCompositionBasedStats) &&
+    // the message below is meaningless for deltablast
+    if (options->GetProgram() != eDeltaBlast &&
+        (options->GetCompositionBasedStats() != eNoCompositionBasedStats) &&
         freq_ratios_all_zeros) {
         ostringstream os;
         os << "Frequency ratios for PSSM are all zeros, frequency ratios for ";
