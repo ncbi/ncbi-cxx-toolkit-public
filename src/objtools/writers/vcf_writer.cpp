@@ -262,7 +262,7 @@ bool CVcfWriter::x_WriteFeature(
     CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
-{
+{ 
     if (!x_WriteFeatureChrom(context, mf)) {
         return false;
     }
@@ -548,7 +548,12 @@ bool CVcfWriter::x_WriteFeatureInfo(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    typedef CVariantProperties VP;
+
     m_Os << "\t";
+
+    vector<string> infos;
+    const CVariation_ref& var = mf.GetData().GetVariation();
 
     if ( mf.IsSetExt() ) {
         string info = ".";
@@ -558,119 +563,167 @@ bool CVcfWriter::x_WriteFeatureInfo(
         {
             if ( ext.HasField( "info" ) ) {
                 info = ext.GetField( "info" ).GetData().GetStr();
+                NStr::Tokenize(info, ";", infos, NStr::eMergeDelims);
             }
         }
-        m_Os << info;
-        return true;
     }
    
-    vector<string> infos;
-    const CVariation_ref& var = mf.GetData().GetVariation();
-    if ( var.IsSetId() ) {
+    if (var.IsSetId()) {
         string db = var.GetId().GetDb();
-        NStr::ToLower( db );
-        if ( db == "dbsnp" ) {
-            infos.push_back( "DB" );
+        NStr::ToLower(db);
+        if (db == "dbsnp") {
+            infos.push_back("DB");
         }
-        if ( db == "hapmap2" ) {
-            infos.push_back( "H2" );
+        if (db == "hapmap2") {
+            infos.push_back("H2");
         }
-        if ( db == "hapmap3" ) {
-            infos.push_back( "H3" );
+        if (db == "hapmap3") {
+            infos.push_back("H3");
         }
     }
 
-    vector<string> values; 
-    if ( var.IsSetVariant_prop() ) {
+    if (var.IsSetVariant_prop()) {
         const CVariantProperties& props = var.GetVariant_prop();
-        if ( props.IsSetAllele_frequency() ) {
+        if ( props.IsSetAllele_frequency()) {
             infos.push_back( string("AF=") + 
-                NStr::DoubleToString( props.GetAllele_frequency(), 4 ) );
+                NStr::DoubleToString( props.GetAllele_frequency(), 4));
         }
-        if ( props.IsSetResource_link() ) {
+        if (props.IsSetResource_link()) {
             int rl = props.GetResource_link();
-            values.clear();
-            if ( rl & CVariantProperties::eResource_link_preserved ) {
-                values.push_back( "preserved" );
+            if (rl & VP::eResource_link_preserved) {
+                infos.push_back("PM");
             }
-            if ( rl & CVariantProperties::eResource_link_provisional ) {
-                values.push_back( "provisional" );
+            if (rl & VP::eResource_link_provisional) {
+                infos.push_back("TPA");
             }
-            if ( rl & CVariantProperties::eResource_link_has3D ) {
-                values.push_back( "has3D" );
+            if (rl & VP::eResource_link_has3D) {
+                infos.push_back("S3D");
             }
-            if ( rl & CVariantProperties::eResource_link_submitterLinkout ) {
-                values.push_back( "submitterLinkout" );
+            if (rl & VP::eResource_link_submitterLinkout) {
+                infos.push_back("SLO");
             }
-            if ( rl & CVariantProperties::eResource_link_clinical ) {
-                values.push_back( "clinical" );
+            if (rl & VP::eResource_link_clinical) {
+                infos.push_back("CLN");
             }
-            if ( rl & CVariantProperties::eResource_link_genotypeKit ) {
-                values.push_back( "genotypeKit" );
+            if (rl & VP::eResource_link_genotypeKit) {
+                 infos.push_back("HD");
             }
-            infos.push_back( string("RL=\"") + NStr::Join( values, "," ) + string("\"") );
         }
-        if ( props.IsSetFrequency_based_validation() ) {
+        if (props.IsSetGene_location()) {
+            int gl = props.GetGene_location();
+            if (gl & VP::eGene_location_near_gene_5) {
+                infos.push_back("R5");
+            }
+            if (gl & VP::eGene_location_near_gene_3) {
+                infos.push_back("R3");
+            }
+            if (gl & VP::eGene_location_intron) {
+                infos.push_back("INT");
+            }
+            if (gl & VP::eGene_location_donor) {
+                infos.push_back("DSS");
+            }
+            if (gl & VP::eGene_location_acceptor) {
+                infos.push_back("ASS");
+            }
+            if (gl & VP::eGene_location_utr_5) {
+                infos.push_back("U5");
+            }
+            if (gl & VP::eGene_location_utr_3) {
+                infos.push_back("U3");
+            }
+        }
+
+        if (props.IsSetEffect()) {
+            int effect = props.GetEffect();
+            if (effect & VP::eEffect_synonymous) {
+                infos.push_back("SYN");
+            }
+            if (effect & VP::eEffect_stop_gain) {
+                infos.push_back("NSN");
+            }
+            if (effect & VP::eEffect_missense) {
+                infos.push_back("NSM");
+            }
+            if (effect & VP::eEffect_frameshift) {
+                infos.push_back("NSF");
+            }
+        }
+
+        if (props.IsSetFrequency_based_validation()) {
             int fbv = props.GetFrequency_based_validation();
-            values.clear();
-            if ( fbv & CVariantProperties::eFrequency_based_validation_is_mutation ) {
-                values.push_back( "is-mutation" );
+            if (fbv & VP::eFrequency_based_validation_is_mutation) {
+                infos.push_back("MUT");
             }
-            if ( fbv & CVariantProperties::eFrequency_based_validation_above_5pct_all ) {
-                values.push_back( "above-5pct-all" );
+            if (fbv & VP::eFrequency_based_validation_above_5pct_all) {
+                infos.push_back("G3");
             }
-            if ( fbv & CVariantProperties::eFrequency_based_validation_above_5pct_1plus ) {
-                values.push_back( "above-5pct-1plus" );
+            if (fbv & VP::eFrequency_based_validation_above_5pct_1plus) {
+                infos.push_back("G5");
             }
-            if ( fbv & CVariantProperties::eFrequency_based_validation_validated ) {
-                values.push_back( "validated" );
+            if (fbv & VP::eFrequency_based_validation_validated) {
+                infos.push_back("VLD");
             }
-            if ( fbv & CVariantProperties::eFrequency_based_validation_above_1pct_all ) {
-                values.push_back( "above-1pct-all" );
-            }
-            if ( fbv & CVariantProperties::eFrequency_based_validation_above_1pct_1plus ) {
-                values.push_back( "above-1pct-1plus" );
-            }
-            infos.push_back( string("FBV=\"") + NStr::Join( values, "," ) + string("\"") );
         }
-        if ( props.IsSetGenotype() ) {
+
+        if (props.IsSetAllele_frequency()) {
+            double alfrq = props.GetAllele_frequency();
+            infos.push_back(string("GMAF=") + NStr::DoubleToString(alfrq));
+        }
+
+        if (props.IsSetGenotype()) {
             int gt = props.GetGenotype();
-            values.clear();
-            if ( gt & CVariantProperties::eGenotype_in_haplotype_set ) {
-                values.push_back( "in_haplotype_set" );
+            if (gt & VP::eGenotype_has_genotypes) {
+                infos.push_back("GNO");
             }
-            if ( gt & CVariantProperties::eGenotype_has_genotypes ) {
-                values.push_back( "has_genotypes" );
-            }
-            infos.push_back( string("GTP=\"") + NStr::Join( values, "," ) + string("\"") );
         }
-        if ( props.IsSetQuality_check() ) {
+
+        if (props.IsSetQuality_check()) {
             int qc = props.GetQuality_check();
-            values.clear();
-            if ( qc & CVariantProperties::eQuality_check_contig_allele_missing ) {
-                values.push_back( "contig_allele_missing" );
+            if (qc & VP::eQuality_check_contig_allele_missing) {
+                infos.push_back("NOC");
             }
-            if ( qc & CVariantProperties::eQuality_check_withdrawn_by_submitter ) {
-                values.push_back( "withdrawn_by_submitter" );
+            if (qc & VP::eQuality_check_withdrawn_by_submitter) {
+                infos.push_back("WTD");
             }
-            if ( qc & CVariantProperties::eQuality_check_non_overlapping_alleles ) {
-                values.push_back( "non_overlapping_alleles" );
+            if (qc & VP::eQuality_check_non_overlapping_alleles) {
+                infos.push_back("NOV");
             }
-            if ( qc & CVariantProperties::eQuality_check_strain_specific ) {
-                values.push_back( "strain_specific" );
+            if (qc & VP::eQuality_check_genotype_conflict) {
+                infos.push_back("GCF");
             }
-            if ( qc & CVariantProperties::eQuality_check_genotype_conflict ) {
-                values.push_back( "genotype_conflict" );
+        }
+
+        if (var.IsSetOther_ids()) {
+            const list<CRef<CDbtag> >&  oids = var.GetOther_ids();
+            list<CRef<CDbtag> >::const_iterator cit; 
+            for (cit = oids.begin(); cit != oids.end(); ++cit) {
+                const CDbtag& dbtag = **cit;
+                if (dbtag.GetType() != CDbtag::eDbtagType_BioProject) {
+                    continue;
+                }
+                if (!dbtag.CanGetTag()) {
+                    continue;
+                }
+                if (!dbtag.GetTag().IsId()) {
+                    continue;
+                }
+                int id = dbtag.GetTag().GetId();
+                if (id == 60835) {
+                    infos.push_back("PH3");
+                }
+                else if (id == 28889) {
+                    infos.push_back("KGPhase1");
+                }
             }
-            infos.push_back( string("QC=\"") + NStr::Join( values, "," ) + string("\"") );
         }
     }
 
-    if ( infos.empty() ) {
+    if (infos.empty()) {
         m_Os << ".";
     }
     else {
-        m_Os << NStr::Join( infos, ";" );
+        m_Os << NStr::Join(infos, ";");
     }
     return true;     
 }
