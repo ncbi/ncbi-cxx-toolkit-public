@@ -1609,12 +1609,10 @@ CQueryOptionsArgs::ExtractAlgorithmOptions(const CArgs& args,
 
 CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
                                        bool is_rpsblast /* = false */,
-                                       bool is_igblast  /* = false */,
-                                       bool is_deltablast /* = false */)
+                                       bool is_igblast  /* = false */)
     : m_RequestMoleculeType(request_mol_type), 
       m_IsRpsBlast(is_rpsblast),
       m_IsIgBlast(is_igblast),
-      m_IsDeltaBlast(is_deltablast),
       m_IsProtein(true), 
       m_SupportsDatabaseMasking(false)
 {}
@@ -1695,16 +1693,14 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
 
     // Entrez Query
-    // Deltablast does not support remote blast
-    if (!m_IsDeltaBlast) {
-        arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
-                                "Restrict search with the given Entrez query",
-                                CArgDescriptions::eString);
+    arg_desc.AddOptionalKey(kArgEntrezQuery, "entrez_query", 
+                            "Restrict search with the given Entrez query",
+                            CArgDescriptions::eString);
 
-        // Entrez query currently requires the -remote option
-        arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
-                               kArgRemote);
-    }
+    // Entrez query currently requires the -remote option
+    arg_desc.SetDependency(kArgEntrezQuery, CArgDescriptions::eRequires, 
+                           kArgRemote);
+
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

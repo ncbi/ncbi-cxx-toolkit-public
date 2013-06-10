@@ -63,7 +63,7 @@ CDeltaBlastAppArgs::CDeltaBlastAppArgs()
      static const string kDefaultTask = "deltablast";
      SetTask(kDefaultTask);
 
-     m_BlastDbArgs.Reset(new CBlastDatabaseArgs(false, false, false, true));
+     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
      arg.Reset(m_BlastDbArgs);
      m_Args.push_back(arg);
 
