@@ -1209,6 +1209,34 @@ CVcfReader::xAssignVariantProps(
         infos.erase(it);
     }
     //todo: INFO ID=PMC
+    it = infos.find("PMC");
+    if (infos.end() != it) {
+        infos.erase(it);
+        it = infos.find("PMID");
+        if (infos.end() == it) {
+            CRef<CDbtag> pDbtag(new CDbtag);
+            pDbtag->SetDb("PM");
+            pDbtag->SetTag().SetId(-1);
+            pFeat->SetDbxref().push_back(pDbtag);
+        }
+        else {
+            vector<string> pmids = it->second;
+            for (vector<string>::const_iterator cit = pmids.begin();
+                cit != pmids.end(); ++cit)
+            {
+                try {
+                    string db, tag;
+                    NStr::SplitInTwo(*cit, ":", db, tag);
+                    CRef<CDbtag> pDbtag(new CDbtag);
+                    pDbtag->SetDb(db);
+                    pDbtag->SetTag().SetId(
+                        NStr::StringToInt(tag));
+                    pFeat->SetDbxref().push_back(pDbtag);
+                }
+                catch(...) {}
+            }
+        }
+    }
 
     //superbyte F2
     it = infos.find("R5");
