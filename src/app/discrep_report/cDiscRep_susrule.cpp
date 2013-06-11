@@ -1686,15 +1686,14 @@ bool CSuspectRuleCheck :: StringContainsUnderscore(const string& search)
   if (search.find('_') == string::npos) return false;
 
   arr = NStr::Tokenize(search, "_", arr);
-  for (unsigned i=0; i< arr.size(); i++) {
+  for (unsigned i=0; i< arr.size() - 1; i++) {
      strtmp = arr[i+1];
      if (FollowedByFamily(strtmp)) continue;   // strtmp was changed in the FollowedByFamily
-     else if (arr[i].size() < 3 || (i == arr.size()-1 && search[arr[i].size()-1] == ' '))
-             return true;
+     else if (arr[i].size() < 3 || search[arr[i].size()-1] == ' ') return true;
      else {
        strtmp = arr[i].substr(arr[i].size()-3);
        if ( (strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA")
-              && (i < arr.size()-1 && isdigit(arr[i+1][0]) && !isdigit(arr[i+1][1])) )
+                  && (isdigit(arr[i+1][0]) && !isdigit(arr[i+1][1])) )
           continue;
        else return true;
      }

@@ -239,6 +239,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_TRRna_run = false;
    thisTest.is_RRna_run = false;
    thisTest.is_SusPhrase_run = false;
+   thisTest.is_SusProd_run = false;
    thisTest.is_TaxDef_run = false;
 
    GoTests(CRepConfig::tests_on_Bioseq, bioseq);

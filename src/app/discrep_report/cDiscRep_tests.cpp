@@ -142,12 +142,13 @@ bool CDiscTestInfo :: is_Prot_run;
 bool CDiscTestInfo :: is_ProtFeat_run;
 bool CDiscTestInfo :: is_Pub_run;
 bool CDiscTestInfo :: is_Quals_run;
-bool CDiscTestInfo :: is_TRRna_run;
 bool CDiscTestInfo :: is_RRna_run;
 bool CDiscTestInfo :: is_Subsrc_run;
 bool CDiscTestInfo :: is_SusPhrase_run;
+bool CDiscTestInfo :: is_SusProd_run;
 bool CDiscTestInfo :: is_TaxCflts_run;
 bool CDiscTestInfo :: is_TaxDef_run;
+bool CDiscTestInfo :: is_TRRna_run;
 
 typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
 typedef map <int, vector <string> > Int2Strs;
@@ -412,9 +413,13 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
 
 void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
 {
+   if (thisTest.is_SusProd_run) return;
+
    m_bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);  // necessary?
    if (thisInfo.suspect_prod_rules->Get().empty()) FindSuspectProductNamesWithStaticList();
    else FindSuspectProductNamesWithRules();
+
+   thisTest.is_SusProd_run = true;
 };
 
 void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
@@ -9384,7 +9389,6 @@ void CSeqEntry_test_on_user :: RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_s
    }
 };
 
-
 void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 {
   if (thisTest.is_DESC_user_run) return;
@@ -9488,7 +9492,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
        cnt = (type_str == "StructuredComment") ? 1 : 0;
        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
           bioseq_desc = GetDiscItemText(*bb_ci->GetCompleteBioseq());
-          if (bb_ci->IsAa()) {
+          if (!bb_ci->IsAa()) {
              if (bioseq2cnt.find(bioseq_desc) != bioseq2cnt.end()) {
                 if (cnt)
                    bioseq2cnt[bioseq_desc]
@@ -9539,7 +9543,10 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     }
 
     // ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
-    if (run_prefix && validator.ValidateStructuredComment(user_obj, **it))
+    if (run_prefix && type_str == "StructuredComment"   // 3 cond. added for C++ api
+                    && user_obj.HasField("StructuredCommentPrefix") 
+                    && user_obj.HasField("StructuredCommentSuffix")
+                    && validator.ValidateStructuredComment(user_obj, **it))
        thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
 
     i++;
@@ -11242,7 +11249,7 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     if (thisTest.is_Defl_run) return;
 
     // DISC_MISSING_DEFLINES
-    for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry, CSeq_inst::eMol_aa); !b_ci; ++ b_ci) 
+    for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry, CSeq_inst::eMol_aa); b_ci; ++ b_ci) 
         m_aa_bioseqs.insert(GetDiscItemText(*(b_ci->GetCompleteBioseq())));
 /*
     if (seq_entry.IsSeq()) {
@@ -11260,6 +11267,7 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     bool run_no_tlt = (thisTest.tests_run.find(GetName_no_tlt()) != thisTest.tests_run.end());
     bool run_seqch = (thisTest.tests_run.find(GetName_seqch()) != thisTest.tests_run.end());
     ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {
+cerr << Blob2Str(**it) << endl;
        if ((title = (*it)->GetTitle()).empty()) continue; 
        desc = GetDiscItemText(**it, *(title_seqdesc_seqentry[i]));
 

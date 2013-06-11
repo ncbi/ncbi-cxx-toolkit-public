@@ -110,12 +110,13 @@ namespace DiscRepNmSpc {
       static bool   is_ProtFeat_run;
       static bool   is_Pub_run;
       static bool   is_Quals_run;
-      static bool   is_TRRna_run;
       static bool   is_RRna_run;
       static bool   is_Subsrc_run;
       static bool   is_SusPhrase_run;
+      static bool   is_SusProd_run;
       static bool   is_TaxCflts_run;
       static bool   is_TaxDef_run;
+      static bool   is_TRRna_run;
   };
 
   template < typename T >

@@ -89,9 +89,7 @@ namespace DiscRepNmSpc {
         virtual ~CRepConfig() {};
 
         void Init(const string& report_type);
-
         static CRepConfig* factory(const string& report_tp);
-        virtual void ConfigRep() = 0; 
         virtual void Export() = 0;
         void CollectTests();
   
@@ -121,31 +119,22 @@ namespace DiscRepNmSpc {
 
    class CRepConfDiscrepancy : public CRepConfig
    {
-        friend class CRepConfig;
-
       public:
         virtual ~CRepConfDiscrepancy () {};
-        virtual void ConfigRep();
         virtual void Export();
    };
 
    class CRepConfOncaller : public CRepConfig
    {
-        friend class CRepConfig;
-
       public:
         virtual ~CRepConfOncaller () {};
-        virtual void ConfigRep();
         virtual void Export() { };
    };
 
    class CRepConfAll : public CRepConfig 
    {
-        friend class CRepConfig;
-
       public:
         virtual ~CRepConfAll () {};
-        virtual void ConfigRep();
         virtual void Export() { };
    };
 };
