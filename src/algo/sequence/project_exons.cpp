@@ -109,7 +109,7 @@ void Canonicalize(CSeq_loc& loc)
 TSeqPos AsNucPos(const CProduct_pos& product_pos)
 {
     return product_pos.IsNucpos() ? product_pos.GetNucpos() 
-                                  : product_pos.GetProtpos().GetAmin() * 3 + (product_pos.GetProtpos().GetAmin() - 1);
+                                  : product_pos.GetProtpos().GetAmin() * 3 + (product_pos.GetProtpos().GetFrame() - 1);
 
 }
 
@@ -203,14 +203,14 @@ T53Partialness GetTerminalPartialness(const CSeq_align& spliced_aln,
         partialness.second = GetUnalignedLength_3p(spliced_aln) > unaligned_ends_partialness_thr;
     } else {
         //cds-exons 5p/3p-terminal partialness is based on whether the product-cds-loc extends past the alignment
-        bool left_partial = product_cds_loc->GetStart(eExtreme_Positional) > spliced_aln.GetSeqStart(0);
-        bool right_partial = product_cds_loc->GetStop(eExtreme_Positional) < spliced_aln.GetSeqStop(0);
+        bool left_partial = product_cds_loc->GetStart(eExtreme_Positional) < spliced_aln.GetSeqStart(0);
+        bool right_partial = product_cds_loc->GetStop(eExtreme_Positional) > spliced_aln.GetSeqStop(0);
 
-        partialness.first =  (left_partial && spliced_aln.GetSeqStart(0) == eNa_strand_plus)
-                          || (right_partial && spliced_aln.GetSeqStart(0) == eNa_strand_minus);
+        partialness.first =  (left_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_plus)
+                          || (right_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_minus);
 
-        partialness.second = (left_partial && spliced_aln.GetSeqStart(0) == eNa_strand_minus)
-                          || (right_partial && spliced_aln.GetSeqStart(0) == eNa_strand_plus);
+        partialness.second = (left_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_minus)
+                          || (right_partial && spliced_aln.GetSeqStrand(0) == eNa_strand_plus);
     }
     return partialness;
 }
@@ -396,6 +396,7 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
         CRef<CSeq_align> truncated_exon_aln = mapper->Map(*exon_aln);
 
         if(truncated_exon_aln->GetSegs().GetSpliced().GetExons().size() == 0) {
+            // NcbiCerr << "gap-only cds-exon: " << MSerial_AsnText <<spliced_aln;
             // This is a rare case where the exon overlaps the CDS, but truncating the alignment to the CDS
             // produced empty alignment - how can this happen? This is the case where an exon has a product-ins
             // abutting the exon terminal, and the CDS part does not extend past the gap, such that the result of
