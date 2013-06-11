@@ -45,6 +45,7 @@
 #include <connect/ncbi_util.h>
 
 // Objects includes
+#include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -54,6 +55,8 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objects/seqtable/SeqTable_multi_data.hpp>
+#include <objects/seqtable/SeqTable_column_info.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -68,6 +71,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include "util.hpp"
 #include "src_table_column.hpp"
+#include "struc_table_column.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -101,20 +105,27 @@ private:
     CObjectIStream* OpenFile(const CArgs& args);
     CObjectIStream* OpenFile(string fname, const CArgs& args);
 
-    vector<CBiosampleFieldDiff *> ProcessBioseqHandle(CBioseq_Handle bh);
-    vector<CBiosampleFieldDiff *> ProcessSeqEntry(const CSeq_entry& se);
-    vector<CBiosampleFieldDiff *> ProcessSeqEntry(void);
-    vector<CBiosampleFieldDiff *> ProcessSeqSubmit(void);
-    vector<CBiosampleFieldDiff *> ProcessInput (void);
+	void ProcessBioseqHandle(CBioseq_Handle bh, CRef<CSeq_table> table);
+	void ProcessSeqEntry(const CSeq_entry& se, CRef<CSeq_table> table);
+    void ProcessSeqEntry(CRef<CSeq_table> table);
+    void ProcessSeqSubmit(CRef<CSeq_table> table);
+    void ProcessInput (CRef<CSeq_table> table);
+	void ProcessOneFile(string fname, CRef<CSeq_table> table);
+    void ProcessOneDirectory(string dir_name, bool recurse, CRef<CSeq_table> table);
+
+    TBiosampleFieldDiffList ProcessBioseqHandle(CBioseq_Handle bh);
+    TBiosampleFieldDiffList ProcessSeqEntry(const CSeq_entry& se);
+    TBiosampleFieldDiffList ProcessSeqEntry(void);
+    TBiosampleFieldDiffList ProcessSeqSubmit(void);
+    TBiosampleFieldDiffList ProcessInput (void);
     void ProcessOneDirectory(string dir_name, bool recurse);
     void ProcessOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
 
-    void PrintResults(vector<CBiosampleFieldDiff *>& diffs);
-    void PrintDiffs(vector<CBiosampleFieldDiff *>& diffs);
-    void PrintTableHeader();
-    void PrintTable(vector<CBiosampleFieldDiff *>& diffs);
+    void PrintResults(TBiosampleFieldDiffList& diffs);
+    void PrintDiffs(TBiosampleFieldDiffList& diffs);
+    void PrintTable(CRef<CSeq_table> table);
     CRef<CScope> BuildScope(void);
 
 
@@ -134,16 +145,17 @@ private:
     };
 
     int m_Mode;
-    vector<CSrcTableColumnBase *> m_ReportFields;
-    bool m_NeedHeader;
+    TSrcTableColumnList m_SrcReportFields;
+	TStructuredCommentTableColumnList m_StructuredCommentReportFields;
 };
 
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs), m_NeedHeader(false)
+    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs)
 {
-    m_ReportFields.clear();
+    m_SrcReportFields.clear();
+	m_StructuredCommentReportFields.clear();
 }
 
 
@@ -200,14 +212,14 @@ void CBiosampleChkApp::Init(void)
 }
 
 
-vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessInput (void)
+TBiosampleFieldDiffList CBiosampleChkApp::ProcessInput (void)
 {
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
-    vector<CBiosampleFieldDiff *> diffs;
+    TBiosampleFieldDiffList diffs;
     string header = m_In->ReadFileHeader();
 
     if (header == "Seq-submit" ) {  // Seq-submit
@@ -218,6 +230,26 @@ vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessInput (void)
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
     return diffs;
+}
+
+
+void CBiosampleChkApp::ProcessInput (CRef<CSeq_table> table)
+{
+    // Process file based on its content
+    // Unless otherwise specifien we assume the file in hand is
+    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
+    // Release file (batch processing) where we process each Seq-entry
+    // at a time.
+
+	string header = m_In->ReadFileHeader();
+
+    if (header == "Seq-submit" ) {  // Seq-submit
+        ProcessSeqSubmit(table);
+    } else if ( header == "Seq-entry" ) {           // Seq-entry
+        ProcessSeqEntry(table);
+    } else {
+        NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+    }
 }
 
 
@@ -237,17 +269,48 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
 
         m_ReportStream = new CNcbiOfstream(path.c_str());
         need_to_close = true;
-        m_NeedHeader = true;
     }
     m_In.reset(OpenFile(fname, args));
 
-    vector<CBiosampleFieldDiff *> diffs = ProcessInput ();
+    TBiosampleFieldDiffList diffs = ProcessInput ();
 
     PrintResults(diffs);
 
     // TODO! Must free diffs
     
     if (need_to_close) {
+        m_ReportStream = 0;
+    }
+}
+
+
+void CBiosampleChkApp::ProcessOneFile(string fname, CRef<CSeq_table> table)
+{
+    const CArgs& args = GetArgs();
+
+    bool need_to_close = false;
+
+    if (!m_ReportStream) {
+        string path = fname;
+        size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
+        if (pos != string::npos) {
+            path = path.substr(0, pos);
+        }
+        path = path + ".val";
+
+        m_ReportStream = new CNcbiOfstream(path.c_str());
+        need_to_close = true;
+		table.Reset(new CSeq_table());
+		table->SetNum_rows(0);
+    }
+    m_In.reset(OpenFile(fname, args));
+
+    ProcessInput (table);
+
+    // TODO! Must free diffs
+    
+    if (need_to_close) {
+		PrintTable(table);
         m_ReportStream = 0;
     }
 }
@@ -287,6 +350,40 @@ void CBiosampleChkApp::ProcessOneDirectory(string dir_name, bool recurse)
 }
 
 
+void CBiosampleChkApp::ProcessOneDirectory(string dir_name, bool recurse, CRef<CSeq_table> table)
+{
+    const CArgs& args = GetArgs();
+
+    CDir dir(dir_name);
+
+    string suffix = ".sqn";
+    if (args["x"]) {
+        suffix = args["x"].AsString();
+    }
+    string mask = "*" + suffix;
+
+    CDir::TEntries files (dir.GetEntries(mask, CDir::eFile));
+    ITERATE(CDir::TEntries, ii, files) {
+        string fname = (*ii)->GetName();
+        if ((*ii)->IsFile() &&
+            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != string::npos)) {
+            string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+            ProcessOneFile (fname, table);
+        }
+    }
+    if (recurse) {
+        CDir::TEntries subdirs (dir.GetEntries("", CDir::eDir));
+        ITERATE(CDir::TEntries, ii, subdirs) {
+            string subdir = (*ii)->GetName();
+            if ((*ii)->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
+                string subname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+                ProcessOneDirectory (subname, recurse, table);
+            }
+        }
+    }
+}
+
+
 int CBiosampleChkApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -299,12 +396,8 @@ int CBiosampleChkApp::Run(void)
     m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
 
     m_Mode = args["m"].AsInteger();
-    m_ReportFields.clear();
-    if (m_Mode == e_generate_biosample) {
-        m_ReportFields.push_back(new CSrcTableOrganismNameColumn());
-        m_ReportFields.push_back(new CSrcTableOrgModColumn(COrgMod::eSubtype_strain));
-        m_NeedHeader = true;
-    }
+    m_SrcReportFields.clear();
+	m_StructuredCommentReportFields.clear();
 
     // Process file based on its content
     // Unless otherwise specified we assume the file in hand is
@@ -313,10 +406,28 @@ int CBiosampleChkApp::Run(void)
     // at a time.
 
     if ( args["p"] ) {
-        ProcessOneDirectory (args["p"].AsString(), args["u"]);
+ 	    if (m_Mode == e_generate_biosample) {
+			CRef<CSeq_table> table(new CSeq_table());
+			table->SetNum_rows(0);
+			ProcessOneDirectory (args["p"].AsString(), args["u"], table);
+			if (table->GetNum_rows() > 0) {
+			    PrintTable(table);
+			}
+		} else {
+            ProcessOneDirectory (args["p"].AsString(), args["u"]);
+		}
     } else {
         if (args["i"]) {
-            ProcessOneFile (args["i"].AsString());
+			if (m_Mode == e_generate_biosample) {
+				CRef<CSeq_table> table(new CSeq_table());
+				table->SetNum_rows(0);
+				ProcessOneFile (args["i"].AsString(), table);
+				if (table->GetNum_rows() > 0) {
+					PrintTable(table);
+				}
+			} else {
+                ProcessOneFile (args["i"].AsString());
+			}
         }
     }
 
@@ -351,7 +462,7 @@ void CBiosampleChkApp::ReadClassMember
 
                 CStopWatch sw(CStopWatch::eStart);
                 
-                vector<CBiosampleFieldDiff *> diffs = ProcessSeqEntry(*se);
+                TBiosampleFieldDiffList diffs = ProcessSeqEntry(*se);
                 PrintResults(diffs);
                 // TODO! Must free diffs
 
@@ -414,49 +525,32 @@ bool s_CompareBiosampleFieldDiffs (CBiosampleFieldDiff * f1, CBiosampleFieldDiff
 }
 
 
-void CBiosampleChkApp::PrintTableHeader()
+void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
 {
-    if (!m_NeedHeader) {
-        return;
-    }
-    // print header
-    *m_ReportStream << "Sequence ID";
-    ITERATE(vector<CSrcTableColumnBase *>, field, m_ReportFields) {
-        *m_ReportStream << "\t" << (*field)->GetLabel();
-    }
-    *m_ReportStream << endl;
-
-    m_NeedHeader = false;
-}
-
-
-void CBiosampleChkApp::PrintTable(vector<CBiosampleFieldDiff *>& diffs)
-{
-    if (diffs.size() == 0) {
+    if (table->GetNum_rows() == 0) {
         // do nothing
         return;
     }
 
-    PrintTableHeader();
+	ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
+		*m_ReportStream << (*it)->GetHeader().GetTitle() << "\t";
+	}
+	*m_ReportStream << endl;
+	for (size_t row = 0; row < table->GetNum_rows(); row++) {
+		ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
+			if (row < (*it)->GetData().GetString().size()) {
+				*m_ReportStream << (*it)->GetData().GetString()[row] << "\t";
+			} else {
+				*m_ReportStream << "\t";
+			}
+		}
+		*m_ReportStream << endl;
+	}
 
-    // list values
-    string sequence_id = "";
-    ITERATE(vector<CBiosampleFieldDiff *>, d, diffs) {
-        string new_id = (*d)->GetSequenceId();
-        if (!NStr::Equal(sequence_id, new_id)) {
-            if (!NStr::IsBlank(sequence_id)) {
-                *m_ReportStream << endl;
-            }
-            sequence_id = new_id;
-            *m_ReportStream << new_id;
-        }
-        *m_ReportStream << "\t" << (*d)->GetSrcVal();
-    }
-    *m_ReportStream << endl;
 }
 
 
-void CBiosampleChkApp::PrintDiffs(vector<CBiosampleFieldDiff *>& diffs)
+void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
 {
     if (diffs.size() == 0) {
         *m_ReportStream << "No differences found" << endl;
@@ -465,8 +559,8 @@ void CBiosampleChkApp::PrintDiffs(vector<CBiosampleFieldDiff *>& diffs)
     } else {
         sort(diffs.begin(), diffs.end(), s_CompareBiosampleFieldDiffs);
 
-        vector<CBiosampleFieldDiff * >::iterator f_prev = diffs.begin();
-        vector<CBiosampleFieldDiff * >::iterator f_next = f_prev;
+        TBiosampleFieldDiffList::iterator f_prev = diffs.begin();
+        TBiosampleFieldDiffList::iterator f_next = f_prev;
         f_next++;
         while (f_next != diffs.end()) {
             if ((*f_prev)->CompareAllButSequenceID(**f_next) == 0) {
@@ -474,9 +568,7 @@ void CBiosampleChkApp::PrintDiffs(vector<CBiosampleFieldDiff *>& diffs)
                 string new_id = (*f_next)->GetSequenceId();
                 old_id += "," + new_id;
                 (*f_prev)->SetSequenceId(old_id);
-                CBiosampleFieldDiff *to_delete = *f_next;
-                f_next = diffs.erase(f_next);
-//                delete to_delete;
+                 f_next = diffs.erase(f_next);
             } else {
                 ++f_prev;
                 ++f_next;
@@ -496,25 +588,77 @@ void CBiosampleChkApp::PrintDiffs(vector<CBiosampleFieldDiff *>& diffs)
 }
 
 
-void CBiosampleChkApp::PrintResults(vector<CBiosampleFieldDiff *>& diffs)
+void CBiosampleChkApp::PrintResults(TBiosampleFieldDiffList & diffs)
 {
-    switch (m_Mode) {
-        case e_report_diffs:
-            PrintDiffs(diffs);
-            break;
-        case e_generate_biosample:
-            PrintTable(diffs);
-            break;
-    }
+    PrintDiffs(diffs);
 }
 
 
-vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
-{
-    vector<CBiosampleFieldDiff *> diffs;
+const string kSequenceID = "Sequence ID";
 
-    CSeqdesc_CI desc_ci(bh, CSeqdesc::e_Source);
-    if (!desc_ci) {
+// This function is for generating a table of biosample values for a bioseq
+// that does not currently have a biosample ID
+void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, CRef<CSeq_table> table)
+{
+    vector<string> biosample_ids = GetBiosampleIDs(bh);
+    if (biosample_ids.size() > 0) {
+		// do not collect if already has biosample ID
+		return;
+	}
+	vector<string> bioproject_ids = GetBioProjectIDs(bh);
+
+    CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
+	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
+	while (comm_desc_ci && !NStr::Equal(comm_desc_ci->GetUser().GetType().GetStr(), "StructuredComment")) {
+		++comm_desc_ci;
+	}
+    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0) {
+        return;
+    }
+
+    string sequence_id;
+    bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
+	size_t row = table->GetNum_rows();
+	AddValueToTable (table, kSequenceID, sequence_id, row);
+
+	if (bioproject_ids.size() > 0) {
+		string val = bioproject_ids[0];
+		for (size_t i = 1; i < bioproject_ids.size(); i++) {
+			val += ";";
+			val += bioproject_ids[i];
+		}
+		AddValueToTable(table, "BioProject", val, row);
+	}
+
+	if (src_desc_ci) {
+		const CBioSource& src = src_desc_ci->GetSource();
+	    TSrcTableColumnList src_fields = GetSourceFields(src);
+		ITERATE(TSrcTableColumnList, it, src_fields) {
+			AddValueToTable(table, (*it)->GetLabel(), (*it)->GetFromBioSource(src), row);
+		}
+	}
+	if (comm_desc_ci) {
+		const CUser_object& usr = comm_desc_ci->GetUser();
+		TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
+	    ITERATE(TStructuredCommentTableColumnList, it, comm_fields) {
+			AddValueToTable(table, (*it)->GetLabel(), (*it)->GetFromComment(usr), row);
+		}
+	}
+	int num_rows = (int)row  + 1;
+	table->SetNum_rows(num_rows);
+}
+
+
+TBiosampleFieldDiffList CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
+{
+    TBiosampleFieldDiffList diffs;
+
+    CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
+	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
+	while (comm_desc_ci && !NStr::Equal(comm_desc_ci->GetUser().GetType().GetStr(), "StructuredComment")) {
+		++comm_desc_ci;
+	}
+    if (!src_desc_ci && !comm_desc_ci) {
         return diffs;
     }
     
@@ -538,18 +682,36 @@ vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Hand
                 if (descr) {
                     ITERATE(CSeq_descr::Tdata, it, descr->Get()) {
                         if ((*it)->IsSource()) {
-                            vector<CBiosampleFieldDiff *> these_diffs = GetFieldDiffs(sequence_id, *id, desc_ci->GetSource(), (*it)->GetSource());
-                            diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
-                        }
+							if (src_desc_ci) {
+                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, src_desc_ci->GetSource(), (*it)->GetSource());
+							    diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
+							}
+                        } else if ((*it)->IsUser()) {
+							if (comm_desc_ci) {
+                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, comm_desc_ci->GetUser(), (*it)->GetUser());
+                                diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
+							}
+						}
                     }
                 }
             }
             break;
         case e_generate_biosample:
-            ITERATE(vector<CSrcTableColumnBase *>, field, m_ReportFields) {
-                string src_val = (*field)->GetFromBioSource(desc_ci->GetSource());
-                diffs.push_back(new CBiosampleFieldDiff(sequence_id, "", (*field)->GetLabel(), src_val, ""));
-            }
+			if (src_desc_ci) {
+				ITERATE(TSrcTableColumnList, field, m_SrcReportFields) {
+					string src_val = (*field)->GetFromBioSource(src_desc_ci->GetSource());
+					CRef<CBiosampleFieldDiff> one_diff(new CBiosampleFieldDiff(sequence_id, "", (*field)->GetLabel(), src_val, ""));
+					diffs.push_back(one_diff);
+				}
+			}
+			if (comm_desc_ci) {
+				ITERATE(TStructuredCommentTableColumnList, field, m_StructuredCommentReportFields) {
+					string src_val = (*field)->GetFromComment(comm_desc_ci->GetUser());
+					CRef<CBiosampleFieldDiff> one_diff(new CBiosampleFieldDiff(sequence_id, "", (*field)->GetLabel(), src_val, ""));
+					diffs.push_back(one_diff);
+				}
+			}
+
             break;
     }
 
@@ -557,15 +719,15 @@ vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Hand
 }
 
 
-vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessSeqEntry(const CSeq_entry& se)
+TBiosampleFieldDiffList CBiosampleChkApp::ProcessSeqEntry(const CSeq_entry& se)
 {
-    vector<CBiosampleFieldDiff *> diffs;
+    TBiosampleFieldDiffList diffs;
 
     CRef<CScope> scope = BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
     CBioseq_CI bi(seh, CSeq_inst::eMol_na);
     while (bi) {
-        vector<CBiosampleFieldDiff *> these_diffs = ProcessBioseqHandle(*bi);
+        TBiosampleFieldDiffList these_diffs = ProcessBioseqHandle(*bi);
         diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
         ++bi;
     }
@@ -574,7 +736,28 @@ vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessSeqEntry(const CSeq_entry
 }
 
 
-vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessSeqEntry(void)
+void CBiosampleChkApp::ProcessSeqEntry(const CSeq_entry& se, CRef<CSeq_table> table)
+{
+    CRef<CScope> scope = BuildScope();
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+    while (bi) {
+		ProcessBioseqHandle(*bi, table);
+		++bi;
+	}
+}
+
+
+void CBiosampleChkApp::ProcessSeqEntry(CRef<CSeq_table> table)
+{
+    // Get seq-entry to process
+    CRef<CSeq_entry> se(ReadSeqEntry());
+
+    return ProcessSeqEntry(*se, table);
+}
+
+
+TBiosampleFieldDiffList CBiosampleChkApp::ProcessSeqEntry(void)
 {
     // Get seq-entry to process
     CRef<CSeq_entry> se(ReadSeqEntry());
@@ -583,9 +766,8 @@ vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessSeqEntry(void)
 }
 
 
-vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessSeqSubmit(void)
+void CBiosampleChkApp::ProcessSeqSubmit(CRef<CSeq_table> table)
 {
-    vector<CBiosampleFieldDiff *> diffs;
     CRef<CSeq_submit> ss(new CSeq_submit);
 
     // Get seq-submit to process
@@ -595,7 +777,25 @@ vector<CBiosampleFieldDiff *> CBiosampleChkApp::ProcessSeqSubmit(void)
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
-            vector<CBiosampleFieldDiff *> these_diffs = ProcessSeqEntry(**se);
+            ProcessSeqEntry(**se, table);
+        }
+    }
+}
+
+
+TBiosampleFieldDiffList CBiosampleChkApp::ProcessSeqSubmit(void)
+{
+    TBiosampleFieldDiffList diffs;
+    CRef<CSeq_submit> ss(new CSeq_submit);
+
+    // Get seq-submit to process
+    m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+
+    // Validae Seq-submit
+    CRef<CScope> scope = BuildScope();
+    if (ss->GetData().IsEntrys()) {
+        ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
+            TBiosampleFieldDiffList these_diffs = ProcessSeqEntry(**se);
             diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
         }
     }

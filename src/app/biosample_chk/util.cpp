@@ -43,6 +43,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/seqtable/SeqTable_multi_data.hpp>
+#include <objects/seqtable/SeqTable_column_info.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -61,6 +63,7 @@
 
 #include "util.hpp"
 #include "src_table_column.hpp"
+#include "struc_table_column.hpp"
 
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -90,7 +93,7 @@ GetBiosampleData(string accession)
 }
 
 
-vector<string> GetBiosampleIDs(const CUser_object& user)
+vector<string> GetDBLinkIDs(const CUser_object& user, const string& field_name)
 {
     vector<string> ids;
 
@@ -99,7 +102,7 @@ vector<string> GetBiosampleIDs(const CUser_object& user)
         return ids;
     }
     try {
-        const CUser_field& field = user.GetField("BioSample");
+        const CUser_field& field = user.GetField(field_name);
         if (field.IsSetData() && field.GetData().IsStrs()) {
             ITERATE(CUser_field::TData::TStrs, it, field.GetData().GetStrs()) {
                 ids.push_back(*it);
@@ -113,12 +116,12 @@ vector<string> GetBiosampleIDs(const CUser_object& user)
 }
 
 
-vector<string> GetBiosampleIDs(const CSeqdesc& seqdesc)
+vector<string> GetDBLinkIDs(const CSeqdesc& seqdesc, const string& field)
 {
     vector<string> ids;
 
     if (seqdesc.IsUser()) {
-        ids = GetBiosampleIDs(seqdesc.GetUser());
+        ids = GetDBLinkIDs(seqdesc.GetUser(), field);
     }
     return ids;
 }
@@ -130,7 +133,23 @@ vector<string> GetBiosampleIDs(CBioseq_Handle bh)
 
     CSeqdesc_CI desc_ci(bh, CSeqdesc::e_User);
     while (desc_ci) {
-        vector<string> new_ids = GetBiosampleIDs(*desc_ci);
+        vector<string> new_ids = GetDBLinkIDs(*desc_ci, "BioSample");
+        ITERATE(vector<string>, s, new_ids) {
+            ids.push_back(*s);
+        }
+        ++desc_ci;
+    }
+    return ids;
+}
+
+
+vector<string> GetBioProjectIDs(CBioseq_Handle bh)
+{
+    vector<string> ids;
+
+    CSeqdesc_CI desc_ci(bh, CSeqdesc::e_User);
+    while (desc_ci) {
+        vector<string> new_ids = GetDBLinkIDs(*desc_ci, "BioProject");
         ITERATE(vector<string>, s, new_ids) {
             ids.push_back(*s);
         }
@@ -175,8 +194,11 @@ int CBiosampleFieldDiff::CompareAllButSequenceID(const CBiosampleFieldDiff& othe
     if (cmp == 0) {
         cmp = NStr::CompareNocase(m_FieldName, other.m_FieldName);
         if (cmp == 0) {
-            cmp = NStr::CompareNocase(m_SrcVal, other.m_SrcVal);
-            // note - if BioSample ID is the same, sample_val should also be the same
+            // "mixed" matches to anything
+            if (!NStr::EqualNocase(m_SrcVal, "mixed") && !NStr::EqualNocase(other.m_SrcVal, "mixed")) {
+                cmp = NStr::CompareNocase(m_SrcVal, other.m_SrcVal);
+                // note - if BioSample ID is the same, sample_val should also be the same
+            }
         }
     }
 
@@ -195,7 +217,7 @@ int CBiosampleFieldDiff::Compare(const CBiosampleFieldDiff& other)
 }
 
 
-bool s_CompareSourceFields (CSrcTableColumnBase * f1, CSrcTableColumnBase * f2)
+bool s_CompareSourceFields (CRef<CSrcTableColumnBase> f1, CRef<CSrcTableColumnBase> f2)
 { 
     if (!f1) {
         return true;
@@ -213,13 +235,13 @@ bool s_CompareSourceFields (CSrcTableColumnBase * f1, CSrcTableColumnBase * f2)
 }
 
 
-vector<CSrcTableColumnBase * > GetAvailableFields(vector<CConstRef<CBioSource> > src)
+TSrcTableColumnList GetAvailableFields(vector<CConstRef<CBioSource> > src)
 {
-    vector<CSrcTableColumnBase * > fields;
+    TSrcTableColumnList fields;
 
     ITERATE(vector<CConstRef<CBioSource> >, it, src) {
-        vector<CSrcTableColumnBase * > src_fields = GetSourceFields(**it);
-        fields.insert(fields.end(), src_fields.begin(), src_fields.end());
+        TSrcTableColumnList src_fields = GetSourceFields(**it);
+		fields.insert(fields.end(), src_fields.begin(), src_fields.end());
     }
 
     // no need to sort and unique if there are less than two fields
@@ -228,14 +250,61 @@ vector<CSrcTableColumnBase * > GetAvailableFields(vector<CConstRef<CBioSource> >
     }
     sort(fields.begin(), fields.end(), s_CompareSourceFields);
 
-    vector<CSrcTableColumnBase * >::iterator f_prev = fields.begin();
-    vector<CSrcTableColumnBase * >::iterator f_next = f_prev;
+    TSrcTableColumnList::iterator f_prev = fields.begin();
+    TSrcTableColumnList::iterator f_next = f_prev;
     f_next++;
     while (f_next != fields.end()) {
         if (NStr::Equal((*f_prev)->GetLabel(), (*f_next)->GetLabel())) {
-            CSrcTableColumnBase *to_delete = *f_next;
             f_next = fields.erase(f_next);
-            delete to_delete;
+        } else {
+            ++f_prev;
+            ++f_next;
+        }
+    }
+
+    return fields;
+}
+
+
+bool s_CompareStructuredCommentFields (CRef<CStructuredCommentTableColumnBase> f1, CRef<CStructuredCommentTableColumnBase> f2)
+{ 
+    if (!f1) {
+        return true;
+    } else if (!f2) {
+        return false;
+    } 
+    string name1 = f1->GetLabel();
+    string name2 = f2->GetLabel();
+    int cmp = NStr::Compare (name1, name2);
+    if (cmp < 0) {
+        return true;
+    } else {
+        return false;
+    }        
+}
+
+
+TStructuredCommentTableColumnList GetAvailableFields(vector<CConstRef<CUser_object> > src)
+{
+    TStructuredCommentTableColumnList fields;
+
+    ITERATE(vector<CConstRef<CUser_object> >, it, src) {
+        TStructuredCommentTableColumnList src_fields = GetStructuredCommentFields(**it);
+		fields.insert(fields.end(), src_fields.begin(), src_fields.end());
+    }
+
+    // no need to sort and unique if there are less than two fields
+    if (fields.size() < 2) {
+        return fields;
+    }
+    sort(fields.begin(), fields.end(), s_CompareStructuredCommentFields);
+
+    TStructuredCommentTableColumnList::iterator f_prev = fields.begin();
+    TStructuredCommentTableColumnList::iterator f_next = f_prev;
+    f_next++;
+    while (f_next != fields.end()) {
+        if (NStr::Equal((*f_prev)->GetLabel(), (*f_next)->GetLabel())) {
+            f_next = fields.erase(f_next);
         } else {
             ++f_prev;
             ++f_next;
@@ -324,9 +393,9 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
 }
 
 
-vector<CBiosampleFieldDiff *> GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample)
+TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample)
 {
-    vector<CBiosampleFieldDiff *> rval;
+    TBiosampleFieldDiffList rval;
 
     vector<CConstRef<CBioSource> > src_list;
     CConstRef<CBioSource> s1(&src);
@@ -334,24 +403,86 @@ vector<CBiosampleFieldDiff *> GetFieldDiffs(string sequence_id, string biosample
     CConstRef<CBioSource> s2(&sample);
     src_list.push_back(s2);
 
-    vector<CSrcTableColumnBase * > field_list = GetAvailableFields (src_list);
+    TSrcTableColumnList field_list = GetAvailableFields (src_list);
 
-    ITERATE(vector<CSrcTableColumnBase * >, it, field_list) {
+    ITERATE(TSrcTableColumnList, it, field_list) {
         string src_val = (*it)->GetFromBioSource(src);
         string sample_val = (*it)->GetFromBioSource(sample);
         if (!s_ShouldIgnoreConflict((*it)->GetLabel(), src_val, sample_val)) {
-            CBiosampleFieldDiff *diff = new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val);
+            CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val));
             rval.push_back(diff);
         }
     }
 
-    ITERATE(vector<CSrcTableColumnBase * >, it, field_list) {
-        CSrcTableColumnBase * to_delete = *it;
-        delete to_delete;
+    return rval;
+}
+
+
+TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CUser_object& src, const CUser_object& sample)
+{
+    TBiosampleFieldDiffList rval;
+
+    vector<CConstRef<CUser_object> > src_list;
+    CConstRef<CUser_object> s1(&src);
+    src_list.push_back(s1);
+    CConstRef<CUser_object> s2(&sample);
+    src_list.push_back(s2);
+
+    TStructuredCommentTableColumnList field_list = GetAvailableFields (src_list);
+
+    ITERATE(TStructuredCommentTableColumnList, it, field_list) {
+        string src_val = (*it)->GetFromComment(src);
+        string sample_val = (*it)->GetFromComment(sample);
+        if (!s_ShouldIgnoreConflict((*it)->GetLabel(), src_val, sample_val)) {
+            CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val));
+            rval.push_back(diff);
+        }
     }
-    field_list.clear();
 
     return rval;
+}
+
+
+CRef<CSeqTable_column> FindSeqTableColumnByName (CRef<CSeq_table> values_table, string column_name)
+{
+    ITERATE (CSeq_table::TColumns, cit, values_table->GetColumns()) {
+        if ((*cit)->IsSetHeader() && (*cit)->GetHeader().IsSetTitle()
+            && NStr::Equal ((*cit)->GetHeader().GetTitle(), column_name)) {
+            return *cit;
+        }
+    }
+    CRef<CSeqTable_column> empty;
+    return empty;
+}
+
+
+void AddValueToColumn (CRef<CSeqTable_column> column, string value, size_t row)
+{
+    while (column->SetData().SetString().size() < row + 1) {
+        column->SetData().SetString().push_back ("");
+    }
+	column->SetData().SetString()[row] = value;
+}
+
+
+void AddValueToTable (CRef<CSeq_table> table, string column_name, string value, size_t row)
+{
+    // do we already have a column for this subtype?
+    bool found = false;
+    NON_CONST_ITERATE (CSeq_table::TColumns, cit, table->SetColumns()) {
+        if ((*cit)->IsSetHeader() && (*cit)->GetHeader().IsSetTitle()
+            && NStr::EqualNocase((*cit)->GetHeader().GetTitle(), column_name)) {
+            AddValueToColumn((*cit), value, row);
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        CRef<objects::CSeqTable_column> new_col(new objects::CSeqTable_column());
+        new_col->SetHeader().SetTitle(column_name);
+		AddValueToColumn(new_col, value, row);
+        table->SetColumns().push_back(new_col);
+    }
 }
 
 

@@ -74,7 +74,7 @@ void CSrcTableOrganismNameColumn::ClearInBioSource(
 
 
 string CSrcTableOrganismNameColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetOrg() && in_out_bioSource.GetOrg().IsSetTaxname()) {
@@ -98,7 +98,7 @@ void CSrcTableGenomeColumn::ClearInBioSource(
 
 
 string CSrcTableGenomeColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetGenome()) {
@@ -143,7 +143,7 @@ void CSrcTableSubSourceColumn::ClearInBioSource(
 
 
 string CSrcTableSubSourceColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetSubtype()) {
@@ -187,7 +187,7 @@ void CSrcTableOrgModColumn::ClearInBioSource(
 
 
 string CSrcTableOrgModColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetOrg() && in_out_bioSource.GetOrg().IsSetOrgname() && in_out_bioSource.GetOrg().GetOrgname().IsSetMod()) {
@@ -243,7 +243,7 @@ void CSrcTableFwdPrimerSeqColumn::ClearInBioSource(
 
 
 string CSrcTableFwdPrimerSeqColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetPcr_primers()
@@ -298,7 +298,7 @@ void CSrcTableRevPrimerSeqColumn::ClearInBioSource(
 
 
 string CSrcTableRevPrimerSeqColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetPcr_primers()
@@ -353,7 +353,7 @@ void CSrcTableFwdPrimerNameColumn::ClearInBioSource(
 
 
 string CSrcTableFwdPrimerNameColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetPcr_primers()
@@ -409,7 +409,7 @@ void CSrcTableRevPrimerNameColumn::ClearInBioSource(
 
 
 string CSrcTableRevPrimerNameColumn::GetFromBioSource(
-      const objects::CBioSource & in_out_bioSource )
+      const objects::CBioSource & in_out_bioSource ) const
 {
     string val = "";
     if (in_out_bioSource.IsSetPcr_primers()
@@ -509,29 +509,29 @@ CSrcTableColumnBaseFactory::Create(string sTitle)
 }
 
 
-vector<CSrcTableColumnBase * > GetSourceFields(const CBioSource& src)
+TSrcTableColumnList GetSourceFields(const CBioSource& src)
 {
-    vector<CSrcTableColumnBase * > fields;
+    TSrcTableColumnList fields;
 
     if (src.IsSetSubtype()) {
         ITERATE(CBioSource::TSubtype, it, src.GetSubtype())  {
-            fields.push_back(new CSrcTableSubSourceColumn((*it)->GetSubtype()));
+            fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableSubSourceColumn((*it)->GetSubtype())));
         }
     }
     if (src.IsSetPcr_primers()) {
-        fields.push_back(new CSrcTableFwdPrimerSeqColumn());
-        fields.push_back(new CSrcTableRevPrimerSeqColumn());
-        fields.push_back(new CSrcTableFwdPrimerNameColumn());
-        fields.push_back(new CSrcTableRevPrimerNameColumn());
+        fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableFwdPrimerSeqColumn()));
+        fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableRevPrimerSeqColumn()));
+        fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableFwdPrimerNameColumn()));
+        fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableRevPrimerNameColumn()));
     }
 
     if (src.IsSetOrg()) {
         if (src.GetOrg().IsSetTaxname()) {
-            fields.push_back(new CSrcTableOrganismNameColumn());
+            fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableOrganismNameColumn()));
         }
         if (src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
             ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
-                fields.push_back(new CSrcTableOrgModColumn((*it)->GetSubtype()));
+                fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableOrgModColumn((*it)->GetSubtype())));
             }
         }            
     }

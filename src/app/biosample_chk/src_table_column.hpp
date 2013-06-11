@@ -57,8 +57,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource ) { }
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource ) { return ""; }
-    virtual string GetLabel() { return ""; }
+        const objects::CBioSource & in_out_bioSource ) const { return ""; }
+    virtual string GetLabel() const { return ""; }
 };
 
 class CSrcTableOrganismNameColumn : public CSrcTableColumnBase
@@ -69,8 +69,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return "Organism Name"; }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return "Organism Name"; }
 };
 
 class CSrcTableGenomeColumn : public CSrcTableColumnBase
@@ -81,8 +81,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return "Organism Name"; }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return "Organism Name"; }
 };
 
 class CSrcTableSubSourceColumn : public CSrcTableColumnBase
@@ -94,8 +94,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return objects::CSubSource::GetSubtypeName(m_Subtype); }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return objects::CSubSource::GetSubtypeName(m_Subtype); }
 private:
     objects::CSubSource::TSubtype m_Subtype;
 };
@@ -109,8 +109,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return objects::COrgMod::GetSubtypeName(m_Subtype); }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return objects::COrgMod::GetSubtypeName(m_Subtype); }
 private:
     objects::COrgMod::TSubtype m_Subtype;
 };
@@ -125,8 +125,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return "fwd-primer-seq"; }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return "fwd-primer-seq"; }
 };
 
 
@@ -139,8 +139,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return "rev-primer-seq"; }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return "rev-primer-seq"; }
 };
 
 
@@ -153,8 +153,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return "fwd-primer-name"; }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return "fwd-primer-name"; }
 };
 
 
@@ -167,8 +167,8 @@ public:
     virtual void ClearInBioSource(
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
-        const objects::CBioSource & in_out_bioSource );
-    virtual string GetLabel() { return "rev-primer-name"; }
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return "rev-primer-name"; }
 };
 
 
@@ -179,7 +179,9 @@ public:
 };
 
 
-vector<CSrcTableColumnBase * > GetSourceFields(const CBioSource& src);
+typedef vector< CRef<CSrcTableColumnBase> > TSrcTableColumnList;
+
+TSrcTableColumnList GetSourceFields(const CBioSource& src);
 
 
 END_SCOPE(objects)

@@ -39,6 +39,8 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqtable/Seq_table.hpp>
+#include <objects/seqtable/SeqTable_column.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
 
@@ -49,8 +51,9 @@ BEGIN_SCOPE(objects)
 CRef< CSeq_descr > GetBiosampleData(string accession);
 
 vector<string> GetBiosampleIDs(CBioseq_Handle bh);
+vector<string> GetBioProjectIDs(CBioseq_Handle bh);
 
-class CBiosampleFieldDiff
+class CBiosampleFieldDiff : public CObject
 {
 public:
     CBiosampleFieldDiff() {};
@@ -58,7 +61,7 @@ public:
         m_SequenceID(sequence_id), m_BiosampleID(biosample_id), m_FieldName(field_name), m_SrcVal(src_val), m_SampleVal(sample_val)
         {};
 
-    ~CBiosampleFieldDiff(void);
+    ~CBiosampleFieldDiff(void) {};
 
     void Print(ncbi::CNcbiOstream & stream);
     void Print(ncbi::CNcbiOstream & stream, const CBiosampleFieldDiff& prev);
@@ -78,8 +81,16 @@ private:
     string m_SampleVal;
 };
 
+typedef vector< CRef<CBiosampleFieldDiff> > TBiosampleFieldDiffList;
 
-vector<CBiosampleFieldDiff *> GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample);
+
+TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample);
+TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CUser_object& src, const CUser_object& sample);
+
+CRef<objects::CSeqTable_column> FindSeqTableColumnByName (CRef<objects::CSeq_table> values_table, string column_name);
+void AddValueToColumn (CRef<CSeqTable_column> column, string value, size_t row);
+void AddValueToTable (CRef<CSeq_table> table, string column_name, string value, size_t row);
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
