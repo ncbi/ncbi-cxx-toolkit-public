@@ -249,12 +249,6 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
-    xAssignVariationAlleles(
-        const CVcfData&,
-        unsigned int,
-        CRef<CSeq_feat> );
-
-    virtual bool
     xAssignVariantSnv(
         const CVcfData&,
         unsigned int,

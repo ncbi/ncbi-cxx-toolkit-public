@@ -45,7 +45,6 @@
 #include <serial/objistrasn.hpp>
 
 // Objects includes
-#include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp> 
@@ -64,24 +63,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
 
-#include <objects/seqfeat/SeqFeatData.hpp>
-
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/Gene_ref.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
@@ -99,7 +81,6 @@
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
@@ -112,9 +93,6 @@ public:
 
     CVcfData() { m_pdQual = 0; };
     ~CVcfData() { delete m_pdQual; };
-
-//    bool ParseData(
-//        const string& );
 
     string m_strLine;
     string m_strChrom;
@@ -134,65 +112,7 @@ public:
         ST_ALL_INS,
         ST_MIXED
     } m_SetType;
-
-
-    bool IsSnv(
-        unsigned int) const;
-    bool IsDel(
-        unsigned int) const;
-    bool IsIns(
-        unsigned int) const;
-    bool IsDelins(
-        unsigned int) const;
 };
-
-//  ----------------------------------------------------------------------------
-bool CVcfData::IsSnv(
-    unsigned int index) const
-//  ----------------------------------------------------------------------------
-{
-    const string& strAlt = m_Alt[index];
-    if (m_strRef.size()==1  &&  strAlt.size()==1) {
-        return true;
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CVcfData::IsIns(
-    unsigned int index) const
-//  ----------------------------------------------------------------------------
-{
-    const string& strAlt = m_Alt[index];
-    if (m_strRef.size()==1  &&  NStr::StartsWith(strAlt, m_strRef)) {
-        return true;
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CVcfData::IsDel(
-    unsigned int index) const
-//  ----------------------------------------------------------------------------
-{
-    const string& strAlt = m_Alt[index];
-    if (strAlt.size()==1  &&  NStr::StartsWith(m_strRef, strAlt)) {
-        return true;
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CVcfData::IsDelins(
-    unsigned int index) const
-//  ----------------------------------------------------------------------------
-{
-    const string& strAlt = m_Alt[index];
-    if (strAlt.size()>1  &&  m_strRef.size()>1  &&  strAlt[0]==m_strRef[0]) {
-        return true;
-    }
-    return false;
-}
 
 //  ----------------------------------------------------------------------------
 ESpecType SpecType( 
@@ -597,29 +517,27 @@ CVcfReader::xAssignVariationAlleleSet(
     //make one variation for the reference
     CRef<CVariation_ref> pIdentity(new CVariation_ref);
     vector<string> variant;
-    CVariation_inst& instance = pIdentity->SetData().SetInstance();
-
+ 
     switch(data.m_SetType) {
     case CVcfData::ST_ALL_SNV:
         variant.push_back(data.m_strRef);
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        instance.SetType(CVariation_inst::eType_identity);
-        instance.SetObservation(CVariation_inst::eObservation_reference);
         break;
     case CVcfData::ST_ALL_DEL:
-        variant.push_back(data.m_strRef.substr(1,-1));
+        variant.push_back(data.m_strRef.substr(1));
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        instance.SetType(CVariation_inst::eType_identity);
-        instance.SetObservation(CVariation_inst::eObservation_reference);
         break;
     case CVcfData::ST_ALL_INS:
+        pIdentity->SetDeletion();
+        break;
     default: 
-        variant.push_back(data.m_strRef);
+        variant.push_back(data.m_strRef.substr(1));
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        instance.SetType(CVariation_inst::eType_identity);
-        instance.SetObservation(CVariation_inst::eObservation_reference);
         break;
     }
+    CVariation_inst& instance = pIdentity->SetData().SetInstance();
+    instance.SetType(CVariation_inst::eType_identity);
+    instance.SetObservation(CVariation_inst::eObservation_reference);
     variants.push_back(pIdentity);
 
     //add additional variations, one for each alternative
@@ -652,41 +570,6 @@ CVcfReader::xAssignVariationAlleleSet(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::xAssignVariationAlleles(
-    const CVcfData& data,
-    unsigned int index,
-    CRef<CSeq_feat> pFeature )
-//  ----------------------------------------------------------------------------
-{
-    if (data.IsSnv(index)) {
-        return xAssignVariantSnv(data, index, pFeature);
-    }
-    if (data.IsDel(index)) {
-        return xAssignVariantDel(data, index, pFeature);
-    }
-    if (data.IsIns(index)) {
-        return xAssignVariantIns(data, index, pFeature);
-    }
-    if (data.IsDelins(index)) {
-        return xAssignVariantDelins(data, index, pFeature);
-    }
-    CVariation_ref::TData::TSet::TVariations& variants =
-        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
-    CRef<CVariation_ref> pVariant(new CVariation_ref);
-    string note("Warning: Could not place variation for record \"" + 
-        NStr::Replace(data.m_strLine.substr(0, 40), "\t", "  "));
-    if (data.m_strLine.size() > 40) {
-        note += "...";
-    }
-    note += "\". Offending values: ref=\"" + data.m_strRef + 
-        "\", alt=\"" + data.m_Alt[index] + "\"";
-    pVariant->SetData().SetNote(note);
-    variants.push_back(pVariant);
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool
 CVcfReader::xAssignVariantSnv(
     const CVcfData& data,
     unsigned int index,
@@ -703,19 +586,6 @@ CVcfReader::xAssignVariantSnv(
         pVariant->SetSNV(variant, CVariation_ref::eSeqType_na);
     }}
     variants.push_back(pVariant);
-    return true;
-
-    CRef<CVariation_ref> pIdentity(new CVariation_ref);
-    {{
-        vector<string> variant;
-        variant.push_back(data.m_strRef);
-        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
-        instance.SetType(CVariation_inst::eType_identity);
-        instance.SetObservation(CVariation_inst::eObservation_asserted);
-    }}
-    variants.push_back(pIdentity);
-
     return true;
 }
 
@@ -741,19 +611,6 @@ CVcfReader::xAssignVariantDel(
         instance.SetDelta().push_back(pItem);
     }}
     variants.push_back(pVariant);
-    return true;
-
-    CRef<CVariation_ref> pIdentity(new CVariation_ref);
-    {{
-        //pIdentity->SetData().SetNote("IDENTITY");
-        vector<string> variant;
-        variant.push_back(data.m_strRef);
-        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
-        instance.SetType(CVariation_inst::eType_identity);
-        instance.SetObservation(CVariation_inst::eObservation_asserted);
-    }}
-    variants.push_back(pIdentity);
     return true;
 }
 
@@ -809,22 +666,6 @@ CVcfReader::xAssignVariantDelins(
         instance.SetDelta().push_back(pItem);       
     }}
     variants.push_back(pVariant);
-    return true;
-
-    CRef<CVariation_ref> pIdentity(new CVariation_ref);
-    {{
-        string insertion(data.m_strRef.substr(1));
-        CRef<CSeq_literal> pLiteral(new CSeq_literal);
-        pLiteral->SetSeq_data().SetIupacna().Set(insertion);
-        pLiteral->SetLength(insertion.size());
-        CRef<CDelta_item> pItem(new CDelta_item);
-        pItem->SetSeq().SetLiteral(*pLiteral); 
-        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
-        instance.SetType(CVariation_inst::eType_identity);
-        instance.SetDelta().push_back(pItem);       
-        instance.SetObservation(CVariation_inst::eObservation_asserted);
-    }}
-    variants.push_back(pIdentity);
     return true;
 }
 
@@ -1050,48 +891,6 @@ CVcfReader::xAssignFeatureLocationSet(
     pFeat->SetLocation().SetInt().SetTo( data.m_iPos+1);
     pFeat->SetLocation().SetInt().SetId(*pId);
     return true;
-    /*
-    if (data.IsSnv(index)) {
-        pFeature->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
-        pFeature->SetLocation().SetPnt().SetId(*pId);
-        return true;
-    }
-    if (data.IsDel(index)) {
-        if (data.m_strRef.size()==2) {
-            pFeature->SetLocation().SetPnt().SetPoint(data.m_iPos);
-            pFeature->SetLocation().SetPnt().SetId(*pId);
-            return true;
-        }
-        else {
-            pFeature->SetLocation().SetInt().SetFrom(data.m_iPos);
-            pFeature->SetLocation().SetInt().SetTo( 
-                data.m_iPos + data.m_strRef.length()-2);
-            pFeature->SetLocation().SetInt().SetId(*pId);
-            return true;
-        }
-    }
-    if (data.IsIns(index)) {
-        pFeature->SetLocation().SetInt().SetFrom(data.m_iPos-1);
-        pFeature->SetLocation().SetInt().SetTo( 
-            data.m_iPos);
-        pFeature->SetLocation().SetInt().SetId(*pId);
-        return true;
-    }
-   
-    if (data.IsDelins(index)) {
-        pFeature->SetLocation().SetInt().SetFrom(data.m_iPos);
-        pFeature->SetLocation().SetInt().SetTo( 
-            data.m_iPos+1);
-        pFeature->SetLocation().SetInt().SetId(*pId);
-        return true;
-    }
-   
-    pFeature->SetLocation().SetInt().SetId( *pId );
-    pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
-    pFeature->SetLocation().SetInt().SetTo( 
-        data.m_iPos + data.m_strRef.length() - 2 );
-*/
-    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1246,7 +1045,7 @@ CVcfReader::x_AssignVariationAlleles(
         string ref = data.m_strRef;
         string alt = *cit;
 //        if (ref.size()==1  &&  alt.size()==1) {
-            pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
+//            pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
 //        }
 //        else if (NStr::StartsWith(ref, alt)) {
             //deletion
@@ -1278,7 +1077,6 @@ CVcfReader::x_AssignVariationAlleles(
                 pAllele->SetVariant_prop().SetIs_ancestral_allele( true );
             }
         }
-
         alleles.push_back( pAllele );
         ++altcount;
     }
@@ -1544,11 +1342,8 @@ CVcfReader::xAssignVariantProps(
         props.SetQuality_check() |= VP::eQuality_check_contig_allele_missing;
         infos.erase(it);
     }
-
     return true;
 }
-
-
 
 END_objects_SCOPE
 END_NCBI_SCOPE
