@@ -219,12 +219,6 @@ protected:
         CRef<CSeq_annot> );
         
     virtual bool
-    xProcessVariant(
-        CVcfData&,
-        unsigned int,
-        CRef<CSeq_annot> );
-
-    virtual bool
     xProcessVariantSet(
         CVcfData&,
         CRef<CSeq_annot> );
@@ -240,9 +234,8 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
-    xAssignFeatureLocation(
+    xAssignFeatureLocationSet(
         const CVcfData&,
-        unsigned int,
         CRef<CSeq_feat> );
 
     virtual bool

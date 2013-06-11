@@ -593,23 +593,60 @@ CVcfReader::xAssignVariationAlleleSet(
 {
     CVariation_ref::TData::TSet::TVariations& variants =
         pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    //make one variation for the reference
     CRef<CVariation_ref> pIdentity(new CVariation_ref);
-    {{
-        vector<string> variant;
+    vector<string> variant;
+    CVariation_inst& instance = pIdentity->SetData().SetInstance();
+
+    switch(data.m_SetType) {
+    case CVcfData::ST_ALL_SNV:
         variant.push_back(data.m_strRef);
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
         instance.SetType(CVariation_inst::eType_identity);
         instance.SetObservation(CVariation_inst::eObservation_reference);
-    }}
+        break;
+    case CVcfData::ST_ALL_DEL:
+        variant.push_back(data.m_strRef.substr(1,-1));
+        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
+        instance.SetType(CVariation_inst::eType_identity);
+        instance.SetObservation(CVariation_inst::eObservation_reference);
+        break;
+    case CVcfData::ST_ALL_INS:
+    default: 
+        variant.push_back(data.m_strRef);
+        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
+        instance.SetType(CVariation_inst::eType_identity);
+        instance.SetObservation(CVariation_inst::eObservation_reference);
+        break;
+    }
     variants.push_back(pIdentity);
 
+    //add additional variations, one for each alternative
     for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
-        if (!xAssignVariationAlleles(data, i, pFeature)) {
-            return false;
+        switch(data.m_SetType) {
+        default:
+            if (!xAssignVariantDelins(data, i, pFeature)) {
+                return false;
+            }
+            break;
+        case CVcfData::ST_ALL_SNV:
+            if (!xAssignVariantSnv(data, i, pFeature)) {
+                return false;
+            }
+            break;
+        case CVcfData::ST_ALL_INS:
+            if (!xAssignVariantIns(data, i, pFeature)) {
+                return false;
+            }
+            break;
+        case CVcfData::ST_ALL_DEL:
+            if (!xAssignVariantDel(data, i, pFeature)) {
+                return false;
+            }
+            break;
         }
     }
-
     return true;
 }
 
@@ -666,6 +703,7 @@ CVcfReader::xAssignVariantSnv(
         pVariant->SetSNV(variant, CVariation_ref::eSeqType_na);
     }}
     variants.push_back(pVariant);
+    return true;
 
     CRef<CVariation_ref> pIdentity(new CVariation_ref);
     {{
@@ -703,6 +741,7 @@ CVcfReader::xAssignVariantDel(
         instance.SetDelta().push_back(pItem);
     }}
     variants.push_back(pVariant);
+    return true;
 
     CRef<CVariation_ref> pIdentity(new CVariation_ref);
     {{
@@ -770,6 +809,7 @@ CVcfReader::xAssignVariantDelins(
         instance.SetDelta().push_back(pItem);       
     }}
     variants.push_back(pVariant);
+    return true;
 
     CRef<CVariation_ref> pIdentity(new CVariation_ref);
     {{
@@ -960,7 +1000,7 @@ CVcfReader::x_AssignFeatureLocation(
 bool
 CVcfReader::xAssignFeatureLocationSet(
     const CVcfData& data,
-    CRef<CSeq_feat> pFeature )
+    CRef<CSeq_feat> pFeat )
 //  ---------------------------------------------------------------------------
 {
     CRef<CSeq_id> pId(CReadUtil::AsSeqId(data.m_strChrom, m_iFlags));
@@ -976,6 +1016,40 @@ CVcfReader::xAssignFeatureLocationSet(
     // in practice, we will choose the common variation type if it is indeed
     // common for all the alleles. Otherwise, we just make it a MNV.
 
+    if (data.m_SetType == CVcfData::ST_ALL_SNV) {
+        //set location for SNVs
+        pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
+        pFeat->SetLocation().SetPnt().SetId(*pId);
+        return true;
+    }
+    if (data.m_SetType == CVcfData::ST_ALL_INS) {
+        //set location for INSs
+        pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
+        pFeat->SetLocation().SetInt().SetTo(data.m_iPos);
+        pFeat->SetLocation().SetInt().SetId(*pId);
+        return true;
+    }
+    if (data.m_SetType == CVcfData::ST_ALL_DEL) {
+        //set location for DELs
+        if (data.m_strRef.size() == 2) {
+            //deletion of a single base
+            pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
+            pFeat->SetLocation().SetPnt().SetId(*pId);
+        }
+        else {
+            pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
+            pFeat->SetLocation().SetInt().SetTo( 
+                data.m_iPos + data.m_strRef.length()-2);
+            pFeat->SetLocation().SetInt().SetId(*pId);
+        }
+        return true;
+    }
+
+    //default: set location for MNVs
+    pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
+    pFeat->SetLocation().SetInt().SetTo( data.m_iPos+1);
+    pFeat->SetLocation().SetInt().SetId(*pId);
+    return true;
     /*
     if (data.IsSnv(index)) {
         pFeature->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
