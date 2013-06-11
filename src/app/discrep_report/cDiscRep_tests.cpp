@@ -414,12 +414,12 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
 void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
 {
    if (thisTest.is_SusProd_run) return;
+   thisTest.is_SusProd_run = true;
 
    m_bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);  // necessary?
    if (thisInfo.suspect_prod_rules->Get().empty()) FindSuspectProductNamesWithStaticList();
    else FindSuspectProductNamesWithRules();
 
-   thisTest.is_SusProd_run = true;
 };
 
 void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
@@ -732,6 +732,7 @@ void CBioseq_TEST_UNWANTED_SPACER :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq) 
 {
    if (thisTest.is_Aa_run) return;
+   thisTest.is_Aa_run = true;
 
    string bioseq_desc(GetDiscItemText(bioseq));
    unsigned len = bioseq.GetLength();
@@ -845,10 +846,8 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    if (thisTest.tests_run.find(GetName_vir()) != thisTest.tests_run.end()) {
       bool has_virus = false;
       ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-cerr << "bioseq_biosrc_seqdesc " << Blob2Str(**it) << endl;
          const CBioSource& biosrc = (*it)->GetSource();
          ITERATE (vector <string>, jt, thisInfo.virus_lineage) {
-cerr << "virus_lineage " << *jt << endl;
             if (HasLineage(biosrc, *jt)) {
                 ITERATE (vector <const CSeq_feat*>, kt, gene_feat)
                     thisInfo.test_item_list[GetName_vir()].push_back(GetDiscItemText(**kt));
@@ -950,8 +949,6 @@ cerr << "virus_lineage " << *jt << endl;
    if (thisTest.tests_run.find(GetName_unv()) != thisTest.tests_run.end()
                                          && BioseqHasKeyword (bioseq, "UNVERIFIED"))
       thisInfo.test_item_list[GetName_unv()].push_back(bioseq_desc);
-
-   thisTest.is_Aa_run = true;
 };
 
 void CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA :: GetReport(CRef <CClickableItem>& c_item)
@@ -1128,6 +1125,8 @@ void CBioseq_TEST_ORGANELLE_NOT_GENOMIC :: GetReport(CRef <CClickableItem>& c_it
 void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
 {
   if (thisTest.is_mRNA_run) return;
+  thisTest.is_mRNA_run = true;
+
   if (!IsMrnaSequence()) return;
 
   string desc(GetDiscItemText(bioseq));
@@ -1170,8 +1169,6 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
       }
     }
   }
-
-  thisTest.is_mRNA_run = true;
 };
 
 void CBioseq_MULTIPLE_CDS_ON_MRNA :: GetReport(CRef <CClickableItem>& c_item)
@@ -1233,6 +1230,7 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: GetReport(CRef <CClickableItem>& c
 void CBioseq_on_cd_feat :: TestOnObj(const CBioseq& bisoeq)
 {
   if (thisTest.is_CDs_run) return;
+  thisTest.is_CDs_run = true;
 
   string desc;
   bool run_exc = (thisTest.tests_run.find(GetName_exc()) != thisTest.tests_run.end());
@@ -1260,8 +1258,6 @@ void CBioseq_on_cd_feat :: TestOnObj(const CBioseq& bisoeq)
        }
     }
   }
- 
-  thisTest.is_CDs_run = true;
 };
 
 
@@ -1350,6 +1346,7 @@ void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: GetReport(CRef <CClickableItem>&
 void CBioseq_test_on_suspect_phrase :: TestOnObj(const CBioseq& bioseq) 
 {
    if (thisTest.is_SusPhrase_run) return;
+   thisTest.is_SusPhrase_run = true;
 
    // DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS
    if (thisTest.tests_run.find(GetName_rna_comm()) != thisTest.tests_run.end()) {
@@ -1360,8 +1357,6 @@ void CBioseq_test_on_suspect_phrase :: TestOnObj(const CBioseq& bioseq)
    // DISC_SUSPECT_MISC_FEATURES
    if (thisTest.tests_run.find(GetName_misc()) != thisTest.tests_run.end())
        ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) FindBadMiscFeatures(**it);
-
-   thisTest.is_SusPhrase_run = true;
 }
 
 
@@ -1758,6 +1753,7 @@ void CBioseq_CDS_TRNA_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
 {
    if (thisTest.is_TaxDef_run) return;
+   thisTest.is_TaxDef_run = true;
 
    string taxnm(kEmptyStr), title(kEmptyStr), tax_desc;
    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
@@ -1801,8 +1797,6 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
         if (add) thisInfo.test_item_list[GetName_missing()].push_back(desc);
       }
    }
-
-   thisTest.is_TaxDef_run = true;
 };
 
 
@@ -2320,6 +2314,7 @@ bool CBioseq_test_on_rrna :: NameNotStandard(const string& nm)
 void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
 {
    if (thisTest.is_RRna_run) return;
+   thisTest.is_RRna_run = true;
 
    string desc, rrna_name, prod_str;
    unsigned len;
@@ -2360,8 +2355,6 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
         }
      }
    }
-
-   thisTest.is_RRna_run = true;
 };
 
 
@@ -3323,6 +3316,7 @@ static string kNonExtendableException("unextendable partial coding region");
 void CBioseq_test_on_bac_partial :: TestOnObj(const CBioseq& bioseq)
 {
   if (thisTest.is_BacPartial_run) return;
+  thisTest.is_BacPartial_run = true;
 
   if (bioseq.IsAa()) return;
   string desc;
@@ -3361,8 +3355,6 @@ void CBioseq_test_on_bac_partial :: TestOnObj(const CBioseq& bioseq)
        }
      }
   }
-
-  thisTest.is_BacPartial_run = true;
 };
 
 
@@ -4014,6 +4006,7 @@ bool CBioseqTestAndRepData :: IsDeltaSeqWithFarpointers(const CBioseq& bioseq)
 void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
 {
     if (IsDeltaSeqWithFarpointers (bioseq)) return;
+    thisTest.is_BASES_N_run = true;
    
     unsigned cnt_a, cnt_t, cnt_g, cnt_c, cnt_n, tot_n, cnt_non_nt;
     cnt_a = cnt_t = cnt_g = cnt_c = cnt_n = tot_n = cnt_non_nt = 0;
@@ -4068,8 +4061,6 @@ void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
     if (tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.10)
           thisInfo.test_item_list[GetName_10perc()].push_back(desc);
     if (cnt_non_nt) thisInfo.test_item_list[GetName_non_nt()].push_back(desc);
-
-    thisTest.is_BASES_N_run = true;
 };
 
 
@@ -4289,6 +4280,7 @@ bool CBioseq_test_on_protfeat :: ContainsWholeWord(const string& pattern, const 
 void CBioseq_test_on_protfeat :: TestOnObj(const CBioseq& bioseq) 
 {
    if (thisTest.is_ProtFeat_run) return;
+   thisTest.is_ProtFeat_run = true;
 
    string desc, head_desc, func;
    bool run_cds = (thisTest.tests_run.find(GetName_cds()) != thisTest.tests_run.end());
@@ -4343,8 +4335,6 @@ void CBioseq_test_on_protfeat :: TestOnObj(const CBioseq& bioseq)
            thisInfo.test_item_list[GetName_pnm()].push_back( *(names.begin()) + "$" + desc);
      }
    }
-
-   thisTest.is_ProtFeat_run = true;
 };
 
 void CBioseq_DISC_PROTEIN_NAMES :: GetReport(CRef <CClickableItem>& c_item)
@@ -5387,6 +5377,8 @@ void CBioseqTestAndRepData :: TestProteinID(const CBioseq& bioseq)
 void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
 {
    if (thisTest.is_GP_Set_run) return;
+   thisTest.is_GP_Set_run = true;
+
    if (!bioseq.IsNa()) {thisTest.is_GP_Set_run = true; return; }
    CConstRef <CBioseq_set> set = bioseq.GetParentSet();
    if (set.Empty()) { thisTest.is_GP_Set_run = true; return;}
@@ -5428,8 +5420,6 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
        }
      }
    }
-   
-   thisTest.is_GP_Set_run = true;
 };
 
 
@@ -5493,6 +5483,7 @@ void CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID :: GetReport(CRef <CClickableItem
 void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
 {
    if (thisTest.is_Prot_run) return;
+   thisTest.is_Prot_run = true;
 
    string desc(GetDiscItemText(bioseq));
 
@@ -5525,8 +5516,6 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
      // MISSING_PROTEIN_ID1
      if (!has_pid && run_id) thisInfo.test_item_list[GetName_id()].push_back(desc);
    }
-
-   thisTest.is_Prot_run = true;
 };
 
 
@@ -5619,6 +5608,7 @@ void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool
 void CBioseq_test_on_cd_4_transl :: TestOnObj(const CBioseq& bioseq)
 { 
    if (thisTest.is_CdTransl_run) return;
+   thisTest.is_CdTransl_run = true;
   
    string desc, comment;
    string note_txt("TAA stop codon is completed by the addition of 3' A residues to the mRNA");
@@ -5643,8 +5633,6 @@ void CBioseq_test_on_cd_4_transl :: TestOnObj(const CBioseq& bioseq)
      else if (run_transl && comment.find(note_txt) != string::npos)
                     thisInfo.test_item_list[GetName_transl()].push_back(desc);
    }  
-
-   thisTest.is_CdTransl_run = true;
 };
 
 void CBioseq_TRANSL_NO_NOTE :: GetReport(CRef <CClickableItem>& c_item)
@@ -5857,6 +5845,7 @@ void CBioseq_test_on_rna :: FindtRNAsOnSameStrand()
 void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
 {
   if (thisTest.is_TRRna_run) return;
+  thisTest.is_TRRna_run = true;
  
   // FIND_BADLEN_TRNAS
   unsigned len;
@@ -5920,8 +5909,6 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
        if (run_rdup) FindDupRNAsInList();
     }
   }
-
-  thisTest.is_TRRna_run = true;
 };
 
 
@@ -6031,6 +6018,7 @@ void CBioseq_COUNT_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
 {
    if (thisTest.is_MolInfo_run) return;
+   thisTest.is_MolInfo_run = true;
 
    if (thisTest.tests_run.find(GetName_part()) != thisTest.tests_run.end()) {
       ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
@@ -6087,8 +6075,6 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
            thisInfo.test_item_list[GetName_link()].push_back(desc);
       }
    }
-
-   thisTest.is_MolInfo_run = true;
 };
 
 
@@ -6124,6 +6110,7 @@ void CBioseq_TECHNIQUE_NOT_TSA :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
 {
   if (thisTest.is_AllAnnot_run) return;
+  thisTest.is_AllAnnot_run = true;
   
   bool excpt;
   string excpt_txt(kEmptyStr);
@@ -6187,7 +6174,6 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
        }
     }
   }
-  thisTest.is_AllAnnot_run = true;
 };
 
 
@@ -7116,6 +7102,7 @@ void CBioseqSet_on_class :: FindUnwantedSetWrappers (const CBioseq_set& set)
 void CBioseqSet_on_class :: TestOnObj(const CBioseq_set& bioseq_set)
 {
    if (thisTest.is_BioSet_run) return;
+   thisTest.is_BioSet_run = true;
 
    string desc = GetDiscItemText(bioseq_set);
    CBioseq_set::EClass e_cls = bioseq_set.GetClass();
@@ -7140,8 +7127,6 @@ void CBioseqSet_on_class :: TestOnObj(const CBioseq_set& bioseq_set)
       if ( e_cls == CBioseq_set :: eClass_segset)
         thisInfo.test_item_list[GetName_segset()].push_back(desc);
    }
-
-   thisTest.is_BioSet_run = true;
 };
 
 
@@ -7218,6 +7203,7 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
 void CSeqEntry_test_on_tax_cflts :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_TaxCflts_run) return;
+   thisTest.is_TaxCflts_run = true;
 
    m_run_vou = (thisTest.tests_run.find(GetName_vou()) != thisTest.tests_run.end());
    m_run_str = (thisTest.tests_run.find(GetName_str()) != thisTest.tests_run.end());
@@ -7234,8 +7220,6 @@ void CSeqEntry_test_on_tax_cflts :: TestOnObj(const CSeq_entry& seq_entry)
       RunTests((*it)->GetSource(), desc);
       i++;
    }
-
-   thisTest.is_TaxCflts_run = true;
 };
 
 
@@ -7863,6 +7847,8 @@ static Str2Ints comb_qual2src_idx;
 void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Quals_run) return;
+   thisTest.is_Quals_run = true;
+
    vector <string> this_desc_ls;
    vector <CConstRef <CBioSource> > this_src_ls;  // local in C
    Str2Ints this_qual2src_idx;  // local in C
@@ -7909,8 +7895,6 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
        if (run_asn1) thisInfo.test_item_list[GetName_asn1()].push_back("yes");
        if (run_oncall) thisInfo.test_item_list[GetName_asn1_oncall()].push_back("yes");
    }
-
-   thisTest.is_Quals_run = true;
 };
 
 
@@ -8280,6 +8264,7 @@ void CSeqEntry_DISC_BACTERIA_MISSING_STRAIN :: GetReport(CRef <CClickableItem>& 
 void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Biosrc_Orgmod_run) return;
+   thisTest.is_Biosrc_Orgmod_run = true;
 
    m_run_mism = (thisTest.tests_run.find(GetName_mism()) != thisTest.tests_run.end());
    m_run_cul = (thisTest.tests_run.find(GetName_cul()) != thisTest.tests_run.end());
@@ -8304,8 +8289,6 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
       RunTests((*it)->GetSource(), desc);
       i++;
    }
-
-   thisTest.is_Biosrc_Orgmod_run = true;
 };
 
 
@@ -8867,6 +8850,7 @@ void CSeqEntry_test_on_biosrc :: FindSpecSubmitText()
 void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_BIOSRC1_run) return;
+   thisTest.is_BIOSRC1_run = true;
 
    m_run_trin = (thisTest.tests_run.find(GetName_trin()) != thisTest.tests_run.end());
    m_run_iso = (thisTest.tests_run.find(GetName_iso()) != thisTest.tests_run.end());
@@ -8898,8 +8882,6 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
      RunTests((*it)->GetSource(), desc, (int)i);
      i++;
    };
-
-  thisTest.is_BIOSRC1_run = true;
 };
 
 
@@ -9085,6 +9067,9 @@ void CSeqEntryTestAndRepData :: GetIncnstTestReport (CRef <CClickableItem>& c_it
 
 void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
 {
+   if (thisTest.is_IncnstUser_run) return;
+   thisTest.is_IncnstUser_run = true;
+
    unsigned i=0;
    CConstRef <CBioseq> seq_ref;
    CConstRef <CBioseq_set> set_ref;
@@ -9394,6 +9379,7 @@ void CSeqEntry_test_on_user :: RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_s
 void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 {
   if (thisTest.is_DESC_user_run) return;
+  thisTest.is_DESC_user_run = true;
 
   CValidError errors;
   CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
@@ -9571,8 +9557,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
           thisInfo.test_item_list[GetName_scomm()].push_back(it->first);
       }
   }
-
-  thisTest.is_DESC_user_run = true;
 };
 
 void CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
@@ -10307,6 +10291,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
 void CSeqEntry_on_biosrc_subsrc :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Subsrc_run) return;
+   thisTest.is_Subsrc_run = true;
 
    m_run_col = (thisTest.tests_run.find(GetName_col()) != thisTest.tests_run.end());
    m_run_orgi = (thisTest.tests_run.find(GetName_orgi()) != thisTest.tests_run.end());
@@ -10323,8 +10308,6 @@ void CSeqEntry_on_biosrc_subsrc :: TestOnObj(const CSeq_entry& seq_entry)
      RunTests( (*it)->GetSource(), desc);
      i++;
    }
-   
-   thisTest.is_Subsrc_run = true;
 };
 
 bool CSeqEntry_on_biosrc_subsrc :: Has3Names(const vector <string> arr)
@@ -10941,6 +10924,8 @@ void CSeqEntry_test_on_pub :: GetGroupedAffilString(const CAuth_list& authors, s
 void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Pub_run) return;
+   thisTest.is_Pub_run = true;
+
    m_has_cit = false;
 
    m_run_dup = (thisTest.tests_run.find(GetName_dup()) != thisTest.tests_run.end())? 
@@ -11024,7 +11009,6 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
  
    if (m_run_aff && !m_has_cit) 
        thisInfo.test_item_list[GetName_aff()].push_back("no cit");
-   thisTest.is_Pub_run = true;
 };
 
 
@@ -11249,6 +11233,7 @@ void CSeqEntry_test_on_defline :: RmvBioseqsOfSet(const CBioseq_set& set)
 void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
 {
     if (thisTest.is_Defl_run) return;
+    thisTest.is_Defl_run = true;
 
     // DISC_MISSING_DEFLINES
     for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry, CSeq_inst::eMol_aa); b_ci; ++ b_ci) 
@@ -11269,7 +11254,6 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     bool run_no_tlt = (thisTest.tests_run.find(GetName_no_tlt()) != thisTest.tests_run.end());
     bool run_seqch = (thisTest.tests_run.find(GetName_seqch()) != thisTest.tests_run.end());
     ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {
-cerr << Blob2Str(**it) << endl;
        if ((title = (*it)->GetTitle()).empty()) continue; 
        desc = GetDiscItemText(**it, *(title_seqdesc_seqentry[i]));
 
@@ -11305,8 +11289,6 @@ cerr << Blob2Str(**it) << endl;
         ITERATE (set <string>, it, m_aa_bioseqs)
               thisInfo.test_item_list[GetName_no_tlt()].push_back(*it);
     }
- 
-    thisTest.is_Defl_run = true;
 };
 
 void CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE :: GetReport(CRef <CClickableItem>& c_item)
@@ -11436,6 +11418,7 @@ void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
 void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
 {
   if (thisTest.is_Comment_run) return;
+  thisTest.is_Comment_run = true;
 
   unsigned i=0;
   string desc;
@@ -11458,8 +11441,6 @@ void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
         thisInfo.test_item_list[GetName_mix()].push_back(strtmp + desc);
      }
   }
-
-  thisTest.is_Comment_run = true;
 };
 
 

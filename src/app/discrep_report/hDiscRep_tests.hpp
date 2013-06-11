@@ -93,7 +93,7 @@ namespace DiscRepNmSpc {
       static bool   is_BacPartial_run;
       static bool   is_BASES_N_run;
       static bool   is_BioSet_run;
-      static bool   is_BIOSRC_run;
+      static bool   is_BIOSRC_run;   // may not be needed
       static bool   is_Biosrc_Orgmod_run;
       static bool   is_BIOSRC1_run;
       static bool   is_CDs_run;
@@ -104,7 +104,7 @@ namespace DiscRepNmSpc {
       static bool   is_GP_Set_run;
       static bool   is_IncnstUser_run;
       static bool   is_MolInfo_run;
-      static bool   is_MRNA_run;
+      static bool   is_MRNA_run;   // discard later
       static bool   is_mRNA_run;
       static bool   is_Prot_run;
       static bool   is_ProtFeat_run;
