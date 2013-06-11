@@ -4,3 +4,9 @@ algo/phy_tree
 algo/align$
 algo/align/nw
 algo/cobalt
+-algo/blast/igblast
+-app/blast
+-app/blastdb
+-app/winmasker
+-app/dustmasker
+-app/segmasker
