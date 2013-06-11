@@ -770,7 +770,8 @@ CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
 #  endif
 #endif
 
-class CStringUTF8;
+class CStringUTF8_DEPRECATED;
+typedef CStringUTF8_DEPRECATED CStringUTF8;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
