@@ -509,7 +509,7 @@ CRef<CSeq_entry> CBiosampleChkApp::ReadSeqEntry(void)
 }
 
 
-bool s_CompareBiosampleFieldDiffs (CBiosampleFieldDiff * f1, CBiosampleFieldDiff * f2)
+bool s_CompareBiosampleFieldDiffs (CRef<CBiosampleFieldDiff> f1, CRef<CBiosampleFieldDiff> f2)
 { 
     if (!f1) {
         return true;
