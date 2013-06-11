@@ -786,7 +786,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
             ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
               if (!IsLocationOrganelle((*it)->GetSource().GetGenome())) {
                  ITERATE (vector <const CSeqdesc*>, jt, bioseq_molinfo) {
-                    if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+                    if ( (*jt)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
                        ITERATE (vector <const CSeq_feat*>, kt, cd_feat) {
                          if (IsPseudoSeqFeatOrXrefGene(*kt)) continue;
                          has_CDs = true;
@@ -845,8 +845,10 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    if (thisTest.tests_run.find(GetName_vir()) != thisTest.tests_run.end()) {
       bool has_virus = false;
       ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+cerr << "bioseq_biosrc_seqdesc " << Blob2Str(**it) << endl;
          const CBioSource& biosrc = (*it)->GetSource();
          ITERATE (vector <string>, jt, thisInfo.virus_lineage) {
+cerr << "virus_lineage " << *jt << endl;
             if (HasLineage(biosrc, *jt)) {
                 ITERATE (vector <const CSeq_feat*>, kt, gene_feat)
                     thisInfo.test_item_list[GetName_vir()].push_back(GetDiscItemText(**kt));
