@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Pavel Ivanov
+* Author:  Pavel Ivanov, Denis Vakatov
 *
 * File Description:
 *   Pool of threads.
@@ -495,6 +495,8 @@ private:
     CRef<CThreadPool_Task>       m_CurrentTask;
     /// Semaphore for waking up from idle waiting
     CSemaphore                   m_IdleTrigger;
+    /// General-use mutex for very (very!) trivial ops
+    mutable CFastMutex           m_FastMutex;
 };
 
 
@@ -547,6 +549,8 @@ private:
     CRef<CThreadPool_Task>  m_CurrentTask;
     /// Flag indicating that thread should pass eOther event to the controller
     CAtomicCounter          m_NeedCallController;
+    /// General-use mutex for very (very!) trivial ops
+    mutable CFastMutex      m_FastMutex;
 };
 
 
@@ -1092,8 +1096,13 @@ CThreadPool_ServiceThread::RequestToFinish(void)
     m_Finishing = true;
     WakeUp();
 
-    CThreadPool_Task* task = m_CurrentTask;
-    if (task) {
+    CRef<CThreadPool_Task> task;
+    {{
+        CFastMutexGuard fast_guard(m_FastMutex);
+        task = m_CurrentTask;
+    }}
+
+    if ( task.NotNull() ) {
         CThreadPool_Impl::sx_RequestToCancel(task);
     }
 }
@@ -1103,8 +1112,13 @@ CThreadPool_ServiceThread::Main(void)
 {
     while (! m_Finishing) {
         CThreadPool_Impl::SExclusiveTaskInfo task_info =
-                                              m_Pool->TryGetExclusiveTask();
-        m_CurrentTask = task_info.task;
+            m_Pool->TryGetExclusiveTask();
+
+        {{
+            CFastMutexGuard fast_guard(m_FastMutex);
+            m_CurrentTask = task_info.task;
+        }}
+        
 
         if ( m_CurrentTask.IsNull() ) {
             x_Idle();
@@ -1211,6 +1225,7 @@ CThreadPool_ThreadImpl::IsFinishing(void) const
 inline CRef<CThreadPool_Task>
 CThreadPool_ThreadImpl::GetCurrentTask(void) const
 {
+    CFastMutexGuard fast_guard(m_FastMutex);
     return m_CurrentTask;
 }
 
@@ -1234,7 +1249,10 @@ CThreadPool_ThreadImpl::x_TaskFinished(CThreadPool_Task::EStatus status)
         CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask, status);
     }
 
-    m_CurrentTask.Reset();
+    {{
+        CFastMutexGuard fast_guard(m_FastMutex);
+        m_CurrentTask.Reset();
+    }}
     m_Pool->TaskFinished();
 }
 
@@ -1256,12 +1274,12 @@ inline void
 CThreadPool_ThreadImpl::CancelCurrentTask(void)
 {
     // Avoid resetting of the pointer during execution
-    // TODO: there's possible race if before we add reference on the task
-    // m_CurrentTask will be reset to NULL, last reference will be removed and
-    // task will be deleted. But nobody uses CThreadPool in this way, thus
-    // this assignment is safe (ThreadPool won't own the last reference to
-    // the task).
-    CRef<CThreadPool_Task> task = m_CurrentTask;
+    CRef<CThreadPool_Task> task;
+    {{
+        CFastMutexGuard fast_guard(m_FastMutex);
+        task = m_CurrentTask;
+    }}
+
     if (task.NotNull()) {
         CThreadPool_Impl::sx_RequestToCancel(task);
     }
@@ -1283,7 +1301,13 @@ CThreadPool_ThreadImpl::Main(void)
         // CancelCurrentTask() will make sure that TryGetNextTask() returns
         // NULL.
         m_CancelRequested = false;
-        m_CurrentTask = m_Pool->TryGetNextTask();
+
+        {{
+            CRef<CThreadPool_Task> task = m_Pool->TryGetNextTask();
+            CFastMutexGuard fast_guard(m_FastMutex);
+            m_CurrentTask = task;
+        }}
+
 
         if (m_CurrentTask.IsNull()) {
             x_Idle();
@@ -1298,6 +1322,7 @@ CThreadPool_ThreadImpl::Main(void)
                 }
                 CThreadPool_Impl::sx_SetTaskStatus(m_CurrentTask,
                                                  CThreadPool_Task::eCanceled);
+                CFastMutexGuard fast_guard(m_FastMutex);
                 m_CurrentTask = NULL;
                 continue;
             }
