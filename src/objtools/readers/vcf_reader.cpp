@@ -128,6 +128,13 @@ public:
     vector<string> m_FormatKeys;
 //    vector< vector<string> > m_GenotypeData;
     GTDATA m_GenotypeData;
+    enum SetType_t {
+        ST_ALL_SNV,
+        ST_ALL_DEL,
+        ST_ALL_INS,
+        ST_MIXED
+    } m_SetType;
+
 
     bool IsSnv(
         unsigned int) const;
@@ -536,51 +543,6 @@ CVcfReader::x_ProcessDataLine(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::xProcessVariant(
-    CVcfData& data,
-    unsigned int index,
-    CRef<CSeq_annot> pAnnot)
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_feat> pFeat( new CSeq_feat );
-    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
-        CVariation_ref::C_Data::C_Set::eData_set_type_package );
-    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion() = 5;
-    CSeq_feat::TExt& ext = pFeat->SetExt();
-    ext.SetType().SetStr( "VcfAttributes" );
-
-    if ( ! xAssignFeatureLocation( data, index, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_AssignVariationIds( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! xAssignVariationAlleles( data, index, pFeat ) ) {
-        return false;
-    }
-
-    if ( ! x_ProcessScore( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_ProcessFilter( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! xProcessInfo( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_ProcessFormat( data, pFeat ) ) {
-        return false;
-    }
-
-    if ( pFeat->GetExt().GetData().empty() ) {
-        pFeat->ResetExt();
-    }
-    pAnnot->SetData().SetFtable().push_back( pFeat );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool
 CVcfReader::xProcessVariantSet(
     CVcfData& data,
     CRef<CSeq_annot> pAnnot)
@@ -593,7 +555,7 @@ CVcfReader::xProcessVariantSet(
     CSeq_feat::TExt& ext = pFeat->SetExt();
     ext.SetType().SetStr( "VcfAttributes" );
 
-    if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
+    if ( ! xAssignFeatureLocationSet( data, pFeat ) ) {
         return false;
     }
     if ( ! x_AssignVariationIds( data, pFeat ) ) {
@@ -840,14 +802,7 @@ CVcfReader::xProcessDataLine(
     if ( ! x_ParseData( line, data ) ) {
         return false;
     }
-    /*
-    for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
-        if (!xProcessVariant(data, i, pAnnot)) {
-            return false;
-        }
-    }
-    return true;
-    */
+
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
@@ -938,9 +893,53 @@ CVcfReader::x_ParseData(
     catch ( ... ) {
         return false;
     }
+
+    //assign set type:
+
+    //test for all SNVs
+    bool maybeAllSnv = (data.m_strRef.size() == 1);
+    if (maybeAllSnv) {
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            if (data.m_Alt[u].size() != 1) {
+                maybeAllSnv = false;
+                break;
+            }
+        }
+        if (maybeAllSnv) {
+            data.m_SetType = CVcfData::ST_ALL_SNV;
+            return true;
+        }
+    }
+
+    //test for all insertions:
+    bool maybeAllIns = true;
+    for (size_t u=0; u < data.m_Alt.size(); ++u) {
+        if (! NStr::StartsWith(data.m_Alt[u], data.m_strRef)) {
+            maybeAllIns = false;
+            break;
+        }
+    }
+    if (maybeAllIns) {
+        data.m_SetType = CVcfData::ST_ALL_INS;
+        return true;
+    }
+
+    //test for all deletions:
+    bool maybeAllDel = true;
+    for (size_t u=0; u < data.m_Alt.size(); ++u) {
+        if (! NStr::StartsWith(data.m_strRef, data.m_Alt[u])) {
+            maybeAllDel = false;
+            break;
+        }
+    }
+    if (maybeAllDel) {
+        data.m_SetType = CVcfData::ST_ALL_DEL;
+        return true;
+    }
+
+    data.m_SetType = CVcfData::ST_MIXED;
     return true;
 }
-
 //  ---------------------------------------------------------------------------
 bool
 CVcfReader::x_AssignFeatureLocation(
@@ -959,14 +958,25 @@ CVcfReader::x_AssignFeatureLocation(
 
 //  ---------------------------------------------------------------------------
 bool
-CVcfReader::xAssignFeatureLocation(
+CVcfReader::xAssignFeatureLocationSet(
     const CVcfData& data,
-    unsigned int index,
     CRef<CSeq_feat> pFeature )
 //  ---------------------------------------------------------------------------
 {
     CRef<CSeq_id> pId(CReadUtil::AsSeqId(data.m_strChrom, m_iFlags));
 
+    //context:
+    // we are trying to package all the allele of this feature into a single
+    // variation_ref, hence, they all need a common location.
+    // Referenced location differ between the different types of variations,
+    // so we need to find the most specific variation type that describes them
+    // all. Once the actual variation type has been found we can set the location
+    // accordingly.
+
+    // in practice, we will choose the common variation type if it is indeed
+    // common for all the alleles. Otherwise, we just make it a MNV.
+
+    /*
     if (data.IsSnv(index)) {
         pFeature->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
         pFeature->SetLocation().SetPnt().SetId(*pId);
@@ -1006,6 +1016,7 @@ CVcfReader::xAssignFeatureLocation(
     pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
     pFeature->SetLocation().SetInt().SetTo( 
         data.m_iPos + data.m_strRef.length() - 2 );
+*/
     return true;
 }
 
