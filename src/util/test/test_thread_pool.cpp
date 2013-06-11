@@ -124,7 +124,8 @@ public:
         CRef<CTerminator_Task> terminator(new CTerminator_Task());
         thread_pool.RequestExclusiveExecution(terminator, flags);
         terminator->m_Semaphore.Wait();
-    }    
+    }
+
 private:
     CSemaphore m_Semaphore;
 };
@@ -167,61 +168,13 @@ void CThreadPoolTester::GetMinMaxThreads
 
 bool CThreadPoolTester::TestApp_Init(void)
 {
-    s_Pool = new CThreadPool(kQueueSize, kMaxThreads);
+    s_Timer.Start();
 
     {{
             TPid pid = CProcess::GetCurrentPid();
             s_RNG.SetSeed(pid);
-            MSG_POST("One-off test randomization seed value: " << pid);
+            MSG_POST("Randomization seed value: " << pid);
     }}
-
-    if (s_NumThreads > kQueueSize) {
-        s_NumThreads = kQueueSize;
-    }
-
-    int total_cnt = kTasksPerThread * s_NumThreads;
-    s_Actions.resize(total_cnt + 1);
-    s_ActionTasks.resize(total_cnt + 1);
-    s_CancelTypes.resize(total_cnt + 1);
-    s_WaitPeriods.resize(total_cnt + 1);
-    s_PostTimes.resize(total_cnt + 1);
-    s_Tasks.resize(total_cnt + 1);
-
-    int req_num = 0;
-    for (int i = 1; i <= total_cnt; ++i) {
-        int rnd = s_RNG.GetRand(1, 1000);
-        if (req_num <= 10 || rnd > 100) {
-            s_Actions[i] = eAddTask;
-            s_ActionTasks[i] = req_num;
-            s_WaitPeriods[req_num] = s_RNG.GetRand(50, 100);
-            rnd = s_RNG.GetRand(0, 100);
-            s_CancelTypes[req_num] = (rnd <= 1? eSimpleWait: eCheckCancel);
-            ++req_num;
-        }
-        else if (rnd <= 1) {
-            s_Actions[i] = eFlushWaiting;
-        }
-        else if (rnd <= 2) {
-            s_Actions[i] = eFlushNoWait;
-        }
-        else if (rnd <= 4) {
-            s_Actions[i] = eAddExclusiveTask;
-            s_ActionTasks[i] = req_num;
-            ++req_num;
-        }
-        else if (rnd <= 6) {
-            s_Actions[i] = eCancelAll;
-        }
-        else /* if (rnd <= 100) */ {
-            s_Actions[i] = eCancelTask;
-            s_ActionTasks[i] = req_num - 8;
-        }
-        s_PostTimes[i] = 100 * (i / 20) + s_RNG.GetRand(50, 100);
-    }
-
-    MSG_POST("Starting test for CThreadPool");
-
-    s_Timer.Start();
 
     // One-off test for using exclusive task to wait for termination of
     // previously run regular tasks
@@ -274,6 +227,56 @@ bool CThreadPoolTester::TestApp_Init(void)
     _ASSERT(!tp.GetQueuedTasksCount());
     _ASSERT(!tp.GetExecutingTasksCount());
     MSG_POST("(2) Finished");
+
+
+    //
+    s_Pool = new CThreadPool(kQueueSize, kMaxThreads);
+
+    if (s_NumThreads > kQueueSize) {
+        s_NumThreads = kQueueSize;
+    }
+
+    int total_cnt = kTasksPerThread * s_NumThreads;
+    s_Actions.resize(total_cnt + 1);
+    s_ActionTasks.resize(total_cnt + 1);
+    s_CancelTypes.resize(total_cnt + 1);
+    s_WaitPeriods.resize(total_cnt + 1);
+    s_PostTimes.resize(total_cnt + 1);
+    s_Tasks.resize(total_cnt + 1);
+
+    int req_num = 0;
+    for (int i = 1; i <= total_cnt; ++i) {
+        int rnd = s_RNG.GetRand(1, 1000);
+        if (req_num <= 10 || rnd > 100) {
+            s_Actions[i] = eAddTask;
+            s_ActionTasks[i] = req_num;
+            s_WaitPeriods[req_num] = s_RNG.GetRand(50, 100);
+            rnd = s_RNG.GetRand(0, 100);
+            s_CancelTypes[req_num] = (rnd <= 1? eSimpleWait: eCheckCancel);
+            ++req_num;
+        }
+        else if (rnd <= 1) {
+            s_Actions[i] = eFlushWaiting;
+        }
+        else if (rnd <= 2) {
+            s_Actions[i] = eFlushNoWait;
+        }
+        else if (rnd <= 4) {
+            s_Actions[i] = eAddExclusiveTask;
+            s_ActionTasks[i] = req_num;
+            ++req_num;
+        }
+        else if (rnd <= 6) {
+            s_Actions[i] = eCancelAll;
+        }
+        else /* if (rnd <= 100) */ {
+            s_Actions[i] = eCancelTask;
+            s_ActionTasks[i] = req_num - 8;
+        }
+        s_PostTimes[i] = 100 * (i / 20) + s_RNG.GetRand(50, 100);
+    }
+
+    MSG_POST("Starting test for CThreadPool");
 
     return true;
 }
@@ -366,7 +369,7 @@ CExclusiveTask::EStatus CExclusiveTask::Execute(void)
 }
 
 
-bool CThreadPoolTester::Thread_Run(int idx)
+bool CThreadPoolTester::Thread_Run(int /*idx*/)
 {
     bool status = true;
 
