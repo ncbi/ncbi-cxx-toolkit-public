@@ -144,6 +144,11 @@ class NCBI_XOBJREAD_EXPORT CVcfReader
     //  object management:
     //
 public:
+    enum {
+        fNormal = 0,
+        fUseSetFormat = 1<<8,
+    };
+
     CVcfReader( 
         int =0 );
     virtual ~CVcfReader();
@@ -218,6 +223,16 @@ protected:
         CVcfData&,
         unsigned int,
         CRef<CSeq_annot> );
+
+    virtual bool
+    xProcessVariantSet(
+        CVcfData&,
+        CRef<CSeq_annot> );
+
+    virtual bool
+    xAssignVariationAlleleSet(
+        const CVcfData&,
+        CRef<CSeq_feat> );
 
     virtual bool
     x_AssignFeatureLocation(

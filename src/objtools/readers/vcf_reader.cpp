@@ -270,7 +270,7 @@ CVcfReader::ReadSeqAnnot(
         if ( x_ProcessHeaderLine( line, annot ) ) {
             continue;
         }
-        if ( xProcessDataLine( line, annot ) ) {
+        if ( x_ProcessDataLine( line, annot ) ) {
             continue;
         }
         // still here? not good!
@@ -523,44 +523,15 @@ CVcfReader::x_ProcessDataLine(
     if ( NStr::StartsWith( line, "#" ) ) {
         return false;
     }
+    if (0 == (m_iFlags & fUseSetFormat)) {
+        return xProcessDataLine(line, pAnnot);
+    }
+    
     CVcfData data;
     if ( ! x_ParseData( line, data ) ) {
         return false;
     }
-    CRef<CSeq_feat> pFeat( new CSeq_feat );
-    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
-        CVariation_ref::C_Data::C_Set::eData_set_type_package );
-    CSeq_feat::TExt& ext = pFeat->SetExt();
-    ext.SetType().SetStr( "VcfAttributes" );
-
-    if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_AssignVariationIds( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_AssignVariationAlleles( data, pFeat ) ) {
-        return false;
-    }
-
-    if ( ! x_ProcessScore( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_ProcessFilter( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! xProcessInfo( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_ProcessFormat( data, pFeat ) ) {
-        return false;
-    }
-
-    if ( pFeat->GetExt().GetData().empty() ) {
-        pFeat->ResetExt();
-    }
-    pAnnot->SetData().SetFtable().push_back( pFeat );
-    return true;
+    return xProcessVariantSet(data, pAnnot);
 }
 
 //  ----------------------------------------------------------------------------
@@ -605,6 +576,78 @@ CVcfReader::xProcessVariant(
         pFeat->ResetExt();
     }
     pAnnot->SetData().SetFtable().push_back( pFeat );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xProcessVariantSet(
+    CVcfData& data,
+    CRef<CSeq_annot> pAnnot)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pFeat( new CSeq_feat );
+    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
+        CVariation_ref::C_Data::C_Set::eData_set_type_package );
+    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
+    CSeq_feat::TExt& ext = pFeat->SetExt();
+    ext.SetType().SetStr( "VcfAttributes" );
+
+    if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_AssignVariationIds( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! xAssignVariationAlleleSet( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessScore( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFilter( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! xProcessInfo( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFormat( data, pFeat ) ) {
+        return false;
+    }
+
+    if ( pFeat->GetExt().GetData().empty() ) {
+        pFeat->ResetExt();
+    }
+    pAnnot->SetData().SetFtable().push_back( pFeat );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariationAlleleSet(
+    const CVcfData& data,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+    CRef<CVariation_ref> pIdentity(new CVariation_ref);
+    {{
+        vector<string> variant;
+        variant.push_back(data.m_strRef);
+        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
+        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
+        instance.SetType(CVariation_inst::eType_identity);
+        instance.SetObservation(CVariation_inst::eObservation_reference);
+    }}
+    variants.push_back(pIdentity);
+
+    for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
+        if (!xAssignVariationAlleles(data, i, pFeature)) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -797,14 +840,14 @@ CVcfReader::xProcessDataLine(
     if ( ! x_ParseData( line, data ) ) {
         return false;
     }
-
+    /*
     for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
         if (!xProcessVariant(data, i, pAnnot)) {
             return false;
         }
     }
     return true;
-    /*
+    */
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
@@ -828,7 +871,7 @@ CVcfReader::xProcessDataLine(
     if ( ! x_ProcessFilter( data, pFeat ) ) {
         return false;
     }
-    if ( ! x_ProcessInfo( data, pFeat ) ) {
+    if ( ! xProcessInfo( data, pFeat ) ) {
         return false;
     }
     if ( ! x_ProcessFormat( data, pFeat ) ) {
@@ -840,7 +883,6 @@ CVcfReader::xProcessDataLine(
     }
     pAnnot->SetData().SetFtable().push_back( pFeat );
     return true;
-    */
 }
 
 //  ----------------------------------------------------------------------------
@@ -1118,18 +1160,18 @@ CVcfReader::x_AssignVariationAlleles(
         ///
         string ref = data.m_strRef;
         string alt = *cit;
-        if (ref.size()==1  &&  alt.size()==1) {
+//        if (ref.size()==1  &&  alt.size()==1) {
             pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
-        }
-        else if (NStr::StartsWith(ref, alt)) {
+//        }
+//        else if (NStr::StartsWith(ref, alt)) {
             //deletion
-        }
-        else if (NStr::StartsWith(alt, ref)) {
+//        }
+//        else if (NStr::StartsWith(alt, ref)) {
             //insertion
-        }
-        else {
+//        }
+//        else {
             //something more complicated
-        }
+//        }
 
         ///
         pAllele->SetData().SetInstance().SetObservation( 
