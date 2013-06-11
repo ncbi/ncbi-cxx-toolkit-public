@@ -372,6 +372,12 @@ void CMultiReaderApp::Init(void)
         "treat all IDs as local IDs",
         true);
 
+    //vcf transitionary
+    arg_desc->AddFlag(
+        "use-set-format",
+        "use experimental variation set format",
+        true);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -780,6 +786,12 @@ void CMultiReaderApp::xSetFlags(
             m_iFlags |= CGFFReader::fNumericIdsAsLocal;
         }
             
+    case CFormatGuess::eVcf:
+        if ( args["use-set-format"] ) {
+            m_iFlags |= CVcfReader::fUseSetFormat;
+        }
+        break;
+
     default:
         break;
     }
