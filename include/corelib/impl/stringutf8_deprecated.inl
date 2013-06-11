@@ -73,7 +73,7 @@ basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(const CTempString& src
     return CUtf8::AsBasicString<TChar>(src,nullptr,CUtf8::eNoValidate);
 }
 
-#ifdef __NO_EXPORT_STRINGUTF8__
+#if !defined(__EXPORT_CTOR_STRINGUTF8__)
 
 inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString& src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
@@ -85,26 +85,6 @@ inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const string& src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
 }
 
-inline string CStringUTF8_DEPRECATED::AsLatin1(const char* substitute_on_error) const
-{
-    return CUtf8::AsSingleByteString(*this,eEncoding_ISO8859_1,substitute_on_error);
-}
-inline wstring CStringUTF8_DEPRECATED::AsUnicode(const wchar_t* substitute_on_error) const
-{
-    return CUtf8::AsBasicString<wchar_t>(*this,substitute_on_error,CUtf8::eNoValidate);
-}
-inline TStringUCS2 CStringUTF8_DEPRECATED::AsUCS2(const TCharUCS2* substitute_on_error) const
-{
-    return CUtf8::AsBasicString<TCharUCS2>(*this,substitute_on_error,CUtf8::eNoValidate);
-}
-#if  STRINGUTF8_OBSOLETE_STATIC
-inline
-CStringUTF8_DEPRECATED CStringUTF8_DEPRECATED::TruncateSpaces(const CTempString& str,
-                                    NStr::ETrunc side)
-{
-    return CUtf8::TruncateSpaces(str,side);
-}
-#endif
 
 inline
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
@@ -149,6 +129,7 @@ inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const wchar_t* src) {
     assign( CUtf8::AsUTF8(src));
 }
 #endif
+
 inline
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
@@ -169,6 +150,30 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
+#endif // __EXPORT_CTOR_STRINGUTF8__
+
+#if !defined(__EXPORT_IMPL_STRINGUTF8__)
+
+inline string CStringUTF8_DEPRECATED::AsLatin1(const char* substitute_on_error) const
+{
+    return CUtf8::AsSingleByteString(*this,eEncoding_ISO8859_1,substitute_on_error);
+}
+inline wstring CStringUTF8_DEPRECATED::AsUnicode(const wchar_t* substitute_on_error) const
+{
+    return CUtf8::AsBasicString<wchar_t>(*this,substitute_on_error,CUtf8::eNoValidate);
+}
+inline TStringUCS2 CStringUTF8_DEPRECATED::AsUCS2(const TCharUCS2* substitute_on_error) const
+{
+    return CUtf8::AsBasicString<TCharUCS2>(*this,substitute_on_error,CUtf8::eNoValidate);
+}
+#if  STRINGUTF8_OBSOLETE_STATIC
+inline
+CStringUTF8_DEPRECATED CStringUTF8_DEPRECATED::TruncateSpaces(const CTempString& str,
+                                    NStr::ETrunc side)
+{
+    return CUtf8::TruncateSpaces(str,side);
+}
+#endif
 inline CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::operator= (const TStringUnicode& src) {
     assign( CUtf8::AsUTF8(src));
     return *this;
@@ -534,7 +539,7 @@ bool   CStringUTF8_DEPRECATED::x_EvalNext(char ch)
 {
     return CUtf8::x_EvalNext(ch);
 }
-#endif // __NO_EXPORT_STRINGUTF8__
+#endif // __EXPORT_IMPL_STRINGUTF8__
 
 template <typename TChar>
 basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(

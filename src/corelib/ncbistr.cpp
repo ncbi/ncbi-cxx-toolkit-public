@@ -5129,7 +5129,80 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8 / CUtf8
 
-#ifndef __NO_EXPORT_STRINGUTF8__
+#if defined(__EXPORT_CTOR_STRINGUTF8__)
+
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString& src) {
+    assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const char* src ) {
+    assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const string& src) {
+    assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
+}
+
+
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    const CTempString& src, EEncoding encoding,EValidate validate) {
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    const char* src, EEncoding encoding, EValidate validate) {
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    const string& src, EEncoding encoding, EValidate validate) {
+    assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TStringUnicode& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TStringUCS4& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TStringUCS2& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#if defined(HAVE_WSTRING)
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const wstring& src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#endif
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TUnicodeSymbol* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TCharUCS4* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const TCharUCS2* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#if defined(HAVE_WSTRING)
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const wchar_t* src) {
+    assign( CUtf8::AsUTF8(src));
+}
+#endif
+
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    ECharBufferType type, const TUnicodeSymbol* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    ECharBufferType type, const TCharUCS4* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
+    ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
+    assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
+}
+#endif // __EXPORT_CTOR_STRINGUTF8__
+
+//#ifndef __NO_EXPORT_STRINGUTF8__
+#if 0
 
 CStringUTF8::CStringUTF8(const CTempString& src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));

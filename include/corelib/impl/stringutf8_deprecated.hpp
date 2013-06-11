@@ -33,7 +33,6 @@
 
 #define  STRINGUTF8_DEFINITION      1
 #define  STRINGUTF8_OBSOLETE_STATIC 1
-#define  STRINGUTF8_NEVER_EXPORT    1
 
 #if STRINGUTF8_DEFINITION
 /////////////////////////////////////////////////////////////////////////////
@@ -52,20 +51,19 @@
 
 // On MSVC2010, we cannot export CStringUTF8
 // So, all its methods must be inline
-#if defined(NCBI_COMPILER_MSVC) && (_MSC_VER >= 1600)
-#  define __NO_EXPORT_STRINGUTF8__ 1
-#else
-#if STRINGUTF8_NEVER_EXPORT
-#  define __NO_EXPORT_STRINGUTF8__ 1
+#if !defined(NCBI_COMPILER_MSVC)
+#  define __EXPORT_CTOR_STRINGUTF8__ 1
 #endif
-#endif
+//#  define __EXPORT_IMPL_STRINGUTF8__ 1
+//#  define __EXPORT_CTOR_STRINGUTF8__ 1
 
 
-#if defined(__NO_EXPORT_STRINGUTF8__)
-#  define NCBI_STRINGUTF8_EXPORT
-#else
+#if defined(__EXPORT_IMPL_STRINGUTF8__) || defined(__EXPORT_CTOR_STRINGUTF8__)
 #  define NCBI_STRINGUTF8_EXPORT NCBI_XNCBI_EXPORT
+#else
+#  define NCBI_STRINGUTF8_EXPORT
 #endif
+
 class NCBI_STRINGUTF8_EXPORT CStringUTF8_DEPRECATED : public string
 {
 public:
