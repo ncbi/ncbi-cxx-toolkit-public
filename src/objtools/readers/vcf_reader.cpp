@@ -191,13 +191,13 @@ CVcfReader::ReadSeqAnnot(
     while ( ! lr.AtEOF() ) {
         string line = *(++lr);
         NStr::TruncateSpacesInPlace( line );
-        if ( x_ProcessMetaLine( line, annot ) ) {
+        if (xProcessMetaLine(line, annot)) {
             continue;
         }
-        if ( x_ProcessHeaderLine( line, annot ) ) {
+        if (xProcessHeaderLine(line, annot)) {
             continue;
         }
-        if ( x_ProcessDataLine( line, annot ) ) {
+        if (xProcessDataLine(line, annot)) {
             continue;
         }
         // still here? not good!
@@ -214,8 +214,8 @@ CVcfReader::ReadSeqAnnots(
     IErrorContainer* pErrorContainer )
 //  ---------------------------------------------------------------------------
 {
-    CStreamLineReader lr( istr );
-    ReadSeqAnnots( annots, lr, pErrorContainer );
+    CStreamLineReader lr(istr);
+    ReadSeqAnnots(annots, lr, pErrorContainer);
 }
  
 //  ---------------------------------------------------------------------------                       
@@ -248,7 +248,7 @@ CVcfReader::ReadObject(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessMetaLine(
+CVcfReader::xProcessMetaLine(
     const string& line,
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
@@ -258,13 +258,13 @@ CVcfReader::x_ProcessMetaLine(
     }
     m_MetaDirectives.push_back(line.substr(2));
 
-    if ( x_ProcessMetaLineInfo( line, pAnnot ) ) {
+    if (xProcessMetaLineInfo(line, pAnnot)) {
         return true;
     }
-    if ( x_ProcessMetaLineFilter( line, pAnnot ) ) {
+    if (xProcessMetaLineFilter(line, pAnnot)) {
         return true;
     }
-    if ( x_ProcessMetaLineFormat( line, pAnnot ) ) {
+    if (xProcessMetaLineFormat(line, pAnnot)) {
         return true;
     }
     return true;
@@ -272,7 +272,7 @@ CVcfReader::x_ProcessMetaLine(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessMetaLineInfo(
+CVcfReader::xProcessMetaLineInfo(
     const string& line,
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
@@ -316,7 +316,7 @@ CVcfReader::x_ProcessMetaLineInfo(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessMetaLineFilter(
+CVcfReader::xProcessMetaLineFilter(
     const string& line,
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
@@ -352,7 +352,7 @@ CVcfReader::x_ProcessMetaLineFilter(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessMetaLineFormat(
+CVcfReader::xProcessMetaLineFormat(
     const string& line,
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
@@ -396,7 +396,7 @@ CVcfReader::x_ProcessMetaLineFormat(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessHeaderLine(
+CVcfReader::xProcessHeaderLine(
     const string& line,
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
@@ -442,7 +442,7 @@ CVcfReader::x_ProcessHeaderLine(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessDataLine(
+CVcfReader::xProcessDataLine(
     const string& line,
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
@@ -450,24 +450,10 @@ CVcfReader::x_ProcessDataLine(
     if ( NStr::StartsWith( line, "#" ) ) {
         return false;
     }
-    if (0 == (m_iFlags & fUseSetFormat)) {
-        return xProcessDataLine(line, pAnnot);
-    }
-    
     CVcfData data;
-    if ( ! x_ParseData( line, data ) ) {
+    if (!xParseData(line, data)) {
         return false;
     }
-    return xProcessVariantSet(data, pAnnot);
-}
-
-//  ----------------------------------------------------------------------------
-bool
-CVcfReader::xProcessVariantSet(
-    CVcfData& data,
-    CRef<CSeq_annot> pAnnot)
-//  ----------------------------------------------------------------------------
-{
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
@@ -475,25 +461,25 @@ CVcfReader::xProcessVariantSet(
     CSeq_feat::TExt& ext = pFeat->SetExt();
     ext.SetType().SetStr( "VcfAttributes" );
 
-    if ( ! xAssignFeatureLocationSet( data, pFeat ) ) {
+    if (!xAssignFeatureLocationSet(data, pFeat)) {
         return false;
     }
-    if ( ! x_AssignVariationIds( data, pFeat ) ) {
+    if (!xAssignVariationIds(data, pFeat)) {
         return false;
     }
-    if ( ! xAssignVariationAlleleSet( data, pFeat ) ) {
+    if (!xAssignVariationAlleleSet(data, pFeat)) {
         return false;
     }
-    if ( ! x_ProcessScore( data, pFeat ) ) {
+    if (!xProcessScore(data, pFeat)) {
         return false;
     }
-    if ( ! x_ProcessFilter( data, pFeat ) ) {
+    if (!xProcessFilter(data, pFeat)) {
         return false;
     }
-    if ( ! xProcessInfo( data, pFeat ) ) {
+    if (!xProcessInfo( data, pFeat)) {
         return false;
     }
-    if ( ! x_ProcessFormat( data, pFeat ) ) {
+    if (!xProcessFormat(data, pFeat)) {
         return false;
     }
 
@@ -671,59 +657,7 @@ CVcfReader::xAssignVariantDelins(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::xProcessDataLine(
-    const string& line,
-    CRef<CSeq_annot> pAnnot)
-//  ----------------------------------------------------------------------------
-{
-    if ( NStr::StartsWith( line, "#" ) ) {
-        return false;
-    }
-    CVcfData data;
-    if ( ! x_ParseData( line, data ) ) {
-        return false;
-    }
-
-    CRef<CSeq_feat> pFeat( new CSeq_feat );
-    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
-        CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
-    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
-    CSeq_feat::TExt& ext = pFeat->SetExt();
-    ext.SetType().SetStr( "VcfAttributes" );
-
-    if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_AssignVariationIds( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_AssignVariationAlleles( data, pFeat ) ) {
-        return false;
-    }
-
-    if ( ! x_ProcessScore( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_ProcessFilter( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! xProcessInfo( data, pFeat ) ) {
-        return false;
-    }
-    if ( ! x_ProcessFormat( data, pFeat ) ) {
-        return false;
-    }
-
-    if ( pFeat->GetExt().GetData().empty() ) {
-        pFeat->ResetExt();
-    }
-    pAnnot->SetData().SetFtable().push_back( pFeat );
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool
-CVcfReader::x_ParseData(
+CVcfReader::xParseData(
     const string& line,
     CVcfData& data )
 //  ----------------------------------------------------------------------------
@@ -821,21 +755,7 @@ CVcfReader::x_ParseData(
     data.m_SetType = CVcfData::ST_MIXED;
     return true;
 }
-//  ---------------------------------------------------------------------------
-bool
-CVcfReader::x_AssignFeatureLocation(
-    const CVcfData& data,
-    CRef<CSeq_feat> pFeature )
-//  ---------------------------------------------------------------------------
-{
-    CRef<CSeq_id> pId(CReadUtil::AsSeqId(data.m_strChrom, m_iFlags));
 
-    pFeature->SetLocation().SetInt().SetId( *pId );
-    pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
-    pFeature->SetLocation().SetInt().SetTo( 
-        data.m_iPos + data.m_strRef.length() - 2 );
-    return true;
-}
 
 //  ---------------------------------------------------------------------------
 bool
@@ -895,8 +815,8 @@ CVcfReader::xAssignFeatureLocationSet(
 
 //  ----------------------------------------------------------------------------
 bool 
-CVcfReader::x_ProcessScore(
-    const CVcfData& data,
+CVcfReader::xProcessScore(
+    CVcfData& data,
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -909,8 +829,8 @@ CVcfReader::x_ProcessScore(
 
 //  ----------------------------------------------------------------------------
 bool 
-CVcfReader::x_ProcessFilter(
-    const CVcfData& data,
+CVcfReader::xProcessFilter(
+    CVcfData& data,
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -953,8 +873,8 @@ CVcfReader::xProcessInfo(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_ProcessFormat(
-    const CVcfData& data,
+CVcfReader::xProcessFormat(
+    CVcfData& data,
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -978,8 +898,8 @@ CVcfReader::x_ProcessFormat(
 
 //  ----------------------------------------------------------------------------
 bool
-CVcfReader::x_AssignVariationIds(
-    const CVcfData& data,
+CVcfReader::xAssignVariationIds(
+    CVcfData& data,
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -1010,75 +930,6 @@ CVcfReader::x_AssignVariationIds(
             variation.SetId().SetDb( "local" );
         }      
         variation.SetId().SetTag().SetStr( data.m_Ids[i] );
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool
-CVcfReader::x_AssignVariationAlleles(
-    const CVcfData& data,
-    CRef<CSeq_feat> pFeature )
-//  ----------------------------------------------------------------------------
-{
-    CVariation_ref::TData::TSet::TVariations& alleles = 
-        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
-
-    vector<string> reference;
-    reference.push_back( data.m_strRef );
-    CRef<CVariation_ref> pReference( new CVariation_ref );
-    pReference->SetVariant_prop().SetVersion( 5 );
-    pReference->SetSNV( reference, CVariation_ref::eSeqType_na );
-    pReference->SetData().SetInstance().SetObservation( 
-        CVariation_inst::eObservation_reference );
-    alleles.push_back( pReference );
-
-    size_t altcount = 0;
-    for ( vector<string>::const_iterator cit = data.m_Alt.begin(); 
-        cit != data.m_Alt.end(); ++cit )
-    {
-        vector<string> alternative;
-        alternative.push_back( *cit );
-        CRef<CVariation_ref> pAllele( new CVariation_ref );
-        pAllele->SetVariant_prop().SetVersion( 5 );
-        ///
-        string ref = data.m_strRef;
-        string alt = *cit;
-//        if (ref.size()==1  &&  alt.size()==1) {
-//            pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
-//        }
-//        else if (NStr::StartsWith(ref, alt)) {
-            //deletion
-//        }
-//        else if (NStr::StartsWith(alt, ref)) {
-            //insertion
-//        }
-//        else {
-            //something more complicated
-//        }
-
-        ///
-        pAllele->SetData().SetInstance().SetObservation( 
-            CVariation_inst::eObservation_variant );
-
-        //  allele frequency:
-        CVcfData::INFOS::const_iterator af = data.m_Info.find( "AF" );
-        if ( af != data.m_Info.end() ) {
-            const vector<string>& info = af->second;
-            double freq = NStr::StringToDouble( info[altcount] );
-            pAllele->SetVariant_prop().SetAllele_frequency( freq );
-        }
-
-        //  ancestral allele:
-        CVcfData::INFOS::const_iterator aa = data.m_Info.find( "AA" );
-        if ( aa != data.m_Info.end() ) {
-            string ancestral = aa->second[0];
-            if ( ancestral == *cit ) {
-                pAllele->SetVariant_prop().SetIs_ancestral_allele( true );
-            }
-        }
-        alleles.push_back( pAllele );
-        ++altcount;
     }
     return true;
 }

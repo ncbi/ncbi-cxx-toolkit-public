@@ -184,52 +184,37 @@ public:
     //
 protected:
     virtual bool
-    x_ProcessMetaLine(
+    xProcessMetaLine(
         const string&,
         CRef<CSeq_annot> );
 
     virtual bool
-    x_ProcessMetaLineInfo(
+    xProcessMetaLineInfo(
         const string&,
         CRef<CSeq_annot> );
 
     virtual bool
-    x_ProcessMetaLineFilter(
+    xProcessMetaLineFilter(
         const string&,
         CRef<CSeq_annot> );
 
     virtual bool
-    x_ProcessMetaLineFormat(
+    xProcessMetaLineFormat(
         const string&,
         CRef<CSeq_annot> );
 
     virtual bool
-    x_ProcessHeaderLine(
+    xProcessHeaderLine(
         const string&,
         CRef<CSeq_annot> );
 
-    virtual bool
-    x_ProcessDataLine(
-        const string&,
-        CRef<CSeq_annot> );
-        
     virtual bool
     xProcessDataLine(
         const string&,
         CRef<CSeq_annot> );
         
     virtual bool
-    xProcessVariantSet(
-        CVcfData&,
-        CRef<CSeq_annot> );
-
-    virtual bool
     xAssignVariationAlleleSet(
-        const CVcfData&,
-        CRef<CSeq_feat> );
-
-    virtual bool
-    x_AssignFeatureLocation(
         const CVcfData&,
         CRef<CSeq_feat> );
 
@@ -239,13 +224,8 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
-    x_AssignVariationIds(
-        const CVcfData&,
-        CRef<CSeq_feat> );
-
-    virtual bool
-    x_AssignVariationAlleles(
-        const CVcfData&,
+    xAssignVariationIds(
+        CVcfData&,
         CRef<CSeq_feat> );
 
     virtual bool
@@ -278,13 +258,13 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
-    x_ProcessScore(
-        const CVcfData&,
+    xProcessScore(
+        CVcfData&,
         CRef<CSeq_feat> );
 
     virtual bool
-    x_ProcessFilter(
-        const CVcfData&,
+    xProcessFilter(
+        CVcfData&,
         CRef<CSeq_feat> );
 
     virtual bool
@@ -293,12 +273,12 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
-    x_ProcessFormat(
-        const CVcfData&,
+    xProcessFormat(
+        CVcfData&,
         CRef<CSeq_feat> );
 
     virtual bool
-    x_ParseData(
+    xParseData(
         const string&,
         CVcfData& );
 
