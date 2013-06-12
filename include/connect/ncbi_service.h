@@ -45,7 +45,7 @@
 
 /** Revision 6.260 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  260
+#define SERV_CLIENT_REVISION_MINOR  270
 
 /** Special values for the "preferred_host" parameter.
  * @sa
