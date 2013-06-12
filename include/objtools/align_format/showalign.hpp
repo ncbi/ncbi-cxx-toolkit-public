@@ -894,6 +894,8 @@ protected:
     ///Display pairwise alignment
     ///
     virtual string x_DisplayRowData(SAlnRowInfo *alnRoInfo);
+    virtual void x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out);
+    string x_DisplayRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start, vector<int> &prev_stop);
 
     ///Display identities,positives,frames etc
     ///
