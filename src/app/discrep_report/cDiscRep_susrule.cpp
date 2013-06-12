@@ -109,9 +109,9 @@ string CSuspectRuleCheck :: CopyListWithoutBankIt (const string& orig)
     pos = NStr::FindNoCase(orig, "Bankit");
     if (pos == string::npos) return cpy;
     else if (!pos || isspace(orig[pos]) || orig[pos-1] == ',' || orig[pos-1] == ';') {
-       cpy = cpy.substr(pos+6);
+       cpy = CTempString(cpy).substr(pos+6);
        cpy = NStr::TruncateSpaces(cpy, NStr::eTrunc_Begin);
-       if (cpy[0] == '/' || cpy[0] == ':') cpy = cpy.substr(1);
+       if (!cpy.empty() && (cpy[0] == '/' || cpy[0] == ':')) cpy = CTempString(cpy).substr(1);
     }
     pre_seq = cpy;
   }
@@ -180,7 +180,7 @@ bool CSuspectRuleCheck :: DoesSeqIDListMeetStringConstraint (const vector <CSeq_
       pos = id.find('|'); 
       if (pos != string::npos) {
         changed = true;
-        id = id.substr(pos+1);
+        id = CTempString(id).substr(pos+1);
       }  
       if (changed) 
         match = DoesSingleStringMatchConstraint (id, &str_cons);
@@ -1019,7 +1019,8 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
      ITERATE (vector <string>, it, thisInfo.weasels) {
         if (NStr::EqualNocase(strtmp.substr(0, (*it).size()), *it)
                                              && isspace(strtmp[(*it).size()])) {
-            strtmp = NStr::TruncateSpaces(strtmp.substr((*it).size()), NStr::eTrunc_Begin);
+            strtmp = NStr::TruncateSpaces(
+                           CTempString(strtmp).substr((*it).size()), NStr::eTrunc_Begin);
             break;
         }
      };
@@ -1059,8 +1060,8 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
 
   unsigned i=0;
   while (match && pos_match < len_m && pos_str < len_s && !recursive_match) {
-    cp_m = str_match.substr(pos_match);
-    cp_s = str.substr(pos_str);
+    cp_m = CTempString(str_match).substr(pos_match);
+    cp_s = CTempString(str).substr(pos_str);
 
     /* first, check to see if we're skipping synonyms */
     ITERATE (list <CRef <CWord_substitution> >, it, str_cons->GetIgnore_words().Get()) {
@@ -1072,8 +1073,8 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
            ch1 = (cp_m.size() < len1) ? ' ' : cp_m[len1];
            if (!whole_wd || (!isalpha(ch1) && word_start_m)) { // whole word mch
               if ( !(*it)->CanGetSynonyms() ) { 
-                 if (AdvancedStringCompare(cp_s, cp_m.substr(len1), str_cons, word_start_m, 
-                                                                    &target_match_len))
+                 if (AdvancedStringCompare(cp_s, CTempString(cp_m).substr(len1), str_cons, 
+                                            word_start_m, &target_match_len))
                     recursive_match = true;
               }
               else {
@@ -1086,8 +1087,9 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
                       ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
                       // whole word match
                       if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
-                        if (AdvancedStringCompare(cp_s.substr(len2), cp_m.substr(len1),
-                                    str_cons, word_start_m & word_start_s, &target_match_len)){
+                        if (AdvancedStringCompare(CTempString(cp_s).substr(len2), 
+                                          CTempString(cp_m).substr(len1), str_cons, 
+                                          word_start_m & word_start_s, &target_match_len)){
 
                             recursive_match = true;
                         }
@@ -1164,7 +1166,7 @@ bool CSuspectRuleCheck :: AdvancedStringMatch(const string& str, const CString_c
       if (str_cons->GetWhole_word()) 
           while (pos < len && isalpha (str[pos-1])) pos++;
       if (pos < len) {
-        if (AdvancedStringCompare (str.substr(pos), match_text, str_cons, true))
+        if (AdvancedStringCompare (CTempString(str).substr(pos), match_text, str_cons, true))
                 rval = true;
         else pos++;
       }
@@ -1209,7 +1211,7 @@ bool CSuspectRuleCheck :: GetSpanFromHyphenInString(const string& str, const siz
    if (cp == string::npos) cp = 0;
 
    unsigned len = hyphen - cp;
-   first = NStr::TruncateSpaces(str.substr(cp, len));
+   first = NStr::TruncateSpaces(CTempString(str).substr(cp, len));
  
    /* find range end */
    cp = str.find_first_not_of(' ', hyphen+1);
@@ -1218,7 +1220,7 @@ bool CSuspectRuleCheck :: GetSpanFromHyphenInString(const string& str, const siz
 
    len = cp - hyphen;
    if (!isspace (str[cp])) len--;
-   second = NStr::TruncateSpaces(str.substr(hyphen+1, len));
+   second = NStr::TruncateSpaces(CTempString(str).substr(hyphen+1, len));
 
    bool rval = true;
    if (first.empty() || second.empty()) rval = false;
@@ -1260,8 +1262,8 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
   else if (StringIsPositiveAllDigits(second)) {
     prefix_len = first.find_first_of(CDiscRepUtil::digit_str) + 1;
 
-    new_str = str.substr(prefix_len - 1);
-    new_first = first.substr(prefix_len - 1);
+    new_str = CTempString(str).substr(prefix_len - 1);
+    new_first = CTempString(first).substr(prefix_len - 1);
     if (NStr::EqualCase(str, 0, prefix_len, first)
         && StringIsPositiveAllDigits (new_str)
         && StringIsPositiveAllDigits (new_first)) {
@@ -1284,9 +1286,9 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
     if (prefix_len <= first.size() && prefix_len <= second.size()
         && isdigit (first[prefix_len-1]) && isdigit (second[prefix_len-1])
         && NStr::EqualCase(str, 0, prefix_len, first)) {
-      new_first = first.substr(prefix_len);
-      new_second = second.substr(prefix_len);
-      new_str = str.substr(prefix_len);
+      new_first = CTempString(first).substr(prefix_len);
+      new_second = CTempString(second).substr(prefix_len);
+      new_str = CTempString(str).substr(prefix_len);
       if (StringIsPositiveAllDigits (new_first) && StringIsPositiveAllDigits (new_second) 
                    && StringIsPositiveAllDigits (new_str)) {
         first_num = NStr::StringToUInt(new_first);
@@ -1301,16 +1303,16 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
         size_t idx1, idx2, idx_str;
         string suf1, suf2, sub_str;
         idx1 = first.find_first_not_of(CDiscRepUtil::digit_str);
-        suf1 = first.substr(prefix_len + idx1);
+        suf1 = CTempString(first).substr(prefix_len + idx1);
         idx2 = second.find_first_not_of(CDiscRepUtil::digit_str);
-        suf2 = second.substr(prefix_len + idx2);
+        suf2 = CTempString(second).substr(prefix_len + idx2);
         idx_str = str.find_first_not_of(CDiscRepUtil::digit_str);
-        sub_str = str.substr(prefix_len + idx_str);
+        sub_str = CTempString(str).substr(prefix_len + idx_str);
         if (suf1 == suf2 && suf1 == sub_str) {
           /* suffixes match */
-          first_num = NStr::StringToUInt(first.substr(prefix_len, idx1));
-          second_num = NStr::StringToUInt(second.substr(prefix_len, idx2));
-          str_num = NStr::StringToUInt(str.substr(prefix_len, idx_str));
+          first_num = NStr::StringToUInt(CTempString(first).substr(prefix_len, idx1));
+          second_num = NStr::StringToUInt(CTempString(second).substr(prefix_len, idx2));
+          str_num = NStr::StringToUInt(CTempString(str).substr(prefix_len, idx_str));
           if ((str_num > first_num && str_num < second_num)
                            || (str_num > second_num && str_num < first_num)) {
             rval = true;
@@ -1329,14 +1331,14 @@ bool CSuspectRuleCheck :: IsStringInSpanInList (const string& str, const string&
   size_t idx = str.find_first_not_of(CDiscRepUtil::alpha_str);
   if (idx == string::npos) return false;
 
-  idx = str.substr(idx).find_first_not_of(CDiscRepUtil::digit_str);
+  idx = CTempString(str).substr(idx).find_first_not_of(CDiscRepUtil::digit_str);
 
   /* find ranges */
   size_t hyphen = list.find('-');
   bool rval = false;
   string range_start, range_end;
   while (hyphen != string::npos && !rval) {
-    if (!hyphen) hyphen = list.substr(1).find('-');
+    if (!hyphen) hyphen = CTempString(list).substr(1).find('-');
     else {
       if (GetSpanFromHyphenInString (list, hyphen, range_start, range_end)) {
         if (IsStringInSpan (str, range_start, range_end)) rval = true;
@@ -1461,8 +1463,8 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
               while (!rval && pFound != string::npos) 
               {
                 if (str_cons->GetCase_sensitive())
-                     pFound = pattern.substr(pFound + 1).find(search);
-                else pFound = NStr::FindNoCase(pattern.substr(pFound + 1), search);
+                     pFound = CTempString(pattern).substr(pFound + 1).find(search);
+                else pFound = NStr::FindNoCase(CTempString(pattern).substr(pFound + 1),search);
                 if (pFound != string::npos)
                     rval = IsWholeWordMatch (pattern, pFound, str.size(), true);
               }
@@ -1492,7 +1494,7 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
    unsigned len = word.size();
    if (last_letter == 's') {
       if (len >= 5) { 
-        if (word.substr(len-5) == "trans") return false; // not plural;
+        if (CTempString(word).substr(len-5) == "trans") return false; // not plural;
       }
       else if (len > 3) {
         if (second_to_last_letter != 's' && second_to_last_letter != 'i'
@@ -1546,16 +1548,16 @@ bool CSuspectRuleCheck :: SkipBracketOrParen(const unsigned& idx, string& start)
   bool rval = false;
   size_t ep, ns;
 
-  if (idx > 2 && start.substr(idx-3, 6) == "NAD(P)") {
+  if (idx > 2 && CTempString(start).substr(idx-3, 6) == "NAD(P)") {
      rval = true;
-     start = start.substr(idx + 3);
+     start = CTempString(start).substr(idx + 3);
   } 
   else {
      unsigned len;
      ITERATE (vector <string>, it, thisInfo.skip_bracket_paren) {
        len = (*it).size();
-       if (start.substr(idx, len) == *it) {
-         start = start.substr(idx + len);
+       if (CTempString(start).substr(idx, len) == *it) {
+         start = CTempString(start).substr(idx + len);
          rval = true;
          break;
        }
@@ -1566,11 +1568,11 @@ bool CSuspectRuleCheck :: SkipBracketOrParen(const unsigned& idx, string& start)
        if (ep != string::npos && (ns == string::npos || ns > ep)) {
          if (ep - idx < 5) {
            rval = true;
-           start = start.substr(ep+1);
+           start = CTempString(start).substr(ep+1);
          } 
-         else if (ep - idx > 3 && start.substr(ep - 3, 3) == "ing") {
+         else if (ep - idx > 3 && CTempString(start).substr(ep - 3, 3) == "ing") {
            rval = true;
-           start = start.substr(ep + 1);
+           start = CTempString(start).substr(ep + 1);
          }
        }
      }
@@ -1611,7 +1613,8 @@ bool CSuspectRuleCheck :: PrecededByOkPrefix (const string& start_str)
   unsigned len_it;
   ITERATE (vector <string>, it, thisInfo.ok_num_prefix) {
     len_it = (*it).size();
-    if (len_str >= len_it && start_str.substr(len_str-len_it) == (*it)) return true;
+    if (len_str >= len_it && (CTempString(start_str).substr(len_str-len_it) == *it)) 
+          return true;
   }
   return false;
 };
@@ -1621,12 +1624,14 @@ bool CSuspectRuleCheck :: InWordBeforeCytochromeOrCoenzyme(const string& start_s
   if (start_str.empty()) return false;
   size_t pos = start_str.find_last_of(' ');
   if (pos != string::npos) {
-      strtmp = start_str.substr(0, pos);
+      strtmp = CTempString(start_str).substr(0, pos);
       pos = strtmp.find_last_not_of(' ');
       if (pos != string::npos) {
          unsigned len = strtmp.size();
-         if ( (len >= 10 && NStr::EqualNocase(strtmp.substr(len-10), 0, 10, "cytochrome"))
-                 || (len >= 8 && NStr::EqualNocase(strtmp.substr(len-8), 0, 8, "coenzyme")) )
+         if ( (len >= 10  
+                 && NStr::EqualNocase(CTempString(strtmp).substr(len-10), 0, 10, "cytochrome"))
+            || (len >= 8 
+                  && NStr::EqualNocase(CTempString(strtmp).substr(len-8), 0, 8, "coenzyme")) )
              return true;
       }
   }
@@ -1637,9 +1642,9 @@ bool CSuspectRuleCheck :: FollowedByFamily(string& after_str)
 {
   size_t pos = after_str.find_first_of(' ');
   if (pos != string::npos) {
-     after_str = after_str.substr(pos+1);
+     after_str = CTempString(after_str).substr(pos+1);
      if (NStr::EqualNocase(after_str, 0, 6, "family")) {
-           after_str  = after_str.substr(7);
+           after_str = CTempString(after_str).substr(7);
            return true;
      }
   } 
@@ -1655,11 +1660,11 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
   while (!sch_str.empty()) {
       p = sch_str.find_first_of(CDiscRepUtil::digit_str);
       if (p == string::npos) break;
-      if (p && ( PrecededByOkPrefix(sch_str.substr(0, p)) 
-                   || InWordBeforeCytochromeOrCoenzyme (sch_str.substr(0, p)) ) ) {
+      if (p && ( PrecededByOkPrefix(CTempString(sch_str).substr(0, p)) 
+                  || InWordBeforeCytochromeOrCoenzyme (CTempString(sch_str).substr(0, p)) ) ) {
         p2 = sch_str.find_first_not_of(CDiscRepUtil::digit_str, p+1);
         if (p2 != string::npos) {
-            sch_str = sch_str.substr(p2);
+            sch_str = CTempString(sch_str).substr(p2);
             num_digits = 0;
         }
         else break;
@@ -1667,12 +1672,12 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
       else {
         num_digits ++;
         if (num_digits == 3) {
-          sch_str = sch_str.substr(p+1);
+          sch_str = CTempString(sch_str).substr(p+1);
           if (FollowedByFamily(sch_str)) num_digits = 0;
           else return true;
         }
         if (p < sch_str.size() - 1) {
-             sch_str = sch_str.substr(p+1);
+             sch_str = CTempString(sch_str).substr(p+1);
              if (!isdigit(sch_str[0])) num_digits = 0;
         }
         else break;
@@ -1691,7 +1696,7 @@ bool CSuspectRuleCheck :: StringContainsUnderscore(const string& search)
      if (FollowedByFamily(strtmp)) continue;   // strtmp was changed in the FollowedByFamily
      else if (arr[i].size() < 3 || search[arr[i].size()-1] == ' ') return true;
      else {
-       strtmp = arr[i].substr(arr[i].size()-3);
+       strtmp = CTempString(arr[i]).substr(arr[i].size()-3);
        if ( (strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA")
                   && (isdigit(arr[i+1][0]) && !isdigit(arr[i+1][1])) )
           continue;
@@ -1710,8 +1715,9 @@ bool CSuspectRuleCheck :: IsPrefixPlusNumbers(const string& prefix, const string
   pattern_len = prefix.size();
   if (pattern_len > 0 && !NStr::EqualCase(search, 0, pattern_len, prefix)) return false;
 
-  size_t digit_len = search.substr(pattern_len).find_first_not_of(CDiscRepUtil::digit_str);
-  if (digit_len && (pattern_len + digit_len) == search.size()) return true;
+  size_t digit_len = search.find_first_not_of(CDiscRepUtil::digit_str, pattern_len);
+  if (digit_len != string::npos && digit_len == search.size()) return true;
+//  if (digit_len && (pattern_len + digit_len) == search.size()) return true;
   else return false;
 };
 
@@ -3134,7 +3140,7 @@ string CSuspectRuleCheck :: GetTwoFieldSubfield(const string& str, unsigned subf
     else {
       if (subfield == 1) return str.substr(0, pos);
       else {
-        strtmp = str.substr(pos+1).empty();
+        strtmp = CTempString(str).substr(pos+1).empty();
         if (!strtmp.empty()) return strtmp;
         else return kEmptyStr;
       }

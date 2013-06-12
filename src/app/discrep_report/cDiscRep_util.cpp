@@ -195,9 +195,9 @@ bool CTestAndRepData :: ContainsPseudo(const string& pattern, const list <string
     while ( !strtmp.empty() && (pos = strtmp.find("pseudo")) != string::npos) {
         right_pseudo = true;
         ITERATE (vector <string>, jt, thisInfo.s_pseudoweasels) {
-           if ( strtmp.substr(pos, (*jt).size()) == *jt) {
+           if ( CTempString(strtmp).substr(pos, (*jt).size()) == *jt) {
                right_pseudo = false;
-               strtmp = strtmp.substr(pos + (*jt).size());
+               strtmp = CTempString(strtmp).substr(pos + (*jt).size());
                break;
            }
         }
@@ -256,7 +256,7 @@ bool CTestAndRepData :: EndsWithFold(const string& pattern, const string& search
   if (search.empty()) return false;
   unsigned len = search.size();
   if (len < 4) return false;
-  strtmp = search.substr(len-5);
+  strtmp = CTempString(search).substr(len-5);
   if (NStr::EqualNocase(strtmp, "fold")) {
     if (strtmp == "folD" || strtmp == "FolD") return false;
     else return true;
@@ -269,7 +269,7 @@ bool CTestAndRepData :: EndsWithPattern(const string& pattern, const string& sea
   unsigned phrase_len = pattern.size();
   unsigned len = search.size();
 
-  if (len >= phrase_len && NStr::EqualNocase(search.substr(len - phrase_len), pattern))
+  if (len >= phrase_len && NStr::EqualNocase(CTempString(search).substr(len - phrase_len), pattern))
       return true;
   else return false;
 }
@@ -310,7 +310,7 @@ bool CTestAndRepData :: IsSingleWordOrWeaselPlusSingleWord(const string& pattern
        len = (*it).size();
        if (NStr::EqualNocase(search, 0, len, *it)
               && search.find(" ", len) != string::npos
-              && search.substr(search.find(" ", len)) == pattern) return true;    
+              && CTempString(search).substr(search.find(" ", len)) == pattern) return true;    
     }
     return false;
   }
@@ -476,7 +476,7 @@ bool CTestAndRepData :: CommentHasPhrase(string comment, const string& phrase)
          return true;
      else {
        if ((pos = comment.find(';')) != string::npos) {
-         comment = comment.substr(pos+1);
+         comment = CTempString(comment).substr(pos+1);
          comment = NStr::TruncateSpaces(comment, NStr::eTrunc_Begin);
        }
      } 
@@ -879,7 +879,7 @@ string CTestAndRepData :: ListAuthNames(const CAuth_list& auths)
           if ( (*it)->GetName().GetName().CanGetFirst()) {
             size_t pos = strtmp.find(",");
             strtmp = strtmp.substr(0, pos+1) + (*it)->GetName().GetName().GetFirst()
-                   + "," + strtmp.substr(pos+1);
+                   + "," + CTempString(strtmp).substr(pos+1);
           }
           auth_nms += (!(i++)) ? strtmp  : ( " & " + strtmp);
        }
@@ -1143,12 +1143,12 @@ void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label
      GetLabel(seq_feat, &label, fFGL_Content);
      size_t pos;
      if (!label.empty() && (string::npos != (pos = label.find("-")) ) )
-          label = label.substr(pos+1);
+          label = CTempString(label).substr(pos+1);
      strtmp = "/number=";
      if (!label.empty() 
             && seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon 
             && (string::npos != (pos = label.find(strtmp))))
-          label = label.substr(pos + strtmp.size());
+          label = CTempString(label).substr(pos + strtmp.size());
      strtmp.clear(); 
 };
 
@@ -1236,7 +1236,7 @@ void CTestAndRepData :: RmvChar(string& str, string chars)
    size_t pos;
    for (unsigned i=0; i< chars.size(); i++) {
       while ((pos = str.find(chars[i])) != string::npos)
-       str = str.substr(0, pos) + str.substr(pos+1);
+       str = str.substr(0, pos) + CTempString(str).substr(pos+1);
    }
 };
 

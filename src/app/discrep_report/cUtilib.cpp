@@ -69,8 +69,6 @@ static 	string	iStr = "1234567890";
 static	string	lchStr = "abcdefghijklmnopqrstuvwxyz";
 static	string	uchStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-
-
 void MultiTokenize(vector <string>& arr, const string& src, const string& delim)
 {
    vector <string> tmp;
@@ -79,8 +77,6 @@ void MultiTokenize(vector <string>& arr, const string& src, const string& delim)
         if (!tmp[i].empty()) arr.push_back(tmp[i]);
 
 }  // MultiTokenize()
-
-
 
 unsigned CntOfSubstrInStr(const string& str, const string& thisStr)
 {

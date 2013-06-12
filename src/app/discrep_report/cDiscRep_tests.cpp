@@ -356,11 +356,15 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
      
      if (prot.CanGetName()) {
        prot_nm = *(prot.GetName().begin()); 
+/*
+cerr << "prot_nm " << prot_nm << endl;
+if (prot_nm != "addiction module antidote protein, CC2985 family") continue;
+*/
        rule_idx = 0;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
 /*
 cerr << " rule_idx " << rule_idx << endl;
-cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
+// cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
 if (rule_idx == 2) cerr << "**rit " << Blob2Str(**rit) << endl;
 */
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
@@ -417,9 +421,11 @@ void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
    thisTest.is_SusProd_run = true;
 
    m_bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);  // necessary?
+FindSuspectProductNamesWithStaticList();
+/*
    if (thisInfo.suspect_prod_rules->Get().empty()) FindSuspectProductNamesWithStaticList();
    else FindSuspectProductNamesWithRules();
-
+*/
 };
 
 void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
@@ -1791,7 +1797,8 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
         if (rx.IsMatch(title)) {
             // capitalization must match for all but the first letter */
             size_t pos = NStr::FindNoCase(title, lookfor);
-            if (title.substr(pos, lookfor.size()) != lookfor.substr(1)) add = true;
+            if (CTempString(title).substr(pos, lookfor.size()) != lookfor.substr(1)) 
+               add = true;
         }
         else add = true; // missing in defline
         if (add) thisInfo.test_item_list[GetName_missing()].push_back(desc);
@@ -2092,7 +2099,7 @@ string GetTwoFieldSubfield(const string& str, unsigned subfield)
     else {
       if (subfield == 1) return str.substr(0, pos);
       else if {
-        strtmp = str.substr(pos+1).empty();
+        strtmp = CTempString(str).substr(pos+1).empty();
         if (!strtmp.empty()) return strtmp;
         else return kEmptyStr;
       }
@@ -2927,8 +2934,8 @@ bool CBioseqTestAndRepData :: ProductsMatchForRefSeq(const string& feat_prod, co
   if (pos_m != pos_f) return false;
   else if (mRNA_prod.substr(0, pos_m) != feat_prod.substr(0, pos_f)) return false;
 
-  if ( feat_prod.substr(pos_f, kCDSVariant.size())
-                                 == mRNA_prod.substr(pos_m, kmRNAVariant.size()))
+  if ( CTempString(feat_prod).substr(pos_f, kCDSVariant.size())
+                                 == CTempString(mRNA_prod).substr(pos_m, kmRNAVariant.size()))
        return true;
   else return false;
 };
@@ -4043,15 +4050,15 @@ void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
     const CSeq_id& new_seq_id =
                        BioseqToBestSeqId(*(bioseq_h.GetCompleteBioseq()), CSeq_id::e_Genbank);
     string id_str = new_seq_id.AsFastaString();
-    id_str = id_str.substr(id_str.find("|")+1);
+    id_str = CTempString(id_str).substr(id_str.find("|")+1);
 
     string desc = GetDiscItemText(bioseq);
     if (!n10_intvls.empty())  
        thisInfo.test_item_list[GetName_n10()].push_back(
-                                   desc + "$" + id_str + "#" + n10_intvls.substr(2));
+                               desc + "$" + id_str + "#" + CTempString(n10_intvls).substr(2));
     if (!n14_intvls.empty())   // just for test, should be in the TSA report          
        thisInfo.test_item_list[GetName_n14()].push_back(
-                                  desc + "$" + id_str + "#" + n14_intvls.substr(2));
+                               desc + "$" + id_str + "#" + CTempString(n14_intvls).substr(2));
     if (!cnt_a) thisInfo.test_item_list[GetName_0()].push_back("A$" + desc);
     if (!cnt_t) thisInfo.test_item_list[GetName_0()].push_back("T$" + desc);
     if (!cnt_c) thisInfo.test_item_list[GetName_0()].push_back("C$" + desc);
@@ -4239,7 +4246,8 @@ bool CBioseq_test_on_protfeat :: EndsWithPattern(const string& pattern, const li
   unsigned len_patt = pattern.size(), len_str;
   ITERATE (list <string>, it, strs) {
      len_str = (*it).size();
-     if (len_str >= len_patt && NStr::EqualNocase((*it).substr(len_str - len_patt), pattern))
+     if (len_str >= len_patt 
+              && NStr::EqualNocase(CTempString(*it).substr(len_str - len_patt), pattern))
           return true;
   }
   return false;
@@ -4256,9 +4264,9 @@ bool CBioseq_test_on_protfeat :: ContainsPseudo(const string& pattern, const lis
     while ( !strtmp.empty() && (pos = strtmp.find("pseudo")) != string::npos) {
         right_pseudo = true;
         ITERATE (vector <string>, jt, thisInfo.s_pseudoweasels) {
-           if ( strtmp.substr(pos, (*jt).size()) == *jt) {
+           if ( CTempString(strtmp).substr(pos, (*jt).size()) == *jt) {
                right_pseudo = false;
-               strtmp = strtmp.substr(pos + (*jt).size());      
+               strtmp = CTempString(strtmp).substr(pos + (*jt).size());      
                break;
            }
         }
@@ -4777,7 +4785,7 @@ void CBioseq_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
      else bad_tag = true;
      if (!isalpha(dt_arr[0][0])) bad_tag = true;
      else {
-        dt_arr[0] = dt_arr[0].substr(0, pos) + dt_arr[0].substr(pos+1);
+        dt_arr[0] = dt_arr[0].substr(0, pos) + CTempString(dt_arr[0]).substr(pos+1);
         for (i=0; (i< dt_arr[0].size()) && !bad_tag; i++)
              if ( !isalnum(dt_arr[0][i]) ) bad_tag = true;
      }
@@ -5916,7 +5924,7 @@ void CBioseq_FIND_STRAND_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
 {
   size_t pos = c_item->item_list[0].find("$");
   strtmp = c_item->item_list[0].substr(0, pos);
-  c_item->item_list[0] = c_item->item_list[0].substr(pos+1);
+  c_item->item_list[0] = CTempString(c_item->item_list[0]).substr(pos+1);
   c_item->description 
       = NStr::UIntToString((unsigned)c_item->item_list.size()) + " tRNAs on " + strtmp + " strand.";
 };
@@ -7935,9 +7943,10 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasConflict(const list <CRef <COrgMod> >
      strtmp = (*it)->GetSubname();
      if ( (*it)->GetSubtype() == check_type && strtmp.substr(0, h_size) == check_head ) {
         if ( (pos = strtmp.find(';')) != string::npos) {
-           if ( strtmp.substr(h_size, pos-h_size) == subname_rest ) return false;  // need to test
+           if ( CTempString(strtmp).substr(h_size, pos-h_size) == subname_rest ) 
+               return false;  // need to test
         }
-        else if (strtmp.substr(h_size) == subname_rest) return false;
+        else if (CTempString(strtmp).substr(h_size) == subname_rest) return false;
      }
   }
   return true;
@@ -7954,13 +7963,13 @@ bool CSeqEntry_test_on_biosrc_orgmod :: IsStrainInCultureCollectionForBioSource(
                   && (*it)->GetSubname().substr(0, strain_head.size()) == strain_head) {
        check_type = COrgMod::eSubtype_culture_collection;
        check_head = culture_head;
-       subname_rest = (*it)->GetSubname().substr(strain_head.size());
+       subname_rest = CTempString((*it)->GetSubname()).substr(strain_head.size());
     }
     else if ( (*it)->GetSubtype() == COrgMod::eSubtype_culture_collection
                 && (*it)->GetSubname().substr(0, culture_head.size()) == culture_head) {
        check_type = COrgMod::eSubtype_strain;
        check_head = strain_head;
-       subname_rest = (*it)->GetSubname().substr(culture_head.size());
+       subname_rest = CTempString((*it)->GetSubname()).substr(culture_head.size());
     }
 
     if (!check_head.empty()&& !subname_rest.empty() 
@@ -8208,7 +8217,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: DoAuthorityAndTaxnameConflict(const CBio
   strtmp = biosrc.GetTaxname();
   size_t pos = strtmp.find(' ');
   unsigned len;
-  if (pos != string::npos) pos = strtmp.substr(pos).find(' ');
+  if (pos != string::npos) pos = CTempString(strtmp).substr(pos).find(' ');
   if (pos == string::npos) len = strtmp.size();
   else len = pos;
   ITERATE (vector <string>, it, auty_strs) {
@@ -8240,7 +8249,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasMissingBacteriaStrain(const CBioSourc
    if (tax_nm.empty() 
            || NStr::FindNoCase(tax_nm, "enrichment culture clone") != string::npos
            || (pos = tax_nm.find(" sp. ")) == string::npos) return false;
-   tax_nm = tax_nm.substr(pos+5);
+   tax_nm = CTempString(tax_nm).substr(pos+5);
    if (tax_nm.empty() 
            || (tax_nm.find('(') != string::npos && tax_nm[tax_nm.size()-1] == ')')) 
             return false;
@@ -8396,12 +8405,12 @@ bool CSeqEntry_test_on_biosrc :: DoInfluenzaStrainAndCollectionDateMisMatch(cons
    flu_substr = tax_name.substr(0, 18);
    if (flu_substr == "Influenza A virus ") {
      if ( (pos = tax_name.find("(")) != string::npos) {
-       if ( (pos = tax_name.substr(pos+1).find("(")) != string::npos) {
+       if ( (pos = CTempString(tax_name).substr(pos+1).find("(")) != string::npos) {
           strtmp = tax_name.substr(0, pos);
           if ( (pos = strtmp.find_last_not_of(" ")) != string::npos) {
              if (isdigit(strtmp[pos])) {
                pos = strtmp.substr(0, pos).find_last_not_of(digits); 
-               year = NStr::StringToUInt(strtmp.substr(pos+1));
+               year = NStr::StringToUInt(CTempString(strtmp).substr(pos+1));
              }
           };
        }
@@ -8409,9 +8418,9 @@ bool CSeqEntry_test_on_biosrc :: DoInfluenzaStrainAndCollectionDateMisMatch(cons
    }
    else if (flu_substr == "Influenza B virus ") {
      if ( (pos = tax_name.find("/")) != string::npos) {
-       if ( (pos = tax_name.substr(pos+1).find_first_not_of(" ")) != string::npos) {
+       if ( (pos = CTempString(tax_name).substr(pos+1).find_first_not_of(" "))!=string::npos) {
          if (isdigit(tax_name[pos])) 
-           year = tax_name.substr(pos);
+           year = CTempString(tax_name).substr(pos);
        }
      }
    }
@@ -8426,7 +8435,7 @@ bool CSeqEntry_test_on_biosrc :: DoInfluenzaStrainAndCollectionDateMisMatch(cons
                  coll_year = strtmp;
               }
               else if (!isdigit(strtmp[pos+1])) return true;
-              else coll_year = strtmp.substr(pos+1);
+              else coll_year = CTempString(strtmp).substr(pos+1);
               if (year == coll_year) return true;
               else return false;
            }
@@ -8614,7 +8623,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
     unsigned len;
     if (!org_tax.empty()) {
        len = org_tax.size();
-       if (len >= 4 && org_tax.substr(len-4) == " sp."
+       if (len >= 4 && CTempString(org_tax).substr(len-4) == " sp."
            && !NStr::EqualNocase(org_tax.substr(0, 11), "uncultured "))
           thisInfo.test_item_list[GetName_sp()].push_back(desc);
     }
@@ -8771,8 +8780,8 @@ bool CSeqEntry_test_on_biosrc :: FindTrinomialWithoutQualifier(const CBioSource&
   size_t pos;
   ITERATE (Str2Str, it, thisInfo.srcqual_keywords) {
      if ( (pos = NStr::FindNoCase(tax_nm, it->second)) != string::npos) {
-        tax_nm 
-           = NStr::TruncateSpaces(tax_nm.substr(pos+ (it->second).size()), NStr::eTrunc_Begin);
+        tax_nm = NStr::TruncateSpaces(CTempString(tax_nm).substr(pos+ (it->second).size()), 
+                                                                         NStr::eTrunc_Begin);
         if (!tax_nm.empty()) {
            vector <string> arr;
            GetOrgModValues(biosrc, it->first, arr);
@@ -9721,11 +9730,11 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
    size_t pos = block_text.find("/translation=\"");
    string trans_str;
    if (pos != string::npos) {
-     strtmp = block_text.substr(pos); 
+     strtmp = CTempString(block_text).substr(pos); 
      block_text = block_text.substr(0, pos-1);
-     pos = strtmp.substr(14).find("\"");
+     pos = CTempString(strtmp).substr(14).find("\"");
      if (pos != string::npos) {
-       if (pos < strtmp.size() - 1) block_text += strtmp.substr(pos+1);
+       if (pos < strtmp.size() - 1) block_text += CTempString(strtmp).substr(pos+1);
      }
    }
    return unified_notify(block_text, ctx, feature_item, 
@@ -9835,7 +9844,7 @@ bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const 
         ITERATE (vector <string>, it, thisInfo.strain_tax) {
           len = (*it).size();
           if (NStr::EqualNocase((*iit).substr(0, len), *it)) {
-             strtmp = NStr::TruncateSpaces( (*iit).substr(len) );
+             strtmp = NStr::TruncateSpaces( CTempString(*iit).substr(len) );
              if (strtmp != tax_nm) return true;
              break;
           }
@@ -10241,7 +10250,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
    vector <unsigned> hap_idx;
    unsigned i;
    ITERATE (Str2Seqs, it, m_tax_hap2seqs) {
-     hap_tps.push_back(it->first.substr(it->first.find("$") + 1));
+     hap_tps.push_back(CTempString(it->first).substr(it->first.find("$") + 1));
      seqs.insert(seqs.end(), it->second.begin(), it->second.end());
      for (i=0; i< it->second.size(); i++) hap_idx.push_back(hap_tps.size()-1);
    }
@@ -10427,7 +10436,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableIte
    ITERATE (Str2Strs, it, tax_hap2seqs){
       pos = it->first.find("#");
       tax_nm = it->first.substr(0, pos);
-      hap_tp = it->first.substr(pos+1);
+      hap_tp = CTempString(it->first).substr(pos+1);
       strtmp = "organism " + tax_nm + " haplotype " + hap_tp 
           + " but the sequences do not match " 
           + (Ndiff ? "(allowing N to match any)." : "(strict match).");
@@ -10586,7 +10595,7 @@ string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_in
           else {
             str = (nm_std.CanGetFirst()? nm_std.GetFirst() + " " : "")
                     + ( (nm_std.CanGetInitials() && nm_std.GetInitials().size()>2)? 
-                          nm_std.GetInitials().substr(2) + " " : "")
+                          CTempString(nm_std.GetInitials()).substr(2) + " " : "")
                     + nm_std.GetLast();
           }
           }
@@ -10623,7 +10632,7 @@ void CSeqEntry_test_on_pub :: CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, 
         default: break;
    };
 
-   if (!authors.empty())  authors = authors.substr(2);
+   if (!authors.empty())  authors = CTempString(authors).substr(2);
    thisInfo.test_item_list[GetName_tlt()].push_back(title + "$" + authors + "#" + desc);
 };
 
@@ -10911,8 +10920,8 @@ void CSeqEntry_test_on_pub :: GetGroupedAffilString(const CAuth_list& authors, s
          ADD_AFFIL_FIELD(Sub, state/province)
          ADD_AFFIL_FIELD(Postal_code, postal_code)
          ADD_AFFIL_FIELD(Country, country)
-         affil_str = affil_str.empty() ? "no affil" : affil_str.substr(1);
-         grp_str = grp_str.empty() ? "no affil" : grp_str.substr(1);
+         affil_str = affil_str.empty() ? "no affil" : CTempString(affil_str).substr(1);
+         grp_str = grp_str.empty() ? "no affil" : CTempString(grp_str).substr(1);
  #undef ADD_AFFIL_FIELD
          return;
        }
@@ -10970,7 +10979,7 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
       if (m_run_dup && auths.CanGetAffil() 
                               && AffilStreetContainsDuplicateText(auths.GetAffil())) {
           size_t pos = desc.find(": ");
-          strtmp = desc.substr(0, pos + 2) + "Cit-sub for " + desc.substr(pos+3);
+          strtmp = desc.substr(0, pos + 2) + "Cit-sub for " + CTempString(desc).substr(pos+3);
           thisInfo.test_item_list[GetName_dup()].push_back(strtmp);
       }
 
@@ -11405,7 +11414,8 @@ void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
         c_item->setting_name = GetName();
         c_item->item_list.clear();
         cnt = NStr::StringToUInt(((it->second)[0]));
-        c_item->description = it->first.substr(pos+1) + ": " + NStr::UIntToString(cnt) 
+        c_item->description 
+            = CTempString(it->first).substr(pos+1) + ": " + NStr::UIntToString(cnt) 
                                 + ((cnt>1)? " present" : " presents");
         thisInfo.disc_report_data.push_back(c_item);
         c_item.Reset(new CClickableItem);

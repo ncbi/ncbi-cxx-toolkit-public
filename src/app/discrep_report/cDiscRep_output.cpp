@@ -96,7 +96,7 @@ bool CRepConfig :: RmTagInDescp(CRef <CClickableItem> c_item, const string& tag)
 
   pos = (c_item->description).find(tag);
   if (pos != string::npos && !pos) {
-      c_item->description =  (c_item->description).substr(tag.size());
+      c_item->description =  CTempString(c_item->description).substr(tag.size());
       return true;
   }
   else return ( false );

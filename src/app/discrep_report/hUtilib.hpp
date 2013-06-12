@@ -53,7 +53,6 @@
 using namespace ncbi;
 using namespace objects;
 
-
 void MultiTokenize(vector <string>& arr, const string& src, const string& delim);
 
 unsigned CntOfSubstrInStr(const string& str, const string& thisStr);

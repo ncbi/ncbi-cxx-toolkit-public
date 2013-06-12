@@ -224,7 +224,7 @@ string CSummarizeSusProdRule :: SummarizeWordSubstitution (const CWord_substitut
 
   string syns = "'" + NStr::Join(word.GetSynonyms(), ", '") + "'";
   size_t pos = syns.find_last_of(',');
-  syns = syns.substr(0, pos+1) + " and" + syns.substr(pos+2);
+  syns = syns.substr(0, pos+1) + " and" + CTempString(syns).substr(pos+2);
   
   string summ 
         = "allow '" + (word.CanGetWord()? word.GetWord() : "") + "' to be replace by " + syns;
@@ -736,7 +736,7 @@ string CSummarizeSusProdRule :: SummarizeMolinfoFieldConstraint (const CMolinfo_
   if (cp == string::npos) return kEmptyStr;
 
   string rval = "where " + label.substr(0, cp) + (mol_cons.GetIs_not()? "is not " : "is ")
-          + label.substr(cp+1);
+          + CTempString(label).substr(cp+1);
 
   return rval;
 };
