@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
     CSeq_loc OrigLoc;
-    OrigLoc.SetInt().SetId().SetLocal().SetStr("NC_000001.10");
+    OrigLoc.SetInt().SetId().Set("NC_000001.10");
     OrigLoc.SetInt().SetFrom(50000000);
     OrigLoc.SetInt().SetTo(50000001);
 
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
     CSeq_loc OrigLoc;
-    OrigLoc.SetInt().SetId().SetLocal().SetStr("NC_000001.10");
+    OrigLoc.SetInt().SetId().Set("NC_000001.10");
     OrigLoc.SetInt().SetFrom(50000000);
     OrigLoc.SetInt().SetTo(50000001);
 
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
     // Do a Map
     CGencollIdMapper Mapper(GenColl);
     CSeq_loc OrigLoc;
-    OrigLoc.SetInt().SetId().SetLocal().SetStr("AL451051.6");
+    OrigLoc.SetInt().SetId().Set("AL451051.6");
     OrigLoc.SetInt().SetFrom(5000);
     OrigLoc.SetInt().SetTo(5001);
 
