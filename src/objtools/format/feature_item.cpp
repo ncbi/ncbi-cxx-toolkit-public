@@ -44,7 +44,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
+
 #include <algorithm>
+#include <sstream>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Heterogen.hpp>
@@ -82,6 +84,7 @@
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
@@ -2133,42 +2136,144 @@ void CFeatureItem::x_AddQualProteinId(
     CConstRef<CSeq_id> protId )
 //  ----------------------------------------------------------------------------
 {
-    if ( !protId ) {
-        return;
-    }
+    if ( protHandle ) {
+        CConstRef<CBioseq> pBioseq( protHandle.GetCompleteBioseq() );
 
-    if ( ! protId->IsGi()  &&
-        ! protId->IsEmbl()  &&
-        ! protId->IsDdbj()  &&
-        ! protId->IsOther()  &&
-        ! protId->IsTpg()  &&
-        ! protId->IsTpe()  &&
-        ! protId->IsTpd()  &&
-        ! protId->IsGpipe() )
-    {
-        return;
-    }
-    CScope& scope = ctx.GetScope();
-    const CFlatFileConfig& cfg = ctx.Config();
+        // extract the *one* usable general seq-id (if there is one)
+        // (the loop sets pTheOneGeneralSeqId, or leaves it NULL
+        //  if there is zero or more than one usable general seqids)
+        CConstRef<CSeq_id> pTheOneUsableGeneralSeqId;
+        FOR_EACH_SEQID_ON_BIOSEQ(seqid_ci, *pBioseq) {
+            const CSeq_id & seqid = **seqid_ci;
+            if( ! seqid.IsGeneral() ) {
+                continue;
+            }
 
-    if ( protId->IsGi() && protId->GetGi() > ZERO_GI ) {
-        string prot_acc;
-        try {
-            prot_acc = GetAccessionForGi( protId->GetGi(), scope );
-            if( prot_acc.empty() && !cfg.DropIllegalQuals() ) {
-                x_AddQual( eFQ_protein_id, new CFlatStringQVal(
-                    NStr::NumericToString(protId->GetGi()) ) );
-            } else {
-                if ( !cfg.DropIllegalQuals() || IsValidAccession( prot_acc ) ) {
-                    CRef<CSeq_id> acc_id( new CSeq_id( prot_acc ) );
-                    x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *acc_id ) );
+            const CDbtag & db_tag = seqid.GetGeneral();
+
+            // db types to ignore
+            static const char* const sc_IgnoredDbs[] = {
+                "BankIt", 
+                "NCBIFILE",
+                "PID",
+                "SMART", 
+                "TMSMART", 
+            };
+            typedef CStaticArraySet<const char*, PNocase> TIgnoredDbSet;
+            DEFINE_STATIC_ARRAY_MAP(TIgnoredDbSet, sc_IgnoredDbSet, sc_IgnoredDbs );
+
+            // get db and tag
+            const string & sDb = GET_STRING_FLD_OR_BLANK(db_tag, Db);
+            string sTag;
+            if( FIELD_IS_SET(db_tag, Tag) ) {
+                stringstream sTagStrm;
+                db_tag.GetTag().AsString(sTagStrm);
+                // swap faster than assignment
+                sTagStrm.str().swap(sTag);
+            }
+
+            if( ! sDb.empty() && ! sTag.empty() && 
+                sc_IgnoredDbSet.find(sDb.c_str()) == sc_IgnoredDbSet.end() ) 
+            {
+                if( pTheOneUsableGeneralSeqId ) {
+                    // more than one, so ignore all of them
+                    pTheOneUsableGeneralSeqId.Reset();
+                    break;
+                } else {
+                    pTheOneUsableGeneralSeqId = *seqid_ci;
                 }
             }
-        } catch ( CException& ) {}
-        x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( *protId, true ) );
-    }
-    else {
-        x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *protId ) );
+        }
+
+        CSeq_id::E_Choice eLastRegularChoice = CSeq_id::e_not_set;
+        FOR_EACH_SEQID_ON_BIOSEQ(seqid_ci, *pBioseq) {
+            const CSeq_id & seqid = **seqid_ci;
+
+            switch( seqid.Which() ) {
+            case CSeq_id::e_Genbank: case CSeq_id::e_Embl: case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Other:
+            case CSeq_id::e_Tpg: case CSeq_id::e_Tpe: case CSeq_id::e_Tpd:
+            case CSeq_id::e_Gpipe:
+                x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( seqid ) );
+                eLastRegularChoice = seqid.Which();
+                break;
+
+            case CSeq_id::e_Gi:
+                if( seqid.GetGi() > ZERO_GI ) {
+                    if ( eLastRegularChoice == CSeq_id::e_not_set ) {
+                        // use as protein_id if it's the first usable one
+                        x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( seqid ) );
+                    }
+                    x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( seqid, true ) );
+                }
+                break;
+
+            case CSeq_id::e_General: 
+                // show it if it's the *one* usable general seqid.  otherwise, ignore
+                if( *seqid_ci == pTheOneUsableGeneralSeqId ) {
+                    x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( seqid ) );
+                }
+                break;
+
+            default:
+                // ignore other types
+                break;
+            }
+        }
+    } else if( protId ) {
+
+        TGi gi = ZERO_GI;
+        string prot_acc;
+
+        // get gi and prot_acc
+        if ( protId->IsGi() ) {
+            gi = protId->GetGi();
+            if( gi > ZERO_GI ) {
+                string prot_acc;
+                try {
+                    prot_acc = GetAccessionForGi( gi, ctx.GetScope() );
+                } catch ( CException& ) {}
+            }
+        } else {
+
+            // swap is faster than assignment
+            // protId->GetSeqIdString(true).swap( prot_acc );
+            prot_acc = protId->GetSeqIdString(true);
+
+            // find prot_acc and gi
+            //const CTextseq_id* pTextSeq_id = protId->GetTextseq_Id();
+            //if( pTextSeq_id ) {
+            //    stringstream protAccStrm;
+            //    pTextSeq_id->AsFastaString(protAccStrm);
+            //    // swap is faster than assignment
+            //    protAccStrm.str().swap( prot_acc );
+
+            //}
+            try {
+                gi = ctx.GetScope().GetGi( CSeq_id_Handle::GetHandle(*protId) );
+            } catch(CException &) {
+                // could not get gi
+            }
+        }
+
+        if( ! prot_acc.empty() ) {
+            if ( ! ctx.Config().DropIllegalQuals() || IsValidAccession( prot_acc ) ) {
+                try {
+                    CRef<CSeq_id> acc_id( new CSeq_id( prot_acc ) );
+                    x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( *acc_id ) );
+                } catch( CException & ) {
+                    x_AddQual( eFQ_protein_id, new CFlatStringQVal(prot_acc) );
+                }
+            }
+        }
+
+        if( gi > ZERO_GI ) {
+            CConstRef<CSeq_id> pGiSeqId(
+                protId->IsGi() ?
+                protId.GetPointer() :
+                new CSeq_id(CSeq_id::e_Gi, gi) );
+            x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( *pGiSeqId, true ) );
+        }
     }
 }
 
