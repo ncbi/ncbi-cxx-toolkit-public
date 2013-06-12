@@ -98,7 +98,6 @@ CBioseqContext::CBioseqContext
     m_IsJournalScan(false),
     m_IsRefSeq(false),
     m_RefseqInfo(0),
-    m_IsRSUniqueProt(false),
     m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
     m_IsNcbiCONDiv(false),       // NCBI CON division (CH)
     m_IsNcbiGenomes(false),
@@ -154,7 +153,6 @@ CBioseqContext::CBioseqContext
     m_IsJournalScan(false),
     m_IsRefSeq(false),
     m_RefseqInfo(0),
-    m_IsRSUniqueProt(false),
     m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
     m_IsNcbiCONDiv(false),       // NCBI CON division (CH)
     m_IsNcbiGenomes(false),
@@ -569,12 +567,6 @@ void CBioseqContext::x_SetId(void)
         case CSeq_id::e_Other:
             m_IsRefSeq = true;
             m_RefseqInfo = acc_info;
-            // check if unique.
-            // TODO: in the future this will hopefully be in m_RefseqInfo and 
-            // we can avoid this kludge
-            if( NStr::StartsWith(acc, "WP_") ) {
-                m_IsRSUniqueProt = true;
-            }
             break;
         // Gi
         case CSeq_id::e_Gi:

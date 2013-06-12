@@ -299,7 +299,6 @@ private:
     bool m_IsJournalScan;  // scanned from journal
     bool m_IsRefSeq;
     unsigned int m_RefseqInfo;
-    bool m_IsRSUniqueProt; // TODO: remove this variable when possible, it's a kludge for info currently missing from m_RefseqInfo
     bool m_IsGbGenomeProject;  // GenBank Genome project data
     bool m_IsNcbiCONDiv;       // NCBI CON division
     bool m_IsNcbiGenomes;      // NCBI_GENOMES
@@ -545,10 +544,7 @@ bool CBioseqContext::IsRSWGSProt(void)  const
 inline
 bool CBioseqContext::IsRSUniqueProt(void) const  // WP
 {
-    // TODO: this is a kludge.  Eventually replace with something
-    // like this:
-    // return m_RefseqInfo == CSeq_id::eAcc_refseq_prot_unique;  // WP_
-    return m_IsRSUniqueProt;
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_unique_prot;  // WP_
 }
 
 inline
