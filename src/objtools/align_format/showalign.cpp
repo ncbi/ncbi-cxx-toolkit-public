@@ -1500,10 +1500,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
 //uses m_AV    m_LineLen m_AlignOption m_QueryNumber
 string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
 {
-    size_t actualLineLen=0;
-    string master_feat_str = NcbiEmptyString;
     size_t aln_stop=m_AV->GetAlnStop();
-
     int rowNum = alnRoInfo->rowNum;
     vector<int> prev_stop(rowNum);
     CNcbiOstrstream out;
@@ -1519,75 +1516,115 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                                           m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
 
     //output rows    
+    string formattedString;
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
-        //output according to aln coordinates
-        if(aln_stop-j+1<m_LineLen) {
-            actualLineLen=aln_stop-j+1;
-        } else {
-            actualLineLen=m_LineLen;
+        string rowdata = x_DisplayRowDataSet(alnRoInfo,j, prev_stop);
+        formattedString += rowdata;                
+    }//end of displaying rows        
+    return formattedString;
+}
+
+void CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out)
+{
+    size_t aln_stop=m_AV->GetAlnStop();
+    int rowNum = alnRoInfo->rowNum;
+    vector<int> prev_stop(rowNum);
+            
+     //only for untranslated alignment
+    alnRoInfo->show_align_stats = (m_AlignOption&eShowAlignStatsForMultiAlignView &&
+                                   m_AlignOption&eMergeAlign && 
+                                   m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
+
+     //only for untranslated alignment
+    alnRoInfo->show_seq_property_label = (m_AlignOption&eShowSequencePropertyLabel &&
+                                          m_AlignOption&eMergeAlign &&
+                                          m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
+
+    //output rows    
+    for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
+        string rowdata = x_DisplayRowDataSet(alnRoInfo,j, prev_stop);
+        out << rowdata;            
+    }//end of displaying rows        
+}
+
+
+
+string CDisplaySeqalign::x_DisplayRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start, vector<int> &prev_stop)
+{
+    size_t actualLineLen=0;
+    string master_feat_str = NcbiEmptyString;
+    size_t aln_stop=m_AV->GetAlnStop();
+
+    int rowNum = alnRoInfo->rowNum;   
+    CNcbiOstrstream out;
+        
+     
+    //output according to aln coordinates
+    if(aln_stop-aln_start+1<m_LineLen) {
+        actualLineLen=aln_stop-aln_start+1;
+    } else {
+        actualLineLen=m_LineLen;
+    }
+    CAlnMap::TSignedRange curRange(aln_start, aln_start+(int)actualLineLen-1);
+    alnRoInfo->currPrintSegment = aln_start;
+    alnRoInfo->currActualLineLen = actualLineLen;
+    alnRoInfo->currRange = curRange;
+    //here is each row
+    for (int row=0; row<rowNum; row++) {
+        bool hasSequence = true;   
+        if (!(m_AlignOption & eShowGapOnlyLines)) {
+            hasSequence = curRange.IntersectingWith(alnRoInfo->rowRng[row]);
         }
-        CAlnMap::TSignedRange curRange(j, j+(int)actualLineLen-1);
-        alnRoInfo->currPrintSegment = j;
-        alnRoInfo->currActualLineLen = actualLineLen;
-        alnRoInfo->currRange = curRange;
-        //here is each row
-        for (int row=0; row<rowNum; row++) {
-            bool hasSequence = true;   
-            if (!(m_AlignOption & eShowGapOnlyLines)) {
-                hasSequence = curRange.IntersectingWith(alnRoInfo->rowRng[row]);
+        //only output rows that have sequence
+        if (hasSequence){                
+            int end = alnRoInfo->seqStops[row].front() + 1;                
+            bool has_mismatch = false;
+            //change the alignment line to identity style                
+            if (row>0 && m_AlignOption & eShowIdentity){//check usage - pairwise - only
+                for (int index = aln_start; index < aln_start + (int)actualLineLen && 
+                         index < (int)alnRoInfo->sequence[row].size(); index ++){
+                    if (alnRoInfo->sequence[row][index] == alnRoInfo->sequence[0][index] &&
+                        isalpha((unsigned char) alnRoInfo->sequence[row][index])) {
+                        alnRoInfo->sequence[row][index] = k_IdentityChar;           
+                    } else if (!has_mismatch) {
+                        has_mismatch = true;
+                    }        
+                }
             }
-            //only output rows that have sequence
-            if (hasSequence){
-                //int start = alnRoInfo->seqStarts[row].front() + 1;  //+1 for 1 based
-                int end = alnRoInfo->seqStops[row].front() + 1;                
-                bool has_mismatch = false;
-                //change the alignment line to identity style                
-                if (row>0 && m_AlignOption & eShowIdentity){//check usage - pairwise - only
-                    for (int index = j; index < j + (int)actualLineLen && 
-                             index < (int)alnRoInfo->sequence[row].size(); index ++){
-                        if (alnRoInfo->sequence[row][index] == alnRoInfo->sequence[0][index] &&
-                            isalpha((unsigned char) alnRoInfo->sequence[row][index])) {
-                            alnRoInfo->sequence[row][index] = k_IdentityChar;           
-                        } else if (!has_mismatch) {
-                            has_mismatch = true;
-                        }        
-                    }
-                }
-                //feature for query
-                if(row == 0){                        
-                    x_PrintFeatures(alnRoInfo, row, master_feat_str, out); 
-                }
-                if((m_AlignOption & eMergeAlign) || (m_AlignOption & eHyperLinkMasterSeqid) || (m_AlignOption & eHyperLinkSlaveSeqid)) {                
-                    x_DisplaySequenceIDForQueryAnchored(alnRoInfo,row,out);
-                }
-                else {
-                    x_DisplaySequenceIDForPairwise(alnRoInfo,row,has_mismatch,out);
-                }
-                //print out sequence line
-                x_DisplaySequenceLine(alnRoInfo, row, prev_stop[row], out);
-                if(m_AlignOption & eMasterAnchored){
-                    //inserts for anchored view
-                    x_DisplayInsertsForQueryAnchored(alnRoInfo,row,out);
-                }                
-                //display subject sequence feature.
-                if(row > 0){                     
-                    x_PrintFeatures(alnRoInfo, row, master_feat_str, out);
-                }
-                //display middle line for pairwise
-                if (row == 0 && ((m_AlignOption & eShowMiddleLine)) && !(m_AlignOption&eMergeAlign)) {
-                    x_DisplayMiddLine(alnRoInfo, row,out);                    
-                }
-                prev_stop[row] = end; 
+            //feature for query
+            if(row == 0){                        
+                x_PrintFeatures(alnRoInfo, row, master_feat_str, out); 
             }
-            if(!alnRoInfo->seqStarts[row].empty()){ //shouldn't need this check
+            if((m_AlignOption & eMergeAlign) || (m_AlignOption & eHyperLinkMasterSeqid) || (m_AlignOption & eHyperLinkSlaveSeqid)) {                
+                x_DisplaySequenceIDForQueryAnchored(alnRoInfo,row,out);
+            }
+            else {
+                x_DisplaySequenceIDForPairwise(alnRoInfo,row,has_mismatch,out);
+            }
+            //print out sequence line
+            x_DisplaySequenceLine(alnRoInfo, row, prev_stop[row], out);
+            if(m_AlignOption & eMasterAnchored){
+                //inserts for anchored view
+                x_DisplayInsertsForQueryAnchored(alnRoInfo,row,out);
+            }                
+            //display subject sequence feature.
+            if(row > 0){                     
+                x_PrintFeatures(alnRoInfo, row, master_feat_str, out);
+            }
+            //display middle line for pairwise
+            if (row == 0 && ((m_AlignOption & eShowMiddleLine)) && !(m_AlignOption&eMergeAlign)) {
+                x_DisplayMiddLine(alnRoInfo, row,out);                    
+            }
+            prev_stop[row] = end; 
+        }
+        if(!alnRoInfo->seqStarts[row].empty()){ //shouldn't need this check
                 alnRoInfo->seqStarts[row].pop_front();
-            }
-            if(!alnRoInfo->seqStops[row].empty()){
-                alnRoInfo->seqStops[row].pop_front();
-            }
         }
-        out<<"\n";
+        if(!alnRoInfo->seqStops[row].empty()){
+                alnRoInfo->seqStops[row].pop_front();
+        }                
     }//end of displaying rows    
+    out<<"\n";
     string formattedString = CNcbiOstrstreamToString(out);    
     return formattedString;
 }
@@ -1810,8 +1847,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
 { 
     SAlnRowInfo *alnRoInfo = x_PrepareRowData();    
 
-    string alignRows = x_DisplayRowData(alnRoInfo);
-    out << alignRows;
+    x_DisplayRowData(alnRoInfo,out);    
     delete alnRoInfo;
 }
 
@@ -3629,8 +3665,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfo(CNcbiOstream& out,
     
     //Displays sorting controls, features, Score, Expect, Idnt,Gaps,strand,positives,frames etc
     x_DisplaySingleAlignParams(out, aln_vec_info,showSortControls);
-    string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
-    out << alignRows;    
+    x_DisplayRowData(aln_vec_info->alnRowInfo,out);    
 }
 
 
