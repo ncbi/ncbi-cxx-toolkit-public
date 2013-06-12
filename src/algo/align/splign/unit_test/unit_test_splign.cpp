@@ -48,7 +48,8 @@
 #include <serial/objostr.hpp>
 
 //#include <objects/seq/Bioseq.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
+//#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 
 #include <algo/align/splign/splign.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
@@ -110,6 +111,32 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 
     arg_desc->SetConstraint("est-outfmt", cons);
 
+}
+
+
+void s_RoundScores(CRef<CSeq_align_set> align) {
+    if(align->IsSet()) {
+                    NON_CONST_ITERATE(CSeq_align_set::Tdata, sait, align->Set()) {
+                        BOOST_CHECK( (*sait)->GetSegs().IsSpliced() );
+                        if( (*sait)->SetSegs().SetSpliced().IsSetExons() ) {
+                            NON_CONST_ITERATE(CSpliced_seg::TExons, exot, (*sait)->SetSegs().SetSpliced().SetExons()) {
+                                if( (*exot)->IsSetScores() && (*exot)->SetScores().IsSet() ) {
+                                    NON_CONST_ITERATE(	CScore_set::Tdata, sit, (*exot)->SetScores().Set() ) {
+                                        if( (*sit)->IsSetValue() && (*sit)->SetValue().IsReal() ) {
+                                            CScore_Base::C_Value::TReal re = (*sit)->SetValue().SetReal();
+                                            CNcbiOstrstream ots1;		
+                                            ots1 << setprecision(7) << scientific << re;
+                                            string tstr1 = CNcbiOstrstreamToString(ots1);
+                                            CNcbiIstrstream its1(tstr1.c_str()); 
+                                            its1 >> re;
+                                            (*sit)->SetValue().SetReal(re);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 }
 
 
@@ -228,9 +255,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     CRef<CSeq_align_set> expected_out(new CSeq_align_set);
                     *es >> *expected_out;
 
-                    //BOOST_CHECK ( sas->Equals(*expected_out) ); 
-                    // check above fails on real number comparison, workaround:
-
+                    /* solution is not working, some real numbers produced on CentOS and Windows stay different after serialization
                     CNcbiOstrstream s1;
                     s1 << MSerial_AsnText << *splign_out;
                     string mrna1 = CNcbiOstrstreamToString(s1);
@@ -238,8 +263,23 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     CNcbiOstrstream s2;
                     s2 << MSerial_AsnText << *expected_out;
                     string mrna2 = CNcbiOstrstreamToString(s2);
-                    
-                    BOOST_CHECK ( mrna1 == mrna2 );
+
+					BOOST_CHECK ( mrna1 == mrna2 );
+                    */
+
+                    s_RoundScores(expected_out);
+                    s_RoundScores(splign_out);
+                    BOOST_CHECK ( splign_out->Equals(*expected_out) ); 
+
+/* DEBUG OUTPUT
+if(! splign_out->Equals(*expected_out) ) {
+	 CNcbiOfstream os1("tmp1.asn");	
+	 os1 << MSerial_AsnText << *splign_out;
+	 CNcbiOfstream os2("tmp2.asn");	
+	 os2 << MSerial_AsnText << *expected_out;
+	 exit(1);
+}
+*/
                     
                 }                                
             }
@@ -315,23 +355,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     auto_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
                     CRef<CSeq_align_set> expected_out(new CSeq_align_set);
                     *es >> *expected_out;
-                    
-                    CRef<CSeq_align_set> sas (sf.AsSeqAlignSet(&splign.GetResult(), CSplignFormatter::eAF_SplicedSegWithParts));
-                    
 
-                    //BOOST_CHECK ( sas->Equals(*expected_out) ); 
-                    // check above fails on real number comparison, workaround:
+                    s_RoundScores(expected_out);
+                    s_RoundScores(splign_out);
+                    BOOST_CHECK ( splign_out->Equals(*expected_out) );                     
 
-                    CNcbiOstrstream s1;
-                    s1 << MSerial_AsnText << *splign_out;
-                    string est1 = CNcbiOstrstreamToString(s1);
-                    
-                    CNcbiOstrstream s2;
-                    s2 << MSerial_AsnText << *expected_out;
-                    string est2 = CNcbiOstrstreamToString(s2);
-                    
-                    BOOST_CHECK ( est1 == est2 );
-                    
                 }  
             }
         }
