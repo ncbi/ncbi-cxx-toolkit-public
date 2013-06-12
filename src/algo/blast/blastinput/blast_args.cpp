@@ -1836,7 +1836,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("Formatting options");
 
-    const string kOutputFormatDescription = string(
+    string kOutputFormatDescription = string(
     "alignment view options:\n"
     "  0 = pairwise,\n"
     "  1 = query-anchored showing identities,\n"
@@ -1856,7 +1856,11 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         DescribeTabularOutputFormatSpecifiers() + 
         string("\n");
 
-    const string kIgOutputFormatDescription = string(
+    int dft_outfmt = kDfltArgOutputFormat;
+
+    // Igblast shows extra column of gaps
+    if (m_IsIgBlast) {
+        kOutputFormatDescription = string(
     "alignment view options:\n"
     "  3 = flat query-anchored, show identities,\n"
     "  4 = flat query-anchored, no identities,\n"
@@ -1866,13 +1870,12 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "The supported format specifiers are:\n") +
         DescribeTabularOutputFormatSpecifiers(true) + 
         string("\n");
-
-    int dft_outfmt = (m_IsIgBlast) ? 3 : kDfltArgOutputFormat;
+        dft_outfmt = 3;
+    }
 
     // alignment view
     arg_desc.AddDefaultKey(kArgOutputFormat, "format", 
-                           (m_IsIgBlast) ? kIgOutputFormatDescription
-                                         : kOutputFormatDescription,
+                           kOutputFormatDescription,
                            CArgDescriptions::eString, 
                            NStr::IntToString(dft_outfmt));
 
