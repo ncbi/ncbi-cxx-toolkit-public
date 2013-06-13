@@ -168,8 +168,7 @@ bool CGtfWriter::x_WriteFeatureMrna(
     }
     pMrna->CorrectType( "exon" );
 
-    const CSeq_feat& feature = mf.GetOriginalFeature();
-    const CSeq_loc& loc = feature.GetLocation();
+    const CSeq_loc& loc = mf.GetLocation();
     unsigned int uExonNumber = 1;
 
     CRef< CSeq_loc > pLocMrna( new CSeq_loc( CSeq_loc::e_Mix ) );
@@ -196,8 +195,6 @@ bool CGtfWriter::x_WriteFeatureCds(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mf.GetOriginalFeature();
-       
     CRef<CGtfRecord> pParent( 
         new CGtfRecord( context, (m_uFlags & fNoExonNumbers) ) );
     if ( ! pParent->AssignFromAsn( mf ) ) {
@@ -207,7 +204,7 @@ bool CGtfWriter::x_WriteFeatureCds(
     CRef< CSeq_loc > pLocStartCodon;
     CRef< CSeq_loc > pLocCode;
     CRef< CSeq_loc > pLocStopCodon;
-    if ( ! x_SplitCdsLocation( feature, pLocStartCodon, pLocCode, pLocStopCodon ) ) {
+    if ( ! x_SplitCdsLocation( mf, pLocStartCodon, pLocCode, pLocStopCodon ) ) {
         return false;
     }
 
@@ -260,7 +257,7 @@ bool CGtfWriter::x_WriteFeatureCdsFragments(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_SplitCdsLocation(
-    const CSeq_feat& cds,
+    CMappedFeat cds,
     CRef< CSeq_loc >& pLocStartCodon,
     CRef< CSeq_loc >& pLocCode,
     CRef< CSeq_loc >& pLocStopCodon ) const

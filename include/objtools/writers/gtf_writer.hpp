@@ -93,7 +93,7 @@ protected:
         const CSeq_loc& );
 
     bool x_SplitCdsLocation(
-        const CSeq_feat&,
+        CMappedFeat,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >& ) const;
