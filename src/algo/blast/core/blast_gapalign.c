@@ -2547,9 +2547,139 @@ s_BlastGreedyGapAlignStructFill(BlastGapAlignStruct* gap_align,
    return 0;
 }
 
+void s_PrintEditScript(GapEditScript* esp) {
+   int i;
+   for (i=0; i< esp->size; i++) {
+       switch(esp->op_type[i]) {
+       case (eGapAlignSub):
+          printf("%d ",esp->num[i]);
+          break;
+       case (eGapAlignIns):
+          printf("+%d ", esp->num[i]);
+          break;
+       case (eGapAlignDel):
+          printf("-%d ", esp->num[i]);
+       }
+   }
+   printf("\n");
+}
+
+static void s_UpdateEditScript(GapEditScript* esp, int pos, int bf, int af) {
+   int op, qd, sd;
+
+   if (bf > 0) {
+      op = pos;
+      qd = sd = bf;
+      do {
+          if (--op < 0) return;
+          switch(esp->op_type[op]) {
+          case eGapAlignSub:
+              qd -= esp->num[op];
+              sd -= esp->num[op];
+              break;
+          case eGapAlignIns:
+              qd -= esp->num[op];
+              break;
+          case eGapAlignDel:
+              sd -= esp->num[op];
+          }
+      } while (qd > 0 || sd > 0);
+
+      esp->num[op++] = -MAX(qd, sd);
+      for (; op < pos-1; op++) esp->num[op] = 0;
+      esp->num[pos] += bf;
+      qd -= sd;
+      esp->op_type[pos-1] = (qd>0) ? eGapAlignDel: eGapAlignIns;
+      esp->num[pos-1] = (qd>0) ? qd : -qd;
+   }
+
+   if (af > 0) {
+      op = pos;
+      qd = sd = af;
+      do {
+          if (++op >= esp->size) return;
+          switch(esp->op_type[op]) {
+          case eGapAlignSub:
+              qd -= esp->num[op];
+              sd -= esp->num[op];
+              break;
+          case eGapAlignIns:
+              qd -= esp->num[op];
+              break;
+          case eGapAlignDel:
+              sd -= esp->num[op];
+          }
+      } while (qd > 0 || sd > 0);
+
+      esp->num[op--] = -MAX(qd, sd);
+      for (; op > pos+1; op--) esp->num[op] = 0;
+      esp->num[pos] += af;
+      qd -= sd;
+      esp->op_type[pos+1] = (qd>0) ? eGapAlignDel: eGapAlignIns;
+      esp->num[pos+1] = (qd>0) ? qd : -qd;
+   }
+}
+
+static void s_RebuildEditScript(GapEditScript* esp) {
+   int i, j;
+   for (i=0, j=-1; i<esp->size; i++) {
+       if (esp->num[i] == 0) continue;
+       if (j>=0 && esp->op_type[i] == esp->op_type[j]) {
+           esp->num[j] += esp->num[i];
+       } else if (j==-1 || esp->op_type[i] == eGapAlignSub
+           || esp->op_type[j] == eGapAlignSub) {
+           esp->op_type[++j] = esp->op_type[i];
+           esp->num[j] = esp->num[i];
+       } else {
+           int d = esp->num[j] - esp->num[i];
+           if (d > 0) {
+              esp->num[j-1] += esp->num[i];
+              esp->num[j] = d;
+           } else if (d < 0) {
+              esp->num[j-1] += esp->num[j];
+              esp->num[j] = -d;
+              esp->op_type[j] = esp->op_type[i];
+           } else {
+              esp->num[j-1] += esp->num[j];
+              --j;
+           }
+       }
+   }
+   esp->size = ++j;
+}
+
 static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s){
    int i, j, nm1, nm2, d;
    const Uint1 *q1, *s1;
+
+   for (q1=q, s1=s, i=0; i<esp->size; i++) {
+       if (esp->num[i] == 0) continue;
+       if (esp->op_type[i] == eGapAlignSub) {
+           if(esp->num[i] >= 12) {
+               nm1 = 1;
+               if (i > 0) {
+                   while (*(q1-nm1) == *(s1-nm1)) ++nm1;
+               }
+               q1 += esp->num[i];
+               s1 += esp->num[i];
+               nm2 = 0;
+               if (i < esp->size -1) {
+                   while (*(q1++) == *(s1++)) ++nm2;
+               }
+               if (nm1>1 || nm2>0) s_UpdateEditScript(esp, i, nm1-1, nm2);
+               q1--; s1--;
+           } else {
+               q1 += esp->num[i];
+               s1 += esp->num[i];
+           }
+       } else if (esp->op_type[i] == eGapAlignIns) {
+           q1 += esp->num[i];
+       } else {
+           s1 += esp->num[i];
+       }
+   }
+   s_RebuildEditScript(esp);
+
    for (i=0; i<esp->size; i++) {
        if (esp->op_type[i] == eGapAlignSub) {
            q += esp->num[i];
@@ -2606,17 +2736,7 @@ static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s){
            s += esp->num[i];
        }
    }
-   /* rebuild the esp */
-   for (i=0, j=0; i<esp->size; i++) {
-       if (esp->num[i] > 0) {
-           esp->num[j] = esp->num[i];
-           esp->op_type[j] = esp->op_type[i];
-           ++j;
-       } else if (++i < esp->size) {
-           esp->num[j-1] += esp->num[i];
-       }
-   }
-   esp->size = j;
+   s_RebuildEditScript(esp);
 }
 
 Int2 
