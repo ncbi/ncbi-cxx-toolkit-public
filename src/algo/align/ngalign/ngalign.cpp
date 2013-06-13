@@ -135,7 +135,7 @@ TAlignSetRef CNgAligner::x_Align_Impl()
 //cerr << MSerial_AsnText << *CurrResults->ToSeqAlignSet();
 //        AccumResults->Insert(CurrResults);
         NON_CONST_ITERATE(TFilters, FilterIter, m_Filters) {
-            (*FilterIter)->FilterAlignments(CurrResults, FilterResults);
+            (*FilterIter)->FilterAlignments(CurrResults, FilterResults, *m_Scope);
         }
         AccumResults->Insert(CurrResults);
     }

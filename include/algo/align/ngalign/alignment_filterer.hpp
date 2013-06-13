@@ -65,7 +65,7 @@ class CQueryFilter : public IAlignmentFilter
 public:
     CQueryFilter(int Rank, const string& Query);
 
-    void FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out);
+    void FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out, objects::CScope& Scope);
     unsigned int GetFilterRank() const { return m_Rank; }
 
 private:

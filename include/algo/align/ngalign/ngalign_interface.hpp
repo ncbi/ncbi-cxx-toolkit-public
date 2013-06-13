@@ -94,7 +94,8 @@ class IAlignmentFilter : public CObject
 {
 public:
     virtual void FilterAlignments(TAlignResultsRef In,
-                                  TAlignResultsRef Out) = 0;
+                                  TAlignResultsRef Out,
+                                  objects::CScope& Scope) = 0;
     virtual unsigned int GetFilterRank() const = 0;
 
     static const string KFILTER_SCORE;

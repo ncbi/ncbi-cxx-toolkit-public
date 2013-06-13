@@ -57,10 +57,10 @@ CQueryFilter::CQueryFilter(int Rank, const string& Query)
 }
 
 
-
-void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out)
+void CQueryFilter::FilterAlignments(TAlignResultsRef In, TAlignResultsRef Out, CScope& Scope)
 {
     m_Filter->SetRemoveDuplicates(true);
+    m_Filter->SetScope(Scope);
 
     NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, In->Get()) {
         
