@@ -35,10 +35,6 @@
 # endif
 #endif
 
-#ifdef NCBI_OS_MSWIN
-#  include <windows.h>
-#endif
-
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -111,8 +107,12 @@ TDS_RCSID(var, "$Id$");
  * \@{
  */
 
-#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
-#define SOL_TCP IPPROTO_TCP
+#if !defined(SOL_TCP) && (defined(IPPROTO_TCP) || defined(_WIN32))
+/* fix incompatibility between MS headers */
+# ifndef IPPROTO_TCP
+#  define IPPROTO_TCP IPPROTO_TCP
+# endif
+# define SOL_TCP IPPROTO_TCP
 #endif
 
 /* Optimize the way we send packets */

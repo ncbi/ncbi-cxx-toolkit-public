@@ -61,6 +61,7 @@ typedef int pid_t;
 #endif	/* defined(DOS32X) */
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#include <winsock2.h>
 #include <windows.h>
 #define READSOCKET(a,b,c)	recv((a), (b), (c), 0L)
 #define WRITESOCKET(a,b,c)	send((a), (b), (c), 0L)

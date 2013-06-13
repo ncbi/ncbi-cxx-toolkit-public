@@ -74,6 +74,7 @@
 #endif /* HAVE_ARPA_INET_H */
 
 #ifdef WIN32
+#include <winsock2.h>
 #include <shlobj.h>
 #endif
 
