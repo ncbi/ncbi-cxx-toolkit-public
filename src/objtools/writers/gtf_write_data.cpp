@@ -53,6 +53,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
@@ -396,6 +397,9 @@ string CGtfRecord::x_GeneToGeneId(
     if ( gene.IsSetLocus_tag() ) {
         return gene.GetLocus_tag();
     }
+    if (gene.IsSetLocus()) {
+        return gene.GetLocus();
+    }
     if ( gene.IsSetSyn() ) {
         return gene.GetSyn().front();
     }
@@ -438,14 +442,18 @@ string CGtfRecord::x_MrnaToGeneId(
 
 //  =============================================================================
 string CGtfRecord::x_MrnaToTranscriptId(
-    CMappedFeat mapped_feature )
+    CMappedFeat mf)
 //  ============================================================================
 {
-    if ( mapped_feature.IsSetProduct() ) {
-        return mapped_feature.GetProduct().GetId()->GetSeqIdString( true );
+    if ( mf.IsSetProduct() ) {
+        string product;
+        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+            return product;
+        }
+        return mf.GetProduct().GetId()->GetSeqIdString( true );
     }
     else { 
-        return x_GenericTranscriptId( mapped_feature );
+        return x_GenericTranscriptId( mf );
     }
 }
     
@@ -479,11 +487,15 @@ string CGtfRecord::x_CdsToTranscriptId(
 
 //  ============================================================================
 string CGtfRecord::x_CdsToProteinId(
-    CMappedFeat mapped_feature )
+    CMappedFeat mf )
 //  ============================================================================
 {
-    if ( mapped_feature.IsSetProduct() ) {
-        return mapped_feature.GetProduct().GetId()->GetSeqIdString( true );
+    if ( mf.IsSetProduct() ) {
+        string product;
+        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+            return product;
+        }
+        return mf.GetProduct().GetId()->GetSeqIdString( true );
     }
     return "";
 }
