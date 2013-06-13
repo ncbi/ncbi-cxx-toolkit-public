@@ -122,8 +122,9 @@ public:
     bool IsSubmitAllowed(unsigned host) const;
     bool IsWorkerAllowed(unsigned host) const;
     bool IsProgramAllowed(const string &  program_name) const;
-    void GetMaxIOSizes(unsigned int &  max_input_size,
-                       unsigned int &  max_output_size) const;
+    void GetMaxIOSizesAndNCAPI(unsigned int &  max_input_size,
+                               unsigned int &  max_output_size,
+                               map<string, string> & netcache_api) const;
 
     bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)  { m_RefuseSubmits = val;  }
@@ -468,6 +469,7 @@ private:
 
     CNetScheduleServer *        m_Server;
     CJobStatusTracker           m_StatusTracker;    // status FSA
+    CQueueDataBase &            m_QueueDB;
 
     // Timeline object to control job execution timeout
     CJobTimeLine*               m_RunTimeLine;
@@ -553,6 +555,7 @@ private:
     CNSPreciseTime               m_HandicapTimeout;
 
     unsigned int                 m_DumpBufferSize;
+    string                       m_NCAPISectionName;
 
     // Group registry
     CNSGroupsRegistry            m_GroupRegistry;

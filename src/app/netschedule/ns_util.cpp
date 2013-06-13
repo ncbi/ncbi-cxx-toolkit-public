@@ -54,5 +54,39 @@ string NS_FormatIPAddress(unsigned int ipaddr)
 }
 
 
+void    NS_ValidateConfigFile(const CNcbiRegistry &  reg)
+{
+    // Walk all the qclass_... and queue_... sections and check that
+    // they do not have dangling references to the NC sections
+    list<string>        sections;
+
+    reg.EnumerateSections(&sections);
+    ITERATE(list<string>, it, sections) {
+        string              queue_or_class;
+        string              prefix;
+        const string &      section_name = *it;
+
+        NStr::SplitInTwo(section_name, "_", prefix, queue_or_class);
+        if (queue_or_class.empty())
+            continue;
+        if (NStr::CompareNocase(prefix, "qclass") == 0 ||
+            NStr::CompareNocase(prefix, "queue") == 0) {
+            // This section should be checked
+            string      ref_section = reg.GetString(section_name,
+                                                    "netcache_api", kEmptyStr);
+            if (ref_section.empty())
+                continue;
+
+            // It refers to another section. Check that it exists.
+            if (find(sections.begin(), sections.end(), ref_section) ==
+                sections.end())
+                NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                           "Value [" + section_name +
+                           "].netcache_api refers to non-existing section '" +
+                           ref_section + "'.");
+        }
+    }
+}
+
 END_NCBI_SCOPE
 

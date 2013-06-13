@@ -455,6 +455,7 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.max_pending_wait_timeout = CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
                                                          m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
         params.description = m_QueueDescriptionDB.description;
+        params.netcache_api_section_name = m_QueueDescriptionDB.netcache_api_section_name;
         params.run_timeout_precision = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
                                                       m_QueueDescriptionDB.run_timeout_precision_nsec);
 
@@ -531,6 +532,7 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.max_pending_wait_timeout_sec = params.max_pending_wait_timeout.Sec();
     m_QueueDescriptionDB.max_pending_wait_timeout_nsec = params.max_pending_wait_timeout.NSec();
     m_QueueDescriptionDB.description = params.description;
+    m_QueueDescriptionDB.netcache_api_section_name = params.netcache_api_section_name;
     m_QueueDescriptionDB.run_timeout_precision_sec = params.run_timeout_precision.Sec();
     m_QueueDescriptionDB.run_timeout_precision_nsec = params.run_timeout_precision.NSec();
 
@@ -712,12 +714,195 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "run_timeout_precision")
                 params.run_timeout_precision =
                         params.ReadRunTimeoutPrecision(reg, section_name);
+            else if (*val == "netcache_api")
+                params.netcache_api_section_name =
+                        params.ReadNetCacheAPISectionName(reg, section_name);
         }
         params.qclass = qclass;
         queues[queue_name] = params;
     }
 
     return queues;
+}
+
+
+void  CQueueDataBase::x_ReadNCApiSections(const IRegistry &  reg,
+                                          string &           diff)
+{
+    // Read the new content
+    typedef map< string, map< string, string > >    ncapi_container;
+    ncapi_container     new_values;
+    list<string>        sections;
+    reg.EnumerateSections(&sections);
+
+    ITERATE(list<string>, it, sections) {
+        string              queue_or_class;
+        string              prefix;
+        const string &      section_name = *it;
+
+        NStr::SplitInTwo(section_name, "_", prefix, queue_or_class);
+        if (queue_or_class.empty())
+            continue;
+        if (NStr::CompareNocase(prefix, "qclass") != 0 &&
+            NStr::CompareNocase(prefix, "queue") != 0)
+            continue;
+        string      ref_section = reg.GetString(section_name,
+                                                "netcache_api", kEmptyStr);
+        if (ref_section.empty())
+            continue;
+
+        list<string>    entries;
+        reg.EnumerateEntries(ref_section, &entries);
+        map<string, string> values;
+        for (list<string>::const_iterator k = entries.begin();
+             k != entries.end(); ++k)
+            values[*k] = reg.GetString(ref_section, *k, kEmptyStr);
+
+        new_values[ref_section] = values;
+    }
+
+    // Identify those sections which were deleted
+    vector<string>  deleted;
+    for (ncapi_container::const_iterator  k(m_NetCacheApiSections.begin());
+         k != m_NetCacheApiSections.end(); ++k)
+        if (new_values.find(k->first) == new_values.end())
+            deleted.push_back(k->first);
+
+    if (!deleted.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"netcache_api_deleted\" [";
+        for (vector<string>::const_iterator  k(deleted.begin());
+             k != deleted.end(); ++k) {
+            if (k != deleted.begin())
+                diff += ", ";
+            diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+    // Identify those sections which were added
+    vector<string>  added;
+    for (ncapi_container::const_iterator  k(new_values.begin());
+         k != new_values.end(); ++k)
+        if (m_NetCacheApiSections.find(k->first) ==
+            m_NetCacheApiSections.end())
+            added.push_back(k->first);
+
+    if (!added.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"netcache_api_added\" [";
+        for (vector<string>::const_iterator  k(added.begin());
+            k != added.end(); ++k) {
+            if (k != added.begin())
+                diff += ", ";
+            diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+    // Deal with changed sections: what was added/deleted/modified
+    vector<string>  changed;
+    for (ncapi_container::const_iterator  k(new_values.begin());
+        k != new_values.end(); ++k) {
+        if (find(added.begin(), added.end(), k->first) != added.end())
+            continue;
+        if (new_values[k->first] == m_NetCacheApiSections[k->first])
+            continue;
+        changed.push_back(k->first);
+    }
+
+    if (!changed.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"netcache_api_changed\" [";
+        for (vector<string>::const_iterator  k(changed.begin());
+             k != changed.end(); ++k) {
+            if (k != changed.begin())
+                diff += ", ";
+            diff += "\"" + *k + "\" {" + x_DetectChangesInNCAPISection(
+                                            m_NetCacheApiSections[*k],
+                                            new_values[*k]) + "}";
+        }
+        diff += "]";
+    }
+
+    // Finally, save the new configuration
+    CFastMutexGuard     guard(m_NCApiSectionsGuard);
+    m_NetCacheApiSections = new_values;
+}
+
+
+string
+CQueueDataBase::x_DetectChangesInNCAPISection(
+                        const map<string, string> &  old_values,
+                        const map<string, string> &  new_values)
+{
+    string      diff;
+
+    // Deal with deleted items
+    vector<string>  deleted;
+    for (map<string, string>::const_iterator  k(old_values.begin());
+         k != old_values.end(); ++k)
+        if (new_values.find(k->first) == new_values.end())
+            deleted.push_back(k->first);
+    if (!deleted.empty()) {
+        diff += "\"deleted\" [";
+        for (vector<string>::const_iterator  k(deleted.begin());
+             k != deleted.end(); ++k) {
+            if (k != deleted.begin())
+                diff += ", ";
+            diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+    // Deal with added items
+    vector<string>  added;
+    for (map<string, string>::const_iterator  k(new_values.begin());
+         k != new_values.end(); ++k)
+        if (old_values.find(k->first) == old_values.end())
+            added.push_back(k->first);
+    if (!added.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"added\" [";
+        for (vector<string>::const_iterator  k(added.begin());
+             k != added.end(); ++k) {
+            if (k != added.begin())
+                diff += ", ";
+            diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+    // Deal with changed values
+    vector<string>  changed;
+    for (map<string, string>::const_iterator  k(new_values.begin());
+         k != new_values.end(); ++k) {
+        if (old_values.find(k->first) == old_values.end())
+            continue;
+        if (old_values.find(k->first)->second ==
+            new_values.find(k->first)->second)
+            continue;
+        changed.push_back(k->first);
+    }
+    if (!changed.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"changed\" {";
+        for (vector<string>::const_iterator  k(changed.begin());
+             k != changed.end(); ++k) {
+            if (k != changed.begin())
+                diff += ", ";
+            diff += "\"" + *k + "\" [\"" + old_values.find(*k)->second +
+                    "\", \"" + new_values.find(*k)->second + "\"]";
+        }
+        diff += "}";
+    }
+
+    return diff;
 }
 
 
@@ -1133,6 +1318,8 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
     // Validate basic consistency of the incoming configuration
     x_ValidateConfiguration(queues_from_ini, classes_from_ini);
 
+    x_ReadNCApiSections(reg, diff);
+
     // Check that the there are enough slots for the new queues if so
     // configured
     unsigned int        to_add_count = x_CountQueuesToAdd(queues_from_ini);
@@ -1529,6 +1716,18 @@ string CQueueDataBase::GetQueueInfo(void)
                   x_SingleQueueInfo(k).GetPrintableParameters(true, false);
     }
     return output;
+}
+
+
+map< string, string >
+CQueueDataBase::GetNCApiSection(const string &  section_name)
+{
+    CFastMutexGuard     guard(m_NCApiSectionsGuard);
+    map< string, map< string, string > >::const_iterator  found =
+        m_NetCacheApiSections.find(section_name);
+    if (found == m_NetCacheApiSections.end())
+        return map< string, string >();
+    return found->second;
 }
 
 

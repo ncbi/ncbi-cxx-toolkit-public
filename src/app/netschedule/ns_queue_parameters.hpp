@@ -75,6 +75,7 @@ struct SQueueParameters
     CNSPreciseTime  pending_timeout;
     CNSPreciseTime  max_pending_wait_timeout;
     string          description;
+    string          netcache_api_section_name;
 
     // This parameter is not reconfigurable
     CNSPreciseTime  run_timeout_precision;
@@ -117,6 +118,7 @@ struct SQueueParameters
     CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &);
     CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &, const string &);
     string          ReadDescription(const IRegistry &, const string &);
+    string          ReadNetCacheAPISectionName(const IRegistry &, const string &);
     CNSPreciseTime  ReadRunTimeoutPrecision(const IRegistry &, const string &);
 };
 

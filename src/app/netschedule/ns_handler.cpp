@@ -182,6 +182,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "GETP2",         { &CNetScheduleHandler::x_ProcessGetParam,
+                         eNS_Queue },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETC",          { &CNetScheduleHandler::x_ProcessGetConfiguration,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -2168,8 +2172,11 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
     if (reloaded) {
         const CNcbiRegistry &   reg = app->GetConfig();
-        string                  diff;
 
+        // It throws an exception if something is wrong
+        NS_ValidateConfigFile(reg);
+
+        string                  diff;
         m_Server->Configure(reg, diff);
 
         // Logging from the [server] section
@@ -2460,15 +2467,29 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
 
 void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
 {
-    unsigned int    max_input_size;
-    unsigned int    max_output_size;
+    unsigned int            max_input_size;
+    unsigned int            max_output_size;
+    map<string, string>     netcache_api;
 
-    q->GetMaxIOSizes(max_input_size, max_output_size);
-    x_WriteMessage("OK:max_input_size=" +
-                   NStr::NumericToString(max_input_size) + ";"
-                   "max_output_size=" +
-                   NStr::NumericToString(max_output_size) + ";" +
-                   NETSCHEDULED_FEATURES);
+    q->GetMaxIOSizesAndNCAPI(max_input_size, max_output_size, netcache_api);
+
+    if (m_CommandArguments.cmd == "GETP2") {
+        string  result("OK:max_input_size=" +
+                       NStr::NumericToString(max_input_size) + "&" +
+                       "max_output_size=" +
+                       NStr::NumericToString(max_output_size));
+        for (map<string, string>::const_iterator  k = netcache_api.begin();
+             k != netcache_api.end(); ++k)
+            result += "&nc::" + NStr::URLEncode(k->first) + "=" +
+                      NStr::URLEncode(k->second);
+        x_WriteMessage(result);
+    } else {
+        x_WriteMessage("OK:max_input_size=" +
+                       NStr::NumericToString(max_input_size) + ";"
+                       "max_output_size=" +
+                       NStr::NumericToString(max_output_size) + ";" +
+                       NETSCHEDULED_FEATURES);
+    }
     x_PrintCmdRequestStop();
 }
 

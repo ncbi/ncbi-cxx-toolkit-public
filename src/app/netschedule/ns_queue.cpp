@@ -37,6 +37,7 @@
 #include "ns_server.hpp"
 #include "ns_precise_time.hpp"
 #include "ns_rollback.hpp"
+#include "queue_database.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -77,6 +78,7 @@ CQueue::CQueue(CRequestExecutor&     executor,
                CQueueDataBase &      qdb)
   :
     m_Server(server),
+    m_QueueDB(qdb),
     m_RunTimeLine(NULL),
     m_Executor(executor),
     m_QueueName(queue_name),
@@ -217,6 +219,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_NotifLofreqMult       = params.notif_lofreq_mult;
     m_HandicapTimeout       = CNSPreciseTime(params.notif_handicap);
     m_DumpBufferSize        = params.dump_buffer_size;
+    m_NCAPISectionName      = params.netcache_api_section_name;
 
     m_ClientsRegistry.SetBlacklistTimeout(m_BlacklistTime);
 
@@ -244,13 +247,15 @@ CQueue::TParameterList CQueue::GetParameters() const
 }
 
 
-void CQueue::GetMaxIOSizes(unsigned int &  max_input_size,
-                           unsigned int &  max_output_size) const
+void CQueue::GetMaxIOSizesAndNCAPI(unsigned int &  max_input_size,
+                                   unsigned int &  max_output_size,
+                                   map<string, string> & netcache_api) const
 {
     CQueueParamAccessor     qp(*this);
 
     max_input_size = qp.GetMaxInputSize();
     max_output_size = qp.GetMaxOutputSize();
+    netcache_api = m_QueueDB.GetNCApiSection(m_NCAPISectionName);
     return;
 }
 

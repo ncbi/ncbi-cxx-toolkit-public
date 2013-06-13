@@ -162,6 +162,9 @@ int CNetScheduleDApp::Run(void)
     const CArgs&         args = GetArgs();
     const CNcbiRegistry& reg  = GetConfig();
 
+    // Throws an exception if there are hanging references
+    NS_ValidateConfigFile(reg);
+
     // attempt to get server gracefully shutdown on signal
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);

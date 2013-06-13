@@ -191,6 +191,8 @@ public:
     string GetQueueClassesInfo(void);
     string GetQueueInfo(void);
 
+    map< string, string >  GetNCApiSection(const string &  section_name);
+
 private:
     // No copy
     CQueueDataBase(const CQueueDataBase&);
@@ -251,6 +253,10 @@ private:
     size_t              m_PurgeStatusIndex;     // Scanned status index
     unsigned int        m_PurgeJobScanned;      // Scanned job ID within status
 
+    // netcache_api sections support
+    CFastMutex                              m_NCApiSectionsGuard;
+    map< string, map< string, string > >    m_NetCacheApiSections;
+
     bool x_PurgeQueue(CQueue &                queue,
                       size_t                  status_to_start,
                       size_t                  status_to_end,
@@ -283,6 +289,11 @@ private:
     TQueueParams  x_ReadIniFileQueueClassDescriptions(const IRegistry &   reg);
     TQueueParams  x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
                                                  const TQueueParams &  classes);
+    void  x_ReadNCApiSections(const IRegistry &  reg,
+                              string &           diff);
+    string  x_DetectChangesInNCAPISection(
+                                const map<string, string> &  old_values,
+                                const map<string, string> &  new_values);
 
     void  x_ValidateConfiguration(const TQueueParams &  queues_from_ini,
                                   const TQueueParams &  classes_from_ini) const;

@@ -377,3 +377,85 @@ class Scenario703( TestBase ):
             raise Exception( "Job key does not have second queue in it" )
 
         return True
+
+
+# NS 4.16.9 tests
+
+class Scenario800( TestBase ):
+    " Scenario800 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Make sure GETP2 provides the info from a config file"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 8 )
+
+        ns_client = self.getNetScheduleService( 'TEST1', 'scenario800' )
+        output = execAny( ns_client, 'GETP2' )
+        if "&nc::one=value+1" not in output:
+            raise Exception( "First value is not found in the output" )
+        if "&nc::two=value+2" not in output:
+            raise Exception( "Second value is not found in the output" )
+
+        output = execAny( ns_client, 'SETQUEUE TEST2' )
+        output = execAny( ns_client, 'GETP2' )
+        if "&nc::three=value+3" not in output:
+            raise Exception( "Third value is not found in the output" )
+        if "&nc::four=value+4" not in output:
+            raise Exception( "Fourth value is not found in the output" )
+
+        return True
+
+
+class Scenario801( TestBase ):
+    " Scenario801 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "RECO after changes in the netcache_api values/sections"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 8 )
+
+        self.ns.connect( 15 )
+        try:
+            self.ns.directLogin( '', 'netschedule_admin' )
+
+            self.ns.setConfig( "9" )
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != '"netcache_api_changed" ' \
+                             '["api2" ' \
+                             '{"deleted" ["four", "three"], ' \
+                              '"added" ["added1", "added2"]}]':
+                raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
+
+            ns_client = self.getNetScheduleService( 'TEST2', 'scenario801' )
+            output = execAny( ns_client, 'GETP2' )
+            if "&nc::added1=addval1" not in output:
+                raise Exception( "First changed value is not found in the output" )
+            if "&nc::added2=addval2" not in output:
+                raise Exception( "Second changed value is not found in the output" )
+        except Exception, exc:
+            self.ns.disconnect()
+            raise
+
+        self.ns.disconnect()
+        return True
+
+

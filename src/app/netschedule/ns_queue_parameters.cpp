@@ -80,6 +80,7 @@ SQueueParameters::SQueueParameters() :
     pending_timeout(default_pending_timeout),
     max_pending_wait_timeout(default_max_pending_wait_timeout),
     description(""),
+    netcache_api_section_name(""),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -111,6 +112,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     pending_timeout = ReadPendingTimeout(reg, sname);
     max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
     description = ReadDescription(reg, sname);
+    netcache_api_section_name = ReadNetCacheAPISectionName(reg, sname);
     run_timeout_precision = ReadRunTimeoutPrecision(reg, sname);
     return;
 }
@@ -224,6 +226,12 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 NS_FormatPreciseTimeAsSec(max_pending_wait_timeout),
                 NS_FormatPreciseTimeAsSec(other.max_pending_wait_timeout));
 
+    if (netcache_api_section_name != other.netcache_api_section_name)
+        AddParameterToDiffString(
+                diff, "netcache_api",
+                netcache_api_section_name,
+                other.netcache_api_section_name);
+
     if (include_description && description != other.description)
         AddParameterToDiffString(diff, "description",
                                  description,
@@ -297,13 +305,15 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
         prefix + "program_name" + suffix + NStr::URLEncode(program_name) + separator +
         prefix + "subm_hosts" + suffix + NStr::URLEncode(subm_hosts) + separator +
         prefix + "wnode_hosts" + suffix + NStr::URLEncode(wnode_hosts) + separator +
-        prefix + "description" + suffix + NStr::URLEncode(description);
+        prefix + "description" + suffix + NStr::URLEncode(description) + separator +
+        prefix + "netcache_api" + suffix + NStr::URLEncode(netcache_api_section_name);
     } else {
         result +=
         prefix + "program_name" + suffix + NStr::PrintableString(program_name) + separator +
         prefix + "subm_hosts" + suffix + NStr::PrintableString(subm_hosts) + separator +
         prefix + "wnode_hosts" + suffix + NStr::PrintableString(wnode_hosts) + separator +
-        prefix + "description" + suffix + NStr::PrintableString(description);
+        prefix + "description" + suffix + NStr::PrintableString(description) + separator +
+        prefix + "netcache_api" + suffix + NStr::PrintableString(netcache_api_section_name);
     }
 
     return result;
@@ -504,6 +514,12 @@ SQueueParameters::ReadDescription(const IRegistry &  reg,
     return reg.GetString(sname, "description", kEmptyStr);
 }
 
+string
+SQueueParameters::ReadNetCacheAPISectionName(const IRegistry &  reg,
+                                             const string &     sname)
+{
+    return reg.GetString(sname, "netcache_api", kEmptyStr);
+}
 
 CNSPreciseTime
 SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,

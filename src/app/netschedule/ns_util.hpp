@@ -34,11 +34,13 @@
 
 #include "ns_types.hpp"
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
 string  NS_FormatIPAddress(unsigned int ipaddr);
+void    NS_ValidateConfigFile(const CNcbiRegistry &  reg);
 
 
 END_NCBI_SCOPE
