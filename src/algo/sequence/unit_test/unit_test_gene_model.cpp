@@ -307,7 +307,6 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         AddFastaToScope(args["seqdata-in"].AsString(), scope);
     }
 
-    int count = 0;
     CSeq_annot actual_combined_annot;
     CSeq_annot::C_Data::TFtable &actual_combined_features = 
             actual_combined_annot.SetData().SetFtable();
@@ -359,7 +358,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             break;
         }
 
-        cerr << "Alignment "<< ++count <<  endl;
+        cerr << "Alignment "<< alignment <<  endl;
 
         BOOST_CHECK_NO_THROW(align->Validate(true));
 

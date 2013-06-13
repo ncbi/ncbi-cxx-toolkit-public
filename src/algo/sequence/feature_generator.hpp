@@ -91,7 +91,9 @@ struct CFeatureGenerator::SImplementation {
     void SetFeatureExceptions(objects::CSeq_feat& feat,
                             const objects::CSeq_align* align,
                             objects::CSeq_feat* cds_feat = NULL,
-                            const objects::CSeq_feat* cds_feat_on_mrna = NULL,
+                            const objects::CSeq_feat* cds_feat_on_query_mrna = NULL,
+                            const objects::CSeq_feat* cds_feat_on_transcribed_mrna = NULL,
+                            list<CRef<CSeq_loc> >* transcribed_mrna_seqloc_refs = NULL,
                             TSeqPos *clean_match_count = NULL);
     void SetPartialFlags(CRef<CSeq_feat> gene_feat,
                          CRef<CSeq_feat> mrna_feat,
@@ -160,46 +162,47 @@ private:
                                bool mark_transcript_deletions = true,
                                bool* has_gap = NULL,
                                bool* has_indel = NULL);
-    const CBioseq& x_CreateMrnaBioseq(const CSeq_align& align,
-                            CRef<CSeq_loc> loc,
-                            const CTime& time,
-                            size_t model_num,
-                            CBioseq_set& seqs,
-                            CSeq_id& rna_id,
-                            CRef<CSeq_feat> cdregion);
+    CRef<CSeq_id> x_CreateMrnaBioseq(const CSeq_align& align,
+                               CConstRef<CSeq_loc> loc,
+                               const CTime& time,
+                               size_t model_num,
+                               CBioseq_set& seqs,
+                               CConstRef<CSeq_feat> cds_feat_on_query_mrna,
+                               CRef<CSeq_feat>& cds_feat_on_transcribed_mrna);
     const CBioseq& x_CreateProteinBioseq(CSeq_loc* cds_loc,
-                               CSeq_feat& cds_on_mrna,
+                               CRef<CSeq_feat> cds_feat_on_transcribed_mrna,
+                               list<CRef<CSeq_loc> >& transcribed_mrna_seqloc_refs,
                                const CTime& time,
                                size_t model_num,
                                CBioseq_set& seqs);
-    CRef<CSeq_feat> x_CreateMrnaFeature(const CSeq_align& align,
-                                        CRef<CSeq_loc> loc,
-                                        const CTime& time,
-                                        size_t model_num,
-                                        CBioseq_set& seqs,
-                                        const CSeq_id& rna_id);
+    CRef<CSeq_feat> x_CreateMrnaFeature(CRef<CSeq_loc> loc,
+                                        const CSeq_id& query_rna_id,
+                                        CSeq_id& transcribed_rna_id,
+                                        CConstRef<CSeq_feat> cds_feat_on_query_mrna);
     void x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                              const CBioseq_Handle& handle,
                              SMapper& mapper,
                              CRef<CSeq_loc> loc,
                              const CSeq_id& genomic_id,
                              int gene_id = 0);
-    CRef<CSeq_feat> x_CreateCdsFeature(CRef<objects::CSeq_feat> cdregion_on_mrna,
+    CRef<CSeq_feat> x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
+                                       CRef<objects::CSeq_feat> cds_feat_on_transcribed_mrna,
+                                       list<CRef<CSeq_loc> >& transcribed_mrna_seqloc_refs,
                                        const CSeq_align& align,
-                                       CRef<CSeq_loc> loc,
+                                       CConstRef<CSeq_loc> loc,
                                        const CTime& time,
                                        size_t model_num,
                                        CBioseq_set& seqs,
                                        CSeq_loc_Mapper::TMapOptions opts);
     CRef<CSeq_feat> x_CreateNcRnaFeature(const objects::CSeq_feat* ncrnafeature_on_mrna,
                                          const CSeq_align& align,
-                                         CRef<CSeq_loc> loc,
+                                         CConstRef<CSeq_loc> loc,
                                          CSeq_loc_Mapper::TMapOptions opts);
-    CRef<CSeq_loc> x_PropagateFeatureLocation(const objects::CSeq_feat* ncrnafeature_on_mrna,
-                                              const CSeq_align& align,
-                                              CRef<CSeq_loc> loc,
-                                              CSeq_loc_Mapper::TMapOptions opts,
-                                              TSeqPos &offset);
+    CRef<CSeq_feat> x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
+                                const CSeq_align& align,
+                                CConstRef<CSeq_loc> loc,
+                                CSeq_loc_Mapper::TMapOptions opts,
+                                TSeqPos &offset);
     void x_CheckInconsistentDbxrefs(CConstRef<CSeq_feat> gene_feat,
                                     CConstRef<CSeq_feat> cds_feat);
     void x_CopyAdditionalFeatures(const CBioseq_Handle& handle,
@@ -211,7 +214,9 @@ private:
                                const CSeq_feat* cds_feat_on_mrna);
     void x_HandleCdsExceptions(CSeq_feat& feat,
                                const CSeq_align* align,
-                               const CSeq_feat* cds_feat_on_mrna,
+                               const CSeq_feat* cds_feat_on_query_mrna,
+                               const CSeq_feat* cds_feat_on_transcribed_mrna,
+                               list<CRef<CSeq_loc> >* transcribed_mrna_seqloc_refs,
                                TSeqPos *clean_match_count);
     void x_SetExceptText(CSeq_feat& feat,
                          const string &except_text);

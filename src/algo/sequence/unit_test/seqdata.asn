@@ -2632,10 +2632,11 @@ Bioseq-set ::= {
               },
               product whole gi 219879767,
               location int {
-                from 157,
+                from 2215,
                 to 4452,
                 strand plus,
-                id gi 219879766
+                id gi 219879766,
+                fuzz-from lim lt
               }
             }
           }
@@ -3199,9 +3200,10 @@ B9B66B88D7A38E63A38E2FF179A6DE867A1DF6F7D279DEF330EBA237B967A2F5D2F12488B5348D
               product whole gi 41053666,
               location int {
                 from 102,
-                to 1793,
+                to 1703,
                 strand plus,
-                id gi 41053665
+                id gi 41053665,
+                fuzz-to lim gt
               }
             }
           }
@@ -7201,7 +7203,10 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                 from 175,
                 to 3063,
                 strand plus,
-                id gi 119220582
+                id other {
+                  accession "NM_003715",
+                  version 2
+                }
               }
             }
           }
@@ -8056,7 +8061,10 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                 from 175,
                 to 3063,
                 strand plus,
-                id gi 119220582
+                id other {
+                  accession "NM_003715",
+                  version 2
+                }
               }
             }
           }
@@ -8852,7 +8860,10 @@ FD0BC12F4C41D23F2CB3EFCD3004CF3BD72FF0021502CE3C330FCFA4FFE7832BF0B48C323FC002
                 from 175,
                 to 3063,
                 strand plus,
-                id gi 119220582
+                id other {
+                  accession "NM_003715",
+                  version 2
+                }
               }
             }
           }
@@ -9677,7 +9688,10 @@ A2AA8AA0948B51FFB443D3FF3C3200C047CF52FD00'H
                 from 90,
                 to 2705,
                 strand plus,
-                id gi 256985143
+                id other {
+                  accession "NM_012133",
+                  version 4
+                }
               }
             }
           }
@@ -10444,7 +10458,10 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                 from 90,
                 to 2705,
                 strand plus,
-                id gi 256985143
+                id other {
+                  accession "NM_012133",
+                  version 4
+                }
               }
             }
           }
@@ -11245,7 +11262,10 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                 from 90,
                 to 2705,
                 strand plus,
-                id gi 256985143
+                id other {
+                  accession "NM_012133",
+                  version 4
+                }
               }
             }
           }
@@ -11821,7 +11841,10 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                 from 90,
                 to 2705,
                 strand plus,
-                id gi 256985143
+                id other {
+                  accession "NM_012133",
+                  version 4
+                }
               }
             }
           }
@@ -12101,7 +12124,10 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                 from 91,
                 to 783,
                 strand plus,
-                id gi 148231791
+                id other {
+                  accession "NM_205781",
+                  version 2
+                }
               }
             }
           }
@@ -15178,7 +15204,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_1_27"
+        local str "CDNA_27"
       },
       descr {
         molinfo {
@@ -15298,11 +15324,13 @@ Bioseq-set ::= {
                   id 11
                 }
               },
-              product whole local str "PROT_1_27",
+              product whole local str "PROT_27",
               location int {
-                from 0,
-                to 566,
-                id local str "CDNA_1_27"
+                from 84,
+                to 392,
+                id local str "CDNA_27",
+                fuzz-from lim lt,
+                fuzz-to lim gt
               }
             }
           }
@@ -15311,7 +15339,7 @@ Bioseq-set ::= {
     },
     seq {
       id {
-        local str "PROT_1_27"
+        local str "PROT_27"
       },
       descr {
         molinfo {
@@ -15334,7 +15362,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_2_28"
+        local str "CDNA_28"
       },
       descr {
         molinfo {
@@ -15417,11 +15445,11 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
                   id 11
                 }
               },
-              product whole local str "PROT_2_28",
+              product whole local str "PROT_28",
               location int {
                 from 0,
                 to 1142,
-                id local str "CDNA_2_28"
+                id local str "CDNA_28"
               }
             }
           }
@@ -15430,7 +15458,7 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
     },
     seq {
       id {
-        local str "PROT_2_28"
+        local str "PROT_28"
       },
       descr {
         molinfo {
@@ -15457,7 +15485,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_3_29"
+        local str "CDNA_29"
       },
       descr {
         molinfo {
@@ -15548,11 +15576,11 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
                   id 11
                 }
               },
-              product whole local str "PROT_3_29",
+              product whole local str "PROT_29",
               location int {
                 from 0,
                 to 2342,
-                id local str "CDNA_3_29"
+                id local str "CDNA_29"
               }
             }
           }
@@ -15561,7 +15589,7 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
     },
     seq {
       id {
-        local str "PROT_3_29"
+        local str "PROT_29"
       },
       descr {
         molinfo {
@@ -15593,7 +15621,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_4_30"
+        local str "CDNA_30"
       },
       descr {
         molinfo {
@@ -15678,11 +15706,11 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
                   id 11
                 }
               },
-              product whole local str "PROT_4_30",
+              product whole local str "PROT_30",
               location int {
                 from 0,
                 to 1142,
-                id local str "CDNA_4_30"
+                id local str "CDNA_30"
               }
             }
           }
@@ -15691,7 +15719,7 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
     },
     seq {
       id {
-        local str "PROT_4_30"
+        local str "PROT_30"
       },
       descr {
         molinfo {
@@ -15718,7 +15746,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_5_31"
+        local str "CDNA_31"
       },
       descr {
         molinfo {
@@ -15811,11 +15839,11 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
                   id 11
                 }
               },
-              product whole local str "PROT_5_31",
+              product whole local str "PROT_31",
               location int {
                 from 0,
                 to 2342,
-                id local str "CDNA_5_31"
+                id local str "CDNA_31"
               }
             }
           }
@@ -15824,7 +15852,7 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
     },
     seq {
       id {
-        local str "PROT_5_31"
+        local str "PROT_31"
       },
       descr {
         molinfo {
@@ -15856,7 +15884,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_6_32"
+        local str "CDNA_32"
       },
       descr {
         molinfo {
@@ -15926,17 +15954,17 @@ Bioseq-set ::= {
                     loc int {
                       from 366,
                       to 368,
-                      id local str "CDNA_6_32"
+                      id local str "CDNA_32"
                     },
                     aa ncbieaa 42
                   }
                 }
               },
-              product whole local str "PROT_6_32",
+              product whole local str "PROT_32",
               location int {
                 from 0,
                 to 368,
-                id local str "CDNA_6_32"
+                id local str "CDNA_32"
               }
             }
           }
@@ -15945,7 +15973,7 @@ Bioseq-set ::= {
     },
     seq {
       id {
-        local str "PROT_6_32"
+        local str "PROT_32"
       },
       descr {
         molinfo {
@@ -15968,7 +15996,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_7_33"
+        local str "CDNA_33"
       },
       descr {
         molinfo {
@@ -16038,17 +16066,17 @@ E18146D03F4F3E8E1C0C00255C58502C289F201ECEE149312C0374B42C51421C2040C0'H,
                     loc int {
                       from 762,
                       to 764,
-                      id local str "CDNA_7_33"
+                      id local str "CDNA_33"
                     },
                     aa ncbieaa 88
                   }
                 }
               },
-              product whole local str "PROT_7_33",
+              product whole local str "PROT_33",
               location int {
                 from 0,
                 to 866,
-                id local str "CDNA_7_33"
+                id local str "CDNA_33"
               }
             }
           }
@@ -16057,7 +16085,7 @@ E18146D03F4F3E8E1C0C00255C58502C289F201ECEE149312C0374B42C51421C2040C0'H,
     },
     seq {
       id {
-        local str "PROT_7_33"
+        local str "PROT_33"
       },
       descr {
         molinfo {
@@ -16083,7 +16111,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_8_34"
+        local str "CDNA_34"
       },
       descr {
         molinfo {
@@ -16153,17 +16181,17 @@ Bioseq-set ::= {
                     loc int {
                       from 0,
                       to 2,
-                      id local str "CDNA_8_34"
+                      id local str "CDNA_34"
                     },
                     aa ncbieaa 77
                   }
                 }
               },
-              product whole local str "PROT_8_34",
+              product whole local str "PROT_34",
               location int {
                 from 0,
                 to 416,
-                id local str "CDNA_8_34"
+                id local str "CDNA_34"
               }
             }
           }
@@ -16172,7 +16200,7 @@ Bioseq-set ::= {
     },
     seq {
       id {
-        local str "PROT_8_34"
+        local str "PROT_34"
       },
       descr {
         molinfo {
@@ -16196,7 +16224,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_9_35"
+        local str "CDNA_35"
       },
       descr {
         molinfo {
@@ -16261,11 +16289,11 @@ EBDEB81405B0C0BA416F0998C0B1980D9E018039787C064921BE09A43993AF82B1E564B3AB3EC3
                   id 11
                 }
               },
-              product whole local str "PROT_9_35",
+              product whole local str "PROT_35",
               location int {
                 from 0,
                 to 422,
-                id local str "CDNA_9_35",
+                id local str "CDNA_35",
                 fuzz-to lim gt
               }
             }
@@ -16275,7 +16303,7 @@ EBDEB81405B0C0BA416F0998C0B1980D9E018039787C064921BE09A43993AF82B1E564B3AB3EC3
     },
     seq {
       id {
-        local str "PROT_9_35"
+        local str "PROT_35"
       },
       descr {
         molinfo {
@@ -16299,7 +16327,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_10_36"
+        local str "CDNA_36"
       },
       descr {
         molinfo {
@@ -16386,11 +16414,13 @@ FB0D8A3C'H
                   id 11
                 }
               },
-              product whole local str "PROT_10_36",
+              product whole local str "PROT_36",
               location int {
-                from 0,
-                to 428,
-                id local str "CDNA_10_36"
+                from 3,
+                to 422,
+                id local str "CDNA_36",
+                fuzz-from lim lt,
+                fuzz-to lim gt
               }
             }
           }
@@ -16399,7 +16429,7 @@ FB0D8A3C'H
     },
     seq {
       id {
-        local str "PROT_10_36"
+        local str "PROT_36"
       },
       descr {
         molinfo {
@@ -16423,7 +16453,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_11_37"
+        local str "CDNA_37"
       },
       descr {
         molinfo {
@@ -16547,290 +16577,291 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                 code-break {
                   {
                     loc int {
-                      from 7,
-                      to 9,
-                      id local str "CDNA_11_37",
+                      from 9,
+                      to 11,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 76,
-                      to 78,
-                      id local str "CDNA_11_37",
+                      from 78,
+                      to 80,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 97,
-                      to 99,
-                      id local str "CDNA_11_37",
+                      from 99,
+                      to 101,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 118,
-                      to 120,
-                      id local str "CDNA_11_37",
+                      from 120,
+                      to 122,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 151,
-                      to 153,
-                      id local str "CDNA_11_37",
+                      from 153,
+                      to 155,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 196,
-                      to 198,
-                      id local str "CDNA_11_37",
+                      from 198,
+                      to 200,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 235,
-                      to 237,
-                      id local str "CDNA_11_37",
+                      from 237,
+                      to 239,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 277,
-                      to 279,
-                      id local str "CDNA_11_37",
+                      from 279,
+                      to 281,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 391,
-                      to 393,
-                      id local str "CDNA_11_37",
+                      from 393,
+                      to 395,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 445,
-                      to 447,
-                      id local str "CDNA_11_37",
+                      from 447,
+                      to 449,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 451,
-                      to 453,
-                      id local str "CDNA_11_37",
+                      from 453,
+                      to 455,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 475,
-                      to 477,
-                      id local str "CDNA_11_37",
+                      from 477,
+                      to 479,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 496,
-                      to 498,
-                      id local str "CDNA_11_37",
+                      from 498,
+                      to 500,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 508,
-                      to 510,
-                      id local str "CDNA_11_37",
+                      from 510,
+                      to 512,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 520,
-                      to 522,
-                      id local str "CDNA_11_37",
+                      from 522,
+                      to 524,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 529,
-                      to 531,
-                      id local str "CDNA_11_37",
+                      from 531,
+                      to 533,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 538,
-                      to 540,
-                      id local str "CDNA_11_37",
+                      from 540,
+                      to 542,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 556,
-                      to 558,
-                      id local str "CDNA_11_37",
+                      from 558,
+                      to 560,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 586,
-                      to 588,
-                      id local str "CDNA_11_37",
+                      from 588,
+                      to 590,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 601,
-                      to 603,
-                      id local str "CDNA_11_37",
+                      from 603,
+                      to 605,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 604,
-                      to 606,
-                      id local str "CDNA_11_37",
+                      from 606,
+                      to 608,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 625,
-                      to 627,
-                      id local str "CDNA_11_37",
+                      from 627,
+                      to 629,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 631,
-                      to 633,
-                      id local str "CDNA_11_37",
+                      from 633,
+                      to 635,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 721,
-                      to 723,
-                      id local str "CDNA_11_37",
+                      from 723,
+                      to 725,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 766,
-                      to 768,
-                      id local str "CDNA_11_37",
+                      from 768,
+                      to 770,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 778,
-                      to 780,
-                      id local str "CDNA_11_37",
+                      from 780,
+                      to 782,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 805,
-                      to 807,
-                      id local str "CDNA_11_37",
+                      from 807,
+                      to 809,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 826,
-                      to 828,
-                      id local str "CDNA_11_37",
+                      from 828,
+                      to 830,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 850,
-                      to 852,
-                      id local str "CDNA_11_37",
+                      from 852,
+                      to 854,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 865,
-                      to 867,
-                      id local str "CDNA_11_37",
+                      from 867,
+                      to 869,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   },
                   {
                     loc int {
-                      from 907,
-                      to 909,
-                      id local str "CDNA_11_37",
+                      from 909,
+                      to 911,
+                      id local str "CDNA_37",
                       fuzz-to lim gt
                     },
                     aa ncbieaa 88
                   }
                 }
               },
-              product whole local str "PROT_11_37",
+              product whole local str "PROT_37",
               location int {
-                from 0,
+                from 3,
                 to 2111,
-                id local str "CDNA_11_37",
+                id local str "CDNA_37",
+                fuzz-from lim lt,
                 fuzz-to lim gt
               }
             }
@@ -16840,7 +16871,7 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
     },
     seq {
       id {
-        local str "PROT_11_37"
+        local str "PROT_37"
       },
       descr {
         molinfo {
@@ -16871,7 +16902,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_12_38"
+        local str "CDNA_38"
       },
       descr {
         molinfo {
@@ -16957,11 +16988,11 @@ Bioseq-set ::= {
                   id 11
                 }
               },
-              product whole local str "PROT_12_38",
+              product whole local str "PROT_38",
               location int {
                 from 0,
                 to 932,
-                id local str "CDNA_12_38",
+                id local str "CDNA_38",
                 fuzz-from lim lt
               }
             }
@@ -16971,7 +17002,7 @@ Bioseq-set ::= {
     },
     seq {
       id {
-        local str "PROT_12_38"
+        local str "PROT_38"
       },
       descr {
         molinfo {
@@ -16997,7 +17028,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_13_39"
+        local str "CDNA_39"
       },
       descr {
         molinfo {
@@ -17086,11 +17117,12 @@ Bioseq-set ::= {
                   id 11
                 }
               },
-              product whole local str "PROT_13_39",
+              product whole local str "PROT_39",
               location int {
                 from 0,
-                to 932,
-                id local str "CDNA_13_39"
+                to 926,
+                id local str "CDNA_39",
+                fuzz-to lim gt
               }
             }
           }
@@ -17099,7 +17131,7 @@ Bioseq-set ::= {
     },
     seq {
       id {
-        local str "PROT_13_39"
+        local str "PROT_39"
       },
       descr {
         molinfo {
@@ -17469,7 +17501,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_14_43"
+        local str "CDNA_43"
       },
       descr {
         molinfo {
@@ -17553,17 +17585,17 @@ ECB844964226CF5432D24AE82A3DE6E339F141AB4484FC885E38A6FA0C882D8CA830'H,
                     loc int {
                       from 0,
                       to 2,
-                      id local str "CDNA_14_43"
+                      id local str "CDNA_43"
                     },
                     aa ncbieaa 77
                   }
                 }
               },
-              product whole local str "PROT_14_43",
+              product whole local str "PROT_43",
               location int {
                 from 0,
                 to 1175,
-                id local str "CDNA_14_43"
+                id local str "CDNA_43"
               }
             }
           }
@@ -17572,7 +17604,7 @@ ECB844964226CF5432D24AE82A3DE6E339F141AB4484FC885E38A6FA0C882D8CA830'H,
     },
     seq {
       id {
-        local str "PROT_14_43"
+        local str "PROT_43"
       },
       descr {
         molinfo {
@@ -17599,7 +17631,7 @@ Bioseq-set ::= {
   seq-set {
     seq {
       id {
-        local str "CDNA_15_44"
+        local str "CDNA_44"
       },
       descr {
         molinfo {
@@ -17683,17 +17715,17 @@ ECB844964226CF5432D24AE82A3DE6E339F141AB4484FC885E38A6FA0C882D8CA830'H,
                     loc int {
                       from 0,
                       to 2,
-                      id local str "CDNA_15_44"
+                      id local str "CDNA_44"
                     },
                     aa ncbieaa 77
                   }
                 }
               },
-              product whole local str "PROT_15_44",
+              product whole local str "PROT_44",
               location int {
                 from 0,
                 to 1175,
-                id local str "CDNA_15_44"
+                id local str "CDNA_44"
               }
             }
           }
@@ -17702,7 +17734,7 @@ ECB844964226CF5432D24AE82A3DE6E339F141AB4484FC885E38A6FA0C882D8CA830'H,
     },
     seq {
       id {
-        local str "PROT_15_44"
+        local str "PROT_44"
       },
       descr {
         molinfo {
@@ -17945,10 +17977,11 @@ FE7A033F5ECCC07DFD0DC430C0A7E2B01E7C'H
               },
               product whole gi 255958313,
               location int {
-                from 146,
+                from 218,
                 to 1060,
                 strand plus,
-                id gi 148277093
+                id gi 148277093,
+                fuzz-from lim lt
               },
               dbxref {
                 {
@@ -17979,6 +18012,503 @@ FE7A033F5ECCC07DFD0DC430C0A7E2B01E7C'H
 RGQPEPEVELNSEGEEVPPDDPPICVSDDNRLCTLASLKAVWHGQKLDFFKQAHEGGPAPNSEVVLPDGFQSQHILDY
 AQGNRPLVLNFGSCTUPPFMARMSAFQRLVTKYQRDVDFLIIYIEEAHPSDGWVTTDSPYIIPQHRSLEDRVSAARVL
 QQGAPGCALVLDTMANSSSSAYGAYFERLYVIQSGTIMYQGGRGPDGYQVSELRTWLERYDEQLHGARPRRV"
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 22749458
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 2666,
+        ext delta {
+          literal {
+            length 2532,
+            seq-data ncbi4na '442141842242284482214281824842824481882148888224
+414214242828882828442224244142448222424422414812244188222414888444144282842888
+228228814412221288842248228444484428421488184822424284241228282284288284284284
+228284848222448228448222441222444142414421114482122244148848421414122244214484
+284444422244441818142881112281182228222422284182821448414212282244482848222214
+414812122842848822148414121414214144284182144414128414422122882241442284484414
+412142442822888284488212121284428422144212141111888418414888888284414184282821
+481422214212828284122214282882822212822812442242284818422214212422282181882118
+442284882828244284241412882818444411828448414444884418412122284424418882844421
+214282284414141484882224284284212221214812142882222228412812284282842282821242
+884422821828122418442828284214222888444412821222242242282242284214181122244122
+284484428422241422888484214442284414128441141118484482142411424288114484224484
+828411442842142214428284184248282182442848222284842244444482222821288184222842
+214442882842282112484488248442848282142142144441284414228412844442112818284418
+448282284182284428418114282214442222888822888414284124422414822188444484114182
+824414448884184812284214411112148424114484822422214484888214414842442222222412
+224484228422242112248241422224224222244411414424442244284844824184484122414414
+414244222124124422421442122112284212244284484844414282242414248284422244184244
+442882844422244284822284124484842441412828242184421424412422824284414424424222
+842844122441422444244442244812884224221484482444442822224422414214482112112222
+414282114484412422824442222418482224121244244248244281214282244424422124422141
+1841111244224212844412124122844124442FFFFF421418414418422142442828441444441214
+214818421418412844184428444428484428222221422244228228244228221812228228141144
+418448828444442111441441448442148422242812112214442244142144148444444421828188
+448888212122211122182282188282822282821422284422284288441228241811244444144448
+422281421821411444882184422288822228228222222821428444228444414414824114444428
+421414144481414114441288842144841184428444422221118221441418888218214144844484
+448488212118188818888882188844811844414444442284444481888188814414441484844888
+228814114481814828221422282811442844442844841821422221121414111184144148881414
+884214284444114444888411441148844114844441444484444421828448282141118441221428
+441842144421444412841444842884148144184841412882184442284448828488414888888214
+818211888288111221118888111111112114484444444842821828248412282842212221218228
+821211128221848882148488841482218488818828421118111844811848188441'H
+          },
+          literal {
+            length 134
+          }
+        },
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              score {
+                {
+                  id str "matches",
+                  value int 2526
+                },
+                {
+                  id str "identity",
+                  value real { 997630331753555, 10, -15 }
+                },
+                {
+                  id str "splices",
+                  value int 18
+                },
+                {
+                  id str "consensus_splices",
+                  value int 16
+                },
+                {
+                  id str "product_coverage",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "exon_identity",
+                  value real { 997630331753555, 10, -15 }
+                },
+                {
+                  id str "pct_identity_gap",
+                  value real { 997630331753554, 10, -13 }
+                },
+                {
+                  id str "num_ident",
+                  value int 2526
+                },
+                {
+                  id str "num_mismatch",
+                  value int 1
+                },
+                {
+                  id str "pct_identity_ungap",
+                  value real { 999604273842501, 10, -13 }
+                },
+                {
+                  id str "gap_count",
+                  value int 1
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 998025276461295, 10, -13 }
+                },
+                {
+                  id str "pct_coverage_hiqual",
+                  value real { 998025276461295, 10, -13 }
+                },
+                {
+                  id str "weighted_identity",
+                  value real { 993073277433467, 10, -15 }
+                },
+                {
+                  id str "rank",
+                  value int 1
+                },
+                {
+                  id str "for_remapping",
+                  value int 1
+                }
+              },
+              segs spliced {
+                product-id gi 22749458,
+                genomic-id gi 157812046,
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 333,
+                    genomic-start 745508,
+                    genomic-end 745841,
+                    parts {
+                      match 334
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 334, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 334,
+                    product-end nucpos 492,
+                    genomic-start 746510,
+                    genomic-end 746668,
+                    parts {
+                      match 159
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 159, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 493,
+                    product-end nucpos 815,
+                    genomic-start 746981,
+                    genomic-end 747303,
+                    parts {
+                      match 323
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 323, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 816,
+                    product-end nucpos 896,
+                    genomic-start 748110,
+                    genomic-end 748190,
+                    parts {
+                      match 81
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 81, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 897,
+                    product-end nucpos 1059,
+                    genomic-start 748878,
+                    genomic-end 749040,
+                    parts {
+                      match 163
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 163, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 1060,
+                    product-end nucpos 1190,
+                    genomic-start 750662,
+                    genomic-end 750792,
+                    parts {
+                      match 131
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 131, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 1191,
+                    product-end nucpos 1337,
+                    genomic-start 750954,
+                    genomic-end 751100,
+                    parts {
+                      match 147
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 147, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 1338,
+                    product-end nucpos 1477,
+                    genomic-start 751201,
+                    genomic-end 751340,
+                    parts {
+                      match 140
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 14, 10, 1 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 1478,
+                    product-end nucpos 1644,
+                    genomic-start 751443,
+                    genomic-end 751609,
+                    parts {
+                      match 167
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 167, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "NN"
+                    }
+                  },
+                  {
+                    product-start nucpos 1645,
+                    product-end nucpos 2531,
+                    genomic-start 752339,
+                    genomic-end 753220,
+                    parts {
+                      product-ins 5,
+                      match 2,
+                      mismatch 1,
+                      match 879
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 879955993652344, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 993235625704622, 10, -15 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "TT"
+                    }
+                  }
+                },
+                poly-a 2532,
+                product-length 2666
+              },
+              id {
+                str "625e57ba-7cc2-4e7e-b02d-8109d2202546"
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                },
+                {
+                  type str "placement_data",
+                  data {
+                    {
+                      label str "gc_asm_id",
+                      data str "GCF_000002125.1"
+                    },
+                    {
+                      label str "gc_asm_chain_id",
+                      data int 25
+                    },
+                    {
+                      label str "placement_id",
+                      data str "3e3832ad-ebbc-46e4-b3f6-8f89c8d86c01"
+                    },
+                    {
+                      label str "mappable_ids",
+                      data strs {
+                        "3e3832ad-ebbc-46e4-b3f6-8f89c8d86c01"
+                      }
+                    }
+                  }
+                },
+                {
+                  type str "lxr_data",
+                  data {
+                    {
+                      label str "accver",
+                      data str "ref|NM_152742.1|"
+                    },
+                    {
+                      label str "locus_ids",
+                      data ints {
+                        221914
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole gi 22749459,
+              location int {
+                from 168,
+                to 1907,
+                strand plus,
+                id gi 22749458
+              },
+              dbxref {
+                {
+                  db "CCDS",
+                  tag str "CCDS5689.1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 22749459
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 579,
+        seq-data iupacaa "MSALRPLLLLLLPLCPGPGPGPGSEAKVTRSCAETRQVLGARGYSLNLIPPA
+LISGEHLRVCPQEYTCCSSETEQRLIRETEATFRGLVEDSGSFLVHTLAARHRKFDEFFLEMLSVAQHSLTQLFSHSY
+GRLYAQHALIFNGLFSRLRDFYGESGEGLDDTLADFWAQLLERVFPLLHPQYSFPPDYLLCLSRLASSTDGSLQPFGD
+SPRRLRLQITRTLVAARAFVQGLETGRNVVSEALKVPVSEGCSQALMRLIGCPLCRGVPSLMPCQGFCLNVVRGCLSS
+RGLEPDWGNYLDGLLILADKLQGPFSFELTAESIGVKISEGLMYLQENSAKVSAQVFQECGPPDPVPARNRRAPPPRE
+EAGRLWSMVTEEERPTTAAGTNLHRLVWELRERLARMRGFWARLSLTVCGDSRMAADASLEAAPCWTGAGRGRYLPPV
+VGGSPAEQVNNPELKVDASGPDVPTRRRRLQLRAATARMKTAALGHDLDGXXADEDASGSGGGQQYADDWMAGAVAPP
+ARPPRPPYPPRRDGSGGKGGGGSARYNQGRSRSGGASIGFHTQTILILSLSALALLGPR"
       }
     }
   }

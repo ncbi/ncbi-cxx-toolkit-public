@@ -1598,7 +1598,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "dynamin2-like"
+        ext name "dynamin 2b"
       },
       partial TRUE,
       except TRUE,
@@ -1634,14 +1634,11 @@ Seq-annot ::= {
       data gene {
         locus "smg6"
       },
-      partial TRUE,
       location int {
         from 195029,
         to 196310,
         strand minus,
-        id gi 258441149,
-        fuzz-from lim lt,
-        fuzz-to lim gt
+        id gi 258441149
       }
     },
     {
@@ -1650,16 +1647,13 @@ Seq-annot ::= {
         ext name "partial mRNA for SMG6 homolog nonsense mediated mRNA decay
  factor (C. elegans)cds (smg6 gene)"
       },
-      partial TRUE,
       product whole gi 240248230,
       location packed-int {
         {
           from 195029,
           to 196310,
           strand minus,
-          id gi 258441149,
-          fuzz-from lim lt,
-          fuzz-to lim gt
+          id gi 258441149
         }
       }
     },
@@ -1668,126 +1662,15 @@ Seq-annot ::= {
         frame two,
         code {
           id 1
-        },
-        code-break {
-          {
-            loc int {
-              from 195279,
-              to 195281,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 195342,
-              to 195344,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 195417,
-              to 195419,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 195450,
-              to 195452,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 195612,
-              to 195614,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 195669,
-              to 195671,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 196074,
-              to 196076,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 196095,
-              to 196097,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 196104,
-              to 196106,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 196233,
-              to 196235,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 196266,
-              to 196268,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 196293,
-              to 196295,
-              strand plus,
-              id gi 258441149
-            },
-            aa ncbieaa 88
-          }
         }
       },
       partial TRUE,
-      except TRUE,
       product whole gi 240248231,
       location packed-int {
         {
           from 195029,
           to 196310,
-          strand minus,
+          strand plus,
           id gi 258441149,
           fuzz-from lim lt,
           fuzz-to lim gt
@@ -1815,8 +1698,7 @@ Seq-annot ::= {
           db "ZFIN",
           tag str "ZDB-GENE-081107-52"
         }
-      },
-      except-text "mismatches in translation"
+      }
     },
     {
       data rna {
@@ -4284,10 +4166,6 @@ Seq-annot ::= {
           tag id 2237
         },
         {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
           db "MIM",
           tag id 604355
         }
@@ -4782,10 +4660,6 @@ Seq-annot ::= {
         {
           db "HGNC",
           tag id 2237
-        },
-        {
-          db "HPRD",
-          tag str "05074"
         },
         {
           db "MIM",
@@ -7266,7 +7140,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_1_27",
+      product whole local str "CDNA_27",
       location packed-int {
         {
           from 122448,
@@ -7286,7 +7160,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      product whole local str "PROT_1_27",
+      product whole local str "PROT_27",
       location packed-int {
         {
           from 122448,
@@ -7296,6 +7170,15 @@ Seq-annot ::= {
           fuzz-from lim lt,
           fuzz-to lim gt
         }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "DNA-invertase"
+            }
+          }
+        }
       }
     },
     {
@@ -7322,7 +7205,7 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_2_28",
+      product whole local str "CDNA_28",
       location packed-int {
         {
           from 0,
@@ -7344,7 +7227,7 @@ Seq-annot ::= {
           id 11
         }
       },
-      product whole local str "PROT_2_28",
+      product whole local str "PROT_28",
       location packed-int {
         {
           from 0,
@@ -7359,6 +7242,15 @@ Seq-annot ::= {
           strand minus,
           id gi 251791816,
           fuzz-to lim circle
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "WD-40 repeat-containing protein"
+            }
+          }
         }
       }
     },
@@ -7386,7 +7278,7 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_3_29",
+      product whole local str "CDNA_29",
       location packed-int {
         {
           from 4690,
@@ -7408,7 +7300,7 @@ Seq-annot ::= {
           id 11
         }
       },
-      product whole local str "PROT_3_29",
+      product whole local str "PROT_29",
       location packed-int {
         {
           from 4690,
@@ -7430,7 +7322,7 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_4_30",
+      product whole local str "CDNA_30",
       location packed-int {
         {
           from 0,
@@ -7452,7 +7344,7 @@ Seq-annot ::= {
           id 11
         }
       },
-      product whole local str "PROT_4_30",
+      product whole local str "PROT_30",
       location packed-int {
         {
           from 0,
@@ -7468,13 +7360,22 @@ Seq-annot ::= {
           id gi 251791816,
           fuzz-to lim circle
         }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "WD-40 repeat-containing protein"
+            }
+          }
+        }
       }
     },
     {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_5_31",
+      product whole local str "CDNA_31",
       location packed-int {
         {
           from 4690,
@@ -7496,7 +7397,7 @@ Seq-annot ::= {
           id 11
         }
       },
-      product whole local str "PROT_5_31",
+      product whole local str "PROT_31",
       location packed-int {
         {
           from 4690,
@@ -7528,7 +7429,7 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_6_32",
+      product whole local str "CDNA_32",
       location packed-int {
         {
           from 60162,
@@ -7555,7 +7456,7 @@ Seq-annot ::= {
           }
         }
       },
-      product whole local str "PROT_6_32",
+      product whole local str "PROT_32",
       location packed-int {
         {
           from 60162,
@@ -7569,7 +7470,7 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_7_33",
+      product whole local str "CDNA_33",
       location packed-int {
         {
           from 206,
@@ -7596,7 +7497,7 @@ Seq-annot ::= {
           }
         }
       },
-      product whole local str "PROT_7_33",
+      product whole local str "PROT_33",
       location packed-int {
         {
           from 206,
@@ -7620,7 +7521,7 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "CDNA_8_34",
+      product whole local str "CDNA_34",
       location packed-int {
         {
           from 1160627,
@@ -7647,7 +7548,7 @@ Seq-annot ::= {
           }
         }
       },
-      product whole local str "PROT_8_34",
+      product whole local str "PROT_34",
       location packed-int {
         {
           from 1160627,
@@ -7674,7 +7575,7 @@ Seq-annot ::= {
         type mRNA
       },
       partial TRUE,
-      product whole local str "CDNA_9_35",
+      product whole local str "CDNA_35",
       location packed-int {
         {
           from 118805,
@@ -7692,7 +7593,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      product whole local str "PROT_9_35",
+      product whole local str "PROT_35",
       location packed-int {
         {
           from 118805,
@@ -7709,7 +7610,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_10_36",
+      product whole local str "CDNA_36",
       location packed-int {
         {
           from 118806,
@@ -7730,7 +7631,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      product whole local str "PROT_10_36",
+      product whole local str "PROT_36",
       location packed-int {
         {
           from 118806,
@@ -7761,7 +7662,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_11_37",
+      product whole local str "CDNA_37",
       location packed-int {
         {
           from 154294,
@@ -7789,8 +7690,8 @@ Seq-annot ::= {
         code-break {
           {
             loc int {
-              from 155979,
-              to 155981,
+              from 155977,
+              to 155979,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7799,8 +7700,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155910,
-              to 155912,
+              from 155908,
+              to 155910,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7809,8 +7710,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155889,
-              to 155891,
+              from 155887,
+              to 155889,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7819,8 +7720,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155868,
-              to 155870,
+              from 155866,
+              to 155868,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7829,8 +7730,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155835,
-              to 155837,
+              from 155833,
+              to 155835,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7839,8 +7740,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155790,
-              to 155792,
+              from 155788,
+              to 155790,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7849,8 +7750,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155751,
-              to 155753,
+              from 155749,
+              to 155751,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7859,8 +7760,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155709,
-              to 155711,
+              from 155707,
+              to 155709,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7869,8 +7770,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155595,
-              to 155597,
+              from 155593,
+              to 155595,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7879,8 +7780,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155541,
-              to 155543,
+              from 155539,
+              to 155541,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7889,8 +7790,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155535,
-              to 155537,
+              from 155533,
+              to 155535,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7899,8 +7800,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155511,
-              to 155513,
+              from 155509,
+              to 155511,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7909,8 +7810,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155490,
-              to 155492,
+              from 155488,
+              to 155490,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7919,8 +7820,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155478,
-              to 155480,
+              from 155476,
+              to 155478,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7929,8 +7830,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155466,
-              to 155468,
+              from 155464,
+              to 155466,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7939,8 +7840,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155457,
-              to 155459,
+              from 155455,
+              to 155457,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7949,8 +7850,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155448,
-              to 155450,
+              from 155446,
+              to 155448,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7959,8 +7860,8 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155430,
-              to 155432,
+              from 155428,
+              to 155430,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
@@ -7969,311 +7870,11 @@ Seq-annot ::= {
           },
           {
             loc int {
-              from 155400,
-              to 155402,
+              from 155398,
+              to 155400,
               strand minus,
               id gi 346722692,
               fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155385,
-              to 155387,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155382,
-              to 155384,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155361,
-              to 155363,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155355,
-              to 155357,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155265,
-              to 155267,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155220,
-              to 155222,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155208,
-              to 155210,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155181,
-              to 155183,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155160,
-              to 155162,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155136,
-              to 155138,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155121,
-              to 155123,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155079,
-              to 155081,
-              strand minus,
-              id gi 346722692,
-              fuzz-from lim lt
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155980,
-              to 155982,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155911,
-              to 155913,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155890,
-              to 155892,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155869,
-              to 155871,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155836,
-              to 155838,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155791,
-              to 155793,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155752,
-              to 155754,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155710,
-              to 155712,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155596,
-              to 155598,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155542,
-              to 155544,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155536,
-              to 155538,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155512,
-              to 155514,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155491,
-              to 155493,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155479,
-              to 155481,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155467,
-              to 155469,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155458,
-              to 155460,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155449,
-              to 155451,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155431,
-              to 155433,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155401,
-              to 155403,
-              strand minus,
-              id gi 346722692
-            },
-            aa ncbieaa 88
-          },
-          {
-            loc int {
-              from 155386,
-              to 155388,
-              strand minus,
-              id gi 346722692
             },
             aa ncbieaa 88
           },
@@ -8282,104 +7883,125 @@ Seq-annot ::= {
               from 155383,
               to 155385,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155362,
-              to 155364,
+              from 155380,
+              to 155382,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155356,
-              to 155358,
+              from 155359,
+              to 155361,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155266,
-              to 155268,
+              from 155353,
+              to 155355,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155221,
-              to 155223,
+              from 155263,
+              to 155265,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155209,
-              to 155211,
+              from 155218,
+              to 155220,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155182,
-              to 155184,
+              from 155206,
+              to 155208,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155161,
-              to 155163,
+              from 155179,
+              to 155181,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155137,
-              to 155139,
+              from 155158,
+              to 155160,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155122,
-              to 155124,
+              from 155134,
+              to 155136,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 155080,
-              to 155082,
+              from 155119,
+              to 155121,
               strand minus,
-              id gi 346722692
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155077,
+              to 155079,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
             },
             aa ncbieaa 88
           }
         }
       },
       partial TRUE,
-      product whole local str "PROT_11_37",
+      product whole local str "PROT_37",
       location packed-int {
         {
           from 154294,
@@ -8416,7 +8038,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_12_38",
+      product whole local str "CDNA_38",
       location packed-int {
         {
           from 0,
@@ -8436,7 +8058,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      product whole local str "PROT_12_38",
+      product whole local str "PROT_38",
       location packed-int {
         {
           from 0,
@@ -8445,6 +8067,15 @@ Seq-annot ::= {
           id gi 323511446,
           fuzz-from lim lt,
           fuzz-to lim gt
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "prohead core protein"
+            }
+          }
         }
       }
     },
@@ -8454,7 +8085,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_13_39",
+      product whole local str "CDNA_39",
       location packed-int {
         {
           from 1,
@@ -8473,7 +8104,7 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      product whole local str "PROT_13_39",
+      product whole local str "PROT_39",
       location packed-int {
         {
           from 1,
@@ -8481,6 +8112,15 @@ Seq-annot ::= {
           strand minus,
           id gi 323511446,
           fuzz-from lim lt
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "prohead core protein"
+            }
+          }
         }
       }
     },
@@ -8709,14 +8349,13 @@ Seq-annot ::= {
         },
         code-break {
           {
-            loc packed-int {
-              {
-                from 9267,
-                to 9267,
+            loc mix {
+              pnt {
+                point 9267,
                 strand plus,
                 id gi 312123950
               },
-              {
+              int {
                 from 10483,
                 to 10484,
                 strand plus,
@@ -8780,6 +8419,514 @@ Seq-annot ::= {
               "lysocardiolipin acyltransferase 1"
             }
           }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 443565,
+        to 562955,
+        strand plus,
+        id gi 312124926,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      product whole local id 1,
+      location packed-int {
+        {
+          from 443565,
+          to 444058,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 493174,
+          to 493248,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 501115,
+          to 501186,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 562887,
+          to 562955,
+          strand plus,
+          id gi 312124926,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      product whole local id 2,
+      location packed-int {
+        {
+          from 443811,
+          to 444058,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 493174,
+          to 493248,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 501115,
+          to 501186,
+          strand plus,
+          id gi 312124926
+        },
+        {
+          from 562887,
+          to 562955,
+          strand plus,
+          id gi 312124926,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_43",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 0,
+              to 2,
+              strand plus,
+              id gi 385243207
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      product whole local str "PROT_43",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "hypothetical protein"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_44",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 0,
+              to 2,
+              strand plus,
+              id gi 385243207
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      product whole local str "PROT_44",
+      location packed-int {
+        {
+          from 0,
+          to 1175,
+          strand plus,
+          id gi 385243207
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "hypothetical protein"
+            }
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "DIO3",
+        desc "deiodinase, iodothyronine, type III",
+        syn {
+          "5DIII",
+          "D3",
+          "DIOIII",
+          "TXDI3"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 2669779,
+        to 2671661,
+        strand minus,
+        id gi 157812221,
+        fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 1735
+        },
+        {
+          db "HGNC",
+          tag id 2885
+        },
+        {
+          db "MIM",
+          tag id 601038
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "deiodinase, iodothyronine, type III"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript aligns at 89% coverage compared to this
+ genomic sequence",
+      product whole gi 148277093,
+      location packed-int {
+        {
+          from 2669779,
+          to 2671661,
+          strand minus,
+          id gi 157812221,
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_001362.3"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        frame three,
+        code {
+          id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 2671225,
+              to 2671227,
+              strand minus,
+              id gi 157812221
+            },
+            aa ncbieaa 85
+          }
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 1 substitution and aligns at 92%
+ coverage compared to this genomic sequence",
+      product whole gi 255958313,
+      location packed-int {
+        {
+          from 2670820,
+          to 2671661,
+          strand minus,
+          id gi 157812221,
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_001353.4"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "type III iodothyronine deiodinase"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS41992.2"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data gene {
+        locus "GPC2",
+        desc "glypican 2"
+      },
+      location int {
+        from 745508,
+        to 753220,
+        strand plus,
+        id gi 157812046
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 221914
+        },
+        {
+          db "HGNC",
+          tag id 4450
+        },
+        {
+          db "HPRD",
+          tag id 17051
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "glypican 2"
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 1 substitution and 1 indel compared
+ to this genomic sequence",
+      product whole gi 22749458,
+      location packed-int {
+        {
+          from 745508,
+          to 745841,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 746510,
+          to 746668,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 746981,
+          to 747303,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 748110,
+          to 748190,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 748878,
+          to 749040,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 750662,
+          to 750792,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 750954,
+          to 751100,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 751201,
+          to 751340,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 751443,
+          to 751609,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 752339,
+          to 753220,
+          strand plus,
+          id gi 157812046
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_152742.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      except TRUE,
+      product whole gi 22749459,
+      location packed-int {
+        {
+          from 745676,
+          to 745841,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 746510,
+          to 746668,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 746981,
+          to 747303,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 748110,
+          to 748190,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 748878,
+          to 749040,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 750662,
+          to 750792,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 750954,
+          to 751100,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 751201,
+          to 751340,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 751443,
+          to 751609,
+          strand plus,
+          id gi 157812046
+        },
+        {
+          from 752339,
+          to 752596,
+          strand plus,
+          id gi 157812046
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_689955.1"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "glypican-2 precursor"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS5689.1"
         }
       },
       except-text "annotated by transcript or proteomic data"

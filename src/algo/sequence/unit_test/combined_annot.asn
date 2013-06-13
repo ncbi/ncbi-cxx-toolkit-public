@@ -28,10 +28,6 @@ Seq-annot ::= {
           tag id 2237
         },
         {
-          db "HPRD",
-          tag str "05074"
-        },
-        {
           db "MIM",
           tag id 604355
         }
