@@ -127,7 +127,7 @@ private:
     void PrintDiffs(TBiosampleFieldDiffList& diffs);
     void PrintTable(CRef<CSeq_table> table);
     CRef<CScope> BuildScope(void);
-
+	bool x_IsReportableStructuredComment(const CSeqdesc& desc);
 
     CRef<CObjectManager> m_ObjMgr;
     auto_ptr<CObjectIStream> m_In;
@@ -145,6 +145,8 @@ private:
     };
 
     int m_Mode;
+	string m_StructuredCommentPrefix;
+
     TSrcTableColumnList m_SrcReportFields;
 	TStructuredCommentTableColumnList m_StructuredCommentReportFields;
 };
@@ -152,7 +154,7 @@ private:
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs)
+    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs), m_StructuredCommentPrefix("")
 {
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
@@ -199,6 +201,9 @@ void CBiosampleChkApp::Init(void)
         CArgDescriptions::eInteger, "1");
     CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_generate_biosample);
     arg_desc->SetConstraint("m", constraint);
+
+	arg_desc->AddOptionalKey(
+		"P", "Prefix", "StructuredCommentPrefix", CArgDescriptions::eString);
 
 
     // Program description
@@ -394,6 +399,10 @@ int CBiosampleChkApp::Run(void)
     }
             
     m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
+	m_StructuredCommentPrefix = args["P"] ? args["P"].AsString() : "";
+	if (!NStr::IsBlank(m_StructuredCommentPrefix) && !NStr::StartsWith(m_StructuredCommentPrefix, "##")) {
+		m_StructuredCommentPrefix = "##" + m_StructuredCommentPrefix;
+	}
 
     m_Mode = args["m"].AsInteger();
     m_SrcReportFields.clear();
@@ -594,6 +603,34 @@ void CBiosampleChkApp::PrintResults(TBiosampleFieldDiffList & diffs)
 }
 
 
+static const string kStructuredCommentPrefix = "StructuredCommentPrefix";
+static const string kStructuredCommentSuffix = "StructuredCommentSufix";
+
+bool CBiosampleChkApp::x_IsReportableStructuredComment(const CSeqdesc& desc)
+{
+	bool rval = false;
+
+	if (!desc.IsUser() || !desc.GetUser().IsSetType() || !desc.GetUser().GetType().IsStr()
+		|| !NStr::Equal(desc.GetUser().GetType().GetStr(), "StructuredComment")){
+		rval = false;
+	} else if (NStr::IsBlank (m_StructuredCommentPrefix)) {
+		rval = true;
+	} else {
+		try {
+			const CUser_field& field = desc.GetUser().GetField(kStructuredCommentPrefix);
+			if (field.IsSetData() && field.GetData().IsStr()) {
+				string prefix = field.GetData().GetStr();				
+				if (NStr::StartsWith(prefix, m_StructuredCommentPrefix)) {
+				    rval = true;
+				}
+			}
+		} catch (...) {
+		}
+	}
+	return rval;
+}
+
+
 const string kSequenceID = "Sequence ID";
 
 // This function is for generating a table of biosample values for a bioseq
@@ -609,7 +646,7 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, CRef<CSeq_table> t
 
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
 	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
-	while (comm_desc_ci && !NStr::Equal(comm_desc_ci->GetUser().GetType().GetStr(), "StructuredComment")) {
+	while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
 		++comm_desc_ci;
 	}
     if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0) {
@@ -637,11 +674,16 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, CRef<CSeq_table> t
 			AddValueToTable(table, (*it)->GetLabel(), (*it)->GetFromBioSource(src), row);
 		}
 	}
-	if (comm_desc_ci) {
+	while (comm_desc_ci) {
 		const CUser_object& usr = comm_desc_ci->GetUser();
 		TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
 	    ITERATE(TStructuredCommentTableColumnList, it, comm_fields) {
-			AddValueToTable(table, (*it)->GetLabel(), (*it)->GetFromComment(usr), row);
+			string label = (*it)->GetLabel();
+            AddValueToTable(table, (*it)->GetLabel(), (*it)->GetFromComment(usr), row);
+		}
+		++comm_desc_ci;
+		while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
+			++comm_desc_ci;
 		}
 	}
 	int num_rows = (int)row  + 1;
@@ -664,10 +706,7 @@ TBiosampleFieldDiffList CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
     
     vector<string> biosample_ids = GetBiosampleIDs(bh);
 
-    if (m_Mode == e_generate_biosample && biosample_ids.size() > 0) {
-        // for generate mode, do not collect if already has biosample ID
-        return diffs;
-    } else if (m_Mode == e_report_diffs && biosample_ids.size() == 0) {
+    if (biosample_ids.size() == 0) {
         // for report mode, do not report if no biosample ID
         return diffs;
     }
@@ -675,44 +714,23 @@ TBiosampleFieldDiffList CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
     string sequence_id;
     bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
 
-    switch (m_Mode) {
-        case e_report_diffs:
-            ITERATE(vector<string>, id, biosample_ids) {
-                CRef<CSeq_descr> descr = GetBiosampleData(*id);
-                if (descr) {
-                    ITERATE(CSeq_descr::Tdata, it, descr->Get()) {
-                        if ((*it)->IsSource()) {
-							if (src_desc_ci) {
-                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, src_desc_ci->GetSource(), (*it)->GetSource());
-							    diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
-							}
-                        } else if ((*it)->IsUser()) {
-							if (comm_desc_ci) {
-                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, comm_desc_ci->GetUser(), (*it)->GetUser());
-                                diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
-							}
-						}
-                    }
-                }
+    ITERATE(vector<string>, id, biosample_ids) {
+        CRef<CSeq_descr> descr = GetBiosampleData(*id);
+        if (descr) {
+            ITERATE(CSeq_descr::Tdata, it, descr->Get()) {
+                if ((*it)->IsSource()) {
+					if (src_desc_ci) {
+                        TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, src_desc_ci->GetSource(), (*it)->GetSource());
+						diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
+					}
+                } else if ((*it)->IsUser()) {
+					if (comm_desc_ci) {
+                        TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, comm_desc_ci->GetUser(), (*it)->GetUser());
+                        diffs.insert(diffs.end(), these_diffs.begin(), these_diffs.end());
+					}
+				}
             }
-            break;
-        case e_generate_biosample:
-			if (src_desc_ci) {
-				ITERATE(TSrcTableColumnList, field, m_SrcReportFields) {
-					string src_val = (*field)->GetFromBioSource(src_desc_ci->GetSource());
-					CRef<CBiosampleFieldDiff> one_diff(new CBiosampleFieldDiff(sequence_id, "", (*field)->GetLabel(), src_val, ""));
-					diffs.push_back(one_diff);
-				}
-			}
-			if (comm_desc_ci) {
-				ITERATE(TStructuredCommentTableColumnList, field, m_StructuredCommentReportFields) {
-					string src_val = (*field)->GetFromComment(comm_desc_ci->GetUser());
-					CRef<CBiosampleFieldDiff> one_diff(new CBiosampleFieldDiff(sequence_id, "", (*field)->GetLabel(), src_val, ""));
-					diffs.push_back(one_diff);
-				}
-			}
-
-            break;
+        }
     }
 
     return diffs;
