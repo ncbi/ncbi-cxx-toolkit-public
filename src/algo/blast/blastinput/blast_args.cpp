@@ -2059,11 +2059,11 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 		return;
 	}
 
-    const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
 
     // number of threads
     arg_desc.SetCurrentGroup("Miscellaneous options");
 #ifdef NCBI_THREADS
+    const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads (CPUs) to use in the BLAST search",
                            CArgDescriptions::eInteger, 
