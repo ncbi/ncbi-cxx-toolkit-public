@@ -90,97 +90,6 @@ SNetStorageAPIImpl::SNetStorageAPIImpl(
 {
 }
 
-struct SNetFileInfoImpl : public CObject
-{
-    SNetFileInfoImpl(ENetFileLocation location, const CNetFileID& file_id,
-            Uint8 file_size, CJsonNode::TInstance storage_specific_info);
-
-    ENetFileLocation m_Location;
-    CJsonNode m_FileIDInfo;
-    Uint8 m_FileSize;
-    CJsonNode m_StorageSpecificInfo;
-};
-
-static const char* s_NCTimeFormat = "M/D/Y h:m:s.r";
-static const char* s_ISO8601TimeFormat = "Y-M-DTh:m:s.r";
-
-SNetFileInfoImpl::SNetFileInfoImpl(ENetFileLocation location,
-        const CNetFileID& file_id, Uint8 file_size,
-        CJsonNode::TInstance storage_specific_info) :
-    m_Location(location),
-    m_FileIDInfo(file_id.ToJSON()),
-    m_FileSize(file_size),
-    m_StorageSpecificInfo(storage_specific_info)
-{
-}
-
-ENetFileLocation CNetFileInfo::GetLocation() const
-{
-    return m_Impl->m_Location;
-}
-
-CJsonNode CNetFileInfo::GetFileIDInfo() const
-{
-    return m_Impl->m_FileIDInfo;
-}
-
-CTime CNetFileInfo::GetCreationTime() const
-{
-    // TODO return a valid creation time
-    return CTime();
-}
-
-Uint8 CNetFileInfo::GetSize()
-{
-    return m_Impl->m_FileSize;
-}
-
-CJsonNode CNetFileInfo::GetStorageSpecificInfo() const
-{
-    return m_Impl->m_StorageSpecificInfo;
-}
-
-CJsonNode CNetFileInfo::ToJSON()
-{
-    CJsonNode root(CJsonNode::NewObjectNode());
-
-    CJsonNode ctime;
-
-    switch (m_Impl->m_Location) {
-    case eNFL_Unknown:
-    case eNFL_NotFound:
-        root.SetString("Location", "NotFound");
-        break;
-    case eNFL_NetCache:
-        root.SetString("Location", "NetCache");
-        root.SetInteger("Size", (Int8) m_Impl->m_FileSize);
-        if (m_Impl->m_StorageSpecificInfo) {
-            ctime = m_Impl->m_StorageSpecificInfo.GetByKeyOrNull("Write time");
-            if (ctime)
-                ctime = CJsonNode::NewStringNode(CTime(ctime.AsString(),
-                        s_NCTimeFormat).AsString(s_ISO8601TimeFormat));
-        }
-        break;
-    case eNFL_FileTrack:
-        root.SetString("Location", "FileTrack");
-        root.SetInteger("Size", (Int8) m_Impl->m_FileSize);
-        if (m_Impl->m_StorageSpecificInfo)
-            // No time format conversion required for FileTrack.
-            ctime = m_Impl->m_StorageSpecificInfo.GetByKeyOrNull("ctime");
-    }
-
-    if (ctime)
-        root.SetByKey("CreationTime", ctime);
-
-    if (m_Impl->m_FileIDInfo)
-        root.SetByKey("FileIDInfo", m_Impl->m_FileIDInfo);
-
-    if (m_Impl->m_StorageSpecificInfo)
-        root.SetByKey("StorageSpecificInfo", m_Impl->m_StorageSpecificInfo);
-
-    return root;
-}
-
 enum ENetFileIOStatus {
     eNFS_Closed,
     eNFS_WritingToNetCache,
@@ -256,18 +165,19 @@ struct SNetFileAPIImpl : public SNetFileImpl
     bool s_TryReadLocation(ENetFileLocation location, ERW_Result* rw_res,
             char* buf, size_t count, size_t* bytes_read);
 
-    ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
+    ERW_Result BeginOrContinueReading(
+            void* buf, size_t count, size_t* bytes_read = 0);
 
     ERW_Result Write(const void* buf,
             size_t count, size_t* bytes_written = 0);
 
-    bool s_TryGetFileSizeFromLocation(ENetFileLocation location,
+    bool x_TryGetFileSizeFromLocation(ENetFileLocation location,
             Uint8* file_size);
 
-    bool s_TryGetInfoFromLocation(ENetFileLocation location,
+    bool x_TryGetInfoFromLocation(ENetFileLocation location,
             CNetFileInfo* file_info);
 
-    bool s_ExistsAtLocation(ENetFileLocation location);
+    bool x_ExistsAtLocation(ENetFileLocation location);
 
     bool Exists();
 
@@ -458,7 +368,8 @@ bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
     return false;
 }
 
-ERW_Result SNetFileAPIImpl::Read(void* buf, size_t count, size_t* bytes_read)
+ERW_Result SNetFileAPIImpl::BeginOrContinueReading(
+        void* buf, size_t count, size_t* bytes_read)
 {
     switch (m_IOStatus) {
     case eNFS_Closed:
@@ -569,7 +480,7 @@ ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
     return eRW_Success;
 }
 
-bool SNetFileAPIImpl::s_TryGetFileSizeFromLocation(ENetFileLocation location,
+bool SNetFileAPIImpl::x_TryGetFileSizeFromLocation(ENetFileLocation location,
         Uint8* file_size)
 {
     try {
@@ -610,7 +521,7 @@ Uint8 SNetFileAPIImpl::GetSize()
             const ENetFileLocation* location = GetPossibleFileLocations();
 
             do
-                if (s_TryGetFileSizeFromLocation(*location, &file_size))
+                if (x_TryGetFileSizeFromLocation(*location, &file_size))
                     return file_size;
             while (*++location != eNFL_NotFound);
         }
@@ -623,7 +534,7 @@ Uint8 SNetFileAPIImpl::GetSize()
         {
             Uint8 file_size;
 
-            if (s_TryGetFileSizeFromLocation(m_CurrentLocation, &file_size))
+            if (x_TryGetFileSizeFromLocation(m_CurrentLocation, &file_size))
                 return file_size;
         }
     }
@@ -633,7 +544,7 @@ Uint8 SNetFileAPIImpl::GetSize()
             "\" could not be found in any of the designated locations.");
 }
 
-bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
+bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
         CNetFileInfo* file_info)
 {
     if (location == eNFL_NetCache) {
@@ -645,7 +556,8 @@ bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
 
         try {
             CNetServerMultilineCmdOutput output = m_NetICacheClient.GetBlobInfo(
-                    m_FileID.GetUniqueKey(), 0, kEmptyStr);
+                    m_FileID.GetUniqueKey(), 0, kEmptyStr,
+                    nc_server_to_use = ic_server);
 
             CJsonNode blob_info = CJsonNode::NewObjectNode();
             string line;
@@ -671,7 +583,7 @@ bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
                 blob_size = m_NetICacheClient.GetSize(
                         m_FileID.GetUniqueKey(), 0, kEmptyStr);
 
-            *file_info = new SNetFileInfoImpl(eNFL_NetCache,
+            *file_info = CNetFileInfo(eNFL_NetCache,
                     m_FileID, blob_size, blob_info);
 
             m_CurrentLocation = eNFL_NetCache;
@@ -692,7 +604,7 @@ bool SNetFileAPIImpl::s_TryGetInfoFromLocation(ENetFileLocation location,
             if (size_node)
                 file_size = (Uint8) size_node.AsInteger();
 
-            *file_info = new SNetFileInfoImpl(eNFL_FileTrack,
+            *file_info = CNetFileInfo(eNFL_FileTrack,
                     m_FileID, file_size, file_info_node);
 
             m_CurrentLocation = eNFL_FileTrack;
@@ -715,7 +627,7 @@ CNetFileInfo SNetFileAPIImpl::GetInfo()
             const ENetFileLocation* location = GetPossibleFileLocations();
 
             do
-                if (s_TryGetInfoFromLocation(*location, &file_info))
+                if (x_TryGetInfoFromLocation(*location, &file_info))
                     return file_info;
             while (*++location != eNFL_NotFound);
         }
@@ -727,15 +639,15 @@ CNetFileInfo SNetFileAPIImpl::GetInfo()
     default:
         {
             CNetFileInfo file_info;
-            if (s_TryGetInfoFromLocation(m_CurrentLocation, &file_info))
+            if (x_TryGetInfoFromLocation(m_CurrentLocation, &file_info))
                 return file_info;
         }
     }
 
-    return new SNetFileInfoImpl(eNFL_NotFound, m_FileID, 0, NULL);
+    return CNetFileInfo(eNFL_NotFound, m_FileID, 0, NULL);
 }
 
-bool SNetFileAPIImpl::s_ExistsAtLocation(ENetFileLocation location)
+bool SNetFileAPIImpl::x_ExistsAtLocation(ENetFileLocation location)
 {
     if (location == eNFL_NetCache) {
         CNetServer ic_server;
@@ -780,7 +692,7 @@ bool SNetFileAPIImpl::Exists()
             const ENetFileLocation* location = GetPossibleFileLocations();
 
             do
-                if (s_ExistsAtLocation(*location))
+                if (x_ExistsAtLocation(*location))
                     return true;
             while (*++location != eNFL_NotFound);
         }
@@ -790,7 +702,7 @@ bool SNetFileAPIImpl::Exists()
         break;
 
     default:
-        return s_ExistsAtLocation(m_CurrentLocation);
+        return x_ExistsAtLocation(m_CurrentLocation);
     }
 
     return false;
@@ -843,7 +755,7 @@ size_t SNetFileAPIImpl::Read(void* buffer, size_t buf_size)
 {
     size_t bytes_read;
 
-    Read(buffer, buf_size, &bytes_read);
+    BeginOrContinueReading(buffer, buf_size, &bytes_read);
 
     return bytes_read;
 }
@@ -915,14 +827,15 @@ string SNetStorageAPIImpl::MoveFile(SNetFileAPIImpl* orig_file,
     // Use Read() to detect the current location of orig_file.
     size_t bytes_read;
 
-    orig_file->Read(buffer, sizeof(buffer), &bytes_read);
+    orig_file->BeginOrContinueReading(buffer, sizeof(buffer), &bytes_read);
 
     if (orig_file->m_CurrentLocation != new_file->m_CurrentLocation) {
         for (;;) {
             new_file->Write(buffer, bytes_read, NULL);
             if (orig_file->Eof())
                 break;
-            orig_file->Read(buffer, sizeof(buffer), &bytes_read);
+            orig_file->BeginOrContinueReading(
+                    buffer, sizeof(buffer), &bytes_read);
         }
 
         new_file->Close();

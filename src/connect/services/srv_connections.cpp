@@ -602,21 +602,18 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
     return conn;
 }
 
-void SNetServerImpl::ConnectAndExec(const string& cmd,
-        CNetServer::SExecResult& exec_result, STimeout* timeout,
-        INetServerExecListener* exec_listener)
+void SNetServerImpl::TryExec(INetServerExecHandler& handler, STimeout* timeout)
 {
     m_ServerInPool->CheckIfThrottled();
+
+    CNetServerConnection conn;
 
     // Silently reconnect if the connection was taken
     // from the pool and it was closed by the server
     // due to inactivity.
-    while ((exec_result.conn = GetConnectionFromPool()) != NULL) {
+    while ((conn = GetConnectionFromPool()) != NULL) {
         try {
-            if (exec_listener != NULL)
-                exec_listener->OnExec(exec_result.conn, cmd);
-
-            exec_result.response = exec_result.conn.Exec(cmd, timeout);
+            handler.Exec(conn, timeout);
             return;
         }
         catch (CNetSrvConnException& e) {
@@ -632,18 +629,53 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     }
 
     try {
-        exec_result.conn = Connect(timeout);
-
-        if (exec_listener != NULL)
-            exec_listener->OnExec(exec_result.conn, cmd);
-
-        exec_result.response = exec_result.conn.Exec(cmd, timeout);
+        handler.Exec(Connect(timeout), timeout);
     }
     catch (CNetSrvConnException&) {
         m_ServerInPool->AdjustThrottlingParameters(
                 SNetServerInPool::eCOR_Failure);
         throw;
     }
+}
+
+class CNetServerExecHandler : public INetServerExecHandler
+{
+public:
+    CNetServerExecHandler(const string& cmd,
+            CNetServer::SExecResult& exec_result,
+            INetServerExecListener* exec_listener) :
+        m_Cmd(cmd),
+        m_ExecResult(exec_result),
+        m_ExecListener(exec_listener)
+    {
+    }
+
+    virtual void Exec(CNetServerConnection::TInstance conn_impl,
+            STimeout* timeout);
+
+    string m_Cmd;
+    CNetServer::SExecResult& m_ExecResult;
+    INetServerExecListener* m_ExecListener;
+};
+
+void CNetServerExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
+        STimeout* timeout)
+{
+    m_ExecResult.conn = conn_impl;
+
+    if (m_ExecListener != NULL)
+        m_ExecListener->OnExec(m_ExecResult.conn, m_Cmd);
+
+    m_ExecResult.response = m_ExecResult.conn.Exec(m_Cmd, timeout);
+}
+
+void SNetServerImpl::ConnectAndExec(const string& cmd,
+        CNetServer::SExecResult& exec_result, STimeout* timeout,
+        INetServerExecListener* exec_listener)
+{
+    CNetServerExecHandler exec_handler(cmd, exec_result, exec_listener);
+
+    TryExec(exec_handler, timeout);
 }
 
 void SNetServerInPool::AdjustThrottlingParameters(EConnOpResult op_result)

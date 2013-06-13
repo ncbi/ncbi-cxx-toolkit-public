@@ -388,13 +388,11 @@ static const char* const s_NetScheduleConfigSections[] = {
     NULL
 };
 
-static const string s_NetScheduleAPIName("NetScheduleAPI");
-
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
         const string& queue_name) :
-    m_Service(new SNetServiceImpl(s_NetScheduleAPIName,
+    m_Service(new SNetServiceImpl("NetScheduleAPI",
         client_name, new CNetScheduleServerListener)),
     m_Queue(queue_name)
 {

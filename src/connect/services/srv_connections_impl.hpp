@@ -102,6 +102,15 @@ public:
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server) = 0;
 };
 
+class INetServerExecHandler
+{
+public:
+    virtual ~INetServerExecHandler() {}
+
+    virtual void Exec(CNetServerConnection::TInstance conn_impl,
+            STimeout* timeout) = 0;
+};
+
 class INetServerExecListener
 {
 public:
@@ -182,6 +191,8 @@ struct SNetServerImpl : public CObject
     CNetServerConnection Connect(STimeout* timeout);
 
     CNetServerConnection GetConnectionFromPool();
+
+    void TryExec(INetServerExecHandler& handler, STimeout* timeout = NULL);
 
     void ConnectAndExec(const string& cmd,
             CNetServer::SExecResult& exec_result,

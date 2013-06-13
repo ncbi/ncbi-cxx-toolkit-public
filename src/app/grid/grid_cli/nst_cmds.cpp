@@ -46,12 +46,14 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd()
             IsOptionExplicitlySet(eCache, OPTION_N(1)))
     {
     case OPTION_N(0) + OPTION_N(1):
-        m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
-                m_Opts.cache_name, m_Opts.auth);
+        if (!IsOptionSet(eNetStorage)) {
+            m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
+                    m_Opts.cache_name, m_Opts.auth);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (IsOptionExplicitlySet(eAllowXSiteConn))
-            m_NetICacheClient.GetService().AllowXSiteConnections();
+            if (IsOptionExplicitlySet(eAllowXSiteConn))
+                m_NetICacheClient.GetService().AllowXSiteConnections();
 #endif
+        }
         break;
 
     case OPTION_N(0):
@@ -62,17 +64,44 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd()
         NCBI_THROW(CArgException, eNoArg, "'--" CACHE_OPTION
                 "' requires '--" NETCACHE_OPTION "'.");
     }
+
+    if (!IsOptionSet(eNetStorage))
+        m_NetStorage = g_CreateNetStorage(m_NetICacheClient);
+    else {
+        string init_string = "nst=" + NStr::URLEncode(m_Opts.nst_service);
+
+        if (IsOptionExplicitlySet(eNetCache)) {
+            init_string += "&nc=";
+            init_string += NStr::URLEncode(m_Opts.nc_service);
+            init_string += "&cache=";
+            init_string += NStr::URLEncode(m_Opts.cache_name);
+        }
+
+        string auth;
+
+        if (IsOptionSet(eAuth)) {
+            auth = m_Opts.auth;
+        } else {
+            string user, host;
+            g_GetUserAndHost(&user, &host);
+            auth = user + '@';
+            auth += host;
+        }
+
+        init_string += "&client=";
+        init_string += NStr::URLEncode(auth);
+
+        m_NetStorage = CNetStorage(init_string, m_Opts.netstorage_flags);
+    }
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
-
     CNetFile netfile(IsOptionSet(eOptionalID) ?
-            netstorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
-            netstorage.Create(m_Opts.netstorage_flags));
+            m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
+            m_NetStorage.Create(m_Opts.netstorage_flags));
 
     if (IsOptionSet(eInput))
         netfile.Write(m_Opts.input);
@@ -100,9 +129,7 @@ int CGridCommandLineInterfaceApp::Cmd_Download()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
-
-    CNetFile netfile(netstorage.Open(m_Opts.id, m_Opts.netstorage_flags));
+    CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
 
     char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
@@ -121,9 +148,7 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
-
-    PrintLine(netstorage.Relocate(m_Opts.id, m_Opts.netstorage_flags));
+    PrintLine(m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags));
 
     return 0;
 }
@@ -188,9 +213,7 @@ int CGridCommandLineInterfaceApp::Cmd_NetFileInfo()
 {
     SetUp_NetStorageCmd();
 
-    CNetStorage netstorage(g_CreateNetStorage(m_NetICacheClient));
-
-    CNetFile netfile(netstorage.Open(m_Opts.id, m_Opts.netstorage_flags));
+    CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
 
     g_PrintJSON(stdout, netfile.GetInfo().ToJSON());
 

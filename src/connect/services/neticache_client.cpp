@@ -725,12 +725,17 @@ void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
 }
 
 CNetServerMultilineCmdOutput CNetICacheClient::GetBlobInfo(const string& key,
-        int version, const string& subkey)
+        int version, const string& subkey,
+        const CNamedParameterList* optional)
 {
+    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
+
+    parameters.LoadNamedParameters(optional);
+
     CNetServerMultilineCmdOutput output(m_Impl->StickToServerAndExec(
         m_Impl->MakeStdCmd("GETMETA",
             s_KeyVersionSubkeyToBlobID(key, version, subkey),
-                &m_Impl->m_DefaultParameters)));
+                &parameters), parameters.GetServerToUse()));
 
     output->SetNetCacheCompatMode();
 

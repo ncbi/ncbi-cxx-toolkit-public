@@ -302,7 +302,8 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// Return a CNetServerMultilineCmdOutput object for reading
     /// meta information about the specified blob.
     CNetServerMultilineCmdOutput GetBlobInfo(const string& key,
-            int version, const string& subkey);
+            int version, const string& subkey,
+            const CNamedParameterList* optional = NULL);
 
     /// Print meta information about the specified blob.
     void PrintBlobInfo(const string& key, int version, const string& subkey);

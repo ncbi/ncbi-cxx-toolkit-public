@@ -105,7 +105,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::GetNextEvent()
 
         m_State = eReadChunk;
         ++m_Offset;
-        if (--m_BufferSize == 0)
+        if (--m_BufferSize == 0 && m_LengthAcc > 0)
             return eEndOfBuffer;
         ++m_Buffer;
 

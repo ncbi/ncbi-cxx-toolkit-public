@@ -46,6 +46,7 @@ struct SNetFileImpl;            ///< @internal
 struct SNetStorageImpl;         ///< @internal
 struct SNetStorageByKeyImpl;    ///< @internal
 struct SNetFileInfoImpl;        ///< @internal
+class  CNetFileID;              ///< @internal
 
 
 /** @addtogroup NetStorage
@@ -62,13 +63,14 @@ public:
         eInvalidArg,    ///< Caller passed invalid arguments to the API
         eNotExists,     ///< Illegal op applied to non-existent file
         eIOError,       ///< I/O error encountered while performing an op
+        eServerError,   ///< NetStorage server error
         eTimeout        ///< Timeout encountered while performing an op
     };
     virtual const char* GetErrCodeString() const;
     NCBI_EXCEPTION_DEFAULT(CNetStorageException, CException);
 };
 
-/// Enumeration that 
+/// Enumeration that indicates the current location of the file.
 enum ENetFileLocation {
     eNFL_Unknown,
     eNFL_NotFound,
@@ -81,6 +83,13 @@ enum ENetFileLocation {
 class NCBI_XCONNECT_EXPORT CNetFileInfo
 {
     NCBI_NET_COMPONENT(NetFileInfo);
+
+    /// Construct a CNetFileInfo object.
+    CNetFileInfo(ENetFileLocation location, const CNetFileID& file_id,
+            Uint8 file_size, CJsonNode::TInstance storage_specific_info);
+
+    /// Load file information from a JSON object.
+    CNetFileInfo(const CJsonNode& file_info_node);
 
     /// Return a ENetFileLocation constant that corresponds to the
     /// storage back-end where the file currently resides. If the

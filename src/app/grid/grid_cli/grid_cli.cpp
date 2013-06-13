@@ -142,6 +142,10 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eEnableMirroring),
         "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
 
+    {OPT_DEF(eOptionWithParameter, eNetStorage),
+        "nst|" NETSTORAGE_OPTION, "NetStorage service name "
+            "or server address.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eFileKey),
         FILE_KEY_OPTION, "Uniqie user-defined key to address the file. "
             "Requires '--" NAMESPACE_OPTION "'.", {-1}},
@@ -440,6 +444,13 @@ struct SCommandCategoryDefinition {
     "ICache mode requires blob ID to be specified in the " \
     "following format: \"key,version,subkey\"."
 
+#define ABOUT_NETSTORAGE_OPTION \
+    "\n\nIf a NetStorage service (or server) is specified " \
+    "via the '--" NETSTORAGE_OPTION "' option, that service " \
+    "or server will be used as a gateway to the actual storage " \
+    "back-end (e.g. NetCache). If the option is not specified, " \
+    "a direct connection to the storage back-end is established."
+
 #define WN_NOT_NOTIFIED_DISCLAIMER \
     "Worker nodes that may have already " \
     "started job processing will not be notified."
@@ -537,8 +548,9 @@ struct SCommandDefinition {
         "specified combination of the '--" PERSISTENT_OPTION "', '--"
         FAST_STORAGE_OPTION "', '--" MOVABLE_OPTION "', and '--"
         CACHEABLE_OPTION "' options. After the data has been written, "
-        "the generated file ID is printed to the standard output.",
-        {eOptionalID, ePersistent, eFastStorage,
+        "the generated file ID is printed to the standard output."
+        ABOUT_NETSTORAGE_OPTION,
+        {eOptionalID, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable,
             eInput, eInputFile, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -546,8 +558,9 @@ struct SCommandDefinition {
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
         "download", "Retrieve a NetStorage file.",
         "Read the file identified by ID and send its contents to the "
-        "standard output (or to the specified output file).",
-        {eID, eNetCache, eCache, eOffset, eSize,
+        "standard output (or to the specified output file)."
+        ABOUT_NETSTORAGE_OPTION,
+        {eID, eNetStorage, eNetCache, eCache, eOffset, eSize,
             eOutputFile, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -558,8 +571,9 @@ struct SCommandDefinition {
         FAST_STORAGE_OPTION "', and '--" CACHEABLE_OPTION "' options. "
         "After the data has been transferred, a new file ID "
         "will be generated, which can be used instead of the old "
-        "one for faster file access.",
-        {eID, ePersistent, eFastStorage, eNetCache, eCache,
+        "one for faster file access."
+        ABOUT_NETSTORAGE_OPTION,
+        {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eCache,
             eTTL, eMovable, eCacheable, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -577,8 +591,9 @@ struct SCommandDefinition {
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_NetFileInfo,
         "netfileinfo", "Print information about a NetFile ID.",
         "Some file IDs may require additional options "
-        "to hint at the current file location.",
-        {eID, eNetCache, eCache, eLoginToken, eAuth,
+        "to hint at the current file location."
+        ABOUT_NETSTORAGE_OPTION,
+        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1176,6 +1191,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eTTL:
                 m_Opts.ttl = NStr::StringToUInt(opt_value);
+                break;
+            case eNetStorage:
+                m_Opts.nst_service = opt_value;
                 break;
             case eNamespace:
                 m_Opts.app_domain = opt_value;

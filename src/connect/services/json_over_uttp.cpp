@@ -1210,7 +1210,7 @@ bool CJsonOverUTTPWriter::CompleteMessage()
             break;
 
         case CJsonNode::eObject:
-            if (!m_CurrentOutputNode.m_Iterator) {
+            if (!m_CurrentOutputNode.m_Iterator) { // TODO surround in a loop
                 x_PopNode();
                 if (!m_UTTPWriter.SendControlSymbol('}'))
                     return false;
@@ -1260,7 +1260,8 @@ bool CJsonOverUTTPWriter::x_SendNode(const CJsonNode& node)
 
     case CJsonNode::eString:
         {
-            string str(node.AsString());
+            const string& str(static_cast<const SJsonStringNodeImpl*>(
+                (const SJsonNodeImpl*) node)->m_String);
             return m_UTTPWriter.SendChunk(str.data(), str.length(), false);
         }
 

@@ -127,10 +127,10 @@ SFileTrackRequest::SFileTrackRequest(
     m_FileTrackAPI(storage_impl),
     m_FileID(file_id),
     m_URL(url),
-    m_HTTPStatus(0),
-    m_ContentLength((size_t) -1),
     m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
-            NULL, fHTTP_AutoReconnect, &storage_impl->m_WriteTimeout)
+            NULL, fHTTP_AutoReconnect, &storage_impl->m_WriteTimeout),
+    m_HTTPStatus(0),
+    m_ContentLength((size_t) -1)
 {
     m_HTTPStream.SetTimeout(eIO_Close, &storage_impl->m_ReadTimeout);
     m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->m_ReadTimeout);

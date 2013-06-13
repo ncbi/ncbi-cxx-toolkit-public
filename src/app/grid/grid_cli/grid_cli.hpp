@@ -63,6 +63,7 @@
 #define LOGIN_TOKEN_OPTION "login-token"
 #define NETCACHE_OPTION "netcache"
 #define CACHE_OPTION "cache"
+#define NETSTORAGE_OPTION "netstorage"
 #define FILE_KEY_OPTION "file-key"
 #define NAMESPACE_OPTION "namespace"
 #define PERSISTENT_OPTION "persistent"
@@ -145,6 +146,7 @@ enum EOption {
     eSize,
     eTTL,
     eEnableMirroring,
+    eNetStorage,
     eFileKey,
     eNamespace,
     ePersistent,
@@ -264,6 +266,7 @@ private:
         size_t offset;
         size_t size;
         unsigned ttl;
+        string nst_service;
         string ns_service;
         string queue;
         string affinity;
@@ -384,6 +387,7 @@ private:
     CNetCacheAPI m_NetCacheAPI;
     CNetCacheAdmin m_NetCacheAdmin;
     CNetICacheClient m_NetICacheClient;
+    CNetStorage m_NetStorage;
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
     CNetScheduleSubmitter m_NetScheduleSubmitter;
