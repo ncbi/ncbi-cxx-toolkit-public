@@ -487,10 +487,19 @@ s_ImportDatabase(const CBlast4_subject& subj,
         search_db->SetGiList(gilist);
     }
 
-    if (opts_builder.HasDbFilteringAlgorithmId()) {
+    if (opts_builder.HasDbFilteringAlgorithmKey()) {
+        string algo_key = opts_builder.GetDbFilteringAlgorithmKey();
+        ESubjectMaskingType mask_type= eSoftSubjMasking;
+        if(opts_builder.HasSubjectMaskingType())
+        	mask_type = opts_builder.GetSubjectMaskingType();
+        search_db->SetFilteringAlgorithm(algo_key, mask_type);
+
+    } else if (opts_builder.HasDbFilteringAlgorithmId()) {
         int algo_id = opts_builder.GetDbFilteringAlgorithmId();
-        // TODO:  should we support hard masking here at all?
-        search_db->SetFilteringAlgorithm(algo_id, eSoftSubjMasking);
+        ESubjectMaskingType mask_type= eSoftSubjMasking;
+        if(opts_builder.HasSubjectMaskingType())
+        	mask_type = opts_builder.GetSubjectMaskingType();
+        search_db->SetFilteringAlgorithm(algo_id, mask_type);
     }
 
     db_args->SetSearchDatabase(search_db);

@@ -106,6 +106,11 @@ public:
     /// @returns -1 if not none was used, otherwise the filtering algorithm ID
     int GetFilteringAlgorithm();
 
+    /// Retrieve the database filtering id from key
+    /// @returns kEmptyStr if not none was found, otherwise the filtering algorithm key
+    string GetFilteringAlgorithmKey();
+
+
     /// Returns true if this object represents protein or nucleotide sequences
     bool IsProtein() const;
 

@@ -76,6 +76,12 @@ struct CImportStrategyData {
 
     unsigned int m_PsiNumOfIterations;
     
+    /// Filtering key
+    string m_FilteringKey;
+
+    /// Subject Masking Type
+    ESubjectMaskingType m_SubjectMaskingType;
+
     /// Constructor
     CImportStrategyData() {
         valid = false;
@@ -83,6 +89,8 @@ struct CImportStrategyData {
         m_FilteringID = -1; // means uninitialized/unknown
         m_QueryRange = TSeqRange::GetEmpty();
         m_PsiNumOfIterations = 0;
+        m_FilteringKey = kEmptyStr; // means uninitialized/unknown
+        m_SubjectMaskingType = eNoSubjMasking; // means uninitialized/unknown
     }
 };
 
@@ -115,6 +123,12 @@ public:
 
     /// The DB filter ID.
     int GetDBFilteringID() ;
+
+    /// The DB filter key.
+    string GetDBFilteringKey() ;
+
+    /// Get Subject Masking Type
+    ESubjectMaskingType GetSubjectMaskingType();
 
     /// The queries either as Bioseq, seqloc, or pssm.
     CRef<objects::CBlast4_queries> GetQueries();
@@ -226,6 +240,9 @@ private:
 	                   	 	    		const int int_value);
 	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
 										const vector<int> & int_list);
+
+	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
+                                        const string & str);
 
 	void x_AddPsiNumOfIterationsToFormatOptions(unsigned int num_iters);
 

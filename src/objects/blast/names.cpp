@@ -246,6 +246,12 @@ CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
         case eBlastOpt_DbFilteringAlgorithmId:
             m_Fields[opt] = CBlast4Field("DbFilteringAlgorithmId",CBlast4_value::e_Integer);
             break;
+        case eBlastOpt_DbFilteringAlgorithmKey:
+            m_Fields[opt] = CBlast4Field("DbFilteringAlgorithmKey",CBlast4_value::e_String);
+            break;
+        case eBlastOpt_SubjectMaskingType:
+            m_Fields[opt] = CBlast4Field("SubjectMaskingType",    CBlast4_value::e_Integer);
+            break;
         case eBlastOpt_HspRangeMax:
             m_Fields[opt] = CBlast4Field("HspRangeMax",           CBlast4_value::e_Integer);
             break;

@@ -146,7 +146,14 @@ public:
     /// Sets the filtering algorithm ID to be applied to the BLAST database
     /// (not supported by server yet)
     /// @param algo_id algorithm ID to use (ignored if -1)
-    void SetDbFilteringAlgorithmId(int algo_id);
+    void SetDbFilteringAlgorithmId(int algo_id, ESubjectMaskingType mask_type=eSoftSubjMasking);
+
+    /// Sets the filtering algorithm key to be applied to the BLAST database
+    /// (not supported by server yet)
+    /// @param algo_id algorithm ID to use (ignored if -1)
+    void SetDbFilteringAlgorithmKey(string algo_key, ESubjectMaskingType mask_type=eSoftSubjMasking);
+
+    ESubjectMaskingType GetSubjectMaskingType() const;
 
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
@@ -440,6 +447,11 @@ public:
     /// Returns the filtering algorithm ID used in the database
     Int4 GetDbFilteringAlgorithmId() const {
         return m_DbFilteringAlgorithmId;
+    }
+
+    /// Returns the filtering algorithm key used in the database
+    string GetDbFilteringAlgorithmKey() const {
+        return m_DbFilteringAlgorithmKey;
     }
 
     /// Returns the task used to create the remote search (if any)
@@ -799,6 +811,11 @@ private:
 
     /// filtering algorithm to use in the database
     int m_DbFilteringAlgorithmId;
+
+    /// filtering algorithm key to use in the database
+    string m_DbFilteringAlgorithmKey;
+
+    ESubjectMaskingType m_SubjectMaskingType;
 
     /// Task used when the search was submitted (recovered via
     /// CBlastOptionsBuilder)

@@ -195,6 +195,13 @@ CLocalDbAdapter::IsProtein() const
     return retval;
 }
 
+string
+CLocalDbAdapter::GetFilteringAlgorithmKey()
+{
+    return (m_DbInfo.Empty() ? kEmptyStr : m_DbInfo->GetFilteringAlgorithmKey());
+}
+
+
 END_SCOPE(Blast)
 END_NCBI_SCOPE
 

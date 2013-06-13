@@ -527,4 +527,63 @@ BOOST_AUTO_TEST_CASE(ExportStrategy_CBlastOptions)
 
 }
 
+BOOST_AUTO_TEST_CASE(LoadHardMaskDBSearchStrategy)
+{
+    const char* fname = "data/ss.filter.asn";
+    ifstream in(fname);
+    CRef<CBlast4_request> request = ExtractBlast4Request(in);
+    CImportStrategy import_strat(request);
+    BOOST_REQUIRE_EQUAL(import_strat.GetService(), "megablast");
+    BOOST_REQUIRE_EQUAL(import_strat.GetProgram(), "blastn");
+
+    BOOST_REQUIRE(import_strat.GetAlgoOptions() != NULL);
+    BOOST_REQUIRE(import_strat.GetProgramOptions() != NULL);
+    BOOST_REQUIRE(import_strat.GetSubjectMaskingType() == eHardSubjMasking);
+    BOOST_REQUIRE(import_strat.GetDBFilteringKey() == "unit_test_mask");
+
+    CRef<blast::CBlastOptionsHandle> opts_handle = import_strat.GetOptionsHandle();
+    BOOST_REQUIRE_EQUAL(opts_handle->GetMaskAtHash(), true);
+    BOOST_REQUIRE_EQUAL(opts_handle->GetGappedMode(), true);
+}
+
+// Test that when a query with a range restriction is NOT provided, no
+// RequiredEnd and RequiredStart fields are sent over the network
+BOOST_AUTO_TEST_CASE(ExportStrategy_DBSoftMask) {
+    CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
+    auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
+    TSeqLocVector queries(1, *sl.get());
+    CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
+    const string kDbName("data/nt.41646578");
+    CSearchDatabase db(kDbName,
+                       CSearchDatabase::eBlastDbIsNucleotide);
+
+    CRef<CSearchDatabase> target_db(&db);
+    const string mask_str ("unit_test_mask");
+    target_db->SetFilteringAlgorithm(mask_str, eSoftSubjMasking);
+    CRef<CBlastOptionsHandle> opts
+        (CBlastOptionsFactory::Create(eBlastn, CBlastOptions::eRemote));
+
+    CExportStrategy exp_ss(qf, opts, target_db);
+    CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
+    BOOST_REQUIRE(ss.NotEmpty());
+
+    bool found_query_range = false;
+
+    const CBlast4_request_body& body = ss->GetBody();
+    BOOST_REQUIRE(body.IsQueue_search());
+    const CBlast4_queue_search_request& qsr = body.GetQueue_search();
+
+
+    // Get the program options
+    BOOST_REQUIRE(qsr.CanGetProgram_options() == true);
+    const CBlast4_parameters& prog_options = qsr.GetProgram_options();
+    CRef<CBlast4_parameter> p1 = prog_options.GetParamByName(CBlast4Field::GetName(eBlastOpt_DbFilteringAlgorithmKey));
+    BOOST_REQUIRE(p1->GetValue().GetString()== mask_str);
+
+    CRef<CBlast4_parameter> p2 = prog_options.GetParamByName(CBlast4Field::GetName(eBlastOpt_SubjectMaskingType));
+    BOOST_REQUIRE(p2->GetValue().GetInteger()== eSoftSubjMasking);
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

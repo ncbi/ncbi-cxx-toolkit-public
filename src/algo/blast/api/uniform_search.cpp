@@ -195,6 +195,12 @@ CSearchDatabase::GetFilteringAlgorithm() const
     return m_FilteringAlgorithmId;
 }
 
+string
+CSearchDatabase::GetFilteringAlgorithmKey() const
+{
+	return m_FilteringAlgorithmString;
+}
+
 ESubjectMaskingType
 CSearchDatabase::GetMaskType() const
 {

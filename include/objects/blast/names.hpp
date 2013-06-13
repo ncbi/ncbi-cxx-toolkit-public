@@ -127,6 +127,8 @@ enum EBlastOptIdx {
     eBlastOpt_FirstDbSeq,
     eBlastOpt_GiList,
     eBlastOpt_DbFilteringAlgorithmId,
+    eBlastOpt_DbFilteringAlgorithmKey,
+    eBlastOpt_SubjectMaskingType,
     eBlastOpt_HspRangeMax,
     eBlastOpt_LCaseMask,
     eBlastOpt_MatrixTable,

@@ -116,7 +116,12 @@ CImportStrategy::FetchData()
         m_OptionsBuilder->GetSearchOptions(algo_opts, prog_opts, format_opts,
                                            &m_Data->m_Task);
     m_Data->m_QueryRange = m_OptionsBuilder->GetRestrictedQueryRange();
-    m_Data->m_FilteringID = m_OptionsBuilder->GetDbFilteringAlgorithmId();
+    if(m_OptionsBuilder->HasDbFilteringAlgorithmId())
+    	m_Data->m_FilteringID = m_OptionsBuilder->GetDbFilteringAlgorithmId();
+    if(m_OptionsBuilder->HasDbFilteringAlgorithmKey())
+    	m_Data->m_FilteringKey = m_OptionsBuilder->GetDbFilteringAlgorithmKey();
+    if(m_OptionsBuilder->GetSubjectMaskingType())
+    	m_Data->m_SubjectMaskingType = m_OptionsBuilder->GetSubjectMaskingType();
     m_Data->valid = true;
 }
 
@@ -175,6 +180,26 @@ CImportStrategy::GetDBFilteringID()
            FetchData();
     
     return m_Data->m_FilteringID;
+}
+
+string
+CImportStrategy::GetDBFilteringKey()
+{
+    if (!m_Data->valid)
+           FetchData();
+
+    return m_Data->m_FilteringKey;
+}
+
+
+/// Get Subject Masking Type
+ESubjectMaskingType
+CImportStrategy::GetSubjectMaskingType()
+{
+    if (!m_Data->valid)
+           FetchData();
+
+    return m_Data->m_SubjectMaskingType;
 }
 
 string 
@@ -389,11 +414,24 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
     }
 
     // Set the filtering algorithms
-    int algo_id = db->GetFilteringAlgorithm();
-    if (algo_id != -1)
+    string algo_key = db->GetFilteringAlgorithmKey();
+    if (algo_key != kEmptyStr)
     {
-       	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId), algo_id);
+    	int mask_type = (int) db->GetMaskType();
+       	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmKey), algo_key);
+       	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_SubjectMaskingType), mask_type);
     }
+    else {
+    	// Set the filtering algorithms
+    	int algo_id = db->GetFilteringAlgorithm();
+    	if (algo_id != -1)
+    	{
+    		int mask_type = (int) db->GetMaskType();
+    		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId), algo_id);
+    		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_SubjectMaskingType), mask_type);
+    	}
+    }
+
 }
 
 /* Prerequisite for calling x_Process_Pssm:-
@@ -586,6 +624,20 @@ void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & fie
     _ASSERT(field.Match(*p));
 
     m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
+}
+
+void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & field,
+                                 	 	    		 const string & str)
+{
+	CRef<CBlast4_parameter> p(new CBlast4_parameter);
+	p->SetName(field.GetName());
+
+	CRef<CBlast4_value> v(new CBlast4_value);
+	v->SetString(str);
+	p->SetValue(*v);
+	_ASSERT(field.Match(*p));
+
+	m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
 }
 
 void CExportStrategy::x_AddPsiNumOfIterationsToFormatOptions(unsigned int num_iters)

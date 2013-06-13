@@ -178,6 +178,8 @@ public:
                                ESubjectMaskingType mask_type);
     /// Accessor for the filtering algorithm ID
     int GetFilteringAlgorithm() const;
+    /// Accessor for the filtering algorithm key
+    string GetFilteringAlgorithmKey() const;
     ESubjectMaskingType GetMaskType() const;
 
     /// Mutator for the seqdb

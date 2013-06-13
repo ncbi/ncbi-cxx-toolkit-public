@@ -123,6 +123,15 @@ public:
     /// Get the database filtering algorithm ID
     int GetDbFilteringAlgorithmId();
 
+    /// Check whether a database filtering algorithm key is specified
+    bool HasDbFilteringAlgorithmKey();
+    /// Get the database filtering algorithm key
+    string GetDbFilteringAlgorithmKey();
+
+    /// Get Subject Maksing Type (soft/hard)
+    bool HasSubjectMaskingType();
+    ESubjectMaskingType GetSubjectMaskingType();
+
     /// Check whether query masks are specified.
     bool HaveQueryMasks();
 
@@ -279,6 +288,8 @@ private:
 
     /// The GI list (or none).
     SOptional<int> m_DbFilteringAlgorithmId;
+    SOptional<string> m_DbFilteringAlgorithmKey;
+    SOptional<ESubjectMaskingType> m_SubjectMaskingType;
 
     /// The query masking locations
     SOptional< TMaskList > m_QueryMasks;

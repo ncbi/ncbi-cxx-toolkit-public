@@ -813,6 +813,7 @@ void CRemoteBlast::x_Init(CNcbiIstream& f)
       m_ErrIgn     = 5;
       m_Verbose    = eSilent;
       m_DbFilteringAlgorithmId = -1;
+      m_DbFilteringAlgorithmKey = kEmptyStr;
 }
 
 void CRemoteBlast::x_Init(CBlastOptionsHandle * opts)
@@ -849,6 +850,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
     m_QueryMaskingLocations.clear();
     m_ReadFile = false;
     m_DbFilteringAlgorithmId = -1;
+    m_DbFilteringAlgorithmKey = kEmptyStr;
     
     m_QSR.Reset(new CBlast4_queue_search_request);
     
@@ -882,6 +884,7 @@ void CRemoteBlast::x_Init(const string & RID)
     m_QueryMaskingLocations.clear();
     m_ReadFile = false;
     m_DbFilteringAlgorithmId = -1;
+    m_DbFilteringAlgorithmKey = kEmptyStr;
 }
 
 void CRemoteBlast::x_SetAlgoOpts(void)
@@ -1399,6 +1402,7 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
     }}
 
     // Set the filtering algorithms
+    SetDbFilteringAlgorithmKey(db.GetFilteringAlgorithmKey());
     SetDbFilteringAlgorithmId(db.GetFilteringAlgorithm());
 }
 // initialize disk cache support variables
@@ -1437,13 +1441,35 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_GiList));
 }
 
-void CRemoteBlast::SetDbFilteringAlgorithmId(int algo_id)
+void CRemoteBlast::SetDbFilteringAlgorithmId(int algo_id, ESubjectMaskingType mask_type)
 {
     if (algo_id == -1) 
         return;
 
     x_SetOneParam(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId), &algo_id);
     m_DbFilteringAlgorithmId = algo_id;
+    int mask = (int) mask_type;
+    x_SetOneParam(CBlast4Field::Get(eBlastOpt_SubjectMaskingType), &mask);
+    m_SubjectMaskingType = mask_type;
+}
+
+void CRemoteBlast::SetDbFilteringAlgorithmKey(string algo_key, ESubjectMaskingType mask_type)
+{
+    if (algo_key == kEmptyStr)
+        return;
+
+    const char * key = algo_key.c_str();
+    x_SetOneParam(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmKey), &key);
+    m_DbFilteringAlgorithmKey = algo_key;
+    int mask = (int) mask_type;
+    x_SetOneParam(CBlast4Field::Get(eBlastOpt_SubjectMaskingType), &mask);
+    m_SubjectMaskingType = mask_type;
+}
+
+ESubjectMaskingType
+CRemoteBlast::GetSubjectMaskingType() const
+{
+    return m_SubjectMaskingType;
 }
 
 void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
@@ -1936,6 +1962,11 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         if (bob.HasDbFilteringAlgorithmId() &&
             bob.GetDbFilteringAlgorithmId() != -1) {
             m_DbFilteringAlgorithmId = bob.GetDbFilteringAlgorithmId();
+        }
+
+        if (bob.HasDbFilteringAlgorithmKey() &&
+            bob.GetDbFilteringAlgorithmKey() != kEmptyStr) {
+            m_DbFilteringAlgorithmKey = bob.GetDbFilteringAlgorithmKey();
         }
 
         if (bob.HaveNegativeGiList()) {

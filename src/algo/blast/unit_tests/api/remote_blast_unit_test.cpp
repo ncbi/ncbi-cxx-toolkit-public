@@ -207,6 +207,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
     BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
     BOOST_REQUIRE(rmt_blaster.GetDbFilteringAlgorithmId() == -1);
+    BOOST_REQUIRE(rmt_blaster.GetDbFilteringAlgorithmKey() == kEmptyStr);
 
     const EBlastProgramType prog = 
         NetworkProgram2BlastProgramType(rmt_blaster.GetProgram(),
@@ -1275,6 +1276,7 @@ BOOST_AUTO_TEST_CASE(ReadArchiveFormat)
     CRef<CBlast4_database> blast_db = rb.GetDatabases();
     BOOST_REQUIRE(blast_db->GetName() == "refseq_rna");
     BOOST_REQUIRE(rb.GetDbFilteringAlgorithmId() == -1);
+    BOOST_REQUIRE(rb.GetDbFilteringAlgorithmKey() == kEmptyStr);
     CBlastNucleotideOptionsHandle* opts_handle = 
        dynamic_cast<CBlastNucleotideOptionsHandle*> (&*(rb.GetSearchOptions()));
     BOOST_REQUIRE(string(opts_handle->GetRepeatFilteringDB()) == "repeat/repeat_9606");

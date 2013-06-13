@@ -200,6 +200,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetDustFilteringLinker(v.GetInteger());
         } else if (CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId).Match(p)) {
             m_DbFilteringAlgorithmId = v.GetInteger();
+        } else if (CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmKey).Match(p)) {
+            m_DbFilteringAlgorithmKey = v.GetString();
         } else if (CBlast4Field::Get(eBlastOpt_DomainInclusionThreshold).Match(p)) {
             bo.SetDomainInclusionThreshold(v.GetReal());
         } else {
@@ -399,6 +401,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
             bo.SetSumStatisticsMode(v.GetBoolean());
         } else if (CBlast4Field::Get(eBlastOpt_SmithWatermanMode).Match(p)) {
             bo.SetSmithWatermanMode(v.GetBoolean());
+        } else if (CBlast4Field::Get(eBlastOpt_SubjectMaskingType).Match(p)) {
+            m_SubjectMaskingType = (ESubjectMaskingType) v.GetInteger();
         } else {
             found = false;
         }
@@ -650,6 +654,27 @@ int CBlastOptionsBuilder::GetDbFilteringAlgorithmId()
 {
     return m_DbFilteringAlgorithmId.Get();
 }
+
+bool CBlastOptionsBuilder::HasDbFilteringAlgorithmKey()
+{
+    return m_DbFilteringAlgorithmKey.Have();
+}
+
+string CBlastOptionsBuilder::GetDbFilteringAlgorithmKey()
+{
+    return m_DbFilteringAlgorithmKey.Get();
+}
+
+bool CBlastOptionsBuilder::HasSubjectMaskingType()
+{
+    return m_SubjectMaskingType.Have();
+}
+
+ESubjectMaskingType CBlastOptionsBuilder::GetSubjectMaskingType()
+{
+    return m_SubjectMaskingType.Get();
+}
+
 
 bool CBlastOptionsBuilder::HaveNegativeGiList()
 {
