@@ -39,6 +39,9 @@
 #include "json_over_uttp.hpp"
 #include "srv_connections.hpp"
 
+#include <corelib/ncbitime.hpp>
+
+
 BEGIN_NCBI_SCOPE
 
 
