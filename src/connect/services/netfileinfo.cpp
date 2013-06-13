@@ -34,6 +34,8 @@
 
 #include <connect/services/netstorage.hpp>
 
+#include <corelib/ncbitime.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
