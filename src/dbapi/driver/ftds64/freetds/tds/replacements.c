@@ -58,6 +58,14 @@
 #undef no_unused_var_warn
 #endif
 
+#ifndef HAVE_POLL
+#define software_version fakepoll_software_version
+#define no_unused_var_warn fakepoll_no_unused_var_warn
+#include "../replacements/fakepoll.c"
+#undef software_version
+#undef no_unused_var_warn
+#endif
+
 #ifndef HAVE_ICONV
 #define software_version iconv_software_version
 #define no_unused_var_warn iconv_no_unused_var_warn

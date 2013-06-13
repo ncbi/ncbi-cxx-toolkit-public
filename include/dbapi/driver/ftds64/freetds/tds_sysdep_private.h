@@ -71,6 +71,7 @@ typedef int pid_t;
 
 #define TDSSOCK_EINTR WSAEINTR
 #define TDSSOCK_EINPROGRESS WSAEWOULDBLOCK
+#define TDSSOCK_WOULDBLOCK(e) ((e)==WSAEWOULDBLOCK)
 #define sock_errno WSAGetLastError()
 #ifndef __MINGW32__
 typedef DWORD pid_t;
@@ -98,6 +99,14 @@ typedef DWORD pid_t;
 
 #ifndef TDSSOCK_EINPROGRESS 
 #define TDSSOCK_EINPROGRESS EINPROGRESS
+#endif
+
+#ifndef TDSSOCK_WOULDBLOCK
+# if defined(EWOULDBLOCK) && EAGAIN != EWOULDBLOCK
+#  define TDSSOCK_WOULDBLOCK(e) ((e)==EAGAIN||(e)==EWOULDBLOCK)
+# else
+#  define TDSSOCK_WOULDBLOCK(e) ((e)==EAGAIN)
+# endif
 #endif
 
 #ifndef READSOCKET

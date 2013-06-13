@@ -1,6 +1,9 @@
 #ifndef DBAPI_DRIVER_FTDS64_FREETDS___RENAME_FREETDS64__H
 #define DBAPI_DRIVER_FTDS64_FREETDS___RENAME_FREETDS64__H
 
+#ifndef HAVE_POLL
+#  define fakepoll                      fakepoll_ver64
+#endif
 #define generate_random_buffer          generate_random_buffer_ver64
 #define readpassphrase                  readpassphrase_ver64
 #define tds7_crypt_pass                 tds7_crypt_pass_ver64

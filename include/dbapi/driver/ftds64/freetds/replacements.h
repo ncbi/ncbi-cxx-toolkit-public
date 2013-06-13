@@ -33,6 +33,11 @@ extern "C"
 #include <stdarg.h>
 #include "tds_sysdep_public.h"
 
+#if !HAVE_POLL
+#include <fakepoll.h>
+#define poll(fds, nfds, timeout) fakepoll((fds), (nfds), (timeout))
+#endif /* !HAVE_POLL */
+
 #if !HAVE_VSNPRINTF
 int vsnprintf(char *ret, size_t max, const char *fmt, va_list ap);
 #endif /* !HAVE_VSNPRINTF */

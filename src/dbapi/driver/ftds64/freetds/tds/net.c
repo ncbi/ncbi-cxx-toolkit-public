@@ -81,6 +81,10 @@
 #include <sys/select.h>
 #endif /* HAVE_SELECT_H */
 
+#if HAVE_POLL_H
+#include <poll.h>
+#endif /* HAVE_POLL_H */
+
 #include "tds.h"
 #include "tdsstring.h"
 #include "replacements.h"
@@ -101,6 +105,15 @@
 #endif
 
 TDS_RCSID(var, "$Id$");
+
+#define TDSSELREAD  POLLIN
+#define TDSSELWRITE POLLOUT
+/* error is always returned */
+#define TDSSELERR   0
+
+static int tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
+                      double global_start);
+
 
 /**
  * \addtogroup network
@@ -163,21 +176,14 @@ int
 tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int timeout)
 {
 	struct sockaddr_in sin;
-	fd_set wfds, efds;
 #if !defined(DOS32X)
 	unsigned long ioctl_blocking = 1;
-	time_t start, now;
-	struct timeval selecttimeout;
+    time_t start;
 	int retval;
 #endif
 	int len;
     int x_errno;
 	char ip[20];
-#if defined(DOS32X) || defined(WIN32)
-	int optlen;
-#else
-	socklen_t optlen;
-#endif
 
 	sin.sin_addr.s_addr = inet_addr(ip_addr);
 	if (sin.sin_addr.s_addr == INADDR_NONE) {
@@ -243,24 +249,7 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 		retval = 0;
 	/* if retval < 0 (error) fall through */
 
-	/* Select on writeability for connect_timeout */
-	now = start;
-	while ((retval == 0) && ((now - start) < timeout)) {
-        FD_ZERO(&wfds);
-        FD_SET(tds->s, &wfds);
-        FD_ZERO(&efds);
-        FD_SET(tds->s, &efds);
-		selecttimeout.tv_sec = 1;
-		selecttimeout.tv_usec = 0;
-		retval = select(tds->s + 1, NULL, &wfds, &efds, &selecttimeout);
-        x_errno = sock_errno;
-		/* on interrupt ignore */
-		if (retval < 0 && x_errno == TDSSOCK_EINTR)
-			retval = 0;
-		now = time(NULL);
-	}
-
-	if ((now - start) >= timeout) {
+    if (tds_select(tds, TDSSELWRITE|TDSSELERR, timeout, (double)start) <= 0) {
 		tds_close_socket(tds);
 		tds_client_msg(tds->tds_ctx, tds, 20015, 6, 0, 0, "SQL Server connection timed out.");
 		return TDS_FAIL;
@@ -268,16 +257,6 @@ tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int tim
 #endif
 	/* END OF NEW CODE */
 
-	/* check socket error */
-    if (retval > 0  &&  FD_ISSET(tds->s, &efds)) {
-	    optlen = sizeof(x_errno);
-	    if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &x_errno, &optlen) != 0) {
-            tds_report_error(tds->tds_ctx, tds, sock_errno, 20007, "Error in getsockopt");
-		    tds_close_socket(tds);
-		    return TDS_FAIL;
-	    }
-        retval = -1;
-    }
 	if (retval < 0) {
         tds_report_error(tds->tds_ctx, tds, x_errno, 20009, "Server is unavailable or does not exist");
 		tds_close_socket(tds);
@@ -335,6 +314,109 @@ GetTimeMark(void)
 }
 
 /**
+ * Select on a socket until it's available or the timeout expires. 
+ * Meanwhile, call the interrupt function. 
+ * \return	>0 ready descriptors
+ *		 0 timeout 
+ * 		<0 error (cf. errno).  Caller should  close socket and return failure. 
+ * This function does not call tdserror or close the socket because it can't know the context in which it's being called.   
+ */
+static int
+tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
+           double global_start)
+{
+	int rc, seconds;
+	unsigned int poll_seconds;
+	static const char method[] = "poll(2)";
+
+	assert(tds != NULL);
+	assert(timeout_seconds >= 0);
+
+
+	/* 
+	 * The select loop.  
+	 * If an interrupt handler is installed, we iterate once per second, 
+	 * 	else we try once, timing out after timeout_seconds (0 == never). 
+	 * If select(2) is interrupted by a signal (e.g. press ^C in sqsh), we timeout.
+	 * 	(The application can retry if desired by installing a signal handler.)
+	 *
+	 * We do not measure current time against end time, to avoid being tricked by ntpd(8) or similar. 
+	 * Instead, we just count down.  
+	 *
+	 * We exit on the first of these events:
+	 * 1.  a descriptor is ready. (return to caller)
+	 * 2.  select(2) returns an important error.  (return to caller)
+	 * A timeout of zero says "wait forever".  We do that by passing a NULL timeval pointer to select(2). 
+	 */
+    poll_seconds = tds->query_timeout_func ? 1 : timeout_seconds;
+	for (seconds = timeout_seconds; timeout_seconds == 0 || seconds > 0; seconds -= poll_seconds) {
+		struct pollfd fd;
+		int timeout = poll_seconds ? poll_seconds * 1000 : -1;
+
+		fd.fd = tds->s;
+		fd.events = tds_sel;
+		fd.revents = 0;
+		rc = poll(&fd, 1, timeout);
+
+		if (rc > 0 ) {
+			return rc;
+		}
+
+		if (rc < 0) {
+			switch (sock_errno) {
+			case TDSSOCK_EINTR:
+            case EAGAIN:
+            case TDSSOCK_EINPROGRESS:
+				break;	/* let interrupt handler be called */
+			default: /* documented: EFAULT, EBADF, EINVAL */
+				tdsdump_log(TDS_DBG_ERROR, "error: %s returned %d, \"%s\"\n", 
+						method, sock_errno, strerror(sock_errno));
+				return rc;
+			}
+		}
+
+		assert(rc == 0 || (rc < 0 && sock_errno == TDSSOCK_EINTR));
+
+        if (tds->query_timeout_func) { /* interrupt handler installed */
+			/*
+			 * "If hndlintr() returns INT_CANCEL, DB-Library sends an attention token [TDS_BUFSTAT_ATTN]
+			 * to the server. This causes the server to discontinue command processing. 
+			 * The server may send additional results that have already been computed. 
+			 * When control returns to the mainline code, the mainline code should do 
+			 * one of the following: 
+			 * - Flush the results using dbcancel 
+			 * - Process the results normally"
+			 */
+            double now = GetTimeMark();
+			int timeout_action
+                = (*tds->query_timeout_func) (tds->query_timeout_param,
+                                              (int)(now - global_start));
+#if 0
+			tdsdump_log(TDS_DBG_ERROR, "tds_ctx->int_handler returned %d\n", timeout_action);
+#endif
+			switch (timeout_action) {
+			case TDS_INT_CONTINUE:		/* keep waiting */
+				continue;
+			case TDS_INT_CANCEL:		/* abort the current command batch */
+							/* FIXME tell tds_goodread() not to call tdserror() */
+				return 0;
+			default:
+				tdsdump_log(TDS_DBG_NETWORK, 
+					"tds_select: invalid interupt handler return code: %d\n", timeout_action);
+				return -1;
+			}
+		}
+		/* 
+		 * We can reach here if no interrupt handler was installed and we either timed out or got EINTR. 
+		 * We cannot be polling, so we are about to drop out of the loop. 
+		 */
+		assert(poll_seconds == timeout_seconds);
+	}
+	
+	return 0;
+}
+
+/**
  * Loops until we have received buflen characters
  * return -1 on failure
  */
@@ -343,15 +425,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 {
 	double start, global_start;
 	int got = 0;
-	fd_set rfds, efds;
-	struct timeval tv;
     int canceled = 0;
-    int retval, x_errno;
-#if defined(DOS32X) || defined(WIN32)
-    int optlen;
-#else
-    socklen_t optlen;
-#endif
 
 	if (buf == NULL || buflen < 1 || IS_TDSDEAD(tds))
 		return 0;
@@ -365,85 +439,63 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 		if (IS_TDSDEAD(tds))
 			return -1;
 
-		FD_ZERO(&rfds);
-		FD_SET(tds->s, &rfds);
-        FD_ZERO(&efds);
-        FD_SET(tds->s, &efds);
+        if ((len = tds_select(tds, TDSSELREAD, tds->query_timeout,
+                              global_start)) > 0) {
 
-        /* tv structure is modified inside select() on Linux, so we need to
-           reinitialize it every time. */
-        tv.tv_usec = 0;
-        tv.tv_sec = 1;
+			len = READSOCKET(tds->s, buf + got, buflen);
 
-        retval = select(tds->s + 1, &rfds, NULL, &efds, &tv);
-        x_errno = sock_errno;
-        len = 0;
-        if (retval > 0) {
-            if (FD_ISSET(tds->s, &efds)) {
-                optlen = sizeof(x_errno);
-                if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &x_errno, &optlen) != 0) {
-                    tds_report_error(tds->tds_ctx, tds, sock_errno, 20016, "Error in getsockopt");
-                    tds_close_socket(tds);
-                    return -1;
+			if (len < 0 && TDSSOCK_WOULDBLOCK(sock_errno))
+				continue;
+			/* detect connection close */
+			if (len <= 0) {
+                if (len == 0) {
+                    tds_client_msg(tds->tds_ctx, tds, 20011, 6, 0, 0,
+                                   "EOF in the socket.");
+                } else {
+                    tds_report_error(tds->tds_ctx, tds, sock_errno, 20012,
+                                     "recv finished with an error.");
                 }
-                retval = -1;
-            }
-			else if (FD_ISSET(tds->s, &rfds)) {
-#ifndef MSG_NOSIGNAL
-				retval = READSOCKET(tds->s, buf + got, buflen);
-#else
-				retval = recv(tds->s, buf + got, buflen, MSG_NOSIGNAL);
-#endif
-				/* detect connection close */
-				if (retval == 0) {
-                    tds_client_msg(tds->tds_ctx, tds, 20011, 6, 0, 0, "EOF in the socket.");
-					tds_close_socket(tds);
-					return -1;
-				}
-                len = retval;
-			}
-		}
-
-		if (retval < 0) {
-            switch(x_errno) {
-			case TDSSOCK_EINTR:
-			case EAGAIN:
-			case TDSSOCK_EINPROGRESS:
-				break;
-			default:
-                tds_report_error(tds->tds_ctx, tds, x_errno, 20012, "select/recv finished with error");
+				tds_close_socket(tds);
 				return -1;
 			}
+		} else if (len < 0) {
+			if (TDSSOCK_WOULDBLOCK(sock_errno)) /* shouldn't happen, but OK */
+				continue;
+            tds_report_error(tds->tds_ctx, tds, sock_errno, 20012,
+                             "recv finished with an error.");
+			tds_close_socket(tds);
+			return -1;
+		} else { /* timeout */
+    		now = GetTimeMark();
+            if (tds->query_timeout > 0 && now - start >= tds->query_timeout) {
+    
+                int timeout_action = TDS_INT_CONTINUE;
+    
+                if (canceled)
+                    return got;
+    
+                if (tds->query_timeout_func && tds->query_timeout)
+                    timeout_action = (*tds->query_timeout_func)
+                        (tds->query_timeout_param, (int)(now - global_start));
+    
+                switch (timeout_action) {
+                case TDS_INT_EXIT:
+                    exit(EXIT_FAILURE);
+                    break;
+                case TDS_INT_CANCEL:
+                    tds_send_cancel(tds);
+                    canceled = 1;
+                    /* fall through to wait while cancelling happens */
+                case TDS_INT_CONTINUE:
+                    start = now;
+                default:
+                    break;
+                }
+            }
 		}
 
 		buflen -= len;
 		got += len;
-
-		now = GetTimeMark();
-		if (tds->query_timeout > 0 && now - start >= tds->query_timeout) {
-
-			int timeout_action = TDS_INT_CONTINUE;
-
-            if (canceled)
-                return got;
-
-			if (tds->query_timeout_func && tds->query_timeout)
-				timeout_action = (*tds->query_timeout_func) (tds->query_timeout_param, (int)(now - global_start));
-
-			switch (timeout_action) {
-			case TDS_INT_EXIT:
-				exit(EXIT_FAILURE);
-				break;
-			case TDS_INT_CANCEL:
-				tds_send_cancel(tds);
-                canceled = 1;
-                /* fall through to wait while cancelling happens */
-			case TDS_INT_CONTINUE:
-				start = now;
-			default:
-				break;
-			}
-		}
 
 		if (unfinished && got)
 			return got;
@@ -620,98 +672,92 @@ tds_read_packet(TDSSOCKET * tds)
 	return (tds->in_len);
 }
 
-/* goodwrite function adapted from patch by freddy77 */
 static int
-tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char last)
+tds_goodwrite(TDSSOCKET * tds, const unsigned char *buffer, int len, unsigned char last)
 {
-    int retval = 0;
     double start, now;
-    fd_set wfds, efds;
-    struct timeval tv;
-	int left = len;
-    int x_errno;
-#if defined(DOS32X) || defined(WIN32)
-    int optlen;
-#else
-    socklen_t optlen;
-#endif
+	const unsigned char *p = buffer;
+	int rc;
 
-	while (left > 0) {
-        if (IS_TDSDEAD(tds))
-            return -1;
+	assert(tds && buffer);
 
-	    FD_ZERO(&wfds);
-        FD_SET(tds->s, &wfds);
-        FD_ZERO(&efds);
-        FD_SET(tds->s, &efds);
+	if (TDS_IS_SOCKET_INVALID(tds->s))
+		return -1;
 
-        /* tv structure is modified inside select() on Linux, so we need to
-           reinitialize it every time. */
-        tv.tv_usec = 0;
-        tv.tv_sec = 1;
-
+	while (p - buffer < len) {
         start = GetTimeMark();
         now = start;
-
-        retval = select(tds->s + 1, NULL, &wfds, &efds, &tv);
-        x_errno = sock_errno;
-        if (retval > 0) {
-            if (FD_ISSET(tds->s, &efds)) {
-                optlen = sizeof(x_errno);
-                if (getsockopt(tds->s, SOL_SOCKET, SO_ERROR, (char *) &x_errno, &optlen) != 0) {
-                    tds_report_error(tds->tds_ctx, tds, sock_errno, 20001, "Error in getsockopt");
-                    tds_close_socket(tds);
-                    return -1;
-                }
-                retval = -1;
-            }
-			else if (FD_ISSET(tds->s, &wfds)) {
+		if ((rc = tds_select(tds, TDSSELWRITE, tds->query_timeout, start)) > 0) {
+			int err;
+			size_t remaining = len - (p - buffer);
 #ifdef USE_MSGMORE
-                retval = send(tds->s, p, left, last ? MSG_NOSIGNAL : MSG_NOSIGNAL|MSG_MORE);
-#elif !defined(MSG_NOSIGNAL)
-                retval = WRITESOCKET(tds->s, p, left);
+			ssize_t nput = send(tds->s, p, remaining, last ? MSG_NOSIGNAL : MSG_NOSIGNAL|MSG_MORE);
+			/* In case the kernel does not support MSG_MORE, try again without it */
+			if (nput < 0 && errno == EINVAL && !last)
+				nput = send(tds->s, p, remaining, MSG_NOSIGNAL);
+#elif defined(__APPLE__) && defined(SO_NOSIGPIPE)
+			ssize_t nput = send(tds->s, p, remaining, 0);
 #else
-                retval = send(tds->s, p, left, MSG_NOSIGNAL);
+			ssize_t nput = WRITESOCKET(tds->s, p, remaining);
 #endif
-                x_errno = sock_errno;
-				/* detect connection close */
-		        if (retval <= 0) {
-                    if (!retval || (x_errno != TDSSOCK_EINTR
-                                    &&  x_errno != EAGAIN
-                                    &&  x_errno != TDSSOCK_EINPROGRESS))
-                    {
-                        tds_report_error(tds->tds_ctx, tds, x_errno, 20017, "Write to SQL Server failed");
-                        tds->in_pos = 0;
-                        tds->in_len = 0;
-                        tds_close_socket(tds);
-                        return -1;
-                    }
-                    retval = 0;
-		        }
+			if (nput > 0) {
+				p += nput;
+				continue;
 			}
-        }
 
-        if (retval < 0) {
-            switch(x_errno) {
-            case TDSSOCK_EINTR:
-            case EAGAIN:
-            case TDSSOCK_EINPROGRESS:
-                break;
-            default:
-                tds_report_error(tds->tds_ctx, tds, x_errno, 20005, "select/send finished with error");
+			err = sock_errno;
+            if (0 == nput || TDSSOCK_WOULDBLOCK(err) || err == TDSSOCK_EINTR)
+				continue;
+
+			assert(nput < 0);
+
+			tdsdump_log(TDS_DBG_NETWORK, "send(2) failed: %d (%s)\n",
+                        err, strerror(err));
+            tds_report_error(tds->tds_ctx, tds, err, 20017,
+                             "Write to SQL Server failed");
+			tds_close_socket(tds);
+			return -1;
+
+		} else if (rc < 0) {
+			int err = sock_errno;
+			if (TDSSOCK_WOULDBLOCK(err)) /* shouldn't happen, but OK, retry */
+				continue;
+			tdsdump_log(TDS_DBG_NETWORK, "select(2) failed: %d (%s)\n",
+                        err, strerror(err));
+            tds_report_error(tds->tds_ctx, tds, err, 20005,
+                             "select/send finished with error");
+			tds_close_socket(tds);
+			return -1;
+		} else { /* timeout */
+            now = GetTimeMark();
+            if (tds->query_timeout  &&  (now - start) >= tds->query_timeout) {
+                tds_client_msg(tds->tds_ctx, tds, 20002, 6, 0, 0,
+                               "Writing to SQL server exceeded timeout");
+                tds_close_socket(tds);
                 return -1;
             }
-        }
 
-        left -= retval;
-        p += retval;
-
-        now = GetTimeMark();
-        if (tds->query_timeout  &&  (now - start) >= tds->query_timeout) {
-            tds_client_msg(tds->tds_ctx, tds, 20002, 6, 0, 0, "Writing to SQL server exceeded timeout");
-            tds_close_socket(tds);
-            return -1;
-        }
+			tdsdump_log(TDS_DBG_NETWORK, "tds_goodwrite(): timed out, asking client\n");
+			switch (rc = tds_client_msg(tds->tds_ctx, tds, 20002, 6, 0, 0,
+                                        "Writing to SQL server exceeded timeout")) {
+			case TDS_INT_CONTINUE:
+				continue;
+			case TDS_INT_TIMEOUT:
+				/* 
+				 * "Cancel the operation ... but leave the dbproc in working condition." 
+				 * We must try to send the cancel packet, else we have to abandon the dbproc.  
+				 * If it can't be done, a harder error e.g. ECONNRESET will bubble up.  
+				 */
+				tds_send_cancel(tds);
+				continue; 
+			default:
+			case TDS_INT_CANCEL:
+				tds_close_socket(tds);
+				return -1;
+			}
+			assert(0); /* not reached */
+		}
+		assert(0); /* not reached */
 	}
 
 #ifdef USE_CORK
@@ -799,8 +845,7 @@ tds7_get_instance_port(const char *ip_addr, const char *instance)
 	int num_try;
 	struct sockaddr_in sin;
 	unsigned long ioctl_blocking = 1;
-	struct timeval selecttimeout;
-	fd_set fds;
+	struct pollfd fd;
 	int retval;
 	TDS_SYS_SOCKET s;
 	char msg[1024];
@@ -842,12 +887,12 @@ tds7_get_instance_port(const char *ip_addr, const char *instance)
 		tds_strlcpy(msg + 1, instance, sizeof(msg) - 1);
 		sendto(s, msg, strlen(msg) + 1, 0, (struct sockaddr *) &sin, sizeof(sin));
 
-		FD_ZERO(&fds);
-		FD_SET(s, &fds);
-		selecttimeout.tv_sec = 1;
-		selecttimeout.tv_usec = 0;
-		retval = select(s + 1, &fds, NULL, NULL, &selecttimeout);
-		tdsdump_log(TDS_DBG_INFO1, "select: retval %d err %d\n", retval, sock_errno);
+		fd.fd = s;
+		fd.events = POLLIN;
+		fd.revents = 0;
+
+		retval = poll(&fd, 1, 1000);
+
 		/* on interrupt ignore */
 		if (retval == 0 || (retval < 0 && sock_errno == TDSSOCK_EINTR))
 			continue;

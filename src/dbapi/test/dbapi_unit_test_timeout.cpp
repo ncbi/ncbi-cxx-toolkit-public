@@ -32,6 +32,7 @@
 
 #include "dbapi_unit_test_pch.hpp"
 
+#include <connect/ncbi_socket.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -375,5 +376,66 @@ BOOST_AUTO_TEST_CASE(Test_Heavy_Load)
     }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+#define NUM_CANARIES 1024
+#ifndef CHAR_BIT
+#  define CHAR_BIT 8
+#endif
+#define NUM_CANARY_BITS NUM_CANARIES * CHAR_BIT
+
+BOOST_AUTO_TEST_CASE(Test_High_FDs)
+{
+    try {
+        // canary_bufN should surround the other local variables, so
+        // whichever winds up at a lower address will take any hits.
+        char                    canary_buf1[NUM_CANARIES];
+        CTempString             canary1(canary_buf1, NUM_CANARIES), canary2;
+        int                     i, j;
+        auto_ptr<CSocket>       socks[NUM_CANARY_BITS];
+        auto_ptr<CTimeoutGuard> GUARD;
+        auto_ptr<IConnection>   conn;
+        char                    canary_buf2[NUM_CANARIES];
+
+        canary2.assign(canary_buf2, NUM_CANARIES);
+        for (i = 0;  i < NUM_CANARIES * 8;  ++i) {
+            socks[i].reset(new CDatagramSocket(fSOCK_KeepOnExec));
+            if (socks[i]->GetStatus(eIO_Open) != eIO_Open) {
+                break;
+            }
+        }
+        LOG_POST("Opened " << i << " extra sockets; releasing the last 10.");
+        for (j = i - 1;  j >= max(i - 10, 0);  --j) {
+            socks[j].reset();
+        }
+        
+        for (i = 0;  i < 3;  ++i) {
+            switch (i) {
+            case 0: // "random" stack data, just sync
+                memcpy(canary_buf2, canary_buf1, NUM_CANARIES);
+                break;
+            case 1: // all zeroes
+                memset(canary_buf1, 0, NUM_CANARIES);
+                memset(canary_buf2, 0, NUM_CANARIES);
+                break;
+            case 2: // all ones
+                memset(canary_buf1, ~(char)0, NUM_CANARIES);
+                memset(canary_buf2, ~(char)0, NUM_CANARIES);
+                break;
+            }
+
+            BOOST_CHECK_EQUAL(canary1, canary2);
+            GUARD.reset(new CTimeoutGuard(*GetDS().GetDriverContext(), 2));
+            conn.reset(GetDS().CreateConnection());
+            conn->Connect(GetArgs().GetConnParams());
+            s_WaitForDelay(*conn);
+            GUARD.reset();
+            conn.reset();
+            BOOST_CHECK_EQUAL(canary1, canary2);
+        }
+    } catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
 
 END_NCBI_SCOPE

@@ -89,6 +89,10 @@
 #  define HAVE_INT64 1
 #endif
 
+#ifdef HAVE_POLL_H
+#  define HAVE_POLL 1
+#endif
+
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;
 #endif
