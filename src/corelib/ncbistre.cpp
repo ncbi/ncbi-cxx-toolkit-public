@@ -259,6 +259,19 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 }
 
 
+void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is)
+{
+    bool success = false;
+    try {
+        success = NcbiStreamCopy(os, is);
+    }
+    STD_CATCH_ALL("NcbiStreamCopy()");
+    if (!success) {
+        NCBI_THROW(CCoreException, eCore, "NcbiStreamCopy() failed");
+    }
+}
+
+
 bool NcbiStreamCompare(CNcbiIstream& is1, CNcbiIstream& is2)
 {
     while (is1 && is2) {
@@ -289,9 +302,10 @@ char x_GetChar(CNcbiIstream& is, ECompareTextMode mode,
         } else {
             return '\0';
         }
-    } while ( (mode == eCompareText_IgnoreEol && (c == '\n' || c == '\r')) ||
-              (mode == eCompareText_IgnoreWhiteSpace && isspace((unsigned char)c))
-            );
+    } while ( (mode == eCompareText_IgnoreEol
+               &&  (c == '\n'  ||  c == '\r'))  ||
+              (mode == eCompareText_IgnoreWhiteSpace
+               &&  isspace((unsigned char) c)) );
     return c;
 }
 
@@ -311,7 +325,7 @@ bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
         char c1 = x_GetChar(is1, mode, buf1, buf_size, pos1, size1);
         char c2 = x_GetChar(is2, mode, buf2, buf_size, pos2, size2);
         equal = (c1 == c2);
-        if (!c1 || !c2) {
+        if (!c1  ||  !c2) {
             break;
         }
     } while ( equal );
@@ -331,12 +345,13 @@ bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
 
 CNcbiOstrstreamToString::operator string(void) const
 {
-    SIZE_TYPE length = (size_t) m_Out.pcount();
-    if ( length == 0 )
+    SIZE_TYPE len = (SIZE_TYPE) m_Out.pcount();
+    if ( !len ) {
         return string();
+    }
     const char* str = m_Out.str();
     m_Out.freeze(false);
-    return string(str, length);
+    return string(str, len);
 }
 
 
@@ -392,10 +407,10 @@ CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val)
 #endif
 
 
-static const char s_Hex[] = "0123456789ABCDEF";
-
 string Printable(char c)
 {
+    static const char kHex[] = "0123456789ABCDEF";
+
     string s;
     switch ( c ) {
     case '\0':  s = "\\0";   break;
@@ -405,14 +420,12 @@ string Printable(char c)
     case '\r':  s = "\\r";   break;
     case '\v':  s = "\\v";   break;
     default:
-        {
-            if ( isprint((unsigned char) c) ) {
-                s = c;
-            } else {
-                s = "\\x";
-                s += s_Hex[(unsigned char) c / 16];
-                s += s_Hex[(unsigned char) c % 16];
-            }
+        if ( isprint((unsigned char) c) ) {
+            s = c;
+        } else {
+            s = "\\x";
+            s += kHex[(unsigned char) c / 16];
+            s += kHex[(unsigned char) c % 16];
         }
     }
     return s;

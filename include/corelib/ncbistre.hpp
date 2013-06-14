@@ -472,6 +472,13 @@ NCBI_XNCBI_EXPORT
 extern bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is);
 
 
+/// Same as NcbiStreamCopy() but throws an CCoreException when copy fails.
+/// @sa
+///   NcbiStreamCopy, CCoreException
+NCBI_XNCBI_EXPORT
+extern void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is);
+
+
 /// Compare stream contents in binary form.
 ///
 /// @param is1
@@ -694,6 +701,10 @@ public:
 /* @} */
 
 
+NCBI_XNCBI_EXPORT
+extern string Printable(char c);
+
+
 inline
 char Upcase(char c)
 {
@@ -715,7 +726,7 @@ CUpcaseCharPtrConverter Upcase(const char* s)
 inline
 char Locase(char c)
 {
-    return static_cast<char>(tolower(c));
+    return static_cast<char>(tolower((unsigned char) c));
 }
 
 inline
@@ -729,9 +740,6 @@ CLocaseCharPtrConverter Locase(const char* s)
 {
     return CLocaseCharPtrConverter(s);
 }
-
-NCBI_XNCBI_EXPORT
-extern string Printable(char c);
 
 inline
 CPrintableStringConverter Printable(const string& s)
