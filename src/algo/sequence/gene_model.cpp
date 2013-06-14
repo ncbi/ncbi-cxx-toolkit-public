@@ -1350,7 +1350,7 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
             str += "_";
         }
         str += NStr::SizetToString(model_num);
-        transcribed_rna_id->Assign(CSeq_id(str));
+        transcribed_rna_id->Set(str);
     }}
     bioseq.SetId().push_back(transcribed_rna_id);
 
