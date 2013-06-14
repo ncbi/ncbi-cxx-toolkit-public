@@ -166,6 +166,9 @@ public:
     /// Print the header of the blast report
     void PrintProlog();
 
+    /// Get total length of the database
+    Int8 GetDbTotalLength();
+
     /// Print all alignment information for a single query sequence along with
     /// any errors or warnings (errors are deemed fatal)
     /// @param results Object containing alignments, mask regions, and

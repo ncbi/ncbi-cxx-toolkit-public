@@ -63,7 +63,8 @@ CAutoOutputFileReset::GetStream()
 }
 
 int
-GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */, bool is_remote /* = false */)
+GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */, 
+                  bool is_remote /* = false */, bool use_default /* = true */)
 {
     int retval = 0;
 
@@ -89,6 +90,8 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */, bool is_remo
        retval = 10000;
        return retval;
     }
+
+    if (! use_default) return 0;
 
     switch (program) {
     case eBlastn:

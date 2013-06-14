@@ -66,21 +66,18 @@ USING_SCOPE(blast);
 
 Int4 CBatchSizeMixer::GetBatchSize(Int4 hits) 
 {
-     if (hits > 0) {
-         double ratio = 1.0 * hits / m_BatchSize;
+     if (hits >= 0) {
+         double ratio = 1.0 * (hits+1) / m_BatchSize;
          m_Ratio = (m_Ratio < 0) ? ratio 
                  : k_MixIn * ratio + (1.0 - k_MixIn) * m_Ratio;
-         m_BatchSize = (Int4) (1.0 * k_TargetHits / m_Ratio);
-         if (m_BatchSize > k_MaxBatchSize) {
-             m_BatchSize = k_MaxBatchSize;
-             m_Ratio = -1.0;  // reset the history
-         } else if (m_BatchSize < 100) {
-             m_BatchSize = 100;
-             m_Ratio = -1.0;  // reset the history
-         }
-     } else if (hits == 0) {
+         m_BatchSize = (Int4) (1.0 * m_TargetHits / m_Ratio);
+     } 
+     if (m_BatchSize > k_MaxBatchSize) {
          m_BatchSize = k_MaxBatchSize;
-         m_Ratio = -1.0;
+         m_Ratio = -1.0;  
+     } else if (m_BatchSize < k_MinBatchSize) {
+         m_BatchSize = k_MinBatchSize;
+         m_Ratio = -1.0; 
      }
      return m_BatchSize;
 }

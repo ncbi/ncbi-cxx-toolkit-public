@@ -241,6 +241,16 @@ static const string kHTML_Suffix =
 "</BODY>\n"
 "</HTML>";
 
+Int8
+CBlastFormat::GetDbTotalLength()
+{
+    Int8 retv = 0L;
+    for (size_t i = 0; i < m_DbInfo.size(); i++) {
+        retv += m_DbInfo[i].total_length;
+    }
+    return retv;
+}
+
 void 
 CBlastFormat::PrintProlog()
 {

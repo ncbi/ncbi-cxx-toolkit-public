@@ -55,18 +55,25 @@ class CBatchSizeMixer
 {
 private:
     const double k_MixIn;        // mixing factor between batches
-    const Int4 k_TargetHits;     // the target hits per batch
+    Int4 m_TargetHits;     // the target hits per batch
     double m_Ratio;              // the hits to batch size ratio
     Int4 m_BatchSize;            // the batch size for next run
+    const Int4 k_MinBatchSize;   // the minimum allowable batch size
     const Int4 k_MaxBatchSize;   // the maximum allowable batch size
 
 public:
-    CBatchSizeMixer(Int4 target, Int4 max_batch_size)
+    CBatchSizeMixer(Int4 max_batch_size)
           : k_MixIn       (0.3),
-            k_TargetHits  (target),
+            m_TargetHits  (1000000),
             m_Ratio       (-1.0),
-            m_BatchSize   (10000),  // a "safe" sample size to start with
+            m_BatchSize   (5000),
+            k_MinBatchSize(100),
             k_MaxBatchSize(max_batch_size) { }
+
+    void SetTargetHits(Int4 target) {
+        m_TargetHits = target;
+        m_BatchSize = target / 200;
+    }
 
     // Return the next batch_size
     Int4 GetBatchSize(Int4 hits = -1); 

@@ -125,7 +125,7 @@ int CBlastnApp::Run(void)
         if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
            	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
-        CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
+        CBlastInput input(&fasta);
 
         // Initialize the megablast database index now so we can know whether an indexed search will be run.
         // This is only important for the reference in the report, but would be done anyway.
@@ -157,14 +157,20 @@ int CBlastnApp::Run(void)
                                
         
         formatter.PrintProlog();
-        
-        CBatchSizeMixer mixer(2000000,   // targeted at 2M hits per batch
-                              SplitQuery_GetChunkSize(opt.GetProgram())-1000);
-        if (!m_CmdLineArgs->ExecuteRemotely()) {
-            input.SetBatchSize(mixer.GetBatchSize());
-        }
 
         /*** Process the input ***/
+        CBatchSizeMixer mixer(SplitQuery_GetChunkSize(opt.GetProgram())-1000);
+        int batch_size = m_CmdLineArgs->GetQueryBatchSize();
+        if (batch_size) {
+            input.SetBatchSize(batch_size);
+        } else {
+            Int8 total_len = formatter.GetDbTotalLength();
+            if (total_len > 0) {
+                /* the optimal hits per batch scales with total db size */
+                mixer.SetTargetHits(total_len / 3000);
+            }
+            input.SetBatchSize(mixer.GetBatchSize());
+        }
         for (; !input.End(); formatter.ResetScopeHistory()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
@@ -184,7 +190,8 @@ int CBlastnApp::Run(void)
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
-                input.SetBatchSize(mixer.GetBatchSize(lcl_blast.GetNumExtensions()));
+                if (!batch_size) 
+                    input.SetBatchSize(mixer.GetBatchSize(lcl_blast.GetNumExtensions()));
             }
 
             if (fmt_args->ArchiveFormatRequested(args)) {

@@ -244,10 +244,12 @@ ParseSequenceRangeOpenEnd(const string& range_str, const char* error_prefix = NU
  * @param program BLAST task [in]
  * @param is_ungapped true if ungapped BLAST search is requested [in]
  * @param remote true if remote BLAST search is requested [in]
+ * @param use_default true if a defaut value should be returned [in]
  */
 NCBI_BLASTINPUT_EXPORT
 int
-GetQueryBatchSize(EProgram program, bool is_ungapped = false, bool remote = false);
+GetQueryBatchSize(EProgram program, bool is_ungapped = false, bool remote = false,
+                  bool use_default = true);
 
 /** Read sequence input for BLAST 
  * @param in input stream from which to read [in]
