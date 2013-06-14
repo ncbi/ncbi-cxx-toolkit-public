@@ -996,7 +996,7 @@ class NetSchedule:
             raise Exception( "netschedule is not running" )
 
         cmdLine = [ self.__grid_cli, "commitjob", "--queue=" + qname,
-                    jobID, authToken, "--fail-job=" + errmsg,
+                    jobID, str( authToken ), "--fail-job=" + errmsg,
                     "--return-code=" + str( retCode ),
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         if output != "":
@@ -1176,7 +1176,7 @@ class NetSchedule:
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
 
-        cmdLine = [ self.__grid_cli, "readjobs",
+        cmdLine = [ self.__grid_cli, "readjob",
                     "--limit=" + str( count ),
                     "--queue=" + qname,
                     "--ns=" + self.__host + ":" + str( self.__port ) ]

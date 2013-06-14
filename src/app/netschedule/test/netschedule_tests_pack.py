@@ -8,7 +8,6 @@
 Netschedule server tests pack
 """
 
-import sys
 import time
 from ncbi_grid_1_0.ncbi.grid import ns as grid
 
@@ -252,40 +251,6 @@ class Scenario06( TestBase ):
         return len( queues ) == 1 and queues[ 0 ] == "TEST"
 
 
-class Scenario07( TestBase ):
-    " Scenario 7 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Getting the list of the configured queues"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        self.ns.setConfig( 2 )
-        self.ns.reconfigure()
-
-        queues = self.ns.getQueueList()
-        if len( queues ) != 3 or \
-               queues[ 0 ] != "TEST" or \
-               queues[ 1 ] != "TEST2" or \
-               queues[ 2 ] != "TEST3":
-            print >> sys.stderr, "Expected queues: TEST, TEST2 and TEST3." \
-                                 " Received: " + ", ".join( queues )
-            return False
-        return True
-
-
 class Scenario08( TestBase ):
     " Scenario 8 "
 
@@ -344,45 +309,6 @@ class Scenario09( TestBase ):
         if qinfo.has_key( "kind" ):
             return qinfo[ "kind" ] == "static"
         raise Exception( "No queue type found" )
-
-
-class Scenario10( TestBase ):
-    " Scenario 10 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Creating a dynamic queue and then delete it"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        self.ns.createQueue( "TEST1", "TEST", "bla" )
-        qinfo = self.ns.getQueueInfo( "TEST1" )
-        if qinfo[ "queue_type" ] != "dynamic" or \
-           qinfo[ "model_queue" ] != "TEST" or \
-           qinfo[ "description" ] != "bla":
-            print >> sys.stderr, "Unexpected queue info received: " + \
-                                 str( qinfo )
-            return False
-
-        self.ns.deleteQueue( "TEST1" )
-        try:
-            qinfo = self.ns.getQueueInfo( "TEST1" )
-        except Exception, exc:
-            if "Job queue not found" in str( exc ):
-                return True
-            raise
-        return False
 
 
 class Scenario11( TestBase ):
@@ -601,51 +527,6 @@ class Scenario18( TestBase ):
         return info[ 'affinity' ] == "n/a"
 
 
-class Scenario21( TestBase ):
-    " Scenario 21 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Submit a job, change the job id slightly, get the job info"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        if self.ns.getActiveJobsCount( 'TEST' ) != 0:
-            return False
-
-        jobID = self.ns.submitJob( "TEST", 'bla' )
-        if self.ns.getActiveJobsCount( 'TEST' ) != 1:
-            return False
-
-        # Make modifications in the job id
-        jobID = jobID[ : -4 ] + "9999"
-
-        # Sic! In spite of the fact the jobID.orig != jobID.changed we GET
-        # the same job info!
-        # I can check the job status only via a direct connection because
-        # the utility [currently] takes the server info from the job key...
-        self.ns.connect( 10 )
-        self.ns.directLogin( 'TEST' )
-        self.ns.directSendCmd( 'SST ' + jobID )
-        reply = self.ns.directReadSingleReply()
-        self.ns.disconnect()
-
-        if reply[ 0 ] != True or reply[ 1 ] != "0":
-            return False
-        return True
-
-
 class Scenario22( TestBase ):
     " Scenario 22 "
 
@@ -736,59 +617,6 @@ class Scenario23( TestBase ):
         if info[ "run_counter" ] != "1" or info[ "status" ] != "Running":
             return False
 
-        return True
-
-
-class Scenario24( TestBase ):
-    " Scenario 24 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Submit a job, get the job, take a break till run-time is " \
-               "expired, get the job dump and check the run counter, get " \
-               "the job again, put the job and check the return code. " \
-               "It will fail until NS is fixed."
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        if self.ns.getActiveJobsCount( 'TEST' ) != 0:
-            return False
-
-        jobID = self.ns.submitJob( "TEST", 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
-
-        if jobID != jobIDReceived:
-            return False
-        if self.ns.getActiveJobsCount( 'TEST' ) != 1:
-            return False
-
-        info = self.ns.getJobInfo( 'TEST', jobID )
-        if info[ "status" ] != "Running" or info[ "run_counter" ] != "1":
-            return False
-
-        time.sleep( 40 )    # Till the job is expired
-        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
-        if jobID != jobIDReceived:
-            return False
-        if self.ns.getActiveJobsCount( 'TEST' ) != 1:
-            return False
-
-        self.ns.putJob( 'TEST', jobID, 1, 'OUT' )
-        info = self.ns.getJobInfo( 'TEST', jobID )
-        if info[ "status" ] != "Done" or info[ "run_counter" ] != "2" or \
-           info[ "output-data" ] != "OUT" or getRetCode( info ) != "1":
-            return False
         return True
 
 
@@ -1095,17 +923,21 @@ class Scenario34( TestBase ):
             return False
 
         jobID = self.ns.submitJob( "TEST", 'bla' )
-        self.ns.getJob( 'TEST' )
-        self.ns.failJob( 'TEST', jobID, 255,
+        jobInfo = self.ns.getJob( 'TEST' )
+        self.ns.failJob( 'TEST', jobID, jobInfo[1], 255,
                          "Test output", "Test error message" )
 
         info = self.ns.getJobInfo( 'TEST', jobID )
-        if info[ 'status' ] != 'Failed' or \
-           info[ 'run_counter' ] != '1' or \
-           getRetCode( info ) != '255' or \
-           info[ 'output-data' ] != "'D Test output'" or \
-           getErrMsg( info ) != "'Test error message'":
-            return False
+        if info[ 'status' ] != 'Pending':
+            raise Exception( "Unexpected status" )
+        if info[ 'run_counter' ] != '1':
+            raise Exception( "Unexpected run counter" )
+        if getRetCode( info ) != '255':
+            raise Exception( "Unexpected return code" )
+        if 'Test output' not in info[ 'embedded_output_data' ]:
+            raise Exception( "Unexpected output data" )
+        if 'Test error message' not in getErrMsg( info ):
+            raise Exception( "Unexpected error message" )
 
         return True
 
@@ -1316,99 +1148,6 @@ class Scenario41( TestBase ):
         return True
 
 
-class Scenario43( TestBase ):
-    " Scenario 43 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "init worker node, init another worker node, " \
-               "wait till registration is exceeded"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        stats = self.ns.getWorkerNodeStat( 'TEST' )
-        if len( stats ) != 0:
-            return False
-
-        guid = self.ns.initWorkerNode( 'TEST', 9000 )
-        stats = self.ns.getWorkerNodeStat( 'TEST' )
-
-        # Check the worker node guid
-        if len( stats ) != 1:
-            return False
-        if guid not in stats[ 0 ]:
-            return False
-
-        guid1 = self.ns.initWorkerNode( 'TEST', 9001 )
-        stats = self.ns.getWorkerNodeStat( 'TEST' )
-
-        # Check the both worker nodes guids
-        if len( stats ) != 2:
-            return False
-
-        combined = " ".join( stats )
-        if 'grid_cli @ localhost UDP:9001' not in combined:
-            return False
-        if guid not in combined:
-            return False
-        if 'grid_cli @ localhost UDP:9000' not in combined:
-            return False
-        if guid1 not in combined:
-            return False
-
-        # Wait till the registration time is expired
-        time.sleep( 61 )
-
-        stats = self.ns.getWorkerNodeStat( 'TEST' )
-        if len( stats ) != 0:
-            return False
-        return True
-
-
-class Scenario45( TestBase ):
-    " Scenario 45 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Init a worker node, " \
-               "init another worker node with the same guid but the other " \
-               "port. It will fail until NS is fixed."
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        guid = self.ns.initWorkerNode( 'TEST', 9000 )
-        guid = guid     # pylint is happy
-        try:
-            guid = self.ns.initWorkerNode( 'TEST', 9001 )
-        except Exception:
-            return True
-
-        # The test will fail because this are two different sessions
-        return False
-
-
 class Scenario46( TestBase ):
     " Scenario 46 "
 
@@ -1469,8 +1208,7 @@ class Scenario50( TestBase ):
         " Should return a textual description of the test "
         return "Submit a job, get job for execution, " \
                "commit the job, get the job for reading, " \
-               "check the job run counter. " \
-               "It will fail until NS is fixed."
+               "check the job run counter. "
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1482,14 +1220,13 @@ class Scenario50( TestBase ):
 
 
         jobID1 = self.ns.submitJob( 'TEST', 'bla1' )
-        receivedJobID1 = self.ns.getJob( 'TEST' )[ 0 ]
-        self.ns.putJob( 'TEST', receivedJobID1, 0, 'bla' )
+        jinfo = self.ns.getJob( 'TEST' )
+        receivedJobID1 = jinfo[ 0 ]
+        self.ns.putJob( 'TEST', receivedJobID1, jinfo[ 1 ], 0, 'bla' )
 
-        groupID, jobs = self.ns.getJobsForReading( 'TEST', 1 )
-        if groupID != 1:
-            return False
-        if len( jobs ) != 1:
-            return False
+        jobID, jobState, jobPassport = self.ns.getJobsForReading2( 'TEST' )
+        if jobID1 != jobID:
+            raise Exception( "Unexpected job ID" )
 
         info = self.ns.getJobInfo( 'TEST', jobID1 )
         if info[ 'run_counter' ] != '1':
@@ -1634,8 +1371,7 @@ class Scenario55( TestBase ):
     def getScenario():
         " Should return a textual description of the test "
         return "Submit a job, get the job for execution, fail the job, " \
-               "get the job fast status. " \
-               "It will fail until NS is fixed."
+               "get the job fast status. "
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1646,48 +1382,15 @@ class Scenario55( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        jInfo = self.ns.getJob( 'TEST' )
+        receivedJobID = jInfo[ 0 ]
         if receivedJobID != jobID:
-            return False
-        self.ns.failJob( 'TEST', jobID, 1, "error-output" )
+            raise Exception( "Unexpected job ID" )
 
-        return self.ns.getFastJobStatus( 'TEST', jobID ) == 4
-
-
-class Scenario56( TestBase ):
-    " Scenario 56 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Submit a job, get the job for execution, cancel the job, " \
-               "reschedule the job, check the job status. " \
-               "It will fail until NS is fixed."
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        jobID = self.ns.submitJob( 'TEST', 'bla' )
-        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
-        if jobID != receivedJobID:
-            return False
-
-        self.ns.cancelJob( 'TEST', jobID )
-        self.ns.rescheduleJob( 'TEST', jobID )
-
-        info = self.ns.getJobInfo( 'TEST', jobID )
-        if info[ 'status' ] != 'Pending':
-            return False
-
+        self.ns.failJob( 'TEST', jobID, jInfo[1], 1, "error-output" )
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Pending":
+            raise Exception( "Unexpected job state" )
         return True
 
 
