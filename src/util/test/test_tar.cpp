@@ -605,15 +605,15 @@ int CTarTest::Run(void)
         CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                CRWStreambuf::fLogExceptions));
         ofstream of;
-        bool stdout = args["O"].HasValue();
-        if (!stdout  ||  pipethru) {
-            of.open(!stdout ? args[1].AsString().c_str() : DEVNULL,
+        bool xstdout = args["O"].HasValue();
+        if (!xstdout  ||  pipethru) {
+            of.open(!xstdout ? args[1].AsString().c_str() : DEVNULL,
                     IOS_BASE::out | IOS_BASE::binary);
         }
-        if (!NcbiStreamCopy(!stdout  ||  pipethru ? of : NcbiCout, rs)) {
+        if (!NcbiStreamCopy(!xstdout  ||  pipethru ? of : NcbiCout, rs)) {
             // NB: CTar would throw archive read exception
             string errmsg("Write error");
-            if (!stdout) {
+            if (!xstdout) {
                 errmsg += " in \"";
                 errmsg += args[1].AsString();
                 errmsg += '"';
@@ -693,12 +693,12 @@ int CTarTest::Run(void)
                     CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                            CRWStreambuf::fLogExceptions));
                     ofstream of;
-                    bool stdout = args["O"].HasValue();
-                    if (!stdout  ||  pipethru) {
-                        of.open(!stdout ? info->GetName().c_str() : DEVNULL,
+                    bool xstdout = args["O"].HasValue();
+                    if (!xstdout  ||  pipethru) {
+                        of.open(!xstdout ? info->GetName().c_str() : DEVNULL,
                                 IOS_BASE::out | IOS_BASE::binary);
                     }
-                    if (!NcbiStreamCopy(!stdout || pipethru? of :NcbiCout,rs)){
+                    if (!NcbiStreamCopy(!xstdout || pipethru? of:NcbiCout,rs)){
                         // NB: CTar would throw archive read exception
                         string errmsg("Write error");
                         if (!stdout) {
