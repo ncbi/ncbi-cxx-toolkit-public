@@ -604,13 +604,22 @@ int CTarTest::Run(void)
         }
         CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                CRWStreambuf::fLogExceptions));
-        bool tocout = args["O"].HasValue();
         ofstream of;
-        if (!tocout  ||  pipethru) {
-            of.open(!tocout ? args[1].AsString().c_str() : DEVNULL,
+        bool stdout = args["O"].HasValue();
+        if (!stdout  ||  pipethru) {
+            of.open(!stdout ? args[1].AsString().c_str() : DEVNULL,
                     IOS_BASE::out | IOS_BASE::binary);
         }
-        NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs);
+        if (!NcbiStreamCopy(!stdout  ||  pipethru ? of : NcbiCout, rs)) {
+            // NB: CTar would throw archive read exception
+            string errmsg("Write error");
+            if (!stdout) {
+                errmsg += " in \"";
+                errmsg += args[1].AsString();
+                errmsg += '"';
+            }
+            NCBI_THROW(CTarException, eWrite, errmsg);
+        }
     } else {
         tar->SetFlags(m_Flags);
         if (args["C"].HasValue()) {
@@ -683,13 +692,22 @@ int CTarTest::Run(void)
                     _ASSERT(ir);
                     CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                            CRWStreambuf::fLogExceptions));
-                    bool tocout = args["O"].HasValue();
                     ofstream of;
-                    if (!tocout  ||  pipethru) {
-                        of.open(!tocout ? info->GetName().c_str() : DEVNULL,
+                    bool stdout = args["O"].HasValue();
+                    if (!stdout  ||  pipethru) {
+                        of.open(!stdout ? info->GetName().c_str() : DEVNULL,
                                 IOS_BASE::out | IOS_BASE::binary);
                     }
-                    NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs);
+                    if (!NcbiStreamCopy(!stdout || pipethru? of :NcbiCout,rs)){
+                        // NB: CTar would throw archive read exception
+                        string errmsg("Write error");
+                        if (!stdout) {
+                            errmsg += " in \"";
+                            errmsg += info->GetName();
+                            errmsg += '"';
+                        }
+                        NCBI_THROW(CTarException, eWrite, errmsg);
+                    }
                 }
             } else {
                 auto_ptr<CTar::TEntries> entries = tar->Extract();
