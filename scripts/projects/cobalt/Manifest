@@ -28,7 +28,7 @@ APP: cobalt
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile --without-dll LDFLAGS=-static-libcxa
+Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
 Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
 
 DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
