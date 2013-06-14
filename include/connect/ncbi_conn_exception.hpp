@@ -46,6 +46,8 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Generic CONN exception.
+///
 class NCBI_XCONNECT_EXPORT CConnException
     : EXCEPTION_VIRTUAL_BASE public CException
 {
@@ -59,11 +61,10 @@ public:
 
 
 /// IO exception. 
-/// Thrown if error is specific to the NCBI BDB C++ library.
 ///
 /// @sa EIO_Status
 class NCBI_XCONNECT_EXPORT CIO_Exception
-    : EXCEPTION_VIRTUAL_BASE public CException
+    : EXCEPTION_VIRTUAL_BASE public CConnException
 {
 public:
     /// @sa EIO_Status
