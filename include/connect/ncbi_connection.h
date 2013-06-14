@@ -393,7 +393,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
 
 
 /** Get an underlying SOCK handle for connection that is implemented as a
- * socket.  Not a eIO_Success return code guarantees "*sock" is NULL.
+ * socket.  Non-eIO_Success return code guarantees "*sock" is NULL.
  * Set "*sock" to NULL when no socket handle can be obtained.
  * @note  The returned SOCK object remains in use by the connection.
  * @sa
