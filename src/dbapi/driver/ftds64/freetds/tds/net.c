@@ -328,6 +328,7 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
 	int rc, seconds;
 	unsigned int poll_seconds;
 	static const char method[] = "poll(2)";
+    double now, start = global_start;
 
 	assert(tds != NULL);
 	assert(timeout_seconds >= 0);
@@ -348,7 +349,12 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
 	 * 2.  select(2) returns an important error.  (return to caller)
 	 * A timeout of zero says "wait forever".  We do that by passing a NULL timeval pointer to select(2). 
 	 */
-    poll_seconds = tds->query_timeout_func ? 1 : timeout_seconds;
+    poll_seconds = timeout_seconds;
+    if (tds->query_timeout_func  &&  tds_sel == TDSSELREAD) {
+        poll_seconds = 1;
+    } else if (tds->query_timeout > 0) {
+        poll_seconds = timeout_seconds = tds->query_timeout;
+    }
 	for (seconds = timeout_seconds; timeout_seconds == 0 || seconds > 0; seconds -= poll_seconds) {
 		struct pollfd fd;
 		int timeout = poll_seconds ? poll_seconds * 1000 : -1;
@@ -377,7 +383,10 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
 
 		assert(rc == 0 || (rc < 0 && sock_errno == TDSSOCK_EINTR));
 
-        if (tds->query_timeout_func) { /* interrupt handler installed */
+        if (tds->query_timeout > 0) {
+			int timeout_action = TDS_INT_CONTINUE;
+            now = GetTimeMark();
+
 			/*
 			 * "If hndlintr() returns INT_CANCEL, DB-Library sends an attention token [TDS_BUFSTAT_ATTN]
 			 * to the server. This causes the server to discontinue command processing. 
@@ -387,13 +396,18 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
 			 * - Flush the results using dbcancel 
 			 * - Process the results normally"
 			 */
-            double now = GetTimeMark();
-			int timeout_action
-                = (*tds->query_timeout_func) (tds->query_timeout_param,
-                                              (int)(now - global_start));
+            if (tds->query_timeout_func  &&  tds_sel == TDSSELREAD
+                &&  now - start >= tds->query_timeout) {
+                timeout_action
+                    = (*tds->query_timeout_func) (tds->query_timeout_param,
+                                                  (int)(now - global_start));
 #if 0
-			tdsdump_log(TDS_DBG_ERROR, "tds_ctx->int_handler returned %d\n", timeout_action);
+                tdsdump_log(TDS_DBG_ERROR,
+                            "tds_ctx->query_timeout_func returned %d\n",
+                            timeout_action);
 #endif
+                start = now;
+            }
 			switch (timeout_action) {
 			case TDS_INT_CONTINUE:		/* keep waiting */
 				continue;
