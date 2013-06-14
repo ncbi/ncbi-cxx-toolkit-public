@@ -202,7 +202,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    SunOS*     ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-2.9.3-ncbi1} ;;
+    SunOS*     ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-2.9.4-ncbi2} ;;
     *          ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-2.9.4-ncbi1} ;;
 esac
 
