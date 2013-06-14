@@ -52,8 +52,8 @@
 BEGIN_NCBI_NAMESPACE;
 
 
-// Hex symbols (up to base 36)
-static const char s_Hex[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+// Digits (up to base 36)
+static const char kDigit[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 
 static inline
@@ -1635,13 +1635,13 @@ static void s_SignedToString(string&                 out_str,
     }
     else if ( base == 16 ) {
         do {
-            *--pos = s_Hex[value % 16];
+            *--pos = kDigit[value % 16];
             value /= 16;
         } while ( value );
     }
     else {
         do {
-            *--pos = s_Hex[value % base];
+            *--pos = kDigit[value % base];
             value /= base;
         } while ( value );
     }
@@ -1728,13 +1728,13 @@ void NStr::ULongToString(string&          out_str,
     }
     else if ( base == 16 ) {
         do {
-            *--pos = s_Hex[value % 16];
+            *--pos = kDigit[value % 16];
             value /= 16;
         } while ( value );
     }
     else {
         do {
-            *--pos = s_Hex[value % base];
+            *--pos = kDigit[value % base];
             value /= base;
         } while ( value );
     }
@@ -1835,13 +1835,13 @@ static char* s_PrintUint8(char*                   pos,
     }
     else if ( base == 16 ) {
         do {
-            *--pos = s_Hex[value % 16];
+            *--pos = kDigit[value % 16];
             value /= 16;
         } while ( value );
     }
     else {
         do {
-            *--pos = s_Hex[value % base];
+            *--pos = kDigit[value % base];
             value /= base;
         } while ( value );
     }
