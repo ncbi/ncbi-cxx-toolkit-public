@@ -63,6 +63,7 @@
 #include "hchecking_class.hpp"
 #include "hauto_disc_class.hpp"
 #include "hDiscRep_config.hpp"
+#include "hUtilib.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -76,11 +77,127 @@ static CDiscRepInfo thisInfo;
 static string       strtmp;
 static COutputConfig& oc = thisInfo.output_config;
 
+static s_fataltag extra_fatal [] = {
+        {"MISSING_GENOMEASSEMBLY_COMMENTS", NULL, NULL}
+};
+
+static s_fataltag disc_fatal[] = {
+        {"BAD_LOCUS_TAG_FORMAT", NULL, NULL},
+        {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", NULL, NULL},
+        {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", NULL, NULL},
+        {"DISC_CITSUBAFFIL_CONFLICT", NULL, "No citsubs were found!"},
+        {"DISC_INCONSISTENT_MOLTYPES", NULL, "Moltypes are consistent"},
+        {"DISC_MAP_CHROMOSOME_CONFLICT", NULL, NULL},
+        {"DISC_MICROSATELLITE_REPEAT_TYPE", NULL, NULL},
+        {"DISC_MISSING_AFFIL", NULL, NULL},
+        {"DISC_NONWGS_SETS_PRESENT", NULL, NULL},
+        {"DISC_QUALITY_SCORES", "Quality scores are missing on some sequences.", NULL},
+        {"DISC_RBS_WITHOUT_GENE", NULL, NULL},
+        {"DISC_SHORT_RRNA", NULL, NULL},
+        {"DISC_SEGSETS_PRESENT", NULL, NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "collection-date", NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "country", NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "isolation-source", NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "host", NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "strain", NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "taxname", NULL},
+        {"DISC_SOURCE_QUALS_ASNDISC", "taxname (all present, all unique)", NULL},
+        {"DISC_SUBMITBLOCK_CONFLICT", NULL, NULL},
+        {"DISC_SUSPECT_RRNA_PRODUCTS", NULL, NULL},
+        {"DISC_TITLE_AUTHOR_CONFLICT", NULL, NULL},
+        {"DISC_UNPUB_PUB_WITHOUT_TITLE", NULL, NULL},
+        {"DISC_USA_STATE", NULL, NULL},
+        {"EC_NUMBER_ON_UNKNOWN_PROTEIN", NULL, NULL},
+        {"EUKARYOTE_SHOULD_HAVE_MRNA", "no mRNA present", NULL},
+        {"INCONSISTENT_LOCUS_TAG_PREFIX", NULL, NULL},
+        {"INCONSISTENT_PROTEIN_ID", NULL, NULL},
+        {"MISSING_GENES", NULL, NULL},
+        {"MISSING_LOCUS_TAGS", NULL, NULL},
+        {"MISSING_PROTEIN_ID", NULL, NULL},
+        {"ONCALLER_ORDERED_LOCATION", NULL, NULL},
+        {"PARTIAL_CDS_COMPLETE_SEQUENCE", NULL, NULL},
+        {"PSEUDO_MISMATCH", NULL, NULL},
+        {"RNA_CDS_OVERLAP", "coding regions are completely contained in RNAs", NULL},
+        {"RNA_NO_PRODUCT", NULL, NULL},
+        {"SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME", NULL, NULL},
+        {"SUSPECT_PRODUCT_NAMES", "Remove organism from product name", NULL},
+        {"SUSPECT_PRODUCT_NAMES", "Possible parsing error or incorrect formatting; remove inappropriate symbols", NULL},
+        {"TEST_OVERLAPPING_RRNAS", NULL, NULL}
+};
+
+static unsigned disc_cnt = sizeof(disc_fatal)/sizeof(s_fataltag);
+static unsigned extra_cnt = sizeof(extra_fatal)/sizeof(s_fataltag);
+
+bool CRepConfig :: NeedsTag(const string& setting_name, const string& desc, const s_fataltag* tags, const unsigned& cnt)
+{
+   unsigned i;
+   for (i =0; i< cnt; i++) {
+     if (setting_name == tags[i].setting_name
+          && (!tags[i].notag_description 
+                 || NStr::FindNoCase(desc, tags[i].notag_description) == string::npos)
+          && (!tags[i].description 
+                 || NStr::FindNoCase(desc, tags[i].description) != string::npos) )
+        return true;
+   }
+   return false;
+};
+
+
+void CRepConfig :: AddListOutputTags()
+{
+  string setting_name, desc, sub_desc;
+  bool na_cnt_grt1 = false;
+  vector <string> arr;
+  ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
+    if ((*it)->setting_name == "DISC_COUNT_NUCLEOTIDES") { // IsDiscCntGrt1
+      arr.clear();
+      arr = NStr::Tokenize((*it)->description, " ", arr);
+      na_cnt_grt1 = (isInt(arr[0]) && NStr::StringToInt(arr[0]) > 1) ? true : false;
+      break;
+    }
+  }
+ 
+  // AddOutpuTag
+  NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, thisInfo.disc_report_data) {
+     setting_name = (*it)->setting_name;
+     desc = (*it)->description;
+     NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, (*it)->subcategories) {
+        sub_desc = (*sit)->description;
+        if (NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
+               || (oc.add_extra_output_tag 
+                      && NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
+           if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
+             if (sub_desc.find("some missing") != string::npos
+                                   || sub_desc.find("some duplicate") != string::npos)
+                  (*sit)->description = "FATAL: " + (*sit)->description;
+
+           }
+           else (*sit)->description = "FATAL: " + (*sit)->description;
+        }
+     }
+
+     if (NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
+              || (oc.add_extra_output_tag 
+                               && NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {
+        if (setting_name == "DISC_SOURCE_QUALS_ASNDSC") {
+          if (NStr::FindNoCase(desc, "taxname (all present, all unique)") != string::npos) {
+             if (na_cnt_grt1) (*it)->description = "FATAL: " + (*it)->description;
+          }
+          else if (desc.find("some missing") != string::npos 
+                       || desc.find("some duplicate") != string::npos)
+              (*it)->description = "FATAL: " + (*it)->description;
+        }
+        else (*it)->description = "FATAL: " + (*it)->description;
+     } 
+  } 
+};
 
 //void CRepConfDiscrepancy :: Export()
 //void CRepConfig :: Export()
 void CRepConfDiscrepancy :: Export()
 {
+  if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags();
+
   oc.output_f << "Discrepancy Report Results\n\n"
        << "Summary\n";
   WriteDiscRepSummary();
@@ -88,7 +205,6 @@ void CRepConfDiscrepancy :: Export()
   oc.output_f << "\n\nDetailed Report\n";
   WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
 };  // Discrepancy:: Export
-
 
 bool CRepConfig :: RmTagInDescp(CRef <CClickableItem> c_item, const string& tag)
 {

@@ -171,6 +171,8 @@ namespace DiscRepNmSpc{
            bool     use_flag;
            ofstream output_f;
            bool     summary_report;
+           bool     add_output_tag;
+           bool     add_extra_output_tag;
      };
 
      typedef map<string, unsigned>  Str2UInt;

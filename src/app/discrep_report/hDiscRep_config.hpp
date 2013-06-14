@@ -83,15 +83,24 @@ namespace DiscRepNmSpc {
       int category;
    };
 
+   struct s_fataltag {
+        string setting_name;
+        const char* description;
+        const char* notag_description;
+   };
+
    class CRepConfig 
    {
      public:
         virtual ~CRepConfig() {};
 
+        void CollectTests();
         void Init(const string& report_type);
         static CRepConfig* factory(const string& report_tp);
         virtual void Export() = 0;
-        void CollectTests();
+        void AddListOutputTags();
+        bool NeedsTag(const string& setting_name, const string& desc, 
+                             const s_fataltag* tags, const unsigned& tags_cnt);
   
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq;
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq_na;

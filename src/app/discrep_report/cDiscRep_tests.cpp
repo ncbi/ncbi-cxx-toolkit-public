@@ -7576,7 +7576,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                true, kEmptyStr, false, (qvlu2src.begin()->second).size());
          }
          else if (all_unique) {
-                 c_item->description += "all_unique";
+                 c_item->description += "all unique";
                  if (setting_name == GetName_asn1_oncall()) {
                     ITERATE (Str2Strs, jt, qvlu2src) { 
                        if ( jt->first != "missing" && jt->first != "multi_same"
@@ -9558,14 +9558,15 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
    }
 
 // ONCALLER_MISSING_STRUCTURED_COMMENTS, MISSING_STRUCTURED_COMMENT
-   if (run_oncall) {
+   if (run_oncall || run_scomm) {
       ITERATE (Str2Int, it, bioseq2cnt) {
-        thisInfo.test_item_list[GetName_oncall_scomm()].push_back(
+        if (run_oncall)
+             thisInfo.test_item_list[GetName_oncall_scomm()].push_back(
                                 NStr::IntToString(it->second) + "$" + it->first);
-        if (!it->second)
+        if (run_scomm && !it->second)
           thisInfo.test_item_list[GetName_scomm()].push_back(it->first);
       }
-  }
+   }
 };
 
 void CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX :: GetReport(CRef <CClickableItem>& c_item)

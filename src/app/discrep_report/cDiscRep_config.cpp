@@ -87,7 +87,8 @@ set <string> CDiscTestInfo :: tests_run;
 
 static CDiscTestInfo thisTest;
 static const s_test_property test1_list[] = {
-   {"MISSING_STRUCTURED_COMMENT", fDiscrepancy},
+   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy},
+   {"DISC_SOURCE_QUALS_ASNDISC", fDiscrepancy}, // asndisc version
 };
 
 static const s_test_property test_list[] = {

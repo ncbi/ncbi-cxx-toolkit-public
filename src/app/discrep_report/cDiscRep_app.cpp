@@ -220,7 +220,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddDefaultKey("d", "DisableTests", "List of disabled tests, seperated by ','",
                               CArgDescriptions::eString, "");
 
-    SetupArgDescriptions(arg_desc.release());
+    SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 
     const CNcbiRegistry& reg = GetConfig();
     int i;
@@ -1013,6 +1013,8 @@ int CDiscRepApp :: Run(void)
     }
     thisInfo.output_config.output_f.open(output_f.c_str());
     thisInfo.output_config.summary_report = args["S"].AsBoolean();
+    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
+    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
 
     // enabled and disabled tests
     strtmp = args["e"].AsString();
@@ -1024,6 +1026,7 @@ int CDiscRepApp :: Run(void)
          thisInfo.tests_disabled 
               = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
 
+    if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
     CRepConfig* rep_config = CRepConfig::factory(thisInfo.report);
     rep_config->Init(thisInfo.report);
 
