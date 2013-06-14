@@ -52,9 +52,11 @@ extern "C" {
  * @sa SSendMailInfo
  */
 enum ESendMailOption {
-    fSendMail_NoMxHeader       = (1 << 0), /**< Don't add standard mail header,
+    fSendMail_LogOn            = eOn,      /**< see: fSOCK_LogOn      */
+    fSendMail_LogOff           = eOff,     /**<      fSOCK_LogDefault */
+    fSendMail_NoMxHeader       = (1 << 4), /**< Don't add standard mail header,
                                                 just use what user provided */
-    fSendMail_Old822Headers    = (1 << 7), /**< Do not form "Date:" and "From:"
+    fSendMail_Old822Headers    = (1 << 6), /**< Do not form "Date:" and "From:"
                                                 but let them be defaulted */
     fSendMail_StripNonFQDNHost = (1 << 8), /**< Strip host part off the "from"
                                                 field if it does not look like
@@ -63,7 +65,7 @@ enum ESendMailOption {
                                                 separated by a dot); leave only
                                                 the username part */
 };
-typedef unsigned int TSendMailOptions;     /**< Bitwise OR of ESendMailOption*/
+typedef unsigned short TSendMailOptions;   /**< Bitwise OR of ESendMailOption*/
 
 
 /** Define optional parameters for communication with sendmail.
@@ -74,9 +76,9 @@ typedef struct {
     char             from[1024];    /**< Originator address                  */
     const char*      header;        /**< Custom msg header ('\n'-separated)  */
     size_t           body_size;     /**< Message body size (if specified)    */
+    STimeout         mx_timeout;    /**< Timeout for all network transactions*/
     const char*      mx_host;       /**< Host to contact an MTA at           */
     short            mx_port;       /**< Port to contact an MTA at           */
-    STimeout         mx_timeout;    /**< Timeout for all network transactions*/
     TSendMailOptions mx_options;    /**< See ESendMailOption                 */
     unsigned int     magic_cookie;  /**< RO, filled in by SendMailInfo_Init  */
 } SSendMailInfo;
@@ -112,7 +114,7 @@ typedef struct {
  *  Which username to use when auto-generating (otherwise ignored)
  * @return
  *  Return value equals the argument 'info' passed in.
- * @note It is allowed to pre-fill "'nfo->from' (of the 'info' being inited)
+ * @note It is allowed to pre-fill "'info->from' (of the 'info' being inited)
  *       with one of the above patterns, and pass it as the 'from' parameter.
  * @note Unlike the username part of the return address, the hostname part is
  *       never truncated but dropped altogether if it does not fit.

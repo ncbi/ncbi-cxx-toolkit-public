@@ -258,9 +258,9 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
 }
 
 
+static STimeout       s_MxTimeout;
 static char           s_MxHost[256];
 static unsigned short s_MxPort;
-static STimeout       s_MxTmo;
 
 
 static void x_Sendmail_InitEnv(void)
@@ -290,8 +290,8 @@ static void x_Sendmail_InitEnv(void)
     }
 
     CORE_LOCK_WRITE;
-    s_MxTmo.sec  = (unsigned int)  tmo;
-    s_MxTmo.usec = (unsigned int)((tmo - s_MxTmo.sec) * 1000000.0);
+    s_MxTimeout.sec  = (unsigned int)  tmo;
+    s_MxTimeout.usec = (unsigned int)((tmo - s_MxTimeout.sec) * 1000000.0);
     strcpy(s_MxHost, buf);
     s_MxPort = port;
     CORE_UNLOCK;
@@ -309,9 +309,9 @@ extern SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
         s_MakeFrom(info->from, sizeof(info->from), from, user);
         info->header          = 0;
         info->body_size       = 0;
+        info->mx_timeout      = s_MxTimeout;
         info->mx_host         = s_MxHost;
         info->mx_port         = s_MxPort;
-        info->mx_timeout      = s_MxTmo;
         info->mx_options      = 0;
         info->magic_cookie    = MX_MAGIC_COOKIE;
     }
@@ -448,6 +448,7 @@ extern const char* CORE_SendMailEx(const char*          to,
     SSendMailInfo ainfo;
     EIO_Status status;
     char buffer[1024];
+    TSOCK_Flags log;
     SOCK sock = 0;
 
     info = uinfo ? uinfo : SendMailInfo_Init(&ainfo);
@@ -461,8 +462,10 @@ extern const char* CORE_SendMailEx(const char*          to,
     }
 
     /* Open connection to sendmail */
-    if ((status = SOCK_Create(info->mx_host, info->mx_port, &info->mx_timeout,
-                              &sock)) != eIO_Success) {
+    log = info->mx_options & fSendMail_LogOn ? fSOCK_LogOn : fSOCK_LogDefault;
+    if ((status = SOCK_CreateEx(info->mx_host, info->mx_port,
+                                &info->mx_timeout, &sock,
+                                0, 0, log)) != eIO_Success) {
         sprintf(buffer, "%s:%hu (%s)", info->mx_host, info->mx_port,
                 IO_StatusStr(status));
         SENDMAIL_RETURN2(8, "Cannot connect to sendmail", buffer);
@@ -474,9 +477,9 @@ extern const char* CORE_SendMailEx(const char*          to,
     if (!SENDMAIL_READ_RESPONSE(220, 0, buffer))
         SENDMAIL_RETURN2(9, "Protocol error in connection init", buffer);
 
-    if ((!(info->mx_options & fSendMail_StripNonFQDNHost)  ||
-         !SOCK_gethostbyaddr(0, buffer, sizeof(buffer)))  &&
-        SOCK_gethostname(buffer, sizeof(buffer)) != 0) {
+    if ((!(info->mx_options & fSendMail_StripNonFQDNHost)
+         ||  !SOCK_gethostbyaddr(0, buffer, sizeof(buffer)))
+        &&  SOCK_gethostname(buffer, sizeof(buffer)) != 0) {
         SENDMAIL_RETURN(10, "Unable to get local host name");
     }
     if (!s_SockWrite(sock, "HELO ", 5)  ||
@@ -517,6 +520,8 @@ extern const char* CORE_SendMailEx(const char*          to,
         SENDMAIL_RETURN(15, "Write error in DATA command");
     if (!SENDMAIL_READ_RESPONSE(354, 0, buffer))
         SENDMAIL_RETURN2(16, "Protocol error in DATA command", buffer);
+
+    (void) SOCK_SetCork(sock, eOn);
 
     if (!(info->mx_options & fSendMail_NoMxHeader)) {
         if (!(info->mx_options & fSendMail_Old822Headers)) {
@@ -665,6 +670,8 @@ extern const char* CORE_SendMailEx(const char*          to,
         }
     } else if (!s_SockWrite(sock, "." MX_CRLF, sizeof(MX_CRLF)))
         SENDMAIL_RETURN(28, "Write error while finalizing message");
+
+    (void) SOCK_SetCork(sock, eOff);
 
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2(29, "Protocol error in sending message", buffer);
