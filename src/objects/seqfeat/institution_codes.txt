@@ -5632,7 +5632,8 @@ SYKT	s	Syktyvkar State University, Botany Department
 SYPC	s	Shenyang College of Pharmacy, Pharmaceutical Botany Department
 SYR	s	Syracuse University, Plant Sciences Department
 SYRF	s	State University of New York
-SYS	s	Zhongshan (Sun Yatsen) University, Biology Department
+SYS	s	Sun Yatsen University, Biology Department
+SYS:Z	s	Sun Yatsen University, Biology Department, Zoology Collection
 SYSU	s	National Sun Yat-Sen University, Department of Biological Sciences
 SYT	s	Stonyhurst College
 SZ	s	Sichuan University, Biological Department
