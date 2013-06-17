@@ -327,8 +327,12 @@ SQueueParameters::ReadTimeout(const IRegistry &  reg,
     double  val = GetDoubleNoErr("timeout",
                                  double(default_timeout));
 
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].timeout cannot be <= 0. Default value: "
+                         << default_timeout << " is used.");
         return default_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -339,8 +343,13 @@ SQueueParameters::ReadNotifHifreqInterval(const IRegistry &  reg,
     double  val = GetDoubleNoErr("notif_hifreq_interval",
                                  double(default_notif_hifreq_interval));
     val = (int(val * 10)) / 10.0;
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].notif_hifreq_interval cannot be <= 0."
+                            " Default value: " << default_notif_hifreq_interval
+                         << " is used.");
         return default_notif_hifreq_interval;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -350,8 +359,13 @@ SQueueParameters::ReadNotifHifreqPeriod(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("notif_hifreq_period",
                                  double(default_notif_hifreq_period));
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].notif_hifreq_period cannot be <= 0."
+                            " Default value: " << default_notif_hifreq_period
+                         << " is used.");
         return default_notif_hifreq_period;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -361,8 +375,13 @@ SQueueParameters::ReadNotifLofreqMult(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("notif_lofreq_mult",
                                       default_notif_lofreq_mult);
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].notif_lofreq_mult cannot be <= 0."
+                            " Default value: " << default_notif_lofreq_mult
+                         << " is used.");
         return default_notif_lofreq_mult;
+    }
     return val;
 }
 
@@ -372,8 +391,13 @@ SQueueParameters::ReadNotifHandicap(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("notif_handicap",
                                  double(default_notif_handicap));
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].notif_handicap cannot be <= 0."
+                            " Default value: " << default_notif_handicap
+                         << " is used.");
         return default_notif_handicap;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -383,10 +407,21 @@ SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("dump_buffer_size",
                                       default_dump_buffer_size);
-    if (val < default_dump_buffer_size)
+    if (val < default_dump_buffer_size) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_buffer_size should not be less than "
+                         << default_dump_buffer_size
+                         << ". Default value: " << default_dump_buffer_size
+                         << " is used.");
         val = default_dump_buffer_size;  // Avoid too small buffer
-    else if (val > 10000)
-        val = 10000;                     // Avoid too large buffer
+    }
+    else if (val > 10000) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_buffer_size should not be larger than "
+                            "10000. Default value: " << default_dump_buffer_size
+                         << " is used.");
+        val = 10000;    // Avoid too large buffer
+    }
     return val;
 }
 
@@ -396,8 +431,13 @@ SQueueParameters::ReadRunTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("run_timeout",
                                  double(default_run_timeout));
-    if (val < 0)
+    if (val < 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].run_timeout cannot be < 0."
+                            " Default value: " << default_run_timeout
+                         << " is used.");
         return default_run_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -421,8 +461,13 @@ SQueueParameters::ReadBlacklistTime(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("blacklist_time",
                                  double(default_blacklist_time));
-    if (val < 0)
+    if (val < 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].blacklist_time cannot be < 0."
+                            " Default value: " << default_blacklist_time
+                         << " is used.");
         return default_blacklist_time;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -436,9 +481,20 @@ SQueueParameters::ReadMaxInputSize(const IRegistry &  reg,
     try {
         val = (unsigned) NStr::StringToUInt8_DataSize(s);
     }
-    catch (CStringException&)
-    {}
+    catch (CStringException&) {
+        LOG_POST(Warning << "[" << sname
+                         << "].max_input_size cannot be converted to "
+                            "unsigned integer. Default value: "
+                         << kNetScheduleMaxDBDataSize
+                         << " is used.");
+    }
 
+    if (val > kNetScheduleMaxOverflowSize)
+        LOG_POST(Warning << "[" << sname
+                         << "].max_input_size cannot be larger than "
+                         << kNetScheduleMaxOverflowSize
+                         << ". Default value: " << kNetScheduleMaxOverflowSize
+                         << " is used.");
     val = min(kNetScheduleMaxOverflowSize, val);
     return val;
 }
@@ -453,9 +509,20 @@ SQueueParameters::ReadMaxOutputSize(const IRegistry &  reg,
     try {
         val = (unsigned) NStr::StringToUInt8_DataSize(s);
     }
-    catch (CStringException&)
-    {}
+    catch (CStringException&) {
+        LOG_POST(Warning << "[" << sname
+                         << "].max_output_size cannot be converted to "
+                            "unsigned integer. Default value: "
+                         << kNetScheduleMaxDBDataSize
+                         << " is used.");
+    }
 
+    if (val > kNetScheduleMaxOverflowSize)
+        LOG_POST(Warning << "[" << sname
+                         << "].max_output_size cannot be larger than "
+                         << kNetScheduleMaxOverflowSize
+                         << ". Default value: " << kNetScheduleMaxOverflowSize
+                         << " is used.");
     val = min(kNetScheduleMaxOverflowSize, val);
     return val;
 }
@@ -480,8 +547,13 @@ SQueueParameters::ReadWnodeTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("wnode_timeout",
                                  double(default_wnode_timeout));
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].wnode_timeout cannot be <= 0. "
+                            "Default value: " << default_wnode_timeout
+                         << " is used.");
         return default_wnode_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -491,8 +563,13 @@ SQueueParameters::ReadPendingTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("pending_timeout",
                                  double(default_pending_timeout));
-    if (val <= 0)
+    if (val <= 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].pending_timeout cannot be <= 0. "
+                            "Default value: " << default_pending_timeout
+                         << " is used.");
         return default_pending_timeout;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -502,8 +579,12 @@ SQueueParameters::ReadMaxPendingWaitTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("max_pending_wait_timeout",
                                  double(default_max_pending_wait_timeout));
-    if (val < 0)
+    if (val < 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].max_pending_wait_timeout cannot be < 0. "
+                            "Default value: 0 is used.");
         val = 0;
+    }
     return CNSPreciseTime(val);
 }
 
@@ -527,8 +608,12 @@ SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("run_timeout_precision",
                                  double(default_run_timeout_precision));
-    if (val < 0)
+    if (val < 0) {
+        LOG_POST(Warning << "[" << sname
+                         << "].run_timeout_precision cannot be < 0. "
+                            "Default value: 3.0 is used.");
         val = 3.0;
+    }
     return CNSPreciseTime(val);
 }
 

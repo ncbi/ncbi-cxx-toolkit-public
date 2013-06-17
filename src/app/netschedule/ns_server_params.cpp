@@ -75,7 +75,7 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
 
     init_threads = GetIntNoErr("init_threads", default_init_threads);
     if (init_threads > max_threads) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets init_threads > max_threads. "
                  "Assume init_threads = max_threads(" << max_threads <<
                  ") instead of given " << init_threads);
@@ -87,7 +87,7 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     use_hostname    = GetBoolNoErr("use_hostname", default_use_hostname);
     network_timeout = GetIntNoErr("network_timeout", default_network_timeout);
     if (network_timeout == 0) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
             "INI file sets 0 sec. network timeout. Assume " <<
             default_network_timeout << " seconds.");
         network_timeout = default_network_timeout;
@@ -130,7 +130,7 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     // Max affinities
     max_affinities = GetIntNoErr("max_affinities", default_max_affinities);
     if (max_affinities <= 0) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
             "INI file sets the max number of preferred affinities <= 0."
             " Assume " << default_max_affinities << " instead.");
         max_affinities = default_max_affinities;
@@ -148,21 +148,21 @@ void SNS_Parameters::CheckAffinityGarbageCollectorSettings(void)
     bool    well_formed = true;
 
     if (affinity_high_mark_percentage >= 100) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets affinity_high_mark_percentage >= 100. "
                  "All the affinity garbage collector settings are reset to default.");
         well_formed = false;
     }
 
     if (well_formed && affinity_low_mark_percentage >= affinity_high_mark_percentage) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets affinity_low_mark_percentage >= affinity_high_mark_percentage. "
                  "All the affinity garbage collector settings are reset to default.");
         well_formed = false;
     }
 
     if (well_formed && affinity_dirt_percentage >= affinity_low_mark_percentage) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets affinity_dirt_percentage >= affinity_low_mark_percentage. "
                  "All the affinity garbage collector settings are reset to default.");
         well_formed = false;
@@ -184,14 +184,14 @@ void SNS_Parameters::CheckGarbageCollectorSettings(void)
     bool    well_formed = true;
 
     if (del_batch_size == 0) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets the del_batch_size = 0. "
                  "All the jobs garbage collector settings are reset to defaults.");
         well_formed = false;
     }
 
     if (well_formed && markdel_batch_size == 0) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets the markdel_batch_size = 0. "
                  "All the jobs garbage collector settings are reset to defaults.");
         well_formed = false;
@@ -199,28 +199,28 @@ void SNS_Parameters::CheckGarbageCollectorSettings(void)
 
 
     if (well_formed && scan_batch_size == 0) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets the scan_batch_size = 0. "
                  "All the jobs garbage collector settings are reset to defaults.");
         well_formed = false;
     }
 
     if (well_formed && purge_timeout <= 0.0) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets purge_timeout <= 0.0. "
                  "All the jobs garbage collector settings are reset to defaults.");
         well_formed = false;
     }
 
     if (well_formed && scan_batch_size < markdel_batch_size) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets scan_batch_size < markdel_batch_size. "
                  "All the jobs garbage collector settings are reset to defaults.");
         well_formed = false;
     }
 
     if (markdel_batch_size < del_batch_size) {
-        LOG_POST(Message << Warning <<
+        LOG_POST(Warning <<
                  "INI file sets markdel_batch_size < del_batch_size. "
                  "All the jobs garbage collector settings are reset to defaults.");
         well_formed = false;
