@@ -2547,23 +2547,6 @@ s_BlastGreedyGapAlignStructFill(BlastGapAlignStruct* gap_align,
    return 0;
 }
 
-void s_PrintEditScript(GapEditScript* esp) {
-   int i;
-   for (i=0; i< esp->size; i++) {
-       switch(esp->op_type[i]) {
-       case (eGapAlignSub):
-          printf("%d ",esp->num[i]);
-          break;
-       case (eGapAlignIns):
-          printf("+%d ", esp->num[i]);
-          break;
-       case (eGapAlignDel):
-          printf("-%d ", esp->num[i]);
-       }
-   }
-   printf("\n");
-}
-
 static void s_UpdateEditScript(GapEditScript* esp, int pos, int bf, int af) {
    int op, qd, sd;
 
@@ -2648,7 +2631,8 @@ static void s_RebuildEditScript(GapEditScript* esp) {
    esp->size = ++j;
 }
 
-static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s){
+static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s,
+                                             const Uint1 *qf,const Uint1 *sf){
    int i, j, nm1, nm2, d;
    const Uint1 *q1, *s1;
 
@@ -2658,13 +2642,13 @@ static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s){
            if(esp->num[i] >= 12) {
                nm1 = 1;
                if (i > 0) {
-                   while (*(q1-nm1) == *(s1-nm1)) ++nm1;
+                   while (q1-nm1>=q && (*(q1-nm1) == *(s1-nm1))) ++nm1;
                }
                q1 += esp->num[i];
                s1 += esp->num[i];
                nm2 = 0;
                if (i < esp->size -1) {
-                   while (*(q1++) == *(s1++)) ++nm2;
+                   while (q1+1<qf && *(q1++) == *(s1++)) ++nm2;
                }
                if (nm1>1 || nm2>0) s_UpdateEditScript(esp, i, nm1-1, nm2);
                q1--; s1--;
@@ -2851,7 +2835,8 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
                                              fwd_prelim_tback);
       /* check for possible gap elimination */
       ASSERT(!compressed_subject);
-      if (esp) s_ReduceGaps(esp, query+q_off-q_ext_l, subject+s_off-s_ext_l);
+      if (esp) s_ReduceGaps(esp, query+q_off-q_ext_l, subject+s_off-s_ext_l,
+                                 query+q_off+q_ext_r, subject+s_off+s_ext_r);
    }
    else {
        /* estimate the best alignment start point. This is the middle
