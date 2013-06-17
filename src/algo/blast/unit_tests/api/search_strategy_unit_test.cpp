@@ -567,8 +567,6 @@ BOOST_AUTO_TEST_CASE(ExportStrategy_DBSoftMask) {
     CRef<CBlast4_request> ss = exp_ss.GetSearchStrategy();
     BOOST_REQUIRE(ss.NotEmpty());
 
-    bool found_query_range = false;
-
     const CBlast4_request_body& body = ss->GetBody();
     BOOST_REQUIRE(body.IsQueue_search());
     const CBlast4_queue_search_request& qsr = body.GetQueue_search();
