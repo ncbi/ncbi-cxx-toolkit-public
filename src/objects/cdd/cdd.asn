@@ -288,6 +288,7 @@ Align-annot ::= SEQUENCE {
                                         -- 4 .. ion binding site
                                         -- 5 .. chemical binding site
                                         -- 6 .. posttranslational modification site
+                                        -- 7 .. structural motif
   aliases       SEQUENCE OF VisibleString OPTIONAL, -- adding more names for indexing
   motif         VisibleString OPTIONAL, -- to validate mapping of sites
   motifuse      INTEGER OPTIONAL        -- 0 for validation,
