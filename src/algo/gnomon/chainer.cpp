@@ -96,7 +96,8 @@ private:
     void Duplicate5pendsAndShortCDSes(CChainMembers& pointers, TGeneModelList& clust);
     void ScoreCdnas(CChainMembers& pointers);
     void DuplicateUTRs(CChainMembers& pointers);
-    bool LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, TContained& contained);
+    void CalculateSpliceWeights(CChainMembers& pointers);
+    bool LRCanChainItoJ(int& delta_cds, double& delta_num, double& delta_splice_num, const SChainMember& mi, const SChainMember& mj, TContained& contained);
     void LRIinit(SChainMember& mi);
     void LeftRight(vector<SChainMember*>& pointers);
     void RightLeft(vector<SChainMember*>& pointers);
@@ -201,6 +202,7 @@ struct SChainMember
         m_align(0), m_cds_info(0), m_align_map(0), m_left_member(0), m_right_member(0),
         m_copy(0), m_contained(0), m_identical_count(0), m_contained_weight(0),
         m_left_num(0), m_right_num(0), m_num(0),
+        m_splice_weight(0), m_contained_splice_weight(0), m_left_splice_num(0), m_right_splice_num(0), m_splice_num(0),
         m_type(eCDS), m_left_cds(0), m_right_cds(0), m_cds(0), m_included(false),  m_postponed(false),
         m_marked_for_deletion(false), m_marked_for_retention(false), 
         m_gapped_connection(false), m_fully_connected_to_part(-1), m_not_for_chaining(false),
@@ -223,6 +225,8 @@ struct SChainMember
     int m_identical_count;
     double m_contained_weight;
     double m_left_num, m_right_num, m_num; 
+    double m_splice_weight, m_contained_splice_weight;
+    double m_left_splice_num, m_right_splice_num, m_splice_num; 
     int m_type, m_left_cds, m_right_cds, m_cds;
     bool m_included;
     bool m_postponed;
@@ -273,6 +277,7 @@ public:
     int m_coverage_bump_right;
     double m_core_coverage;
     vector<double> m_coverage;
+    double m_splice_weight;
 };
 
 
@@ -521,7 +526,7 @@ int NumOfRetainedIntrons(const CGeneModel& under_test, const CGeneModel& control
     return num;
 }
 
-static bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
+static bool DescendingModelOrder(const CChain& a, const CChain& b)
 {
     if (!a.Support().empty() && b.Support().empty())
         return true;
@@ -540,14 +545,6 @@ static bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
     } else if(b.ReadingFrame().NotEmpty() && a.ReadingFrame().Empty()) {
         return false;
     } else if(a.ReadingFrame().NotEmpty()) {     // both coding
-        /*
-        int acdslen = a.FShiftedLen(a.GetCdsInfo().Cds(),true);
-        int bcdslen = b.FShiftedLen(b.GetCdsInfo().Cds(),true);
-        if(acdslen > 1.5*bcdslen)   // much longer cds is better
-            return true;
-        else if(bcdslen > 1.5*acdslen)
-            return false;
-        */
 
         double ds = 0.025*(fabs(b.Score())+fabs(a.Score()));
         
@@ -575,12 +572,10 @@ static bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
             return true;
         else if(bs > as + 0.001*ds)
             return false;
-        /*
-        else if(NumOfRetainedIntrons(a, b) < NumOfRetainedIntrons(b,a)) // less retained introns is better
+        else if(a.m_splice_weight > b.m_splice_weight) // more splice support
             return true;
-        else if(NumOfRetainedIntrons(a, b) > NumOfRetainedIntrons(b,a))
+        else if(a.m_splice_weight < b.m_splice_weight)
             return false;
-        */
         else if(a.Weight() > b.Weight())       // more alignments is better
             return true;
         else if(a.Weight() < b.Weight()) 
@@ -588,8 +583,8 @@ static bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
         else 
             return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
     } else {                       // both noncoding
-        double asize = a.Weight();
-        double bsize = b.Weight();
+        double asize = a.m_splice_weight;
+        double bsize = b.m_splice_weight;
         double ds = 0.025*(asize+bsize);
         
         if((a.Status()&CGeneModel::ePolyA) != 0)
@@ -646,7 +641,7 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
             if(!algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()) {                   // trusted gene
                 return eAlternative;
             } else if(algn.ReadingFrame().Empty() || gene.front()->ReadingFrame().Empty()) {   // one noncoding
-                if(algn.AlignLen() > altfrac/100*gene.front()->AlignLen())                     // long enough
+                if(algn.m_splice_weight > altfrac/100*gene.front()->m_splice_weight)                     // long enough
                     return eAlternative;
                 else
                     return eNotCompatible;
@@ -1465,10 +1460,12 @@ struct CdsNumOrder
     {
         if(max(ap->m_cds,bp->m_cds) >= 300 && ap->m_cds != bp->m_cds) // only long cdses count
             return (ap->m_cds > bp->m_cds);
-        else if(ap->m_num == bp->m_num)
-            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
-        else
+        else if(fabs(ap->m_splice_num - bp->m_splice_num) > 0.001)
+            return (ap->m_splice_num > bp->m_splice_num);
+        else if(fabs(ap->m_num - bp->m_num) > 0.001)
             return (ap->m_num > bp->m_num);
+        else
+            return ap->m_mem_id < bp->m_mem_id; // to make sort deterministic
     }
 };
 
@@ -1616,6 +1613,7 @@ TSignedSeqRange ExtendedMaxCdsLimits(const CGeneModel& a, const CCDSInfo& cds)
 void CChainer::CChainerImpl::IncludeInContained(SChainMember& big, SChainMember& small)
 {
     big.m_contained_weight += small.m_align->Weight();
+    big.m_contained_splice_weight += small.m_splice_weight;
 
     //all identical members are contained in each other; only one of them (with smaller m_mem_id) is contained in other members
     if(big.m_align->Limits() == small.m_align->Limits()) {  // identical
@@ -1687,6 +1685,30 @@ void CChainer::CChainerImpl::DuplicateUTRs(CChainMembers& pointers)
         SChainMember& mbr = *pointers[i];
         if(mbr.m_cds_info->Score() == BadScore()) 
             pointers.DuplicateUTR(&mbr);
+    }
+}
+
+void CChainer::CChainerImpl::CalculateSpliceWeights(CChainMembers& pointers)
+{
+    map<int, set<int> > oriented_splices;
+    ITERATE(set<TSignedSeqRange>, i, oriented_introns_plus) {
+        oriented_splices[ePlus].insert(i->GetFrom());
+        oriented_splices[ePlus].insert(i->GetTo());
+    }
+    ITERATE(set<TSignedSeqRange>, i, oriented_introns_minus) {
+        oriented_splices[eMinus].insert(i->GetFrom());
+        oriented_splices[eMinus].insert(i->GetTo());
+    }
+
+    NON_CONST_ITERATE(CChainMembers, i, pointers) {
+        SChainMember& mbr = **i;
+        CGeneModel& algn = *mbr.m_align;
+        set<int>& ospl = oriented_splices[algn.Strand()];
+        ITERATE(CGeneModel::TExons, ie, algn.Exons()) {
+            TSignedSeqRange exon = *ie;
+            for(set<int>::iterator spli = ospl.lower_bound(exon.GetFrom()); spli != ospl.end() && *spli <= exon.GetTo(); ++spli)
+                mbr.m_splice_weight += algn.Weight();
+        }
     }
 }
 
@@ -1920,7 +1942,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
 
 #define NON_CDNA_INTRON_PENALTY 20
 
-bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, const SChainMember& mi, const SChainMember& mj, TContained& contained) {
+bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, double& delta_splice_num, const SChainMember& mi, const SChainMember& mj, TContained& contained) {
 
     const CGeneModel& ai = *mi.m_align;
     const CGeneModel& aj = *mj.m_align;
@@ -2012,8 +2034,11 @@ bool CChainer::CChainerImpl::LRCanChainItoJ(int& delta_cds, double& delta_num, c
 
     TContained::const_iterator endsp = upper_bound(contained.begin(),contained.end(),&mj,LeftOrder()); // first alignmnet contained in ai and outside aj
     delta_num = 0;
-    for(TContained::const_iterator ic = endsp; ic != contained.end(); ++ic) 
+    delta_splice_num = 0;
+    for(TContained::const_iterator ic = endsp; ic != contained.end(); ++ic) {
         delta_num += (*ic)->m_align->Weight();
+        delta_splice_num += (*ic)->m_splice_weight;
+    }
 
     return true;
 }
@@ -2024,6 +2049,7 @@ void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
     TSignedSeqRange ai_rf = ai_cds_info.Start()+ai_cds_info.ReadingFrame()+ai_cds_info.Stop();
 
     mi.m_num = mi.m_contained_weight;
+    mi.m_splice_num = mi.m_contained_splice_weight;
 
     const CGeneModel& ai = *mi.m_align;
     mi.m_cds = mi.m_align_map->FShiftedLen(ai_rf,false);
@@ -2046,6 +2072,7 @@ void CChainer::CChainerImpl::LRIinit(SChainMember& mi) {
     
     mi.m_left_member = 0;
     mi.m_left_num = mi.m_num;
+    mi.m_left_splice_num = mi.m_splice_num;
     mi.m_left_cds =  mi.m_cds;
 
     mi.m_gapped_connection = false;
@@ -2075,11 +2102,24 @@ void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
 
             int delta_cds;
             double delta_num;
-            if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, micontained)) {
+            double delta_splice_num;
+            if(LRCanChainItoJ(delta_cds, delta_num, delta_splice_num, mi, mj, micontained)) {
                 int newcds = mj.m_left_cds+delta_cds;
                 double newnum = mj.m_left_num+delta_num;
-                if (newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
+                double newsplicenum = mj.m_left_splice_num+delta_splice_num;
+
+                bool better_connection = false;
+                if(newcds != mi.m_left_cds) {
+                    better_connection = (newcds > mi.m_left_cds);
+                } else if(fabs(newsplicenum - mi.m_left_splice_num) > 0.001) {
+                    better_connection = (newsplicenum > mi.m_left_splice_num);
+                } else if(newnum > mi.m_left_num) {
+                    better_connection = true;
+                }
+
+                if(better_connection) {                
                     mi.m_left_cds = newcds;
+                    mi.m_left_splice_num = newsplicenum;
                     mi.m_left_num = newnum;
                     mi.m_left_member = &mj;
                     _ASSERT(mj.m_align->Limits().GetFrom() < ai.Limits().GetFrom() && mj.m_align->Limits().GetTo() < ai.Limits().GetTo());
@@ -2106,6 +2146,7 @@ void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
 
         mi.m_right_member = 0;
         mi.m_right_num = mi.m_num;
+        mi.m_right_splice_num = mi.m_splice_num;
         mi.m_right_cds =  mi.m_cds;
         TContained micontained = mi.CollectContainedForMemeber();
         sort(micontained.begin(),micontained.end(),RightOrderD());
@@ -2206,13 +2247,27 @@ void CChainer::CChainerImpl::RightLeft(vector<SChainMember*>& pointers)
             int newcds = mj.m_right_cds+delta_cds;
             
             TContained::iterator endsp = upper_bound(micontained.begin(),micontained.end(),&mj,RightOrder()); // first alignment contained in ai and outside aj
-            double delta = 0;
-            for(TContained::iterator ic = endsp; ic != micontained.end(); ++ic) 
-                delta += (*ic)->m_align->Weight();
-            double newnum = mj.m_right_num+delta;
+            double delta_num = 0;
+            double delta_splice_num = 0;
+            for(TContained::iterator ic = endsp; ic != micontained.end(); ++ic) {
+                delta_num += (*ic)->m_align->Weight();
+                delta_splice_num += (*ic)->m_splice_weight;
+            }
+            double newnum = mj.m_right_num+delta_num;
+            double newsplicenum = mj.m_right_splice_num+delta_splice_num;
 
-            if(newcds > mi.m_right_cds || (newcds == mi.m_right_cds && newnum > mi.m_right_num)) {
+            bool better_connection = false;
+            if(newcds != mi.m_right_cds) {
+                better_connection = (newcds > mi.m_right_cds);
+            } else if(fabs(newsplicenum - mi.m_right_splice_num) > 0.001) {
+                better_connection = (newsplicenum > mi.m_right_splice_num);
+            } else if(newnum > mi.m_right_num) {
+                better_connection = true;
+            }
+
+            if(better_connection) {
                 mi.m_right_cds = newcds;
+                mi.m_right_splice_num = newsplicenum;
                 mi.m_right_num = newnum;
                 mi.m_right_member = &mj;
                 _ASSERT(aj.Limits().GetFrom() > ai.Limits().GetFrom() && aj.Limits().GetTo() > ai.Limits().GetTo());
@@ -2340,6 +2395,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     ScoreCdnas(allpointers);
     Duplicate5pendsAndShortCDSes(allpointers, clust);
     DuplicateUTRs(allpointers);
+    CalculateSpliceWeights(allpointers);
     FindContainedAlignments(allpointers);
 
     vector<SChainMember*> pointers;
@@ -2359,6 +2415,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     NON_CONST_ITERATE(vector<SChainMember*>, i, coding_pointers) {
         SChainMember& mi = **i;
         mi.m_cds = mi.m_left_cds+mi.m_right_cds-mi.m_cds;
+        mi.m_splice_num = mi.m_left_splice_num+mi.m_right_splice_num-mi.m_splice_num;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
     }
     sort(coding_pointers.begin(),coding_pointers.end(),CdsNumOrder());
@@ -2406,6 +2463,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         SChainMember& mi = **i;
         mi.m_included = false;
         mi.m_cds = mi.m_left_cds+mi.m_right_cds-mi.m_cds;
+        mi.m_splice_num = mi.m_left_splice_num+mi.m_right_splice_num-mi.m_splice_num;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
     }
 
@@ -2459,6 +2517,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     ITERATE(vector<SChainMember*>, i, pointers) {
         SChainMember& mi = **i;
+        mi.m_splice_num = mi.m_left_splice_num+mi.m_right_splice_num-mi.m_splice_num;
         mi.m_num = mi.m_left_num+mi.m_right_num-mi.m_num;
         _ASSERT(mi.m_cds == 0);
     }
@@ -2719,11 +2778,24 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                 } else if(ai.Limits().IntersectingWith(aj.Limits())) {
                     int delta_cds;
                     double delta_num;
-                    if(LRCanChainItoJ(delta_cds, delta_num, mi, mj, micontained)) {      // i and j connected continuosly
+                    double delta_splice_num;
+                    if(LRCanChainItoJ(delta_cds, delta_num, delta_splice_num, mi, mj, micontained)) {      // i and j connected continuosly
                         int newcds = mj.m_left_cds+delta_cds;
                         double newnum = mj.m_left_num+delta_num;
-                        if (mi.m_left_member == 0 || newcds > mi.m_left_cds || (newcds == mi.m_left_cds && newnum > mi.m_left_num)) {
+                        double newsplicenum = mj.m_left_splice_num+delta_splice_num;
+
+                        bool better_connection = false;
+                        if(newcds != mi.m_left_cds) {
+                            better_connection = (newcds > mi.m_left_cds);
+                        } else if(fabs(newsplicenum - mi.m_left_splice_num) > 0.001) {
+                            better_connection = (newsplicenum > mi.m_left_splice_num);
+                        } else if(newnum > mi.m_left_num) {
+                            better_connection = true;
+                        }
+
+                        if (mi.m_left_member == 0 || better_connection) {
                             mi.m_left_cds = newcds;
+                            mi.m_left_splice_num = newsplicenum;
                             mi.m_left_num = newnum;
                             mi.m_gapped_connection = mj.m_gapped_connection;
                             mi.m_left_member = &mj;
@@ -2733,8 +2805,20 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                         } else if(mj_no_gap.m_fully_connected_to_part == part_to_connect) {
                             newcds = mj_no_gap.m_left_cds+delta_cds;
                             newnum = mj_no_gap.m_left_num+delta_num;
-                            if (mi_no_gap.m_left_member == 0 || newcds > mi_no_gap.m_left_cds || (newcds == mi_no_gap.m_left_cds && newnum > mi_no_gap.m_left_num)) {
+                            newsplicenum = mj_no_gap.m_left_splice_num+delta_splice_num;
+
+                            better_connection = false;
+                            if(newcds != mi_no_gap.m_left_cds) {
+                                better_connection = (newcds > mi_no_gap.m_left_cds);
+                            } else if(fabs(newsplicenum - mi_no_gap.m_left_splice_num) > 0.001) {
+                                better_connection = (newsplicenum > mi_no_gap.m_left_splice_num);
+                            } else if(newnum > mi_no_gap.m_left_num) {
+                                better_connection = true;
+                            }
+
+                            if (mi_no_gap.m_left_member == 0 || better_connection) {
                                 mi_no_gap.m_left_cds = newcds;
+                                mi_no_gap.m_left_splice_num = newsplicenum;
                                 mi_no_gap.m_left_num = newnum;
                                 mi_no_gap.m_left_member = &mj_no_gap;
                                 mi_no_gap.m_fully_connected_to_part = part_to_connect;
@@ -2955,7 +3039,7 @@ void CChainer::CChainerImpl::RemovePoorCds(CGeneModel& algn, double minscor)
 
 #define SCAN_WINDOW 49            // odd number!!!
 
-CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_left(-1), m_coverage_drop_right(-1), m_coverage_bump_left(-1), m_coverage_bump_right(-1), m_core_coverage(0)
+CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_left(-1), m_coverage_drop_right(-1), m_coverage_bump_left(-1), m_coverage_bump_right(-1), m_core_coverage(0), m_splice_weight(0)
 {
     m_members = mbr.CollectContainedForChain();
     _ASSERT(m_members.size()>0);
@@ -3054,6 +3138,7 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
     support.reserve(m_members.size());
     const CGeneModel* last_important_align = 0;
     double weight = 0;
+    m_splice_weight = 0;
     set<Int8> sp;
     set<Int8> sp_core;
 
@@ -3085,6 +3170,7 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
             
         if(sp.insert(id).second) {   // avoid counting parts of splitted aligns
             weight += align.Weight();
+            m_splice_weight += (*it)->m_splice_num;
             support.push_back(CSupportInfo(id,false));
         }
 
