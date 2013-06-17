@@ -123,7 +123,7 @@ namespace DiscRepNmSpc {
         void WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix);
         bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
         void StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat);
-        bool RmTagInDescp(CRef <CClickableItem> c_item, const string& tag);
+        bool RmTagInDescp(string& str, const string& tag);
    };
 
    class CRepConfDiscrepancy : public CRepConfig

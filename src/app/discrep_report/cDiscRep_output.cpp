@@ -101,7 +101,6 @@ static s_fataltag disc_fatal[] = {
         {"DISC_SOURCE_QUALS_ASNDISC", "host", NULL},
         {"DISC_SOURCE_QUALS_ASNDISC", "strain", NULL},
         {"DISC_SOURCE_QUALS_ASNDISC", "taxname", NULL},
-        {"DISC_SOURCE_QUALS_ASNDISC", "taxname (all present, all unique)", NULL},
         {"DISC_SUBMITBLOCK_CONFLICT", NULL, NULL},
         {"DISC_SUSPECT_RRNA_PRODUCTS", NULL, NULL},
         {"DISC_TITLE_AUTHOR_CONFLICT", NULL, NULL},
@@ -136,8 +135,9 @@ bool CRepConfig :: NeedsTag(const string& setting_name, const string& desc, cons
           && (!tags[i].notag_description 
                  || NStr::FindNoCase(desc, tags[i].notag_description) == string::npos)
           && (!tags[i].description 
-                 || NStr::FindNoCase(desc, tags[i].description) != string::npos) )
+                 || NStr::FindNoCase(desc, tags[i].description) != string::npos) ) {
         return true;
+     }
    }
    return false;
 };
@@ -179,7 +179,7 @@ void CRepConfig :: AddListOutputTags()
      if (NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
               || (oc.add_extra_output_tag 
                                && NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {
-        if (setting_name == "DISC_SOURCE_QUALS_ASNDSC") {
+        if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
           if (NStr::FindNoCase(desc, "taxname (all present, all unique)") != string::npos) {
              if (na_cnt_grt1) (*it)->description = "FATAL: " + (*it)->description;
           }
@@ -206,13 +206,13 @@ void CRepConfDiscrepancy :: Export()
   WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
 };  // Discrepancy:: Export
 
-bool CRepConfig :: RmTagInDescp(CRef <CClickableItem> c_item, const string& tag)
+bool CRepConfig :: RmTagInDescp(string& str, const string& tag)
 {
   string::size_type pos;
 
-  pos = (c_item->description).find(tag);
+  pos = str.find(tag);
   if (pos != string::npos && !pos) {
-      c_item->description =  CTempString(c_item->description).substr(tag.size());
+      str =  CTempString(str).substr(tag.size());
       return true;
   }
   else return ( false );
@@ -221,14 +221,15 @@ bool CRepConfig :: RmTagInDescp(CRef <CClickableItem> c_item, const string& tag)
 
 void CRepConfig :: WriteDiscRepSummary()
 {
-  string prefix;
+  string prefix, desc;
 
   ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
-      if ( (*it)->description.empty()) continue;
+      desc = (*it)->description;
+      if ( desc.empty()) continue;
       // FATAL tag
-      if (RmTagInDescp((*it), "FATAL: ")) oc.output_f  << "FATAL:";
+      if (RmTagInDescp(desc, "FATAL: ")) oc.output_f  << "FATAL:";
       oc.output_f 
-         << (*it)->setting_name << ": " << (*it)->description << endl;
+         << (*it)->setting_name << ": " << desc << endl;
       if ("SUSPECT_PRODUCT_NAMES" == (*it)->setting_name)
             WriteDiscRepSubcategories((*it)->subcategories);
   }
@@ -261,10 +262,11 @@ bool OkToExpand(CRef < CClickableItem > c_item)
 
 void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
 {
-  string prefix;
+  string prefix, desc;
   unsigned i;
   NON_CONST_ITERATE (vector < CRef < CClickableItem > >, it, disc_rep_dt) {
-      if ( (*it)->description.empty() ) continue;
+      desc = (*it)->description;
+      if ( desc.empty() ) continue;
       // prefix
       if (use_flag) {
           prefix = "DiscRep_";
@@ -274,11 +276,11 @@ void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_re
       }
  
       // FATAL tag
-      if (RmTagInDescp((*it), "FATAL: ")) prefix = "FATAL:" + prefix;
+      if (RmTagInDescp(desc, "FATAL: ")) prefix = "FATAL:" + prefix;
 
       // summary report
       if (oc.summary_report) {
-         oc.output_f << prefix << (*it)->description << endl;
+         oc.output_f << prefix << desc << endl;
 /*
          if ( ( oc.add_output_tag || oc.add_extra_output_tag) 
                && SubsHaveTags((*it), oc))
@@ -328,8 +330,10 @@ void CRepConfig :: WriteDiscRepItems(CRef <CClickableItem> c_item, const string&
    if (oc.use_flag && 
          SuppressItemListForFeatureTypeForOutputFiles (c_item->setting_name)) {
        if (!prefix.empty()) oc.output_f << prefix;
-       oc.output_f << c_item->description << endl;
-ITERATE (vector <string>, it, c_item->item_list) {
+       string desc = c_item->description;
+       RmTagInDescp(desc, "FATAL: ");
+       oc.output_f << desc << endl;
+ITERATE (vector <string>, it, c_item->item_list) {  // necessary?
   oc.output_f << *it << endl;
 //cerr << c_item->setting_name << "  " << *it << endl;
 };
@@ -359,7 +363,9 @@ ITERATE (vector <string>, it, c_item->item_list) {
 void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat)
 {
   if (!prefix.empty())  oc.output_f << prefix;
-  oc.output_f << c_item->description << endl;
+  string desc = c_item->description;
+  RmTagInDescp(desc, "FATAL: ");
+  oc.output_f << desc << endl;
 
   if (c_item->subcategories.empty() || list_features_if_subcat) {
           /*
