@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(Test_High_FDs)
         canary2.assign(canary_buf2, NUM_CANARIES);
         for (i = 0;  i < NUM_CANARIES * 8;  ++i) {
             socks[i].reset(new CDatagramSocket(fSOCK_KeepOnExec));
-            if (socks[i]->GetStatus(eIO_Open) != eIO_Open) {
+            if (socks[i]->GetStatus(eIO_Open) != eIO_Success) {
                 break;
             }
         }
@@ -409,16 +409,13 @@ BOOST_AUTO_TEST_CASE(Test_High_FDs)
             socks[j].reset();
         }
         
-        for (i = 0;  i < 3;  ++i) {
+        for (i = 0;  i < 2;  ++i) {
             switch (i) {
-            case 0: // "random" stack data, just sync
-                memcpy(canary_buf2, canary_buf1, NUM_CANARIES);
-                break;
-            case 1: // all zeroes
+            case 0: // all zeroes
                 memset(canary_buf1, 0, NUM_CANARIES);
                 memset(canary_buf2, 0, NUM_CANARIES);
                 break;
-            case 2: // all ones
+            case 1: // all ones
                 memset(canary_buf1, ~(char)0, NUM_CANARIES);
                 memset(canary_buf2, ~(char)0, NUM_CANARIES);
                 break;
