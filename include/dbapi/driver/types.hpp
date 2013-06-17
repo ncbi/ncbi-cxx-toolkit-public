@@ -468,7 +468,7 @@ public:
 
     const string& AsString(void) const
     {
-        return IsNULL() ? kEmptyStr : static_cast<const string&>(m_WString);
+        return IsNULL() ? kEmptyStr : x_GetWString();
     }
 
     size_t Size(void) const
@@ -478,12 +478,12 @@ public:
 
     const char* Data(void) const
     {
-        return IsNULL() ? NULL : static_cast<const string&>(m_WString).data();
+        return IsNULL() ? NULL : x_GetWString().data();
     }
 
     const char* AsCString(void) const
     {
-        return IsNULL() ? NULL : static_cast<const string&>(m_WString).c_str();
+        return IsNULL() ? NULL : x_GetWString().c_str();
     }
 
     const CSqlString& Value(void) const { return m_WString; }
@@ -500,6 +500,10 @@ public:
 
 private:
     CWString m_WString;
+
+    // Avoid explicit static_cast<const string&>(m_WString) constructs,
+    // which trigger internal errors under ICC 12.
+    const string& x_GetWString() const { return m_WString; }
 };
 
 
