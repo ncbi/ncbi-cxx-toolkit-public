@@ -241,6 +241,13 @@ void CAlignCollapser::FilterESTandSR() {
     int left_end = numeric_limits<int>::max();
     int right_end = 0;
     int total = 0;
+    ITERATE(TAlignIntrons, it, m_align_introns) {
+        const SIntron& intron = it->first;
+        int a = intron.m_range.GetFrom();
+        int b = intron.m_range.GetTo();
+        left_end = min(left_end, a);
+        right_end = max(right_end, b);
+    }
     ITERATE(Tdata, i, m_aligns) {
         ITERATE(deque<SAlignIndividual>, k, i->second) {
             left_end = min(left_end, k->m_range.GetFrom());
@@ -470,6 +477,7 @@ void CAlignCollapser::FilterESTandSR() {
                 right_minus[b-left_end] = b;
         }
     }
+
     for(int i = 1; i < len; ++i) {
         right_plus[i] = max(right_plus[i],right_plus[i-1]);
         right_minus[i] = max(right_minus[i],right_minus[i-1]);
