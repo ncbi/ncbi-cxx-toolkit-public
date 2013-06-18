@@ -1190,8 +1190,10 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
     while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
            != BLAST_SEQSRC_EOF) {
        Int4 stat_length;
-       if (seq_arg.oid == BLAST_SEQSRC_ERROR)
+       if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
+    	   status = BLASTERR_SEQSRC;
            break;
+       }
 
        if( check_index_oid != 0 && 
                check_index_oid( seq_arg.oid, &last_vol_idx ) == eNoResults ) {

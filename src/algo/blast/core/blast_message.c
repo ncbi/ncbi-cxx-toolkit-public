@@ -213,6 +213,12 @@ Blast_PerrorEx(Blast_Message* *msg,
         new_msg->context = context;
         break;
 
+    case BLASTERR_SEQSRC:
+        new_msg->message = strdup("search cannot proceed due to errors "
+                                 "retrieving sequences from databases");
+        new_msg->severity = eBlastSevFatal;
+        new_msg->context = context;
+        break;
     /* No error, just free the structure */
     case 0:
         new_msg = Blast_MessageFree(new_msg);

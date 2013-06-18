@@ -180,7 +180,11 @@ CLocalBlast::Run()
         m_InternalData = m_PrelimSearch->Run();
     } catch( CIndexedDbException & e ) { 
         throw;
-    } catch (...) {
+    } catch (CBlastException & e) {
+    	if(e.GetErrCode() == CBlastException::eCoreBlastError) {
+    		throw;
+    	}
+    }catch (...) {
     }
     if (status != 0)
     {

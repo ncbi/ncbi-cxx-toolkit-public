@@ -163,6 +163,9 @@ void Blast_PerrorEx(Blast_Message* *msg,
   /** The value of the option is not supported (e.g., word size too small) */
 #define BLASTERR_OPTION_VALUE_INVALID               202
 
+/** Blast seqsrc returns  BLAST_SEQSRC_ERROR */
+#define BLASTERR_SEQSRC								300
+
 #ifdef __cplusplus
 }
 #endif
