@@ -2925,6 +2925,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     CRef<CSeq_loc_Mapper> to_prot;
     CRef<CSeq_loc_Mapper> to_mrna;
     CRef<CSeq_loc_Mapper> to_genomic;
+    CRef<CSeq_id> mapped_protein_id;
     if (corrected_cds_feat_on_transcribed_mrna) {
         to_prot.Reset(
             new CSeq_loc_Mapper(*corrected_cds_feat_on_query_mrna,
@@ -2934,10 +2935,9 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                                 CSeq_loc_Mapper::eProductToLocation));
         to_genomic.Reset(
             new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Gen));
+        mapped_protein_id.Reset(new CSeq_id);
+        mapped_protein_id->Assign(*corrected_cds_feat_on_query_mrna->GetProduct().GetId());
     }
-
-    CRef<CSeq_id> mapped_protein_id(new CSeq_id);
-    mapped_protein_id->Assign(*corrected_cds_feat_on_query_mrna->GetProduct().GetId());
 
     CRef<CSeq_id> cds_id(new CSeq_id);
     cds_id->Assign(*feat.GetProduct().GetId());
