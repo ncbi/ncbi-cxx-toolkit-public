@@ -35,6 +35,33 @@
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/general/Person_id.hpp>
+
+// macros
+#include <objects/macro/CDSGen_featur_type_constra_.hpp>
+#include <objects/macro/CDSGeneProt_field_.hpp>
+#include <objects/macro/Completedness_type_.hpp>
+#include <objects/macro/DBLink_field_type_.hpp>
+#include <objects/macro/Feat_qual_legal_.hpp>
+#include <objects/macro/Feature_stranded_constrain_.hpp>
+#include <objects/macro/Macro_feature_type_.hpp>
+#include <objects/macro/Molecule_type_.hpp>
+#include <objects/macro/Molecule_class_type_.hpp>
+#include <objects/macro/Pub_field_speci_const_type.hpp>
+#include <objects/macro/Publication_field.hpp>
+#include <objects/macro/Rna_feat_type.hpp>
+#include <objects/macro/Rna_field_.hpp>
+#include <objects/macro/Sequence_constraint_rnamol_.hpp>
+#include <objects/macro/Search_func.hpp>
+#include <objects/macro/Source_location_.hpp>
+#include <objects/macro/Source_origin_.hpp>
+#include <objects/macro/Source_qual_.hpp>
+#include <objects/macro/Strand_type.hpp>
+#include <objects/macro/String_location_.hpp>
+#include <objects/macro/Suspect_rule.hpp>
+#include <objects/macro/Suspect_rule_set.hpp>
+#include <objects/macro/Technique_type_.hpp>
+#include <objects/macro/Topology_type_.hpp>
+
 #include <objects/macro/CDSGeneProt_field.hpp>
 #include <objects/macro/Constraint_choice.hpp>
 #include <objects/macro/Constraint_choice_set.hpp>
@@ -58,10 +85,12 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/PCRPrimer.hpp>
+#include <objects/seqfeat/PCRReaction.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>      
 #include <objects/pub/Pub.hpp>
@@ -82,6 +111,46 @@ namespace DiscRepNmSpc {
   typedef map <int, int> Int2Int;
   typedef map <string, Str2Strs> Str2MapStr2Strs;
   typedef map <string, vector <CConstRef <CBioseq> > > Str2Seqs;
+
+  enum ESuspectNameType {
+     eSuspectNameType_None = 0,
+     eSuspectNameType_Typo = 1,
+     eSuspectNameType_QuickFix,
+     eSuspectNameType_NoOrganelleForProkaryote,
+     eSuspectNameType_MightBeNonfunctional,
+     eSuspectNameType_Database,
+     eSuspectNameType_RemoveOrganismName,
+     eSuspectNameType_InappropriateSymbol,
+     eSuspectNameType_EvolutionaryRelationship,
+     eSuspectNameType_UseProtein,
+     eSuspectNameType_Max
+  };
+
+  typedef bool (*FSuspectProductNameSearchFunc) (const string& str1, const string& str2);
+  typedef void (*FSuspectProductNameReplaceFunc) (const string& str, const string& str2,
+                                                   const string& str3, const CSeq_feat& feat);
+  struct s_SuspectProductNameData {
+     const char* pattern;
+     FSuspectProductNameSearchFunc search_func;
+     ESuspectNameType fix_type;
+     const char* replace_phrase;
+     FSuspectProductNameReplaceFunc replace_func;
+  };
+
+  class CClickableItem  : public CObject
+  {
+     public:
+       CClickableItem () : item_list(), subcategories(), expanded(false),
+                           next_sibling(false) {};
+       ~CClickableItem () {};
+
+       string                               setting_name;
+       string                               description;
+       vector < string >                    item_list;
+       vector < CRef <CClickableItem > >    subcategories;
+       bool                                 expanded;
+       bool                                 next_sibling;
+  };
 
   class CDiscTestInfo 
   {

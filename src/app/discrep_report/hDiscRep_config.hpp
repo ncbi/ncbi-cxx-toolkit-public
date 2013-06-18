@@ -55,6 +55,8 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/validator/validatorp.hpp>
+#include <objects/taxon1/taxon1.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -89,13 +91,159 @@ namespace DiscRepNmSpc {
         const char* notag_description;
    };
 
+/*
+   enum ESuspectNameType {
+        eSuspectNameType_None = 0,
+        eSuspectNameType_Typo = 1,
+        eSuspectNameType_QuickFix,
+        eSuspectNameType_NoOrganelleForProkaryote,
+        eSuspectNameType_MightBeNonfunctional,
+        eSuspectNameType_Database,
+        eSuspectNameType_RemoveOrganismName,
+        eSuspectNameType_InappropriateSymbol,
+        eSuspectNameType_EvolutionaryRelationship,
+        eSuspectNameType_UseProtein,
+        eSuspectNameType_Max
+   };
+
+   typedef bool (*FSuspectProductNameSearchFunc) (const string& str1, const string& str2);
+   typedef void (*FSuspectProductNameReplaceFunc) (const string& str, const string& str2,
+                                                   const string& str3, const CSeq_feat& feat);
+   struct s_SuspectProductNameData {
+         const char* pattern;
+         FSuspectProductNameSearchFunc search_func;
+         ESuspectNameType fix_type;
+         const char* replace_phrase;
+         FSuspectProductNameReplaceFunc replace_func;
+   };
+*/
+
+   class COutputConfig 
+   {
+      public:
+        bool     use_flag;
+        ofstream output_f;
+        bool     summary_report;
+        bool     add_output_tag;
+        bool     add_extra_output_tag;
+   };
+
+   class CDiscRepInfo
+   {
+      public:
+        CDiscRepInfo ();
+        ~CDiscRepInfo () {};
+
+        static CRef < CScope >                    scope;
+        static string                             infile;
+        static COutputConfig                      output_config;
+        static vector < CRef < CClickableItem > > disc_report_data;
+        static Str2Strs                           test_item_list;
+        static CRef < CSuspect_rule_set>          suspect_prod_rules;
+        static vector < vector <string> >         susrule_summ;
+        static vector <string> 		          weasels;
+        static CRef <CSeq_submit>                 seq_submit;
+        static string                             expand_defline_on_set;
+        static string                             report_lineage;
+        static vector <string>                    strandsymbol;
+        static bool                               exclude_dirsub;
+        static string                             report;
+
+        static Str2UInt                           rRNATerms;
+        static Str2UInt                           rRNATerms_partial;
+        static vector <string>                    bad_gene_names_contained;
+        static vector <string>                    no_multi_qual;
+        static vector <string>                    rrna_standard_name; 
+        static vector <string>                    short_auth_nms; 
+        static vector <string>                    spec_words_biosrc; 
+        static vector <string>                    suspicious_notes;
+        static vector <string>                    trna_list; 
+        static Str2UInt                           desired_aaList;
+        static CTaxon1                            tax_db_conn;
+        static list <string>                      state_abbrev;
+        static Str2Str                            cds_prod_find;
+        static vector <string>                    s_pseudoweasels;
+        static vector <string>                    suspect_rna_product_names;
+        static vector <string>                    new_exceptions;
+        static Str2Str		                  srcqual_keywords;
+        static vector <string>                    kIntergenicSpacerNames;
+        static vector <string>                    taxnm_env;
+        static vector <string>                    virus_lineage;
+        static vector <string>                    strain_tax;
+        static CRef <CComment_set>                comment_rules;
+        static Str2UInt                           whole_word;
+        static Str2Str                            fix_data;
+        static CRef <CSuspect_rule_set>           orga_prod_rules;
+        static vector <string>                    skip_bracket_paren;
+        static vector <string>                    ok_num_prefix;
+        static map <EMacro_feature_type, CSeqFeatData::ESubtype>  feattype_featdef;
+        static map <EMacro_feature_type, string>  feattype_name;
+        static map <CRna_feat_type::E_Choice, CRNA_ref::EType> rnafeattp_rnareftp;
+        static map <ERna_field, EFeat_qual_legal>  rnafield_featquallegal;
+        static map <ERna_field, string>            rnafield_names;
+        static vector <string>                     rnatype_names;
+        static map <CSeq_inst::EMol, string>       mol_molname;
+        static map <CSeq_inst::EStrand, string>    strand_strname;
+        static vector <string>                     dblink_names;
+        static map <ESource_qual, COrgMod::ESubtype>    srcqual_orgmod;
+        static map <ESource_qual, CSubSource::ESubtype> srcqual_subsrc;
+        static map <ESource_qual, string>               srcqual_names;
+        static map <EFeat_qual_legal, string>           featquallegal_name;
+        static map <EFeat_qual_legal, unsigned>         featquallegal_subfield;
+        static map <ESequence_constraint_rnamol, CMolInfo::EBiomol> scrna_mirna;
+        static map <string, string>                     pub_class_quals; 
+        static vector <string>                          months;
+        static map <EMolecule_type, CMolInfo::EBiomol>  moltp_biomol;
+        static map <ETechnique_type, CMolInfo::ETech>   techtp_mitech;
+        static map <ETechnique_type, string>            techtp_name;
+        static vector <string>                          s_putative_replacements;
+        static vector <string>                          suspect_name_category_names;
+        static vector <string>                          fix_type_names;
+        static map <ECDSGeneProt_field, string>         cgp_field_name;
+        static map <ECDSGeneProt_feature_type_constraint, string>          cgp_feat_name;
+        static map <EMolecule_type, string>             moltp_name;
+        static vector < vector <string> >               susterm_summ;
+        static map <EFeature_strandedness_constraint, string> feat_strandedness;
+        static map <EPublication_field, string>         pubfield_label;
+        static map <CPub_field_special_constraint_type::E_Choice,string> spe_pubfield_label;
+        static map <EFeat_qual_legal, string>           featqual_leg_name;
+        static vector <string>                          miscfield_names;
+        static vector <string>                          loctype_names;
+        static map <EString_location, string>           matloc_names;
+        static map <EString_location, string>           matloc_notpresent_names;
+        static map <ESource_location, string>           srcloc_names;
+        static map <ESource_origin, string>             srcori_names;
+        static map <ECompletedness_type, string>        compl_names;
+        static map <EMolecule_class_type, string>       molclass_names;
+        static map <ETopology_type, string>             topo_names;
+        static map <EStrand_type, string>               strand_names;
+        static CRef < CSuspect_rule_set>                suspect_rna_rules;
+        static vector <string>                          rna_rule_summ;
+        static vector <string>                          tests_enabled;
+        static vector <string>                          tests_disabled;
+        static vector <string>                          suspect_phrases;
+        static map <int, string>                        genome_names;
+
+        s_SuspectProductNameData                    suspect_prod_terms[];
+        unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
+   };
+
    class CRepConfig 
    {
      public:
         virtual ~CRepConfig() {};
 
+        // removed from *_app.hpp
+        void InitParams(const IRWRegistry& reg);
+        void ReadArgs(const CArgs& args);
+        void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
+        void GetOrgModSubtpName(unsigned num1, unsigned num2,
+                                         map <string, COrgMod::ESubtype>& orgmodnm_subtp);
+        CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
+                                                                 bool whole_word = false);
+
         void CollectTests();
-        void Init(const string& report_type);
+        void Run();
         static CRepConfig* factory(const string& report_tp);
         virtual void Export() = 0;
         void AddListOutputTags();

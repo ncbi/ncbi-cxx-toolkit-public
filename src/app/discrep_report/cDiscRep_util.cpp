@@ -79,7 +79,7 @@
 #include <objmgr/seq_map.hpp>
 #include <util/xregexp/regexp.hpp>
 
-#include "hDiscRep_app.hpp"
+#include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"
 
 #include "hUtilib.hpp"

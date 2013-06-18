@@ -198,7 +198,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
      else continue;
 
      for (i=0; i< thisInfo.susterm_summ.size(); i++) {
-       SuspectProductNameData& this_term = thisInfo.suspect_prod_terms[i];
+       s_SuspectProductNameData& this_term = thisInfo.suspect_prod_terms[i];
        if (!CategoryOkForBioSource(biosrc_p, this_term.fix_type)) continue;
        if (prot.CanGetName()) {
           ITERATE (list <string>, nit, prot.GetName()) {
@@ -421,11 +421,9 @@ void CBioseq_on_SUSPECT_RULE :: TestOnObj(const CBioseq& bioseq)
    thisTest.is_SusProd_run = true;
 
    m_bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);  // necessary?
-FindSuspectProductNamesWithStaticList();
-/*
+//FindSuspectProductNamesWithStaticList();
    if (thisInfo.suspect_prod_rules->Get().empty()) FindSuspectProductNamesWithStaticList();
    else FindSuspectProductNamesWithRules();
-*/
 };
 
 void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)

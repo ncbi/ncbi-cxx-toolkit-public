@@ -32,13 +32,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "hDiscRep_app.hpp"
+#include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"
 
 using namespace DiscRepNmSpc;
 CDiscRepInfo::CDiscRepInfo () 
 {
-SuspectProductNameData suspect_prod_terms[]={
+s_SuspectProductNameData suspect_prod_terms[]={
   { "beginning with period, comma, or hyphen" , CTestAndRepData::BeginsWithPunct, eSuspectNameType_InappropriateSymbol, NULL, NULL } ,
   { "begins or ends with quotes", CTestAndRepData::BeginsOrEndsWithQuotes, eSuspectNameType_QuickFix, NULL, CTestAndRepData::RemoveBeginningAndEndingQuotes } ,
   { "binding" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,

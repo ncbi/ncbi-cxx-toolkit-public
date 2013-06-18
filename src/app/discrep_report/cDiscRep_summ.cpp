@@ -68,7 +68,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 
-#include "hDiscRep_app.hpp"
+#include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"
 #include "hUtilib.hpp"
 #include "hDiscRep_summ.hpp"
