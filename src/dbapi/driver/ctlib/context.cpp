@@ -119,7 +119,7 @@ private:
     vector<CTLibContext*>   m_Registry;
     bool                    m_ExitProcessPatched;
 
-    friend class CSafeStaticPtr<CTLibContextRegistry>;
+    friend class CSafeStatic_Allocator<CTLibContextRegistry>;
 };
 
 
@@ -151,7 +151,7 @@ CTLibContextRegistry::~CTLibContextRegistry(void) throw()
 CTLibContextRegistry&
 CTLibContextRegistry::Instance(void)
 {
-    static CSafeStaticPtr<CTLibContextRegistry> instance;
+    static CSafeStatic<CTLibContextRegistry> instance;
 
     return instance.Get();
 }

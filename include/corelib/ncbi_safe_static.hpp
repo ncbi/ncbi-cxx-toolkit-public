@@ -109,7 +109,7 @@ public:
 
 protected:
     /// Cleanup function type used by derived classes
-    typedef void (*FSelfCleanup)(void** ptr);
+    typedef void (*FSelfCleanup)(CSafeStaticPtr_Base* safe_static);
 
     /// Constructor.
     ///
@@ -122,7 +122,7 @@ protected:
     ///   Life span allows to control destruction of objects. Objects with
     ///   the same life span are destroyed in the order reverse to their
     ///   creation order.
-    ///   @sa CSafeStaticLifeSpan
+    /// @sa CSafeStaticLifeSpan
     CSafeStaticPtr_Base(FSelfCleanup self_cleanup,
                         FUserCleanup user_cleanup = 0,
                         TLifeSpan life_span = TLifeSpan::GetDefault())
@@ -166,7 +166,7 @@ private:
         if ( m_UserCleanup )
             m_UserCleanup(m_Ptr);
         if ( m_SelfCleanup )
-            m_SelfCleanup(&m_Ptr);
+            m_SelfCleanup(this);
     }
 
 };
@@ -187,155 +187,6 @@ public:
         return ptr1->m_LifeSpan < ptr2->m_LifeSpan;
     }
 };
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CSafeStaticPtr<>::
-///
-///    For simple on-demand variables.
-///    Create the variable of type "T" on demand,
-///    destroy it on the program termination.
-///    Should be used only as static object. Otherwise
-///    the correct initialization is not guaranteed.
-
-template <class T>
-class CSafeStaticPtr : public CSafeStaticPtr_Base
-{
-public:
-    typedef CSafeStaticLifeSpan TLifeSpan;
-
-    /// Constructor.
-    ///
-    /// @param user_cleanup
-    ///   User-provided cleanup function to be executed on destruction.
-    /// @param life_span
-    ///   Life span allows to control destruction of objects.
-    /// @sa CSafeStaticPtr_Base
-    CSafeStaticPtr(FUserCleanup user_cleanup = 0,
-                   TLifeSpan life_span = TLifeSpan::GetDefault())
-        : CSafeStaticPtr_Base(x_SelfCleanup, user_cleanup, life_span)
-    {}
-
-    /// Create the variable if not created yet, return the reference.
-    T& Get(void)
-    {
-        if ( !m_Ptr ) {
-            x_Init();
-        }
-        return *static_cast<T*> (m_Ptr);
-    }
-    /// Get the existing object or create a new one using the provided
-    /// FUserCreate object.
-    template <class FUserCreate>
-    T& Get(FUserCreate user_create)
-    {
-        if ( !m_Ptr ) {
-            x_Init(user_create);
-        }
-        return *static_cast<T*> (m_Ptr);
-    }
-
-    T* operator -> (void) { return &Get(); }
-    T& operator *  (void) { return  Get(); }
-
-    /// Initialize with an existing object. The object MUST be
-    /// allocated with "new T" -- it will be destroyed with
-    /// "delete object" in the end. Set() works only for
-    /// not yet initialized safe-static variables.
-    void Set(T* object);
-
-private:
-    // Initialize the object
-    void x_Init(void);
-
-    template <class FUserCreate>
-    void x_Init(FUserCreate user_create);
-
-    // "virtual" cleanup function
-    static void x_SelfCleanup(void** ptr)
-    {
-        T* tmp = static_cast<T*> (*ptr);
-        *ptr = 0;
-        delete tmp;
-    }
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///  CSafeStaticRef<>::
-///
-///    For on-demand CObject-derived object.
-///    Create the variable of type "T" using CRef<>
-///    (to avoid premature destruction).
-///    Should be used only as static object. Otherwise
-///    the correct initialization is not guaranteed.
-
-template <class T>
-class CSafeStaticRef : public CSafeStaticPtr_Base
-{
-public:
-    typedef CSafeStaticLifeSpan TLifeSpan;
-
-    /// Constructor.
-    ///
-    /// @param user_cleanup
-    ///   User-provided cleanup function to be executed on destruction.
-    /// @param life_span
-    ///   Life span allows to control destruction of objects.
-    /// @sa CSafeStaticPtr_Base
-    CSafeStaticRef(FUserCleanup user_cleanup = 0,
-                   TLifeSpan life_span = TLifeSpan::GetDefault())
-        : CSafeStaticPtr_Base(x_SelfCleanup, user_cleanup, life_span)
-    {}
-
-    /// Create the variable if not created yet, return the reference.
-    T& Get(void)
-    {
-        if ( !m_Ptr ) {
-            x_Init();
-        }
-        return *static_cast<T*>(m_Ptr);
-    }
-    /// Get the existing object or create a new one using the provided
-    /// FUserCreate object.
-    template <class FUserCreate>
-    T& Get(FUserCreate user_create)
-    {
-        if ( !m_Ptr ) {
-            x_Init(user_create);
-        }
-        return *static_cast<T*>(m_Ptr);
-    }
-
-    T* operator -> (void) { return &Get(); }
-    T& operator *  (void) { return  Get(); }
-
-    /// Initialize with an existing object. The object MUST be
-    /// allocated with "new T" to avoid premature destruction.
-    /// Set() works only for un-initialized safe-static variables.
-    void Set(T* object);
-
-private:
-    // Initialize the object and the reference
-    void x_Init(void);
-
-    template <class FUserCreate>
-    void x_Init(FUserCreate user_create);
-
-    // "virtual" cleanup function
-    static void x_SelfCleanup(void** ptr)
-    {
-        T* tmp = static_cast<T*>(*ptr);
-        if ( tmp ) {
-            tmp->RemoveReference();
-            *ptr = 0;
-        }
-    }
-};
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -382,6 +233,377 @@ private:
     static int sm_RefCount;
 };
 
+
+/// Helper class for object allocation/deallocation.
+/// Required to simplify friend declarations for classes with
+/// private constructors/destructors and to support CObject
+/// reference counting.
+
+template <class T>
+class CSafeStatic_Allocator
+{
+public:
+    /// Create a new class instance.
+    static T* s_Create(void) { return new T; }
+
+    // CSafeStatic must use AddReference/RemoveReference for CObject derived
+    // classes. To do this there are two different versions of the following
+    // methods.
+    static void s_AddReference(void*) {}
+    static void s_AddReference(CObject* ptr)
+    {
+        if (ptr) ptr->AddReference();
+    }
+    static void s_RemoveReference(void* ptr)
+    {
+        if (ptr) delete static_cast<T*>(ptr);
+    }
+    static void s_RemoveReference(CObject* ptr)
+    {
+        if (ptr) ptr->RemoveReference();
+    }
+};
+
+
+/// Initialization and cleanup of a safe-static object.
+/// Must implement at least Create() and Cleanup() methods.
+/// Create() must create a new object and return the initialized
+/// pointer. Cleanup() can be a no-op.
+/// The default implementation allows to use it as a wrapper for
+/// static callback functions.
+template <class T>
+class CSafeStatic_Callbacks
+{
+public:
+    /// The default implementation allows to use callback functions
+    /// rather than a new class.
+    typedef T* (*FCreate)(void);
+    typedef void (*FCleanup)(T& value);
+    typedef CSafeStatic_Allocator<T> TAllocator;
+
+    /// The constructor allows to use CSafeStatic_Callbacks as a simple
+    /// wrapper for static functions.
+    /// @param create
+    ///   Initialization function which must create a new object. If null,
+    ///   no special initialization is performed.
+    /// @param cleanup
+    ///   Cleanup function. If null, no special cleanup is performed.
+    CSafeStatic_Callbacks(FCreate create = 0, FCleanup cleanup = 0)
+        : m_Create(create), m_Cleanup(cleanup) {}
+
+    /// Create new object.
+    /// @return
+    ///   The allocated object.
+    T* Create(void) {
+        return (m_Create) ? m_Create() : TAllocator::s_Create();
+    }
+
+    /// Perform cleanup before destruction.
+    /// @param ptr
+    ///   Object to be destroyed using the selected allocator. The cleanup
+    ///   method should not destroy the object itself, just perform any
+    ///   additional actions (e.g. setting some external pointers to null).
+    void Cleanup(T& value) {
+        if ( m_Cleanup ) {
+            m_Cleanup(value);
+        }
+    }
+
+private:
+    FCreate  m_Create;
+    FCleanup m_Cleanup;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSafeStatic<>::
+///
+///    For on-demand object access, both non-CObject and CObject based.
+///    Create the variable of type "T" on the first access. The default
+///    implementation of allocator uses reference counter of CObject
+///    class to prevent premature destruction.
+///    Should be used only as static object. Otherwise the correct
+///    initialization is not guaranteed.
+///    @param T
+///      Type of the variable to be stored.
+///    @param Callbacks
+///      A class implementing two methods to perform additional initialization
+///      and cleanup:
+///      void Create(T* ptr)
+///      void Cleanup(T* ptr)
+///      NOTE: The Cleanup callback must not destroy the object itself, just
+///      perform any additional actions.
+template <class T,
+    class Callbacks = CSafeStatic_Callbacks<T> >
+class CSafeStatic : public CSafeStaticPtr_Base
+{
+public:
+    typedef Callbacks TCallbacks;
+    typedef CSafeStatic<T, TCallbacks> TThisType;
+    typedef CSafeStaticLifeSpan TLifeSpan;
+    typedef CSafeStatic_Allocator<T> TAllocator;
+
+    /// Callback function types. The default callback class can be used
+    /// as a simple wrapper for static functions.
+    /// @sa CSafeStatic_Callbacks
+    typedef typename CSafeStatic_Callbacks<T>::FCreate FCreate;
+    typedef typename CSafeStatic_Callbacks<T>::FCleanup FCleanup;
+
+    /// Constructor.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects. Objects with
+    ///   the same life span are destroyed in the order reverse to their
+    ///   creation order.
+    /// @sa CSafeStaticLifeSpan
+    CSafeStatic(TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(sx_SelfCleanup, 0, life_span)
+    {}
+
+    /// Constructor.
+    /// @param init
+    ///   Callback function to be used to create the stored object.
+    /// @param cleanup
+    ///   Callback function to be used for additional cleanup.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects. Objects with
+    ///   the same life span are destroyed in the order reverse to their
+    ///   creation order.
+    /// @sa CSafeStaticLifeSpan
+    CSafeStatic(FCreate  create,
+                FCleanup cleanup,
+                TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(sx_SelfCleanup, 0, life_span),
+          m_Callbacks(create, cleanup)
+    {}
+
+    /// Constructor.
+    /// @param callbacks
+    ///   Callbacks class instance.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects. Objects with
+    ///   the same life span are destroyed in the order reverse to their
+    ///   creation order.
+    /// @sa CSafeStaticLifeSpan
+    CSafeStatic(TCallbacks callbacks,
+                TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(sx_SelfCleanup, 0, life_span),
+          m_Callbacks(callbacks)
+    {}
+
+    /// Create the variable if not created yet, return the reference.
+    T& Get(void)
+    {
+        if ( !m_Ptr ) {
+            x_Init();
+        }
+        return *static_cast<T*>(m_Ptr);
+    }
+
+    T* operator-> (void) { return &Get(); }
+    T& operator*  (void) { return  Get(); }
+
+private:
+    CSafeStatic(const CSafeStatic&);
+    CSafeStatic& operator=(const CSafeStatic&);
+
+    void x_Init(void) {
+        bool mutex_locked = false;
+        if ( Init_Lock(&mutex_locked) ) {
+            // Create the object and register for cleanup
+            T* ptr = 0;
+            try {
+                ptr = m_Callbacks.Create();
+                TAllocator::s_AddReference(ptr);
+                CSafeStaticGuard::Register(this);
+                m_Ptr = ptr;
+            }
+            catch (CException& e) {
+                TAllocator::s_RemoveReference(ptr);
+                m_Ptr = 0;
+                Init_Unlock(mutex_locked);
+                NCBI_RETHROW_SAME(e, "CSafeStatic::Init: Register() failed");
+            }
+            catch (...) {
+                TAllocator::s_RemoveReference(ptr);
+                m_Ptr = 0;
+                Init_Unlock(mutex_locked);
+                NCBI_THROW(CCoreException,eCore,
+                           "CSafeStatic::Init: Register() failed");
+            }
+        }
+        Init_Unlock(mutex_locked);
+    }
+
+    // "virtual" cleanup function
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static)
+    {
+        TThisType* this_ptr = static_cast<TThisType*>(safe_static);
+        T* tmp = static_cast<T*>(this_ptr->m_Ptr);
+        if ( tmp ) {
+            this_ptr->m_Callbacks.Cleanup(*tmp);
+            TAllocator::s_RemoveReference(tmp);
+            this_ptr->m_Ptr = 0;
+        }
+    }
+
+    TCallbacks m_Callbacks;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSafeStaticPtr<>::
+///
+///    For simple on-demand variables.
+///    Create the variable of type "T" on demand,
+///    destroy it on the program termination.
+///    Should be used only as static object. Otherwise
+///    the correct initialization is not guaranteed.
+///    @deprecated Use CSafeStatic<> instead.
+
+template <class T>
+class CSafeStaticPtr : public CSafeStaticPtr_Base
+{
+public:
+    typedef CSafeStaticLifeSpan TLifeSpan;
+
+    /// Constructor.
+    ///
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects.
+    /// @sa CSafeStaticPtr_Base
+    CSafeStaticPtr(FUserCleanup user_cleanup = 0,
+                   TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(sx_SelfCleanup, user_cleanup, life_span)
+    {}
+
+    /// Create the variable if not created yet, return the reference.
+    T& Get(void)
+    {
+        if ( !m_Ptr ) {
+            x_Init();
+        }
+        return *static_cast<T*> (m_Ptr);
+    }
+    /// Get the existing object or create a new one using the provided
+    /// FUserCreate object.
+    /// @deprecated Use CSafeStatic class instead.
+    template <class FUserCreate>
+    NCBI_DEPRECATED
+    T& Get(FUserCreate user_create)
+    {
+        if ( !m_Ptr ) {
+            x_Init(user_create);
+        }
+        return *static_cast<T*> (m_Ptr);
+    }
+
+    T* operator -> (void) { return &Get(); }
+    T& operator *  (void) { return  Get(); }
+
+    /// Initialize with an existing object. The object MUST be
+    /// allocated with "new T" -- it will be destroyed with
+    /// "delete object" in the end. Set() works only for
+    /// not yet initialized safe-static variables.
+    void Set(T* object);
+
+private:
+    // Initialize the object
+    void x_Init(void);
+
+    template <class FUserCreate>
+    void x_Init(FUserCreate user_create);
+
+    // "virtual" cleanup function
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static)
+    {
+        CSafeStaticPtr<T>* this_ptr = static_cast<CSafeStaticPtr<T>*>(safe_static);
+        T* tmp = static_cast<T*> (this_ptr->m_Ptr);
+        this_ptr->m_Ptr = 0;
+        delete tmp;
+    }
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSafeStaticRef<>::
+///
+///    For on-demand CObject-derived object.
+///    Create the variable of type "T" using CRef<>
+///    (to avoid premature destruction).
+///    Should be used only as static object. Otherwise
+///    the correct initialization is not guaranteed.
+///    @deprecated Use CSafeStatic<> instead.
+template <class T>
+class CSafeStaticRef : public CSafeStaticPtr_Base
+{
+public:
+    typedef CSafeStaticLifeSpan TLifeSpan;
+
+    /// Constructor.
+    ///
+    /// @param user_cleanup
+    ///   User-provided cleanup function to be executed on destruction.
+    /// @param life_span
+    ///   Life span allows to control destruction of objects.
+    /// @sa CSafeStaticPtr_Base
+    CSafeStaticRef(FUserCleanup user_cleanup = 0,
+                   TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(sx_SelfCleanup, user_cleanup, life_span)
+    {}
+
+    /// Create the variable if not created yet, return the reference.
+    T& Get(void)
+    {
+        if ( !m_Ptr ) {
+            x_Init();
+        }
+        return *static_cast<T*>(m_Ptr);
+    }
+    /// Get the existing object or create a new one using the provided
+    /// FUserCreate object.
+    /// @deprecated Use CSafeStatic class instead.
+    template <class FUserCreate>
+    NCBI_DEPRECATED
+    T& Get(FUserCreate user_create)
+    {
+        if ( !m_Ptr ) {
+            x_Init(user_create);
+        }
+        return *static_cast<T*>(m_Ptr);
+    }
+
+    T* operator -> (void) { return &Get(); }
+    T& operator *  (void) { return  Get(); }
+
+    /// Initialize with an existing object. The object MUST be
+    /// allocated with "new T" to avoid premature destruction.
+    /// Set() works only for un-initialized safe-static variables.
+    void Set(T* object);
+
+private:
+    // Initialize the object and the reference
+    void x_Init(void);
+
+    template <class FUserCreate>
+    void x_Init(FUserCreate user_create);
+
+    // "virtual" cleanup function
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static)
+    {
+        CSafeStaticRef<T>* this_ptr = static_cast<CSafeStaticRef<T>*>(safe_static);
+        T* tmp = static_cast<T*> (this_ptr->m_Ptr);
+        if ( tmp ) {
+            tmp->RemoveReference();
+            this_ptr->m_Ptr = 0;
+        }
+    }
+};
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -212,8 +212,7 @@ protected:
 
 private:
     CObjectManager(void);
-
-    static CRef<CObjectManager> sx_Create(void);
+    friend class CSafeStatic_Allocator<CObjectManager>;
 
     // these are for Object Manager itself
     // nobody else should use it

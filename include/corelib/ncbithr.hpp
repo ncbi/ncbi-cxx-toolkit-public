@@ -266,11 +266,32 @@ public:
 #define NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF 1
 
 #if NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF
+
+template <class TValue>
+class CStaticTls_Callbacks
+{
+public:
+    typedef void (*FUserCleanup)(void*  ptr);
+    CStaticTls_Callbacks(FUserCleanup cleanup) : m_Cleanup(cleanup) {}
+
+    CTls<TValue>* Create() {
+        return new CTls<TValue>;
+    }
+    void Cleanup(CTls<TValue>& value) {
+        if ( m_Cleanup ) {
+            m_Cleanup(&value);
+        }
+    }
+
+private:
+    FUserCleanup m_Cleanup;
+};
+
 template<class TValue>
-class CStaticTls : private CSafeStaticRef< CTls<TValue> >
+class CStaticTls : private CSafeStatic<CTls<TValue>, CStaticTls_Callbacks<TValue> >
 {
 private:
-    typedef CSafeStaticRef< CTls<TValue> > TParent;
+    typedef CSafeStatic<CTls<TValue>, CStaticTls_Callbacks<TValue> > TParent;
 
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
@@ -281,7 +302,7 @@ public:
 
     CStaticTls(FUserCleanup user_cleanup = 0,
                TLifeSpan life_span = TLifeSpan::GetDefault())
-        : TParent(user_cleanup, life_span)
+        : TParent(CStaticTls_Callbacks<TValue>(user_cleanup), life_span)
     {
     }
 

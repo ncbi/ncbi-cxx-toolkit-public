@@ -627,7 +627,7 @@ private:
 
 static inline ECharType s_GetCharType(int c)
 {
-    static CSafeStaticPtr<CFillTypes> fill_types;
+    static CSafeStatic<CFillTypes> fill_types;
     _ASSERT(c < 256  &&  c >= 0);
     return fill_types->GetChar(c);
 }

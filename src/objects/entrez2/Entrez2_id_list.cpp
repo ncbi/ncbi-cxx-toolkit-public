@@ -50,7 +50,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 static const size_t kUidSize = 32; // bits
 const size_t        CEntrez2_id_list::sm_UidSize = kUidSize / 8; // bytes
-CSafeStaticPtr<CEntrez2_id_list::TUids> s_EmptyList;
+CSafeStatic<CEntrez2_id_list::TUids> s_EmptyList;
 
 CEntrez2_id_list::TUidIterator CEntrez2_id_list::GetUidIterator()
 {

@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static CSafeStaticPtr<CTypeInfoMap> s_AutoPointerTypeInfo_map;
+static CSafeStatic<CTypeInfoMap> s_AutoPointerTypeInfo_map;
 
 CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
     : CParent(type->GetName(), type)

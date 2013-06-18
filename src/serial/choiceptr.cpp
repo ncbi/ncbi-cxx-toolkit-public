@@ -58,7 +58,7 @@ CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo pointerType)
     SetPointerType(pointerType);
 }
 
-static CSafeStaticPtr<CTypeInfoMap> s_ChoicePointerTypeInfo_map;
+static CSafeStatic<CTypeInfoMap> s_ChoicePointerTypeInfo_map;
 
 TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TTypeInfo base)
 {

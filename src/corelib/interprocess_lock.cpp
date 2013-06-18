@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 
 // List of all locks in the current process <name, ref_counter>.
 typedef map<string, int> TLocks;
-static CSafeStaticPtr<TLocks> s_Locks;
+static CSafeStatic<TLocks> s_Locks;
 
 // Protective mutex for save access to s_Locks in MT environment.
 DEFINE_STATIC_FAST_MUTEX(s_ProcessLock);

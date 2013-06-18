@@ -53,8 +53,8 @@ BEGIN_NCBI_SCOPE
 
 CDriverManager& CDriverManager::GetInstance()
 {
-    static CSafeStaticPtr<CDriverManager> instance
-        (NULL, CSafeStaticLifeSpan::eLifeSpan_Long);
+    static CSafeStatic<CDriverManager> instance(
+        CSafeStaticLifeSpan::eLifeSpan_Long);
 
     return instance.Get();
 }

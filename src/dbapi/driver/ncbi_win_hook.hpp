@@ -239,7 +239,7 @@ namespace NWinHook
         /// Determines whether all system functions has been successfuly hacked
         BOOL m_bSystemFuncsHooked;
 
-        friend class CSafeStaticPtr<CApiHookMgr>;
+        friend class CSafeStatic_Allocator<CApiHookMgr>;
     };
 
 
@@ -269,7 +269,7 @@ namespace NWinHook
         TRegistry   m_Registry;
         bool        m_Hooked;
 
-        friend class CSafeStaticPtr<COnExitProcess>;
+        friend class CSafeStatic_Allocator<COnExitProcess>;
     };
 }
 

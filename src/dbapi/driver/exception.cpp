@@ -441,7 +441,7 @@ CDB_UserHandler::ClearExceptions(TExceptions& expts)
 
 static CDB_UserHandler_Wrapper& GetDefaultCDBErrorHandler(void)
 {
-    static CSafeStaticRef<CDB_UserHandler_Wrapper> s_CDB_DefUserHandler;
+    static CSafeStatic<CDB_UserHandler_Wrapper> s_CDB_DefUserHandler;
 
     return s_CDB_DefUserHandler.Get();
 }

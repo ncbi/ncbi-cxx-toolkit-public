@@ -534,7 +534,7 @@ namespace NWinHook
         HMODULE m_ModDbghelp;
         FImageDirectoryEntryToData m_ImageDirectoryEntryToData;
 
-        friend class CSafeStaticPtr<CPEi386>;
+        friend class CSafeStatic_Allocator<CPEi386>;
     };
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1900,7 +1900,7 @@ namespace NWinHook
     CApiHookMgr&
     CApiHookMgr::GetInstance(void)
     {
-        static CSafeStaticPtr<CApiHookMgr> instance;
+        static CSafeStatic<CApiHookMgr> instance;
 
         return (instance.Get());
     }
@@ -2308,7 +2308,7 @@ namespace NWinHook
 
     CPEi386& CPEi386::GetInstance(void)
     {
-        static CSafeStaticPtr<CPEi386> instance(NULL,
+        static CSafeStatic<CPEi386> instance(
             CSafeStaticLifeSpan::eLifeSpan_Longest);
 
         return (instance.Get());
@@ -2365,7 +2365,7 @@ namespace NWinHook
     COnExitProcess&
     COnExitProcess::Instance(void)
     {
-        static CSafeStaticPtr<COnExitProcess> instance;
+        static CSafeStatic<COnExitProcess> instance;
 
         return instance.Get();
     }

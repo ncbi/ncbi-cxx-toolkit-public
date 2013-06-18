@@ -42,16 +42,16 @@
 
 BEGIN_NCBI_SCOPE
 
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_auto_ptr;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_CRef;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_CConstRef;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_AutoPtr;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_list;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMapSet_list;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_vector;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMapSet_vector;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_set;
-static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_multiset;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_auto_ptr;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_CRef;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_CConstRef;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_AutoPtr;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_list;
+static CSafeStatic<CTypeInfoMap> s_TypeMapSet_list;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_vector;
+static CSafeStatic<CTypeInfoMap> s_TypeMapSet_vector;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_set;
+static CSafeStatic<CTypeInfoMap> s_TypeMap_multiset;
 
 TTypeInfo CStlClassInfoUtil::Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f)
 {

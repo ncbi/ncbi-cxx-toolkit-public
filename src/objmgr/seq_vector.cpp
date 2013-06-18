@@ -1062,7 +1062,7 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
     typedef pair<TMainConversion, TConversionFlags> TConversionKey;
     typedef vector<char> TConversionTable;
     typedef map<TConversionKey, TConversionTable> TTables;
-    static CSafeStaticPtr<TTables> tables;
+    static CSafeStatic<TTables> tables;
 
     TConversionKey key;
     key.first = TMainConversion(src, dst);

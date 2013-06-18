@@ -368,7 +368,7 @@ const string& CNcbiArguments::GetProgramName(EFollowLinks follow_links) const
     } else if ( m_Args.size() ) {
         return m_Args[0];
     } else {
-        static CSafeStaticPtr<string> kDefProgramName;
+        static CSafeStatic<string> kDefProgramName;
         kDefProgramName->assign("ncbi");
         return kDefProgramName.Get();
     }

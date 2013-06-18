@@ -899,7 +899,7 @@ private:
 };
 
 
-static CSafeStaticPtr<CSeqportUtil_implementation> sx_Implementation;
+static CSafeStatic<CSeqportUtil_implementation> sx_Implementation;
 
 CSeqportUtil_implementation& CSeqportUtil::x_GetImplementation(void)
 {

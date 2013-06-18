@@ -129,20 +129,17 @@ void s_CleanupUsedTlsBases(CUsedTlsBases* tls, void*)
     delete tls;
 }
 
-void s_CleanupMainUsedTlsBases(void* ptr)
+void s_CleanupMainUsedTlsBases(CUsedTlsBases& tls)
 {
-    CUsedTlsBases* tls = static_cast<CUsedTlsBases*>(ptr);
-    if (tls) {
-        tls->ClearAll();
-    }
+    tls.ClearAll();
 }
 
 // Storage for used TLS sets
 CStaticTls<CUsedTlsBases> CUsedTlsBases::sm_UsedTlsBases;
 // Main thread needs a usual safe-static-ref for proper cleanup --
 // there's no thread which can do it on destruction.
-static CSafeStaticPtr<CUsedTlsBases>
-s_MainUsedTlsBases(s_CleanupMainUsedTlsBases);
+static CSafeStatic<CUsedTlsBases>
+s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases);
 
 CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
 {

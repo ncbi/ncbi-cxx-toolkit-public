@@ -62,7 +62,7 @@ NCBI_DEFINE_ERR_SUBCODE_X(10);
 
 BEGIN_SCOPE(objects)
 
-static CSafeStaticPtr<CAsnSizer> s_Sizer; // for size estimation
+static CSafeStatic<CAsnSizer> s_Sizer; // for size estimation
 
 namespace {
     template<class C>

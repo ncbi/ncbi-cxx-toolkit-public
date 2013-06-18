@@ -85,7 +85,7 @@ private:
     vector<CODBCContext*>   m_Registry;
     bool                    m_ExitProcessPatched;
 
-    friend class CSafeStaticPtr<CODBCContextRegistry>;
+    friend class CSafeStatic_Allocator<CODBCContextRegistry>;
 };
 
 
@@ -113,7 +113,7 @@ CODBCContextRegistry::~CODBCContextRegistry(void) throw()
 CODBCContextRegistry&
 CODBCContextRegistry::Instance(void)
 {
-    static CSafeStaticPtr<CODBCContextRegistry> instance;
+    static CSafeStatic<CODBCContextRegistry> instance;
 
     return *instance;
 }

@@ -52,7 +52,7 @@ const char* kTagStartEnd = "</@";
 // Template file caching (disabled by default)
 CHTMLPage::ECacheTemplateFiles CHTMLPage::sm_CacheTemplateFiles = CHTMLPage::eCTF_Disable;
 typedef map<string, string*> TTemplateCache;
-static CSafeStaticPtr<TTemplateCache> s_TemplateCache;
+static CSafeStatic<TTemplateCache> s_TemplateCache;
 
 
 const string& CPageStat::GetValue(const string& name) const

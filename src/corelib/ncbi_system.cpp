@@ -130,7 +130,7 @@ extern "C" {
 DEFINE_STATIC_FAST_MUTEX(s_ExitHandler_Mutex);
 static bool                  s_ExitHandlerIsSet  = false;
 static ELimitsExitCode       s_ExitCode          = eLEC_None;
-static CSafeStaticPtr<CTime> s_TimeSet;
+static CSafeStatic<CTime>    s_TimeSet;
 static size_t                s_MemoryLimitSoft   = 0;
 static size_t                s_MemoryLimitHard   = 0;
 static size_t                s_CpuTimeLimit      = 0;

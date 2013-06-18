@@ -89,7 +89,7 @@ private:
     vector<CDBLibContext*>  m_Registry;
     bool                    m_ExitProcessPatched;
 
-    friend class CSafeStaticPtr<CDblibContextRegistry>;
+    friend class CSafeStatic_Allocator<CDblibContextRegistry>;
 };
 
 
@@ -121,7 +121,7 @@ CDblibContextRegistry::~CDblibContextRegistry(void) throw()
 CDblibContextRegistry&
 CDblibContextRegistry::Instance(void)
 {
-    static CSafeStaticPtr<CDblibContextRegistry> instance;
+    static CSafeStatic<CDblibContextRegistry> instance;
 
     return instance.Get();
 }

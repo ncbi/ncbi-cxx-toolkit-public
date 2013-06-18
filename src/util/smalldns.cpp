@@ -117,7 +117,7 @@ string CSmallDNS::GetLocalIP(void) const
 
 string CSmallDNS::GetLocalHost(void)
 {
-    static CSafeStaticPtr<string> s_LocalHostName;
+    static CSafeStatic<string> s_LocalHostName;
 
     if ( s_LocalHostName->empty() ) {
 #if !defined(MAXHOSTNAMELEN)

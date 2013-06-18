@@ -977,7 +977,7 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
     const CCgiRequest& request = context.GetRequest();
 
     typedef map<string, TDiagPostFlags> TFlagMap;
-    static CSafeStaticPtr<TFlagMap> s_FlagMap;
+    static CSafeStatic<TFlagMap> s_FlagMap;
     TFlagMap& flagmap = s_FlagMap.Get();
 
     TDiagPostFlags defaults = (eDPF_Prefix | eDPF_Severity

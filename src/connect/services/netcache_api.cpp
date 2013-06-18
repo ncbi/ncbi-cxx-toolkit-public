@@ -62,7 +62,7 @@
 BEGIN_NCBI_SCOPE
 
 static bool s_FallbackServer_Initialized = false;
-static CSafeStaticPtr<auto_ptr<SServerAddress> > s_FallbackServer;
+static CSafeStatic<auto_ptr<SServerAddress> > s_FallbackServer;
 
 static SServerAddress* s_GetFallbackServer()
 {

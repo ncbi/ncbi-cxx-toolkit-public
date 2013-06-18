@@ -84,7 +84,7 @@ namespace variation {
     {HGVS_THROW(eGrammatic, "Unexpected rule " + CHgvsParser::SGrammar::s_GetRuleName(i->value.id()) ); }
 
 
-CSafeStaticPtr<CHgvsParser::SGrammar> CHgvsParser::s_grammar;
+CSafeStatic<CHgvsParser::SGrammar> CHgvsParser::s_grammar;
 
 const char* CHgvsParser::SGrammar::s_rule_names[CHgvsParser::SGrammar::eNodeIds_SIZE] = 
 {

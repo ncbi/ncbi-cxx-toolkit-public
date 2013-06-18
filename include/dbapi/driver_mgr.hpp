@@ -59,11 +59,11 @@ BEGIN_NCBI_SCOPE
 // Forward declaration
 class IDataSource;
 
-template <typename T> class CSafeStaticPtr;
+template <typename T> class CSafeStatic_Allocator;
 
 class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
-    friend class CSafeStaticPtr<CDriverManager>;
+    friend class CSafeStatic_Allocator<CDriverManager>;
 
 public:
     // Get a single instance of CDriverManager

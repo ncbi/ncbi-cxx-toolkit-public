@@ -51,7 +51,7 @@ namespace impl
 // Forward declaration
 
 class IRegistry;
-template <typename T> class CSafeStaticPtr;
+template <typename T> class CSafeStatic_Allocator;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ private:
     unsigned int m_NumConnect;
 
     // Friends
-    friend class CSafeStaticPtr<CDbapiConnMgr>;
+    friend class CSafeStatic_Allocator<CDbapiConnMgr>;
     friend class impl::CConnection;
 };
 

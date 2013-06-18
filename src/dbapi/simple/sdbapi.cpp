@@ -768,7 +768,7 @@ public:
 };
 
 
-static CSafeStaticPtr<CDataSourceInitializer> ds_init;
+static CSafeStatic<CDataSourceInitializer> ds_init;
 
 
 static impl::CDriverContext*
@@ -975,7 +975,7 @@ struct SMirrorInfo
 };
 
 typedef map<string, SMirrorInfo>  TMirrorsDataMap;
-static CSafeStaticPtr<TMirrorsDataMap> s_MirrorsData;
+static CSafeStatic<TMirrorsDataMap> s_MirrorsData;
 
 
 class CUpdMirrorServerParams: public CDBConnParamsBase

@@ -109,7 +109,7 @@ typedef map<string, CVariantProperties::EAllele_state> TAlleleStateMap;
 const TAlleleStateMap& s_AlleleStateMap()
 //  ----------------------------------------------------------------------------
 {
-    static CSafeStaticPtr<TAlleleStateMap> s_Map;
+    static CSafeStatic<TAlleleStateMap> s_Map;
     TAlleleStateMap& m = *s_Map;
     if ( m.empty() ) {
         m["heterozygous"] = CVariantProperties::eAllele_state_heterozygous;

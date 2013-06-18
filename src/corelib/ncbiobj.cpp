@@ -254,7 +254,7 @@ CAtomicCounter::TValue sx_PopLastNewPtr(void* ptr)
 #endif
 
 #if USE_HEAPOBJ_LIST
-static CSafeStaticPtr< list<const void*> > s_heap_obj;
+static CSafeStatic< list<const void*> > s_heap_obj;
 #endif
 
 #if USE_COMPLEX_MASK
@@ -1045,7 +1045,7 @@ private:
     TLocks m_Locks;
 };
 
-static CSafeStaticPtr<CLocksMonitor> sx_LocksMonitor;
+static CSafeStatic<CLocksMonitor> sx_LocksMonitor;
 
 inline bool MonitoredType(const CObject* object)
 {

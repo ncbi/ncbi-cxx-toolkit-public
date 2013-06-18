@@ -134,7 +134,7 @@ NCBI_PARAM_DEF (string, NCBI, Data, kEmptyStr);
 typedef NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataDir;
 
 typedef vector<string> TIgnoreDataFiles;
-static CSafeStaticPtr<TIgnoreDataFiles> s_IgnoredDataFiles;
+static CSafeStatic<TIgnoreDataFiles> s_IgnoredDataFiles;
 
 string g_FindDataFile(const CTempString& name, CDirEntry::EType type)
 {

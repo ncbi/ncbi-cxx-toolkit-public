@@ -229,7 +229,7 @@ CGridGlobals::~CGridGlobals()
 /* static */
 CGridGlobals& CGridGlobals::GetInstance()
 {
-    static CSafeStaticPtr<CGridGlobals> global_instance;
+    static CSafeStatic<CGridGlobals> global_instance;
 
     return global_instance.Get();
 }

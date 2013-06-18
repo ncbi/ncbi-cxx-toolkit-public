@@ -92,8 +92,8 @@ C& NonConst(const C& c)
 /////////////////////////////////////////////////////////////////////////////
 
 
-static CSafeStaticPtr<CAsnSizer> s_Sizer;
-static CSafeStaticPtr<CSize> small_annot;
+static CSafeStatic<CAsnSizer> s_Sizer;
+static CSafeStatic<CSize> small_annot;
 
 
 void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)

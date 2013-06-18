@@ -60,7 +60,7 @@ public:
         const string& );
 
 protected:
-    static CSafeStaticPtr<TLookupSofaToGenbank> m_Lookup;
+    static CSafeStatic<TLookupSofaToGenbank> m_Lookup;
 };
 
 //  ----------------------------------------------------------------------------

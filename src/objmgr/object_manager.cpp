@@ -70,7 +70,7 @@ static bool s_DebugScope(void)
 }
 
 typedef map<const CScope_Impl*, AutoPtr<CStackTrace> > TScopeRegisterMap;
-static CSafeStaticPtr<TScopeRegisterMap> s_ScopeRegisterMap;
+static CSafeStatic<TScopeRegisterMap> s_ScopeRegisterMap;
 
 void s_RegisterScope(const CScope_Impl& scope)
 {
@@ -100,16 +100,10 @@ void s_DumpScopes(void)
 #endif
 
 
-CRef<CObjectManager> CObjectManager::sx_Create(void)
-{
-    return Ref(new CObjectManager());
-}
-
-
 CRef<CObjectManager> CObjectManager::GetInstance(void)
 {
-    static CSafeStaticRef<CObjectManager> s_Instance;
-    return Ref(&s_Instance.Get(sx_Create));
+    static CSafeStatic<CObjectManager> s_Instance;
+    return Ref(&s_Instance.Get());
 }
 
 

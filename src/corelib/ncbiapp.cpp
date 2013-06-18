@@ -1424,7 +1424,7 @@ void CIdlerWrapper::RunIdler(void)
 }
 
 
-CSafeStaticPtr<CIdlerWrapper> s_IdlerWrapper;
+CSafeStatic<CIdlerWrapper> s_IdlerWrapper;
 
 INcbiIdler* GetIdler(EOwnership ownership)
 {

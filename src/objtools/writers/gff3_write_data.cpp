@@ -201,7 +201,7 @@ bool CGff3WriteRecordFeature::x_AssignType(
         }
     }
 
-    static CSafeStaticPtr<CSofaMap> SOFAMAP;
+    static CSafeStatic<CSofaMap> SOFAMAP;
 
     if ( ! mf.IsSetData() ) {
         m_strType = SOFAMAP->DefaultName();

@@ -519,7 +519,7 @@ CSeqFeatData::SubtypeNameToValue(const string & sName)
 }
 
 typedef map<CSeqFeatData::ESubtype, string> TSubtypeValueToNameMap;
-static TSubtypeValueToNameMap * s_CreateSubtypeValueToNameMap(void)
+static TSubtypeValueToNameMap* s_CreateSubtypeValueToNameMap(void)
 {
     // if this assertion fails, it means this function might be out
     // of date.  Don't just fix the assert, make sure the function is
@@ -542,9 +542,10 @@ static TSubtypeValueToNameMap * s_CreateSubtypeValueToNameMap(void)
 const string & 
 CSeqFeatData::SubtypeValueToName(ESubtype eSubtype)
 {
-    static CSafeStaticPtr<TSubtypeValueToNameMap> pSubtypeValueToNameMap;
+    static CSafeStatic<TSubtypeValueToNameMap> pSubtypeValueToNameMap(
+        s_CreateSubtypeValueToNameMap, 0);
     const TSubtypeValueToNameMap & subtypeValueToNameMap =
-        pSubtypeValueToNameMap.Get(s_CreateSubtypeValueToNameMap);
+        pSubtypeValueToNameMap.Get();
     
     TSubtypeValueToNameMap::const_iterator find_iter =
         subtypeValueToNameMap.find(eSubtype);

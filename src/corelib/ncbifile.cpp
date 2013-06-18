@@ -113,7 +113,7 @@ BEGIN_NCBI_SCOPE
 const size_t kDefaultBufferSize = 64*1024;
 
 // List of files for CFileDeleteAtExit class
-static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
+static CSafeStatic< CFileDeleteList > s_DeleteAtExitFileList;
 
 
 // Declare the parameter to get directory for temporary files.

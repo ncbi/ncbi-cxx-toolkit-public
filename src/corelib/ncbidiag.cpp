@@ -66,8 +66,8 @@ BEGIN_NCBI_SCOPE
 
 static bool s_DiagUseRWLock = false;
 DEFINE_STATIC_MUTEX(s_DiagMutex);
-static CSafeStaticPtr<CRWLock> s_DiagRWLock;
-static CSafeStaticPtr<CAtomicCounter_WithAutoInit> s_ReopenEntered;
+static CSafeStatic<CRWLock> s_DiagRWLock;
+static CSafeStatic<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 
 DEFINE_STATIC_FAST_MUTEX(s_ApproveMutex);
 
@@ -434,8 +434,8 @@ void CDiagCollectGuard::SetCollectSeverity(EDiagSev sev)
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
 
-static CSafeStaticPtr<CDiagFilter> s_TraceFilter;
-static CSafeStaticPtr<CDiagFilter> s_PostFilter;
+static CSafeStatic<CDiagFilter> s_TraceFilter;
+static CSafeStatic<CDiagFilter> s_PostFilter;
 
 
 // Analogue to strstr.
@@ -699,7 +699,7 @@ public:
     }
 };
 
-static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
+static CSafeStatic<CDiagRecycler> s_DiagRecycler;
 
 
 // Helper function to check if applog severity lock is set and
@@ -2969,8 +2969,8 @@ bool CDiagContext::IsUsingRootLog(void)
 CDiagContext& GetDiagContext(void)
 {
     // Make the context live longer than other diag safe-statics
-    static CSafeStaticPtr<CDiagContext> s_DiagContext(0,
-        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long));
+    static CSafeStatic<CDiagContext> s_DiagContext(
+        CSafeStaticLifeSpan::eLifeSpan_Long);
 
     return s_DiagContext.Get();
 }
@@ -3049,6 +3049,9 @@ static CDiagHandler* s_CreateDefaultDiagHandler(void);
 
 // Use s_DefaultHandler only for purposes of comparison, as installing
 // another handler will normally delete it.
+// NOTE: If SetDiagHandler is never called, the default handler will not
+// be destroyed on application termination. This is a tradeoff for having
+// the handler always available.
 CDiagHandler*      s_DefaultHandler = s_CreateDefaultDiagHandler();
 CDiagHandler*      CDiagBuffer::sm_Handler = s_DefaultHandler;
 bool               CDiagBuffer::sm_CanDeleteHandler = true;

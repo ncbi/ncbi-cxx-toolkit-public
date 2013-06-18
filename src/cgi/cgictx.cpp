@@ -248,7 +248,7 @@ const CCgiEntry& CCgiContext::GetRequestValue(const string& name,
         if ( is_found ) {
             *is_found = false;
         }
-        static CSafeStaticPtr<CCgiEntry> s_EmptyCgiEntry; 
+        static CSafeStatic<CCgiEntry> s_EmptyCgiEntry; 
         return s_EmptyCgiEntry.Get();
     }
     if ( is_found ) {

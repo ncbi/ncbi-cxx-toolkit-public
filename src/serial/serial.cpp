@@ -83,7 +83,7 @@ DEFINE_STATIC_FAST_MUTEX(s_ModuleNameMutex);
 static const string& GetModuleName(const char* moduleName)
 {
     CFastMutexGuard GUARD(s_ModuleNameMutex);
-    static CSafeStaticPtr< set<string> > s_ModuleNames;
+    static CSafeStatic< set<string> > s_ModuleNames;
     const string& s = *s_ModuleNames.Get().insert(moduleName).first;
     CClassTypeInfoBase::RegisterModule(s);
     return s;

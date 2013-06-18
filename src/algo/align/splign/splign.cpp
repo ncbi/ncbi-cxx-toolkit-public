@@ -182,15 +182,16 @@ CSplign::~CSplign()
 {
 }
 
-CVersion* s_CreateVersion(void)
+static CVersion* s_CreateVersion(void)
 {
     return new CVersion(CVersionInfo(1, 39, 8));
-}
+};
+
 
 CVersion& CSplign::s_GetVersion(void)
 {
-    static CSafeStaticRef<CVersion> s_Version;
-    return s_Version.Get(s_CreateVersion);
+    static CSafeStatic<CVersion> s_Version(s_CreateVersion, 0);
+    return s_Version.Get();
 }
 
 

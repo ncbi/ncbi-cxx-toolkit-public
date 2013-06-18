@@ -51,7 +51,7 @@ typedef ncbi::CNcbiStrstream TStrStream;
 BEGIN_NCBI_SCOPE
 
 
-static CSafeStaticPtr<CMetaRegistry> s_Instance;
+static CSafeStatic<CMetaRegistry> s_Instance;
 
 
 bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)

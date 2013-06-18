@@ -97,7 +97,7 @@ public:
 private:
     static TBucketPool& x_Instance() 
     {
-        static CSafeStaticPtr<TBucketPool>  bucket_pool;
+        static CSafeStatic<TBucketPool>  bucket_pool;
         return bucket_pool.Get();
     }
 };

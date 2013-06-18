@@ -53,7 +53,7 @@ typedef CReverseObjectStore<TObjectStoreKey, TObjectStoreObject> TObjectStore;
 
 static TObjectStore& GetObjStore(void)
 {
-    static CSafeStaticPtr<TObjectStore> s_obj_store;
+    static CSafeStatic<TObjectStore> s_obj_store;
     return s_obj_store.Get();
 }
 

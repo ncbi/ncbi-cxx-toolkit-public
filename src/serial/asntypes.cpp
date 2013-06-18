@@ -69,7 +69,7 @@ T* Alloc(T*& ptr)
 }
 
 
-static CSafeStaticPtr<CTypeInfoMap> s_SequenceOfTypeInfo_map;
+static CSafeStatic<CTypeInfoMap> s_SequenceOfTypeInfo_map;
 
 
 TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
@@ -394,7 +394,7 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src,
 }
 
 
-static CSafeStaticPtr<CTypeInfoMap> s_SetOfTypeInfo_map;
+static CSafeStatic<CTypeInfoMap> s_SetOfTypeInfo_map;
 
 TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
 {

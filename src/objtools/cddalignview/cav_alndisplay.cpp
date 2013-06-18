@@ -1042,7 +1042,7 @@ const string AlignmentDisplay::GetColumnColor(int alnLoc, double conservationThr
 {
     // standard probabilities (calculated by BLAST using BLOSUM62 - see conservation_colorer.cpp in Cn3D++)
     typedef map < char , double > Char2Double;
-    static CSafeStaticPtr<Char2Double> s_StandardProbabilities;
+    static CSafeStatic<Char2Double> s_StandardProbabilities;
     Char2Double& StandardProbabilities = *s_StandardProbabilities;
     if (StandardProbabilities.size() == 0) {
         StandardProbabilities['A'] = 0.07805;

@@ -773,7 +773,7 @@ protected:
             return s_is_list_a(id) || s_is_list_b(id);
         }
     };
-    static CSafeStaticPtr<SGrammar> s_grammar;
+    static CSafeStatic<SGrammar> s_grammar;
 
 private:
     typedef tree_match<char const*> TParseTreeMatch;

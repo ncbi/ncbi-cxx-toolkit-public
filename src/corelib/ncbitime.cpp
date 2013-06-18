@@ -79,7 +79,7 @@ static void s_TlsFormatCleanup(CTimeFormat* fmt, void* /* data */)
 }
 
 // Global quick and dirty getter of local time
-static CSafeStaticPtr<CFastLocalTime> s_FastLocalTime;
+static CSafeStatic<CFastLocalTime> s_FastLocalTime;
 
 
 //============================================================================

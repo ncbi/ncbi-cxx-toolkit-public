@@ -80,7 +80,7 @@ private:
     CNcbiResourceInfo& operator=(const CNcbiResourceInfo&);
 
     friend class CNcbiResourceInfoFile;
-    friend class CSafeStaticPtr<CNcbiResourceInfo>;
+    friend class CSafeStatic_Allocator<CNcbiResourceInfo>;
 
     /// Create a new empty resource info.
     CNcbiResourceInfo(void);

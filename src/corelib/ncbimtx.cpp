@@ -1547,7 +1547,7 @@ CRWLockHolder_Pool::DeleteHolder(CRWLockHolder* holder)
 
 
 /// Default CRWLockHolder pool used in CYieldingRWLock
-static CSafeStaticPtr<CRWLockHolder_Pool> s_RWHolderPool;
+static CSafeStatic<CRWLockHolder_Pool> s_RWHolderPool;
 
 
 CYieldingRWLock::CYieldingRWLock(IRWLockHolder_Factory* factory /* = NULL */)

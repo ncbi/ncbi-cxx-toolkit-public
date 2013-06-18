@@ -246,7 +246,7 @@ const int kSR_WatchFile  = 112;
 
 static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
 {
-    static CSafeStaticPtr<CTime> restart_time;
+    static CSafeStatic<CTime> restart_time;
     static int   restart_reason;
 
     // Check if this CGI executable has been changed

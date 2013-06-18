@@ -43,14 +43,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  --------------------------------------------------------------------------
-CSafeStaticPtr<TLookupSofaToGenbank> CGff3SofaTypes::m_Lookup;
+CSafeStatic<TLookupSofaToGenbank> CGff3SofaTypes::m_Lookup;
 //  --------------------------------------------------------------------------
 
 //  --------------------------------------------------------------------------
 CGff3SofaTypes& SofaTypes()
 //  --------------------------------------------------------------------------
 {
-    static CSafeStaticPtr<CGff3SofaTypes> m_Lookup;    
+    static CSafeStatic<CGff3SofaTypes> m_Lookup;    
     return *m_Lookup;
 }
 

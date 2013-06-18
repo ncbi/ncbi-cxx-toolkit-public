@@ -479,7 +479,7 @@ typedef NCBI_PARAM_TYPE(CGI, Cookie_Name_Banned_Symbols) TCookieNameBannedSymbol
 
 const char* s_GetCookieNameBannedSymbols(void)
 {
-    static CSafeStaticPtr<string> s_BannedSymbols;
+    static CSafeStatic<string> s_BannedSymbols;
     static bool s_BannedSymbolsSet = false;
     if ( !s_BannedSymbolsSet ) {
         *s_BannedSymbols = TCookieNameBannedSymbols::GetDefault();
@@ -1357,7 +1357,7 @@ const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
 const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
     const
 {
-    static CSafeStaticPtr<CCgiEntry> s_EmptyCgiEntry; 
+    static CSafeStatic<CCgiEntry> s_EmptyCgiEntry; 
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());
     if ( is_found ) {

@@ -134,7 +134,7 @@ CDbapiConnMgr::~CDbapiConnMgr(void)
 CDbapiConnMgr&
 CDbapiConnMgr::Instance(void)
 {
-    static CSafeStaticPtr<CDbapiConnMgr> instance;
+    static CSafeStatic<CDbapiConnMgr> instance;
 
     return instance.Get();
 }

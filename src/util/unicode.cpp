@@ -311,7 +311,7 @@ CUnicodeToAsciiTranslation::GetTranslation( TUnicode symbol) const
     return &(i->second);
 }
 
-CSafeStaticRef<CUnicodeToAsciiTranslation> g_UnicodeTranslation;
+CSafeStatic<CUnicodeToAsciiTranslation> g_UnicodeTranslation;
 
 /////////////////////////////////////////////////////////////////////////////
 const SUnicodeTranslation*

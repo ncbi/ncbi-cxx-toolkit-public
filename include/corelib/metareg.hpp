@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 
-template <typename T> class CSafeStaticPtr;
+template <typename T> class CSafeStatic_Allocator;
 
 class NCBI_XNCBI_EXPORT CMetaRegistry
 {
@@ -209,7 +209,7 @@ private:
 
     CMutex         m_Mutex;
 
-    friend class  CSafeStaticPtr<CMetaRegistry>;
+    friend class  CSafeStatic_Allocator<CMetaRegistry>;
     friend struct SEntry;
 };
 

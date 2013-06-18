@@ -190,11 +190,16 @@ CCachedResultSet::Next(void)
     return false;
 }
 
-static CVariant*
-s_CreateUnsupported(void)
+
+class CVariant_Callbacks
 {
-    return new CVariant(eDB_UnsupportedType);
-}
+public:
+    CVariant* Create(void) {
+        return new CVariant(eDB_UnsupportedType);
+    }
+    void Cleanup(CVariant& value) {}
+};
+
 
 const CVariant&
 CCachedResultSet::GetVariant(const CDBParamVariant& param)
@@ -210,8 +215,8 @@ CCachedResultSet::GetVariant(const CDBParamVariant& param)
         }
     }
 
-    static CSafeStaticPtr<CVariant> value;
-    return value.Get(&s_CreateUnsupported);
+    static CSafeStatic<CVariant, CVariant_Callbacks> value;
+    return value.Get();
 }
 
 unsigned int
@@ -964,7 +969,7 @@ DataSourceCleanup(void* ptr)
 CDataSourcePool&
 CDataSourcePool::GetInstance(void)
 {
-    static CSafeStaticPtr<CDataSourcePool> ds_pool;
+    static CSafeStatic<CDataSourcePool> ds_pool;
 
     return *ds_pool;
 }

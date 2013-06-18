@@ -415,7 +415,7 @@ void CSymbolGuard::UpdateSymbols(void)
 }
 
 
-static CSafeStaticPtr<CSymbolGuard> s_SymbolGuard;
+static CSafeStatic<CSymbolGuard> s_SymbolGuard;
 
 
 class CStackTraceImpl
