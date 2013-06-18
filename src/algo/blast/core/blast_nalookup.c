@@ -405,8 +405,8 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
                                       lookup->lut_word_length,
                                       query, locations);
     if (locations && 
-        lookup->word_length > lookup->lut_word_length && 
-        s_HasMaskAtHashEnabled(query_options)) {
+        lookup->word_length > lookup->lut_word_length ) {
+        /* because we use compressed query, we must always check masked location*/
         lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
     }
 
