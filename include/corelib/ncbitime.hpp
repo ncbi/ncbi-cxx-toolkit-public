@@ -1312,7 +1312,7 @@ public:
         eSSP_Microsecond,        ///< Round to microseconds
         eSSP_Nanosecond,         ///< Do not round at all (accurate time span)
 
-        // Float precision levels (1-7)
+        // Floating precision levels (1-7)
         eSSP_Precision1,
         eSSP_Precision2,
         eSSP_Precision3,
@@ -1321,13 +1321,14 @@ public:
         eSSP_Precision6,
         eSSP_Precision7,
 
-        eSSP_Default = eSSP_Day  ///< Default precision level
+        eSSP_Smart,                ///< As smart as possible (use most significant levels of time span)
+        eSSP_Default = eSSP_Smart  ///< Default precision level
     };
 
     /// Which format use to zero time span output.
     enum ESmartStringZeroMode {
-        eSSZ_SkipZero,           ///< Skip zero valued
-        eSSZ_NoSkipZero,         ///< Print zero valued
+        eSSZ_SkipZero,            ///< Skip zero valued
+        eSSZ_NoSkipZero,          ///< Print zero valued
         eSSZ_Default = eSSZ_SkipZero
     };
 
@@ -1337,19 +1338,24 @@ public:
     ///   Enum value describing how many parts of time span should be
     ///   returned. Values from eSSP_Year to eSSP_Nanosecond apparently
     ///   describe part of time span which will be last in output string.
-    ///   Floating precision levels eSSP_PrecisionN say that maximum 'N'
+    ///   Float precision levels eSSP_PrecisionN say that maximum 'N'
     ///   parts of time span will be put to output string.
     ///   The parts counting begin from first non-zero value.
+    ///   For special precision value eSSP_Smart it try to represent
+    ///   time span as close and shorter as possible, usually using only
+    ///   one or two most significant non-zero parts of the time span.
     /// @param rounding
     ///   Rounding mode. By default time span will be truncated at last value
-    //    specified by precision. If mode is eRound, that last significant
-    //    part of time span will be arifmetically rounded on base .
-    //    For example, if precison is eSSP_Day and number of hours in time
-    //    span is 20, that number of days will be increased on 1.
+    ///   specified by precision. If mode is eRound, that last significant
+    ///   part of time span will be arithmetically rounded.
+    ///   This parameters is ignored for eSSP_Smart precision value and
+    ///   always works as eTrunc.
     /// @param zero_mode
     ///   Mode to print or skip zero parts of time span which should be
     ///   printed but have 0 value. Trailing and leading zeros will be
-    ///   never printed.
+    ///   never printed, except eSSP_Smart precision, that prints
+    ///   zero milli/micro/nano-second part for eSSZ_NoSkipZero mode
+    ///   in case if time span is less than a minute.
     /// @return
     ///   A string representation of time span.
     /// @sa
