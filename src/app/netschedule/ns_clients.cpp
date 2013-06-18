@@ -661,13 +661,22 @@ void  CNSClient::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
     if (m_BlacklistLimits.empty())
         return;
 
+    unsigned int            min_existed_id = tracker.GetMinJobID();
     vector<unsigned int>    to_be_removed;
 
     for (map<unsigned int,
              CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
          k != m_BlacklistLimits.end(); ++k) {
-        if (tracker.GetStatus(k->first) == CNetScheduleAPI::eJobNotFound)
+        if (k->first < min_existed_id)
             to_be_removed.push_back(k->first);
+        else {
+            TJobStatus      status = tracker.GetStatus(k->first);
+            if (status == CNetScheduleAPI::eJobNotFound ||
+                status == CNetScheduleAPI::eCanceled ||
+                status == CNetScheduleAPI::eConfirmed ||
+                status == CNetScheduleAPI::eReadFailed)
+                to_be_removed.push_back(k->first);
+        }
     }
 
     for (vector<unsigned int>::const_iterator j = to_be_removed.begin();

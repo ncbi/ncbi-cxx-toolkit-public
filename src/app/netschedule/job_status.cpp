@@ -111,6 +111,28 @@ unsigned int  CJobStatusTracker::Count(void) const
 }
 
 
+unsigned int  CJobStatusTracker::GetMinJobID(void) const
+{
+    unsigned int    id = 0;
+    CReadLockGuard  guard(m_Lock);
+
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        TNSBitVector &      bv = *m_StatusStor[g_ValidJobStatuses[k]];
+        if (bv.count() == 0)
+            continue;
+        if (id == 0)
+            id = bv.get_first();
+        else {
+            unsigned int    first = bv.get_first();
+            if (first < id)
+                id = first;
+        }
+    }
+
+    return id;
+}
+
+
 bool  CJobStatusTracker::AnyJobs(void) const
 {
     CReadLockGuard  guard(m_Lock);

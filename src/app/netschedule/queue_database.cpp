@@ -2231,12 +2231,12 @@ void CQueueDataBase::PurgeWNodes(void)
 
 void CQueueDataBase::PurgeBlacklistedJobs(void)
 {
-    static CNSPreciseTime   ten_seconds(10, 0);
+    static CNSPreciseTime   period(30, 0);
     static CNSPreciseTime   last_time(0, 0);
     CNSPreciseTime          current_time = CNSPreciseTime::Current();
 
     // Run this check once in ten seconds
-    if (current_time - last_time < ten_seconds)
+    if (current_time - last_time < period)
         return;
 
     last_time = current_time;

@@ -110,7 +110,7 @@ public:
     /// TRUE if we have pending jobs
     bool AnyPending() const;
 
-     /// Get next job in the specified status, or first if job_id is 0
+    /// Get next job in the specified status, or first if job_id is 0
     unsigned GetNext(TJobStatus status, unsigned job_id) const;
 
     /// Set job status without logic control.
@@ -137,6 +137,7 @@ public:
 
     // Count all jobs in any status
     unsigned int  Count(void) const;
+    unsigned int  GetMinJobID(void) const;
 
     bool  AnyJobs(void) const;
     bool  AnyJobs(TJobStatus  status) const;
