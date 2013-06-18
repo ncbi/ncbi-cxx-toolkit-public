@@ -350,10 +350,12 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds,
 	 * A timeout of zero says "wait forever".  We do that by passing a NULL timeval pointer to select(2). 
 	 */
     poll_seconds = timeout_seconds;
-    if (tds->query_timeout_func  &&  tds_sel == TDSSELREAD) {
-        poll_seconds = 1;
-    } else if (tds->query_timeout > 0) {
-        poll_seconds = timeout_seconds = tds->query_timeout;
+    if (tds->query_timeout > 0) {
+        if (tds->query_timeout_func  &&  tds_sel == TDSSELREAD) {
+            poll_seconds = 1;
+        } else {
+            poll_seconds = timeout_seconds = tds->query_timeout;
+        }
     }
 	for (seconds = timeout_seconds; timeout_seconds == 0 || seconds > 0; seconds -= poll_seconds) {
 		struct pollfd fd;
