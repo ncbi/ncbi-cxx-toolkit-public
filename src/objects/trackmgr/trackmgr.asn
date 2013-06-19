@@ -52,7 +52,8 @@ TMgr-ClientInfo ::= SEQUENCE {
 TMgr-DisplayTrackRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     genome-contexts SET OF TMgr-GenomeContext OPTIONAL,
-    attrs SET OF TMgr-AttrSpec OPTIONAL
+    attrs SET OF TMgr-AttrSpec OPTIONAL,
+    identity TMgr-Identity OPTIONAL
 }
 
 TMgr-DisplayTrackReply ::= SEQUENCE {
