@@ -122,11 +122,13 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
                 service.GetServiceType()));
     else if (m_Opts.output_format == eRaw)
         service.PrintCmdOutput("VERSION", NcbiCout,
-                CNetService::eSingleLineOutput);
+                CNetService::eSingleLineOutput,
+                CNetService::eIncludePenalized);
     else {
         bool print_server_address = service.IsLoadBalanced();
 
-        for (CNetServiceIterator it = service.Iterate(); it; ++it) {
+        for (CNetServiceIterator it =
+                service.Iterate(CNetService::eIncludePenalized); it; ++it) {
             if (print_server_address)
                 printf("[%s]\n", (*it).GetServerAddress().c_str());
 

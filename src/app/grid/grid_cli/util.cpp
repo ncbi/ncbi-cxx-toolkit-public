@@ -208,7 +208,8 @@ CJsonNode g_ServerInfoToJson(CNetService service,
 {
     SServerInfoToJson server_info_proc;
 
-    return g_ExecToJson(server_info_proc, service, service_type);
+    return g_ExecToJson(server_info_proc, service,
+            service_type, CNetService::eIncludePenalized);
 }
 
 void g_GetUserAndHost(string* user, string* host)

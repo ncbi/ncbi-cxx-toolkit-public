@@ -205,8 +205,8 @@ void CNetScheduleAdmin::PrintQueueInfo(const string& queue_name,
 {
     bool print_headers = m_Impl->m_API->m_Service.IsLoadBalanced();
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
+            CNetService::eIncludePenalized); it; ++it) {
         if (print_headers)
             output_stream << '[' << (*it).GetServerAddress() << ']' << NcbiEndl;
 
@@ -233,8 +233,8 @@ void CNetScheduleAdmin::GetWorkerNodes(
     string cmd("STAT");
     g_AppendClientIPAndSessionID(cmd);
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
+            CNetService::eIncludePenalized); it; ++it) {
         CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
         CNetServerMultilineCmdOutput output(exec_result);
 
@@ -318,8 +318,8 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 
     string output_line;
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
+            CNetService::eIncludePenalized); it; ++it) {
         CNetServer server = *it;
 
         qlist.push_back(SServerQueueList(server));
@@ -359,8 +359,8 @@ void CNetScheduleAdmin::StatusSnapshot(
     CTempString st_str, cnt_str;
 
     try {
-        for (CNetServiceIterator it =
-                m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+        for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
+                CNetService::eIncludePenalized); it; ++it) {
             CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
 
             while (cmd_output.ReadLine(output_line))
@@ -386,8 +386,8 @@ void CNetScheduleAdmin::AffinitySnapshot(
 
     string affinity_token, cnt_str;
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
+            CNetService::eIncludePenalized); it; ++it) {
         string cmd_output((*it).ExecWithRetry(cmd).response);
         vector<CTempString> affinities;
         NStr::Tokenize(cmd_output, "&", affinities);

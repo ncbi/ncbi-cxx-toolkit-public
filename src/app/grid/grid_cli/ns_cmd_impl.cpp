@@ -164,8 +164,8 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
         else {
             CJsonNode result(CJsonNode::NewObjectNode());
 
-            for (CNetServiceIterator it =
-                    m_NetScheduleAPI.GetService().Iterate(); it; ++it)
+            for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
+                    CNetService::eIncludePenalized); it; ++it)
                 result.SetByKey((*it).GetServerAddress(),
                         g_LegacyStatToJson(*it, !IsOptionSet(eBrief)));
 
@@ -182,8 +182,8 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
     if (m_Opts.output_format == eJSON) {
         CJsonNode result(CJsonNode::NewObjectNode());
 
-        for (CNetServiceIterator it =
-                m_NetScheduleAPI.GetService().Iterate(); it; ++it)
+        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
+                CNetService::eIncludePenalized); it; ++it)
             result.SetByKey((*it).GetServerAddress(),
                     g_GenericStatToJson(*it, topic, IsOptionSet(eVerbose)));
 

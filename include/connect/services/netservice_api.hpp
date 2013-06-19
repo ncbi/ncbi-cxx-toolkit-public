@@ -132,7 +132,8 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     void PrintCmdOutput(const string& cmd,
         CNcbiOstream& output_stream,
-        ECmdOutputStyle output_style);
+        ECmdOutputStyle output_style,
+        CNetService::EIterationMode = CNetService::eSortByLoad);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections();

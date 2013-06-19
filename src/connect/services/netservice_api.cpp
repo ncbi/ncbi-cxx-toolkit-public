@@ -596,12 +596,13 @@ void CNetServerPool::StickToServer(const string& host, unsigned short port)
 }
 
 void CNetService::PrintCmdOutput(const string& cmd,
-    CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style)
+        CNcbiOstream& output_stream, CNetService::ECmdOutputStyle output_style,
+        CNetService::EIterationMode iteration_mode)
 {
     bool load_balanced = IsLoadBalanced() ?
         output_style != eMultilineOutput_NoHeaders : false;
 
-    for (CNetServiceIterator it = Iterate(); it; ++it) {
+    for (CNetServiceIterator it = Iterate(iteration_mode); it; ++it) {
         if (load_balanced)
             output_stream << '[' << (*it).GetServerAddress() << ']' << endl;
 

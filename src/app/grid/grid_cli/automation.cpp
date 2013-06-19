@@ -236,8 +236,8 @@ bool SNetCacheServiceAutomationObject::Call(const string& method,
 {
     if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
-        for (CNetServiceIterator it = m_NetCacheAPI.GetService().Iterate();
-                it; ++it)
+        for (CNetServiceIterator it = m_NetCacheAPI.GetService().Iterate(
+                CNetService::eIncludePenalized); it; ++it)
             object_ids.AppendInteger(m_AutomationProc->
                     ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
         reply.Append(object_ids);
@@ -343,8 +343,8 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         reply.Append(jobs_by_status);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
-        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate();
-                it; ++it)
+        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
+                CNetService::eIncludePenalized); it; ++it)
             object_ids.AppendInteger(m_AutomationProc->
                     ReturnNetScheduleServerObject(m_NetScheduleAPI, *it)->
                     GetID());
