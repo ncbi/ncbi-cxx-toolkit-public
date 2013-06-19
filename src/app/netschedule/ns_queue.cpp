@@ -89,6 +89,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_LastId(0),
     m_SavedId(s_ReserveDelta),
 
+    m_JobsToDeleteOps(0),
+
     m_Timeout(3600, 0),
     m_RunTimeout(3600, 0),
     m_FailedRetries(0),
@@ -1955,6 +1957,7 @@ void CQueue::EraseJob(unsigned int  job_id)
         CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
 
         m_JobsToDelete.set_bit(job_id);
+        ++m_JobsToDeleteOps;
     }}
     TimeLineRemove(job_id);
 }
@@ -1965,6 +1968,7 @@ void CQueue::x_Erase(const TNSBitVector &  job_ids)
     CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
 
     m_JobsToDelete |= job_ids;
+    m_JobsToDeleteOps += job_ids.count();
 }
 
 
@@ -2780,8 +2784,15 @@ unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
 
         TNSBitVector::enumerator    en = deleted_jobs.first();
         CFastMutexGuard             guard(m_JobsToDeleteLock);
-        for (; en.valid(); ++en)
+        for (; en.valid(); ++en) {
             m_JobsToDelete.set_bit(*en, false);
+            ++m_JobsToDeleteOps;
+        }
+
+        if (m_JobsToDeleteOps >= 1000000) {
+            m_JobsToDeleteOps = 0;
+            m_JobsToDelete.optimize(0, TNSBitVector::opt_free_0);
+        }
     }
     return del_rec;
 }

@@ -506,6 +506,7 @@ private:
     // Vector of jobs to be deleted from db unconditionally
     // keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;
+    unsigned int                 m_JobsToDeleteOps;
 
     // Vector of jobs which have been set for notifications
     TNSBitVector                 m_JobsToNotify;
