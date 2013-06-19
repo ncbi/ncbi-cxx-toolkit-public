@@ -1302,15 +1302,15 @@ public:
     /// Precision for span "smart" string. Used in AsSmartString() method.
     enum ESmartStringPrecision {
         // Named precision levels
-        eSSP_Year,               ///< Round to years
-        eSSP_Month,              ///< Round to months
-        eSSP_Day,                ///< Round to days
-        eSSP_Hour,               ///< Round to hours
-        eSSP_Minute,             ///< Round to minutes
-        eSSP_Second,             ///< Round to seconds
-        eSSP_Millisecond,        ///< Round to milliseconds
-        eSSP_Microsecond,        ///< Round to microseconds
-        eSSP_Nanosecond,         ///< Do not round at all (accurate time span)
+        eSSP_Year,          ///< Round to years
+        eSSP_Month,         ///< Round to months
+        eSSP_Day,           ///< Round to days
+        eSSP_Hour,          ///< Round to hours
+        eSSP_Minute,        ///< Round to minutes
+        eSSP_Second,        ///< Round to seconds
+        eSSP_Millisecond,   ///< Round to milliseconds
+        eSSP_Microsecond,   ///< Round to microseconds
+        eSSP_Nanosecond,    ///< Do not round at all (accurate time span)
 
         // Floating precision levels (1-7)
         eSSP_Precision1,
@@ -1321,15 +1321,13 @@ public:
         eSSP_Precision6,
         eSSP_Precision7,
 
-        eSSP_Smart,                ///< As smart as possible (use most significant levels of time span)
-        eSSP_Default = eSSP_Smart  ///< Default precision level
+        eSSP_Smart          ///< As smart as possible (use most significant levels of time span)
     };
 
-    /// Which format use to zero time span output.
+    /// Which format use to output zero time span parts.
     enum ESmartStringZeroMode {
-        eSSZ_SkipZero,            ///< Skip zero valued
-        eSSZ_NoSkipZero,          ///< Print zero valued
-        eSSZ_Default = eSSZ_SkipZero
+        eSSZ_SkipZero,      ///< Skip zero valued parts
+        eSSZ_NoSkipZero     ///< Print zero valued parts
     };
 
     /// Transform time span to "smart" string.
@@ -1346,23 +1344,23 @@ public:
     ///   one or two most significant non-zero parts of the time span.
     /// @param rounding
     ///   Rounding mode. By default time span will be truncated at last value
-    ///   specified by precision. If mode is eRound, that last significant
-    ///   part of time span will be arithmetically rounded.
-    ///   This parameters is ignored for eSSP_Smart precision value and
+    ///   specified by precision. If mode is eRound, that time span will be
+    ///   arithmetically rounded by precision level. 
+    ///   This parameters is ignored for eSSP_Smart precision level and
     ///   always works as eTrunc.
     /// @param zero_mode
     ///   Mode to print or skip zero parts of time span which should be
-    ///   printed but have 0 value. Trailing and leading zeros will be
-    ///   never printed, except eSSP_Smart precision, that prints
-    ///   zero milli/micro/nano-second part for eSSZ_NoSkipZero mode
-    ///   in case if time span is less than a minute.
+    ///   printed but have 0 value. Apply to middle and trailing zero parts
+    ///   of time span only. Leading zeros will be ignored in common case
+    ///   in any mode, they can be printed only if it is impossible
+    ///   to represent time span otherwise.
     /// @return
     ///   A string representation of time span.
     /// @sa
     ///   AsString, ESmartStringPrecision, ERound, ESmartStringZeroMode
-    string AsSmartString(ESmartStringPrecision precision = eSSP_Default,
+    string AsSmartString(ESmartStringPrecision precision = eSSP_Smart,
                          ERound                rounding  = eTrunc,
-                         ESmartStringZeroMode  zero_mode = eSSZ_Default)
+                         ESmartStringZeroMode  zero_mode = eSSZ_SkipZero)
                          const;
 
     //
@@ -1812,7 +1810,7 @@ public:
     string AsSmartString(
         CTimeSpan::ESmartStringPrecision precision = CTimeSpan::eSSP_Nanosecond,
         ERound                           rounding  = eTrunc,
-        CTimeSpan::ESmartStringZeroMode  zero_mode = CTimeSpan::eSSZ_Default)
+        CTimeSpan::ESmartStringZeroMode  zero_mode = CTimeSpan::eSSZ_SkipZero)
         const;
 
 protected:

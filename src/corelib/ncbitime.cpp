@@ -241,21 +241,26 @@ void s_AddInt(string& str, long value)
 // Convert 'value' to string, add leading '0' to size 'len'.
 // Append result to string 'str'.
 static inline 
-void s_AddZeroPadInt(string& str, long value, size_t len)
+void s_AddZeroPadInt(string& str, long value, size_t len, bool ignore_trailing_zeros = false)
 {
     _ASSERT(value >= 0);
     _ASSERT((len > 0)  &&  (len < 10));
+
     const size_t size = 9;
     char buf[size];
+    memset(buf, '0', size);
+
     size_t pos = size;
     do {
         buf[--pos] = char(value % 10) + '0';
         value /= 10;
     } while (value);
-    if (len > (size - pos)) {
-        str.append(len - (size - pos), '0');
+
+    char* p = buf + size - len;
+    if (ignore_trailing_zeros) {
+        for (; len > 1  &&  p[len-1] == '0'; len--) {}
     }
-    str.append(buf + pos, size - pos);
+    str.append(p, len);
 }
 
 
@@ -2332,8 +2337,6 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
     if ( diff.GetSign() == eNegative ) {
         diff.Invert();
     }
-    // Get nanoseconds before rounding
-    long nanoseconds = diff.GetNanoSecondsAfterSecond();
     // Named or float precision level
     bool is_named_precision = (precision <= eSSP_Nanosecond);
     bool is_smart_mode = (precision == eSSP_Smart);
@@ -2366,9 +2369,9 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                 adjust_level = eSSP_Second + adjust_shift;
             }
             if (adjust_level > eSSP_Second) {
-                if ( nanoseconds % 1000 == 0 ) {
+                if ( diff.GetNanoSecondsAfterSecond() % 1000 == 0 ) {
                     adjust_level = eSSP_Millisecond;
-                } else if ( nanoseconds % 1000000 == 0 ) {
+                } else if ( diff.GetNanoSecondsAfterSecond() % 1000000 == 0 ) {
                     adjust_level = eSSP_Microsecond;
                 }
             }
@@ -2397,7 +2400,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                 diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000);
                 break;
             case eSSP_Microsecond:
-                diff += CTimeSpan(0, 0, 0, 0, kMicroSecondsPerSecond/2000000);
+                diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000000);
                 break;
             default:
                 ; // nanoseconds -- nothing to do
@@ -2409,6 +2412,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
     const int max_count = 7;
     SItem span[max_count];
     long days = diff.GetCompleteDays();
+    long nanoseconds = diff.GetNanoSecondsAfterSecond();
 
     span[0] = SItem(days/365       , "year"  );  days %= 365;
     span[1] = SItem(days/30        , "month" );  days %= 30;
@@ -2531,7 +2535,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                         // print zero millisecond part only.
                         pad = 3;
                 }
-                s_AddZeroPadInt(result, val, pad);
+                s_AddZeroPadInt(result, val, pad, is_smart_mode);
                 result += " seconds";
             }
             break;
