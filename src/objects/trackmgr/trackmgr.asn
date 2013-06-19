@@ -22,13 +22,19 @@ IMPORTS Seq-id FROM NCBI-Seqloc;
 TMgr-Request ::= CHOICE {
     display-tracks TMgr-DisplayTrackRequest,
     switch-display-tracks TMgr-SwitchTrackContextRequest,
-    track-attr-values TMgr-TrackAttrValueRequest
+    track-attr-values TMgr-TrackAttrValueRequest,
+    blast-tracks TMgr-BlastRIDRequest,
+    create-user-tracks TMgr-CreateUserTrackRequest,
+    resolve-track-items TMgr-ItemResolverRequest
 }
 
 TMgr-Reply ::= CHOICE {
     display-tracks TMgr-DisplayTrackReply,
     switch-display-tracks TMgr-SwitchTrackContextReply,
-    track-attr-values TMgr-TrackAttrValueReply
+    track-attr-values TMgr-TrackAttrValueReply,
+    blast-tracks TMgr-BlastRIDReply,
+    create-user-tracks TMgr-CreateUserTrackReply,
+    resolve-track-items TMgr-ItemResolverReply
 }
 
 TMgr-GenomeContext ::= CHOICE {
@@ -57,13 +63,13 @@ TMgr-DisplayTrackReply ::= SEQUENCE {
 
 TMgr-SwitchTrackContextRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
-    new-genome-contexts SEQUENCE OF TMgr-GenomeContext,
-    current-dtrack-ids SEQUENCE OF INTEGER
+    new-genome-contexts SET OF TMgr-GenomeContext,
+    current-dtrack-ids SET OF INTEGER
 }
 
 TMgr-SwitchTrackContextReply ::= SEQUENCE {
-    messages SEQUENCE OF TMgr-Message OPTIONAL,
-    display-tracks SEQUENCE OF TMgr-DisplayTrackChoice OPTIONAL
+    messages SET OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrackChoice OPTIONAL
 }
 
 TMgr-TrackAttrValueRequest ::= SEQUENCE {
@@ -95,10 +101,8 @@ TMgr-AttrReply ::= CHOICE {
 }
 
 TMgr-TrackAttributes ::= SEQUENCE {
-    track-name VisibleString,                   -- track type name
-    attributes SET OF VisibleString             -- list of attributes
-                                                -- associated with track type
-                                                -- name
+    track-name VisibleString,        -- track type name
+    attributes SET OF VisibleString  -- list of attributes associated with track type name
 }
 
 TMgr-AttrValueReply ::= SEQUENCE {
@@ -145,9 +149,7 @@ TMgr-Attribute ::= SEQUENCE {
 TMgr-DisplayTrack ::= SEQUENCE {
     dtrack-id INTEGER,
     name UTF8String,
-    attrs SET OF TMgr-Attribute OPTIONAL,
-    data SET OF TMgr-DatasetItem
-    -- display settings
+    attrs SET OF TMgr-Attribute OPTIONAL
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
@@ -170,6 +172,72 @@ TMgr-MessageLevel ::= INTEGER {
 TMgr-Message ::= SEQUENCE {
     level TMgr-MessageLevel,
     message VisibleString
+}
+
+
+TMgr-BlastRIDRequest ::= SEQUENCE {
+    rid VisibleString
+}
+
+TMgr-Sequence ::= SEQUENCE {
+    gi INTEGER,
+    accession VisibleString
+}
+
+TMgr-BlastRIDReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    rid VisibleString,
+    query-sequences SET OF SEQUENCE {
+        index INTEGER,
+        seq TMgr-Sequence
+    } OPTIONAL
+}
+
+TMgr-CreateUserDataItem ::= SEQUENCE {
+    datakey VisibleString,
+    attrs SET OF TMgr-Attribute OPTIONAL
+}
+
+TMgr-IdentityId ::= SEQUENCE {
+    id VisibleString,
+    id-type TMgr-IdentityIdType
+}
+
+TMgr-IdentityIdType ::= INTEGER {
+    myncbi-id (0),
+    ncbi-sid (1)
+}
+
+TMgr-Identity ::= SEQUENCE {
+    ids SET OF TMgr-IdentityId
+}
+
+TMgr-CreateUserTrackRequest ::= SEQUENCE {
+    identity TMgr-Identity,
+    track-name VisibleString OPTIONAL, -- User-provided track name
+    track-descr VisibleString OPTIONAL, -- User-provided data description
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    data-items SET OF TMgr-CreateUserDataItem
+}
+
+TMgr-CreateUserTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL
+}
+
+TMgr-ItemResolverRequest ::= SEQUENCE {
+    dtrack-ids SET OF INTEGER,
+    sequence Seq-id OPTIONAL -- resolve specifically for this top-level sequence
+}
+
+TMgr-TrackItems ::= SEQUENCE {
+    dtrack-id INTEGER,
+    data SET OF TMgr-DatasetItem
+}
+
+TMgr-ItemResolverReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    track-items SET OF TMgr-TrackItems OPTIONAL
 }
 
 
