@@ -214,6 +214,7 @@ void CValidError_imp::Reset(void)
     m_IsRefSeq = false;
     m_IsEmbl = false;
     m_IsDdbj = false;
+    m_IsTPE = false;
     m_IsNC = false;
     m_IsNG = false;
     m_IsNM = false;
@@ -2885,6 +2886,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     m_IsINSDInSep = true;
                     break;
                 case CSeq_id::e_Tpe:
+                    m_IsTPE = true;
                     m_IsINSDInSep = true;
                     break;
                 case CSeq_id::e_Tpd:

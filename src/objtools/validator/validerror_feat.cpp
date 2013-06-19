@@ -2479,10 +2479,12 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
             } else if (NStr::EqualCase(*it, pos, 4, "[NAD")) {
                 report_name = false;
             }
-            if (report_name) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
-                        "Protein name ends with bracket and may contain organism name",
-                        feat);
+            if (! m_Imp.IsEmbl() && ! m_Imp.IsTPE()) {
+                if (report_name) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
+                            "Protein name ends with bracket and may contain organism name",
+                            feat);
+                }
             }
         }
         if (NStr::StartsWith (*it, "hypothetical protein XP_")) {
