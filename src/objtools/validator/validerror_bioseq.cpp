@@ -2382,13 +2382,20 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                     for (size_t i = 0; i < vec.size(); i++) {
                         if (vec[i] == 'N') {
                             num_ns++;
-                            this_stretch++;
-                            if (this_stretch >= 10) {
-                                if (i < 20) {
-                                    n5 = true;
-                                } 
-                                if (vec.size() > 20 && i > vec.size() - 20) {
-                                    n3 = true;
+                            if (vec.IsInGap(i)) {
+                                if (max_stretch < this_stretch) {
+                                    max_stretch = this_stretch;
+                                }
+                                this_stretch = 0;
+                            } else {
+                                this_stretch++;
+                                if (this_stretch >= 10) {
+                                    if (i < 20) {
+                                        n5 = true;
+                                    } 
+                                    if (vec.size() > 20 && i > vec.size() - 20) {
+                                        n3 = true;
+                                    }
                                 }
                             }
                         } else {

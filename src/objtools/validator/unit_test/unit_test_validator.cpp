@@ -3527,6 +3527,20 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodDeltaSeq();
+    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetLength(10);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGA", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetLength(entry->GetSeq().GetInst().GetLength() + 20);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
