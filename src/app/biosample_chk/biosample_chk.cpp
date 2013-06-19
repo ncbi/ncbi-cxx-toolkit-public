@@ -613,18 +613,23 @@ bool CBiosampleChkApp::x_IsReportableStructuredComment(const CSeqdesc& desc)
 	if (!desc.IsUser() || !desc.GetUser().IsSetType() || !desc.GetUser().GetType().IsStr()
 		|| !NStr::Equal(desc.GetUser().GetType().GetStr(), "StructuredComment")){
 		rval = false;
-	} else if (NStr::IsBlank (m_StructuredCommentPrefix)) {
-		rval = true;
 	} else {
+        string prefix = "";
 		try {
 			const CUser_field& field = desc.GetUser().GetField(kStructuredCommentPrefix);
 			if (field.IsSetData() && field.GetData().IsStr()) {
-				string prefix = field.GetData().GetStr();				
-				if (NStr::StartsWith(prefix, m_StructuredCommentPrefix)) {
-				    rval = true;
-				}
+				string prefix = field.GetData().GetStr();		
 			}
 		} catch (...) {
+            // no prefix. only take if no match prefix specified
+		}
+        if (NStr::IsBlank (m_StructuredCommentPrefix)) {
+            if (!NStr::StartsWith(prefix, "##Genome-Assembly-Data", NStr::eNocase)
+                && !NStr::StartsWith(prefix, "##Assembly-Data", NStr::eNocase)) {
+		        rval = true;
+            }
+        } else if (NStr::StartsWith(prefix, m_StructuredCommentPrefix)) {
+			rval = true;
 		}
 	}
 	return rval;
