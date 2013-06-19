@@ -337,7 +337,7 @@ CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,
     CExecAndParseStructuredOutput exec_and_parse_structured_output(cmd);
 
     return g_ExecToJson(exec_and_parse_structured_output,
-            ns_api.GetService(), service_type);
+            ns_api.GetService(), service_type, CNetService::eIncludePenalized);
 }
 
 struct {
@@ -528,12 +528,14 @@ CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
     if (queue_name.empty()) {
         SQueueInfoToJson queue_info_proc("STAT QUEUES", "[queue ");
 
-        return g_ExecToJson(queue_info_proc, ns_api.GetService(), service_type);
+        return g_ExecToJson(queue_info_proc, ns_api.GetService(),
+                service_type, CNetService::eIncludePenalized);
     }
 
     SSingleQueueInfoToJson single_queue_proc(ns_api.GetAdmin(), queue_name);
 
-    return g_ExecToJson(single_queue_proc, ns_api.GetService(), service_type);
+    return g_ExecToJson(single_queue_proc, ns_api.GetService(),
+            service_type, CNetService::eIncludePenalized);
 }
 
 CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
@@ -541,7 +543,8 @@ CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
 {
     SQueueInfoToJson queue_info_proc("STAT QCLASSES", "[qclass ");
 
-    return g_ExecToJson(queue_info_proc, ns_api.GetService(), service_type);
+    return g_ExecToJson(queue_info_proc, ns_api.GetService(),
+            service_type, CNetService::eIncludePenalized);
 }
 
 CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
