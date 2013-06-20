@@ -193,6 +193,7 @@ ANLW	s	Amt Der Niederosterreichischen Landsregierung
 ANMR	c	Asian Network on Microbial Researches
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica
 ANSP	s	Academy of Natural Sciences of Philadelphia
+ANSP:Malacology	s	Academy of Natural Sciences of Philadelphia, Malacology Collection
 ANTU	s	Changbai Mountain National Nature Reserve Administration Bureau
 ANU<AUS>	s	Australian National University
 ANU<CHN>	s	Anhui University, Biology Department
@@ -6139,6 +6140,7 @@ UMKU	s	Uganda Museum
 UMML	s	University of Miami Marine Laboratory
 UMMP	s	University of Michigan
 UMMZ	s	University of Michigan, Museum of Zoology
+UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection
 UMNH	s	Utah Museum of Natural History
 UMO<GBR>	s	University Museum of Natural History
 UMO<USA-ME>	s	University of Maine
