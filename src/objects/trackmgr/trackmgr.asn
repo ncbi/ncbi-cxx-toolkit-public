@@ -15,7 +15,8 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-TrackAttrValueReply, TMgr-AttrReply, TMgr-TrackAttributes,
         TMgr-AttrValueReply, TMgr-MessageLevel, TMgr-Message;
 
-IMPORTS Seq-id FROM NCBI-Seqloc;
+IMPORTS Seq-id FROM NCBI-Seqloc
+        Dbtag FROM NCBI-General;
 ---
 --- Top-level request/reply
 ---
@@ -65,7 +66,7 @@ TMgr-DisplayTrackReply ::= SEQUENCE {
 TMgr-SwitchTrackContextRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     new-genome-contexts SET OF TMgr-GenomeContext,
-    current-dtrack-ids SET OF INTEGER
+    current-dtrack-ids SET OF Dbtag
 }
 
 TMgr-SwitchTrackContextReply ::= SEQUENCE {
@@ -117,7 +118,7 @@ TMgr-SwitchTrackExceptionCode ::= INTEGER {
 }
 
 TMgr-SwitchTrackException ::= SEQUENCE {
-    dtrack-id INTEGER,
+    dtrack-id Dbtag,
     code TMgr-SwitchTrackExceptionCode OPTIONAL
 }
 
@@ -148,7 +149,7 @@ TMgr-Attribute ::= SEQUENCE {
 }
 
 TMgr-DisplayTrack ::= SEQUENCE {
-    dtrack-id INTEGER,
+    dtrack-id Dbtag,
     name UTF8String,
     attrs SET OF TMgr-Attribute OPTIONAL
 }
@@ -239,12 +240,15 @@ TMgr-CreateUserTrackReply ::= SEQUENCE {
 }
 
 TMgr-ItemResolverRequest ::= SEQUENCE {
-    dtrack-ids SET OF INTEGER,
+    dtrack-ids SET OF Dbtag,
+    client TMgr-ClientInfo,
+    assembly TMgr-AssemblySpec OPTIONAL,
+    attrs SET OF TMgr-AttrSpec OPTIONAL,
     sequence Seq-id OPTIONAL -- resolve specifically for this top-level sequence
 }
 
 TMgr-TrackItems ::= SEQUENCE {
-    dtrack-id INTEGER,
+    dtrack-id Dbtag,
     data SET OF TMgr-DatasetItem
 }
 
