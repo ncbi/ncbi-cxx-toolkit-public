@@ -1404,7 +1404,7 @@ static void s_TestTimeSpan_AsSmartString(void)
 
 #if (SIZEOF_LONG == 8)
         // 10,000,000,000 nanoseconds
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10.000 seconds" },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10.0 seconds" },
         { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
         { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
