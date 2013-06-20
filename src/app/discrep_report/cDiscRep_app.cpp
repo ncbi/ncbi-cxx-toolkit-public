@@ -45,7 +45,6 @@ USING_NCBI_SCOPE;
 
 using namespace DiscRepNmSpc;
 
-static CDiscRepInfo thisInfo;
 static string       strtmp, tmp;
 
 void CDiscRepApp::Init(void)
@@ -89,7 +88,7 @@ int CDiscRepApp :: Run(void)
     const CArgs& args = GetArgs();
     
     string report = args["P"].AsString();
-    if (report == "t" || thisInfo.report == "s") report = "Discrepancy";
+    if (report == "t" || report == "s") report = "Discrepancy";
     CRepConfig* config = CRepConfig::factory(report);
     config->InitParams(GetConfig());
     config->ReadArgs(args);

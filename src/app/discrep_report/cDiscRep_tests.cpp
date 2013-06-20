@@ -50,8 +50,6 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
-#include <objects/seqfeat/PCRReaction.hpp>
-#include <objects/seqfeat/PCRPrimer.hpp>
 #include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/PCRPrimerSet.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
@@ -60,10 +58,6 @@
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqblock/GB_block.hpp>
-#include <objects/macro/Feat_qual_legal_.hpp>
-#include <objects/macro/Feature_field.hpp>
-#include <objects/macro/Search_func.hpp>
-#include <objects/macro/Constraint_choice_set.hpp>
 #include <objects/macro/Field_type.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Date.hpp>
@@ -98,9 +92,9 @@
 #include <objmgr/seq_feat_handle.hpp>
 #include <util/xregexp/regexp.hpp>
 
-#include <algo/blast/core/ncbi_std.h>
+//#include <algo/blast/core/ncbi_std.h>
 
-#include "hDiscRep_app.hpp"
+//#include "hDiscRep_app.hpp"
 #include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"
 #include "hchecking_class.hpp"
@@ -123,6 +117,7 @@ static CSuspectRuleCheck rule_check;
 bool CDiscTestInfo :: is_Aa_run;
 bool CDiscTestInfo :: is_AllAnnot_run;
 bool CDiscTestInfo :: is_BacPartial_run;
+bool CDiscTestInfo :: is_Bases_N_run;
 bool CDiscTestInfo :: is_BASES_N_run;
 bool CDiscTestInfo :: is_BioSet_run;
 bool CDiscTestInfo :: is_BIOSRC_run;
@@ -173,7 +168,7 @@ Str2QualVlus qual_nm2qual_vlus;
 bool CBioseq_on_SUSPECT_RULE :: CategoryOkForBioSource(const CBioSource* biosrc_p, ESuspectNameType name_type) 
 {
   if (name_type != eSuspectNameType_NoOrganelleForProkaryote) return true;
-  else if (!HasTaxonomyID (*biosrc_p)) return TRUE;
+  else if (!HasTaxonomyID (*biosrc_p)) return true;
   else if (IsBiosrcEukaryotic(*biosrc_p)) return false;
   else return true;
 };
@@ -2311,7 +2306,7 @@ bool CBioseq_test_on_rrna :: NameNotStandard(const string& nm)
     if (nm_new == thisInfo.rrna_standard_name[i]) return false;
     else return true; 
   }
-  else return TRUE;
+  else return true;
 };
 
 
@@ -3763,7 +3758,7 @@ bool CBioseqTestAndRepData :: StrandOk(ENa_strand strand1, ENa_strand strand2)
 bool CBioseq_DISC_BAD_GENE_STRAND :: AreIntervalStrandsOk(const CSeq_loc& g_loc, const CSeq_loc& f_loc) 
 {
   bool   found_match;
-  bool   found_bad = FALSE;
+  bool   found_bad = false;
   ENa_strand     feat_strand, gene_strand;
 
   for (CSeq_loc_CI f_loc_it(f_loc); f_loc_it && !found_bad; ++ f_loc_it) {
@@ -3941,7 +3936,7 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
     for (++loc_it; loc_it; ++loc_it) {
       start = loc_it.GetRange().GetFrom();
       stop = loc_it.GetRange().GetTo();
-      if (ABS((int)(start - last_stop)) < 11 || ABS ((int)(stop - last_start)) < 11) {
+      if (abs((int)(start - last_stop)) < 11 || abs ((int)(stop - last_start)) < 11) {
                found_short = true; break;
       }
       last_start = start;
@@ -3993,7 +3988,8 @@ void CBioseq_DISC_SHORT_INTRON :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-bool CBioseqTestAndRepData :: IsDeltaSeqWithFarpointers(const CBioseq& bioseq)
+// new comb
+bool CBioseq_on_base :: x_IsDeltaSeqWithFarpointers(const CBioseq& bioseq)
 {
   bool rval = false;
 
@@ -4005,13 +4001,12 @@ bool CBioseqTestAndRepData :: IsDeltaSeqWithFarpointers(const CBioseq& bioseq)
   return rval;
 };
 
-
-
-
-void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
+//void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
+void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
 {
-    if (IsDeltaSeqWithFarpointers (bioseq)) return;
-    thisTest.is_BASES_N_run = true;
+    if (thisTest.is_Bases_N_run) return;
+    thisTest.is_Bases_N_run = true;
+    if (x_IsDeltaSeqWithFarpointers (bioseq)) return;
    
     unsigned cnt_a, cnt_t, cnt_g, cnt_c, cnt_n, tot_n, cnt_non_nt;
     cnt_a = cnt_t = cnt_g = cnt_c = cnt_n = tot_n = cnt_non_nt = 0;
@@ -4051,25 +4046,34 @@ void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
     id_str = CTempString(id_str).substr(id_str.find("|")+1);
 
     string desc = GetDiscItemText(bioseq);
+    // N_RUNS
     if (!n10_intvls.empty())  
        thisInfo.test_item_list[GetName_n10()].push_back(
                                desc + "$" + id_str + "#" + CTempString(n10_intvls).substr(2));
+    // N_RUNS_14
     if (!n14_intvls.empty())   // just for test, should be in the TSA report          
        thisInfo.test_item_list[GetName_n14()].push_back(
                                desc + "$" + id_str + "#" + CTempString(n14_intvls).substr(2));
+    // ZERO_BASECOUNT
     if (!cnt_a) thisInfo.test_item_list[GetName_0()].push_back("A$" + desc);
     if (!cnt_t) thisInfo.test_item_list[GetName_0()].push_back("T$" + desc);
     if (!cnt_c) thisInfo.test_item_list[GetName_0()].push_back("C$" + desc);
     if (!cnt_g) thisInfo.test_item_list[GetName_0()].push_back("G$" + desc);
+
+    // DISC_PERCENT_N
     if (tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.05)
           thisInfo.test_item_list[GetName_5perc()].push_back(desc);
+
+    // DISC_10_PERCENTN
     if (tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.10)
           thisInfo.test_item_list[GetName_10perc()].push_back(desc);
+ 
+    // TEST_UNUSUAL_NT
     if (cnt_non_nt) thisInfo.test_item_list[GetName_non_nt()].push_back(desc);
 };
 
 
-void CBioseqTestAndRepData :: AddNsReport(CRef <CClickableItem>& c_item, bool is_n10)
+void CBioseq_on_base :: x_AddNsReport(CRef <CClickableItem>& c_item, bool is_n10)
 {
    Str2Strs desc2intvls;
    GetTestItemList(c_item->item_list, desc2intvls);
@@ -4091,37 +4095,15 @@ void CBioseqTestAndRepData :: AddNsReport(CRef <CClickableItem>& c_item, bool is
                            + "runs of " + (is_n10 ? "10":"14") + " or more Ns.";
 };
 
-
-
-void CBioseq_N_RUNS :: TestOnObj(const CBioseq& bioseq)
-{
-   if (!thisTest.is_BASES_N_run) TestOnBasesN(bioseq);
-};
- 
-
 void CBioseq_N_RUNS :: GetReport(CRef <CClickableItem>& c_item) 
 {
-      AddNsReport(c_item);
+      x_AddNsReport(c_item);
 };
-
-
-void CBioseq_N_RUNS_14 :: TestOnObj(const CBioseq& bioseq)
-{
-   if (!thisTest.is_BASES_N_run) TestOnBasesN(bioseq);
-};
-
 
 void CBioseq_N_RUNS_14 :: GetReport(CRef <CClickableItem>& c_item)
 {
-     AddNsReport(c_item, false);
+     x_AddNsReport(c_item, false);
 };
-
-
-void CBioseq_ZERO_BASECOUNT :: TestOnObj(const CBioseq& bioseq)
-{
-   if (!thisTest.is_BASES_N_run) TestOnBasesN(bioseq);
-};
-
 
 void CBioseq_ZERO_BASECOUNT :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -4141,46 +4123,21 @@ void CBioseq_ZERO_BASECOUNT :: GetReport(CRef <CClickableItem>& c_item)
    }
 };
 
-
-void CBioseq_DISC_PERCENT_N :: TestOnObj(const CBioseq& bioseq)
-{
-   if (!thisTest.is_BASES_N_run) TestOnBasesN(bioseq);
-};
-
-
-
 void CBioseq_DISC_PERCENT_N :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description = GetHasComment(c_item->item_list.size(), "sequence") + "> 5% Ns.";
 };
-
-
-
-void CBioseq_DISC_10_PERCENTN :: TestOnObj(const CBioseq& bioseq)
-{
-   if (!thisTest.is_BASES_N_run) TestOnBasesN(bioseq);
-};
-
 
 void CBioseq_DISC_10_PERCENTN :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description = GetHasComment(c_item->item_list.size(), "sequence") + "> 10% Ns.";
 };
 
-
-void CBioseq_TEST_UNUSUAL_NT :: TestOnObj(const CBioseq& bioseq)
-{
-   if (!thisTest.is_BASES_N_run) TestOnBasesN(bioseq);
-};
-
-
 void CBioseq_TEST_UNUSUAL_NT :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description = GetContainsComment(c_item->item_list.size(), "sequence")
                           + " nucleotides that are not ATCG or N.";
 };
-
-
 
 void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
 {

@@ -32,34 +32,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 
-// Objects includes
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-
-// Object Manager includes
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objects/taxon1/taxon1.hpp>
-
-#include <serial/objistr.hpp>
-#include <serial/serial.hpp>
 #include <sstream>
 
-#include "hchecking_class.hpp"
 #include "hauto_disc_class.hpp"
 #include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"
@@ -959,13 +935,55 @@ cerr << "222can get\n";
    arr.clear();
 };
 
+void CRepConfig :: ReadArgs(Str2Str& args)
+{
+    // input file
+    thisInfo.infile = args["i"];
+
+    // report category
+    thisInfo.report = args["P"];
+    if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
+
+    // output
+    string output_f = args["o"];
+    if (output_f.empty()) {
+       vector <string> infile_path;
+       infile_path = NStr::Tokenize(thisInfo.infile, "/", infile_path);
+       strtmp = infile_path[infile_path.size()-1];
+       size_t pos = strtmp.find(".");
+       if (pos != string::npos) strtmp = strtmp.substr(0, pos);
+       infile_path[infile_path.size()-1] = strtmp + ".dr";
+       output_f = NStr::Join(infile_path, "/");
+    }
+    thisInfo.output_config.output_f.open(output_f.c_str());
+    strtmp = args["S"];
+    thisInfo.output_config.summary_report 
+        = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t")) ? true : false;
+    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
+    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
+
+    // enabled and disabled tests
+    strtmp = args["e"];
+    if (!strtmp.empty())
+          thisInfo.tests_enabled
+              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_enabled, NStr::eMergeDelims);
+    strtmp = args["d"];
+    if (!strtmp.empty())
+         thisInfo.tests_disabled
+              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
+};
+
+
 void CRepConfig :: ReadArgs(const CArgs& args) 
 {
     // input file
     thisInfo.infile = args["i"].AsString();
 
-    // output
+    // report category
     thisInfo.report = args["P"].AsString();
+    if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
+
+    // output
     string output_f = args["o"].AsString();
     if (output_f.empty()) {
        vector <string> infile_path;
@@ -990,8 +1008,6 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     if (!strtmp.empty())
          thisInfo.tests_disabled 
               = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
-
-    if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
 };
 
 CRef <CSearch_func> CRepConfig :: MakeSimpleSearchFunc(const string& match_text, bool whole_word)
@@ -1051,8 +1067,7 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
 static CDiscTestInfo thisTest;
 static const s_test_property test1_list[] = {
-//   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy},
-   {"DISC_SOURCE_QUALS_ASNDISC", fDiscrepancy}, // asndisc version
+   {"TEST_UNUSUAL_NT", fDiscrepancy},
 };
 
 static const s_test_property test_list[] = {

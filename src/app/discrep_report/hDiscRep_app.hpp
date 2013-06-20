@@ -41,12 +41,6 @@ using namespace ncbi;
 BEGIN_NCBI_SCOPE
 
 namespace DiscRepNmSpc{
-
-     typedef map < string, string> Str2Str;
-     typedef map < string, vector < const CSerialObject* > > Str2Objs;
-     typedef map < string, vector < string > > Str2Strs;
-     typedef map<string, unsigned>  Str2UInt;
-
      class CDiscRepApp : public CNcbiApplication
      {
        public:

@@ -33,12 +33,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
 #include "hchecking_class.hpp"
-#include "hDiscRep_app.hpp"
 #include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"
 #include "hUtilib.hpp"
@@ -227,7 +225,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;
    thisTest.is_BacPartial_run = false;
-   thisTest.is_BASES_N_run = false;
+   thisTest.is_Bases_N_run = false;
    thisTest.is_CDs_run = false;
    thisTest.is_CdTransl_run = false;
    thisTest.is_GP_Set_run = false;

@@ -35,25 +35,11 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-
-// Objects includes
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validatorp.hpp>
 #include <objects/taxon1/taxon1.hpp>
@@ -61,10 +47,7 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 
-#include "hDiscRep_app.hpp"
 #include "hDiscRep_tests.hpp"
-
-#include <common/test_assert.h>
 
 using namespace ncbi;
 using namespace objects;
@@ -236,6 +219,7 @@ namespace DiscRepNmSpc {
         // removed from *_app.hpp
         void InitParams(const IRWRegistry& reg);
         void ReadArgs(const CArgs& args);
+        void ReadArgs(Str2Str& args);
         void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
                                          map <string, COrgMod::ESubtype>& orgmodnm_subtp);

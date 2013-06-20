@@ -32,32 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-
-// Objects includes
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-
-// Object Manager includes
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-
-#include <serial/objistr.hpp>
-#include <serial/serial.hpp>
-
-#include <common/test_assert.h>
 
 #include "hDiscRep_app.hpp"
 #include "hchecking_class.hpp"

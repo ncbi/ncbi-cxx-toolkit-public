@@ -33,40 +33,35 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+/*
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+*/
+
 #include <objects/macro/CDSGenePr_pseudo_constrain.hpp>
 #include <objects/macro/CDSGenePr_constraint_field.hpp>
 #include <objects/macro/CDSGenePro_qual_constraint.hpp>
-#include <objects/macro/CDSGeneProt_field_.hpp>
 #include <objects/macro/Field_type.hpp>
 #include <objects/macro/Field_constraint.hpp>
 #include <objects/macro/Fix_type_.hpp>
-#include <objects/macro/Location_constraint.hpp>
 #include <objects/macro/Location_pos_constraint.hpp>
 #include <objects/macro/Match_type_constraint_.hpp>
 #include <objects/macro/Misc_field_.hpp>
-#include <objects/macro/Molinfo_field_.hpp>
 #include <objects/macro/Molinfo_field_constraint.hpp>
-#include <objects/macro/Pub_field_speci_const_type.hpp>
 #include <objects/macro/Publication_constraint.hpp>
 #include <objects/macro/Replace_rule.hpp>
-#include <objects/macro/Search_func.hpp>
 #include <objects/macro/Seque_const_mol_type_const.hpp>
 #include <objects/macro/Sequence_constraint.hpp>
 #include <objects/macro/Simple_replace.hpp>
 #include <objects/macro/Source_constraint.hpp>
-#include <objects/macro/Source_qual_.hpp>
-#include <objects/macro/Source_qual_choice.hpp>
 #include <objects/macro/String_constraint_set.hpp>
 #include <objects/macro/Translation_constraint.hpp>
 #include <objects/macro/Word_substitution.hpp>
 #include <objects/macro/Word_substitution_set.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/format/items/qualifiers.hpp>
 
 #include "hDiscRep_config.hpp"
 #include "hDiscRep_tests.hpp"

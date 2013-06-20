@@ -32,54 +32,50 @@
  *   Tests and item data collection for Cpp Discrepany Report
  */
 
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Title.hpp>
-#include <objects/general/Person_id.hpp>
 
 // macros
 #include <objects/macro/CDSGen_featur_type_constra_.hpp>
 #include <objects/macro/CDSGeneProt_field_.hpp>
 #include <objects/macro/Completedness_type_.hpp>
+#include <objects/macro/Constraint_choice.hpp>
+#include <objects/macro/Constraint_choice_set.hpp>
 #include <objects/macro/DBLink_field_type_.hpp>
+#include <objects/macro/Feat_qual_choice.hpp>
 #include <objects/macro/Feat_qual_legal_.hpp>
+#include <objects/macro/Feature_field.hpp>
 #include <objects/macro/Feature_stranded_constrain_.hpp>
+#include <objects/macro/Location_constraint.hpp>
 #include <objects/macro/Macro_feature_type_.hpp>
 #include <objects/macro/Molecule_type_.hpp>
 #include <objects/macro/Molecule_class_type_.hpp>
+#include <objects/macro/Molinfo_field.hpp>
+#include <objects/macro/Pub_field_constraint.hpp>
 #include <objects/macro/Pub_field_speci_const_type.hpp>
+#include <objects/macro/Pub_field_special_constrai.hpp>
+#include <objects/macro/Pub_type_.hpp>
 #include <objects/macro/Publication_field.hpp>
+#include <objects/macro/Quantity_constraint.hpp>
 #include <objects/macro/Rna_feat_type.hpp>
 #include <objects/macro/Rna_field_.hpp>
+#include <objects/macro/Rna_qual.hpp>
+#include <objects/macro/Seqtype_constraint_.hpp>
 #include <objects/macro/Sequence_constraint_rnamol_.hpp>
 #include <objects/macro/Search_func.hpp>
 #include <objects/macro/Source_location_.hpp>
 #include <objects/macro/Source_origin_.hpp>
 #include <objects/macro/Source_qual_.hpp>
+#include <objects/macro/Source_qual_choice.hpp>
 #include <objects/macro/Strand_type.hpp>
+#include <objects/macro/String_constraint.hpp>
 #include <objects/macro/String_location_.hpp>
 #include <objects/macro/Suspect_rule.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/macro/Technique_type_.hpp>
 #include <objects/macro/Topology_type_.hpp>
 
-#include <objects/macro/CDSGeneProt_field.hpp>
-#include <objects/macro/Constraint_choice.hpp>
-#include <objects/macro/Constraint_choice_set.hpp>
-#include <objects/macro/Feat_qual_choice.hpp>
-#include <objects/macro/Feature_field.hpp>
-#include <objects/macro/Feature_stranded_constrain_.hpp>
-#include <objects/macro/Location_constraint.hpp>
-#include <objects/macro/Macro_feature_type_.hpp>
-#include <objects/macro/Molinfo_field.hpp>
-#include <objects/macro/Pub_field_constraint.hpp>
-#include <objects/macro/Pub_field_special_constrai.hpp>
-#include <objects/macro/Pub_type_.hpp>
-#include <objects/macro/Publication_field_.hpp>
-#include <objects/macro/Quantity_constraint.hpp>
-#include <objects/macro/Rna_qual.hpp>
-#include <objects/macro/Seqtype_constraint_.hpp>
-#include <objects/macro/Source_qual_choice.hpp>
-#include <objects/macro/String_constraint.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Title.hpp>
+#include <objects/general/Person_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -94,11 +90,14 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>      
 #include <objects/pub/Pub.hpp>
+
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
-
-#include "hDiscRep_app.hpp"
 
 using namespace ncbi;
 using namespace objects;
@@ -106,6 +105,10 @@ using namespace objects;
 BEGIN_NCBI_SCOPE
 
 namespace DiscRepNmSpc {
+  typedef map < string, string> Str2Str;
+  typedef map < string, vector < const CSerialObject* > > Str2Objs;
+  typedef map < string, vector < string > > Str2Strs;
+  typedef map<string, unsigned>  Str2UInt;
   typedef map <string, vector <int> > Str2Ints;
   typedef map <string, int> Str2Int;
   typedef map <int, int> Int2Int;
@@ -160,7 +163,8 @@ namespace DiscRepNmSpc {
       static bool   is_Aa_run;
       static bool   is_AllAnnot_run;  // checked
       static bool   is_BacPartial_run;
-      static bool   is_BASES_N_run;
+      static bool   is_Bases_N_run; 
+      static bool   is_BASES_N_run; // may not be needed
       static bool   is_BioSet_run;
       static bool   is_BIOSRC_run;   // may not be needed
       static bool   is_Biosrc_Orgmod_run;
@@ -2025,7 +2029,82 @@ namespace DiscRepNmSpc {
 
 
 // new comb.
-  class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData  // how to deal enable/disable?
+  class CBioseq_on_base : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_on_base() {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      string GetName_n10() const {return string("N_RUNS"); }
+      string GetName_n14() const {return string("N_RUNS_14"); }
+      string GetName_0() const {return string("ZERO_BASECOUNT"); }
+      string GetName_5perc() const {return string("DISC_PERCENT_N"); }
+      string GetName_10perc() const {return string("DISC_10_PERCENTN"); }
+      string GetName_non_nt() const {return string("TEST_UNUSUAL_NT"); }
+
+      bool x_IsDeltaSeqWithFarpointers(const CBioseq& bioseq);
+      void x_AddNsReport(CRef <CClickableItem>& c_item, bool is_n10=true);
+  };
+
+  class CBioseq_N_RUNS : public CBioseq_on_base
+  {
+    public:
+      virtual ~CBioseq_N_RUNS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_base::GetName_n10();}
+  };
+
+  class CBioseq_N_RUNS_14 : public CBioseq_on_base
+  {
+    public:
+      virtual ~CBioseq_N_RUNS_14 () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_base::GetName_n14();}
+  };
+
+  class CBioseq_ZERO_BASECOUNT : public CBioseq_on_base
+  {
+    public:
+      virtual ~CBioseq_ZERO_BASECOUNT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_base::GetName_0();}
+  };
+
+  class CBioseq_DISC_PERCENT_N : public CBioseq_on_base
+  {
+    public:
+      virtual ~CBioseq_DISC_PERCENT_N () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_base::GetName_5perc();}
+  };
+
+  class CBioseq_DISC_10_PERCENTN : public CBioseq_on_base
+  {
+    public:
+      virtual ~CBioseq_DISC_10_PERCENTN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_base::GetName_10perc();}
+  };
+
+  class CBioseq_TEST_UNUSUAL_NT : public CBioseq_on_base
+  {
+    public:
+      virtual ~CBioseq_TEST_UNUSUAL_NT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_base::GetName_non_nt();}
+  };
+
+  class CBioseq_on_SUSPECT_RULE : public CBioseqTestAndRepData 
   {
     public:
       virtual ~CBioseq_on_SUSPECT_RULE () {};
@@ -3453,6 +3532,7 @@ namespace DiscRepNmSpc {
   };
 
 
+/*
   class CBioseq_TEST_UNUSUAL_NT : public CBioseqTestAndRepData
   {
     public:
@@ -3518,7 +3598,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_10_PERCENTN");}
   };
-
+*/
 
 
   class CBioseq_RNA_NO_PRODUCT : public CBioseqTestAndRepData
