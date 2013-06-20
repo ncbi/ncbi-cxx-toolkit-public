@@ -213,12 +213,24 @@ TMgr-Identity ::= SEQUENCE {
     ids SET OF TMgr-IdentityId
 }
 
+TMgr-ACL-AccessLevel ::= INTEGER {
+    public (0),
+    private (1),
+    ncbi (2),
+    nih (3)
+}
+
+TMgr-TrackACL-Permission ::= SEQUENCE {
+    access-level TMgr-ACL-AccessLevel DEFAULT public
+}
+
 TMgr-CreateUserTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
     track-name VisibleString OPTIONAL, -- User-provided track name
     track-descr VisibleString OPTIONAL, -- User-provided data description
     attrs SET OF TMgr-Attribute OPTIONAL,
-    data-items SET OF TMgr-CreateUserDataItem
+    data-items SET OF TMgr-CreateUserDataItem,
+    access-perms TMgr-TrackACL-Permission
 }
 
 TMgr-CreateUserTrackReply ::= SEQUENCE {
