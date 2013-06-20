@@ -46,6 +46,9 @@
 USING_NCBI_SCOPE;
 
 
+// Macro to enable/disable tests
+#define ENABLE_SPEED_TESTS  0
+// String printout
 #define STR(t) string("[" + (t).AsString() + "]")
 
 #if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
@@ -983,6 +986,8 @@ static void s_TestGMT(void)
 //
 //============================================================================
 
+#if ENABLE_SPEED_TESTS
+
 static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz, 
                               CTime::ETimeZonePrecision tzp)
 {
@@ -1016,6 +1021,7 @@ static void s_TestGMTSpeed(void)
     s_TestGMTSpeedRun("eGmt   - eNone  ", CTime::eGmt,   CTime::eNone);
 }
 
+#endif
 
 //============================================================================
 //
@@ -1897,7 +1903,7 @@ static void s_DemoStopWatch(void)
 
         CNcbiOstrstream s;
         for (int i=0; i<10; i++) {
-            s  << sw << endl;
+            s << sw << endl;
         }
         assert(sw.IsRunning());
         sw.Stop();
@@ -1933,7 +1939,9 @@ int main()
         s_TestMisc();
         s_TestFormats();
         s_TestGMT();
-        //s_TestGMTSpeed();
+        #if ENABLE_SPEED_TESTS
+            s_TestGMTSpeed();
+        #endif
         s_TestTimeSpan();
         s_TestTimeSpan_AsSmartString();
         s_TestTimeout();
