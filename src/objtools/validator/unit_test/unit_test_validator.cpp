@@ -6637,7 +6637,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("TARI");
     ambig.push_back("NMNH");
     ambig.push_back("CSCS");
-    ambig.push_back("BPI");
     ambig.push_back("PSU");
     ambig.push_back("IMT");
     ambig.push_back("MZV");
@@ -6672,7 +6671,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("SSM");
     ambig.push_back("MZ");
     ambig.push_back("WSU");
-    ambig.push_back("CUP");
     ambig.push_back("CIAN");
     ambig.push_back("ZMT");
     ambig.push_back("IMS");
