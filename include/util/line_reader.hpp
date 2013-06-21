@@ -169,7 +169,7 @@ public:
     /// As always with ILineReader, an explicit call to operator++ or
     /// ReadLine() will be necessary to fetch the first line.
     CMemoryLineReader(const char* start, const char* end)
-        : m_Start(start), m_End(end), m_Pos(start) { }
+        : m_Start(start), m_End(end), m_Pos(start), m_LineNumber(0) { }
 
     /// Open a line reader over the half-open memory range
     /// [start, start+length).
@@ -177,7 +177,8 @@ public:
     /// As always with ILineReader, an explicit call to operator++ or
     /// ReadLine() will be necessary to fetch the first line.
     CMemoryLineReader(const char* start, SIZE_TYPE length)
-        : m_Start(start), m_End(start + length), m_Pos(start) { }
+        : m_Start(start), m_End(start + length), m_Pos(start), 
+          m_LineNumber(0) { }
 
     /// Open a line reader over a given memory-mapped file, with the
     /// given ownership setting (if specified).
