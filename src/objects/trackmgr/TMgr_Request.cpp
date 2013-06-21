@@ -59,9 +59,8 @@ CRef<CTMgr_DisplayTrackRequest> CTMgr_Request::SetDefaultRequest(
     tr->SetClient().SetClient_name(client);
     tr->SetClient().SetContext(ctx);
 
-    CRef<CTMgr_GenomeContext> context(new CTMgr_GenomeContext());
-    context->SetAssembly().SetAccession(assm);
-    tr->SetGenome_contexts().push_back(context);
+    tr->SetGenome_context().SetAssembly().SetAccession(assm);
+    
     return tr;
 }
 

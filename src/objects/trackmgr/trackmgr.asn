@@ -52,7 +52,7 @@ TMgr-ClientInfo ::= SEQUENCE {
 
 TMgr-DisplayTrackRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
-    genome-contexts SET OF TMgr-GenomeContext OPTIONAL,
+    genome-context TMgr-GenomeContext,
     attrs SET OF TMgr-AttrSpec OPTIONAL,
     identity TMgr-Identity OPTIONAL
 }
@@ -65,7 +65,7 @@ TMgr-DisplayTrackReply ::= SEQUENCE {
 
 TMgr-SwitchTrackContextRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
-    new-genome-contexts SET OF TMgr-GenomeContext,
+    new-genome-context TMgr-GenomeContext,
     current-dtrack-ids SET OF Dbtag
 }
 

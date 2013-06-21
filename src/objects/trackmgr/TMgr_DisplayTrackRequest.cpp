@@ -67,20 +67,14 @@ CTMgr_DisplayTrackRequest::SetResourceName(const string& name)
 void
 CTMgr_DisplayTrackRequest::AddAssemblyAcc(const string& acc)
 {
-    CRef<CTMgr_GenomeContext> ctx(new CTMgr_GenomeContext());
-    CTMgr_AssemblySpec& spec = ctx->SetAssembly();
-    spec.SetAccession(acc);
-    SetGenome_contexts().push_back(ctx);
+    SetGenome_context().SetAssembly().SetAccession(acc);
 }
 
 void
 CTMgr_DisplayTrackRequest::AddAssemblyNameTax(const string& name, int tax_id)
 {
-    CRef<CTMgr_GenomeContext> ctx(new CTMgr_GenomeContext());
-    CTMgr_AssemblySpec& spec = ctx->SetAssembly();
-    spec.SetName().SetName(name);
-    spec.SetName().SetTax_id(tax_id);
-    SetGenome_contexts().push_back(ctx);
+    SetGenome_context().SetAssembly().SetName().SetName(name);
+    SetGenome_context().SetAssembly().SetName().SetTax_id(tax_id);
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
