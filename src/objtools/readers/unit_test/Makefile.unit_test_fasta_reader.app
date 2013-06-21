@@ -11,8 +11,8 @@ SRC = unit_test_fasta_reader
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = $(OBJREAD_LIBS) seqset $(SEQ_LIBS) pub medline biblio general xser xutil test_boost xncbi
-LIBS = $(ORIG_LIBS)
+LIB  = $(OBJREAD_LIBS) test_boost $(SOBJMGR_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 

@@ -36,8 +36,11 @@
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
+#include <util/static_map.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/Seq_gap.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
@@ -161,6 +164,9 @@ public:
             eType_AminoAcidsInTitle,
             eType_ModsFoundButNotExpected,
             eType_ExpectedSeqMissing,
+            eType_GapModsFoundButNoneExpected,
+            eType_ExtraGapModsFound,
+            eType_ExpectedGapModsMissing,
 
             // feel free to add more warning types as necessary, but
             // put them before eType_NUM
@@ -231,6 +237,39 @@ public:
     ///
     /// @returns currently set maximum ID length
     Uint4 GetMaxIDLength(void) const { return m_MaxIDLength; }
+
+    /// indicates which linkage-evidences a given gap-type
+    /// can accept, if any
+    enum ELinkEvid {
+        /// only the "unspecified" linkage-evidence is allowed
+        eLinkEvid_UnspecifiedOnly,
+        /// no linkage-evidence is allowed
+        eLinkEvid_Forbidden,
+        /// any linkage-evidence is allowed, and at least one is required
+        eLinkEvid_Required, 
+    };
+    /// Holds information about a given gap-type string
+    struct SGapTypeInfo {
+        /// The underlying type that the string corresponds to
+        CSeq_gap::EType m_eType;
+        /// Indicates what linkage-evidences are compatible with this
+        ELinkEvid       m_eLinkEvid;
+    };
+    /// Map a gap-type string to its information
+    /// Note that PCase_CStr, which means direct lookup is 
+    /// NOT insensitive to case, etc.
+    typedef CStaticArrayMap<const char *, SGapTypeInfo, PCase_CStr> TGapTypeMap;
+
+    /// From a gap-type string, get the SGapTypeInfo, 
+    /// insensitive to case, etc.  This is NOT quite the same as calling
+    /// find on the TGapTypeMap.
+    ///
+    /// @returns NULL if not found
+    static const SGapTypeInfo * NameToGapTypeInfo(const CTempString & sName);
+    /// This is for if the user needs to get the gap-type string
+    /// to SGapTypeInfo info directly (For example, to iterate through
+    /// all possible types).
+    static const TGapTypeMap & GetNameToGapTypeInfoMap(void);
 
 protected:
     enum EInternalFlags {
@@ -314,12 +353,53 @@ protected:
     
     CRef<TWarningRefVec> m_pWarningRefVec;
 
+    // Make case-sensitive and other kinds of insensitivity, too
+    // (such as "spaces" and "underscores" becoming "hyphens"
+    static auto_ptr<string> CanonicalizeString(const TStr & sValue);
+
 private:
-    struct SGap {
-        TSeqPos       pos; // 0-based, and NOT counting previous gaps
-        TSignedSeqPos len; // 0: unknown, negative: negated nominal length
+    struct SGap : public CObject {
+        enum EKnownSize {
+            eKnownSize_No,
+            eKnownSize_Yes
+        };
+
+        // This lets us represent a "not-set" state for CSeq_gap::EType
+        // as an unset pointer.  This is needed because CSeq_gap::EType doesn't
+        // have a "not_set" enum value at this time.
+        typedef CObjectFor<CSeq_gap::EType> TGapTypeObj;
+        typedef CConstRef<TGapTypeObj> TNullableGapType;
+
+        SGap(
+            TSeqPos pos,
+            TSignedSeqPos len, // signed so we can catch negative numbers and throw an exception
+            EKnownSize eKnownSize,
+            TSeqPos uLineNumber,
+            TNullableGapType pGapType =
+                TNullableGapType(),
+            const set<CLinkage_evidence::EType> & setOfLinkageEvidence =
+                set<CLinkage_evidence::EType>() );
+
+        // immutable once created
+
+        // 0-based, and NOT counting previous gaps
+        const TSeqPos m_uPos; 
+        // 0: unknown, negative: negated nominal length of unknown gap size.
+        // positive: known gap size
+        const TSeqPos m_uLen; 
+        const EKnownSize m_eKnownSize;
+        const TSeqPos m_uLineNumber;
+        // NULL means "no gap type specified"
+        const TNullableGapType m_pGapType;
+        typedef set<CLinkage_evidence::EType> TLinkEvidSet;
+        const TLinkEvidSet m_setOfLinkageEvidence;
+    private:
+        // forbid assignment and copy-construction
+        SGap & operator = (const SGap & );
+        SGap(const SGap & rhs);
     };
-    typedef vector<SGap>        TGaps;
+    typedef CRef<SGap> TGapRef;
+    typedef vector<TGapRef>     TGaps;
     typedef set<CSeq_id_Handle> TIDTracker;
 
     CRef<ILineReader>       m_LineReader;

@@ -871,7 +871,7 @@ void CFastaReader::ParseDataLine(const TStr& s)
         unsigned char c = s[pos];
         if (c == '-'  &&  TestFlag(fParseGaps)) {
             CloseMask();
-            // OpenGap();
+            // open a gap
             size_t pos2 = pos + 1;
             while (pos2 < len  &&  s[pos2] == '-') {
                 ++pos2;
@@ -941,8 +941,12 @@ void CFastaReader::x_CloseGap(TSeqPos len)
                 len = 0;
             }
         }
-        SGap gap = { pos, len };
-        m_Gaps.push_back(gap);
+        TGapRef pGap( new SGap(
+            pos, len,
+            ( len > 0 ? SGap::eKnownSize_Yes : SGap::eKnownSize_No ),
+            LineNumber()) );
+
+        m_Gaps.push_back(pGap);
         m_TotalGapLength += len;
         m_CurrentGapLength = 0;
     }
@@ -965,20 +969,242 @@ void CFastaReader::x_CloseMask(void)
 
 bool CFastaReader::ParseGapLine(const TStr& line)
 {
-    SGap gap = { GetCurrentPos(eRawPos),
-                 NStr::StringToUInt(line.substr(2), NStr::fConvErr_NoThrow) };
-    if (gap.len > 0) {
-        m_Gaps.push_back(gap);
-        m_TotalGapLength += gap.len;
-        return true;
-    } else if (line == ">?unk100") {
-        gap.len = -100;
-        m_TotalGapLength += 100;
-        m_Gaps.push_back(gap);
-        return true;
-    } else {
-        return false;
+    _ASSERT( NStr::StartsWith(line, ">?") );
+
+    // sRemainingLine will hold the part of the line left to parse
+    TStr sRemainingLine = line.substr(2);
+    NStr::TruncateSpacesInPlace(sRemainingLine);
+
+    const TSeqPos uPos = GetCurrentPos(eRawPos);
+
+    // check if size is unknown
+    SGap::EKnownSize eIsKnown = SGap::eKnownSize_Yes;
+    if( NStr::StartsWith(sRemainingLine, "unk") ) {
+        eIsKnown = SGap::eKnownSize_No;
+        sRemainingLine = sRemainingLine.substr(3);
+        NStr::TruncateSpacesInPlace(sRemainingLine, NStr::eTrunc_Begin);
     }
+
+    // extract the gap size
+    TSeqPos uGapSize = 0;
+    {
+        // find how many digits in number
+        TStr::size_type uNumDigits = 0;
+        while( uNumDigits != sRemainingLine.size() &&
+               ::isdigit(sRemainingLine[uNumDigits]) )
+        {
+            ++uNumDigits;
+        }
+        TStr sDigits = sRemainingLine.substr(
+            0, uNumDigits);
+        uGapSize = NStr::StringToUInt(sDigits, NStr::fConvErr_NoThrow);
+        if( uGapSize <= 0 ) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "CFastaReader: Bad gap size at line " + NStr::NumericToString(LineNumber()),
+                        LineNumber());
+        }
+        sRemainingLine = sRemainingLine.substr(sDigits.length());
+        NStr::TruncateSpacesInPlace(sRemainingLine, NStr::eTrunc_Begin);
+    }
+
+    // extract the raw key-value pairs for the gap
+    typedef multimap<TStr, TStr> TModKeyValueMultiMap;
+    TModKeyValueMultiMap modKeyValueMultiMap;
+    while( ! sRemainingLine.empty() ) {
+        TStr::size_type uOpenBracketPos = TStr::npos;
+        if ( NStr::StartsWith(sRemainingLine, "[") ) {
+            uOpenBracketPos = 0;
+        }
+        TStr::size_type uPosOfEqualSign = TStr::npos;
+        if( uOpenBracketPos != TStr::npos ) {
+            // uses "1" to skip the '['
+            uPosOfEqualSign = sRemainingLine.find('=', uOpenBracketPos + 1);
+        }
+        TStr::size_type uCloseBracketPos = TStr::npos;
+        if( uPosOfEqualSign != TStr::npos ) {
+            uCloseBracketPos = sRemainingLine.find(']', uPosOfEqualSign + 1);
+        }
+        if( uCloseBracketPos == TStr::npos ) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "CFastaReader: Problem parsing gap mods at line " +
+                            NStr::NumericToString(LineNumber()),
+                        LineNumber());
+        }
+
+        // extract the key and the value
+        TStr sKey = NStr::TruncateSpaces(
+            sRemainingLine.substr(uOpenBracketPos + 1, 
+                (uPosOfEqualSign - uOpenBracketPos - 1) ) );
+        TStr sValue = NStr::TruncateSpaces(
+            sRemainingLine.substr(uPosOfEqualSign + 1,
+                uCloseBracketPos - uPosOfEqualSign - 1) );
+        
+        // remember what we saw
+        modKeyValueMultiMap.insert(
+            TModKeyValueMultiMap::value_type(sKey, sValue) );
+
+        // prepare for the next loop around
+        sRemainingLine = sRemainingLine.substr(uCloseBracketPos + 1);
+        NStr::TruncateSpacesInPlace(sRemainingLine, NStr::eTrunc_Begin);
+    }
+
+    // string to value maps
+    const CEnumeratedTypeValues::TNameToValue & linkage_evidence_to_value_map =
+        CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+
+    // remember bad mods and bad values
+    set<CTempString> setBadModNames;
+    set<CTempString> setBadGapTypes;
+    bool bConflictingGapTypes = false;
+    set<CTempString> setBadLinkageEvidences;
+    // extract the mods, if any
+    SGap::TNullableGapType pGapType;
+    ELinkEvid eLinkEvid = eLinkEvid_UnspecifiedOnly;
+    set<CLinkage_evidence::EType> setOfLinkageEvidence;
+    ITERATE(TModKeyValueMultiMap, modKeyValue_it, modKeyValueMultiMap) {
+        const TStr & sKey   = modKeyValue_it->first;
+        const TStr & sValue = modKeyValue_it->second;
+
+        auto_ptr<string> pCanonicalKey( CanonicalizeString(sKey) );
+        if(  *pCanonicalKey == "gap-type") {
+
+            const SGapTypeInfo *pGapTypeInfo = NameToGapTypeInfo(sValue);
+            if( pGapTypeInfo ) {
+                 CSeq_gap::EType eGapType = pGapTypeInfo->m_eType;
+
+                if( ! pGapType ) {
+                    pGapType.Reset( new SGap::TGapTypeObj(eGapType) );
+                    eLinkEvid = pGapTypeInfo->m_eLinkEvid;
+                } else if( eGapType != *pGapType ) {
+                    // check if pGapType already set and different
+                    bConflictingGapTypes = true;
+                }
+            } else {
+                setBadGapTypes.insert(sValue);
+            }
+
+        } else if( *pCanonicalKey == "linkage-evidence") {
+
+            // could be semi-colon separated
+            vector<CTempString> arrLinkageEvidences;
+            NStr::Tokenize(sValue, ";", arrLinkageEvidences, 
+                NStr::eMergeDelims);
+
+            ITERATE(vector<CTempString>, link_evid_it, arrLinkageEvidences) {
+                CTempString sLinkEvid = *link_evid_it;
+                CEnumeratedTypeValues::TNameToValue::const_iterator find_iter =
+                    linkage_evidence_to_value_map.find(*CanonicalizeString(sLinkEvid));
+                if( find_iter != linkage_evidence_to_value_map.end() ) {
+                    setOfLinkageEvidence.insert(
+                        static_cast<CLinkage_evidence::EType>(
+                        find_iter->second));
+                } else {
+                    setBadLinkageEvidences.insert(sLinkEvid);
+                }
+            }
+
+        } else {
+            // unknown mod.
+            setBadModNames.insert(sKey);
+        }
+    }
+
+    // handle bad mods and/or bad values and throw as one big
+    // exception
+    if( ! setBadModNames.empty() || ! setBadGapTypes.empty() ||
+        bConflictingGapTypes || ! setBadLinkageEvidences.empty() ) 
+    {
+        CNcbiOstrstream err_strm;
+        err_strm << "CFastaReader: Gap modifier problems:";
+        const char * pchPrefix = " ";
+        if( ! setBadModNames.empty() ) {
+            err_strm << pchPrefix << "Unknown modifier names:";
+            pchPrefix = "; ";
+            ITERATE( set<CTempString>, bad_mod_it, setBadModNames ) {
+                err_strm << " " << *bad_mod_it;
+            }
+        }
+        if( ! setBadGapTypes.empty() ) {
+            err_strm << pchPrefix << "Unknown gap-types:";
+            pchPrefix = "; ";
+            ITERATE( set<CTempString>, unkn_gap_type_it, setBadGapTypes ) {
+                err_strm << " " << *unkn_gap_type_it;
+            }
+        }
+        if( bConflictingGapTypes ) {
+            err_strm << pchPrefix << "There were conflicting gap-types";
+            pchPrefix = "; ";
+        }
+        if( ! setBadLinkageEvidences.empty() ) {
+            err_strm << pchPrefix << "Unknown linkage-evidence types:";
+            pchPrefix = "; ";
+            ITERATE( set<CTempString>, unkn_evid_type_it, setBadLinkageEvidences ) {
+                err_strm << " " << *unkn_evid_type_it;
+            }
+        }
+        err_strm << pchPrefix << "; all on line " << LineNumber();
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            CNcbiOstrstreamToString(err_strm),
+            LineNumber());
+    }
+
+    // check validation beyond basic parsing problems
+
+    // if no gap-type set (but linkage-evidence explicitly set, use "unknown")
+    if( ! pGapType && ! setOfLinkageEvidence.empty() ) {
+        pGapType.Reset( new SGap::TGapTypeObj(CSeq_gap::eType_unknown) );
+    }
+
+    // check if linkage-evidence(s) compatible with gap-type
+    switch( eLinkEvid ) {
+    case eLinkEvid_UnspecifiedOnly:
+        if( setOfLinkageEvidence.empty() ) {
+            if( pGapType ) {
+                // silently add the required "unspecified"
+                setOfLinkageEvidence.insert(CLinkage_evidence::eType_unspecified);
+            }
+        } else if( setOfLinkageEvidence.size() > 1 || 
+            *setOfLinkageEvidence.begin() != CLinkage_evidence::eType_unspecified )
+        {
+            // only "unspecified" is allowed
+            FASTA_WARNING(LineNumber(), CWarning::eType_ExtraGapModsFound,
+                "FASTA-Reader: Unknown gap-type can have linkage-evidence "
+                "of type 'unspecified' only.");
+            setOfLinkageEvidence.clear();
+            setOfLinkageEvidence.insert(CLinkage_evidence::eType_unspecified);
+        }
+        break;
+    case eLinkEvid_Forbidden:
+        if( ! setOfLinkageEvidence.empty() ) {
+            FASTA_WARNING(LineNumber(), CWarning::eType_GapModsFoundButNoneExpected,
+                "FASTA-Reader: This gap-type cannot have any "
+                "linkage-evidence specified, so any will be ignored.");
+            setOfLinkageEvidence.clear();
+        }
+        break;
+    case eLinkEvid_Required:
+        if( setOfLinkageEvidence.empty() ) {
+            setOfLinkageEvidence.insert(CLinkage_evidence::eType_unspecified);
+        }
+        if( setOfLinkageEvidence.size() == 1 &&
+            *setOfLinkageEvidence.begin() == CLinkage_evidence::eType_unspecified)
+        {
+            FASTA_WARNING(LineNumber(), CWarning::eType_ExpectedGapModsMissing,
+                "CFastaReader: This gap-type should have at least one "
+                "specified linkage-evidence.");
+        }
+        break;
+        // intentionally omitted "default:" so a compiler warning will
+        // hopefully let us know if we've forgotten a case
+    }
+
+    TGapRef pGap( new SGap(
+        uPos, uGapSize, eIsKnown, LineNumber(), pGapType, 
+        setOfLinkageEvidence ) );
+
+    m_Gaps.push_back(pGap);
+    m_TotalGapLength += pGap->m_uLen;
+    return true;
 }
 
 void CFastaReader::AssembleSeq(void)
@@ -1022,11 +1248,27 @@ void CFastaReader::AssembleSeq(void)
         SIZE_TYPE pos = 0;
         new_data.reserve(GetCurrentPos(ePosWithGaps));
         ITERATE (TGaps, it, m_Gaps) {
-            if (it->pos > pos) {
-                new_data.append(m_SeqData, pos, it->pos - pos);
-                pos = it->pos;
+            // since we're not parsing gaps, we have to throw out
+            // any specified extra information that can't be
+            // represented with a mere 'X' or 'N', so at least
+            // give a warning
+            const bool bHasSpecifiedGapType = 
+                ( (*it)->m_pGapType && *(*it)->m_pGapType != CSeq_gap::eType_unknown );
+            const bool bHasSpecifiedLinkEvid =
+                ( ! (*it)->m_setOfLinkageEvidence.empty() &&
+                  ( (*it)->m_setOfLinkageEvidence.size() > 1 ||
+                    *(*it)->m_setOfLinkageEvidence.begin() != CLinkage_evidence::eType_unspecified ) );
+            if( bHasSpecifiedGapType || bHasSpecifiedLinkEvid )
+            {
+                FASTA_WARNING((*it)->m_uLineNumber, CWarning::eType_GapModsFoundButNoneExpected,
+                    "CFastaReader: Gap mods are ignored because gaps are "
+                    "becoming N's or X's in this case.");
             }
-            new_data.append((it->len >= 0) ? it->len : -it->len, gap_char);
+            if ((*it)->m_uPos > pos) {
+                new_data.append(m_SeqData, pos, (*it)->m_uPos - pos);
+                pos = (*it)->m_uPos;
+            }
+            new_data.append((*it)->m_uLen, gap_char);
         }
         if (m_CurrentPos > pos) {
             new_data.append(m_SeqData, pos, m_CurrentPos - pos);
@@ -1075,33 +1317,58 @@ void CFastaReader::AssembleSeq(void)
         inst.SetLength(GetCurrentPos(ePosWithGaps));
         SIZE_TYPE n = m_Gaps.size();
         for (SIZE_TYPE i = 0;  i < n;  ++i) {
-            if (i == 0  &&  m_Gaps[i].pos > 0) {
-                TStr chunk(m_SeqData, 0, m_Gaps[i].pos);
+
+            if (i == 0  &&  m_Gaps[i]->m_uPos > 0) {
+                TStr chunk(m_SeqData, 0, m_Gaps[i]->m_uPos);
                 if (TestFlag(fNoSplit)) {
                     delta_ext.AddLiteral(chunk, inst.GetMol());
                 } else {
-                    delta_ext.AddAndSplit(chunk, format, m_Gaps[i].pos,
+                    delta_ext.AddAndSplit(chunk, format, m_Gaps[i]->m_uPos,
                                           TestFlag(fLetterGaps));
                 }
             }
 
-            if (m_Gaps[i].len > 0) {
-                delta_ext.AddLiteral(m_Gaps[i].len);
-            } else {
-                CRef<CDelta_seq> gap_ds(new CDelta_seq);
-                if (m_Gaps[i].len == 0) { // totally unknown
-                    gap_ds->SetLoc().SetNull();
-                } else { // has a nominal length (normally 100)
-                    gap_ds->SetLiteral().SetLength(-m_Gaps[i].len);
+            // add delta-seq
+            CRef<CDelta_seq> gap_ds(new CDelta_seq);
+            if (m_Gaps[i]->m_uLen == 0) { // totally unknown
+                gap_ds->SetLoc().SetNull();
+            } else { // has a nominal length (normally 100)
+                gap_ds->SetLiteral().SetLength(m_Gaps[i]->m_uLen);
+                if( m_Gaps[i]->m_eKnownSize == SGap::eKnownSize_No ) {
                     gap_ds->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
                 }
-                delta_ext.Set().push_back(gap_ds);
-            }
 
-            TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1].pos;
-            if (next_start != m_Gaps[i].pos) {
-                TSeqPos seq_len = next_start - m_Gaps[i].pos;
-                TStr chunk(m_SeqData, m_Gaps[i].pos, seq_len);
+                if( m_Gaps[i]->m_pGapType || ! m_Gaps[i]->m_setOfLinkageEvidence.empty() ) {
+                    CSeq_gap & seq_gap = gap_ds->SetLiteral().SetSeq_data().SetGap();
+                    seq_gap.SetType( m_Gaps[i]->m_pGapType ? 
+                        *m_Gaps[i]->m_pGapType : 
+                        CSeq_gap::eType_unknown );
+
+                    // set linkage and linkage-evidence, if any
+                    if( ! m_Gaps[i]->m_setOfLinkageEvidence.empty() ) {
+                        // any linkage-evidence (even "unspecified")
+                        // implies "linked"
+                        seq_gap.SetLinkage( CSeq_gap::eLinkage_linked );
+
+                        CSeq_gap::TLinkage_evidence & vecLinkEvids = 
+                            seq_gap.SetLinkage_evidence();
+                        ITERATE(SGap::TLinkEvidSet, link_evid_it, 
+                            m_Gaps[i]->m_setOfLinkageEvidence ) 
+                        {
+                            CSeq_gap::TLinkage_evidence::value_type pNewLinkEvid(
+                                new CLinkage_evidence );
+                            pNewLinkEvid->SetType( *link_evid_it );
+                            vecLinkEvids.push_back(pNewLinkEvid);
+                        }
+                    }
+                }
+            }
+            delta_ext.Set().push_back(gap_ds);
+
+            TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1]->m_uPos;
+            if (next_start != m_Gaps[i]->m_uPos) {
+                TSeqPos seq_len = next_start - m_Gaps[i]->m_uPos;
+                TStr chunk(m_SeqData, m_Gaps[i]->m_uPos, seq_len);
                 if (TestFlag(fNoSplit)) {
                     delta_ext.AddLiteral(chunk, inst.GetMol());
                 } else {
@@ -1637,6 +1904,80 @@ std::string CFastaReader::x_NucOrProt(void) const
     } else {
         return kEmptyStr;
     }
+}
+
+// static
+auto_ptr<string> CFastaReader::CanonicalizeString(const TStr & sValue)
+{
+    auto_ptr<string> pNewString( new string );
+    pNewString->reserve(sValue.length());
+
+    ITERATE_0_IDX(ii, sValue.length()) {
+        const char ch = sValue[ii];
+        if( isupper(ch) ) {
+            pNewString->push_back(tolower(ch));
+        } else if( ch == ' ' || ch == '_' ) {
+            pNewString->push_back('-');
+        } else {
+            pNewString->push_back(ch);
+        }
+    }
+
+    return pNewString;
+}
+
+// static
+const CFastaReader::SGapTypeInfo *
+CFastaReader::NameToGapTypeInfo(const CTempString & sName)
+{
+    const CFastaReader::TGapTypeMap & gapTypeMap =
+        GetNameToGapTypeInfoMap();
+
+    TGapTypeMap::const_iterator find_iter =
+        gapTypeMap.find( CanonicalizeString(sName)->c_str() );
+    if( find_iter == gapTypeMap.end() ) {
+        // not found
+        return NULL;
+    } else {
+        return & find_iter->second;
+    }
+}
+
+// static
+const CFastaReader::TGapTypeMap & 
+CFastaReader::GetNameToGapTypeInfoMap(void)
+{
+    // gap-type name to info
+    typedef SStaticPair<const char*, SGapTypeInfo> TGapTypeElem;
+    static const TGapTypeElem sc_gap_type_map[] = {
+        {"between-scaffolds",        { CSeq_gap::eType_contig,          eLinkEvid_Required} },
+        {"centromere",               { CSeq_gap::eType_centromere,      eLinkEvid_Forbidden} },
+        {"heterochromatin",          { CSeq_gap::eType_heterochromatin, eLinkEvid_Forbidden} },
+        {"repeat-between-scaffolds", { CSeq_gap::eType_repeat,          eLinkEvid_Forbidden} },
+        {"repeat-within-scaffold",   { CSeq_gap::eType_repeat,          eLinkEvid_Required} },
+        {"short-arm",                { CSeq_gap::eType_short_arm,       eLinkEvid_Forbidden} },
+        {"telomere",                 { CSeq_gap::eType_telomere,        eLinkEvid_Forbidden} },
+        {"unknown",                  { CSeq_gap::eType_unknown,         eLinkEvid_UnspecifiedOnly} },
+        {"within-scaffold",          { CSeq_gap::eType_scaffold,        eLinkEvid_Forbidden} },
+    };
+    DEFINE_STATIC_ARRAY_MAP(TGapTypeMap, sc_GapTypeMap, sc_gap_type_map);
+    return sc_GapTypeMap;
+}
+
+CFastaReader::SGap::SGap(
+    TSeqPos uPos,
+    TSignedSeqPos uLen,
+    EKnownSize eKnownSize,
+    TSeqPos uLineNumber,
+    TNullableGapType pGapType,
+    const set<CLinkage_evidence::EType> & setOfLinkageEvidence ) :
+        m_uPos(uPos),
+        m_uLen(uLen),
+        m_eKnownSize(eKnownSize),
+        m_uLineNumber(uLineNumber),
+        m_pGapType(pGapType),
+        m_setOfLinkageEvidence(setOfLinkageEvidence)
+{
 }
 
 END_SCOPE(objects)

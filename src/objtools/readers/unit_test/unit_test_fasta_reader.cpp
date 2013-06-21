@@ -52,12 +52,17 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
+#include <objmgr/seq_vector.hpp>
+
+// for places where we don't care if it throws or not
+#define IGNORE_ANY_THROWS(_body) try { ((_body), true); } catch(...) { }
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 namespace {
 
-    // represents inforation about one test of the CFastaReader warning system
+    // represents information about one test of the CFastaReader warning system
     struct SWarningTest {
 
         // Each SWarningTest has one SOneWarningsInfo for each
@@ -92,13 +97,16 @@ namespace {
             "test case of no warnings",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah \n"
@@ -109,13 +117,16 @@ namespace {
             "title too long",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ ABCDEFGHIJ\n"
@@ -126,13 +137,16 @@ namespace {
             "nucs in title",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
@@ -143,13 +157,16 @@ namespace {
             "too many ambig on first line",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must,    2 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_Must,    2 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -160,13 +177,16 @@ namespace {
             "invalid residue on first line",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -177,13 +197,16 @@ namespace {
             "invalid residue on subsequent line",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -195,13 +218,16 @@ namespace {
             "amino acids in title",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_Must,    1 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
 
             kDefaultFastaReaderFlags, // CFastaReader flags
@@ -212,13 +238,16 @@ namespace {
             "trigger as many warnings as possible",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_Must, 2 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_Must, 2 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_Must, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_Must, 1 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah [topology=linear] ACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTACACGTACGTAC\n"
@@ -229,13 +258,16 @@ namespace {
             "invalid residue on multiple lines",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_Must,    0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
@@ -247,13 +279,16 @@ namespace {
             "Make sure it reads modifiers if requested",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
                 // Note: non-default flags
                 CFastaReader::fAddMods | kDefaultFastaReaderFlags, // CFastaReader flags
@@ -266,13 +301,16 @@ namespace {
             "Test unexpected mods on line other than first line",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_Must,    4 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_Must,    4 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
                 kDefaultFastaReaderFlags, // CFastaReader flags
                 ">blah \n"
@@ -290,13 +328,16 @@ namespace {
             "Test that we get a no-residues warning (1 seq).",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_Must,    1 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_Must,    1 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
                 kDefaultFastaReaderFlags, // CFastaReader flags
                 ">blah \n"
@@ -306,13 +347,16 @@ namespace {
             "Test that we get a no-residues warning (multiple seqs).",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_Must,    3 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_Must,    3 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
                 kDefaultFastaReaderFlags, // CFastaReader flags
                 ">blah \n"
@@ -326,13 +370,16 @@ namespace {
             "Test that having no residues is fine if the right flag is set.",
 
             {
-                { CFastaReader::CWarning::eType_TitleTooLong,            SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_NucsInTitle,             SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_InvalidResidue,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_AminoAcidsInTitle,       SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ModsFoundButNotExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
-                { CFastaReader::CWarning::eType_ExpectedSeqMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
+                { CFastaReader::CWarning::eType_TitleTooLong,                SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_NucsInTitle,                 SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_TooManyAmbigOnFirstLine,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_InvalidResidue,              SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_AminoAcidsInTitle,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ModsFoundButNotExpected,     SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedSeqMissing,          SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_GapModsFoundButNoneExpected, SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExtraGapModsFound,           SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 },
+                { CFastaReader::CWarning::eType_ExpectedGapModsMissing,      SWarningTest::SOneWarningsInfo::eAppears_MustNot, 0 }
             },
                 kDefaultFastaReaderFlags | CFastaReader::fNoSeqData, // CFastaReader flags
                 ">blah \n"
@@ -348,7 +395,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
     // IF THIS FAILS, IT MEANS YOU NEED TO UPDATE THE TESTS!
     // ( this is here because the tests may need to be adjusted if
     //   the number of possible warnings changes. )
-    BOOST_REQUIRE( CFastaReader::CWarning::eType_NUM == 7 );
+    BOOST_REQUIRE_EQUAL( CFastaReader::CWarning::eType_NUM, 10 );
 
     // sanity test the tests
     for( size_t warn_test_idx = 0; 
@@ -363,7 +410,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
                 fasta_warning_test_arr[warn_test_idx].m_warnings_expected[iTestNum];
 
             // index must equal the EType
-            BOOST_REQUIRE( one_warning_info.m_eType == iTestNum );
+            BOOST_REQUIRE_EQUAL( one_warning_info.m_eType, iTestNum );
             BOOST_REQUIRE( 
                 one_warning_info.m_eAppears == 
                     SWarningTest::SOneWarningsInfo::eAppears_Must ||
@@ -477,18 +524,227 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
     }
 }
 
+namespace {
+
+    typedef vector<CFastaReader::CWarning::EType> TWarnVec;
+
+    // returns empty reference on error
+    // (should never let exceptions escape)
+    CRef<CBioseq> s_ParseFasta( const string & sFasta,
+        CFastaReader::TFlags fFlags,
+        const string & sExpectedExceptionErrCode = kEmptyStr,
+        const TWarnVec & pExpectedWarningTypes = TWarnVec() )
+    {
+        CRef<CBioseq> pRetvalBioseq;
+        string sErrCodeThatOccurred;
+        CAutoInitRef<CFastaReader::TWarningRefVec> pWarningRefVec;
+
+        try {
+            CMemoryLineReader line_reader( sFasta.c_str(), sFasta.length() );
+            CFastaReader fasta_reader( line_reader, fFlags );
+
+            fasta_reader.SetWarningOutput( Ref(&*pWarningRefVec) );
+
+            CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq();
+            BOOST_REQUIRE(pEntry->IsSeq());
+            pRetvalBioseq.Reset( & pEntry->SetSeq() );
+        } catch(const CException & ex ) {
+            sErrCodeThatOccurred = ex.GetErrCodeString();
+        } catch(...) {
+            sErrCodeThatOccurred = "UNKNOWN";
+        }
+
+        // extract the warning codes
+        TWarnVec pWarningTypes;
+        ITERATE( CFastaReader::TWarningRefVec::TObjectType, 
+            warn_it, pWarningRefVec->GetData() ) 
+        {
+            pWarningTypes.push_back( (*warn_it)->GetType());
+        }
+
+        // check warnings
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            pExpectedWarningTypes.begin(), 
+            pExpectedWarningTypes.end(),
+            pWarningTypes.begin(),
+            pWarningTypes.end() );
+
+        // check error
+        BOOST_CHECK_EQUAL( sExpectedExceptionErrCode, sErrCodeThatOccurred );
+
+        return pRetvalBioseq;
+    }
+
+    // returns NULL if not found.  Does NOT do boost checks
+    CConstRef<CSeq_literal> s_GetFirstGapSeqLiteral(
+        CConstRef<CBioseq> pBioseq)
+    {
+        try {
+            const CDelta_ext::Tdata & delta_data =
+                pBioseq->GetInst().GetExt().GetDelta().Get();
+            ITERATE(CDelta_ext::Tdata, delta_it, delta_data) {
+                const CSeq_literal & seq_literal = 
+                    (*delta_it)->GetLiteral();
+                if( ! seq_literal.IsSetSeq_data() || 
+                    FIELD_IS_SET_AND_IS(seq_literal, Seq_data, Gap) ) 
+                {
+                    return ConstRef(&seq_literal);
+                }
+            }
+        } catch(...) {
+            // do nothing, we will return NULL
+        }
+        return CConstRef<CSeq_literal>();
+    }
+
+    // kludge to work around the inability to have templated typedefs
+    template<typename TType>
+    class TRefStd : public CConstRef<CObjectFor<TType> > { };
+
+    // turns even a literal into a reference
+    template<typename TType>
+    TRefStd<TType> s_RefStd(const TType & value )
+    {
+        TRefStd<TType> pAnswer;
+        pAnswer.Reset( new CObjectFor<TType>(value) );
+        return pAnswer;
+    }
+
+    // lets us have nullable non-CObject data
+    template<typename TType>
+    TRefStd<TType> s_RefOrNull(
+        bool bReturnNonNull,
+        const TType & valueIfNonNull )
+    {
+        if( bReturnNonNull ) {
+            return s_RefStd(valueIfNonNull);
+        }
+        return TRefStd<TType>();
+    }
+
+    template<typename TType>
+    vector<TType> s_VecOfOne(
+        const TType & value)
+    {
+        vector<TType> answerVec;
+        answerVec.push_back(value);
+        return answerVec;
+    }
+
+    // The given bioseq should have exactly one gap
+    // The TRefStd's are NULL for "should be unset"
+    void s_CheckOnlyBioseqGap(
+                CConstRef<CBioseq> pBioseq,
+                TRefStd<TSeqPos> pNumDeltasExpected,
+                TRefStd<TSeqPos>  pGapLenExpected,
+                TRefStd<CInt_fuzz::ELim> pLimExpected,
+                TRefStd<CSeq_gap::EType> pGapTypeExpected,
+                TRefStd< vector<CLinkage_evidence::EType> > pLinkEvidsExpected )
+    {
+        // check number of deltas
+        const CDelta_ext::Tdata * pDeltaData = NULL;
+        IGNORE_ANY_THROWS(
+            pDeltaData = & pBioseq->GetInst().GetExt().GetDelta().Get());
+        if( pNumDeltasExpected ) {
+            if( pDeltaData ) {
+                NCBITEST_CHECK_EQUAL(pDeltaData->size(), *pNumDeltasExpected);
+            } else {
+                BOOST_ERROR("no delta-ext's");
+            }
+        } else {
+            NCBITEST_CHECK( ! pDeltaData );
+        }
+
+        // find the one gap seq-literal
+        CConstRef<CSeq_literal> pGapLiteral;
+        if( pDeltaData ) {
+            ITERATE(CDelta_ext::Tdata, delta_it, *pDeltaData) {
+                const CSeq_literal & seq_literal = 
+                    (*delta_it)->GetLiteral();
+                if( ! seq_literal.IsSetSeq_data() || 
+                    FIELD_IS_SET_AND_IS(seq_literal, Seq_data, Gap) ) 
+                {
+                    // it's a gap
+                    BOOST_REQUIRE_MESSAGE( ! pGapLiteral, 
+                        "There should be only one gap" );
+                    pGapLiteral.Reset( & seq_literal );
+                }
+            }
+        }
+
+        // check gap len
+        if( pGapLenExpected ) {
+            NCBITEST_CHECK_EQUAL( pGapLiteral->GetLength(), *pGapLenExpected );
+        } else {
+            NCBITEST_CHECK( ! pGapLiteral->IsSetLength() );
+        }
+
+        // check fuzz
+        if( pLimExpected ) {
+            NCBITEST_CHECK_EQUAL(
+                pGapLiteral->GetFuzz().GetLim(), CInt_fuzz::eLim_unk);
+        } else {
+            BOOST_CHECK( ! pGapLiteral || ! pGapLiteral->IsSetFuzz() );
+        }
+
+        // extract CSeq_gap, if any
+        CConstRef<CSeq_gap> pSeqGap;
+        IGNORE_ANY_THROWS(
+            pSeqGap.Reset( & pGapLiteral->GetSeq_data().GetGap() ) );
+
+        if( pGapTypeExpected ) {
+            NCBITEST_CHECK_EQUAL(pSeqGap->GetType(), *pGapTypeExpected);
+        } else {
+            NCBITEST_CHECK( ! pSeqGap || ! pSeqGap->IsSetType() );
+        }
+
+        // check linkage and linkage-evidence
+        if( pLinkEvidsExpected && pLinkEvidsExpected->GetData().empty() ) {
+            // consider empty and unset to be the same thing
+            // for our expected array and our actual array
+            pLinkEvidsExpected.Reset();
+        }
+        if( pLinkEvidsExpected ) {
+            NCBITEST_CHECK_EQUAL( pSeqGap->GetLinkage(), 
+                CSeq_gap::eLinkage_linked );
+        } else {
+            NCBITEST_CHECK( ! pSeqGap || 
+                ! FIELD_EQUALS(*pSeqGap, Linkage, CSeq_gap::eLinkage_linked) );
+        }
+        const CSeq_gap::TLinkage_evidence * pLinkEvidObjs = NULL;
+        IGNORE_ANY_THROWS(
+            pLinkEvidObjs = & pSeqGap->GetLinkage_evidence() );
+        if( pLinkEvidsExpected ) {
+            vector<CLinkage_evidence::EType> vecLinkEvids;
+            if( pLinkEvidObjs ) {
+                ITERATE(CSeq_gap::TLinkage_evidence, evid_obj_it, *pLinkEvidObjs) {
+                    BOOST_CHECK_NO_THROW(
+                        vecLinkEvids.push_back( 
+                            static_cast<CLinkage_evidence::EType>(
+                                (*evid_obj_it)->GetType() ) ) );
+                }
+            }
+            BOOST_CHECK_EQUAL_COLLECTIONS(
+                pLinkEvidsExpected->GetData().begin(), 
+                pLinkEvidsExpected->GetData().end(),
+                vecLinkEvids.begin(), vecLinkEvids.end());
+        } else {
+            NCBITEST_CHECK( ! pLinkEvidObjs || 
+                pLinkEvidObjs->empty() );
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
 {
     static const string kFastaWhereAllModsRemoved = 
         ">Seq1 [topology=circular]\n"
         "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n";
-    CMemoryLineReader line_reader( kFastaWhereAllModsRemoved.c_str(),
-        kFastaWhereAllModsRemoved.length() );
-    CFastaReader fasta_reader( line_reader, CFastaReader::fAddMods );
+    CRef<CBioseq> pBioseq = s_ParseFasta( kFastaWhereAllModsRemoved,
+        CFastaReader::fAddMods );
+    BOOST_REQUIRE(pBioseq);
 
-    CRef<CSeq_entry> pSeqEntry = fasta_reader.ReadOneSeq();
-
-    FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, pSeqEntry->GetSeq()) {
+    FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, *pBioseq) {
         BOOST_CHECK( ! (*desc_it)->IsTitle() );
     }
 }
@@ -513,11 +769,8 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
     // test with and without nosplit
     ITERATE_BOTH_BOOL_VALUES(bSetNoSplit) {
         cout << "Trying with" << (bSetNoSplit ? "" : "out") << " CFastaReader::fNoSplit" << endl;
-        CMemoryLineReader line_reader( kFastaWithProtGap.c_str(),
-            kFastaWithProtGap.length() );
-        CFastaReader fasta_reader( line_reader, 
-            fFastaReaderFlags | (bSetNoSplit ? CFastaReader::fNoSplit : 0) );
-        BOOST_CHECK_NO_THROW(fasta_reader.ReadOneSeq());
+        BOOST_CHECK(s_ParseFasta( kFastaWithProtGap, 
+            fFastaReaderFlags | (bSetNoSplit ? CFastaReader::fNoSplit : 0)));
     }
 }
 
@@ -532,17 +785,13 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
             ">Seq1 [gene=some_gene] [protein=foo]\n"
             "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC\n";
 
-        CMemoryLineReader line_reader( kFastaNuc.c_str(),
-            kFastaNuc.length() );
-        CFastaReader fasta_reader( line_reader,
-            CFastaReader::fAddMods );
-        CRef<CSeq_entry> pEntry;
-        BOOST_CHECK_NO_THROW(pEntry = fasta_reader.ReadOneSeq());
-        BOOST_REQUIRE(pEntry);
+        CRef<CBioseq> pBioseq = s_ParseFasta(
+            kFastaNuc, CFastaReader::fAddMods );
+        BOOST_REQUIRE(pBioseq);
 
         bool bFoundGene = false;
 
-        CTypeConstIterator<CSeqFeatData> seqfeatdat_ci(Begin(*pEntry));
+        CTypeConstIterator<CSeqFeatData> seqfeatdat_ci(Begin(*pBioseq));
         for( ; seqfeatdat_ci; ++seqfeatdat_ci ) {
             BOOST_REQUIRE( ! seqfeatdat_ci->IsProt() );
             if( FIELD_IS_AND_IS_SET(*seqfeatdat_ci, Gene, Locus) && 
@@ -560,16 +809,12 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
             ">Seq1 [gene=some_gene] [protein=foo]\n"
             "MALWMHLLTVLALLALWGPNTNQAFVSRHLCGSNLVETLYSVCQDDGFFYIPKDRRELED\n";
 
-        CMemoryLineReader line_reader( kFastaProt.c_str(),
-            kFastaProt.length() );
-        CFastaReader fasta_reader( line_reader,
-            CFastaReader::fAddMods );
-        CRef<CSeq_entry> pEntry;
-        BOOST_CHECK_NO_THROW(pEntry = fasta_reader.ReadOneSeq());
-        BOOST_REQUIRE(pEntry);
+        CRef<CBioseq> pBioseq = s_ParseFasta(
+            kFastaProt, CFastaReader::fAddMods );
+        BOOST_REQUIRE(pBioseq);
 
         bool bHasProt = false;
-        CTypeConstIterator<CSeq_feat> seqfeat_ci(Begin(*pEntry));
+        CTypeConstIterator<CSeq_feat> seqfeat_ci(Begin(*pBioseq));
         for( ; seqfeat_ci; ++seqfeat_ci ) {
             BOOST_CHECK( ! FIELD_IS_SET_AND_IS(*seqfeat_ci, Data, Gene) );
             if( FIELD_IS_SET_AND_IS(*seqfeat_ci, Data, Prot) ) {
@@ -579,4 +824,356 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
         }
         BOOST_CHECK(bHasProt);
     }}
+}
+
+BOOST_AUTO_TEST_CASE(TestGapMods)
+{
+    const string kPreGapNucs = 
+        "GATTACAACGTGATTACAACGTGATTACAACGTGATTACAACGTGATTACAACGTGATTACA";
+    const string kPostGapNucs[2] = {
+        "TCGACCCACGCGTCCGGAGAAGTTTTTCACCTACTGGAACCCGCCTAGGGTACGGGAAAC",
+        "AGGTGCCCTCCAAAACGAGAGCGCGAACTGCAGCCTACGTCCCACTGCAGCTCAGGAGCA"
+    };
+
+    const string kLinesBeforeGap = 
+        ">Seq1\n" +
+        kPreGapNucs + "\n";
+    const string kLinesAfterGap = 
+        kPostGapNucs[0] + "\n" +
+        kPostGapNucs[1] + "\n";
+
+    // the 2 above, plus a gap line added in-between
+    const TSeqPos kNumDeltasExpected = 3;
+
+    // arbitrary gap length to use when the length doesn't matter
+    const TSeqPos kArbGapLen = 42;
+
+    const CFastaReader::TFlags kDefaultFastaFlags = 
+        CFastaReader::fParseGaps;
+
+    // test that numbers other than "100" will work
+    // (no values provided should imply [gap-type=unknown][linkage-evidence=unspecified])
+    // (and test that negative or zero fails)
+    ITERATE_BOTH_BOOL_VALUES(bIsUnknown) {
+        const int arrGapLensToTry[] = {-250, -8, 0, 1, 20, 84, 100, 158, 2093};
+        ITERATE_0_IDX(gapLenIdx, ArraySize(arrGapLensToTry) ) {
+            const int iGapLen = arrGapLensToTry[gapLenIdx];
+            const string sDataToRead = kLinesBeforeGap + ">?" + 
+                ( bIsUnknown ? "unk" : "") + 
+                NStr::NumericToString(iGapLen) + "\n" + kLinesAfterGap;
+
+            cerr << "Testing with " << (bIsUnknown ? "unknown" : "known") 
+                 << " gap size of " << iGapLen << endl;
+
+            // non-positive gap sizes should create a format error
+            const char * pchExpectedError = ( 
+                iGapLen <= 0 ? "eFormat" : "" );
+
+            CRef<CBioseq> pBioseq = s_ParseFasta(
+                sDataToRead, kDefaultFastaFlags, pchExpectedError );
+
+            // non-positive gap sizes should create a format error
+            if( iGapLen <= 0 ) {
+                BOOST_CHECK( ! pBioseq );
+                continue;
+            }
+
+            s_CheckOnlyBioseqGap(
+                pBioseq,
+                s_RefStd(kNumDeltasExpected),
+                s_RefStd( static_cast<TSeqPos>(iGapLen) ),
+                s_RefOrNull(bIsUnknown, CInt_fuzz::eLim_unk),
+                TRefStd<CSeq_gap::EType>(),
+                TRefStd<vector<CLinkage_evidence::EType> >() );
+        }
+    }
+
+    // test possible gap types
+    const CFastaReader::TGapTypeMap & gapTypeMap =
+        CFastaReader::GetNameToGapTypeInfoMap();
+
+    ITERATE_BOTH_BOOL_VALUES(bPutLinkEvidInInput) {
+        ITERATE( CFastaReader::TGapTypeMap, gap_type_text_it, gapTypeMap )
+        {
+            const char *pchGapType = gap_type_text_it->first;
+            const CFastaReader::SGapTypeInfo & gapTypeInfo =
+                gap_type_text_it->second;
+
+            // build the data we're reading;
+            CNcbiOstrstream fasta_in_strm;
+            fasta_in_strm << kLinesBeforeGap
+            << ">?unk" << kArbGapLen
+            << " [gap-type=" << pchGapType << ']';
+            if( bPutLinkEvidInInput ) {
+                fasta_in_strm << " [linkage-evidence=pcr]";
+            }
+            fasta_in_strm << '\n';
+            fasta_in_strm << kLinesAfterGap;
+
+            // print what we're doing here
+            cerr << "Testing gap-type " << pchGapType << "("
+                 << (bPutLinkEvidInInput ? "with" : "without" ) 
+                 << " a linkage-evidence)" << endl;
+
+            TWarnVec expectedWarningsVec;
+            if( bPutLinkEvidInInput ) 
+            {
+                if( gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Forbidden ) {
+                    expectedWarningsVec.push_back(
+                        CFastaReader::CWarning::eType_GapModsFoundButNoneExpected);
+                } else if( gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_UnspecifiedOnly ) {
+                    expectedWarningsVec.push_back(
+                        CFastaReader::CWarning::eType_ExtraGapModsFound);
+                }
+            } else {
+                if(gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Required ) 
+                {
+                    expectedWarningsVec.push_back(
+                        CFastaReader::CWarning::eType_ExpectedGapModsMissing);
+                }
+            }
+
+            CRef<CBioseq> pBioseq =
+                s_ParseFasta(
+                    CNcbiOstrstreamToString(fasta_in_strm),
+                    kDefaultFastaFlags,
+                    kEmptyStr,
+                    expectedWarningsVec);
+              
+            // add checking function
+            s_CheckOnlyBioseqGap(
+                pBioseq,
+                s_RefStd(kNumDeltasExpected),
+                s_RefStd(kArbGapLen),
+                s_RefStd(CInt_fuzz::eLim_unk),
+                s_RefStd(gapTypeInfo.m_eType),
+                s_RefOrNull(gapTypeInfo.m_eLinkEvid != CFastaReader::eLinkEvid_Forbidden,                 
+                    s_VecOfOne(
+                        gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Required &&
+                            bPutLinkEvidInInput ?
+                        CLinkage_evidence::eType_pcr :
+                        CLinkage_evidence::eType_unspecified)) );
+        }
+    }
+
+    // test interaction with "unspecified"
+    ITERATE( CFastaReader::TGapTypeMap, gap_type_text_it, gapTypeMap )
+    {
+        const char *pchGapType = gap_type_text_it->first;
+        const CFastaReader::SGapTypeInfo & gapTypeInfo = gap_type_text_it->second;
+
+        // build the data we're reading;
+        CNcbiOstrstream fasta_in_strm;
+        fasta_in_strm << kLinesBeforeGap
+            << ">?unk" << kArbGapLen
+            << " [gap-type=" << pchGapType << ']'
+            << " [linkage-evidence=unspecified]\n"
+            << kLinesAfterGap;
+
+        // print what we're doing here
+        cerr << "Testing gap-type " << pchGapType << " with 'unspecified'" << endl;
+
+        TWarnVec expectedWarningsVec;
+        switch( gapTypeInfo.m_eLinkEvid ) {
+        case CFastaReader::eLinkEvid_UnspecifiedOnly:
+            // no problem
+            break;
+        case CFastaReader::eLinkEvid_Required:
+            expectedWarningsVec.push_back(
+                CFastaReader::CWarning::eType_ExpectedGapModsMissing);
+            break;
+        case CFastaReader::eLinkEvid_Forbidden:
+            expectedWarningsVec.push_back(
+                CFastaReader::CWarning::eType_GapModsFoundButNoneExpected);
+            break;
+        default:
+            BOOST_FAIL("Unknown CFastaReader::ELinkEvid: " 
+                << static_cast<int>(gapTypeInfo.m_eLinkEvid) );
+            break;
+        }
+
+        CRef<CBioseq> pBioseq =
+            s_ParseFasta(
+            CNcbiOstrstreamToString(fasta_in_strm),
+            kDefaultFastaFlags,
+            kEmptyStr,
+            expectedWarningsVec);
+
+        // add checking function
+        s_CheckOnlyBioseqGap(
+            pBioseq,
+            s_RefStd(kNumDeltasExpected),
+            s_RefStd(kArbGapLen),
+            s_RefStd(CInt_fuzz::eLim_unk),
+            s_RefStd(gapTypeInfo.m_eType),
+            s_RefOrNull(
+                gapTypeInfo.m_eLinkEvid != CFastaReader::eLinkEvid_Forbidden, 
+                s_VecOfOne(CLinkage_evidence::eType_unspecified)) );
+    }
+
+    // test format errors after gap length
+    {
+        const char * arrBadGapMods[] = {
+            // bogus mod key
+            " [foo=baz]",
+            // bogus gap type
+            " [gap-type=foo]",
+            // bogus linkage-evidence
+            " [gap-type=between scaffolds] [linkage-evidence=foo]",
+            // extra junk on gap line (even if good mods)
+            " extra junk",
+            " [gap-type=short arm] extra junk",
+            " [gap-type=short arm] extra junk [linkage-evidence=map]",
+            // conflicting gap types
+            " [gap-type=short arm] [gap-type=heterochromatin]"
+        };
+        ITERATE_0_IDX( ii, ArraySize(arrBadGapMods) ) {
+            const string sDataToRead = kLinesBeforeGap +
+                ">?unk" + NStr::NumericToString(kArbGapLen) +
+                arrBadGapMods[ii] + "\n" + kLinesAfterGap;
+
+            CRef<CBioseq> pBioseq =
+                s_ParseFasta(
+                sDataToRead,
+                kDefaultFastaFlags,
+                "eFormat");
+
+            BOOST_CHECK( ! pBioseq );
+        }
+    }
+
+    // test multiple linkage evidences (both approaches)
+    {
+        // all ways should give the same result
+        const char * arrLinkageEvidences[] = {
+            // shouldn't matter if all in one semi-colon-separated mod
+            // or split across multiple ones
+            "[linkage-evidence=pcr;strobe;map]",
+            "[linkage-evidence=pcr][linkage-evidence=strobe][linkage-evidence=map]",
+            "[linkage-evidence=pcr;strobe][linkage-evidence=map]",
+            "[linkage-evidence=pcr][linkage-evidence=strobe;map]",
+            // dups should be ignored
+            "[linkage-evidence=pcr;strobe;pcr;map]",
+            "[linkage-evidence=pcr][linkage-evidence=strobe][linkage-evidence=pcr][linkage-evidence=map]"
+        };
+
+        // same result every iteration, so just build it here
+        vector<CLinkage_evidence::EType> vecExpectedLinkEvids;
+        vecExpectedLinkEvids.push_back(CLinkage_evidence::eType_pcr);
+        vecExpectedLinkEvids.push_back(CLinkage_evidence::eType_strobe);
+        vecExpectedLinkEvids.push_back(CLinkage_evidence::eType_map);
+        sort( vecExpectedLinkEvids.begin(), vecExpectedLinkEvids.end() );
+
+        ITERATE_0_IDX(linkEvidIdx, ArraySize(arrLinkageEvidences) ) {
+            const char * pchLinkageEvidences = 
+                arrLinkageEvidences[linkEvidIdx];
+
+            cerr << "Trying: " << pchLinkageEvidences << endl;
+
+            const string sDataToRead = kLinesBeforeGap +
+                ">?unk" + NStr::NumericToString(kArbGapLen) +
+                " [gap-type=between scaffolds] " + pchLinkageEvidences + "\n" + 
+                kLinesAfterGap;
+
+            CRef<CBioseq> pBioseq =
+                s_ParseFasta(sDataToRead, kDefaultFastaFlags);
+
+            BOOST_REQUIRE( pBioseq );
+
+            s_CheckOnlyBioseqGap(
+                pBioseq,
+                s_RefStd(kNumDeltasExpected),
+                s_RefStd(kArbGapLen),
+                s_RefStd(CInt_fuzz::eLim_unk),
+                s_RefStd(CSeq_gap::eType_contig),
+                s_RefStd(vecExpectedLinkEvids) );
+        }
+    }
+
+    // test that canonicalization does work
+    // (that is, case, etc. is ignored)
+    {
+        const string sDataToRead = kLinesBeforeGap +
+            ">?unk" + NStr::NumericToString(kArbGapLen) +
+            " [  GAP tYpe  =   Between_Scaffolds  ] [ linkage_evidence  = Align xgenus   ]\n" + 
+            kLinesAfterGap;
+
+        CRef<CBioseq> pBioseq =
+            s_ParseFasta(
+            sDataToRead,
+            kDefaultFastaFlags);
+
+        BOOST_REQUIRE( pBioseq );
+
+        vector<CLinkage_evidence::EType> vecExpectedLinkEvids(
+            1, CLinkage_evidence::eType_align_xgenus);
+        
+        s_CheckOnlyBioseqGap(
+            pBioseq,
+            s_RefStd(kNumDeltasExpected),
+            s_RefStd(kArbGapLen),
+            s_RefStd(CInt_fuzz::eLim_unk),
+            s_RefStd(CSeq_gap::eType_contig),
+            s_RefStd(s_VecOfOne(CLinkage_evidence::eType_align_xgenus)) );
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
+{
+    const string kDefline = ">Seq1";
+    const string kNucsBeforeGap = 
+        "GATTACAACGTGATTACAACGTGATTACAAC";
+    // arbitrary kArbGapSize, but used prime to make accidentally correct 
+    // results less likely 
+    const TSeqPos kArbGapSize = 17;
+    const string kNucsAfterGap = "GTGATTACAACGTGATTACAACGTGATTACA";
+
+    const string kExpectedBases = kNucsBeforeGap + 
+        string(kArbGapSize, 'N') +
+        kNucsAfterGap;
+    // test if the fParseGaps flag is NOT set, which would result in 
+    // one big sequence (no deltas).
+
+    // all these different representations should result in a gap
+    // of the same size
+    const string arrGapStrings[] = {
+        string(kArbGapSize, 'N'),
+        string(kArbGapSize, '-'),
+        "\n>?" + NStr::NumericToString(kArbGapSize) + "\n",
+        "\n>?unk" + NStr::NumericToString(kArbGapSize) + "\n",
+        "\n>?unk" + NStr::NumericToString(kArbGapSize) + 
+            " [gap-type=unknown]  [linkage-evidence=unspecified]\n",
+        "\n>?unk" + NStr::NumericToString(kArbGapSize) + 
+            " [gap-type=repeat within scaffold]  [linkage-evidence=pcr]\n"
+    };
+    ITERATE_0_IDX( gap_str_idx, ArraySize(arrGapStrings) ) {
+        const string sDataToRead =
+            kDefline + "\n" +
+            kNucsBeforeGap + arrGapStrings[gap_str_idx] + kNucsAfterGap + "\n";
+
+
+        // if there are substantive mods on the gaps, a warning
+        // is expected
+        TWarnVec expectedWarnings;
+        if( sDataToRead.find('[') != string::npos && 
+            sDataToRead.find("unknown") == string::npos ) 
+        {
+            expectedWarnings.push_back(
+                CFastaReader::CWarning::eType_GapModsFoundButNoneExpected);
+        }
+
+        CRef<CBioseq> pBioseq =
+            s_ParseFasta(sDataToRead, 0, 
+                kEmptyStr, expectedWarnings);
+
+        BOOST_REQUIRE( pBioseq );
+
+        // should NOT contain a gap per se
+        NCBITEST_CHECK( ! pBioseq->GetInst().GetSeq_data().IsGap() );
+
+        CSeqVector seq_vec(*pBioseq, NULL, CBioseq_Handle::eCoding_Iupac);
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            kExpectedBases.begin(), kExpectedBases.end(),
+            seq_vec.begin(), seq_vec.end() );
+    }
 }
