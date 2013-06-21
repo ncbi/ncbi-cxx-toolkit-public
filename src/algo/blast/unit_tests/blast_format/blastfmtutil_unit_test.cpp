@@ -134,6 +134,7 @@ BOOST_AUTO_TEST_CASE(GetBlastDeflineFromBlastDb)
         TGi cur_gi =  FindGi(cur_id);
         BOOST_REQUIRE (gi==cur_gi);
 
+        BOOST_WARN_MESSAGE((*iter)->IsSetLinks(), "Links are not set, test is inactive");
         if ((*iter)->IsSetLinks()){
             int linkout = 0;
             ITERATE(list< int >, iter2, (*iter)->GetLinks()){
