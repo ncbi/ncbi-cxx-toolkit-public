@@ -419,6 +419,7 @@ BFY	s	John Innes Horticultural Institution
 BG	s	University of Bergen, Botanical Museum
 BGAAS	s	Botanical Garden of the Armenian Academy of Sciences, Flora and Vegetation Department
 BGHan	s	Bundesanstalf fuer Geowissenschaften und Rohstoffe
+BGIV	c	Banco de Glomeromycota In Vitro (Bank of Glomeromycota In Vitro)
 BGM	s	Bath Geology Museum (now the Royal Literary and Scientific Institution)
 BGR	s	Bundesanstalt fur Geowissenschaften und Rohstoffe
 BGS	s	British Geological Survey
@@ -514,6 +515,7 @@ BNHM<IND>	s	Bombay Natural History Museum
 BNHS	s	Bombay Natural History Society
 BNI	c	Bernhard Nocht Institute for Tropical Medicine
 BNL	s	Bundesamt fuer Naturschutz
+BNM	c	Banco Nacional Microorganismos (National Bank of Microorganisms)
 BNP	s	Banff Park Museum
 BNPL	s	Brighton Public Library
 BNRH	s	Buffelskloof Nature Reserve
@@ -859,6 +861,7 @@ CENA<BRZ>	s	Centro de Energia Nuclear na Agricultura, Universidade de Sao Paulo
 CENA<NIC>	s	Centro Nacional de Proteccion Vegetal
 CENACUMI	c	Centro Nacional de Cultivos Microbianos (National Center For Microbial Cultures)
 CENG	s	Centro Experimental de Nueva Guinea
+CEP	c	Entomopathogenic Fungal Culture Collection of Argentina
 CEPEC	s	CEPEC, CEPLAC
 CEPH	b	Foundation Jean Dausset (CEPH)
 CEPIM	c	Centro per gli Enterobatteri Patogeni per l'Italia Meridionale
@@ -1690,7 +1693,7 @@ FCNI	s	Forest Commission of N.S.W.
 FCO	s	Universidad de Oviedo, Departamento de Biologia de Organismos y Sistemas
 FCQ	s	Universidad Nacional de Asuncion, Departamento de Botanica, Direccion de Investigacion
 FCRM	s	Fisheries College Reference Museum
-FCT	c	FCT
+FCT	c	FCT (Forestry Commission Tasmania)
 FCTH	s	Forestry Commission of Tasmania
 FCU	s	Fukien Christian University
 FCUG	c	Fungal Cultures University of Goteborg
@@ -3168,6 +3171,7 @@ LIVC	s	Liverpool Botanic Garden
 LIVCM	s	Liverpool County Museum
 LIVNFC	s	Liverpool Naturalists' Field Club
 LIVU	s	Hartley Botanical Laboratories
+LJC	c	Coleccion de fitopatogenos de cultivos horticolas
 LJM	s	Prirodoslovni Muzej Slovenije
 LJU	s	University of Ljubljana, Botany Department
 LKHD	s	Lakehead University, Biology Department
@@ -3220,6 +3224,7 @@ LPFU	s	Lehrstuhl fur Palaontologie
 LPL	s	The University
 LPN	s	Littlehampton Museum
 LPS	s	Universidad Nacional de La Plata, Instituto de Botanica Carlos Spegazzini
+LPSC	c	La Plata Spegazzini Collection
 LPSP	s	Lumus Pond State Park, Whale Wallow Nature Center
 LPUB	s	Laboratorul de Paleontologie
 LPUP	s	Laboratoire de Parasitologie
@@ -3499,6 +3504,7 @@ MCZ:Mamm	s	Museum of Comparative Zoology, Harvard University, Mammalogy Collecti
 MCZR	s	Museo Civico di Zoologia
 MD<AGO>	s	Museu Regional do Dundo
 MD<DEU>	s	Museum Donaueschingen
+MDC	c	Microbial Depository Center (National Microbial Culture Collection of the Republic of Armenia)
 MDE	s	Musee des Dinosaures in Esperaza
 MDFW	s	Massachusetts Division of Fisheries and Wildlife
 MDH<GBR>	s	Dorman Museum
@@ -4201,7 +4207,7 @@ NIAES	c	National Institute for Agro-Environmental Sciences
 NIAH	c	National Institute of Animal Health
 NIAS	sb	National Institute of Agrobiological Sciences
 NIBH	c	National Institute of Bioscience and Human-Technology
-NIBR	s	National Institute of Biological Resources
+NIBR	scb	National Institute of Biological Resources
 NICC	s	National Insect Collection
 NICD	s	Malaria Research Center
 NICE	s	Museum d'Histoire Naturelle
@@ -5694,6 +5700,7 @@ TCDL	s	Trinity College Library, Manuscript Department
 TCDU<IRL>	b	Trinity College, Dublin University, Department of Zoology DNA repository
 TCDU<UGA>	s	Ministry of Animal Industry and Fisheries
 TCF	s	National Chung Hsing University, Forestry Department
+TCFB	c	Tasmanian Collection of Fish Bacteria
 TCMM	c	Thai Collection of Medical Microorganism, Department of Pathology, Faculty of Veterinary Science
 TCNM	s	Timpanogos Cave National Monument
 TCSW	s	Texas Women's University, Biology Department
