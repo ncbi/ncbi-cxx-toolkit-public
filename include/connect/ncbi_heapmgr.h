@@ -56,25 +56,25 @@ typedef struct SHEAP_tag* HEAP;
 /* Header of a heap block
  */
 typedef struct {
-    unsigned int flag;  /* (short)flag == 0 if block is vacant              */
-    TNCBI_Size   size;  /* size of the block (including the block header)   */
+    unsigned int flag;  /* (flag & 1) == 0 if the block is vacant         */
+    TNCBI_Size   size;  /* size of the block (including the block header) */
 } SHEAP_Block;
 
 
 /* Callback to resize the heap (a la 'realloc').
- * NOTE: the returned address must be aligned with the 'double' boundary!
+ * NOTE: the returned address must be aligned at the 'double' boundary!
  *
  *   old_base  |  new_size  |  Expected result
  * ------------+------------+--------------------------------------------------
- *   non-NULL  |     0      | Deallocate old_base and return 0
+ *   non-NULL  |     0      | Deallocate old_base, return 0
  *   non-NULL  |  non-zero  | Reallocate to the requested size, return new base
- *      0      |  non-zero  | Allocate (anew) and return base
+ *      0      |  non-zero  | Allocate anew, return base (return 0 on error)
  *      0      |     0      | Do nothing, return 0
  * ------------+------------+--------------------------------------------------
- * Note that reallocation can request either to expand or to shrink the
- * heap extent.  When (re-)allocation fails, the callback should return 0
- * (and must not change the original heap extent / content, if any).
- * When expected to return 0, this callback must always do so.
+ * Note that reallocation can request either to expand or to shrink the heap
+ * extent.  When (re-)allocation fails, the callback should return 0 (and must
+ * retain the original heap extent / content, if any).  When expected to return
+ * 0, this callback must always do so.
  */
 typedef void* (*FHEAP_Resize)
 (void*      old_base,  /* current base of the heap to be expanded           */
@@ -95,14 +95,16 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
  );
 
 
-/* Attach to an already existing heap (in read-only mode).
+/* Attach to an already existing heap (in read-only mode), calculating the heap
+ * extent by a heap end marker (but only within the maximal specified size).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Attach
-(const void* base,         /* base of the heap to attach to */
- int         serial        /* serial number to assign       */
+(const void* base,         /* base of the heap to attach to                  */
+ TNCBI_Size  maxsize,      /* maximal heap extent, or 0 for unlimited search */
+ int         serial        /* serial number to assign                        */
  );
 
-/* Expedited HEAP_Attach() that does not calculate heap size on its own */
+/* Expedited HEAP_Attach() that does not calculate heap extent on its own */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachFast
 (const void* base,         /* base of the heap to attach to                  */
  TNCBI_Size  size,         /* heap extent -- must be non-0 for non-NULL base */
@@ -110,20 +112,16 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachFast
  );
 
 
-/* Allocate a new block of memory in the heap.
+/* Allocate a new block of memory in the heap toward either the base or the
+ * end of the heap, depending on the "hint" parameter:
+ * "hint" == 0 for base;
+ * "hint" != 0 for end.
+ * Return NULL if allocation has failed.
  */
 extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Alloc
-(HEAP       heap,          /* heap handle                          */
- TNCBI_Size size           /* data size of the block to accomodate */
- );
-
-
-/* Allocate a new block of memory in the heap
- * (faster than HEAP_Alloc() but inverses the insertion order).
- */
-extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_AllocFast
-(HEAP       heap,          /* heap handle                          */
- TNCBI_Size size           /* data size of the block to accomodate */
+(HEAP        heap,         /* heap handle                           */
+ TNCBI_Size  size,         /* data size of the block to accommodate */
+ int/*bool*/ hint
  );
 
 
@@ -141,6 +139,7 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Free
  * coalesce, to use this call again while walking the following rule must
  * be utilized:  If "prev" was free, "prev" must not get advanced;
  * otherwise, "prev" must be updated with "ptr"'s value.
+ * NOTE:  This call will be removed.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
 (HEAP               heap,  /* heap handle         */
@@ -150,12 +149,21 @@ extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
 
 
 /* Iterate through the heap blocks.
- * Return pointer to the block following block "prev_block".
- * Return NULL if "prev_block" is the last block of the heap.
+ * Return pointer to the block following the block "prev".
+ * Return NULL if "prev" is the last block of the heap.
  */
 extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
-(const HEAP         heap,  /* heap handle                                  */
- const SHEAP_Block* prev   /* (if 0, then get the first block of the heap) */
+(const HEAP         heap,  /* heap handle                         */
+ const SHEAP_Block* prev   /* if 0, then get the first heap block */
+ );
+
+
+/* Same as HEAP_Walk() but skip over free blocks so that only used blocks show
+ * (nevertheless it can also accept prev pointing to a free block).
+ */
+extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Next
+(const HEAP         heap,  /* heap handle                              */
+ const SHEAP_Block* prev   /* if 0, then get the first used heap block */
  );
 
 
@@ -166,13 +174,13 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
  * enough to allow the trimming.  NULL gets returned on NULL or read-only
  * heaps, or if a resize error has occurred.
  * Note that trimming can cause the entire heap extent (of an empty heap)
- * to deallocate (so that HEAP_Base() and HEAP_Size() will return 0).
+ * to deallocate (so that HEAP_Base() and HEAP_Size() will both return 0).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Trim(HEAP heap);
 
 
 /* Make a snapshot of a given heap.  Return a read-only heap
- * (like the one after HEAP_Attach[Fast]), which must be freed by a call
+ * (like the one after HEAP_Attach[Fast]()), which must be freed by a call
  * to either HEAP_Detach() or HEAP_Destroy() when no longer needed.
  * A copy is created reference-counted (with the initial ref.count set to 1).
  */
