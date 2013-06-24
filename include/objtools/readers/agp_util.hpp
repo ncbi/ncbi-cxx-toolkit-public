@@ -578,6 +578,13 @@ public:
         G_First = G_InvalidCompId,
     };
 
+    static const char* ErrorWarningOrNote(int code)
+    {
+        if(code<W_First || code>W_Last) return "ERROR";
+        if(code==W_ShortGap || code==W_AssumingVersion) return "NOTE";
+        return "WARNING";
+    }
+
     static const char* GetMsg(int code);
 
 protected:
@@ -643,7 +650,11 @@ public:
     virtual void PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo);
 
     // Construct a readable message on total error & warning counts
-    static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count);
+    static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count);
+    static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)
+    {
+      PrintTotals(ostr, e_count, w_count, 0, skipped_count);
+    }
     static void PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count);
 
     CAgpErrEx(CNcbiOstream* out=&cerr, bool use_xml=false);

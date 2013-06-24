@@ -676,16 +676,18 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
         e_count==m_AgpErr->CountTotals(CAgpErrEx::E_NoValidLines)
     ) return; // all files are empty, no need to say it again
 
+    // these were already included in w_count
+    int note_count = m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap) + m_AgpErr->CountTotals(CAgpErrEx::W_AssumingVersion);
+
     CAgpErrEx::TMapCcodeToString hints;
     if(use_xml) {
       // jira/browse/GP-594: [iinsignificant warning are] making it hard for the naive user to know what to fix
       // w_count -= m_AgpErr->CountTotals(CAgpErrEx::W_GapLineMissingCol9);
-      int note_count = m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap) + m_AgpErr->CountTotals(CAgpErrEx::W_AssumingVersion);
       m_AgpErr->PrintTotalsXml(out, e_count, w_count-note_count, note_count, m_AgpErr->m_msg_skipped);
     }
     else {
       out << "\n";
-      m_AgpErr->PrintTotals(out, e_count, w_count, m_AgpErr->m_msg_skipped);
+      m_AgpErr->PrintTotals(out, e_count, w_count-note_count, note_count, m_AgpErr->m_msg_skipped);
       if(m_AgpErr->m_MaxRepeatTopped) {
         out << " (to print all: -limit 0; to skip some: -skip CODE)";
       }
@@ -1330,7 +1332,7 @@ void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
     else {
       string tmp;
       NStr::Replace(label, "(s)", cnt==1 ? "" : "s", tmp);
-      out << "\n" << cnt << " " << tmp << ": ";
+      out << "\nWARNING -- " << cnt << " " << tmp << ": ";
     }
 
     if(!use_xml && cnt==1) {

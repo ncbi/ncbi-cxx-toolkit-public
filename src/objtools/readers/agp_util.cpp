@@ -216,7 +216,9 @@ void CAgpErr::Msg(int code, const string& details, int appliesTo)
         m_apply_to |= appliesTo;
 
         string& m( appliesTo==fAtPrevLine ? m_messages_prev_line : m_messages );
-        m += ( code<E_Last ? "\tERROR: " : "\tWARNING: " );
+        m += "\t";
+        m += ErrorWarningOrNote(code);
+        m += ": " ;
         m += FormatMessage(GetMsg(code), details);
         m += "\n";
     }
@@ -1255,18 +1257,14 @@ void CAgpErrEx::PrintLineXml(CNcbiOstream& ostr,
 void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
         const string& details)
 {
-    ostr<< "\t" << (
-        (code>=W_First && code<W_Last) ? "WARNING" : "ERROR"
-    ) << (code <=E_LastToSkipLine ? ", line skipped" : "")
-    << ": " << FormatMessage( GetMsg(code), details ) << "\n";
+    ostr<< "\t" << ErrorWarningOrNote(code)
+        << (code <=E_LastToSkipLine ? ", line skipped" : "")
+        << ": " << FormatMessage( GetMsg(code), details ) << "\n";
 }
 
 void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo)
 {
-    ostr<< " <message severity=\"" << (
-        (code<W_First || code>W_Last) ? "ERROR" :
-        (code==W_ShortGap || code==W_AssumingVersion) ? "NOTE" : "WARNING"
-    ) << "\"";
+    ostr<< " <message severity=\"" << ErrorWarningOrNote(code) << "\"";
     if(code <=E_LastToSkipLine) ostr << " line_skipped=\"1\"";
     ostr<<">\n";
 
@@ -1589,7 +1587,7 @@ void CAgpErrEx::PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int
     ostr << " <skipped>"  << skipped_count << "</skipped>\n";
 }
 
-void CAgpErrEx::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)
+void CAgpErrEx::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count)
 {
     if     (e_count==0) ostr << "No errors, ";
     else if(e_count==1) ostr << "1 error, "  ;
@@ -1598,6 +1596,11 @@ void CAgpErrEx::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int sk
     if     (w_count==0) ostr << "no warnings";
     else if(w_count==1) ostr << "1 warning";
     else                ostr << w_count << " warnings";
+
+    if(note_count>0) {
+        ostr << ", " << note_count << " note";
+        if(note_count>1) ostr << "s";
+    }
 
     if(skipped_count) {
         ostr << "; " << skipped_count << " not printed";
