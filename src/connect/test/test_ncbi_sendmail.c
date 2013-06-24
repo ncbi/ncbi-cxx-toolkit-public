@@ -97,6 +97,13 @@ int main(int argc, const char* argv[])
                         strcasecmp(val, "data") == 0))) {
         SOCK_SetDataLoggingAPI(eOn);
     }
+    
+    SendMailInfo_InitEx(&info, 0, eCORE_UsernameReal);
+    CORE_LOGF(eLOG_Note, ("REAL: <%s>", info.from));
+    SendMailInfo_InitEx(&info, 0, eCORE_UsernameLogin);
+    CORE_LOGF(eLOG_Note, ("LOGIN: <%s>", info.from));
+    SendMailInfo_InitEx(&info, 0, eCORE_UsernameCurrent);
+    CORE_LOGF(eLOG_Note, ("CURRENT: <%s>", info.from));
 
     strcpy(val, "@");
     SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
