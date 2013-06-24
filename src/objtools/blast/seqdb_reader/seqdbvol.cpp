@@ -2058,11 +2058,6 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
 {
     pig = -1;
     
-    if (!m_PigFileOpened) x_OpenPigFile(locked);
-    if (m_IsamPig.Empty()) {
-        return false;
-    }
-    
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, NULL, locked);
     
     if (BDLS.Empty() || (! BDLS->IsSet())) {
