@@ -112,7 +112,10 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_NotifHifreqInterval(0, 100000000), // 0.1 sec
     m_NotifHifreqPeriod(5, 0),
     m_NotifLofreqMult(50),
-    m_DumpBufferSize(100)
+    m_DumpBufferSize(100),
+    m_DumpClientBufferSize(100),
+    m_DumpAffBufferSize(100),
+    m_DumpGroupBufferSize(100)
 {
     _ASSERT(!queue_name.empty());
 }
@@ -221,6 +224,9 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_NotifLofreqMult       = params.notif_lofreq_mult;
     m_HandicapTimeout       = CNSPreciseTime(params.notif_handicap);
     m_DumpBufferSize        = params.dump_buffer_size;
+    m_DumpClientBufferSize  = params.dump_client_buffer_size;
+    m_DumpAffBufferSize     = params.dump_aff_buffer_size;
+    m_DumpGroupBufferSize   = params.dump_group_buffer_size;
     m_NCAPISectionName      = params.netcache_api_section_name;
 
     m_ClientsRegistry.SetBlacklistTimeout(m_BlacklistTime);
@@ -2394,26 +2400,27 @@ CNSPreciseTime CQueue::NotifyExactListeners(void)
 string CQueue::PrintClientsList(bool verbose) const
 {
     return m_ClientsRegistry.PrintClientsList(this, m_AffinityRegistry,
-                                              verbose);
+                                              m_DumpClientBufferSize, verbose);
 }
 
 
 string CQueue::PrintNotificationsList(bool verbose) const
 {
-    return m_NotificationsList.Print(m_ClientsRegistry,
-                                     m_AffinityRegistry, verbose);
+    return m_NotificationsList.Print(m_ClientsRegistry, m_AffinityRegistry,
+                                     verbose);
 }
 
 
 string CQueue::PrintAffinitiesList(bool verbose) const
 {
-    return m_AffinityRegistry.Print(this, m_ClientsRegistry, verbose);
+    return m_AffinityRegistry.Print(this, m_ClientsRegistry,
+                                    m_DumpAffBufferSize, verbose);
 }
 
 
 string CQueue::PrintGroupsList(bool verbose) const
 {
-    return m_GroupRegistry.Print(this, verbose);
+    return m_GroupRegistry.Print(this, m_DumpGroupBufferSize, verbose);
 }
 
 

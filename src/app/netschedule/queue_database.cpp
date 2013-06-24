@@ -438,6 +438,9 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.notif_handicap = CNSPreciseTime(m_QueueDescriptionDB.notif_handicap_sec,
                                                m_QueueDescriptionDB.notif_handicap_nsec);
         params.dump_buffer_size = m_QueueDescriptionDB.dump_buffer_size;
+        params.dump_client_buffer_size = m_QueueDescriptionDB.dump_client_buffer_size;
+        params.dump_aff_buffer_size = m_QueueDescriptionDB.dump_aff_buffer_size;
+        params.dump_group_buffer_size = m_QueueDescriptionDB.dump_group_buffer_size;
         params.run_timeout = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_sec,
                                             m_QueueDescriptionDB.run_timeout_nsec);
         params.program_name = m_QueueDescriptionDB.program_name;
@@ -515,6 +518,9 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.notif_handicap_sec = params.notif_handicap.Sec();
     m_QueueDescriptionDB.notif_handicap_nsec = params.notif_handicap.NSec();
     m_QueueDescriptionDB.dump_buffer_size = params.dump_buffer_size;
+    m_QueueDescriptionDB.dump_client_buffer_size = params.dump_client_buffer_size;
+    m_QueueDescriptionDB.dump_aff_buffer_size = params.dump_aff_buffer_size;
+    m_QueueDescriptionDB.dump_group_buffer_size = params.dump_group_buffer_size;
     m_QueueDescriptionDB.run_timeout_sec = params.run_timeout.Sec();
     m_QueueDescriptionDB.run_timeout_nsec = params.run_timeout.NSec();
     m_QueueDescriptionDB.program_name = params.program_name;
@@ -676,6 +682,15 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "dump_buffer_size")
                 params.dump_buffer_size =
                         params.ReadDumpBufferSize(reg, section_name);
+            else if (*val == "dump_client_buffer_size")
+                params.dump_client_buffer_size =
+                        params.ReadDumpClientBufferSize(reg, section_name);
+            else if (*val == "dump_aff_buffer_size")
+                params.dump_aff_buffer_size =
+                        params.ReadDumpAffBufferSize(reg, section_name);
+            else if (*val == "dump_group_buffer_size")
+                params.dump_group_buffer_size =
+                        params.ReadDumpGroupBufferSize(reg, section_name);
             else if (*val == "run_timeout")
                 params.run_timeout =
                         params.ReadRunTimeout(reg, section_name);

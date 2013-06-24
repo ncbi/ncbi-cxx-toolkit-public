@@ -111,6 +111,7 @@ class CNSGroupsRegistry
                         unsigned int  job_id);
         void  ClearMemoryAndDatabase(void);
         string  Print(const CQueue *  queue,
+                      size_t          batch_size,
                       bool            verbose) const;
 
         // Used to load the group DB table and register loaded jobs.

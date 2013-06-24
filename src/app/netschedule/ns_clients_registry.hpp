@@ -97,6 +97,7 @@ class CNSClientsRegistry
 
         string  PrintClientsList(const CQueue *               queue,
                                  const CNSAffinityRegistry &  aff_registry,
+                                 size_t                       batch_size,
                                  bool                         verbose) const;
 
         void  SetWaiting(const CNSClientId &          client,

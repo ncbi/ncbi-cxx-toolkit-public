@@ -144,6 +144,7 @@ class CNSAffinityRegistry
 
         string Print(const CQueue *              queue,
                      const CNSClientsRegistry &  clients_registry,
+                     size_t                      batch_size,
                      bool                        verbose) const;
 
         // Used to load the affinity DB table and register loaded jobs.

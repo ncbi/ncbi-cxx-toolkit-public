@@ -534,10 +534,10 @@ void  CNSAffinityRegistry::SetWaitClientForAffinities(unsigned int          clie
 
 string  CNSAffinityRegistry::Print(const CQueue *              queue,
                                    const CNSClientsRegistry &  clients_registry,
+                                   size_t                      batch_size,
                                    bool                        verbose) const
 {
     string              result;
-    const size_t        max_batch_size = 1000;
     TNSBitVector        batch;
 
     TNSBitVector                registered_affs = GetRegisteredAffinities();
@@ -547,7 +547,7 @@ string  CNSAffinityRegistry::Print(const CQueue *              queue,
         batch.set_bit(*en);
         ++en;
 
-        if (batch.count() >= max_batch_size) {
+        if (batch.count() >= batch_size) {
             result += x_PrintSelected(batch, queue, clients_registry,
                                       verbose) + "\n";
             batch.clear();

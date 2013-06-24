@@ -271,10 +271,10 @@ void  CNSGroupsRegistry::ClearMemoryAndDatabase(void)
 
 
 string  CNSGroupsRegistry::Print(const CQueue *  queue,
+                                 size_t          batch_size,
                                  bool            verbose) const
 {
     string              result;
-    const size_t        max_batch_size = 1000;
     TNSBitVector        batch;
 
     TNSBitVector                registered_groups = GetRegisteredGroups();
@@ -284,7 +284,7 @@ string  CNSGroupsRegistry::Print(const CQueue *  queue,
         batch.set_bit(*en);
         ++en;
 
-        if (batch.count() >= max_batch_size) {
+        if (batch.count() >= batch_size) {
             result += x_PrintSelected(batch, queue, verbose);
             batch.clear();
         }

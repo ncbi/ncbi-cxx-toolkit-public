@@ -48,6 +48,9 @@ static CNSPreciseTime   default_notif_hifreq_period(5, 0);
 static unsigned int     default_notif_lofreq_mult = 50;
 static CNSPreciseTime   default_notif_handicap(0, 0);
 static unsigned int     default_dump_buffer_size = 100;
+static unsigned int     default_dump_client_buffer_size = 100;
+static unsigned int     default_dump_aff_buffer_size = 100;
+static unsigned int     default_dump_group_buffer_size = 100;
 static CNSPreciseTime   default_run_timeout(3600, 0);
 static unsigned int     default_failed_retries = 0;
 static CNSPreciseTime   default_blacklist_time = CNSPreciseTime(2147483647, 0);
@@ -68,6 +71,9 @@ SQueueParameters::SQueueParameters() :
     notif_lofreq_mult(default_notif_lofreq_mult),
     notif_handicap(default_notif_handicap),
     dump_buffer_size(default_dump_buffer_size),
+    dump_client_buffer_size(default_dump_client_buffer_size),
+    dump_aff_buffer_size(default_dump_aff_buffer_size),
+    dump_group_buffer_size(default_dump_group_buffer_size),
     run_timeout(default_run_timeout),
     program_name(""),
     failed_retries(default_failed_retries),
@@ -100,6 +106,9 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     notif_lofreq_mult = ReadNotifLofreqMult(reg, sname);
     notif_handicap = ReadNotifHandicap(reg, sname);
     dump_buffer_size = ReadDumpBufferSize(reg, sname);
+    dump_client_buffer_size = ReadDumpClientBufferSize(reg, sname);
+    dump_aff_buffer_size = ReadDumpAffBufferSize(reg, sname);
+    dump_group_buffer_size = ReadDumpGroupBufferSize(reg, sname);
     run_timeout = ReadRunTimeout(reg, sname);
     program_name = ReadProgram(reg, sname);
     failed_retries = ReadFailedRetries(reg, sname);
@@ -165,6 +174,21 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         AddParameterToDiffString(diff, "dump_buffer_size",
                                  dump_buffer_size,
                                  other.dump_buffer_size);
+
+    if (dump_client_buffer_size != other.dump_client_buffer_size)
+        AddParameterToDiffString(diff, "dump_client_buffer_size",
+                                 dump_client_buffer_size,
+                                 other.dump_client_buffer_size);
+
+    if (dump_aff_buffer_size != other.dump_aff_buffer_size)
+        AddParameterToDiffString(diff, "dump_aff_buffer_size",
+                                 dump_aff_buffer_size,
+                                 other.dump_aff_buffer_size);
+
+    if (dump_group_buffer_size != other.dump_group_buffer_size)
+        AddParameterToDiffString(diff, "dump_group_buffer_size",
+                                 dump_group_buffer_size,
+                                 other.dump_group_buffer_size);
 
     if (run_timeout != other.run_timeout)
         AddParameterToDiffString(
@@ -290,6 +314,9 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "notif_lofreq_mult" + suffix + NStr::NumericToString(notif_lofreq_mult) + separator +
     prefix + "notif_handicap" + suffix + NS_FormatPreciseTimeAsSec(notif_handicap) + separator +
     prefix + "dump_buffer_size" + suffix + NStr::NumericToString(dump_buffer_size) + separator +
+    prefix + "dump_client_buffer_size" + suffix + NStr::NumericToString(dump_client_buffer_size) + separator +
+    prefix + "dump_aff_buffer_size" + suffix + NStr::NumericToString(dump_aff_buffer_size) + separator +
+    prefix + "dump_group_buffer_size" + suffix + NStr::NumericToString(dump_group_buffer_size) + separator +
     prefix + "run_timeout" + suffix + NS_FormatPreciseTimeAsSec(run_timeout) + separator +
     prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
     prefix + "blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(blacklist_time) + separator +
@@ -418,8 +445,76 @@ SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
     else if (val > 10000) {
         LOG_POST(Warning << "[" << sname
                          << "].dump_buffer_size should not be larger than "
-                            "10000. Default value: " << default_dump_buffer_size
+                            "10000. The value 10000 is used.");
+        val = 10000;    // Avoid too large buffer
+    }
+    return val;
+}
+
+unsigned int
+SQueueParameters::ReadDumpClientBufferSize(const IRegistry &  reg,
+                                           const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("dump_client_buffer_size",
+                                      default_dump_client_buffer_size);
+    if (val < default_dump_client_buffer_size) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_client_buffer_size should not be less than "
+                         << default_dump_client_buffer_size
+                         << ". Default value: " << default_dump_client_buffer_size
                          << " is used.");
+        val = default_dump_client_buffer_size;  // Avoid too small buffer
+    }
+    else if (val > 10000) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_client_buffer_size should not be larger than "
+                            "10000. The value 10000 is used.");
+        val = 10000;    // Avoid too large buffer
+    }
+    return val;
+}
+
+unsigned int
+SQueueParameters::ReadDumpAffBufferSize(const IRegistry &  reg,
+                                        const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("dump_aff_buffer_size",
+                                      default_dump_aff_buffer_size);
+    if (val < default_dump_aff_buffer_size) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_aff_buffer_size should not be less than "
+                         << default_dump_aff_buffer_size
+                         << ". Default value: " << default_dump_aff_buffer_size
+                         << " is used.");
+        val = default_dump_aff_buffer_size;  // Avoid too small buffer
+    }
+    else if (val > 10000) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_aff_buffer_size should not be larger than "
+                            "10000. The value 10000 is used.");
+        val = 10000;    // Avoid too large buffer
+    }
+    return val;
+}
+
+unsigned int
+SQueueParameters::ReadDumpGroupBufferSize(const IRegistry &  reg,
+                                          const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("dump_group_buffer_size",
+                                      default_dump_group_buffer_size);
+    if (val < default_dump_group_buffer_size) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_group_buffer_size should not be less than "
+                         << default_dump_group_buffer_size
+                         << ". Default value: " << default_dump_group_buffer_size
+                         << " is used.");
+        val = default_dump_group_buffer_size;  // Avoid too small buffer
+    }
+    else if (val > 10000) {
+        LOG_POST(Warning << "[" << sname
+                         << "].dump_group_buffer_size should not be larger than "
+                            "10000. The value 10000 is used.");
         val = 10000;    // Avoid too large buffer
     }
     return val;

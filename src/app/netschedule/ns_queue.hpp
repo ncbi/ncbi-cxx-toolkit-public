@@ -556,6 +556,9 @@ private:
     CNSPreciseTime               m_HandicapTimeout;
 
     unsigned int                 m_DumpBufferSize;
+    unsigned int                 m_DumpClientBufferSize;
+    unsigned int                 m_DumpAffBufferSize;
+    unsigned int                 m_DumpGroupBufferSize;
     string                       m_NCAPISectionName;
 
     // Group registry

@@ -268,6 +268,9 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     notif_handicap_sec;
     CBDB_FieldUint4     notif_handicap_nsec;
     CBDB_FieldUint4     dump_buffer_size;
+    CBDB_FieldUint4     dump_client_buffer_size;
+    CBDB_FieldUint4     dump_aff_buffer_size;
+    CBDB_FieldUint4     dump_group_buffer_size;
     CBDB_FieldUint4     run_timeout_sec;
     CBDB_FieldUint4     run_timeout_nsec;
     CBDB_FieldLString   program_name;
@@ -308,6 +311,9 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("notif_handicap_sec",            &notif_handicap_sec);
         BindData("notif_handicap_nsec",           &notif_handicap_nsec);
         BindData("dump_buffer_size",              &dump_buffer_size);
+        BindData("dump_client_buffer_size",       &dump_client_buffer_size);
+        BindData("dump_aff_buffer_size",          &dump_aff_buffer_size);
+        BindData("dump_group_buffer_size",        &dump_group_buffer_size);
         BindData("run_timeout_sec",               &run_timeout_sec);
         BindData("run_timeout_nsec",              &run_timeout_nsec);
         BindData("program_name",                  &program_name);

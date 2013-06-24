@@ -379,9 +379,9 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
 
 string CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
                                             const CNSAffinityRegistry &  aff_registry,
+                                            size_t                       batch_size,
                                             bool                         verbose) const
 {
-    const size_t        max_batch_size = 1000;
     TNSBitVector        batch;
     string              result;
 
@@ -392,7 +392,7 @@ string CNSClientsRegistry::PrintClientsList(const CQueue *               queue,
         batch.set_bit(*en);
         ++en;
 
-        if (batch.count() >= max_batch_size) {
+        if (batch.count() >= batch_size) {
             result += x_PrintSelected(batch, queue,
                                       aff_registry, verbose) + "\n";
             batch.clear();
