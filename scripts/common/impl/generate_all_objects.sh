@@ -29,8 +29,8 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/sample/lib/dtd/dtd_sample_lib.dtd \
   src/sample/lib/xsd/xsd_sample_lib.xsd \
   src/internal/objects/*/*.asn src/internal/objects/*/*.xsd \
+  src/internal/stax/taxon/taxon.dtd \
   src/internal/ncbils2/asn/login.asn src/internal/ncbils2/auth/*xml/*.dtd \
-  src/internal/geo/GMC/geogquery/*.dtd \
   src/internal/geo/cgi/geo*/objects/geo*.asn \
   src/internal/geo/meta/objects/geometa.asn \
   src/internal/asn_cache/lib/cache_blob.asn \
@@ -44,7 +44,6 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/blast/SplitDB/BlastdbInfo/asn/BlastdbInfo.asn \
   src/internal/blast/Blastdb2Entrez/dbASN/bdb2ez.asn \
   src/internal/cppcore/test_stat_ext/loader/BoostTestXML.dtd \
-  src/internal/gpipe/align_db/objects/alndb_query.asn \
   src/internal/gpipe/objects/*/*.asn src/internal/gpipe/objects/*/*.dtd \
   src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
