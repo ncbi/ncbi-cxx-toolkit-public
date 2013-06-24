@@ -9,7 +9,7 @@ BEGIN
 EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-ClientInfo, TMgr-DisplayTrackRequest,
         TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
-        TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
+        TMgr-BlastRIDReply, TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
         TMgr-DatasetItem, TMgr-DisplayTrackChoice,
         TMgr-TrackAttrValueRequest, TMgr-AttrRequest, TMgr-ValueRequest,
         TMgr-TrackAttrValueReply, TMgr-AttrReply, TMgr-TrackAttributes,
