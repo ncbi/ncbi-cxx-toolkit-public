@@ -450,7 +450,7 @@ extern NCBI_XCONNECT_EXPORT size_t CORE_GetVMPageSize(void);
 
 
 /******************************************************************************
- *  CRC32
+ *  Checksumming
  */
 
 /** Calculate/Update CRC-32 checksum
@@ -471,9 +471,6 @@ extern NCBI_XCONNECT_EXPORT unsigned int UTIL_CRC32_Update
  size_t       len
  );
 
-/* FIXME: Compatibility (to remove in the future) */
-#define CRC32_Update(c, p, l)  UTIL_CRC32_Update(c, p, l)
-
 
 /** Calculate/Update Adler-32 checksum
  * NB:  Initial checksum is "1".
@@ -492,7 +489,6 @@ extern NCBI_XCONNECT_EXPORT unsigned int UTIL_Adler32_Update
  const void*  ptr,
  size_t       len
  );
-
 
 
 /** Cryptographic hash function descriptor:
