@@ -356,6 +356,8 @@ void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
     }
     //set final seqalign
     for(unsigned int i = 0; i < catagorized_seqalign.size(); i ++){
+        //restore alnrangesort
+        catagorized_seqalign[i]->Set().sort(AlnFromRangeAscendingSort);
         ITERATE(CSeq_align_set::Tdata, iter, catagorized_seqalign[i]->Get()){
             m_FinalSeqalign->Set().push_back(*iter);
             
