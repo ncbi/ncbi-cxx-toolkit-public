@@ -761,7 +761,6 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     bool is_protein_align = IsProteinAlign(*align);
     if (is_protein_align) {
         TransformProteinAlignToTranscript(align, cds_feat_on_query_mrna);
-        cds_feat_on_query_mrna_ptr = cds_feat_on_query_mrna.GetPointer();
     }
 
     CSeq_loc_Mapper::TMapOptions opts = 0;
@@ -770,9 +769,6 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     }
 
     SMapper mapper(*align, *m_scope, m_allowed_unaligned, opts);
-
-
-    CTime time(CTime::eCurrent);
 
     const CSeq_id& query_rna_id = align->GetSeq_id(mapper.GetRnaRow());
 
@@ -791,38 +787,19 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     }
 
 
-    /// we always need the mRNA location as a reference
-    CRef<CSeq_loc> rna_feat_loc_on_genome(new CSeq_loc);
-    rna_feat_loc_on_genome->Assign(mapper.GetRnaLoc());
-
-    static CAtomicCounter counter;
-    size_t model_num = counter.Add(1);
-
-    CMappedFeat full_length_rna;
-    vector<CMappedFeat> ncRNAs;
-
-    if (!cds_feat_on_query_mrna_ptr && !(m_flags & fDeNovoProducts)) {
+    if (cds_feat_on_query_mrna_ptr) {
+        cds_feat_on_query_mrna.Reset(new CSeq_feat);
+        cds_feat_on_query_mrna->Assign(*cds_feat_on_query_mrna_ptr);
+    } else if (!is_protein_align && !(m_flags & fDeNovoProducts)) {
         CMappedFeat cdregion_handle = GetCdsOnMrna(query_rna_id);
         if (cdregion_handle) {
-            cds_feat_on_query_mrna_ptr = &cdregion_handle.GetMappedFeature();
+            cds_feat_on_query_mrna.Reset(new CSeq_feat);
+            cds_feat_on_query_mrna->Assign(cdregion_handle.GetMappedFeature());
         }
     }
 
-    if (cds_feat_on_query_mrna_ptr && !cds_feat_on_query_mrna) {
-        cds_feat_on_query_mrna.Reset(new CSeq_feat);
-        cds_feat_on_query_mrna->Assign(*cds_feat_on_query_mrna_ptr);
-    }
-
-    CRef<CSeq_feat> cds_feat_on_transcribed_mrna;
-    list<CRef<CSeq_loc> > transcribed_mrna_seqloc_refs;
-
-    /// create a new bioseq for this mRNA; if the mRNA sequence is not found,
-    /// this is needed in order to translate the protein
-    /// alignment, even if flag fForceTranscribeMrna wasn't set
-    CRef<CSeq_id> transcribed_rna_id =
-        x_CreateMrnaBioseq(*align, rna_feat_loc_on_genome, time,
-                           model_num, seqs,
-                           cds_feat_on_query_mrna, cds_feat_on_transcribed_mrna);
+    CMappedFeat full_length_rna;
+    vector<CMappedFeat> ncRNAs;
 
     CBioseq_Handle query_rna_handle = m_scope->GetBioseqHandle(query_rna_id);
     if (query_rna_handle) {
@@ -844,16 +821,38 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         }
     }
 
+    CTime time(CTime::eCurrent);
+    static CAtomicCounter counter;
+    size_t model_num = counter.Add(1);
+
+    /// we always need the mRNA location as a reference
+    CRef<CSeq_loc> rna_feat_loc_on_genome(new CSeq_loc);
+    rna_feat_loc_on_genome->Assign(mapper.GetRnaLoc());
+
+    CRef<CSeq_feat> cds_feat_on_transcribed_mrna;
+    list<CRef<CSeq_loc> > transcribed_mrna_seqloc_refs;
+
+    /// create a new bioseq for this mRNA; if the mRNA sequence is not found,
+    /// this is needed in order to translate the protein
+    /// alignment, even if flag fForceTranscribeMrna wasn't set
+    CRef<CSeq_id> transcribed_rna_id =
+        x_CreateMrnaBioseq(*align, rna_feat_loc_on_genome, time,
+                           model_num, seqs,
+                           cds_feat_on_query_mrna, cds_feat_on_transcribed_mrna);
+
     CRef<CSeq_feat> mrna_feat_on_genome_with_translated_product =
         full_length_rna && (m_flags&fPropagateNcrnaFeats)
         /// If there is a full-length RNA feature, propagate it instead of
         /// creating a new one. Create the bioseq separately
         ? x_CreateNcRnaFeature(&full_length_rna.GetOriginalFeature(),
                                *align, rna_feat_loc_on_genome, opts)
-        : x_CreateMrnaFeature(rna_feat_loc_on_genome, query_rna_id, *transcribed_rna_id, cds_feat_on_query_mrna);
-    if (mrna_feat_on_genome_with_translated_product && !mrna_feat_on_genome_with_translated_product->IsSetProduct()) {
+        : x_CreateMrnaFeature(rna_feat_loc_on_genome, query_rna_id,
+                              *transcribed_rna_id, cds_feat_on_query_mrna);
+    if (mrna_feat_on_genome_with_translated_product &&
+        !mrna_feat_on_genome_with_translated_product->IsSetProduct()) {
         /// Propagated full-length feature; add product
-        mrna_feat_on_genome_with_translated_product->SetProduct().SetWhole().Assign(*transcribed_rna_id);
+        mrna_feat_on_genome_with_translated_product->
+            SetProduct().SetWhole().Assign(*transcribed_rna_id);
     }
 
     CRef<CSeq_feat> gene_feat;
@@ -863,16 +862,18 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         if (gene_id) {
             TGeneMap::iterator gene = genes.find(gene_id);
             if (gene == genes.end()) {
-                x_CreateGeneFeature(gene_feat, query_rna_handle, mapper, rna_feat_loc_on_genome,
-                                    genomic_id, gene_id);
+                x_CreateGeneFeature(gene_feat, query_rna_handle, mapper,
+                                    rna_feat_loc_on_genome, genomic_id, gene_id);
                 if (gene_feat) {
-                    _ASSERT(gene_feat->GetData().Which() != CSeqFeatData::e_not_set);
+                    _ASSERT(gene_feat->GetData().Which() !=
+                            CSeqFeatData::e_not_set);
                     annot.SetData().SetFtable().push_back(gene_feat);
                 }
                 gene = genes.insert(make_pair(gene_id,gene_feat)).first;
             } else {
                 gene_feat = gene->second;
-                gene_feat->SetLocation(*MergeSeq_locs(&gene_feat->GetLocation(), &mrna_feat_on_genome_with_translated_product->GetLocation()));
+                gene_feat->SetLocation(*MergeSeq_locs(&gene_feat->GetLocation(),
+                                                      &mrna_feat_on_genome_with_translated_product->GetLocation()));
             }
     
             CRef< CSeqFeatXref > genexref( new CSeqFeatXref() );
