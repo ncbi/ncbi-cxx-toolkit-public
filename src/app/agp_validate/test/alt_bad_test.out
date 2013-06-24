@@ -1,6 +1,9 @@
 
 2:scaffold_0	2107	4201	2	N	2095	fragment	yes
-	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+Note: temporary Entrez2 problems; falling back to Object Manager for this batch:
+  AAAGU02000003 AAGU02000001.15 AAGU02000002 ... AAGU02222225 AAGU02990008 ABRQ01000007 NT_165199 (total 10)
+PLEASE IGNORE any (Timeout) warnings above!
 
 1:scaffold_0	1	2106	1	W	AAGU02000001.15	1	2106	+#bad version
 	ERROR: component_id not in GenBank: AAGU02000001.15

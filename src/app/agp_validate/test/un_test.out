@@ -50,6 +50,6 @@ Object names      :  5
 Component names        :  1 != 2 in the FASTA
   LACBIscaffold_1_Cont1:  1
 
-1 component name in FASTA not found in AGP: LACBIscaffold_extra
+WARNING -- 1 component name in FASTA not found in AGP: LACBIscaffold_extra
 
 #Comment line count    : 1

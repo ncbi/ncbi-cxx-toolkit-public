@@ -1,7 +1,7 @@
 ===== Reading Scaffold from component AGP =====
 
 10:chrY	3044	53043	2	N	50000	contig	no	
-	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
 12:chrY	3423628	3473627	4	N	50000	contig	no	
@@ -67,7 +67,7 @@
 52:chrY	10955352	11005351	44	N	50000	contig	no	
 	ERROR: in "Scaffold from component" file, invalid scaffold-breaking gap
 
-22 errors, 1 warning.
+22 errors, no warnings, 1 note.
   Count Code  Description
      22  e19  in "Scaffold from component" file, invalid scaffold-breaking gap
       1  w58  assuming AGP version X
@@ -100,7 +100,7 @@ Component names      :  23
 ===== Reading Chromosome from scaffold AGP =====
 
 9:EG1_scaffold2	40449	40548	2	N	100	fragment	yes	
-	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
 
 11:EG1_scaffold2	117530	117629	4	N	100	fragment	yes	
@@ -316,7 +316,7 @@ Component names      :  23
 170:EG1_scaffold21	342399	343694	12	N	1296	fragment	yes	
 	ERROR: in "Chromosome from scaffold" file, invalid "within-scaffold" gap
 
-72 errors, 1 warning.
+72 errors, no warnings, 1 note.
   Count Code  Description
      72  e20  in "Chromosome from scaffold" file, invalid "within-scaffold" gap
       1  w58  assuming AGP version X

@@ -74,7 +74,7 @@ Component names      :  23
 	WARNING: AGP version comment is invalid, expecting ##agp-version 1.1 or ##agp-version 2.0
 
 ./test/chr_from_contig_BAC.agp2.0_bad_ver:10:chr37	1	8000000	1	N	8000000	short_arm	no	na
-	WARNING: assuming AGP version 2.0 since linkage evidence (column 9) is NOT empty
+	NOTE: assuming AGP version 2.0 since linkage evidence (column 9) is NOT empty
 ./test/chr_from_contig_BAC.agp2.0_bad_ver:11:chr37	8000001	8050000	2	N	50000	heterochromatin	no	na
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 ./test/chr_from_contig_BAC.agp2.0_bad_ver:12:chr37	8050001	9050000	3	N	1000000	centromere	no	na
@@ -89,7 +89,7 @@ Component names      :  23
 ./test/chr_from_contig_BAC.agp2.0_bad_ver:33:chr37	10939269	10956946	24	N	17678	scaffold	yes	clone_contig;
 	ERROR, line skipped: invalid value for linkage_evidence (column 9): 
 
-2 errors, 5 warnings.
+2 errors, 4 warnings, 1 note.
   Count Code  Description
       2  e04  invalid value for X
       2  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)

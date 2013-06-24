@@ -1,10 +1,10 @@
 
 1:chr22	1	11330000	1	N	11330000	short_arm	no
-	WARNING: assuming AGP version 1.1 since linkage evidence (column 9) is empty
+	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 2:chr22	11330001	13570000	2	N	2240000	centromere	no
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
-No errors, 5 warnings; 3 not printed.
+No errors, 1 warning, 4 notes; 3 not printed.
   Count Code  Description
       1  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
       3  w52  gap shorter than 10 bp
@@ -41,4 +41,4 @@ Component names                      :  4084
   ABGA[01409238..01410146].1.1       :    26 (local or misspelled)
   AAA[00027,28].1                    :     2 (some look like protein accessions)
   .1                                 :     1 (local or misspelled)
-Use -g or -a to print lines with suspicious accessions.
+Use -g or "-show all" to print lines with suspicious accessions.
