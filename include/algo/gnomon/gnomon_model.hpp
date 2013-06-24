@@ -565,8 +565,8 @@ public:
     TSignedSeqRange MapRangeEditedToOrig(TSignedSeqRange edited_range, bool withextras = true) const;
     template <class Vec>
     void EditedSequence(const Vec& original_sequence, Vec& edited_sequence, bool includeholes = false) const;
-    int FShiftedLen(TSignedSeqRange ab, ERangeEnd lend, ERangeEnd rend) const { return MapRangeOrigToEdited(ab, lend, rend).GetLength(); }
-    int FShiftedLen(TSignedSeqRange ab, bool withextras = true) const { return MapRangeOrigToEdited(ab, withextras).GetLength(); }
+    int FShiftedLen(TSignedSeqRange ab, ERangeEnd lend, ERangeEnd rend) const;
+    int FShiftedLen(TSignedSeqRange ab, bool withextras = true) const;
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const { return FShiftedLen(TSignedSeqRange(a,b), withextras); }
     //snap to codons works by analising transcript coordinates (MUST be a protein or reading frame cutout)
     TSignedSeqRange ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons = false) const;

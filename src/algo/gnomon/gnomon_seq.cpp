@@ -894,6 +894,31 @@ TSignedSeqRange CAlignMap::MapRangeEditedToOrig(TSignedSeqRange edited_range, bo
     return MapRangeAtoB(m_edited_ranges, m_orig_ranges, edited_range, withextras);
 }
 
+int CAlignMap::FShiftedLen(TSignedSeqRange ab, ERangeEnd lend, ERangeEnd rend) const { 
+
+    int len = MapRangeOrigToEdited(ab, lend, rend).GetLength(); 
+
+    for(int i = 1; i < (int)m_edited_ranges.size(); ++i) {
+        if(m_edited_ranges[i].GetTypeFrom() == eBoundary && Include(ab,m_orig_ranges[i].GetFrom()))
+            len -= m_edited_ranges[i].GetFrom()-m_edited_ranges[i-1].GetTo()-1;
+    }
+
+    return len;
+}
+
+int CAlignMap::FShiftedLen(TSignedSeqRange ab, bool withextras) const {
+
+    int len = MapRangeOrigToEdited(ab, withextras).GetLength(); 
+
+    for(int i = 1; i < (int)m_edited_ranges.size(); ++i) {
+        if(m_edited_ranges[i].GetTypeFrom() == eBoundary && Include(ab,m_orig_ranges[i].GetFrom()))
+            len -= m_edited_ranges[i].GetFrom()-m_edited_ranges[i-1].GetTo()-1;
+    }
+
+    return len;
+}
+
+
 
 
 END_SCOPE(gnomon)
