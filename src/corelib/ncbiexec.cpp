@@ -269,58 +269,36 @@ typedef ArrayDeleter<const TXChar*> TXArgsDeleter;
 typedef AutoPtr<const TXChar*, TXArgsDeleter> TXArgsOrEnv;
 
 #if defined(NCBI_OS_MSWIN)
+
 void s_Create_Args(
     vector<TXString>& xargs, TXArgsOrEnv& t_args,
     va_list& begin, const char* cmdname, const char* argv)
 {
+    // Count arguments to allocate memory
     va_list v_args = begin;
     int xcnt = 2;
-    while ( va_arg(v_args, const char*) )
+    while ( va_arg(v_args, const char*) ) {
         xcnt++;
-
+    }
     const TXChar **args = new const TXChar*[xcnt+1];
     if ( !args ) {
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
     }
     t_args = args;
 
-    int i_arg=0;
-#if defined(NCBI_OS_MSWIN)
-    if (strstr(cmdname, " ")) {
-        xargs.push_back( TXString(_TX("\"")) + _T_XSTRING(cmdname) + _TX("\""));
-    } else {
-#if defined(_UNICODE)
-        xargs.push_back( _T_XSTRING(cmdname) );
-#else
-        args[i_arg] = cmdname;
-#endif
-    }
-#else
-    args[i_arg] = cmdname;
-#endif
-    ++i_arg;
-
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-    xargs.push_back( _T_XSTRING(argv) );
-    ++i_arg;
-#else
-    args[i_arg++] = argv;
-#endif
-
+    // Use temporary vector to store quoted/unicoded strings.
+    xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
+    xargs.push_back( _T_XSTRING(CExec::QuoteArg(argv)) );
+    // Repeat for each argument in the variable list
     v_args = begin;
-    while ( i_arg < xcnt ) {
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-        xargs.push_back( _T_XSTRING(va_arg(v_args, const char*)) );
-        ++i_arg;
-#else
-        args[i_arg++] = va_arg(v_args, const char*);
-        s_CheckExecArg(args[i_arg-1]);
-#endif
+    for (size_t i=2; i < xcnt; ++i) {
+        xargs.push_back( _T_XSTRING(CExec::QuoteArg(va_arg(v_args, const char*))) );
     }
-    args[i_arg++] = NULL;
+    // Prepare array of char* arguments for execution
     for (size_t i=0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
+    args[xcnt] = NULL;
     va_arg(v_args, const char**);
     begin = v_args;
 }
@@ -330,9 +308,9 @@ void s_Create_Env(
 {
     const char** envp = begin;
     int xcnt = 0;
-    while ( *(envp++) )
+    while ( *(envp++) ) {
         xcnt++;
-
+    }
     const TXChar **args = new const TXChar*[xcnt+1];
     if ( !args ) {
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
@@ -342,19 +320,22 @@ void s_Create_Env(
     envp = begin;
     int i_arg=0;
     while ( i_arg < xcnt ) {
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#  if defined(_UNICODE)
         xargs.push_back( _T_XSTRING(*(envp++)) );
+#  else
+        args[i_arg] = *(envp++);
+#  endif
         ++i_arg;
-#else
-        args[i_arg++] = *(envp++);
-#endif
     }
-    args[i_arg++] = NULL;
+#  if defined(_UNICODE)
     for (size_t i=0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
+#  endif
+    args[i_arg++] = NULL;
 }
 #endif //NCBI_OS_MSWIN
+
 
 #if defined(NCBI_OS_MSWIN)
 #define XGET_EXEC_ARGS(name, ptr) \
@@ -682,7 +663,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 
     // Compose command line
     cmdline.reserve(kMaxCmdLength);
-    cmdline = _T_XCSTRING(cmdname);
+    cmdline = _T_XCSTRING(CExec::QuoteArg(cmdname));
 
     if (argv) {
         cmdline += _TX(" "); 
