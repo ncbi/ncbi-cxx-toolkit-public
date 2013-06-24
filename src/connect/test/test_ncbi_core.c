@@ -348,6 +348,21 @@ static void TEST_CORE_GetUsername(void)
            temp ?   temp              : "NULL",
            temp ? (*temp ? "" : "\"") : ">",
            !temp ^ !user ? ", error!" : "");
+    temp = CORE_GetUsernameEx(buffer, sizeof(buffer), eCORE_UsernameReal);
+    printf("Username(Real) = %s%s%s\n",
+           temp ? (*temp ? "" : "\"") : "<",
+           temp ?   temp              : "NULL",
+           temp ? (*temp ? "" : "\"") : ">");
+    temp = CORE_GetUsernameEx(buffer, sizeof(buffer), eCORE_UsernameLogin);
+    printf("Username(Login) = %s%s%s\n",
+           temp ? (*temp ? "" : "\"") : "<",
+           temp ?   temp              : "NULL",
+           temp ? (*temp ? "" : "\"") : ">");
+    temp = CORE_GetUsernameEx(buffer, sizeof(buffer), eCORE_UsernameCurrent);
+    printf("Username(Current) = %s%s%s\n",
+           temp ? (*temp ? "" : "\"") : "<",
+           temp ?   temp              : "NULL",
+           temp ? (*temp ? "" : "\"") : ">");
     /* NB: GCC's __wur (warn unused result) silenced */
     verify(freopen(null, "r", stdin));  /* NCBI_FAKE_WARNING: GCC */
     temp = CORE_GetUsername(buffer, sizeof(buffer));
