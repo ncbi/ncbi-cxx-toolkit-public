@@ -1950,7 +1950,12 @@ void CGenbankFormatter::FormatWGS
             link = "http://www.ncbi.nlm.nih.gov/nuccore/" + first_id;
         } else {
             string url_arg;
-            if( CWGSItem::eWGS_Projects == wgs.GetType() ) {
+            const bool bIsWGSProject = CWGSItem::eWGS_Projects == wgs.GetType();
+            const bool bIsWGSScafldWithS = ( 
+                CWGSItem::eWGS_ScaffoldList == wgs.GetType() &&
+                first_id.length() > 7 && first_id[6] == 'S' );
+            if( bIsWGSProject || bIsWGSScafldWithS )
+            {
                 if( first_id.length() > 2 && first_id[2] == '_' ) {
                     url_arg = first_id.substr(0, 9);
                 } else {
