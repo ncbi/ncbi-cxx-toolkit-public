@@ -2851,8 +2851,12 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         if (feat.GetData().GetCdregion().IsSetCode()) {
             code = &feat.GetData().GetCdregion().GetCode();
         }
-
-        CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fDefault, code);
+        bool partial_start = feat.GetLocation().IsPartialStart(eExtreme_Biological);
+        CSeqTranslator::Translate(mrna, xlate,
+                                  partial_start
+                                  ? CSeqTranslator::fIs5PrimePartial
+                                  : CSeqTranslator::fDefault,
+                                  code);
         if (xlate.size() && xlate[0] == '-') {
             /// First codon couldn't be translated as initial codon; translate
             /// as mid-sequence codon instead

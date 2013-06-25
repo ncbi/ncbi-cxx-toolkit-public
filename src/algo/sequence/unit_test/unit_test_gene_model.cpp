@@ -1546,6 +1546,64 @@ Seq-loc ::= packed-int { \
 
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseConvertLocToAnnotNoMismatches)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+string buf = " \
+Seq-loc ::= packed-int { \
+            { \
+              from 0, \
+              to 290, \
+              strand minus, \
+              id general { db \"PRJNA205468\" , \
+                           tag str \"contig_484\" }, \
+              fuzz-from lim lt, \
+              fuzz-to lim gt \
+            } \
+          } \
+";
+string fasta_string = "\
+>gnl|PRJNA205468|contig_484 [organism=Sphingobacterium sp. IITKGP-BTPF85] [moltype=Genomic] [strain=IITKGP-BTPF85] [gcode=11] [tech=wgs]\n\
+GCTTCAACAAATAGGCATAGCCTTGATTCTGAAAAGCTTTTAAGGCGTAATCTTCAAACGCTGTAGTAAA\n\
+AATAACAGGTGCCTGAACTTTGACCTGGTCAAATATTTCGAAACTCAATCCATCACCGAGCTGCACATCC\n\
+ATAAAGATGAGATCGACTTCATTTTTAAGCAACCAATCGGTAGCTTCACGCACTGTTGTTATAATCGTAG\n\
+ATTGAAATTTGGAAGCAATCAATTGGTCTAATTTCTCCAAAAGACTTTCCGAAGCCCAGTTTTCATCTTC\n\
+TACGATCAATA\n\
+";
+    CNcbiIstrstream istrs(buf.c_str());
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    CSeq_loc loc;
+    *istr >> loc;
+
+    CNcbiIstrstream fasta_stream(fasta_string.c_str());
+    CFastaReader fasta_reader(fasta_stream, CFastaReader::fAddMods);
+    scope->AddTopLevelSeqEntry(*fasta_reader.ReadOneSeq());
+
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    CBioseq_set& seqs = seq_entry->SetSet();
+    seqs.SetSeq_set();
+    CSeq_annot annot;
+    annot.SetData().SetFtable();
+    CFeatureGenerator feat_gen(*scope);
+    int flags =
+        CFeatureGenerator::fCreateGene |
+        CFeatureGenerator::fCreateCdregion |
+        CFeatureGenerator::fForceTranslateCds;
+    feat_gen.SetFlags(flags);
+
+
+    feat_gen.ConvertLocToAnnot(loc, annot, seqs, CCdregion::eFrame_three);
+
+    // there should not be any exceptions set
+    bool no_exceptions_set = !annot.GetData().GetFtable().back()->IsSetExcept();
+    BOOST_CHECK(no_exceptions_set);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 
