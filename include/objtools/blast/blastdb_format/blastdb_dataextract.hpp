@@ -68,7 +68,12 @@ public:
               m_TargetOnly(target_only),
               m_UseCtrlA(ctrl_a),
               m_Oid(0)
-    {}
+    {
+	m_Gi2TaxidMap.first = -1;
+	m_Gi2AccMap.first = -1;
+	m_Gi2TitleMap.first = -1;
+	m_Oid2Pig.first = -1;
+    }
 
     /// Setting seqid
     /// @param id sequence identifier [in]
@@ -125,9 +130,21 @@ protected:
     CRef<CBioseq> m_Bioseq;
     /// Cache the defline (for membership bits)
     CRef<CBlast_def_line_set> m_Defline; 
+    /// Pair with a gi2taxid map for one Oid
+    pair< int, map<int, int> > m_Gi2TaxidMap;
+    /// Pair with a gi2accesion map for one Oid
+    pair< int, map<int, string> > m_Gi2AccMap;
+    /// Pair with a gi2title map for one Oid
+    pair< int, map<int, string> > m_Gi2TitleMap;
+    /// Pair with a pig for one Oid.
+    pair<int, int> m_Oid2Pig;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();
+    /// Sets the map
+    void x_SetGi2AccMap();
+    /// Sets the map
+    void x_SetGi2TitleMap();
 
     /// Initialize the cached defline
     void x_InitDefline();

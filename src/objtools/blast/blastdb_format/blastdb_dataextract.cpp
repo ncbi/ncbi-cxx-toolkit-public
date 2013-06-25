@@ -56,7 +56,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Oid = -1;
     CRef<CSeq_id> seq_id;
 
-    int target_gi = 0;
+    TGi target_gi = 0;
     CSeq_id *target_seq_id = NULL;
 
     if (id.IsOID()) {
@@ -110,9 +110,11 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     try {
         if (get_data) {
             m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id)); 
-        } else {
-            m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id)); 
-        }
+        } 
+	else if (m_Gi <= 0)
+	{  // If no GI, then all the Gi2XMaps will fail.
+	    m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id));
+	}
 
     } catch (const CSeqDBException& e) {
         // this happens when CSeqDB detects a GI that doesn't belong to a
@@ -129,9 +131,14 @@ string CBlastDBExtractor::ExtractOid() {
 }
 
 string CBlastDBExtractor::ExtractPig() {
-    int pig;
-    m_BlastDb.OidToPig(m_Oid, pig);
-    return NStr::IntToString(pig);
+    if (m_Oid2Pig.first != m_Oid)
+    {
+    	int pig;
+    	m_BlastDb.OidToPig(m_Oid, pig);
+	m_Oid2Pig.first = m_Oid;
+	m_Oid2Pig.second = pig;
+    }
+    return NStr::IntToString(m_Oid2Pig.second);
 }
 
 string CBlastDBExtractor::ExtractGi() {
@@ -206,7 +213,60 @@ string CBlastDBExtractor::ExtractAsn1Bioseq()
     return CNcbiOstrstreamToString(oss);
 }
 
+void CBlastDBExtractor::x_SetGi2AccMap()
+{
+	if (m_Gi2AccMap.first == m_Oid)
+		return;
+
+	map<TGi, string> gi2acc;
+        x_InitDefline();
+        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+	    TGi gi=0;
+            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+                if ((*id)->IsGi()) {
+			gi = (*id)->GetGi();
+			break;
+		}
+	    }
+	    CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
+	    string acc;
+	    theId->GetLabel(&acc, CSeq_id::eContent);
+	    gi2acc[gi] = acc;
+        }
+	m_Gi2AccMap.first = m_Oid;
+	m_Gi2AccMap.second.swap(gi2acc);
+	return;
+}
+
+void CBlastDBExtractor::x_SetGi2TitleMap()
+{
+	if (m_Gi2TitleMap.first == m_Oid)
+		return;
+
+	map<TGi, string> gi2title;
+	x_InitDefline();
+        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+	    TGi gi=0;
+            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+                if ((*id)->IsGi()) {
+			gi = (*id)->GetGi();
+			break;
+		}
+	    }
+	    gi2title[gi] = (*bd)->GetTitle();	
+	}
+	m_Gi2TitleMap.first = m_Oid;
+	m_Gi2TitleMap.second.swap(gi2title);
+	return;
+}
+
 string CBlastDBExtractor::ExtractAccession() {
+    if (m_Gi)
+    {
+    	x_SetGi2AccMap();
+    	return m_Gi2AccMap.second[m_Gi];
+    }
+
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
     if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
         return "No ID available";
@@ -225,6 +285,12 @@ string CBlastDBExtractor::ExtractSeqId() {
 }
 
 string CBlastDBExtractor::ExtractTitle() {
+    if (m_Gi)
+    {
+	x_SetGi2TitleMap();
+	return m_Gi2TitleMap.second[m_Gi];
+    }
+
     ITERATE(list <CRef <CSeqdesc> >, itr, m_Bioseq->GetDescr().Get()) {
         if ((*itr)->IsTitle()) {
             return (*itr)->GetTitle();
@@ -419,28 +485,14 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 int CBlastDBExtractor::x_ExtractTaxId() 
 {
     x_SetGi();
-#if 0
-    if (m_Bioseq.NotEmpty()) {
-        // try to use the defline first to avoid re-reading it from the database
-        x_InitDefline();
-        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
-                if ((*id)->IsGi()) {
-                    if ((*id)->GetGi() == m_Gi) {
-                        return (*bd)->GetTaxid();
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-    } 
-#endif
 
     if (m_Gi) {
-        map <int, int> gi2taxid;
-        m_BlastDb.GetTaxIDs(m_Oid, gi2taxid);
-        return gi2taxid[m_Gi];
+	if (m_Gi2TaxidMap.first != m_Oid)
+	{
+		m_Gi2TaxidMap.first = m_Oid;
+        	m_BlastDb.GetTaxIDs(m_Oid, m_Gi2TaxidMap.second);
+	}
+	return m_Gi2TaxidMap.second[m_Gi];
     }
     // for database without Gi:
     vector <int> taxid;

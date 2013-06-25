@@ -1868,7 +1868,8 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
         cached.first = BDLS;
         cached.second = asn_changed;
     } else {
-        cached.first.Reset();
+        cached.first = BDLS;
+        cached.second = asn_changed;
     }
     
     return BDLS;

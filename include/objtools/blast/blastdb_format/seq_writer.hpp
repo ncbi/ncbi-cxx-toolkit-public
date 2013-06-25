@@ -121,6 +121,9 @@ private:
     /// @param data2write data to replace in the output string [in]
     string x_Replacer(const vector<string>& data2write) const;
 
+    /// Specifies whether or not data (e.g., Bioseq) is required.
+    bool x_RequireData() const;
+
     /// Prohibit copy constructor
     CSeqFormatter(const CSeqFormatter& rhs);
     /// Prohibit assignment operator

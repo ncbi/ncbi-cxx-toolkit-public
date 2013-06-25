@@ -99,6 +99,25 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     m_Fasta = (m_ReplTypes[0] == 'f');
 }
 
+bool CSeqFormatter::x_RequireData() const
+{
+	bool retval=false;
+
+	ITERATE(vector<char>, fmt, m_ReplTypes) {
+	switch (*fmt) {
+		case 's':
+		case 'h':
+		case 'm':
+		case 'e':
+		case 'd':
+		case 'b':
+			retval = true;
+			break;
+	}
+    }
+    return retval;
+}
+
 void CSeqFormatter::x_Builder(vector<string>& data2write)
 {
     data2write.reserve(m_ReplTypes.size());
@@ -194,10 +213,7 @@ void CSeqFormatter::Write(CBlastDBSeqId& id)
         return;
     }
 
-    bool get_data = false;
-#ifdef _BLAST_DEBUG
-    get_data = (m_ReplTypes.find('b') == m_ReplTypes.end()) ? false : true;
-#endif
+    bool get_data = x_RequireData();
     m_DataExtractor.SetSeqId(id, get_data);
     vector<string> data2write;
     x_Builder(data2write);
