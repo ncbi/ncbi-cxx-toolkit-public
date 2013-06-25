@@ -193,11 +193,11 @@ TMgr-BlastRIDRequest ::= SEQUENCE {
 --     "whole" or "interval" types.  In the case of "whole", any number of
 --     queries may be used; in the case of "interval", there should be
 --     exactly one query.  (This is limited by the BlastObject.)
-TMgr-BlastQueryPssm ::= CHOICE {
+TMgr-BlastQueryPssm ::= SEQUENCE {
     label VisibleString,
     data PssmWithParameters
 }
-TMgr-BlastQueryBioseqset ::= CHOICE {
+TMgr-BlastQueryBioseqset ::= SEQUENCE {
     label VisibleString,
     data Bioseq-set
 }
