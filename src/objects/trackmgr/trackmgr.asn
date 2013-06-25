@@ -183,17 +183,28 @@ TMgr-BlastRIDRequest ::= SEQUENCE {
     rid VisibleString
 }
 
--- Analogous to Blast4-queries:
+-- TMgr-BlastQuerySeqs is analogous to Blast4-queries, though bioseq-set
+-- and pssm additionally have labels.
+--
+-- Documentation for Blast4-queries:
 --     If a PSSM is used (ie. for PSI-Blast), it must contain a "query"
 --     for formatting purposes.  Bioseq-set may contain any number of
 --     queries, specified as data.  Seq-loc-list may contain only the
 --     "whole" or "interval" types.  In the case of "whole", any number of
 --     queries may be used; in the case of "interval", there should be
 --     exactly one query.  (This is limited by the BlastObject.)
+TMgr-BlastQueryPssm ::= CHOICE {
+    label VisibleString,
+    data PssmWithParameters
+}
+TMgr-BlastQueryBioseqset ::= CHOICE {
+    label VisibleString,
+    data Bioseq-set
+}
 TMgr-BlastQuerySeqs ::= CHOICE {
-    pssm PssmWithParameters,
     seq-loc-list SEQUENCE OF Seq-loc,
-    bioseq-set Bioseq-set
+    pssm TMgr-BlastQueryPssm,
+    bioseq-set TMgr-BlastQueryBioseqset
 }
 
 TMgr-BlastRIDReply ::= SEQUENCE {
