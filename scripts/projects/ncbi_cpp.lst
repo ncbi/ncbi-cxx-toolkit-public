@@ -17,11 +17,11 @@ internal/gpipe/align_db
 internal/test/corelib
 internal/test/misc/xmlwrapp
 internal/demo/misc/xmlwrapp
-internal/sra
 misc
 objects
 objmgr
 objtools
 sample
 serial
+sra
 util

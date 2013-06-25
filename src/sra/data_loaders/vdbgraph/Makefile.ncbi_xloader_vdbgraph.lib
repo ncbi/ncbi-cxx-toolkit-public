@@ -1,0 +1,21 @@
+# $Id$
+
+# Build library "ncbi_xloader_vdbgraph"
+###############################
+
+PROJ_TAG = gbench,lib,public
+
+LIB = ncbi_xloader_vdbgraph
+SRC = vdbgraphloader vdbgraphloader_impl
+
+REQUIRES = objects
+
+ASN_DEP = seqset seq
+
+LIB_OR_DLL = both
+
+DLL_LIB = sraread$(STATIC) $(SRAREAD_LDEP) $(SOBJMGR_LIBS)
+
+CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_VDBGRAPH_EXPORTS $(ORIG_CPPFLAGS)
+
+WATCHERS = vasilche

@@ -1,0 +1,19 @@
+# $Id$
+
+# Build library "ncbi_xloader_sra"
+###############################
+
+LIB = ncbi_xloader_sra
+SRC = sraloader
+
+REQUIRES = objects
+
+ASN_DEP = seqset seq
+
+LIB_OR_DLL = both
+
+DLL_LIB = sraread$(STATIC) $(SRAREAD_LDEP) $(SOBJMGR_LIBS)
+
+CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_SRA_EXPORTS $(ORIG_CPPFLAGS)
+
+WATCHERS = vasilche

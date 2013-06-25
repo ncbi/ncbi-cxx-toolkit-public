@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = test_bam_loader
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

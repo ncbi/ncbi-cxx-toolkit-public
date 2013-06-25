@@ -15,6 +15,7 @@ app
 sample
 build-system
 algo
+sra
 check
 gui
 -gui/plugins

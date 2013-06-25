@@ -34,7 +34,6 @@ objmgr
 objtools
 serial
 sra
-internal/sra
 util
 -[^g].*/samples
 -[^g].*/mssamples
