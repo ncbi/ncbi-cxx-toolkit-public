@@ -210,6 +210,7 @@ TMgr-BlastQuerySeqs ::= CHOICE {
 TMgr-BlastRIDReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     rid VisibleString,
+    title VisibleString OPTIONAL,
     query-sequences TMgr-BlastQuerySeqs OPTIONAL
 }
 
