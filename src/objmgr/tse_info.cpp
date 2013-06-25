@@ -204,6 +204,7 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
         if( !lsnr )
             lsnr.Reset(new CTSE_Default_Assigner);
         m_Split->x_TSEAttach(*this, lsnr);
+        m_BioseqUpdater = tse->m_BioseqUpdater;
     }
     if (tse->HasDataSource()) {
         CDataLoader* ld = tse->GetDataSource().GetDataLoader();

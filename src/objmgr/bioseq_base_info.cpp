@@ -68,7 +68,10 @@ CBioseq_Base_Info::CBioseq_Base_Info(void)
 CBioseq_Base_Info::CBioseq_Base_Info(const CBioseq_Base_Info& src,
                                      TObjectCopyMap* copy_map)
     : TParent(src, copy_map),
-      m_ObjAnnot(0)
+      m_ObjAnnot(0),
+      m_DescrChunks(src.m_DescrChunks),
+      m_DescrTypeMasks(src.m_DescrTypeMasks),
+      m_AnnotChunks(src.m_AnnotChunks)
 {
 }
 

@@ -54,7 +54,7 @@ CTSE_Info_Object::CTSE_Info_Object(const CTSE_Info_Object& src,
     : m_TSE_Info(0),
       m_Parent_Info(0),
       m_DirtyAnnotIndex(true),
-      m_NeedUpdateFlags(0)
+      m_NeedUpdateFlags(src.m_NeedUpdateFlags)
 {
     if ( copy_map ) {
         (*copy_map)[CConstRef<CObject>(&src)] = this;

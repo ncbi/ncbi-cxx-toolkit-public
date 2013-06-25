@@ -93,8 +93,9 @@ CBioseq_Info::CBioseq_Info(CBioseq& seq)
 
 CBioseq_Info::CBioseq_Info(const CBioseq_Info& info, TObjectCopyMap* copy_map)
     : TParent(info, copy_map),
-      m_AssemblyChunk(-1),
-      m_FeatureFetchPolicy(-1)
+      m_Seq_dataChunks(info.m_Seq_dataChunks),
+      m_AssemblyChunk(info.m_AssemblyChunk),
+      m_FeatureFetchPolicy(info.m_FeatureFetchPolicy)
 {
     x_SetObject(info, copy_map);
 }

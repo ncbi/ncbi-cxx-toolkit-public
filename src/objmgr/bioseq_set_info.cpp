@@ -69,7 +69,9 @@ CBioseq_set_Info::CBioseq_set_Info(TObject& seqset)
 
 CBioseq_set_Info::CBioseq_set_Info(const CBioseq_set_Info& info,
                                    TObjectCopyMap* copy_map)
-    : TParent(info, copy_map), m_Bioseq_set_Id(-1)
+    : TParent(info, copy_map),
+      m_BioseqChunks(info.m_BioseqChunks),
+      m_Bioseq_set_Id(-1)
 {
     x_SetObject(info, copy_map);
 }
