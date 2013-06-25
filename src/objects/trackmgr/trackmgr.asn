@@ -15,8 +15,10 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-TrackAttrValueReply, TMgr-AttrReply, TMgr-TrackAttributes,
         TMgr-AttrValueReply, TMgr-MessageLevel, TMgr-Message;
 
-IMPORTS Seq-id FROM NCBI-Seqloc
-        Dbtag FROM NCBI-General;
+IMPORTS Seq-id, Seq-loc FROM NCBI-Seqloc
+        Dbtag FROM NCBI-General
+        Bioseq-set FROM NCBI-Seqset
+        PssmWithParameters FROM NCBI-ScoreMat;
 ---
 --- Top-level request/reply
 ---
@@ -181,18 +183,23 @@ TMgr-BlastRIDRequest ::= SEQUENCE {
     rid VisibleString
 }
 
-TMgr-Sequence ::= SEQUENCE {
-    gi INTEGER,
-    accession VisibleString
+-- Analogous to Blast4-queries:
+--     If a PSSM is used (ie. for PSI-Blast), it must contain a "query"
+--     for formatting purposes.  Bioseq-set may contain any number of
+--     queries, specified as data.  Seq-loc-list may contain only the
+--     "whole" or "interval" types.  In the case of "whole", any number of
+--     queries may be used; in the case of "interval", there should be
+--     exactly one query.  (This is limited by the BlastObject.)
+TMgr-BlastQuerySeqs ::= CHOICE {
+    pssm PssmWithParameters,
+    seq-loc-list SEQUENCE OF Seq-loc,
+    bioseq-set Bioseq-set
 }
 
 TMgr-BlastRIDReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     rid VisibleString,
-    query-sequences SET OF SEQUENCE {
-        index INTEGER,
-        seq TMgr-Sequence
-    } OPTIONAL
+    query-sequences TMgr-BlastQuerySeqs
 }
 
 TMgr-CreateUserDataItem ::= SEQUENCE {
