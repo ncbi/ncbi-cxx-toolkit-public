@@ -1051,8 +1051,10 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     CRef<CSeq_align> refined_align(new CSeq_align);
     refined_align->Assign(seq_align);
 
-    if (output_options.IsPassThrough())
+    if (output_options.IsPassThrough()) {
+        prosplign::SetScores(*refined_align, scope, output_options.GetScoreMatrix());
         return refined_align;
+    }
 
     CProteinAlignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
     list<CNPiece> good_parts = FindGoodParts( alignment_text, output_options);

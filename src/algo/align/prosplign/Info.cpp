@@ -822,10 +822,10 @@ void prosplign::SetScores(objects::CSeq_align& seq_align, objects::CScope& scope
     seq_align.SetNamedScore("align_length", len);
     //internal protein gap length for full alignment quality measure
     int ipgap = 0; 
-    string::size_type ibeg, iend;
-    for(ibeg = 0; ibeg<prot.size() && ( (prot[ibeg] == '.') || (match[ibeg] == 'X') || (prot[ibeg] == '-' ) ); ++ibeg) {}
+    int ibeg, iend;
+    for(ibeg = 0; ibeg<(int)(prot.size()) && ( (prot[ibeg] == '.') || (match[ibeg] == 'X') || (prot[ibeg] == '-' ) ); ++ibeg) {}
     for(iend = prot.size() - 1; iend >=0 && ( (prot[iend] == '.') || (match[iend] == 'X') || (prot[iend] == '-' ) ); --iend) {}
-    for(string::size_type i=ibeg;i<=iend; ++i) {
+    for(int i=ibeg;i<=iend; ++i) {
         if( (prot[i] != '.') && (match[i] != 'X') ) {//skip introns and bad parts
             if(prot[i] == '-') {
                 ++ipgap;
