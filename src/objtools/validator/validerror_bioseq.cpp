@@ -7121,7 +7121,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                         || use_ctx->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
                         use_ctx = &ctx;
                     }
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentDates,
                         "Inconsistent create_dates [" + current_str +
                         "] and [" + create_str + "]", *use_ctx, desc);
                 }
@@ -7956,7 +7956,7 @@ void CValidError_bioseq::ValidateUpdateDateContext
             || use_ctx->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
             use_ctx = ctx;
         }
-        PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentDates,
             "Inconsistent create_date [" + create_str + 
             "] and update_date [" + update_str + "]",
             *use_ctx, desc);

@@ -630,6 +630,10 @@ require a taxonomy consult." } },
    { eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
    { "RefGeneTrackingOnNucProtSet",
 "The RefGeneTracking user object should not be on a nuc-prot set." } },
+   { eErr_SEQ_DESCR_InconsistentDates,
+   { "InconsistentDates",
+"There are two date descriptors that are inconsistent with each \
+other. Please make them consistent." } },
 
 /* SEQ_GENERIC */
 

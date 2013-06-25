@@ -238,6 +238,7 @@ enum EErrType {
     eErr_SEQ_DESCR_AmbiguousSpecificHost,
     eErr_SEQ_DESCR_BadAltitude,
     eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
+    eErr_SEQ_DESCR_InconsistentDates,
     ERR_CODE_END(SEQ_DESCR),
 
 
