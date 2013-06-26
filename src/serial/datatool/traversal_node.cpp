@@ -676,7 +676,7 @@ CRef<CTraversalNode> CTraversalNode::x_CloneWithoutCallers( const string &var_na
     }
     // chop off underscore and the part after it
     result->m_FuncName.resize( last_underscore );
-    result->m_FuncName += "_" + var_name + NStr::IntToString(++ms_FuncUniquerInt);
+    result->m_FuncName += "_" + NStr::Replace(var_name, "-", "_") + NStr::IntToString(++ms_FuncUniquerInt);
 
     ITERATE( TNodeCallSet, callee_iter, m_Callees ) {
         (*callee_iter)->GetNode()->AddCaller( (*callee_iter)->GetVarName(), result );
