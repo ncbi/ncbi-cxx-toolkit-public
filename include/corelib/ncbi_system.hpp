@@ -416,6 +416,30 @@ extern void DisableSuppressSystemMessageBox();
 NCBI_XNCBI_EXPORT
 extern bool IsSuppressedDebugSystemMessageBox();
 
+
+/// [UNIX only]  Provides the process consumed file descriptors count as well
+///              as system wide file descriptor limits.
+///
+/// @param soft_limit Pointer to the variable where the system wide soft limit
+///                   will be stored. -1 means it was impossible to get the
+///                   limit. If NULL is passed the limit will not be provided.
+/// @param hard_limit Pointer to the variable where the system wide hard limit
+///                   will be stored. -1 means it was impossible to get the
+///                   limit. If NULL is passed the limit will not be provided.
+/// @return Number of file descriptors consumed by the process the function is
+///         called from. -1 means that it was impossible to get the count.
+NCBI_XNCBI_EXPORT
+extern int GetProcessFDCount(int* soft_limit = NULL, int* hard_limit = NULL);
+
+
+/// [Linux only]  Provides the number of threads in the current process.
+///
+/// @return Number of threads in the current process. -1 means that this
+///         functionality is not implemented for the paltform or that there
+///         was a problem of getting the number of threads.
+NCBI_XNCBI_EXPORT
+extern int GetProcessThreadCount(void);
+
 END_NCBI_SCOPE
 
 #endif  /* NCBI_SYSTEM__HPP */

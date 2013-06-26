@@ -54,9 +54,11 @@ extern "C" {
 #  include <sys/resource.h>
 #  include <sys/times.h>
 #  include <sys/types.h>
+#  include <dirent.h>
 #  include <limits.h>
 #  include <time.h>
 #  include <unistd.h>
+#  include <fcntl.h>
 #  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
 #    include <sys/sysctl.h>
 #  endif //NCBI_OS_BSD || NCBI_OS_DARWIN
@@ -1083,6 +1085,96 @@ extern bool IsSuppressedDebugSystemMessageBox(void)
         s_SuppressedDebugSystemMessageBox;
 #else
     return false;
+#endif
+}
+
+
+
+extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
+{
+#if defined(NCBI_OS_UNIX)
+    int                 fd_count = 0;
+    struct dirent *     dp;
+
+    DIR *   dir = opendir("/proc/self/fd/");
+    if (dir) {
+        while ((dp = readdir(dir)) != NULL)
+            ++fd_count;
+        closedir(dir);
+        fd_count -= 3;  // '.', '..' and the one for 'opendir'
+        if (fd_count < 0)
+            fd_count = -1;
+    } else {
+        // Fallback to rlimit analisis
+        struct rlimit       rlim;
+        if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
+            // Try till max because the soft limit could be lowered after some
+            // FD were opened.
+            for (unsigned int fd = 0; fd < rlim.rlim_max; ++fd) {
+                if (fcntl(fd, F_GETFD, 0) == -1) {
+                    if (errno == EBADF)
+                        continue;
+                }
+                ++fd_count;
+            }
+            if (soft_limit)
+                *soft_limit = rlim.rlim_cur;
+            if (hard_limit)
+                *hard_limit = rlim.rlim_max;
+        } else {
+            fd_count = -1;
+            if (soft_limit)
+                *soft_limit = -1;
+            if (hard_limit)
+                *hard_limit = -1;
+        }
+        return fd_count;
+    }
+
+    if (soft_limit || hard_limit) {
+        struct rlimit       rlim;
+        if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
+            if (soft_limit)
+                *soft_limit = rlim.rlim_cur;
+            if (hard_limit)
+                *hard_limit = rlim.rlim_max;
+        } else {
+            if (soft_limit)
+                *soft_limit = -1;
+            if (hard_limit)
+                *hard_limit = -1;
+        }
+    }
+    return fd_count;
+#else
+    if (soft_limit)
+        *soft_limit = -1;
+    if (hard_limit)
+        *hard_limit = -1;
+    return -1;
+#endif
+}
+
+
+extern int GetProcessThreadCount(void)
+{
+#if defined(NCBI_OS_LINUX)
+    int                 thread_count = 0;
+    struct dirent *     dp;
+
+    DIR *   dir = opendir("/proc/self/task/");
+    if (dir) {
+        while ((dp = readdir(dir)) != NULL)
+            ++thread_count;
+        closedir(dir);
+        thread_count -= 2;  // '.' and '..'
+        if (thread_count <= 0)
+            thread_count = -1;
+        return thread_count;
+    }
+    return -1;
+#else
+    return -1;
 #endif
 }
 

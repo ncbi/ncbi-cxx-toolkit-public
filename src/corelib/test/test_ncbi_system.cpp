@@ -71,6 +71,26 @@ static void Test_General(void)
     } else {
         cout << "Couldn't determine memory usage." << endl;
     }
+    int soft_fd_limit, hard_fd_limit, proc_fd_count;
+    proc_fd_count = GetProcessFDCount(&soft_fd_limit, &hard_fd_limit);
+    if (proc_fd_count != -1)
+        cout << "Used file descriptors       : " << proc_fd_count << endl;
+    else
+        cout << "Couldn't determine file descriptors usage." << endl;
+    if (soft_fd_limit != -1)
+        cout << "File descriptors soft limit : " << soft_fd_limit << endl;
+    else
+        cout << "Couldn't determine file descriptors soft limit." << endl;
+    if (hard_fd_limit != -1)
+        cout << "File descriptors hard limit : " << hard_fd_limit << endl;
+    else
+        cout << "Couldn't determine file descriptors hard limit." << endl;
+    int proc_thread_count;
+    proc_thread_count = GetProcessThreadCount();
+    if (proc_thread_count != -1)
+        cout << "Number of threads: " << proc_thread_count << endl;
+    else
+        cout << "Couldn't determine the process thread count." << endl;
 }
 
 
