@@ -51,6 +51,13 @@ CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(EAPILocality locali
     SetDefaults();
 }
 
+
+CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(CRef<CBlastOptions> opt)
+    : CBlastOptionsHandle(opt)
+{
+}
+
+
 void
 CBlastNucleotideOptionsHandle::SetDefaults()
 {
