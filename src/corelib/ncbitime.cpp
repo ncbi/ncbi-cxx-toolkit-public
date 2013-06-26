@@ -256,6 +256,9 @@ void s_AddZeroPadInt(string& str, long value, size_t len, bool ignore_trailing_z
         value /= 10;
     } while (value);
 
+    if (size - pos > len) {
+        len = size - pos;
+    }
     char* p = buf + size - len;
     if (ignore_trailing_zeros) {
         for (; len > 1  &&  p[len-1] == '0'; len--) {}
