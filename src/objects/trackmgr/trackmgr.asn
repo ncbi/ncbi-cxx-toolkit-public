@@ -193,13 +193,17 @@ TMgr-BlastRIDRequest ::= SEQUENCE {
 --     "whole" or "interval" types.  In the case of "whole", any number of
 --     queries may be used; in the case of "interval", there should be
 --     exactly one query.  (This is limited by the BlastObject.)
+--
+-- In TMgr-BlastQueryPssm and TMgr-BlastQueryBioseqset, the data field is
+-- optional as it likely doesn't contain essential metadata - the label is sufficient
+--
 TMgr-BlastQueryPssm ::= SEQUENCE {
     label VisibleString,
-    data PssmWithParameters
+    data PssmWithParameters OPTIONAL
 }
 TMgr-BlastQueryBioseqset ::= SEQUENCE {
     label VisibleString,
-    data Bioseq-set
+    data Bioseq-set OPTIONAL
 }
 TMgr-BlastQuerySeqs ::= CHOICE {
     seq-loc-list SEQUENCE OF Seq-loc,
