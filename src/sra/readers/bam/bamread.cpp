@@ -448,6 +448,25 @@ CRef<CSeq_id> CBamDb::GetShortSeq_id(const string& str) const
 }
 
 
+TSeqPos CBamDb::GetRefSeqLength(const string& id) const
+{
+    if ( m_RefSeqLengths.empty() ) {
+        for ( CBamRefSeqIterator it(*this); it; ++it ) {
+            TSeqPos len;
+            try {
+                len = it.GetLength();
+            }
+            catch ( CBamException& /*ignored*/ ) {
+                len = kInvalidSeqPos;
+            }
+            m_RefSeqLengths[it.GetRefSeqId()] = len;
+        }
+    }
+    TRefSeqLengths::const_iterator it = m_RefSeqLengths.find(id);
+    return it == m_RefSeqLengths.end()? kInvalidSeqPos: it->second;
+}
+
+
 string CBamDb::GetHeaderText(void) const
 {
     const BAMFile* file;
@@ -593,6 +612,21 @@ CRef<CSeq_id> CBamRefSeqIterator::GetRefSeq_id(void) const
         m_RefSeq_id = sx_GetRefSeq_id(GetRefSeqId(), GetIdMapper());
     }
     return m_RefSeq_id;
+}
+
+
+TSeqPos CBamRefSeqIterator::GetLength(void) const
+{
+    uint64_t length;
+    if ( rc_t rc = AlignAccessRefSeqEnumeratorGetLength(m_Iter, &length) ) {
+        NCBI_THROW2(CBamException, eNoData,
+                    "CBamRefSeqIterator::GetLength() cannot get length", rc);
+    }
+    if ( length >= kInvalidSeqPos ) {
+        NCBI_THROW(CBamException, eOtherError,
+                   "CBamRefSeqIterator::GetLength() length is too big");
+    }
+    return TSeqPos(length);
 }
 
 

@@ -384,11 +384,15 @@ public:
     CRef<CSeq_id> GetRefSeq_id(const string& str) const;
     CRef<CSeq_id> GetShortSeq_id(const string& str) const;
 
+    TSeqPos GetRefSeqLength(const string& str) const;
+
     string GetHeaderText(void) const;
 
 private:
     string m_DbName;
     AutoPtr<IIdMapper> m_IdMapper;
+    typedef map<string, TSeqPos> TRefSeqLengths;
+    mutable TRefSeqLengths m_RefSeqLengths;
 };
 
 
@@ -493,6 +497,8 @@ public:
 
     const CBamString& GetRefSeqId(void) const;
     CRef<CSeq_id> GetRefSeq_id(void) const;
+
+    TSeqPos GetLength(void) const;
 
 private:
     typedef rc_t (*TGetString)(const AlignAccessRefSeqEnumerator *self,

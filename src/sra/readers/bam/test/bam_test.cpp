@@ -446,7 +446,7 @@ int CBAMTestApp::Run(void)
         }
         if ( args["refseq_table"] ) {
             for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
-                out << "RefSeq: " << it.GetRefSeqId()
+                out << "RefSeq: " << it.GetRefSeqId() << " " << it.GetLength()
                     << '\n';
             }
         }

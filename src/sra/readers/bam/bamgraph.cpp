@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   BAM2Graph
-NCBI_DEFINE_ERR_SUBCODE_X(4);
+NCBI_DEFINE_ERR_SUBCODE_X(6);
 
 BEGIN_SCOPE(objects)
 
@@ -180,12 +180,15 @@ vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
     TSeqPos max_align_span = 0;
     int min_qual = GetMinMapQuality();
 
+    TSeqPos ref_length = db.GetRefSeqLength(GetRefLabel());
+
     typedef map<TSeqPos, Int8> TCovLevelChangeMap;
     TCovLevelChangeMap cov_level_change_map;
     const TSeqPos kMapBinCountThreshold = 20;
 
     const TSeqPos kWarnLongAlignThreshold = 10000;
     const size_t kWarnLongAlignCount = 10;
+    size_t invalid_align_count = 0;
     size_t long_align_count = 0;
     for ( CBamAlignIterator ait(db, GetRefLabel(), 0); ait; ++ait ) {
         if ( min_qual > 0 && ait.GetMapQuality() < min_qual ) {
@@ -196,18 +199,31 @@ vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
         if ( size == 0 ) {
             continue;
         }
-        if ( size > max_align_span ) {
-            max_align_span = size;
-        }
-        align_cov += size;
         TSeqPos pos = ait.GetRefSeqPos();
         if ( pos < min_pos ) {
             min_pos = pos;
         }
         TSeqPos end = pos + size;
+        if ( end > ref_length ) {
+            if ( ++invalid_align_count <= kWarnLongAlignCount ) {
+                ERR_POST_X(5, Warning << "CBam2Seq_graph: "
+                           "alignment is out of refseq bounds " << pos << ": " << size
+                           << ", CIGAR: "<< ait.GetCIGAR());
+            }
+            else if ( invalid_align_count == kWarnLongAlignCount+1 ) {
+                ERR_POST_X(6, Warning << "CBam2Seq_graph: "
+                           "there are more alignments out of refseq bounds...");
+            }
+            --align_cnt;
+            continue;
+        }
         if ( end > max_pos ) {
             max_pos = end;
         }
+        if ( size > max_align_span ) {
+            max_align_span = size;
+        }
+        align_cov += size;
         if ( size > kWarnLongAlignThreshold ) {
             if ( ++long_align_count <= kWarnLongAlignCount ) {
                 ERR_POST_X(3, Warning << "CBam2Seq_graph: "
