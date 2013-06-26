@@ -212,6 +212,18 @@ void CAgpconvertApplication::Init(void)
                              CArgDescriptions::eString);
     arg_desc->AddFlag("stdout", "Write to stdout rather than files.  This does not work for Seq-submits. "
                       "Implies -no_asnval.");
+    arg_desc->AddDefaultKey(
+        "output-type", "ASN_OBJECT_TYPE",
+        "This lets you force what kind of object is used for output. "
+        " Forcing may cause some data to be thrown out (Example: "
+        "if input is a Seq-submit and you force the output to be a "
+        "Seq-entry, then the Seq-submit's data will be disregarded)",
+        CArgDescriptions::eString,
+        "AUTO" );
+    arg_desc->SetConstraint("output-type",
+        &(*new CArgAllow_Strings,
+          "AUTO", "Seq-entry"));
+
 
     arg_desc->SetCurrentGroup("VALIDATION");
 
@@ -410,10 +422,16 @@ int CAgpconvertApplication::Run(void)
     }
 
     if( args["stdout"] ) {
+        CAgpConverter::TOutputBioseqsFlags fOutputBioseqsFlags = 
+            CAgpConverter::fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets;
+
+        if( args["output-type"].AsString() == "Seq-entry" ) {
+            fOutputBioseqsFlags |= CAgpConverter::fOutputBioseqsFlags_WrapInSeqEntry;
+        }
         agpConvert.OutputBioseqs(
             cout,
             vecAgpFileNames,
-            CAgpConverter::fOutputBioseqsFlags_DoNOTUnwrapSingularBioseqSets );
+            fOutputBioseqsFlags );
     } else {
         if( ! args["outdir"] ) {
             throw runtime_error("Please specify -stdout or -outdir");
@@ -467,6 +485,8 @@ void CAgpconvertApplication::x_LoadTemplate(
     CRef<CSeq_entry> & out_ent_templ,
     CRef<CSeq_submit> & out_submit_templ)
 {
+    const CArgs & args = GetArgs();
+
     out_ent_templ.Reset( new CSeq_entry );
     out_submit_templ.Reset( new CSeq_submit ); // possibly not used
 
@@ -623,6 +643,11 @@ void CAgpconvertApplication::x_LoadTemplate(
 
     if( ! out_ent_templ->IsSeq() ) {
         throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
+    }
+
+    if( args["output-type"].AsString() == "Seq-entry" ) {
+        // force Seq-entry by throwing out the Seq-submit
+        out_submit_templ.Reset( new CSeq_submit );
     }
 }
 
