@@ -468,6 +468,64 @@ protected:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CTransparentProcessor -- memory-copy processor
+///
+/// Do not perform any compression/decompression, just copy data from input
+/// buffer to output buffer. Can be used as adapter to work with uncompressed
+/// data in compression streams.
+/// Used in CTransparentStreamCompressor.
+/// @sa CCompressionProcessor, CTransparentStreamProcessor
+
+class NCBI_XUTIL_EXPORT CTransparentProcessor : public CCompressionProcessor
+{
+public:
+    CTransparentProcessor(void) {};
+    virtual ~CTransparentProcessor(void);
+
+protected:
+    virtual EStatus Init   (void);
+    virtual EStatus Process(const char* in_buf,  size_t  in_len,
+                            char*       out_buf, size_t  out_size,
+                            /* out */            size_t* in_avail,
+                            /* out */            size_t* out_avail);
+    virtual EStatus Flush  (char*       out_buf, size_t  out_size,
+                            /* out */            size_t* out_avail);
+    virtual EStatus Finish (char*       out_buf, size_t  out_size,
+                            /* out */            size_t* out_avail);
+    virtual EStatus End    (int abandon = 0);
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+///
+/// CTransparentStreamProcessor -- stream processor to copy data "as is".
+///
+/// See util/compress/stream.hpp for details of stream processing.
+/// @sa CCompressionStreamProcessor, CTransparentProcessor
+
+class NCBI_XUTIL_EXPORT CTransparentStreamProcessor
+    : public CCompressionStreamProcessor
+{
+public:
+    /// Full constructor
+    CTransparentStreamProcessor(
+        streamsize  in_bufsize,
+        streamsize  out_bufsize
+        )
+        : CCompressionStreamProcessor(
+              new CTransparentProcessor(), eDelete, in_bufsize, out_bufsize)
+    {}
+    /// Conventional constructor
+    CTransparentStreamProcessor(void)
+        : CCompressionStreamProcessor(
+              new CTransparentProcessor(),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
+    {}
+};
+
+
 END_NCBI_SCOPE
 
 

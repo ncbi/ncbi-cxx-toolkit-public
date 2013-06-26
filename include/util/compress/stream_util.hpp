@@ -70,11 +70,24 @@ class NCBI_XUTIL_EXPORT CCompressStream
 {
 public:
     /// Compression/decompression method.
+    /// @note
+    ///   Don't mix up "eNone" with compression level. In this mode data
+    ///   will be copied "as is", without parsing or writing any header
+    ///   or footer. On the other hand, CCompress::eLevel_NoCompression
+    ///   use uncompressed data, but reading/writing compression format
+    ///   is always correspond to EMethod.
+    /// @note
+    ///   You can use "eNone" to allow transparent reading/writing data
+    ///   from/to an underlying stream using compression streams, but we
+    ///   do not recommend this. It is always better to use direct access
+    ///   to the original input/output stream if you know in advance that
+    ///   data is uncompressed. 
     enum EMethod {
-        eBZip2,               ///< bzip2
+        eNone,                ///< no compression method (copy "as is")
+        eBZip2,               ///< BZIP2
         eLZO,                 ///< LZO (LZO1X)
-        eZip,                 ///< zlib (raw zip data / DEFLATE method)
-        eGZipFile,            ///< .gz file (including concatenated)
+        eZip,                 ///< ZLIB (raw zip data / DEFLATE method)
+        eGZipFile,            ///< .gz file (including concatenated files)
         eConcatenatedGZipFile ///< Synonym for eGZipFile (for backward compatibility)
     };
 
@@ -111,8 +124,11 @@ public:
     /// @param flags
     ///   By default, predefined algorithm-specific flags will be used,
     ///   but they can be overridden by using this parameter.
+    /// @param level
+    ///   Compression level.
     CCompressIStream(CNcbiIstream& stream, EMethod method, 
-                     ICompression::TFlags flags = fDefault);
+                     ICompression::TFlags flags = fDefault,
+                     ICompression::ELevel level = ICompression::eLevel_Default);
 };
 
 
@@ -144,8 +160,11 @@ public:
     /// @param flags
     ///   By default, predefined algorithm-specific flags will be used,
     ///   but they can be overridden by using this parameter.
+    /// @param level
+    ///   Compression level.
     CCompressOStream(CNcbiOstream& stream, EMethod method, 
-                     ICompression::TFlags flags = fDefault);
+                     ICompression::TFlags flags = fDefault,
+                     ICompression::ELevel level = ICompression::eLevel_Default);
 };
 
 

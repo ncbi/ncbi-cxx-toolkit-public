@@ -138,7 +138,9 @@ class CTest : public CNcbiApplication
 public:
     void Init(void);
     int  Run(void);
+    // Additional tests
     void TestEmptyInputData(CCompressStream::EMethod);
+    void TestTransparentCopy(const char* src_buf, size_t src_len);
 };
 
 
@@ -231,6 +233,10 @@ int CTest::Run(void)
                             CZipStreamCompressor, CZipStreamDecompressor>
                 ::Run(src_buf, len);
         }
+
+        // Test for transparent copy (de)compressor
+        TestTransparentCopy(src_buf, len);
+
         // Restore saved character
         src_buf[len] = saved;
     }
@@ -415,6 +421,54 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
             }}
         }}
     }
+}
+
+
+//------------------------------------------------------------------------
+// Tests for transparent stream encoder (CXX-4148)
+//------------------------------------------------------------------------
+
+void CTest::TestTransparentCopy(const char* src_buf, size_t src_len)
+{
+    AutoArray<char> dst_buf_arr(kBufLen);
+    char* dst_buf = dst_buf_arr.get();
+    assert(dst_buf);
+    size_t n;
+
+    // Input stream test
+    {{
+        memset(dst_buf, 0, kBufLen);
+        CNcbiIstrstream is_str(src_buf, src_len);
+        CCompressionIStream is(is_str, new CTransparentStreamProcessor(), CCompressionStream::fOwnProcessor);
+        assert(is.good());
+        is.read(dst_buf, kReadMax);
+        assert(is.eof());
+        n = (size_t)is.gcount();
+        assert(src_len == n);
+        assert(is.GetProcessedSize() == n);
+        assert(is.GetOutputSize() == n);
+        assert(memcmp(src_buf, dst_buf, n) == 0);
+        OK;
+    }}
+
+    // Output stream test
+    {{
+        memset(dst_buf, 0, kBufLen);
+        CNcbiOstrstream os_str;
+        CCompressionOStream os(os_str, new CTransparentStreamProcessor(), CCompressionStream::fOwnProcessor);
+        assert(os.good());
+        os.write(src_buf, src_len);
+        assert(os.good());
+        os.Finalize();
+        assert(os.good());
+        const char* str = os_str.str();
+        n = (size_t)os_str.pcount();
+        assert(src_len == n);
+        assert(os.GetProcessedSize() == n);
+        assert(os.GetOutputSize() == n);
+        assert(memcmp(src_buf, str, n) == 0);
+        OK;
+    }}
 }
 
 

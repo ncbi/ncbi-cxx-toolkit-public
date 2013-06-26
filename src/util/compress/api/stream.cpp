@@ -228,4 +228,67 @@ unsigned long CCompressionStream::x_GetOutputSize(
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CTransparentProcessor
+//
+
+
+CTransparentProcessor::~CTransparentProcessor()
+{
+    if ( IsBusy() ) {
+        // Abnormal session termination
+        End();
+    }
+}
+
+CCompressionProcessor::EStatus CTransparentProcessor::Init(void)
+{
+    SetBusy();
+    return eStatus_Success;
+}
+
+CCompressionProcessor::EStatus CTransparentProcessor::Process(
+                      const char* in_buf,  size_t  in_len,
+                      char*       out_buf, size_t  out_size,
+                      /* out */            size_t* in_avail,
+                      /* out */            size_t* out_avail)
+{
+    *out_avail = 0;
+    if ( !out_size ) {
+        return eStatus_Overflow;
+    }
+    size_t n = min(in_len, out_size);
+    memcpy(out_buf, in_buf, n);
+    *in_avail  = in_len - n;
+    *out_avail = n;
+    IncreaseProcessedSize((unsigned long)n);
+    IncreaseOutputSize((unsigned long)n);
+    return eStatus_Success;
+}
+
+CCompressionProcessor::EStatus CTransparentProcessor::Flush(
+                      char* out_buf, size_t  out_size,
+                      /* out */      size_t* out_avail)
+{
+    *out_avail = 0;
+    return eStatus_Success;
+}
+
+CCompressionProcessor::EStatus CTransparentProcessor::Finish(
+                      char* out_buf, size_t  out_size,
+                      /* out */      size_t* out_avail)
+{
+    *out_avail = 0;
+    return eStatus_EndOfData;
+}
+
+CCompressionProcessor::EStatus CTransparentProcessor::End(int abandon)
+{
+    SetBusy(false);
+    return eStatus_Success;
+}
+
+
 END_NCBI_SCOPE

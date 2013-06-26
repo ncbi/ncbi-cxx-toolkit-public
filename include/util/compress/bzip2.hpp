@@ -454,7 +454,7 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CLZOStreamDecompressor -- bzip2 based decompression stream processor
+/// CBZip2StreamDecompressor -- bzip2 based decompression stream processor
 ///
 /// See util/compress/stream.hpp for details.
 /// @sa CCompressionStreamProcessor
