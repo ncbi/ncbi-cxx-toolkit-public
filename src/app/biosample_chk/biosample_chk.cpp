@@ -52,6 +52,13 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Affil.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/cleanup/cleanup.hpp>
@@ -636,7 +643,24 @@ bool CBiosampleChkApp::x_IsReportableStructuredComment(const CSeqdesc& desc)
 }
 
 
+static bool s_IsCitSub (const CSeqdesc& desc)
+{
+    if (!desc.IsPub() || !desc.GetPub().IsSetPub()) {
+        return false;
+    }
+    ITERATE(CPubdesc::TPub::Tdata, it, desc.GetPub().GetPub().Get()) {
+        if ((*it)->IsSub()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 const string kSequenceID = "Sequence ID";
+const string kAffilInst = "Institution";
+const string kAffilDept = "Department";
 
 // This function is for generating a table of biosample values for a bioseq
 // that does not currently have a biosample ID
@@ -654,7 +678,13 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, CRef<CSeq_table> t
 	while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
 		++comm_desc_ci;
 	}
-    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0) {
+
+    CSeqdesc_CI pub_desc_ci(bh, CSeqdesc::e_Pub);
+    while (pub_desc_ci && !s_IsCitSub(*pub_desc_ci)) {
+        ++pub_desc_ci;
+    }
+
+    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0 && !pub_desc_ci) {
         return;
     }
 
@@ -671,6 +701,25 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, CRef<CSeq_table> t
 		}
 		AddValueToTable(table, "BioProject", val, row);
 	}
+
+    if (pub_desc_ci) {
+        ITERATE(CPubdesc::TPub::Tdata, it, pub_desc_ci->GetPub().GetPub().Get()) {
+            if ((*it)->IsSub() && (*it)->GetSub().IsSetAuthors() && (*it)->GetSub().GetAuthors().IsSetAffil()) {
+                const CAffil& affil = (*it)->GetSub().GetAuthors().GetAffil();
+                if (affil.IsStd()) {
+                    if (affil.GetStd().IsSetAffil()) {
+                        AddValueToTable(table, kAffilInst, affil.GetStd().GetAffil(), row);
+                    }
+                    if (affil.GetStd().IsSetDiv()) {
+                        AddValueToTable(table, kAffilDept, affil.GetStd().GetDiv(), row);
+                    }
+                } else if (affil.IsStr()) {
+                    AddValueToTable(table, kAffilInst, affil.GetStr(), row);
+                }
+                break;
+            }
+        }
+    }
 
 	if (src_desc_ci) {
 		const CBioSource& src = src_desc_ci->GetSource();
