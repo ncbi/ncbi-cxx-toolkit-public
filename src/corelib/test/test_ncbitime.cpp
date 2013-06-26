@@ -602,8 +602,53 @@ static void s_TestFormats(void)
             assert(s.compare("12/13/2002 12:34:56 PM GMT Friday") == 0);
         }}
     }}
+    {{
+        const char fmtstr[] = "b d, Y H:m P";
+        {{
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Feb 10, 2003 08:40 PM") == 0);
+        }}
+        {{
+            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Feb 10, 1998 08:40 PM") == 0);
+        }}
+        {{
+            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Mar 13, 2003 03:49 PM") == 0);
+        }}
+        {{
+            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Mar 13, 2001 03:49 PM") == 0);
+        }}
+        {{
+            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Dec 31, 2002 11:59 PM") == 0);
+        }}
+        {{
+            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Jan 1, 2003 12:00 AM") == 0);
+        }}
+        {{
+            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("Dec 13, 2002 12:34 PM") == 0);
+        }}
+    }}
 
-    // Partialy defined time
+    // Partially defined time
     {{
         string s;
         {{  // Y
