@@ -197,16 +197,16 @@ TMgr-BlastRIDRequest ::= SEQUENCE {
 --     queries may be used; in the case of "interval", there should be
 --     exactly one query.  (This is limited by the BlastObject.)
 --
--- In TMgr-BlastQueryPssm and TMgr-BlastQueryBioseqset, the data field is
--- optional as it likely doesn't contain essential metadata - the label is sufficient
+-- TMgr-BlastQueryPssm.data is optional as it likely doesn't contain essential
+-- metadata - the label is sufficient
 --
 TMgr-BlastQueryPssm ::= SEQUENCE {
     label VisibleString,
     data PssmWithParameters OPTIONAL
 }
-TMgr-BlastQueryBioseqset ::= SEQUENCE {
+TMgr-BlastQueryBioseq ::= SEQUENCE {
     label VisibleString,
-    data Bioseq-set OPTIONAL
+    seq Seq-entry OPTIONAL
 }
 TMgr-BlastQuerySeqLoc ::= SEQUENCE {
     label VisibleString, -- accession or seq-id string
@@ -215,7 +215,7 @@ TMgr-BlastQuerySeqLoc ::= SEQUENCE {
 TMgr-BlastQuerySeqs ::= CHOICE {
     seq-loc-list SEQUENCE OF TMgr-BlastQuerySeqLoc,
     pssm TMgr-BlastQueryPssm,
-    bioseq-set TMgr-BlastQueryBioseqset
+    bioseq-set SEQUENCE OF TMgr-BlastQueryBioseq -- bioseq_set.seq-set contents
 }
 
 TMgr-BlastRIDReply ::= SEQUENCE {
