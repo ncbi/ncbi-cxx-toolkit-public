@@ -4270,7 +4270,7 @@ if test "$with_mysql" != "no" ; then
       # Kill off single quotes, due to later requoting
       : ${MYSQL_INCLUDE=`$mysql_config --include | tr -d \'`}
       NCBI_RPATHIFY_OUTPUT_COND(MYSQL_LIBS, $mysql_config --libs${mt_sfx:+_r},
-         [s/'//g; ])
+         [s/'//g; $no_usr_lib])
       AC_CACHE_CHECK([whether MySQL works], ncbi_cv_lib_mysql,
          [CPPFLAGS="$MYSQL_INCLUDE $orig_CPPFLAGS"
           LIBS="$MYSQL_LIBS $orig_LIBS"
