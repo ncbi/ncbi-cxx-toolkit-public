@@ -614,8 +614,11 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                         }
                     }  else {
                         //no overlaps, do nothing
-                        //no comparing again as it's already sorted
-                        break;                     
+                        if ((*iter_lower)->range.GetFrom() > (*iter_higher)->range.GetFrom()) {
+                            //no comparing again as it's already sorted
+                            break; 
+                        }
+                        iter_lower ++; 
                     }
                 }
             }
