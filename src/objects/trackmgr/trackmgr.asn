@@ -208,8 +208,12 @@ TMgr-BlastQueryBioseqset ::= SEQUENCE {
     label VisibleString,
     data Bioseq-set OPTIONAL
 }
+TMgr-BlastQuerySeqLoc ::= SEQUENCE {
+    label VisibleString, -- accession or seq-id string
+    loc Seq-loc
+}
 TMgr-BlastQuerySeqs ::= CHOICE {
-    seq-loc-list SEQUENCE OF Seq-loc,
+    seq-loc-list SEQUENCE OF TMgr-BlastQuerySeqLoc,
     pssm TMgr-BlastQueryPssm,
     bioseq-set TMgr-BlastQueryBioseqset
 }
