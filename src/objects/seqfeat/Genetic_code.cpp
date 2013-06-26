@@ -80,6 +80,28 @@ int CGenetic_code::GetId(void) const
     return m_Id;
 }
 
+// Set the genetic-code's numeric ID.
+void CGenetic_code::SetId(int iNewGenCode)
+{
+    bool bAnySet = false;
+    NON_CONST_ITERATE( CGenetic_code::Tdata, gcode_it, Set() ) {
+        if( (*gcode_it)->IsId() ) {
+            (*gcode_it)->SetId(iNewGenCode);
+            bAnySet = true;
+            // keep going, we want to set all of them if there
+            // is more than one (hopefully not)
+        }
+    }
+    if( ! bAnySet ) {
+        // no ids were found, so add one
+        CRef<CGenetic_code::C_E> pIdObj( new CGenetic_code::C_E );
+        pIdObj->SetId(iNewGenCode);
+        Set().push_back( pIdObj );
+    }
+
+    // also set m_Id
+    m_Id = iNewGenCode;
+}
 
 const string& CGenetic_code::GetNcbieaa(void) const
 {

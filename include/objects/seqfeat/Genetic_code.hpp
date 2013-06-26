@@ -62,6 +62,8 @@ public:
 
     // Retrieve the genetic-code's numeric ID.
     int GetId(void) const;
+    // Set the genetic-code's numeric ID.
+    void SetId(int);
 
     // Try to retrieve the ncbieaa and sncbieaa strings.
     // If they don't exist return empty strings instead.
