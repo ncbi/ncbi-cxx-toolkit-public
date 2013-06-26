@@ -180,7 +180,10 @@ TMgr-Message ::= SEQUENCE {
 
 
 TMgr-BlastRIDRequest ::= SEQUENCE {
-    rid VisibleString
+    rid VisibleString,
+    flags SEQUENCE {
+        include-data BOOLEAN DEFAULT FALSE
+    }
 }
 
 -- TMgr-BlastQuerySeqs is analogous to Blast4-queries, though bioseq-set
