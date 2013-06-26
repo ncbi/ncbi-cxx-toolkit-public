@@ -453,5 +453,37 @@ BOOST_AUTO_TEST_CASE(Test_SQD_169)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_374)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource (entry, "Clathrina aurea");
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetImp().SetKey("misc_feature");
+    feat->SetComment("contains DNA lyase (Apn2) gene, Apn2-Mat1 intergenic spacer, and mating type protein (Mat1) gene");
+    AddFeat(feat, entry);
+    feat->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    feat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(entry, "Clathrina aurea DNA lyase (Apn2) gene, partial sequence; Apn2-Mat1 intergenic spacer, complete sequence; and mating type protein (Mat1) gene, partial sequence.");
+
+    CheckDeflineMatches(entry);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_155)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource (entry, "Clathrina aurea");
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetImp().SetKey("misc_feature");
+    feat->SetComment("amplified with primers designed for 16S ribosomal RNA");
+    AddFeat(feat, entry);
+
+    AddTitle(entry, "Clathrina aurea.");
+
+    CheckDeflineMatches(entry);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

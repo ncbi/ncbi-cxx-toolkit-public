@@ -79,8 +79,8 @@ public:
     
     void AddSource(const CBioSource& bs, string feature_clauses = "");
     
-    void AddSubsource(CSubSource::ESubtype st);
-    void AddOrgMod(COrgMod::ESubtype st);
+    void AddSubsource(CSubSource::ESubtype st, bool even_if_not_uniquifying = false);
+    void AddOrgMod(COrgMod::ESubtype st, bool even_if_not_uniquifying = false);
     void GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list);
     bool HasTrickyHIV();
     bool GetDefaultExcludeSp();
@@ -129,7 +129,7 @@ public:
         return Compare (src) < 0;
     }
 
-    bool AddQual (bool IsOrgMod, int subtype);
+    bool AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying = false);
     bool RemoveQual (bool IsOrgMod, int subtype);
 
     vector<CAutoDefModifierCombo *> ExpandByAnyPresent();

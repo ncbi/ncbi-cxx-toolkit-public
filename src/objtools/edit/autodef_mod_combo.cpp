@@ -188,15 +188,15 @@ void CAutoDefModifierCombo::AddSource(const CBioSource& bs, string feature_claus
 }
 
 
-void CAutoDefModifierCombo::AddSubsource(CSubSource::ESubtype st)
+void CAutoDefModifierCombo::AddSubsource(CSubSource::ESubtype st, bool even_if_not_uniquifying)
 {
-    AddQual(false, st);
+    AddQual(false, st, even_if_not_uniquifying);
 }
 
 
-void CAutoDefModifierCombo::AddOrgMod(COrgMod::ESubtype st)
+void CAutoDefModifierCombo::AddOrgMod(COrgMod::ESubtype st, bool even_if_not_uniquifying)
 {
-    AddQual (true, st);
+    AddQual (true, st, even_if_not_uniquifying);
 }
 
 
@@ -661,7 +661,7 @@ struct SAutoDefSourceGroupByStrings {
 };
 
 
-bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype)
+bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying)
 {
     bool added = false, rval = false;
     vector <CAutoDefSourceGroup *> new_groups;
@@ -688,7 +688,7 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype)
         new_groups.pop_back();
     }
 
-    if (rval) {
+    if (rval || even_if_not_uniquifying) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo (IsOrgMod, subtype, ""));
         std::sort (m_GroupList.begin(), m_GroupList.end(), SAutoDefSourceGroupByStrings());
         if (IsOrgMod) {
