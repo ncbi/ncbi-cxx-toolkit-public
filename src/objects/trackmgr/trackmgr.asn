@@ -17,7 +17,7 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
 
 IMPORTS Seq-id, Seq-loc FROM NCBI-Seqloc
         Dbtag FROM NCBI-General
-        Bioseq-set FROM NCBI-Seqset
+        Bioseq-set, Seq-entry FROM NCBI-Seqset
         PssmWithParameters FROM NCBI-ScoreMat;
 ---
 --- Top-level request/reply
