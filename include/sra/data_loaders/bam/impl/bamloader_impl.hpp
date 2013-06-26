@@ -181,6 +181,11 @@ public:
 
     CBamRefSeqInfo* GetRefSeqInfo(const CSeq_id_Handle& seq_id) const;
 
+    TSeqPos GetRefSeqLength(const string& id) const
+        {
+            return m_BamDb.GetRefSeqLength(id);
+        }
+
     CMutex& GetMutex(void) const
         {
             return m_BamMutex;

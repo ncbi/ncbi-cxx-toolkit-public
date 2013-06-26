@@ -596,6 +596,7 @@ namespace {
     {
         m_RefPosQuery = ref_pos;
         size_t skipped = 0;
+        TSeqPos ref_len = bam_db.GetRefSeqLength(ref_id);
         CBamAlignIterator ait(bam_db, ref_id, ref_pos);
         for ( ; ait; ++ait ) {
             TSeqPos pos = ait.GetRefSeqPos();
@@ -607,12 +608,16 @@ namespace {
                 ++skipped;
                 continue;
             }
-            m_RefPosLast = pos;
             TSeqPos len = ait.GetCIGARRefSize();
+            TSeqPos max = pos + len;
+            if ( max > ref_len ) {
+                ++skipped;
+                continue;
+            }
+            m_RefPosLast = pos;
             if ( len > m_RefLenMax ) {
                 m_RefLenMax = len;
             }
-            TSeqPos max = pos + len;
             if ( max > m_RefPosMax ) {
                 m_RefPosMax = max;
             }
@@ -854,7 +859,8 @@ void CBamRefSeqInfo::x_LoadRangesStat(void)
         stat_len = stat[0].GetStatLen();
         stat_cnt = stat[0].GetStatCount();
     }
-    {{
+    ref_end = m_File->GetRefSeqLength(GetRefSeqId());
+    if ( ref_end == kInvalidSeqPos ) {
         TSeqPos min = ref_end_min;
         TSeqPos max = kInvalidSeqPos;
         while ( max > min+max_len+1 ) {
@@ -869,7 +875,7 @@ void CBamRefSeqInfo::x_LoadRangesStat(void)
         }
         ref_end = max;
         _TRACE("binary: end: "<<max);
-    }}
+    }
     for ( unsigned k = scan_first; k < kNumStat; ++k ) {
         TSeqPos ref_pos = ref_begin +
             TSeqPos(double(ref_end - ref_begin)*k/kNumStat);
@@ -908,7 +914,11 @@ void CBamRefSeqInfo::x_LoadRangesStat(void)
         TSeqPos pos = pp[k];
         TSeqPos end = pp[k+1];
         chunk.m_RefSeqRange.SetFrom(pos);
-        chunk.m_RefSeqRange.SetToOpen(end+max_len);
+        TSeqPos end2 = min(end+max_len, ref_end);
+        if ( k+1 < chunks ) {
+            end2 = min(end2, pp[k+2]);
+        }
+        chunk.m_RefSeqRange.SetToOpen(end2);
         chunk.m_MaxRefSeqFrom = end-1;
         m_Chunks.push_back(chunk);
     }
@@ -920,12 +930,16 @@ void CBamRefSeqInfo::x_LoadRangesScan(void)
     typedef CBamRefSeqInfo::TRange TRange;
     vector<TRange> rr;
     int min_quality = m_MinMapQuality;
+    TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
     for ( CBamAlignIterator ait(*m_File, GetRefSeqId(), 0); ait; ++ait ) {
         if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
             continue;
         }
         TSeqPos ref_pos = ait.GetRefSeqPos();
         TSeqPos ref_end = ref_pos + ait.GetCIGARRefSize() - 1;
+        if ( ref_end > ref_len ) {
+            continue;
+        }
         rr.push_back(TRange(ref_pos, ref_end));
     }
     if ( !rr.empty() ) {
@@ -1137,17 +1151,24 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     CRef<CSeq_annot> annot;
     CSeq_annot::TData::TAlign* align_list = 0;
     
+    TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
     CBamAlignIterator ait(*m_File, GetRefSeqId(), pos, len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
-    for( ; ait; ++ait ){
-        if ( ait.GetRefSeqPos() < pos ) {
+    for( ; ait; ++ait ) {
+        TSeqPos align_pos = ait.GetRefSeqPos();
+        if ( align_pos < pos ) {
             // the alignments starts before current chunk range
             ++skipped;
             continue;
         }
         if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+            ++skipped;
+            continue;
+        }
+        TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+        if ( align_end > ref_len ) {
             ++skipped;
             continue;
         }
@@ -1203,17 +1224,24 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     size_t count = 0, skipped = 0, dups = 0;
     set<CSeq_id_Handle> loaded;
     
+    TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
     CBamAlignIterator ait(*m_File, GetRefSeqId(), pos, len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
     for( ; ait; ++ait ){
-        if ( ait.GetRefSeqPos() < pos ) {
+        TSeqPos align_pos = ait.GetRefSeqPos();
+        if ( align_pos < pos ) {
             // the alignments starts before current chunk range
             ++skipped;
             continue;
         }
         if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+            ++skipped;
+            continue;
+        }
+        TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+        if ( align_end > ref_len ) {
             ++skipped;
             continue;
         }
@@ -1312,7 +1340,6 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     else {
         chunk_len = chunk.GetMaxRefSeqFrom() - chunk_pos + 1;
     }
-    TSeqPos chunk_end = chunk_pos + chunk_len;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
     _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
@@ -1321,18 +1348,25 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     vector<SBaseStat> ss(chunk_len);
     SBaseStat::TCount whole_chunk_gap_count = 0;
     
+    TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
     CBamAlignIterator ait(*m_File, GetRefSeqId(), chunk_pos, chunk_len);
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
     for( ; ait; ++ait ){
+        TSeqPos align_pos = ait.GetRefSeqPos();
+        TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+        if ( align_end > ref_len ) {
+            ++skipped;
+            continue;
+        }
         if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
             ++skipped;
             continue;
         }
         ++count;
 
-        TSeqPos ss_pos = ait.GetRefSeqPos() - chunk_pos;
+        TSeqPos ss_pos = align_pos - chunk_pos;
         TSeqPos read_pos = ait.GetCIGARPos();
         const CBamString& read = ait.GetShortSequence();
         const CBamString& cigar = ait.GetCIGAR();
