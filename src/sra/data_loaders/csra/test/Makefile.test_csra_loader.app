@@ -11,6 +11,6 @@ LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = mapfile
 CHECK_CMD = test_csra_loader
-CHECK_REQUIRES = -AIX -BSD -Solaris
+CHECK_REQUIRES = in-house-resources -Solaris
 
 WATCHERS = vasilche ucko

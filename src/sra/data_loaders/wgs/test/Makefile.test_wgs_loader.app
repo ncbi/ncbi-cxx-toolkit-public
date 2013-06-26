@@ -10,6 +10,6 @@ LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xobjreadex submit xobjutil test_boost $(O
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_wgs_loader
-CHECK_REQUIRES = -AIX -BSD -Solaris
+CHECK_REQUIRES = in-house-resources -Solaris
 
 WATCHERS = vasilche ucko

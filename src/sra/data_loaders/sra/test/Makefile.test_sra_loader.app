@@ -10,6 +10,6 @@ LIB = ncbi_xloader_sra $(SRAREAD_LIBS) test_boost $(SOBJMGR_LIBS) $(CMPRS_LIB)
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_sra_loader
-CHECK_REQUIRES = -AIX -BSD -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources -MSWin -Solaris
 
 WATCHERS = vasilche ucko

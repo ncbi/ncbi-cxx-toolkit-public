@@ -13,6 +13,6 @@ LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = mapfile test_bam_loader.ini
 CHECK_CMD = test_bam_loader
-CHECK_REQUIRES = -AIX -BSD -Solaris
+CHECK_REQUIRES = in-house-resources -Solaris
 
 WATCHERS = vasilche ucko

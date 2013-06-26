@@ -10,6 +10,6 @@ LIB = ncbi_xloader_vdbgraph $(SRAREAD_LIBS) test_boost $(SOBJMGR_LIBS) $(CMPRS_L
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_vdbgraph_loader
-CHECK_REQUIRES = -AIX -BSD -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources -MSWin -Solaris
 
 WATCHERS = vasilche

@@ -16,7 +16,7 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = -AIX -BSD -MSWin -Solaris
+CHECK_REQUIRES = in-house-resources -MSWin -Solaris
 CHECK_CMD = wgs_test -file AAAA -print_seq
 CHECK_CMD = wgs_test -file AAAA01 -print_seq
 CHECK_CMD = wgs_test -file AAAA02 -print_seq
