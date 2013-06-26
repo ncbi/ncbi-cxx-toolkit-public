@@ -4677,9 +4677,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "TPA:experimental and TPA:inferential should not both be in the same set of keywords"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_dates [Mar 2009] and [Apr 2009]"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "Inconsistent",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InconsistentDates",
                               "Inconsistent create_date [Apr 2009] and update_date [Feb 2009]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "Inconsistent",
                               "Inconsistent taxnames [Trichechus manatus] and [Sebaea microphylla]"));
