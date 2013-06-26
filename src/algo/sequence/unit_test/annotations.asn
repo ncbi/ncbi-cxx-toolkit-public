@@ -9580,3 +9580,238 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "ASIC2",
+        desc "acid-sensing (proton-gated) ion channel 2",
+        syn {
+          "ACCN",
+          "ACCN1",
+          "ASIC2a",
+          "BNaC1",
+          "BNC1",
+          "hBNaC1",
+          "MDEG"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 919042,
+        to 1198698,
+        strand minus,
+        id gi 157697769,
+        fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 40
+        },
+        {
+          db "HGNC",
+          tag id 99
+        },
+        {
+          db "HPRD",
+          tag str "03471"
+        },
+        {
+          db "MIM",
+          tag id 601784
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "acid-sensing (proton-gated) ion channel 2, transcript
+ variant MDEG2"
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 140 substitutions and 1 indel
+ compared to this genomic sequence",
+      product whole gi 34452694,
+      location packed-int {
+        {
+          from 1197113,
+          to 1198698,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 1017861,
+          to 1018011,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 994802,
+          to 994929,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 934177,
+          to 934327,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 931860,
+          to 931916,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 929795,
+          to 929948,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 927154,
+          to 927245,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 923558,
+          to 923637,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 921926,
+          to 921994,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 919042,
+          to 920021,
+          strand minus,
+          id gi 157697769
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_183377.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        frame three,
+        code {
+          id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 1197818,
+              to 1197820,
+              strand minus,
+              id gi 157697769
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "similarity to MDEG2 (Mus musculus)~isoform MDEG2 is encoded by
+ transcript variant MDEG2; The RefSeq protein has 13 substitutions compared to
+ this genomic sequence",
+      product whole gi 34452695,
+      location packed-int {
+        {
+          from 1197113,
+          to 1197783,
+          strand minus,
+          id gi 157697769,
+          fuzz-to lim gt
+        },
+        {
+          from 1017861,
+          to 1018011,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 994802,
+          to 994929,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 934177,
+          to 934327,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 931860,
+          to 931916,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 929795,
+          to 929948,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 927154,
+          to 927245,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 923558,
+          to 923637,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 921926,
+          to 921994,
+          strand minus,
+          id gi 157697769
+        },
+        {
+          from 919920,
+          to 920021,
+          strand minus,
+          id gi 157697769
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_899233.1"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "acid-sensing ion channel 2 isoform MDEG2"
+            }
+          }
+        }
+      },
+      dbxref {
+        {
+          db "CCDS",
+          tag str "CCDS11276.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    }
+  }
+}

@@ -18513,3 +18513,431 @@ ARPPRPPYPPRRDGSGGKGGGGSARYNQGRSRSGGASIGFHTQTILILSLSALALLGPR"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 34452694
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 3470,
+        ext delta {
+          literal {
+            length 3443,
+            seq-data ncbi4na '212284441414224144241411424121288222842442814218
+228841144122224424424112142282224214412422284141142828214222214424141424442422
+844214412881442421441288444411422811421448282842241424214222144414214811211441
+144482284414444114441114114424421422442114424122128212222448121212221222242224
+222142214414224244842422828444442428248822884424228828282224848222142122428444
+281244422444284484444822284444184822141821442184484422414844222882822214412214
+248111142844448814424444214444441282442821444822222414482214412414444144244424
+214212221444128441414424428222148444122228221411481484224442422444218228221441
+141221444422444111422844414424282444141442212842214444284244428414414424282142
+222444244424222424414424421424424424224442444218422424221224414282288824442421
+24288222844242444284242424424FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+FFFF24282122442224441242882242184422242414414224424222424424884424428422444214
+222444442442141442442414244424284214444221444482422242144444244221824284142242
+428111284212444284244212184848422444242124424428444442822882214244244424284844
+484284422882848121822882442884284284822844822824112242884282812844282142882224
+821212124244484212242414844142242214881222882222422482122484842112112112224284
+242882224242282822114444412282812818422442212844282444284284284222112242122424
+242224288482142414284284244442412414224242242214844882242114284424412882242282
+882284228224242212882414441182142422422882184412242284442212214284414412184284
+282822842114812242442414282842444224212112882822822484888121111818444114848812
+184888112821442414418442111228284282122124482114444444121442112444284414182184
+284412188214214418414812284222182844441414121414411124121888411421441484111488
+214182212148214828414221228882182211414284442888444484428221444882214122888484
+422121214414214144282121812284222221224844448414842241822821414184442282412888
+888228488812142182122422848144188412848414122242812188484411112842112842242184
+488212184221444418422228888848122228414214212114414848421414228422281448284884
+424411114412142118812848282842144121222842112281122242812112111414282822184484
+114182222142114121821422114812288414114111888112111821411111818182821414112182
+288488284418181888888411428282118818414121188411214114114424818411488428422881
+288448418188448448214184441884882188448428148182288121181281414282888418818188
+818414284182111414114281881412284288442111414414412411444142212418414118484148
+128848412121184221112212828411122182148212128484112484222284214124122284444122
+884414414188422842841212222824148212221421282228221112141228841442221141222144
+121144112142114282144844418442222148428441114114211414222228184212121884214128
+142842281412282428224422124822112124124218228844422224224842482228288144141418
+414821212828441128482211411241122842218212182821284221418481811142122842184282
+141288288184424221228221248284828848121841212822822124244888221484822121284284
+222484214844412214188221448221114821221841442212228441182141128421211821141444
+112221844412828284281218821488288484824888484111488288112284222111112222288882
+222114284222124444288244242211144841222424221122822282222222148422848412442442
+121421422142444844444124228484882122218448422218482488288282822284841212142884
+812148284188288888182844448144444428888184888482241844141888488884888842882188
+881842888888188881488884184882841448884288844888882218888288844218881888188248
+428821118212148218188111142844828848441110'H
+          },
+          literal {
+            length 27
+          }
+        },
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id gi 34452694,
+                genomic-id gi 157697769,
+                product-strand plus,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 1580,
+                    genomic-start 1197113,
+                    genomic-end 1198698,
+                    parts {
+                      match 261,
+                      mismatch 1,
+                      match 244,
+                      mismatch 1,
+                      match 154,
+                      mismatch 1,
+                      match 115,
+                      mismatch 66,
+                      genomic-ins 5,
+                      mismatch 67,
+                      match 364,
+                      mismatch 1,
+                      match 306
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 770867980957031, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 996138996138996, 10, -15 }
+                      },
+                      {
+                        id str "score",
+                        value real { 668955993652344, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 998509687034277, 10, -15 }
+                      }
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    },
+                    partial FALSE
+                  },
+                  {
+                    product-start nucpos 1581,
+                    product-end nucpos 1731,
+                    genomic-start 1017861,
+                    genomic-end 1018011,
+                    parts {
+                      match 151
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 151, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 1732,
+                    product-end nucpos 1859,
+                    genomic-start 994802,
+                    genomic-end 994929,
+                    parts {
+                      match 128
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 128, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 1860,
+                    product-end nucpos 2010,
+                    genomic-start 934177,
+                    genomic-end 934327,
+                    parts {
+                      match 151
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 151, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 2011,
+                    product-end nucpos 2067,
+                    genomic-start 931860,
+                    genomic-end 931916,
+                    parts {
+                      match 57
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 57, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 2068,
+                    product-end nucpos 2221,
+                    genomic-start 929795,
+                    genomic-end 929948,
+                    parts {
+                      match 154
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 154, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 2222,
+                    product-end nucpos 2313,
+                    genomic-start 927154,
+                    genomic-end 927245,
+                    parts {
+                      match 92
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 92, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 2314,
+                    product-end nucpos 2393,
+                    genomic-start 923558,
+                    genomic-end 923637,
+                    parts {
+                      match 80
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 8, 10, 1 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 2394,
+                    product-end nucpos 2462,
+                    genomic-start 921926,
+                    genomic-end 921994,
+                    parts {
+                      match 69
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 69, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 2463,
+                    product-end nucpos 3442,
+                    genomic-start 919042,
+                    genomic-end 920021,
+                    parts {
+                      match 402,
+                      mismatch 1,
+                      match 237,
+                      mismatch 1,
+                      match 53,
+                      mismatch 1,
+                      match 285
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 973867980957031, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 996938775510204, 10, -15 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    }
+                  }
+                },
+                poly-a 3443,
+                product-length 3470
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 873,
+                      to 875,
+                      strand plus,
+                      id gi 34452694
+                    },
+                    aa ncbieaa 77
+                  }
+                }
+              },
+              comment "similarity to MDEG2 (Mus musculus)~isoform MDEG2 is
+ encoded by transcript variant MDEG2",
+              product whole gi 34452695,
+              location int {
+                from 873,
+                to 2564,
+                strand plus,
+                id gi 34452694
+              },
+              dbxref {
+                {
+                  db "CCDS",
+                  tag str "CCDS11276.1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 34452695
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-left
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 563,
+        seq-data iupacaa "MXXXXXXXXXXXXLTGPGRFRMAREEPAPAALAAAGQPGGGRGGERALQGPG
+VARRGRPSLSRAKLHGLRHMCAGRTAAGGSFQRRALWVLAFCTSFGLLLSWSSNRLLYWLSFPSHTRVHREWSRQLPF
+PAVTVCNNNPLRFPRLSKGDLYYAGHWLGLLLPNRTARPLVSELLRGDEPRRQWFRKLADFRLFLPPRHFEGISAAFM
+DRLGHQLEDMLLSCKYRGELCGPHNFSSVFTKYGKCYMFNSGEDGKPLLTTVKGGTGNGLEIMLDIQQDEYLPIWGET
+EETTFEAGVKVQIHSQSEPPFIQELGFGVAPGFQTFVATQEQRLTYLPPPWGECRSSEMGLDFFPVYSITACRIDCET
+RYIVENCNCRMVHMPGDAPFCTPEQHKECAEPALGLLAEKDSNYCLCRTPCNLTRYNKELSMVKIPSKTSAKYLEKKF
+NKSEKYISENILVLDIFFEALNYETIEQKKAYEVAALLGDIGGQMGLFIGASILTILELFDYIYELIKEKLLDLLGKE
+EDEGSHDENVSTCDTMPNHSETISHTVNVPLQTTLGTLEEIAC"
+      }
+    }
+  }
+}

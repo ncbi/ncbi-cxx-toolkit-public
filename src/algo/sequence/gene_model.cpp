@@ -2832,7 +2832,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             cds_len_on_query_mrna = GetLength(cds_feat_on_query_mrna->GetLocation(), NULL);
 
             if (cds_feat_on_query_mrna->GetData().GetCdregion().IsSetFrame()) {
-                switch (feat.GetData().GetCdregion().GetFrame()) {
+                switch (cds_feat_on_query_mrna->GetData().GetCdregion().GetFrame()) {
                 case CCdregion::eFrame_two :
                     frame_on_mrna = 1;
                     break;
