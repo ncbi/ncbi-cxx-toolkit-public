@@ -108,9 +108,6 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(string acc,
         return AskGet_assembly(req, &reply);
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
-            ERR_POST(Error << " at Server  side (will be propagated) ...\nErrId:" 
-                            << reply.GetSrvr_error().GetError_id() << ": "
-                            << reply.GetSrvr_error().GetDescription());
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
         }
         throw;
@@ -145,9 +142,6 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
         return AskGet_assembly(req, &reply);
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
-            ERR_POST(Error << " at Server side (will be propagated) ...\n" 
-                            << reply.GetSrvr_error().GetError_id() << ": "
-                            << reply.GetSrvr_error().GetDescription());
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
         }
         throw;
@@ -172,9 +166,6 @@ string CGenomicCollectionsService::ValidateChrType(string chrType, string chrLoc
         return AskGet_chrtype_valid(req, &reply);
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
-            ERR_POST(Error << " at Server side (will be propagated) ...\n" 
-                            << reply.GetSrvr_error().GetError_id() << ": "
-                            << reply.GetSrvr_error().GetDescription());
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
         }
         throw;
