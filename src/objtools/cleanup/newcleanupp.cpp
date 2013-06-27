@@ -176,8 +176,6 @@ CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
       m_Options(options),
       m_Objmgr(NULL),
       m_Scope(NULL),
-      m_IsEmblOrDdbj(false),
-      m_StripSerial(false),
       m_IsGpipe(false)
 {
     if (options & CCleanup::eClean_GpipeMode) {
@@ -186,6 +184,9 @@ CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
 
     m_Objmgr = CObjectManager::GetInstance ();
     m_Scope.Reset (new CScope (*m_Objmgr));
+
+    // make sure stack is never empty, so "top()" always works
+    m_SeqEntryInfoStack.push( SSeqEntryInfo() );
 }
 
 // Destructor
@@ -426,11 +427,19 @@ void CNewCleanup_imp::ChangeMade (CCleanupChange::EChanges e)
     }
 }
 
-void CNewCleanup_imp::SetupBC (
+void CNewCleanup_imp::EnteringEntry (
     CSeq_entry& se
 )
 
 {
+    SSeqEntryInfo seqEntryInfo;
+    if( ! m_SeqEntryInfoStack.empty() ) {
+        // inherit from parent by default
+        seqEntryInfo = m_SeqEntryInfoStack.top();
+    }
+    seqEntryInfo.m_IsEmblOrDdbj = false;
+    seqEntryInfo.m_StripSerial = true;
+
     // for cleanup Seq-entry and Seq-submit, set scope and parentize.
     // We use exceptions for AddTopLevelSeqEntry because we need to detect
     // if we've already processed the given Seq-entry.
@@ -438,6 +447,9 @@ void CNewCleanup_imp::SetupBC (
          CSeq_entry_Handle seh =
              m_Scope->GetSeq_entryHandle(se, CScope::eMissing_Null);
          if (seh) {
+             // all code paths in this function must result
+             // in m_SeqEntryInfoStack getting a "push"
+             m_SeqEntryInfoStack.push( m_SeqEntryInfoStack.top() );
              return;
          }
 
@@ -446,8 +458,8 @@ void CNewCleanup_imp::SetupBC (
      }}
 
     // a few differences based on sequence identifier type
-    m_IsEmblOrDdbj = false;
-    m_StripSerial = true;
+    // (some values are reset here because they shouldn't inherit
+    // from higher seq-entry's)
     VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bs_itr, se) {
         const CBioseq& bs = *bs_itr;
         FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bs) {
@@ -460,15 +472,15 @@ void CNewCleanup_imp::SetupBC (
                         if (FIELD_IS_SET (tsid, Accession)) {
                             const string& acc = GET_FIELD (tsid, Accession);
                             if (acc.length() == 6) {
-                                m_StripSerial = false;
+                                seqEntryInfo.m_StripSerial = false;
                             }
                         }
                     }
                     break;
                 case NCBI_SEQID(Embl):
                 case NCBI_SEQID(Ddbj):
-                    m_StripSerial = false;
-                    m_IsEmblOrDdbj = true;
+                    seqEntryInfo.m_StripSerial = false;
+                    seqEntryInfo.m_IsEmblOrDdbj = true;
                     break;
                 case NCBI_SEQID(not_set):
                 case NCBI_SEQID(Local):
@@ -485,13 +497,80 @@ void CNewCleanup_imp::SetupBC (
                 case NCBI_SEQID(Gpipe):
                 case NCBI_SEQID(Tpe):
                 case NCBI_SEQID(Tpd):
-                    m_StripSerial = false;
+                    seqEntryInfo.m_StripSerial = false;
                     break;
                 default:
                     break;
             }
         }
     }
+
+    // set m_pGenCode if not already set
+    if( ! m_pGenCode.get() ) {
+        // autogen code to do that?
+        CTypeConstIterator<CBioSource> biosource_it(Begin(se));
+        for( ; biosource_it; ++biosource_it ) {
+            const CBioSource & bsrc = *biosource_it;
+            
+            if( m_pGenCode.get() && ! bsrc.IsSetIs_focus() ) {
+                // skip if not focus and we already got something
+                continue;
+            }
+
+            // use "genome" to determine if we're a plastid or what
+            CBioSource::EGenome eGenome = ( bsrc.IsSetGenome() ?
+                static_cast<CBioSource::EGenome>(bsrc.GetGenome()) : 
+                CBioSource::eGenome_unknown );
+
+                switch( eGenome )
+                {
+                case CBioSource::eGenome_chloroplast:
+                case CBioSource::eGenome_chromoplast:
+                case CBioSource::eGenome_plastid:
+                case CBioSource::eGenome_cyanelle:
+                case CBioSource::eGenome_apicoplast:
+                case CBioSource::eGenome_leucoplast:
+                case CBioSource::eGenome_proplastid:
+                case CBioSource::eGenome_chromatophore: {
+                    // plastid
+                    const int iPlastidCode = (
+                        FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Pgcode) ?
+                        bsrc.GetOrg().GetPgcode() : 0 );
+                    m_pGenCode.reset(
+                        new int( iPlastidCode > 0 ? iPlastidCode : 11 ) );
+                    break;
+                }
+                case CBioSource::eGenome_kinetoplast:
+                case CBioSource::eGenome_mitochondrion:
+                case CBioSource::eGenome_hydrogenosome:
+                    m_pGenCode.reset(
+                        new int( 
+                            FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Mgcode) ?
+                            bsrc.GetOrg().GetMgcode() : 0 ) );
+                    break;
+                default:
+                    // usually we want the nuc code
+                    m_pGenCode.reset(
+                        new int( 
+                            FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Gcode) ?
+                            bsrc.GetOrg().GetGcode() : 0 ) );
+                    break;
+                }
+
+                // only look at the first one
+                break;
+        }
+    }
+
+    m_SeqEntryInfoStack.push(seqEntryInfo);
+}
+
+void CNewCleanup_imp::LeavingEntry (
+    CSeq_entry& se
+)
+
+{
+    m_SeqEntryInfoStack.pop();
 }
 
 // Strips all spaces in string in following manner. If the function
@@ -936,7 +1015,7 @@ void CNewCleanup_imp::GBblockBC (
 
     CLEAN_STRING_LIST (gbk, Keywords);
 
-    if( m_IsEmblOrDdbj ) {
+    if( m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
         UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK( gbk, PCase );
     } else {
         UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK( gbk, PNocase );
@@ -2123,7 +2202,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::CitGenBC(CCit_gen& cg, bool fix_initia
         x_StripSpacesMarkChanged( GET_MUTABLE(cg, Title) );
     }
 
-    if( m_StripSerial ) {
+    if( m_SeqEntryInfoStack.top().m_StripSerial ) {
         RESET_FIELD( cg, Serial_number );
         ChangeMade(CCleanupChange::eStripSerial);
     }
@@ -2564,7 +2643,7 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
         } else if ( key == "misc_bind" ) {
             SET_FIELD(imf, Key, "misc_binding");
             ChangeMade(CCleanupChange::eChangeKeywords);
-        } else if ( key == "satellite" && ! m_IsEmblOrDdbj ) {
+        } else if ( key == "satellite" && ! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
             SET_FIELD(imf, Key, "repeat_region");
             ChangeMade(CCleanupChange::eChangeKeywords);
 
@@ -2582,7 +2661,7 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
             feat.SetQual().push_back( satellite_qual );
         }
 
-        if( key == "repeat_region" && ! m_IsEmblOrDdbj ) {
+        if( key == "repeat_region" && ! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
             string val;
             if( FIELD_IS_SET(feat, Comment) ) {
                 val = x_ExtractSatelliteFromComment( GET_MUTABLE(feat, Comment) );
@@ -2598,7 +2677,7 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
         }
 
         if( key == "CDS" ) {
-            if( ! m_IsEmblOrDdbj ) {
+            if( ! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
                 CRef<CCdregion> new_cdregion( new CCdregion );
                 // get frame from location
                 if( ! FIELD_EQUALS( feat, Pseudo, true ) && FIELD_IS_SET(feat, Location) ) {
@@ -3781,6 +3860,9 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
                 SET_FIELD(*gc, Id, new_val);
                 cds.SetCode().Set().push_back(gc);
                 
+                // we don't have to check except-text because we're 
+                // setting an unset genetic_code, not changing an existing one
+                // (the except-text would be: "genetic code exception")
                 ChangeMade(CCleanupChange::eChangeGeneticCode);
                 return eAction_Erase;
             }
@@ -4227,7 +4309,7 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
     TRNAREF_TYPE& rna_type = rna.SetType();
     const bool is_std_name = NStr::EqualNocase( gb_qual_qual, "standard_name" );
     if (NStr::EqualNocase( gb_qual_qual, "product" ) ||
-        (is_std_name && (! m_IsEmblOrDdbj) )) 
+        (is_std_name && (! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) )) 
     {
         if (rna_type == NCBI_RNAREF(unknown)) {
             rna_type = NCBI_RNAREF(other);
@@ -4501,7 +4583,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_ParseCodeBreak(const CSeq_feat& feat
         }
     }
 
-    string pos = str.substr(loc_pos, end_pos - loc_pos);
+    string pos = NStr::TruncateSpaces(str.substr(loc_pos, end_pos - loc_pos));
 
     // handle multi-interval positions by adding a join() around them
     if( pos.find_first_of(",") != string::npos ) {
@@ -6889,7 +6971,7 @@ void CNewCleanup_imp::x_PostSeqFeat( CSeq_feat& sf )
         sequence::SeqLocPartialCheck( GET_FIELD( sf, Location ), m_Scope );
     if ( FIELD_EQUALS(sf, Partial, true) ) {
         // do nothing, will not change partial if already set
-    } else if ( (partial_loc & partial_loc_mask) || ( s_SeqLocAnyNull( GET_FIELD( sf, Location ) ) && ! m_IsEmblOrDdbj) ) {
+    } else if ( (partial_loc & partial_loc_mask) || ( s_SeqLocAnyNull( GET_FIELD( sf, Location ) ) && ! m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) ) {
         SET_FIELD( sf, Partial, true );
         ChangeMade (CCleanupChange::eChangePartial);
     }
@@ -7286,7 +7368,7 @@ void CNewCleanup_imp::ProtrefBC (
     REMOVE_IF_EMPTY_ACTIVITY_ON_PROTREF(prot_ref);
 
     // rubisco cleanup
-    if( m_IsEmblOrDdbj ) {
+    if( m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
         EDIT_EACH_NAME_ON_PROTREF (it, prot_ref) {
             if (NStr::EqualNocase (*it, "RbcL") || NStr::EqualNocase(*it, "rubisco large subunit")) {
                 *it = "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit";
@@ -8472,6 +8554,25 @@ void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
 {
     // move the cdregion's xrefs to their destination protein
     x_MoveCdregionXrefsToProt( cds, seqfeat );
+
+    // set Cdregion's gcode from seq-entry (unless except-text)
+    const int bioseqGenCode = ( m_pGenCode.get() ? *m_pGenCode : 0 );
+    if( bioseqGenCode != 0 ) {
+        const int cdregionGenCode = ( cds.IsSetCode() ?
+            cds.GetCode().GetId() :
+            0 );
+        if( cdregionGenCode != bioseqGenCode )
+        {
+            // make cdregion's gencode match bioseq's gencode,
+            // if allowed
+            if( ! seqfeat.HasExceptionText("genetic code exception") ) 
+            {
+                cds.ResetCode();
+                cds.SetCode().SetId(bioseqGenCode);
+                ChangeMade(CCleanupChange::eChangeGeneticCode);
+            }
+        }
+    }
 
     // make code-break's location on minus strand if seq-feat's location is 
     // on minus strand(and both are on the same seqid)

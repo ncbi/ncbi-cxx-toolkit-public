@@ -62,8 +62,9 @@ deprecated {
 
 # Don't forget: order matters!
 
-# Call SetupBC as early as possible.
-use m_NewCleanup.SetupBC { Seq-entry }
+# Call EnteringEntry as early as possible.
+# (Its partner function is LeavingEntry.  See below.)
+use m_NewCleanup.EnteringEntry { Seq-entry }
 
 # Should be before other types of cleaning, since other cleaners
 # might remove the ';' at the end of XML codes
@@ -297,3 +298,7 @@ use m_NewCleanup.x_AuthListBCWithFixInitials {
     Seq-submit.sub.cit.authors
 }
 
+# Call LeavingEntry as late as possible, so keep this as close 
+# as possible to end of file.
+# (Its partner function is EnteringEntry.  See above.)
+use m_NewCleanup.LeavingEntry { POST Seq-entry }

@@ -57,9 +57,9 @@ do_cleanasn()
 {
     for FILE in "$@" ; do
         if [[ $DO_EXTENDED_CLEANUP == yes ]]; then
-            $CLEANASN -i $FILE -K bs -a ${CLEANASN_TYPE} -U grp
+            $CLEANASN -i $FILE -K bcs -a ${CLEANASN_TYPE} -U grp
         else
-            $CLEANASN -i $FILE -K b -a ${CLEANASN_TYPE} -U grp
+            $CLEANASN -i $FILE -K bc -a ${CLEANASN_TYPE} -U grp
         fi
     done
 }
