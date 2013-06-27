@@ -845,6 +845,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCNH	s	Central Michigan University, Center for Cultural and Natural History",
 "CCNL	s	Connecticut College, Botany Department",
 "CCNP	s	Carlsbad, Carlsbad Caverns National Park",
+"CCNP<POL>	c	Culture Collection of Northern Poland",
 "CCNU	s	Central China Normal University, Biology Department",
 "CCO	s	Carleton University, Biology Department",
 "CCOS<CHE>	c	Culture Collection of Switzerland",
