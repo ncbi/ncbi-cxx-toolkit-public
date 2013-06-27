@@ -14810,3 +14810,34 @@ Seq-align ::= {
     product-length 3470
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 178405,
+    genomic-id gi 157696887,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 2083,
+        genomic-start 1364981,
+        genomic-end 1367067,
+        parts {
+          match 159,
+          genomic-ins 1,
+          match 25,
+          genomic-ins 1,
+          match 47,
+          product-ins 1,
+          match 361,
+          genomic-ins 2,
+          match 1491
+        }
+      }
+    },
+    product-length 2084
+  }
+}

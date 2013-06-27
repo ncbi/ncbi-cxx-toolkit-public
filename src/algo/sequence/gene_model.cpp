@@ -741,7 +741,10 @@ void  RenameGeneratedBioseqs(const CSeq_id& query_rna_id, CSeq_id& transcribed_r
                              CRef<CSeq_feat> cds_feat_on_genome_with_translated_product)
 {
     transcribed_rna_id.Assign(query_rna_id);
-    if (cds_feat_on_genome_with_translated_product) {
+    if (cds_feat_on_genome_with_translated_product &&
+        cds_feat_on_genome_with_translated_product->CanGetProduct() &&
+        cds_feat_on_query_mrna &&
+        cds_feat_on_query_mrna->CanGetProduct()) {
         CSeq_id* translated_protein_id = const_cast<CSeq_id*>(cds_feat_on_genome_with_translated_product->SetProduct().GetId());
         translated_protein_id->Assign(*cds_feat_on_query_mrna->GetProduct().GetId());
     }
@@ -974,8 +977,12 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             mrna_feat_on_genome_with_translated_product->SetProduct().SetWhole().Assign(query_rna_id);
         }
         if (cds_feat_on_genome_with_translated_product) {
-            cds_feat_on_genome_with_translated_product->SetProduct().Assign(cds_feat_on_query_mrna->GetProduct());
-            cds_feat_on_transcribed_mrna->SetProduct().Assign(cds_feat_on_query_mrna->GetProduct());
+            if (cds_feat_on_query_mrna->CanGetProduct()) {
+                cds_feat_on_genome_with_translated_product->
+                    SetProduct().Assign(cds_feat_on_query_mrna->GetProduct());
+                cds_feat_on_transcribed_mrna->
+                    SetProduct().Assign(cds_feat_on_query_mrna->GetProduct());
+            }
             CRef<CSeq_id> seq_id(new CSeq_id);
             seq_id->Assign(query_rna_id);
             cds_feat_on_transcribed_mrna->SetLocation().SetId(*seq_id);
@@ -2734,7 +2741,9 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                                   list<CRef<CSeq_loc> >* transcribed_mrna_seqloc_refs,
                                   TSeqPos *clean_match_count)
 {
-    if ( !feat.IsSetProduct() ) {
+    if ( !feat.IsSetProduct()
+         || ( cds_feat_on_query_mrna && !cds_feat_on_query_mrna->IsSetProduct() )
+         ) {
         ///
         /// corner case:
         /// we may be a CDS feature for an Ig locus

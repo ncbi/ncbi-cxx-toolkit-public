@@ -18941,3 +18941,206 @@ EDEGSHDENVSTCDTMPNHSETISHTVNVPLQTTLGTLEEIAC"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 178405
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 2084,
+        seq-data ncbi4na '4118828222811882188281841442211221421821212841812211
+112214141814121211211111111412112812144481842141448422221122121282848221214128
+282148818888144141822284422114188818882848841211221144228224828441888221144114
+11188822888411421284411F288422122122142122184222812241818221421884122284414214
+114114414284828412182428212242182484421284442114442182284428421418414822128444
+142188422114244284214822288112422414112122111414112844242882812848214284284284
+121428412412842484112222842182444412482182282882212214121282812214114114418418
+444248228882222211488482184822114448448488444442142114481412114442484482828842
+144412111844241412212212221144488481844428482841484284842221481211411441844142
+841288212211484421884848828411418844441121212222282142228842248218441111812211
+248228442284821842214218284281421414844218848422218842441422841418222222811844
+441221841288411421284221484848412211411448428412842848281211442828414841821121
+218281828844144421828842841122221421844821222214422182228421822141148888282124
+144141884221844841284821211242842122421214842222224284822284441821218822848284
+414422141184144144144218221821122821124221881121148428222848412288282281844224
+142228421442282842228411442284444214411411441411228411442842221441441482114841
+422484422112142284422848211441114812122221142148414128444428428428141414822282
+882182828112218122812811484414484882222442848822211212822144222242222812828288
+411414244422882822821448282214488442884222484282884228222824841214844848484484
+824828484118428112822182122288822142121284221181112142818821144884414414444444
+244441414112812142214818222211841121814181211118882821121111812214211128111842
+112142121821111141211818122484182114844418881814214441242114418428824121212121
+118224811121841212182121221121111841144121111122181841881828211814421214111114
+218884181111882112182428881841811121282821121112814121814114411218112821111811
+211141221818121422112221214281121821812841184414811148841124228884282211411284
+111211412114418828212888212218822818821121814812814114822814221414211821482114
+141114111811111421822111884411114114114841112848282888884284144121841818818182
+8141'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id gi 178405,
+                genomic-id gi 157696887,
+                product-strand plus,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 2083,
+                    genomic-start 1364981,
+                    genomic-end 1367067,
+                    parts {
+                      match 159,
+                      genomic-ins 1,
+                      match 25,
+                      genomic-ins 1,
+                      match 47,
+                      product-ins 1,
+                      match 361,
+                      genomic-ins 2,
+                      match 1491
+                    }
+                  }
+                },
+                product-length 2084
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code-break {
+                  {
+                    loc int {
+                      from 643,
+                      to 645,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 676,
+                      to 678,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 814,
+                      to 816,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 826,
+                      to 828,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 838,
+                      to 840,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 901,
+                      to 903,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 934,
+                      to 936,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 1003,
+                      to 1005,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 1219,
+                      to 1221,
+                      id gi 178405
+                    },
+                    aa ncbieaa 88
+                  }
+                }
+              },
+              product whole local str "PROT_48",
+              location int {
+                from 250,
+                to 1323,
+                id gi 178405
+              },
+              dbxref {
+                {
+                  db "GDB",
+                  tag str "G00-118-995"
+                }
+              },
+              pseudo TRUE
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_48"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 357,
+        seq-data iupacaa "MPYRYPALTLEQKKELSDIAHRIVALGKGILAADESTGSIAKRLQSLNAENT
+KENWRFYCQLLLTADDCVNPCIGDVILFHQTLYQKKDDGRPFPQVVMSKGGVGGSKVDKGVVSCRDKWRDHHPRVVWA
+VXVLCPVQEGWSXLHQVALCSEDWGTHPLSPCRHGKYQRPGLSCQHLLAEWHCAHCGAXDPPXWGPXLEALPVCDQEG
+ADCCLQGSEXSTHLSWRASCXTPAWSPQAIPASRSFLTRRLPWXLSQRCTAQCPPLSLGSHSCLEARMRRRHPSTSTP
+LTSAPCDLLLWPSPAGLCPEGLGQEEGEPEGCPGGVKXAVANSLACQGKYTPSSETGAAARESLFISNHTY"
+      }
+    }
+  }
+}

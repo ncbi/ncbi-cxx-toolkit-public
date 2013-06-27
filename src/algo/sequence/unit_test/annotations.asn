@@ -9815,3 +9815,35 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "ALDOAP2"
+      },
+      location int {
+        from 1364981,
+        to 1367067,
+        strand minus,
+        id gi 157696887
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "Human aldolase pseudogene mRNA"
+      },
+      except TRUE,
+      product whole gi 178405,
+      location packed-int {
+        {
+          from 1364981,
+          to 1367067,
+          strand minus,
+          id gi 157696887
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    }
+  }
+}
