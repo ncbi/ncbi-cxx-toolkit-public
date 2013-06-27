@@ -180,49 +180,19 @@ TMgr-Message ::= SEQUENCE {
 
 
 TMgr-BlastRIDRequest ::= SEQUENCE {
-    rid VisibleString,
-    flags SEQUENCE {
-        include-data BOOLEAN DEFAULT FALSE
-    }
+    rid VisibleString
 }
 
--- TMgr-BlastQuerySeqs is analogous to Blast4-queries, though bioseq-set
--- and pssm additionally have labels.
---
--- Documentation for Blast4-queries:
---     If a PSSM is used (ie. for PSI-Blast), it must contain a "query"
---     for formatting purposes.  Bioseq-set may contain any number of
---     queries, specified as data.  Seq-loc-list may contain only the
---     "whole" or "interval" types.  In the case of "whole", any number of
---     queries may be used; in the case of "interval", there should be
---     exactly one query.  (This is limited by the BlastObject.)
---
--- TMgr-BlastQueryPssm.data is optional as it likely doesn't contain essential
--- metadata - the label is sufficient
---
-TMgr-BlastQueryPssm ::= SEQUENCE {
-    label VisibleString,
-    data PssmWithParameters OPTIONAL
-}
-TMgr-BlastQueryBioseq ::= SEQUENCE {
-    label VisibleString,
-    seq Seq-entry OPTIONAL
-}
-TMgr-BlastQuerySeqLoc ::= SEQUENCE {
-    label VisibleString, -- accession or seq-id string
-    loc Seq-loc
-}
-TMgr-BlastQuerySeqs ::= CHOICE {
-    seq-loc-list SEQUENCE OF TMgr-BlastQuerySeqLoc,
-    pssm TMgr-BlastQueryPssm,
-    bioseq-set SEQUENCE OF TMgr-BlastQueryBioseq -- bioseq_set.seq-set contents
+TMgr-BlastQuerySeq ::= SEQUENCE {
+    query-number INTEGER,
+    label VisibleString -- accession or seq-id string
 }
 
 TMgr-BlastRIDReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     rid VisibleString,
     title VisibleString OPTIONAL,
-    query-sequences TMgr-BlastQuerySeqs OPTIONAL
+    query-sequences SEQUENCE OF TMgr-BlastQuerySeq OPTIONAL
 }
 
 TMgr-CreateUserDataItem ::= SEQUENCE {
