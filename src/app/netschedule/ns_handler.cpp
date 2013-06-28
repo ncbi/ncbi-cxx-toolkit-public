@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbi_system.hpp>
+
 #include "ns_handler.hpp"
 #include "ns_server.hpp"
 #include "ns_server_misc.hpp"
@@ -91,6 +93,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "VERSION",       { &CNetScheduleHandler::x_ProcessVersion,
+                         eNS_NoChecks },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "HEALTH",        { &CNetScheduleHandler::x_ProcessHealth,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -2300,6 +2306,8 @@ void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
 
 void CNetScheduleHandler::x_ProcessVersion(CQueue*)
 {
+    // Further NS versions should exclude ns_node, ns_session and pid from the
+    // VERSION command in favor of the HEALTH command
     static string  reply =
                     "OK:server_version=" NETSCHEDULED_VERSION
                     "&storage_version=" NETSCHEDULED_STORAGE_VERSION
@@ -2308,6 +2316,74 @@ void CNetScheduleHandler::x_ProcessVersion(CQueue*)
                     "&ns_node=" + m_Server->GetNodeID() +
                     "&ns_session=" + m_Server->GetSessionID() +
                     "&pid=" + NStr::NumericToString(CDiagContext::GetPID());
+    x_WriteMessage(reply);
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessHealth(CQueue*)
+{
+    double      user_time;
+    double      system_time;
+    bool        process_time_result = GetCurrentProcessTimes(&user_time,
+                                                             &system_time);
+    Uint8       physical_memory = GetPhysicalMemorySize();
+    size_t      mem_used_total;
+    size_t      mem_used_resident;
+    size_t      mem_used_shared;
+    bool        mem_used_result = GetMemoryUsage(&mem_used_total,
+                                                 &mem_used_resident,
+                                                 &mem_used_shared);
+    int         proc_fd_soft_limit;
+    int         proc_fd_hard_limit;
+    int         proc_fd_used = GetProcessFDCount(&proc_fd_soft_limit,
+                                                 &proc_fd_hard_limit);
+    int         proc_thread_count = GetProcessThreadCount();
+
+    string      reply =
+                    "OK:pid=" + NStr::NumericToString(CDiagContext::GetPID()) +
+                    "&ns_node=" + m_Server->GetNodeID() +
+                    "&ns_session=" + m_Server->GetSessionID() +
+                    "&cpu_count=" + NStr::NumericToString(GetCpuCount());
+    if (process_time_result)
+        reply += "&user_time=" + NStr::NumericToString(user_time) +
+                 "&system_time=" + NStr::NumericToString(system_time);
+    else
+        reply += "&user_time=n/a&system_time=n/a";
+
+    if (physical_memory > 0)
+        reply += "&physical_memory=" + NStr::NumericToString(physical_memory);
+    else
+        reply += "&physical_memory=n/a";
+
+    if (mem_used_result)
+        reply += "&mem_used_total=" + NStr::NumericToString(mem_used_total) +
+                 "&mem_used_resident=" + NStr::NumericToString(mem_used_resident) +
+                 "&mem_used_shared=" + NStr::NumericToString(mem_used_shared);
+    else
+        reply += "&mem_used_total=n/a&mem_used_resident=n/a&mem_used_shared=n/a";
+
+    if (proc_fd_soft_limit >= 0)
+        reply += "&proc_fd_soft_limit=" + NStr::NumericToString(proc_fd_soft_limit);
+    else
+        reply += "&proc_fd_soft_limit=n/a";
+
+    if (proc_fd_hard_limit >= 0)
+        reply += "&proc_fd_hard_limit=" + NStr::NumericToString(proc_fd_hard_limit);
+    else
+        reply += "&proc_fd_hard_limit=n/a";
+
+    if (proc_fd_used >= 0)
+        reply += "&proc_fd_used=" + NStr::NumericToString(proc_fd_used);
+    else
+        reply += "&proc_fd_used=n/a";
+
+    if (proc_thread_count >= 1)
+        reply += "&proc_thread_count=" + NStr::NumericToString(proc_thread_count);
+    else
+        reply += "&proc_thread_count=n/a";
+
+
     x_WriteMessage(reply);
     x_PrintCmdRequestStop();
 }

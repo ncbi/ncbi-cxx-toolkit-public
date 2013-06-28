@@ -8,13 +8,10 @@
 Netschedule server tests pack for the features appeared in NS-4.16.0
 """
 
-import time, os
+import time
 import socket
 from netschedule_tests_pack import TestBase
-from netschedule_tests_pack_4_10 import getClientInfo, NON_EXISTED_JOB, \
-                                        getAffinityInfo, getNotificationInfo, \
-                                        getGroupInfo, changeAffinity, \
-                                        execAny
+from netschedule_tests_pack_4_10 import getClientInfo, changeAffinity, execAny
 from ncbi_grid_1_0.ncbi.grid import ns as grid
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
@@ -459,3 +456,31 @@ class Scenario801( TestBase ):
         return True
 
 
+# NS 4.16.10 tests
+
+class Scenario900( TestBase ):
+    " Scenario900 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "HEALTH command"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( '', 'scenario702' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'HEALTH' )
+        values = parse_qs( output, True, True )
+        if int( values[ 'proc_thread_count' ][ 0 ] ) <= 0:
+            raise Exception( "Unexpected number of threads" )
+        if int( values[ 'proc_fd_used' ][ 0 ] ) <= 0:
+            raise Exception( "Unexpected number of fd" )
+        return True

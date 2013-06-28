@@ -167,6 +167,7 @@ private:
     void x_ProcessShutdown(CQueue*);
     void x_ProcessGetConf(CQueue*);
     void x_ProcessVersion(CQueue*);
+    void x_ProcessHealth(CQueue*);
     void x_ProcessQList(CQueue*);
     void x_ProcessQuitSession(CQueue*);
     void x_ProcessCreateDynamicQueue(CQueue*);
