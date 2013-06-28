@@ -125,7 +125,7 @@ public:
     /// Input has 2 tab-delimited columns: id, then chromosome name
     void LoadChromosomeMap(CNcbiIstream & chromosomes_istr );
 
-    class IIdTransformer : public CObject {
+    class NCBI_XOBJEDIT_EXPORT IIdTransformer : public CObject {
     public:
         virtual ~IIdTransformer(void);
         /// Takes a CSeq_id and optionally transform it.
