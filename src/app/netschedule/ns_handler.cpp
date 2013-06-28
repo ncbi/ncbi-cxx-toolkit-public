@@ -2344,7 +2344,7 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
                     "OK:pid=" + NStr::NumericToString(CDiagContext::GetPID()) +
                     "&ns_node=" + m_Server->GetNodeID() +
                     "&ns_session=" + m_Server->GetSessionID() +
-                    "&started=" + m_Server->GetStartTime().AsString() +
+                    "&started=" + NStr::URLEncode(m_Server->GetStartTime().AsString()) +
                     "&cpu_count=" + NStr::NumericToString(GetCpuCount());
     if (process_time_result)
         reply += "&user_time=" + NStr::NumericToString(user_time) +
