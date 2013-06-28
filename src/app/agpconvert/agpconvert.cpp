@@ -263,12 +263,20 @@ void CAgpconvertApplication::Init(void)
         arg_desc->SetDependency(sArgName, CArgDescriptions::eExcludes, "chromosomes" );
     }
 
+    arg_desc->SetCurrentGroup("SEQ-IDS");
+
+    arg_desc->AddFlag("fasta_id", "Parse object ids (col. 1) "
+                      "as fasta-style ids if they contain '|'");
+    arg_desc->AddDefaultKey("general_id", "general_db",
+        "if set to non-empty string, local ids for object seq-ids will "
+        "become general ids belonging to the given database",
+        CArgDescriptions::eString, kEmptyStr );
+
     arg_desc->SetCurrentGroup("OTHER");
 
     arg_desc->AddFlag("fuzz100", "For gaps of length 100, "
                       "put an Int-fuzz = unk in the literal");
-    arg_desc->AddFlag("fasta_id", "Parse object ids (col. 1) "
-                      "as fasta-style ids if they contain '|'");
+    
     arg_desc->AddOptionalKey("chromosomes", "chromosome_name_file",
                              "Mapping of col. 1 names to chromsome "
                              "names, for use as SubSource",
@@ -396,6 +404,46 @@ int CAgpconvertApplication::Run(void)
         ( submit_templ->IsEntrys() ? &submit_templ->GetSub() : NULL ),
         fAgpConvertOutputFlags,
         CRef<CAgpConverter::CErrorHandler>(m_pCustomErrorHandler.GetPointer()) );
+
+    // add general_id transformer, if needed
+    const string & sGeneralIdDb = args["general_id"].AsString();
+    if( ! sGeneralIdDb.empty() ) {
+        class CLocalToGeneralIdTransformer : 
+            public CAgpConverter::IIdTransformer 
+        {
+        public:
+            CLocalToGeneralIdTransformer(const string & sGeneralDb)
+                : m_sGeneralDb(sGeneralDb) { }
+
+            virtual bool Transform(CRef<objects::CSeq_id> pSeqId) const 
+            {
+                if( ! pSeqId || ! pSeqId->IsLocal() ) {
+                    // only transform local ids
+                    return false;
+                }
+                CRef<CSeq_id> pNewSeqId( new CSeq_id );
+                CDbtag & dbtag = pNewSeqId->SetGeneral();
+                dbtag.SetDb(m_sGeneralDb);
+                if( pSeqId->GetLocal().IsId() ) {
+                    dbtag.SetTag().SetId( pSeqId->GetLocal().GetId() );
+                } else if( pSeqId->GetLocal().IsStr() ) {
+                    dbtag.SetTag().SetStr( pSeqId->GetLocal().GetStr() );
+                } else {
+                    return false;
+                }
+
+                pSeqId->Assign( *pNewSeqId );
+                return true;
+            }
+
+        private:
+            string m_sGeneralDb;
+        };
+        CRef<CAgpConverter::IIdTransformer> pIdTransformer(
+            new CLocalToGeneralIdTransformer(sGeneralIdDb) );
+
+        agpConvert.SetIdTransformer( pIdTransformer.GetPointer() );
+    }
 
     // if validating against a file containing
     // sequence components, load it and make

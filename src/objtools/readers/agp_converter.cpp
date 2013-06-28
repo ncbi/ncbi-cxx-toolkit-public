@@ -165,6 +165,11 @@ CAgpConverter::LoadChromosomeMap(CNcbiIstream & chromosomes_istr )
     SetChromosomesInfo(mapChromosomeNames);
 }
 
+CAgpConverter::IIdTransformer::~IIdTransformer(void)
+{
+    // nothing required yet.
+}
+
 void CAgpConverter::OutputBioseqs(
     CNcbiOstream & ostrm,
     const std::vector<std::string> & vecAgpFileNames,
@@ -546,16 +551,33 @@ CAgpConverter::x_InitializeCopyOfTemplate(
             // parse the id as a fasta id
             ids.clear();
             CSeq_id::ParseFastaIds(ids, out_id_str);
-            out_id_str.clear();
-            // need version, no db name from id general
-            CSeq_id::TLabelFlags flags = CSeq_id::fLabel_GeneralDbIsContent|CSeq_id::fLabel_Version;
-            ids.front()->GetLabel(&out_id_str, CSeq_id::eContent, flags);
         } else {
             m_pErrorHandler->HandleError(
                 eError_SuggestUsingFastaIdOption,
                 "** ID " + out_id_str +
                 " contains a '|'; consider using the -fasta_id option");
         }
+    }
+
+    // perform custom transformations given to us by the caller, if any
+    bool bFirstWasTransformed = false;
+    if( m_pIdTransformer ) {
+        NON_CONST_ITERATE(list<CRef<CSeq_id> >, id_it, ids) {
+            const bool bWasTransformed = m_pIdTransformer->Transform(*id_it);
+            if( bWasTransformed && id_it == ids.begin() ) {
+                bFirstWasTransformed = true;
+            }
+        }
+    }
+
+    // out_id_str might need to be updated
+    if( m_fOutputFlags & fOutputFlags_FastaId ||
+        bFirstWasTransformed )
+    {
+        // need version, no db name from id general
+        out_id_str.clear();
+        CSeq_id::TLabelFlags flags = CSeq_id::fLabel_GeneralDbIsContent|CSeq_id::fLabel_Version;
+        ids.front()->GetLabel(&out_id_str, CSeq_id::eContent, flags);
     }
 
     CRef<CSeq_entry> new_entry( new CSeq_entry );

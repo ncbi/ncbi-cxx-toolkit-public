@@ -125,6 +125,26 @@ public:
     /// Input has 2 tab-delimited columns: id, then chromosome name
     void LoadChromosomeMap(CNcbiIstream & chromosomes_istr );
 
+    class IIdTransformer : public CObject {
+    public:
+        virtual ~IIdTransformer(void);
+        /// Takes a CSeq_id and optionally transform it.
+        ///
+        /// @return true, if transformed
+        virtual bool Transform(CRef<objects::CSeq_id> pSeqId) const = 0;
+    };
+    /// When this reads an id, it will use the supplied transformer
+    /// (if any) to change the CSeq_id.  It is okay to even change it
+    /// to a different type.
+    /// Set to NULL to unset it
+    void SetIdTransformer(IIdTransformer * pIdTransformer) {
+        if( pIdTransformer ) {
+            m_pIdTransformer.Reset(pIdTransformer);
+        } else {
+            m_pIdTransformer.Reset();
+        }
+    }
+
     enum EOutputBioseqsFlags {
         /// If set, each AGP Bioseq is written as its own object.
         /// * If Submit_block was given, each object is a Seq-submit
@@ -198,6 +218,7 @@ private:
     CConstRef<objects::CSubmit_block> m_pSubmitBlock;
     TOutputFlags m_fOutputFlags;
     CRef<CErrorHandler> m_pErrorHandler;
+    CRef<IIdTransformer> m_pIdTransformer;
 
     typedef map<string, TSeqPos> TCompLengthMap;
     TCompLengthMap m_mapComponentLength;
