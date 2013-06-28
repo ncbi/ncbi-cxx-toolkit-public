@@ -180,6 +180,7 @@ struct SNetFileAPIImpl : public SNetFileImpl
     bool x_ExistsAtLocation(ENetFileLocation location);
 
     bool Exists();
+    void Remove();
 
     virtual ~SNetFileAPIImpl();
 
@@ -263,7 +264,7 @@ const ENetFileLocation* SNetFileAPIImpl::GetPossibleFileLocations()
 
     if (flags == 0)
         // Just guessing.
-        return SetNetICacheClient() ? s_NetCache : s_FileTrack;
+        return SetNetICacheClient() ? s_TryNetCacheThenFileTrack : s_FileTrack;
 
     if (flags & fNST_Movable) {
         if (!SetNetICacheClient())
@@ -708,6 +709,36 @@ bool SNetFileAPIImpl::Exists()
     return false;
 }
 
+void SNetFileAPIImpl::Remove()
+{
+    if (m_CurrentLocation == eNFL_Unknown ||
+            m_CurrentLocation == eNFL_FileTrack)
+        try {
+            m_NetStorage->m_FileTrackAPI.Remove(&m_FileID);
+        }
+        catch (CException& e) {
+            LOG_POST(Trace << e);
+        }
+
+    if (m_CurrentLocation == eNFL_Unknown ||
+            m_CurrentLocation == eNFL_NetCache)
+        try {
+            CNetServer ic_server;
+
+            if (m_FileID.GetFields() & fNFID_NetICache)
+                ic_server = m_NetICacheClient.GetService().GetServer(
+                        m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
+
+            m_NetICacheClient.RemoveBlob(m_FileID.GetUniqueKey(), 0,
+                    kEmptyStr, nc_server_to_use = ic_server);
+        }
+        catch (CException& e) {
+            LOG_POST(Trace << e);
+        }
+
+    m_CurrentLocation = eNFL_NotFound;
+}
+
 void SNetFileAPIImpl::Close()
 {
     switch (m_IOStatus) {
@@ -805,7 +836,7 @@ CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 CNetFile SNetStorageAPIImpl::Open(const string& file_id, TNetStorageFlags flags)
 {
     CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-        netfile(new SNetFileAPIImpl(this, file_id));
+            netfile(new SNetFileAPIImpl(this, file_id));
 
     if (flags != 0)
         netfile->m_FileID.SetStorageFlags(flags);
@@ -841,11 +872,7 @@ string SNetStorageAPIImpl::MoveFile(SNetFileAPIImpl* orig_file,
         new_file->Close();
         orig_file->Close();
 
-        if (orig_file->m_CurrentLocation == eNFL_NetCache)
-            orig_file->m_NetICacheClient.Remove(
-                    orig_file->m_FileID.GetUniqueKey(), 0, kEmptyStr);
-
-        // TODO Delete orig_file from FileTrack.
+        orig_file->Remove();
     }
 
     return new_file->m_FileID.GetID();
@@ -879,9 +906,12 @@ bool SNetStorageAPIImpl::Exists(const string& file_id)
     return net_file->Exists();
 }
 
-void SNetStorageAPIImpl::Remove(const string& /*key*/)
+void SNetStorageAPIImpl::Remove(const string& file_id)
 {
-    NCBI_THROW(CNetStorageException, eInvalidArg, "Method not implemented");
+    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
+            net_file(new SNetFileAPIImpl(this, file_id));
+
+    return net_file->Remove();
 }
 
 struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
@@ -929,7 +959,7 @@ string SNetStorageByKeyAPIImpl::Relocate(const string& unique_key,
                     m_DomainName, unique_key, m_APIImpl->m_NetICacheClient));
 
     CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            new_file(new SNetFileAPIImpl(m_APIImpl, old_flags,
+            new_file(new SNetFileAPIImpl(m_APIImpl, flags,
                     m_DomainName, unique_key, m_APIImpl->m_NetICacheClient));
 
     return m_APIImpl->MoveFile(orig_file, new_file);
@@ -947,7 +977,12 @@ bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 
 void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 {
-    NCBI_THROW(CNetStorageException, eInvalidArg, "Method not implemented");
+    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
+            net_file(new SNetFileAPIImpl(m_APIImpl,
+                    m_APIImpl->GetDefaultFlags(flags),
+                            m_DomainName, key, m_APIImpl->m_NetICacheClient));
+
+    net_file->Remove();
 }
 
 CNetStorage g_CreateNetStorage(CNetICacheClient::TInstance icache_client,

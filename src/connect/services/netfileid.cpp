@@ -75,6 +75,53 @@ CNetFileID::CNetFileID(TNetStorageFlags flags,
     x_SetUniqueKeyFromUserDefinedKey();
 }
 
+#define SCRAMBLE_PASS() \
+    pos = seq; \
+    counter = seq_len - 1; \
+    do { \
+        pos[1] ^= *pos ^ length_factor--; \
+        ++pos; \
+    } while (--counter > 0);
+
+static void s_Scramble(unsigned char* seq, size_t seq_len)
+{
+    if (seq_len > 1) {
+        unsigned char length_factor = ((unsigned char) seq_len << 1) - 1;
+        unsigned char* pos;
+        size_t counter;
+
+        SCRAMBLE_PASS();
+
+        *seq ^= *pos ^ length_factor--;
+
+        SCRAMBLE_PASS();
+    }
+}
+
+#define UNSCRAMBLE_PASS() \
+    counter = seq_len - 1; \
+    do { \
+        *pos ^= pos[-1] ^ ++length_factor; \
+        --pos; \
+    } while (--counter > 0);
+
+static void s_Unscramble(unsigned char* seq, size_t seq_len)
+{
+    if (seq_len > 1) {
+        unsigned char length_factor = 0;
+        unsigned char* pos = seq + seq_len - 1;
+        size_t counter;
+
+        UNSCRAMBLE_PASS();
+
+        pos = seq + seq_len - 1;
+
+        *seq ^= *pos ^ ++length_factor;
+
+        UNSCRAMBLE_PASS();
+    }
+}
+
 #define NET_FILE_ID_SIGNATURE "NF"
 #define NET_FILE_ID_SIGNATURE_LEN (sizeof(NET_FILE_ID_SIGNATURE) - 1)
 #define MIN_BINARY_ID_LEN (NET_FILE_ID_SIGNATURE_LEN + \
@@ -125,6 +172,8 @@ CNetFileID::CNetFileID(const string& packed_id) :
             binary_id, binary_id_len, NULL) != eBase64_OK) {
         CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
     }
+
+    s_Unscramble(binary_id, binary_id_len);
 
     unsigned char* ptr = binary_id;
 
@@ -334,6 +383,8 @@ void CNetFileID::Pack()
     // Now pack it all up.
     size_t binary_id_len = ptr - binary_id;
     size_t packed_id_len;
+
+    s_Scramble(binary_id, binary_id_len);
 
     base64url_encode(NULL, binary_id_len, NULL, 0, &packed_id_len);
 

@@ -99,6 +99,8 @@ struct SFileTrackAPI
     CRef<SFileTrackPostRequest> StartUpload(CNetFileID* file_id);
     CRef<SFileTrackRequest> StartDownload(CNetFileID* file_id);
 
+    void Remove(CNetFileID* file_id);
+
     Uint8 GetRandom();
     string GenerateUniqueBoundary();
     string MakeMutipartFormDataHeader(const string& boundary);

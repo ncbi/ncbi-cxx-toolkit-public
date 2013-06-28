@@ -3,9 +3,9 @@
 CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
 APP = test_netstorage
-SRC = test_netstorage
+SRC = test_netstorage test_netstorage_common
 LIB = ncbi_xcache_netcache netstorage xconnserv \
-        xthrserv xconnect connssl xser xutil test_boost xncbi
+        xthrserv xconnect connssl xutil test_boost xncbi
 
 LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

@@ -25,13 +25,14 @@
  *
  * Authors:  Dmitry Kazimirov
  *
- * File Description:  Simple test for the "direct access" NetStorage API.
+ * File Description:  Simple test for the NetStorage API
+ *      (implemented via RPC to NetStorage servers).
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
 
 #include <corelib/test_boost.hpp>
 
@@ -40,6 +41,7 @@
 USING_NCBI_SCOPE;
 
 #define APP_NAME "test_netstorage_rpc"
+#define NETSTORAGE_SERVICE_NAME "NST_Test"
 #define NETCACHE_SERVICE_NAME "NC_UnitTest"
 #define CACHE_NAME "nst_test"
 
@@ -47,16 +49,23 @@ void g_TestNetStorage(CNetStorage netstorage);
 
 BOOST_AUTO_TEST_CASE(TestNetStorage)
 {
-    CNetICacheClient icache_client(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME);
+    CNetStorage netstorage("nst=" NETSTORAGE_SERVICE_NAME
+            "&nc=" NETCACHE_SERVICE_NAME
+            "&cache=" CACHE_NAME
+            "&client=" APP_NAME);
 
-    g_TestNetStorage(g_CreateNetStorage(icache_client));
+    g_TestNetStorage(netstorage);
 }
 
 void g_TestNetStorageByKey(CNetStorageByKey netstorage);
 
 BOOST_AUTO_TEST_CASE(TestNetStorageByKey)
 {
-    CNetICacheClient icache_client(NETCACHE_SERVICE_NAME, CACHE_NAME, APP_NAME);
+    CNetStorageByKey netstorage("nst=" NETSTORAGE_SERVICE_NAME
+            "&nc=" NETCACHE_SERVICE_NAME
+            "&cache=" CACHE_NAME
+            "&client=" APP_NAME
+            "&domain=" CACHE_NAME);
 
-    g_TestNetStorageByKey(g_CreateNetStorageByKey(icache_client));
+    g_TestNetStorageByKey(netstorage);
 }

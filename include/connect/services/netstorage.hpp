@@ -258,6 +258,18 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     /// @param init_string
     ///  Initialization string that contains client identification,
     ///  network service locations, etc.
+    ///  The string must be a sequence of apersand-separated pairs of
+    ///  attribute names and their values. Within each pair, the name
+    ///  and the value of the attribute must be separated by the equality
+    ///  sign, and the value must be URL-encoded.
+    ///  The following attributes are recoginzed:
+    ///  * client     - Application name.
+    ///  * nst        - NetStorage server address or LBSM service name
+    ///                 pointing to a group of NetStorage servers.
+    ///  * nc         - NetCache service name or server address.
+    ///  * cache      - Application-specific NetCache cache name.
+    ///  Example: "clent=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
+    ///
     /// @param default_flags
     ///  Default storage preferences for files created by this object.
     ///
@@ -337,6 +349,20 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     /// @param init_string
     ///  Initialization string that contains client identification,
     ///  network service locations, etc.
+    ///  The string must be a sequence of apersand-separated pairs of
+    ///  attribute names and their values. Within each pair, the name
+    ///  and the value of the attribute must be separated by the equality
+    ///  sign, and the value must be URL-encoded.
+    ///  The following attributes are recoginzed:
+    ///  * domain     - Namespace name, within which the keys passed
+    ///                 to the methods of this class must be unique.
+    ///  * client     - Application name.
+    ///  * nst        - NetStorage server address or LBSM service name
+    ///                 pointing to a group of NetStorage servers.
+    ///  * nc         - NetCache service name or server address.
+    ///  * cache      - Application-specific NetCache cache name.
+    ///  Example: "clent=MyApp&nst=NST_Test&nc=NC_MyApp_TEST&cache=myapp"
+    ///
     /// @param default_flags
     ///  Default storage preferences for files created by this object.
     ///

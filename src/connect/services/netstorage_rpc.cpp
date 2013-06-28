@@ -327,9 +327,12 @@ struct SNetStorageRPC : public SNetStorageImpl
     CJsonNode Exchange(const CJsonNode& request,
             CNetServerConnection* conn = NULL);
 
-    void x_LoadStorageFlags(CJsonNode& node, TNetStorageFlags flags);
+    void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
+    void x_SetICacheNames(CJsonNode& node);
     CJsonNode MkStdRequest(const string& request_type);
     CJsonNode MkFileRequest(const string& request_type, const string& file_id);
+    CJsonNode MkFileRequest(const string& request_type,
+            const string& unique_key, TNetStorageFlags flags);
 
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;
@@ -338,6 +341,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     string m_NetCacheServiceName;
     string m_CacheName;
     string m_ClientName;
+    string m_AppDomain;
 
     CAtomicCounter m_RequestNumber;
 };
@@ -366,6 +370,11 @@ void CNetStorageServerListener::OnWarning(const string& warn_msg,
 
 struct SNetFileRPC : public SNetFileImpl
 {
+    enum EObjectIdentification {
+        eByGeneratedID,
+        eByUniqueKey
+    };
+
     enum EState {
         eReady,
         eReading,
@@ -375,7 +384,9 @@ struct SNetFileRPC : public SNetFileImpl
     SNetFileRPC(SNetStorageRPC* netstorage_rpc,
             CJsonNode::TInstance original_request,
             CNetServerConnection::TInstance conn,
-            const string& file_id, TNetStorageFlags flags,
+            EObjectIdentification object_identification,
+            const string& file_id_or_key,
+            TNetStorageFlags flags,
             EState initial_state);
 
     virtual ~SNetFileRPC();
@@ -388,15 +399,20 @@ struct SNetFileRPC : public SNetFileImpl
     virtual CNetFileInfo GetInfo();
     virtual void Close();
 
+    CJsonNode x_MkRequest(const string& request_type);
+
     CRef<SNetStorageRPC,
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
+
     CJsonNode m_OriginalRequest;
     CNetServerConnection m_Connection;
     char* m_ReadBuffer;
     CUTTPReader m_UTTPReader;
     const char* m_CurrentChunk;
     size_t m_CurrentChunkSize;
+    EObjectIdentification m_ObjectIdentification;
     string m_ID;
+    string m_UniqueKey;
     TNetStorageFlags m_Flags;
     EState m_State;
     bool m_EOF;
@@ -405,16 +421,22 @@ struct SNetFileRPC : public SNetFileImpl
 SNetFileRPC::SNetFileRPC(SNetStorageRPC* netstorage_rpc,
         CJsonNode::TInstance original_request,
         CNetServerConnection::TInstance conn,
-        const string& file_id, TNetStorageFlags flags,
+        EObjectIdentification object_identification,
+        const string& file_id_or_key,
+        TNetStorageFlags flags,
         EState initial_state) :
     m_NetStorageRPC(netstorage_rpc),
     m_OriginalRequest(original_request),
     m_Connection(conn),
     m_ReadBuffer(NULL),
-    m_ID(file_id),
+    m_ObjectIdentification(object_identification),
     m_Flags(flags),
     m_State(initial_state)
 {
+    if (object_identification == eByGeneratedID)
+        m_ID = file_id_or_key;
+    else
+        m_UniqueKey = file_id_or_key;
 }
 
 SNetFileRPC::~SNetFileRPC()
@@ -442,6 +464,10 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
         if (field->name.empty())
             continue;
         switch (field->name[0]) {
+        case 'd':
+            if (field->name == "domain")
+                m_AppDomain = field->value;
+            break;
         case 'n':
             if (field->name == "nst")
                 m_NetStorageServiceName = field->value;
@@ -486,20 +512,21 @@ CNetFile SNetStorageRPC::Create(TNetStorageFlags flags)
 {
     CJsonNode request(MkStdRequest("WRITE"));
 
-    x_LoadStorageFlags(request, flags);
+    x_SetStorageFlags(request, flags);
+    x_SetICacheNames(request);
 
     CNetServerConnection conn;
 
     string file_id = Exchange(request, &conn).GetString("FileID");
 
-    return new SNetFileRPC(this, request, conn,
+    return new SNetFileRPC(this, request, conn, SNetFileRPC::eByGeneratedID,
             file_id, flags, SNetFileRPC::eWriting);
 }
 
 CNetFile SNetStorageRPC::Open(const string& file_id,
         TNetStorageFlags flags)
 {
-    return new SNetFileRPC(this, NULL, NULL,
+    return new SNetFileRPC(this, NULL, NULL, SNetFileRPC::eByGeneratedID,
             file_id, flags, SNetFileRPC::eReady);
 }
 
@@ -509,7 +536,7 @@ string SNetStorageRPC::Relocate(const string& file_id, TNetStorageFlags flags)
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
 
-    x_LoadStorageFlags(new_location, flags);
+    x_SetStorageFlags(new_location, flags);
 
     request.SetByKey("NewLocation", new_location);
 
@@ -579,7 +606,7 @@ CJsonNode SNetStorageRPC::Exchange(const CJsonNode& request,
     return reply;
 }
 
-void SNetStorageRPC::x_LoadStorageFlags(CJsonNode& node, TNetStorageFlags flags)
+void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
 {
     CJsonNode storage_flags(CJsonNode::NewObjectNode());
 
@@ -593,6 +620,14 @@ void SNetStorageRPC::x_LoadStorageFlags(CJsonNode& node, TNetStorageFlags flags)
         storage_flags.SetBoolean("Cacheable", true);
 
     node.SetByKey("StorageFlags", storage_flags);
+}
+
+void SNetStorageRPC::x_SetICacheNames(CJsonNode& node)
+{
+    CJsonNode icache(CJsonNode::NewObjectNode());
+    icache.SetString("ServiceName", m_NetCacheServiceName);
+    icache.SetString("CacheName", m_CacheName);
+    node.SetByKey("ICache", icache);
 }
 
 CJsonNode SNetStorageRPC::MkStdRequest(const string& request_type)
@@ -623,6 +658,22 @@ CJsonNode SNetStorageRPC::MkFileRequest(const string& request_type,
     return new_request;
 }
 
+CJsonNode SNetStorageRPC::MkFileRequest(const string& request_type,
+        const string& unique_key, TNetStorageFlags flags)
+{
+    CJsonNode new_request(MkStdRequest(request_type));
+
+    CJsonNode user_key(CJsonNode::NewObjectNode());
+    user_key.SetString("AppDomain", m_AppDomain);
+    user_key.SetString("UniqueID", unique_key);
+    new_request.SetByKey("UserKey", user_key);
+
+    x_SetStorageFlags(new_request, flags);
+    x_SetICacheNames(new_request);
+
+    return new_request;
+}
+
 CNetStorage::CNetStorage(const string& init_string,
         TNetStorageFlags default_flags) :
     m_Impl(new SNetStorageRPC(init_string, default_flags))
@@ -644,7 +695,7 @@ size_t SNetFileRPC::Read(void* buffer, size_t buf_size)
     size_t bytes_read;
 
     if (m_State == eReady) {
-        m_OriginalRequest = m_NetStorageRPC->MkFileRequest("READ", m_ID);
+        m_OriginalRequest = x_MkRequest("READ");
 
         m_NetStorageRPC->Exchange(m_OriginalRequest, &m_Connection);
 
@@ -751,7 +802,7 @@ void SNetFileRPC::Write(const void* buf_pos, size_t buf_size)
     switch (m_State) {
     case eReady:
         {
-            m_OriginalRequest = m_NetStorageRPC->MkFileRequest("WRITE", m_ID);
+            m_OriginalRequest = x_MkRequest("WRITE");
 
             m_ID = m_NetStorageRPC->Exchange(m_OriginalRequest,
                     &m_Connection).GetString("FileID");
@@ -772,14 +823,14 @@ void SNetFileRPC::Write(const void* buf_pos, size_t buf_size)
 
 Uint8 SNetFileRPC::GetSize()
 {
-    CJsonNode request(m_NetStorageRPC->MkFileRequest("GETSIZE", m_ID));
+    CJsonNode request(x_MkRequest("GETSIZE"));
 
     return (Uint8) m_NetStorageRPC->Exchange(request).GetInteger("Size");
 }
 
 CNetFileInfo SNetFileRPC::GetInfo()
 {
-    CJsonNode request(m_NetStorageRPC->MkFileRequest("GETOBJECTINFO", m_ID));
+    CJsonNode request(x_MkRequest("GETOBJECTINFO"));
 
     return CNetFileInfo(m_NetStorageRPC->Exchange(request));
 }
@@ -836,6 +887,15 @@ void SNetFileRPC::Close()
     }
 }
 
+CJsonNode SNetFileRPC::x_MkRequest(const string& request_type)
+{
+    if (m_ObjectIdentification == eByGeneratedID)
+        return m_NetStorageRPC->MkFileRequest(request_type, m_ID);
+    else
+        return m_NetStorageRPC->MkFileRequest(request_type,
+                m_UniqueKey, m_Flags);
+}
+
 void SNetFileImpl::Read(string* data)
 {
     data->resize(data->capacity() == 0 ? READ_CHUNK_SIZE : data->capacity());
@@ -869,9 +929,7 @@ void SNetFileImpl::Read(string* data)
 struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
 {
     SNetStorageByKeyRPC(const string& init_string,
-            TNetStorageFlags default_flags)
-    {
-    }
+            TNetStorageFlags default_flags);
 
     virtual CNetFile Open(const string& unique_key,
             TNetStorageFlags flags = 0);
@@ -879,31 +937,61 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
             TNetStorageFlags flags, TNetStorageFlags old_flags = 0);
     virtual bool Exists(const string& key, TNetStorageFlags flags = 0);
     virtual void Remove(const string& key, TNetStorageFlags flags = 0);
+
+    CRef<SNetStorageRPC,
+            CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
 };
 
-
-CNetFile SNetStorageByKeyRPC::Open(const string& /*unique_key*/,
-        TNetStorageFlags /*flags*/)
+SNetStorageByKeyRPC::SNetStorageByKeyRPC(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_NetStorageRPC(new SNetStorageRPC(init_string, default_flags))
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Method not implemented");
+    if (m_NetStorageRPC->m_AppDomain.empty()) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "'domain' parameter is missing from the initialization string");
+    }
 }
 
-string SNetStorageByKeyRPC::Relocate(const string& /*unique_key*/,
-        TNetStorageFlags /*flags*/, TNetStorageFlags /*old_flags*/)
+CNetFile SNetStorageByKeyRPC::Open(const string& unique_key,
+        TNetStorageFlags flags)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Method not implemented");
+    return new SNetFileRPC(m_NetStorageRPC, NULL, NULL, SNetFileRPC::eByUniqueKey,
+            unique_key, flags, SNetFileRPC::eReady);
 }
 
-bool SNetStorageByKeyRPC::Exists(const string& /*key*/,
-        TNetStorageFlags /*flags*/)
+string SNetStorageByKeyRPC::Relocate(const string& unique_key,
+        TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Method not implemented");
+    CJsonNode request(m_NetStorageRPC->MkFileRequest(
+            "RELOCATE", unique_key, old_flags));
+
+    CJsonNode new_location(CJsonNode::NewObjectNode());
+
+    m_NetStorageRPC->x_SetStorageFlags(new_location, flags);
+
+    request.SetByKey("NewLocation", new_location);
+
+    return m_NetStorageRPC->Exchange(request).GetString("FileID");
 }
 
-void SNetStorageByKeyRPC::Remove(const string& /*key*/,
-        TNetStorageFlags /*flags*/)
+bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, "Method not implemented");
+    CJsonNode request(m_NetStorageRPC->MkFileRequest("EXISTS", key, flags));
+
+    return m_NetStorageRPC->Exchange(request).GetBoolean("Exists");
+}
+
+void SNetStorageByKeyRPC::Remove(const string& key, TNetStorageFlags flags)
+{
+    CJsonNode request(m_NetStorageRPC->MkFileRequest("DELETE", key, flags));
+
+    m_NetStorageRPC->Exchange(request);
+}
+
+CNetStorageByKey::CNetStorageByKey(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_Impl(new SNetStorageByKeyRPC(init_string, default_flags))
+{
 }
 
 END_NCBI_SCOPE

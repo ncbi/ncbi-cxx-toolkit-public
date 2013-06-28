@@ -596,6 +596,14 @@ struct SCommandDefinition {
         {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveNetFile,
+        "rmnetfile", "Remove a NetFile by its ID.",
+        "Some file IDs may require additional options "
+        "to hint at the current file location."
+        ABOUT_NETSTORAGE_OPTION,
+        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
         JOBINFO_COMMAND "|ji", "Print information about a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "

@@ -409,6 +409,7 @@ public:
     int Cmd_Relocate();
     int Cmd_MkFileID();
     int Cmd_NetFileInfo();
+    int Cmd_RemoveNetFile();
 
 // NetSchedule commands.
 public:

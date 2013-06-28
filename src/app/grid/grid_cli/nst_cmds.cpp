@@ -66,7 +66,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd()
     }
 
     if (!IsOptionSet(eNetStorage))
-        m_NetStorage = g_CreateNetStorage(m_NetICacheClient);
+        m_NetStorage = g_CreateNetStorage(m_NetICacheClient,
+                m_Opts.netstorage_flags);
     else {
         string init_string = "nst=" + NStr::URLEncode(m_Opts.nst_service);
 
@@ -216,6 +217,15 @@ int CGridCommandLineInterfaceApp::Cmd_NetFileInfo()
     CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
 
     g_PrintJSON(stdout, netfile.GetInfo().ToJSON());
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_RemoveNetFile()
+{
+    SetUp_NetStorageCmd();
+
+    m_NetStorage.Remove(m_Opts.id);
 
     return 0;
 }

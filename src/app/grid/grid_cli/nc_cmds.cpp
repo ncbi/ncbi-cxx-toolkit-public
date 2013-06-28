@@ -425,14 +425,17 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
             m_NetCacheAPI.Remove(m_Opts.id, nc_blob_password = m_Opts.password);
         else
             m_NetCacheAPI.Remove(m_Opts.id);
-    else
+    else {
+        ParseICacheKey();
+
         if (IsOptionSet(ePassword))
-            CNetICachePasswordGuard(m_NetICacheClient,
-                m_Opts.password)->Remove(m_Opts.icache_key.key,
-                    m_Opts.icache_key.version, m_Opts.icache_key.subkey);
+            m_NetICacheClient.RemoveBlob(m_Opts.icache_key.key,
+                    m_Opts.icache_key.version, m_Opts.icache_key.subkey,
+                    nc_blob_password = m_Opts.password);
         else
-            m_NetICacheClient.Remove(m_Opts.icache_key.key,
+            m_NetICacheClient.RemoveBlob(m_Opts.icache_key.key,
                 m_Opts.icache_key.version, m_Opts.icache_key.subkey);
+    }
 
     return 0;
 }

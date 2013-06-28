@@ -358,6 +358,22 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(CNetFileID* file_id)
     return new_request;
 }
 
+void SFileTrackAPI::Remove(CNetFileID* file_id)
+{
+    string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
+    url += "/__delete__";
+
+    CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, file_id,
+            url, kEmptyStr, s_HTTPParseHeader_GetContentLength));
+
+    new_request->m_HTTPStream << NcbiEndl;
+
+    CNullWriter null_writer;
+    CWStream null_stream(&null_writer);
+
+    NcbiStreamCopy(null_stream, new_request->m_HTTPStream);
+}
+
 ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 {
     if (m_HTTPStream.read(reinterpret_cast<char*>(buf), count).bad()) {
