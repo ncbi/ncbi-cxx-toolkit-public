@@ -14841,3 +14841,120 @@ Seq-align ::= {
     product-length 2084
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 45382214,
+    genomic-id gi 358484732,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 10,
+        product-end nucpos 56,
+        genomic-start 87481,
+        genomic-end 87527,
+        parts {
+          match 4,
+          mismatch 1,
+          match 42
+        },
+        scores {
+          {
+            id str "score",
+            value real { 449560012817383, 10, -13 }
+          },
+          {
+            id str "idty",
+            value real { 978723404255319, 10, -15 }
+          }
+        },
+        donor-after-exon {
+          bases "GT"
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 57,
+        product-end nucpos 234,
+        genomic-start 87655,
+        genomic-end 87832,
+        parts {
+          match 178
+        },
+        scores {
+          {
+            id str "score",
+            value real { 178, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 235,
+        product-end nucpos 337,
+        genomic-start 87903,
+        genomic-end 88005,
+        parts {
+          match 103
+        },
+        scores {
+          {
+            id str "score",
+            value real { 103, 10, 0 }
+          },
+          {
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 338,
+        product-end nucpos 471,
+        genomic-start 88116,
+        genomic-end 88247,
+        parts {
+          match 12,
+          mismatch 1,
+          match 114,
+          mismatch 1,
+          product-ins 2,
+          match 4
+        },
+        scores {
+          {
+            id str "score",
+            value real { 124496002197266, 10, -12 }
+          },
+          {
+            id str "idty",
+            value real { 970149253731343, 10, -15 }
+          }
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        partial TRUE
+      }
+    },
+    product-length 8615
+  }
+}

@@ -19144,3 +19144,197 @@ LTSAPCDLLLWPSPAGLCPEGLGQEEGEPEGCPGGVKXAVANSLACQGKYTPSSETGAAARESLFISNHTY"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 45382214
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 8615,
+        ext delta {
+          literal {
+            length 10
+          },
+          literal {
+            length 462,
+            seq-data ncbi4na '244182444422422844428822144828442841141124421824
+822821422142844841121422828122224124428221142284821141822224121422282221221844
+828821142141844112141824222148822821144244284144128124424844821141214121848822
+141224884122828884114221144181844244244842141441212844844222844441422844244841
+221141184184442188122124444182221128448821841141144242144112121142444148828224
+141422142841144144421141121821884428812141844441221121144424218212144244441841
+428124422412222442FF1418'H
+          },
+          literal {
+            length 8143
+          }
+        },
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id gi 45382214,
+                genomic-id gi 358484732,
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 10,
+                    product-end nucpos 56,
+                    genomic-start 87481,
+                    genomic-end 87527,
+                    parts {
+                      match 4,
+                      mismatch 1,
+                      match 42
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 449560012817383, 10, -13 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 978723404255319, 10, -15 }
+                      }
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    },
+                    partial TRUE
+                  },
+                  {
+                    product-start nucpos 57,
+                    product-end nucpos 234,
+                    genomic-start 87655,
+                    genomic-end 87832,
+                    parts {
+                      match 178
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 178, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 235,
+                    product-end nucpos 337,
+                    genomic-start 87903,
+                    genomic-end 88005,
+                    parts {
+                      match 103
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 103, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 338,
+                    product-end nucpos 471,
+                    genomic-start 88116,
+                    genomic-end 88247,
+                    parts {
+                      match 12,
+                      mismatch 1,
+                      match 114,
+                      mismatch 1,
+                      product-ins 2,
+                      match 4
+                    },
+                    scores {
+                      {
+                        id str "score",
+                        value real { 124496002197266, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 970149253731343, 10, -15 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 8615
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole gi 45382215,
+              location null NULL
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 45382215
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-right
+        }
+      },
+      inst {
+        repr delta,
+        mol aa,
+        length 0,
+        ext delta {
+        }
+      }
+    }
+  }
+}

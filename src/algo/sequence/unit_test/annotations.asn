@@ -9847,3 +9847,81 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "SYNM",
+        desc "synemin, intermediate filament protein",
+        syn {
+          "DMN"
+        }
+      },
+      partial TRUE,
+      location int {
+        from 87481,
+        to 88247,
+        strand plus,
+        id gi 358484732,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "CGNC",
+          tag id 5322
+        },
+        {
+          db "GeneID",
+          tag id 395599
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "synemin, intermediate filament protein"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 3 substitutions and 1 indel and
+ aligns at 5% coverage compared to this genomic sequence",
+      product whole gi 45382214,
+      location packed-int {
+        {
+          from 87481,
+          to 87527,
+          strand plus,
+          id gi 358484732,
+          fuzz-from lim lt
+        },
+        {
+          from 87655,
+          to 87832,
+          strand plus,
+          id gi 358484732
+        },
+        {
+          from 87903,
+          to 88005,
+          strand plus,
+          id gi 358484732
+        },
+        {
+          from 88116,
+          to 88247,
+          strand plus,
+          id gi 358484732,
+          fuzz-to lim gt
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_204809.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    }
+  }
+}
