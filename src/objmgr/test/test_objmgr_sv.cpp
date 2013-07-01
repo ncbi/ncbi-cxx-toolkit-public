@@ -133,7 +133,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
         CRef<CDelta_seq> s(new CDelta_seq);
         int len;
         if ( pll.empty() ) {
-            len = m_Random.GetRand(0, 100);
+            len = m_Random.GetRand(0, 2000>>m_Random.GetRand(0, 8));
             CSeq_literal& lit = s->SetLiteral();
             lit.SetLength(len);
             CSeq_data& data = lit.SetSeq_data();

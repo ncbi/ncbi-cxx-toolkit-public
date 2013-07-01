@@ -322,6 +322,8 @@ static inline
 void x_Append8To8(string& dst_str, const string& src_str,
                   size_t src_pos, size_t count)
 {
+    _ASSERT(src_pos+count >= src_pos); // check for overflow
+    _ASSERT(src_pos+count <= src_str.size());
     if ( count ) {
         dst_str.append(src_str.data()+src_pos, count);
     }
@@ -332,6 +334,8 @@ static inline
 void x_Append8To8(string& dst_str, const vector<char>& src_str,
                   size_t src_pos, size_t count)
 {
+    _ASSERT(src_pos+count >= src_pos); // check for overflow
+    _ASSERT(src_pos+count <= src_str.size());
     if ( count ) {
         dst_str.append(&src_str[src_pos], count);
     }
@@ -351,6 +355,7 @@ static
 void x_Append8To4(string& dst, char& dst_c, TSeqPos dst_pos,
                   const char* src, size_t count)
 {
+    _ASSERT(src+count >= src); // check for overflow
     if ( !count ) {
         return;
     }
@@ -375,6 +380,8 @@ void x_Append4To4(string& dst, char& dst_c, TSeqPos dst_pos,
                   const vector<char>& src, TSeqPos src_pos,
                   TSeqPos count)
 {
+    _ASSERT(src_pos+count >= src_pos); // check for overflow
+    _ASSERT(src_pos+count <= src.size()*2);
     if ( !count ) {
         return;
     }
@@ -504,6 +511,8 @@ void x_Append2To2(string& dst, char& dst_c, TSeqPos dst_pos,
                   const vector<char>& src, TSeqPos src_pos,
                   TSeqPos count)
 {
+    _ASSERT(src_pos+count >= src_pos); // check for overflow
+    _ASSERT(src_pos+count <= src.size()*4);
     if ( !count ) {
         return;
     }
@@ -557,6 +566,7 @@ void x_AppendRandomTo2(string& dst_str, char& dst_c, TSeqPos dst_pos,
                        TSeqPos src_pos, TSeqPos count,
                        INcbi2naRandomizer& randomizer, char gap)
 {
+    _ASSERT(src_pos+count >= src_pos); // check for overflow
     char buffer[kBufferSize];
     while ( count ) {
         _ASSERT(dst_str.size() == dst_pos>>2);
@@ -580,10 +590,17 @@ void x_AppendAnyTo8(string& dst_str,
                     TSeqPos total_count,
                     const char* table = 0, bool reverse = false)
 {
+    _ASSERT(dataPos+total_count >= dataPos); // check for overflow
     char buffer[kBufferSize];
     CSeq_data::E_Choice src_coding = data.Which();
+    if ( reverse ) {
+        dataPos += total_count;
+    }
     while ( total_count ) {
         TSeqPos count = min(total_count, TSeqPos(sizeof(buffer)));
+        if ( reverse ) {
+            dataPos -= count;
+        }
         switch ( src_coding ) {
         case CSeq_data::e_Iupacna:
             copy_8bit_any(buffer, count, data.GetIupacna().Get(), dataPos,
@@ -622,10 +639,7 @@ void x_AppendAnyTo8(string& dst_str,
                            "Invalid data coding: "<<src_coding);
         }
         dst_str.append(buffer, count);
-        if ( reverse ) {
-            dataPos -= count;
-        }
-        else {
+        if ( !reverse ) {
             dataPos += count;
         }
         total_count -= count;
@@ -639,11 +653,18 @@ void x_AppendAnyTo4(string& dst_str, char& dst_c, TSeqPos dst_pos,
                     TSeqPos total_count,
                     const char* table, bool reverse)
 {
+    _ASSERT(dataPos+total_count >= dataPos); // check for overflow
     _ASSERT(table || reverse);
     char buffer[kBufferSize];
     CSeq_data::E_Choice src_coding = data.Which();
+    if ( reverse ) {
+        dataPos += total_count;
+    }
     while ( total_count ) {
         TSeqPos count = min(total_count, TSeqPos(sizeof(buffer)));
+        if ( reverse ) {
+            dataPos -= count;
+        }
         switch ( src_coding ) {
         case CSeq_data::e_Iupacna:
             copy_8bit_any(buffer, count, data.GetIupacna().Get(), dataPos,
@@ -682,10 +703,7 @@ void x_AppendAnyTo4(string& dst_str, char& dst_c, TSeqPos dst_pos,
                            "Invalid data coding: "<<src_coding);
         }
         x_Append8To4(dst_str, dst_c, dst_pos, buffer, count);
-        if ( reverse ) {
-            dataPos -= count;
-        }
-        else {
+        if ( !reverse ) {
             dataPos += count;
         }
         dst_pos += count;
@@ -699,13 +717,20 @@ void x_AppendAnyTo2(string& dst_str, char& dst_c, TSeqPos dst_pos,
                     const CSeq_data& data, TSeqPos dataPos,
                     TSeqPos total_count,
                     const char* table, bool reverse,
-                    INcbi2naRandomizer* randomizer, TSeqPos src_pos)
+                    INcbi2naRandomizer* randomizer, TSeqPos randomizer_pos)
 {
+    _ASSERT(dataPos+total_count >= dataPos); // check for overflow
     _ASSERT(table || reverse || randomizer);
     char buffer[kBufferSize];
     CSeq_data::E_Choice src_coding = data.Which();
+    if ( reverse ) {
+        dataPos += total_count;
+    }
     while ( total_count ) {
         TSeqPos count = min(total_count, TSeqPos(sizeof(buffer)));
+        if ( reverse ) {
+            dataPos -= count;
+        }
         switch ( src_coding ) {
         case CSeq_data::e_Iupacna:
             copy_8bit_any(buffer, count, data.GetIupacna().Get(), dataPos,
@@ -744,17 +769,14 @@ void x_AppendAnyTo2(string& dst_str, char& dst_c, TSeqPos dst_pos,
                            "Invalid data coding: "<<src_coding);
         }
         if ( randomizer ) {
-            randomizer->RandomizeData(buffer, count, src_pos);
+            randomizer->RandomizeData(buffer, count, randomizer_pos);
         }
         x_Append8To2(dst_str, dst_c, dst_pos, buffer, count);
-        if ( reverse ) {
-            dataPos -= count;
-        }
-        else {
+        if ( !reverse ) {
             dataPos += count;
         }
         dst_pos += count;
-        src_pos += count;
+        randomizer_pos += count;
         total_count -= count;
     }
 }
