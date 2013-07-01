@@ -117,6 +117,9 @@ Gene-commentary ::= SEQUENCE {
 
         ncRNA (22), 
         gene-group (23), -- for relationship sets (such as pseudogene / parent gene)
+        assembly (24),  -- for full assembly accession
+        assembly-unit (25), -- for the assembly unit corresponding to the refseq
+
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
