@@ -236,6 +236,8 @@ private:
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
+    void x_InitCORS(void);
+
     // Secure protocol flag.
     enum ESecureMode {
         eSecure_NotSet,

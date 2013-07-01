@@ -73,51 +73,6 @@ const char* CCgiResponse::sm_ContentRange       = "Content-Range";
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 
 
-// Param controlling cross-origin resource sharing headers. If set to true,
-// non-empty parameters for individual headers are used as values for the
-// headers.
-NCBI_PARAM_DECL(bool, CGI, CORS_Enable);
-NCBI_PARAM_DEF_EX(bool, CGI, CORS_Enable, false,
-                  eParam_NoThread, CGI_CORS_ENABLE);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Enable) TCORS_Enable;
-
-// Access-Control-Allow-Headers
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, "X-Requested-With",
-                  eParam_NoThread, CGI_CORS_ALLOW_HEADERS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Headers) TCORS_AllowHeaders;
-
-// Access-Control-Allow-Methods
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Methods);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Methods, "GET, POST, OPTIONS",
-                  eParam_NoThread, CGI_CORS_ALLOW_METHODS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Methods) TCORS_AllowMethods;
-
-// Access-Control-Allow-Origin
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Origin);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Origin, "*",
-                  eParam_NoThread, CGI_CORS_ALLOW_ORIGIN);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Origin) TCORS_AllowOrigin;
-
-// Access-Control-Allow-Credentials
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Credentials);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Credentials, kEmptyStr,
-                  eParam_NoThread, CGI_CORS_ALLOW_CREDENTIALS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Credentials) TCORS_AllowCredentials;
-
-// Access-Control-Expose-Headers
-NCBI_PARAM_DECL(string, CGI, CORS_Expose_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Expose_Headers, kEmptyStr,
-                  eParam_NoThread, CGI_CORS_EXPOSE_HEADERS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Expose_Headers) TCORS_ExposeHeaders;
-
-// Access-Control-Max-Age
-NCBI_PARAM_DECL(string, CGI, CORS_Max_Age);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Max_Age, kEmptyStr,
-                  eParam_NoThread, CGI_CORS_MAX_AGE);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Max_Age) TCORS_MaxAge;
-
-
 inline bool s_ZeroTime(const tm& date)
 {
     static const tm kZeroTime = { 0 };
@@ -138,15 +93,6 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
     SetOutput(os ? os  : &NcbiCout,
               os ? ofd : STDOUT_FILENO  // "os" on this line is NOT a typo
               );
-    if ( TCORS_Enable::GetDefault() ) {
-        // Add headers for cross-origin resource sharing.
-        SetHeaderValue("Access-Control-Allow-Headers", TCORS_AllowHeaders::GetDefault());
-        SetHeaderValue("Access-Control-Allow-Methods", TCORS_AllowMethods::GetDefault());
-        SetHeaderValue("Access-Control-Allow-Origin", TCORS_AllowOrigin::GetDefault());
-        SetHeaderValue("Access-Control-Allow-Credentials", TCORS_AllowCredentials::GetDefault());
-        SetHeaderValue("Access-Control-Expose-Headers", TCORS_ExposeHeaders::GetDefault());
-        SetHeaderValue("Access-Control-Max-Age", TCORS_MaxAge::GetDefault());
-    }
 }
 
 
