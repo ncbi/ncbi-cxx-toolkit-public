@@ -185,8 +185,8 @@ CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
       m_ContentLength(content_length), m_ContentLog(content_log),
       m_Position(0), m_BytePos(0), m_CurrentEntry(NULL), m_CurrentReader(NULL)
 {
-    if (NStr::StartsWith(content_type, "multipart/form-data")) {
-        SIZE_TYPE pos = content_type.find(kBoundaryTag);
+    if (NStr::StartsWith(content_type, "multipart/form-data", NStr::eNocase)) {
+        SIZE_TYPE pos = NStr::FindNoCase(content_type, kBoundaryTag);
         if (pos == NPOS) {
             NCBI_THROW(CCgiRequestException, eFormat,
                        CCER "no boundary field in " + content_type);
@@ -460,7 +460,7 @@ void CCgiEntryReaderContext::x_ReadMultipartHeaders(string& name,
                         CCER "part header lacks colon: " + line, input_pos);
         }
         CTempString field_name(line, 0, pos);
-        if (field_name == kContentDisposition) {
+        if (NStr::EqualNocase(field_name, kContentDisposition)) {
             if (NStr::CompareNocase(line, pos, 13, ": form-data; ") != 0) {
                 NCBI_THROW2(CCgiParseException, eEntry,
                             CCER "malformatted Content-Disposition header: "
@@ -469,7 +469,7 @@ void CCgiEntryReaderContext::x_ReadMultipartHeaders(string& name,
             }
             name     = s_FindAttribute(line, "name",     input_pos, true);
             filename = s_FindAttribute(line, "filename", input_pos, false);
-        } else if (field_name == kContentType) {
+        } else if (NStr::EqualNocase(field_name, kContentType)) {
             content_type = line.substr(pos + 2);
         } else {
             ERR_POST_X(4, Warning << CCER "ignoring unrecognized part header: "
