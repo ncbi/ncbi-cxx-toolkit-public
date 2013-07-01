@@ -41,6 +41,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
+
+
 static inline TThreadSystemID GetThreadId(void)
 {
     TThreadSystemID thread_id = 0;
@@ -528,13 +531,16 @@ CLoadLockBlob::CLoadLockBlob(TMutexSource& src, const CBlob_id& blob_id)
 #endif
 
 CLoadLockBlob::CLoadLockBlob(void)
+    : m_Result(0)
 {
 }
 
 
 CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& src,
                              const CBlob_id& blob_id)
-    : CTSE_LoadLock(src.GetBlobLoadLock(blob_id))
+    : CTSE_LoadLock(src.GetBlobLoadLock(blob_id)),
+      m_Result(&src),
+      m_BlobId(blob_id)
 {
     if ( IsLoaded() ) {
         src.AddTSE_Lock(*this);
@@ -563,13 +569,13 @@ void CLoadLockBlob::SetBlobState(TBlobState state)
 
 bool CLoadLockBlob::IsSetBlobVersion(void) const
 {
-    return *this && (**this).GetBlobVersion() >= 0;
+    return m_Result->IsSetBlobVersion(m_BlobId);
 }
 
 
 CLoadLockBlob::TBlobVersion CLoadLockBlob::GetBlobVersion(void) const
 {
-    return (**this).GetBlobVersion();
+    return m_Result->GetBlobVersion(m_BlobId);
 }
 
 
@@ -624,7 +630,10 @@ CReaderRequestResult::x_GetBlobLoadInfo(const CBlob_id& blob_id)
 {
     TBlobLoadLocks::iterator iter = m_BlobLoadLocks.lower_bound(blob_id);
     if ( iter == m_BlobLoadLocks.end() || iter->first != blob_id ) {
-        iter = m_BlobLoadLocks.insert(iter, TBlobLoadLocks::value_type(blob_id, TBlobLoadInfo(-1, CTSE_LoadLock())));
+        TBlobLoadLocks::value_type node(blob_id,
+                                        TBlobLoadInfo(kBlobVersionNotSet,
+                                                      CTSE_LoadLock()));
+        iter = m_BlobLoadLocks.insert(iter, node);
     }
     return iter->second;
 }
@@ -635,7 +644,7 @@ CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
     TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
     if ( !info.second ) {
         info.second = GetTSE_LoadLock(blob_id);
-        if ( info.first != -1 ) {
+        if ( info.first != kBlobVersionNotSet ) {
             info.second->SetBlobVersion(info.first);
         }
     }
@@ -676,6 +685,33 @@ bool CReaderRequestResult::SetBlobVersion(const CBlob_id& blob_id,
 }
 
 
+bool CReaderRequestResult::IsSetBlobVersion(const CBlob_id& blob_id)
+{
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
+    if ( info.first != kBlobVersionNotSet ) {
+        return true;
+    }
+    if ( info.second && info.second->GetBlobVersion() != kBlobVersionNotSet ) {
+        return true;
+    }
+    return false;
+}
+
+
+CReaderRequestResult::TBlobVersion
+CReaderRequestResult::GetBlobVersion(const CBlob_id& blob_id)
+{
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
+    if ( info.first != kBlobVersionNotSet ) {
+        return info.first;
+    }
+    if ( info.second ) {
+        return info.second->GetBlobVersion();
+    }
+    return kBlobVersionNotSet;
+}
+
+
 bool CReaderRequestResult::SetNoBlob(const CBlob_id& blob_id,
                                      TBlobState blob_state)
 {
@@ -694,12 +730,9 @@ bool CReaderRequestResult::SetNoBlob(const CBlob_id& blob_id,
 
 void CReaderRequestResult::ReleaseNotLoadedBlobs(void)
 {
-    for ( TBlobLoadLocks::iterator it = m_BlobLoadLocks.begin(); it != m_BlobLoadLocks.end(); ) {
+    NON_CONST_ITERATE ( TBlobLoadLocks, it, m_BlobLoadLocks ) {
         if ( it->second.second && !it->second.second.IsLoaded() ) {
-            m_BlobLoadLocks.erase(it++);
-        }
-        else {
-            ++it;
+            it->second.second.Reset();
         }
     }
 }

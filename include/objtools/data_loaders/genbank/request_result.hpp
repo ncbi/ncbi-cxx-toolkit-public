@@ -520,6 +520,10 @@ public:
     bool IsSetBlobVersion(void) const;
     TBlobVersion GetBlobVersion(void) const;
     void SetBlobVersion(TBlobVersion);
+
+private:
+    CReaderRequestResult* m_Result;
+    CBlob_id m_BlobId;
 };
 
 /*
@@ -599,6 +603,8 @@ public:
                                    TLoadedBlob_ids& blob_ids) const;
 
     bool SetBlobVersion(const TKeyBlob& blob_id, TBlobVersion version);
+    bool IsSetBlobVersion(const TKeyBlob& blob_id);
+    TBlobVersion GetBlobVersion(const TKeyBlob& blob_id);
     bool SetNoBlob(const TKeyBlob& blob_id, TBlobState blob_state);
     void ReleaseNotLoadedBlobs(void);
 
