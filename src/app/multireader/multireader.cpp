@@ -157,10 +157,8 @@ public:
     PutError(
         const ILineError& err ) 
     {
-        m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
-        return (err.Severity() <= m_iMaxLevel) && (m_Errors.size() < m_iMaxCount);
+        StoreError(err);
+        return (err.Severity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
     };
     
 protected:
@@ -212,6 +210,7 @@ void CMultiReaderApp::Init(void)
             "vcf",
             "aln", "align",
             "hgvs",
+            "fasta",
             "guess") );
 
     arg_desc->AddDefaultKey(
@@ -724,6 +723,10 @@ void CMultiReaderApp::xSetFormat(
     if (NStr::StartsWith(strProgramName, "hgvs") || 
         format == "hgvs") {
         m_uFormat = CFormatGuess::eHgvs;
+    }
+    if( NStr::StartsWith(strProgramName, "fasta") ||
+        format == "fasta" ) {
+            m_uFormat = CFormatGuess::eFasta;
     }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);

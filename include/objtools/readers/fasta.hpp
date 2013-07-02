@@ -42,6 +42,9 @@
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/error_container.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 // #include <objects/seqset/Seq_entry.hpp>
 #include <stack>
@@ -61,6 +64,8 @@ class CSeq_loc;
 
 class CSeqIdGenerator;
 
+class IErrorContainer;
+
 /// Base class for reading FASTA sequences.
 ///
 /// This class should suffice as for typical usage, but its
@@ -68,7 +73,7 @@ class CSeqIdGenerator;
 /// for a wide range of specialized subclasses.
 ///
 /// @sa CFastaOstream
-class NCBI_XOBJREAD_EXPORT CFastaReader {
+class NCBI_XOBJREAD_EXPORT CFastaReader : public CReaderBase {
 public:
     /// Note on fAllSeqIds: some databases (notably nr) have merged
     /// identical sequences, joining their deflines together with
@@ -106,23 +111,28 @@ public:
     CFastaReader(ILineReader& reader, TFlags flags = 0);
     CFastaReader(CNcbiIstream& in,    TFlags flags = 0);
     CFastaReader(const string& path,  TFlags flags = 0);
+    CFastaReader(CReaderBase::TReaderFlags fBaseFlags,  TFlags flags = 0);
     virtual ~CFastaReader(void);
+
+    /// CReaderBase overrides
+    virtual CRef<CSerialObject> ReadObject   (ILineReader &lr, IErrorContainer *pErrors);
+    virtual CRef<CSeq_entry>    ReadSeqEntry (ILineReader &lr, IErrorContainer *pErrors);
 
     /// Indicates (negatively) whether there is any more input.
     bool AtEOF(void) const { return m_LineReader->AtEOF(); }
 
     /// Read a single effective sequence, which may turn out to be a
     /// segmented set.
-    virtual CRef<CSeq_entry> ReadOneSeq(void);
+    virtual CRef<CSeq_entry> ReadOneSeq(IErrorContainer * pErrorContainer = 0);
 
     /// Read multiple sequences (by default, as many as are available.)
-    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int);
+    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int, IErrorContainer * pErrorContainer = 0);
 
     /// Read as many sequences as are available, and interpret them as
     /// an alignment, with hyphens marking relative deletions.
     /// @param reference_row
     ///   0-based; the special value -1 yields a full (pseudo-?)N-way alignment.
-    CRef<CSeq_entry> ReadAlignedSet(int reference_row);
+    CRef<CSeq_entry> ReadAlignedSet(int reference_row, IErrorContainer * pErrorContainer = 0);
 
     // also allow changing?
     TFlags GetFlags(void) const { return m_Flags.top(); }
@@ -150,80 +160,7 @@ public:
     
     const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
-    void ClearBadMods(void) { m_BadMods.clear(); }
-
-    /// Holds information about a FASTA warning (non-fatal)
-    class NCBI_XOBJREAD_EXPORT CWarning : public CObject {
-    public:
-        enum EType {
-            // must start with 0 and increment by one only
-            eType_TitleTooLong = 0,
-            eType_NucsInTitle,
-            eType_TooManyAmbigOnFirstLine,
-            eType_InvalidResidue,
-            eType_AminoAcidsInTitle,
-            eType_ModsFoundButNotExpected,
-            eType_ExpectedSeqMissing,
-            eType_GapModsFoundButNoneExpected,
-            eType_ExtraGapModsFound,
-            eType_ExpectedGapModsMissing,
-
-            // feel free to add more warning types as necessary, but
-            // put them before eType_NUM
-            eType_NUM
-        };
-
-        CWarning(EType eType, 
-            int iLineNum,
-            const string & sMsg ) 
-            : m_eType(eType),
-            m_iLineNum(iLineNum),
-            m_sMsg(sMsg) { }
-
-        EType GetType(void) const { return m_eType; }
-        int GetLineNum(void) const { return m_iLineNum; }
-        const string & GetMsg(void) const {
-            return m_sMsg; }
-
-        static string GetStringOfType(EType eType);
-
-        bool operator == (const CWarning & rhs ) const {
-            return m_eType == rhs.m_eType &&
-                m_iLineNum == rhs.m_iLineNum &&
-                m_sMsg == rhs.m_sMsg;
-        }
-
-        bool operator != (const CWarning & rhs ) const {
-            return ! (*this == rhs);
-        }
-
-    private:
-        EType  m_eType;
-        int    m_iLineNum;
-        string m_sMsg;
-    };
-
-    typedef CConstRef<CWarning> TWarningRef;
-
-    typedef CObjectFor< std::vector<TWarningRef> > TWarningRefVec;
-
-    /// Set where FASTA warnings go.  The default if this function is not
-    /// called is to go to ERR_POST_X.
-    ///
-    /// @param pWarningVec
-    ///   The vector that FASTA warnings are sent into.  If unset, they 
-    ///   just go to ERR_POST_X
-    void SetWarningOutput( CRef<TWarningRefVec> pWarningRefVec ) { 
-        m_pWarningRefVec = pWarningRefVec; }
-
-    /// Get a reference to the vector of FASTA warnings (empty reference returned
-    /// if none set currently).  Note that there's no reason to call
-    /// this if you originally called SetWarningOutput and still have a reference
-    /// to the supplied pWarningRefVec.
-    ///
-    /// @return A const ref to the internal warning output array.
-    CConstRef<TWarningRefVec> GetWarningOutput(void) const { 
-        return m_pWarningRefVec; }
+    void  ClearBadMods(void) { m_BadMods.clear(); }
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length.
@@ -289,25 +226,26 @@ protected:
         TSeqPos m_iLineNum;
     };
 
-    virtual CRef<CSeq_entry> x_ReadSegSet(void);
+    virtual CRef<CSeq_entry> x_ReadSegSet(IErrorContainer * pErrorContainer);
 
-    virtual void   ParseDefLine  (const TStr& s);
-    virtual bool   ParseIDs      (const TStr& s);
-    virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end);
-    virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo);
+    virtual void   ParseDefLine  (const TStr& s, IErrorContainer * pErrorContainer);
+    virtual bool   ParseIDs      (const TStr& s, IErrorContainer * pErrorContainer);
+    virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, IErrorContainer * pErrorContainer);
+    virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, IErrorContainer * pErrorContainer);
     virtual bool   IsValidLocalID(const TStr& s);
     virtual void   GenerateID    (void);
-    virtual void   ParseDataLine (const TStr& s);
-    virtual void   CheckDataLine (const TStr& s);
-    virtual void   x_CloseGap    (TSeqPos len);
+    virtual void   ParseDataLine (const TStr& s, IErrorContainer * pErrorContainer);
+    virtual void   CheckDataLine (const TStr& s, IErrorContainer * pErrorContainer);
+    virtual void   x_CloseGap    (TSeqPos len, IErrorContainer * pErrorContainer);
     virtual void   x_OpenMask    (void);
     virtual void   x_CloseMask   (void);
-    virtual bool   ParseGapLine  (const TStr& s);
-    virtual void   AssembleSeq   (void);
-    virtual void   AssignMolType (void);
+    virtual bool   ParseGapLine  (const TStr& s, IErrorContainer * pErrorContainer);
+    virtual void   AssembleSeq   (IErrorContainer * pErrorContainer);
+    virtual void   AssignMolType (IErrorContainer * pErrorContainer);
     virtual bool   CreateWarningsForSeqDataInTitle(
         const TStr& sLineText, 
-        TSeqPos iLineNum);
+        TSeqPos iLineNum,
+        IErrorContainer * pErrorContainer);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
@@ -315,13 +253,13 @@ protected:
     typedef map<TSeqPos, TSubMap>       TStartsMap;
     typedef vector<CRef<CSeq_id> >      TIds;
 
-    CRef<CSeq_entry> x_ReadSeqsToAlign(TIds& ids);
+    CRef<CSeq_entry> x_ReadSeqsToAlign(TIds& ids, IErrorContainer * pErrorContainer);
     void             x_AddPairwiseAlignments(CSeq_annot& annot, const TIds& ids,
                                              TRowNum reference_row);
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
     // inline utilities 
-    void CloseGap(void);
+    void CloseGap(IErrorContainer * pErrorContainer = 0);
     void OpenMask(void);
     void CloseMask(void)
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
@@ -347,12 +285,11 @@ protected:
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
 
-    void x_ApplyAllMods( CBioseq & bioseq, TSeqPos iLineNum );
+    void x_ApplyAllMods( CBioseq & bioseq, TSeqPos iLineNum, 
+        IErrorContainer * pErrorContainer );
 
     std::string x_NucOrProt(void) const;
     
-    CRef<TWarningRefVec> m_pWarningRefVec;
-
     // Make case-sensitive and other kinds of insensitivity, too
     // (such as "spaces" and "underscores" becoming "hyphens"
     static auto_ptr<string> CanonicalizeString(const TStr & sValue);
@@ -534,10 +471,10 @@ void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner,
 
 
 inline
-void CFastaReader::CloseGap(void)
+void CFastaReader::CloseGap(IErrorContainer * pErrorContainer)
 {
     if (m_CurrentGapLength > 0) {
-        x_CloseGap(m_CurrentGapLength);
+        x_CloseGap(m_CurrentGapLength, pErrorContainer);
     }
     m_CurrentGapLength = 0;
 }

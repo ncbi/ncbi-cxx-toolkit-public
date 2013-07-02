@@ -92,6 +92,7 @@
 #include <objtools/readers/gvf_reader.hpp>
 #include <objtools/readers/vcf_reader.hpp>
 #include <objtools/readers/rm_reader.hpp>
+#include <objtools/readers/fasta.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -107,7 +108,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CReaderBase*
 CReaderBase::GetReader(
     CFormatGuess::EFormat format,
-    unsigned int flags )
+    TReaderFlags flags )
 //  ----------------------------------------------------------------------------
 {
     switch ( format ) {
@@ -130,12 +131,14 @@ CReaderBase::GetReader(
         return new CVcfReader(flags);
     case CFormatGuess::eRmo:
         return new CRepeatMaskerReader(flags);
+    case CFormatGuess::eFasta:
+        return new CFastaReader(flags);
     }
 }
 
 //  ----------------------------------------------------------------------------
 CReaderBase::CReaderBase(
-    unsigned int flags) :
+    TReaderFlags flags) :
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
     m_iFlags(flags)

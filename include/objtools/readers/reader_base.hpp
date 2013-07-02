@@ -59,15 +59,16 @@ public:
     ///
     enum EFlags {
         fNormal = 0,
-        ///< numeric identifiers are local IDs
-        fNumericIdsAsLocal  = 1<0,
-        ///< all identifiers are local IDs
-        fAllIdsAsLocal      = 1<1,
+        /// numeric identifiers are local IDs
+        fNumericIdsAsLocal  = 1<<0,
+        /// all identifiers are local IDs
+        fAllIdsAsLocal      = 1<<1,
 
-        fNextInLine = 1<2,
+        fNextInLine = 1<<2,
 
         fAsRaw = 1<<3,
     };
+    typedef unsigned int TReaderFlags;
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,
@@ -77,7 +78,7 @@ public:
 protected:
     /// Protected constructor. Use GetReader() to get an actual reader object.
     CReaderBase(
-        unsigned int flags =0);    //flags
+        TReaderFlags flags =0);    //flags
 
 
 public:
@@ -92,7 +93,7 @@ public:
     ///
     static CReaderBase* GetReader(
         CFormatGuess::EFormat format,
-        unsigned int flags =0 );
+        TReaderFlags flags =0 );
 
     /// Read an object from a given input stream, render it as the most
     /// appropriate Genbank object.
@@ -216,8 +217,8 @@ protected:
     //  Data:
     //
     unsigned int m_uLineNumber;
-    int m_iFlags;
-    CTrackData* m_pTrackDefaults;
+    TReaderFlags       m_iFlags;
+    CTrackData*  m_pTrackDefaults;
 };
 
 END_objects_SCOPE

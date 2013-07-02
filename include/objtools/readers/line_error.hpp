@@ -69,6 +69,15 @@ public:
         eProblem_FeatMustBeInXrefdGene,
         eProblem_CreatedGeneFromMultipleFeats,
         eProblem_UnrecognizedSquareBracketCommand,
+        eProblem_TooLong,
+        eProblem_UnexpectedNucResidues,
+        eProblem_UnexpectedAminoAcids,
+        eProblem_TooManyAmbiguousResidues,
+        eProblem_InvalidResidue,
+        eProblem_ModifierFoundButNoneExpected,
+        eProblem_ExtraModifierFound,
+        eProblem_ExpectedModifierMissing,
+        eProblem_Missing,
 
         eProblem_GeneralParsingError
     };
@@ -193,6 +202,24 @@ public:
             return "Feature is trying to create a gene that conflicts with the gene created by another feature.";
         case eProblem_UnrecognizedSquareBracketCommand:
             return "Unrecognized square bracket command";
+        case eProblem_TooLong:
+            return "Feature is too long";
+        case eProblem_UnexpectedNucResidues:
+            return "Nucleotide residues unexpectedly found in feature";
+        case eProblem_UnexpectedAminoAcids:
+            return "Amino acid residues unexpectedly found in feature";
+        case eProblem_TooManyAmbiguousResidues:
+            return "Too many ambiguous residues";
+        case eProblem_InvalidResidue:
+            return "Invalid residue(s)";
+        case eProblem_ModifierFoundButNoneExpected:
+            return "Modifiers were found where none were expected";
+        case eProblem_ExtraModifierFound:
+            return "Extraneous modifiers found";
+        case eProblem_ExpectedModifierMissing:
+            return "Expected modifier missing";
+        case eProblem_Missing:
+            return "Feature is missing";
         default:
             return "Unknown problem";
         }
@@ -303,6 +330,9 @@ class CObjReaderLineException
     : public CObjReaderParseException, public ILineError
 {
 public:
+
+    using CObjReaderParseException::EErrCode;
+
     CObjReaderLineException(
         EDiagSev eSeverity,
         unsigned int uLine,
@@ -311,17 +341,35 @@ public:
         const std::string& strSeqId = string(""),
         const std::string & strFeatureName = string(""),
         const std::string & strQualifierName = string(""),
-        const std::string & strQualifierValue = string("") )
-    : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine,
+        const std::string & strQualifierValue = string(""),
+        CObjReaderLineException::EErrCode eErrCode = eFormat
+        )
+        : CObjReaderParseException( DIAG_COMPILE_INFO, 0, static_cast<CObjReaderParseException::EErrCode>(CException::eInvalid), strMessage, uLine,
         eDiag_Info ), 
         m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine), 
         m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
         m_strQualifierValue(strQualifierValue)
     {
         SetSeverity( eSeverity );
-    };
+        x_InitErrCode(static_cast<CException::EErrCode>(eErrCode));
+    }
+
+    CObjReaderLineException(const CObjReaderLineException & rhs ) :
+        CObjReaderParseException( rhs ), 
+            m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()), 
+            m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()), 
+            m_strQualifierValue(rhs.QualifierValue())
+    {
+        SetSeverity( rhs.Severity() );
+        x_InitErrCode(static_cast<CException::EErrCode>(rhs.x_GetErrCode()));
+    }
 
     ~CObjReaderLineException(void) throw() { }
+
+    TErrCode GetErrCode(void) const 
+    { 
+        return (TErrCode) this->x_GetErrCode();
+    } 
 
     EProblem Problem(void) const { return m_eProblem; }
     const std::string &SeqId(void) const { return m_strSeqId; }
@@ -348,7 +396,7 @@ public:
     void AddOtherLine(unsigned int uOtherLine) {
         m_vecOfOtherLines.push_back(uOtherLine);
     }
-        
+
 protected:
     EProblem m_eProblem;
     std::string m_strSeqId;

@@ -80,7 +80,7 @@ public:
 
     /// Override this method to force the parent class to ignore gaps
     /// @param len length of the gap? @sa CFastaReader
-    virtual void x_CloseGap(TSeqPos len) {
+    virtual void x_CloseGap(TSeqPos len, IErrorContainer * pErrorContainer) {
         (void)len;  // remove solaris compiler warning
         return;
     }
@@ -88,14 +88,14 @@ public:
     /// Override logic for assigning the molecule type
     /// @note fForceType is ignored if the sequence length is less than the
     /// value configured in the constructor
-    virtual void AssignMolType() {
+    virtual void AssignMolType(IErrorContainer * pErrorContainer) {
         if (GetCurrentPos(eRawPos) < m_SeqLenThreshold) {
             _ASSERT( (TestFlag(fAssumeNuc) ^ TestFlag(fAssumeProt) ) );
             SetCurrentSeq().SetInst().SetMol(TestFlag(fAssumeNuc) 
                                              ? CSeq_inst::eMol_na 
                                              : CSeq_inst::eMol_aa);
         } else {
-            CFastaReader::AssignMolType();
+            CFastaReader::AssignMolType(pErrorContainer);
         }
     }
 
@@ -131,7 +131,7 @@ public:
           m_RetrieveSeqData(retrieve_seq_data) {}
 
     /// Overloaded method to attempt to read non-FASTA input types
-    virtual CRef<CSeq_entry> ReadOneSeq(void) {
+    virtual CRef<CSeq_entry> ReadOneSeq(IErrorContainer * pErrorContainer) {
         
         const string line = NStr::TruncateSpaces(*++GetLineReader());
         if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {

@@ -46,21 +46,24 @@ class IErrorContainer
 {
 public:
     virtual ~IErrorContainer() {}
-    //
-    //  return true if the error was added to the container, false if not. In the
-    //  second case, the caller should terminate all further processing
-    //
+    /// Store error in the container, and 
+    /// return true if error was stored fine, and
+    /// return false if the caller should terminate all further processing.
+    ///
     virtual bool
     PutError(
-        const ILineError& ) =0;
+        const ILineError& ) = 0;
     
+    /// 0-based error retrieval.
     virtual const ILineError&
     GetError(
         size_t ) =0;
         
+    /// Return number of errors seen so far.
     virtual size_t
     Count() const =0;
     
+    /// Returns the number of errors seen so far at the given severity.
     virtual size_t
     LevelCount(
         EDiagSev ) =0;
@@ -115,8 +118,25 @@ public:
         }
     };
                 
-protected:
+private:
+    // private so later we can change the structure if
+    // necessary (e.g. to have indexing and such to speed up
+    // level-counting)
     std::vector< CLineError > m_Errors;
+
+protected:
+
+    // Child classes should use this to store errors
+    // into m_Errors
+    void StoreError(const ILineError& err)
+    {
+        m_Errors.push_back( 
+            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
+                err.FeatureName(), err.QualifierName(), err.QualifierValue()) );
+        ITERATE( ILineError::TVecOfLines, line_it, err.OtherLines() ) {
+            m_Errors.back().AddOtherLine(*line_it);
+        }
+    }
 };
 
 //  ============================================================================
@@ -134,12 +154,7 @@ public:
     PutError(
         const ILineError& err ) 
     {
-        m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue()) );
-        ITERATE( ILineError::TVecOfLines, line_it, err.OtherLines() ) {
-            m_Errors.back().AddOtherLine(*line_it);
-        }
+        StoreError(err);
         return true;
     };
 };        
@@ -159,9 +174,7 @@ public:
     PutError(
         const ILineError& err ) 
     {
-        m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
+        StoreError(err);
         return false;
     };
 };        
@@ -182,9 +195,7 @@ public:
     PutError(
         const ILineError& err ) 
     {
-        m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
+        StoreError(err);
         return (Count() < m_uMaxCount);
     };    
 protected:
@@ -207,9 +218,7 @@ public:
     PutError(
         const ILineError& err ) 
     {
-        m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
+        StoreError(err);
         return (err.Severity() <= m_iAcceptLevel);
     };    
 protected:
@@ -236,9 +245,7 @@ public:
                   eDPF_Log | eDPF_IsMessage).GetRef()
            << err.Message() << Endm;
 
-        m_Errors.push_back(
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(),
-                err.FeatureName(), err.QualifierName(), err.QualifierValue() ) );
+        StoreError(err);
         return true;
     };
 
