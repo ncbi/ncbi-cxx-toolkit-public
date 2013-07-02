@@ -142,6 +142,9 @@ private:
     bool m_filtersr;
     bool m_filterest;
     bool m_collapsest;
+    bool m_collapssr;
+    bool m_filtermrna;
+    bool m_filterprots;
 };
 
 END_SCOPE(gnomon)

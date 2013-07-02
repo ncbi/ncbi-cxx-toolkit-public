@@ -178,6 +178,8 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
 
     arg_desc->AddFlag("filtersr","Filter SR");
     arg_desc->AddFlag("filterest","Filter EST");
+    arg_desc->AddFlag("filtermrna","Filter mRNA");
+    arg_desc->AddFlag("filterprots","Filter proteins");
     arg_desc->AddFlag("collapsest","Collaps EST");
     arg_desc->AddFlag("collapssr","Collaps SR");
 
@@ -224,7 +226,10 @@ CAlignCollapser::CAlignCollapser() : m_count(0) {
     CArgs args = CNcbiApplication::Instance()->GetArgs();
     m_filtersr = args["filtersr"];
     m_filterest = args["filterest"];
+    m_filtermrna = args["filtermrna"];
+    m_filterprots = args["filterprots"];
     m_collapsest = args["collapsest"];
+    m_collapssr = args["collapssr"];
 }
 
 
@@ -373,7 +378,7 @@ bool RemoveNotSupportedIntronsFromTranscripts(CAlignModel& align, CAlignCollapse
 
 void CAlignCollapser::FilterAlignments() {
 
-    if(!m_filtersr && !m_filterest)
+    if(!m_filtersr && !m_filterest && !m_filtermrna && !m_filterprots)
         return;
 
     CArgs args = CNcbiApplication::Instance()->GetArgs();
@@ -703,10 +708,17 @@ void CAlignCollapser::FilterAlignments() {
 
 
     //filter other alignments
-    for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end() && m_filterest; ) {
+    for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
         TAlignModelList::iterator i = it++;
         CAlignModel& align = *i;
         const CAlignMap& amap = align.GetAlignMap();
+
+        if((align.Type()&CGeneModel::eEST) && !m_filterest)
+            continue;
+        if((align.Type()&CGeneModel::emRNA) && !m_filtermrna)
+            continue;
+        if((align.Type()&CGeneModel::eProt) && !m_filterprots)
+            continue;
 
         if((align.Type()&(CGeneModel::emRNA|CGeneModel::eProt)) && !AlignmentIsSupportedBySR(align, coverage, minsingleexpression, left_end)) {
             cerr << "Not supported " << align.Type() << ' ' << align.TargetAccession() << ' ' << align.ID() << endl;
@@ -840,7 +852,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         const deque<char>& id_pool = m_target_id_pool[alc];
         deque<SAlignIndividual>& alideque = i->second;
 
-        if((alc.isEST() && !args["collapsest"]) || (alc.isSR() && !args["collapssr"])) {   // don't collaps
+        if(alc.isSR() && !m_collapssr) {   // don't collaps
             ITERATE(deque<SAlignIndividual>, k, alideque) {
                 CAlignModel align(alc.GetAlignment(*k, id_pool));
                 clsset.Insert(align);
@@ -931,7 +943,11 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a) {
             SIntron intron(e[l-1].GetTo(),e[l].GetFrom(), align.Strand(), (align.Status()&CGeneModel::eUnknownOrientation) == 0, sig);
             SIntronData& id = m_align_introns[intron];
 
-            if((align.Type()&(CGeneModel::eProt|CGeneModel::emRNA|CGeneModel::eEST) && !m_filterest) || ((align.Type()&CGeneModel::eSR) && !m_filtersr)) {
+            if(((align.Type()&CGeneModel::eSR) && !m_filtersr) || 
+               ((align.Type()&CGeneModel::eEST) && !m_filterest) ||
+               ((align.Type()&CGeneModel::emRNA) && !m_filtermrna) ||
+               ((align.Type()&CGeneModel::eProt) && !m_filterprots)) {
+
                 id.m_keep_anyway = true;
             }
 
