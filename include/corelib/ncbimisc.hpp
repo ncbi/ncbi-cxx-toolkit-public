@@ -49,6 +49,7 @@
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbidbg.hpp>
 
 #if !defined(HAVE_NULLPTR)
 #  define nullptr NULL
@@ -897,12 +898,28 @@ BEGIN_NCBI_NAMESPACE;
 //
 
 /// ITERATE macro to sequence through container elements.
+
+#ifdef _DEBUG
+template<typename Type>
+inline bool s_ITERATE_SameObject(const Type& obj1, const Type& obj2)
+{
+    return &obj1 == &obj2;
+}
+# define ITERATE_GET_BEGIN(Cont) \
+    (NCBI_ASSERT_EXPR(s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).begin())
+# define ITERATE_GET_RBEGIN(Cont) \
+    (NCBI_ASSERT_EXPR(s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).rbegin())
+#else
+# define ITERATE_GET_BEGIN(Cont) (Cont).begin()
+# define ITERATE_GET_RBEGIN(Cont) (Cont).rbegin()
+#endif
+
 #define ITERATE(Type, Var, Cont) \
-    for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
+    for ( Type::const_iterator Var = ITERATE_GET_BEGIN(Cont), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 /// Non constant version of ITERATE macro.
 #define NON_CONST_ITERATE(Type, Var, Cont) \
-    for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
+    for ( Type::iterator Var = ITERATE_GET_BEGIN(Cont);  Var != (Cont).end();  ++Var )
 
 /// NON_CONST_ITERATE macro for STL sets.  A special macro is required because 
 /// STL sets iterate in a const manner even if you use their "iterator" type.
@@ -913,7 +930,7 @@ BEGIN_NCBI_NAMESPACE;
 /// The number has no significance.
 #define NON_CONST_SET_ITERATE( Type, Var, Cont) \
     Type::key_type *Var = NULL;  \
-    Type::iterator Var##REAL92137892  = (Cont).begin(); \
+    Type::iterator Var##REAL92137892  = ITERATE_GET_BEGIN(Cont); \
     Var = ( Var##REAL92137892 != (Cont).end() ? (Type::key_type *)&*Var##REAL92137892 : NULL ); \
     for ( ; Var##REAL92137892 != (Cont).end(); \
     ( ++Var##REAL92137892 != (Cont).end() ? Var = (Type::key_type *)&*(Var##REAL92137892) : Var = NULL ) )
@@ -923,7 +940,7 @@ BEGIN_NCBI_NAMESPACE;
 /// e.g., map, list, but NOT vector.
 /// See also VECTOR_ERASE
 #define ERASE_ITERATE(Type, Var, Cont) \
-    for ( Type::iterator Var, NCBI_NAME2(Var,_next) = (Cont).begin();   \
+    for ( Type::iterator Var, NCBI_NAME2(Var,_next) = ITERATE_GET_BEGIN(Cont);   \
           (Var = NCBI_NAME2(Var,_next)) != (Cont).end() &&              \
               (++NCBI_NAME2(Var,_next), true); )
 /// Use this macro inside body of ERASE_ITERATE cycle to erase from
@@ -933,11 +950,11 @@ BEGIN_NCBI_NAMESPACE;
 
 /// ITERATE macro to reverse sequence through container elements.
 #define REVERSE_ITERATE(Type, Var, Cont) \
-    for ( Type::const_reverse_iterator Var = (Cont).rbegin(), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
+    for ( Type::const_reverse_iterator Var = ITERATE_GET_RBEGIN(Cont), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 /// Non constant version of REVERSE_ITERATE macro.
 #define NON_CONST_REVERSE_ITERATE(Type, Var, Cont) \
-    for ( Type::reverse_iterator Var = (Cont).rbegin();  Var != (Cont).rend();  ++Var )
+    for ( Type::reverse_iterator Var = ITERATE_GET_RBEGIN(Cont);  Var != (Cont).rend();  ++Var )
 
 /// The body of the loop will be run with Var equal to false and then true.
 /// The seemlingly excessive complexity of this macro is to get around a couple of limitations:
