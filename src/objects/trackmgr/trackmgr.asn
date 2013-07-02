@@ -194,7 +194,7 @@ TMgr-BlastRIDDetail ::= SEQUENCE {
 
 TMgr-BlastRIDReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
-    rid-detail TMgr-BlastRIDDetail
+    rid-detail TMgr-BlastRIDDetail OPTIONAL
 }
 
 TMgr-CreateUserDataItem ::= SEQUENCE {
