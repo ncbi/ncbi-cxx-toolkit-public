@@ -305,6 +305,9 @@ bool CVcfWriter::x_WriteFeatureChrom(
     string chrom = idh.AsString();
     string db, id;
     NStr::SplitInTwo( idh.AsString(), "|", db, id );
+    if (NStr::EndsWith(id, "|")) {
+        id = id.substr(0, id.size()-1);
+    }
     m_Os << id;
     return true;
 }
