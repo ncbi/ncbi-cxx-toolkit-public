@@ -524,7 +524,9 @@ CVcfReader::xAssignVariationAlleleSet(
     CVariation_inst& instance = pIdentity->SetData().SetInstance();
     instance.SetType(CVariation_inst::eType_identity);
     instance.SetObservation(CVariation_inst::eObservation_reference);
-    variants.push_back(pIdentity);
+    if (data.m_SetType != CVcfData::ST_ALL_INS) {
+        variants.push_back(pIdentity);
+    }
 
     //add additional variations, one for each alternative
     for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
@@ -784,10 +786,9 @@ CVcfReader::xAssignFeatureLocationSet(
         return true;
     }
     if (data.m_SetType == CVcfData::ST_ALL_INS) {
-        //set location for INSs
-        pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
-        pFeat->SetLocation().SetInt().SetTo(data.m_iPos);
-        pFeat->SetLocation().SetInt().SetId(*pId);
+        //set location for INSs. Will always be a point!
+        pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
+        pFeat->SetLocation().SetPnt().SetId(*pId);
         return true;
     }
     if (data.m_SetType == CVcfData::ST_ALL_DEL) {
@@ -910,7 +911,14 @@ CVcfReader::xAssignVariationIds(
 //    CVariation_ref::TVariant_prop& var_prop = variation.SetVariant_prop();
 //    var_prop.SetVersion( 5 );
     if ( data.m_Info.find( "DB" ) != data.m_Info.end() ) {
-        variation.SetId().SetDb( "dbVar" );
+        string id = data.m_Ids[0];
+        NStr::ToLower(id);
+        if (NStr::StartsWith(id, "rs")  ||  NStr::StartsWith(id, "ss")) {
+            variation.SetId().SetDb("dbSNP");
+        }
+        else {
+            variation.SetId().SetDb( "dbVar" );
+        }
     }
     else if ( data.m_Info.find( "H2" ) != data.m_Info.end() ) {
         variation.SetId().SetDb( "HapMap2" );
