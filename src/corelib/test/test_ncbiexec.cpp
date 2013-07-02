@@ -51,6 +51,26 @@ USING_NCBI_SCOPE;
 #define TEST_RESULT_C    99   // Test exit code for current test
 #define TEST_RESULT_P     0   // Test exit code for test from PATH
 
+// Array of arguments to test argument quoting in SpawnL/SpawnV
+const char* s_QuoteArgsTest[] =
+{
+    "",              // Will be overwritten with application name
+    "SpawnV_Quote",  // Test name  
+    " ", 
+    "\\", 
+    " \\", 
+    "a b", 
+    "\"a", 
+    "a\"b", 
+    "\"a b\"",
+    "\"",
+    "\"\"",
+    "\"\"\"",
+    "\"\"\"\"",
+    "!{} \t\r\n[|&;<>()$`'*?#~=%",
+    NULL
+};
+
 
 ////////////////////////////////
 // Test application
@@ -76,6 +96,9 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
+    TExitCode code;
+    TProcessHandle handle;
+
     string app = GetArguments().GetProgramName();
     LOG_POST("Application path: " << app);
 
@@ -146,98 +169,91 @@ int CTest::Run(void)
     assert( CExec::System(cmd.c_str()) == TEST_RESULT_C );
     cmd = string(app_p) + " " + app_pp;
     assert( CExec::System(cmd.c_str()) == TEST_RESULT_P );
-    
+
+
     // Spawn with eWait
-
-    TExitCode code;
-
-    code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait",
-                           NULL).GetExitCode(); 
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
-    code = CExec::SpawnLP (CExec::eWait, app_p, app_pp,
-                           NULL).GetExitCode();
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_P );
-
-    code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait",
-                           NULL, my_env).GetExitCode(); 
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
-    code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait",
-                           NULL, my_env).GetExitCode();
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
-    code = CExec::SpawnV  (CExec::eWait, app_c, args_c).GetExitCode();
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
-    code = CExec::SpawnVP (CExec::eWait, app_p, args_p).GetExitCode();
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_P );
-
-    code = CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env).GetExitCode();
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
-    code = CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env).GetExitCode();
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
+    {{
+        code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", NULL).GetExitCode(); 
+        assert( code == TEST_RESULT_C );
+        code = CExec::SpawnLP (CExec::eWait, app_p, app_pp, NULL).GetExitCode();
+        assert( code == TEST_RESULT_P );
+        code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait", NULL, my_env).GetExitCode(); 
+        assert( code == TEST_RESULT_C );
+        code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait", NULL, my_env).GetExitCode();
+        assert( code == TEST_RESULT_C );
+        code = CExec::SpawnV  (CExec::eWait, app_c, args_c).GetExitCode();
+        assert( code == TEST_RESULT_C );
+        code = CExec::SpawnVP (CExec::eWait, app_p, args_p).GetExitCode();
+        assert( code == TEST_RESULT_P );
+        code = CExec::SpawnVE (CExec::eWait, app_c, args_c, my_env).GetExitCode();
+        assert( code == TEST_RESULT_C );
+        code = CExec::SpawnVPE(CExec::eWait, app_c, args_c, my_env).GetExitCode();
+        assert( code == TEST_RESULT_C );
+    }}
 
     // Spawn with eNoWait, waiting self
-
-    TProcessHandle handle;
-
-    handle = CExec::SpawnL  (CExec::eNoWait, app_c, "SpawnL_eNoWait",
-                             NULL).GetProcessHandle();
-    assert(CExec::Wait(handle) == TEST_RESULT_C );
-    handle = CExec::SpawnLP (CExec::eNoWait, app_p, app_pp,
-                             NULL).GetProcessHandle();
-    assert(CExec::Wait(handle) == TEST_RESULT_P);
-    handle = CExec::SpawnLE (CExec::eNoWait, app_c, "SpawnLE_eNoWait",
-                             NULL, my_env).GetProcessHandle();
-    assert(CExec::Wait(handle) == TEST_RESULT_C);
-    handle = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait",
-                             NULL, my_env).GetProcessHandle();
-    assert(CExec::Wait(handle) == TEST_RESULT_C);
-
+    {{
+        handle = CExec::SpawnL  (CExec::eNoWait, app_c, "SpawnL_eNoWait", NULL).GetProcessHandle();
+        assert(CExec::Wait(handle) == TEST_RESULT_C );
+        handle = CExec::SpawnLP (CExec::eNoWait, app_p, app_pp, NULL).GetProcessHandle();
+        assert(CExec::Wait(handle) == TEST_RESULT_P);
+        handle = CExec::SpawnLE (CExec::eNoWait, app_c, "SpawnLE_eNoWait", NULL, my_env).GetProcessHandle();
+        assert(CExec::Wait(handle) == TEST_RESULT_C);
+        handle = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait", NULL, my_env).GetProcessHandle();
+        assert(CExec::Wait(handle) == TEST_RESULT_C);
+    }}
 
     // Spawn with eDetach
-
-    CExec::SpawnL  (CExec::eDetach, app_c, "SpawnL_eDetach", NULL);
-    CExec::SpawnLP (CExec::eDetach, app_p, app_pp, NULL);
-    CExec::SpawnLE (CExec::eDetach, app_c, "SpawnLE_eDetach", NULL, my_env);
-    CExec::SpawnLPE(CExec::eDetach, app_c, "SpawnLPE_eDetach",NULL, my_env);
-    CExec::SpawnV  (CExec::eDetach, app_c, args_c);
-    CExec::SpawnVP (CExec::eDetach, app_p, args_p);
-    CExec::SpawnVE (CExec::eDetach, app_c, args_c, my_env);
-    CExec::SpawnVPE(CExec::eDetach, app_c, args_c, my_env);
-
+    {{
+        CExec::SpawnL  (CExec::eDetach, app_c, "SpawnL_eDetach", NULL);
+        CExec::SpawnLP (CExec::eDetach, app_p, app_pp, NULL);
+        CExec::SpawnLE (CExec::eDetach, app_c, "SpawnLE_eDetach", NULL, my_env);
+        CExec::SpawnLPE(CExec::eDetach, app_c, "SpawnLPE_eDetach",NULL, my_env);
+        CExec::SpawnV  (CExec::eDetach, app_c, args_c);
+        CExec::SpawnVP (CExec::eDetach, app_p, args_p);
+        CExec::SpawnVE (CExec::eDetach, app_c, args_c, my_env);
+        CExec::SpawnVPE(CExec::eDetach, app_c, args_c, my_env);
+    }}
 
     // Spawn with eWaitGroup
-
-    code = CExec::SpawnL(CExec::eWaitGroup, app_c, "SpawnL_eWaitGroup",
-                         NULL).GetExitCode(); 
-    LOG_POST("Exit code: " << code);
-    assert( code == TEST_RESULT_C );
-
+    {{
+        code = CExec::SpawnL(CExec::eWaitGroup, app_c, "SpawnL_eWaitGroup", NULL).GetExitCode(); 
+        assert( code == TEST_RESULT_C );
+    }}
 
     // Spawn with eNoWaitGroup, waiting self
+    {{
+        handle = CExec::SpawnL(CExec::eNoWaitGroup, app_c, "SpawnL_eNoWaitGroup", NULL).GetProcessHandle();
+        assert( CExec::Wait(handle) == TEST_RESULT_C );
+    }}
 
-    handle = CExec::SpawnL(CExec::eNoWaitGroup, app_c, "SpawnL_eNoWaitGroup",
-                           NULL).GetProcessHandle();
-    assert(CExec::Wait(handle) == TEST_RESULT_C );
-
+    // Argument quoting test
+    {{
+        code = CExec::SpawnL(CExec::eWait, app_c, 
+                             "SpawnL_Quote", 
+                             s_QuoteArgsTest[2],
+                             s_QuoteArgsTest[3], 
+                             s_QuoteArgsTest[4],
+                             s_QuoteArgsTest[5],
+                             s_QuoteArgsTest[6], 
+                             s_QuoteArgsTest[7],
+                             s_QuoteArgsTest[8],
+                             s_QuoteArgsTest[9], 
+                             s_QuoteArgsTest[10],
+                             s_QuoteArgsTest[11],
+                             s_QuoteArgsTest[12], 
+                             s_QuoteArgsTest[13], 
+                             NULL).GetExitCode(); 
+        assert( code == TEST_RESULT_C );
+        code = CExec::SpawnV(CExec::eWait, app_c, s_QuoteArgsTest).GetExitCode();
+        assert( code == TEST_RESULT_C );
+    }}
 
     // Spawn with eOverlay
-
-    code = CExec::SpawnL(CExec::eOverlay, app_c, "SpawnL_eOverlay",
-                         NULL).GetExitCode();
-    assert( code == TEST_RESULT_C );
+    {{
+        code = CExec::SpawnL(CExec::eOverlay, app_c, "SpawnL_eOverlay", NULL).GetExitCode();
+        assert( code == TEST_RESULT_C );
+    }}
 
     // At success code below never been executed
     LOG_POST("\nTEST execution fails!\n");
@@ -256,12 +272,31 @@ int main(int argc, const char* argv[], const char* envp[])
     if ( argc > 1) {
         assert(argv[1] && *argv[1]);
         cout << endl << "Exec: " << argv[1] << endl;
+
+        if ( strstr(argv[1],"Quote")) {
+            // Check arguments
+            const int n = sizeof(s_QuoteArgsTest) / sizeof(s_QuoteArgsTest[0]);
+            assert(argc == (n-1));
+            for (int i=2; i<argc; i++) {
+                //cout << i << " = '" << argv[i] << "'" << endl;
+                //cout << i << " = '" << NStr::PrintableString(argv[i]) << "'" << endl;
+                //cout << i << " = '" << NStr::PrintableString(s_QuoteArgsTest[i]) << "'" << endl;
+                //cout.flush();
+                assert( NStr::CompareCase(s_QuoteArgsTest[i], argv[i]) == 0 );
+            }
+
+        } else {
+            assert(argc == 2);
+        }
+
         // View environment
+        /*
         const char** env_var = &envp[0];
         while (*env_var) {
             cout << *env_var << endl;
             env_var++;
         }
+        */
         // Check environment
         if ( strstr(argv[1],"E_e")) {
             char* ptr = getenv("TEST_NCBI_EXEC");
@@ -273,6 +308,7 @@ int main(int argc, const char* argv[], const char* envp[])
                 cout << "TEST_NCBI_EXEC=" << ptr << endl;
             }
         }
+        cout.flush();
         _exit(TEST_RESULT_C);
     }
     LOG_POST("Start tests:\n");

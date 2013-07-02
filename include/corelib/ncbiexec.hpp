@@ -155,6 +155,18 @@ public:
     /// value; otherwise, it returns 0.
     static TExitCode System(const char* cmdline);
 
+    /// Quote argument.
+    ///
+    /// Enclose argument in quotes if necessary.
+    /// Used for concatenation arguments into command line.
+    /// @note
+    ///   Do not use this function with Spawn*() methods. Im most cases they
+    ///   don't need it, because all parameters passes to system separately, 
+    ///   and automatically use more advanced and OS-specific algorithm for this
+    ///   if quoting is really necessary.
+    /// @sa System
+    static string QuoteArg(const string& arg);
+
     /// Spawn a new process with specified command-line arguments.
     ///
     /// In the SpawnL() version, the command-line arguments are passed
@@ -458,7 +470,7 @@ public:
     /// Wait until specified process terminates.
     ///
     /// Wait until the process with "handle" terminates, and return
-    /// immeditately if the specifed process has already terminated.
+    /// immediately if the specified process has already terminated.
     /// @param handle
     ///   Wait on process with identifier "handle", returned by one 
     ///   of the Spawn* function in eNoWait and eDetach modes.
@@ -488,7 +500,7 @@ public:
     /// Wait until any/all processes terminates.
     ///
     /// Wait until any/all processes from specified list terminates.
-    /// Return immeditately if the specifed processes has already terminated.
+    /// Return immediately if the specified processes has already terminated.
     /// @param handles
     ///   List of process identifiers. Each identifier is a value returned
     ///   by one of the Spawn* function in eNoWait and eDetach modes.
@@ -520,7 +532,7 @@ public:
     ///
     /// MS Windows:
     ///    This function try to run a program in invisible mode, without
-    ///    visible window. This can be used to run console programm from 
+    ///    visible window. This can be used to run console program from 
     ///    non-console application. If it runs from console application,
     ///    the parent's console window can be used by child process.
     ///    Executing non-console program can show theirs windows or not,
@@ -551,19 +563,12 @@ public:
     RunSilent(EMode mode, const char *cmdname,
               const char *argv, ... /*, NULL */);
 
-    /// Quote argument.
-    ///
-    /// Enclose argument in quotes if necessary.
-    /// Used for concatenation arguments into command line.
-    static string QuoteArg(const string& arg);
-
-
     /// Check executable permissions for specified file.
     ///
     /// @note
     ///   This is no guarantee that the file is executable even if
     ///   the function returns TRUE. It try to get effective user
-    ///   permissions for spefified file, but sometimes this
+    ///   permissions for specified file, but sometimes this
     ///   is not possible.
     /// @param path
     ///   Path to the file to check.

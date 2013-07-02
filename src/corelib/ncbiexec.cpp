@@ -238,6 +238,46 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
 #endif
 
 
+string CExec::QuoteArg(const string& arg)
+{
+    // Enclose argument in quotes if it is empty,
+    // or contains spaces and not contains quotes.
+    if ( arg.empty()  ||
+        (arg.find(' ') != NPOS  &&  arg.find('"') == NPOS) ) {
+        return '"' + arg + '"';
+    }
+    return arg;
+}
+
+
+string s_QuoteSpawnArg(const string& arg)
+{
+#if defined(NCBI_OS_MSWIN)
+
+    if ( arg.empty() ) {
+        return '"' + arg + '"';
+    }
+    bool have_spaces = (arg.find(' ') != NPOS);
+    bool have_quotes = (arg.find('"') != NPOS);
+    bool have_slash  = (arg.find('\\') != NPOS);
+
+    if (!have_spaces  &&  !have_quotes  &&  !have_slash) {
+        return arg;
+    }
+    string s = arg;
+    if ( have_quotes ) {
+        s = NStr::Replace(s, "\"", "\"\"");
+    }
+    if ( have_slash ) {
+        s = NStr::Replace(s, "\\", "\\\\");
+    }
+    return '"' + s + '"';
+#else
+    return arg;
+#endif
+}
+
+
 // On 64-bit platforms, check argument, passed into function with variable
 // number of arguments, on possible using 0 instead NULL as last argument.
 // Of course, the argument 'arg' can be aligned on segment boundary,
@@ -270,7 +310,7 @@ typedef AutoPtr<const TXChar*, TXArgsDeleter> TXArgsOrEnv;
 
 #if defined(NCBI_OS_MSWIN)
 
-void s_Create_Args(
+void s_Create_Args_L(
     vector<TXString>& xargs, TXArgsOrEnv& t_args,
     va_list& begin, const char* cmdname, const char* argv)
 {
@@ -288,11 +328,11 @@ void s_Create_Args(
 
     // Use temporary vector to store quoted/unicoded strings.
     xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
-    xargs.push_back( _T_XSTRING(CExec::QuoteArg(argv)) );
+    xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(argv)) );
     // Repeat for each argument in the variable list
     v_args = begin;
     for (size_t i=2; i < xcnt; ++i) {
-        xargs.push_back( _T_XSTRING(CExec::QuoteArg(va_arg(v_args, const char*))) );
+        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(va_arg(v_args, const char*))) );
     }
     // Prepare array of char* arguments for execution
     for (size_t i=0; i < xargs.size(); ++i) {
@@ -301,6 +341,35 @@ void s_Create_Args(
     args[xcnt] = NULL;
     va_arg(v_args, const char**);
     begin = v_args;
+}
+
+void s_Create_Args_V(
+    vector<TXString>& xargs, TXArgsOrEnv& t_args, const char* cmdname, const char** argv)
+{
+    // Count arguments to allocate memory
+    const char** p = argv;
+    int xcnt = 0;
+    while ( *(p++) ) {
+        xcnt++;
+    }
+    const TXChar **args = new const TXChar*[xcnt+1];
+    if ( !args ) {
+        NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+    }
+    t_args = args;
+
+    // Use temporary vector to store quoted/unicoded strings.
+    xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
+    // Repeat for each argument in the array
+    p = argv;
+    for (size_t i=1; i < xcnt; ++i) {
+        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(*(++p))) );
+    }
+    // Prepare array of char* arguments for execution
+    for (size_t i=0; i < xargs.size(); ++i) {
+        args[i] = xargs[i].c_str();
+    }
+    args[xcnt] = NULL;
 }
 
 void s_Create_Env(
@@ -339,12 +408,12 @@ void s_Create_Env(
 
 #if defined(NCBI_OS_MSWIN)
 #define XGET_EXEC_ARGS(name, ptr) \
-    const TXChar * const * a_##name; \
+    const TXChar* const *a_##name; \
     vector<TXString> x_##name; \
     TXArgsOrEnv t_##name; \
     va_list vargs; \
     va_start(vargs, ptr); \
-    s_Create_Args( x_##name, t_##name, vargs, cmdname, ptr); \
+    s_Create_Args_L(x_##name, t_##name, vargs, cmdname, ptr); \
     a_##name = t_##name.get();
 #else
 #define XGET_EXEC_ARGS(name, ptr) \
@@ -369,29 +438,40 @@ void s_Create_Env(
     a_##name[xi] = (const char*)0
 #endif
 
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-#  define XGET_EXEC_ENVP(name) \
-    const TXChar * const * a_##name; \
+#if defined(NCBI_OS_MSWIN)
+#  define XGET_PTR_ARGS(name, ptr) \
+    const TXChar* const *a_##name; \
     vector<TXString> x_##name; \
     TXArgsOrEnv t_##name; \
-    s_Create_Env( x_##name, t_##name, va_arg(vargs, const char**)); \
+    s_Create_Args_V(x_##name, t_##name, cmdname, (const char**)ptr); \
+    a_##name = t_##name.get();
+#  define XGET_PTR_ENVP(name, ptr) \
+    const TXChar* const *a_##name; \
+    vector<TXString> x_##name; \
+    TXArgsOrEnv t_##name; \
+    s_Create_Env(x_##name, t_##name, (const char**)ptr); \
+    a_##name = t_##name.get();
+#else
+#  define XGET_PTR_ARGS(name, ptr) \
+    const char* const *a_##name = ptr; \
+    char** xptr = const_cast<char**>(ptr); \
+    xptr[0] = const_cast<char*>(cmdname);
+#  define XGET_PTR_ENVP(name, ptr) \
+    const char* const *a_##name = ptr;
+#endif
+
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#  define XGET_EXEC_ENVP(name) \
+    const TXChar* const *a_##name; \
+    vector<TXString> x_##name; \
+    TXArgsOrEnv t_##name; \
+    s_Create_Env(x_##name, t_##name, va_arg(vargs, const char**)); \
     a_##name = t_##name.get();
 #else
 #  define XGET_EXEC_ENVP(name) \
     const char * const * a_##name = va_arg(vargs, const char**);
 #endif
 
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
-#  define XGET_PTR_ARGS(name, ptr) \
-    const TXChar * const * a_##name; \
-    vector<TXString> x_##name; \
-    TXArgsOrEnv t_##name; \
-    s_Create_Env( x_##name, t_##name, (const char**)ptr); \
-    a_##name = t_##name.get();
-#else
-#  define XGET_PTR_ARGS(name, ptr) \
-    const char * const * a_##name = ptr;
-#endif
 
 // Return result from Spawn method
 #define RETURN_RESULT(func) \
@@ -505,8 +585,6 @@ CExec::CResult
 CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
 {
     intptr_t status;
-    char** argp = const_cast<char**>(argv);
-    argp[0] = const_cast<char*>(cmdname);
     XGET_PTR_ARGS(args, argv);
 
 #if defined(NCBI_OS_MSWIN)
@@ -524,10 +602,8 @@ CExec::SpawnVE(EMode mode, const char *cmdname,
                const char *const *argv, const char * const *envp)
 {
     intptr_t status;
-    char** argp = const_cast<char**>(argv);
-    argp[0] = const_cast<char*>(cmdname);
     XGET_PTR_ARGS(args, argv);
-    XGET_PTR_ARGS(envs, envp);
+    XGET_PTR_ENVP(envs, envp);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -543,8 +619,6 @@ CExec::CResult
 CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
 {
     intptr_t status;
-    char** argp = const_cast<char**>(argv);
-    argp[0] = const_cast<char*>(cmdname);
     XGET_PTR_ARGS(args, argv);
 
 #if defined(NCBI_OS_MSWIN)
@@ -562,10 +636,8 @@ CExec::SpawnVPE(EMode mode, const char *cmdname,
                 const char *const *argv, const char * const *envp)
 {
     intptr_t status;
-    char** argp = const_cast<char**>(argv);
-    argp[0] = const_cast<char*>(cmdname);
     XGET_PTR_ARGS(args, argv);
-    XGET_PTR_ARGS(envs, envp);
+    XGET_PTR_ENVP(envs, envp);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -721,17 +793,6 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     RETURN_RESULT(RunSilent);
 }
 
-
-string CExec::QuoteArg(const string& arg)
-{
-    // Enclose argument in quotes if it is empty,
-    // or contains spaces and not contains quotes.
-    if ( arg.empty()  ||
-        (arg.find(' ') != NPOS  &&  arg.find('"') == NPOS) ) {
-        return '"' + arg + '"';
-    }
-    return arg;
-}
 
 bool CExec::IsExecutable(const string& path)
 {
