@@ -165,7 +165,7 @@ public:
 
         // If all fails, fall back to parent's implementation
         GetLineReader().UngetLine();
-        return CFastaReader::ReadOneSeq();
+        return CFastaReader::ReadOneSeq(pErrorContainer);
     }
 
     /// Retrieves the CBlastScopeSource object used to fetch the query
