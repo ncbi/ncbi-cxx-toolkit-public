@@ -486,9 +486,14 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 
     CBioseq_Handle bh;
 
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP02000011.1"));
     BOOST_CHECK(bh);
     BOOST_CHECK_EQUAL(bh.GetState(), 0);
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
+    BOOST_CHECK(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(),
+                      CBioseq_Handle::fState_suppress_perm);
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000012.1"));
     BOOST_CHECK(!bh);
