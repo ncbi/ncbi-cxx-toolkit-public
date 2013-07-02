@@ -315,14 +315,48 @@ bool CVcfWriter::x_WriteFeatureChrom(
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeaturePos(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
 
+    bool isInsertions = false;
+    try {
+        typedef CVariation_ref::TData::TSet::TVariations TVARS;
+        const TVARS& variations =
+            mf.GetData().GetVariation().GetData().GetSet().GetVariations();
+        for (TVARS::const_iterator cit = variations.begin(); 
+                cit != variations.end();
+                ++cit) {
+            if ( !(**cit).GetData().IsInstance() ) {
+                continue;
+            }
+            const CVariation_inst& instance = (**cit).GetData().GetInstance();
+            if (!instance.IsSetType()) {
+                continue;
+            }
+            switch(instance.GetType()) {
+            default:
+                continue;
+            case CVariation_inst::eType_ins:
+                isInsertions = true;
+                break;
+            case CVariation_inst::eType_del:
+            case CVariation_inst::eType_delins:
+            case CVariation_inst::eType_snv:
+                break;
+            }
+        }
+    }
+    catch(...) {
+        //empty set???
+    }
     const CSeq_loc& loc = mf.GetLocation();
     unsigned int start = loc.GetStart(eExtreme_Positional);
-    m_Os << NStr::UIntToString( start + 1 );
+    if (!isInsertions) {
+        start += 1;
+    }
+    m_Os << NStr::UIntToString(start);
     return true;
 }
 
