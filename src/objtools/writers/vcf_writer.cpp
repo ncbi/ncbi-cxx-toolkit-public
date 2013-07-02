@@ -592,19 +592,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
     vector<string> infos;
     const CVariation_ref& var = mf.GetData().GetVariation();
 
-    if ( mf.IsSetExt() ) {
-        string info = ".";
-        const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "VcfAttributes" ) 
-        {
-            if ( ext.HasField( "info" ) ) {
-                info = ext.GetField( "info" ).GetData().GetStr();
-                NStr::Tokenize(info, ";", infos, NStr::eMergeDelims);
-            }
-        }
-    }
-   
     if (var.IsSetId()) {
         string db = var.GetId().GetDb();
         NStr::ToLower(db);
@@ -777,6 +764,30 @@ bool CVcfWriter::x_WriteFeatureInfo(
         }
     }
 
+    if ( mf.IsSetExt() ) {
+        string info = ".";
+        const CSeq_feat::TExt& ext = mf.GetExt();
+        if ( ext.IsSetType() && ext.GetType().IsStr() && 
+            ext.GetType().GetStr() == "VcfAttributes" ) 
+        {
+            if ( ext.HasField( "info" ) ) {
+                vector<string> extraInfos;
+                info = ext.GetField( "info" ).GetData().GetStr();
+                NStr::Tokenize(info, ";", extraInfos, NStr::eMergeDelims);
+                for (vector<string>::const_iterator cit = extraInfos.begin();
+                        cit != extraInfos.end();
+                        ++cit) {
+                    string value = *cit;
+                    vector<string>::iterator fit = 
+                        std::find(infos.begin(), infos.end(), value);
+                    if (fit == infos.end()) {
+                        infos.push_back(value);
+                    }
+                }
+            }
+        }
+    }
+   
     if (infos.empty()) {
         m_Os << ".";
     }
