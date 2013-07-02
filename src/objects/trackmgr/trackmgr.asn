@@ -59,7 +59,8 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
 
 TMgr-DisplayTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
-    display-tracks SET OF TMgr-DisplayTrack OPTIONAL
+    display-tracks SET OF TMgr-DisplayTrack OPTIONAL,
+    blast-tracks SET OF TMgr-BlastRIDDetail OPTIONAL
     --tracks TMgr-DisplayTracks OPTIONAL
 }
 
@@ -186,11 +187,15 @@ TMgr-BlastQuerySeq ::= SEQUENCE {
     label VisibleString -- accession or seq-id string
 }
 
-TMgr-BlastRIDReply ::= SEQUENCE {
-    messages SEQUENCE OF TMgr-Message OPTIONAL,
+TMgr-BlastRIDDetail ::= SEQUENCE {
     rid VisibleString,
     title VisibleString OPTIONAL,
     query-sequences SEQUENCE OF TMgr-BlastQuerySeq OPTIONAL
+}
+
+TMgr-BlastRIDReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    rid-detail TMgr-BlastRIDDetail OPTIONAL
 }
 
 TMgr-CreateUserDataItem ::= SEQUENCE {
