@@ -103,11 +103,15 @@ BEGIN_NCBI_SCOPE
                   DIAG_COMPILE_INFO, #expr, mess); \
           } \
       } while ( 0 )
+#    define NCBI_ASSERT_EXPR(expr, mess)                                \
+    ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
 #  else  /* NCBI_COMPILER_MSVC */
 #    define NCBI_ASSERT(expr, mess) \
       do { if ( !(expr) ) \
           NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
       } while ( 0 )
+#    define NCBI_ASSERT_EXPR(expr, mess)                                \
+    ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
 #  endif
 
 #  define NCBI_VERIFY(expr, mess) NCBI_ASSERT(expr, mess)
@@ -127,6 +131,7 @@ BEGIN_NCBI_SCOPE
 
 #  define NCBI_TROUBLE(mess)
 #  define NCBI_ASSERT(expr, mess)   ((void)0)
+#  define NCBI_ASSERT_EXPR(expr, mess) ((void)0)
 #  define NCBI_VERIFY(expr, mess)   while ( expr ) break
 #  define _DEBUG_ARG(arg)
 #  define _DEBUG_CODE(code)         ((void)0)
