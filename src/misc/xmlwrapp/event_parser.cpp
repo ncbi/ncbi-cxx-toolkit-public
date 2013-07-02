@@ -695,7 +695,6 @@ void epimpl::event_start_element (const xmlChar *tag, const xmlChar **props) {
     if (!parser_status_) return;
 
     try {
-
         event_parser::attrs_type attrs;
         const xmlChar **attrp;
 
@@ -705,8 +704,13 @@ void epimpl::event_start_element (const xmlChar *tag, const xmlChar **props) {
 
         std::string name = reinterpret_cast<const char*>(tag);
         parser_status_ = parent_.start_element(name, attrs);
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in start_element handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -714,11 +718,15 @@ void epimpl::event_end_element (const xmlChar *tag) {
     if (!parser_status_) return;
 
     try {
-
         std::string name = reinterpret_cast<const char*>(tag);
         parser_status_ = parent_.end_element(name);
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in end_element handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -726,11 +734,15 @@ void epimpl::event_text (const xmlChar *text, int length) {
     if (!parser_status_) return;
 
     try {
-
         std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
         parser_status_ = parent_.text(contents);
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in text handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -738,10 +750,14 @@ void epimpl::event_start_document () {
     if (!parser_status_) return;
 
     try {
-
         parser_status_ = parent_.start_document();
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in start_document handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -749,10 +765,14 @@ void epimpl::event_end_document () {
     if (!parser_status_) return;
 
     try {
-
         parser_status_ = parent_.end_document();
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in end_document handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -760,12 +780,16 @@ void epimpl::event_pi (const xmlChar *target, const xmlChar *data) {
     if (!parser_status_) return;
 
     try {
-
         std::string s_target = reinterpret_cast<const char*>(target);
         std::string s_data = reinterpret_cast<const char*>(data);
         parser_status_ = parent_.processing_instruction(s_target, s_data);
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in processing_instruction handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -773,11 +797,15 @@ void epimpl::event_comment (const xmlChar *text) {
     if (!parser_status_) return;
 
     try {
-
         std::string contents = reinterpret_cast<const char*>(text);
         parser_status_ = parent_.comment(contents);
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in comment handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -785,11 +813,15 @@ void epimpl::event_cdata (const xmlChar *text, int length) {
     if (!parser_status_) return;
 
     try {
-
         std::string contents(reinterpret_cast<const char*>(text), static_cast<std::string::size_type>(length));
         parser_status_ = parent_.cdata(contents);
-
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in cdata handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -799,14 +831,19 @@ void epimpl::event_notation_declaration (const xmlChar *name,
     if (!parser_status_) return;
 
     try {
-
         std::string     notation_name( name ? reinterpret_cast<const char*>(name) : "" );
         std::string     notation_public_id( public_id ? reinterpret_cast<const char*>(public_id) : "" );
         std::string     notation_system_id( system_id ? reinterpret_cast<const char*>(system_id) : "" );
         parser_status_ = parent_.notation_declaration(notation_name,
                                                       notation_public_id,
                                                       notation_system_id);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in notation_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -825,7 +862,13 @@ void epimpl::event_entity_declaration (const xmlChar *name,
         parser_status_ = parent_.entity_declaration(entity_name, parent_.get_entity_type(type),
                                                     entity_public_id, entity_system_id,
                                                     entity_content);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in entity_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -843,7 +886,13 @@ void epimpl::event_unparsed_entity_declaration (const xmlChar *name,
         parser_status_ = parent_.unparsed_entity_declaration(entity_name,
                                                              entity_public_id, entity_system_id,
                                                              entity_notation_name);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in unparsed_entity_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -859,7 +908,13 @@ void epimpl::event_external_subset_declaration (const xmlChar *name,
         parser_status_ = parent_.external_subset_declaration(root_element_name,
                                                              ext_id,
                                                              sys_id);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in external_subset_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -875,7 +930,13 @@ void epimpl::event_internal_subset_declaration (const xmlChar *name,
         parser_status_ = parent_.internal_subset_declaration(root_element_name,
                                                              ext_id,
                                                              sys_id);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in internal_subset_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -903,7 +964,13 @@ void epimpl::event_attribute_declaration (const xmlChar *element_name,
                                                        parent_.get_attribute_default_type(default_type),
                                                        default_val,
                                                        def_vals);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in attribute_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -918,7 +985,13 @@ void epimpl::event_element_declaration (const xmlChar *element_name,
         parser_status_ = parent_.element_declaration(element,
                                                      parent_.get_element_content_type(type),
                                                      content);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in element_declaration handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -929,7 +1002,13 @@ void epimpl::event_entity_reference (const xmlChar *name) {
         std::string     reference_name( name ? reinterpret_cast<const char*>(name) : "" );
 
         parser_status_ = parent_.entity_reference(reference_name);
-    } catch ( ... ) { parser_status_ = false; }
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in entity_reference handler");
+        return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -949,8 +1028,13 @@ void epimpl::event_warning (const std::string &message) {
         if (!parser_status_)
             if (is_outside_errors_)
                 last_error_message_ = message;
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
+    } catch ( ... ) {
+        event_fatal_error("user exception in warning handler");
+        return;
     }
-    catch ( ... ) { parser_status_ = false; }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################
@@ -970,8 +1054,14 @@ void epimpl::event_error (const std::string &message) {
         if (!parser_status_)
             if (is_outside_errors_)
                 last_error_message_ = message;
+    } catch (const std::exception &ex) {
+        event_fatal_error(ex.what());
+        return;
     }
-    catch ( ... ) { parser_status_ = false; }
+    catch ( ... ) {
+       event_fatal_error("user exception in error handler");
+       return;
+    }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
 //####################################################################

@@ -400,6 +400,15 @@ protected:
      * processed.
      *
      * @return You should return true to continue parsing; false to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -411,6 +420,15 @@ protected:
      * detected.
      *
      * @return You should return true to continue parsing; false to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -424,6 +442,15 @@ protected:
      * @param name The name of the element
      * @param attrs The element's attributes
      * @return You should return true to continue parsing; false to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -437,6 +464,15 @@ protected:
      *
      * @param name The name of the element that was closed.
      * @return You should return true to continue parsing; false to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -449,6 +485,15 @@ protected:
      *
      * @param contents The contents of the text node.
      * @return You should return true to continue parsing; false to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -466,6 +511,15 @@ protected:
      * @param contents The contents of the CDATA section.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -484,6 +538,15 @@ protected:
      * @param data The data of the processing instruction.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -500,6 +563,15 @@ protected:
      * @param contents The contents of the XML comment.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -513,6 +585,15 @@ protected:
      * @param message The warning message from the parser.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Peter Jones
     **/
     //####################################################################
@@ -529,6 +610,15 @@ protected:
      * @param message The error message from the parser.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -545,6 +635,15 @@ protected:
      * @param system_id The system ID of the entity.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -565,6 +664,15 @@ protected:
      * @param content The entity value.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -585,6 +693,15 @@ protected:
      * @param notation_name The notation name.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -603,6 +720,15 @@ protected:
      * @param public_id The public ID.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -620,6 +746,15 @@ protected:
      * @param public_id The public ID.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -640,6 +775,15 @@ protected:
      * @param default_values The attribute possible default values.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -660,6 +804,15 @@ protected:
      * @param content The raw libxml2 structure pointer.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -678,6 +831,15 @@ protected:
      * @note see http://mail.gnome.org/archives/xml/2009-May/msg00006.html
      *       and http://xmlsoft.org/entities.html for more details when you
      *       get errors on entity reference parsing
+     * @note If an exception is generated in the overloaded version of the
+     *       member it will be intercepted and two actions will take place:
+     *       - a fatal error message will be stored in the messages contaner.
+     *         The message text is taken from .what() if the generated
+     *         exception derives from std::exception, otherwise a generic
+     *         error message is generated.
+     *       - parsing of the document will be stopped.
+     *       So check the completion status and the error messages after any
+     *       usage of the parse*() family members.
      * @author Sergey Satskiy, NCBI
     **/
     //####################################################################
