@@ -224,6 +224,7 @@ CAlignCollapser::CAlignCollapser() : m_count(0) {
     CArgs args = CNcbiApplication::Instance()->GetArgs();
     m_filtersr = args["filtersr"];
     m_filterest = args["filterest"];
+    m_collapsest = args["collapsest"];
 }
 
 
@@ -231,7 +232,146 @@ bool AlignmentMarkedForDeletion(const SAlignIndividual& ali) {
     return ali.m_weight < 0;
 }
 
-void CAlignCollapser::FilterESTandSR() {
+#define COVERED_FRACTION 0.75
+bool AlignmentIsSupportedBySR(const CAlignModel& align, const vector<double>& coverage, int mincoverage, int left_end) {
+
+    int align_len = align.AlignLen();
+
+    int covered_length = 0;
+    ITERATE(CGeneModel::TExons, i, align.Exons()) {
+        for(int p = i->Limits().GetFrom(); p <= i->Limits().GetTo(); ++p) 
+            if(coverage[p-left_end] >= mincoverage)
+                ++covered_length;            
+    }
+
+    return (covered_length >= COVERED_FRACTION*align_len);
+}
+
+bool isGoodIntron(int a, int b, int strand, CAlignCollapser::TAlignIntrons& introns) {
+    SIntron intron_oriented_nosig(a, b, strand, true, "");
+    SIntron intron_notoriented_nosig(a, b, ePlus, false, "");
+    return (introns.find(intron_oriented_nosig) != introns.end() || introns.find(intron_notoriented_nosig) != introns.end());
+}
+
+
+#define CUT_MARGIN 15
+bool RemoveNotSupportedIntronsFromProts(CAlignModel& align, CAlignCollapser::TAlignIntrons& introns) {
+
+    CAlignMap amap = align.GetAlignMap();
+
+    bool keepdoing = true;
+    while(keepdoing) {
+        keepdoing = false;
+        for (int k = 1; k < (int)align.Exons().size(); ++k) {
+            CModelExon exonl = align.Exons()[k-1];
+            CModelExon exonr = align.Exons()[k];
+            if(!(exonl.m_ssplice && exonr.m_fsplice) || isGoodIntron(exonl.GetTo(), exonr.GetFrom(), align.Strand(), introns))
+                continue;
+
+            TSignedSeqRange segl;
+            if(exonl.GetTo()-CUT_MARGIN > align.Limits().GetFrom())
+                segl = amap.ShrinkToRealPoints(TSignedSeqRange(align.Limits().GetFrom(),exonl.GetTo()-CUT_MARGIN), true);
+
+            TSignedSeqRange segr;
+            if(exonr.GetFrom()+CUT_MARGIN < align.Limits().GetTo())
+                segr = amap.ShrinkToRealPoints(TSignedSeqRange(exonr.GetFrom()+CUT_MARGIN,align.Limits().GetTo()), true);
+
+            if(segl.Empty()) {
+                if(segr.Empty()) {
+                    return false;
+                } else {
+                    align.Clip(segr,CGeneModel::eRemoveExons);
+                    keepdoing = true;
+                    break;                    
+                }
+            } else if(segr.Empty()) {
+                align.Clip(segl,CGeneModel::eRemoveExons);
+                keepdoing = true;
+                break;                    
+            } else {
+                align.CutExons(TSignedSeqRange(segl.GetTo()+1,segr.GetFrom()-1));
+                keepdoing = true;
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool RemoveNotSupportedIntronsFromTranscripts(CAlignModel& align, CAlignCollapser::TAlignIntrons& introns) {
+
+    CAlignMap amap = align.GetAlignMap();
+
+    CAlignModel newalign;
+    for (CAlignModel::TExons::const_iterator piece_begin = align.Exons().begin(); piece_begin != align.Exons().end(); ++piece_begin) {
+        _ASSERT( !piece_begin->m_fsplice );
+            
+        CAlignModel::TExons::const_iterator piece_end = piece_begin;
+        for ( ; piece_end != align.Exons().end() && piece_end->m_ssplice; ++piece_end) ;
+        _ASSERT( piece_end != align.Exons().end() );
+
+        CAlignModel a = align;
+        a.Clip(TSignedSeqRange(piece_begin->Limits().GetFrom(),piece_end->Limits().GetTo()),CGeneModel::eRemoveExons);  // only one piece   
+            
+        //remove flanking bad introns       
+        int new_left = a.Limits().GetFrom();
+        for(int k = 1; k < (int)a.Exons().size(); ++k) {
+            CModelExon exonl = align.Exons()[k-1];
+            CModelExon exonr = align.Exons()[k];
+            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), introns))
+                break;
+            else
+                new_left = exonr.GetFrom();
+        }
+        int new_right = a.Limits().GetTo();
+        for(int k = (int)a.Exons().size()-1; k > 0 && a.Exons()[k-1].GetTo() > new_left; --k) {
+            CModelExon exonl = a.Exons()[k-1];
+            CModelExon exonr = a.Exons()[k];
+            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), introns))
+                break;
+            else
+                new_right = exonl.GetTo();
+        }
+
+        TSignedSeqRange new_lim(new_left,new_right);
+        if(new_lim != a.Limits()) {
+            new_lim = amap.ShrinkToRealPoints(new_lim,false);
+            a.Clip(new_lim,CGeneModel::eRemoveExons);
+            _ASSERT(a.Limits().NotEmpty());
+        }
+
+        if(newalign.Limits().Empty()) {
+            newalign = a;
+        } else {
+            newalign.AddHole();
+            ITERATE(CGeneModel::TExons, e, a.Exons())
+                newalign.AddExon(e->Limits(), e->m_fsplice_sig, e->m_ssplice_sig, e->m_ident);
+
+            copy(a.FrameShifts().begin(),a.FrameShifts().end(), back_inserter(newalign.FrameShifts()));
+        }
+
+        piece_begin = piece_end;
+    }
+
+    bool good_alignment = true;
+    if((align.Type()&CGeneModel::eEST) && (int)newalign.Exons().size() == 1 && newalign.Limits() != align.Limits())
+        good_alignment = false;
+
+    align = newalign;
+
+    for (int k = 1; k < (int)align.Exons().size() && good_alignment; ++k) {
+        CModelExon exonl = align.Exons()[k-1];
+        CModelExon exonr = align.Exons()[k];
+        if(exonl.m_ssplice && exonr.m_fsplice && !isGoodIntron(exonl.GetTo(), exonr.GetFrom(), align.Strand(), introns))
+            good_alignment = false;
+    }
+
+    return good_alignment;
+}
+
+
+void CAlignCollapser::FilterAlignments() {
 
     if(!m_filtersr && !m_filterest)
         return;
@@ -240,7 +380,6 @@ void CAlignCollapser::FilterESTandSR() {
 
     int left_end = numeric_limits<int>::max();
     int right_end = 0;
-    int total = 0;
     ITERATE(TAlignIntrons, it, m_align_introns) {
         const SIntron& intron = it->first;
         int a = intron.m_range.GetFrom();
@@ -252,12 +391,11 @@ void CAlignCollapser::FilterESTandSR() {
         ITERATE(deque<SAlignIndividual>, k, i->second) {
             left_end = min(left_end, k->m_range.GetFrom());
             right_end = max(right_end, k->m_range.GetTo());
-            ++total;
         }
     }
     int len = right_end-left_end+1;
 
-    cerr << "Before filtering: " << m_align_introns.size() << " introns, " << total << " alignments" << endl;
+    cerr << "Before filtering: " << m_align_introns.size() << " introns, " << m_count << " alignments" << endl;
 
 
 
@@ -333,10 +471,10 @@ void CAlignCollapser::FilterESTandSR() {
     }
 
     //filter low expressed splices
-    typedef multimap<int,TAlignIntrons::iterator> TIntronsBySplice;
     double minspliceexpression = args["min-support-fraction"].AsDouble();
     double minintronexpression = args["end-pair-support-cutoff"].AsDouble();
 
+    typedef multimap<int,CAlignCollapser::TAlignIntrons::iterator> TIntronsBySplice;
     TIntronsBySplice introns_by_left_splice;
     NON_CONST_ITERATE(TAlignIntrons, intron, m_align_introns) {
         introns_by_left_splice.insert(TIntronsBySplice::value_type(intron->first.m_range.GetFrom(),intron));
@@ -490,64 +628,186 @@ void CAlignCollapser::FilterESTandSR() {
     //filter/cut low abandance one-exon and crossing splices
     int minsingleexpression = args["min-edge-coverage"].AsInteger();
     int trim = args["trim"].AsInteger();
-    total = 0;
+    int total = 0;
     for(Tdata::iterator it = m_aligns.begin(); it != m_aligns.end(); ) {
         Tdata::iterator data = it++;
         const CAlignCommon& alc = data->first;
         deque<SAlignIndividual>& aligns = data->second;
 
-        if((alc.isEST() && !m_filterest) || (alc.isSR() && !m_filtersr))
-            continue;
+        if((alc.isEST() && m_filterest) || (alc.isSR() && m_filtersr)) {
+            if(alc.GetIntrons().empty()) { // not spliced
+                NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
+                    int a = i->m_range.GetFrom()+trim;
+                    int b = i->m_range.GetTo()-trim;
+                    if(b > a) {
+                        if((coverage[a-left_end] < minsingleexpression || coverage[b-left_end] < minsingleexpression) && !alc.isPolyA() && !alc.isCap())
+                            i->m_weight = -1;
+                        else if((alc.isUnknown() || alc.isPlus()) && ((right_plus[b-left_end] > a && !alc.isCap()) || (left_plus[a-left_end] < b && !alc.isPolyA())))
+                            i->m_weight = -1;
+                        else if((alc.isUnknown() || alc.isMinus()) && ((right_minus[b-left_end] > a && !alc.isPolyA()) || (left_minus[a-left_end] < b && !alc.isCap())))
+                            i->m_weight = -1;
+                    } else {
+                        i->m_weight = -1;
+                    }
+                }
+            } else {    // spliced  
+                const deque<char>& id_pool = m_target_id_pool[alc];
+                NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
+                    CAlignModel align(alc.GetAlignment(*i, id_pool));
+                    TSignedSeqRange new_lim = align.Limits();
+                    if(align.Exons().front().Limits().GetLength() > trim) {
+                        int a = align.Exons().front().Limits().GetFrom()+trim;
+                        int b = align.Exons().front().Limits().GetTo();
+                        if((alc.isUnknown() || alc.isPlus()) && (right_plus[b-left_end] > a && !alc.isCap())) // crosses right plus splice      
+                            new_lim.SetFrom(right_plus[b-left_end]);
+                        if((alc.isUnknown() || alc.isMinus()) && (right_minus[b-left_end] > a && !alc.isPolyA())) // crosses right minus splice 
+                            new_lim.SetFrom(right_minus[b-left_end]);
+                        _ASSERT(new_lim.GetFrom() <= align.Exons().front().GetTo());
+                    }
+                    if(align.Exons().back().Limits().GetLength() > trim) {
+                        int a = align.Exons().back().Limits().GetFrom();
+                        int b = align.Exons().back().Limits().GetTo()-trim;
+                        if((alc.isUnknown() || alc.isPlus()) && (left_plus[a-left_end] < b && !alc.isPolyA())) // crosses left plus splice  
+                            new_lim.SetTo(left_plus[a-left_end]);
+                        if((alc.isUnknown() || alc.isMinus()) && (left_minus[a-left_end] < b && !alc.isCap())) // crosses left minus splice 
+                            new_lim.SetTo(left_minus[a-left_end]);
+                        _ASSERT(new_lim.GetTo() >= align.Exons().back().GetFrom());
+                    }
+                    i->m_range = new_lim;
 
-        if(alc.GetIntrons().empty()) { // not spliced
-            NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
-                int a = i->m_range.GetFrom()+trim;
-                int b = i->m_range.GetTo()-trim;
-                if(b > a) {
-                    if((coverage[a-left_end] < minsingleexpression || coverage[b-left_end] < minsingleexpression) && !alc.isPolyA() && !alc.isCap())
-                        i->m_weight = -1;
-                    else if((alc.isUnknown() || alc.isPlus()) && ((right_plus[b-left_end] > a && !alc.isCap()) || (left_plus[a-left_end] < b && !alc.isPolyA())))
-                        i->m_weight = -1;
-                    else if((alc.isUnknown() || alc.isMinus()) && ((right_minus[b-left_end] > a && !alc.isPolyA()) || (left_minus[a-left_end] < b && !alc.isCap())))
-                        i->m_weight = -1;
-                } else {
-                    i->m_weight = -1;
+                    //delete if retained intron in internal exon    
+                    for(int n = 1; n < (int)align.Exons().size()-1 && i->m_weight > 0; ++n) {
+                        int a = align.Exons()[n].Limits().GetFrom();
+                        int b = align.Exons()[n].Limits().GetTo();
+
+                        pair<TIntronsBySplice::iterator,TIntronsBySplice::iterator> eqr(introns_by_right_splice.end(),introns_by_right_splice.end());
+                        if((alc.isUnknown() || alc.isPlus()) && right_plus[b-left_end] > a)         // crosses right plus splice    
+                            eqr = introns_by_right_splice.equal_range(right_plus[b-left_end]);
+                        else if((alc.isUnknown() || alc.isMinus()) && right_minus[b-left_end] > a)  // crosses right minus splice   
+                            eqr = introns_by_right_splice.equal_range(right_minus[b-left_end]);
+                        for(TIntronsBySplice::iterator ip = eqr.first; ip != eqr.second; ++ip) {
+                            if(ip->second->first.m_range.GetFrom() > a)
+                                i->m_weight = -1;
+                        }
+                    }
                 }
             }
-
-        } else {    // spliced
-            const deque<char>& id_pool = m_target_id_pool[alc];
-            NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
-                CAlignModel align(alc.GetAlignment(*i, id_pool));
-                TSignedSeqRange new_lim = align.Limits();
-                if(align.Exons().front().Limits().GetLength() > trim) {
-                    int a = align.Exons().front().Limits().GetFrom()+trim;
-                    int b = align.Exons().front().Limits().GetTo();
-                    if((alc.isUnknown() || alc.isPlus()) && (right_plus[b-left_end] > a && !alc.isCap())) // crosses right plus splice
-                        new_lim.SetFrom(right_plus[b-left_end]);
-                    if((alc.isUnknown() || alc.isMinus()) && (right_minus[b-left_end] > a && !alc.isPolyA())) // crosses right minus splice
-                        new_lim.SetFrom(right_minus[b-left_end]);
-                    _ASSERT(new_lim.GetFrom() <= align.Exons().front().GetTo());
-                }
-                if(align.Exons().back().Limits().GetLength() > trim) {
-                    int a = align.Exons().back().Limits().GetFrom();
-                    int b = align.Exons().back().Limits().GetTo()-trim;
-                    if((alc.isUnknown() || alc.isPlus()) && (left_plus[a-left_end] < b && !alc.isPolyA())) // crosses left plus splice
-                        new_lim.SetTo(left_plus[a-left_end]);
-                    if((alc.isUnknown() || alc.isMinus()) && (left_minus[a-left_end] < b && !alc.isCap())) // crosses left minus splice
-                        new_lim.SetTo(left_minus[a-left_end]);
-                    _ASSERT(new_lim.GetTo() >= align.Exons().back().GetFrom());
-                }
-                i->m_range = new_lim;
-            }
-        }
         
-        aligns.erase(remove_if(aligns.begin(),aligns.end(),AlignmentMarkedForDeletion),aligns.end());
+            aligns.erase(remove_if(aligns.begin(),aligns.end(),AlignmentMarkedForDeletion),aligns.end());
+        }
+
         total += aligns.size();
         if(aligns.empty())
             m_aligns.erase(data);
-
     }
+
+
+    //filter other alignments
+    for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end() && m_filterest; ) {
+        TAlignModelList::iterator i = it++;
+        CAlignModel& align = *i;
+        const CAlignMap& amap = align.GetAlignMap();
+
+        if((align.Type()&(CGeneModel::emRNA|CGeneModel::eProt)) && !AlignmentIsSupportedBySR(align, coverage, minsingleexpression, left_end)) {
+            cerr << "Not supported " << align.Type() << ' ' << align.TargetAccession() << ' ' << align.ID() << endl;
+            continue;
+        }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        for(int k = 1; k < (int)align.Exons().size(); ++k) {
+            if(!align.Exons()[k-1].m_ssplice || !align.Exons()[k].m_fsplice)
+                continue;
+
+            if(!isGoodIntron(align.Exons()[k-1].GetTo(), align.Exons()[k].GetFrom(), align.Strand(), m_align_introns)) {
+                cerr << "Bad intron " << align.Type() << ' ' << align.TargetAccession() << ' ' << align.ID() << ' ' << align.Exons()[k-1].GetTo()+1 << ':' << align.Exons()[k].GetFrom()+1 << endl;
+            }
+        }
+
+
+        bool good_alignment = true;
+
+        //clip alignmnets with bad introns
+        if(align.Type()&CAlignModel::eProt) 
+            good_alignment = RemoveNotSupportedIntronsFromProts(align, m_align_introns);
+        else
+            good_alignment = RemoveNotSupportedIntronsFromTranscripts(align, m_align_introns);
+
+        if(!good_alignment) {
+            m_aligns_for_filtering_only.erase(i);
+            continue;
+        }
+
+        //delete if retained intron in internal exon    
+        for(int n = 1; n < (int)align.Exons().size()-1; ++n) {
+            if(!align.Exons()[n].m_fsplice || !align.Exons()[n].m_ssplice)
+                continue;
+
+            int l = align.Exons()[n].Limits().GetFrom();
+            int r = align.Exons()[n].Limits().GetTo();
+
+            pair<TIntronsBySplice::iterator,TIntronsBySplice::iterator> eqr(introns_by_right_splice.end(),introns_by_right_splice.end());
+            if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && right_plus[r-left_end] > l) // crosses right plus splice    
+                eqr = introns_by_right_splice.equal_range(right_plus[r-left_end]);
+            if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && right_minus[r-left_end] > l) // crosses right minus splice 
+                eqr = introns_by_right_splice.equal_range(right_minus[r-left_end]);
+            for(TIntronsBySplice::iterator ip = eqr.first; ip != eqr.second; ++ip) {
+                if(ip->second->first.m_range.GetFrom() > l)
+                    good_alignment = false;
+            }
+        }
+
+        if(!good_alignment) {
+            m_aligns_for_filtering_only.erase(i);
+            continue;
+        }
+
+        //trim 3'/5' exons crossing splices (including hole boundaries)
+        bool snap_to_codons = align.Type()&CAlignModel::eProt;      
+        ITERATE(CGeneModel::TExons, e, align.Exons()) {
+            if(!e->m_fsplice && e->Limits().GetLength() > trim && 
+               (e != align.Exons().begin() || (align.Strand() == ePlus && !(align.Status()&CGeneModel::eCap)) || (align.Strand() == eMinus && !(align.Status()&CGeneModel::ePolyA)))) {
+                int l = e->GetFrom();
+                int r = e->GetTo();
+                int new_l = l;
+                if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && right_plus[r-left_end] > l+trim) // crosses right plus splice            
+                    new_l = right_plus[r-left_end];
+                if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && right_minus[r-left_end] > l+trim) // crosses right minus splice         
+                    new_l = right_minus[r-left_end];
+                if(new_l != l) {
+                    _ASSERT(new_l <= r);
+                    if((align.Type()&CGeneModel::eEST) && (int)align.Exons().size() == 1)
+                        good_alignment = false;
+
+                    TSignedSeqRange seg = amap.ShrinkToRealPoints(TSignedSeqRange(new_l,r),snap_to_codons);
+                    if(seg.NotEmpty()) 
+                        align.Clip(TSignedSeqRange(seg.GetFrom(),align.Limits().GetTo()), CAlignModel::eDontRemoveExons);
+                }
+            }
+
+            if(!e->m_ssplice && e->Limits().GetLength() > trim && 
+               (e != align.Exons().end()-1 || (align.Strand() == ePlus && !(align.Status()&CGeneModel::ePolyA)) || (align.Strand() == eMinus && !(align.Status()&CGeneModel::eCap)))) {
+                int l = e->GetFrom();
+                int r = e->GetTo();
+                int new_r = r;
+                if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && left_plus[l-left_end] < r-trim) // crosses left plus splice          
+                    new_r = left_plus[l-left_end];
+                if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && left_minus[l-left_end] < r-trim) // crosses left minus splice           
+                    new_r = left_minus[l-left_end];
+                if(new_r != r) {
+                    _ASSERT(new_r >= l);
+                    if((align.Type()&CGeneModel::eEST) && (int)align.Exons().size() == 1)
+                        good_alignment = false;
+
+                    TSignedSeqRange seg = amap.ShrinkToRealPoints(TSignedSeqRange(l,new_r),snap_to_codons);
+                    if(seg.NotEmpty()) 
+                        align.Clip(TSignedSeqRange(align.Limits().GetFrom(),seg.GetTo()), CAlignModel::eDontRemoveExons);
+                }
+            }
+        }
+    }
+
+    total += m_aligns_for_filtering_only.size();
+    
 
     cerr << "After filtering: " << m_align_introns.size() << " introns, " << total << " alignments" << endl;
 }
@@ -559,7 +819,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
     if(m_count == 0)
         return;
 
-    FilterESTandSR();
+    FilterAlignments();
 
     CArgs args = CNcbiApplication::Instance()->GetArgs();
     int oep = args["oep"].AsInteger();
@@ -640,12 +900,21 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
                 ++total;
             }
         }
-    }    
+    }
+
+    ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+        clsset.Insert(*i);
+        ++total;
+    }
+    
     cerr << "After collapsing: " << total << " alignments" << endl;
 }
 
 #define COLLAPS_CHUNK 500000
-void CAlignCollapser::AddAlignment(const CAlignModel& a, bool includeincollaps) {
+void CAlignCollapser::AddAlignment(const CAlignModel& a) {
+
+    if((a.Type()&CGeneModel::eSR) && !a.Continuous())   // ignore SR with internal gaps
+        return;
 
     CAlignModel align(a);
     if((align.Status()&CGeneModel::eUnknownOrientation) && align.Strand() == eMinus)
@@ -662,13 +931,13 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a, bool includeincollaps) 
             SIntron intron(e[l-1].GetTo(),e[l].GetFrom(), align.Strand(), (align.Status()&CGeneModel::eUnknownOrientation) == 0, sig);
             SIntronData& id = m_align_introns[intron];
 
-            if((align.Type()&(CGeneModel::eProt|CGeneModel::emRNA)) || ((align.Type()&CGeneModel::eSR) && !m_filtersr) || ((align.Type()&CGeneModel::eEST) && !m_filterest)) {
+            if((align.Type()&(CGeneModel::eProt|CGeneModel::emRNA|CGeneModel::eEST) && !m_filterest) || ((align.Type()&CGeneModel::eSR) && !m_filtersr)) {
                 id.m_keep_anyway = true;
             }
 
             id.m_weight += align.Weight();
 
-            if(align.Type()&CGeneModel::eEST)
+            if(align.Type()&(CGeneModel::eEST|CGeneModel::emRNA))
                 id.m_est_support += align.Weight()+0.5;
 
             double ident = min(e[l-1].m_ident,e[l].m_ident);
@@ -678,11 +947,13 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a, bool includeincollaps) 
         }
     }
 
-    if(!includeincollaps)    // collect introns and leave it alone
-        return;
-    
-    CAlignCommon c(align);
-    m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
+    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && m_collapsest && align.Continuous())) {   // add alignments for collapsing
+        CAlignCommon c(align);
+        m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
+    } else {
+        m_aligns_for_filtering_only.push_back(align);
+    }
+        
     if(++m_count%COLLAPS_CHUNK == 0) {
         cerr << "Added " << m_count << " alignments to collapser" << endl;
         CollapsIdentical();

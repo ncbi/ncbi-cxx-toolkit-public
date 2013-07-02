@@ -114,8 +114,8 @@ private:
 class CAlignCollapser {
 public:
     CAlignCollapser();
-    void AddAlignment(const CAlignModel& align, bool includeincollaps);
-    void FilterESTandSR();
+    void AddAlignment(const CAlignModel& align);
+    void FilterAlignments();
     void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
 
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
@@ -127,6 +127,7 @@ public:
         int m_est_support;
         bool m_keep_anyway;
     };
+    typedef map<SIntron,SIntronData> TAlignIntrons;
 
 private:
     void CollapsIdentical();
@@ -134,12 +135,13 @@ private:
     Tdata m_aligns;
     typedef map< CAlignCommon,deque<char> > Tidpool;
     Tidpool m_target_id_pool;
-    typedef map<SIntron,SIntronData> TAlignIntrons;
     TAlignIntrons m_align_introns;
+    TAlignModelList m_aligns_for_filtering_only;
 
     int m_count;
     bool m_filtersr;
     bool m_filterest;
+    bool m_collapsest;
 };
 
 END_SCOPE(gnomon)
