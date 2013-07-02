@@ -489,8 +489,8 @@ bool CVcfWriter::x_WriteFeatureAlt(
                         alternatives.push_back( seqstr );
                     }
                     else {
-                        alternatives.push_back( 
-                            (*cit)->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get() + seqstr );
+                        alternatives.push_back(seqstr + 
+                            (*cit)->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get());
                     }
                     break;
                 }
