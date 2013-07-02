@@ -71,7 +71,7 @@ public:
     };
     typedef int TFlags;
 
-    CFeature_table_reader(TReaderFlags fReaderFlags);
+    CFeature_table_reader(TReaderFlags fReaderFlags = 0);
 
     // For CReaderBase
     CRef<CSerialObject> ReadObject   (ILineReader &lr, IErrorContainer *pErrors);
