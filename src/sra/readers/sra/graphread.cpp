@@ -250,7 +250,6 @@ CVDBGraphSeqIterator::GetAnnot(COpenRange<TSeqPos> range,
         return null;
     }
     CRef<CSeq_annot> annot(new CSeq_annot);
-    annot->SetData().SetGraph();
     if ( !annot_name.empty() ) {
         CRef<CAnnotdesc> desc(new CAnnotdesc);
         desc->SetName(annot_name);
@@ -548,7 +547,7 @@ CVDBGraphSeqIterator::GetAnnot(COpenRange<TSeqPos> range,
             annot->SetData().SetGraph().push_back(graph);
         }
     }
-    if ( (content & fGraphMain) && !annot->IsSetData() ) {
+    if ( (content & fGraphMain) && !(content & fGraphMainAsTable) ) {
         CRef<CSeq_graph> graph(new CSeq_graph);
         if ( !annot_name.empty() ) {
             graph->SetTitle(annot_name);
