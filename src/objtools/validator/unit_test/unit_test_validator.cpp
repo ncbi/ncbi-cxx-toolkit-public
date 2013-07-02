@@ -6492,7 +6492,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("DMNH");
     ambig.push_back("SDNH");
     ambig.push_back("ZMUH");
-    ambig.push_back("NTM");
     ambig.push_back("UMO");
     ambig.push_back("SMF");
     ambig.push_back("CDC");
