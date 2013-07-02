@@ -35,6 +35,8 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <objtools/readers/reader_base.hpp>
+
 // Objects includes
 #include <objects/seq/Seq_annot.hpp>
 
@@ -53,7 +55,7 @@ class CSeq_entry;
 
 // public interface for (single instance) feature table reader
 
-class NCBI_XOBJREAD_EXPORT CFeature_table_reader
+class NCBI_XOBJREAD_EXPORT CFeature_table_reader : public CReaderBase
 {
 public:
     /// Some flags that control feature table generation.
@@ -69,6 +71,11 @@ public:
     };
     typedef int TFlags;
 
+    CFeature_table_reader(TReaderFlags fReaderFlags);
+
+    // For CReaderBase
+    CRef<CSerialObject> ReadObject   (ILineReader &lr, IErrorContainer *pErrors);
+    CRef<CSeq_annot>    ReadSeqAnnot (ILineReader &lr, IErrorContainer *pErrors);
 
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,

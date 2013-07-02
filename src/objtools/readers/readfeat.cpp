@@ -2609,7 +2609,6 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     }
 }
                                              
-
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     ILineReader& reader,
     const string& seqid,
@@ -2909,6 +2908,28 @@ void CFeature_table_reader_imp::AddFeatQual (
 
 
 // public access functions
+
+CFeature_table_reader::CFeature_table_reader(
+    TReaderFlags fReaderFlags)
+    : CReaderBase(fReaderFlags)
+{
+}
+
+CRef<CSerialObject> 
+CFeature_table_reader::ReadObject(
+    ILineReader &lr, IErrorContainer *pErrorContainer)
+{
+    CRef<CSerialObject> object( 
+        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );
+    return object;
+}
+
+CRef<CSeq_annot>
+CFeature_table_reader::ReadSeqAnnot(
+    ILineReader &lr, IErrorContainer *pErrorContainer)
+{
+    return ReadSequinFeatureTable(lr, 0, pErrorContainer);
+}
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,

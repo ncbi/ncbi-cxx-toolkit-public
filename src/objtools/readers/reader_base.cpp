@@ -93,6 +93,7 @@
 #include <objtools/readers/vcf_reader.hpp>
 #include <objtools/readers/rm_reader.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/readfeat.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -133,6 +134,8 @@ CReaderBase::GetReader(
         return new CRepeatMaskerReader(flags);
     case CFormatGuess::eFasta:
         return new CFastaReader(flags);
+    case CFormatGuess::eFiveColFeatureTable:
+        return new CFeature_table_reader(flags);
     }
 }
 

@@ -211,6 +211,7 @@ void CMultiReaderApp::Init(void)
             "aln", "align",
             "hgvs",
             "fasta",
+            "5colftbl",
             "guess") );
 
     arg_desc->AddDefaultKey(
@@ -727,6 +728,10 @@ void CMultiReaderApp::xSetFormat(
     if( NStr::StartsWith(strProgramName, "fasta") ||
         format == "fasta" ) {
             m_uFormat = CFormatGuess::eFasta;
+    }
+    if( NStr::StartsWith(strProgramName, "feattbl") ||
+        format == "5colftbl" ) {
+            m_uFormat = CFormatGuess::eFiveColFeatureTable;
     }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
