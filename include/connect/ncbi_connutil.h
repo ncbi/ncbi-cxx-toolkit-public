@@ -349,23 +349,23 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
 
 
 /* Convenience routines to manipulate SConnNetInfo::args[].
- * In "arg" all routines below assume to have a single arg name
- * or an "arg=value" pair.  In the former case, additional "val"
- * may be supplied separately (and will be prepended by "=" if
- * necessary).  In the latter case, having a non-zero string in
- * "val" may result in an erroneous behavior.  Ampersand (&) gets
- * automatically added to keep the arg list correct.
+ * All routines below assume that "arg" either a single arg name
+ * or an "arg=val" pair.  In the former case, an additional "val"
+ * may be supplied separately (and will be prepended by an "=" if
+ * necessary).  In the latter case, also having a non-zero string
+ * the in the "val" argument may result in an incorrect behavior.
+ * An ampersand (&) gets automatically added to keep the arg list proper.
  * Return value (if any): none-zero on success; 0 on error.
  */
 
-/* append argument to the end of the list */
+/* append an argument to the end of the list */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendArg
 (SConnNetInfo* info,
  const char*   arg,
  const char*   val
  );
 
-/* put argument in the front of the list */
+/* put an argument at the front of the list */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
 (SConnNetInfo* info,
  const char*   arg,
