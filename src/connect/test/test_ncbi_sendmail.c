@@ -45,12 +45,12 @@
 
 int main(int argc, const char* argv[])
 {
-    const char custom_body[] =
+    static const char custom_body[] =
         "Subject: Custom sized body\n"
         "\n"
         "Custom sized body\n"
         "0123456789\n"; /* these 11 chars to ignore */
-    const char* body[] = {
+    static const char* body[] = {
         "This is a simple test",
         "This is a test with\n.",
         0,
@@ -62,12 +62,12 @@ int main(int argc, const char* argv[])
         "a\r\n\rb\r\nc\r\nd\r\n.",
         ".\na"
     };
-    const char* subject[] = {
+    static const char* subject[] = {
         0,
         "CORE_SendMail Test",
         "",
     };
-    const char* to[] = {
+    static const char* to[] = {
         "lavr",
         "lavr@pavo",
         " \"Anton Lavrentiev\"   <lavr@pavo>  , lavr, <lavr>   ",
@@ -97,7 +97,7 @@ int main(int argc, const char* argv[])
                         strcasecmp(val, "data") == 0))) {
         SOCK_SetDataLoggingAPI(eOn);
     }
-    
+
     SendMailInfo_InitEx(&info, 0, eCORE_UsernameReal);
     CORE_LOGF(eLOG_Note, ("REAL: <%s>", info.from));
     SendMailInfo_InitEx(&info, 0, eCORE_UsernameLogin);
@@ -105,6 +105,7 @@ int main(int argc, const char* argv[])
     SendMailInfo_InitEx(&info, 0, eCORE_UsernameCurrent);
     CORE_LOGF(eLOG_Note, ("CURRENT: <%s>", info.from));
 
+#if 1
     strcpy(val, "@");
     SendMailInfo_InitEx(&info, val, eCORE_UsernameCurrent);
     CORE_LOGF(eLOG_Note, ("@ - <%s>", info.from));
@@ -171,9 +172,14 @@ int main(int argc, const char* argv[])
 
         free(huge_body);
     }
+#endif
 
     if (argc > 1) {
         CORE_LOG(eLOG_Note, "Special test requested");
+        SendMailInfo_InitEx(&info, "@", eCORE_UsernameCurrent);
+        strcpy(info.from, "Friend <>");
+        info.header = "Sender: \"Your Sender\" <lavr@ncbi.nlm.nih.gov>\n"
+                      "Reply-To: Coremake <coremake@ncbi.nlm.nih.gov>";
         if ((fp = fopen(argv[1], "rb")) != 0          &&
             fseek(fp, 0, SEEK_END) == 0               &&
             (m = ftell(fp)) != (size_t)(-1)           &&
@@ -183,7 +189,7 @@ int main(int argc, const char* argv[])
             huge_body[m] = '\0';
             CORE_LOGF(eLOG_Note, ("Sending file (%lu bytes)",
                                   (unsigned long) m));
-            retval = CORE_SendMail("lavr", "File", huge_body);
+            retval = CORE_SendMailEx("lavr", "File", huge_body, &info);
             if (retval) {
                 CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
             } else {
@@ -194,7 +200,7 @@ int main(int argc, const char* argv[])
         return 0;
     }
 
-#if 1
+#if 0
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Testing CORE_SendMail");
 
     n = (sizeof(to)/sizeof(to[0]))*
@@ -215,6 +221,7 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Skipping CORE_SendMail tests");
 #endif
 
+#if 1
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Testing CORE_SendMailEx");
 
     SendMailInfo_Init(&info);
@@ -359,6 +366,9 @@ int main(int argc, const char* argv[])
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
+#else
+    CORE_LOG(eLOG_Note, "Phase 2 of 2: Skipping CORE_SendMailEx tests");
+#endif
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
