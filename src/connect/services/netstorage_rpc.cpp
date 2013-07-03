@@ -272,16 +272,12 @@ static void s_TrapErrors(const CJsonNode& request,
         }
     }
 
-    Int8 request_sn = request.GetInteger("SN");
-    Int8 reply_sn = reply.GetInteger("RE");
-
-    if (reply_sn != request_sn) {
+    if (reply.GetInteger("RE") != request.GetInteger("SN")) {
         NCBI_THROW_FMT(CNetStorageException, eServerError,
-                "Serial number mismatch in NetStorage command " <<
-                        request.GetString("Type") << " "
-                "(server: " << sock->GetPeerAddress() << "; "
-                "SN: " << request_sn << "; "
-                "RE: " << reply_sn << ").");
+                "Message serial number mismatch "
+                "(NetStorage server: " << sock->GetPeerAddress() << "; "
+                "request: " << request.Repr() << "; "
+                "reply: " << reply.Repr() << ").");
     }
 }
 
