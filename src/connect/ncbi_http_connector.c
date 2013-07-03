@@ -352,10 +352,9 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         if (status != eIO_Success)
             uuu->can_connect = fCC_None;
         return status;
-    } else if (!uuu->adjust
-               ||  !uuu->adjust(uuu->net_info,
-                                uuu->user_data,
-                                uuu->major_fault)) {
+    } else if (uuu->adjust  &&  !uuu->adjust(uuu->net_info,
+                                             uuu->user_data,
+                                             uuu->major_fault)) {
         msg = extract != eEM_Drop  &&  uuu->major_fault > 1
             ? "[HTTP%s%s]  Retry attempts (%d) exhausted, giving up" : "";
     } else
@@ -588,10 +587,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                               ? len : 0);
                 break;
             }
-            assert(status != eIO_Success);
         } else
             assert(!sock);
 
+        assert(status != eIO_Success);
         /* connection failed, try another server */
         if (s_Adjust(uuu, 0, extract) != eIO_Success)
             break;
@@ -701,6 +700,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
 
         /* write failed; close and try to use another server */
         s_DropConnection(uuu);
+        assert(status != eIO_Success);
         if ((status = s_Adjust(uuu, 0, extract)) != eIO_Success)
             break/*closed*/;
     }
@@ -1192,8 +1192,9 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             return eIO_Timeout;
         }
 
-        /* HTTP header read error; disconnect and try to use another server */
+        /* HTTP header read error; disconnect and retry */
         s_DropConnection(uuu);
+        assert(status != eIO_Success);
         adjust = s_Adjust(uuu, &retry, extract);
         if (retry.data)
             free((void*) retry.data);

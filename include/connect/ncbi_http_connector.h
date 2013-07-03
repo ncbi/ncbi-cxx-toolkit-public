@@ -154,13 +154,13 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  );
 
 
-/** The extended version HTTP_CreateConnectorEx() is able to change the URL of
- * the server "on-the-fly":
+/** The extended version HTTP_CreateConnectorEx() is able to track the HTTP
+ * response chain and also change the URL of the server "on-the-fly":
  * - FHTTP_ParseHeader() gets called every time a new HTTP response header is
  *   received from the server, and only if fHTTP_KeepHeader is NOT set.
  *   Return code from the parser adjusts the existing server error condition
  *   (if any) as the following:
- *   + eHTTP_HeaderError:    unconditionally flag server error;
+ *   + eHTTP_HeaderError:    unconditionally flag a server error;
  *   + eHTTP_HeaderSuccess:  header parse successful, retain existing condition
  *                           (note that in case of an already existing server
  *                           error condition the response body can be logged
@@ -168,10 +168,10 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *                           to read, and eIO_Unknown will result on read);
  *   + eHTTP_HeaderContinue: if there was already a server error condition,
  *                           the response body will be made available for the
- *                           user code to read (if HTTP connector cannot post-
- *                           process the request such as for redirects,
- *                           authorization etc);  otherwise, this code has the
- *                           same effect as eHTTP_ParseSuccess;
+ *                           user code to read (but only if HTTP connector
+ *                           cannot post-process the request such as for
+ *                           redirects, authorization etc);  otherwise, this
+ *                           code has the same effect as eHTTP_HeaderSuccess;
  *   + eHTTP_HeaderComplete: flag this request as processed completely, and do
  *                           not do any post-processing (such as redirects,
  *                           authorization etc), yet make the response body (if
@@ -180,11 +180,13 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  * - FHTTP_Adjust() gets invoked every time before starting a new "HTTP
  *   micro-session" making a hit when a previous hit has failed;  it is passed
  *   "net_info" as stored within the connector, and the number of previously
- *   unsuccessful consecutive attempts since the connection was opened;  a zero
- *   (false) return value ends the retries.
+ *   unsuccessful consecutive attempts (in the least significant word) since
+ *   the connection was opened;  a zero (false) return value ends the retries.
  * - FHTTP_Cleanup() gets called when the connector is about to be destroyed;
- *   "user_data" is guaranteed not to be referenced anymore (so it is a good
+ *   "user_data" is guaranteed not to be referenced anymore (so this is a good
  *   place to clean up "user_data" if necessary).
+ * @sa
+ *   SConnNetInfo::max_try
  */
 typedef enum {
     eHTTP_HeaderError    = 0,  /**< Parse failed, treat as a server error */
@@ -201,7 +203,7 @@ typedef EHTTP_HeaderParse (*FHTTP_ParseHeader)
 typedef int/*bool*/ (*FHTTP_Adjust)
 (SConnNetInfo*       net_info,      /**< net_info to adjust (in place)       */
  void*               user_data,     /**< supplemental user data              */
- unsigned int        failure_count  /**< how many failures since open        */
+ unsigned int        failure_count  /**< low word: # of failures since open  */
  );
 
 typedef void        (*FHTTP_Cleanup)
