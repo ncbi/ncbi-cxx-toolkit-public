@@ -228,7 +228,7 @@ static bool CORS_IsValidOrigin(string& origin, const string& allowed)
 void CCgiContext::x_InitCORS(void)
 {
     if ( TCORS_Enable::GetDefault() ) {
-        string origin = m_Request->GetRandomProperty("Origin");
+        string origin = m_Request->GetRandomProperty("ORIGIN");
         if (CORS_IsValidOrigin(origin, TCORS_AllowOrigin::GetDefault())) {
             // Add headers for cross-origin resource sharing.
             m_Response.SetHeaderValue("Access-Control-Allow-Origin", origin);
