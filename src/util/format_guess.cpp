@@ -332,7 +332,7 @@ CFormatGuess::CFormatGuess()
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess(
     const string& FileName )
-    : m_Stream( * new CNcbiIfstream( FileName.c_str() ) )
+    : m_Stream( * new CNcbiIfstream( FileName.c_str(), ios::binary ) )
     , m_bOwnsStream( true )
 {
     Initialize();
@@ -2324,8 +2324,10 @@ CFormatGuess::EnsureSplitLines()
 
 //  ----------------------------------------------------------------------------
 bool
-CFormatGuess::IsAllComment()
+CFormatGuess::IsAsciiText()
 {
+    const double REQUIRED_ASCII_RATIO = 0.9;
+
     // first stab - are we text?  comments are only valid if we are text
     size_t count = 0;
     size_t count_print = 0;
@@ -2334,9 +2336,18 @@ CFormatGuess::IsAllComment()
             ++count_print;
         }
     }
-    if (count_print < count * 0.9) {
-        // 10% non-printing at least; likely not text
+    if (count_print < count * REQUIRED_ASCII_RATIO) {
 		return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CFormatGuess::IsAllComment()
+{
+    if (!IsAsciiText()) {
+        return false;
     }
 
     m_bSplitDone = false;
