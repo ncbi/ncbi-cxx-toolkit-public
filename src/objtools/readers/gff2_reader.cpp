@@ -1018,7 +1018,7 @@ bool CGff2Reader::x_FeatureSetDataCDS(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    //CCdregion& cdr = pFeature->SetData().SetCdregion();
+    CCdregion& cdr = pFeature->SetData().SetCdregion();
     return true;
 }
 
