@@ -80,6 +80,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "ENSEMBL", CDbtag::eDbtagType_ENSEMBL },
     { "ESTLIB", CDbtag::eDbtagType_ESTLIB },
     { "EcoGene", CDbtag::eDbtagType_EcoGene },
+    { "EnsemblGenomes", CDbtag::eDbtagType_EnsemblGenomes },
     { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
     { "FBOL", CDbtag::eDbtagType_FBOL },
     { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
@@ -641,7 +642,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_NASONIABASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
-    { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" }
+    { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" },
+    { CDbtag::eDbtagType_EnsemblGenomes, "http://ensemblgenomes.org/id/" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;

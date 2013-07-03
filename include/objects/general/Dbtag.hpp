@@ -194,7 +194,8 @@ public:
         eDbtagType_PubChem,
         eDbtagType_SRA,
         eDbtagType_Trace,
-        eDbtagType_RefSeq
+        eDbtagType_RefSeq,
+        eDbtagType_EnsemblGenomes
     };
 
     enum EDbtagGroup {
