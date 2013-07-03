@@ -217,6 +217,7 @@ protected:
     bool EnsureStats();
     bool EnsureSplitLines();
 	bool IsAllComment();
+    bool IsAsciiText();
 
     bool TestFormatRepeatMasker(
         EMode );
