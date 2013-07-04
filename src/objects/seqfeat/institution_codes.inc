@@ -5940,6 +5940,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TYF	s	Shangxi Forestry Institute",
 "TZM	s	National Science Museum",
 "U	s	Nationaal Herbarium Nederland, Utrecht University branch",
+"UA-SEC	c	University of Alabama-Science and Engineering Complex Chytrid Collections",
 "UA<GRC>	s	Department of Historical Geology and Paleontology",
 "UA<USA-AL>	s	University of Alabama Collection",
 "UA<USA-AZ>	s	University of Arizona",
