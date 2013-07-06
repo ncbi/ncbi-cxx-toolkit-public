@@ -392,11 +392,17 @@ void CAlignCollapser::FilterAlignments() {
         left_end = min(left_end, a);
         right_end = max(right_end, b);
     }
+
+    size_t count_m_aligns = 0;
     ITERATE(Tdata, i, m_aligns) {
         ITERATE(deque<SAlignIndividual>, k, i->second) {
             left_end = min(left_end, k->m_range.GetFrom());
             right_end = max(right_end, k->m_range.GetTo());
+            ++count_m_aligns;
         }
+    }
+    if (count_m_aligns == 0) {
+        return;
     }
     int len = right_end-left_end+1;
 
@@ -405,7 +411,6 @@ void CAlignCollapser::FilterAlignments() {
 
 
 #define COVERAGE_WINDOW 20    
-
     //coverage calculation
     vector<double> coverage(len,0.);
     ITERATE(Tdata, i, m_aligns) {
