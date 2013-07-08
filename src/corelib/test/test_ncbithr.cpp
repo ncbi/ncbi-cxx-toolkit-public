@@ -427,10 +427,27 @@ void* CTestThread::Main(void)
 
     // ======= CRWLock test =======
     static int s_var = 0; // global value
+    int lock_success = 0;
+    int lock_fail = 0;
     if (m_Index % 5) {         // <------ Reader
         for (int r_cycle=0; r_cycle<sRCycles*2; r_cycle++) {
+            // Allow writers to obtain lock.
+            delay(100);
             // Lock immediately or wait for locking
-            if (!m_RW->TryReadLock()) {
+            bool locked = false;
+            if ( r_cycle % 3 ) {
+                locked = m_RW->TryReadLock();
+            }
+            else {
+                locked = m_RW->TryReadLock(CTimeout(0, 3000));
+                if ( locked ) {
+                    lock_success++;
+                }
+                else {
+                    lock_fail++;
+                }
+            }
+            if ( !locked ) {
                 m_RW->ReadLock();
             }
 
@@ -452,7 +469,7 @@ void* CTestThread::Main(void)
                 m_Res->BeginRead(m_Index);
                 m_Res->EndRead(m_Index);
                 m_RW->Unlock();
-	    }
+	        }
 
             // W-after-R must be prohibited
             assert( !m_RW->TryWriteLock() );
@@ -487,10 +504,25 @@ void* CTestThread::Main(void)
     else {                     // <------ Writer
         for (int w_cycle=0; w_cycle<sWCycles; w_cycle++) {
             // Lock immediately or wait for locking
-            if (!m_RW->TryWriteLock()) {
+            bool locked = false;
+            if ( w_cycle % 3 ) {
+                locked = m_RW->TryWriteLock();
+            }
+            else {
+                locked = m_RW->TryWriteLock(CTimeout(0, 3000));
+                if ( locked ) {
+                    lock_success++;
+                }
+                else {
+                    lock_fail++;
+                }
+            }
+            if ( !locked ) {
                 m_RW->WriteLock();
             }
             m_Res->BeginWrite(m_Index);
+            // Allow other threads to try-lock with timeout.
+            SleepMilliSec(10);
 
             // Cascaded W-lock
             if (w_cycle % 4 == 0) {

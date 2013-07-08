@@ -973,6 +973,14 @@ public:
     ///   FALSE, otherwise.
     bool TryReadLock(void);
 
+    /// Try read lock with timeout.
+    /// @param timeout
+    ///   Timeout for the read lock attempt.
+    /// @return
+    ///   TRUE if the R-lock has been successfully acquired;
+    ///   FALSE, otherwise.
+    bool TryReadLock(const CTimeout& timeout);
+
     /// Try write lock.
     ///
     /// Try to acquire W-lock and return immediately.
@@ -980,6 +988,14 @@ public:
     ///   TRUE if the W-lock has been successfully acquired;
     ///   FALSE, otherwise.
     bool TryWriteLock(void);
+
+    /// Try write lock with timeout.
+    /// @param timeout
+    ///   Timeout for the write lock attempt.
+    /// @return
+    ///   TRUE if the W-lock has been successfully acquired;
+    ///   FALSE, otherwise.
+    bool TryWriteLock(const CTimeout& timeout);
 
     /// Release the RW-lock.
     void Unlock(void);
@@ -1351,6 +1367,9 @@ public:
     /// semaphore's count to exceed zero.  If that happens, decrement
     /// the counter by one and return TRUE; otherwise, return FALSE.
     bool TryWait(unsigned int timeout_sec = 0, unsigned int timeout_nsec = 0);
+
+    /// Timed wait. Wait time specified by CTimeout.
+    bool TryWait(const CTimeout& timeout);
 
     /// Increment the semaphore by "count".
     ///
