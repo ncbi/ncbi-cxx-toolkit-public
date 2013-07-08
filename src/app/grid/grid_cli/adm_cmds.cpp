@@ -42,11 +42,10 @@ CGridCommandLineInterfaceApp::EAPIClass
         CGridCommandLineInterfaceApp::SetUp_AdminCmd(
                 CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
-    const char* opt_error;
-
     switch (IsOptionAccepted(eNetCache, OPTION_N(0)) |
             IsOptionAccepted(eNetSchedule, OPTION_N(1)) |
-            IsOptionAccepted(eWorkerNode, OPTION_N(2))) {
+            IsOptionAccepted(eWorkerNode, OPTION_N(2)) |
+            IsOptionAccepted(eNetStorage, OPTION_N(3))) {
     case OPTION_N(0): // eNetCache
         SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
         return eNetCacheAdmin;
@@ -59,27 +58,18 @@ CGridCommandLineInterfaceApp::EAPIClass
         SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
         return eWorkerNodeAdmin;
 
-    case OPTION_N(0) | OPTION_N(1): // eNetCache or eNetSchedule
-        opt_error = "either '--" NETCACHE_OPTION "' or '--"
-                NETSCHEDULE_OPTION "' must be explicitly specified.";
+    case OPTION_N(3): // eNetStorage
+        SetUp_NetStorageCmd(eNetStorageAdmin);
+        return eNetStorageAdmin;
+
+    default:
         break;
-    case OPTION_N(0) | OPTION_N(2): // eNetCache or eWorkerNode
-        opt_error = "either '--" NETCACHE_OPTION "' or '--"
-                WORKER_NODE_OPTION "' must be explicitly specified.";
-        break;
-    case OPTION_N(1) | OPTION_N(2): // eNetSchedule or eWorkerNode
-        opt_error = "either '--" NETSCHEDULE_OPTION "' or '--"
-                WORKER_NODE_OPTION "' must be explicitly specified.";
-        break;
-    default: // All three are accepted.
-        opt_error = "exactly one of '--" NETCACHE_OPTION "', '--"
-                 NETSCHEDULE_OPTION "', or '--" WORKER_NODE_OPTION
-                 "' must be explicitly specified.";
     }
 
     switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
             IsOptionExplicitlySet(eNetSchedule, OPTION_N(1)) |
-            IsOptionExplicitlySet(eWorkerNode, OPTION_N(2))) {
+            IsOptionExplicitlySet(eWorkerNode, OPTION_N(2)) |
+            IsOptionExplicitlySet(eNetStorage, OPTION_N(3))) {
     case OPTION_N(0): // eNetCache
         SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
         return eNetCacheAdmin;
@@ -92,8 +82,13 @@ CGridCommandLineInterfaceApp::EAPIClass
         SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
         return eWorkerNodeAdmin;
 
+    case OPTION_N(3): // eNetStorage
+        SetUp_NetStorageCmd(eNetStorageAdmin);
+        return eNetStorageAdmin;
+
     default: // None or a combination of options
-        NCBI_THROW(CArgException, eNoValue, opt_error);
+        NCBI_THROW(CArgException, eNoValue, "this command works "
+                "with only one type of server at a time");
     }
 }
 
@@ -112,6 +107,9 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
     case eWorkerNodeAdmin:
         service = m_NetScheduleAPI.GetService();
         break;
+
+    case eNetStorageAdmin:
+        return PrintNetStorageServerInfo();
 
     default:
         return 2;
@@ -381,6 +379,9 @@ int CGridCommandLineInterfaceApp::Cmd_GetConf()
         m_NetScheduleAdmin.PrintConf(NcbiCout);
         return 0;
 
+    case eNetStorageAdmin:
+        return PrintNetStorageServerConfig();
+
     default:
         return 2;
     }
@@ -451,6 +452,9 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
                     "' are mutually exclusive.\n");
         }
         /* FALL THROUGH */
+
+    case eNetStorageAdmin:
+        return ShutdownNetStorageServer();
 
     default:
         return 2;

@@ -40,8 +40,13 @@
 
 USING_NCBI_SCOPE;
 
-void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd()
+void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class)
 {
+    if (api_class == eNetStorageAdmin && !IsOptionExplicitlySet(eNetStorage)) {
+        NCBI_THROW(CArgException, eNoValue, "'--" NETSTORAGE_OPTION "' "
+            "must be explicitly specified.");
+    }
+
     switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
             IsOptionExplicitlySet(eCache, OPTION_N(1)))
     {
@@ -93,12 +98,133 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd()
         init_string += NStr::URLEncode(auth);
 
         m_NetStorage = CNetStorage(init_string, m_Opts.netstorage_flags);
+
+        if (api_class == eNetStorageAdmin)
+            m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
     }
+}
+
+static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)
+{
+    server_reply.DeleteByKey("Type");
+    server_reply.DeleteByKey("Status");
+    server_reply.DeleteByKey("RE");
+    server_reply.DeleteByKey("Warnings");
+}
+
+void CGridCommandLineInterfaceApp::NetStorage_PrintServerReply(
+        CJsonNode& server_reply)
+{
+    for (CJsonIterator it =
+            server_reply.Iterate(CJsonNode::eFlatten); it; ++it) {
+        printf("%s: %s\n", it.GetKey().c_str(),
+                it.GetNode().Repr(CJsonNode::fVerbatimIfString |
+                        CJsonNode::fOmitOutermostBrackets).c_str());
+    }
+}
+
+class CNetStorageInfoToJson : public IExecToJson
+{
+public:
+    CNetStorageInfoToJson(CNetStorageAdmin::TInstance netstorage_admin) :
+        m_NetStorageAdmin(netstorage_admin)
+    {
+    }
+
+private:
+    virtual CJsonNode ExecOn(CNetServer server);
+
+    CNetStorageAdmin m_NetStorageAdmin;
+};
+
+CJsonNode CNetStorageInfoToJson::ExecOn(CNetServer server)
+{
+    CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
+            m_NetStorageAdmin.MkNetStorageRequest("INFO"), server));
+
+    s_NetStorage_RemoveStdReplyFields(server_reply);
+
+    return server_reply;
+}
+
+int CGridCommandLineInterfaceApp::PrintNetStorageServerInfo()
+{
+    CNetService service(m_NetStorageAdmin.GetService());
+
+    if (m_Opts.output_format != eHumanReadable) {
+        CNetStorageInfoToJson info_to_json(m_NetStorageAdmin);
+
+        g_PrintJSON(stdout, g_ExecToJson(info_to_json, service,
+                service.GetServiceType(), CNetService::eIncludePenalized));
+    } else {
+        bool print_server_address = service.IsLoadBalanced();
+
+        for (CNetServiceIterator it =
+                service.Iterate(CNetService::eIncludePenalized); it; ++it) {
+            CNetServer server(*it);
+
+            CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
+                    m_NetStorageAdmin.MkNetStorageRequest("INFO"), server));
+
+            s_NetStorage_RemoveStdReplyFields(server_reply);
+
+            if (print_server_address)
+                printf("[%s]\n", server.GetServerAddress().c_str());
+
+            NetStorage_PrintServerReply(server_reply);
+
+            if (print_server_address)
+                printf("\n");
+        }
+    }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::PrintNetStorageServerConfig()
+{
+    CNetService service(m_NetStorageAdmin.GetService());
+
+    for (CNetServiceIterator it =
+            service.Iterate(CNetService::eIncludePenalized); it; ++it) {
+        CNetServer server(*it);
+
+        CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
+                m_NetStorageAdmin.MkNetStorageRequest("CONFIGURATION"),
+                server));
+
+        printf("[[server=%s; config_pathname=%s]]\n%s\n",
+                server.GetServerAddress().c_str(),
+                server_reply.GetString("ConfigurationFilePath").c_str(),
+                server_reply.GetString("Configuration").c_str());
+    }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::ShutdownNetStorageServer()
+{
+    CNetService service(m_NetStorageAdmin.GetService());
+
+    CJsonNode shutdown_request =
+            m_NetStorageAdmin.MkNetStorageRequest("SHUTDOWN");
+
+    shutdown_request.SetString("Mode",
+            IsOptionSet(eNow) || IsOptionSet(eDie) ? "hard" : "soft");
+
+    for (CNetServiceIterator it =
+            service.Iterate(CNetService::eIncludePenalized); it; ++it) {
+        CNetServer server(*it);
+
+        m_NetStorageAdmin.ExchangeJson(shutdown_request, server);
+    }
+
+    return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
-    SetUp_NetStorageCmd();
+    SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetFile netfile(IsOptionSet(eOptionalID) ?
             m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
@@ -128,7 +254,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
 
 int CGridCommandLineInterfaceApp::Cmd_Download()
 {
-    SetUp_NetStorageCmd();
+    SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
 
@@ -147,7 +273,7 @@ int CGridCommandLineInterfaceApp::Cmd_Download()
 
 int CGridCommandLineInterfaceApp::Cmd_Relocate()
 {
-    SetUp_NetStorageCmd();
+    SetUp_NetStorageCmd(eNetStorageAPI);
 
     PrintLine(m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags));
 
@@ -156,7 +282,7 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 
 int CGridCommandLineInterfaceApp::Cmd_MkFileID()
 {
-    SetUp_NetStorageCmd();
+    SetUp_NetStorageCmd(eNetStorageAPI);
 
     auto_ptr<CNetFileID> file_id;
 
@@ -212,7 +338,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkFileID()
 
 int CGridCommandLineInterfaceApp::Cmd_NetFileInfo()
 {
-    SetUp_NetStorageCmd();
+    SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
 
@@ -223,7 +349,7 @@ int CGridCommandLineInterfaceApp::Cmd_NetFileInfo()
 
 int CGridCommandLineInterfaceApp::Cmd_RemoveNetFile()
 {
-    SetUp_NetStorageCmd();
+    SetUp_NetStorageCmd(eNetStorageAPI);
 
     m_NetStorage.Remove(m_Opts.id);
 

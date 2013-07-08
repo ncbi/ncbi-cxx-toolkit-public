@@ -924,12 +924,13 @@ struct SCommandDefinition {
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
         "Query and print information about a running "
-        "NetCache, NetSchedule, or worker node process."
+        "NetCache, NetSchedule, NetStorage, or worker node process."
         "\n\nThe following output formats are supported: \""
         HUMAN_READABLE_OUTPUT_FORMAT "\", \"" RAW_OUTPUT_FORMAT
         "\", and \"" JSON_OUTPUT_FORMAT "\". "
         "The default is \"" HUMAN_READABLE_OUTPUT_FORMAT "\".",
-        {eNetCache, eNetSchedule, eWorkerNode, eOutputFormat, eCompatMode,
+        {eNetCache, eNetSchedule, eWorkerNode, eNetStorage,
+            eOutputFormat, eCompatMode,
             eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1},
         {eHumanReadable, eRaw, eJSON, -1}},
@@ -980,8 +981,8 @@ struct SCommandDefinition {
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
-        "running NetCache or NetSchedule server.",
-        {eNetCache, eNetSchedule, eLoginToken, eAuth,
+        "running NetCache, NetSchedule, or NetStorage server.",
+        {eNetCache, eNetSchedule, eNetStorage, eLoginToken, eAuth,
             eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -1007,13 +1008,13 @@ struct SCommandDefinition {
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
         "shutdown", "Send a shutdown request to a remote server.",
         "Depending on the option specified, this command sends "
-        "a shutdown request to a NetCache or NetSchedule server "
-        "or a worker node process.\n\n"
+        "a shutdown request to a NetCache, NetSchedule or NetStorage "
+        "server or a worker node process.\n\n"
         "Additional options '--" NOW_OPTION "' and '--" DIE_OPTION
-        "' are applicable only to worker nodes.\n\n"
+        "' are applicable only to worker nodes and NetStorage servers.\n\n"
         "The '--" DRAIN_OPTION "' option is supported only by "
         "NetSchedule servers version 4.11.0 and up.",
-        {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie, eDrain,
+        {eNetCache, eNetSchedule, eNetStorage, eWorkerNode, eNow, eDie, eDrain,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 

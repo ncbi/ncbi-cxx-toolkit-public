@@ -34,7 +34,7 @@
 
 #include "netservice_api_impl.hpp"
 
-#include <connect/services/netstorage.hpp>
+#include <connect/services/netstorage_admin.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <util/ncbi_url.hpp>
@@ -42,6 +42,8 @@
 #include <corelib/request_ctx.hpp>
 
 #define NCBI_USE_ERRCODE_X  NetStorage_RPC
+
+#define NST_PROTOCOL_VERSION 1
 
 #define READ_CHUNK_SIZE (4 * 1024)
 
@@ -321,7 +323,8 @@ struct SNetStorageRPC : public SNetStorageImpl
     virtual void Remove(const string& file_id);
 
     CJsonNode Exchange(const CJsonNode& request,
-            CNetServerConnection* conn = NULL);
+            CNetServerConnection* conn = NULL,
+            CNetServer::TInstance server_to_use = NULL);
 
     void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
     void x_SetICacheNames(CJsonNode& node);
@@ -491,6 +494,7 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app != NULL)
         hello.SetString("Application", app->GetProgramExecutablePath());
+    hello.SetInteger("Protocol", NST_PROTOCOL_VERSION);
 
     m_Service = new SNetServiceImpl("NetStorageAPI", m_ClientName,
             new CNetStorageServerListener(hello));
@@ -580,9 +584,12 @@ void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
 }
 
 CJsonNode SNetStorageRPC::Exchange(const CJsonNode& request,
-        CNetServerConnection* conn)
+        CNetServerConnection* conn,
+        CNetServer::TInstance server_to_use)
 {
-    CNetServer server(*m_Service.Iterate(CNetService::eRandomize));
+    CNetServer server(server_to_use != NULL ? server_to_use :
+            (CNetServer::TInstance)
+                    *m_Service.Iterate(CNetService::eRandomize));
 
     CJsonOverUTTPExecHandler json_over_uttp_sender(request);
 
@@ -685,7 +692,7 @@ size_t SNetFileRPC::Read(void* buffer, size_t buf_size)
 {
     if (m_State == eWriting) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Cannot read a NetStorage file while writing");
+                "Cannot read a NetStorage file while writing to it");
     }
 
     size_t bytes_read;
@@ -988,6 +995,38 @@ CNetStorageByKey::CNetStorageByKey(const string& init_string,
         TNetStorageFlags default_flags) :
     m_Impl(new SNetStorageByKeyRPC(init_string, default_flags))
 {
+}
+
+struct SNetStorageAdminImpl : public CObject
+{
+    SNetStorageAdminImpl(CNetStorage::TInstance netstorage_impl) :
+        m_NetStorageRPC(static_cast<SNetStorageRPC*>(netstorage_impl))
+    {
+    }
+
+    CRef<SNetStorageRPC,
+            CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
+};
+
+CNetStorageAdmin::CNetStorageAdmin(CNetStorage::TInstance netstorage_impl) :
+    m_Impl(new SNetStorageAdminImpl(netstorage_impl))
+{
+}
+
+CNetService CNetStorageAdmin::GetService()
+{
+    return m_Impl->m_NetStorageRPC->m_Service;
+}
+
+CJsonNode CNetStorageAdmin::MkNetStorageRequest(const string& request_type)
+{
+    return m_Impl->m_NetStorageRPC->MkStdRequest(request_type);
+}
+
+CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
+        CNetServer::TInstance server_to_use, CNetServerConnection* conn)
+{
+    return m_Impl->m_NetStorageRPC->Exchange(request, conn, server_to_use);
 }
 
 END_NCBI_SCOPE

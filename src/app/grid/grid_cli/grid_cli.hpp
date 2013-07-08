@@ -38,6 +38,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/ns_output_parser.hpp>
+#include <connect/services/netstorage_admin.hpp>
 #include <misc/netstorage/netstorage.hpp>
 
 
@@ -387,12 +388,13 @@ private:
     CNetCacheAPI m_NetCacheAPI;
     CNetCacheAdmin m_NetCacheAdmin;
     CNetICacheClient m_NetICacheClient;
-    CNetStorage m_NetStorage;
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
     CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetScheduleExecutor m_NetScheduleExecutor;
     auto_ptr<CGridClient> m_GridClient;
+    CNetStorage m_NetStorage;
+    CNetStorageAdmin m_NetStorageAdmin;
 
 // NetCache commands.
 public:
@@ -458,7 +460,9 @@ private:
         eNetScheduleAdmin,
         eNetScheduleSubmitter,
         eNetScheduleExecutor,
-        eWorkerNodeAdmin
+        eWorkerNodeAdmin,
+        eNetStorageAPI,
+        eNetStorageAdmin,
     };
     enum EAdminCmdSeverity {
         eReadOnlyAdminCmd,
@@ -489,7 +493,12 @@ private:
 
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
-    void SetUp_NetStorageCmd();
+    void SetUp_NetStorageCmd(EAPIClass api_class);
+
+    void NetStorage_PrintServerReply(CJsonNode& server_reply);
+    int PrintNetStorageServerInfo();
+    int PrintNetStorageServerConfig();
+    int ShutdownNetStorageServer();
 
     int Automation_PipeServer();
     int Automation_DebugConsole();
