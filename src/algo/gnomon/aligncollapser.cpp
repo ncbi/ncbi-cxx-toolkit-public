@@ -385,13 +385,6 @@ void CAlignCollapser::FilterAlignments() {
 
     int left_end = numeric_limits<int>::max();
     int right_end = 0;
-    ITERATE(TAlignIntrons, it, m_align_introns) {
-        const SIntron& intron = it->first;
-        int a = intron.m_range.GetFrom();
-        int b = intron.m_range.GetTo();
-        left_end = min(left_end, a);
-        right_end = max(right_end, b);
-    }
 
     size_t count_m_aligns = 0;
     ITERATE(Tdata, i, m_aligns) {
@@ -404,6 +397,20 @@ void CAlignCollapser::FilterAlignments() {
     if (count_m_aligns == 0) {
         return;
     }
+
+    ITERATE(TAlignIntrons, it, m_align_introns) {
+        const SIntron& intron = it->first;
+        int a = intron.m_range.GetFrom();
+        int b = intron.m_range.GetTo();
+        left_end = min(left_end, a);
+        right_end = max(right_end, b);
+    }
+
+    ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+        left_end = min(left_end,i->Limits().GetFrom());
+        right_end = max(right_end,i->Limits().GetTo());
+    }
+
     int len = right_end-left_end+1;
 
     cerr << "Before filtering: " << m_align_introns.size() << " introns, " << m_count << " alignments" << endl;
