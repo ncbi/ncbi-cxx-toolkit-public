@@ -37,6 +37,7 @@
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/seqloc__.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -442,19 +443,21 @@ bool CFlatSeqLoc::x_Add
         return false;
     }
 
-    bool do_html = ctx.Config().DoHTML();
+    const bool do_html = ctx.Config().DoHTML();
+    const bool is_comp = 
+        pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp;
 
     TSeqPos pos = pnt.GetPoint();
     x_AddID(pnt.GetId(), oss, ctx, type);
-    if ( pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp ) {
+    if( is_comp ) {
         oss << "complement(";
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ( do_html ? eHTML_Yes : eHTML_None ), ( (eType_assembly == type) ? eForce_ToRange : eForce_None ) );
+    }
+    x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, 
+        oss, ( do_html ? eHTML_Yes : eHTML_None ), 
+        ( (eType_assembly == type) ? eForce_ToRange : eForce_None ),
+        eSource_Point );
+    if( is_comp ) {
         oss << ')';
-    } else if ( pnt.IsSetFuzz() && pnt.GetFuzz().Which() == CInt_fuzz::e_Range ) {
-        oss << (pnt.GetFuzz().GetRange().GetMin() + 1)
-            << '^' << (pnt.GetFuzz().GetRange().GetMax() + 1);
-    } else {
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ( do_html ? eHTML_Yes : eHTML_None ), ( (eType_assembly == type) ? eForce_ToRange : eForce_None ) );
     }
 
     return true;
@@ -466,41 +469,66 @@ bool CFlatSeqLoc::x_Add
  const CInt_fuzz* fuzz,
  CNcbiOstrstream& oss,
  EHTML html,
- EForce force)
+ EForce force,
+ ESource source)
 {
     // need to convert to 1-based coordinates
     pnt += 1;
+
+    const bool bFromSeqPoint = (source == eSource_Point);
 
     if ( fuzz != 0 ) {
         switch ( fuzz->Which() ) {
         case CInt_fuzz::e_P_m:
             {
-                oss << '(' << pnt - fuzz->GetP_m() << '.' 
-                    << pnt + fuzz->GetP_m() << ')';
+                oss << '(' << pnt - fuzz->GetP_m() << '.';
+                if( bFromSeqPoint ) {
+                    oss << pnt << ")..(" << pnt << '.';
+                }
+                oss << pnt + fuzz->GetP_m() << ')';
                 break;
             }
         case CInt_fuzz::e_Range:
             {
-                oss << '(' << (fuzz->GetRange().GetMin() + 1)
-                    << '.' << (fuzz->GetRange().GetMax() + 1) << ')';
+                oss << ( bFromSeqPoint ? "" : "(" )
+                    << (fuzz->GetRange().GetMin() + 1)
+                    << ( bFromSeqPoint ? '^' : '.' )
+                    << (fuzz->GetRange().GetMax() + 1)
+                    << ( bFromSeqPoint ? "" : ")");
                 break;
             }
         case CInt_fuzz::e_Pct: // actually per thousand...
             {
                 // calculate in floating point to avoid overflow (or underflow)
-                double delta = 0.001 * pnt * fuzz->GetPct();
-                oss << '(' << static_cast<long>(pnt - delta) << '.' << static_cast<long>(pnt + delta) << ')';
+                const double delta = 0.001 * pnt * fuzz->GetPct();
+                const long start = static_cast<long>(pnt - delta);
+                const long end   = static_cast<long>(pnt + delta);
+                if( bFromSeqPoint ) {
+                    oss << start << '^' << end;
+                } else {
+                    oss << '(' << start << '.' << end << ')';
+                }
                 break;
             }
         case CInt_fuzz::e_Lim:
             {
                 switch ( fuzz->GetLim() ) {
-                case CInt_fuzz::eLim_gt:
                 case CInt_fuzz::eLim_tr:
+                    if( bFromSeqPoint ) {
+                        oss << pnt << '^' << (pnt + 1);
+                        break;
+                    }
+                    // sometimes FALL-THROUGH
+                case CInt_fuzz::eLim_gt:
                     oss << (html == eHTML_Yes ? "&gt;" : ">") << pnt;
                     break;
-                case CInt_fuzz::eLim_lt:
                 case CInt_fuzz::eLim_tl:
+                    if( bFromSeqPoint ) {
+                        oss << (pnt - 1) << '^' << pnt;
+                        break;
+                    }
+                    // sometimes FALL-THROUGH
+                case CInt_fuzz::eLim_lt:
                     oss << (html == eHTML_Yes ? "&lt;" : "<") << pnt;
                     break;
                 default:
