@@ -336,6 +336,16 @@ CSearchResults::SetSubjectMasks(const TSeqLocInfoVector& subj_masks)
     copy(subj_masks.begin(), subj_masks.end(), back_inserter(m_SubjectMasks));
 }
 
+void CSearchResults::TrimSeqAlign(CSeq_align_set::Tdata::size_type max_size)
+{
+	if (m_Alignment->Size() >  max_size)
+	{
+		CSeq_align_set::Tdata  & as = m_Alignment->Set();
+		as.resize(max_size);
+	}
+}
+
+
 CSearchResults&
 CSearchResultSet::GetResults(size_type qi, size_type si)
 {

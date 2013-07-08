@@ -248,6 +248,11 @@ public:
          return m_PhiQueryInfo;
     }
 
+    /// Trim align_set size
+    /// @parm size  max num of alignments to keep
+    ///				(0 will erase all)
+    void TrimSeqAlign(objects::CSeq_align_set::Tdata::size_type max_size);
+
 protected:
     /// this query's id
     CConstRef<objects::CSeq_id> m_QueryId;
