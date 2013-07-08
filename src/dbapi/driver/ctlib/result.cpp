@@ -973,13 +973,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         for (;;) {
             switch ( my_ct_get_data(cmd, item_no, buffer, sizeof(buffer), &outlen, is_null) ) {
             case CS_SUCCEED:
-                if (outlen != 0)
-                    val->Append(buffer, outlen);
+                // For historic reasons, Append with a length of 0 calls
+                // strlen; avoid passing it inappropriate data.
+                val->Append(outlen ? buffer : kEmptyCStr, outlen);
                 continue;
             case CS_END_ITEM:
             case CS_END_DATA:
-                if (outlen != 0)
-                    val->Append(buffer, outlen);
+                val->Append(outlen ? buffer : kEmptyCStr, outlen);
                 return val;
             case CS_CANCELED:
                 DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );

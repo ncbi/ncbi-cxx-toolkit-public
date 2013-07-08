@@ -1327,5 +1327,105 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_Empty_Blob)
+{
+    const string             kTableName = "#TestEmptyBlob";
+    static const char* const kValues[]  = { NULL, kEmptyCStr, " ", "  " };
+    const int                kValueCount = sizeof(kValues) / sizeof(*kValues);
+    static const char* const kTypes[][2] = {
+        { "IMAGE", "TEXT", },
+        { "VARBINARY(MAX)", "VARCHAR(MAX)" }
+    };
+    const int                kTypesCount = sizeof(kTypes) / sizeof(*kTypes);
+
+    try {
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+
+        for (int k = 0;  k < kTypesCount;  ++k) {
+            auto_stmt->ExecuteUpdate("CREATE TABLE " + kTableName
+                                     + "(i1 " + kTypes[k][0] + ","
+                                       " t1 " + kTypes[k][1] + ","
+                                       " i INTEGER NOT NULL,"
+                                       " j INTEGER NOT NULL,"
+                                       " i2 " + kTypes[k][0] + ","
+                                       " t2 " + kTypes[k][1] + ")");
+
+            auto_ptr<IBulkInsert> bi
+                (GetConnection().GetBulkInsert(kTableName));
+            for (int i = 0;  i < kValueCount;  ++i) {
+                for (int j = 0;  j < kValueCount;  ++j) {
+                    CVariant i1(eDB_Image), t1(eDB_Text), vi(i), vj(j),
+                             i2(eDB_Image), t2(eDB_Text);
+                    if (i > 0) {
+                        i1.Append(kValues[i], i - 1);
+                        i2 = i1;
+                    }
+                    BOOST_CHECK_EQUAL(i1.IsNull(), i == 0);
+                    BOOST_CHECK_EQUAL(i2.IsNull(), i == 0);
+                    if (j > 0) {
+                        t1.Append(kValues[j], j - 1);
+                        t2 = t1;
+                    }
+                    BOOST_CHECK_EQUAL(t1.IsNull(), j == 0);
+                    BOOST_CHECK_EQUAL(t2.IsNull(), j == 0);
+                    bi->Bind(1, &i1);
+                    bi->Bind(2, &t1);
+                    bi->Bind(3, &vi);
+                    bi->Bind(4, &vj);
+                    bi->Bind(5, &i2);
+                    bi->Bind(6, &t2);
+                    bi->AddRow();
+                }
+            }
+            bi->Complete();
+
+            auto_stmt->SendSql("SELECT * FROM " + kTableName);
+            while (auto_stmt->HasMoreResults()) {
+                if (auto_stmt->HasRows()) {
+                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                    rs->BindBlobToVariant(true);
+                    while (rs->Next()) {
+                        size_t i = rs->GetVariant(3).GetInt4();
+                        size_t j = rs->GetVariant(4).GetInt4();
+
+                        const CVariant &i1 = rs->GetVariant(1);
+                        const CVariant &t1 = rs->GetVariant(2);
+                        const CVariant &i2 = rs->GetVariant(5);
+                        const CVariant &t2 = rs->GetVariant(6);
+
+                        if (i == 0) {
+                            BOOST_CHECK(i1.IsNull());
+                            BOOST_CHECK(i2.IsNull());
+                        } else {
+                            BOOST_CHECK( !i1.IsNull() );
+                            BOOST_CHECK_EQUAL(i1.GetString(),
+                                              string(kValues[i], i - 1));
+
+                            BOOST_CHECK( !i2.IsNull() );
+                            BOOST_CHECK_EQUAL(i2.GetString(),
+                                              string(kValues[i], i - 1));
+                        }
+
+                        if (j == 0) {
+                            BOOST_CHECK(t1.IsNull());
+                            BOOST_CHECK(t2.IsNull());
+                        } else {
+                            BOOST_CHECK( !t1.IsNull() );
+                            BOOST_CHECK_EQUAL(t1.GetString(),
+                                              string(kValues[j], j - 1));
+                            BOOST_CHECK( !t2.IsNull() );
+                            BOOST_CHECK_EQUAL(t2.GetString(),
+                                              string(kValues[j], j-1));
+                        }
+                    }
+                }
+            }
+            auto_stmt->ExecuteUpdate("DROP TABLE " + kTableName);
+        }
+    } catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
 
 END_NCBI_SCOPE

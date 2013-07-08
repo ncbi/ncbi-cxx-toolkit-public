@@ -1620,7 +1620,7 @@ size_t CDB_Stream::Read(void* buff, size_t nof_bytes)
 
 size_t CDB_Stream::Append(const void* buff, size_t nof_bytes)
 {
-    if(buff && (nof_bytes > 0)) SetNULL(false);
+    /* if (buff && (nof_bytes > 0)) */ SetNULL(false);
     return m_Store->Append(buff, nof_bytes);
 }
 
@@ -1708,7 +1708,10 @@ CDB_Text::~CDB_Text(void)
 
 size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
 {
-    if(!buff) return 0;
+    if (buff == NULL) {
+        // return 0;
+        buff = kEmptyCStr;
+    }
     return CDB_Stream::Append
         (buff, nof_bytes ? nof_bytes : strlen((const char*) buff));
 }

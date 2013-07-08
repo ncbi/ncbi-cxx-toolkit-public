@@ -563,10 +563,9 @@ bool CTL_BCPInCmd::Send(void)
             }
             else if (param.GetType() == eDB_Text  ||  param.GetType() == eDB_Image) {
                 CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
+                datalen = (CS_INT) par.Size();
 
-                for (datalen = (CS_INT) par.Size();  datalen > 0;
-                    datalen -= (CS_INT) len)
-                {
+                do {
                     len = par.Read(buff, sizeof(buff));
 
                     SetHasFailed((Check(blk_textxfer(x_GetSybaseCmd(),
@@ -579,7 +578,9 @@ bool CTL_BCPInCmd::Send(void)
                         HasFailed(),
                         "blk_textxfer failed for the text/image field." + GetDbgInfo(), 123005
                         );
-                }
+
+                    datalen -= (CS_INT) len;
+                } while (datalen > 0);
             }
         }
     case CS_SUCCEED:
