@@ -7610,6 +7610,7 @@ static const char* const ncrna_names [] = {
     "autocatalytically_spliced_intron",
     "guide_RNA",
     "hammerhead_ribozyme",
+    "lncRNA",
     "miRNA",
     "other",
     "piRNA",
